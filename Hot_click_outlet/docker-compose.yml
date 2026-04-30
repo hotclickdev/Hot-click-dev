@@ -6,7 +6,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require
+      SPRING_DATASOURCE_URL: jdbc:postgresql://aws-1-us-west-2.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0
       SPRING_DATASOURCE_USERNAME: postgres.gwykydxwmuzchwojxqnn
       SPRING_DATASOURCE_PASSWORD: "*3>kXINM#5C0"
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
