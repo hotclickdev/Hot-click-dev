@@ -18,6 +18,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
+import static org.springframework.http.HttpMethod.*;
 
 @Configuration
 @EnableWebSecurity
@@ -59,10 +60,12 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/health").permitAll()
-                .requestMatchers("/api/productos/**").permitAll()
+                .requestMatchers(GET,  "/api/productos/**").permitAll()
+                .requestMatchers(POST, "/api/productos/**").authenticated()
+                .requestMatchers(PUT,  "/api/productos/**").authenticated()
+                .requestMatchers(DELETE, "/api/productos/**").authenticated()
                 .requestMatchers("/api/ruleta/premios").permitAll()
-                .requestMatchers("/api/categorias").permitAll()
-                .requestMatchers("/api/bodegas").authenticated()
+                .requestMatchers(GET, "/api/categorias/**").permitAll()
                 .requestMatchers("/", "/*.html", "/favicon.ico", "/pages/**", "/css/**", "/js/**", "/images/**", "/assets/**", "/admin/**").permitAll()
                 .requestMatchers("/api/admin/**").hasAnyRole("ADMIN_IT", "ADMIN_CLIENTE")
                 .requestMatchers("/api/usuarios/**").authenticated()
