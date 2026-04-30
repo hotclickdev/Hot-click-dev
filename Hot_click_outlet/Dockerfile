@@ -1,30 +1,40 @@
+# ============================================================
+# HOT_CLICK_OUTLET - Dockerfile con Java 21
+# ============================================================
+
 # Stage 1: Build
-FROM maven:3.9-eclipse-temurin-17 AS builder
+FROM maven:3.9-eclipse-temurin-21 AS builder
 
 WORKDIR /build
 
 # Copiar pom.xml primero (para cachear dependencias)
 COPY pom.xml .
-
-# Descargar dependencias (esto se cachea si el pom.xml no cambia)
 RUN mvn dependency:go-offline
 
-# Copiar el código fuente
+# Copiar código fuente y compilar
 COPY src ./src
-
-# Compilar el proyecto
 RUN mvn clean package -DskipTests
 
 # Stage 2: Run
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-# Copiar el JAR desde la etapa de build
+# Crear usuario no root
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# Copiar JAR del builder
 COPY --from=builder /build/target/*.jar app.jar
 
-# Puerto de la aplicación
+# Cambiar a usuario no root
+USER appuser
+
+# Exponer puerto
 EXPOSE 8080
 
-# Comando para ejecutar la aplicación
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://localhost:8080/api/health || exit 1
+
+# Ejecutar
 ENTRYPOINT ["java", "-jar", "app.jar"]
