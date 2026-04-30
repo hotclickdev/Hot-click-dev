@@ -1,38 +1,19 @@
 services:
 
-  postgres_db:
-    image: postgres:16
-    container_name: hotclick_postgres
-    environment:
-      POSTGRES_DB: hotclick_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: hotclick123
-    ports:
-      - "5433:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d hotclick_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   hot_click_outlet:
     build: .
     container_name: hot_click_outlet
     ports:
       - "8080:8080"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres_db:5432/hotclick_db
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db.gwykydxwmuzchwojxqnn.supabase.co:5432/postgres?sslmode=require
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: hotclick123
+      SPRING_DATASOURCE_PASSWORD: "*3>kXINM#5C0"
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
       SPRING_JPA_HIBERNATE_DDL_AUTO: create
       SPRING_JPA_SHOW_SQL: "true"
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
-    depends_on:
-      postgres_db:
-        condition: service_healthy
     restart: unless-stopped
-
-volumes:
-  postgres_data:
