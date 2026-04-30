@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOTCLICK — Bodegas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-layout">
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar" id="sidebar">
+    <a class="sidebar-logo" href="admin-dashboard.html">
+        <div class="logo-box">HC</div>
+        <span class="logo-name">HOT<span>CLICK</span></span>
+    </a>
+
+    <div class="sidebar-section">Principal</div>
+    <nav class="sidebar-nav">
+        <a href="admin-dashboard.html" class="nav-item">
+            <span class="nav-icon">📊</span> Dashboard
+        </a>
+        <a href="admin-productos.html" class="nav-item">
+            <span class="nav-icon">📦</span> Productos
+        </a>
+        <a href="admin-bodegas.html" class="nav-item active">
+            <span class="nav-icon">🏭</span> Bodegas
+        </a>
+        <a href="admin-categorias.html" class="nav-item">
+            <span class="nav-icon">🏷️</span> Categorías
+        </a>
+        <div class="sidebar-section" style="padding-left:0;margin-top:12px;">Otros</div>
+        <a href="../index.html" class="nav-item">
+            <span class="nav-icon">🛍️</span> Ver Tienda
+        </a>
+    </nav>
+
+    <div class="sidebar-bottom">
+        <a href="#" class="nav-item"><span class="nav-icon">⚙️</span> Configuración</a>
+        <button class="nav-item logout" id="logoutBtn">
+            <span class="nav-icon">🚪</span> Cerrar Sesión
+        </button>
+    </div>
+</aside>
+
+<!-- ===== MAIN ===== -->
+<div class="admin-wrapper">
+    <header class="topbar">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+        <div class="topbar-search">
+            <span class="search-icon">🔍</span>
+            <input type="text" placeholder="Buscar bodega...">
+        </div>
+        <div class="topbar-right">
+            <button class="topbar-btn">🔔</button>
+            <div class="topbar-user">
+                <div class="topbar-avatar" id="adminAvatar">A</div>
+                <span class="topbar-username" id="adminName">Admin</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="admin-content" style="flex-direction:column">
+        <div class="page-header">
+            <div>
+                <h1>🏭 Administrar <span>Bodegas</span></h1>
+                <p>Gestiona los almacenes y ubicaciones</p>
+            </div>
+            <button class="btn btn-primary" id="nuevaBodegaBtn">+ Nueva Bodega</button>
+        </div>
+
+        <div class="data-card">
+            <div style="overflow-x:auto">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nombre</th>
+                            <th>Dirección</th>
+                            <th>Teléfono</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bodegasTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Bodega -->
+<div id="bodegaModal" class="modal">
+    <div class="modal-content" style="max-width:480px">
+        <div class="modal-header">
+            <span id="modalTitle">Nueva Bodega</span>
+            <button class="modal-close" onclick="cerrarModal('bodegaModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="bodegaId">
+            <div class="form-group">
+                <label>Nombre</label>
+                <input type="text" id="bodegaNombre" class="form-input" placeholder="Nombre de la bodega">
+            </div>
+            <div class="form-group">
+                <label>Dirección</label>
+                <input type="text" id="bodegaDireccion" class="form-input" placeholder="Dirección completa">
+            </div>
+            <div class="form-group">
+                <label>Teléfono</label>
+                <input type="text" id="bodegaTelefono" class="form-input" placeholder="Teléfono de contacto">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="cerrarModal('bodegaModal')">Cancelar</button>
+            <button class="btn btn-primary" id="guardarBodegaBtn">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<script src="../js/utils.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+    function mostrarToast(msg, tipo = 'success') {
+        const c = document.getElementById('toastContainer');
+        const t = document.createElement('div');
+        t.className = `toast toast-${tipo}`;
+        t.textContent = msg;
+        c.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+    }
+    function abrirModal(id)  { document.getElementById(id)?.classList.add('active'); }
+    function cerrarModal(id) { document.getElementById(id)?.classList.remove('active'); }
+    function cerrarSesion()  { localStorage.clear(); window.location.href = '../index.html'; }
+
+    let bodegas = [
+        { id:1, nombre:'Bodega Central',  direccion:'San José, Costa Rica', telefono:'2222-3333' },
+        { id:2, nombre:'Bodega Alajuela', direccion:'Alajuela Centro',       telefono:'4444-5555' }
+    ];
+    let nextId = 3;
+
+    function cargarBodegas() {
+        document.getElementById('bodegasTable').innerHTML = bodegas.map(b => `
+            <tr>
+                <td style="font-weight:600">#${b.id}</td>
+                <td style="font-weight:500">${escapeHtml(b.nombre)}</td>
+                <td style="color:var(--txt-sub)">${escapeHtml(b.direccion)}</td>
+                <td>${b.telefono}</td>
+                <td><span class="badge badge-active">Activo</span></td>
+                <td class="table-actions">
+                    <button class="btn-icon" onclick="editarBodega(${b.id})" title="Editar">✏️</button>
+                    <button class="btn-icon del" onclick="eliminarBodega(${b.id})" title="Eliminar">🗑️</button>
+                </td>
+            </tr>`).join('');
+    }
+
+    function editarBodega(id) {
+        const b = bodegas.find(b => b.id === id);
+        if (!b) return;
+        document.getElementById('bodegaId').value       = b.id;
+        document.getElementById('bodegaNombre').value   = b.nombre;
+        document.getElementById('bodegaDireccion').value = b.direccion;
+        document.getElementById('bodegaTelefono').value = b.telefono;
+        document.getElementById('modalTitle').innerText = 'Editar Bodega';
+        abrirModal('bodegaModal');
+    }
+
+    function eliminarBodega(id) {
+        if (confirm('¿Eliminar esta bodega?')) {
+            bodegas = bodegas.filter(b => b.id !== id);
+            cargarBodegas();
+            mostrarToast('Bodega eliminada', 'success');
+        }
+    }
+
+    document.getElementById('nuevaBodegaBtn').addEventListener('click', () => {
+        ['bodegaId','bodegaNombre','bodegaDireccion','bodegaTelefono'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.value = '';
+        });
+        document.getElementById('modalTitle').innerText = 'Nueva Bodega';
+        abrirModal('bodegaModal');
+    });
+
+    document.getElementById('guardarBodegaBtn').addEventListener('click', () => {
+        const id = document.getElementById('bodegaId').value;
+        const bodega = {
+            nombre:    document.getElementById('bodegaNombre').value,
+            direccion: document.getElementById('bodegaDireccion').value,
+            telefono:  document.getElementById('bodegaTelefono').value
+        };
+        if (!bodega.nombre) { mostrarToast('El nombre es obligatorio', 'error'); return; }
+
+        if (id) {
+            const idx = bodegas.findIndex(b => b.id === parseInt(id));
+            if (idx !== -1) { bodegas[idx] = { ...bodegas[idx], ...bodega }; mostrarToast('Bodega actualizada', 'success'); }
+        } else {
+            bodega.id = nextId++;
+            bodegas.push(bodega);
+            mostrarToast('Bodega creada', 'success');
+        }
+        cerrarModal('bodegaModal');
+        cargarBodegas();
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', cerrarSesion);
+    document.getElementById('mobileMenuBtn').addEventListener('click', () =>
+        document.getElementById('sidebar').classList.toggle('open'));
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const name = localStorage.getItem('userName') || 'Admin';
+        document.getElementById('adminName').innerText   = name;
+        document.getElementById('adminAvatar').innerText = name.charAt(0).toUpperCase();
+        cargarBodegas();
+    });
+</script>
+</body>
+</html>

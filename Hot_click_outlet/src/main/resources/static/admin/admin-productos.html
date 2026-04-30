@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOTCLICK — Productos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-layout">
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar" id="sidebar">
+    <a class="sidebar-logo" href="admin-dashboard.html">
+        <div class="logo-box">HC</div>
+        <span class="logo-name">HOT<span>CLICK</span></span>
+    </a>
+
+    <div class="sidebar-section">Principal</div>
+    <nav class="sidebar-nav">
+        <a href="admin-dashboard.html" class="nav-item">
+            <span class="nav-icon">📊</span> Dashboard
+        </a>
+        <a href="admin-productos.html" class="nav-item active">
+            <span class="nav-icon">📦</span> Productos
+        </a>
+        <a href="admin-bodegas.html" class="nav-item">
+            <span class="nav-icon">🏭</span> Bodegas
+        </a>
+        <a href="admin-categorias.html" class="nav-item">
+            <span class="nav-icon">🏷️</span> Categorías
+        </a>
+        <div class="sidebar-section" style="padding-left:0;margin-top:12px;">Otros</div>
+        <a href="../index.html" class="nav-item">
+            <span class="nav-icon">🛍️</span> Ver Tienda
+        </a>
+    </nav>
+
+    <div class="sidebar-bottom">
+        <a href="#" class="nav-item"><span class="nav-icon">⚙️</span> Configuración</a>
+        <button class="nav-item logout" id="logoutBtn">
+            <span class="nav-icon">🚪</span> Cerrar Sesión
+        </button>
+    </div>
+</aside>
+
+<!-- ===== MAIN ===== -->
+<div class="admin-wrapper">
+    <header class="topbar">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+        <div class="topbar-search">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchProducto" placeholder="Buscar producto...">
+        </div>
+        <div class="topbar-right">
+            <button class="topbar-btn">🔔</button>
+            <div class="topbar-user">
+                <div class="topbar-avatar" id="adminAvatar">A</div>
+                <span class="topbar-username" id="adminName">Admin</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="admin-content" style="flex-direction:column">
+        <div class="page-header">
+            <div>
+                <h1>📦 Administrar <span>Productos</span></h1>
+                <p>Gestiona el catálogo de productos de la tienda</p>
+            </div>
+            <button class="btn btn-primary" id="nuevoProductoBtn">+ Nuevo Producto</button>
+        </div>
+
+        <div class="data-card">
+            <div class="admin-filters">
+                <select id="categoriaFilter" class="filter-input filter-select">
+                    <option value="">Todas las categorías</option>
+                    <option value="electronica">Electrónica</option>
+                    <option value="hogar">Hogar</option>
+                    <option value="deportes">Deportes</option>
+                    <option value="moda">Moda</option>
+                </select>
+                <button class="btn btn-primary btn-sm" id="searchBtn">🔍 Buscar</button>
+            </div>
+
+            <div style="overflow-x:auto">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Producto</th>
+                            <th>P. Venta</th>
+                            <th>Stock</th>
+                            <th>Categoría</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productosTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Producto -->
+<div id="productoModal" class="modal">
+    <div class="modal-content" style="max-width:620px">
+        <div class="modal-header">
+            <span id="modalTitle">Nuevo Producto</span>
+            <button class="modal-close" onclick="cerrarModal('productoModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="productoId">
+            <div class="form-group">
+                <label>Nombre</label>
+                <input type="text" id="prodNombre" class="form-input" placeholder="Nombre del producto">
+            </div>
+            <div class="form-group">
+                <label>Descripción</label>
+                <textarea id="prodDescripcion" class="form-input form-textarea" rows="3" placeholder="Descripción del producto"></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Precio Compra</label>
+                    <input type="number" id="prodPrecioCompra" class="form-input" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Precio Venta</label>
+                    <input type="number" id="prodPrecioVenta" class="form-input" step="0.01">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Stock</label>
+                    <input type="number" id="prodStock" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>Categoría</label>
+                    <select id="prodCategoria" class="form-input">
+                        <option value="electronica">Electrónica</option>
+                        <option value="hogar">Hogar</option>
+                        <option value="deportes">Deportes</option>
+                        <option value="moda">Moda</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Link Amazon</label>
+                <input type="url" id="prodAmazon" class="form-input" placeholder="https://amazon.com/...">
+            </div>
+            <div class="form-group">
+                <label>📸 Imagen del Producto</label>
+                <input type="file" id="prodImagen" accept="image/*" onchange="previsualizarImagen(event)">
+                <div id="vistaPrevia" style="margin-top:8px;"></div>
+                <input type="hidden" id="prodImagenUrl">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="cerrarModal('productoModal')">Cancelar</button>
+            <button class="btn btn-primary" id="guardarProductoBtn">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<script src="../js/utils.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+    function mostrarToast(msg, tipo = 'success') {
+        const c = document.getElementById('toastContainer');
+        const t = document.createElement('div');
+        t.className = `toast toast-${tipo}`;
+        t.textContent = msg;
+        c.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+    }
+    function abrirModal(id)  { document.getElementById(id)?.classList.add('active'); }
+    function cerrarModal(id) { document.getElementById(id)?.classList.remove('active'); }
+    function cerrarSesion()  {
+        localStorage.clear();
+        window.location.href = '../index.html';
+    }
+
+    let productos = [
+        { id:1, nombre:'Laptop Gamer',      precioCompra:500, precioVenta:750,   stock:10, categoria:'electronica', amazonLink:'https://amazon.com', imagenUrl:'' },
+        { id:2, nombre:'Mouse Inalámbrico', precioCompra:15,  precioVenta:29.99, stock:50, categoria:'electronica', amazonLink:'https://amazon.com', imagenUrl:'' },
+        { id:3, nombre:'Teclado Mecánico',  precioCompra:45,  precioVenta:89.99, stock:25, categoria:'electronica', amazonLink:'https://amazon.com', imagenUrl:'' }
+    ];
+    let nextId = 4;
+
+    const SUPABASE_URL      = 'https://gwykydxwmuzchwojxqnn.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_ezmDlNuNJuN0JxlpHhfrTw_VnEQ-pKG';
+
+    async function subirImagenSupabase(file) {
+        const fileName = `${Date.now()}_${file.name}`;
+        try {
+            mostrarToast('Subiendo imagen...', 'info');
+            const res = await fetch(`${SUPABASE_URL}/storage/v1/object/productos/${fileName}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'apikey': SUPABASE_ANON_KEY },
+                body: file
+            });
+            if (res.ok) {
+                const url = `${SUPABASE_URL}/storage/v1/object/public/productos/${fileName}`;
+                mostrarToast('Imagen subida', 'success');
+                return { success: true, url };
+            }
+            mostrarToast('Error al subir imagen', 'error');
+            return { success: false };
+        } catch {
+            mostrarToast('Error de conexión', 'error');
+            return { success: false };
+        }
+    }
+
+    function previsualizarImagen(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) { mostrarToast('Solo imágenes', 'error'); event.target.value = ''; return; }
+        if (file.size > 2 * 1024 * 1024)     { mostrarToast('Máximo 2MB',    'error'); event.target.value = ''; return; }
+        const reader = new FileReader();
+        reader.onload = e => {
+            document.getElementById('vistaPrevia').innerHTML =
+                `<img src="${e.target.result}" style="max-width:150px;border-radius:8px;border:2px solid var(--blue)">`;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function cargarProductos() {
+        const tbody    = document.getElementById('productosTable');
+        const search   = document.getElementById('searchProducto')?.value.toLowerCase() || '';
+        const categoria = document.getElementById('categoriaFilter')?.value || '';
+        const filtrados = productos.filter(p =>
+            (!search || p.nombre.toLowerCase().includes(search)) &&
+            (!categoria || p.categoria === categoria)
+        );
+        tbody.innerHTML = filtrados.map(p => `
+            <tr>
+                <td style="font-weight:600">#${p.id}</td>
+                <td style="display:flex;align-items:center;gap:10px">
+                    ${p.imagenUrl
+                        ? `<img src="${p.imagenUrl}" style="width:38px;height:38px;object-fit:cover;border-radius:8px">`
+                        : `<span style="font-size:1.5rem">📦</span>`}
+                    <span style="font-weight:500">${escapeHtml(p.nombre)}</span>
+                </td>
+                <td style="font-weight:600;color:var(--green)">$${p.precioVenta.toFixed(2)}</td>
+                <td>${p.stock}</td>
+                <td style="color:var(--txt-sub);text-transform:capitalize">${p.categoria}</td>
+                <td><span class="badge badge-active">Activo</span></td>
+                <td class="table-actions">
+                    <button class="btn-icon" onclick="editarProducto(${p.id})" title="Editar">✏️</button>
+                    <button class="btn-icon del" onclick="eliminarProducto(${p.id})" title="Eliminar">🗑️</button>
+                </td>
+            </tr>`).join('');
+    }
+
+    function editarProducto(id) {
+        const p = productos.find(p => p.id === id);
+        if (!p) return;
+        document.getElementById('productoId').value      = p.id;
+        document.getElementById('prodNombre').value       = p.nombre;
+        document.getElementById('prodDescripcion').value  = p.descripcion || '';
+        document.getElementById('prodPrecioCompra').value = p.precioCompra;
+        document.getElementById('prodPrecioVenta').value  = p.precioVenta;
+        document.getElementById('prodStock').value        = p.stock;
+        document.getElementById('prodCategoria').value    = p.categoria;
+        document.getElementById('prodAmazon').value       = p.amazonLink || '';
+        document.getElementById('prodImagenUrl').value    = p.imagenUrl || '';
+        if (p.imagenUrl) {
+            document.getElementById('vistaPrevia').innerHTML =
+                `<img src="${p.imagenUrl}" style="max-width:150px;border-radius:8px">`;
+        }
+        document.getElementById('modalTitle').innerText = 'Editar Producto';
+        abrirModal('productoModal');
+    }
+
+    function eliminarProducto(id) {
+        if (confirm('¿Eliminar este producto?')) {
+            productos = productos.filter(p => p.id !== id);
+            cargarProductos();
+            mostrarToast('Producto eliminado', 'success');
+        }
+    }
+
+    document.getElementById('guardarProductoBtn').addEventListener('click', async () => {
+        const imagenFile = document.getElementById('prodImagen').files[0];
+        let imagenUrl = document.getElementById('prodImagenUrl').value || '';
+        if (imagenFile) {
+            const res = await subirImagenSupabase(imagenFile);
+            if (res.success) { imagenUrl = res.url; document.getElementById('prodImagenUrl').value = imagenUrl; }
+            else return;
+        }
+        const id = document.getElementById('productoId').value;
+        const producto = {
+            nombre:       document.getElementById('prodNombre').value,
+            descripcion:  document.getElementById('prodDescripcion').value || '',
+            precioCompra: parseFloat(document.getElementById('prodPrecioCompra').value) || 0,
+            precioVenta:  parseFloat(document.getElementById('prodPrecioVenta').value) || 0,
+            stock:        parseInt(document.getElementById('prodStock').value) || 0,
+            categoria:    document.getElementById('prodCategoria').value,
+            amazonLink:   document.getElementById('prodAmazon').value || '',
+            imagenUrl
+        };
+        if (!producto.nombre) { mostrarToast('El nombre es obligatorio', 'error'); return; }
+        if (producto.precioVenta <= producto.precioCompra) { mostrarToast('Precio venta debe ser mayor al de compra', 'error'); return; }
+
+        if (id) {
+            const idx = productos.findIndex(p => p.id === parseInt(id));
+            if (idx !== -1) { productos[idx] = { ...productos[idx], ...producto }; mostrarToast('Producto actualizado', 'success'); }
+        } else {
+            producto.id = nextId++;
+            productos.push(producto);
+            mostrarToast('Producto creado', 'success');
+        }
+        cerrarModal('productoModal');
+        cargarProductos();
+        ['productoId','prodNombre','prodDescripcion','prodPrecioCompra','prodPrecioVenta','prodStock','prodAmazon','prodImagen','prodImagenUrl']
+            .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        document.getElementById('vistaPrevia').innerHTML = '';
+        document.getElementById('prodCategoria').value = 'electronica';
+    });
+
+    document.getElementById('nuevoProductoBtn').addEventListener('click', () => {
+        ['productoId','prodNombre','prodDescripcion','prodPrecioCompra','prodPrecioVenta','prodStock','prodAmazon','prodImagen','prodImagenUrl']
+            .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        document.getElementById('vistaPrevia').innerHTML = '';
+        document.getElementById('prodCategoria').value = 'electronica';
+        document.getElementById('modalTitle').innerText = 'Nuevo Producto';
+        abrirModal('productoModal');
+    });
+
+    document.getElementById('searchBtn').addEventListener('click', cargarProductos);
+    document.getElementById('searchProducto').addEventListener('keypress', e => { if (e.key === 'Enter') cargarProductos(); });
+    document.getElementById('categoriaFilter').addEventListener('change', cargarProductos);
+    document.getElementById('logoutBtn').addEventListener('click', cerrarSesion);
+    document.getElementById('mobileMenuBtn').addEventListener('click', () =>
+        document.getElementById('sidebar').classList.toggle('open'));
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const name = localStorage.getItem('userName') || 'Admin';
+        document.getElementById('adminName').innerText  = name;
+        document.getElementById('adminAvatar').innerText = name.charAt(0).toUpperCase();
+        cargarProductos();
+    });
+</script>
+</body>
+</html>

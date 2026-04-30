@@ -1,0 +1,373 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOTCLICK — Contacto</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="header">
+    <div class="container">
+        <div class="header-container">
+            <div class="logo" onclick="window.location.href='index.html'">
+                <span class="logo-icon">HC</span>
+                <span class="logo-text">HOTCLICK</span>
+            </div>
+            <nav class="nav-menu">
+                <a href="index.html"      class="nav-link">Inicio</a>
+                <a href="productos.html"  class="nav-link">Productos</a>
+                <a href="categorias.html" class="nav-link">Categorías</a>
+                <a href="nosotros.html"   class="nav-link">Nosotros</a>
+                <a href="contacto.html"   class="nav-link active">Contacto</a>
+            </nav>
+            <div class="nav-actions">
+                <button class="icon-btn" id="cartBtn">🛒<span class="badge" id="cartCount">0</span></button>
+                <button class="icon-btn" id="userBtn">👤</button>
+                <button class="icon-btn" id="scanBtn">📷</button>
+            </div>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+        </div>
+    </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+    <a href="index.html">Inicio</a>
+    <a href="productos.html">Productos</a>
+    <a href="categorias.html">Categorías</a>
+    <a href="nosotros.html">Nosotros</a>
+    <a href="contacto.html">Contacto</a>
+    <a href="#" id="mobileUserBtn">Mi Cuenta</a>
+</div>
+
+<div class="status-bar">
+    <div class="container">
+        <div class="status-inner">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="backendStatus">Verificando conexión...</span>
+        </div>
+    </div>
+</div>
+
+<section class="page-hero">
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="index.html">Inicio</a>
+            <span>›</span>
+            <span>Contacto</span>
+        </div>
+        <h1 class="page-hero-title">Contáctanos</h1>
+        <p class="page-hero-sub">Estamos aquí para ayudarte — escríbenos o llámanos</p>
+    </div>
+</section>
+
+<div class="container">
+    <div class="contact-grid">
+        <div class="contact-info-card">
+            <h3>Información de Contacto</h3>
+
+            <div class="contact-info-item">
+                <div class="contact-info-item-icon">📍</div>
+                <div class="contact-info-item-text">
+                    <label>Dirección</label>
+                    <span>San José, Costa Rica</span>
+                </div>
+            </div>
+            <div class="contact-info-item">
+                <div class="contact-info-item-icon">📧</div>
+                <div class="contact-info-item-text">
+                    <label>Email</label>
+                    <span>info@hotclick.com</span>
+                </div>
+            </div>
+            <div class="contact-info-item">
+                <div class="contact-info-item-icon">📞</div>
+                <div class="contact-info-item-text">
+                    <label>Teléfono</label>
+                    <span>+506 8974-5370</span>
+                </div>
+            </div>
+            <div class="contact-info-item">
+                <div class="contact-info-item-icon">⏰</div>
+                <div class="contact-info-item-text">
+                    <label>Horario</label>
+                    <span>Lun–Vie 8am–6pm · Sáb 9am–1pm</span>
+                </div>
+            </div>
+
+            <div class="social-links">
+                <a href="#" class="social-link" target="_blank" title="Facebook">📘</a>
+                <a href="#" class="social-link" target="_blank" title="Instagram">📸</a>
+                <a href="https://wa.me/50689745370" class="social-link" target="_blank" title="WhatsApp">💬</a>
+            </div>
+        </div>
+
+        <div class="contact-form-card">
+            <h3>Envíanos un Mensaje</h3>
+            <form id="contactForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" id="contactNombre" class="form-input" placeholder="Tu nombre" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" id="contactEmail" class="form-input" placeholder="tu@email.com" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Asunto</label>
+                    <input type="text" id="contactAsunto" class="form-input" placeholder="¿En qué podemos ayudarte?" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mensaje</label>
+                    <textarea id="contactMensaje" class="form-textarea" rows="5" placeholder="Escribe tu mensaje aquí..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;">Enviar Mensaje</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <div class="logo" style="cursor:default;">
+                    <span class="logo-icon">HC</span>
+                    <span class="logo-text" style="-webkit-text-fill-color:white;">HOTCLICK</span>
+                </div>
+                <p>Tu tienda en línea de electrónica y gadgets en Costa Rica.</p>
+            </div>
+            <div class="footer-col"><h4>Tienda</h4><ul><li><a href="productos.html">Productos</a></li><li><a href="categorias.html">Categorías</a></li></ul></div>
+            <div class="footer-col"><h4>Empresa</h4><ul><li><a href="nosotros.html">Nosotros</a></li><li><a href="contacto.html">Contacto</a></li></ul></div>
+            <div class="footer-col"><h4>Contacto</h4><p>📧 info@hotclick.com<br>📞 +506 8974-5370</p></div>
+        </div>
+        <div class="footer-bottom"><span>&copy; 2026 HOTCLICK. Todos los derechos reservados.</span></div>
+    </div>
+</footer>
+
+<a href="https://wa.me/50689745370" target="_blank" class="whatsapp-float">💬</a>
+
+<!-- MODALES -->
+<div id="cartModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3>🛒 Mi Carrito</h3><button class="modal-close" id="closeCartModal">&times;</button></div>
+        <div class="modal-body" id="cartItems"><p style="color:var(--c-muted);">Tu carrito está vacío</p></div>
+        <div class="modal-footer">
+            <div class="cart-modal-total"><span>Total</span><span class="total-amount" id="cartTotal">$0.00</span></div>
+            <button class="btn btn-whatsapp" id="checkoutWhatsApp" style="width:100%;">💬 Enviar por WhatsApp</button>
+            <a href="carrito.html" class="btn btn-outline" style="width:100%;text-align:center;">Ver carrito completo</a>
+        </div>
+    </div>
+</div>
+
+<div id="loginModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3>Iniciar Sesión</h3><button class="modal-close" id="closeLoginModal">&times;</button></div>
+        <div class="modal-body">
+            <div class="form-group"><input type="email" id="loginCorreo" class="form-input" placeholder="Correo electrónico"></div>
+            <div class="form-group"><input type="password" id="loginPassword" class="form-input" placeholder="Contraseña"></div>
+            <button id="btnLogin" class="btn btn-primary" style="width:100%;">Ingresar</button>
+            <p style="text-align:center;margin-top:14px;font-size:.88rem;color:var(--c-muted);">¿No tienes cuenta? <a href="#" id="showRegister" style="color:var(--c-blue);font-weight:600;">Regístrate</a></p>
+        </div>
+    </div>
+</div>
+
+<div id="registerModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3>Crear Cuenta</h3><button class="modal-close" id="closeRegisterModal">&times;</button></div>
+        <div class="modal-body">
+            <div class="form-group"><input type="text"     id="regNombre"          class="form-input" placeholder="Nombre"></div>
+            <div class="form-group"><input type="text"     id="regApellidoPaterno" class="form-input" placeholder="Apellido paterno"></div>
+            <div class="form-group"><input type="text"     id="regApellidoMaterno" class="form-input" placeholder="Apellido materno"></div>
+            <div class="form-group"><input type="email"    id="regCorreo"          class="form-input" placeholder="Correo electrónico"></div>
+            <div class="form-group"><input type="text"     id="regTelefono"        class="form-input" placeholder="Teléfono"></div>
+            <div class="form-group"><input type="text"     id="regIdentificacion"  class="form-input" placeholder="Identificación"></div>
+            <div class="form-group"><input type="password" id="regPassword"        class="form-input" placeholder="Contraseña"></div>
+            <button id="btnRegister" class="btn btn-primary" style="width:100%;">Registrarse</button>
+            <p style="text-align:center;margin-top:14px;font-size:.88rem;color:var(--c-muted);">¿Ya tienes cuenta? <a href="#" id="showLogin" style="color:var(--c-blue);font-weight:600;">Inicia sesión</a></p>
+        </div>
+    </div>
+</div>
+
+<div id="scanModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3>Escanear Producto</h3><button class="modal-close" id="closeScanModal">&times;</button></div>
+        <div class="modal-body" style="text-align:center;">
+            <div style="font-size:3.5rem;margin-bottom:12px;">📷</div>
+            <p style="color:var(--c-muted);margin-bottom:16px;">Ingresa el código de barras del producto</p>
+            <div class="form-group"><input type="text" id="codigoManual" class="form-input" placeholder="Código de barras o SKU" style="text-align:center;"></div>
+            <button id="buscarCodigoBtn" class="btn btn-primary" style="width:100%;">🔍 Buscar</button>
+            <div id="scanResultado" style="margin-top:16px;"></div>
+        </div>
+    </div>
+</div>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<script>
+const API_URL = 'http://localhost:8080/api';
+let carrito = [];
+
+function mostrarToast(mensaje, tipo = 'success') {
+    const c = document.getElementById('toastContainer');
+    if (!c) return;
+    const t = document.createElement('div');
+    t.className = `toast toast-${tipo}`;
+    t.textContent = mensaje;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+}
+function abrirModal(id)  { const m = document.getElementById(id); if (m) m.classList.add('active'); }
+function cerrarModal(id) { const m = document.getElementById(id); if (m) m.classList.remove('active'); }
+
+function inicializarCarrito() {
+    const g = localStorage.getItem('carrito');
+    if (g) { try { carrito = JSON.parse(g); } catch { carrito = []; } }
+    actualizarContadorCarrito();
+}
+function agregarAlCarrito(id, nombre, precio) {
+    const e = carrito.find(i => i.id === id);
+    if (e) e.cantidad++; else carrito.push({ id, nombre, precio, cantidad: 1 });
+    localStorage.setItem('carrito', JSON.stringify(carrito));
+    actualizarContadorCarrito();
+    mostrarToast(`${nombre} agregado al carrito`, 'success');
+}
+function eliminarDelCarrito(id) {
+    carrito = carrito.filter(i => i.id !== id);
+    localStorage.setItem('carrito', JSON.stringify(carrito));
+    actualizarContadorCarrito(); actualizarModalCarrito();
+    mostrarToast('Producto eliminado', 'info');
+}
+function actualizarContadorCarrito() {
+    const t = carrito.reduce((s, i) => s + (i.cantidad || 1), 0);
+    document.querySelectorAll('.badge, #cartCount').forEach(b => b.textContent = t);
+}
+function actualizarModalCarrito() {
+    const con = document.getElementById('cartItems');
+    const tot = document.getElementById('cartTotal');
+    if (!con) return;
+    if (!carrito.length) { con.innerHTML = '<p style="color:var(--c-muted);">Tu carrito está vacío</p>'; if (tot) tot.textContent = '$0.00'; return; }
+    let html = '', total = 0;
+    carrito.forEach(item => {
+        const sub = item.precio * (item.cantidad || 1); total += sub;
+        html += `<div class="cart-modal-item"><div><div class="cart-modal-name">${item.nombre}</div><div class="cart-modal-meta">$${item.precio.toFixed(2)} × ${item.cantidad || 1}</div></div><div style="display:flex;align-items:center;gap:8px;"><span class="cart-modal-price">$${sub.toFixed(2)}</span><button class="cart-modal-remove" onclick="eliminarDelCarrito(${item.id})">✕</button></div></div>`;
+    });
+    con.innerHTML = html;
+    if (tot) tot.textContent = `$${total.toFixed(2)}`;
+}
+function enviarPedidoWhatsApp() {
+    if (!carrito.length) { mostrarToast('El carrito está vacío', 'error'); return; }
+    let msg = '🛍️ *NUEVO PEDIDO - HOTCLICK*%0A';
+    msg += `📅 *Fecha:* ${new Date().toLocaleString('es-CR')}%0A*PRODUCTOS:*%0A`;
+    let total = 0;
+    carrito.forEach(i => { const sub = i.precio * (i.cantidad || 1); total += sub; msg += `• ${i.cantidad || 1}x ${i.nombre} - $${sub.toFixed(2)}%0A`; });
+    msg += `%0A*TOTAL: $${total.toFixed(2)}*`;
+    window.open(`https://wa.me/50689745370?text=${msg}`, '_blank');
+}
+function getToken() { return localStorage.getItem('token'); }
+function setToken(t) { if (t) localStorage.setItem('token', t); else localStorage.removeItem('token'); }
+async function apiLogin(correo, contrasena) {
+    try {
+        const r = await fetch(`${API_URL}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ correo, contrasena }) });
+        const d = await r.json();
+        if (r.ok && d.token) { setToken(d.token); localStorage.setItem('userRole', d.rol || 'USUARIO_FINAL'); localStorage.setItem('userName', d.nombre || 'Usuario'); return { success: true }; }
+        return { success: false, message: d.mensaje || 'Credenciales inválidas' };
+    } catch { return { success: false, message: 'Error de conexión' }; }
+}
+async function apiRegister(usuario) {
+    try {
+        const r = await fetch(`${API_URL}/auth/register`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(usuario) });
+        if (r.ok) return { success: true };
+        const d = await r.json();
+        return { success: false, message: d.mensaje || 'Error al registrar' };
+    } catch { return { success: false, message: 'Error de conexión' }; }
+}
+function cerrarSesion() {
+    setToken(null); localStorage.removeItem('userRole'); localStorage.removeItem('userName');
+    actualizarIconoSesion(); mostrarToast('Sesión cerrada', 'success');
+}
+function actualizarIconoSesion() {
+    const btn = document.getElementById('userBtn');
+    if (btn) btn.innerHTML = getToken() ? '👤✅' : '👤';
+}
+async function verificarBackend() {
+    const dot = document.getElementById('statusDot');
+    const txt = document.getElementById('backendStatus');
+    try {
+        const r = await fetch(`${API_URL}/health`);
+        if (r.ok) {
+            const d = await r.json();
+            if (dot) dot.classList.add('online');
+            if (txt) txt.textContent = `Conectado · ${d.service || 'HOTCLICK'} v${d.version || '1.0'}`;
+        } else { if (dot) dot.classList.add('offline'); if (txt) txt.textContent = 'Error en el servidor'; }
+    } catch { if (dot) dot.classList.add('offline'); if (txt) txt.textContent = 'Sin conexión con el servidor'; }
+}
+function buscarProductoPorCodigo() {
+    const codigo = document.getElementById('codigoManual').value;
+    const res = document.getElementById('scanResultado');
+    if (!codigo) { mostrarToast('Ingresa un código', 'error'); return; }
+    res.innerHTML = `<div style="background:var(--c-bg);padding:16px;border-radius:var(--r-md);border:1px solid var(--c-border);"><p style="font-weight:600;margin-bottom:8px;">✅ Producto encontrado</p><button class="btn btn-primary btn-sm" onclick="agregarAlCarrito(999,'Producto Ejemplo',99.99);cerrarModal('scanModal');">🛒 Agregar al Carrito</button></div>`;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    inicializarCarrito();
+    verificarBackend();
+    actualizarIconoSesion();
+
+    document.getElementById('cartBtn').onclick = () => { actualizarModalCarrito(); abrirModal('cartModal'); };
+    document.getElementById('closeCartModal').onclick = () => cerrarModal('cartModal');
+    document.getElementById('checkoutWhatsApp').onclick = enviarPedidoWhatsApp;
+
+    document.getElementById('userBtn').onclick = () => { if (getToken()) cerrarSesion(); else abrirModal('loginModal'); };
+    document.getElementById('closeLoginModal').onclick = () => cerrarModal('loginModal');
+    document.getElementById('closeRegisterModal').onclick = () => cerrarModal('registerModal');
+
+    document.getElementById('btnLogin').onclick = async () => {
+        const r = await apiLogin(document.getElementById('loginCorreo').value, document.getElementById('loginPassword').value);
+        if (r.success) { mostrarToast('✅ Sesión iniciada', 'success'); cerrarModal('loginModal'); actualizarIconoSesion(); }
+        else mostrarToast(r.message, 'error');
+    };
+    document.getElementById('btnRegister').onclick = async () => {
+        const r = await apiRegister({
+            nombre: document.getElementById('regNombre').value,
+            apellidoPaterno: document.getElementById('regApellidoPaterno').value,
+            apellidoMaterno: document.getElementById('regApellidoMaterno').value,
+            correo: document.getElementById('regCorreo').value,
+            telefono: document.getElementById('regTelefono').value,
+            identificacion: document.getElementById('regIdentificacion').value,
+            contrasenaHash: document.getElementById('regPassword').value
+        });
+        if (r.success) { mostrarToast('✅ Registro exitoso', 'success'); cerrarModal('registerModal'); abrirModal('loginModal'); }
+        else mostrarToast(r.message, 'error');
+    };
+    document.getElementById('showRegister').onclick = e => { e.preventDefault(); cerrarModal('loginModal'); abrirModal('registerModal'); };
+    document.getElementById('showLogin').onclick = e => { e.preventDefault(); cerrarModal('registerModal'); abrirModal('loginModal'); };
+
+    document.getElementById('scanBtn').onclick = () => abrirModal('scanModal');
+    document.getElementById('closeScanModal').onclick = () => cerrarModal('scanModal');
+    document.getElementById('buscarCodigoBtn').onclick = buscarProductoPorCodigo;
+
+    document.getElementById('mobileMenuBtn').onclick = () => document.getElementById('mobileMenu').classList.toggle('active');
+    document.getElementById('mobileUserBtn').onclick = () => {
+        if (getToken()) cerrarSesion(); else abrirModal('loginModal');
+        document.getElementById('mobileMenu').classList.remove('active');
+    };
+    window.onclick = e => { if (e.target.classList.contains('modal')) e.target.classList.remove('active'); };
+
+    document.getElementById('contactForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const n = document.getElementById('contactNombre').value;
+        const em = document.getElementById('contactEmail').value;
+        const a = document.getElementById('contactAsunto').value;
+        const m = document.getElementById('contactMensaje').value;
+        if (!n || !em || !a || !m) { mostrarToast('Completa todos los campos', 'error'); return; }
+        mostrarToast('✅ Mensaje enviado. Te contactaremos pronto', 'success');
+        document.getElementById('contactForm').reset();
+    });
+});
+</script>
+</body>
+</html>

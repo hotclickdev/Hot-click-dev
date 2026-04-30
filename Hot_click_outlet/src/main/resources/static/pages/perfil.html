@@ -1,0 +1,203 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOTCLICK — Mi Perfil</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="header">
+    <div class="container">
+        <div class="header-container">
+            <div class="logo" onclick="window.location.href='index.html'">
+                <span class="logo-icon">HC</span>
+                <span class="logo-text">HOTCLICK</span>
+            </div>
+            <nav class="nav-menu">
+                <a href="index.html"      class="nav-link">Inicio</a>
+                <a href="productos.html"  class="nav-link">Productos</a>
+                <a href="categorias.html" class="nav-link">Categorías</a>
+                <a href="nosotros.html"   class="nav-link">Nosotros</a>
+                <a href="contacto.html"   class="nav-link">Contacto</a>
+            </nav>
+            <div class="nav-actions">
+                <button class="icon-btn" id="cartBtn">🛒<span class="badge" id="cartCount">0</span></button>
+                <button class="icon-btn" id="userBtn">👤✅</button>
+                <button class="icon-btn" id="scanBtn">📷</button>
+            </div>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+        </div>
+    </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+    <a href="index.html">Inicio</a>
+    <a href="productos.html">Productos</a>
+    <a href="categorias.html">Categorías</a>
+    <a href="nosotros.html">Nosotros</a>
+    <a href="contacto.html">Contacto</a>
+</div>
+
+<section class="page-hero">
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="index.html">Inicio</a>
+            <span>›</span>
+            <span>Mi Perfil</span>
+        </div>
+        <h1 class="page-hero-title">Mi Perfil</h1>
+        <p class="page-hero-sub">Gestiona tu información personal</p>
+    </div>
+</section>
+
+<div class="profile-page">
+    <div class="container">
+        <div id="profileContent">
+            <div class="loading">⏳ Cargando perfil...</div>
+        </div>
+    </div>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <div class="logo" style="cursor:default;">
+                    <span class="logo-icon">HC</span>
+                    <span class="logo-text" style="-webkit-text-fill-color:white;">HOTCLICK</span>
+                </div>
+                <p>Tu tienda en línea de electrónica y gadgets en Costa Rica.</p>
+            </div>
+            <div class="footer-col"><h4>Tienda</h4><ul><li><a href="productos.html">Productos</a></li><li><a href="categorias.html">Categorías</a></li></ul></div>
+            <div class="footer-col"><h4>Empresa</h4><ul><li><a href="nosotros.html">Nosotros</a></li><li><a href="contacto.html">Contacto</a></li></ul></div>
+            <div class="footer-col"><h4>Contacto</h4><p>📧 info@hotclick.com<br>📞 +506 8974-5370</p></div>
+        </div>
+        <div class="footer-bottom"><span>&copy; 2026 HOTCLICK. Todos los derechos reservados.</span></div>
+    </div>
+</footer>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<script src="../js/utils.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/cart.js"></script>
+<script>
+function verificarAutenticacion() {
+    if (!getToken()) {
+        mostrarToast('Debes iniciar sesión primero', 'error');
+        setTimeout(() => window.location.href = 'login.html', 1500);
+        return false;
+    }
+    return true;
+}
+
+function cargarPerfil() {
+    const container = document.getElementById('profileContent');
+    const userName  = localStorage.getItem('userName')  || 'Usuario';
+    const userEmail = localStorage.getItem('userEmail') || '—';
+    const userRole  = localStorage.getItem('userRole')  || 'USUARIO_FINAL';
+    const userId    = localStorage.getItem('userId')    || '—';
+
+    const rolTexto = {
+        'ADMIN_IT':       'Administrador del Sistema',
+        'ADMIN_CLIENTE':  'Administrador de Negocio',
+        'USUARIO_FINAL':  'Cliente'
+    }[userRole] || 'Cliente';
+
+    container.innerHTML = `
+        <div class="profile-card">
+            <div class="profile-header-section">
+                <div class="profile-avatar">👤</div>
+                <p class="profile-name">${escapeHtml(userName)}</p>
+                <span class="profile-role">${rolTexto}</span>
+            </div>
+
+            <div class="profile-fields">
+                <div class="profile-field-item">
+                    <span class="profile-field-label">Nombre completo</span>
+                    <span class="profile-field-value">${escapeHtml(userName)}</span>
+                </div>
+                <div class="profile-field-item">
+                    <span class="profile-field-label">Correo electrónico</span>
+                    <span class="profile-field-value">${escapeHtml(userEmail)}</span>
+                </div>
+                <div class="profile-field-item">
+                    <span class="profile-field-label">ID de usuario</span>
+                    <span class="profile-field-value">#${userId}</span>
+                </div>
+                <div class="profile-field-item">
+                    <span class="profile-field-label">Rol</span>
+                    <span class="profile-field-value">${rolTexto}</span>
+                </div>
+            </div>
+
+            <div style="display:flex;gap:12px;margin-top:32px;flex-wrap:wrap;">
+                <button class="btn btn-outline" onclick="window.location.href='index.html'" style="flex:1;">← Ir al inicio</button>
+                <button class="btn btn-red" id="logoutBtn" style="flex:1;">Cerrar Sesión</button>
+            </div>
+        </div>`;
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        cerrarSesion();
+        window.location.href = 'index.html';
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    inicializarCarrito();
+    actualizarContadorCarrito();
+
+    document.getElementById('cartBtn').onclick   = () => window.location.href = 'carrito.html';
+    document.getElementById('scanBtn').onclick   = () => window.location.href = 'escaner.html';
+    document.getElementById('userBtn').onclick   = () => { cerrarSesion(); window.location.href = 'index.html'; };
+    document.getElementById('mobileMenuBtn').onclick = () => document.getElementById('mobileMenu').classList.toggle('active');
+
+    if (verificarAutenticacion()) cargarPerfil();
+});
+</script>
+
+<style>
+.profile-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+.profile-field-item {
+    background: var(--c-bg);
+    border-radius: var(--r-md);
+    padding: 14px 16px;
+    border: 1px solid var(--c-border);
+}
+.profile-field-label {
+    display: block;
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--c-muted);
+    margin-bottom: 4px;
+}
+.profile-field-value {
+    font-size: .95rem;
+    font-weight: 600;
+    color: var(--c-text);
+}
+.profile-role {
+    display: inline-block;
+    background: rgba(30,136,229,.1);
+    color: var(--c-blue);
+    padding: 4px 14px;
+    border-radius: var(--r-full);
+    font-size: .8rem;
+    font-weight: 600;
+    margin-top: 6px;
+}
+@media (max-width: 600px) {
+    .profile-fields { grid-template-columns: 1fr; }
+}
+</style>
+</body>
+</html>

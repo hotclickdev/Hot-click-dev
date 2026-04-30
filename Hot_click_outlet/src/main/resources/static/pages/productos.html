@@ -1,0 +1,275 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOTCLICK — Productos</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="header">
+    <div class="container">
+        <div class="header-container">
+            <div class="logo" onclick="window.location.href='index.html'">
+                <span class="logo-icon">HC</span>
+                <span class="logo-text">HOTCLICK</span>
+            </div>
+            <nav class="nav-menu">
+                <a href="index.html"     class="nav-link">Inicio</a>
+                <a href="productos.html" class="nav-link active">Productos</a>
+                <a href="categorias.html"class="nav-link">Categorías</a>
+                <a href="nosotros.html"  class="nav-link">Nosotros</a>
+                <a href="contacto.html"  class="nav-link">Contacto</a>
+            </nav>
+            <div class="nav-actions">
+                <button class="icon-btn" id="cartBtn">🛒<span class="badge" id="cartCount">0</span></button>
+                <button class="icon-btn" id="userBtn">👤</button>
+                <button class="icon-btn" id="scanBtn">📷</button>
+            </div>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+        </div>
+    </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+    <a href="index.html">Inicio</a>
+    <a href="productos.html">Productos</a>
+    <a href="categorias.html">Categorías</a>
+    <a href="nosotros.html">Nosotros</a>
+    <a href="contacto.html">Contacto</a>
+    <a href="#" id="mobileUserBtn">Mi Cuenta</a>
+</div>
+
+<section class="page-hero">
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="index.html">Inicio</a>
+            <span>›</span>
+            <span>Productos</span>
+        </div>
+        <h1 class="page-hero-title">Catálogo de Productos</h1>
+        <p class="page-hero-sub">Encuentra la mejor tecnología al mejor precio</p>
+    </div>
+</section>
+
+<div class="container" style="padding-top:36px;padding-bottom:64px;">
+    <div class="filters-bar">
+        <input type="text" id="searchProduct" class="filter-input" placeholder="🔍 Buscar productos...">
+        <select id="categoryFilter" class="filter-select">
+            <option value="">Todas las categorías</option>
+            <option value="electronica">Electrónica</option>
+            <option value="gaming">Gaming</option>
+            <option value="audio">Audio</option>
+            <option value="celulares">Smartphones</option>
+            <option value="hogar">Hogar</option>
+        </select>
+    </div>
+
+    <div class="products-grid" id="allProductsGrid">
+        <div class="loading">📦 Cargando productos...</div>
+    </div>
+
+    <div class="pagination">
+        <button class="page-btn" id="prevPage">← Anterior</button>
+        <span id="pageInfo">Página 1</span>
+        <button class="page-btn" id="nextPage">Siguiente →</button>
+    </div>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <div class="logo" style="cursor:default;">
+                    <span class="logo-icon">HC</span>
+                    <span class="logo-text" style="-webkit-text-fill-color:white;">HOTCLICK</span>
+                </div>
+                <p>Tu tienda en línea de electrónica y gadgets en Costa Rica.</p>
+            </div>
+            <div class="footer-col"><h4>Tienda</h4><ul><li><a href="productos.html">Productos</a></li><li><a href="categorias.html">Categorías</a></li><li><a href="carrito.html">Mi Carrito</a></li></ul></div>
+            <div class="footer-col"><h4>Empresa</h4><ul><li><a href="nosotros.html">Nosotros</a></li><li><a href="contacto.html">Contacto</a></li></ul></div>
+            <div class="footer-col"><h4>Contacto</h4><p>📧 info@hotclick.com<br>📞 +506 8974-5370</p></div>
+        </div>
+        <div class="footer-bottom">
+            <span>&copy; 2026 HOTCLICK. Todos los derechos reservados.</span>
+        </div>
+    </div>
+</footer>
+
+<a href="https://wa.me/50689745370" target="_blank" class="whatsapp-float">💬</a>
+
+<!-- MODALES -->
+<div id="cartModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3>🛒 Mi Carrito</h3><button class="modal-close" id="closeCartModal">&times;</button></div>
+        <div class="modal-body" id="cartItems"><p style="color:var(--c-muted);text-align:center;padding:24px 0;">Tu carrito está vacío</p></div>
+        <div class="modal-footer">
+            <div class="cart-modal-total"><span>Total</span><span class="total-amount" id="cartTotal">$0.00</span></div>
+            <button class="btn btn-whatsapp" id="checkoutWhatsApp" style="width:100%;">💬 Enviar por WhatsApp</button>
+            <a href="carrito.html" class="btn btn-outline" style="width:100%;text-align:center;">Ver Carrito Completo</a>
+        </div>
+    </div>
+</div>
+
+<div id="loginModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3>🔐 Iniciar Sesión</h3><button class="modal-close" id="closeLoginModal">&times;</button></div>
+        <div class="modal-body">
+            <div class="form-group"><label class="form-label">Correo</label><input type="email" id="loginCorreo" class="form-input" placeholder="tu@correo.com"></div>
+            <div class="form-group"><label class="form-label">Contraseña</label><input type="password" id="loginPassword" class="form-input" placeholder="••••••••"></div>
+            <button id="btnLogin" class="btn btn-primary" style="width:100%;margin-top:8px;">Ingresar</button>
+            <p style="text-align:center;margin-top:14px;font-size:.88rem;">¿No tienes cuenta? <a href="#" id="showRegister" style="color:var(--c-blue);font-weight:600;">Regístrate</a></p>
+        </div>
+    </div>
+</div>
+
+<div id="registerModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3>📝 Crear Cuenta</h3><button class="modal-close" id="closeRegisterModal">&times;</button></div>
+        <div class="modal-body">
+            <div class="form-group"><input type="text" id="regNombre" class="form-input" placeholder="Nombre completo"></div>
+            <div class="form-group"><input type="email" id="regCorreo" class="form-input" placeholder="Correo electrónico"></div>
+            <div class="form-group"><input type="text" id="regTelefono" class="form-input" placeholder="Teléfono"></div>
+            <div class="form-group"><input type="password" id="regPassword" class="form-input" placeholder="Contraseña"></div>
+            <button id="btnRegister" class="btn btn-primary" style="width:100%;margin-top:8px;">Registrarse</button>
+            <p style="text-align:center;margin-top:14px;font-size:.88rem;">¿Ya tienes cuenta? <a href="#" id="showLogin" style="color:var(--c-blue);font-weight:600;">Inicia sesión</a></p>
+        </div>
+    </div>
+</div>
+
+<div id="scanModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3>📷 Escanear Producto</h3><button class="modal-close" id="closeScanModal">&times;</button></div>
+        <div class="modal-body" style="text-align:center;">
+            <div style="font-size:3rem;margin-bottom:12px;">📷</div>
+            <p style="color:var(--c-muted);margin-bottom:16px;font-size:.9rem;">Ingresa el código del producto</p>
+            <input type="text" id="codigoManual" class="form-input" placeholder="Código de barras o SKU">
+            <button id="buscarCodigoBtn" class="btn btn-primary" style="width:100%;margin-top:10px;">🔍 Buscar</button>
+            <div id="scanResultado" style="margin-top:16px;text-align:left;"></div>
+        </div>
+    </div>
+</div>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<script>
+const API_URL = 'http://localhost:8080/api';
+let carrito = [];
+let paginaActual = 0;
+let totalPaginas = 1;
+const productosPorPagina = 6;
+const EMOJIS = { electronica:'💻', gaming:'🎮', audio:'🎧', celulares:'📱', hogar:'🏠', default:'📦' };
+let productosMock = [
+    { id:1, nombre:'Laptop Gamer',       precio:750.00, stock:10, categoria:'electronica', descripcion:'Laptop de alto rendimiento', badge:'hot' },
+    { id:2, nombre:'Mouse Inalámbrico',  precio:29.99,  stock:50, categoria:'electronica', descripcion:'Mouse ergonómico', badge:'new' },
+    { id:3, nombre:'Teclado Mecánico',   precio:89.99,  stock:25, categoria:'electronica', descripcion:'Teclado RGB', badge:null },
+    { id:4, nombre:'Audífonos Bluetooth',precio:59.99,  stock:30, categoria:'audio',       descripcion:'Cancelación de ruido', badge:'sale' },
+    { id:5, nombre:'Monitor 24"',        precio:199.99, stock:15, categoria:'electronica', descripcion:'Monitor Full HD', badge:null },
+    { id:6, nombre:'Silla Gamer',        precio:299.99, stock:8,  categoria:'gaming',      descripcion:'Silla ergonómica', badge:null }
+];
+
+function mostrarToast(msg,tipo='success'){const c=document.getElementById('toastContainer');if(!c)return;const t=document.createElement('div');t.className=`toast toast-${tipo}`;t.textContent=msg;c.appendChild(t);setTimeout(()=>t.remove(),3000);}
+function abrirModal(id){const m=document.getElementById(id);if(m)m.classList.add('active');}
+function cerrarModal(id){const m=document.getElementById(id);if(m)m.classList.remove('active');}
+
+function inicializarCarrito(){const g=localStorage.getItem('carrito');if(g){try{carrito=JSON.parse(g);}catch(e){carrito=[];}}actualizarContadorCarrito();}
+function agregarAlCarrito(id,nombre,precio){const e=carrito.find(i=>i.id===id);if(e)e.cantidad++;else carrito.push({id,nombre,precio,cantidad:1});localStorage.setItem('carrito',JSON.stringify(carrito));actualizarContadorCarrito();mostrarToast(`${nombre} agregado al carrito`,'success');}
+function eliminarDelCarrito(id){carrito=carrito.filter(i=>i.id!==id);localStorage.setItem('carrito',JSON.stringify(carrito));actualizarContadorCarrito();actualizarModalCarrito();}
+function actualizarContadorCarrito(){const t=carrito.reduce((s,i)=>s+(i.cantidad||1),0);document.querySelectorAll('.badge,#cartCount').forEach(b=>b.textContent=t);}
+function actualizarModalCarrito(){
+    const c=document.getElementById('cartItems'),tot=document.getElementById('cartTotal');
+    if(!c)return;
+    if(!carrito.length){c.innerHTML='<p style="color:var(--c-muted);text-align:center;padding:24px 0;">Tu carrito está vacío</p>';if(tot)tot.textContent='$0.00';return;}
+    let html='',total=0;
+    carrito.forEach(item=>{const s=item.precio*(item.cantidad||1);total+=s;html+=`<div class="cart-modal-item"><div><div class="cart-modal-name">${item.nombre}</div><div class="cart-modal-meta">$${item.precio.toFixed(2)} × ${item.cantidad||1}</div></div><div style="display:flex;align-items:center;gap:10px;"><span class="cart-modal-price">$${s.toFixed(2)}</span><button class="cart-modal-remove" onclick="eliminarDelCarrito(${item.id})">✕</button></div></div>`;});
+    c.innerHTML=html;if(tot)tot.textContent='$'+total.toFixed(2);
+}
+function enviarPedidoWhatsApp(){if(!carrito.length){mostrarToast('El carrito está vacío','error');return;}let m='🛍️ *NUEVO PEDIDO - HOTCLICK*%0A',t=0;carrito.forEach(i=>{const s=i.precio*(i.cantidad||1);t+=s;m+=`• ${i.cantidad||1}x ${i.nombre} - $${s.toFixed(2)}%0A`;});window.open(`https://wa.me/50689745370?text=${m}%0A*TOTAL: $${t.toFixed(2)}*`,'_blank');}
+
+function getToken(){return localStorage.getItem('token');}
+function setToken(t){if(t)localStorage.setItem('token',t);else localStorage.removeItem('token');}
+async function apiLogin(correo,contrasena){try{const r=await fetch(`${API_URL}/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({correo,contrasena})});const d=await r.json();if(r.ok&&d.token){setToken(d.token);localStorage.setItem('userRole',d.rol||'USUARIO_FINAL');localStorage.setItem('userName',d.nombre||'Usuario');return{success:true};}return{success:false,message:d.mensaje||'Credenciales inválidas'};}catch{return{success:false,message:'Error de conexión'};}}
+async function apiRegister(u){const btn=document.getElementById('btnRegister');if(btn){btn.textContent='Registrando...';btn.disabled=true;}try{const r=await fetch(`${API_URL}/auth/register`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:u.nombre,apellidoPaterno:'',apellidoMaterno:'',correo:u.correo,telefono:u.telefono,identificacion:'',contrasenaHash:u.contrasenaHash})});const d=await r.json();if(btn){btn.textContent='Registrarse';btn.disabled=false;}if(r.ok)return{success:true};return{success:false,message:d.mensaje||'Error al registrar'};}catch{if(btn){btn.textContent='Registrarse';btn.disabled=false;}return{success:false,message:'Error de conexión'};}}
+function cerrarSesion(){setToken(null);localStorage.removeItem('userRole');localStorage.removeItem('userName');actualizarIconoSesion();mostrarToast('Sesión cerrada','success');}
+function actualizarIconoSesion(){const btn=document.getElementById('userBtn');if(btn)btn.innerHTML=getToken()?'👤✅':'👤';}
+
+function mostrarProductosEnGrid(productos){
+    const grid=document.getElementById('allProductsGrid');
+    if(!grid)return;
+    if(!productos||!productos.length){grid.innerHTML='<div class="loading">No hay productos disponibles</div>';return;}
+    const badgeMap={sale:'<span class="product-badge badge-sale">Oferta</span>',new:'<span class="product-badge badge-new">Nuevo</span>',hot:'<span class="product-badge badge-hot">Popular</span>'};
+    let html='';
+    for(let p of productos){
+        const emoji=EMOJIS[p.categoria]||EMOJIS.default;
+        const badge=p.badge?(badgeMap[p.badge]||''):'';
+        html+=`<div class="product-card">
+            <div class="product-card-image">
+                ${badge}<button class="product-card-fav">♡</button>
+                <span class="prod-emoji">${emoji}</span>
+            </div>
+            <div class="product-card-body">
+                <div class="product-category-tag">${p.categoria||'General'}</div>
+                <h3 class="product-card-title">${p.nombre}</h3>
+                <div class="product-card-stars"><span class="stars">★★★★★</span><span class="count">(${Math.floor(Math.random()*80)+20})</span></div>
+                <div class="product-card-footer">
+                    <div class="product-card-price"><span class="price-current">$${p.precio.toFixed(2)}</span></div>
+                    <button class="btn-add-cart" onclick="agregarAlCarrito(${p.id},'${p.nombre}',${p.precio})">+ Carrito</button>
+                </div>
+            </div>
+        </div>`;
+    }
+    grid.innerHTML=html;
+}
+
+function cargarProductos(){
+    const inicio=paginaActual*productosPorPagina;
+    const paginados=productosMock.slice(inicio,inicio+productosPorPagina);
+    totalPaginas=Math.ceil(productosMock.length/productosPorPagina);
+    mostrarProductosEnGrid(paginados);
+    document.getElementById('pageInfo').textContent=`Página ${paginaActual+1} de ${totalPaginas}`;
+    document.getElementById('prevPage').disabled=paginaActual===0;
+    document.getElementById('nextPage').disabled=paginaActual+1>=totalPaginas;
+}
+
+function aplicarFiltros(){
+    paginaActual=0;
+    const busqueda=document.getElementById('searchProduct').value.toLowerCase();
+    const categoria=document.getElementById('categoryFilter').value;
+    let filtrados=productosMock.filter(p=>{
+        let ok=true;
+        if(busqueda&&!p.nombre.toLowerCase().includes(busqueda))ok=false;
+        if(categoria&&p.categoria!==categoria)ok=false;
+        return ok;
+    });
+    totalPaginas=Math.ceil(filtrados.length/productosPorPagina)||1;
+    mostrarProductosEnGrid(filtrados.slice(0,productosPorPagina));
+    document.getElementById('pageInfo').textContent=`Página 1 de ${totalPaginas}`;
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+    inicializarCarrito();cargarProductos();actualizarIconoSesion();
+    document.getElementById('cartBtn').onclick=()=>{actualizarModalCarrito();abrirModal('cartModal');};
+    document.getElementById('closeCartModal').onclick=()=>cerrarModal('cartModal');
+    document.getElementById('checkoutWhatsApp').onclick=()=>enviarPedidoWhatsApp();
+    document.getElementById('userBtn').onclick=()=>{if(getToken())cerrarSesion();else abrirModal('loginModal');};
+    document.getElementById('closeLoginModal').onclick=()=>cerrarModal('loginModal');
+    document.getElementById('closeRegisterModal').onclick=()=>cerrarModal('registerModal');
+    document.getElementById('btnLogin').onclick=async()=>{const r=await apiLogin(document.getElementById('loginCorreo').value,document.getElementById('loginPassword').value);if(r.success){mostrarToast('✅ Sesión iniciada','success');cerrarModal('loginModal');actualizarIconoSesion();}else mostrarToast(r.message,'error');};
+    document.getElementById('btnRegister').onclick=async()=>{const r=await apiRegister({nombre:document.getElementById('regNombre').value,correo:document.getElementById('regCorreo').value,telefono:document.getElementById('regTelefono').value,contrasenaHash:document.getElementById('regPassword').value});if(r.success){mostrarToast('✅ Registro exitoso','success');cerrarModal('registerModal');abrirModal('loginModal');}else mostrarToast(r.message,'error');};
+    document.getElementById('showRegister').onclick=e=>{e.preventDefault();cerrarModal('loginModal');abrirModal('registerModal');};
+    document.getElementById('showLogin').onclick=e=>{e.preventDefault();cerrarModal('registerModal');abrirModal('loginModal');};
+    document.getElementById('scanBtn').onclick=()=>abrirModal('scanModal');
+    document.getElementById('closeScanModal').onclick=()=>cerrarModal('scanModal');
+    document.getElementById('buscarCodigoBtn').onclick=()=>{const r=document.getElementById('scanResultado');r.innerHTML=`<div class="scan-result found"><h4 style="margin-bottom:8px;">✅ Producto encontrado</h4><p><strong>${productosMock[0].nombre}</strong></p><p style="font-size:.88rem;color:var(--c-muted);margin:4px 0 12px;">$${productosMock[0].precio.toFixed(2)}</p><button class="btn btn-primary btn-sm" onclick="agregarAlCarrito(${productosMock[0].id},'${productosMock[0].nombre}',${productosMock[0].precio});cerrarModal('scanModal');">🛒 Agregar</button></div>`;};
+    document.getElementById('prevPage').onclick=()=>{if(paginaActual>0){paginaActual--;cargarProductos();}};
+    document.getElementById('nextPage').onclick=()=>{if(paginaActual+1<totalPaginas){paginaActual++;cargarProductos();}};
+    document.getElementById('searchProduct').oninput=aplicarFiltros;
+    document.getElementById('categoryFilter').onchange=aplicarFiltros;
+    document.getElementById('mobileMenuBtn').onclick=()=>document.getElementById('mobileMenu').classList.toggle('active');
+    document.getElementById('mobileUserBtn').onclick=()=>{if(getToken())cerrarSesion();else abrirModal('loginModal');document.getElementById('mobileMenu').classList.remove('active');};
+    window.onclick=e=>{if(e.target.classList.contains('modal'))e.target.classList.remove('active');};
+});
+</script>
+</body>
+</html>

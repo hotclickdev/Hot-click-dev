@@ -1,0 +1,201 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOTCLICK — Mi Carrito</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="header">
+    <div class="container">
+        <div class="header-container">
+            <div class="logo" onclick="window.location.href='index.html'">
+                <span class="logo-icon">HC</span>
+                <span class="logo-text">HOTCLICK</span>
+            </div>
+            <nav class="nav-menu">
+                <a href="index.html"     class="nav-link">Inicio</a>
+                <a href="productos.html" class="nav-link">Productos</a>
+                <a href="categorias.html"class="nav-link">Categorías</a>
+                <a href="nosotros.html"  class="nav-link">Nosotros</a>
+                <a href="contacto.html"  class="nav-link">Contacto</a>
+            </nav>
+            <div class="nav-actions">
+                <button class="icon-btn" id="cartBtn">🛒<span class="badge" id="cartCount">0</span></button>
+                <button class="icon-btn" id="userBtn">👤</button>
+                <button class="icon-btn" id="scanBtn">📷</button>
+            </div>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+        </div>
+    </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+    <a href="index.html">Inicio</a>
+    <a href="productos.html">Productos</a>
+    <a href="categorias.html">Categorías</a>
+    <a href="nosotros.html">Nosotros</a>
+    <a href="contacto.html">Contacto</a>
+    <a href="#" id="mobileUserBtn">Mi Cuenta</a>
+</div>
+
+<section class="page-hero">
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="index.html">Inicio</a>
+            <span>›</span>
+            <span>Mi Carrito</span>
+        </div>
+        <h1 class="page-hero-title">Mi Carrito de Compras</h1>
+        <p class="page-hero-sub">Revisa tus productos antes de enviar el pedido</p>
+    </div>
+</section>
+
+<div class="container cart-page">
+    <div id="cartContent">
+        <div class="loading">📦 Cargando carrito...</div>
+    </div>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-grid">
+            <div class="footer-brand"><div class="logo" style="cursor:default;"><span class="logo-icon">HC</span><span class="logo-text" style="-webkit-text-fill-color:white;">HOTCLICK</span></div><p>Tu tienda en línea de electrónica y gadgets en Costa Rica.</p></div>
+            <div class="footer-col"><h4>Tienda</h4><ul><li><a href="productos.html">Productos</a></li><li><a href="categorias.html">Categorías</a></li></ul></div>
+            <div class="footer-col"><h4>Empresa</h4><ul><li><a href="nosotros.html">Nosotros</a></li><li><a href="contacto.html">Contacto</a></li></ul></div>
+            <div class="footer-col"><h4>Contacto</h4><p>📧 info@hotclick.com<br>📞 +506 8974-5370</p></div>
+        </div>
+        <div class="footer-bottom"><span>&copy; 2026 HOTCLICK. Todos los derechos reservados.</span></div>
+    </div>
+</footer>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<script src="../js/utils.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/cart.js"></script>
+<script>
+let carritoItems = [];
+
+function mostrarToast(msg,tipo='success'){const c=document.getElementById('toastContainer');if(!c)return;const t=document.createElement('div');t.className=`toast toast-${tipo}`;t.textContent=msg;c.appendChild(t);setTimeout(()=>t.remove(),3000);}
+function actualizarContadorCarrito(){const t=carritoItems.reduce((s,i)=>s+i.cantidad,0);document.querySelectorAll('.badge,#cartCount').forEach(b=>b.textContent=t);}
+
+function cargarCarrito() {
+    const saved = localStorage.getItem('carrito');
+    const container = document.getElementById('cartContent');
+    if (saved) { try { carritoItems = JSON.parse(saved); } catch { carritoItems = []; } }
+
+    if (!carritoItems || !carritoItems.length) {
+        container.innerHTML = `
+            <div class="cart-empty">
+                <div class="cart-empty-icon">🛒</div>
+                <h3>Tu carrito está vacío</h3>
+                <p>¡Agrega productos desde nuestro catálogo para comenzar!</p>
+                <a href="productos.html" class="btn btn-primary btn-lg" style="margin-top:8px;">Explorar Productos</a>
+            </div>`;
+        return;
+    }
+
+    let total = 0;
+    let itemsHtml = carritoItems.map(item => {
+        const sub = item.precio * item.cantidad;
+        total += sub;
+        return `<div class="cart-item" data-id="${item.id}">
+            <div class="cart-item-name">
+                <span style="font-size:1.4rem;margin-right:10px;">📦</span>
+                <strong>${item.nombre}</strong>
+            </div>
+            <div class="cart-item-price">$${item.precio.toFixed(2)}</div>
+            <div class="cart-item-qty">
+                <button class="qty-btn" onclick="actualizarCantidad(${item.id},${item.cantidad-1})">−</button>
+                <span class="qty-val">${item.cantidad}</span>
+                <button class="qty-btn" onclick="actualizarCantidad(${item.id},${item.cantidad+1})">+</button>
+            </div>
+            <div class="cart-item-subtotal">$${sub.toFixed(2)}</div>
+            <div>
+                <button class="btn-remove" onclick="eliminarItem(${item.id})" title="Eliminar">🗑️</button>
+            </div>
+        </div>`;
+    }).join('');
+
+    container.innerHTML = `
+        <div class="cart-layout">
+            <div>
+                <div class="cart-table-wrap">
+                    <div class="cart-table-head">
+                        <span>Producto</span>
+                        <span>Precio</span>
+                        <span>Cantidad</span>
+                        <span>Subtotal</span>
+                        <span></span>
+                    </div>
+                    ${itemsHtml}
+                </div>
+                <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap;">
+                    <a href="productos.html" class="btn btn-outline btn-sm">← Seguir comprando</a>
+                    <button class="btn btn-outline btn-sm" style="color:var(--c-red);border-color:var(--c-red);" id="vaciarBtn">🗑 Vaciar carrito</button>
+                </div>
+            </div>
+            <div class="cart-summary">
+                <h3>Resumen del Pedido</h3>
+                <div class="cart-summary-row"><span>Subtotal</span><span>$${total.toFixed(2)}</span></div>
+                <div class="cart-summary-row"><span>Envío</span><span>A calcular</span></div>
+                <div class="cart-summary-total"><span>Total</span><span class="amount">$${total.toFixed(2)}</span></div>
+                <button class="btn btn-whatsapp" id="whatsappBtn" style="width:100%;margin-bottom:10px;">💬 Enviar Pedido por WhatsApp</button>
+                <a href="productos.html" class="btn btn-outline" style="width:100%;text-align:center;display:block;">Agregar más productos</a>
+            </div>
+        </div>`;
+
+    document.getElementById('whatsappBtn').onclick = enviarPedido;
+    document.getElementById('vaciarBtn').onclick = () => {
+        if (confirm('¿Estás seguro de vaciar todo el carrito?')) {
+            carritoItems = [];
+            localStorage.setItem('carrito', JSON.stringify(carritoItems));
+            cargarCarrito();
+            actualizarContadorCarrito();
+            mostrarToast('Carrito vaciado', 'info');
+        }
+    };
+}
+
+function actualizarCantidad(id, nueva) {
+    if (nueva <= 0) { eliminarItem(id); return; }
+    const item = carritoItems.find(i => i.id === id);
+    if (item) { item.cantidad = nueva; localStorage.setItem('carrito', JSON.stringify(carritoItems)); cargarCarrito(); actualizarContadorCarrito(); }
+}
+
+function eliminarItem(id) {
+    carritoItems = carritoItems.filter(i => i.id !== id);
+    localStorage.setItem('carrito', JSON.stringify(carritoItems));
+    cargarCarrito(); actualizarContadorCarrito();
+    mostrarToast('Producto eliminado', 'info');
+}
+
+function enviarPedido() {
+    if (!carritoItems.length) { mostrarToast('El carrito está vacío', 'error'); return; }
+    const userName = localStorage.getItem('userName') || 'Cliente';
+    let msg = '🛍️ *NUEVO PEDIDO - HOTCLICK*%0A';
+    msg += `📅 *Fecha:* ${new Date().toLocaleString('es-CR', {timeZone:'America/Costa_Rica'})}%0A`;
+    msg += `👤 *Cliente:* ${userName}%0A*📦 PRODUCTOS:*%0A`;
+    let total = 0;
+    carritoItems.forEach((item, i) => {
+        const sub = item.precio * item.cantidad;
+        total += sub;
+        msg += `${i+1}. *${item.nombre}* × ${item.cantidad} = $${sub.toFixed(2)}%0A`;
+    });
+    msg += `%0A💰 *TOTAL: $${total.toFixed(2)}*%0A%0A✨ Pedido generado desde HOTCLICK`;
+    window.open(`https://wa.me/50689745370?text=${msg}`, '_blank');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    cargarCarrito();
+    const saved = localStorage.getItem('carrito');
+    if (saved) try { carritoItems = JSON.parse(saved); } catch { carritoItems = []; }
+    actualizarContadorCarrito();
+});
+</script>
+</body>
+</html>

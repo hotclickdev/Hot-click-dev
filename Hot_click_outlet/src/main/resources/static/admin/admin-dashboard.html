@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOTCLICK — Panel de Administración</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-layout">
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar" id="sidebar">
+    <a class="sidebar-logo" href="admin-dashboard.html">
+        <div class="logo-box">HC</div>
+        <span class="logo-name">HOT<span>CLICK</span></span>
+    </a>
+
+    <div class="sidebar-section">Principal</div>
+    <nav class="sidebar-nav">
+        <a href="admin-dashboard.html" class="nav-item active">
+            <span class="nav-icon">📊</span> Dashboard
+        </a>
+        <a href="admin-productos.html" class="nav-item">
+            <span class="nav-icon">📦</span> Productos
+        </a>
+        <a href="admin-bodegas.html" class="nav-item">
+            <span class="nav-icon">🏭</span> Bodegas
+        </a>
+        <a href="admin-categorias.html" class="nav-item">
+            <span class="nav-icon">🏷️</span> Categorías
+        </a>
+
+        <div class="sidebar-section" style="padding-left:0; margin-top:12px;">Gestión</div>
+        <a href="#" class="nav-item" id="navPedidos">
+            <span class="nav-icon">🛒</span> Pedidos
+        </a>
+        <a href="#" class="nav-item" id="navUsuarios">
+            <span class="nav-icon">👥</span> Usuarios
+        </a>
+        <a href="#" class="nav-item" id="navFinanzas">
+            <span class="nav-icon">💰</span> Finanzas
+        </a>
+
+        <div class="sidebar-section" style="padding-left:0; margin-top:12px;">Otros</div>
+        <a href="../index.html" class="nav-item">
+            <span class="nav-icon">🛍️</span> Ver Tienda
+        </a>
+    </nav>
+
+    <div class="sidebar-bottom">
+        <a href="#" class="nav-item">
+            <span class="nav-icon">⚙️</span> Configuración
+        </a>
+        <button class="nav-item logout" id="logoutBtn">
+            <span class="nav-icon">🚪</span> Cerrar Sesión
+        </button>
+    </div>
+</aside>
+
+<!-- ===== MAIN WRAPPER ===== -->
+<div class="admin-wrapper">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+
+        <div class="topbar-search">
+            <span class="search-icon">🔍</span>
+            <input type="text" placeholder="Buscar productos, pedidos, usuarios...">
+        </div>
+
+        <div class="topbar-right">
+            <button class="topbar-btn" title="Notificaciones">🔔</button>
+            <button class="topbar-btn" title="Mensajes">💬</button>
+            <div class="topbar-user">
+                <div class="topbar-avatar" id="adminAvatar">A</div>
+                <span class="topbar-username" id="adminName">Admin</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENT -->
+    <div class="admin-content">
+
+        <!-- MAIN COLUMN -->
+        <div class="content-main">
+
+            <!-- PAGE HEADER -->
+            <div class="page-header">
+                <div>
+                    <h1>Panel de <span>Administración</span></h1>
+                    <p>Gestiona tu negocio desde un solo lugar</p>
+                </div>
+                <button class="btn btn-primary btn-sm">+ Nueva Venta</button>
+            </div>
+
+            <!-- BANNERS -->
+            <div class="banner-grid">
+                <div class="banner-card blue">
+                    <div>
+                        <div class="banner-tag">HOTCLICK — Plataforma</div>
+                        <h2>La mejor plataforma para tu negocio</h2>
+                        <p>Gestiona ventas, productos y clientes de forma segura y eficiente.</p>
+                        <a href="admin-productos.html" class="banner-btn">📦 Ver Productos</a>
+                    </div>
+                    <span class="banner-emoji">🚀</span>
+                </div>
+                <div class="banner-card red">
+                    <div>
+                        <div class="banner-tag">HOTCLICK — Tienda</div>
+                        <h2>Fácil de vender a precios competitivos</h2>
+                        <p>Tus clientes pueden comprar con comodidad y seguridad.</p>
+                        <a href="../index.html" class="banner-btn">🛍️ Ver Tienda</a>
+                    </div>
+                    <span class="banner-emoji">💎</span>
+                </div>
+            </div>
+
+            <!-- STATS -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-icon-box blue">👥</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="totalUsuarios">156</div>
+                        <div class="stat-label">Usuarios</div>
+                    </div>
+                    <span class="stat-trend up">+12%</span>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-box green">💰</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="totalVentas">$45,678</div>
+                        <div class="stat-label">Ventas totales</div>
+                    </div>
+                    <span class="stat-trend up">+8%</span>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-box amber">📦</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="totalProductos">1,284</div>
+                        <div class="stat-label">Productos</div>
+                    </div>
+                    <span class="stat-trend up">+5%</span>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-box red">🛒</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="totalPedidos">89</div>
+                        <div class="stat-label">Pedidos</div>
+                    </div>
+                    <span class="stat-trend down">-2%</span>
+                </div>
+            </div>
+
+            <!-- DATA CARD CON TABS -->
+            <div class="data-card">
+                <div class="data-card-header">
+                    <h3>Gestión</h3>
+                    <div class="tab-pills">
+                        <button class="tab-pill active" data-tab="usuarios">👥 Usuarios</button>
+                        <button class="tab-pill" data-tab="ventas">📊 Ventas</button>
+                        <button class="tab-pill" data-tab="pedidos">🛒 Pedidos</button>
+                        <button class="tab-pill" data-tab="finanzas">💰 Finanzas</button>
+                    </div>
+                </div>
+
+                <!-- TAB: Usuarios -->
+                <div class="tab-content active" id="tab-usuarios">
+                    <div style="overflow-x:auto">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Nombre</th>
+                                    <th>Email</th>
+                                    <th>Rol</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usuariosTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB: Ventas -->
+                <div class="tab-content" id="tab-ventas">
+                    <div style="overflow-x:auto">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Producto</th>
+                                    <th>Cant.</th>
+                                    <th>Total</th>
+                                    <th>Cliente</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ventasTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB: Pedidos -->
+                <div class="tab-content" id="tab-pedidos">
+                    <div style="overflow-x:auto">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Fecha</th>
+                                    <th>Cliente</th>
+                                    <th>Total</th>
+                                    <th>Estado</th>
+                                    <th>WhatsApp</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pedidosTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB: Finanzas -->
+                <div class="tab-content" id="tab-finanzas">
+                    <div style="overflow-x:auto">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Período</th>
+                                    <th>Ventas</th>
+                                    <th>Inversión</th>
+                                    <th>Utilidad</th>
+                                    <th>Margen</th>
+                                </tr>
+                            </thead>
+                            <tbody id="finanzasTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /content-main -->
+
+        <!-- ASIDE COLUMN -->
+        <aside class="content-aside">
+
+            <!-- DONUT CHART -->
+            <div class="aside-card">
+                <div class="aside-card-header">
+                    <h4>Top Categorías</h4>
+                    <a href="admin-categorias.html" class="aside-link">Detalle</a>
+                </div>
+
+                <div class="donut-wrap">
+                    <svg class="donut-svg" viewBox="0 0 36 36">
+                        <!-- Fondo -->
+                        <circle cx="18" cy="18" r="15.9" fill="none" stroke="#E5E7EB" stroke-width="3.2"/>
+                        <!-- Electrónica 40% -->
+                        <circle cx="18" cy="18" r="15.9" fill="none"
+                            stroke="#3563E9" stroke-width="3.2"
+                            stroke-dasharray="40 60" stroke-dashoffset="0"/>
+                        <!-- Hogar 26% -->
+                        <circle cx="18" cy="18" r="15.9" fill="none"
+                            stroke="#e63946" stroke-width="3.2"
+                            stroke-dasharray="26 74" stroke-dashoffset="-40"/>
+                        <!-- Deportes 18% -->
+                        <circle cx="18" cy="18" r="15.9" fill="none"
+                            stroke="#28a745" stroke-width="3.2"
+                            stroke-dasharray="18 82" stroke-dashoffset="-66"/>
+                        <!-- Moda 16% -->
+                        <circle cx="18" cy="18" r="15.9" fill="none"
+                            stroke="#F59E0B" stroke-width="3.2"
+                            stroke-dasharray="16 84" stroke-dashoffset="-84"/>
+                    </svg>
+                    <div class="donut-center">
+                        <span class="donut-num" id="donutTotal">1,284</span>
+                        <span class="donut-lbl">Productos</span>
+                    </div>
+                </div>
+
+                <ul class="legend-list">
+                    <li class="legend-item">
+                        <span class="legend-dot" style="background:#3563E9"></span>
+                        <span class="legend-name">Electrónica</span>
+                        <span class="legend-val">514</span>
+                    </li>
+                    <li class="legend-item">
+                        <span class="legend-dot" style="background:#e63946"></span>
+                        <span class="legend-name">Hogar</span>
+                        <span class="legend-val">334</span>
+                    </li>
+                    <li class="legend-item">
+                        <span class="legend-dot" style="background:#28a745"></span>
+                        <span class="legend-name">Deportes</span>
+                        <span class="legend-val">231</span>
+                    </li>
+                    <li class="legend-item">
+                        <span class="legend-dot" style="background:#F59E0B"></span>
+                        <span class="legend-name">Moda</span>
+                        <span class="legend-val">205</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- DETALLE ÚLTIMO PEDIDO -->
+            <div class="aside-card">
+                <div class="aside-card-header">
+                    <h4>Último Pedido</h4>
+                    <a href="#" class="aside-link" id="verPedidoLink">Ver</a>
+                </div>
+
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--border);">
+                    <div style="width:44px;height:44px;background:var(--blue-lt);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">📦</div>
+                    <div>
+                        <div style="font-size:0.85rem;font-weight:600;" id="pedidoProducto">Laptop Gamer</div>
+                        <div style="font-size:0.72rem;color:var(--txt-sub);">Electrónica</div>
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <span class="lbl">Cliente</span>
+                    <span class="val" id="pedidoCliente">María García</span>
+                </div>
+                <div class="detail-row">
+                    <span class="lbl">Fecha</span>
+                    <span class="val" id="pedidoFecha">15 Dic 2024</span>
+                </div>
+                <div class="detail-row">
+                    <span class="lbl">Estado</span>
+                    <span class="badge badge-pending" id="pedidoEstado">PENDIENTE</span>
+                </div>
+                <div class="detail-row">
+                    <span class="lbl">Cantidad</span>
+                    <span class="val">2 unidades</span>
+                </div>
+
+                <div class="detail-total">
+                    <span class="lbl">Total</span>
+                    <span class="price" id="pedidoTotal">$1,500.00</span>
+                </div>
+
+                <button class="btn btn-primary" style="width:100%;margin-top:14px;justify-content:center;"
+                    onclick="window.open('https://wa.me/50689745370','_blank')">
+                    💬 Contactar por WhatsApp
+                </button>
+            </div>
+
+        </aside>
+
+    </div><!-- /admin-content -->
+</div><!-- /admin-wrapper -->
+
+<!-- MODALES -->
+<div id="editUserModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span>✏️ Editar Usuario</span>
+            <button class="modal-close" onclick="cerrarModal('editUserModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editUserId">
+            <div class="form-group">
+                <label>Nombre</label>
+                <input type="text" id="editNombre" class="form-input">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="editEmail" class="form-input">
+            </div>
+            <div class="form-group">
+                <label>Rol</label>
+                <select id="editRol" class="form-input">
+                    <option value="ADMIN_IT">Admin IT</option>
+                    <option value="ADMIN_CLIENTE">Admin Cliente</option>
+                    <option value="USUARIO_FINAL">Usuario Final</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Estado</label>
+                <select id="editEstado" class="form-input">
+                    <option value="ACTIVO">Activo</option>
+                    <option value="INACTIVO">Inactivo</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="cerrarModal('editUserModal')">Cancelar</button>
+            <button class="btn btn-primary" id="confirmEditUserBtn">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<div id="deleteUserModal" class="modal">
+    <div class="modal-content" style="max-width:400px">
+        <div class="modal-header">
+            <span>🗑️ Confirmar eliminación</span>
+            <button class="modal-close" onclick="cerrarModal('deleteUserModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size:0.9rem;color:var(--txt-sub)">¿Estás seguro de eliminar este usuario?</p>
+            <p id="deleteUserName" style="font-weight:700;color:var(--red);font-size:0.9rem;"></p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="cerrarModal('deleteUserModal')">Cancelar</button>
+            <button class="btn btn-danger-solid" id="confirmDeleteUserBtn">Eliminar</button>
+        </div>
+    </div>
+</div>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<script>
+    /* ── Utilidades ── */
+    function mostrarToast(msg, tipo = 'success') {
+        const c = document.getElementById('toastContainer');
+        const t = document.createElement('div');
+        t.className = `toast toast-${tipo}`;
+        t.textContent = msg;
+        c.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+    }
+
+    function abrirModal(id)  { document.getElementById(id)?.classList.add('active'); }
+    function cerrarModal(id) { document.getElementById(id)?.classList.remove('active'); }
+
+    function cerrarSesion() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('userName');
+        mostrarToast('Sesión cerrada', 'success');
+        setTimeout(() => window.location.href = '../index.html', 800);
+    }
+
+    /* ── Datos ── */
+    let usuariosMock = [
+        { id:1, nombre:'Admin Sistema',  email:'admin@hotclick.com',   rol:'ADMIN_IT',      estado:'ACTIVO'   },
+        { id:2, nombre:'Tech Store CR',  email:'ventas@techstore.com', rol:'ADMIN_CLIENTE', estado:'ACTIVO'   },
+        { id:3, nombre:'Moda Express',   email:'info@modaexpress.com', rol:'ADMIN_CLIENTE', estado:'ACTIVO'   },
+        { id:4, nombre:'María García',   email:'maria@gmail.com',      rol:'USUARIO_FINAL', estado:'ACTIVO'   },
+        { id:5, nombre:'Carlos López',   email:'carlos@gmail.com',     rol:'USUARIO_FINAL', estado:'INACTIVO' }
+    ];
+    let usuarioActual = null;
+
+    const ventasMock = [
+        { fecha:'2024-12-15', producto:'Laptop Gamer',      cantidad:2, total:'$1,500',  cliente:'María García' },
+        { fecha:'2024-12-14', producto:'Mouse Inalámbrico', cantidad:5, total:'$149.95', cliente:'Juan Pérez'   }
+    ];
+
+    const pedidosMock = [
+        { id:1, fecha:'2024-12-15', cliente:'María García', total:'$1,500',  estado:'PENDIENTE'  },
+        { id:2, fecha:'2024-12-14', cliente:'Juan Pérez',   total:'$149.95', estado:'ENTREGADO' }
+    ];
+
+    const finanzasMock = [
+        { periodo:'Diciembre 2024', ventas:'$18,500', inversion:'$12,000', utilidad:'$6,500', margen:'35.1%' },
+        { periodo:'Noviembre 2024', ventas:'$15,200', inversion:'$9,800',  utilidad:'$5,400', margen:'35.5%' }
+    ];
+
+    /* ── Render tablas ── */
+    function cargarUsuarios() {
+        const tb = document.getElementById('usuariosTable');
+        if (!tb) return;
+        document.getElementById('totalUsuarios').innerText = usuariosMock.length;
+        tb.innerHTML = usuariosMock.map(u => `
+            <tr>
+                <td style="font-weight:600">#${u.id}</td>
+                <td>${u.nombre}</td>
+                <td style="color:var(--txt-sub)">${u.email}</td>
+                <td><span class="badge-role" data-rol="${u.rol}">${u.rol.replace('_',' ')}</span></td>
+                <td><span class="badge-status ${u.estado==='ACTIVO'?'badge-active':'badge-inactive'}">${u.estado}</span></td>
+                <td class="table-actions">
+                    <button class="btn-icon" onclick="editarUsuario(${u.id})" title="Editar">✏️</button>
+                    <button class="btn-icon del" onclick="eliminarUsuario(${u.id})" title="Eliminar">🗑️</button>
+                </td>
+            </tr>`).join('');
+    }
+
+    function cargarVentas() {
+        const tb = document.getElementById('ventasTable');
+        if (!tb) return;
+        tb.innerHTML = ventasMock.map(v => `
+            <tr>
+                <td style="color:var(--txt-sub)">${v.fecha}</td>
+                <td style="font-weight:600">${v.producto}</td>
+                <td>${v.cantidad}</td>
+                <td style="font-weight:600;color:var(--green)">${v.total}</td>
+                <td>${v.cliente}</td>
+            </tr>`).join('');
+    }
+
+    function cargarPedidos() {
+        const tb = document.getElementById('pedidosTable');
+        if (!tb) return;
+        tb.innerHTML = pedidosMock.map(p => `
+            <tr>
+                <td style="font-weight:600">#${p.id}</td>
+                <td style="color:var(--txt-sub)">${p.fecha}</td>
+                <td>${p.cliente}</td>
+                <td style="font-weight:600">${p.total}</td>
+                <td><span class="badge-status ${p.estado==='ENTREGADO'?'badge-active':'badge-pending'}">${p.estado}</span></td>
+                <td><button class="btn-icon" onclick="window.open('https://wa.me/50689745370','_blank')" title="WhatsApp">💬</button></td>
+            </tr>`).join('');
+    }
+
+    function cargarFinanzas() {
+        const tb = document.getElementById('finanzasTable');
+        if (!tb) return;
+        tb.innerHTML = finanzasMock.map(f => `
+            <tr>
+                <td style="font-weight:600">${f.periodo}</td>
+                <td style="color:var(--green);font-weight:600">${f.ventas}</td>
+                <td>${f.inversion}</td>
+                <td style="font-weight:600">${f.utilidad}</td>
+                <td><span class="badge badge-active">${f.margen}</span></td>
+            </tr>`).join('');
+    }
+
+    /* ── Acciones usuarios ── */
+    function editarUsuario(id) {
+        const u = usuariosMock.find(u => u.id === id);
+        if (!u) return;
+        usuarioActual = u;
+        document.getElementById('editUserId').value = u.id;
+        document.getElementById('editNombre').value  = u.nombre;
+        document.getElementById('editEmail').value   = u.email;
+        document.getElementById('editRol').value     = u.rol;
+        document.getElementById('editEstado').value  = u.estado;
+        abrirModal('editUserModal');
+    }
+
+    function eliminarUsuario(id) {
+        const u = usuariosMock.find(u => u.id === id);
+        if (!u) return;
+        usuarioActual = u;
+        document.getElementById('deleteUserName').innerText = `${u.nombre} (${u.email})`;
+        abrirModal('deleteUserModal');
+    }
+
+    /* ── Eventos modales ── */
+    document.getElementById('confirmEditUserBtn').addEventListener('click', () => {
+        if (!usuarioActual) return;
+        const idx = usuariosMock.findIndex(u => u.id === usuarioActual.id);
+        if (idx !== -1) {
+            usuariosMock[idx].nombre = document.getElementById('editNombre').value;
+            usuariosMock[idx].email  = document.getElementById('editEmail').value;
+            usuariosMock[idx].rol    = document.getElementById('editRol').value;
+            usuariosMock[idx].estado = document.getElementById('editEstado').value;
+            mostrarToast('Usuario actualizado', 'success');
+            cerrarModal('editUserModal');
+            cargarUsuarios();
+        }
+    });
+
+    document.getElementById('confirmDeleteUserBtn').addEventListener('click', () => {
+        if (!usuarioActual) return;
+        const idx = usuariosMock.findIndex(u => u.id === usuarioActual.id);
+        if (idx !== -1) {
+            usuariosMock.splice(idx, 1);
+            mostrarToast('Usuario eliminado', 'success');
+            cerrarModal('deleteUserModal');
+            cargarUsuarios();
+        }
+    });
+
+    /* ── Init ── */
+    document.addEventListener('DOMContentLoaded', () => {
+        const name = localStorage.getItem('userName') || 'Admin';
+        document.getElementById('adminName').innerText = name;
+        document.getElementById('adminAvatar').innerText = name.charAt(0).toUpperCase();
+
+        cargarUsuarios();
+        cargarVentas();
+        cargarPedidos();
+        cargarFinanzas();
+
+        /* Tabs */
+        document.querySelectorAll('.tab-pill').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(`tab-${btn.dataset.tab}`)?.classList.add('active');
+            });
+        });
+
+        /* Shortcuts de sidebar a tabs */
+        document.getElementById('navUsuarios')?.addEventListener('click', e => {
+            e.preventDefault();
+            document.querySelector('[data-tab="usuarios"]')?.click();
+        });
+        document.getElementById('navPedidos')?.addEventListener('click', e => {
+            e.preventDefault();
+            document.querySelector('[data-tab="pedidos"]')?.click();
+        });
+        document.getElementById('navFinanzas')?.addEventListener('click', e => {
+            e.preventDefault();
+            document.querySelector('[data-tab="finanzas"]')?.click();
+        });
+
+        /* Logout */
+        document.getElementById('logoutBtn').addEventListener('click', cerrarSesion);
+
+        /* Mobile sidebar */
+        document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('open');
+        });
+    });
+</script>
+</body>
+</html>

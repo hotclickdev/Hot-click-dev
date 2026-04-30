@@ -1,0 +1,92 @@
+/* ====================================================
+   HOTCLICK - ESTILOS RESPONSIVE
+   ==================================================== */
+
+/* Tablets */
+@media (max-width: 992px) {
+    .container {
+        padding: 0 15px;
+    }
+    
+    .products-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+}
+
+/* Móviles grandes */
+@media (max-width: 768px) {
+    .products-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .categories-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .hero-title {
+        font-size: 1.6rem;
+    }
+    
+    .section-header h2 {
+        font-size: 1.4rem;
+    }
+}
+
+/* Móviles pequeños */
+@media (max-width: 576px) {
+    .products-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .categories-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .filters-bar {
+        flex-direction: column;
+    }
+    
+    .filter-input,
+    .filter-select {
+        width: 100%;
+    }
+    
+    .hero-cards {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .hero-card {
+        width: 80%;
+        margin: 0 auto;
+    }
+    
+    .modal-content {
+        width: 95%;
+    }
+    
+    .cart-item {
+        flex-direction: column;
+    }
+    
+    .cart-item-actions {
+        justify-content: space-between;
+    }
+}
+
+/* Landscapes */
+@media (max-width: 768px) and (orientation: landscape) {
+    .hero {
+        padding: 2rem 0;
+    }
+    
+    .hero-title {
+        font-size: 1.4rem;
+    }
+    
+    .products-section,
+    .products-page {
+        padding: 2rem 0;
+    }
+}

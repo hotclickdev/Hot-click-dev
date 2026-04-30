@@ -1,0 +1,183 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOTCLICK — Escáner de Productos</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="header">
+    <div class="container">
+        <div class="header-container">
+            <div class="logo" onclick="window.location.href='index.html'">
+                <span class="logo-icon">HC</span>
+                <span class="logo-text">HOTCLICK</span>
+            </div>
+            <nav class="nav-menu">
+                <a href="index.html"      class="nav-link">Inicio</a>
+                <a href="productos.html"  class="nav-link">Productos</a>
+                <a href="categorias.html" class="nav-link">Categorías</a>
+                <a href="nosotros.html"   class="nav-link">Nosotros</a>
+                <a href="contacto.html"   class="nav-link">Contacto</a>
+            </nav>
+            <div class="nav-actions">
+                <button class="icon-btn" id="cartBtn">🛒<span class="badge" id="cartCount">0</span></button>
+                <button class="icon-btn" id="userBtn">👤</button>
+                <button class="icon-btn" id="scanBtn">📷</button>
+            </div>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+        </div>
+    </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+    <a href="index.html">Inicio</a>
+    <a href="productos.html">Productos</a>
+    <a href="categorias.html">Categorías</a>
+    <a href="nosotros.html">Nosotros</a>
+    <a href="contacto.html">Contacto</a>
+</div>
+
+<section class="page-hero">
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="index.html">Inicio</a>
+            <span>›</span>
+            <span>Escáner</span>
+        </div>
+        <h1 class="page-hero-title">Escáner de Productos</h1>
+        <p class="page-hero-sub">Busca productos por código de barras o SKU</p>
+    </div>
+</section>
+
+<div style="padding:56px 0;">
+    <div class="container">
+        <div style="max-width:520px;margin:0 auto;">
+            <div style="background:var(--c-white);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow-md);border:1px solid var(--c-border);">
+
+                <div style="background:linear-gradient(135deg,var(--c-navy) 0%,#1a3a5c 100%);padding:40px 32px;text-align:center;color:var(--c-white);position:relative;overflow:hidden;">
+                    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 80% 50%,rgba(30,136,229,.2),transparent);pointer-events:none;"></div>
+                    <div style="position:relative;font-size:4rem;margin-bottom:12px;">📷</div>
+                    <h3 style="position:relative;font-size:1.2rem;margin-bottom:6px;">Escanear Código</h3>
+                    <p style="position:relative;color:rgba(255,255,255,.6);font-size:.9rem;">Ingresa el código de barras o SKU del producto</p>
+                </div>
+
+                <div style="padding:32px;">
+                    <div class="form-group">
+                        <label class="form-label">Código de barras o SKU</label>
+                        <input type="text" id="codigoInput" class="form-input" placeholder="Ej: LAP123 / 1234567890123" autocomplete="off" style="text-align:center;letter-spacing:1px;">
+                    </div>
+                    <button id="buscarBtn" class="btn btn-primary" style="width:100%;">🔍 Buscar Producto</button>
+
+                    <div id="resultado" style="margin-top:20px;"></div>
+
+                    <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--c-border);display:flex;gap:10px;flex-wrap:wrap;">
+                        <a href="productos.html" class="btn btn-outline btn-sm" style="flex:1;text-align:center;">Ver catálogo</a>
+                        <a href="carrito.html"   class="btn btn-ghost btn-sm"   style="flex:1;text-align:center;">🛒 Mi carrito</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <div class="logo" style="cursor:default;">
+                    <span class="logo-icon">HC</span>
+                    <span class="logo-text" style="-webkit-text-fill-color:white;">HOTCLICK</span>
+                </div>
+                <p>Tu tienda en línea de electrónica y gadgets en Costa Rica.</p>
+            </div>
+            <div class="footer-col"><h4>Tienda</h4><ul><li><a href="productos.html">Productos</a></li><li><a href="categorias.html">Categorías</a></li></ul></div>
+            <div class="footer-col"><h4>Empresa</h4><ul><li><a href="nosotros.html">Nosotros</a></li><li><a href="contacto.html">Contacto</a></li></ul></div>
+            <div class="footer-col"><h4>Contacto</h4><p>📧 info@hotclick.com<br>📞 +506 8974-5370</p></div>
+        </div>
+        <div class="footer-bottom"><span>&copy; 2026 HOTCLICK. Todos los derechos reservados.</span></div>
+    </div>
+</footer>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<script src="../js/utils.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/cart.js"></script>
+<script src="../js/products.js"></script>
+<script>
+const productosDisponibles = [
+    { id: 1, nombre: 'Laptop Gamer',        precio: 750.00, codigos: ['LAP123', '1234567890123'] },
+    { id: 2, nombre: 'Mouse Inalámbrico',    precio:  29.99, codigos: ['MOU456', '9876543210987'] },
+    { id: 3, nombre: 'Teclado Mecánico',     precio:  89.99, codigos: ['TEC789', '5555555555555'] },
+    { id: 4, nombre: 'Audífonos Bluetooth',  precio:  59.99, codigos: ['AUD012', '9999999999999'] }
+];
+
+function buscarProductoPorCodigo(codigo) {
+    if (!codigo) return null;
+    const c = codigo.trim().toUpperCase();
+    return productosDisponibles.find(p => p.codigos.some(x => x.toUpperCase() === c));
+}
+
+function mostrarResultado(producto) {
+    const div = document.getElementById('resultado');
+    if (producto) {
+        div.innerHTML = `
+            <div style="background:var(--c-bg);border:1px solid var(--c-border);border-radius:var(--r-md);padding:20px;">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+                    <div style="width:44px;height:44px;background:linear-gradient(135deg,#EBF4FF,#DCEEFF);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:1.5rem;">📦</div>
+                    <div>
+                        <div style="font-weight:700;font-size:.95rem;">${escapeHtml(producto.nombre)}</div>
+                        <div style="color:var(--c-red);font-weight:700;font-size:1rem;">$${producto.precio.toFixed(2)}</div>
+                    </div>
+                </div>
+                <button class="btn btn-primary" style="width:100%;" onclick="agregarAlCarritoEscaneado(${producto.id},'${escapeHtml(producto.nombre)}',${producto.precio})">
+                    🛒 Agregar al Carrito
+                </button>
+            </div>`;
+    } else {
+        div.innerHTML = `
+            <div style="background:#FFF3F3;border:1px solid #FFCDD2;border-radius:var(--r-md);padding:20px;text-align:center;">
+                <div style="font-size:2rem;margin-bottom:8px;">❌</div>
+                <p style="font-weight:600;color:#B71C1C;margin-bottom:4px;">Producto no encontrado</p>
+                <p style="font-size:.85rem;color:var(--c-muted);">No hay coincidencias para ese código.</p>
+                <a href="productos.html" class="btn btn-outline btn-sm" style="margin-top:12px;">Ver catálogo</a>
+            </div>`;
+    }
+}
+
+function agregarAlCarritoEscaneado(id, nombre, precio) {
+    agregarAlCarrito(id, nombre, precio);
+    document.getElementById('codigoInput').value = '';
+    document.getElementById('resultado').innerHTML = '';
+    mostrarToast(`${nombre} agregado al carrito`, 'success');
+}
+window.agregarAlCarritoEscaneado = agregarAlCarritoEscaneado;
+
+document.getElementById('buscarBtn').addEventListener('click', () => {
+    const codigo = document.getElementById('codigoInput').value;
+    if (!codigo) { mostrarToast('Ingresa un código de barras', 'error'); return; }
+    mostrarResultado(buscarProductoPorCodigo(codigo));
+});
+
+document.getElementById('codigoInput').addEventListener('keypress', e => {
+    if (e.key === 'Enter') document.getElementById('buscarBtn').click();
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    inicializarCarrito();
+    actualizarContadorCarrito();
+
+    document.getElementById('cartBtn').onclick = () => window.location.href = 'carrito.html';
+    document.getElementById('scanBtn').onclick = () => document.getElementById('codigoInput').focus();
+    document.getElementById('userBtn').onclick = () => {
+        if (getToken()) { cerrarSesion(); } else { window.location.href = 'login.html'; }
+    };
+    document.getElementById('mobileMenuBtn').onclick = () => document.getElementById('mobileMenu').classList.toggle('active');
+});
+</script>
+</body>
+</html>

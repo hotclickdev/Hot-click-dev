@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOTCLICK — Categorías</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-layout">
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar" id="sidebar">
+    <a class="sidebar-logo" href="admin-dashboard.html">
+        <div class="logo-box">HC</div>
+        <span class="logo-name">HOT<span>CLICK</span></span>
+    </a>
+
+    <div class="sidebar-section">Principal</div>
+    <nav class="sidebar-nav">
+        <a href="admin-dashboard.html" class="nav-item">
+            <span class="nav-icon">📊</span> Dashboard
+        </a>
+        <a href="admin-productos.html" class="nav-item">
+            <span class="nav-icon">📦</span> Productos
+        </a>
+        <a href="admin-bodegas.html" class="nav-item">
+            <span class="nav-icon">🏭</span> Bodegas
+        </a>
+        <a href="admin-categorias.html" class="nav-item active">
+            <span class="nav-icon">🏷️</span> Categorías
+        </a>
+        <div class="sidebar-section" style="padding-left:0;margin-top:12px;">Otros</div>
+        <a href="../index.html" class="nav-item">
+            <span class="nav-icon">🛍️</span> Ver Tienda
+        </a>
+    </nav>
+
+    <div class="sidebar-bottom">
+        <a href="#" class="nav-item"><span class="nav-icon">⚙️</span> Configuración</a>
+        <button class="nav-item logout" id="logoutBtn">
+            <span class="nav-icon">🚪</span> Cerrar Sesión
+        </button>
+    </div>
+</aside>
+
+<!-- ===== MAIN ===== -->
+<div class="admin-wrapper">
+    <header class="topbar">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+        <div class="topbar-search">
+            <span class="search-icon">🔍</span>
+            <input type="text" placeholder="Buscar categoría...">
+        </div>
+        <div class="topbar-right">
+            <button class="topbar-btn">🔔</button>
+            <div class="topbar-user">
+                <div class="topbar-avatar" id="adminAvatar">A</div>
+                <span class="topbar-username" id="adminName">Admin</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="admin-content" style="flex-direction:column">
+        <div class="page-header">
+            <div>
+                <h1>🏷️ Administrar <span>Categorías</span></h1>
+                <p>Gestiona las categorías de productos</p>
+            </div>
+            <button class="btn btn-primary" id="nuevaCategoriaBtn">+ Nueva Categoría</button>
+        </div>
+
+        <div class="data-card">
+            <div style="overflow-x:auto">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="categoriasTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Categoría -->
+<div id="categoriaModal" class="modal">
+    <div class="modal-content" style="max-width:480px">
+        <div class="modal-header">
+            <span id="modalTitle">Nueva Categoría</span>
+            <button class="modal-close" onclick="cerrarModal('categoriaModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="categoriaId">
+            <div class="form-group">
+                <label>Nombre</label>
+                <input type="text" id="categoriaNombre" class="form-input" placeholder="Nombre de la categoría">
+            </div>
+            <div class="form-group">
+                <label>Descripción</label>
+                <textarea id="categoriaDescripcion" class="form-input form-textarea" rows="3" placeholder="Descripción"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Icono (emoji)</label>
+                <input type="text" id="categoriaIcono" class="form-input" placeholder="Ej: 💻 🏠 ⚽">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="cerrarModal('categoriaModal')">Cancelar</button>
+            <button class="btn btn-primary" id="guardarCategoriaBtn">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<script src="../js/utils.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+    function mostrarToast(msg, tipo = 'success') {
+        const c = document.getElementById('toastContainer');
+        const t = document.createElement('div');
+        t.className = `toast toast-${tipo}`;
+        t.textContent = msg;
+        c.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+    }
+    function abrirModal(id)  { document.getElementById(id)?.classList.add('active'); }
+    function cerrarModal(id) { document.getElementById(id)?.classList.remove('active'); }
+    function cerrarSesion()  { localStorage.clear(); window.location.href = '../index.html'; }
+
+    let categorias = [
+        { id:1, nombre:'Electrónica', descripcion:'Productos electrónicos', icono:'💻' },
+        { id:2, nombre:'Hogar',       descripcion:'Artículos para el hogar', icono:'🏠' },
+        { id:3, nombre:'Deportes',    descripcion:'Equipo deportivo',        icono:'⚽' },
+        { id:4, nombre:'Moda',        descripcion:'Ropa y accesorios',       icono:'👕' }
+    ];
+    let nextId = 5;
+
+    function cargarCategorias() {
+        document.getElementById('categoriasTable').innerHTML = categorias.map(c => `
+            <tr>
+                <td style="font-weight:600">#${c.id}</td>
+                <td style="font-weight:500">${c.icono || '📁'} ${escapeHtml(c.nombre)}</td>
+                <td style="color:var(--txt-sub)">${escapeHtml(c.descripcion)}</td>
+                <td><span class="badge badge-active">Activo</span></td>
+                <td class="table-actions">
+                    <button class="btn-icon" onclick="editarCategoria(${c.id})" title="Editar">✏️</button>
+                    <button class="btn-icon del" onclick="eliminarCategoria(${c.id})" title="Eliminar">🗑️</button>
+                </td>
+            </tr>`).join('');
+    }
+
+    function editarCategoria(id) {
+        const c = categorias.find(c => c.id === id);
+        if (!c) return;
+        document.getElementById('categoriaId').value          = c.id;
+        document.getElementById('categoriaNombre').value      = c.nombre;
+        document.getElementById('categoriaDescripcion').value = c.descripcion;
+        document.getElementById('categoriaIcono').value       = c.icono || '';
+        document.getElementById('modalTitle').innerText       = 'Editar Categoría';
+        abrirModal('categoriaModal');
+    }
+
+    function eliminarCategoria(id) {
+        if (confirm('¿Eliminar esta categoría?')) {
+            categorias = categorias.filter(c => c.id !== id);
+            cargarCategorias();
+            mostrarToast('Categoría eliminada', 'success');
+        }
+    }
+
+    document.getElementById('nuevaCategoriaBtn').addEventListener('click', () => {
+        ['categoriaId','categoriaNombre','categoriaDescripcion','categoriaIcono']
+            .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        document.getElementById('modalTitle').innerText = 'Nueva Categoría';
+        abrirModal('categoriaModal');
+    });
+
+    document.getElementById('guardarCategoriaBtn').addEventListener('click', () => {
+        const id = document.getElementById('categoriaId').value;
+        const categoria = {
+            nombre:      document.getElementById('categoriaNombre').value,
+            descripcion: document.getElementById('categoriaDescripcion').value,
+            icono:       document.getElementById('categoriaIcono').value || '📁'
+        };
+        if (!categoria.nombre) { mostrarToast('El nombre es obligatorio', 'error'); return; }
+
+        if (id) {
+            const idx = categorias.findIndex(c => c.id === parseInt(id));
+            if (idx !== -1) { categorias[idx] = { ...categorias[idx], ...categoria }; mostrarToast('Categoría actualizada', 'success'); }
+        } else {
+            categoria.id = nextId++;
+            categorias.push(categoria);
+            mostrarToast('Categoría creada', 'success');
+        }
+        cerrarModal('categoriaModal');
+        cargarCategorias();
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', cerrarSesion);
+    document.getElementById('mobileMenuBtn').addEventListener('click', () =>
+        document.getElementById('sidebar').classList.toggle('open'));
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const name = localStorage.getItem('userName') || 'Admin';
+        document.getElementById('adminName').innerText   = name;
+        document.getElementById('adminAvatar').innerText = name.charAt(0).toUpperCase();
+        cargarCategorias();
+    });
+</script>
+</body>
+</html>

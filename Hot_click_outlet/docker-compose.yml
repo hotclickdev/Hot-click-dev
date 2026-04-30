@@ -1,0 +1,10 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://hotclick-backend-hotclick-b364.g.aivencloud.com:20804/defaultdb?sslmode=require
+      SPRING_DATASOURCE_USERNAME: avnadmin
+      SPRING_DATASOURCE_PASSWORD: AVNS_MSUS4Nn4XNziq91mgCm
+    restart: unless-stopped

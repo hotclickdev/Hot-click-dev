@@ -1,0 +1,105 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOTCLICK — Iniciar Sesión</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="header">
+    <div class="container">
+        <div class="header-container">
+            <div class="logo" onclick="window.location.href='index.html'">
+                <span class="logo-icon">HC</span>
+                <span class="logo-text">HOTCLICK</span>
+            </div>
+            <nav class="nav-menu">
+                <a href="index.html"      class="nav-link">Inicio</a>
+                <a href="productos.html"  class="nav-link">Productos</a>
+                <a href="categorias.html" class="nav-link">Categorías</a>
+                <a href="nosotros.html"   class="nav-link">Nosotros</a>
+                <a href="contacto.html"   class="nav-link">Contacto</a>
+            </nav>
+            <div class="nav-actions">
+                <button class="icon-btn" id="cartBtn">🛒<span class="badge" id="cartCount">0</span></button>
+                <button class="icon-btn" id="userBtn">👤</button>
+                <button class="icon-btn" id="scanBtn">📷</button>
+            </div>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+        </div>
+    </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+    <a href="index.html">Inicio</a>
+    <a href="productos.html">Productos</a>
+    <a href="categorias.html">Categorías</a>
+    <a href="nosotros.html">Nosotros</a>
+    <a href="contacto.html">Contacto</a>
+</div>
+
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="auth-logo">
+            <div class="logo" style="cursor:default;justify-content:center;">
+                <span class="logo-icon">HC</span>
+                <span class="logo-text">HOTCLICK</span>
+            </div>
+            <h2>Bienvenido de vuelta</h2>
+            <p>Ingresa tus credenciales para continuar</p>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Correo electrónico</label>
+            <input type="email" id="loginCorreo" class="form-input" placeholder="tu@email.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Contraseña</label>
+            <input type="password" id="loginPassword" class="form-input" placeholder="Tu contraseña" autocomplete="current-password">
+        </div>
+
+        <button id="btnLogin" class="btn btn-primary" style="width:100%;margin-top:4px;">Iniciar Sesión</button>
+
+        <div class="auth-footer">
+            ¿No tienes cuenta? <a href="registro.html">Regístrate aquí</a><br>
+            <a href="index.html" style="color:var(--c-muted);font-weight:400;">← Volver al inicio</a>
+        </div>
+    </div>
+</div>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<script src="../js/utils.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/cart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    inicializarCarrito();
+    actualizarContadorCarrito();
+
+    document.getElementById('cartBtn').onclick = () => window.location.href = 'carrito.html';
+    document.getElementById('mobileMenuBtn').onclick = () => document.getElementById('mobileMenu').classList.toggle('active');
+    document.getElementById('scanBtn').onclick = () => window.location.href = 'escaner.html';
+
+    document.getElementById('btnLogin').addEventListener('click', async () => {
+        const correo    = document.getElementById('loginCorreo').value;
+        const contrasena = document.getElementById('loginPassword').value;
+        const result = await apiLogin(correo, contrasena);
+        if (result.success) {
+            mostrarToast('✅ Sesión iniciada correctamente', 'success');
+            setTimeout(() => window.location.href = 'index.html', 1200);
+        } else {
+            mostrarToast(result.message, 'error');
+        }
+    });
+
+    document.getElementById('loginPassword').addEventListener('keypress', e => {
+        if (e.key === 'Enter') document.getElementById('btnLogin').click();
+    });
+});
+</script>
+</body>
+</html>
