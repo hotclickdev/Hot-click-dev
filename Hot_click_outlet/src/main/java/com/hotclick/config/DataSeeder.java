@@ -1,9 +1,7 @@
 package com.hotclick.config;
 
-import com.hotclick.model.Rol;
-import com.hotclick.model.Usuario;
-import com.hotclick.repository.RolRepository;
-import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.model.*;
+import com.hotclick.repository.*;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
@@ -17,15 +15,19 @@ public class DataSeeder implements ApplicationRunner {
 
     @Autowired private RolRepository rolRepository;
     @Autowired private UsuarioRepository usuarioRepository;
+    @Autowired private BodegaRepository bodegaRepository;
+    @Autowired private CategoriaRepository categoriaRepository;
     @Autowired private PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        seedRol(Constants.ROL_ADMIN_IT,      "Administrador del sistema",    100);
-        seedRol(Constants.ROL_ADMIN_CLIENTE,  "Administrador de negocio",     50);
-        seedRol(Constants.ROL_USUARIO_FINAL,  "Cliente final",                 1);
+        seedRol(Constants.ROL_ADMIN_IT,      "Administrador del sistema", 100);
+        seedRol(Constants.ROL_ADMIN_CLIENTE,  "Administrador de negocio",  50);
+        seedRol(Constants.ROL_USUARIO_FINAL,  "Cliente final",              1);
         seedAdminUser();
+        seedBodegaDefault();
+        seedCategoriasDefault();
     }
 
     private void seedRol(String nombre, String descripcion, int nivel) {
@@ -42,7 +44,6 @@ public class DataSeeder implements ApplicationRunner {
     private void seedAdminUser() {
         String correo = "admin@hotclick.com";
         if (usuarioRepository.existsByCorreo(correo)) {
-            // Asegurar que tenga rol ADMIN_IT
             Usuario admin = usuarioRepository.findByCorreo(correo).get();
             boolean tieneAdmin = admin.getRoles().stream()
                 .anyMatch(r -> r.getNombreRol().equals(Constants.ROL_ADMIN_IT));
@@ -63,6 +64,35 @@ public class DataSeeder implements ApplicationRunner {
             rolRepository.findByNombreRol(Constants.ROL_ADMIN_IT)
                 .ifPresent(rol -> admin.getRoles().add(rol));
             usuarioRepository.save(admin);
+        }
+    }
+
+    private void seedBodegaDefault() {
+        if (bodegaRepository.count() == 0) {
+            Usuario admin = usuarioRepository.findByCorreo("admin@hotclick.com").orElse(null);
+            if (admin == null) return;
+            Bodega bodega = new Bodega();
+            bodega.setNombreBodega("Bodega Principal");
+            bodega.setDireccionExacta("San José, Costa Rica");
+            bodega.setTelefono("00000000");
+            bodega.setEstado(Constants.ESTADO_ACTIVO);
+            bodega.setAdminCliente(admin);
+            bodegaRepository.save(bodega);
+        }
+    }
+
+    private void seedCategoriasDefault() {
+        if (categoriaRepository.count() == 0) {
+            Usuario admin = usuarioRepository.findByCorreo("admin@hotclick.com").orElse(null);
+            if (admin == null) return;
+            String[] nombres = { "Electrónica", "Computación", "Hogar", "Accesorios", "Gaming", "Oficina" };
+            for (String nombre : nombres) {
+                Categoria cat = new Categoria();
+                cat.setNombreCategoria(nombre);
+                cat.setEstado(Constants.ESTADO_ACTIVO);
+                cat.setAdminCliente(admin);
+                categoriaRepository.save(cat);
+            }
         }
     }
 }

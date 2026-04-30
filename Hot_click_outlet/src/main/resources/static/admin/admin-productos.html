@@ -137,12 +137,15 @@
                 <div class="form-group">
                     <label>Categoría</label>
                     <select id="prodCategoria" class="form-input">
-                        <option value="electronica">Electrónica</option>
-                        <option value="hogar">Hogar</option>
-                        <option value="deportes">Deportes</option>
-                        <option value="moda">Moda</option>
+                        <option value="">Cargando...</option>
                     </select>
                 </div>
+            </div>
+            <div class="form-group">
+                <label>Bodega</label>
+                <select id="prodBodega" class="form-input">
+                    <option value="">Cargando...</option>
+                </select>
             </div>
             <div class="form-group">
                 <label>Link Amazon</label>
@@ -183,150 +186,133 @@
         window.location.href = '../index.html';
     }
 
-    let productos = [
-        { id:1, nombre:'Laptop Gamer',      precioCompra:500, precioVenta:750,   stock:10, categoria:'electronica', amazonLink:'https://amazon.com', imagenUrl:'' },
-        { id:2, nombre:'Mouse Inalámbrico', precioCompra:15,  precioVenta:29.99, stock:50, categoria:'electronica', amazonLink:'https://amazon.com', imagenUrl:'' },
-        { id:3, nombre:'Teclado Mecánico',  precioCompra:45,  precioVenta:89.99, stock:25, categoria:'electronica', amazonLink:'https://amazon.com', imagenUrl:'' }
-    ];
-    let nextId = 4;
+    const API    = 'http://localhost:8080/api';
+    const authHdr = () => ({ 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('token') });
 
-    const SUPABASE_URL      = 'https://gwykydxwmuzchwojxqnn.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_ezmDlNuNJuN0JxlpHhfrTw_VnEQ-pKG';
+    /* ── Cargar categorías y bodegas en selects ── */
+    async function cargarSelects() {
+        const [resCats, resBods] = await Promise.all([
+            fetch(`${API}/categorias`),
+            fetch(`${API}/bodegas`, { headers: authHdr() })
+        ]);
+        const cats = (await resCats.json()).data || [];
+        const bods = (await resBods.json()).data || [];
 
-    async function subirImagenSupabase(file) {
-        const fileName = `${Date.now()}_${file.name}`;
+        const selCat = document.getElementById('prodCategoria');
+        const selBod = document.getElementById('prodBodega');
+        if (selCat) selCat.innerHTML = cats.map(c => `<option value="${c.id}">${c.nombreCategoria}</option>`).join('');
+        if (selBod) selBod.innerHTML = bods.map(b => `<option value="${b.id}">${b.nombreBodega}</option>`).join('');
+    }
+
+    /* ── Listar productos ── */
+    async function cargarProductos() {
+        const tbody = document.getElementById('productosTable');
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px">Cargando...</td></tr>';
         try {
-            mostrarToast('Subiendo imagen...', 'info');
-            const res = await fetch(`${SUPABASE_URL}/storage/v1/object/productos/${fileName}`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'apikey': SUPABASE_ANON_KEY },
-                body: file
-            });
-            if (res.ok) {
-                const url = `${SUPABASE_URL}/storage/v1/object/public/productos/${fileName}`;
-                mostrarToast('Imagen subida', 'success');
-                return { success: true, url };
+            const res  = await fetch(`${API}/productos?size=100`);
+            const json = await res.json();
+            const lista = json.data?.content || json.data || [];
+            const search    = document.getElementById('searchProducto')?.value.toLowerCase() || '';
+            const catFilter = document.getElementById('categoriaFilter')?.value || '';
+            const filtrados = lista.filter(p =>
+                (!search    || (p.nombreProducto||'').toLowerCase().includes(search)) &&
+                (!catFilter || String(p.categoria?.id) === catFilter)
+            );
+            if (!filtrados.length) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--txt-sub)">Sin productos registrados</td></tr>';
+                return;
             }
-            mostrarToast('Error al subir imagen', 'error');
-            return { success: false };
+            tbody.innerHTML = filtrados.map(p => `
+                <tr>
+                    <td style="font-weight:600">#${p.id}</td>
+                    <td style="display:flex;align-items:center;gap:10px">
+                        <span style="font-size:1.5rem">📦</span>
+                        <span style="font-weight:500">${escapeHtml(p.nombreProducto||'')}</span>
+                    </td>
+                    <td style="font-weight:600;color:var(--green)">₡${(p.precioVenta||0).toLocaleString()}</td>
+                    <td>${p.stockActual ?? 0}</td>
+                    <td style="color:var(--txt-sub)">${p.categoria?.nombreCategoria || '—'}</td>
+                    <td><span class="badge badge-active">Activo</span></td>
+                    <td class="table-actions">
+                        <button class="btn-icon" onclick="editarProducto(${p.id})" title="Editar">✏️</button>
+                        <button class="btn-icon del" onclick="eliminarProducto(${p.id})" title="Eliminar">🗑️</button>
+                    </td>
+                </tr>`).join('');
         } catch {
-            mostrarToast('Error de conexión', 'error');
-            return { success: false };
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--red)">Error al cargar productos</td></tr>';
         }
     }
 
-    function previsualizarImagen(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        if (!file.type.startsWith('image/')) { mostrarToast('Solo imágenes', 'error'); event.target.value = ''; return; }
-        if (file.size > 2 * 1024 * 1024)     { mostrarToast('Máximo 2MB',    'error'); event.target.value = ''; return; }
-        const reader = new FileReader();
-        reader.onload = e => {
-            document.getElementById('vistaPrevia').innerHTML =
-                `<img src="${e.target.result}" style="max-width:150px;border-radius:8px;border:2px solid var(--blue)">`;
-        };
-        reader.readAsDataURL(file);
+    async function editarProducto(id) {
+        try {
+            const json = await (await fetch(`${API}/productos/${id}`, { headers: authHdr() })).json();
+            const p    = json.data || json;
+            document.getElementById('productoId').value       = p.id;
+            document.getElementById('prodNombre').value        = p.nombreProducto || '';
+            document.getElementById('prodDescripcion').value   = p.descripcionCorta || '';
+            document.getElementById('prodPrecioCompra').value  = p.precioCompra || 0;
+            document.getElementById('prodPrecioVenta').value   = p.precioVenta || 0;
+            document.getElementById('prodStock').value         = p.stockActual || 0;
+            document.getElementById('prodAmazon').value        = p.linkAmazon || '';
+            if (p.categoria?.id) document.getElementById('prodCategoria').value = p.categoria.id;
+            if (p.bodega?.id)    document.getElementById('prodBodega')?.value && (document.getElementById('prodBodega').value = p.bodega.id);
+            document.getElementById('modalTitle').innerText = 'Editar Producto';
+            abrirModal('productoModal');
+        } catch { mostrarToast('Error al cargar producto', 'error'); }
     }
 
-    function cargarProductos() {
-        const tbody    = document.getElementById('productosTable');
-        const search   = document.getElementById('searchProducto')?.value.toLowerCase() || '';
-        const categoria = document.getElementById('categoriaFilter')?.value || '';
-        const filtrados = productos.filter(p =>
-            (!search || p.nombre.toLowerCase().includes(search)) &&
-            (!categoria || p.categoria === categoria)
-        );
-        tbody.innerHTML = filtrados.map(p => `
-            <tr>
-                <td style="font-weight:600">#${p.id}</td>
-                <td style="display:flex;align-items:center;gap:10px">
-                    ${p.imagenUrl
-                        ? `<img src="${p.imagenUrl}" style="width:38px;height:38px;object-fit:cover;border-radius:8px">`
-                        : `<span style="font-size:1.5rem">📦</span>`}
-                    <span style="font-weight:500">${escapeHtml(p.nombre)}</span>
-                </td>
-                <td style="font-weight:600;color:var(--green)">$${p.precioVenta.toFixed(2)}</td>
-                <td>${p.stock}</td>
-                <td style="color:var(--txt-sub);text-transform:capitalize">${p.categoria}</td>
-                <td><span class="badge badge-active">Activo</span></td>
-                <td class="table-actions">
-                    <button class="btn-icon" onclick="editarProducto(${p.id})" title="Editar">✏️</button>
-                    <button class="btn-icon del" onclick="eliminarProducto(${p.id})" title="Eliminar">🗑️</button>
-                </td>
-            </tr>`).join('');
-    }
-
-    function editarProducto(id) {
-        const p = productos.find(p => p.id === id);
-        if (!p) return;
-        document.getElementById('productoId').value      = p.id;
-        document.getElementById('prodNombre').value       = p.nombre;
-        document.getElementById('prodDescripcion').value  = p.descripcion || '';
-        document.getElementById('prodPrecioCompra').value = p.precioCompra;
-        document.getElementById('prodPrecioVenta').value  = p.precioVenta;
-        document.getElementById('prodStock').value        = p.stock;
-        document.getElementById('prodCategoria').value    = p.categoria;
-        document.getElementById('prodAmazon').value       = p.amazonLink || '';
-        document.getElementById('prodImagenUrl').value    = p.imagenUrl || '';
-        if (p.imagenUrl) {
-            document.getElementById('vistaPrevia').innerHTML =
-                `<img src="${p.imagenUrl}" style="max-width:150px;border-radius:8px">`;
-        }
-        document.getElementById('modalTitle').innerText = 'Editar Producto';
-        abrirModal('productoModal');
-    }
-
-    function eliminarProducto(id) {
-        if (confirm('¿Eliminar este producto?')) {
-            productos = productos.filter(p => p.id !== id);
-            cargarProductos();
-            mostrarToast('Producto eliminado', 'success');
-        }
+    async function eliminarProducto(id) {
+        if (!confirm('¿Eliminar este producto?')) return;
+        try {
+            const res = await fetch(`${API}/productos/${id}`, { method: 'DELETE', headers: authHdr() });
+            if (res.ok) { mostrarToast('Producto eliminado', 'success'); cargarProductos(); }
+            else        { mostrarToast('Error al eliminar', 'error'); }
+        } catch { mostrarToast('Error de conexión', 'error'); }
     }
 
     document.getElementById('guardarProductoBtn').addEventListener('click', async () => {
-        const imagenFile = document.getElementById('prodImagen').files[0];
-        let imagenUrl = document.getElementById('prodImagenUrl').value || '';
-        if (imagenFile) {
-            const res = await subirImagenSupabase(imagenFile);
-            if (res.success) { imagenUrl = res.url; document.getElementById('prodImagenUrl').value = imagenUrl; }
-            else return;
-        }
-        const id = document.getElementById('productoId').value;
-        const producto = {
-            nombre:       document.getElementById('prodNombre').value,
-            descripcion:  document.getElementById('prodDescripcion').value || '',
-            precioCompra: parseFloat(document.getElementById('prodPrecioCompra').value) || 0,
-            precioVenta:  parseFloat(document.getElementById('prodPrecioVenta').value) || 0,
-            stock:        parseInt(document.getElementById('prodStock').value) || 0,
-            categoria:    document.getElementById('prodCategoria').value,
-            amazonLink:   document.getElementById('prodAmazon').value || '',
-            imagenUrl
+        const id  = document.getElementById('productoId').value;
+        const body = {
+            nombreProducto:   document.getElementById('prodNombre').value.trim(),
+            descripcionCorta: document.getElementById('prodDescripcion').value.trim(),
+            precioCompra:     parseInt(document.getElementById('prodPrecioCompra').value) || 0,
+            precioVenta:      parseInt(document.getElementById('prodPrecioVenta').value)  || 0,
+            stockActual:      parseInt(document.getElementById('prodStock').value)         || 0,
+            linkAmazon:       document.getElementById('prodAmazon').value.trim(),
+            visibleCatalogo:  true,
+            destacado:        false,
+            categoriaId:      parseInt(document.getElementById('prodCategoria').value) || null,
+            bodegaId:         parseInt(document.getElementById('prodBodega')?.value)   || null
         };
-        if (!producto.nombre) { mostrarToast('El nombre es obligatorio', 'error'); return; }
-        if (producto.precioVenta <= producto.precioCompra) { mostrarToast('Precio venta debe ser mayor al de compra', 'error'); return; }
 
-        if (id) {
-            const idx = productos.findIndex(p => p.id === parseInt(id));
-            if (idx !== -1) { productos[idx] = { ...productos[idx], ...producto }; mostrarToast('Producto actualizado', 'success'); }
-        } else {
-            producto.id = nextId++;
-            productos.push(producto);
-            mostrarToast('Producto creado', 'success');
-        }
-        cerrarModal('productoModal');
-        cargarProductos();
-        ['productoId','prodNombre','prodDescripcion','prodPrecioCompra','prodPrecioVenta','prodStock','prodAmazon','prodImagen','prodImagenUrl']
-            .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-        document.getElementById('vistaPrevia').innerHTML = '';
-        document.getElementById('prodCategoria').value = 'electronica';
+        if (!body.nombreProducto)               { mostrarToast('El nombre es obligatorio', 'error'); return; }
+        if (body.precioVenta <= body.precioCompra) { mostrarToast('Precio venta debe ser mayor al de compra', 'error'); return; }
+        if (!body.categoriaId)                  { mostrarToast('Selecciona una categoría', 'error'); return; }
+        if (!body.bodegaId)                     { mostrarToast('Selecciona una bodega', 'error'); return; }
+
+        try {
+            const url    = id ? `${API}/productos/${id}` : `${API}/productos`;
+            const method = id ? 'PUT' : 'POST';
+            const res    = await fetch(url, { method, headers: authHdr(), body: JSON.stringify(body) });
+            const json   = await res.json();
+            if (res.ok) {
+                mostrarToast(id ? 'Producto actualizado ✅' : 'Producto creado ✅', 'success');
+                cerrarModal('productoModal');
+                cargarProductos();
+                limpiarFormulario();
+            } else {
+                mostrarToast(json.message || 'Error al guardar', 'error');
+            }
+        } catch { mostrarToast('Error de conexión', 'error'); }
     });
 
-    document.getElementById('nuevoProductoBtn').addEventListener('click', () => {
-        ['productoId','prodNombre','prodDescripcion','prodPrecioCompra','prodPrecioVenta','prodStock','prodAmazon','prodImagen','prodImagenUrl']
+    function limpiarFormulario() {
+        ['productoId','prodNombre','prodDescripcion','prodPrecioCompra','prodPrecioVenta','prodStock','prodAmazon']
             .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-        document.getElementById('vistaPrevia').innerHTML = '';
-        document.getElementById('prodCategoria').value = 'electronica';
+    }
+
+    document.getElementById('nuevoProductoBtn').addEventListener('click', () => {
+        limpiarFormulario();
         document.getElementById('modalTitle').innerText = 'Nuevo Producto';
         abrirModal('productoModal');
     });
@@ -342,6 +328,7 @@
         const name = localStorage.getItem('userName') || 'Admin';
         document.getElementById('adminName').innerText  = name;
         document.getElementById('adminAvatar').innerText = name.charAt(0).toUpperCase();
+        cargarSelects();
         cargarProductos();
     });
 </script>

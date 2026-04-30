@@ -61,6 +61,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/health").permitAll()
                 .requestMatchers("/api/productos/**").permitAll()
                 .requestMatchers("/api/ruleta/premios").permitAll()
+                .requestMatchers("/api/categorias").permitAll()
+                .requestMatchers("/api/bodegas").authenticated()
                 .requestMatchers("/", "/*.html", "/favicon.ico", "/pages/**", "/css/**", "/js/**", "/images/**", "/assets/**", "/admin/**").permitAll()
                 .requestMatchers("/api/admin/**").hasAnyRole("ADMIN_IT", "ADMIN_CLIENTE")
                 .requestMatchers("/api/usuarios/**").authenticated()

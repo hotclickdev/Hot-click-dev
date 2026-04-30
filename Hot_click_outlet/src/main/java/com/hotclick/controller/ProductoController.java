@@ -1,11 +1,13 @@
 package com.hotclick.controller;
 
+import com.hotclick.dto.ProductoRequestDTO;
 import com.hotclick.dto.ResponseDTO;
-import com.hotclick.model.Producto;
 import com.hotclick.service.ProductoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @CrossOrigin(origins = "*")
@@ -27,28 +29,32 @@ public class ProductoController {
     @GetMapping("/{id}")
     public ResponseEntity<ResponseDTO> obtenerProducto(@PathVariable Long id) {
         try {
-            Producto producto = productoService.buscarPorId(id);
-            return ResponseEntity.ok(ResponseDTO.success("Producto encontrado", producto));
+            return ResponseEntity.ok(ResponseDTO.success("Producto encontrado", productoService.buscarPorId(id)));
         } catch (Exception e) {
             return ResponseEntity.status(404).body(ResponseDTO.error(e.getMessage()));
         }
     }
 
     @PostMapping
-    public ResponseEntity<ResponseDTO> crearProducto(@RequestBody Producto producto) {
+    public ResponseEntity<ResponseDTO> crearProducto(
+            @RequestBody ProductoRequestDTO dto,
+            @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            Producto nuevoProducto = productoService.crearProducto(producto);
-            return ResponseEntity.ok(ResponseDTO.success("Producto creado", nuevoProducto));
+            var producto = productoService.crearProducto(dto, userDetails.getUsername());
+            return ResponseEntity.ok(ResponseDTO.success("Producto creado", producto));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ResponseDTO> actualizarProducto(@PathVariable Long id, @RequestBody Producto producto) {
+    public ResponseEntity<ResponseDTO> actualizarProducto(
+            @PathVariable Long id,
+            @RequestBody ProductoRequestDTO dto,
+            @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            Producto actualizado = productoService.actualizarProducto(id, producto);
-            return ResponseEntity.ok(ResponseDTO.success("Producto actualizado", actualizado));
+            var producto = productoService.actualizarProducto(id, dto, userDetails.getUsername());
+            return ResponseEntity.ok(ResponseDTO.success("Producto actualizado", producto));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
