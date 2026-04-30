@@ -1,18 +1,21 @@
 services:
-
   hot_click_outlet:
     build: .
     container_name: hot_click_outlet
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://aws-0-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require
-      SPRING_DATASOURCE_USERNAME: postgres.gwykydxwmuzchwojxqnn
-      SPRING_DATASOURCE_PASSWORD: "*3>kXINM#5C0"
+      # Session Pooler (IPv4) - Puerto 5432
+      SPRING_DATASOURCE_URL: jdbc:postgresql://aws-1-us-east-2.pooler.supabase.com:5432/postgres?sslmode=require&prepareThreshold=0
+      SPRING_DATASOURCE_USERNAME: postgres.nkevwfcjhjaawtdqquns
+      SPRING_DATASOURCE_PASSWORD: "HotClick2026!"
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
-      SPRING_JPA_HIBERNATE_DDL_AUTO: create
+      
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
       SPRING_JPA_SHOW_SQL: "true"
-      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
-      SPRING_JPA_PROPERTIES_HIBERNATE_JDBC_LOB_NON_CONTEXTUAL_CREATION: "true"
-      SPRING_JPA_OPEN_IN_VIEW: "false"
+      SPRING_JPA_PROPERTIES_HIBERNATE_PHYSICAL_NAMING_STRATEGY: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+      
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     restart: unless-stopped

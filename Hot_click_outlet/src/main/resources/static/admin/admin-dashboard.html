@@ -122,34 +122,34 @@
                 <div class="stat-card">
                     <div class="stat-icon-box blue">👥</div>
                     <div class="stat-info">
-                        <div class="stat-value" id="totalUsuarios">156</div>
+                        <div class="stat-value" id="totalUsuarios">—</div>
                         <div class="stat-label">Usuarios</div>
                     </div>
-                    <span class="stat-trend up">+12%</span>
+                    <span class="stat-trend" id="trendUsuarios"></span>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon-box green">💰</div>
                     <div class="stat-info">
-                        <div class="stat-value" id="totalVentas">$45,678</div>
+                        <div class="stat-value" id="totalVentas">—</div>
                         <div class="stat-label">Ventas totales</div>
                     </div>
-                    <span class="stat-trend up">+8%</span>
+                    <span class="stat-trend" id="trendVentas"></span>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon-box amber">📦</div>
                     <div class="stat-info">
-                        <div class="stat-value" id="totalProductos">1,284</div>
+                        <div class="stat-value" id="totalProductos">—</div>
                         <div class="stat-label">Productos</div>
                     </div>
-                    <span class="stat-trend up">+5%</span>
+                    <span class="stat-trend" id="trendProductos"></span>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon-box red">🛒</div>
                     <div class="stat-info">
-                        <div class="stat-value" id="totalPedidos">89</div>
+                        <div class="stat-value" id="totalPedidos">—</div>
                         <div class="stat-label">Pedidos</div>
                     </div>
-                    <span class="stat-trend down">-2%</span>
+                    <span class="stat-trend" id="trendPedidos"></span>
                 </div>
             </div>
 
@@ -254,52 +254,16 @@
 
                 <div class="donut-wrap">
                     <svg class="donut-svg" viewBox="0 0 36 36">
-                        <!-- Fondo -->
                         <circle cx="18" cy="18" r="15.9" fill="none" stroke="#E5E7EB" stroke-width="3.2"/>
-                        <!-- Electrónica 40% -->
-                        <circle cx="18" cy="18" r="15.9" fill="none"
-                            stroke="#3563E9" stroke-width="3.2"
-                            stroke-dasharray="40 60" stroke-dashoffset="0"/>
-                        <!-- Hogar 26% -->
-                        <circle cx="18" cy="18" r="15.9" fill="none"
-                            stroke="#e63946" stroke-width="3.2"
-                            stroke-dasharray="26 74" stroke-dashoffset="-40"/>
-                        <!-- Deportes 18% -->
-                        <circle cx="18" cy="18" r="15.9" fill="none"
-                            stroke="#28a745" stroke-width="3.2"
-                            stroke-dasharray="18 82" stroke-dashoffset="-66"/>
-                        <!-- Moda 16% -->
-                        <circle cx="18" cy="18" r="15.9" fill="none"
-                            stroke="#F59E0B" stroke-width="3.2"
-                            stroke-dasharray="16 84" stroke-dashoffset="-84"/>
                     </svg>
                     <div class="donut-center">
-                        <span class="donut-num" id="donutTotal">1,284</span>
+                        <span class="donut-num" id="donutTotal">0</span>
                         <span class="donut-lbl">Productos</span>
                     </div>
                 </div>
 
-                <ul class="legend-list">
-                    <li class="legend-item">
-                        <span class="legend-dot" style="background:#3563E9"></span>
-                        <span class="legend-name">Electrónica</span>
-                        <span class="legend-val">514</span>
-                    </li>
-                    <li class="legend-item">
-                        <span class="legend-dot" style="background:#e63946"></span>
-                        <span class="legend-name">Hogar</span>
-                        <span class="legend-val">334</span>
-                    </li>
-                    <li class="legend-item">
-                        <span class="legend-dot" style="background:#28a745"></span>
-                        <span class="legend-name">Deportes</span>
-                        <span class="legend-val">231</span>
-                    </li>
-                    <li class="legend-item">
-                        <span class="legend-dot" style="background:#F59E0B"></span>
-                        <span class="legend-name">Moda</span>
-                        <span class="legend-val">205</span>
-                    </li>
+                <ul class="legend-list" id="legendList">
+                    <li style="color:var(--txt-sub);font-size:.8rem;padding:8px">Cargando categorías...</li>
                 </ul>
             </div>
 
@@ -310,34 +274,30 @@
                     <a href="#" class="aside-link" id="verPedidoLink">Ver</a>
                 </div>
 
-                <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--border);">
+                <div id="ultimoPedidoCard" style="display:flex; align-items:center; gap:12px; margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--border);">
                     <div style="width:44px;height:44px;background:var(--blue-lt);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">📦</div>
                     <div>
-                        <div style="font-size:0.85rem;font-weight:600;" id="pedidoProducto">Laptop Gamer</div>
-                        <div style="font-size:0.72rem;color:var(--txt-sub);">Electrónica</div>
+                        <div style="font-size:0.85rem;font-weight:600;" id="pedidoProducto">Sin pedidos</div>
+                        <div style="font-size:0.72rem;color:var(--txt-sub);">—</div>
                     </div>
                 </div>
 
                 <div class="detail-row">
                     <span class="lbl">Cliente</span>
-                    <span class="val" id="pedidoCliente">María García</span>
+                    <span class="val" id="pedidoCliente">—</span>
                 </div>
                 <div class="detail-row">
                     <span class="lbl">Fecha</span>
-                    <span class="val" id="pedidoFecha">15 Dic 2024</span>
+                    <span class="val" id="pedidoFecha">—</span>
                 </div>
                 <div class="detail-row">
                     <span class="lbl">Estado</span>
-                    <span class="badge badge-pending" id="pedidoEstado">PENDIENTE</span>
-                </div>
-                <div class="detail-row">
-                    <span class="lbl">Cantidad</span>
-                    <span class="val">2 unidades</span>
+                    <span class="badge badge-pending" id="pedidoEstado">—</span>
                 </div>
 
                 <div class="detail-total">
                     <span class="lbl">Total</span>
-                    <span class="price" id="pedidoTotal">$1,500.00</span>
+                    <span class="price" id="pedidoTotal">$0</span>
                 </div>
 
                 <button class="btn btn-primary" style="width:100%;margin-top:14px;justify-content:center;"
@@ -484,9 +444,12 @@
     }
 
     function renderCategorias(cats) {
-        const lista = document.querySelector('.legend-list');
+        const lista = document.getElementById('legendList');
         if (!lista) return;
-        if (cats.length === 0) { lista.innerHTML = '<li style="color:var(--txt-sub);font-size:.8rem;padding:8px">Sin categorías cargadas</li>'; return; }
+        if (!cats || cats.length === 0) {
+            lista.innerHTML = '<li style="color:var(--txt-sub);font-size:.8rem;padding:8px">Sin categorías registradas</li>';
+            return;
+        }
         lista.innerHTML = cats.slice(0, 6).map((c, i) => `
             <li class="legend-item">
                 <span class="legend-dot" style="background:${COLORES_DONUT[i % COLORES_DONUT.length]}"></span>

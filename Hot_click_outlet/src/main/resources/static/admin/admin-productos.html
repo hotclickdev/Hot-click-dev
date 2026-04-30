@@ -74,10 +74,6 @@
             <div class="admin-filters">
                 <select id="categoriaFilter" class="filter-input filter-select">
                     <option value="">Todas las categorías</option>
-                    <option value="electronica">Electrónica</option>
-                    <option value="hogar">Hogar</option>
-                    <option value="deportes">Deportes</option>
-                    <option value="moda">Moda</option>
                 </select>
                 <button class="btn btn-primary btn-sm" id="searchBtn">🔍 Buscar</button>
             </div>
@@ -198,10 +194,13 @@
         const cats = (await resCats.json()).data || [];
         const bods = (await resBods.json()).data || [];
 
-        const selCat = document.getElementById('prodCategoria');
-        const selBod = document.getElementById('prodBodega');
-        if (selCat) selCat.innerHTML = cats.map(c => `<option value="${c.id}">${c.nombreCategoria}</option>`).join('');
-        if (selBod) selBod.innerHTML = bods.map(b => `<option value="${b.id}">${b.nombreBodega}</option>`).join('');
+        const selCat    = document.getElementById('prodCategoria');
+        const selBod    = document.getElementById('prodBodega');
+        const filtro    = document.getElementById('categoriaFilter');
+        const opsCats   = cats.map(c => `<option value="${c.id}">${escapeHtml(c.nombreCategoria)}</option>`).join('');
+        if (selCat) selCat.innerHTML = opsCats;
+        if (selBod) selBod.innerHTML = bods.map(b => `<option value="${b.id}">${escapeHtml(b.nombreBodega)}</option>`).join('');
+        if (filtro) filtro.innerHTML = '<option value="">Todas las categorías</option>' + opsCats;
     }
 
     /* ── Listar productos ── */

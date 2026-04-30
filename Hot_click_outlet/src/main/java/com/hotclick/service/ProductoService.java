@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class ProductoService {
@@ -27,6 +28,9 @@ public class ProductoService {
         Producto p = new Producto();
         mapDtoToProducto(dto, p);
         p.setEstado(Constants.ESTADO_ACTIVO);
+        if (p.getSku() == null) {
+            p.setSku("HC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        }
         p.setCategoria(categoriaRepository.findById(dto.getCategoriaId())
             .orElseThrow(() -> new RuntimeException("Categoría no encontrada")));
         p.setBodega(bodegaRepository.findById(dto.getBodegaId())

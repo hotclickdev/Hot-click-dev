@@ -87,30 +87,7 @@
             <a href="categorias.html" class="btn btn-outline btn-sm">Ver todas →</a>
         </div>
         <div class="categories-grid" id="homeCategoriesGrid">
-            <div class="category-card" onclick="window.location.href='productos.html?cat=electronica'">
-                <div class="category-card-icon">💻</div>
-                <span class="category-card-name">Electrónica</span>
-            </div>
-            <div class="category-card" onclick="window.location.href='productos.html?cat=gaming'">
-                <div class="category-card-icon">🎮</div>
-                <span class="category-card-name">Gaming</span>
-            </div>
-            <div class="category-card" onclick="window.location.href='productos.html?cat=celulares'">
-                <div class="category-card-icon">📱</div>
-                <span class="category-card-name">Smartphones</span>
-            </div>
-            <div class="category-card" onclick="window.location.href='productos.html?cat=audio'">
-                <div class="category-card-icon">🎧</div>
-                <span class="category-card-name">Audio</span>
-            </div>
-            <div class="category-card" onclick="window.location.href='productos.html?cat=laptops'">
-                <div class="category-card-icon">💡</div>
-                <span class="category-card-name">Laptops</span>
-            </div>
-            <div class="category-card" onclick="window.location.href='productos.html?cat=accesorios'">
-                <div class="category-card-icon">⌨️</div>
-                <span class="category-card-name">Accesorios</span>
-            </div>
+            <div class="loading" style="grid-column:1/-1;text-align:center;padding:20px;color:var(--c-muted)">Cargando categorías...</div>
         </div>
     </div>
 </section>
@@ -261,14 +238,8 @@
 <script src="../js/auth.js"></script>
 <script src="../js/cart.js"></script>
 <script>
-let productosMock = [
-    { id: 1, nombre: 'Laptop Gamer', precio: 750.00, stock: 10, categoria: 'electronica', descripcion: 'Laptop de alto rendimiento', badge: 'hot' },
-    { id: 2, nombre: 'Mouse Inalámbrico', precio: 29.99, stock: 50, categoria: 'electronica', descripcion: 'Mouse ergonómico', badge: 'new' },
-    { id: 3, nombre: 'Teclado Mecánico', precio: 89.99, stock: 25, categoria: 'electronica', descripcion: 'Teclado RGB', badge: null },
-    { id: 4, nombre: 'Audífonos Bluetooth', precio: 59.99, stock: 30, categoria: 'audio', descripcion: 'Cancelación de ruido', badge: 'sale' }
-];
-
-const EMOJIS = { electronica: '💻', gaming: '🎮', audio: '🎧', celulares: '📱', laptops: '💡', default: '📦' };
+const CAT_EMOJIS = ['💻','🎮','🎧','📱','💡','⌨️','🏠','📦','🛍️','⚽'];
+const EMOJIS = { default: '📦' };
 
 function mostrarToast(mensaje, tipo = 'success') {
     const container = document.getElementById('toastContainer');
@@ -426,42 +397,88 @@ async function verificarBackend() {
     }
 }
 
+function mapearProducto(p) {
+    return {
+        id:          p.id,
+        nombre:      p.nombreProducto || '',
+        precio:      p.precioVenta    || 0,
+        stock:       p.stockActual    || 0,
+        categoria:   p.categoria?.nombreCategoria || 'General',
+        descripcion: p.descripcionCorta || '',
+        badge:       p.destacado ? 'hot' : null
+    };
+}
+
 function mostrarProductosEnGrid(grid, productos) {
     if (!productos || productos.length === 0) {
-        grid.innerHTML = '<div class="loading">No hay productos disponibles</div>';
+        grid.innerHTML = '<div class="loading" style="color:var(--c-muted)">Sin productos disponibles. El administrador aún no ha cargado productos.</div>';
         return;
     }
     const badgeMap = { sale: '<span class="product-badge badge-sale">Oferta</span>', new: '<span class="product-badge badge-new">Nuevo</span>', hot: '<span class="product-badge badge-hot">Popular</span>' };
-    let html = '';
-    for (let p of productos) {
-        const emoji = EMOJIS[p.categoria] || EMOJIS.default;
+    grid.innerHTML = productos.map(p => {
         const badge = p.badge ? (badgeMap[p.badge] || '') : '';
-        html += `
+        const precio = typeof p.precio === 'number' ? p.precio : 0;
+        const nombreSeguro = escapeHtml(p.nombre);
+        return `
         <div class="product-card">
             <div class="product-card-image">
                 ${badge}
                 <button class="product-card-fav">♡</button>
-                <span class="prod-emoji">${emoji}</span>
+                <span class="prod-emoji">📦</span>
             </div>
             <div class="product-card-body">
-                <div class="product-category-tag">${p.categoria || 'General'}</div>
-                <h3 class="product-card-title">${p.nombre}</h3>
+                <div class="product-category-tag">${escapeHtml(p.categoria)}</div>
+                <h3 class="product-card-title">${nombreSeguro}</h3>
                 <div class="product-card-stars">
                     <span class="stars">★★★★★</span>
                     <span class="count">(${Math.floor(Math.random()*80)+20})</span>
                 </div>
                 <div class="product-card-footer">
                     <div class="product-card-price">
-                        <span class="price-current">$${p.precio.toFixed(2)}</span>
+                        <span class="price-current">₡${precio.toLocaleString()}</span>
                     </div>
                     <div class="product-card-actions">
-                        <button class="btn-add-cart" onclick="agregarAlCarrito(${p.id}, '${p.nombre}', ${p.precio})">+ Carrito</button>
+                        <button class="btn-add-cart" onclick="agregarAlCarrito(${p.id}, '${nombreSeguro.replace(/'/g,"\\'")}', ${precio})">+ Carrito</button>
                     </div>
                 </div>
             </div>
         </div>`;
+    }).join('');
+}
+
+async function cargarProductosDestacados() {
+    const grid = document.getElementById('productsGrid');
+    if (!grid) return;
+    grid.innerHTML = '<div class="loading">📦 Cargando productos...</div>';
+    try {
+        const res  = await fetch(`${API_URL}/productos?size=8`);
+        const json = await res.json();
+        const lista = (json.data?.content || json.data || []).map(mapearProducto);
+        mostrarProductosEnGrid(grid, lista);
+    } catch {
+        grid.innerHTML = '<div class="loading" style="color:var(--c-muted)">Sin conexión al servidor</div>';
     }
-    grid.innerHTML = html;
+}
+
+async function cargarCategoriasHome() {
+    const grid = document.getElementById('homeCategoriesGrid');
+    if (!grid) return;
+    try {
+        const res  = await fetch(`${API_URL}/categorias`);
+        const json = await res.json();
+        const cats = json.data || [];
+        if (!cats.length) {
+            grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--c-muted)">Sin categorías registradas</div>';
+            return;
+        }
+        grid.innerHTML = cats.slice(0, 6).map((c, i) => `
+            <div class="category-card" onclick="window.location.href='productos.html?catId=${c.id}'">
+                <div class="category-card-icon">${CAT_EMOJIS[i % CAT_EMOJIS.length]}</div>
+                <span class="category-card-name">${escapeHtml(c.nombreCategoria)}</span>
+            </div>`).join('');
+    } catch {
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--c-muted)">Error al cargar categorías</div>';
+    }
 }
 
 function buscarProductoPorCodigo() {
@@ -482,7 +499,8 @@ document.addEventListener('DOMContentLoaded', function() {
     inicializarCarrito();
     verificarBackend();
     actualizarIconoSesion();
-    mostrarProductosEnGrid(document.getElementById('productsGrid'), productosMock);
+    cargarProductosDestacados();
+    cargarCategoriasHome();
 
     document.getElementById('cartBtn').onclick = () => { actualizarModalCarrito(); abrirModal('cartModal'); };
     document.getElementById('closeCartModal').onclick = () => cerrarModal('cartModal');

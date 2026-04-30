@@ -121,9 +121,10 @@
 <div id="toastContainer" class="toast-container"></div>
 
 <script src="../js/utils.js"></script>
-<script src="../js/api.js"></script>
-<script src="../js/auth.js"></script>
 <script>
+    const API     = 'http://localhost:8080/api';
+    const authHdr = () => ({ 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('token') });
+
     function mostrarToast(msg, tipo = 'success') {
         const c = document.getElementById('toastContainer');
         const t = document.createElement('div');
@@ -136,73 +137,78 @@
     function cerrarModal(id) { document.getElementById(id)?.classList.remove('active'); }
     function cerrarSesion()  { localStorage.clear(); window.location.href = '../index.html'; }
 
-    let categorias = [
-        { id:1, nombre:'Electrónica', descripcion:'Productos electrónicos', icono:'💻' },
-        { id:2, nombre:'Hogar',       descripcion:'Artículos para el hogar', icono:'🏠' },
-        { id:3, nombre:'Deportes',    descripcion:'Equipo deportivo',        icono:'⚽' },
-        { id:4, nombre:'Moda',        descripcion:'Ropa y accesorios',       icono:'👕' }
-    ];
-    let nextId = 5;
-
-    function cargarCategorias() {
-        document.getElementById('categoriasTable').innerHTML = categorias.map(c => `
-            <tr>
-                <td style="font-weight:600">#${c.id}</td>
-                <td style="font-weight:500">${c.icono || '📁'} ${escapeHtml(c.nombre)}</td>
-                <td style="color:var(--txt-sub)">${escapeHtml(c.descripcion)}</td>
-                <td><span class="badge badge-active">Activo</span></td>
-                <td class="table-actions">
-                    <button class="btn-icon" onclick="editarCategoria(${c.id})" title="Editar">✏️</button>
-                    <button class="btn-icon del" onclick="eliminarCategoria(${c.id})" title="Eliminar">🗑️</button>
-                </td>
-            </tr>`).join('');
+    async function cargarCategorias() {
+        const tbody = document.getElementById('categoriasTable');
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px">Cargando...</td></tr>';
+        try {
+            const res  = await fetch(`${API}/categorias`, { headers: authHdr() });
+            const json = await res.json();
+            const lista = json.data || [];
+            if (!lista.length) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--txt-sub)">Sin categorías registradas</td></tr>';
+                return;
+            }
+            tbody.innerHTML = lista.map(c => `
+                <tr>
+                    <td style="font-weight:600">#${c.id}</td>
+                    <td style="font-weight:500">🏷️ ${escapeHtml(c.nombreCategoria || '')}</td>
+                    <td style="color:var(--txt-sub)">${escapeHtml(c.descripcion || '—')}</td>
+                    <td><span class="badge badge-active">Activo</span></td>
+                    <td class="table-actions">
+                        <button class="btn-icon" onclick="editarCategoria(${c.id},'${escapeHtml(c.nombreCategoria||'')}','${escapeHtml(c.descripcion||'')}')" title="Editar">✏️</button>
+                        <button class="btn-icon del" onclick="eliminarCategoria(${c.id})" title="Eliminar">🗑️</button>
+                    </td>
+                </tr>`).join('');
+        } catch {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--red)">Error al cargar categorías</td></tr>';
+        }
     }
 
-    function editarCategoria(id) {
-        const c = categorias.find(c => c.id === id);
-        if (!c) return;
-        document.getElementById('categoriaId').value          = c.id;
-        document.getElementById('categoriaNombre').value      = c.nombre;
-        document.getElementById('categoriaDescripcion').value = c.descripcion;
-        document.getElementById('categoriaIcono').value       = c.icono || '';
+    function editarCategoria(id, nombre, descripcion) {
+        document.getElementById('categoriaId').value          = id;
+        document.getElementById('categoriaNombre').value      = nombre;
+        document.getElementById('categoriaDescripcion').value = descripcion;
         document.getElementById('modalTitle').innerText       = 'Editar Categoría';
         abrirModal('categoriaModal');
     }
 
-    function eliminarCategoria(id) {
-        if (confirm('¿Eliminar esta categoría?')) {
-            categorias = categorias.filter(c => c.id !== id);
-            cargarCategorias();
-            mostrarToast('Categoría eliminada', 'success');
-        }
+    async function eliminarCategoria(id) {
+        if (!confirm('¿Eliminar esta categoría?')) return;
+        try {
+            const res = await fetch(`${API}/categorias/${id}`, { method: 'DELETE', headers: authHdr() });
+            const json = await res.json();
+            if (res.ok) { mostrarToast('Categoría eliminada', 'success'); cargarCategorias(); }
+            else         { mostrarToast(json.message || 'Error al eliminar', 'error'); }
+        } catch { mostrarToast('Error de conexión', 'error'); }
     }
 
     document.getElementById('nuevaCategoriaBtn').addEventListener('click', () => {
-        ['categoriaId','categoriaNombre','categoriaDescripcion','categoriaIcono']
-            .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        ['categoriaId','categoriaNombre','categoriaDescripcion'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.value = '';
+        });
         document.getElementById('modalTitle').innerText = 'Nueva Categoría';
         abrirModal('categoriaModal');
     });
 
-    document.getElementById('guardarCategoriaBtn').addEventListener('click', () => {
-        const id = document.getElementById('categoriaId').value;
-        const categoria = {
-            nombre:      document.getElementById('categoriaNombre').value,
-            descripcion: document.getElementById('categoriaDescripcion').value,
-            icono:       document.getElementById('categoriaIcono').value || '📁'
-        };
-        if (!categoria.nombre) { mostrarToast('El nombre es obligatorio', 'error'); return; }
+    document.getElementById('guardarCategoriaBtn').addEventListener('click', async () => {
+        const id     = document.getElementById('categoriaId').value;
+        const nombre = document.getElementById('categoriaNombre').value.trim();
+        const desc   = document.getElementById('categoriaDescripcion').value.trim();
+        if (!nombre) { mostrarToast('El nombre es obligatorio', 'error'); return; }
 
-        if (id) {
-            const idx = categorias.findIndex(c => c.id === parseInt(id));
-            if (idx !== -1) { categorias[idx] = { ...categorias[idx], ...categoria }; mostrarToast('Categoría actualizada', 'success'); }
-        } else {
-            categoria.id = nextId++;
-            categorias.push(categoria);
-            mostrarToast('Categoría creada', 'success');
-        }
-        cerrarModal('categoriaModal');
-        cargarCategorias();
+        const url    = id ? `${API}/categorias/${id}` : `${API}/categorias`;
+        const method = id ? 'PUT' : 'POST';
+        try {
+            const res  = await fetch(url, { method, headers: authHdr(), body: JSON.stringify({ nombreCategoria: nombre, descripcion: desc }) });
+            const json = await res.json();
+            if (res.ok) {
+                mostrarToast(id ? 'Categoría actualizada ✅' : 'Categoría creada ✅', 'success');
+                cerrarModal('categoriaModal');
+                cargarCategorias();
+            } else {
+                mostrarToast(json.message || 'Error al guardar', 'error');
+            }
+        } catch { mostrarToast('Error de conexión', 'error'); }
     });
 
     document.getElementById('logoutBtn').addEventListener('click', cerrarSesion);
@@ -210,6 +216,8 @@
         document.getElementById('sidebar').classList.toggle('open'));
 
     document.addEventListener('DOMContentLoaded', () => {
+        const token = localStorage.getItem('token');
+        if (!token) { window.location.href = '../pages/login.html'; return; }
         const name = localStorage.getItem('userName') || 'Admin';
         document.getElementById('adminName').innerText   = name;
         document.getElementById('adminAvatar').innerText = name.charAt(0).toUpperCase();

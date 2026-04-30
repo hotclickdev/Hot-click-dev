@@ -26,8 +26,6 @@ public class DataSeeder implements ApplicationRunner {
         seedRol(Constants.ROL_ADMIN_CLIENTE,  "Administrador de negocio",  50);
         seedRol(Constants.ROL_USUARIO_FINAL,  "Cliente final",              1);
         seedAdminUser();
-        seedBodegaDefault();
-        seedCategoriasDefault();
     }
 
     private void seedRol(String nombre, String descripcion, int nivel) {
@@ -43,14 +41,23 @@ public class DataSeeder implements ApplicationRunner {
 
     private void seedAdminUser() {
         String correo = "admin@hotclick.com";
+        String defaultPassword = "Admin1234!";
         if (usuarioRepository.existsByCorreo(correo)) {
             Usuario admin = usuarioRepository.findByCorreo(correo).get();
+            // Siempre garantizar contraseña correcta, campos obligatorios y rol
+            admin.setContrasenaHash(passwordEncoder.encode(defaultPassword));
+            if (admin.getIdentificacion() == null) admin.setIdentificacion("0000000001");
+            if (admin.getTelefono() == null)       admin.setTelefono("0000000000");
+            admin.setEstado(Constants.ESTADO_ACTIVO);
+            admin.setIntentosFallidos(0);
+            admin.setBloqueadoHasta(null);
             boolean tieneAdmin = admin.getRoles().stream()
                 .anyMatch(r -> r.getNombreRol().equals(Constants.ROL_ADMIN_IT));
             if (!tieneAdmin) {
                 rolRepository.findByNombreRol(Constants.ROL_ADMIN_IT)
-                    .ifPresent(rol -> { admin.getRoles().add(rol); usuarioRepository.save(admin); });
+                    .ifPresent(rol -> admin.getRoles().add(rol));
             }
+            usuarioRepository.save(admin);
         } else {
             Usuario admin = new Usuario();
             admin.setIdentificacion("0000000001");
@@ -58,7 +65,7 @@ public class DataSeeder implements ApplicationRunner {
             admin.setApellidoPaterno("HotClick");
             admin.setCorreo(correo);
             admin.setTelefono("0000000000");
-            admin.setContrasenaHash(passwordEncoder.encode("Admin1234!"));
+            admin.setContrasenaHash(passwordEncoder.encode(defaultPassword));
             admin.setEstado(Constants.ESTADO_ACTIVO);
             admin.setIntentosFallidos(0);
             rolRepository.findByNombreRol(Constants.ROL_ADMIN_IT)

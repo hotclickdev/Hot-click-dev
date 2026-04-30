@@ -8,6 +8,8 @@ import java.util.List;
 @Repository
 public interface BodegaRepository extends JpaRepository<Bodega, Long> {
 
+    List<Bodega> findByEstado(Integer estado);
+
     List<Bodega> findByAdminClienteIdAndEstado(Long adminId, Integer estado);
 
     List<Bodega> findByNombreBodegaContainingIgnoreCaseAndEstado(String nombre, Integer estado);

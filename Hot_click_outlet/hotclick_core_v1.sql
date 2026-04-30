@@ -435,7 +435,12 @@ CREATE INDEX idx_log_conexion_usuario ON "HOT_CLICK_LOG_CONEXION_TB" ("FK_ID_USU
 CREATE INDEX idx_carrito_usuario     ON "HOT_CLICK_CARRITO_TB"  ("FK_ID_USUARIO_FINAL");
 
 -- ============================================================
--- TRIGGERS
+-- SOLO TRIGGERS, FUNCIONES, PROCEDIMIENTOS Y VISTAS
+-- Para ejecutar DESPUÉS de que las tablas ya están creadas
+-- ============================================================
+
+-- ============================================================
+-- TRIGGERS Y SUS FUNCIONES
 -- ============================================================
 
 -- TRIGGER 1: Validar stock antes de agregar al carrito
@@ -446,16 +451,16 @@ DECLARE
     v_es_unico     BOOLEAN;
     v_vendido      BOOLEAN;
 BEGIN
-    SELECT stock_actual, es_unico, vendido
+    SELECT "STOCK_ACTUAL", "ES_UNICO", "VENDIDO"
     INTO v_stock_actual, v_es_unico, v_vendido
     FROM "HOT_CLICK_PRODUCTO_TB"
-    WHERE id_producto = NEW.fk_id_producto;
+    WHERE "ID_PRODUCTO" = NEW."FK_ID_PRODUCTO";
 
     IF v_es_unico AND v_vendido THEN
         RAISE EXCEPTION 'Este artículo único ya fue vendido';
     END IF;
 
-    IF NEW.cantidad > v_stock_actual THEN
+    IF NEW."CANTIDAD" > v_stock_actual THEN
         RAISE EXCEPTION 'Stock insuficiente. Disponible: %', v_stock_actual;
     END IF;
 
@@ -463,6 +468,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS tg_validar_stock_carrito ON "HOT_CLICK_CARRITO_ITEM_TB";
 CREATE TRIGGER tg_validar_stock_carrito
     BEFORE INSERT OR UPDATE ON "HOT_CLICK_CARRITO_ITEM_TB"
     FOR EACH ROW EXECUTE FUNCTION fn_validar_stock_carrito();
@@ -472,15 +478,16 @@ CREATE OR REPLACE FUNCTION fn_marcar_unico_vendido()
 RETURNS TRIGGER AS $$
 BEGIN
     UPDATE "HOT_CLICK_PRODUCTO_TB"
-    SET vendido          = true,
-        stock_actual     = 0,
-        visible_catalogo = false
-    WHERE id_producto = NEW.fk_id_producto
-      AND es_unico = true;
+    SET "VENDIDO" = true,
+        "STOCK_ACTUAL" = 0,
+        "VISIBLE_CATALOGO" = false
+    WHERE "ID_PRODUCTO" = NEW."FK_ID_PRODUCTO"
+      AND "ES_UNICO" = true;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS tg_marcar_unico_vendido ON "HOT_CLICK_PEDIDO_ITEM_TB";
 CREATE TRIGGER tg_marcar_unico_vendido
     AFTER INSERT ON "HOT_CLICK_PEDIDO_ITEM_TB"
     FOR EACH ROW EXECUTE FUNCTION fn_marcar_unico_vendido();
@@ -490,18 +497,19 @@ CREATE OR REPLACE FUNCTION fn_actualizar_total_carrito()
 RETURNS TRIGGER AS $$
 BEGIN
     UPDATE "HOT_CLICK_CARRITO_TB"
-    SET total_carrito = (
-        SELECT COALESCE(SUM(cantidad * precio_unitario_momento), 0)
+    SET "TOTAL_CARRITO" = (
+        SELECT COALESCE(SUM("CANTIDAD" * "PRECIO_UNITARIO_MOMENTO"), 0)
         FROM "HOT_CLICK_CARRITO_ITEM_TB"
-        WHERE fk_id_carrito = COALESCE(NEW.fk_id_carrito, OLD.fk_id_carrito)
-          AND fk_id_estado = 1
+        WHERE "FK_ID_CARRITO" = COALESCE(NEW."FK_ID_CARRITO", OLD."FK_ID_CARRITO")
+          AND "FK_ID_ESTADO" = 1
     ),
-    fecha_actualizacion = CURRENT_TIMESTAMP
-    WHERE id_carrito = COALESCE(NEW.fk_id_carrito, OLD.fk_id_carrito);
+    "FECHA_ACTUALIZACION" = CURRENT_TIMESTAMP
+    WHERE "ID_CARRITO" = COALESCE(NEW."FK_ID_CARRITO", OLD."FK_ID_CARRITO");
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS tg_actualizar_total_carrito ON "HOT_CLICK_CARRITO_ITEM_TB";
 CREATE TRIGGER tg_actualizar_total_carrito
     AFTER INSERT OR UPDATE OR DELETE ON "HOT_CLICK_CARRITO_ITEM_TB"
     FOR EACH ROW EXECUTE FUNCTION fn_actualizar_total_carrito();
@@ -510,26 +518,27 @@ CREATE TRIGGER tg_actualizar_total_carrito
 CREATE OR REPLACE FUNCTION fn_control_intentos_login()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NOT NEW.exitoso THEN
+    IF NOT NEW."EXITOSO" THEN
         UPDATE "HOT_CLICK_USUARIO_TB"
-        SET intentos_fallidos = intentos_fallidos + 1,
-            bloqueado_hasta   = CASE
-                WHEN intentos_fallidos + 1 >= 5
+        SET "INTENTOS_FALLIDOS" = "INTENTOS_FALLIDOS" + 1,
+            "BLOQUEADO_HASTA"   = CASE
+                WHEN "INTENTOS_FALLIDOS" + 1 >= 5
                 THEN CURRENT_TIMESTAMP + INTERVAL '30 minutes'
-                ELSE bloqueado_hasta
+                ELSE "BLOQUEADO_HASTA"
             END
-        WHERE id_usuario = NEW.fk_id_usuario;
+        WHERE "ID_USUARIO" = NEW."FK_ID_USUARIO";
     ELSE
         UPDATE "HOT_CLICK_USUARIO_TB"
-        SET intentos_fallidos    = 0,
-            bloqueado_hasta      = NULL,
-            fecha_ultimo_acceso  = CURRENT_TIMESTAMP
-        WHERE id_usuario = NEW.fk_id_usuario;
+        SET "INTENTOS_FALLIDOS" = 0,
+            "BLOQUEADO_HASTA" = NULL,
+            "FECHA_ULTIMO_ACCESO" = CURRENT_TIMESTAMP
+        WHERE "ID_USUARIO" = NEW."FK_ID_USUARIO";
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS tg_control_intentos_login ON "HOT_CLICK_LOG_CONEXION_TB";
 CREATE TRIGGER tg_control_intentos_login
     AFTER INSERT ON "HOT_CLICK_LOG_CONEXION_TB"
     FOR EACH ROW EXECUTE FUNCTION fn_control_intentos_login();
@@ -538,17 +547,18 @@ CREATE TRIGGER tg_control_intentos_login
 CREATE OR REPLACE FUNCTION fn_giro_por_registro()
 RETURNS TRIGGER AS $$
 BEGIN
-    INSERT INTO "HOT_CLICK_GIRO_RULETA_TB" (tipo_origen, fk_id_usuario_final, fk_id_estado)
-    VALUES ('REGISTRO', NEW.id_usuario, 1);
+    INSERT INTO "HOT_CLICK_GIRO_RULETA_TB" ("TIPO_ORIGEN", "FK_ID_USUARIO_FINAL", "FK_ID_ESTADO")
+    VALUES ('REGISTRO', NEW."ID_USUARIO", 1);
 
-    INSERT INTO "HOT_CLICK_HISTORIAL_CLIENTE_TB" (fk_id_usuario_final, fk_id_estado)
-    VALUES (NEW.id_usuario, 1)
-    ON CONFLICT (fk_id_usuario_final) DO NOTHING;
+    INSERT INTO "HOT_CLICK_HISTORIAL_CLIENTE_TB" ("FK_ID_USUARIO_FINAL", "FK_ID_ESTADO")
+    VALUES (NEW."ID_USUARIO", 1)
+    ON CONFLICT ("FK_ID_USUARIO_FINAL") DO NOTHING;
 
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS tg_giro_por_registro ON "HOT_CLICK_USUARIO_TB";
 CREATE TRIGGER tg_giro_por_registro
     AFTER INSERT ON "HOT_CLICK_USUARIO_TB"
     FOR EACH ROW EXECUTE FUNCTION fn_giro_por_registro();
@@ -557,22 +567,23 @@ CREATE TRIGGER tg_giro_por_registro
 CREATE OR REPLACE FUNCTION fn_giro_por_compra()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.estado_pedido = 'COMPLETADO' AND OLD.estado_pedido != 'COMPLETADO' THEN
-        INSERT INTO "HOT_CLICK_GIRO_RULETA_TB" (tipo_origen, fk_id_usuario_final, fk_id_pedido, fk_id_estado)
-        VALUES ('COMPRA', NEW.fk_id_usuario_final, NEW.id_pedido, 1);
+    IF NEW."ESTADO_PEDIDO" = 'COMPLETADO' AND OLD."ESTADO_PEDIDO" != 'COMPLETADO' THEN
+        INSERT INTO "HOT_CLICK_GIRO_RULETA_TB" ("TIPO_ORIGEN", "FK_ID_USUARIO_FINAL", "FK_ID_PEDIDO", "FK_ID_ESTADO")
+        VALUES ('COMPRA', NEW."FK_ID_USUARIO_FINAL", NEW."ID_PEDIDO", 1);
 
         UPDATE "HOT_CLICK_HISTORIAL_CLIENTE_TB"
-        SET total_compras       = total_compras + 1,
-            monto_total_gastado = monto_total_gastado + NEW.total_pedido,
-            ultima_compra       = CURRENT_TIMESTAMP,
-            promedio_compra     = (monto_total_gastado + NEW.total_pedido) / (total_compras + 1),
-            fecha_actualizacion = CURRENT_TIMESTAMP
-        WHERE fk_id_usuario_final = NEW.fk_id_usuario_final;
+        SET "TOTAL_COMPRAS" = "TOTAL_COMPRAS" + 1,
+            "MONTO_TOTAL_GASTADO" = "MONTO_TOTAL_GASTADO" + NEW."TOTAL_PEDIDO",
+            "ULTIMA_COMPRA" = CURRENT_TIMESTAMP,
+            "PROMEDIO_COMPRA" = ("MONTO_TOTAL_GASTADO" + NEW."TOTAL_PEDIDO") / ("TOTAL_COMPRAS" + 1),
+            "FECHA_ACTUALIZACION" = CURRENT_TIMESTAMP
+        WHERE "FK_ID_USUARIO_FINAL" = NEW."FK_ID_USUARIO_FINAL";
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS tg_giro_por_compra ON "HOT_CLICK_PEDIDO_TB";
 CREATE TRIGGER tg_giro_por_compra
     AFTER UPDATE ON "HOT_CLICK_PEDIDO_TB"
     FOR EACH ROW EXECUTE FUNCTION fn_giro_por_compra();
@@ -581,22 +592,23 @@ CREATE TRIGGER tg_giro_por_compra
 CREATE OR REPLACE FUNCTION fn_unica_imagen_principal()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.es_principal THEN
+    IF NEW."ES_PRINCIPAL" THEN
         UPDATE "HOT_CLICK_PRODUCTO_IMAGEN_TB"
-        SET es_principal = false
-        WHERE fk_id_producto = NEW.fk_id_producto
-          AND id_imagen != NEW.id_imagen;
+        SET "ES_PRINCIPAL" = false
+        WHERE "FK_ID_PRODUCTO" = NEW."FK_ID_PRODUCTO"
+          AND "ID_IMAGEN" != NEW."ID_IMAGEN";
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS tg_unica_imagen_principal ON "HOT_CLICK_PRODUCTO_IMAGEN_TB";
 CREATE TRIGGER tg_unica_imagen_principal
     BEFORE INSERT OR UPDATE ON "HOT_CLICK_PRODUCTO_IMAGEN_TB"
     FOR EACH ROW EXECUTE FUNCTION fn_unica_imagen_principal();
 
 -- ============================================================
--- PROCEDIMIENTOS
+-- PROCEDIMIENTOS ALMACENADOS
 -- ============================================================
 
 -- Convierte el carrito activo en un pedido
@@ -613,41 +625,41 @@ DECLARE
     v_costo_total INTEGER := 0;
 BEGIN
     SELECT
-        SUM(ci.cantidad * ci.precio_unitario_momento),
-        SUM(ci.cantidad * p.precio_compra)
+        SUM(ci."CANTIDAD" * ci."PRECIO_UNITARIO_MOMENTO"),
+        SUM(ci."CANTIDAD" * p."PRECIO_COMPRA")
     INTO v_subtotal, v_costo_total
     FROM "HOT_CLICK_CARRITO_ITEM_TB" ci
-    JOIN "HOT_CLICK_PRODUCTO_TB" p ON ci.fk_id_producto = p.id_producto
-    WHERE ci.fk_id_carrito = p_id_carrito;
+    JOIN "HOT_CLICK_PRODUCTO_TB" p ON ci."FK_ID_PRODUCTO" = p."ID_PRODUCTO"
+    WHERE ci."FK_ID_CARRITO" = p_id_carrito;
 
     INSERT INTO "HOT_CLICK_PEDIDO_TB" (
-        subtotal, total_pedido, costo_total_productos, utilidad_bruta,
-        metodo_pago, metodo_envio, fk_id_usuario_final, fk_id_bodega, fk_id_estado
+        "SUBTOTAL", "TOTAL_PEDIDO", "COSTO_TOTAL_PRODUCTOS", "UTILIDAD_BRUTA",
+        "METODO_PAGO", "METODO_ENVIO", "FK_ID_USUARIO_FINAL", "FK_ID_BODEGA", "FK_ID_ESTADO"
     ) VALUES (
         v_subtotal, v_subtotal, v_costo_total, v_subtotal - v_costo_total,
         p_metodo_pago, p_metodo_envio, p_id_usuario, p_id_bodega, 1
-    ) RETURNING id_pedido INTO v_id_pedido;
+    ) RETURNING "ID_PEDIDO" INTO v_id_pedido;
 
     INSERT INTO "HOT_CLICK_PEDIDO_ITEM_TB" (
-        cantidad, precio_unitario_momento, costo_unitario_momento,
-        subtotal_item, utilidad_item, fk_id_pedido, fk_id_producto, fk_id_estado
+        "CANTIDAD", "PRECIO_UNITARIO_MOMENTO", "COSTO_UNITARIO_MOMENTO",
+        "SUBTOTAL_ITEM", "UTILIDAD_ITEM", "FK_ID_PEDIDO", "FK_ID_PRODUCTO", "FK_ID_ESTADO"
     )
     SELECT
-        ci.cantidad,
-        ci.precio_unitario_momento,
-        p.precio_compra,
-        ci.cantidad * ci.precio_unitario_momento,
-        ci.cantidad * (ci.precio_unitario_momento - p.precio_compra),
+        ci."CANTIDAD",
+        ci."PRECIO_UNITARIO_MOMENTO",
+        p."PRECIO_COMPRA",
+        ci."CANTIDAD" * ci."PRECIO_UNITARIO_MOMENTO",
+        ci."CANTIDAD" * (ci."PRECIO_UNITARIO_MOMENTO" - p."PRECIO_COMPRA"),
         v_id_pedido,
-        ci.fk_id_producto,
+        ci."FK_ID_PRODUCTO",
         1
     FROM "HOT_CLICK_CARRITO_ITEM_TB" ci
-    JOIN "HOT_CLICK_PRODUCTO_TB" p ON ci.fk_id_producto = p.id_producto
-    WHERE ci.fk_id_carrito = p_id_carrito;
+    JOIN "HOT_CLICK_PRODUCTO_TB" p ON ci."FK_ID_PRODUCTO" = p."ID_PRODUCTO"
+    WHERE ci."FK_ID_CARRITO" = p_id_carrito;
 
     UPDATE "HOT_CLICK_CARRITO_TB"
-    SET estado_carrito = 'CONVERTIDO', fk_id_estado = 2
-    WHERE id_carrito = p_id_carrito;
+    SET "ESTADO_CARRITO" = 'CONVERTIDO', "FK_ID_ESTADO" = 2
+    WHERE "ID_CARRITO" = p_id_carrito;
 
     RETURN v_id_pedido;
 END;
@@ -666,23 +678,23 @@ DECLARE
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM "HOT_CLICK_GIRO_RULETA_TB"
-        WHERE id_giro = p_id_giro
-          AND fk_id_usuario_final = p_id_usuario
-          AND usado = false
+        WHERE "ID_GIRO" = p_id_giro
+          AND "FK_ID_USUARIO_FINAL" = p_id_usuario
+          AND "USADO" = false
     ) THEN
         RAISE EXCEPTION 'Giro inválido o ya utilizado';
     END IF;
 
     v_random := ROUND((RANDOM() * 100)::DECIMAL, 2);
 
-    SELECT id_premio INTO v_premio_ganado
+    SELECT "ID_PREMIO" INTO v_premio_ganado
     FROM (
-        SELECT id_premio,
-               SUM(probabilidad) OVER (ORDER BY id_premio) AS prob_acumulada
+        SELECT "ID_PREMIO",
+               SUM("PROBABILIDAD") OVER (ORDER BY "ID_PREMIO") AS prob_acumulada
         FROM "HOT_CLICK_PREMIO_TB"
-        WHERE activo = true
-          AND fk_id_estado = 1
-          AND (fecha_fin IS NULL OR fecha_fin > CURRENT_TIMESTAMP)
+        WHERE "ACTIVO" = true
+          AND "FK_ID_ESTADO" = 1
+          AND ("FECHA_FIN" IS NULL OR "FECHA_FIN" > CURRENT_TIMESTAMP)
     ) t
     WHERE v_random <= prob_acumulada
     ORDER BY prob_acumulada
@@ -691,16 +703,16 @@ BEGIN
     v_codigo_canje := 'HC-' || UPPER(SUBSTRING(MD5(RANDOM()::TEXT), 1, 8));
 
     INSERT INTO "HOT_CLICK_RESULTADO_RULETA_TB" (
-        fk_id_giro, fk_id_usuario_final, fk_id_premio,
-        codigo_canje, expira_en, fk_id_estado
+        "FK_ID_GIRO", "FK_ID_USUARIO_FINAL", "FK_ID_PREMIO",
+        "CODIGO_CANJE", "EXPIRA_EN", "FK_ID_ESTADO"
     ) VALUES (
         p_id_giro, p_id_usuario, v_premio_ganado,
         v_codigo_canje, CURRENT_TIMESTAMP + INTERVAL '30 days', 1
-    ) RETURNING id_resultado INTO v_id_resultado;
+    ) RETURNING "ID_RESULTADO" INTO v_id_resultado;
 
     UPDATE "HOT_CLICK_GIRO_RULETA_TB"
-    SET usado = true, fecha_uso = CURRENT_TIMESTAMP
-    WHERE id_giro = p_id_giro;
+    SET "USADO" = true, "FECHA_USO" = CURRENT_TIMESTAMP
+    WHERE "ID_GIRO" = p_id_giro;
 
     RETURN v_id_resultado;
 END;
@@ -710,98 +722,103 @@ $$ LANGUAGE plpgsql;
 -- VISTAS
 -- ============================================================
 
+DROP VIEW IF EXISTS VISTA_CATALOGO_PUBLICO;
 CREATE OR REPLACE VIEW VISTA_CATALOGO_PUBLICO AS
 SELECT
-    p.id_producto,
-    p.nombre_producto,
-    p.descripcion_corta,
-    p.precio_venta,
-    p.stock_actual,
-    p.es_unico,
-    p.vendido,
-    p.destacado,
-    c.nombre_categoria,
-    m.nombre_marca,
-    pi.url_imagen AS imagen_principal
+    p."ID_PRODUCTO",
+    p."NOMBRE_PRODUCTO",
+    p."DESCRIPCION_CORTA",
+    p."PRECIO_VENTA",
+    p."STOCK_ACTUAL",
+    p."ES_UNICO",
+    p."VENDIDO",
+    p."DESTACADO",
+    c."NOMBRE_CATEGORIA",
+    m."NOMBRE_MARCA",
+    pi."URL_IMAGEN" AS "IMAGEN_PRINCIPAL"
 FROM "HOT_CLICK_PRODUCTO_TB" p
-JOIN "HOT_CLICK_CATEGORIA_TB" c      ON p.fk_id_categoria = c.id_categoria
-LEFT JOIN "HOT_CLICK_MARCA_TB" m     ON p.fk_id_marca     = m.id_marca
-LEFT JOIN "HOT_CLICK_PRODUCTO_IMAGEN_TB" pi ON pi.fk_id_producto = p.id_producto AND pi.es_principal = true
-WHERE p.visible_catalogo = true
-  AND p.fk_id_estado = 1
-  AND (p.es_unico = false OR p.vendido = false);
+JOIN "HOT_CLICK_CATEGORIA_TB" c ON p."FK_ID_CATEGORIA" = c."ID_CATEGORIA"
+LEFT JOIN "HOT_CLICK_MARCA_TB" m ON p."FK_ID_MARCA" = m."ID_MARCA"
+LEFT JOIN "HOT_CLICK_PRODUCTO_IMAGEN_TB" pi ON pi."FK_ID_PRODUCTO" = p."ID_PRODUCTO" AND pi."ES_PRINCIPAL" = true
+WHERE p."VISIBLE_CATALOGO" = true
+  AND p."FK_ID_ESTADO" = 1
+  AND (p."ES_UNICO" = false OR p."VENDIDO" = false);
 
+DROP VIEW IF EXISTS VISTA_PRODUCTOS_UNICOS;
 CREATE OR REPLACE VIEW VISTA_PRODUCTOS_UNICOS AS
 SELECT
-    p.id_producto,
-    p.nombre_producto,
-    p.precio_venta,
-    p.precio_compra,
-    p.margen_ganancia,
-    p.vendido,
-    p.visible_catalogo,
-    c.nombre_categoria,
-    b.nombre_bodega
+    p."ID_PRODUCTO",
+    p."NOMBRE_PRODUCTO",
+    p."PRECIO_VENTA",
+    p."PRECIO_COMPRA",
+    p."MARGEN_GANANCIA",
+    p."VENDIDO",
+    p."VISIBLE_CATALOGO",
+    c."NOMBRE_CATEGORIA",
+    b."NOMBRE_BODEGA"
 FROM "HOT_CLICK_PRODUCTO_TB" p
-JOIN "HOT_CLICK_CATEGORIA_TB" c ON p.fk_id_categoria = c.id_categoria
-JOIN "HOT_CLICK_BODEGA_TB"    b ON p.fk_id_bodega    = b.id_bodega
-WHERE p.es_unico = true
-  AND p.fk_id_estado = 1
-ORDER BY p.vendido ASC, p.fecha_creacion DESC;
+JOIN "HOT_CLICK_CATEGORIA_TB" c ON p."FK_ID_CATEGORIA" = c."ID_CATEGORIA"
+JOIN "HOT_CLICK_BODEGA_TB" b ON p."FK_ID_BODEGA" = b."ID_BODEGA"
+WHERE p."ES_UNICO" = true
+  AND p."FK_ID_ESTADO" = 1
+ORDER BY p."VENDIDO" ASC, p."FECHA_CREACION" DESC;
 
+DROP VIEW IF EXISTS VISTA_PREMIOS_ACTIVOS;
 CREATE OR REPLACE VIEW VISTA_PREMIOS_ACTIVOS AS
 SELECT
-    p.id_premio,
-    p.nombre_premio,
-    p.tipo_premio,
-    p.valor_premio,
-    p.probabilidad,
-    p.color_ruleta,
-    p.stock_disponible,
-    COUNT(rr.id_resultado) AS veces_ganado
+    p."ID_PREMIO",
+    p."NOMBRE_PREMIO",
+    p."TIPO_PREMIO",
+    p."VALOR_PREMIO",
+    p."PROBABILIDAD",
+    p."COLOR_RULETA",
+    p."STOCK_DISPONIBLE",
+    COUNT(rr."ID_RESULTADO") AS "VECES_GANADO"
 FROM "HOT_CLICK_PREMIO_TB" p
-LEFT JOIN "HOT_CLICK_RESULTADO_RULETA_TB" rr ON rr.fk_id_premio = p.id_premio
-WHERE p.activo = true
-  AND p.fk_id_estado = 1
-  AND (p.fecha_fin IS NULL OR p.fecha_fin > CURRENT_TIMESTAMP)
-GROUP BY p.id_premio, p.nombre_premio, p.tipo_premio,
-         p.valor_premio, p.probabilidad, p.color_ruleta, p.stock_disponible;
+LEFT JOIN "HOT_CLICK_RESULTADO_RULETA_TB" rr ON rr."FK_ID_PREMIO" = p."ID_PREMIO"
+WHERE p."ACTIVO" = true
+  AND p."FK_ID_ESTADO" = 1
+  AND (p."FECHA_FIN" IS NULL OR p."FECHA_FIN" > CURRENT_TIMESTAMP)
+GROUP BY p."ID_PREMIO", p."NOMBRE_PREMIO", p."TIPO_PREMIO",
+         p."VALOR_PREMIO", p."PROBABILIDAD", p."COLOR_RULETA", p."STOCK_DISPONIBLE";
 
+DROP VIEW IF EXISTS VISTA_STOCK_CRITICO;
 CREATE OR REPLACE VIEW VISTA_STOCK_CRITICO AS
 SELECT
-    p.id_producto,
-    p.nombre_producto,
-    p.stock_actual,
-    p.stock_minimo,
-    p.es_unico,
-    c.nombre_categoria
+    p."ID_PRODUCTO",
+    p."NOMBRE_PRODUCTO",
+    p."STOCK_ACTUAL",
+    p."STOCK_MINIMO",
+    p."ES_UNICO",
+    c."NOMBRE_CATEGORIA"
 FROM "HOT_CLICK_PRODUCTO_TB" p
-JOIN "HOT_CLICK_CATEGORIA_TB" c ON p.fk_id_categoria = c.id_categoria
-WHERE p.stock_actual <= p.stock_minimo
-  AND p.es_unico = false
-  AND p.fk_id_estado = 1
-ORDER BY p.stock_actual ASC;
+JOIN "HOT_CLICK_CATEGORIA_TB" c ON p."FK_ID_CATEGORIA" = c."ID_CATEGORIA"
+WHERE p."STOCK_ACTUAL" <= p."STOCK_MINIMO"
+  AND p."ES_UNICO" = false
+  AND p."FK_ID_ESTADO" = 1
+ORDER BY p."STOCK_ACTUAL" ASC;
 
+DROP VIEW IF EXISTS VISTA_CLIENTES_HISTORIAL;
 CREATE OR REPLACE VIEW VISTA_CLIENTES_HISTORIAL AS
 SELECT
-    u.id_usuario,
-    u.nombre || ' ' || u.apellido_paterno AS nombre_completo,
-    u.correo,
-    u.telefono,
-    u.fecha_registro,
-    hc.total_compras,
-    hc.monto_total_gastado,
-    hc.primera_compra,
-    hc.ultima_compra,
-    hc.promedio_compra,
+    u."ID_USUARIO",
+    u."NOMBRE" || ' ' || u."APELLIDO_PATERNO" AS "NOMBRE_COMPLETO",
+    u."CORREO",
+    u."TELEFONO",
+    u."FECHA_REGISTRO",
+    hc."TOTAL_COMPRAS",
+    hc."MONTO_TOTAL_GASTADO",
+    hc."PRIMERA_COMPRA",
+    hc."ULTIMA_COMPRA",
+    hc."PROMEDIO_COMPRA",
     (SELECT COUNT(*) FROM "HOT_CLICK_GIRO_RULETA_TB" gr
-     WHERE gr.fk_id_usuario_final = u.id_usuario AND gr.usado = false) AS giros_disponibles
+     WHERE gr."FK_ID_USUARIO_FINAL" = u."ID_USUARIO" AND gr."USADO" = false) AS "GIROS_DISPONIBLES"
 FROM "HOT_CLICK_USUARIO_TB" u
-LEFT JOIN "HOT_CLICK_HISTORIAL_CLIENTE_TB" hc ON hc.fk_id_usuario_final = u.id_usuario
-WHERE u.fk_id_estado = 1;
+LEFT JOIN "HOT_CLICK_HISTORIAL_CLIENTE_TB" hc ON hc."FK_ID_USUARIO_FINAL" = u."ID_USUARIO"
+WHERE u."FK_ID_ESTADO" = 1;
 
 -- ============================================================
--- DATOS INICIALES
+-- DATOS INICIALES (SOLO INSERTS, SIN CREAR TABLAS)
 -- ============================================================
 BEGIN;
 SET CONSTRAINTS ALL DEFERRED;
@@ -810,28 +827,34 @@ INSERT INTO "HOT_CLICK_ESTADO_TB" ("ID_ESTADO", "NOMBRE_ESTADO", "DESCRIPCION", 
   (1, 'ACTIVO',     'Registro activo y funcional',       '#00FF00'),
   (2, 'INACTIVO',   'Registro desactivado',              '#FFA500'),
   (3, 'ELIMINADO',  'Registro eliminado logicamente',    '#FF0000'),
-  (4, 'SUSPENDIDO', 'Registro suspendido temporalmente', '#FFFF00');
+  (4, 'SUSPENDIDO', 'Registro suspendido temporalmente', '#FFFF00')
+ON CONFLICT ("ID_ESTADO") DO NOTHING;
 
 INSERT INTO "HOT_CLICK_ROL_TB" ("ID_ROL", "NOMBRE_ROL", "DESCRIPCION", "NIVEL_ACCESO") VALUES
   (1, 'ADMIN_IT',      'Administrador del sistema - control total',  10),
   (2, 'ADMIN_CLIENTE', 'Administrador de negocio - gestión propia',   5),
-  (3, 'USUARIO_FINAL', 'Cliente registrado',                          1);
+  (3, 'USUARIO_FINAL', 'Cliente registrado',                          1)
+ON CONFLICT ("ID_ROL") DO NOTHING;
 
 INSERT INTO "HOT_CLICK_METODO_ENVIO_TB" ("ID_METODO_ENVIO", "NOMBRE_ENVIO", "COSTO_BASE", "TIEMPO_ESTIMADO_DIAS") VALUES
   (1, 'RETIRO_EN_TIENDA',   0,    0),
-  (2, 'ENVIO_A_DOMICILIO',  2000, 2);
+  (2, 'ENVIO_A_DOMICILIO',  2000, 2)
+ON CONFLICT ("ID_METODO_ENVIO") DO NOTHING;
 
 INSERT INTO "HOT_CLICK_METODO_PAGO_CONFIG_TB" ("ID_METODO_PAGO_CONFIG", "NOMBRE", "ACTIVO", "ORDEN") VALUES
   (1, 'TARJETA_CREDITO',  TRUE, 1),
   (2, 'SINPE_MOVIL',      TRUE, 2),
-  (3, 'EFECTIVO_ENTREGA', TRUE, 3);
+  (3, 'EFECTIVO_ENTREGA', TRUE, 3)
+ON CONFLICT ("ID_METODO_PAGO_CONFIG") DO NOTHING;
 
 -- Admin del sistema (contraseña debe actualizarse en producción)
 INSERT INTO "HOT_CLICK_USUARIO_TB"
   ("ID_USUARIO", "IDENTIFICACION", "NOMBRE", "APELLIDO_PATERNO", "CORREO", "TELEFONO", "CONTRASENA_HASH") VALUES
-  (1, '999999999', 'Admin', 'Sistema', 'admin@hotclick.com', '88888888', '$2b$10$placeholder');
+  (1, '999999999', 'Admin', 'Sistema', 'admin@hotclick.com', '88888888', '$2b$10$placeholder')
+ON CONFLICT ("ID_USUARIO") DO NOTHING;
 
-INSERT INTO "HOT_CLICK_USUARIO_ROL_TB" ("FK_ID_USUARIO", "FK_ID_ROL") VALUES (1, 1);
+INSERT INTO "HOT_CLICK_USUARIO_ROL_TB" ("FK_ID_USUARIO", "FK_ID_ROL") VALUES (1, 1)
+ON CONFLICT ("FK_ID_USUARIO", "FK_ID_ROL") DO NOTHING;
 
 INSERT INTO "HOT_CLICK_PREMIO_TB"
   ("ID_PREMIO", "NOMBRE_PREMIO", "TIPO_PREMIO", "VALOR_PREMIO", "PROBABILIDAD", "COLOR_RULETA", "FK_ID_ADMIN_CLIENTE", "FK_ID_ESTADO") VALUES
@@ -840,13 +863,12 @@ INSERT INTO "HOT_CLICK_PREMIO_TB"
   (3, '500 Puntos',         'PUNTOS',      500, 20.00, '#2ecc71', 1, 1),
   (4, '20% Descuento',      'DESCUENTO',   20,  10.00, '#f39c12', 1, 1),
   (5, 'Giro Extra',         'PUNTOS',       1,   5.00, '#9b59b6', 1, 1),
-  (6, '¡Suerte la próxima!','NADA',         0,  10.00, '#95a5a6', 1, 1);
+  (6, '¡Suerte la próxima!','NADA',         0,  10.00, '#95a5a6', 1, 1)
+ON CONFLICT ("ID_PREMIO") DO NOTHING;
 
 SET CONSTRAINTS ALL IMMEDIATE;
 COMMIT;
 
 -- ============================================================
--- RESUMEN
--- 23 tablas activas para el MVP actual
--- 7 triggers | 2 procedimientos | 5 vistas
+-- FIN DEL SCRIPT
 -- ============================================================

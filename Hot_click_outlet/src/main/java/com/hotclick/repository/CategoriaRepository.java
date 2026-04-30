@@ -8,6 +8,8 @@ import java.util.List;
 @Repository
 public interface CategoriaRepository extends JpaRepository<Categoria, Long> {
 
+    List<Categoria> findByEstado(Integer estado);
+
     List<Categoria> findByAdminClienteIdAndEstado(Long adminId, Integer estado);
 
     List<Categoria> findByCategoriaPadreIdAndEstado(Long padreId, Integer estado);

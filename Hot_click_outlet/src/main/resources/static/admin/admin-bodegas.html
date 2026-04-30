@@ -122,9 +122,10 @@
 <div id="toastContainer" class="toast-container"></div>
 
 <script src="../js/utils.js"></script>
-<script src="../js/api.js"></script>
-<script src="../js/auth.js"></script>
 <script>
+    const API     = 'http://localhost:8080/api';
+    const authHdr = () => ({ 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('token') });
+
     function mostrarToast(msg, tipo = 'success') {
         const c = document.getElementById('toastContainer');
         const t = document.createElement('div');
@@ -137,44 +138,54 @@
     function cerrarModal(id) { document.getElementById(id)?.classList.remove('active'); }
     function cerrarSesion()  { localStorage.clear(); window.location.href = '../index.html'; }
 
-    let bodegas = [
-        { id:1, nombre:'Bodega Central',  direccion:'San José, Costa Rica', telefono:'2222-3333' },
-        { id:2, nombre:'Bodega Alajuela', direccion:'Alajuela Centro',       telefono:'4444-5555' }
-    ];
-    let nextId = 3;
-
-    function cargarBodegas() {
-        document.getElementById('bodegasTable').innerHTML = bodegas.map(b => `
-            <tr>
-                <td style="font-weight:600">#${b.id}</td>
-                <td style="font-weight:500">${escapeHtml(b.nombre)}</td>
-                <td style="color:var(--txt-sub)">${escapeHtml(b.direccion)}</td>
-                <td>${b.telefono}</td>
-                <td><span class="badge badge-active">Activo</span></td>
-                <td class="table-actions">
-                    <button class="btn-icon" onclick="editarBodega(${b.id})" title="Editar">✏️</button>
-                    <button class="btn-icon del" onclick="eliminarBodega(${b.id})" title="Eliminar">🗑️</button>
-                </td>
-            </tr>`).join('');
+    async function cargarBodegas() {
+        const tbody = document.getElementById('bodegasTable');
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px">Cargando...</td></tr>';
+        try {
+            const res  = await fetch(`${API}/bodegas`, { headers: authHdr() });
+            const json = await res.json();
+            const lista = json.data || [];
+            if (!lista.length) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--txt-sub)">Sin bodegas registradas</td></tr>';
+                return;
+            }
+            tbody.innerHTML = lista.map(b => `
+                <tr>
+                    <td style="font-weight:600">#${b.id}</td>
+                    <td style="font-weight:500">🏭 ${escapeHtml(b.nombreBodega || '')}</td>
+                    <td style="color:var(--txt-sub)">${escapeHtml(b.direccionExacta || '—')}</td>
+                    <td>${escapeHtml(b.telefono || '—')}</td>
+                    <td><span class="badge badge-active">Activo</span></td>
+                    <td class="table-actions">
+                        <button class="btn-icon" onclick="editarBodega(${b.id})" title="Editar">✏️</button>
+                        <button class="btn-icon del" onclick="eliminarBodega(${b.id})" title="Eliminar">🗑️</button>
+                    </td>
+                </tr>`).join('');
+            window._bodegasCache = lista;
+        } catch {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--red)">Error al cargar bodegas</td></tr>';
+        }
     }
 
     function editarBodega(id) {
-        const b = bodegas.find(b => b.id === id);
+        const b = (window._bodegasCache || []).find(b => b.id === id);
         if (!b) return;
-        document.getElementById('bodegaId').value       = b.id;
-        document.getElementById('bodegaNombre').value   = b.nombre;
-        document.getElementById('bodegaDireccion').value = b.direccion;
-        document.getElementById('bodegaTelefono').value = b.telefono;
-        document.getElementById('modalTitle').innerText = 'Editar Bodega';
+        document.getElementById('bodegaId').value        = b.id;
+        document.getElementById('bodegaNombre').value    = b.nombreBodega || '';
+        document.getElementById('bodegaDireccion').value = b.direccionExacta || '';
+        document.getElementById('bodegaTelefono').value  = b.telefono || '';
+        document.getElementById('modalTitle').innerText  = 'Editar Bodega';
         abrirModal('bodegaModal');
     }
 
-    function eliminarBodega(id) {
-        if (confirm('¿Eliminar esta bodega?')) {
-            bodegas = bodegas.filter(b => b.id !== id);
-            cargarBodegas();
-            mostrarToast('Bodega eliminada', 'success');
-        }
+    async function eliminarBodega(id) {
+        if (!confirm('¿Eliminar esta bodega?')) return;
+        try {
+            const res  = await fetch(`${API}/bodegas/${id}`, { method: 'DELETE', headers: authHdr() });
+            const json = await res.json();
+            if (res.ok) { mostrarToast('Bodega eliminada', 'success'); cargarBodegas(); }
+            else         { mostrarToast(json.message || 'Error al eliminar', 'error'); }
+        } catch { mostrarToast('Error de conexión', 'error'); }
     }
 
     document.getElementById('nuevaBodegaBtn').addEventListener('click', () => {
@@ -185,25 +196,28 @@
         abrirModal('bodegaModal');
     });
 
-    document.getElementById('guardarBodegaBtn').addEventListener('click', () => {
-        const id = document.getElementById('bodegaId').value;
-        const bodega = {
-            nombre:    document.getElementById('bodegaNombre').value,
-            direccion: document.getElementById('bodegaDireccion').value,
-            telefono:  document.getElementById('bodegaTelefono').value
-        };
-        if (!bodega.nombre) { mostrarToast('El nombre es obligatorio', 'error'); return; }
+    document.getElementById('guardarBodegaBtn').addEventListener('click', async () => {
+        const id        = document.getElementById('bodegaId').value;
+        const nombre    = document.getElementById('bodegaNombre').value.trim();
+        const direccion = document.getElementById('bodegaDireccion').value.trim();
+        const telefono  = document.getElementById('bodegaTelefono').value.trim();
+        if (!nombre)    { mostrarToast('El nombre es obligatorio', 'error'); return; }
+        if (!direccion) { mostrarToast('La dirección es obligatoria', 'error'); return; }
+        if (!telefono)  { mostrarToast('El teléfono es obligatorio', 'error'); return; }
 
-        if (id) {
-            const idx = bodegas.findIndex(b => b.id === parseInt(id));
-            if (idx !== -1) { bodegas[idx] = { ...bodegas[idx], ...bodega }; mostrarToast('Bodega actualizada', 'success'); }
-        } else {
-            bodega.id = nextId++;
-            bodegas.push(bodega);
-            mostrarToast('Bodega creada', 'success');
-        }
-        cerrarModal('bodegaModal');
-        cargarBodegas();
+        const url    = id ? `${API}/bodegas/${id}` : `${API}/bodegas`;
+        const method = id ? 'PUT' : 'POST';
+        try {
+            const res  = await fetch(url, { method, headers: authHdr(), body: JSON.stringify({ nombreBodega: nombre, direccionExacta: direccion, telefono }) });
+            const json = await res.json();
+            if (res.ok) {
+                mostrarToast(id ? 'Bodega actualizada ✅' : 'Bodega creada ✅', 'success');
+                cerrarModal('bodegaModal');
+                cargarBodegas();
+            } else {
+                mostrarToast(json.message || 'Error al guardar', 'error');
+            }
+        } catch { mostrarToast('Error de conexión', 'error'); }
     });
 
     document.getElementById('logoutBtn').addEventListener('click', cerrarSesion);
@@ -211,6 +225,8 @@
         document.getElementById('sidebar').classList.toggle('open'));
 
     document.addEventListener('DOMContentLoaded', () => {
+        const token = localStorage.getItem('token');
+        if (!token) { window.location.href = '../pages/login.html'; return; }
         const name = localStorage.getItem('userName') || 'Admin';
         document.getElementById('adminName').innerText   = name;
         document.getElementById('adminAvatar').innerText = name.charAt(0).toUpperCase();
