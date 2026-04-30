@@ -21,11 +21,10 @@
                 <a href="categorias.html" class="nav-link">Categorías</a>
                 <a href="nosotros.html"   class="nav-link active">Nosotros</a>
                 <a href="contacto.html"   class="nav-link">Contacto</a>
+                <a href="perfil.html" class="nav-link" id="navCuenta">Mi cuenta</a>
             </nav>
             <div class="nav-actions">
                 <button class="icon-btn" id="cartBtn">🛒<span class="badge" id="cartCount">0</span></button>
-                <button class="icon-btn" id="userBtn">👤</button>
-                <button class="icon-btn" id="scanBtn">📷</button>
             </div>
             <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
         </div>
@@ -187,19 +186,10 @@
 </div>
 
 <div id="toastContainer" class="toast-container"></div>
-
-<script>
-const API_URL = 'http://localhost:8080/api';
-let carrito = [];
-
-function mostrarToast(mensaje, tipo = 'success') {
-    const c = document.getElementById('toastContainer');
-    if (!c) return;
-    const t = document.createElement('div'); t.className = `toast toast-${tipo}`; t.textContent = mensaje;
-    c.appendChild(t); setTimeout(() => t.remove(), 3000);
-}
-function abrirModal(id)  { const m = document.getElementById(id); if (m) m.classList.add('active'); }
-function cerrarModal(id) { const m = document.getElementById(id); if (m) m.classList.remove('active'); }
+<script src="../js/utils.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/cart.js"></script><script>
 function inicializarCarrito() {
     const g = localStorage.getItem('carrito');
     if (g) { try { carrito = JSON.parse(g); } catch { carrito = []; } }
@@ -278,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('cartBtn').onclick = () => { actualizarModalCarrito(); abrirModal('cartModal'); };
     document.getElementById('closeCartModal').onclick = () => cerrarModal('cartModal');
     document.getElementById('checkoutWhatsApp').onclick = enviarPedidoWhatsApp;
-    document.getElementById('userBtn').onclick = () => { if (getToken()) cerrarSesion(); else abrirModal('loginModal'); };
+    document.getElementById('userBtn').onclick = () => { if (getToken()) window.location.href = 'perfil.html'; else abrirModal('loginModal'); };
     document.getElementById('closeLoginModal').onclick = () => cerrarModal('loginModal');
     document.getElementById('closeRegisterModal').onclick = () => cerrarModal('registerModal');
     document.getElementById('btnLogin').onclick = async () => {
@@ -293,11 +283,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     document.getElementById('showRegister').onclick = e => { e.preventDefault(); cerrarModal('loginModal'); abrirModal('registerModal'); };
     document.getElementById('showLogin').onclick = e => { e.preventDefault(); cerrarModal('registerModal'); abrirModal('loginModal'); };
-    document.getElementById('scanBtn').onclick = () => abrirModal('scanModal');
-    document.getElementById('closeScanModal').onclick = () => cerrarModal('scanModal');
-    document.getElementById('buscarCodigoBtn').onclick = buscarProductoPorCodigo;
     document.getElementById('mobileMenuBtn').onclick = () => document.getElementById('mobileMenu').classList.toggle('active');
-    document.getElementById('mobileUserBtn').onclick = () => { if (getToken()) cerrarSesion(); else abrirModal('loginModal'); document.getElementById('mobileMenu').classList.remove('active'); };
+    document.getElementById('mobileUserBtn').onclick = () => { if (getToken()) window.location.href = 'perfil.html'; else abrirModal('loginModal'); document.getElementById('mobileMenu').classList.remove('active'); };
     window.onclick = e => { if (e.target.classList.contains('modal')) e.target.classList.remove('active'); };
 });
 </script>

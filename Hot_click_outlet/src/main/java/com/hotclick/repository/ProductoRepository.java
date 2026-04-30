@@ -34,4 +34,10 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     List<Producto> findByVisibleCatalogoTrueAndEstado(Integer estado, Pageable pageable);
 
     Long countByAdminClienteIdAndEstado(Long adminId, Integer estado);
+
+    @Query("SELECT COUNT(p) FROM Producto p WHERE p.estado = 1")
+    long countProductosActivos();
+
+    @Query("SELECT p.categoria.nombreCategoria, COUNT(p) FROM Producto p WHERE p.estado = 1 GROUP BY p.categoria.nombreCategoria ORDER BY COUNT(p) DESC")
+    List<Object[]> countPorCategoria();
 }

@@ -112,19 +112,22 @@ function inicializarEventosUI() {
         userBtn.addEventListener('click', () => {
             const token = getToken();
             if (token) {
-                cerrarSesion();
+                // Detectar ruta relativa correcta
+                const enAdmin = window.location.pathname.includes('/admin/');
+                window.location.href = enAdmin ? '../pages/perfil.html' : 'perfil.html';
             } else {
                 abrirModal('loginModal');
             }
         });
     }
-    
+
     if (mobileUserBtn) {
         mobileUserBtn.addEventListener('click', (e) => {
             e.preventDefault();
             const token = getToken();
             if (token) {
-                cerrarSesion();
+                const enAdmin = window.location.pathname.includes('/admin/');
+                window.location.href = enAdmin ? '../pages/perfil.html' : 'perfil.html';
             } else {
                 abrirModal('loginModal');
             }

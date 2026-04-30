@@ -432,136 +432,120 @@
         setTimeout(() => window.location.href = '../index.html', 800);
     }
 
-    /* ── Datos ── */
-    let usuariosMock = [
-        { id:1, nombre:'Admin Sistema',  email:'admin@hotclick.com',   rol:'ADMIN_IT',      estado:'ACTIVO'   },
-        { id:2, nombre:'Tech Store CR',  email:'ventas@techstore.com', rol:'ADMIN_CLIENTE', estado:'ACTIVO'   },
-        { id:3, nombre:'Moda Express',   email:'info@modaexpress.com', rol:'ADMIN_CLIENTE', estado:'ACTIVO'   },
-        { id:4, nombre:'María García',   email:'maria@gmail.com',      rol:'USUARIO_FINAL', estado:'ACTIVO'   },
-        { id:5, nombre:'Carlos López',   email:'carlos@gmail.com',     rol:'USUARIO_FINAL', estado:'INACTIVO' }
-    ];
-    let usuarioActual = null;
+    const COLORES_DONUT = ['#3563E9','#e63946','#28a745','#F59E0B','#9333ea','#0ea5e9'];
 
-    const ventasMock = [
-        { fecha:'2024-12-15', producto:'Laptop Gamer',      cantidad:2, total:'$1,500',  cliente:'María García' },
-        { fecha:'2024-12-14', producto:'Mouse Inalámbrico', cantidad:5, total:'$149.95', cliente:'Juan Pérez'   }
-    ];
+    /* ── Dashboard real ── */
+    async function cargarDashboard() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            mostrarToast('Sesión no válida', 'error');
+            setTimeout(() => window.location.href = '../pages/login.html', 1000);
+            return;
+        }
 
-    const pedidosMock = [
-        { id:1, fecha:'2024-12-15', cliente:'María García', total:'$1,500',  estado:'PENDIENTE'  },
-        { id:2, fecha:'2024-12-14', cliente:'Juan Pérez',   total:'$149.95', estado:'ENTREGADO' }
-    ];
+        try {
+            const res = await fetch('http://localhost:8080/api/admin/dashboard', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
 
-    const finanzasMock = [
-        { periodo:'Diciembre 2024', ventas:'$18,500', inversion:'$12,000', utilidad:'$6,500', margen:'35.1%' },
-        { periodo:'Noviembre 2024', ventas:'$15,200', inversion:'$9,800',  utilidad:'$5,400', margen:'35.5%' }
-    ];
+            if (res.status === 401 || res.status === 403) {
+                mostrarToast('Sin permisos de administrador', 'error');
+                return;
+            }
 
-    /* ── Render tablas ── */
-    function cargarUsuarios() {
+            const json = await res.json();
+            if (!json.success) { mostrarToast('Error al cargar dashboard', 'error'); return; }
+
+            const d = json.data;
+
+            /* Stat cards */
+            document.getElementById('totalUsuarios').innerText  = d.totalUsuarios.toLocaleString();
+            document.getElementById('totalVentas').innerText    = '$' + d.totalVentas.toLocaleString();
+            document.getElementById('totalProductos').innerText = d.totalProductos.toLocaleString();
+            document.getElementById('totalPedidos').innerText   = d.totalPedidos.toLocaleString();
+
+            /* Donut — total */
+            document.getElementById('donutTotal').innerText = d.totalProductos.toLocaleString();
+
+            /* Categorías — lista */
+            renderCategorias(d.categorias || []);
+
+            /* Último pedido */
+            if (d.ultimoPedido) renderUltimoPedido(d.ultimoPedido);
+
+            /* Tabs de gestión con datos del dashboard */
+            renderTabUsuarios(d);
+            renderTabPedidos(d.ultimoPedido);
+
+        } catch (e) {
+            console.error('Dashboard error:', e);
+            mostrarToast('Error de conexión', 'error');
+        }
+    }
+
+    function renderCategorias(cats) {
+        const lista = document.querySelector('.legend-list');
+        if (!lista) return;
+        if (cats.length === 0) { lista.innerHTML = '<li style="color:var(--txt-sub);font-size:.8rem;padding:8px">Sin categorías cargadas</li>'; return; }
+        lista.innerHTML = cats.slice(0, 6).map((c, i) => `
+            <li class="legend-item">
+                <span class="legend-dot" style="background:${COLORES_DONUT[i % COLORES_DONUT.length]}"></span>
+                <span class="legend-name">${c.nombre}</span>
+                <span class="legend-val">${c.cantidad}</span>
+            </li>`).join('');
+    }
+
+    function renderUltimoPedido(p) {
+        const primerItem = (p.items && p.items.length > 0) ? p.items[0].nombreProducto : '—';
+        const elProd = document.getElementById('pedidoProducto');
+        const elCliente = document.getElementById('pedidoCliente');
+        const elFecha = document.getElementById('pedidoFecha');
+        const elEstado = document.getElementById('pedidoEstado');
+        const elTotal = document.getElementById('pedidoTotal');
+        if (elProd)    elProd.innerText    = primerItem;
+        if (elCliente) elCliente.innerText = p.clienteNombre || '—';
+        if (elFecha)   elFecha.innerText   = p.fechaPedido ? new Date(p.fechaPedido).toLocaleDateString('es-CR') : '—';
+        if (elEstado)  elEstado.innerText  = p.estadoPedido || '—';
+        if (elTotal)   elTotal.innerText   = '$' + (p.totalPedido || 0).toLocaleString();
+    }
+
+    function renderTabUsuarios(d) {
         const tb = document.getElementById('usuariosTable');
         if (!tb) return;
-        document.getElementById('totalUsuarios').innerText = usuariosMock.length;
-        tb.innerHTML = usuariosMock.map(u => `
+        tb.innerHTML = `
             <tr>
-                <td style="font-weight:600">#${u.id}</td>
-                <td>${u.nombre}</td>
-                <td style="color:var(--txt-sub)">${u.email}</td>
-                <td><span class="badge-role" data-rol="${u.rol}">${u.rol.replace('_',' ')}</span></td>
-                <td><span class="badge-status ${u.estado==='ACTIVO'?'badge-active':'badge-inactive'}">${u.estado}</span></td>
-                <td class="table-actions">
-                    <button class="btn-icon" onclick="editarUsuario(${u.id})" title="Editar">✏️</button>
-                    <button class="btn-icon del" onclick="eliminarUsuario(${u.id})" title="Eliminar">🗑️</button>
+                <td colspan="6" style="text-align:center;padding:24px;color:var(--txt-sub)">
+                    <div style="font-size:1.4rem;margin-bottom:6px">👥</div>
+                    <strong>${d.totalUsuarios.toLocaleString()}</strong> usuarios registrados en el sistema.<br>
+                    <span style="font-size:.8rem">Módulo de gestión de usuarios disponible próximamente.</span>
                 </td>
-            </tr>`).join('');
+            </tr>`;
     }
 
-    function cargarVentas() {
-        const tb = document.getElementById('ventasTable');
-        if (!tb) return;
-        tb.innerHTML = ventasMock.map(v => `
-            <tr>
-                <td style="color:var(--txt-sub)">${v.fecha}</td>
-                <td style="font-weight:600">${v.producto}</td>
-                <td>${v.cantidad}</td>
-                <td style="font-weight:600;color:var(--green)">${v.total}</td>
-                <td>${v.cliente}</td>
-            </tr>`).join('');
-    }
-
-    function cargarPedidos() {
+    function renderTabPedidos(ultimoPedido) {
         const tb = document.getElementById('pedidosTable');
         if (!tb) return;
-        tb.innerHTML = pedidosMock.map(p => `
+        if (!ultimoPedido) {
+            tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--txt-sub)">Sin pedidos registrados</td></tr>';
+            return;
+        }
+        const p = ultimoPedido;
+        const fecha = p.fechaPedido ? new Date(p.fechaPedido).toLocaleDateString('es-CR') : '—';
+        tb.innerHTML = `
             <tr>
-                <td style="font-weight:600">#${p.id}</td>
-                <td style="color:var(--txt-sub)">${p.fecha}</td>
-                <td>${p.cliente}</td>
-                <td style="font-weight:600">${p.total}</td>
-                <td><span class="badge-status ${p.estado==='ENTREGADO'?'badge-active':'badge-pending'}">${p.estado}</span></td>
+                <td style="font-weight:600">${p.numeroPedido || '—'}</td>
+                <td style="color:var(--txt-sub)">${fecha}</td>
+                <td>${p.clienteNombre || '—'}</td>
+                <td style="font-weight:600">$${(p.totalPedido || 0).toLocaleString()}</td>
+                <td><span class="badge-status ${p.estadoPedido === 'ENTREGADO' ? 'badge-active' : 'badge-pending'}">${p.estadoPedido || '—'}</span></td>
                 <td><button class="btn-icon" onclick="window.open('https://wa.me/50689745370','_blank')" title="WhatsApp">💬</button></td>
-            </tr>`).join('');
-    }
-
-    function cargarFinanzas() {
-        const tb = document.getElementById('finanzasTable');
-        if (!tb) return;
-        tb.innerHTML = finanzasMock.map(f => `
+            </tr>
             <tr>
-                <td style="font-weight:600">${f.periodo}</td>
-                <td style="color:var(--green);font-weight:600">${f.ventas}</td>
-                <td>${f.inversion}</td>
-                <td style="font-weight:600">${f.utilidad}</td>
-                <td><span class="badge badge-active">${f.margen}</span></td>
-            </tr>`).join('');
+                <td colspan="6" style="text-align:center;padding:12px;color:var(--txt-sub);font-size:.8rem">
+                    Mostrando último pedido · Módulo completo de pedidos disponible próximamente
+                </td>
+            </tr>`;
     }
-
-    /* ── Acciones usuarios ── */
-    function editarUsuario(id) {
-        const u = usuariosMock.find(u => u.id === id);
-        if (!u) return;
-        usuarioActual = u;
-        document.getElementById('editUserId').value = u.id;
-        document.getElementById('editNombre').value  = u.nombre;
-        document.getElementById('editEmail').value   = u.email;
-        document.getElementById('editRol').value     = u.rol;
-        document.getElementById('editEstado').value  = u.estado;
-        abrirModal('editUserModal');
-    }
-
-    function eliminarUsuario(id) {
-        const u = usuariosMock.find(u => u.id === id);
-        if (!u) return;
-        usuarioActual = u;
-        document.getElementById('deleteUserName').innerText = `${u.nombre} (${u.email})`;
-        abrirModal('deleteUserModal');
-    }
-
-    /* ── Eventos modales ── */
-    document.getElementById('confirmEditUserBtn').addEventListener('click', () => {
-        if (!usuarioActual) return;
-        const idx = usuariosMock.findIndex(u => u.id === usuarioActual.id);
-        if (idx !== -1) {
-            usuariosMock[idx].nombre = document.getElementById('editNombre').value;
-            usuariosMock[idx].email  = document.getElementById('editEmail').value;
-            usuariosMock[idx].rol    = document.getElementById('editRol').value;
-            usuariosMock[idx].estado = document.getElementById('editEstado').value;
-            mostrarToast('Usuario actualizado', 'success');
-            cerrarModal('editUserModal');
-            cargarUsuarios();
-        }
-    });
-
-    document.getElementById('confirmDeleteUserBtn').addEventListener('click', () => {
-        if (!usuarioActual) return;
-        const idx = usuariosMock.findIndex(u => u.id === usuarioActual.id);
-        if (idx !== -1) {
-            usuariosMock.splice(idx, 1);
-            mostrarToast('Usuario eliminado', 'success');
-            cerrarModal('deleteUserModal');
-            cargarUsuarios();
-        }
-    });
 
     /* ── Init ── */
     document.addEventListener('DOMContentLoaded', () => {
@@ -569,10 +553,7 @@
         document.getElementById('adminName').innerText = name;
         document.getElementById('adminAvatar').innerText = name.charAt(0).toUpperCase();
 
-        cargarUsuarios();
-        cargarVentas();
-        cargarPedidos();
-        cargarFinanzas();
+        cargarDashboard();
 
         /* Tabs */
         document.querySelectorAll('.tab-pill').forEach(btn => {

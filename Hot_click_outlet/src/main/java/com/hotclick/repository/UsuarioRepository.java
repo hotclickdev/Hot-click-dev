@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.List;
 
 @Repository
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
@@ -40,4 +41,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     @Transactional
     @Query("UPDATE Usuario u SET u.bloqueadoHasta = :fecha WHERE u.id = :id")
     void bloquearUsuario(@Param("id") Long id, @Param("fecha") LocalDateTime fecha);
+
+    @Query("SELECT COUNT(u) FROM Usuario u WHERE u.estado = 1")
+    long countUsuariosActivos();
 }

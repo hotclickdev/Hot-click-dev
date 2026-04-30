@@ -152,3 +152,21 @@ async function apiObtenerProducto(id) {
         return null;
     }
 }
+
+// ====================================================
+// ADMIN — DASHBOARD
+// ====================================================
+
+async function apiObtenerDashboard() {
+    try {
+        const res = await fetch(`${API_URL}/admin/dashboard`, {
+            headers: getAuthHeaders()
+        });
+        const data = await res.json();
+        if (!res.ok) return { success: false, message: data.message || 'Error al obtener dashboard' };
+        return { success: true, data: data.data };
+    } catch (e) {
+        console.error('Dashboard error:', e);
+        return { success: false, message: 'Error de conexión' };
+    }
+}

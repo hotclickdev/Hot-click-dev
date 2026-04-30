@@ -177,6 +177,24 @@ p + p { margin-top: .9em; }
   transform: scale(1.05);
 }
 
+.btn-sesion {
+  padding: 8px 18px;
+  border-radius: var(--r-full);
+  border: 2px solid var(--c-blue);
+  background: transparent;
+  color: var(--c-blue);
+  font-size: .85rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--transition);
+}
+.btn-sesion:hover,
+.btn-sesion.logged-in {
+  background: var(--c-blue);
+  color: #fff;
+}
+
 .badge {
   position: absolute;
   top: -3px;

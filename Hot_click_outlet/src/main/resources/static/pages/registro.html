@@ -24,9 +24,7 @@
             </nav>
             <div class="nav-actions">
                 <button class="icon-btn" id="cartBtn">🛒<span class="badge" id="cartCount">0</span></button>
-                <button class="icon-btn" id="userBtn">👤</button>
-                <button class="icon-btn" id="scanBtn">📷</button>
-            </div>
+                </div>
             <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
         </div>
     </div>
@@ -106,7 +104,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('cartBtn').onclick = () => window.location.href = 'carrito.html';
     document.getElementById('mobileMenuBtn').onclick = () => document.getElementById('mobileMenu').classList.toggle('active');
-    document.getElementById('scanBtn').onclick = () => window.location.href = 'escaner.html';
 
     document.getElementById('btnRegister').addEventListener('click', async () => {
         const usuario = {

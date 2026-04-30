@@ -109,13 +109,10 @@
                 <a href="categorias.html" class="nav-link">Categorías</a>
                 <a href="nosotros.html"   class="nav-link">Nosotros</a>
                 <a href="contacto.html"   class="nav-link">Contacto</a>
+                <a href="perfil.html" class="nav-link" id="navCuenta">Mi cuenta</a>
             </nav>
             <div class="nav-actions">
-                <button class="icon-btn" id="cartBtn">🛒<span class="badge" id="cartCount">0</span></button>
-                <button class="icon-btn" id="userBtn">👤</button>
-                <button class="icon-btn" id="scanBtn">📷</button>
-            </div>
-            <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+                <button class="icon-btn" id="cartBtn">🛒<span class="badge" id="cartCount">0</span></button>`n            </div>`n            <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
         </div>
     </div>
 </header>
@@ -241,9 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
     actualizarContadorCarrito();
 
     document.getElementById('cartBtn').onclick = () => window.location.href = 'carrito.html';
-    document.getElementById('scanBtn').onclick = () => window.location.href = 'escaner.html';
-    document.getElementById('userBtn').onclick = () => {
-        if (getToken()) { cerrarSesion(); } else { window.location.href = 'login.html'; }
+    document.getElementById('userBtn').onclick = () => { if (getToken()) window.location.href = 'perfil.html'; else abrirModal('loginModal'); } else { window.location.href = 'login.html'; }
     };
     document.getElementById('mobileMenuBtn').onclick = () => document.getElementById('mobileMenu').classList.toggle('active');
 });

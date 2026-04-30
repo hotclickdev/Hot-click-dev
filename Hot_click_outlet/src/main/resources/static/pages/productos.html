@@ -21,11 +21,10 @@
                 <a href="categorias.html"class="nav-link">Categorías</a>
                 <a href="nosotros.html"  class="nav-link">Nosotros</a>
                 <a href="contacto.html"  class="nav-link">Contacto</a>
+                <a href="perfil.html" class="nav-link" id="navCuenta">Mi cuenta</a>
             </nav>
             <div class="nav-actions">
                 <button class="icon-btn" id="cartBtn">🛒<span class="badge" id="cartCount">0</span></button>
-                <button class="icon-btn" id="userBtn">👤</button>
-                <button class="icon-btn" id="scanBtn">📷</button>
             </div>
             <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
         </div>
@@ -138,24 +137,12 @@
     </div>
 </div>
 
-<div id="scanModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header"><h3>📷 Escanear Producto</h3><button class="modal-close" id="closeScanModal">&times;</button></div>
-        <div class="modal-body" style="text-align:center;">
-            <div style="font-size:3rem;margin-bottom:12px;">📷</div>
-            <p style="color:var(--c-muted);margin-bottom:16px;font-size:.9rem;">Ingresa el código del producto</p>
-            <input type="text" id="codigoManual" class="form-input" placeholder="Código de barras o SKU">
-            <button id="buscarCodigoBtn" class="btn btn-primary" style="width:100%;margin-top:10px;">🔍 Buscar</button>
-            <div id="scanResultado" style="margin-top:16px;text-align:left;"></div>
-        </div>
-    </div>
-</div>
 
 <div id="toastContainer" class="toast-container"></div>
-
-<script>
-const API_URL = 'http://localhost:8080/api';
-let carrito = [];
+<script src="../js/utils.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/cart.js"></script><script>
 let paginaActual = 0;
 let totalPaginas = 1;
 const productosPorPagina = 6;
@@ -170,9 +157,6 @@ let productosMock = [
 ];
 
 function mostrarToast(msg,tipo='success'){const c=document.getElementById('toastContainer');if(!c)return;const t=document.createElement('div');t.className=`toast toast-${tipo}`;t.textContent=msg;c.appendChild(t);setTimeout(()=>t.remove(),3000);}
-function abrirModal(id){const m=document.getElementById(id);if(m)m.classList.add('active');}
-function cerrarModal(id){const m=document.getElementById(id);if(m)m.classList.remove('active');}
-
 function inicializarCarrito(){const g=localStorage.getItem('carrito');if(g){try{carrito=JSON.parse(g);}catch(e){carrito=[];}}actualizarContadorCarrito();}
 function agregarAlCarrito(id,nombre,precio){const e=carrito.find(i=>i.id===id);if(e)e.cantidad++;else carrito.push({id,nombre,precio,cantidad:1});localStorage.setItem('carrito',JSON.stringify(carrito));actualizarContadorCarrito();mostrarToast(`${nombre} agregado al carrito`,'success');}
 function eliminarDelCarrito(id){carrito=carrito.filter(i=>i.id!==id);localStorage.setItem('carrito',JSON.stringify(carrito));actualizarContadorCarrito();actualizarModalCarrito();}
@@ -192,7 +176,6 @@ function setToken(t){if(t)localStorage.setItem('token',t);else localStorage.remo
 async function apiLogin(correo,contrasena){try{const r=await fetch(`${API_URL}/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({correo,contrasena})});const d=await r.json();if(r.ok&&d.token){setToken(d.token);localStorage.setItem('userRole',d.rol||'USUARIO_FINAL');localStorage.setItem('userName',d.nombre||'Usuario');return{success:true};}return{success:false,message:d.mensaje||'Credenciales inválidas'};}catch{return{success:false,message:'Error de conexión'};}}
 async function apiRegister(u){const btn=document.getElementById('btnRegister');if(btn){btn.textContent='Registrando...';btn.disabled=true;}try{const r=await fetch(`${API_URL}/auth/register`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:u.nombre,apellidoPaterno:'',apellidoMaterno:'',correo:u.correo,telefono:u.telefono,identificacion:'',contrasenaHash:u.contrasenaHash})});const d=await r.json();if(btn){btn.textContent='Registrarse';btn.disabled=false;}if(r.ok)return{success:true};return{success:false,message:d.mensaje||'Error al registrar'};}catch{if(btn){btn.textContent='Registrarse';btn.disabled=false;}return{success:false,message:'Error de conexión'};}}
 function cerrarSesion(){setToken(null);localStorage.removeItem('userRole');localStorage.removeItem('userName');actualizarIconoSesion();mostrarToast('Sesión cerrada','success');}
-function actualizarIconoSesion(){const btn=document.getElementById('userBtn');if(btn)btn.innerHTML=getToken()?'👤✅':'👤';}
 
 function mostrarProductosEnGrid(productos){
     const grid=document.getElementById('allProductsGrid');
@@ -252,22 +235,19 @@ document.addEventListener('DOMContentLoaded',function(){
     document.getElementById('cartBtn').onclick=()=>{actualizarModalCarrito();abrirModal('cartModal');};
     document.getElementById('closeCartModal').onclick=()=>cerrarModal('cartModal');
     document.getElementById('checkoutWhatsApp').onclick=()=>enviarPedidoWhatsApp();
-    document.getElementById('userBtn').onclick=()=>{if(getToken())cerrarSesion();else abrirModal('loginModal');};
+    document.getElementById('userBtn').onclick = () => { if (getToken()) window.location.href = 'perfil.html'; else abrirModal('loginModal'); };
     document.getElementById('closeLoginModal').onclick=()=>cerrarModal('loginModal');
     document.getElementById('closeRegisterModal').onclick=()=>cerrarModal('registerModal');
-    document.getElementById('btnLogin').onclick=async()=>{const r=await apiLogin(document.getElementById('loginCorreo').value,document.getElementById('loginPassword').value);if(r.success){mostrarToast('✅ Sesión iniciada','success');cerrarModal('loginModal');actualizarIconoSesion();}else mostrarToast(r.message,'error');};
+    document.getElementById('btnLogin').onclick = iniciarSesion;
     document.getElementById('btnRegister').onclick=async()=>{const r=await apiRegister({nombre:document.getElementById('regNombre').value,correo:document.getElementById('regCorreo').value,telefono:document.getElementById('regTelefono').value,contrasenaHash:document.getElementById('regPassword').value});if(r.success){mostrarToast('✅ Registro exitoso','success');cerrarModal('registerModal');abrirModal('loginModal');}else mostrarToast(r.message,'error');};
     document.getElementById('showRegister').onclick=e=>{e.preventDefault();cerrarModal('loginModal');abrirModal('registerModal');};
     document.getElementById('showLogin').onclick=e=>{e.preventDefault();cerrarModal('registerModal');abrirModal('loginModal');};
-    document.getElementById('scanBtn').onclick=()=>abrirModal('scanModal');
-    document.getElementById('closeScanModal').onclick=()=>cerrarModal('scanModal');
-    document.getElementById('buscarCodigoBtn').onclick=()=>{const r=document.getElementById('scanResultado');r.innerHTML=`<div class="scan-result found"><h4 style="margin-bottom:8px;">✅ Producto encontrado</h4><p><strong>${productosMock[0].nombre}</strong></p><p style="font-size:.88rem;color:var(--c-muted);margin:4px 0 12px;">$${productosMock[0].precio.toFixed(2)}</p><button class="btn btn-primary btn-sm" onclick="agregarAlCarrito(${productosMock[0].id},'${productosMock[0].nombre}',${productosMock[0].precio});cerrarModal('scanModal');">🛒 Agregar</button></div>`;};
     document.getElementById('prevPage').onclick=()=>{if(paginaActual>0){paginaActual--;cargarProductos();}};
     document.getElementById('nextPage').onclick=()=>{if(paginaActual+1<totalPaginas){paginaActual++;cargarProductos();}};
     document.getElementById('searchProduct').oninput=aplicarFiltros;
     document.getElementById('categoryFilter').onchange=aplicarFiltros;
     document.getElementById('mobileMenuBtn').onclick=()=>document.getElementById('mobileMenu').classList.toggle('active');
-    document.getElementById('mobileUserBtn').onclick=()=>{if(getToken())cerrarSesion();else abrirModal('loginModal');document.getElementById('mobileMenu').classList.remove('active');};
+    document.getElementById('mobileUserBtn').onclick = () => { if (getToken()) window.location.href = 'perfil.html'; else abrirModal('loginModal'); document.getElementById('mobileMenu').classList.remove('active'); };
     window.onclick=e=>{if(e.target.classList.contains('modal'))e.target.classList.remove('active');};
 });
 </script>
