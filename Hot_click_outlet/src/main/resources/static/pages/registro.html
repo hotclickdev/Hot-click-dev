@@ -91,6 +91,42 @@
     </div>
 </div>
 
+<!-- ===================== MODAL VERIFICAR CUENTA ===================== -->
+<div id="modalVerificacion" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:40px 36px;width:100%;max-width:420px;box-shadow:0 8px 40px rgba(0,0,0,.2);position:relative;margin:16px;text-align:center;">
+
+    <div style="width:64px;height:64px;background:#111;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+      <span style="color:#fff;font-size:28px;">✉</span>
+    </div>
+
+    <h3 style="margin:0 0 8px;font-size:18px;color:#111;">Verifica tu correo</h3>
+    <p style="color:#888;font-size:13px;margin:0 0 8px;">Enviamos un código de 6 dígitos a</p>
+    <p id="verCorreoMostrado" style="color:#111;font-weight:700;font-size:14px;margin:0 0 24px;"></p>
+
+    <div style="display:flex;gap:8px;justify-content:center;margin-bottom:24px;">
+      <input class="vdig" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+      <input class="vdig" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+      <input class="vdig" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+      <input class="vdig" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+      <input class="vdig" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+      <input class="vdig" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+    </div>
+
+    <button id="btnVerificarCuenta" class="btn btn-primary" style="width:100%;">Verificar y crear cuenta</button>
+    <p style="margin:14px 0 0;font-size:13px;color:#888;">¿No llegó? <a href="#" id="btnReenviarVer" style="color:#111;">Reenviar código</a></p>
+  </div>
+</div>
+
+<style>
+.vdig {
+  width: 44px; height: 52px;
+  text-align: center; font-size: 22px; font-weight: 700;
+  border: 2px solid #ddd; border-radius: 8px;
+  outline: none; transition: border-color .2s;
+}
+.vdig:focus { border-color: #111; }
+</style>
+
 <div id="toastContainer" class="toast-container"></div>
 
 <script src="../js/utils.js"></script>
@@ -105,23 +141,102 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('cartBtn').onclick = () => window.location.href = 'carrito.html';
     document.getElementById('mobileMenuBtn').onclick = () => document.getElementById('mobileMenu').classList.toggle('active');
 
+    const modal = document.getElementById('modalVerificacion');
+    let correoRegistro = '';
+
+    // Autoavance entre dígitos de verificación
+    document.querySelectorAll('.vdig').forEach((input, idx, arr) => {
+        input.addEventListener('input', () => {
+            input.value = input.value.replace(/\D/, '');
+            if (input.value && idx < arr.length - 1) arr[idx + 1].focus();
+        });
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Backspace' && !input.value && idx > 0) arr[idx - 1].focus();
+        });
+    });
+
+    async function enviarCodigo(usuario) {
+        const res  = await fetch(`${API_URL}/auth/send-verification`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(usuario)
+        });
+        const data = await res.json();
+        return { ok: res.ok, mensaje: data.mensaje || data.message || '' };
+    }
+
     document.getElementById('btnRegister').addEventListener('click', async () => {
-        const usuario = {
-            nombre:           document.getElementById('regNombre').value,
-            apellidoPaterno:  document.getElementById('regApellidoPaterno').value,
-            apellidoMaterno:  document.getElementById('regApellidoMaterno').value,
-            correo:           document.getElementById('regCorreo').value,
-            telefono:         document.getElementById('regTelefono').value,
-            identificacion:   document.getElementById('regIdentificacion').value,
-            contrasenaHash:   document.getElementById('regPassword').value
-        };
-        const result = await apiRegister(usuario);
-        if (result.success) {
-            mostrarToast('✅ Registro exitoso. Ahora inicia sesión', 'success');
-            setTimeout(() => window.location.href = 'login.html', 1500);
-        } else {
-            mostrarToast(result.message, 'error');
+        const nombre          = document.getElementById('regNombre').value.trim();
+        const apellidoPaterno = document.getElementById('regApellidoPaterno').value.trim();
+        const correo          = document.getElementById('regCorreo').value.trim();
+        const telefono        = document.getElementById('regTelefono').value.trim();
+        const identificacion  = document.getElementById('regIdentificacion').value.trim();
+        const contrasena      = document.getElementById('regPassword').value;
+
+        if (!nombre || !apellidoPaterno || !correo || !telefono || !identificacion || !contrasena) {
+            mostrarToast('Completa todos los campos obligatorios', 'error'); return;
         }
+        if (contrasena.length < 6) {
+            mostrarToast('La contraseña debe tener al menos 6 caracteres', 'error'); return;
+        }
+
+        const btn = document.getElementById('btnRegister');
+        btn.disabled = true; btn.textContent = 'Enviando código...';
+
+        const usuario = {
+            nombre, apellidoPaterno,
+            apellidoMaterno: document.getElementById('regApellidoMaterno').value.trim(),
+            correo, telefono, identificacion,
+            contrasenaHash: contrasena
+        };
+
+        try {
+            const { ok, mensaje } = await enviarCodigo(usuario);
+            if (ok) {
+                correoRegistro = correo;
+                document.getElementById('verCorreoMostrado').textContent = correo;
+                document.querySelectorAll('.vdig').forEach(i => i.value = '');
+                modal.style.display = 'flex';
+                setTimeout(() => document.querySelectorAll('.vdig')[0].focus(), 100);
+                mostrarToast('Código enviado a tu correo', 'success');
+            } else {
+                mostrarToast(mensaje || 'Error al enviar el código', 'error');
+            }
+        } catch { mostrarToast('Error de conexión', 'error'); }
+
+        btn.disabled = false; btn.textContent = 'Crear Cuenta';
+    });
+
+    document.getElementById('btnReenviarVer').addEventListener('click', async e => {
+        e.preventDefault();
+        // Reusar datos del formulario para reenviar
+        document.getElementById('btnRegister').click();
+    });
+
+    document.getElementById('btnVerificarCuenta').addEventListener('click', async () => {
+        const codigo = [...document.querySelectorAll('.vdig')].map(i => i.value).join('');
+        if (codigo.length < 6) { mostrarToast('Ingresa el código completo', 'error'); return; }
+
+        const btn = document.getElementById('btnVerificarCuenta');
+        btn.disabled = true; btn.textContent = 'Verificando...';
+
+        try {
+            const res  = await fetch(`${API_URL}/auth/verify-registration`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ correo: correoRegistro, codigo })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                mostrarToast('¡Cuenta creada! Ahora inicia sesión', 'success');
+                modal.style.display = 'none';
+                setTimeout(() => window.location.href = 'login.html', 1600);
+            } else {
+                mostrarToast(data.mensaje || data.message || 'Código inválido o expirado', 'error');
+            }
+        } catch { mostrarToast('Error de conexión', 'error'); }
+
+        btn.disabled = false; btn.textContent = 'Verificar y crear cuenta';
     });
 });
 </script>

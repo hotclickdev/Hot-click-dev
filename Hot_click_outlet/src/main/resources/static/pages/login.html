@@ -62,10 +62,80 @@
 
         <div class="auth-footer">
             ¿No tienes cuenta? <a href="registro.html">Regístrate aquí</a><br>
+            <a href="#" id="linkOlvide" style="color:var(--c-muted);font-weight:400;">¿Olvidaste tu contraseña?</a><br>
             <a href="index.html" style="color:var(--c-muted);font-weight:400;">← Volver al inicio</a>
         </div>
     </div>
 </div>
+
+<!-- ===================== MODAL RECUPERAR CONTRASEÑA ===================== -->
+<div id="modalRecuperar" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:40px 36px;width:100%;max-width:420px;box-shadow:0 8px 40px rgba(0,0,0,.2);position:relative;margin:16px;">
+
+    <button id="btnCerrarModal" style="position:absolute;top:16px;right:20px;background:none;border:none;font-size:22px;cursor:pointer;color:#888;line-height:1;">✕</button>
+
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="font-size:20px;font-weight:900;letter-spacing:2px;color:#111;">HOTCLICK</div>
+      <h3 id="modalTitulo" style="margin:8px 0 4px;font-size:17px;color:#111;">Recuperar contraseña</h3>
+      <p id="modalSubtitulo" style="margin:0;color:#888;font-size:13px;">Ingresa tu correo registrado</p>
+    </div>
+
+    <!-- Indicador de pasos -->
+    <div style="display:flex;gap:6px;margin-bottom:28px;">
+      <div id="dot1" style="flex:1;height:4px;border-radius:4px;background:#111;transition:.3s;"></div>
+      <div id="dot2" style="flex:1;height:4px;border-radius:4px;background:#ddd;transition:.3s;"></div>
+      <div id="dot3" style="flex:1;height:4px;border-radius:4px;background:#ddd;transition:.3s;"></div>
+    </div>
+
+    <!-- PASO 1: correo -->
+    <div id="paso1">
+      <div class="form-group">
+        <label class="form-label">Correo electrónico</label>
+        <input type="email" id="rpCorreo" class="form-input" placeholder="tu@email.com">
+      </div>
+      <button id="btnEnviarCodigo" class="btn btn-primary" style="width:100%;margin-top:8px;">Enviar código</button>
+    </div>
+
+    <!-- PASO 2: código -->
+    <div id="paso2" style="display:none;">
+      <p style="text-align:center;color:#555;font-size:13px;margin:0 0 20px;">Ingresa el código de 6 dígitos que enviamos a <strong id="correoMostrado"></strong></p>
+      <div style="display:flex;gap:8px;justify-content:center;margin-bottom:20px;">
+        <input class="digit-input" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+        <input class="digit-input" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+        <input class="digit-input" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+        <input class="digit-input" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+        <input class="digit-input" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+        <input class="digit-input" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+      </div>
+      <button id="btnVerificar" class="btn btn-primary" style="width:100%;">Verificar código</button>
+      <p style="text-align:center;margin:12px 0 0;font-size:13px;color:#888;">¿No llegó? <a href="#" id="btnReenviar" style="color:#111;">Reenviar</a></p>
+    </div>
+
+    <!-- PASO 3: nueva contraseña -->
+    <div id="paso3" style="display:none;">
+      <div class="form-group">
+        <label class="form-label">Nueva contraseña</label>
+        <input type="password" id="rpNuevaPass" class="form-input" placeholder="Mínimo 6 caracteres">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirmar contraseña</label>
+        <input type="password" id="rpConfirmPass" class="form-input" placeholder="Repite la contraseña">
+      </div>
+      <button id="btnCambiarPass" class="btn btn-primary" style="width:100%;margin-top:8px;">Cambiar contraseña</button>
+    </div>
+
+  </div>
+</div>
+
+<style>
+.digit-input {
+  width: 44px; height: 52px;
+  text-align: center; font-size: 22px; font-weight: 700;
+  border: 2px solid #ddd; border-radius: 8px;
+  outline: none; transition: border-color .2s;
+}
+.digit-input:focus { border-color: #111; }
+</style>
 
 <div id="toastContainer" class="toast-container"></div>
 
@@ -95,6 +165,111 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('loginPassword').addEventListener('keypress', e => {
         if (e.key === 'Enter') document.getElementById('btnLogin').click();
+    });
+
+    // ===== RECUPERAR CONTRASEÑA =====
+    const modal       = document.getElementById('modalRecuperar');
+    const paso1       = document.getElementById('paso1');
+    const paso2       = document.getElementById('paso2');
+    const paso3       = document.getElementById('paso3');
+    const dots        = [document.getElementById('dot1'), document.getElementById('dot2'), document.getElementById('dot3')];
+    const titulos     = ['Recuperar contraseña', 'Verificar código', 'Nueva contraseña'];
+    const subtitulos  = ['Ingresa tu correo registrado', 'Revisa tu bandeja de entrada', 'Crea tu nueva contraseña'];
+    let correoActual  = '';
+
+    function mostrarPaso(n) {
+        [paso1, paso2, paso3].forEach((p, i) => p.style.display = i === n - 1 ? 'block' : 'none');
+        dots.forEach((d, i) => d.style.background = i < n ? '#111' : '#ddd');
+        document.getElementById('modalTitulo').textContent    = titulos[n - 1];
+        document.getElementById('modalSubtitulo').textContent = subtitulos[n - 1];
+    }
+
+    function abrirModal() {
+        modal.style.display = 'flex';
+        mostrarPaso(1);
+        document.getElementById('rpCorreo').value = '';
+        document.querySelectorAll('.digit-input').forEach(i => i.value = '');
+        document.getElementById('rpNuevaPass').value = '';
+        document.getElementById('rpConfirmPass').value = '';
+    }
+
+    document.getElementById('linkOlvide').addEventListener('click', e => { e.preventDefault(); abrirModal(); });
+    document.getElementById('btnCerrarModal').addEventListener('click', () => modal.style.display = 'none');
+    modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
+
+    // Autoavance entre dígitos
+    document.querySelectorAll('.digit-input').forEach((input, idx, arr) => {
+        input.addEventListener('input', () => {
+            input.value = input.value.replace(/\D/, '');
+            if (input.value && idx < arr.length - 1) arr[idx + 1].focus();
+        });
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Backspace' && !input.value && idx > 0) arr[idx - 1].focus();
+        });
+    });
+
+    async function apiPost(ruta, datos) {
+        const res  = await fetch(`${API_URL}/auth/${ruta}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(datos)
+        });
+        const data = await res.json();
+        return { ok: res.ok, mensaje: data.mensaje || data.message || '' };
+    }
+
+    document.getElementById('btnEnviarCodigo').addEventListener('click', async () => {
+        const correo = document.getElementById('rpCorreo').value.trim();
+        if (!correo) { mostrarToast('Ingresa tu correo', 'error'); return; }
+        const btn = document.getElementById('btnEnviarCodigo');
+        btn.disabled = true; btn.textContent = 'Enviando...';
+        try {
+            await apiPost('forgot-password', { correo });
+            correoActual = correo;
+            document.getElementById('correoMostrado').textContent = correo;
+            mostrarToast('Código enviado. Revisa tu correo', 'success');
+            mostrarPaso(2);
+            document.querySelectorAll('.digit-input')[0].focus();
+        } catch { mostrarToast('Error de conexión', 'error'); }
+        btn.disabled = false; btn.textContent = 'Enviar código';
+    });
+
+    document.getElementById('btnReenviar').addEventListener('click', async e => {
+        e.preventDefault();
+        await apiPost('forgot-password', { correo: correoActual });
+        mostrarToast('Nuevo código enviado', 'success');
+        document.querySelectorAll('.digit-input').forEach(i => i.value = '');
+        document.querySelectorAll('.digit-input')[0].focus();
+    });
+
+    document.getElementById('btnVerificar').addEventListener('click', async () => {
+        const codigo = [...document.querySelectorAll('.digit-input')].map(i => i.value).join('');
+        if (codigo.length < 6) { mostrarToast('Ingresa el código completo', 'error'); return; }
+        const btn = document.getElementById('btnVerificar');
+        btn.disabled = true; btn.textContent = 'Verificando...';
+        try {
+            const { ok, mensaje } = await apiPost('verify-code', { correo: correoActual, codigo });
+            if (ok) { mostrarToast('Código correcto', 'success'); mostrarPaso(3); document.getElementById('rpNuevaPass').focus(); }
+            else mostrarToast(mensaje || 'Código inválido o expirado', 'error');
+        } catch { mostrarToast('Error de conexión', 'error'); }
+        btn.disabled = false; btn.textContent = 'Verificar código';
+    });
+
+    document.getElementById('btnCambiarPass').addEventListener('click', async () => {
+        const nueva    = document.getElementById('rpNuevaPass').value;
+        const confirma = document.getElementById('rpConfirmPass').value;
+        if (nueva.length < 6)      { mostrarToast('Mínimo 6 caracteres', 'error'); return; }
+        if (nueva !== confirma)    { mostrarToast('Las contraseñas no coinciden', 'error'); return; }
+        const btn = document.getElementById('btnCambiarPass');
+        btn.disabled = true; btn.textContent = 'Guardando...';
+        try {
+            const { ok, mensaje } = await apiPost('reset-password', { correo: correoActual, nuevaContrasena: nueva });
+            if (ok) {
+                mostrarToast('¡Contraseña actualizada! Inicia sesión', 'success');
+                setTimeout(() => { modal.style.display = 'none'; }, 1800);
+            } else mostrarToast(mensaje || 'Error al cambiar la contraseña', 'error');
+        } catch { mostrarToast('Error de conexión', 'error'); }
+        btn.disabled = false; btn.textContent = 'Cambiar contraseña';
     });
 });
 </script>
