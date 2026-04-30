@@ -25,4 +25,12 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     @Query("SELECT COALESCE(SUM(p.totalPedido), 0) FROM Pedido p")
     long sumTotalVentas();
+
+    @Query("SELECT DISTINCT p FROM Pedido p " +
+           "LEFT JOIN FETCH p.usuarioFinal " +
+           "LEFT JOIN FETCH p.items i " +
+           "LEFT JOIN FETCH i.producto pr " +
+           "LEFT JOIN FETCH pr.categoria " +
+           "ORDER BY p.fechaPedido DESC")
+    List<Pedido> findAllWithDetails();
 }

@@ -61,4 +61,13 @@ public class PedidoController {
     public ResponseEntity<ResponseDTO> listarPendientes() {
         return ResponseEntity.ok(ResponseDTO.success("Pedidos pendientes", pedidoService.listarPendientes()));
     }
+
+    @GetMapping
+    public ResponseEntity<ResponseDTO> listarTodos() {
+        try {
+            return ResponseEntity.ok(ResponseDTO.success("Pedidos", pedidoService.listarTodosConDetalles()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        }
+    }
 }
