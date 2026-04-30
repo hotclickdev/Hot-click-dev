@@ -4,43 +4,444 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HOTCLICK — Nueva Venta</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/admin.css">
     <style>
-        .tab-bar { display:flex; gap:8px; margin-bottom:24px; border-bottom:2px solid var(--border); padding-bottom:0; }
-        .tab-btn { padding:10px 20px; border:none; background:none; cursor:pointer; font-size:.9rem; font-weight:500; color:var(--txt-sub); border-bottom:2px solid transparent; margin-bottom:-2px; transition:.2s; }
-        .tab-btn.active { color:var(--blue); border-bottom-color:var(--blue); }
-        .tab-pane { display:none; }
-        .tab-pane.active { display:grid; grid-template-columns:1fr 340px; gap:20px; }
-        .venta-card { background:var(--card-bg); border:1px solid var(--border); border-radius:12px; padding:20px; }
-        .venta-card h3 { font-size:.95rem; font-weight:600; margin-bottom:16px; }
-        .search-row { display:flex; gap:8px; margin-bottom:12px; }
-        .search-row input { flex:1; }
-        .prod-result { background:var(--bg); border:1px solid var(--border); border-radius:8px; max-height:220px; overflow-y:auto; margin-bottom:12px; }
-        .prod-row { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border-bottom:1px solid var(--border); cursor:pointer; transition:.15s; }
-        .prod-row:hover { background:var(--hover); }
-        .prod-row:last-child { border-bottom:none; }
-        .prod-row-info { font-size:.85rem; }
-        .prod-row-name { font-weight:500; }
-        .prod-row-price { color:var(--green); font-size:.8rem; }
-        .btn-add-sm { font-size:.75rem; padding:4px 10px; }
-        .cart-items { min-height:80px; margin-bottom:16px; }
-        .cart-row { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--border); font-size:.85rem; }
-        .cart-row:last-child { border-bottom:none; }
-        .cart-row-name { flex:1; font-weight:500; }
-        .cart-qty { display:flex; align-items:center; gap:6px; }
-        .qty-btn { width:24px; height:24px; border:1px solid var(--border); background:var(--bg); border-radius:4px; cursor:pointer; font-size:.9rem; display:flex; align-items:center; justify-content:center; }
-        .cart-price { color:var(--green); font-weight:600; min-width:80px; text-align:right; }
-        .btn-del { background:none; border:none; color:var(--red,#e53935); cursor:pointer; font-size:1rem; padding:0 4px; }
-        .total-row { display:flex; justify-content:space-between; font-size:1.05rem; font-weight:700; padding:12px 0; border-top:2px solid var(--border); margin-top:8px; }
-        .empty-cart { color:var(--txt-sub); text-align:center; padding:20px 0; font-size:.85rem; }
-        .cliente-selected { background:var(--hover); border:1px solid var(--blue); border-radius:8px; padding:10px 14px; margin-bottom:12px; font-size:.85rem; display:none; }
-        .client-row { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border-bottom:1px solid var(--border); cursor:pointer; font-size:.85rem; }
-        .client-row:hover { background:var(--hover); }
-        .field-row { display:flex; gap:12px; margin-bottom:12px; }
-        .field-row .form-group { flex:1; margin-bottom:0; }
-        .form-group label { font-size:.8rem; font-weight:600; color:var(--txt-sub); margin-bottom:4px; display:block; }
-        @media(max-width:768px) { .tab-pane.active { grid-template-columns:1fr; } }
+        /* ── Tab bar ── */
+        .tab-bar {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 24px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 6px;
+            box-shadow: var(--shadow);
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: .83rem;
+            font-weight: 600;
+            color: var(--txt-sub);
+            border-radius: 8px;
+            transition: all .2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            white-space: nowrap;
+        }
+        .tab-btn .tab-icon {
+            font-size: 1rem;
+            line-height: 1;
+        }
+        .tab-btn:hover {
+            background: var(--bg);
+            color: var(--txt-main);
+        }
+        .tab-btn.active {
+            background: var(--blue);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(53,99,233,0.35);
+        }
+        .tab-btn.active.whatsapp-tab {
+            background: #25D366;
+            box-shadow: 0 2px 8px rgba(37,211,102,0.35);
+        }
+
+        /* ── Tab panes ── */
+        .tab-pane { display: none; }
+        .tab-pane.active {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 20px;
+            align-items: start;
+        }
+
+        /* ── Venta cards ── */
+        .venta-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 0;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            margin-bottom: 16px;
+        }
+        .venta-card:last-child { margin-bottom: 0; }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg);
+        }
+        .card-header-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .95rem;
+            flex-shrink: 0;
+        }
+        .card-header-icon.blue  { background: var(--blue-lt); }
+        .card-header-icon.green { background: var(--green-lt); }
+        .card-header-icon.amber { background: var(--amber-lt); }
+        .card-header-icon.wa    { background: #E7FAF0; }
+
+        .card-header h3 {
+            font-size: .9rem;
+            font-weight: 700;
+            color: var(--txt-main);
+            margin: 0;
+        }
+        .card-header p {
+            font-size: .73rem;
+            color: var(--txt-sub);
+            margin: 1px 0 0;
+        }
+        .card-body { padding: 16px 18px; }
+
+        /* ── Search row ── */
+        .search-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .search-row input { flex: 1; }
+
+        /* ── Product results ── */
+        .prod-result {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            max-height: 220px;
+            overflow-y: auto;
+            margin-bottom: 14px;
+        }
+        .prod-result::-webkit-scrollbar { width: 4px; }
+        .prod-result::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        .prod-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 9px 12px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background .15s;
+        }
+        .prod-row:hover { background: var(--blue-lt); }
+        .prod-row:last-child { border-bottom: none; }
+
+        .prod-row-info { flex: 1; min-width: 0; }
+        .prod-row-name {
+            font-size: .84rem;
+            font-weight: 600;
+            color: var(--txt-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .prod-row-meta {
+            display: flex;
+            gap: 8px;
+            margin-top: 2px;
+        }
+        .prod-row-price {
+            font-size: .75rem;
+            font-weight: 700;
+            color: var(--green);
+        }
+        .prod-row-stock {
+            font-size: .72rem;
+            color: var(--txt-sub);
+            background: var(--border);
+            padding: 1px 6px;
+            border-radius: 20px;
+        }
+        .btn-add-sm {
+            font-size: .75rem;
+            padding: 5px 12px;
+            border-radius: 6px;
+            flex-shrink: 0;
+            margin-left: 10px;
+        }
+
+        /* ── Cart sidebar ── */
+        .cart-sidebar {
+            position: sticky;
+            top: calc(var(--topbar-h) + 20px);
+        }
+        .cart-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+        .cart-header {
+            padding: 14px 18px;
+            background: linear-gradient(135deg, #1e40af 0%, var(--blue) 100%);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .cart-header h3 {
+            font-size: .9rem;
+            font-weight: 700;
+            color: #fff;
+            flex: 1;
+        }
+        .cart-badge {
+            background: rgba(255,255,255,0.25);
+            color: #fff;
+            font-size: .72rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 20px;
+            min-width: 24px;
+            text-align: center;
+        }
+        .cart-body { padding: 14px 16px; }
+
+        .cart-items { min-height: 70px; }
+        .cart-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .cart-row:last-child { border-bottom: none; }
+        .cart-row-name {
+            flex: 1;
+            font-size: .83rem;
+            font-weight: 500;
+            color: var(--txt-main);
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cart-qty {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+        .qty-btn {
+            width: 26px;
+            height: 26px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: .9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .15s;
+            font-weight: 600;
+            color: var(--txt-main);
+        }
+        .qty-btn:hover { background: var(--blue); border-color: var(--blue); color: #fff; }
+        .qty-num {
+            font-size: .82rem;
+            font-weight: 700;
+            min-width: 18px;
+            text-align: center;
+        }
+        .cart-price {
+            color: var(--green);
+            font-weight: 700;
+            font-size: .82rem;
+            min-width: 72px;
+            text-align: right;
+        }
+        .btn-del {
+            background: none;
+            border: none;
+            color: var(--txt-sub);
+            cursor: pointer;
+            font-size: .85rem;
+            padding: 3px 4px;
+            border-radius: 4px;
+            transition: all .15s;
+            line-height: 1;
+        }
+        .btn-del:hover { background: var(--red-lt); color: var(--red); }
+
+        .empty-cart {
+            color: var(--txt-sub);
+            text-align: center;
+            padding: 28px 0;
+            font-size: .82rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .empty-cart-icon {
+            font-size: 1.8rem;
+            opacity: .5;
+        }
+
+        /* ── Total section ── */
+        .cart-total-section {
+            border-top: 1px solid var(--border);
+            padding: 14px 16px;
+            background: var(--bg);
+        }
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .total-label {
+            font-size: .8rem;
+            color: var(--txt-sub);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+        .total-amount {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--txt-main);
+        }
+        .btn-generar {
+            width: 100%;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: .88rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all .2s;
+            background: linear-gradient(135deg, #1e40af 0%, var(--blue) 100%);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(53,99,233,0.4);
+        }
+        .btn-generar:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(53,99,233,0.5);
+        }
+        .btn-generar:active { transform: translateY(0); }
+        .btn-generar.wa {
+            background: linear-gradient(135deg, #128C7E 0%, #25D366 100%);
+            box-shadow: 0 4px 12px rgba(37,211,102,0.4);
+        }
+        .btn-generar.wa:hover { box-shadow: 0 6px 16px rgba(37,211,102,0.5); }
+
+        /* ── Cliente selected ── */
+        .cliente-selected {
+            background: var(--blue-lt);
+            border: 1.5px solid var(--blue);
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-bottom: 12px;
+            font-size: .83rem;
+            display: none;
+            position: relative;
+        }
+        .cliente-selected-name {
+            font-weight: 700;
+            color: var(--blue);
+            margin-bottom: 2px;
+        }
+        .cliente-selected-email {
+            color: var(--txt-sub);
+            font-size: .78rem;
+        }
+        .btn-clear-client {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: var(--txt-sub);
+            cursor: pointer;
+            font-size: .8rem;
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+        .btn-clear-client:hover { background: var(--border); }
+
+        /* ── Client results ── */
+        .client-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 9px 12px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            font-size: .83rem;
+            transition: background .15s;
+        }
+        .client-row:hover { background: var(--blue-lt); }
+        .client-row:last-child { border-bottom: none; }
+        .client-row-name { font-weight: 600; color: var(--txt-main); }
+        .client-row-email { font-size: .75rem; color: var(--txt-sub); margin-top: 1px; }
+        .client-row-action { font-size: .75rem; color: var(--blue); font-weight: 600; flex-shrink: 0; margin-left: 8px; }
+
+        /* ── Field rows ── */
+        .field-row { display: flex; gap: 12px; margin-bottom: 12px; }
+        .field-row .form-group { flex: 1; margin-bottom: 0; }
+        .form-group label {
+            font-size: .76rem;
+            font-weight: 700;
+            color: var(--txt-sub);
+            margin-bottom: 5px;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+        }
+
+        /* ── Rapida note ── */
+        .rapida-note {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: .78rem;
+            color: var(--txt-sub);
+            background: var(--amber-lt);
+            border: 1px solid var(--amber);
+            border-radius: 8px;
+            padding: 7px 11px;
+            margin-bottom: 12px;
+        }
+
+        /* ── WA card header ── */
+        .cart-header.wa {
+            background: linear-gradient(135deg, #128C7E 0%, #25D366 100%);
+        }
+
+        /* ── Divider ── */
+        .card-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 14px 0;
+        }
+
+        @media(max-width:768px) {
+            .tab-pane.active { grid-template-columns: 1fr; }
+            .cart-sidebar { position: static; }
+            .tab-btn { font-size: .75rem; padding: 9px 10px; }
+        }
     </style>
 </head>
 <body class="admin-layout">
@@ -59,10 +460,16 @@
         <a href="admin-categorias.html" class="nav-item"><span class="nav-icon">🏷️</span> Categorías</a>
         <div class="sidebar-section" style="padding-left:0;margin-top:12px;">Ventas</div>
         <a href="admin-nueva-venta.html" class="nav-item active"><span class="nav-icon">💵</span> Nueva Venta</a>
+        <div class="sidebar-section" style="padding-left:0;margin-top:12px;">Gestión</div>
+        <a href="admin-dashboard.html" class="nav-item"><span class="nav-icon">👥</span> Usuarios</a>
+        <a href="admin-dashboard.html" class="nav-item"><span class="nav-icon">🛒</span> Pedidos</a>
+        <a href="admin-dashboard.html" class="nav-item"><span class="nav-icon">💰</span> Finanzas</a>
+        <a href="admin-dashboard.html" class="nav-item"><span class="nav-icon">📋</span> Historial</a>
         <div class="sidebar-section" style="padding-left:0;margin-top:12px;">Otros</div>
         <a href="../index.html" class="nav-item"><span class="nav-icon">🛍️</span> Ver Tienda</a>
     </nav>
     <div class="sidebar-bottom">
+        <a href="#" class="nav-item"><span class="nav-icon">⚙️</span> Configuración</a>
         <button class="nav-item logout" id="logoutBtn"><span class="nav-icon">🚪</span> Cerrar Sesión</button>
     </div>
 </aside>
@@ -81,6 +488,8 @@
     </header>
 
     <div class="admin-content" style="flex-direction:column">
+
+        <!-- PAGE HEADER -->
         <div class="page-header">
             <div>
                 <h1>💵 Nueva <span>Venta</span></h1>
@@ -91,77 +500,113 @@
 
         <!-- TABS -->
         <div class="tab-bar">
-            <button class="tab-btn active" data-tab="cliente">👤 Venta con Cliente</button>
-            <button class="tab-btn" data-tab="rapida">⚡ Venta Rápida</button>
-            <button class="tab-btn" data-tab="cotizacion">💬 Cotización WhatsApp</button>
+            <button class="tab-btn active" data-tab="cliente">
+                <span class="tab-icon">👤</span> Venta con Cliente
+            </button>
+            <button class="tab-btn" data-tab="rapida">
+                <span class="tab-icon">⚡</span> Venta Rápida
+            </button>
+            <button class="tab-btn whatsapp-tab" data-tab="cotizacion">
+                <span class="tab-icon">💬</span> Cotización WhatsApp
+            </button>
         </div>
 
         <!-- ===== TAB 1: VENTA CON CLIENTE ===== -->
         <div id="tab-cliente" class="tab-pane active">
-            <!-- Left -->
+            <!-- Left col -->
             <div>
                 <!-- Buscar cliente -->
-                <div class="venta-card" style="margin-bottom:16px">
-                    <h3>👤 Seleccionar Cliente</h3>
-                    <div class="search-row">
-                        <input type="text" id="clienteSearch" class="form-input" placeholder="Buscar por nombre o correo...">
-                        <button class="btn btn-outline btn-sm" onclick="buscarClientes()">Buscar</button>
+                <div class="venta-card">
+                    <div class="card-header">
+                        <div class="card-header-icon blue">👤</div>
+                        <div>
+                            <h3>Seleccionar Cliente</h3>
+                            <p>Busca el cliente por nombre o correo</p>
+                        </div>
                     </div>
-                    <div id="clienteSelected" class="cliente-selected">
-                        <strong id="clienteNombre">—</strong><br>
-                        <span id="clienteCorreo" style="color:var(--txt-sub)"></span>
-                        <button class="btn btn-outline btn-sm" style="margin-left:8px;float:right" onclick="limpiarCliente()">✕</button>
+                    <div class="card-body">
+                        <div id="clienteSelected" class="cliente-selected">
+                            <div class="cliente-selected-name" id="clienteNombre">—</div>
+                            <div class="cliente-selected-email" id="clienteCorreo"></div>
+                            <button class="btn-clear-client" onclick="limpiarCliente()">✕</button>
+                        </div>
+                        <div class="search-row">
+                            <input type="text" id="clienteSearch" class="form-input" placeholder="Nombre o correo del cliente...">
+                            <button class="btn btn-outline btn-sm" onclick="buscarClientes()">Buscar</button>
+                        </div>
+                        <div class="prod-result" id="clienteResultados" style="display:none"></div>
                     </div>
-                    <div class="prod-result" id="clienteResultados" style="display:none"></div>
                 </div>
 
                 <!-- Buscar productos -->
                 <div class="venta-card">
-                    <h3>📦 Agregar Productos</h3>
-                    <div class="search-row">
-                        <input type="text" id="prodSearch1" class="form-input" placeholder="Buscar producto...">
+                    <div class="card-header">
+                        <div class="card-header-icon green">📦</div>
+                        <div>
+                            <h3>Agregar Productos</h3>
+                            <p>Busca y agrega al carrito</p>
+                        </div>
                     </div>
-                    <div class="prod-result" id="prodResultados1"></div>
+                    <div class="card-body">
+                        <div class="search-row">
+                            <input type="text" id="prodSearch1" class="form-input" placeholder="Buscar producto por nombre...">
+                        </div>
+                        <div class="prod-result" id="prodResultados1"></div>
 
-                    <div class="field-row" style="margin-top:8px">
-                        <div class="form-group">
-                            <label>Método de Pago</label>
-                            <select id="metodoPago1" class="form-input">
-                                <option value="EFECTIVO">Efectivo</option>
-                                <option value="TARJETA">Tarjeta</option>
-                                <option value="TRANSFERENCIA">Transferencia</option>
-                                <option value="SINPE">SINPE Móvil</option>
-                            </select>
+                        <div class="card-divider"></div>
+
+                        <div class="field-row">
+                            <div class="form-group">
+                                <label>Método de Pago</label>
+                                <select id="metodoPago1" class="form-input">
+                                    <option value="EFECTIVO">💵 Efectivo</option>
+                                    <option value="TARJETA">💳 Tarjeta</option>
+                                    <option value="TRANSFERENCIA">🏦 Transferencia</option>
+                                    <option value="SINPE">📱 SINPE Móvil</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Método de Envío</label>
+                                <select id="metodoEnvio1" class="form-input">
+                                    <option value="RETIRO_TIENDA">🏪 Retiro en tienda</option>
+                                    <option value="ENTREGA_DOMICILIO">🚚 Entrega a domicilio</option>
+                                    <option value="CORREOS">📬 Correos CR</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="form-group">
-                            <label>Método de Envío</label>
-                            <select id="metodoEnvio1" class="form-input">
-                                <option value="RETIRO_TIENDA">Retiro en tienda</option>
-                                <option value="ENTREGA_DOMICILIO">Entrega a domicilio</option>
-                                <option value="CORREOS">Correos CR</option>
-                            </select>
+                            <label>Notas adicionales</label>
+                            <textarea id="notas1" class="form-input" rows="2" placeholder="Instrucciones especiales, referencias, etc."></textarea>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Notas</label>
-                        <textarea id="notas1" class="form-input" rows="2" placeholder="Notas adicionales..."></textarea>
                     </div>
                 </div>
             </div>
 
             <!-- Right: carrito -->
-            <div class="venta-card">
-                <h3>🛒 Resumen del Pedido</h3>
-                <div class="cart-items" id="cart1">
-                    <div class="empty-cart">Sin productos. Agrega productos desde la izquierda.</div>
+            <div class="cart-sidebar">
+                <div class="cart-card">
+                    <div class="cart-header">
+                        <h3>🛒 Resumen del Pedido</h3>
+                        <span class="cart-badge" id="cartBadge1">0</span>
+                    </div>
+                    <div class="cart-body">
+                        <div class="cart-items" id="cart1">
+                            <div class="empty-cart">
+                                <span class="empty-cart-icon">🛒</span>
+                                Agrega productos desde la izquierda
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cart-total-section">
+                        <div class="total-row">
+                            <span class="total-label">Total a pagar</span>
+                            <span class="total-amount" id="total1">₡0</span>
+                        </div>
+                        <button class="btn-generar" onclick="generarVenta(1)">
+                            ✅ Generar Pedido
+                        </button>
+                    </div>
                 </div>
-                <div class="total-row">
-                    <span>Total</span>
-                    <span id="total1">₡0</span>
-                </div>
-                <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="generarVenta(1)">
-                    ✅ Generar Pedido
-                </button>
             </div>
         </div>
 
@@ -169,42 +614,71 @@
         <div id="tab-rapida" class="tab-pane">
             <div>
                 <div class="venta-card">
-                    <h3>📦 Agregar Productos</h3>
-                    <div class="search-row">
-                        <input type="text" id="prodSearch2" class="form-input" placeholder="Buscar producto...">
-                    </div>
-                    <div class="prod-result" id="prodResultados2"></div>
-                    <div class="field-row" style="margin-top:8px">
-                        <div class="form-group">
-                            <label>Método de Pago</label>
-                            <select id="metodoPago2" class="form-input">
-                                <option value="EFECTIVO">Efectivo</option>
-                                <option value="TARJETA">Tarjeta</option>
-                                <option value="TRANSFERENCIA">Transferencia</option>
-                                <option value="SINPE">SINPE Móvil</option>
-                            </select>
+                    <div class="card-header">
+                        <div class="card-header-icon amber">⚡</div>
+                        <div>
+                            <h3>Venta Rápida</h3>
+                            <p>Sin registro de cliente</p>
                         </div>
-                        <div class="form-group">
-                            <label>Método de Envío</label>
-                            <select id="metodoEnvio2" class="form-input">
-                                <option value="RETIRO_TIENDA">Retiro en tienda</option>
-                                <option value="ENTREGA_DOMICILIO">Entrega a domicilio</option>
-                                <option value="CORREOS">Correos CR</option>
-                            </select>
+                    </div>
+                    <div class="card-body">
+                        <div class="rapida-note">
+                            ⚠️ Esta venta se registrará sin cliente asociado (venta de mostrador).
+                        </div>
+                        <div class="search-row">
+                            <input type="text" id="prodSearch2" class="form-input" placeholder="Buscar producto por nombre...">
+                        </div>
+                        <div class="prod-result" id="prodResultados2"></div>
+
+                        <div class="card-divider"></div>
+
+                        <div class="field-row">
+                            <div class="form-group">
+                                <label>Método de Pago</label>
+                                <select id="metodoPago2" class="form-input">
+                                    <option value="EFECTIVO">💵 Efectivo</option>
+                                    <option value="TARJETA">💳 Tarjeta</option>
+                                    <option value="TRANSFERENCIA">🏦 Transferencia</option>
+                                    <option value="SINPE">📱 SINPE Móvil</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Método de Envío</label>
+                                <select id="metodoEnvio2" class="form-input">
+                                    <option value="RETIRO_TIENDA">🏪 Retiro en tienda</option>
+                                    <option value="ENTREGA_DOMICILIO">🚚 Entrega a domicilio</option>
+                                    <option value="CORREOS">📬 Correos CR</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="venta-card">
-                <h3>🛒 Resumen</h3>
-                <p style="font-size:.8rem;color:var(--txt-sub);margin-bottom:12px">Cliente: Admin (venta rápida sin registro de cliente)</p>
-                <div class="cart-items" id="cart2">
-                    <div class="empty-cart">Sin productos.</div>
+
+            <div class="cart-sidebar">
+                <div class="cart-card">
+                    <div class="cart-header">
+                        <h3>⚡ Resumen</h3>
+                        <span class="cart-badge" id="cartBadge2">0</span>
+                    </div>
+                    <div class="cart-body">
+                        <div class="cart-items" id="cart2">
+                            <div class="empty-cart">
+                                <span class="empty-cart-icon">🛒</span>
+                                Sin productos
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cart-total-section">
+                        <div class="total-row">
+                            <span class="total-label">Total</span>
+                            <span class="total-amount" id="total2">₡0</span>
+                        </div>
+                        <button class="btn-generar" onclick="generarVenta(2)">
+                            ⚡ Generar Venta Rápida
+                        </button>
+                    </div>
                 </div>
-                <div class="total-row"><span>Total</span><span id="total2">₡0</span></div>
-                <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="generarVenta(2)">
-                    ⚡ Generar Venta Rápida
-                </button>
             </div>
         </div>
 
@@ -212,36 +686,70 @@
         <div id="tab-cotizacion" class="tab-pane">
             <div>
                 <div class="venta-card">
-                    <h3>👤 Datos del Cliente</h3>
-                    <div class="form-group">
-                        <label>Nombre del cliente (opcional)</label>
-                        <input type="text" id="cotNombre" class="form-input" placeholder="Nombre del cliente">
+                    <div class="card-header">
+                        <div class="card-header-icon wa">👤</div>
+                        <div>
+                            <h3>Datos del Cliente</h3>
+                            <p>Nombre y número de WhatsApp</p>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>WhatsApp <span style="color:var(--red)">*</span></label>
-                        <input type="tel" id="cotTelefono" class="form-input" placeholder="50688887777 (con código de país)">
-                        <small style="color:var(--txt-sub)">Ejemplo: 50688887777 (Costa Rica)</small>
+                    <div class="card-body">
+                        <div class="form-group" style="margin-bottom:12px">
+                            <label>Nombre del cliente <span style="font-weight:400;color:var(--txt-sub)">(opcional)</span></label>
+                            <input type="text" id="cotNombre" class="form-input" placeholder="Ej. Juan Pérez">
+                        </div>
+                        <div class="form-group">
+                            <label>WhatsApp <span style="color:var(--red)">*</span></label>
+                            <input type="tel" id="cotTelefono" class="form-input" placeholder="50688887777">
+                            <small style="color:var(--txt-sub);font-size:.72rem;margin-top:4px;display:block">Con código de país · Ej: 50688887777 (Costa Rica)</small>
+                        </div>
                     </div>
                 </div>
-                <div class="venta-card" style="margin-top:16px">
-                    <h3>📦 Agregar Productos</h3>
-                    <div class="search-row">
-                        <input type="text" id="prodSearch3" class="form-input" placeholder="Buscar producto...">
+
+                <div class="venta-card">
+                    <div class="card-header">
+                        <div class="card-header-icon green">📦</div>
+                        <div>
+                            <h3>Agregar Productos</h3>
+                            <p>Busca los productos a cotizar</p>
+                        </div>
                     </div>
-                    <div class="prod-result" id="prodResultados3"></div>
+                    <div class="card-body">
+                        <div class="search-row">
+                            <input type="text" id="prodSearch3" class="form-input" placeholder="Buscar producto...">
+                        </div>
+                        <div class="prod-result" id="prodResultados3"></div>
+                    </div>
                 </div>
             </div>
-            <div class="venta-card">
-                <h3>💬 Cotización</h3>
-                <div class="cart-items" id="cart3">
-                    <div class="empty-cart">Sin productos.</div>
+
+            <div class="cart-sidebar">
+                <div class="cart-card">
+                    <div class="cart-header wa">
+                        <h3>💬 Cotización</h3>
+                        <span class="cart-badge" id="cartBadge3">0</span>
+                    </div>
+                    <div class="cart-body">
+                        <div class="cart-items" id="cart3">
+                            <div class="empty-cart">
+                                <span class="empty-cart-icon">💬</span>
+                                Sin productos
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cart-total-section">
+                        <div class="total-row">
+                            <span class="total-label">Total cotizado</span>
+                            <span class="total-amount" id="total3">₡0</span>
+                        </div>
+                        <button class="btn-generar wa" onclick="enviarCotizacion()">
+                            💬 Guardar y Enviar por WhatsApp
+                        </button>
+                    </div>
                 </div>
-                <div class="total-row"><span>Total</span><span id="total3">₡0</span></div>
-                <button class="btn btn-primary" style="width:100%;margin-top:16px;background:#25D366;border-color:#25D366" onclick="enviarCotizacion()">
-                    💬 Guardar y Enviar por WhatsApp
-                </button>
             </div>
         </div>
+
     </div><!-- admin-content -->
 </div><!-- admin-wrapper -->
 
@@ -302,12 +810,15 @@ function filtrarProductos(tab) {
 
 function renderProductos(tab, lista) {
     const el = document.getElementById(`prodResultados${tab}`);
-    if (!lista.length) { el.innerHTML = '<div class="prod-row" style="color:var(--txt-sub)">Sin resultados</div>'; return; }
+    if (!lista.length) { el.innerHTML = '<div class="prod-row" style="color:var(--txt-sub);justify-content:center;padding:14px">Sin resultados</div>'; return; }
     el.innerHTML = lista.map(p => `
         <div class="prod-row">
             <div class="prod-row-info">
                 <div class="prod-row-name">${escapeHtml(p.nombre)}</div>
-                <div class="prod-row-price">₡${p.precio.toLocaleString()} · Stock: ${p.stock}</div>
+                <div class="prod-row-meta">
+                    <span class="prod-row-price">₡${p.precio.toLocaleString()}</span>
+                    <span class="prod-row-stock">Stock: ${p.stock}</span>
+                </div>
             </div>
             <button class="btn btn-primary btn-sm btn-add-sm" onclick="agregarAlCart(${tab},${p.id},'${p.nombre.replace(/'/g,"\\'")}',${p.precio})">+ Agregar</button>
         </div>`).join('');
@@ -338,17 +849,26 @@ function eliminarDelCart(tab, id) {
 
 function renderCart(tab) {
     const el    = document.getElementById(`cart${tab}`);
+    const badge = document.getElementById(`cartBadge${tab}`);
     const cart  = carts[tab];
     const total = cart.reduce((s, i) => s + i.precio * i.cantidad, 0);
-    document.getElementById(`total${tab}`).textContent = '₡' + total.toLocaleString();
+    const totalItems = cart.reduce((s, i) => s + i.cantidad, 0);
 
-    if (!cart.length) { el.innerHTML = '<div class="empty-cart">Sin productos.</div>'; return; }
+    document.getElementById(`total${tab}`).textContent = '₡' + total.toLocaleString();
+    if (badge) badge.textContent = totalItems;
+
+    if (!cart.length) {
+        const icons = { 1:'🛒', 2:'🛒', 3:'💬' };
+        const labels = { 1:'Agrega productos desde la izquierda', 2:'Sin productos', 3:'Sin productos' };
+        el.innerHTML = `<div class="empty-cart"><span class="empty-cart-icon">${icons[tab]}</span>${labels[tab]}</div>`;
+        return;
+    }
     el.innerHTML = cart.map(i => `
         <div class="cart-row">
             <span class="cart-row-name">${escapeHtml(i.nombre)}</span>
             <div class="cart-qty">
                 <button class="qty-btn" onclick="cambiarCantidad(${tab},${i.id},-1)">−</button>
-                <span>${i.cantidad}</span>
+                <span class="qty-num">${i.cantidad}</span>
                 <button class="qty-btn" onclick="cambiarCantidad(${tab},${i.id},1)">+</button>
             </div>
             <span class="cart-price">₡${(i.precio*i.cantidad).toLocaleString()}</span>
@@ -364,14 +884,14 @@ async function buscarClientes() {
     const lista = json.data || [];
     const el   = document.getElementById('clienteResultados');
     el.style.display = 'block';
-    if (!lista.length) { el.innerHTML = '<div class="client-row" style="color:var(--txt-sub)">Sin resultados</div>'; return; }
+    if (!lista.length) { el.innerHTML = '<div class="client-row" style="color:var(--txt-sub);justify-content:center">Sin resultados</div>'; return; }
     el.innerHTML = lista.slice(0, 10).map(c => `
         <div class="client-row" onclick="seleccionarCliente(${c.id},'${(c.nombre+'').replace(/'/g,"\\'")}','${(c.correo+'').replace(/'/g,"\\'")}')">
             <div>
-                <div style="font-weight:500">${escapeHtml(c.nombre || '—')}</div>
-                <div style="color:var(--txt-sub);font-size:.78rem">${escapeHtml(c.correo || '')}</div>
+                <div class="client-row-name">${escapeHtml(c.nombre || '—')}</div>
+                <div class="client-row-email">${escapeHtml(c.correo || '')}</div>
             </div>
-            <span style="color:var(--blue);font-size:.8rem">Seleccionar</span>
+            <span class="client-row-action">Seleccionar →</span>
         </div>`).join('');
 }
 
