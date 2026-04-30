@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOTCLICK — Nueva Venta</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+    <style>
+        .tab-bar { display:flex; gap:8px; margin-bottom:24px; border-bottom:2px solid var(--border); padding-bottom:0; }
+        .tab-btn { padding:10px 20px; border:none; background:none; cursor:pointer; font-size:.9rem; font-weight:500; color:var(--txt-sub); border-bottom:2px solid transparent; margin-bottom:-2px; transition:.2s; }
+        .tab-btn.active { color:var(--blue); border-bottom-color:var(--blue); }
+        .tab-pane { display:none; }
+        .tab-pane.active { display:grid; grid-template-columns:1fr 340px; gap:20px; }
+        .venta-card { background:var(--card-bg); border:1px solid var(--border); border-radius:12px; padding:20px; }
+        .venta-card h3 { font-size:.95rem; font-weight:600; margin-bottom:16px; }
+        .search-row { display:flex; gap:8px; margin-bottom:12px; }
+        .search-row input { flex:1; }
+        .prod-result { background:var(--bg); border:1px solid var(--border); border-radius:8px; max-height:220px; overflow-y:auto; margin-bottom:12px; }
+        .prod-row { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border-bottom:1px solid var(--border); cursor:pointer; transition:.15s; }
+        .prod-row:hover { background:var(--hover); }
+        .prod-row:last-child { border-bottom:none; }
+        .prod-row-info { font-size:.85rem; }
+        .prod-row-name { font-weight:500; }
+        .prod-row-price { color:var(--green); font-size:.8rem; }
+        .btn-add-sm { font-size:.75rem; padding:4px 10px; }
+        .cart-items { min-height:80px; margin-bottom:16px; }
+        .cart-row { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--border); font-size:.85rem; }
+        .cart-row:last-child { border-bottom:none; }
+        .cart-row-name { flex:1; font-weight:500; }
+        .cart-qty { display:flex; align-items:center; gap:6px; }
+        .qty-btn { width:24px; height:24px; border:1px solid var(--border); background:var(--bg); border-radius:4px; cursor:pointer; font-size:.9rem; display:flex; align-items:center; justify-content:center; }
+        .cart-price { color:var(--green); font-weight:600; min-width:80px; text-align:right; }
+        .btn-del { background:none; border:none; color:var(--red,#e53935); cursor:pointer; font-size:1rem; padding:0 4px; }
+        .total-row { display:flex; justify-content:space-between; font-size:1.05rem; font-weight:700; padding:12px 0; border-top:2px solid var(--border); margin-top:8px; }
+        .empty-cart { color:var(--txt-sub); text-align:center; padding:20px 0; font-size:.85rem; }
+        .cliente-selected { background:var(--hover); border:1px solid var(--blue); border-radius:8px; padding:10px 14px; margin-bottom:12px; font-size:.85rem; display:none; }
+        .client-row { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border-bottom:1px solid var(--border); cursor:pointer; font-size:.85rem; }
+        .client-row:hover { background:var(--hover); }
+        .field-row { display:flex; gap:12px; margin-bottom:12px; }
+        .field-row .form-group { flex:1; margin-bottom:0; }
+        .form-group label { font-size:.8rem; font-weight:600; color:var(--txt-sub); margin-bottom:4px; display:block; }
+        @media(max-width:768px) { .tab-pane.active { grid-template-columns:1fr; } }
+    </style>
+</head>
+<body class="admin-layout">
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar" id="sidebar">
+    <a class="sidebar-logo" href="admin-dashboard.html">
+        <div class="logo-box">HC</div>
+        <span class="logo-name">HOT<span>CLICK</span></span>
+    </a>
+    <div class="sidebar-section">Principal</div>
+    <nav class="sidebar-nav">
+        <a href="admin-dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+        <a href="admin-productos.html" class="nav-item"><span class="nav-icon">📦</span> Productos</a>
+        <a href="admin-bodegas.html" class="nav-item"><span class="nav-icon">🏭</span> Bodegas</a>
+        <a href="admin-categorias.html" class="nav-item"><span class="nav-icon">🏷️</span> Categorías</a>
+        <div class="sidebar-section" style="padding-left:0;margin-top:12px;">Ventas</div>
+        <a href="admin-nueva-venta.html" class="nav-item active"><span class="nav-icon">💵</span> Nueva Venta</a>
+        <div class="sidebar-section" style="padding-left:0;margin-top:12px;">Otros</div>
+        <a href="../index.html" class="nav-item"><span class="nav-icon">🛍️</span> Ver Tienda</a>
+    </nav>
+    <div class="sidebar-bottom">
+        <button class="nav-item logout" id="logoutBtn"><span class="nav-icon">🚪</span> Cerrar Sesión</button>
+    </div>
+</aside>
+
+<!-- ===== MAIN ===== -->
+<div class="admin-wrapper">
+    <header class="topbar">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+        <div class="topbar-search"><span class="search-icon">🔍</span><input type="text" placeholder="Buscar..."></div>
+        <div class="topbar-right">
+            <div class="topbar-user">
+                <div class="topbar-avatar" id="adminAvatar">A</div>
+                <span class="topbar-username" id="adminName">Admin</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="admin-content" style="flex-direction:column">
+        <div class="page-header">
+            <div>
+                <h1>💵 Nueva <span>Venta</span></h1>
+                <p>Registra una venta, venta rápida o cotización por WhatsApp</p>
+            </div>
+            <a href="admin-dashboard.html" class="btn btn-outline btn-sm">← Volver</a>
+        </div>
+
+        <!-- TABS -->
+        <div class="tab-bar">
+            <button class="tab-btn active" data-tab="cliente">👤 Venta con Cliente</button>
+            <button class="tab-btn" data-tab="rapida">⚡ Venta Rápida</button>
+            <button class="tab-btn" data-tab="cotizacion">💬 Cotización WhatsApp</button>
+        </div>
+
+        <!-- ===== TAB 1: VENTA CON CLIENTE ===== -->
+        <div id="tab-cliente" class="tab-pane active">
+            <!-- Left -->
+            <div>
+                <!-- Buscar cliente -->
+                <div class="venta-card" style="margin-bottom:16px">
+                    <h3>👤 Seleccionar Cliente</h3>
+                    <div class="search-row">
+                        <input type="text" id="clienteSearch" class="form-input" placeholder="Buscar por nombre o correo...">
+                        <button class="btn btn-outline btn-sm" onclick="buscarClientes()">Buscar</button>
+                    </div>
+                    <div id="clienteSelected" class="cliente-selected">
+                        <strong id="clienteNombre">—</strong><br>
+                        <span id="clienteCorreo" style="color:var(--txt-sub)"></span>
+                        <button class="btn btn-outline btn-sm" style="margin-left:8px;float:right" onclick="limpiarCliente()">✕</button>
+                    </div>
+                    <div class="prod-result" id="clienteResultados" style="display:none"></div>
+                </div>
+
+                <!-- Buscar productos -->
+                <div class="venta-card">
+                    <h3>📦 Agregar Productos</h3>
+                    <div class="search-row">
+                        <input type="text" id="prodSearch1" class="form-input" placeholder="Buscar producto...">
+                    </div>
+                    <div class="prod-result" id="prodResultados1"></div>
+
+                    <div class="field-row" style="margin-top:8px">
+                        <div class="form-group">
+                            <label>Método de Pago</label>
+                            <select id="metodoPago1" class="form-input">
+                                <option value="EFECTIVO">Efectivo</option>
+                                <option value="TARJETA">Tarjeta</option>
+                                <option value="TRANSFERENCIA">Transferencia</option>
+                                <option value="SINPE">SINPE Móvil</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Método de Envío</label>
+                            <select id="metodoEnvio1" class="form-input">
+                                <option value="RETIRO_TIENDA">Retiro en tienda</option>
+                                <option value="ENTREGA_DOMICILIO">Entrega a domicilio</option>
+                                <option value="CORREOS">Correos CR</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Notas</label>
+                        <textarea id="notas1" class="form-input" rows="2" placeholder="Notas adicionales..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: carrito -->
+            <div class="venta-card">
+                <h3>🛒 Resumen del Pedido</h3>
+                <div class="cart-items" id="cart1">
+                    <div class="empty-cart">Sin productos. Agrega productos desde la izquierda.</div>
+                </div>
+                <div class="total-row">
+                    <span>Total</span>
+                    <span id="total1">₡0</span>
+                </div>
+                <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="generarVenta(1)">
+                    ✅ Generar Pedido
+                </button>
+            </div>
+        </div>
+
+        <!-- ===== TAB 2: VENTA RÁPIDA ===== -->
+        <div id="tab-rapida" class="tab-pane">
+            <div>
+                <div class="venta-card">
+                    <h3>📦 Agregar Productos</h3>
+                    <div class="search-row">
+                        <input type="text" id="prodSearch2" class="form-input" placeholder="Buscar producto...">
+                    </div>
+                    <div class="prod-result" id="prodResultados2"></div>
+                    <div class="field-row" style="margin-top:8px">
+                        <div class="form-group">
+                            <label>Método de Pago</label>
+                            <select id="metodoPago2" class="form-input">
+                                <option value="EFECTIVO">Efectivo</option>
+                                <option value="TARJETA">Tarjeta</option>
+                                <option value="TRANSFERENCIA">Transferencia</option>
+                                <option value="SINPE">SINPE Móvil</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Método de Envío</label>
+                            <select id="metodoEnvio2" class="form-input">
+                                <option value="RETIRO_TIENDA">Retiro en tienda</option>
+                                <option value="ENTREGA_DOMICILIO">Entrega a domicilio</option>
+                                <option value="CORREOS">Correos CR</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="venta-card">
+                <h3>🛒 Resumen</h3>
+                <p style="font-size:.8rem;color:var(--txt-sub);margin-bottom:12px">Cliente: Admin (venta rápida sin registro de cliente)</p>
+                <div class="cart-items" id="cart2">
+                    <div class="empty-cart">Sin productos.</div>
+                </div>
+                <div class="total-row"><span>Total</span><span id="total2">₡0</span></div>
+                <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="generarVenta(2)">
+                    ⚡ Generar Venta Rápida
+                </button>
+            </div>
+        </div>
+
+        <!-- ===== TAB 3: COTIZACIÓN WHATSAPP ===== -->
+        <div id="tab-cotizacion" class="tab-pane">
+            <div>
+                <div class="venta-card">
+                    <h3>👤 Datos del Cliente</h3>
+                    <div class="form-group">
+                        <label>Nombre del cliente (opcional)</label>
+                        <input type="text" id="cotNombre" class="form-input" placeholder="Nombre del cliente">
+                    </div>
+                    <div class="form-group">
+                        <label>WhatsApp <span style="color:var(--red)">*</span></label>
+                        <input type="tel" id="cotTelefono" class="form-input" placeholder="50688887777 (con código de país)">
+                        <small style="color:var(--txt-sub)">Ejemplo: 50688887777 (Costa Rica)</small>
+                    </div>
+                </div>
+                <div class="venta-card" style="margin-top:16px">
+                    <h3>📦 Agregar Productos</h3>
+                    <div class="search-row">
+                        <input type="text" id="prodSearch3" class="form-input" placeholder="Buscar producto...">
+                    </div>
+                    <div class="prod-result" id="prodResultados3"></div>
+                </div>
+            </div>
+            <div class="venta-card">
+                <h3>💬 Cotización</h3>
+                <div class="cart-items" id="cart3">
+                    <div class="empty-cart">Sin productos.</div>
+                </div>
+                <div class="total-row"><span>Total</span><span id="total3">₡0</span></div>
+                <button class="btn btn-primary" style="width:100%;margin-top:16px;background:#25D366;border-color:#25D366" onclick="enviarCotizacion()">
+                    💬 Guardar y Enviar por WhatsApp
+                </button>
+            </div>
+        </div>
+    </div><!-- admin-content -->
+</div><!-- admin-wrapper -->
+
+<div id="toastContainer" class="toast-container"></div>
+
+<script src="../js/utils.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+const authHdr = () => ({ 'Content-Type':'application/json', 'Authorization':'Bearer '+localStorage.getItem('token') });
+
+/* ── Estado global ── */
+const carts = { 1:[], 2:[], 3:[] };
+let todosProductos = [];
+let clienteSeleccionado = null;
+
+function mostrarToast(msg, tipo='success') {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = `toast toast-${tipo}`;
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+}
+
+/* ── Tabs ── */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+});
+
+/* ── Cargar productos ── */
+async function cargarProductos() {
+    try {
+        const res  = await fetch(`${API_URL}/productos?size=200`);
+        const json = await res.json();
+        todosProductos = (json.data?.content || json.data || []).map(p => ({
+            id:     p.id,
+            nombre: p.nombreProducto || '',
+            precio: p.precioVenta    || 0,
+            stock:  p.stockActual    || 0
+        }));
+        filtrarProductos(1);
+        filtrarProductos(2);
+        filtrarProductos(3);
+    } catch { mostrarToast('Error al cargar productos', 'error'); }
+}
+
+function filtrarProductos(tab) {
+    const q   = (document.getElementById(`prodSearch${tab}`)?.value || '').toLowerCase();
+    const res = todosProductos.filter(p => !q || p.nombre.toLowerCase().includes(q));
+    renderProductos(tab, res.slice(0, 30));
+}
+
+function renderProductos(tab, lista) {
+    const el = document.getElementById(`prodResultados${tab}`);
+    if (!lista.length) { el.innerHTML = '<div class="prod-row" style="color:var(--txt-sub)">Sin resultados</div>'; return; }
+    el.innerHTML = lista.map(p => `
+        <div class="prod-row">
+            <div class="prod-row-info">
+                <div class="prod-row-name">${escapeHtml(p.nombre)}</div>
+                <div class="prod-row-price">₡${p.precio.toLocaleString()} · Stock: ${p.stock}</div>
+            </div>
+            <button class="btn btn-primary btn-sm btn-add-sm" onclick="agregarAlCart(${tab},${p.id},'${p.nombre.replace(/'/g,"\\'")}',${p.precio})">+ Agregar</button>
+        </div>`).join('');
+}
+
+/* ── Carrito ── */
+function agregarAlCart(tab, id, nombre, precio) {
+    const cart = carts[tab];
+    const existente = cart.find(i => i.id === id);
+    if (existente) { existente.cantidad++; }
+    else           { cart.push({ id, nombre, precio, cantidad: 1 }); }
+    renderCart(tab);
+    mostrarToast(`${nombre} agregado`, 'success');
+}
+
+function cambiarCantidad(tab, id, delta) {
+    const item = carts[tab].find(i => i.id === id);
+    if (!item) return;
+    item.cantidad += delta;
+    if (item.cantidad <= 0) carts[tab] = carts[tab].filter(i => i.id !== id);
+    renderCart(tab);
+}
+
+function eliminarDelCart(tab, id) {
+    carts[tab] = carts[tab].filter(i => i.id !== id);
+    renderCart(tab);
+}
+
+function renderCart(tab) {
+    const el    = document.getElementById(`cart${tab}`);
+    const cart  = carts[tab];
+    const total = cart.reduce((s, i) => s + i.precio * i.cantidad, 0);
+    document.getElementById(`total${tab}`).textContent = '₡' + total.toLocaleString();
+
+    if (!cart.length) { el.innerHTML = '<div class="empty-cart">Sin productos.</div>'; return; }
+    el.innerHTML = cart.map(i => `
+        <div class="cart-row">
+            <span class="cart-row-name">${escapeHtml(i.nombre)}</span>
+            <div class="cart-qty">
+                <button class="qty-btn" onclick="cambiarCantidad(${tab},${i.id},-1)">−</button>
+                <span>${i.cantidad}</span>
+                <button class="qty-btn" onclick="cambiarCantidad(${tab},${i.id},1)">+</button>
+            </div>
+            <span class="cart-price">₡${(i.precio*i.cantidad).toLocaleString()}</span>
+            <button class="btn-del" onclick="eliminarDelCart(${tab},${i.id})">🗑</button>
+        </div>`).join('');
+}
+
+/* ── Buscar clientes ── */
+async function buscarClientes() {
+    const q   = document.getElementById('clienteSearch').value.trim();
+    const res = await fetch(`${API_URL}/ventas/clientes${q ? '?q='+encodeURIComponent(q) : ''}`, { headers: authHdr() });
+    const json = await res.json();
+    const lista = json.data || [];
+    const el   = document.getElementById('clienteResultados');
+    el.style.display = 'block';
+    if (!lista.length) { el.innerHTML = '<div class="client-row" style="color:var(--txt-sub)">Sin resultados</div>'; return; }
+    el.innerHTML = lista.slice(0, 10).map(c => `
+        <div class="client-row" onclick="seleccionarCliente(${c.id},'${(c.nombre+'').replace(/'/g,"\\'")}','${(c.correo+'').replace(/'/g,"\\'")}')">
+            <div>
+                <div style="font-weight:500">${escapeHtml(c.nombre || '—')}</div>
+                <div style="color:var(--txt-sub);font-size:.78rem">${escapeHtml(c.correo || '')}</div>
+            </div>
+            <span style="color:var(--blue);font-size:.8rem">Seleccionar</span>
+        </div>`).join('');
+}
+
+function seleccionarCliente(id, nombre, correo) {
+    clienteSeleccionado = { id, nombre, correo };
+    document.getElementById('clienteNombre').textContent  = nombre;
+    document.getElementById('clienteCorreo').textContent  = correo;
+    document.getElementById('clienteSelected').style.display = 'block';
+    document.getElementById('clienteResultados').style.display = 'none';
+    document.getElementById('clienteSearch').value = '';
+}
+
+function limpiarCliente() {
+    clienteSeleccionado = null;
+    document.getElementById('clienteSelected').style.display = 'none';
+}
+
+/* ── Generar Venta ── */
+async function generarVenta(tab) {
+    const cart = carts[tab];
+    if (!cart.length) { mostrarToast('Agrega al menos un producto', 'error'); return; }
+    if (tab === 1 && !clienteSeleccionado) { mostrarToast('Selecciona un cliente', 'error'); return; }
+
+    const body = {
+        clienteId:   tab === 1 ? clienteSeleccionado?.id : null,
+        metodoPago:  document.getElementById(`metodoPago${tab}`)?.value  || 'EFECTIVO',
+        metodoEnvio: document.getElementById(`metodoEnvio${tab}`)?.value || 'RETIRO_TIENDA',
+        notas:       document.getElementById('notas1')?.value || '',
+        items: cart.map(i => ({ productoId: i.id, cantidad: i.cantidad }))
+    };
+
+    try {
+        const res  = await fetch(`${API_URL}/ventas`, { method:'POST', headers: authHdr(), body: JSON.stringify(body) });
+        const json = await res.json();
+        if (res.ok) {
+            mostrarToast('✅ Pedido creado exitosamente', 'success');
+            carts[tab] = [];
+            renderCart(tab);
+            if (tab === 1) limpiarCliente();
+        } else {
+            mostrarToast(json.message || 'Error al crear pedido', 'error');
+        }
+    } catch { mostrarToast('Error de conexión', 'error'); }
+}
+
+/* ── Cotización WhatsApp ── */
+async function enviarCotizacion() {
+    const telefono = document.getElementById('cotTelefono').value.trim();
+    const nombre   = document.getElementById('cotNombre').value.trim();
+    const cart     = carts[3];
+
+    if (!telefono) { mostrarToast('El teléfono de WhatsApp es obligatorio', 'error'); return; }
+    if (!cart.length) { mostrarToast('Agrega al menos un producto', 'error'); return; }
+
+    const body = {
+        nombreCliente: nombre || null,
+        telefono,
+        items: cart.map(i => ({ id: i.id, nombre: i.nombre, cantidad: i.cantidad, precio: i.precio }))
+    };
+
+    try {
+        const res  = await fetch(`${API_URL}/cotizaciones`, { method:'POST', headers: authHdr(), body: JSON.stringify(body) });
+        const json = await res.json();
+        if (res.ok) {
+            mostrarToast('✅ Cotización guardada', 'success');
+            const msg = json.data?.mensajeEnviado || '';
+            const url = `https://wa.me/${telefono.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(msg)}`;
+            window.open(url, '_blank');
+            carts[3] = [];
+            renderCart(3);
+            document.getElementById('cotTelefono').value = '';
+            document.getElementById('cotNombre').value   = '';
+        } else {
+            mostrarToast(json.message || 'Error al guardar cotización', 'error');
+        }
+    } catch { mostrarToast('Error de conexión', 'error'); }
+}
+
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded', () => {
+    const token = localStorage.getItem('token');
+    if (!token) { window.location.href = '../index.html'; return; }
+
+    const name = localStorage.getItem('userName') || 'Admin';
+    document.getElementById('adminName').textContent  = name;
+    document.getElementById('adminAvatar').textContent = name.charAt(0).toUpperCase();
+
+    cargarProductos();
+
+    [1,2,3].forEach(tab => {
+        const el = document.getElementById(`prodSearch${tab}`);
+        if (el) el.addEventListener('input', () => filtrarProductos(tab));
+    });
+
+    document.getElementById('clienteSearch').addEventListener('keypress', e => { if (e.key === 'Enter') buscarClientes(); });
+    document.getElementById('logoutBtn').addEventListener('click', () => { localStorage.clear(); window.location.href = '../index.html'; });
+    document.getElementById('mobileMenuBtn').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
+});
+</script>
+</body>
+</html>
