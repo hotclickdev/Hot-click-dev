@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($path = \"c:\\\\Users\\\\pmdan\\\\OneDrive - Universidad Fidélitas\\\\proyecto\"; Get-ChildItem -Path $path -Recurse -Force -ErrorAction SilentlyContinue | Where-Object {$_.Name -match \"^\\(package\\\\.json|tsconfig|\\\\.eslintrc|webpack|vite|jest|vitest|\\\\.cursorrules|CLAUDE\\\\.md|README\\)\"}  | Select-Object FullName)"
+    ]
+  }
+}
