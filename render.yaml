@@ -2,7 +2,8 @@ services:
   - type: web
     name: hot-click-backend
     runtime: docker
-dockerfilePath: ./Dockerfile
+    rootDir: ./Hot_click_outlet
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: DB_URL
         sync: false
