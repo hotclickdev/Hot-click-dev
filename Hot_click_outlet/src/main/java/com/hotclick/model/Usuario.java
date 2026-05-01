@@ -1,5 +1,6 @@
 package com.hotclick.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ public class Usuario extends BaseEntity {
     @Column(name = "telefono_alterno", length = 20)
     private String telefonoAlterno;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(name = "contrasena_hash", nullable = false, length = 255)
     private String contrasenaHash;
 

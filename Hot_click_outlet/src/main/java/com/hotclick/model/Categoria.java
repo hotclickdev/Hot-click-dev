@@ -1,5 +1,6 @@
 package com.hotclick.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
@@ -49,6 +50,7 @@ public class Categoria extends BaseEntity {
     public Categoria getCategoriaPadre() { return categoriaPadre; }
     public void setCategoriaPadre(Categoria categoriaPadre) { this.categoriaPadre = categoriaPadre; }
 
+    @JsonIgnore
     public Usuario getAdminCliente() { return adminCliente; }
     public void setAdminCliente(Usuario adminCliente) { this.adminCliente = adminCliente; }
 }

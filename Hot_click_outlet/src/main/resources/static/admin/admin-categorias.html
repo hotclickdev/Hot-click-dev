@@ -142,7 +142,9 @@
 
 <script src="../js/utils.js"></script>
 <script>
-    const API     = 'http://localhost:8080/api';
+    const API     = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://localhost:8080/api'
+        : '/api';
     const authHdr = () => ({ 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('token') });
 
     function mostrarToast(msg, tipo = 'success') {
