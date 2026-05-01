@@ -78,6 +78,7 @@ function actualizarContadorCarrito() {
     badges.forEach(badge => {
         if (badge) badge.textContent = total;
     });
+    if (typeof actualizarBottomNavCarrito === 'function') actualizarBottomNavCarrito();
 }
 
 function actualizarModalCarrito() {

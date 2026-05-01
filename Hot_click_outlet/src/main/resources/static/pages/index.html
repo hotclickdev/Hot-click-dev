@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HOTCLICK — Tu Tienda de Gadgets</title>
     <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/responsive.css">
 </head>
 <body>
 
@@ -506,7 +507,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('closeCartModal').onclick = () => cerrarModal('cartModal');
     document.getElementById('checkoutWhatsApp').onclick = () => enviarPedidoWhatsApp();
 
-    document.getElementById('userBtn').onclick = () => { if (getToken()) window.location.href = 'perfil.html'; else abrirModal('loginModal'); };
+    const _uBtn = document.getElementById('userBtn');
+    if (_uBtn) _uBtn.onclick = () => { if (getToken()) window.location.href = 'perfil.html'; else abrirModal('loginModal'); };
     document.getElementById('closeLoginModal').onclick = () => cerrarModal('loginModal');
     document.getElementById('closeRegisterModal').onclick = () => cerrarModal('registerModal');
 
@@ -528,8 +530,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('codigoManual').addEventListener('keypress', (e) => { if (e.key === 'Enter') buscarProductoPorCodigo(); });
 
     document.getElementById('exploreBtn').onclick = () => window.location.href = 'productos.html';
-    document.getElementById('mobileMenuBtn').onclick = () => document.getElementById('mobileMenu').classList.toggle('active');
-    document.getElementById('mobileUserBtn').onclick = () => { if (getToken()) window.location.href = 'perfil.html'; else abrirModal('loginModal'); document.getElementById('mobileMenu').classList.remove('active'); };
+    const _mUBtn = document.getElementById('mobileUserBtn');
+    if (_mUBtn) _mUBtn.onclick = () => { if (getToken()) window.location.href = 'perfil.html'; else abrirModal('loginModal'); };
     window.onclick = (e) => { if (e.target.classList.contains('modal')) e.target.classList.remove('active'); };
 });
 </script>

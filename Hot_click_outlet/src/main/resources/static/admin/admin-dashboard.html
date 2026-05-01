@@ -95,6 +95,8 @@
 </head>
 <body class="admin-layout">
 
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
 <!-- ===== SIDEBAR ===== -->
 <aside class="sidebar" id="sidebar">
     <a class="sidebar-logo" href="admin-dashboard.html">
@@ -833,8 +835,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     /* Mobile sidebar */
+    const _backdrop = document.getElementById('sidebarBackdrop');
     document.getElementById('mobileMenuBtn').addEventListener('click', () => {
         document.getElementById('sidebar').classList.toggle('open');
+        _backdrop.classList.toggle('active');
+    });
+    _backdrop.addEventListener('click', () => {
+        document.getElementById('sidebar').classList.remove('open');
+        _backdrop.classList.remove('active');
     });
 });
 </script>

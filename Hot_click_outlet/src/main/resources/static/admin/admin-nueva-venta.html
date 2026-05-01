@@ -446,6 +446,8 @@
 </head>
 <body class="admin-layout">
 
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
 <!-- ===== SIDEBAR ===== -->
 <aside class="sidebar" id="sidebar">
     <a class="sidebar-logo" href="admin-dashboard.html">
@@ -988,7 +990,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('clienteSearch').addEventListener('keypress', e => { if (e.key === 'Enter') buscarClientes(); });
     document.getElementById('logoutBtn').addEventListener('click', () => { localStorage.clear(); window.location.href = '../index.html'; });
-    document.getElementById('mobileMenuBtn').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
+    const _backdrop = document.getElementById('sidebarBackdrop');
+    document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+        document.getElementById('sidebar').classList.toggle('open');
+        _backdrop.classList.toggle('active');
+    });
+    _backdrop.addEventListener('click', () => {
+        document.getElementById('sidebar').classList.remove('open');
+        _backdrop.classList.remove('active');
+    });
 });
 </script>
 </body>

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HOTCLICK — Detalle del Producto</title>
     <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/responsive.css">
     <style>
         .detail-page { padding: 48px 0; }
 
@@ -238,9 +239,8 @@ document.addEventListener('DOMContentLoaded', () => {
     actualizarContadorCarrito();
 
     document.getElementById('cartBtn').onclick = () => window.location.href = 'carrito.html';
-    document.getElementById('userBtn').onclick = () => { if (getToken()) window.location.href = 'perfil.html'; else abrirModal('loginModal'); } else { window.location.href = 'login.html'; }
-    };
-    document.getElementById('mobileMenuBtn').onclick = () => document.getElementById('mobileMenu').classList.toggle('active');
+    const _uBtn = document.getElementById('userBtn');
+    if (_uBtn) _uBtn.onclick = () => { if (getToken()) window.location.href = 'perfil.html'; else abrirModal('loginModal'); };
 });
 </script>
 </body>

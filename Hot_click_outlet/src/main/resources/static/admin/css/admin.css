@@ -838,39 +838,94 @@ body.admin-layout {
     .banner-grid { grid-template-columns: 1fr; }
 }
 
+/* ── Backdrop del sidebar (overlay oscuro) ── */
+.sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 99;
+    cursor: pointer;
+}
+.sidebar-backdrop.active { display: block; }
+
+/* ── Botón hamburguesa (oculto por defecto) ── */
+.mobile-menu-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 38px; height: 38px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: var(--txt-main);
+    flex-shrink: 0;
+    transition: var(--ease);
+}
+.mobile-menu-btn:hover { background: var(--bg); }
+
 @media (max-width: 768px) {
     :root { --sidebar-w: 0px; }
 
     .sidebar {
-        transform: translateX(-240px);
-        transition: transform 0.3s ease;
+        transform: translateX(-260px);
+        transition: transform 0.28s ease;
+        z-index: 100;
     }
-
     .sidebar.open {
         transform: translateX(0);
         width: 240px;
-        box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+        box-shadow: 4px 0 24px rgba(0,0,0,0.18);
     }
 
     .admin-wrapper { margin-left: 0; }
 
-    .topbar { padding: 0 16px; }
+    /* Topbar: ocultar buscador, mantener hamburguesa y usuario */
+    .topbar { padding: 0 14px; gap: 10px; }
+    .topbar-search { display: none; }
+    .topbar-username { display: none; }
 
-    .admin-content { padding: 16px; flex-direction: column; }
+    .admin-content { padding: 12px; flex-direction: column; }
 
-    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    /* Stats: 2 columnas */
+    .stats-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .stat-card { padding: 14px 12px; }
+    .stat-value { font-size: 1.5rem; }
 
-    .mobile-menu-btn {
-        display: flex !important;
-        align-items: center; justify-content: center;
-        width: 38px; height: 38px;
-        background: none; border: 1px solid var(--border);
-        border-radius: 8px; cursor: pointer; font-size: 1.1rem;
-        color: var(--txt-main);
-    }
+    /* Tablas con scroll horizontal */
+    .data-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .data-table { min-width: 560px; }
+
+    /* Page header apilado */
+    .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .page-header h1 { font-size: 1.1rem; }
+
+    /* Filtros apilados */
+    .admin-filters { flex-direction: column; gap: 8px; }
+    .admin-filters .filter-input,
+    .admin-filters .filter-select { min-width: 100%; width: 100%; }
+
+    /* Modal más ancho */
+    .modal-content { width: 96%; max-height: 90vh; overflow-y: auto; border-radius: 14px; }
+
+    /* Formularios */
+    .form-grid { grid-template-columns: 1fr; }
+    .form-input, select, textarea { font-size: 16px; min-height: 44px; }
+
+    /* Banner */
+    .banner-card { padding: 16px; }
+
+    /* Botón hamburguesa visible */
+    .mobile-menu-btn { display: flex; }
 }
 
-.mobile-menu-btn { display: none; }
+@media (max-width: 480px) {
+    .stats-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .topbar-avatar { width: 30px; height: 30px; font-size: 0.75rem; }
+    .admin-content { padding: 10px; }
+}
 
 /* ====================================================
    MISC

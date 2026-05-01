@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HOTCLICK — Productos</title>
     <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/responsive.css">
 </head>
 <body>
 
@@ -265,8 +266,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('nextPage').onclick = () => { if (paginaActual + 1 < totalPaginas) { paginaActual++; renderPagina(); } };
     document.getElementById('searchProduct').oninput   = aplicarFiltros;
     document.getElementById('categoryFilter').onchange = aplicarFiltros;
-    document.getElementById('mobileMenuBtn').onclick   = () => document.getElementById('mobileMenu').classList.toggle('active');
-    document.getElementById('mobileUserBtn').onclick   = () => { if (getToken()) window.location.href = 'perfil.html'; else abrirModal('loginModal'); document.getElementById('mobileMenu').classList.remove('active'); };
+    const _mUBtn = document.getElementById('mobileUserBtn');
+    if (_mUBtn) _mUBtn.onclick = () => { if (getToken()) window.location.href = 'perfil.html'; else abrirModal('loginModal'); };
     window.onclick = e => { if (e.target.classList.contains('modal')) e.target.classList.remove('active'); };
 });
 </script>

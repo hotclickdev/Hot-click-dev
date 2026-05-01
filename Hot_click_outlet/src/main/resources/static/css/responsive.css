@@ -1,92 +1,100 @@
 /* ====================================================
-   HOTCLICK - ESTILOS RESPONSIVE
+   HOTCLICK - ESTILOS RESPONSIVE ADICIONALES
    ==================================================== */
 
-/* Tablets */
+/* ── Tablets (992px) ─────────────────────────────── */
 @media (max-width: 992px) {
-    .container {
-        padding: 0 15px;
-    }
-    
-    .products-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
-    }
+    .container { padding: 0 18px; }
+    .products-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .hero-title { font-size: 2.2rem; }
 }
 
-/* Móviles grandes */
+/* ── Móviles (768px) ─────────────────────────────── */
 @media (max-width: 768px) {
-    .products-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .categories-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .hero-title {
-        font-size: 1.6rem;
-    }
-    
-    .section-header h2 {
-        font-size: 1.4rem;
-    }
-}
+    /* Secciones */
+    .section { padding: 40px 0; }
 
-/* Móviles pequeños */
-@media (max-width: 576px) {
-    .products-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .categories-grid {
-        grid-template-columns: 1fr;
-    }
-    
+    /* Filtros */
     .filters-bar {
-        flex-direction: column;
+        flex-wrap: wrap;
+        gap: 8px;
     }
-    
-    .filter-input,
-    .filter-select {
-        width: 100%;
-    }
-    
-    .hero-cards {
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-    
-    .hero-card {
-        width: 80%;
-        margin: 0 auto;
-    }
-    
-    .modal-content {
-        width: 95%;
-    }
-    
-    .cart-item {
-        flex-direction: column;
-    }
-    
-    .cart-item-actions {
-        justify-content: space-between;
-    }
+    .filter-input { flex: 1; min-width: 140px; }
+    .filter-select { flex: 1; min-width: 120px; }
+
+    /* Carrito */
+    .cart-page { padding: 20px 0 40px; }
+
+    /* Perfil */
+    .profile-page { padding: 24px 0 40px; }
+
+    /* Contacto */
+    .contact-section { padding: 40px 0; }
+    .contact-info-item { padding: 16px; }
+
+    /* Nosotros */
+    .about-section { padding: 40px 0; }
+    .team-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+
+    /* Detalle producto */
+    .product-detail-section { padding: 24px 0 48px; }
+    .product-detail-price { font-size: 1.6rem; }
+    .product-detail-actions { flex-direction: column; gap: 10px; }
+    .product-detail-actions .btn { width: 100%; }
+
+    /* Footer */
+    .footer { padding: 40px 0 24px; }
 }
 
-/* Landscapes */
+/* ── Móviles pequeños (576px) ───────────────────── */
+@media (max-width: 576px) {
+    /* Tipografía */
+    body { font-size: 15px; }
+
+    /* Grids */
+    .products-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .categories-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .team-grid { grid-template-columns: 1fr; }
+
+    /* Tarjeta de producto */
+    .product-card-image { height: 130px; }
+    .product-card-body { padding: 10px; }
+    .product-card-title { font-size: .85rem; -webkit-line-clamp: 2; }
+    .btn-add-cart { font-size: .78rem; padding: 7px 10px; }
+
+    /* Modales */
+    .modal-content { width: 98%; border-radius: 16px; }
+    .modal-header { padding: 16px 18px; }
+    .modal-body { padding: 16px 18px 20px; }
+
+    /* Formularios */
+    .form-input { font-size: 16px; } /* evita zoom en iOS */
+    .form-group { margin-bottom: 14px; }
+
+    /* Carrito página */
+    .cart-summary { padding: 18px; }
+    .cart-summary-total { font-size: 1rem; }
+    .btn-whatsapp { font-size: .9rem; }
+
+    /* Auth cards */
+    .auth-card { padding: 24px 16px; }
+
+    /* Badges */
+    .badge { min-width: 16px; height: 16px; font-size: .6rem; }
+}
+
+/* ── Muy pequeños (380px) ───────────────────────── */
+@media (max-width: 380px) {
+    .logo-text { font-size: 1.1rem; }
+    .logo-icon { width: 32px; height: 32px; font-size: .75rem; }
+    .hero-title { font-size: 1.4rem; }
+    .products-grid { gap: 8px; }
+    .product-card-image { height: 110px; }
+}
+
+/* ── Landscape móvil ────────────────────────────── */
 @media (max-width: 768px) and (orientation: landscape) {
-    .hero {
-        padding: 2rem 0;
-    }
-    
-    .hero-title {
-        font-size: 1.4rem;
-    }
-    
-    .products-section,
-    .products-page {
-        padding: 2rem 0;
-    }
+    .hero { padding: 32px 0 40px; }
+    .hero-title { font-size: 1.5rem; }
+    .mobile-menu { max-height: 75vh; overflow-y: auto; }
 }
