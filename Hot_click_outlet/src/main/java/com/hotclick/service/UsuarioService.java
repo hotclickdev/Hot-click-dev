@@ -2,6 +2,7 @@ package com.hotclick.service;
 
 import com.hotclick.model.Usuario;
 import com.hotclick.model.Rol;
+import com.hotclick.utils.Constants;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.repository.RolRepository;
 import com.hotclick.utils.Constants;
@@ -62,5 +63,24 @@ public class UsuarioService {
     @Transactional
     public void resetearIntentosFallidos(Long id) {
         usuarioRepository.resetearIntentosFallidos(id);
+    }
+
+    @Transactional
+    public Usuario guardar(Usuario usuario) {
+        return usuarioRepository.save(usuario);
+    }
+
+    /** Registro sin email: guarda con estado PENDIENTE, sin rol asignado. */
+    @Transactional
+    public Usuario registrarSolicitud(Usuario usuario) {
+        if (usuarioRepository.existsByCorreo(usuario.getCorreo())) {
+            throw new RuntimeException("El correo ya está registrado");
+        }
+        if (usuarioRepository.existsByIdentificacion(usuario.getIdentificacion())) {
+            throw new RuntimeException("La identificación ya está registrada");
+        }
+        usuario.setEstado(Constants.ESTADO_PENDIENTE);
+        usuario.setIntentosFallidos(0);
+        return usuarioRepository.save(usuario);
     }
 }

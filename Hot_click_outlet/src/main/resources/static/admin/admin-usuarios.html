@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOTCLICK — Gestión de Usuarios</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+    <style>
+        /* ── Dark Mode ── */
+        body.dark {
+            --txt-main: #E2E8F0;
+            --txt-sub:  #94A3B8;
+            --border:   #2D3348;
+            --bg:       #0F1117;
+            --white:    #1A1D2E;
+            --blue-lt:  #1E2A4A;
+            --red-lt:   #3D1A1E;
+            --green-lt: #0D2E1A;
+            --amber-lt: #2E2200;
+            --shadow:   0 1px 6px rgba(0,0,0,.45);
+            --shadow-md:0 4px 16px rgba(0,0,0,.55);
+        }
+        body.dark .sidebar { background: #13151F; border-color: #2D3348; }
+        body.dark .topbar  { background: #1A1D2E; border-color: #2D3348; }
+        body.dark .data-table th { background: #1E2238; color: var(--txt-sub); }
+        body.dark .data-table tr:hover td { background: #1E2238; }
+        body.dark .tab-pill { color: var(--txt-sub); }
+        body.dark .tab-pill:hover { background: #1E2238; }
+        body.dark .form-input, body.dark select, body.dark input[type="text"],
+        body.dark input[type="number"], body.dark input[type="date"],
+        body.dark input[type="email"] {
+            background: #1E2238; color: var(--txt-main);
+            border-color: var(--border);
+        }
+        body.dark .modal-content { background: #1A1D2E; }
+        body.dark .stat-card { background: var(--white); }
+        body.dark .data-card { background: var(--white); }
+
+        /* ── Estado badges ── */
+        .badge-estado {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 99px;
+            font-size: .73rem;
+            font-weight: 600;
+            letter-spacing: .02em;
+        }
+        .badge-pendiente  { background:#FEF9EC; color:#D97706; }
+        .badge-activo     { background:#E8F8ED; color:#166534; }
+        .badge-inactivo   { background:#F1F5F9; color:#64748B; }
+        .badge-eliminado  { background:#FEF0F1; color:#e63946; }
+        body.dark .badge-pendiente  { background:#2E2200; color:#FCD34D; }
+        body.dark .badge-activo     { background:#0D2E1A; color:#86EFAC; }
+        body.dark .badge-inactivo   { background:#1E2238; color:#94A3B8; }
+        body.dark .badge-eliminado  { background:#3D1A1E; color:#FCA5A5; }
+
+        /* ── Rol badge ── */
+        .badge-rol {
+            display: inline-block;
+            padding: 2px 9px;
+            border-radius: 99px;
+            font-size: .72rem;
+            font-weight: 600;
+        }
+        .rol-usuario  { background: #EEF3FF; color: #3563E9; }
+        .rol-admin-it { background: #F5F0FF; color: #7C3AED; }
+        .rol-admin-cl { background: #FFF4E5; color: #EA580C; }
+        body.dark .rol-usuario  { background:#1E2A4A; color:#93C5FD; }
+        body.dark .rol-admin-it { background:#2A1A4A; color:#C4B5FD; }
+        body.dark .rol-admin-cl { background:#2E1A00; color:#FDB977; }
+
+        /* ── Tabs ── */
+        .tabs-bar {
+            display: flex;
+            gap: 4px;
+            padding: 0 0 16px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 18px;
+        }
+        .tab-pill {
+            padding: 7px 18px;
+            border-radius: 8px;
+            font-size: .83rem;
+            font-weight: 500;
+            border: none;
+            background: transparent;
+            color: var(--txt-sub);
+            cursor: pointer;
+            transition: background .15s, color .15s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .tab-pill:hover { background: var(--blue-lt); color: var(--blue); }
+        .tab-pill.active { background: var(--blue-lt); color: var(--blue); font-weight: 600; }
+        .tab-badge {
+            background: var(--red);
+            color: #fff;
+            border-radius: 99px;
+            padding: 1px 7px;
+            font-size: .68rem;
+            font-weight: 700;
+            min-width: 18px;
+            text-align: center;
+        }
+
+        /* ── Filtros ── */
+        .filtros-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        .filtros-bar input,
+        .filtros-bar select {
+            padding: 7px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: .82rem;
+            background: var(--bg);
+            color: var(--txt-main);
+            font-family: inherit;
+            flex: 1;
+            min-width: 140px;
+        }
+        .filtros-bar input:focus,
+        .filtros-bar select:focus { outline: none; border-color: var(--blue); }
+
+        /* ── Table actions ── */
+        .actions-cell { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+        .btn-xs {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: .75rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: opacity .15s;
+            white-space: nowrap;
+        }
+        .btn-xs:hover { opacity: .82; }
+        .btn-xs-green { background: #22c55e; color: #fff; }
+        .btn-xs-red   { background: #ef4444; color: #fff; }
+        .btn-xs-blue  { background: var(--blue); color: #fff; }
+        .btn-xs-amber { background: #f59e0b; color: #fff; }
+        .btn-xs-gray  { background: #64748b; color: #fff; }
+
+        /* ── Inline role select ── */
+        .rol-select {
+            padding: 4px 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: .78rem;
+            background: var(--bg);
+            color: var(--txt-main);
+            font-family: inherit;
+        }
+        .rol-select:focus { outline: none; border-color: var(--blue); }
+
+        /* ── Empty state ── */
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--txt-sub);
+        }
+        .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 10px; }
+        .empty-state p { font-size: .88rem; }
+
+        /* ── Summary cards ── */
+        .summary-strip {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .summary-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            font-size: .83rem;
+            font-weight: 500;
+            color: var(--txt-main);
+            box-shadow: var(--shadow);
+        }
+        .summary-chip .chip-num {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        .chip-pending .chip-num  { color: #D97706; }
+        .chip-active  .chip-num  { color: #16a34a; }
+        .chip-total   .chip-num  { color: var(--blue); }
+    </style>
+</head>
+<body class="admin-layout">
+
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar" id="sidebar">
+    <a class="sidebar-logo" href="admin-dashboard.html">
+        <div class="logo-box">HC</div>
+        <span class="logo-name">HOT<span>CLICK</span></span>
+    </a>
+
+    <div class="sidebar-section">Principal</div>
+    <nav class="sidebar-nav">
+        <a href="admin-dashboard.html" class="nav-item">
+            <span class="nav-icon">📊</span> Dashboard
+        </a>
+        <a href="admin-productos.html" class="nav-item">
+            <span class="nav-icon">📦</span> Productos
+        </a>
+        <a href="admin-bodegas.html" class="nav-item">
+            <span class="nav-icon">🏭</span> Bodegas
+        </a>
+        <a href="admin-categorias.html" class="nav-item">
+            <span class="nav-icon">🏷️</span> Categorías
+        </a>
+
+        <div class="sidebar-section" style="padding-left:0;margin-top:12px;">Ventas</div>
+        <a href="admin-nueva-venta.html" class="nav-item">
+            <span class="nav-icon">💵</span> Nueva Venta
+        </a>
+
+        <div class="sidebar-section" style="padding-left:0;margin-top:12px;">Gestión</div>
+        <a href="admin-usuarios.html" class="nav-item active">
+            <span class="nav-icon">👥</span> Usuarios
+        </a>
+        <a href="admin-dashboard.html#pedidos" class="nav-item">
+            <span class="nav-icon">🛒</span> Pedidos
+        </a>
+        <a href="admin-dashboard.html#finanzas" class="nav-item">
+            <span class="nav-icon">💰</span> Finanzas
+        </a>
+        <a href="admin-dashboard.html#historial" class="nav-item">
+            <span class="nav-icon">📋</span> Historial
+        </a>
+
+        <div class="sidebar-section" style="padding-left:0;margin-top:12px;">Otros</div>
+        <a href="../index.html" class="nav-item">
+            <span class="nav-icon">🛍️</span> Ver Tienda
+        </a>
+    </nav>
+
+    <div class="sidebar-bottom">
+        <a href="#" class="nav-item"><span class="nav-icon">⚙️</span> Configuración</a>
+        <button class="nav-item logout" id="logoutBtn">
+            <span class="nav-icon">🚪</span> Cerrar Sesión
+        </button>
+    </div>
+</aside>
+
+<!-- ===== MAIN WRAPPER ===== -->
+<div class="admin-wrapper">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+        <div class="topbar-search">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="globalSearch" placeholder="Buscar usuarios...">
+        </div>
+        <div class="topbar-right">
+            <button class="topbar-btn" id="darkModeBtn" title="Modo oscuro/claro">🌙</button>
+            <button class="topbar-btn" title="Notificaciones">🔔</button>
+            <div class="topbar-user">
+                <div class="topbar-avatar" id="adminAvatar">A</div>
+                <span class="topbar-username" id="adminName">Admin</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENT -->
+    <div class="admin-content">
+        <div class="content-main" style="max-width:100%;">
+
+            <!-- PAGE HEADER -->
+            <div class="page-header">
+                <div>
+                    <h1>Gestión de <span>Usuarios</span></h1>
+                    <p>Aprueba solicitudes y administra roles y estados de cuentas</p>
+                </div>
+                <button class="btn btn-primary btn-sm" id="btnRefresh">↻ Actualizar</button>
+            </div>
+
+            <!-- SUMMARY STRIP -->
+            <div class="summary-strip">
+                <div class="summary-chip chip-pending">
+                    <span>⏳</span>
+                    <div>
+                        <div class="chip-num" id="cntPendientes">—</div>
+                        <div style="font-size:.75rem;color:var(--txt-sub);">Pendientes</div>
+                    </div>
+                </div>
+                <div class="summary-chip chip-active">
+                    <span>✅</span>
+                    <div>
+                        <div class="chip-num" id="cntActivos">—</div>
+                        <div style="font-size:.75rem;color:var(--txt-sub);">Activos</div>
+                    </div>
+                </div>
+                <div class="summary-chip chip-total">
+                    <span>👥</span>
+                    <div>
+                        <div class="chip-num" id="cntTotal">—</div>
+                        <div style="font-size:.75rem;color:var(--txt-sub);">Total</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABS -->
+            <div class="data-card">
+                <div class="tabs-bar">
+                    <button class="tab-pill active" id="tabPendientes" onclick="switchTab('pendientes')">
+                        ⏳ Pendientes de aprobación
+                        <span class="tab-badge" id="badgePend">0</span>
+                    </button>
+                    <button class="tab-pill" id="tabTodos" onclick="switchTab('todos')">
+                        👥 Todos los usuarios
+                    </button>
+                </div>
+
+                <!-- TAB: Pendientes -->
+                <div id="panelPendientes">
+                    <div class="filtros-bar">
+                        <input type="text" id="filtroPendNombre" placeholder="🔍 Buscar por nombre o correo..." oninput="filtrarPendientes()">
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="data-table" id="tablaPendientes">
+                            <thead>
+                                <tr>
+                                    <th>Nombre completo</th>
+                                    <th>Correo</th>
+                                    <th>Teléfono</th>
+                                    <th>Identificación</th>
+                                    <th>Asignar rol</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyPendientes">
+                                <tr><td colspan="6"><div class="empty-state"><div class="empty-icon">⏳</div><p>Cargando...</p></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB: Todos -->
+                <div id="panelTodos" style="display:none;">
+                    <div class="filtros-bar">
+                        <input type="text" id="filtroTodosNombre" placeholder="🔍 Buscar por nombre o correo..." oninput="filtrarTodos()">
+                        <select id="filtroTodosRol" onchange="filtrarTodos()">
+                            <option value="">Todos los roles</option>
+                            <option value="USUARIO_FINAL">Usuario Final</option>
+                            <option value="ADMIN_IT">Admin IT</option>
+                            <option value="ADMIN_CLIENTE">Admin Cliente</option>
+                        </select>
+                        <select id="filtroTodosEstado" onchange="filtrarTodos()">
+                            <option value="">Todos los estados</option>
+                            <option value="1">Activo</option>
+                            <option value="0">Pendiente</option>
+                            <option value="2">Inactivo</option>
+                        </select>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="data-table" id="tablaUsuarios">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre completo</th>
+                                    <th>Correo</th>
+                                    <th>Rol actual</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyTodos">
+                                <tr><td colspan="6"><div class="empty-state"><div class="empty-icon">👥</div><p>Cargando...</p></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div><!-- /data-card -->
+
+        </div><!-- /content-main -->
+    </div><!-- /admin-content -->
+</div><!-- /admin-wrapper -->
+
+<!-- ── TOAST ── -->
+<div id="toastContainer" class="toast-container"></div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────────────────────
+const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:8080/api'
+    : '/api';
+
+const tok = () => localStorage.getItem('token');
+let _todosRaw      = [];
+let _pendientesRaw = [];
+
+// ── Auth guard ───────────────────────────────────────────────────────────────
+function parseJwt(t) {
+    try { return JSON.parse(atob(t.split('.')[1])); } catch { return {}; }
+}
+(function guard() {
+    const t = tok();
+    if (!t) { window.location.href = '../pages/login.html'; return; }
+    const p = parseJwt(t);
+    const name = p.sub || p.correo || 'Admin';
+    document.getElementById('adminName').textContent = name.split('@')[0];
+    document.getElementById('adminAvatar').textContent = name[0].toUpperCase();
+})();
+
+// ── Dark mode ────────────────────────────────────────────────────────────────
+(function initDark() {
+    if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark');
+})();
+document.getElementById('darkModeBtn').onclick = () => {
+    const on = document.body.classList.toggle('dark');
+    localStorage.setItem('darkMode', on);
+    document.getElementById('darkModeBtn').textContent = on ? '☀️' : '🌙';
+};
+
+// ── Sidebar mobile ───────────────────────────────────────────────────────────
+const _backdrop = document.getElementById('sidebarBackdrop');
+document.getElementById('mobileMenuBtn').onclick = () => {
+    document.getElementById('sidebar').classList.toggle('open');
+    _backdrop.classList.toggle('active');
+};
+_backdrop.onclick = () => {
+    document.getElementById('sidebar').classList.remove('open');
+    _backdrop.classList.remove('active');
+};
+
+// ── Logout ───────────────────────────────────────────────────────────────────
+document.getElementById('logoutBtn').onclick = () => {
+    localStorage.removeItem('token');
+    window.location.href = '../pages/login.html';
+};
+
+// ── Toast ────────────────────────────────────────────────────────────────────
+function toast(msg, type = 'success') {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = `toast toast-${type}`;
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function estadoBadge(estado) {
+    const map = {
+        0: ['Pendiente',  'badge-pendiente'],
+        1: ['Activo',     'badge-activo'],
+        2: ['Inactivo',   'badge-inactivo'],
+        3: ['Suspendido', 'badge-eliminado'],
+        4: ['Eliminado',  'badge-eliminado'],
+    };
+    const [label, cls] = map[estado] || ['Desconocido', 'badge-inactivo'];
+    return `<span class="badge-estado ${cls}">${label}</span>`;
+}
+
+function rolBadge(roles) {
+    if (!roles || roles.length === 0) return `<span class="badge-estado badge-inactivo">Sin rol</span>`;
+    const r = roles[0].nombreRol || '';
+    const map = {
+        'USUARIO_FINAL':  ['Usuario Final',  'rol-usuario'],
+        'ADMIN_IT':       ['Admin IT',        'rol-admin-it'],
+        'ADMIN_CLIENTE':  ['Admin Cliente',   'rol-admin-cl'],
+    };
+    const [label, cls] = map[r] || [r, 'rol-usuario'];
+    return `<span class="badge-rol ${cls}">${label}</span>`;
+}
+
+function nombreCompleto(u) {
+    return [u.nombre, u.apellidoPaterno, u.apellidoMaterno].filter(Boolean).join(' ');
+}
+
+// ── API calls ────────────────────────────────────────────────────────────────
+async function apiFetch(path, opts = {}) {
+    const res = await fetch(`${API}${path}`, {
+        ...opts,
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${tok()}`,
+            ...(opts.headers || {})
+        }
+    });
+    return res;
+}
+
+// ── Load data ────────────────────────────────────────────────────────────────
+async function cargarPendientes() {
+    try {
+        const res = await apiFetch('/admin/usuarios/pendientes');
+        if (!res.ok) {
+            const txt = await res.text();
+            toast(`Error ${res.status} al cargar pendientes`, 'error');
+            console.error('cargarPendientes:', res.status, txt);
+            document.getElementById('tbodyPendientes').innerHTML =
+                `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">⚠️</div><p>Error ${res.status} — revisa la consola</p></div></td></tr>`;
+            return;
+        }
+        const data = await res.json();
+        _pendientesRaw = data.data || [];
+        renderPendientes(_pendientesRaw);
+        actualizarContadores();
+    } catch (e) { toast('Error de conexión: ' + e.message, 'error'); console.error(e); }
+}
+
+async function cargarTodos() {
+    try {
+        const res = await apiFetch('/admin/usuarios');
+        if (!res.ok) {
+            const txt = await res.text();
+            toast(`Error ${res.status} al cargar usuarios`, 'error');
+            console.error('cargarTodos:', res.status, txt);
+            document.getElementById('tbodyTodos').innerHTML =
+                `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">⚠️</div><p>Error ${res.status} — revisa la consola</p></div></td></tr>`;
+            return;
+        }
+        const data = await res.json();
+        _todosRaw = data.data || [];
+        renderTodos(_todosRaw);
+        actualizarContadores();
+    } catch (e) { toast('Error de conexión: ' + e.message, 'error'); console.error(e); }
+}
+
+function actualizarContadores() {
+    const pendientes = _todosRaw.filter(u => u.estado === 0).length || _pendientesRaw.length;
+    const activos    = _todosRaw.filter(u => u.estado === 1).length;
+    document.getElementById('cntPendientes').textContent = pendientes;
+    document.getElementById('cntActivos').textContent    = activos;
+    document.getElementById('cntTotal').textContent      = _todosRaw.length || '—';
+    document.getElementById('badgePend').textContent     = _pendientesRaw.length;
+}
+
+// ── Render: Pendientes ────────────────────────────────────────────────────────
+function renderPendientes(list) {
+    const tbody = document.getElementById('tbodyPendientes');
+    if (!list.length) {
+        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">
+            <div class="empty-icon">✅</div>
+            <p>No hay solicitudes pendientes de aprobación</p>
+        </div></td></tr>`;
+        return;
+    }
+    tbody.innerHTML = list.map(u => `
+        <tr>
+            <td><strong>${nombreCompleto(u)}</strong></td>
+            <td>${u.correo || '—'}</td>
+            <td>${u.telefono || '—'}</td>
+            <td>${u.identificacion || '—'}</td>
+            <td>
+                <select class="rol-select" id="rolSelect_${u.id}">
+                    <option value="USUARIO_FINAL">Usuario Final</option>
+                    <option value="ADMIN_IT">Admin IT</option>
+                    <option value="ADMIN_CLIENTE">Admin Cliente</option>
+                </select>
+            </td>
+            <td>
+                <div class="actions-cell">
+                    <button class="btn-xs btn-xs-green" onclick="aprobar(${u.id})">✔ Aprobar</button>
+                    <button class="btn-xs btn-xs-red"   onclick="rechazar(${u.id})">✘ Rechazar</button>
+                </div>
+            </td>
+        </tr>`).join('');
+}
+
+function filtrarPendientes() {
+    const q = document.getElementById('filtroPendNombre').value.toLowerCase();
+    const filtered = _pendientesRaw.filter(u =>
+        nombreCompleto(u).toLowerCase().includes(q) ||
+        (u.correo || '').toLowerCase().includes(q)
+    );
+    renderPendientes(filtered);
+}
+
+// ── Render: Todos ─────────────────────────────────────────────────────────────
+function renderTodos(list) {
+    const tbody = document.getElementById('tbodyTodos');
+    if (!list.length) {
+        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">
+            <div class="empty-icon">👥</div>
+            <p>No se encontraron usuarios</p>
+        </div></td></tr>`;
+        return;
+    }
+    tbody.innerHTML = list.map(u => {
+        const rolActual = u.roles && u.roles.length ? u.roles[0].nombreRol : '';
+        const esActivo  = u.estado === 1;
+        return `
+        <tr>
+            <td><span style="color:var(--txt-sub);font-size:.8rem;">#${u.id}</span></td>
+            <td><strong>${nombreCompleto(u)}</strong><br>
+                <span style="font-size:.75rem;color:var(--txt-sub);">${u.correo || ''}</span></td>
+            <td>${u.correo || '—'}</td>
+            <td>${rolBadge(u.roles)}</td>
+            <td>${estadoBadge(u.estado)}</td>
+            <td>
+                <div class="actions-cell">
+                    <select class="rol-select" id="rolCambiar_${u.id}">
+                        <option value="USUARIO_FINAL" ${rolActual==='USUARIO_FINAL'?'selected':''}>Usuario Final</option>
+                        <option value="ADMIN_IT"      ${rolActual==='ADMIN_IT'?'selected':''}>Admin IT</option>
+                        <option value="ADMIN_CLIENTE" ${rolActual==='ADMIN_CLIENTE'?'selected':''}>Admin Cliente</option>
+                    </select>
+                    <button class="btn-xs btn-xs-blue" onclick="cambiarRol(${u.id})">Guardar rol</button>
+                    ${u.estado !== 0 && u.estado !== 4 ? `
+                    <button class="btn-xs ${esActivo ? 'btn-xs-amber' : 'btn-xs-green'}"
+                        onclick="cambiarEstado(${u.id}, ${esActivo ? 2 : 1})">
+                        ${esActivo ? '⏸ Desactivar' : '▶ Activar'}
+                    </button>` : ''}
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function filtrarTodos() {
+    const q      = document.getElementById('filtroTodosNombre').value.toLowerCase();
+    const rol    = document.getElementById('filtroTodosRol').value;
+    const estado = document.getElementById('filtroTodosEstado').value;
+    const filtered = _todosRaw.filter(u => {
+        const matchName  = nombreCompleto(u).toLowerCase().includes(q) || (u.correo||'').toLowerCase().includes(q);
+        const rolActual  = u.roles && u.roles.length ? u.roles[0].nombreRol : '';
+        const matchRol   = !rol    || rolActual === rol;
+        const matchEst   = !estado || String(u.estado) === estado;
+        return matchName && matchRol && matchEst;
+    });
+    renderTodos(filtered);
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+async function aprobar(id) {
+    const rolNombre = document.getElementById(`rolSelect_${id}`)?.value || 'USUARIO_FINAL';
+    try {
+        const res = await apiFetch(`/admin/usuarios/${id}/aprobar`, {
+            method: 'PUT',
+            body: JSON.stringify({ rol: rolNombre })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            toast(`✅ Usuario aprobado con rol ${rolNombre}`, 'success');
+            await Promise.all([cargarPendientes(), cargarTodos()]);
+        } else {
+            toast(data.message || 'Error al aprobar', 'error');
+        }
+    } catch { toast('Error de conexión', 'error'); }
+}
+
+async function rechazar(id) {
+    if (!confirm('¿Rechazar y eliminar esta solicitud?')) return;
+    try {
+        const res = await apiFetch(`/admin/usuarios/${id}/rechazar`, { method: 'PUT' });
+        const data = await res.json();
+        if (res.ok) {
+            toast('Usuario rechazado', 'success');
+            await Promise.all([cargarPendientes(), cargarTodos()]);
+        } else {
+            toast(data.message || 'Error al rechazar', 'error');
+        }
+    } catch { toast('Error de conexión', 'error'); }
+}
+
+async function cambiarRol(id) {
+    const rolNombre = document.getElementById(`rolCambiar_${id}`)?.value;
+    if (!rolNombre) return;
+    try {
+        const res = await apiFetch(`/admin/usuarios/${id}/rol`, {
+            method: 'PUT',
+            body: JSON.stringify({ rol: rolNombre })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            toast(`Rol actualizado a ${rolNombre}`, 'success');
+            await cargarTodos();
+        } else {
+            toast(data.message || 'Error al cambiar rol', 'error');
+        }
+    } catch { toast('Error de conexión', 'error'); }
+}
+
+async function cambiarEstado(id, nuevoEstado) {
+    try {
+        const res = await apiFetch(`/admin/usuarios/${id}/estado`, {
+            method: 'PUT',
+            body: JSON.stringify({ estado: nuevoEstado })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            toast(nuevoEstado === 1 ? 'Usuario activado' : 'Usuario desactivado', 'success');
+            await cargarTodos();
+        } else {
+            toast(data.message || 'Error al cambiar estado', 'error');
+        }
+    } catch { toast('Error de conexión', 'error'); }
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+let _tabActual = 'pendientes';
+function switchTab(tab) {
+    _tabActual = tab;
+    document.getElementById('panelPendientes').style.display = tab === 'pendientes' ? '' : 'none';
+    document.getElementById('panelTodos').style.display      = tab === 'todos'      ? '' : 'none';
+    document.getElementById('tabPendientes').classList.toggle('active', tab === 'pendientes');
+    document.getElementById('tabTodos').classList.toggle('active', tab === 'todos');
+    if (tab === 'todos' && !_todosRaw.length) cargarTodos();
+}
+
+// ── Refresh ───────────────────────────────────────────────────────────────────
+document.getElementById('btnRefresh').onclick = async () => {
+    await cargarPendientes();
+    if (_tabActual === 'todos') await cargarTodos();
+    toast('Datos actualizados', 'success');
+};
+
+// ── Global search ─────────────────────────────────────────────────────────────
+document.getElementById('globalSearch').oninput = function() {
+    const q = this.value.toLowerCase();
+    if (!q) { renderPendientes(_pendientesRaw); renderTodos(_todosRaw); return; }
+    if (_tabActual === 'pendientes') {
+        renderPendientes(_pendientesRaw.filter(u =>
+            nombreCompleto(u).toLowerCase().includes(q) || (u.correo||'').toLowerCase().includes(q)));
+    } else {
+        renderTodos(_todosRaw.filter(u =>
+            nombreCompleto(u).toLowerCase().includes(q) || (u.correo||'').toLowerCase().includes(q)));
+    }
+};
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+cargarPendientes();
+cargarTodos();
+</script>
+</body>
+</html>

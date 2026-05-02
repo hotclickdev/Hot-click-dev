@@ -41,31 +41,61 @@
 
 <div class="auth-page">
     <div class="auth-card">
-        <div class="auth-logo">
-            <div class="logo" style="cursor:default;justify-content:center;">
-                <span class="logo-icon">HC</span>
-                <span class="logo-text">HOTCLICK</span>
+
+        <!-- ── PASO 1: Credenciales ── -->
+        <div id="stepCredenciales">
+            <div class="auth-logo">
+                <div class="logo" style="cursor:default;justify-content:center;">
+                    <span class="logo-icon">HC</span>
+                    <span class="logo-text">HOTCLICK</span>
+                </div>
+                <h2>Bienvenido de vuelta</h2>
+                <p>Ingresa tus credenciales para continuar</p>
             </div>
-            <h2>Bienvenido de vuelta</h2>
-            <p>Ingresa tus credenciales para continuar</p>
+
+            <div class="form-group">
+                <label class="form-label">Correo electrónico</label>
+                <input type="email" id="loginCorreo" class="form-input" placeholder="tu@email.com" autocomplete="email">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Contraseña</label>
+                <input type="password" id="loginPassword" class="form-input" placeholder="Tu contraseña" autocomplete="current-password">
+            </div>
+
+            <button id="btnLogin" class="btn btn-primary" style="width:100%;margin-top:4px;">Iniciar Sesión</button>
+
+            <div class="auth-footer">
+                ¿No tienes cuenta? <a href="registro.html">Regístrate aquí</a><br>
+                <a href="#" id="linkOlvide" style="color:var(--c-muted);font-weight:400;">¿Olvidaste tu contraseña?</a><br>
+                <a href="index.html" style="color:var(--c-muted);font-weight:400;">← Volver al inicio</a>
+            </div>
         </div>
 
-        <div class="form-group">
-            <label class="form-label">Correo electrónico</label>
-            <input type="email" id="loginCorreo" class="form-input" placeholder="tu@email.com" autocomplete="email">
-        </div>
-        <div class="form-group">
-            <label class="form-label">Contraseña</label>
-            <input type="password" id="loginPassword" class="form-input" placeholder="Tu contraseña" autocomplete="current-password">
+        <!-- ── PASO 2: Verificación 2FA ── -->
+        <div id="step2FA" style="display:none;">
+            <div class="auth-logo">
+                <div style="font-size:2.8rem;margin-bottom:8px;">🔐</div>
+                <h2>Verificación en 2 pasos</h2>
+                <p>Abre Google Authenticator e ingresa el código de 6 dígitos</p>
+            </div>
+
+            <div style="display:flex;gap:8px;justify-content:center;margin:8px 0 20px;">
+                <input class="digit-input totp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code">
+                <input class="digit-input totp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+                <input class="digit-input totp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+                <input class="digit-input totp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+                <input class="digit-input totp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+                <input class="digit-input totp-digit" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]">
+            </div>
+
+            <button id="btnVerify2FA" class="btn btn-primary" style="width:100%;">Verificar código</button>
+            <button id="btnVolver2FA" class="btn btn-ghost" style="width:100%;margin-top:8px;text-align:center;">← Volver</button>
+
+            <p style="text-align:center;margin-top:14px;font-size:.82rem;color:var(--c-muted);">
+                El código expira en 30 segundos. Si no es correcto, espera al siguiente.
+            </p>
         </div>
 
-        <button id="btnLogin" class="btn btn-primary" style="width:100%;margin-top:4px;">Iniciar Sesión</button>
-
-        <div class="auth-footer">
-            ¿No tienes cuenta? <a href="registro.html">Regístrate aquí</a><br>
-            <a href="#" id="linkOlvide" style="color:var(--c-muted);font-weight:400;">¿Olvidaste tu contraseña?</a><br>
-            <a href="index.html" style="color:var(--c-muted);font-weight:400;">← Volver al inicio</a>
-        </div>
     </div>
 </div>
 
@@ -151,21 +181,107 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('cartBtn').onclick = () => window.location.href = 'carrito.html';
 
+    // ── Login con soporte 2FA ──────────────────────────────────────────────
+    let _tempToken2fa = null;
+
     document.getElementById('btnLogin').addEventListener('click', async () => {
-        const correo    = document.getElementById('loginCorreo').value;
+        const correo     = document.getElementById('loginCorreo').value.trim();
         const contrasena = document.getElementById('loginPassword').value;
-        const result = await apiLogin(correo, contrasena);
-        if (result.success) {
+        if (!correo || !contrasena) { mostrarToast('Completa todos los campos', 'error'); return; }
+
+        const btn = document.getElementById('btnLogin');
+        btn.disabled = true; btn.textContent = 'Verificando...';
+
+        try {
+            const res  = await fetch(`${API_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ correo, contrasena })
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                mostrarToast(data.message || 'Credenciales inválidas', 'error');
+                return;
+            }
+
+            // El servidor pide verificación 2FA
+            if (data.requires2fa) {
+                _tempToken2fa = data.tempToken;
+                document.getElementById('stepCredenciales').style.display = 'none';
+                document.getElementById('step2FA').style.display = 'block';
+                document.querySelectorAll('.totp-digit').forEach(i => i.value = '');
+                document.querySelectorAll('.totp-digit')[0].focus();
+                return;
+            }
+
+            // Login directo (sin 2FA)
+            _guardarSesion(data);
             mostrarToast('✅ Sesión iniciada correctamente', 'success');
-            setTimeout(() => window.location.href = 'index.html', 1200);
-        } else {
-            mostrarToast(result.message, 'error');
-        }
+            setTimeout(() => window.location.href = 'index.html', 1000);
+
+        } catch { mostrarToast('Error de conexión', 'error'); }
+        finally   { btn.disabled = false; btn.textContent = 'Iniciar Sesión'; }
     });
 
     document.getElementById('loginPassword').addEventListener('keypress', e => {
         if (e.key === 'Enter') document.getElementById('btnLogin').click();
     });
+
+    // ── Verificar código TOTP ─────────────────────────────────────────────
+    document.querySelectorAll('.totp-digit').forEach((input, idx, arr) => {
+        input.addEventListener('input', () => {
+            input.value = input.value.replace(/\D/, '');
+            if (input.value && idx < arr.length - 1) arr[idx + 1].focus();
+            if (idx === arr.length - 1 && input.value) document.getElementById('btnVerify2FA').click();
+        });
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Backspace' && !input.value && idx > 0) arr[idx - 1].focus();
+        });
+    });
+
+    document.getElementById('btnVerify2FA').addEventListener('click', async () => {
+        const code = [...document.querySelectorAll('.totp-digit')].map(i => i.value).join('');
+        if (code.length < 6) { mostrarToast('Ingresa los 6 dígitos', 'error'); return; }
+
+        const btn = document.getElementById('btnVerify2FA');
+        btn.disabled = true; btn.textContent = 'Verificando...';
+
+        try {
+            const res  = await fetch(`${API_URL}/auth/2fa/verify`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tempToken: _tempToken2fa, code })
+            });
+            const data = await res.json();
+
+            if (res.ok && data.token) {
+                _guardarSesion(data);
+                mostrarToast('✅ Sesión iniciada correctamente', 'success');
+                setTimeout(() => window.location.href = 'index.html', 1000);
+            } else {
+                mostrarToast(data.message || 'Código incorrecto', 'error');
+                document.querySelectorAll('.totp-digit').forEach(i => i.value = '');
+                document.querySelectorAll('.totp-digit')[0].focus();
+            }
+        } catch { mostrarToast('Error de conexión', 'error'); }
+        finally   { btn.disabled = false; btn.textContent = 'Verificar código'; }
+    });
+
+    document.getElementById('btnVolver2FA').addEventListener('click', () => {
+        _tempToken2fa = null;
+        document.getElementById('step2FA').style.display = 'none';
+        document.getElementById('stepCredenciales').style.display = 'block';
+        document.getElementById('loginPassword').value = '';
+        document.getElementById('loginPassword').focus();
+    });
+
+    function _guardarSesion(data) {
+        localStorage.setItem('token',    data.token);
+        localStorage.setItem('userId',   data.id);
+        localStorage.setItem('userEmail', data.correo);
+        localStorage.setItem('userRole',  data.rol);
+    }
 
     // ===== RECUPERAR CONTRASEÑA =====
     const modal       = document.getElementById('modalRecuperar');

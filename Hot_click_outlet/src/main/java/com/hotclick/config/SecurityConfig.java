@@ -58,6 +58,9 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
+                // 2FA: verify es público (paso del login); los demás requieren JWT
+                .requestMatchers(POST, "/api/auth/2fa/verify").permitAll()
+                .requestMatchers("/api/auth/2fa/**").authenticated()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/health").permitAll()
                 .requestMatchers(GET,  "/api/productos/**").permitAll()
@@ -67,7 +70,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/ruleta/premios").permitAll()
                 .requestMatchers(GET, "/api/categorias/**").permitAll()
                 .requestMatchers("/", "/*.html", "/favicon.ico", "/pages/**", "/css/**", "/js/**", "/images/**", "/assets/**", "/admin/**").permitAll()
-                .requestMatchers("/api/admin/**").hasAnyRole("ADMIN_IT", "ADMIN_CLIENTE")
+                .requestMatchers("/api/admin/**").authenticated()
                 .requestMatchers("/api/usuarios/**").authenticated()
                 .requestMatchers("/api/pedidos/**").authenticated()
                 .anyRequest().authenticated()

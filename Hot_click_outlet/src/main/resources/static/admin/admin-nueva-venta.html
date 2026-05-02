@@ -442,6 +442,29 @@
             .cart-sidebar { position: static; }
             .tab-btn { font-size: .75rem; padding: 9px 10px; }
         }
+        /* ── Dark Mode ── */
+        body.dark {
+            --txt-main: #E2E8F0; --txt-sub: #94A3B8; --border: #2D3348;
+            --bg: #0F1117; --white: #1A1D2E; --blue-lt: #1E2A4A;
+            --red-lt: #3D1A1E; --green-lt: #0D2E1A; --amber-lt: #2E2200;
+            --shadow: 0 1px 6px rgba(0,0,0,.45); --shadow-md: 0 4px 16px rgba(0,0,0,.55);
+        }
+        body.dark .sidebar { background: #13151F; border-color: #2D3348; }
+        body.dark .topbar  { background: #1A1D2E; border-color: #2D3348; }
+        body.dark .venta-card { background: var(--white); }
+        body.dark .card-header { background: #13151F; border-color: var(--border); }
+        body.dark .tab-bar { background: var(--white); border-color: var(--border); }
+        body.dark .tab-btn:not(.active) { color: var(--txt-sub); }
+        body.dark .tab-btn:not(.active):hover { background: #1E2238; color: var(--txt-main); }
+        body.dark .data-table th { background: #1E2238; color: var(--txt-sub); }
+        body.dark .data-table tr:hover td { background: #1E2238; }
+        body.dark .form-input, body.dark select, body.dark input[type="text"],
+        body.dark input[type="number"], body.dark input[type="date"],
+        body.dark input[type="email"], body.dark textarea {
+            background: #1E2238; color: var(--txt-main); border-color: var(--border);
+        }
+        body.dark .modal-content { background: #1A1D2E; }
+        body.dark .data-card { background: var(--white); }
     </style>
 </head>
 <body class="admin-layout">
@@ -463,7 +486,7 @@
         <div class="sidebar-section" style="padding-left:0;margin-top:12px;">Ventas</div>
         <a href="admin-nueva-venta.html" class="nav-item active"><span class="nav-icon">💵</span> Nueva Venta</a>
         <div class="sidebar-section" style="padding-left:0;margin-top:12px;">Gestión</div>
-        <a href="admin-dashboard.html" class="nav-item"><span class="nav-icon">👥</span> Usuarios</a>
+        <a href="admin-usuarios.html" class="nav-item"><span class="nav-icon">👥</span> Usuarios</a>
         <a href="admin-dashboard.html" class="nav-item"><span class="nav-icon">🛒</span> Pedidos</a>
         <a href="admin-dashboard.html" class="nav-item"><span class="nav-icon">💰</span> Finanzas</a>
         <a href="admin-dashboard.html" class="nav-item"><span class="nav-icon">📋</span> Historial</a>
@@ -482,6 +505,8 @@
         <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
         <div class="topbar-search"><span class="search-icon">🔍</span><input type="text" placeholder="Buscar..."></div>
         <div class="topbar-right">
+            <button class="topbar-btn" id="darkModeBtn" title="Modo oscuro/claro">🌙</button>
+            <button class="topbar-btn">🔔</button>
             <div class="topbar-user">
                 <div class="topbar-avatar" id="adminAvatar">A</div>
                 <span class="topbar-username" id="adminName">Admin</span>
@@ -761,6 +786,20 @@
 <script src="../js/api.js"></script>
 <script src="../js/auth.js"></script>
 <script>
+// ── Dark mode ──
+(function() {
+    if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark');
+    const btn = document.getElementById('darkModeBtn');
+    if (btn) {
+        btn.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
+        btn.onclick = () => {
+            const on = document.body.classList.toggle('dark');
+            localStorage.setItem('darkMode', on);
+            btn.textContent = on ? '☀️' : '🌙';
+        };
+    }
+})();
+
 const authHdr = () => ({ 'Content-Type':'application/json', 'Authorization':'Bearer '+localStorage.getItem('token') });
 
 /* ── Estado global ── */

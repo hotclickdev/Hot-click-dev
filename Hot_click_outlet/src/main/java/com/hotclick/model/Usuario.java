@@ -55,6 +55,13 @@ public class Usuario extends BaseEntity {
     @Column(name = "bloqueado_hasta")
     private LocalDateTime bloqueadoHasta;
 
+    @Column(name = "two_factor_enabled")
+    private Boolean twoFactorEnabled = false;
+
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Column(name = "two_factor_secret", length = 100)
+    private String twoFactorSecret;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
         name = "hot_click_usuario_rol_tb",
@@ -107,4 +114,10 @@ public class Usuario extends BaseEntity {
 
     public List<Rol> getRoles() { return roles; }
     public void setRoles(List<Rol> roles) { this.roles = roles; }
+
+    public Boolean getTwoFactorEnabled() { return twoFactorEnabled; }
+    public void setTwoFactorEnabled(Boolean twoFactorEnabled) { this.twoFactorEnabled = twoFactorEnabled; }
+
+    public String getTwoFactorSecret() { return twoFactorSecret; }
+    public void setTwoFactorSecret(String twoFactorSecret) { this.twoFactorSecret = twoFactorSecret; }
 }

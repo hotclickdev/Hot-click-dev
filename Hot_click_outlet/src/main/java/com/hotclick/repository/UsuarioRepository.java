@@ -42,6 +42,13 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     @Query("UPDATE Usuario u SET u.bloqueadoHasta = :fecha WHERE u.id = :id")
     void bloquearUsuario(@Param("id") Long id, @Param("fecha") LocalDateTime fecha);
 
+    List<Usuario> findByEstadoOrderByIdDesc(Integer estado);
+
+    List<Usuario> findAllByOrderByIdDesc();
+
     @Query("SELECT COUNT(u) FROM Usuario u WHERE u.estado = 1")
     long countUsuariosActivos();
+
+    @Query("SELECT COUNT(u) FROM Usuario u WHERE u.estado = 0")
+    long countUsuariosPendientes();
 }

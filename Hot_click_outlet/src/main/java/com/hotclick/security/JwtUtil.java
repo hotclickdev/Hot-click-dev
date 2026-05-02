@@ -68,4 +68,34 @@ public class JwtUtil {
         final String extractedUsername = extractUsername(token);
         return (extractedUsername.equals(username) && !isTokenExpired(token));
     }
+
+    /** Token de vida corta (5 min) para el paso 2FA durante el login. */
+    public String generateTempToken(String correo, Long userId) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId);
+        claims.put("2fa_pending", true);
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(correo)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + 300_000L))
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public boolean isTempToken(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            return Boolean.TRUE.equals(claims.get("2fa_pending"));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public Long extractUserId(String token) {
+        Object raw = extractAllClaims(token).get("userId");
+        if (raw instanceof Long l)    return l;
+        if (raw instanceof Integer i) return i.longValue();
+        return Long.parseLong(raw.toString());
+    }
 }
