@@ -3,12 +3,15 @@ package com.hotclick.controller;
 import com.hotclick.dto.ProductoRequestDTO;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.service.ProductoService;
+import com.hotclick.service.SupabaseStorageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import java.util.Map;
 
 @CrossOrigin(origins = "*")
 @RestController
@@ -17,6 +20,9 @@ public class ProductoController {
 
     @Autowired
     private ProductoService productoService;
+
+    @Autowired
+    private SupabaseStorageService supabaseStorageService;
 
     @GetMapping
     public ResponseEntity<ResponseDTO> listarProductos(
@@ -55,6 +61,16 @@ public class ProductoController {
         try {
             var producto = productoService.actualizarProducto(id, dto, userDetails.getUsername());
             return ResponseEntity.ok(ResponseDTO.success("Producto actualizado", producto));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        }
+    }
+
+    @PostMapping("/imagen")
+    public ResponseEntity<ResponseDTO> subirImagen(@RequestParam("file") MultipartFile file) {
+        try {
+            String url = supabaseStorageService.subirImagen(file);
+            return ResponseEntity.ok(ResponseDTO.success("Imagen subida", Map.of("url", url)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }

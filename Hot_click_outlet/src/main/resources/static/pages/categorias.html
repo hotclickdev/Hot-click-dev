@@ -120,7 +120,9 @@ function renderProductosCat(productos) {
         return `<div class="product-card">
             <div class="product-card-image">
                 ${p.destacado ? '<span class="product-badge badge-hot">Popular</span>' : ''}
-                <span class="prod-emoji">📦</span>
+                ${p.imagenPrincipalUrl
+                    ? `<img src="${p.imagenPrincipalUrl}" alt="${nombre}" class="prod-img" loading="lazy" onerror="this.outerHTML='<span class=\\'prod-emoji\\'>📦</span>'">`
+                    : '<span class="prod-emoji">📦</span>'}
             </div>
             <div class="product-card-body">
                 <div class="product-category-tag">${escapeHtml(p.categoria?.nombreCategoria || 'General')}</div>

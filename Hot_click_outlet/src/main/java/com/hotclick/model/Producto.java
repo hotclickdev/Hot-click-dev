@@ -111,6 +111,9 @@ public class Producto extends BaseEntity {
     @Column(name = "tiempo_reorden_dias")
     private Integer tiempoReordenDias = 7;
 
+    @Column(name = "imagen_principal_url", length = 500)
+    private String imagenPrincipalUrl;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -206,4 +209,7 @@ public class Producto extends BaseEntity {
 
     public Integer getTiempoReordenDias() { return tiempoReordenDias; }
     public void setTiempoReordenDias(Integer tiempoReordenDias) { this.tiempoReordenDias = tiempoReordenDias; }
+
+    public String getImagenPrincipalUrl() { return imagenPrincipalUrl; }
+    public void setImagenPrincipalUrl(String imagenPrincipalUrl) { this.imagenPrincipalUrl = imagenPrincipalUrl; }
 }

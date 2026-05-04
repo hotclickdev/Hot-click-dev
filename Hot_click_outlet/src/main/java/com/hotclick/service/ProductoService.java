@@ -66,6 +66,7 @@ public class ProductoService {
         if (dto.getLinkAmazon()       != null) p.setLinkAmazon(dto.getLinkAmazon());
         if (dto.getVisibleCatalogo()  != null) p.setVisibleCatalogo(dto.getVisibleCatalogo());
         if (dto.getDestacado()        != null) p.setDestacado(dto.getDestacado());
+        if (dto.getImagenPrincipalUrl() != null) p.setImagenPrincipalUrl(dto.getImagenPrincipalUrl());
     }
 
     @Transactional

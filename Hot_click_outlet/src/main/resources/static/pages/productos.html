@@ -160,7 +160,9 @@ function mostrarProductosEnGrid(productos) {
         return `<div class="product-card">
             <div class="product-card-image">
                 ${badge}<button class="product-card-fav">♡</button>
-                <span class="prod-emoji">📦</span>
+                ${p.imagenUrl
+                    ? `<img src="${p.imagenUrl}" alt="${nombre}" class="prod-img" loading="lazy" onerror="this.outerHTML='<span class=\\'prod-emoji\\'>📦</span>'">`
+                    : '<span class="prod-emoji">📦</span>'}
             </div>
             <div class="product-card-body">
                 <div class="product-category-tag">${escapeHtml(p.categoria || 'General')}</div>
@@ -219,7 +221,8 @@ async function cargarProductos() {
             categoria:   p.categoria?.nombreCategoria || 'General',
             categoriaId: p.categoria?.id,
             descripcion: p.descripcionCorta || '',
-            badge:       p.destacado ? 'hot' : null
+            badge:       p.destacado ? 'hot' : null,
+            imagenUrl:   p.imagenPrincipalUrl || null
         }));
         const catIdUrl = new URLSearchParams(window.location.search).get('catId');
         if (catIdUrl) document.getElementById('categoryFilter').value = catIdUrl;

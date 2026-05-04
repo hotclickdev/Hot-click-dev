@@ -17,15 +17,36 @@ public class DataSeeder implements ApplicationRunner {
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private BodegaRepository bodegaRepository;
     @Autowired private CategoriaRepository categoriaRepository;
+    @Autowired private EstadoRepository estadoRepository;
     @Autowired private PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
+        seedEstados();
         seedRol(Constants.ROL_ADMIN_IT,      "Administrador del sistema", 100);
         seedRol(Constants.ROL_ADMIN_CLIENTE,  "Administrador de negocio",  50);
         seedRol(Constants.ROL_USUARIO_FINAL,  "Cliente final",              1);
         seedAdminUser();
+    }
+
+    private void seedEstados() {
+        seedEstado(Constants.ESTADO_PENDIENTE,  "PENDIENTE",  "Pendiente de aprobación", "#FFA500");
+        seedEstado(Constants.ESTADO_ACTIVO,     "ACTIVO",     "Activo en el sistema",    "#28A745");
+        seedEstado(Constants.ESTADO_INACTIVO,   "INACTIVO",   "Inactivo",                "#6C757D");
+        seedEstado(Constants.ESTADO_ELIMINADO,  "ELIMINADO",  "Eliminado",               "#DC3545");
+        seedEstado(Constants.ESTADO_SUSPENDIDO, "SUSPENDIDO", "Suspendido temporalmente","#FFC107");
+    }
+
+    private void seedEstado(int id, String nombre, String descripcion, String color) {
+        if (!estadoRepository.existsById(id)) {
+            Estado e = new Estado();
+            e.setIdEstado(id);
+            e.setNombreEstado(nombre);
+            e.setDescripcion(descripcion);
+            e.setCodigoColor(color);
+            estadoRepository.save(e);
+        }
     }
 
     private void seedRol(String nombre, String descripcion, int nivel) {

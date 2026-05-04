@@ -193,6 +193,7 @@
                 <label>📸 Imagen del Producto</label>
                 <input type="file" id="prodImagen" accept="image/*" onchange="previsualizarImagen(event)">
                 <div id="vistaPrevia" style="margin-top:8px;"></div>
+                <div id="uploadStatus" style="margin-top:4px;font-size:0.8rem;color:var(--txt-sub);display:none;"></div>
                 <input type="hidden" id="prodImagenUrl">
             </div>
         </div>
@@ -313,6 +314,11 @@
             document.getElementById('prodAmazon').value        = p.linkAmazon || '';
             if (p.categoria?.id) document.getElementById('prodCategoria').value = p.categoria.id;
             if (p.bodega?.id)    document.getElementById('prodBodega')?.value && (document.getElementById('prodBodega').value = p.bodega.id);
+            if (p.imagenPrincipalUrl) {
+                document.getElementById('prodImagenUrl').value = p.imagenPrincipalUrl;
+                document.getElementById('vistaPrevia').innerHTML =
+                    `<img src="${p.imagenPrincipalUrl}" style="max-width:100%;max-height:160px;border-radius:8px;border:1px solid var(--border);object-fit:cover;">`;
+            }
             document.getElementById('modalTitle').innerText = 'Editar Producto';
             abrirModal('productoModal');
         } catch { mostrarToast('Error al cargar producto', 'error'); }
@@ -347,7 +353,14 @@
         if (!body.categoriaId)                  { mostrarToast('Selecciona una categoría', 'error'); return; }
         if (!body.bodegaId)                     { mostrarToast('Selecciona una bodega', 'error'); return; }
 
+        const btn = document.getElementById('guardarProductoBtn');
+        btn.disabled = true;
+        btn.textContent = 'Guardando...';
+
         try {
+            const imagenUrl = await subirImagenSiHay();
+            if (imagenUrl) body.imagenPrincipalUrl = imagenUrl;
+
             const url    = id ? `${API}/productos/${id}` : `${API}/productos`;
             const method = id ? 'PUT' : 'POST';
             const res    = await fetch(url, { method, headers: authHdr(), body: JSON.stringify(body) });
@@ -360,12 +373,77 @@
             } else {
                 mostrarToast(json.message || 'Error al guardar', 'error');
             }
-        } catch { mostrarToast('Error de conexión', 'error'); }
+        } catch(e) {
+            mostrarToast(e.message || 'Error de conexión', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Guardar';
+        }
     });
 
+    function previsualizarImagen(event) {
+        const file = event.target.files[0];
+        const preview = document.getElementById('vistaPrevia');
+        if (!file) { preview.innerHTML = ''; return; }
+        const reader = new FileReader();
+        reader.onload = e => {
+            preview.innerHTML = `<img src="${e.target.result}" style="max-width:100%;max-height:160px;border-radius:8px;border:1px solid var(--border);object-fit:cover;">`;
+        };
+        reader.readAsDataURL(file);
+        document.getElementById('prodImagenUrl').value = '';
+        document.getElementById('uploadStatus').style.display = 'none';
+    }
+
+    async function subirImagenSiHay() {
+        const fileInput = document.getElementById('prodImagen');
+        const file = fileInput.files[0];
+        if (!file) return document.getElementById('prodImagenUrl').value || null;
+
+        const status = document.getElementById('uploadStatus');
+        status.style.display = 'block';
+        status.textContent = '⏳ Subiendo imagen...';
+
+        const form = new FormData();
+        form.append('file', file);
+
+        let res;
+        try {
+            res = await fetch(`${API}/productos/imagen`, {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') },
+                body: form
+            });
+        } catch (netErr) {
+            throw new Error('Sin conexión al servidor');
+        }
+
+        const texto = await res.text();
+        let json;
+        try {
+            json = JSON.parse(texto);
+        } catch {
+            console.error('Respuesta no-JSON del servidor:', res.status, texto.substring(0, 200));
+            if (res.status === 401 || res.status === 403) throw new Error('Sesión expirada, recarga la página');
+            if (res.status === 413) throw new Error('La imagen es demasiado grande (máx 5 MB)');
+            throw new Error(`Error del servidor (código ${res.status})`);
+        }
+
+        if (!res.ok) throw new Error(json.message || 'Error al subir imagen');
+
+        const url = json.data?.url;
+        if (!url) throw new Error('El servidor no devolvió la URL de la imagen');
+
+        document.getElementById('prodImagenUrl').value = url;
+        status.textContent = '✅ Imagen subida';
+        return url;
+    }
+
     function limpiarFormulario() {
-        ['productoId','prodNombre','prodDescripcion','prodPrecioCompra','prodPrecioVenta','prodStock','prodAmazon']
+        ['productoId','prodNombre','prodDescripcion','prodPrecioCompra','prodPrecioVenta','prodStock','prodAmazon','prodImagenUrl']
             .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        document.getElementById('prodImagen').value = '';
+        document.getElementById('vistaPrevia').innerHTML = '';
+        document.getElementById('uploadStatus').style.display = 'none';
     }
 
     document.getElementById('nuevoProductoBtn').addEventListener('click', () => {
