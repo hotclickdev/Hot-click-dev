@@ -107,6 +107,7 @@ public class VentaController {
                     : BigDecimal.ZERO
             );
             pedido.setItems(items);
+            pedido.setEstadoPedido(Constants.PEDIDO_COMPLETADO);
 
             Pedido nuevo = pedidoService.crearPedido(pedido);
             return ResponseEntity.ok(ResponseDTO.success("Venta creada exitosamente", nuevo.getId()));

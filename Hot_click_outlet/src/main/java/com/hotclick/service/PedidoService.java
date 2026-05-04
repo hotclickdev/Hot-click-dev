@@ -25,7 +25,9 @@ public class PedidoService {
     public Pedido crearPedido(Pedido pedido) {
         pedido.setNumeroPedido("ORD-" + System.currentTimeMillis());
         pedido.setFechaPedido(LocalDateTime.now());
-        pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
+        if (pedido.getEstadoPedido() == null) {
+            pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
+        }
         pedido.setEstado(Constants.ESTADO_ACTIVO);
         return pedidoRepository.save(pedido);
     }

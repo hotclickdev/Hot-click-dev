@@ -20,7 +20,8 @@ public class Constants {
     public static final String PEDIDO_PREPARANDO = "PREPARANDO";
     public static final String PEDIDO_ENVIADO = "ENVIADO";
     public static final String PEDIDO_ENTREGADO = "ENTREGADO";
-    public static final String PEDIDO_CANCELADO = "CANCELADO";
+    public static final String PEDIDO_CANCELADO  = "CANCELADO";
+    public static final String PEDIDO_COMPLETADO = "COMPLETADO";
 
     // Estados de carrito
     public static final String CARRITO_ACTIVO = "ACTIVO";
