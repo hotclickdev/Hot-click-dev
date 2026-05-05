@@ -126,15 +126,17 @@ function apiLogout() {
 async function apiObtenerProductos(page = 0, size = 10) {
     try {
         const response = await fetch(`${API_URL}/productos?page=${page}&size=${size}`);
-        
+
         if (response.ok) {
-            const data = await response.json();
-            const productos = data.content || data.data || [];
+            const data     = await response.json();
+            // Backend envuelve en ResponseDTO: { success, message, data: Page<Producto> }
+            const pageData = data.data || data;
+            const productos = pageData.content || [];
             return {
                 success: true,
                 content: productos,
-                totalPages: data.totalPages || 1,
-                totalElements: data.totalElements || productos.length
+                totalPages: pageData.totalPages || 1,
+                totalElements: pageData.totalElements || productos.length
             };
         }
         return { success: false, content: [], totalPages: 1 };

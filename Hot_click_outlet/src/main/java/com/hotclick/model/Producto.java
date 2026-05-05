@@ -47,6 +47,10 @@ public class Producto extends BaseEntity {
     @Column(name = "stock_actual", nullable = false)
     private Integer stockActual = 0;
 
+    /** Unidades actualmente en carritos activos, no vendidas todavía. */
+    @Column(name = "stock_reservado", columnDefinition = "INTEGER NOT NULL DEFAULT 0")
+    private Integer stockReservado = 0;
+
     @Column(name = "stock_minimo", nullable = false)
     private Integer stockMinimo = 5;
 
@@ -149,6 +153,11 @@ public class Producto extends BaseEntity {
 
     public Integer getStockActual() { return stockActual; }
     public void setStockActual(Integer stockActual) { this.stockActual = stockActual; }
+
+    public Integer getStockReservado() { return stockReservado != null ? stockReservado : 0; }
+    public void setStockReservado(Integer stockReservado) { this.stockReservado = stockReservado; }
+
+    public Integer getStockDisponible() { return getStockActual() - getStockReservado(); }
 
     public Integer getStockMinimo() { return stockMinimo; }
     public void setStockMinimo(Integer stockMinimo) { this.stockMinimo = stockMinimo; }

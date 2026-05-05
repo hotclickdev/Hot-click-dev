@@ -1,0 +1,190 @@
+package com.hotclick.service;
+
+import com.hotclick.dto.VentaRequestDTO;
+import com.hotclick.exception.StockInsuficienteException;
+import com.hotclick.model.*;
+import com.hotclick.repository.*;
+import com.hotclick.utils.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+public class VentaService {
+
+    private static final Logger log = LoggerFactory.getLogger(VentaService.class);
+
+    @Autowired private PedidoService               pedidoService;
+    @Autowired private StockService                stockService;
+    @Autowired private ProductoRepository          productoRepository;
+    @Autowired private BodegaRepository            bodegaRepository;
+    @Autowired private UsuarioRepository           usuarioRepository;
+    @Autowired private CarritoRepository           carritoRepository;
+    @Autowired private MovimientoStockRepository   movimientoStockRepository;
+
+    /**
+     * Crea una venta validando y descontando stock con bloqueo pesimista (SELECT FOR UPDATE).
+     *
+     * Si el DTO incluye {@code carritoId}, también libera las reservas de ese carrito
+     * y lo marca como CONVERTIDO — todo dentro de la misma transacción.
+     */
+    @Transactional
+    public Pedido crearVenta(VentaRequestDTO dto, String correoOperador) {
+        if (dto.getItems() == null || dto.getItems().isEmpty()) {
+            throw new IllegalArgumentException("Debe agregar al menos un producto");
+        }
+
+        boolean desdeCarrito = dto.getCarritoId() != null;
+        Usuario usuario      = resolverUsuario(dto, correoOperador);
+        Bodega  bodega       = resolverBodega(dto);
+
+        Pedido pedido = new Pedido();
+        pedido.setUsuarioFinal(usuario);
+        pedido.setBodega(bodega);
+        pedido.setMetodoPago(dto.getMetodoPago()   != null ? dto.getMetodoPago()   : "EFECTIVO");
+        pedido.setMetodoEnvio(dto.getMetodoEnvio() != null ? dto.getMetodoEnvio()  : "RETIRO_TIENDA");
+        pedido.setNotas(dto.getNotas());
+        pedido.setAplicaImpuesto(false);
+        pedido.setMontoImpuesto(0);
+        pedido.setDescuentoTotal(0);
+        pedido.setCostoEnvio(0);
+
+        List<PedidoItem> items = new ArrayList<>();
+        int subtotal = 0;
+        int costo    = 0;
+
+        for (VentaRequestDTO.ItemVentaDTO itemDto : dto.getItems()) {
+            // SELECT FOR UPDATE: bloquea la fila en PostgreSQL hasta el COMMIT.
+            // Si otra transacción concurrente intenta modificar el mismo producto, espera aquí.
+            Producto producto = productoRepository.findByIdForUpdate(itemDto.getProductoId())
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + itemDto.getProductoId()));
+
+            int cantidad = itemDto.getCantidad() != null ? itemDto.getCantidad() : 1;
+
+            validarProductoParaVenta(producto, cantidad, desdeCarrito);
+
+            // Descontar stock real + registrar auditoría.
+            // Si viene de carrito: también libera la reserva (stockReservado--)
+            stockService.descontarPorVenta(producto, cantidad, desdeCarrito,
+                "pendiente", correoOperador);
+
+            int precioUnit = producto.getPrecioVenta()  != null ? producto.getPrecioVenta()  : 0;
+            int costoUnit  = producto.getPrecioCompra() != null ? producto.getPrecioCompra() : 0;
+            int subItem    = precioUnit * cantidad;
+            int costoItem  = costoUnit  * cantidad;
+
+            PedidoItem item = new PedidoItem();
+            item.setPedido(pedido);
+            item.setProducto(producto);
+            item.setCantidad(cantidad);
+            item.setPrecioUnitarioMomento(precioUnit);
+            item.setCostoUnitarioMomento(costoUnit);
+            item.setDescuentoAplicado(0);
+            item.setSubtotalItem(subItem);
+            item.setUtilidadItem(subItem - costoItem);
+            item.setEstado(Constants.ESTADO_ACTIVO);
+
+            items.add(item);
+            subtotal += subItem;
+            costo    += costoItem;
+        }
+
+        pedido.setSubtotal(subtotal);
+        pedido.setCostoTotalProductos(costo);
+        pedido.setUtilidadBruta(subtotal - costo);
+        pedido.setTotalPedido(subtotal);
+        pedido.setMargenGananciaPedido(
+            costo > 0
+                ? BigDecimal.valueOf((subtotal - costo) * 100.0 / costo).setScale(2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO
+        );
+        pedido.setItems(items);
+        pedido.setEstadoPedido(Constants.PEDIDO_COMPLETADO);
+
+        Pedido nuevo = pedidoService.crearPedido(pedido);
+
+        // Ahora que tenemos el número de pedido real, actualizamos la referencia en los movimientos
+        actualizarReferenciaMovimientos(items, nuevo.getNumeroPedido());
+
+        if (desdeCarrito) {
+            convertirCarrito(dto.getCarritoId(), nuevo.getNumeroPedido());
+        }
+
+        return nuevo;
+    }
+
+    // ── Validaciones ────────────────────────────────────────────────────────────
+
+    private void validarProductoParaVenta(Producto producto, int cantidad, boolean desdeCarrito) {
+        if (producto.getEstado() != Constants.ESTADO_ACTIVO) {
+            throw new RuntimeException("Producto no disponible: " + producto.getNombreProducto());
+        }
+        if (Boolean.TRUE.equals(producto.getEsUnico()) && Boolean.TRUE.equals(producto.getVendido())) {
+            throw new RuntimeException("El artículo único '" + producto.getNombreProducto() + "' ya fue vendido");
+        }
+        if (cantidad <= 0) {
+            throw new IllegalArgumentException("La cantidad debe ser mayor a 0");
+        }
+        // Si viene de carrito: la reserva YA existe, por eso comparamos contra stockActual.
+        // Si es venta directa (admin): comparamos contra stockDisponible = stockActual - stockReservado,
+        // respetando las reservas activas de otros usuarios.
+        int comparar = desdeCarrito ? producto.getStockActual() : producto.getStockDisponible();
+        if (comparar < cantidad) {
+            throw new StockInsuficienteException(producto.getNombreProducto(), comparar, cantidad);
+        }
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────────
+
+    private void actualizarReferenciaMovimientos(List<PedidoItem> items, String numeroPedido) {
+        items.forEach(item -> {
+            List<MovimientoStock> movs = movimientoStockRepository
+                .findByProductoIdOrderByFechaMovimientoDesc(item.getProducto().getId());
+            if (!movs.isEmpty()) {
+                MovimientoStock ultimo = movs.get(0);
+                ultimo.setReferencia(numeroPedido);
+                movimientoStockRepository.save(ultimo);
+            }
+        });
+    }
+
+    private void convertirCarrito(Long carritoId, String numeroPedido) {
+        carritoRepository.findById(carritoId).ifPresent(carrito -> {
+            carrito.setEstadoCarrito(Constants.CARRITO_CONVERTIDO);
+            carrito.setFechaActualizacion(LocalDateTime.now());
+            carrito.getItems().clear();
+            carrito.setTotalCarrito(0);
+            carritoRepository.save(carrito);
+            log.info("Carrito id={} convertido por pedido {}", carritoId, numeroPedido);
+        });
+    }
+
+    private Usuario resolverUsuario(VentaRequestDTO dto, String correoOperador) {
+        if (dto.getClienteId() != null) {
+            return usuarioRepository.findById(dto.getClienteId())
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado: id=" + dto.getClienteId()));
+        }
+        return usuarioRepository.findByCorreo(correoOperador)
+            .orElseThrow(() -> new RuntimeException("Usuario operador no encontrado: " + correoOperador));
+    }
+
+    private Bodega resolverBodega(VentaRequestDTO dto) {
+        if (dto.getBodegaId() != null) {
+            return bodegaRepository.findById(dto.getBodegaId())
+                .orElseThrow(() -> new RuntimeException("Bodega no encontrada: id=" + dto.getBodegaId()));
+        }
+        List<Bodega> bodegas = bodegaRepository.findByEstado(Constants.ESTADO_ACTIVO);
+        if (bodegas.isEmpty()) {
+            throw new RuntimeException("No hay bodegas activas configuradas en el sistema");
+        }
+        return bodegas.get(0);
+    }
+}

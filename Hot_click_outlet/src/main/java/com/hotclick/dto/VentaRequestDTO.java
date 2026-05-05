@@ -6,6 +6,8 @@ public class VentaRequestDTO {
 
     private Long clienteId;
     private Long bodegaId;
+    /** Si la venta proviene de un carrito, incluir el ID para liberar reservas y marcarlo como CONVERTIDO. */
+    private Long carritoId;
     private String metodoPago;
     private String metodoEnvio;
     private String notas;
@@ -13,6 +15,9 @@ public class VentaRequestDTO {
 
     public Long getClienteId() { return clienteId; }
     public void setClienteId(Long clienteId) { this.clienteId = clienteId; }
+
+    public Long getCarritoId() { return carritoId; }
+    public void setCarritoId(Long carritoId) { this.carritoId = carritoId; }
 
     public Long getBodegaId() { return bodegaId; }
     public void setBodegaId(Long bodegaId) { this.bodegaId = bodegaId; }

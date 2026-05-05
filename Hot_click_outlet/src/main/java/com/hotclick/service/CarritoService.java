@@ -10,31 +10,20 @@ import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class CarritoService {
 
-    @Autowired
-    private CarritoRepository carritoRepository;
-
-    @Autowired
-    private ProductoRepository productoRepository;
+    @Autowired private CarritoRepository  carritoRepository;
+    @Autowired private ProductoRepository productoRepository;
+    @Autowired private StockService       stockService;
 
     public Carrito obtenerCarritoActivo(Usuario usuario) {
-        return carritoRepository.findByUsuarioFinalIdAndEstadoCarrito(usuario.getId(), "ACTIVO")
+        return carritoRepository.findByUsuarioFinalIdAndEstadoCarrito(usuario.getId(), Constants.CARRITO_ACTIVO)
             .orElseGet(() -> crearCarrito(usuario));
-    }
-
-    @Transactional
-    private Carrito crearCarrito(Usuario usuario) {
-        Carrito carrito = new Carrito();
-        carrito.setUsuarioFinal(usuario);
-        carrito.setEstadoCarrito("ACTIVO");
-        carrito.setFechaCreacion(LocalDateTime.now());
-        carrito.setFechaActualizacion(LocalDateTime.now());
-        carrito.setEstado(Constants.ESTADO_ACTIVO);
-        return carritoRepository.save(carrito);
     }
 
     @Transactional
@@ -42,18 +31,20 @@ public class CarritoService {
         Carrito carrito = carritoRepository.findById(carritoId)
             .orElseThrow(() -> new RuntimeException("Carrito no encontrado"));
 
-        Producto producto = productoRepository.findById(productoId)
+        // SELECT FOR UPDATE: evita doble-reserva concurrente del mismo producto
+        Producto producto = productoRepository.findByIdForUpdate(productoId)
             .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
 
         if (producto.getEstado() != Constants.ESTADO_ACTIVO) {
             throw new RuntimeException("Producto no disponible");
         }
-        if (producto.getEsUnico() && producto.getVendido()) {
+        if (Boolean.TRUE.equals(producto.getEsUnico()) && Boolean.TRUE.equals(producto.getVendido())) {
             throw new RuntimeException("Este artículo único ya fue vendido");
         }
-        if (producto.getStockActual() < cantidad) {
-            throw new RuntimeException("Stock insuficiente");
-        }
+
+        // Reservar stock (valida stockDisponible = stockActual - stockReservado >= cantidad)
+        String referencia = "carrito-" + carritoId;
+        stockService.reservar(producto, cantidad, referencia, "carrito-usuario");
 
         CarritoItem item = new CarritoItem();
         item.setCarrito(carrito);
@@ -76,8 +67,37 @@ public class CarritoService {
     public void vaciarCarrito(Long carritoId) {
         Carrito carrito = carritoRepository.findById(carritoId)
             .orElseThrow(() -> new RuntimeException("Carrito no encontrado"));
+
+        // Liberar todas las reservas antes de borrar los ítems
+        liberarReservasDeItems(carrito.getItems(), carritoId);
+
         carrito.getItems().clear();
         carrito.setTotalCarrito(0);
+        carrito.setFechaActualizacion(LocalDateTime.now());
         carritoRepository.save(carrito);
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────────
+
+    @Transactional
+    private Carrito crearCarrito(Usuario usuario) {
+        Carrito carrito = new Carrito();
+        carrito.setUsuarioFinal(usuario);
+        carrito.setEstadoCarrito(Constants.CARRITO_ACTIVO);
+        carrito.setFechaCreacion(LocalDateTime.now());
+        carrito.setFechaActualizacion(LocalDateTime.now());
+        carrito.setEstado(Constants.ESTADO_ACTIVO);
+        return carritoRepository.save(carrito);
+    }
+
+    private void liberarReservasDeItems(List<CarritoItem> items, Long carritoId) {
+        String referencia = "liberacion-carrito-" + carritoId;
+        items.forEach(item -> {
+            // Para liberar no necesitamos lock pesimista (solo decrementamos, Math.max previene negativos)
+            Producto producto = productoRepository.findById(item.getProducto().getId()).orElse(null);
+            if (producto != null) {
+                stockService.liberarReserva(producto, item.getCantidad(), referencia, "sistema");
+            }
+        });
     }
 }
