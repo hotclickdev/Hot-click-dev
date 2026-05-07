@@ -13,6 +13,7 @@ public class ProductoRequestDTO {
     private Boolean destacado = false;
     private Long categoriaId;
     private Long bodegaId;
+    private String condicion = "NUEVO";
 
     public String getNombreProducto() { return nombreProducto; }
     public void setNombreProducto(String nombreProducto) { this.nombreProducto = nombreProducto; }
@@ -49,4 +50,20 @@ public class ProductoRequestDTO {
 
     public Long getBodegaId() { return bodegaId; }
     public void setBodegaId(Long bodegaId) { this.bodegaId = bodegaId; }
+
+    public String getCondicion() { return condicion; }
+    public void setCondicion(String condicion) { this.condicion = condicion; }
+
+    private String tituloProducto;
+    private String especificaciones;
+    private String comoUsar;
+
+    public String getTituloProducto() { return tituloProducto; }
+    public void setTituloProducto(String tituloProducto) { this.tituloProducto = tituloProducto; }
+
+    public String getEspecificaciones() { return especificaciones; }
+    public void setEspecificaciones(String especificaciones) { this.especificaciones = especificaciones; }
+
+    public String getComoUsar() { return comoUsar; }
+    public void setComoUsar(String comoUsar) { this.comoUsar = comoUsar; }
 }

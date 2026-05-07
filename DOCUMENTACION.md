@@ -1,6 +1,6 @@
 # HOTCLICK Outlet — Documentación Técnica Completa
 
-> Versión del documento: 1.2 | Fecha: 2026-05-04 | Actualizado con implementación de stock, reservas y auditoría
+> Versión del documento: 1.3 | Fecha: 2026-05-06 | Actualizado con sistema de diseño UI, filtros de catálogo y carousel de proceso
 
 ---
 
@@ -27,6 +27,8 @@
 - JavaScript modular vanilla (sin framework) dividido en: `api.js`, `auth.js`, `cart.js`, `products.js`, `scanner.js`, `modals.js`, `ui.js`, `utils.js`, `app.js`.
 - Panel de administración separado en `/admin/` con su propio CSS y JS.
 - Diseño mobile-first con `responsive.css`.
+- Animaciones con **GSAP 3.12.5 + ScrollTrigger** (CDN).
+- Sistema de diseño propio basado en tokens CSS (sección 12).
 
 ### Base de Datos
 - PostgreSQL 15 en Supabase (Session Pooler, región `aws-1-us-east-2`).
@@ -161,6 +163,9 @@ Hot_click_outlet/
 - Detalle de producto con imágenes
 - Filtro por categoría
 - Productos destacados
+- **Sidebar de filtros** (precio, disponibilidad, categoría) en `productos.html`
+- **Skeleton loading** durante la carga inicial de productos
+- **Resultado en tiempo real** — contador de productos actualizado con cada filtro
 
 ### Carrito de Compras
 - Carrito persistente por usuario (ACTIVO/ABANDONADO/CONVERTIDO)
@@ -209,6 +214,12 @@ Hot_click_outlet/
 - Swagger UI disponible vía SpringDoc
 - Dockerfile y docker-compose.yml presentes
 - render.yaml con rootDir configurado para Render
+
+### Paginación en Catálogo
+
+- Paginación controlada por `paginaActual` / `totalPaginas` en `productos.html`
+- Botones Anterior/Siguiente actualizados según filtros activos
+- Variable `_filtradosActuales` separada de `todosLosProductos` para que la paginación opere sobre el conjunto filtrado correctamente
 
 ---
 
@@ -602,3 +613,220 @@ Content-Type: application/json
 | 2 | INACTIVO | Desactivado temporalmente |
 | 3 | ELIMINADO | Soft delete |
 | 4 | SUSPENDIDO | Bloqueado por administrador |
+
+---
+
+## 12. Sistema de Diseño UI Frontend
+
+> Implementado en v1.3 (2026-05-06). Reemplazo completo del sistema visual previo. Referencia estética: Apple / Linear / Stripe Press.
+
+### 12.1 Tipografía
+
+| Rol | Familia | Uso |
+|---|---|---|
+| Display | **Syne** (400, 600, 700, 800) | Títulos, logo, precios, números grandes |
+| Body | **DM Sans** (300–700, opsz 9–40) | Todo el texto de UI, botones, inputs |
+
+Ambas fuentes se cargan desde Google Fonts con `display=swap`.
+
+### 12.2 Tokens de Color
+
+| Variable | Valor | Uso |
+|---|---|---|
+| `--c-ink` | `#0a0a0a` | Botón primario, activos, texto fuerte |
+| `--c-ink-hover` | `#1c1c1e` | Hover del botón primario |
+| `--c-navy` | `#0D1B2A` | Títulos, footer background, hero dark |
+| `--c-blue` | `#1E88E5` | Acentos, links, badge, botón circular "+" |
+| `--c-red` | `#E53935` | Errores, precios originales tachados, badges de oferta |
+| `--c-green` | `#00897B` | Stock disponible, badge "Nuevo" |
+| `--c-cream` | `#F4F0E8` | Background del hero principal |
+| `--c-bg` | `#F4F6F9` | Background general de página |
+| `--c-white` | `#FFFFFF` | Cards, modales, superficies |
+| `--c-border` | `#E8ECF0` | Bordes de separación |
+| `--c-muted` | `#7B8A9A` | Texto secundario, placeholders |
+
+### 12.3 Tokens de Radio y Sombra
+
+| Variable | Valor | Uso |
+|---|---|---|
+| `--r-card` | `14px` | Tarjetas de producto |
+| `--r-btn` | `10px` | Botones estándar |
+| `--r-full` | `999px` | Botones pill, badges, tabs |
+| `--shadow-card` | `0 2px 12px rgba(13,27,42,.08)` | Cards en reposo |
+| `--shadow-float` | `0 24px 56px rgba(0,0,0,.11), 0 8px 20px rgba(0,0,0,.07)` | Cards en hover |
+
+### 12.4 Tokens de Movimiento
+
+| Variable | Valor | Uso |
+|---|---|---|
+| `--transition` | `.18s ease` (bg, color, border, opacity) | Cambios de estado genéricos |
+| `--transition-spring` | `.22s cubic-bezier(.23,1,.32,1)` | Hover de cards, botón circle |
+
+### 12.5 Sistema de Botones
+
+Todos los botones tienen `height` fijo (no `padding` vertical) para consistencia cross-browser.
+
+| Clase | Alto | Descripción |
+|---|---|---|
+| `.btn` | 40px | Base — todos los botones heredan de aquí |
+| `.btn-primary` | 40px | Fondo negro `--c-ink`, texto blanco; shine en hover |
+| `.btn-outline` | 40px | Borde sutil, fondo transparente |
+| `.btn-secondary` | 40px | Fondo `--c-bg` |
+| `.btn-ghost` | 40px | Sin borde ni fondo — para contextos sobre blanco |
+| `.btn-ghost-light` | 40px | Versión para fondos oscuros (carousel, hero) |
+| `.btn-whatsapp` | 40px | Verde WhatsApp |
+| `.btn-sm` | 32px | Botón pequeño (filtros, breadcrumbs) |
+| `.btn-lg` | 48px | Botón grande (CTAs hero) |
+| `.btn-xl` | 56px | Botón extra grande |
+| `.btn-pill` | — | Modificador: `border-radius: 999px` |
+
+### 12.6 Sistema de Tarjetas de Producto
+
+```text
+┌──────────────────────────┐  ← .product-card (overflow: visible)
+│  [imagen 4:3]            │  ← .product-card-image (overflow: hidden, top corners)
+│                          │
+│              ●+          │  ← .btn-add-circle (top:-18px, z-index:3)
+│  CATEGORÍA               │
+│  Nombre del producto     │  ← .product-card-body (bottom corners)
+│  ▪ 3 disponibles         │
+│  ₡45,000          [+]    │
+└──────────────────────────┘
+```
+
+**Decisión de `overflow`:** El card usa `overflow: visible` para que el botón circular "+" (posicionado `top: -18px`) no quede cortado. El `overflow: hidden` se aplica solo en `.product-card-image` para que la imagen no desborde.
+
+**Hover:** `translateY(-7px)` + `box-shadow: var(--shadow-float)` + overlay gradiente sutil en la imagen.
+
+### 12.7 Sidebar de Filtros — `productos.html`
+
+Layout grid de dos columnas: `210px sidebar + 1fr contenido`.
+
+```text
+┌──────────┬──────────────────────────────┐
+│ FILTROS  │  Lo mejor                    │
+│ ──────── │  disponible ahora            │
+│ PRECIO   │  ─────────────────────────── │
+│ [slider] │  [card][card][card]          │
+│ DISPONI- │  [card][card][card]          │
+│ BILIDAD  │                              │
+│ ○ Stock  │  ← → Página 1 de 3          │
+│ ○ Agotado│                              │
+│ CATEG.   │                              │
+│ [lista]  │                              │
+└──────────┴──────────────────────────────┘
+```
+
+**Filtros disponibles:**
+
+| Filtro | Tipo | Comportamiento |
+|---|---|---|
+| Precio | Range slider `<input type="range">` | Máximo dinámico calculado desde los productos cargados |
+| Disponibilidad | Dos checkboxes con dot verde/rojo | Ninguno = todos; solo En Stock = oculta agotados; solo Agotado = oculta en stock; ambos = todos |
+| Categoría | Lista de botones verticales | Sincronizado con `<select>` oculto (compatibilidad) |
+
+**Bug corregido (v1.3):** El slider tenía `max` hardcodeado a ₡500 000. Ahora `actualizarSliderPrecio()` calcula el máximo real de los productos y lo redondea al ₡50 000 más cercano.
+
+**Lógica de paginación corregida:** Se usa `_filtradosActuales` (array separado) en lugar de `todosLosProductos._filtrados` (hack previo), para que los botones de página operen correctamente sobre el conjunto filtrado.
+
+### 12.8 Componentes Visuales Nuevos
+
+#### Marquee strip
+
+Banda horizontal navy oscuro que desplaza categorías/temas de la tienda en loop continuo. Aparece después del hero (index.html) y después del page-hero (productos.html).
+
+- CSS puro: `animation: marqueeScroll 26s linear infinite`
+- Se pausa al hacer hover (`:hover { animation-play-state: paused }`)
+- Duplicado para loop seamless (16 items × 2)
+
+#### Concentric rings (hero visual)
+
+Tres anillos `border: 1px solid rgba(30,136,229,.12)` con `animation: ringBreath` en desfase (0s, 0.9s, 1.8s) alrededor del emoji del hero.
+
+#### Live dot (hero kicker)
+
+El punto del badge "Importado · Limitado · CR" es un círculo verde `#22c55e` con animación `box-shadow` pulsante que imita un indicador de actividad en vivo.
+
+#### Skeleton loading
+
+Reemplaza el texto "📦 Cargando..." con tarjetas esqueleto animadas (`animation: shimmer`). Generadas por `skeletonCards(n)` en JS.
+
+```js
+function skeletonCards(n = 6) {
+    return Array.from({length: n}, () => `
+        <div class="skeleton-card">
+            <div class="skeleton-img"></div>
+            <div class="skeleton-body">
+                <div class="skeleton-line tall w80"></div>
+                <div class="skeleton-line w60"></div>
+                <div class="skeleton-line w40"></div>
+            </div>
+        </div>`).join('');
+}
+```
+
+#### Scroll indicator
+
+Línea vertical animada `translateY` en la parte inferior del hero. Solo visible en desktop; oculto con `display: none` en `≤768px`.
+
+### 12.9 Carousel de Proceso — `index.html`
+
+Sección `<section class="process-section">` entre EXCLUSIVIDAD y CATEGORÍAS.
+
+**4 slides:**
+
+| # | Título | Imagen (Unsplash) |
+|---|---|---|
+| 01 | Buscamos lo mejor en EE.UU. | `photo-1498049794561-7780e7231661` |
+| 02 | Importamos directo, sin intermediarios | `photo-1553413077-190dd305871c` |
+| 03 | Cada artículo, en cantidades exclusivas | `photo-1523275335684-37898b6baf30` |
+| 04 | Te lo llevamos a donde estés en CR | `photo-1586864387967-d02ef85d93e8` |
+
+**Funcionalidades del carousel:**
+
+- Auto-avance cada 5 segundos; se pausa con `mouseenter` en el contenedor
+- Progress bar azul en la parte inferior de la imagen (animación `width: 0% → 100%`)
+- Tab bars en la parte superior izquierda (4 líneas que se llenan con `animation: tabFill`)
+- Flechas SVG ← → para navegación manual
+- Touch swipe: diferencia de 40px entre `touchstart` y `touchend` cambia de slide
+- Imagen desliza con `translateX(-${idx * 100}%)` sobre un track flex
+- Texto del slide: `animation: pcFadeUp` al activarse
+- Número decorativo grande (01, 02…) en `color: rgba(255,255,255,.05)` como fondo tipográfico
+- Overlay gradiente lateral conecta el panel oscuro izquierdo con la foto
+
+**Estructura HTML:**
+
+```text
+.process-section
+  .process-header          ← título centrado
+  .process-carousel-box    ← grid 42fr/58fr
+    .pc-left               ← panel oscuro (#0f1923)
+      .pc-tabs             ← 4 tab bars de progreso
+      .pc-content × 4      ← texto de cada slide
+      .pc-arrows           ← flechas ← →
+    .pc-right              ← panel de imagen
+      .pc-img-track        ← flex con 4 slides
+      .pc-progress-wrap    ← barra de progreso inferior
+```
+
+**Responsive:** En `≤900px` el layout cambia a una columna; la imagen sube arriba (260px de alto) y el texto queda debajo.
+
+### 12.10 Página Nosotros — Rediseño
+
+Estructura de 4 secciones editoriales:
+
+| Sección | Clase | Descripción |
+|---|---|---|
+| Historia | `.about-story` | Título centrado + imagen wide `aspect-ratio: 21/8` |
+| Stats | `.about-stats` `.stats-row` | Grid 4 columnas con `border-left` separadores |
+| Misión | `.about-mission` | Grid 50/50: imagen emoji izquierda, texto derecha |
+| Valores | `.about-values` | Grid 3 columnas de tarjetas |
+
+### 12.11 Archivos modificados en v1.3
+
+| Archivo | Cambio |
+| --- | --- |
+| `css/style.css` | Tokens nuevos, hero, botones, cards, skeleton, marquee, rings, carousel, footer, nosotros |
+| `pages/index.html` | Hero split + rings, marquee strip, carousel de proceso, skeleton loading |
+| `pages/productos.html` | Sidebar de filtros (`<style>` inline), skeleton loading, `_filtradosActuales`, `actualizarSliderPrecio()` |
+| `pages/nosotros.html` | Rediseño completo con 4 secciones editoriales |

@@ -32,6 +32,25 @@ public class ProductoController {
         return ResponseEntity.ok(ResponseDTO.success("Productos obtenidos", productos));
     }
 
+    @GetMapping("/destacados")
+    public ResponseEntity<ResponseDTO> listarDestacados() {
+        return ResponseEntity.ok(ResponseDTO.success("Destacados obtenidos", productoService.listarDestacados()));
+    }
+
+    @PatchMapping("/{id}/destacado")
+    public ResponseEntity<ResponseDTO> toggleDestacado(
+            @PathVariable Long id,
+            @RequestBody Map<String, Boolean> body) {
+        try {
+            Boolean valor = body.get("destacado");
+            if (valor == null) return ResponseEntity.badRequest().body(ResponseDTO.error("Campo destacado requerido"));
+            var producto = productoService.toggleDestacado(id, valor);
+            return ResponseEntity.ok(ResponseDTO.success("Destacado actualizado", producto));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        }
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ResponseDTO> obtenerProducto(@PathVariable Long id) {
         try {

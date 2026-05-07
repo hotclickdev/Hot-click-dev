@@ -67,6 +67,10 @@ public class ProductoService {
         if (dto.getVisibleCatalogo()  != null) p.setVisibleCatalogo(dto.getVisibleCatalogo());
         if (dto.getDestacado()        != null) p.setDestacado(dto.getDestacado());
         if (dto.getImagenPrincipalUrl() != null) p.setImagenPrincipalUrl(dto.getImagenPrincipalUrl());
+        if (dto.getCondicion()         != null) p.setCondicion(dto.getCondicion());
+        if (dto.getTituloProducto()    != null) p.setTituloProducto(dto.getTituloProducto());
+        if (dto.getEspecificaciones()  != null) p.setEspecificaciones(dto.getEspecificaciones());
+        if (dto.getComoUsar()          != null) p.setComoUsar(dto.getComoUsar());
     }
 
     @Transactional
@@ -75,6 +79,14 @@ public class ProductoService {
             .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
         p.setEstado(Constants.ESTADO_INACTIVO);
         productoRepository.save(p);
+    }
+
+    @Transactional
+    public Producto toggleDestacado(Long id, Boolean valor) {
+        Producto p = productoRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+        p.setDestacado(valor);
+        return productoRepository.save(p);
     }
 
     @Transactional

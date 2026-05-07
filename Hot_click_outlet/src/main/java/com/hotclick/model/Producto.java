@@ -118,6 +118,19 @@ public class Producto extends BaseEntity {
     @Column(name = "imagen_principal_url", length = 500)
     private String imagenPrincipalUrl;
 
+    /** Estado físico del producto: NUEVO, COMO_NUEVO, USADO */
+    @Column(name = "condicion", length = 20, columnDefinition = "VARCHAR(20) DEFAULT 'NUEVO'")
+    private String condicion = "NUEVO";
+
+    @Column(name = "titulo_producto", length = 300)
+    private String tituloProducto;
+
+    @Column(name = "especificaciones", columnDefinition = "TEXT")
+    private String especificaciones;
+
+    @Column(name = "como_usar", columnDefinition = "TEXT")
+    private String comoUsar;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -221,4 +234,16 @@ public class Producto extends BaseEntity {
 
     public String getImagenPrincipalUrl() { return imagenPrincipalUrl; }
     public void setImagenPrincipalUrl(String imagenPrincipalUrl) { this.imagenPrincipalUrl = imagenPrincipalUrl; }
+
+    public String getCondicion() { return condicion != null ? condicion : "NUEVO"; }
+    public void setCondicion(String condicion) { this.condicion = condicion; }
+
+    public String getTituloProducto() { return tituloProducto; }
+    public void setTituloProducto(String tituloProducto) { this.tituloProducto = tituloProducto; }
+
+    public String getEspecificaciones() { return especificaciones; }
+    public void setEspecificaciones(String especificaciones) { this.especificaciones = especificaciones; }
+
+    public String getComoUsar() { return comoUsar; }
+    public void setComoUsar(String comoUsar) { this.comoUsar = comoUsar; }
 }

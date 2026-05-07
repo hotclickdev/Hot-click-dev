@@ -40,17 +40,26 @@ public class PedidoService {
         return pedidoRepository.save(pedido);
     }
 
+    @Transactional(readOnly = true)
     public Pedido buscarPorId(Long id) {
-        return pedidoRepository.findById(id)
+        Pedido p = pedidoRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+        p.getItems().size(); // force-initialize within session
+        return p;
     }
 
+    @Transactional(readOnly = true)
     public Page<Pedido> listarPorUsuario(Long usuarioId, Pageable pageable) {
-        return pedidoRepository.findByUsuarioFinalIdOrderByFechaPedidoDesc(usuarioId, pageable);
+        Page<Pedido> page = pedidoRepository.findByUsuarioFinalIdOrderByFechaPedidoDesc(usuarioId, pageable);
+        page.getContent().forEach(p -> p.getItems().size());
+        return page;
     }
 
+    @Transactional(readOnly = true)
     public List<Pedido> listarPendientes() {
-        return pedidoRepository.findByEstadoPedidoAndEstado(Constants.PEDIDO_PENDIENTE, Constants.ESTADO_ACTIVO);
+        List<Pedido> list = pedidoRepository.findByEstadoPedidoAndEstado(Constants.PEDIDO_PENDIENTE, Constants.ESTADO_ACTIVO);
+        list.forEach(p -> p.getItems().size());
+        return list;
     }
 
     @Transactional(readOnly = true)

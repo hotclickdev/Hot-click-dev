@@ -69,7 +69,9 @@ public class SecurityConfig {
                 .requestMatchers(DELETE, "/api/productos/**").authenticated()
                 .requestMatchers("/api/ruleta/premios").permitAll()
                 .requestMatchers(GET, "/api/categorias/**").permitAll()
-                .requestMatchers("/", "/*.html", "/favicon.ico", "/pages/**", "/css/**", "/js/**", "/images/**", "/assets/**", "/admin/**").permitAll()
+                .requestMatchers("/", "/*.html", "/*.ico", "/*.jpg", "/*.jpeg", "/*.png", "/*.svg", "/*.webp", "/favicon.ico", "/pages/**", "/css/**", "/js/**", "/images/**", "/assets/**", "/admin/**",
+                    "/nosotros", "/productos", "/productos/**", "/informacion", "/contacto",
+                    "/carrito", "/login", "/registro", "/perfil", "/perfil/**").permitAll()
                 .requestMatchers("/api/admin/**").authenticated()
                 .requestMatchers("/api/usuarios/**").authenticated()
                 .requestMatchers("/api/pedidos/**").authenticated()
