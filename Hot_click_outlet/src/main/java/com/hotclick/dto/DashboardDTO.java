@@ -10,7 +10,8 @@ public class DashboardDTO {
     private long totalPedidos;
     private long totalVentas;
     private long pedidosPendientes;
-    private int productosBajoStock;
+    private long usuariosPendientes;
+    private int stockBajo;
     private List<CategoriaConteoDTO> categorias;
     private UltimoPedidoDTO ultimoPedido;
 
@@ -31,8 +32,11 @@ public class DashboardDTO {
     public long getPedidosPendientes() { return pedidosPendientes; }
     public void setPedidosPendientes(long pedidosPendientes) { this.pedidosPendientes = pedidosPendientes; }
 
-    public int getProductosBajoStock() { return productosBajoStock; }
-    public void setProductosBajoStock(int productosBajoStock) { this.productosBajoStock = productosBajoStock; }
+    public long getUsuariosPendientes() { return usuariosPendientes; }
+    public void setUsuariosPendientes(long usuariosPendientes) { this.usuariosPendientes = usuariosPendientes; }
+
+    public int getStockBajo() { return stockBajo; }
+    public void setStockBajo(int stockBajo) { this.stockBajo = stockBajo; }
 
     public List<CategoriaConteoDTO> getCategorias() { return categorias; }
     public void setCategorias(List<CategoriaConteoDTO> categorias) { this.categorias = categorias; }

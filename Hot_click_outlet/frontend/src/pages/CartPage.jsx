@@ -1,8 +1,9 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import MainLayout from '@/layouts/MainLayout'
 import Button from '@/components/ui/Button'
 import useCartStore from '@/store/cartStore'
+import useAuthStore from '@/store/authStore'
 import { formatPrice } from '@/utils/format'
 import { useToast } from '@/components/ui/Toast'
 
@@ -10,7 +11,9 @@ const WHATSAPP = '50689745370'
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart, total, toWhatsAppMessage } = useCartStore()
-  const toast = useToast()
+  const { token } = useAuthStore()
+  const navigate  = useNavigate()
+  const toast     = useToast()
 
   const handleWhatsApp = () => {
     if (items.length === 0) return
@@ -178,6 +181,16 @@ export default function CartPage() {
               </div>
 
               <div className="pt-2 space-y-2">
+                {/* Pago con tarjeta vía PayXpert */}
+                <Button
+                  onClick={() => token ? navigate('/checkout') : navigate('/login')}
+                  className="w-full bg-[#4f7cff] hover:bg-[#3d6ee0] shadow-[0_0_20px_rgba(79,124,255,0.3)]"
+                  size="lg"
+                >
+                  <LockIcon />
+                  Pagar con tarjeta
+                </Button>
+
                 <Button
                   onClick={handleWhatsApp}
                   className="w-full bg-[#25D366] hover:bg-[#1da851] shadow-[0_0_20px_rgba(37,211,102,0.25)]"
@@ -202,6 +215,14 @@ export default function CartPage() {
         </div>
       </div>
     </MainLayout>
+  )
+}
+
+function LockIcon() {
+  return (
+    <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+    </svg>
   )
 }
 

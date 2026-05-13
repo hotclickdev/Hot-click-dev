@@ -38,8 +38,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             try {
                 username = jwtUtil.extractUsername(jwt);
             } catch (JwtException | IllegalArgumentException e) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido o expirado");
-                return;
+                // Token inválido: ignorar y continuar — Spring Security decide si el endpoint es público o no
             }
         }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion } from 'framer-motion'
 import AdminLayout from '@/layouts/AdminLayout'
 import Button from '@/components/ui/Button'
@@ -46,7 +46,7 @@ export default function AdminProducts() {
     setLoading(true)
     try {
       const [{ data: prods }, { data: cats }, { data: bods }] = await Promise.all([
-        productService.getAll(0, 200),
+        productService.adminGetAll(0, 200),
         productService.getCategories(),
         warehouseService.getAll(),
       ])
@@ -97,6 +97,9 @@ export default function AdminProducts() {
 
   const handleSave = async (e) => {
     e.preventDefault()
+    if (!form.categoriaId) {
+      toast({ message: 'Selecciona una categoría', type: 'error' }); return
+    }
     if (!form.bodegaId && bodegas.length > 0) {
       toast({ message: 'Selecciona una bodega', type: 'error' }); return
     }
@@ -388,9 +391,9 @@ export default function AdminProducts() {
           {/* Categoría + Bodega */}
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-[#e8e8ed]">Categoría</label>
-              <select value={form.categoriaId} onChange={set('categoriaId')} className="h-11 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60">
-                <option value="">Sin categoría</option>
+              <label className="text-sm font-medium text-[#e8e8ed]">Categoría *</label>
+              <select value={form.categoriaId} onChange={set('categoriaId')} required className="h-11 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60">
+                <option value="">Selecciona categoría</option>
                 {categories.map((c) => <option key={c.id} value={c.id}>{c.nombreCategoria ?? c.nombre}</option>)}
               </select>
             </div>
@@ -399,13 +402,16 @@ export default function AdminProducts() {
                 <label className="text-sm font-medium text-[#e8e8ed]">Bodega *</label>
                 <select value={form.bodegaId} onChange={set('bodegaId')} className="h-11 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60" required>
                   <option value="">Selecciona bodega</option>
-                  {bodegas.map((b) => <option key={b.id} value={b.id}>{b.nombre}</option>)}
+                  {bodegas.map((b) => <option key={b.id} value={b.id}>{b.nombreBodega ?? b.nombre}</option>)}
                 </select>
               </div>
             )}
           </div>
 
-          <Input label="URL de imagen" value={form.imagenUrl} onChange={set('imagenUrl')} placeholder="https://..." hint="Pega la URL de la imagen del producto" />
+          <ImagePicker
+            value={form.imagenUrl}
+            onChange={(url) => setField('imagenUrl', url)}
+          />
 
           {/* Destacado */}
           <div className="flex items-center justify-between py-2.5 px-3 rounded-xl bg-white/4 border border-white/8">
@@ -467,6 +473,104 @@ export default function AdminProducts() {
         </form>
       </Modal>
     </AdminLayout>
+  )
+}
+
+const SUPABASE_URL = 'https://nkevwfcjhjaawtdqquns.supabase.co'
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rZXZ3ZmNqaGphYXd0ZHFxdW5zIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzU3MDQ2OSwiZXhwIjoyMDkzMTQ2NDY5fQ.CFvaekC5F0QBUSW5cRlt2k2CoQUvSdmLuEKW7WkA6j4'
+const BUCKET = 'HOT_CLICK'
+
+async function uploadToSupabase(file) {
+  const ext = file.name.split('.').pop().toLowerCase() || 'jpg'
+  const path = `productos/${crypto.randomUUID()}.${ext}`
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': file.type },
+    body: file,
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.message ?? `Error ${res.status}`)
+  }
+  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`
+}
+
+function ImagePicker({ value, onChange }) {
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState('')
+  const [dragging, setDragging] = useState(false)
+  const inputRef = useRef(null)
+
+  const processFile = async (file) => {
+    if (!file) return
+    if (!file.type.startsWith('image/')) { setError('Solo imágenes (PNG, JPG, WebP)'); return }
+    if (file.size > 5 * 1024 * 1024) { setError('Máximo 5 MB'); return }
+    setError('')
+    setUploading(true)
+    try {
+      const url = await uploadToSupabase(file)
+      onChange(url)
+    } catch (err) {
+      setError(err.message ?? 'Error al subir')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const onDrop = (e) => {
+    e.preventDefault()
+    setDragging(false)
+    processFile(e.dataTransfer.files?.[0])
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <label className="text-sm font-medium text-[#e8e8ed]">Imagen del producto</label>
+
+      {/* Zona drag & drop */}
+      <div
+        onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={onDrop}
+        onClick={() => !uploading && inputRef.current?.click()}
+        className={`relative flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed cursor-pointer transition-all min-h-[110px] ${
+          dragging
+            ? 'border-[#4f7cff] bg-[#4f7cff]/10'
+            : 'border-white/15 bg-white/3 hover:border-[#4f7cff]/50 hover:bg-white/5'
+        }`}
+      >
+        {uploading ? (
+          <>
+            <span className="w-6 h-6 border-2 border-[#4f7cff]/30 border-t-[#4f7cff] rounded-full animate-spin" />
+            <span className="text-xs text-[#8e8e9a]">Subiendo…</span>
+          </>
+        ) : value ? (
+          <img
+            src={value}
+            alt="preview"
+            className="max-h-32 max-w-full rounded-xl object-contain"
+            onError={(e) => { e.currentTarget.style.display = 'none' }}
+          />
+        ) : (
+          <>
+            <svg className="w-8 h-8 text-[#8e8e9a]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <p className="text-sm text-[#8e8e9a]">Arrastrá la imagen o <span className="text-[#4f7cff]">hacé clic</span></p>
+            <p className="text-xs text-[#8e8e9a]/60">PNG, JPG, WebP — máx 5 MB</p>
+          </>
+        )}
+        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { processFile(e.target.files?.[0]); e.target.value = '' }} />
+      </div>
+
+      {error && <p className="text-xs text-red-400">{error}</p>}
+
+      {value && !uploading && (
+        <button type="button" onClick={() => onChange('')} className="text-xs text-red-400 hover:text-red-300 text-left">
+          Quitar imagen
+        </button>
+      )}
+    </div>
   )
 }
 

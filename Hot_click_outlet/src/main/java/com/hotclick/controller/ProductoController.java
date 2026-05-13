@@ -32,6 +32,14 @@ public class ProductoController {
         return ResponseEntity.ok(ResponseDTO.success("Productos obtenidos", productos));
     }
 
+    @GetMapping("/admin/todos")
+    public ResponseEntity<ResponseDTO> listarTodosAdmin(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "200") int size) {
+        var productos = productoService.listarTodosActivos(PageRequest.of(page, size));
+        return ResponseEntity.ok(ResponseDTO.success("Productos obtenidos", productos));
+    }
+
     @GetMapping("/destacados")
     public ResponseEntity<ResponseDTO> listarDestacados() {
         return ResponseEntity.ok(ResponseDTO.success("Destacados obtenidos", productoService.listarDestacados()));

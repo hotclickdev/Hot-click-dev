@@ -58,23 +58,28 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                // 2FA: verify es público (paso del login); los demás requieren JWT
+                // Auth: 2FA verify es público; el resto requiere JWT
                 .requestMatchers(POST, "/api/auth/2fa/verify").permitAll()
                 .requestMatchers("/api/auth/2fa/**").authenticated()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/health").permitAll()
-                .requestMatchers(GET,  "/api/productos/**").permitAll()
-                .requestMatchers(POST, "/api/productos/**").authenticated()
-                .requestMatchers(PUT,  "/api/productos/**").authenticated()
-                .requestMatchers(DELETE, "/api/productos/**").authenticated()
-                .requestMatchers("/api/ruleta/premios").permitAll()
-                .requestMatchers(GET, "/api/categorias/**").permitAll()
-                .requestMatchers("/", "/*.html", "/*.ico", "/*.jpg", "/*.jpeg", "/*.png", "/*.svg", "/*.webp", "/favicon.ico", "/pages/**", "/css/**", "/js/**", "/images/**", "/assets/**", "/admin/**",
+                .requestMatchers(POST, "/api/webhooks/payxpert").permitAll()
+                // Catálogo público - solo GETs específicos
+                .requestMatchers(GET, "/api/productos/admin/todos").authenticated()
+                .requestMatchers(GET, "/api/productos").permitAll()
+                .requestMatchers(GET, "/api/productos/destacados").permitAll()
+                .requestMatchers(GET, "/api/productos/*").permitAll()
+                .requestMatchers(GET, "/api/categorias").permitAll()
+                .requestMatchers(GET, "/api/ruleta/premios").permitAll()
+                // Todas las demás rutas /api/** requieren autenticación
+                .requestMatchers("/api/**").authenticated()
+                // Rutas del SPA React (frontend)
+                .requestMatchers("/", "/*.html", "/*.ico", "/*.jpg", "/*.jpeg", "/*.png",
+                    "/*.svg", "/*.webp", "/favicon.ico", "/pages/**", "/css/**", "/js/**",
+                    "/images/**", "/assets/**", "/admin/**",
                     "/nosotros", "/productos", "/productos/**", "/informacion", "/contacto",
-                    "/carrito", "/login", "/registro", "/perfil", "/perfil/**").permitAll()
-                .requestMatchers("/api/admin/**").authenticated()
-                .requestMatchers("/api/usuarios/**").authenticated()
-                .requestMatchers("/api/pedidos/**").authenticated()
+                    "/carrito", "/login", "/registro", "/perfil", "/perfil/**",
+                    "/checkout", "/pago/exito", "/pago/cancelado").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));

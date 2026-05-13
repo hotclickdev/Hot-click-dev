@@ -25,6 +25,11 @@ public class ProductoService {
 
     @Transactional
     public Producto crearProducto(ProductoRequestDTO dto, String adminCorreo) {
+        if (dto.getCategoriaId() == null)
+            throw new IllegalArgumentException("Debe seleccionar una categoría");
+        if (dto.getBodegaId() == null)
+            throw new IllegalArgumentException("Debe seleccionar una bodega");
+
         Producto p = new Producto();
         mapDtoToProducto(dto, p);
         p.setEstado(Constants.ESTADO_ACTIVO);
@@ -105,6 +110,10 @@ public class ProductoService {
 
     public Page<Producto> listarProductosDisponibles(Pageable pageable) {
         return productoRepository.findByEstadoAndStockActualGreaterThan(Constants.ESTADO_ACTIVO, 0, pageable);
+    }
+
+    public Page<Producto> listarTodosActivos(Pageable pageable) {
+        return productoRepository.findByEstado(Constants.ESTADO_ACTIVO, pageable);
     }
 
     public Page<Producto> listarPorCategoria(Long categoriaId, Pageable pageable) {

@@ -24,7 +24,9 @@ const AdminCategories = lazy(() => import('@/pages/admin/AdminCategories'))
 const AdminWarehouses = lazy(() => import('@/pages/admin/AdminWarehouses'))
 const AdminNewSale = lazy(() => import('@/pages/admin/AdminNewSale'))
 const AdminFinanzas = lazy(() => import('@/pages/admin/AdminFinanzas'))
-const AdminReportes = lazy(() => import('@/pages/admin/AdminReportes'))
+const AdminReportes   = lazy(() => import('@/pages/admin/AdminReportes'))
+const CheckoutPage    = lazy(() => import('@/pages/CheckoutPage'))
+const PaymentStatusPage = lazy(() => import('@/pages/PaymentStatusPage'))
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -60,7 +62,10 @@ export default function App() {
               <Route path="/nosotros" element={<NosotrosPage />} />
               <Route path="/contacto" element={<ContactoPage />} />
               <Route path="/informacion" element={<InformacionPage />} />
-              <Route path="/perfil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+              <Route path="/perfil"   element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+              <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
+              <Route path="/pago/exito"     element={<PaymentStatusPage />} />
+              <Route path="/pago/cancelado" element={<PaymentStatusPage />} />
               <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
               <Route path="/admin/productos" element={<AdminRoute><AdminProducts /></AdminRoute>} />
               <Route path="/admin/pedidos" element={<AdminRoute><AdminOrders /></AdminRoute>} />

@@ -55,6 +55,10 @@ export const productService = {
     api.get('/productos', { params: { page, size, ...params } })
        .then((r) => ({ ...r, data: normalizeList(r.data) })),
 
+  adminGetAll: (page = 0, size = 200) =>
+    api.get('/productos/admin/todos', { params: { page, size } })
+       .then((r) => ({ ...r, data: normalizeList(r.data) })),
+
   getById: (id) =>
     api.get(`/productos/${id}`)
        .then((r) => ({ ...r, data: normalizeProduct(r.data) })),
@@ -69,9 +73,7 @@ export const productService = {
     api.delete(`/productos/${id}`),
 
   uploadImage: (formData) =>
-    api.post('/productos/imagen', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+    api.post('/productos/imagen', formData),
 
   getDestacados: () =>
     api.get('/productos/destacados')

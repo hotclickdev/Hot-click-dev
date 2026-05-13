@@ -1,14 +1,14 @@
 # MEMORIA DEL PROYECTO — HOT_CLICK OUTLET
-> Última actualización: 2026-04-29
+> Última actualización: 2026-05-13
 
 ---
 
 ## ¿Qué es este proyecto?
 
-**Hot_click_outlet** es una tienda e-commerce de tecnología/electrónica.
-Los clientes pueden ver productos, agregarlos al carrito, hacer pedidos y ver
-su historial con garantías. Hay administradores que gestionan productos,
-bodegas y categorías desde un panel propio.
+**Hot_click_outlet** es una tienda e-commerce de tecnología/electrónica en Costa Rica.
+Los clientes pueden ver productos, agregarlos al carrito, hacer pedidos, pagar con tarjeta
+(PayXpert), y ver su historial con garantías. Los administradores gestionan productos,
+bodegas, categorías, finanzas y pedidos desde un panel React.
 
 ---
 
@@ -17,13 +17,18 @@ bodegas y categorías desde un panel propio.
 | Capa | Tecnología |
 |------|------------|
 | Backend | Spring Boot 3.4.4, Java 24 |
-| Base de datos | PostgreSQL en Aiven Cloud |
-| Seguridad | Spring Security + JWT (stateless) |
-| Frontend | HTML + CSS + JavaScript vanilla (multi-página) |
-| Contenedor | Docker / Docker Compose |
+| Base de datos | PostgreSQL en Supabase (Transaction Pooler puerto 6543) |
+| Seguridad | Spring Security + JWT (stateless) + 2FA (TOTP) |
+| Frontend | React 19 + Vite (en `Hot_click_outlet/frontend/`) |
+| State | Zustand (auth + carrito) + React Query |
+| Estilos | TailwindCSS 4 |
 | Build | Maven local en `maven/bin/` → usar `.\maven\bin\mvn` |
+| Imágenes | Supabase Storage (bucket `productos`) |
+| Pagos | PayXpert (API: connect2.payxpert.com) |
+| Email | SMTP Gmail (hotclick.cr@gmail.com) |
 
-**URL local:** `http://localhost:8080`
+**URL local:** `http://localhost:8080`  
+**Dev frontend:** `http://localhost:3000` (proxy `/api` → 8080)
 
 ---
 
@@ -39,110 +44,195 @@ El usuario admin es creado automáticamente por `DataSeeder.java` al iniciar la 
 
 ---
 
-## Estructura de archivos clave
+## Base de datos
+
+- **Host:** Supabase (aws-1-us-east-2.pooler.supabase.com:6543)
+- **`ddl-auto=none`** — El esquema se gestiona manualmente con el archivo `Actualizado.sql`
+- **Naming strategy:** `PhysicalNamingStrategyStandardImpl` — los nombres de tabla/columna se usan exactamente como están en las entidades (minúsculas)
+- **Moneda:** CRC (₡), enteros sin decimales para todos los montos
+
+### Esquema (resumen por módulo)
+
+| Módulo | Tablas principales |
+|--------|-------------------|
+| Usuarios/Auth | `hot_click_usuario_tb`, `hot_click_rol_tb`, `hot_click_usuario_rol_tb`, `hot_click_sesion_tb`, `hot_click_codigo_otp_tb` |
+| Ubicaciones | `hot_click_pais_tb` → `hot_click_provincia_tb` → `hot_click_canton_tb` → `hot_click_distrito_tb` → `hot_click_barrio_tb` |
+| Bodegas | `hot_click_bodega_tb`, `hot_click_bodega_usuario_tb`, `hot_click_bodega_historial_tb` |
+| Catálogo | `hot_click_producto_tb`, `hot_click_producto_imagen_tb`, `hot_click_categoria_tb`, `hot_click_marca_tb`, `hot_click_etiqueta_tb` |
+| Variantes | `hot_click_producto_variante_tb`, `hot_click_producto_atributo_tb`, `hot_click_producto_atributo_valor_tb` |
+| Inventario | `hot_click_movimiento_inventario_tb`, `hot_click_tipo_movimiento_tb`, `hot_click_inventario_periodico_tb` |
+| Carrito | `hot_click_carrito_tb`, `hot_click_carrito_item_tb`, `hot_click_carrito_descuento_tb` |
+| Pedidos | `hot_click_pedido_tb`, `hot_click_pedido_item_tb`, `hot_click_pedido_historial_estado_tb` |
+| Facturación | `hot_click_factura_tb`, `hot_click_factura_detalle_tb` |
+| Pagos | `hot_click_pago_tb`, `hot_click_transaccion_pago_tb`, `hot_click_webhook_event_tb`, `hot_click_payment_log_tb` |
+| Cotizaciones | `hot_click_cotizacion_tb`, `hot_click_cotizacion_detalle_tb`, `hot_click_cliente_cotizacion_tb` |
+| WhatsApp | `hot_click_plantilla_whatsapp_tb`, `hot_click_whatsapp_envio_tb` |
+| Gamificación | `hot_click_premio_tb`, `hot_click_giro_ruleta_tb`, `hot_click_resultado_ruleta_tb`, `hot_click_referido_tb` |
+| Finanzas | `hot_click_finanza_producto_tb`, `hot_click_finanza_global_tb`, `hot_click_gasto_operativo_tb` |
+| Análisis | `hot_click_analisis_producto_tb`, `hot_click_sugerencia_compra_tb`, `hot_click_dashboard_kpi_tb` |
+| Sistema | `hot_click_auditoria_tb`, `hot_click_log_error_tb`, `hot_click_alerta_tb` |
+| Config | `hot_click_configuracion_moneda_tb`, `hot_click_configuracion_impuesto_tb` |
+
+### Triggers del esquema
+
+| Trigger | Función | Acción |
+|---------|---------|--------|
+| `tg_validar_stock_carrito` | `fn_validar_stock_carrito()` | Valida stock antes de agregar al carrito |
+| `tg_marcar_unico_vendido` | `fn_marcar_unico_vendido()` | Marca producto único como vendido al crear pedido item |
+| `tg_actualizar_total_carrito` | `fn_actualizar_total_carrito()` | Recalcula total del carrito en cada cambio |
+
+---
+
+## Estructura de archivos clave (backend)
 
 ```
-Hot_click_outlet/
-├── src/main/java/com/hotclick/
-│   ├── config/
-│   │   ├── DataSeeder.java          ← Siembra roles y admin al arrancar
-│   │   ├── SecurityConfig.java      ← JWT + CORS + rutas públicas/privadas
-│   │   └── WebConfig.java
-│   ├── controller/
-│   │   ├── AuthController.java      ← POST /api/auth/login, /register
-│   │   ├── UsuarioController.java   ← GET/PUT /api/usuarios/{id}
-│   │   ├── ProductoController.java  ← GET /api/productos/**
-│   │   ├── PedidoController.java    ← GET/POST /api/pedidos/**
-│   │   ├── CarritoController.java
-│   │   └── PremioController.java    ← ruleta de premios
-│   ├── model/
-│   │   ├── Usuario.java             ← tabla hot_click_usuario_tb
-│   │   ├── Rol.java                 ← tabla hot_click_rol_tb
-│   │   ├── Producto.java
-│   │   ├── Pedido.java              ← tiene fechaEntregaReal para garantía
-│   │   ├── PedidoItem.java
-│   │   ├── Carrito.java / CarritoItem.java
-│   │   ├── Premio.java / GiroRuleta.java / ResultadoRuleta.java
-│   │   └── Referido.java
-│   ├── security/
-│   │   ├── JwtUtil.java
-│   │   └── JwtRequestFilter.java
-│   └── utils/Constants.java         ← ROL_ADMIN_IT, ROL_ADMIN_CLIENTE, ROL_USUARIO_FINAL
-│
-├── src/main/resources/
-│   ├── application.properties       ← ⚠️ ddl-auto=create (borra BD al reiniciar)
-│   └── static/
-│       ├── pages/
-│       │   ├── index.html
-│       │   ├── productos.html
-│       │   ├── categorias.html
-│       │   ├── carrito.html
-│       │   ├── perfil.html          ← 3 tabs: Mis Datos / Mis Compras / Cambiar Datos
-│       │   ├── producto-detalle.html
-│       │   ├── contacto.html
-│       │   ├── nosotros.html
-│       │   ├── login.html
-│       │   ├── registro.html
-│       │   └── escaner.html         ← página legacy, ya no se usa activamente
-│       ├── admin/
-│       │   ├── admin-dashboard.html
-│       │   ├── admin-productos.html
-│       │   ├── admin-bodegas.html
-│       │   └── admin-categorias.html
-│       ├── js/
-│       │   ├── utils.js             ← mostrarToast, abrirModal, cerrarModal
-│       │   ├── api.js               ← apiLogin, apiRegister, apiLogout, getToken, API_URL
-│       │   ├── auth.js              ← iniciarSesion, registrarUsuario, cerrarSesion, actualizarIconoSesion
-│       │   └── cart.js              ← lógica del carrito
-│       └── css/style.css
+Hot_click_outlet/src/main/java/com/hotclick/
+├── config/
+│   ├── DataSeeder.java          ← Siembra roles y admin al arrancar
+│   ├── SecurityConfig.java      ← JWT + CORS + rutas públicas/privadas
+│   └── WebConfig.java
+├── controller/
+│   ├── AuthController.java      ← POST /api/auth/login, /register, 2FA, reset
+│   ├── UsuarioController.java   ← GET/PUT /api/usuarios/{id}
+│   ├── AdminUsuarioController.java ← Gestión de usuarios (ADMIN_IT)
+│   ├── ProductoController.java  ← CRUD /api/productos/**
+│   ├── PedidoController.java    ← GET/POST /api/pedidos/**
+│   ├── CarritoController.java   ← /api/carrito/**
+│   ├── BodegaController.java    ← /api/bodegas/**
+│   ├── CategoriaController.java ← /api/categorias/**
+│   ├── CotizacionController.java← /api/cotizaciones/**
+│   ├── DashboardController.java ← /api/admin/dashboard/**
+│   ├── PaymentController.java   ← /api/payment/**
+│   ├── WebhookController.java   ← /api/webhooks/payxpert
+│   ├── PremioController.java    ← /api/ruleta/**
+│   ├── StockController.java     ← /api/stock/**
+│   ├── VentaController.java     ← /api/ventas/**
+│   ├── HealthController.java    ← GET /api/health
+│   └── SpaController.java       ← Redirige SPA → index.html
+├── model/
+│   ├── Usuario.java             ← hot_click_usuario_tb
+│   ├── Rol.java                 ← hot_click_rol_tb
+│   ├── Producto.java            ← hot_click_producto_tb
+│   ├── Categoria.java / Marca.java / Bodega.java
+│   ├── ProductoImagen.java
+│   ├── Pedido.java / PedidoItem.java
+│   ├── Carrito.java / CarritoItem.java
+│   ├── Pago.java / TransaccionPago.java / PaymentLog.java / WebhookEvent.java
+│   ├── Premio.java / GiroRuleta.java / ResultadoRuleta.java
+│   ├── Cotizacion.java / MovimientoStock.java
+│   ├── Estado.java / Referido.java
+│   └── BaseEntity.java
+├── security/
+│   ├── JwtUtil.java
+│   └── JwtRequestFilter.java
+├── service/         ← 15 servicios (ver lista completa abajo)
+├── repository/      ← 19 repositorios JPA
+├── dto/             ← 9 DTOs
+└── utils/Constants.java  ← ROL_ADMIN_IT, ROL_ADMIN_CLIENTE, ROL_USUARIO_FINAL
+```
+
+---
+
+## Estructura del frontend (React)
+
+```
+Hot_click_outlet/frontend/src/
+├── pages/
+│   ├── HomePage.jsx / ProductsPage.jsx / ProductDetailPage.jsx
+│   ├── CartPage.jsx / CheckoutPage.jsx
+│   ├── LoginPage.jsx / RegisterPage.jsx / ProfilePage.jsx
+│   ├── NosotrosPage.jsx / ContactoPage.jsx / InformacionPage.jsx
+│   ├── PaymentStatusPage.jsx
+│   └── admin/
+│       ├── AdminDashboard.jsx / AdminProducts.jsx / AdminOrders.jsx
+│       ├── AdminUsers.jsx / AdminCategories.jsx / AdminWarehouses.jsx
+│       ├── AdminNewSale.jsx / AdminFinanzas.jsx / AdminReportes.jsx
+│       └── AdminLayout.jsx
+├── components/
+│   ├── layout/Navbar.jsx / BottomNav.jsx / Footer.jsx
+│   └── ui/ Button, Input, Badge, Modal, Toast, Spinner
+├── services/
+│   ├── api.js           ← Axios instance con interceptor JWT
+│   ├── authService.js / productService.js / orderService.js
+│   ├── paymentService.js / cartService.js
+├── store/
+│   ├── authStore.js     ← Zustand: token, userId, userRole
+│   └── cartStore.js     ← Zustand: items, totales
+├── hooks/usePayment.js
+├── utils/format.js      ← Formateo de moneda CRC
+└── App.jsx              ← Rutas, ProtectedRoute, AdminRoute
 ```
 
 ---
 
 ## API endpoints relevantes
 
+### Autenticación (`/api/auth`)
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
-| POST | `/api/auth/login` | No | Login → retorna JWT + userId + role |
-| POST | `/api/auth/register` | No | Registro de nuevo usuario |
-| GET | `/api/usuarios/{id}` | JWT | Datos del usuario |
-| PUT | `/api/usuarios/{id}` | JWT | Actualizar nombre, teléfono, contraseña |
-| GET | `/api/pedidos/usuario/{id}` | JWT | Historial de pedidos del usuario |
-| GET | `/api/pedidos/pendientes` | JWT | Pedidos pendientes (admin) |
-| PUT | `/api/pedidos/{id}/estado` | JWT | Cambiar estado del pedido |
-| GET | `/api/productos/**` | No | Catálogo de productos |
-| GET | `/api/ruleta/premios` | No | Premios disponibles ruleta |
+| POST | `/api/auth/login` | No | Login → JWT + userId + role |
+| POST | `/api/auth/register` | No | Registro (con email verification) |
+| POST | `/api/auth/2fa/setup` | JWT | Iniciar 2FA (TOTP) |
+| POST | `/api/auth/2fa/verify` | No | Verificar 2FA durante login |
+| POST | `/api/auth/forgot-password` | No | Solicitar reset de contraseña |
+| POST | `/api/auth/reset-password` | No | Resetear contraseña con OTP |
+
+### Productos (`/api/productos`)
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/api/productos` | No | Catálogo paginado |
+| GET | `/api/productos/destacados` | No | Productos destacados |
+| GET | `/api/productos/{id}` | No | Detalle de producto |
+| POST | `/api/productos` | JWT | Crear producto |
+| PUT | `/api/productos/{id}` | JWT | Actualizar producto |
+| DELETE | `/api/productos/{id}` | JWT | Eliminar producto |
+| POST | `/api/productos/imagen` | JWT | Subir imagen a Supabase |
+
+### Pedidos (`/api/pedidos`)
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| POST | `/api/pedidos` | JWT | Crear pedido |
+| GET | `/api/pedidos/{id}` | JWT | Detalle de pedido |
+| GET | `/api/pedidos/usuario/{id}` | JWT | Historial del usuario |
+| GET | `/api/pedidos` | JWT admin | Listar todos |
+| PUT | `/api/pedidos/{id}/estado` | JWT admin | Cambiar estado |
+
+### Pagos (`/api/payment`)
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| POST | `/api/payment/checkout` | JWT | Iniciar pago PayXpert |
+| GET | `/api/payment/status/{orderId}` | JWT | Estado del pago |
+| POST | `/api/webhooks/payxpert` | No | Webhook de PayXpert |
+
+### Otros
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
 | GET | `/api/health` | No | Estado del servidor |
+| GET | `/api/ruleta/premios` | No | Premios disponibles |
+| GET | `/api/categorias/**` | No/JWT | Gestión categorías |
+| GET | `/api/admin/dashboard/**` | JWT admin | KPIs y métricas |
 
 ---
 
-## Flujo de autenticación (frontend)
+## Flujo de autenticación (React)
 
-1. Usuario llena modal de login → llama `iniciarSesion()` en `auth.js`
-2. `auth.js` llama `apiLogin()` de `api.js` → `POST /api/auth/login`
+1. Usuario llena `LoginPage.jsx` → llama `authService.login()`
+2. `api.js` hace `POST /api/auth/login`
 3. Backend responde `{ token, userId, role }`
-4. `api.js` guarda en `localStorage`: `jwtToken`, `userId`, `userRole`
-5. `auth.js` revisa el rol:
-   - `ADMIN_IT` o `ADMIN_CLIENTE` → muestra modal "¿Entrar como Admin o Cliente?"
-   - Cualquier otro rol → redirige a `perfil.html`
-6. `actualizarIconoSesion()` se ejecuta en cada `DOMContentLoaded` para reflejar el estado de sesión en el nav
+4. `authStore.js` (Zustand) guarda token + userId + role
+5. Si el token tiene 2FA pendiente → redirige a pantalla de verificación 2FA
+6. Según rol: admin → `/admin/dashboard`, usuario → `/perfil` o página anterior
+7. `api.js` tiene interceptor que agrega `Authorization: Bearer <token>` a cada request
 
 ---
 
-## Página de perfil (`perfil.html`) — tabs
+## Flujo de pagos (PayXpert)
 
-| Tab | Qué hace |
-|-----|----------|
-| **Mis Datos** | Muestra nombre, correo, teléfono del usuario (GET /api/usuarios/{id}) |
-| **Mis Compras** | Lista pedidos con barra de garantía de 40 días desde `fechaEntregaReal` |
-| **Cambiar Datos** | Formulario para actualizar nombre, teléfono, contraseña (PUT /api/usuarios/{id}) |
-
-**Garantía:** 40 días desde `fechaEntregaReal`.
-- Verde: quedan más de 15 días
-- Amarillo: quedan entre 1 y 15 días
-- Rojo: expirada
-
-Si el usuario tiene rol ADMIN, aparece botón "Ir al Panel Admin".
+1. Checkout → `POST /api/payment/checkout` → retorna `redirectUrl`
+2. Frontend redirige al usuario a `redirectUrl` (iframe/ventana PayXpert)
+3. Usuario paga → PayXpert llama `POST /api/webhooks/payxpert`
+4. Webhook actualiza `hot_click_pago_tb` + `hot_click_transaccion_pago_tb`
+5. Usuario retorna a `/pago/exito` o `/pago/cancelado` → `PaymentStatusPage.jsx`
 
 ---
 
@@ -150,101 +240,68 @@ Si el usuario tiene rol ADMIN, aparece botón "Ir al Panel Admin".
 
 | Constante | Valor | Descripción |
 |-----------|-------|-------------|
-| `ROL_ADMIN_IT` | `ADMIN_IT` | Máximo acceso, gestiona sistema |
+| `ROL_ADMIN_IT` | `ADMIN_IT` | Máximo acceso, gestiona sistema y usuarios |
 | `ROL_ADMIN_CLIENTE` | `ADMIN_CLIENTE` | Administrador de negocio |
-| `ROL_USUARIO_FINAL` | `USUARIO_FINAL` | Cliente normal |
-
-Los roles se guardan en `hot_click_rol_tb` y se asignan en `hot_click_usuario_rol_tb`.
+| `ROL_USUARIO_FINAL` | `USUARIO_FINAL` | Cliente registrado |
 
 ---
 
-## Problemas conocidos / deuda técnica
+## Garantía de productos
 
-### CRÍTICO — ddl-auto=create
-```properties
-spring.jpa.hibernate.ddl-auto=create
-```
-**Cada vez que se reinicia la app se borra toda la base de datos.**
-DataSeeder recrea los roles y el admin, pero todos los productos, pedidos y
-usuarios de clientes se pierden. Cuando el esquema sea estable, cambiar a
-`validate` o `update`.
-
-### Pendiente — Tab de Testimonios
-El usuario mencionó que los clientes deberían poder "agregar testimonios" en
-su perfil. Nunca se implementó. Falta:
-- Modelo `Testimonio` (usuario, texto, fecha, estado)
-- Endpoint `POST /api/testimonios` y `GET /api/testimonios`
-- Tab "Mis Testimonios" en `perfil.html`
-- Mostrar testimonios aprobados en `nosotros.html` o `index.html`
-
-### Pendiente — Panel admin incompleto
-Las páginas admin (`admin-productos.html`, `admin-bodegas.html`,
-`admin-categorias.html`) existen pero su funcionalidad real (CRUD operativo,
-validaciones, subida de imágenes) puede estar incompleta o en borrador.
-
-### Pendiente — Carrito → Pedido
-El flujo completo desde `carrito.html` hasta crear un pedido real en la BD
-puede no estar terminado. Revisar `CarritoController` y `PedidoController`.
-
-### Pendiente — Ruleta de premios
-Existe modelo `Premio`, `GiroRuleta`, `ResultadoRuleta` y endpoint
-`/api/ruleta/premios`, pero la UI de la ruleta no está claramente integrada
-en el frontend.
-
-### Pendiente — Foto de perfil
-`Usuario` tiene campo `fotoPerfilUrl` pero no hay UI ni endpoint para subir foto.
-
-### Pendiente — Referidos
-Existe modelo `Referido` pero ningún controller ni UI lo usa todavía.
+- **Duración:** 40 días desde `fechaEntregaReal` del pedido
+- **Colores en UI:**
+  - Verde: quedan > 15 días
+  - Amarillo: quedan 1–15 días
+  - Rojo: expirada
 
 ---
 
-## Errores comunes (histórico)
+## Pendientes / deuda técnica
+
+| Feature | Estado | Notas |
+|---------|--------|-------|
+| Testimonios | Sin implementar | Tabla `hot_click_testimonio_tb` existe en schema pero no hay modelo JPA ni endpoints |
+| Referidos | Sin implementar | Tabla `hot_click_referido_tb` + modelo `Referido.java` existen, sin controller ni UI |
+| Ruleta frontend | Parcial | Backend completo (`/api/ruleta/**`), UI no integrada claramente |
+| Foto de perfil | Sin implementar | Campo `foto_perfil_url` existe, sin upload UI ni endpoint |
+| Cotizaciones | Parcial | Controller existe, revisar si UI admin está completa |
+| Variantes de producto | Sin implementar | Tablas `hot_click_producto_variante_tb` en schema, sin modelo JPA |
+| Sistema de ubicaciones | Sin UI | Tablas Pais/Provincia/Canton/Distrito/Barrio en schema, sin datos cargados |
+| Análisis automático | Sin implementar | Tablas de análisis en schema, sin lógica de cálculo |
+
+---
+
+## Problemas históricos resueltos
 
 | Error | Causa | Solución |
 |-------|-------|----------|
-| `PSQLException: column contains null values` | `ddl-auto=update` + nueva columna NOT NULL en BD con datos | Cambiar a `create` o agregar valor default |
-| `No property 'nivel' found for type 'Categoria'` | `CategoriaRepository` tenía método con campo inexistente | Borrar el método del repository |
-| HTTP 403 en `/pages/index.html` | `SecurityConfig` solo permitía `/*.html` | Agregar `/pages/**` al permitAll |
-| 401 en `/api/auth/login` desde browser | CORS preflight (OPTIONS) bloqueado por Spring Security | Agregar bean `CorsConfigurationSource` correcto |
-| Modal admin no aparece | Usuario en BD sin roles / handler inline sobreescribía `iniciarSesion()` | DataSeeder + reemplazar handlers inline |
-| `SyntaxError: Identifier 'API_URL' already declared` | Página tenía `const API_URL` y también cargaba `api.js` | Eliminar la declaración duplicada inline |
-| Login se pide dos veces | `actualizarIconoSesion()` no se llamaba al cargar la página | Agregar `DOMContentLoaded` en `auth.js` |
+| `max clients` error en BD | Session pooler (puerto 5432) con conexiones directas | Migrar a Transaction Mode pooler (puerto 6543) + `prepareThreshold=0` |
+| `PSQLException: column null values` | `ddl-auto=update` + columna NOT NULL sin default | Cambio a `ddl-auto=none`, migraciones manuales con `Actualizado.sql` |
+| HTTP 403 en rutas SPA | SecurityConfig no permitía rutas React | Agregar `/**` y rutas específicas al `permitAll` |
+| 401 en `/api/auth/login` | CORS preflight bloqueado | Agregar `CorsConfigurationSource` correcto en `SecurityConfig` |
+| Stock negativo en carrito | Sin validación de stock | Trigger `tg_validar_stock_carrito` en BD + `StockInsuficienteException` |
 
 ---
 
 ## Reglas de desarrollo importantes
 
 - **Siempre usar `.\maven\bin\mvn`**, no `mvn` global
-- **Nunca agregar `const API_URL` inline** en las páginas HTML — ya viene de `api.js`
-- **Nunca duplicar** `mostrarToast`, `abrirModal`, `cerrarModal` inline — vienen de `utils.js`
-- Todos los HTML en `/pages/` deben cargar en orden: `utils.js` → `api.js` → `auth.js` → `cart.js`
-- El JWT se guarda en `localStorage` con clave `jwtToken`. El userId en `userId`. El rol en `userRole`
-- El modo actual (admin/cliente) se guarda en `localStorage` con clave `modoActual`
+- **`ddl-auto=none`** — nunca cambiar a `create` en producción; todo cambio de esquema va en `Actualizado.sql`
+- El frontend React se compila con `npm run build` en `Hot_click_outlet/frontend/` → output en `src/main/resources/static/`
+- En desarrollo usar `npm run dev` en el frontend (puerto 3000); el proxy redirige `/api` al backend (8080)
+- Monedas siempre en enteros (₡ colones), sin decimales
+- Naming strategy: PhysicalNamingStrategyStandardImpl — los nombres en entidades JPA deben ser **exactamente iguales** a los nombres en BD (minúsculas)
 
 ---
 
-## Navegación actual del nav (todas las páginas)
+## Objetivos a largo plazo
 
-```
-Logo | Inicio · Productos · Categorías · Nosotros · Contacto · Mi cuenta | 🛒
-```
-
-- "Mi cuenta" → `perfil.html`
-- 🛒 → `carrito.html`
-- NO hay botón de login a la derecha (fue eliminado)
-- El login se hace desde el modal que se abre con el botón en el nav o directamente desde `login.html`
-
----
-
-## Objetivos a largo plazo (sin implementar)
-
-1. **Testimonios** de clientes en perfil y página pública
-2. **Sistema de referidos** (modelo existe, falta todo lo demás)
-3. **Ruleta de premios** funcional en el frontend
-4. **Subida de foto de perfil**
-5. **Panel admin completo** (CRUD productos con imágenes, gestión de pedidos, reportes)
-6. **Migrar `ddl-auto` a `validate`** cuando el esquema sea estable
-7. **Notificaciones WhatsApp** (campo `facturaEnviadaWhatsapp` en Pedido sugiere integración futura)
-8. **Paginación y filtros** en listado de productos
-9. **Sistema de estados de pedido** con flujo completo (PENDIENTE → PROCESANDO → ENVIADO → ENTREGADO)
+1. **Testimonios** con moderación y visualización pública
+2. **Sistema de referidos** con giros de ruleta como recompensa
+3. **Ruleta de premios** integrada en el frontend
+4. **Subida de foto de perfil** via Supabase Storage
+5. **Variantes de producto** (tallas, colores) con UI
+6. **Sistema de ubicaciones** completo con datos de Costa Rica
+7. **Análisis automático de inventario** con sugerencias de recompra
+8. **Notificaciones WhatsApp** via API (campo `factura_enviada_whatsapp` en pedido)
+9. **Sistema de cotizaciones** completo con envío por WhatsApp

@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 @CrossOrigin(origins = "*")
 @RestController
@@ -48,8 +49,11 @@ public class PedidoController {
     @PutMapping("/{id}/estado")
     public ResponseEntity<ResponseDTO> cambiarEstado(
             @PathVariable Long id,
-            @RequestParam String estado) {
+            @RequestBody Map<String, String> body) {
         try {
+            String estado = body.get("estado");
+            if (estado == null || estado.isBlank())
+                return ResponseEntity.badRequest().body(ResponseDTO.error("Estado requerido"));
             Pedido pedido = pedidoService.cambiarEstado(id, estado);
             return ResponseEntity.ok(ResponseDTO.success("Estado actualizado", pedido));
         } catch (Exception e) {

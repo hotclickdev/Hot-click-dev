@@ -27,4 +27,18 @@ public class Constants {
     public static final String CARRITO_ACTIVO = "ACTIVO";
     public static final String CARRITO_ABANDONADO = "ABANDONADO";
     public static final String CARRITO_CONVERTIDO = "CONVERTIDO";
+
+    // Estados de pago PayXpert
+    public static final String PAGO_PENDIENTE    = "PENDIENTE";
+    public static final String PAGO_CAPTURADO    = "CAPTURADO";
+    public static final String PAGO_FALLIDO      = "FALLIDO";
+    public static final String PAGO_CANCELADO    = "CANCELADO";
+    public static final String PAGO_REEMBOLSADO  = "REEMBOLSADO";
+
+    // Estados de pedido extendidos
+    public static final String PEDIDO_PAGADO     = "PAGADO";
+
+    // PayXpert error code exitoso
+    public static final String PAYXPERT_OK       = "000";
+    public static final String METODO_PAYXPERT   = "PAYXPERT";
 }

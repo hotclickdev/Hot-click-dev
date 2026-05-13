@@ -41,19 +41,34 @@ El frontend compilado se sirve desde Spring Boot en producción. `SpaController.
 
 ## Arquitectura
 
-Proyecto Spring Boot 3.4.4 con Java 24. Estructura estándar Maven bajo `app/`.
+Proyecto Spring Boot 3.4.4 con Java 24. El código vive bajo `Hot_click_outlet/`.
 
-- **Punto de entrada**: `app/src/main/java/com/hotclick/app/AppApplication.java`
-- **Paquete base**: `com.hotclick.app`
-- **Controladores REST**: `com.hotclick.app.controller`
-- **Configuración**: `app/src/main/resources/application.properties`
+- **Punto de entrada**: `Hot_click_outlet/src/main/java/com/hotclick/AppApplication.java`
+- **Paquete base**: `com.hotclick`
+- **Controladores REST**: `com.hotclick.controller`
+- **Modelos JPA**: `com.hotclick.model`
+- **Servicios**: `com.hotclick.service`
+- **Repositorios**: `com.hotclick.repository`
+- **Seguridad**: `com.hotclick.security` (JWT)
+- **Configuración**: `Hot_click_outlet/src/main/resources/application.properties`
+- **Base de datos**: PostgreSQL en Supabase (`ddl-auto=none`, esquema en `Hot_click_outlet/Actualizado.sql`)
 
-### Endpoints actuales
+### Principales endpoints
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| GET | `/api/health` | Estado del servicio, timestamp y versión |
+| GET | `/api/health` | Estado del servicio |
+| POST | `/api/auth/login` | Login → JWT |
+| POST | `/api/auth/register` | Registro de usuario |
+| GET | `/api/productos` | Catálogo paginado |
+| POST | `/api/pedidos` | Crear pedido |
+| POST | `/api/payment/checkout` | Iniciar pago PayXpert |
+| POST | `/api/webhooks/payxpert` | Webhook de pagos |
+| GET | `/api/admin/dashboard/**` | KPIs para panel admin |
 
 ## Convenciones
 
-- Los controladores REST se ubican en `com.hotclick.app.controller` y usan `@RestController` con `@RequestMapping("/api")` como prefijo de ruta.
+- Los controladores REST se ubican en `com.hotclick.controller` y usan `@RestController` con `@RequestMapping("/api")` como prefijo de ruta.
+- Naming strategy: `PhysicalNamingStrategyStandardImpl` — los nombres de entidad deben coincidir exactamente con los nombres de columna/tabla en BD (minúsculas).
+- Todos los montos monetarios son enteros en colones costarricenses (₡), sin decimales.
+- **Nunca cambiar `ddl-auto=none`**; todo cambio de esquema se aplica manualmente con `Actualizado.sql`.

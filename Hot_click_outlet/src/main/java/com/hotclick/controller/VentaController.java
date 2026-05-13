@@ -6,6 +6,7 @@ import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.service.PedidoService;
 import com.hotclick.service.VentaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +25,17 @@ import java.util.stream.Collectors;
 public class VentaController {
 
     @Autowired private VentaService ventaService;
+    @Autowired private PedidoService pedidoService;
     @Autowired private UsuarioRepository usuarioRepository;
+
+    @GetMapping
+    public ResponseEntity<ResponseDTO> listarVentas() {
+        try {
+            return ResponseEntity.ok(ResponseDTO.success("Ventas", pedidoService.listarTodosConDetalles()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        }
+    }
 
     @PostMapping
     public ResponseEntity<ResponseDTO> crearVenta(

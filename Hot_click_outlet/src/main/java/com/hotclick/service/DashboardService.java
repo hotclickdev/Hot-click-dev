@@ -33,7 +33,8 @@ public class DashboardService {
         dto.setPedidosPendientes(
             pedidoRepository.countByEstadoPedidoAndEstado("PENDIENTE", 1)
         );
-        dto.setProductosBajoStock(
+        dto.setUsuariosPendientes(usuarioRepository.countUsuariosPendientes());
+        dto.setStockBajo(
             productoRepository.findProductosConStockBajo().size()
         );
 

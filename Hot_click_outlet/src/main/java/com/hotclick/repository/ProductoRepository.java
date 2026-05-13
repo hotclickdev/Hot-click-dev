@@ -21,6 +21,8 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     Optional<Producto> findBySku(String sku);
 
+    Page<Producto> findByEstado(Integer estado, Pageable pageable);
+
     Page<Producto> findByEstadoAndStockActualGreaterThan(Integer estado, Integer stock, Pageable pageable);
 
     Page<Producto> findByCategoriaIdAndEstado(Long categoriaId, Integer estado, Pageable pageable);

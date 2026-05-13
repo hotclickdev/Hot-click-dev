@@ -37,7 +37,9 @@ public class PedidoService {
         Pedido pedido = pedidoRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
         pedido.setEstadoPedido(nuevoEstado);
-        return pedidoRepository.save(pedido);
+        pedido = pedidoRepository.save(pedido);
+        pedido.getItems().size(); // force-initialize within session
+        return pedido;
     }
 
     @Transactional(readOnly = true)
@@ -66,17 +68,17 @@ public class PedidoService {
     public List<Map<String, Object>> listarTodosConDetalles() {
         return pedidoRepository.findAllWithDetails().stream().map(p -> {
             Map<String, Object> m = new LinkedHashMap<>();
-            m.put("id",           p.getId());
-            m.put("numeroPedido", p.getNumeroPedido());
-            m.put("fechaPedido",  p.getFechaPedido());
-            m.put("estadoPedido", p.getEstadoPedido());
-            m.put("totalPedido",  p.getTotalPedido());
-            m.put("metodoPago",   p.getMetodoPago());
-            m.put("notas",        p.getNotas());
-            m.put("clienteId",    p.getUsuarioFinal() != null ? p.getUsuarioFinal().getId()      : null);
-            m.put("clienteNombre",p.getUsuarioFinal() != null ? p.getUsuarioFinal().getNombre()  : "—");
-            m.put("clienteCorreo",p.getUsuarioFinal() != null ? p.getUsuarioFinal().getCorreo()  : "—");
-            m.put("clienteTel",   p.getUsuarioFinal() != null ? p.getUsuarioFinal().getTelefono(): "");
+            m.put("id",            p.getId());
+            m.put("numeroPedido",  p.getNumeroPedido());
+            m.put("fechaCreacion", p.getFechaPedido());
+            m.put("estado",        p.getEstadoPedido());
+            m.put("total",         p.getTotalPedido());
+            m.put("metodoPago",    p.getMetodoPago());
+            m.put("notas",         p.getNotas());
+            m.put("clienteId",     p.getUsuarioFinal() != null ? p.getUsuarioFinal().getId()      : null);
+            m.put("nombreCliente", p.getUsuarioFinal() != null ? p.getUsuarioFinal().getNombre()  : "—");
+            m.put("clienteCorreo", p.getUsuarioFinal() != null ? p.getUsuarioFinal().getCorreo()  : "—");
+            m.put("clienteTel",    p.getUsuarioFinal() != null ? p.getUsuarioFinal().getTelefono(): "");
             List<Map<String, Object>> items = p.getItems().stream().map(i -> {
                 Map<String, Object> im = new LinkedHashMap<>();
                 im.put("productoId",      i.getProducto() != null ? i.getProducto().getId()              : null);

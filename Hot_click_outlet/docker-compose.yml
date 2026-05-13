@@ -5,16 +5,27 @@ services:
     ports:
       - "8080:8080"
     environment:
-      # Session Pooler (IPv4) - Puerto 5432
-      SPRING_DATASOURCE_URL: jdbc:postgresql://aws-1-us-east-2.pooler.supabase.com:5432/postgres?sslmode=require&prepareThreshold=0
+      # Transaction Pooler (IPv4) - Puerto 6543
+      SPRING_DATASOURCE_URL: jdbc:postgresql://aws-1-us-east-2.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0
       SPRING_DATASOURCE_USERNAME: postgres.nkevwfcjhjaawtdqquns
       SPRING_DATASOURCE_PASSWORD: "HotClick2026!"
-      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
-      
+
       SPRING_JPA_HIBERNATE_DDL_AUTO: none
-      SPRING_JPA_SHOW_SQL: "true"
+      SPRING_JPA_SHOW_SQL: "false"
       SPRING_JPA_PROPERTIES_HIBERNATE_PHYSICAL_NAMING_STRATEGY: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
-      
+
+      # Supabase Storage
+      SUPABASE_URL: https://nkevwfcjhjaawtdqquns.supabase.co
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
+
+      # Gmail SMTP
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+
+      # PayXpert (sandbox por defecto)
+      PAYXPERT_ORIGINATOR_ID: ${PAYXPERT_ORIGINATOR_ID:-TU_ID_SANDBOX}
+      PAYXPERT_ORIGINATOR_PASSWORD: ${PAYXPERT_ORIGINATOR_PASSWORD:-TU_PASSWORD_SANDBOX}
+      APP_URL: ${APP_URL:-http://localhost:8080}
+
     dns:
       - 8.8.8.8
       - 8.8.4.4
