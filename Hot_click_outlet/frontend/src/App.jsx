@@ -24,7 +24,8 @@ const AdminCategories = lazy(() => import('@/pages/admin/AdminCategories'))
 const AdminWarehouses = lazy(() => import('@/pages/admin/AdminWarehouses'))
 const AdminNewSale = lazy(() => import('@/pages/admin/AdminNewSale'))
 const AdminFinanzas = lazy(() => import('@/pages/admin/AdminFinanzas'))
-const AdminReportes   = lazy(() => import('@/pages/admin/AdminReportes'))
+const AdminReportes       = lazy(() => import('@/pages/admin/AdminReportes'))
+const AdminPublicaciones  = lazy(() => import('@/pages/admin/AdminPublicaciones'))
 const CheckoutPage    = lazy(() => import('@/pages/CheckoutPage'))
 const PaymentStatusPage = lazy(() => import('@/pages/PaymentStatusPage'))
 
@@ -75,6 +76,7 @@ export default function App() {
               <Route path="/admin/ventas" element={<AdminRoute><AdminNewSale /></AdminRoute>} />
               <Route path="/admin/finanzas" element={<AdminRoute><AdminFinanzas /></AdminRoute>} />
               <Route path="/admin/reportes" element={<AdminRoute><AdminReportes /></AdminRoute>} />
+              <Route path="/admin/publicaciones" element={<AdminRoute><AdminPublicaciones /></AdminRoute>} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>
