@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HOTCLICK Marketplace</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 340px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: #0a0a0b;
+      color: #e8e8ed;
+      font-size: 13px;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .logo-badge {
+      width: 26px; height: 26px;
+      background: #4f7cff;
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 9px; color: #fff;
+      box-shadow: 0 0 10px rgba(79,124,255,0.4);
+    }
+    .logo-text { font-weight: 800; font-size: 13px; }
+    .logo-text span { color: #4f7cff; }
+    .header-sub { font-size: 10px; color: #8e8e9a; }
+
+    .gear-btn {
+      background: none; border: none; color: #8e8e9a;
+      cursor: pointer; padding: 4px; border-radius: 6px;
+      line-height: 0;
+    }
+    .gear-btn:hover { color: #e8e8ed; background: rgba(255,255,255,0.06); }
+
+    /* ── Settings panel ── */
+    .settings {
+      display: none;
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.02);
+    }
+    .settings.open { display: block; }
+    .settings label {
+      display: block;
+      font-size: 11px;
+      color: #8e8e9a;
+      margin-bottom: 4px;
+      margin-top: 10px;
+    }
+    .settings label:first-child { margin-top: 0; }
+    .settings input {
+      width: 100%;
+      padding: 7px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.05);
+      color: #e8e8ed;
+      font-size: 12px;
+      outline: none;
+    }
+    .settings input:focus { border-color: rgba(79,124,255,0.5); }
+    .settings input::placeholder { color: rgba(255,255,255,0.2); }
+    .btn-save {
+      margin-top: 10px;
+      width: 100%;
+      padding: 7px;
+      border-radius: 8px;
+      border: none;
+      background: #4f7cff;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-save:hover { background: #3d6bef; }
+
+    /* ── Estado vacío / loading ── */
+    .status {
+      padding: 20px 14px;
+      text-align: center;
+      color: #8e8e9a;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid rgba(255,255,255,0.1);
+      border-top-color: #4f7cff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Lista de publicaciones ── */
+    .list { padding: 8px; }
+    .pub-item {
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 6px;
+      background: rgba(255,255,255,0.02);
+    }
+    .pub-item:last-child { margin-bottom: 0; }
+    .pub-title {
+      font-weight: 600;
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #e8e8ed;
+    }
+    .pub-meta {
+      font-size: 11px;
+      color: #8e8e9a;
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .badge-listo    { background: rgba(79,124,255,0.15); color: #4f7cff; border: 1px solid rgba(79,124,255,0.3); }
+    .badge-pendiente{ background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+    .badge-publicado{ background: rgba(34,197,94,0.15);  color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+    .badge-error    { background: rgba(239,68,68,0.15);  color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+
+    .pub-actions {
+      margin-top: 8px;
+      display: flex;
+      gap: 5px;
+    }
+    .btn-fill {
+      flex: 1;
+      padding: 5px 0;
+      border-radius: 7px;
+      border: none;
+      background: #4f7cff;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-fill:hover { background: #3d6bef; }
+    .btn-copy {
+      padding: 5px 10px;
+      border-radius: 7px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      color: #8e8e9a;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .btn-copy:hover { color: #e8e8ed; background: rgba(255,255,255,0.08); }
+
+    /* ── Footer ── */
+    .footer {
+      padding: 8px 14px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .btn-refresh {
+      font-size: 11px;
+      color: #8e8e9a;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 3px 6px;
+      border-radius: 6px;
+    }
+    .btn-refresh:hover { color: #e8e8ed; background: rgba(255,255,255,0.06); }
+    .count { font-size: 11px; color: #8e8e9a; }
+
+    .toast {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: #22c55e;
+      color: #fff;
+      font-size: 12px;
+      padding: 8px 14px;
+      text-align: center;
+      z-index: 9999;
+      animation: slideUp 0.2s ease;
+    }
+    .toast.error { background: #ef4444; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">
+      <div class="logo-badge">HC</div>
+      <div>
+        <div class="logo-text"><span>HOT</span>CLICK</div>
+        <div class="header-sub">Marketplace Helper</div>
+      </div>
+    </div>
+    <button class="gear-btn" id="gearBtn" title="Configuración">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Settings panel (oculto por defecto) -->
+  <div class="settings" id="settingsPanel">
+    <label>URL de la API (Render o localhost)</label>
+    <input type="text" id="apiUrl" placeholder="https://tu-app.onrender.com" />
+    <label>Token JWT (cópialo desde localStorage en el admin)</label>
+    <input type="password" id="jwtToken" placeholder="eyJhbGciOiJIUzI1NiJ9..." />
+    <button class="btn-save" id="saveBtn">Guardar</button>
+  </div>
+
+  <!-- Contenido principal -->
+  <div id="content">
+    <div class="status" id="statusMsg">
+      <div class="spinner"></div>
+      Cargando publicaciones...
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span class="count" id="countLabel"></span>
+    <button class="btn-refresh" id="refreshBtn">↻ Actualizar</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
