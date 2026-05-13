@@ -117,12 +117,97 @@ cd Hot_click_outlet/frontend && npm run build
 
 ---
 
-## PENDIENTE
+## EN DESARROLLO — Módulo Publicación Automatizada
+
+### Objetivo
+
+Sistema completo para cargar un producto desde una foto y publicarlo en Facebook Marketplace con extracción automática de nombre, características y precios.
+
+### Flujo definido
+
+```
+Foto del producto (celular/PC)
+  → Google Cloud Vision API → identifica producto + URLs de ecommerce
+  → Jsoup scrapea esas URLs → extrae precios (Amazon, Encuentra24, Crautos, Tiendamia, eBay)
+  → BCCR API → convierte USD a CRC en tiempo real
+  → Admin revisa/edita + llena datos faltantes → guarda en BD
+  → Extensión Chrome → llena formulario FB Marketplace automáticamente
+  → Admin hace click "Publicar" en Facebook
+```
+
+### Decisiones de arquitectura
+
+| Decisión | Motivo |
+|---|---|
+| Google Cloud Vision API | Render Free sin Chrome; CAPTCHA bloquea Selenium en servidores |
+| Extensión Chrome local para FB | 2FA de FB impide login server-side; extensión usa sesión ya abierta |
+| Sin subir de plan en Render | 512 MB RAM — Chrome consumiría todo |
+| Jsoup para scraping de precios | Más ligero que Selenium, sin Chrome necesario |
+
+### Prerequisito pendiente (acción del usuario)
+
+- [ ] **Configurar Google Cloud Vision API** — ver sección 13 de DOCUMENTACION.md:
+
+  1. Crear cuenta en [console.cloud.google.com](https://console.cloud.google.com)
+  2. Crear proyecto `hotclick-vision`
+  3. Habilitar **Cloud Vision API**
+  4. Crear **API Key** y restringirla a Cloud Vision API
+  5. Agregar en Render → Environment: `GOOGLE_VISION_API_KEY=AIzaSy...`
+
+### Tareas de implementación pendientes
+
+#### Backend
+
+- [ ] Agregar dependencia en `pom.xml`: Jsoup 1.17.2
+- [ ] `BccrService.java` — tipo de cambio BCCR en tiempo real con caché 1h
+- [ ] `GoogleVisionService.java` — llamada a Vision API Web Detection
+- [ ] `ExtraccionService.java` — Jsoup scraping de URLs encontradas por Vision
+- [ ] `PrecioSugerido.java` — entidad + repositorio + tabla `hot_click_precio_sugerido_tb`
+- [ ] `PublicacionFacebook.java` — entidad + repositorio + tabla `hot_click_publicacion_fb_tb`
+- [ ] `PrecioSugeridoService.java` — calcula precio con IVA 13% e importación 25%
+- [ ] `PublicacionFacebookService.java` — genera texto FB formateado, gestiona cola
+- [ ] `ExtraccionController.java` — `POST /api/extraccion/analizar`
+- [ ] `PublicacionFbController.java` — CRUD de la cola FB
+- [ ] `PublicacionScheduler.java` — `@Scheduled` genera texto FB para productos nuevos
+
+#### Base de datos (SQL incremental)
+
+- [ ] `CREATE TABLE hot_click_precio_sugerido_tb`
+- [ ] `CREATE TABLE hot_click_publicacion_fb_tb`
+
+#### Frontend
+
+- [ ] `AdminPublicaciones.jsx` — página completa en `/admin/publicaciones`
+- [ ] Componente `MultiImageUploader` — drag & drop N fotos
+- [ ] Componente `VisionResultPanel` — resultados de Vision API editables
+- [ ] Componente `PriceChart` — gráfica de barras de precios por fuente
+- [ ] Componente `PublicationQueue` — cola de publicaciones FB con botón Copiar
+- [ ] Actualizar `App.jsx` — nueva ruta `/admin/publicaciones`
+- [ ] Actualizar `AdminLayout.jsx` — nueva entrada en sidebar
+
+#### Extensión Chrome
+
+- [ ] `chrome-extension/manifest.json`
+- [ ] `chrome-extension/content.js` — detecta FB Marketplace, llena formulario
+- [ ] `chrome-extension/popup.html` + `popup.js` — muestra productos pendientes
+- [ ] `chrome-extension/background.js` — llama API de Render
+
+#### Variables de entorno nuevas
+
+- [ ] `GOOGLE_VISION_API_KEY` — en Render Environment
+- [ ] `app.publication.enabled=true` — en `application.properties`
+- [ ] `app.publication.interval-minutes=30` — en `application.properties`
+- [ ] `app.tc.usd.fallback=530` — en `application.properties`
+
+---
+
+## PENDIENTE (otras funcionalidades)
 
 ### Alta prioridad
 
 - [ ] **PayXpert** — activar integración real cuando el proveedor responda
 - [ ] **Verificar RLS Supabase** — si `rowsecurity = true` en las tablas, los INSERTs fallan silenciosamente:
+
   ```sql
   SELECT tablename, rowsecurity FROM pg_tables
   WHERE schemaname = 'public' AND tablename LIKE 'hot_click%';
@@ -130,6 +215,7 @@ cd Hot_click_outlet/frontend && npm run build
   ALTER TABLE hot_click_bodega_tb DISABLE ROW LEVEL SECURITY;
   -- (repetir para cada tabla afectada)
   ```
+
 - [ ] **Historial de pedidos para el usuario final** — página `/perfil/pedidos` no existe aún
 
 ### Media prioridad
@@ -139,7 +225,7 @@ cd Hot_click_outlet/frontend && npm run build
 - [ ] **Sistema de referidos** — entidades creadas pero sin controlador ni UI
 - [ ] **Email al confirmar pedido** — `PedidoService` no envía email al crear pedido
 - [ ] **Búsqueda global en tienda** — barra de búsqueda del header no está implementada
-- [ ] **Paginación real** — admin carga hasta 200 productos en una sola llamada; para catálogos grandes se necesita paginación server-side con scroll infinito o "cargar más"
+- [ ] **Paginación real** — admin carga hasta 200 productos; necesita paginación server-side para catálogos grandes
 
 ### Baja prioridad
 

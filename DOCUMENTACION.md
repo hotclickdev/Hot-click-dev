@@ -362,3 +362,142 @@ Completar venta     → stockActual--  y  stockReservado-- (si venía de carrito
 Venta admin directa → stockActual--  (valida contra stockDisponible)
 Auditoría           → registra cada cambio en hot_click_movimiento_stock_tb
 ```
+
+---
+
+## 12. Módulo de Publicación Automatizada (EN DESARROLLO)
+
+### Descripción
+
+Sistema para cargar productos desde una foto y publicarlos automáticamente en Facebook Marketplace, con extracción automática de características y precios vía IA.
+
+### Flujo completo
+
+```
+1. Admin sube foto(s) del producto (celular o PC)
+        ↓
+2. Google Cloud Vision API analiza la imagen
+   → Identifica: nombre del producto, marca, modelo
+   → Devuelve: URLs de páginas ecommerce donde aparece el producto
+        ↓
+3. Backend (Jsoup) visita esas páginas → extrae precios
+   → Fuentes: Amazon, Encuentra24, Crautos, Tiendamia, eBay
+   → Convierte USD → CRC con tipo de cambio en tiempo real (API BCCR)
+   → Calcula precio promedio y precio sugerido (con/sin IVA 13%, importación 25%)
+        ↓
+4. Admin revisa resultados en /admin/publicaciones:
+   → Edita nombre, descripción, precio si es necesario
+   → Llena campos faltantes: precioCompra, stock, condición, categoría, bodega
+   → Aprueba → producto guardado en BD
+        ↓
+5. Admin hace click "Publicar en Facebook"
+   → Se abre Facebook Marketplace en nueva pestaña
+   → Extensión Chrome (instalada una vez) detecta la página
+   → Llena el formulario automáticamente: título, descripción, precio, condición, fotos
+   → Admin solo hace click en "Publicar" en Facebook
+```
+
+### Componentes técnicos
+
+| Componente | Tecnología | Propósito |
+|---|---|---|
+| Identificación de producto | Google Cloud Vision API (Web Detection) | Reconoce el producto desde la foto |
+| Extracción de precios | Jsoup + headers realistas | Scrapea páginas ecommerce encontradas por Vision |
+| Tipo de cambio | API BCCR (indicador 318) | Convierte USD → CRC en tiempo real |
+| Cálculo de precios | Backend Java | IVA 13%, importación 25%, precio sugerido |
+| Publicación FB | Extensión Chrome | Llena formulario FB Marketplace desde el panel |
+| Scheduler | `@Scheduled` Spring | Genera texto FB para productos nuevos automáticamente |
+
+### Nuevas tablas en BD
+
+| Tabla | Propósito |
+|---|---|
+| `hot_click_precio_sugerido_tb` | Histórico de precios extraídos por fuente con impuestos |
+| `hot_click_publicacion_fb_tb` | Cola de publicaciones Facebook: PENDIENTE → PUBLICADO |
+
+### Variables de entorno nuevas
+
+| Variable | Descripción | Dónde configurar |
+|---|---|---|
+| `GOOGLE_VISION_API_KEY` | API Key de Google Cloud Vision | Render → Environment |
+| `app.publication.enabled` | Activar/desactivar scheduler | `application.properties` |
+| `app.publication.interval-minutes` | Intervalo del scheduler (default: 30) | `application.properties` |
+| `app.tc.usd.fallback` | Tipo de cambio fallback si BCCR falla (default: 530) | `application.properties` |
+
+### Nueva ruta admin
+
+| Ruta | Componente | Descripción |
+|---|---|---|
+| `/admin/publicaciones` | `AdminPublicaciones.jsx` | Flujo: subir foto, analizar, editar, guardar, publicar FB |
+
+### Extensión Chrome
+
+Carpeta: `Hot_click_outlet/chrome-extension/`
+
+Instalación (sin publicar en Chrome Web Store):
+
+1. Abrir `chrome://extensions`
+2. Activar "Modo desarrollador"
+3. Click "Cargar sin empaquetar"
+4. Seleccionar la carpeta `chrome-extension/`
+
+La extensión se conecta al backend de Render usando el mismo JWT del admin. La URL del backend se configura una vez en el popup de la extensión.
+
+### Limitaciones conocidas
+
+| Limitación | Motivo | Solución |
+|---|---|---|
+| Google Vision puede no identificar productos muy genéricos | La imagen es de baja calidad o el producto no tiene presencia web | El admin completa los datos manualmente |
+| Jsoup bloqueado por algunos sitios | Anti-bot del sitio | Reintenta hasta 3 veces con headers distintos; marca error y permite ingreso manual |
+| FB Marketplace cambia su DOM frecuentemente | Meta actualiza la UI | La extensión se actualiza cuando sea necesario (código abierto, fácil de editar) |
+
+---
+
+## 13. Configuración Google Cloud Vision API
+
+### Pasos para obtener la API Key
+
+1. Ir a [console.cloud.google.com](https://console.cloud.google.com)
+2. Crear un proyecto nuevo llamado `hotclick-vision` (o usar uno existente)
+3. En el menú lateral: **APIs y servicios → Biblioteca**
+4. Buscar **"Cloud Vision API"** → Click → **Habilitar**
+5. Ir a **APIs y servicios → Credenciales**
+6. Click **"Crear credenciales" → "Clave de API"**
+7. Copiar la clave generada (formato: `AIzaSy...`)
+8. Click en **"Restringir clave"** (recomendado):
+   - En "Restricciones de API": seleccionar solo **Cloud Vision API**
+9. Agregar la clave en Render: **Dashboard → hotclick-outlet → Environment → Add Variable**
+   - Key: `GOOGLE_VISION_API_KEY`
+   - Value: `AIzaSy...` (tu clave)
+
+### Cuota gratuita
+
+| Recurso | Límite gratuito | Costo extra |
+|---|---|---|
+| Web Detection (búsqueda inversa) | **1,000 solicitudes/mes** | $1.50 por cada 1,000 adicionales |
+| Label Detection (identificar objetos) | 1,000 solicitudes/mes | $1.50 por cada 1,000 adicionales |
+
+Para el volumen típico de un outlet (20-50 productos/mes), el tier gratuito es suficiente.
+
+### Qué devuelve Vision API para un producto
+
+```json
+{
+  "webDetection": {
+    "bestGuessLabels": [{ "label": "Samsung Galaxy A55 5G" }],
+    "webEntities": [
+      { "description": "Samsung Galaxy A55", "score": 0.97 },
+      { "description": "Android smartphone", "score": 0.85 }
+    ],
+    "pagesWithMatchingImages": [
+      { "url": "https://www.amazon.com/...", "pageTitle": "Samsung Galaxy A55 - Amazon" },
+      { "url": "https://encuentra24.com/...", "pageTitle": "Samsung Galaxy A55 en venta CR" }
+    ],
+    "fullMatchingImages": [
+      { "url": "https://m.media-amazon.com/images/..." }
+    ]
+  }
+}
+```
+
+El backend usa `bestGuessLabels` como nombre del producto y `pagesWithMatchingImages` para buscar precios con Jsoup.
