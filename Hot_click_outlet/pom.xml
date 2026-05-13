@@ -94,6 +94,13 @@
             <version>1.7.1</version>
         </dependency>
 
+        <!-- Jsoup — scraping de precios -->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.17.2</version>
+        </dependency>
+
         <!-- H2 para pruebas -->
         <dependency>
             <groupId>com.h2database</groupId>

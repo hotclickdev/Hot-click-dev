@@ -1366,5 +1366,38 @@ ON CONFLICT ("FK_ID_USUARIO", "FK_ID_ROL") DO NOTHING;
 COMMIT;
 
 -- ============================================================
+-- MÓDULO PUBLICACIÓN AUTOMATIZADA (incremental 2026-05-13)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS hot_click_precio_sugerido_tb (
+    id_precio_sugerido   BIGSERIAL PRIMARY KEY,
+    fk_id_producto       BIGINT NOT NULL REFERENCES hot_click_producto_tb(id_producto) ON DELETE CASCADE,
+    fuente               VARCHAR(100) NOT NULL,
+    url_fuente           VARCHAR(500),
+    precio_usd           INTEGER,
+    precio_crc           INTEGER,
+    tipo_cambio_usado    INTEGER,
+    precio_con_iva       INTEGER,
+    precio_con_importacion INTEGER,
+    precio_sugerido_final  INTEGER,
+    fecha_extraccion     TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS hot_click_publicacion_fb_tb (
+    id_publicacion_fb    BIGSERIAL PRIMARY KEY,
+    fk_id_producto       BIGINT NOT NULL REFERENCES hot_click_producto_tb(id_producto) ON DELETE CASCADE,
+    estado_publicacion   VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
+    texto_fb             TEXT,
+    titulo_fb            VARCHAR(255),
+    precio_publicar      INTEGER,
+    categoria_fb         VARCHAR(100),
+    condicion_fb         VARCHAR(50),
+    notas_admin          VARCHAR(500),
+    fecha_creacion       TIMESTAMP NOT NULL DEFAULT NOW(),
+    fecha_publicacion    TIMESTAMP,
+    CONSTRAINT chk_estado_pub CHECK (estado_publicacion IN ('PENDIENTE','LISTO','PUBLICADO','ERROR'))
+);
+
+-- ============================================================
 -- FIN DEL SCRIPT
 -- ============================================================
