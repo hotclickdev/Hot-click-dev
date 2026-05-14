@@ -6,6 +6,7 @@ import { PageLoader } from '@/components/ui/Spinner'
 import useAuthStore from '@/store/authStore'
 import useUiStore from '@/store/uiStore'
 import AccessibilityPanel from '@/components/ui/AccessibilityPanel'
+import WhatsAppFab from '@/components/ui/WhatsAppFab'
 import i18n from './i18n'
 
 const HomePage = lazy(() => import('@/pages/HomePage'))
@@ -106,6 +107,7 @@ export default function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>
+          <WhatsAppFab />
           <AccessibilityPanel />
         </BrowserRouter>
       </ToastProvider>

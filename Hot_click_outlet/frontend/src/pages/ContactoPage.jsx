@@ -13,15 +13,27 @@ export default function ContactoPage() {
   const { t } = useTranslation()
   const [form, setForm] = useState({ nombre: '', correo: '', mensaje: '' })
   const [sent, setSent] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   const set = (f) => (e) => setForm((p) => ({ ...p, [f]: e.target.value }))
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    const msg = encodeURIComponent(`Hola HOTCLICK!\n\nNombre: ${form.nombre}\nCorreo: ${form.correo}\n\nMensaje:\n${form.mensaje}`)
-    window.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank')
-    setSent(true)
-    toast({ message: 'Mensaje enviado por WhatsApp', type: 'success' })
+    setLoading(true)
+    try {
+      const res = await fetch('/api/contacto', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (!res.ok) throw new Error()
+      setSent(true)
+      toast({ message: 'Mensaje enviado correctamente', type: 'success' })
+    } catch {
+      toast({ message: 'No se pudo enviar. Intenta por WhatsApp.', type: 'error' })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -49,9 +61,9 @@ export default function ContactoPage() {
               <div className="text-center py-8 space-y-2">
                 <span className="text-5xl">✅</span>
                 <p className="text-[#e8e8ed] font-medium mt-3">{t('contacto.sent')}</p>
-                <p className="text-sm text-[#8e8e9a]">Te contactaremos pronto vía WhatsApp</p>
+                <p className="text-sm text-[#8e8e9a]">Recibimos tu mensaje y te contactaremos pronto.</p>
                 <Button variant="ghost" onClick={() => { setSent(false); setForm({ nombre: '', correo: '', mensaje: '' }) }} className="mt-3">
-                  {t('contacto.send')}
+                  Enviar otro
                 </Button>
               </div>
             ) : (
@@ -69,8 +81,13 @@ export default function ContactoPage() {
                     className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-[#e8e8ed] placeholder:text-[#8e8e9a]/60 focus:outline-none focus:border-[#4f7cff]/60 resize-none transition-colors"
                   />
                 </div>
-                <Button type="submit" className="w-full bg-[#25D366] hover:bg-[#1da851] shadow-[0_0_20px_rgba(37,211,102,0.2)]">
-                  {t('contacto.send')}
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full"
+                  style={{ backgroundColor: '#4f7cff', opacity: loading ? 0.7 : 1 }}
+                >
+                  {loading ? 'Enviando…' : t('contacto.send')}
                 </Button>
               </form>
             )}
