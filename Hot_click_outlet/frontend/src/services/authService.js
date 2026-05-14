@@ -10,6 +10,12 @@ export const authService = {
   register: (data) =>
     api.post('/auth/register', data),
 
+  sendVerification: (data) =>
+    api.post('/auth/send-verification', data),
+
+  verifyRegistration: (correo, codigo) =>
+    api.post('/auth/verify-registration', { correo, codigo }),
+
   forgotPassword: (correo) =>
     api.post('/auth/forgot-password', { correo }),
 
