@@ -242,7 +242,13 @@ public class AuthController {
             emailVerificationService.iniciarRegistro(usuario);
             return ResponseEntity.ok(ResponseDTO.success("Código de verificación enviado a tu correo", null));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            String msg = e.getMessage();
+            if (msg == null || msg.isBlank()) {
+                msg = "Error al enviar el código. Revisá que el correo sea válido e intentá de nuevo.";
+            }
+            System.err.println("[send-verification] ERROR: " + e.getClass().getSimpleName() + " — " + e.getMessage());
+            if (e.getCause() != null) System.err.println("  Caused by: " + e.getCause().getMessage());
+            return ResponseEntity.badRequest().body(ResponseDTO.error(msg));
         }
     }
 

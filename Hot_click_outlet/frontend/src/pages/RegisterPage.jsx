@@ -36,8 +36,8 @@ export default function RegisterPage() {
       setCorreoRegistro(form.correo)
       setStep('verify')
     } catch (err) {
-      const msg = err.response?.data?.message || err.response?.data
-      setError(typeof msg === 'string' ? msg : 'Error al enviar el código. Intentá de nuevo.')
+      const msg = err.response?.data?.message
+      setError(typeof msg === 'string' && msg ? msg : 'Error al enviar el código. Intentá de nuevo.')
     } finally {
       setLoading(false)
     }
@@ -53,8 +53,8 @@ export default function RegisterPage() {
       await authService.verifyRegistration(correoRegistro, codigo.trim())
       setStep('success')
     } catch (err) {
-      const msg = err.response?.data?.message || err.response?.data
-      setError(typeof msg === 'string' ? msg : 'Código incorrecto o expirado')
+      const msg = err.response?.data?.message
+      setError(typeof msg === 'string' && msg ? msg : 'Código incorrecto o expirado')
     } finally {
       setLoading(false)
     }
