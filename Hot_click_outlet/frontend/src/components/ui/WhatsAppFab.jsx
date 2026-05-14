@@ -10,7 +10,7 @@ export default function WhatsAppFab() {
       rel="noopener noreferrer"
       aria-label="Contactar por WhatsApp"
       title="WhatsApp"
-      className="fixed bottom-40 md:bottom-24 right-6 z-50 w-12 h-12 rounded-2xl flex items-center justify-center
+      className="fixed bottom-44 md:bottom-24 right-6 z-50 w-12 h-12 rounded-2xl flex items-center justify-center
         shadow-[0_4px_20px_rgba(37,211,102,0.4)] hover:shadow-[0_4px_28px_rgba(37,211,102,0.65)]"
       style={{ backgroundColor: '#25D366' }}
       whileHover={{ scale: 1.12 }}
