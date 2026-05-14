@@ -1399,5 +1399,15 @@ CREATE TABLE IF NOT EXISTS hot_click_publicacion_fb_tb (
 );
 
 -- ============================================================
+-- MIGRACIONES
+-- ============================================================
+
+-- 2026-05-14: Ampliar columnas VARCHAR de producto que Vision AI puede exceder
+ALTER TABLE hot_click_producto_tb
+    ALTER COLUMN descripcion_corta TYPE VARCHAR(300),
+    ALTER COLUMN titulo_producto   TYPE VARCHAR(300),
+    ALTER COLUMN nombre_producto   TYPE VARCHAR(200);
+
+-- ============================================================
 -- FIN DEL SCRIPT
 -- ============================================================

@@ -62,22 +62,26 @@ public class ProductoService {
     }
 
     private void mapDtoToProducto(ProductoRequestDTO dto, Producto p) {
-        if (dto.getNombreProducto()   != null) p.setNombreProducto(dto.getNombreProducto());
-        if (dto.getDescripcionCorta() != null) p.setDescripcionCorta(dto.getDescripcionCorta());
-        if (dto.getPrecioCompra()     != null) p.setPrecioCompra(dto.getPrecioCompra());
-        if (dto.getPrecioVenta()      != null) p.setPrecioVenta(dto.getPrecioVenta());
-        if (dto.getStockActual()      != null) p.setStockActual(dto.getStockActual());
-        if (dto.getStockMinimo()      != null) p.setStockMinimo(dto.getStockMinimo());
-        if (dto.getLinkAmazon()       != null) p.setLinkAmazon(dto.getLinkAmazon());
-        if (dto.getVisibleCatalogo()  != null) p.setVisibleCatalogo(dto.getVisibleCatalogo());
-        if (dto.getDestacado()        != null) p.setDestacado(dto.getDestacado());
-        if (dto.getImagenPrincipalUrl() != null) p.setImagenPrincipalUrl(dto.getImagenPrincipalUrl());
-        if (dto.getCondicion()         != null) p.setCondicion(dto.getCondicion());
-        if (dto.getTituloProducto()    != null) p.setTituloProducto(dto.getTituloProducto());
-        if (dto.getEspecificaciones()  != null) p.setEspecificaciones(dto.getEspecificaciones());
-        if (dto.getComoUsar()          != null) p.setComoUsar(dto.getComoUsar());
-        if (dto.getDescripcionLarga()  != null) p.setDescripcionLarga(dto.getDescripcionLarga());
-        if (dto.getMarcaTexto()        != null) p.setMarcaTexto(dto.getMarcaTexto());
+        if (dto.getNombreProducto()     != null) p.setNombreProducto(trunc(dto.getNombreProducto(), 200));
+        if (dto.getDescripcionCorta()   != null) p.setDescripcionCorta(trunc(dto.getDescripcionCorta(), 255));
+        if (dto.getTituloProducto()     != null) p.setTituloProducto(trunc(dto.getTituloProducto(), 255));
+        if (dto.getMarcaTexto()         != null) p.setMarcaTexto(trunc(dto.getMarcaTexto(), 100));
+        if (dto.getLinkAmazon()         != null) p.setLinkAmazon(trunc(dto.getLinkAmazon(), 500));
+        if (dto.getImagenPrincipalUrl() != null) p.setImagenPrincipalUrl(trunc(dto.getImagenPrincipalUrl(), 500));
+        if (dto.getCondicion()          != null) p.setCondicion(dto.getCondicion());
+        if (dto.getPrecioCompra()       != null) p.setPrecioCompra(dto.getPrecioCompra());
+        if (dto.getPrecioVenta()        != null) p.setPrecioVenta(dto.getPrecioVenta());
+        if (dto.getStockActual()        != null) p.setStockActual(dto.getStockActual());
+        if (dto.getStockMinimo()        != null) p.setStockMinimo(dto.getStockMinimo());
+        if (dto.getVisibleCatalogo()    != null) p.setVisibleCatalogo(dto.getVisibleCatalogo());
+        if (dto.getDestacado()          != null) p.setDestacado(dto.getDestacado());
+        if (dto.getEspecificaciones()   != null) p.setEspecificaciones(dto.getEspecificaciones());
+        if (dto.getComoUsar()           != null) p.setComoUsar(dto.getComoUsar());
+        if (dto.getDescripcionLarga()   != null) p.setDescripcionLarga(dto.getDescripcionLarga());
+    }
+
+    private static String trunc(String s, int max) {
+        return s != null && s.length() > max ? s.substring(0, max) : s;
     }
 
     @Transactional
