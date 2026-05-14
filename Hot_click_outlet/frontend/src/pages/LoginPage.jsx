@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import AuthLayout from '@/layouts/AuthLayout'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -14,6 +15,7 @@ export default function LoginPage() {
   const location = useLocation()
   const login = useAuthStore((s) => s.login)
   const toast = useToast()
+  const { t } = useTranslation()
   const from = location.state?.from || '/'
 
   const [step, setStep] = useState('login') // 'login' | '2fa'
@@ -43,11 +45,11 @@ export default function LoginPage() {
       }
     } catch (err) {
       const body = err.response?.data
-      const msg = body?.message || body || 'Credenciales incorrectas'
+      const msg = body?.message || body || t('login.badCredentials')
       if (err.response?.status === 403) {
-        setError('Tu cuenta está pendiente de aprobación por el administrador.')
+        setError(t('login.pendingApproval'))
       } else {
-        setError(typeof msg === 'string' ? msg : 'Error al iniciar sesión')
+        setError(typeof msg === 'string' ? msg : t('login.error'))
       }
     } finally {
       setLoading(false)
@@ -57,14 +59,14 @@ export default function LoginPage() {
   const handle2FA = async (e) => {
     e.preventDefault()
     const fullCode = code2FA.join('')
-    if (fullCode.length !== 6) { setError('Ingresa el código de 6 dígitos'); return }
+    if (fullCode.length !== 6) { setError(t('login.code6digits')); return }
     setError('')
     setLoading(true)
     try {
       const { data } = await authService.verify2FA(tempToken, fullCode)
       handleLoginSuccess(data)
     } catch {
-      setError('Código incorrecto. Intenta de nuevo.')
+      setError(t('login.error'))
       setCode2FA(['', '', '', '', '', ''])
       refs2FA.current[0]?.focus()
     } finally {
@@ -76,7 +78,7 @@ export default function LoginPage() {
   const handleLoginSuccess = (data) => {
     login(data)
     const isAdmin = ['ADMIN_IT', 'ADMIN_CLIENTE'].includes(data.rol)
-    toast({ message: `¡Bienvenido${isAdmin ? ', Admin' : ''}!`, type: 'success' })
+    toast({ message: isAdmin ? t('login.welcomeAdmin') : t('login.welcome'), type: 'success' })
     if (isAdmin) {
       setLoginData(data)
       setShowAdminModal(true)
@@ -112,12 +114,12 @@ export default function LoginPage() {
       <div className="bg-[#111114] border border-white/8 rounded-2xl p-8 shadow-2xl">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-[#e8e8ed] mb-2">
-            {step === '2fa' ? 'Verificación 2FA' : 'Bienvenido de vuelta'}
+            {step === '2fa' ? t('login.title2fa') : t('login.title')}
           </h1>
           <p className="text-sm text-[#8e8e9a]">
             {step === '2fa'
-              ? 'Ingresa el código de tu app autenticadora'
-              : 'Inicia sesión en tu cuenta HOTCLICK'
+              ? t('login.subtitle2fa')
+              : t('login.subtitle')
             }
           </p>
         </div>
@@ -134,9 +136,9 @@ export default function LoginPage() {
               className="space-y-4"
             >
               <Input
-                label="Correo electrónico"
+                label={t('login.email')}
                 type="email"
-                placeholder="tu@email.com"
+                placeholder={t('login.emailPlaceholder')}
                 value={correo}
                 onChange={(e) => setCorreo(e.target.value)}
                 required
@@ -144,7 +146,7 @@ export default function LoginPage() {
                 icon={<EmailIcon />}
               />
               <Input
-                label="Contraseña"
+                label={t('login.password')}
                 type="password"
                 placeholder="••••••••"
                 value={contrasena}
@@ -164,7 +166,7 @@ export default function LoginPage() {
               )}
 
               <Button type="submit" loading={loading} className="w-full" size="lg">
-                Iniciar sesión
+                {t('login.submit')}
               </Button>
 
               <div className="flex items-center justify-between">
@@ -173,10 +175,10 @@ export default function LoginPage() {
                   onClick={() => setShowForgot(true)}
                   className="text-xs text-[#8e8e9a] hover:text-[#4f7cff] transition-colors"
                 >
-                  ¿Olvidaste tu contraseña?
+                  {t('login.forgotPassword')}
                 </button>
                 <Link to="/registro" className="text-xs text-[#4f7cff] hover:text-[#3d6ee0] transition-colors">
-                  Crear cuenta
+                  {t('login.createAccount')}
                 </Link>
               </div>
             </motion.form>
@@ -194,7 +196,7 @@ export default function LoginPage() {
             >
               <div>
                 <label className="block text-sm font-medium text-[#e8e8ed] mb-3 text-center">
-                  Código de 6 dígitos
+                  {t('login.code6digits')}
                 </label>
                 <div className="flex gap-2 justify-center" onPaste={handle2FAPaste}>
                   {code2FA.map((digit, i) => (
@@ -227,7 +229,7 @@ export default function LoginPage() {
 
               <div className="space-y-2">
                 <Button type="submit" loading={loading} className="w-full" size="lg">
-                  Verificar
+                  {t('login.verify')}
                 </Button>
                 <Button
                   type="button"
@@ -236,7 +238,7 @@ export default function LoginPage() {
                   className="w-full"
                   onClick={() => { setStep('login'); setCode2FA(['','','','','','']); setError('') }}
                 >
-                  ← Volver al login
+                  {t('login.backToLogin')}
                 </Button>
               </div>
             </motion.form>
@@ -245,19 +247,19 @@ export default function LoginPage() {
 
         {step === 'login' && (
           <p className="text-center text-xs text-[#8e8e9a] mt-6">
-            ¿No tienes cuenta?{' '}
+            {t('login.noAccount')}{' '}
             <Link to="/registro" className="text-[#4f7cff] hover:underline">
-              Regístrate gratis
+              {t('login.register')}
             </Link>
           </p>
         )}
       </div>
 
       {/* Modal selección modo admin */}
-      <Modal open={showAdminModal} title="Seleccionar modo de acceso">
+      <Modal open={showAdminModal} title={t('login.adminModal')}>
         <div className="space-y-3">
           <p className="text-sm text-[#8e8e9a] mb-4">
-            Tienes permisos de administrador. ¿Cómo deseas ingresar?
+            {t('login.adminModalSub')}
           </p>
           <button
             onClick={() => { setShowAdminModal(false); navigate('/admin') }}
@@ -267,8 +269,8 @@ export default function LoginPage() {
               <span className="text-[#4f7cff] text-lg">⚙</span>
             </div>
             <div>
-              <div className="font-medium text-[#e8e8ed] text-sm">Entrar como Administrador</div>
-              <div className="text-xs text-[#8e8e9a]">Acceso al panel de control</div>
+              <div className="font-medium text-[#e8e8ed] text-sm">{t('login.enterAdmin')}</div>
+              <div className="text-xs text-[#8e8e9a]">{t('login.enterAdminSub')}</div>
             </div>
           </button>
           <button
@@ -279,8 +281,8 @@ export default function LoginPage() {
               <span className="text-[#e8e8ed] text-lg">🛍</span>
             </div>
             <div>
-              <div className="font-medium text-[#e8e8ed] text-sm">Entrar como Cliente</div>
-              <div className="text-xs text-[#8e8e9a]">Ver la tienda como usuario</div>
+              <div className="font-medium text-[#e8e8ed] text-sm">{t('login.enterClient')}</div>
+              <div className="text-xs text-[#8e8e9a]">{t('login.enterClientSub')}</div>
             </div>
           </button>
         </div>
@@ -299,6 +301,7 @@ function ForgotPasswordModal({ open, onClose }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const toast = useToast()
+  const { t } = useTranslation()
 
   const handleEmail = async (e) => {
     e.preventDefault()
@@ -306,9 +309,9 @@ function ForgotPasswordModal({ open, onClose }) {
     setLoading(true)
     try {
       await authService.forgotPassword(correo)
-      toast({ message: 'Código enviado a tu correo', type: 'success' })
+      toast({ message: t('forgot.codeSent'), type: 'success' })
       setStep('code')
-    } catch { setError('No encontramos ese correo registrado.') }
+    } catch { setError(t('forgot.emailNotFound')) }
     finally { setLoading(false) }
   }
 
@@ -319,50 +322,50 @@ function ForgotPasswordModal({ open, onClose }) {
     try {
       await authService.verifyCode(correo, codigo)
       setStep('password')
-    } catch { setError('Código incorrecto.') }
+    } catch { setError(t('forgot.badCode')) }
     finally { setLoading(false) }
   }
 
   const handlePassword = async (e) => {
     e.preventDefault()
-    if (nueva.length < 6) { setError('Mínimo 6 caracteres'); return }
+    if (nueva.length < 6) { setError(t('forgot.minChars')); return }
     setError('')
     setLoading(true)
     try {
       await authService.resetPassword(correo, nueva)
-      toast({ message: 'Contraseña actualizada con éxito', type: 'success' })
+      toast({ message: t('forgot.passwordChanged'), type: 'success' })
       onClose()
       setStep('email'); setCorreo(''); setCodigo(''); setNueva('')
-    } catch { setError('Error al cambiar la contraseña.') }
+    } catch { setError(t('forgot.errorChange')) }
     finally { setLoading(false) }
   }
 
   const reset = () => { setStep('email'); setError('') }
 
   return (
-    <Modal open={open} onClose={() => { onClose(); reset() }} title="Recuperar contraseña">
+    <Modal open={open} onClose={() => { onClose(); reset() }} title={t('forgot.title')}>
       {step === 'email' && (
         <form onSubmit={handleEmail} className="space-y-4">
-          <p className="text-sm text-[#8e8e9a]">Ingresa tu correo y te enviaremos un código.</p>
-          <Input label="Correo" type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} required />
+          <p className="text-sm text-[#8e8e9a]">{t('forgot.emailStep')}</p>
+          <Input label={t('forgot.emailLabel')} type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} required />
           {error && <p className="text-sm text-red-400">{error}</p>}
-          <Button type="submit" loading={loading} className="w-full">Enviar código</Button>
+          <Button type="submit" loading={loading} className="w-full">{t('forgot.sendCode')}</Button>
         </form>
       )}
       {step === 'code' && (
         <form onSubmit={handleCode} className="space-y-4">
-          <p className="text-sm text-[#8e8e9a]">Revisa tu correo <strong className="text-[#e8e8ed]">{correo}</strong></p>
-          <Input label="Código" value={codigo} onChange={(e) => setCodigo(e.target.value)} required maxLength={6} />
+          <p className="text-sm text-[#8e8e9a]">{t('forgot.codeStep')} <strong className="text-[#e8e8ed]">{correo}</strong></p>
+          <Input label={t('forgot.codeLabel')} value={codigo} onChange={(e) => setCodigo(e.target.value)} required maxLength={6} />
           {error && <p className="text-sm text-red-400">{error}</p>}
-          <Button type="submit" loading={loading} className="w-full">Verificar</Button>
+          <Button type="submit" loading={loading} className="w-full">{t('forgot.codeVerify')}</Button>
         </form>
       )}
       {step === 'password' && (
         <form onSubmit={handlePassword} className="space-y-4">
-          <p className="text-sm text-[#8e8e9a]">Crea una nueva contraseña.</p>
-          <Input label="Nueva contraseña" type="password" value={nueva} onChange={(e) => setNueva(e.target.value)} required minLength={6} />
+          <p className="text-sm text-[#8e8e9a]">{t('forgot.passwordStep')}</p>
+          <Input label={t('forgot.newPassword')} type="password" value={nueva} onChange={(e) => setNueva(e.target.value)} required minLength={6} />
           {error && <p className="text-sm text-red-400">{error}</p>}
-          <Button type="submit" loading={loading} className="w-full">Cambiar contraseña</Button>
+          <Button type="submit" loading={loading} className="w-full">{t('forgot.changePassword')}</Button>
         </form>
       )}
     </Modal>

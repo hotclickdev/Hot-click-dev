@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 
 export default function MainLayout({ children }) {
   return (
-    <div className="flex flex-col min-h-screen bg-[#0a0a0b]">
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: 'var(--hc-bg)' }}>
       <Navbar />
       <motion.main
         initial={{ opacity: 0, y: 8 }}

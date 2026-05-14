@@ -3,15 +3,15 @@ import { motion } from 'framer-motion'
 
 export default function AuthLayout({ children }) {
   return (
-    <div className="min-h-screen bg-[#0a0a0b] flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--hc-bg)' }}>
       {/* Header */}
       <header className="h-16 flex items-center px-6">
         <Link to="/" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-[#4f7cff] flex items-center justify-center shadow-[0_0_16px_rgba(79,124,255,0.45)] shrink-0">
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 hc-logo-badge">
             <span className="text-white font-extrabold text-[13px] tracking-tight leading-none">HC</span>
           </div>
-          <span className="font-extrabold text-lg tracking-tight leading-none">
-            <span className="text-white">HOT</span><span className="text-[#4f7cff]">CLICK</span>
+          <span className="font-extrabold text-lg tracking-tight leading-none uppercase hc-logo-text">
+            HOTCLICK
           </span>
         </Link>
       </header>

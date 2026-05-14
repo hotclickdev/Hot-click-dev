@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 export default function Footer() {
+  const { t } = useTranslation()
+
   return (
-    <footer className="border-t border-white/6 bg-[#0a0a0b] mt-auto">
+    <footer className="mt-auto" style={{ borderTop: '1px solid var(--hc-border)', backgroundColor: 'var(--hc-surface)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
           {/* Brand */}
@@ -11,17 +14,18 @@ export default function Footer() {
               <div className="w-7 h-7 rounded-lg bg-[#4f7cff] flex items-center justify-center shadow-[0_0_12px_rgba(79,124,255,0.4)]">
                 <span className="text-white font-bold text-xs">H</span>
               </div>
-              <span className="font-semibold text-[#e8e8ed]">HOTCLICK</span>
+              <span className="font-semibold" style={{ color: 'var(--hc-text)' }}>HOTCLICK</span>
             </div>
-            <p className="text-sm text-[#8e8e9a] leading-relaxed max-w-xs">
-              Tu tienda de electrónica y tecnología en Costa Rica. Calidad garantizada.
+            <p className="text-sm leading-relaxed max-w-xs" style={{ color: 'var(--hc-muted)' }}>
+              {t('footer.tagline')}
             </p>
             <div className="flex items-center gap-3 mt-4">
               <a
-                href={`https://wa.me/50689745370`}
+                href="https://wa.me/50689745370"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#8e8e9a] hover:text-[#4f7cff] transition-colors"
+                className="hover:text-[#4f7cff] transition-colors"
+                style={{ color: 'var(--hc-muted)' }}
                 aria-label="WhatsApp"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -31,13 +35,13 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Links */}
+          {/* Tienda */}
           <div>
-            <h3 className="text-sm font-semibold text-[#e8e8ed] mb-4">Tienda</h3>
+            <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--hc-text)' }}>{t('footer.tienda')}</h3>
             <ul className="space-y-2.5">
-              {[['Productos', '/productos'], ['Carrito', '/carrito']].map(([label, href]) => (
+              {[[t('footer.productos'), '/productos'], [t('footer.carrito'), '/carrito']].map(([label, href]) => (
                 <li key={href}>
-                  <Link to={href} className="text-sm text-[#8e8e9a] hover:text-white transition-colors">
+                  <Link to={href} className="text-sm transition-colors hover:text-[#4f7cff]" style={{ color: 'var(--hc-muted)' }}>
                     {label}
                   </Link>
                 </li>
@@ -45,12 +49,13 @@ export default function Footer() {
             </ul>
           </div>
 
+          {/* Empresa */}
           <div>
-            <h3 className="text-sm font-semibold text-[#e8e8ed] mb-4">Empresa</h3>
+            <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--hc-text)' }}>{t('footer.empresa')}</h3>
             <ul className="space-y-2.5">
-              {[['Nosotros', '/nosotros'], ['Contacto', '/contacto']].map(([label, href]) => (
+              {[[t('footer.nosotros'), '/nosotros'], [t('footer.contacto'), '/contacto']].map(([label, href]) => (
                 <li key={href}>
-                  <Link to={href} className="text-sm text-[#8e8e9a] hover:text-white transition-colors">
+                  <Link to={href} className="text-sm transition-colors hover:text-[#4f7cff]" style={{ color: 'var(--hc-muted)' }}>
                     {label}
                   </Link>
                 </li>
@@ -58,12 +63,17 @@ export default function Footer() {
             </ul>
           </div>
 
+          {/* Cuenta */}
           <div>
-            <h3 className="text-sm font-semibold text-[#e8e8ed] mb-4">Cuenta</h3>
+            <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--hc-text)' }}>{t('footer.cuenta')}</h3>
             <ul className="space-y-2.5">
-              {[['Iniciar sesión', '/login'], ['Registrarse', '/registro'], ['Mi perfil', '/perfil']].map(([label, href]) => (
+              {[
+                [t('footer.iniciarSesion'), '/login'],
+                [t('footer.registrarse'), '/registro'],
+                [t('footer.miPerfil'), '/perfil'],
+              ].map(([label, href]) => (
                 <li key={href}>
-                  <Link to={href} className="text-sm text-[#8e8e9a] hover:text-white transition-colors">
+                  <Link to={href} className="text-sm transition-colors hover:text-[#4f7cff]" style={{ color: 'var(--hc-muted)' }}>
                     {label}
                   </Link>
                 </li>
@@ -72,11 +82,11 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="pt-6 border-t border-white/6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-[#8e8e9a]">
-            © {new Date().getFullYear()} HOTCLICK. Todos los derechos reservados.
+        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderTop: '1px solid var(--hc-border)' }}>
+          <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+            © {new Date().getFullYear()} HOTCLICK. {t('footer.derechos')}
           </p>
-          <p className="text-xs text-[#8e8e9a]">Costa Rica 🇨🇷</p>
+          <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Costa Rica 🇨🇷</p>
         </div>
       </div>
     </footer>

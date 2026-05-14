@@ -1,7 +1,7 @@
 package com.hotclick.controller;
 
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 
 /**
  * Forwards all non-API, non-static routes to index.html so React Router handles them.
@@ -9,13 +9,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Controller
 public class SpaController {
 
-    @RequestMapping(value = {
-        "/", "/productos", "/productos/**",
-        "/carrito", "/login", "/registro",
-        "/perfil", "/nosotros", "/contacto",
-        "/admin", "/admin/**"
-    })
+    // Catch-all: cualquier ruta que no sea /api/** ni un recurso estático
+    @GetMapping(value = "/{path:[^\\.]*}", produces = "text/html")
     public String spa() {
+        return "forward:/index.html";
+    }
+
+    @GetMapping(value = "/{path:[^\\.]*}/**", produces = "text/html")
+    public String spaDeep() {
         return "forward:/index.html";
     }
 }

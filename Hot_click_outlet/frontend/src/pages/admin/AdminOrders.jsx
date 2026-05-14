@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import AdminLayout from '@/layouts/AdminLayout'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
@@ -11,6 +12,7 @@ import { formatDate, formatPrice, statusColor } from '@/utils/format'
 const STATUS_OPTIONS = ['PENDIENTE', 'DESPACHADO', 'ENTREGADO', 'CANCELADO']
 
 export default function AdminOrders() {
+  const { t } = useTranslation()
   const toast = useToast()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
@@ -53,8 +55,8 @@ export default function AdminOrders() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[#e8e8ed]">Pedidos</h1>
-            <p className="text-sm text-[#8e8e9a] mt-1">{orders.length} pedidos en total</p>
+            <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.orders.title')}</h1>
+            <p className="text-sm text-[#8e8e9a] mt-1">{orders.length} {t('admin.orders.title').toLowerCase()}</p>
           </div>
         </div>
 
@@ -83,7 +85,7 @@ export default function AdminOrders() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/8">
-                    {['#', 'Cliente', 'Total', 'Estado', 'Fecha', ''].map((h) => (
+                    {['#', t('admin.orders.client'), t('admin.orders.total'), t('admin.orders.status'), t('admin.orders.date'), ''].map((h) => (
                       <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">
                         {h}
                       </th>
@@ -111,7 +113,7 @@ export default function AdminOrders() {
                           onClick={() => openOrder(order)}
                           className="px-3 py-1 text-xs rounded-lg bg-white/5 hover:bg-white/10 text-[#8e8e9a] hover:text-white transition-colors"
                         >
-                          Gestionar
+                          {t('admin.orders.detail')}
                         </button>
                       </td>
                     </tr>
@@ -119,7 +121,7 @@ export default function AdminOrders() {
                 </tbody>
               </table>
               {filtered.length === 0 && (
-                <div className="text-center py-12 text-[#8e8e9a]">No hay pedidos en este estado</div>
+                <div className="text-center py-12 text-[#8e8e9a]">{t('common.noData')}</div>
               )}
             </div>
           </div>
@@ -132,19 +134,19 @@ export default function AdminOrders() {
           <div className="space-y-5">
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <p className="text-[#8e8e9a] text-xs mb-1">Cliente</p>
+                <p className="text-[#8e8e9a] text-xs mb-1">{t('admin.orders.client')}</p>
                 <p className="text-[#e8e8ed]">{selected.usuario?.nombre ?? selected.nombreCliente ?? '—'}</p>
               </div>
               <div>
-                <p className="text-[#8e8e9a] text-xs mb-1">Total</p>
+                <p className="text-[#8e8e9a] text-xs mb-1">{t('admin.orders.total')}</p>
                 <p className="text-[#e8e8ed] font-bold">{formatPrice(selected.total)}</p>
               </div>
               <div>
-                <p className="text-[#8e8e9a] text-xs mb-1">Estado actual</p>
+                <p className="text-[#8e8e9a] text-xs mb-1">{t('admin.orders.status')}</p>
                 <Badge variant={statusColor(selected.estado)}>{selected.estado}</Badge>
               </div>
               <div>
-                <p className="text-[#8e8e9a] text-xs mb-1">Fecha</p>
+                <p className="text-[#8e8e9a] text-xs mb-1">{t('admin.orders.date')}</p>
                 <p className="text-[#e8e8ed] text-xs">
                   {selected.fechaCreacion ? formatDate(selected.fechaCreacion) : '—'}
                 </p>
@@ -154,7 +156,7 @@ export default function AdminOrders() {
             {/* Items */}
             {selected.items?.length > 0 && (
               <div>
-                <p className="text-xs font-medium text-[#8e8e9a] mb-2">Productos</p>
+                <p className="text-xs font-medium text-[#8e8e9a] mb-2">{t('admin.sales.products')}</p>
                 <div className="space-y-2">
                   {selected.items.map((item, i) => (
                     <div key={i} className="flex justify-between text-sm text-[#e8e8ed] bg-white/3 px-3 py-2 rounded-lg">
@@ -168,7 +170,7 @@ export default function AdminOrders() {
 
             {/* Update status */}
             <div>
-              <p className="text-xs font-medium text-[#8e8e9a] mb-2">Cambiar estado</p>
+              <p className="text-xs font-medium text-[#8e8e9a] mb-2">{t('admin.orders.updateStatus')}</p>
               <div className="flex gap-2">
                 <select
                   value={newStatus}
@@ -178,7 +180,7 @@ export default function AdminOrders() {
                   {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
                 <Button onClick={handleStatusUpdate} loading={saving} disabled={newStatus === selected.estado}>
-                  Actualizar
+                  {t('common.save')}
                 </Button>
               </div>
             </div>

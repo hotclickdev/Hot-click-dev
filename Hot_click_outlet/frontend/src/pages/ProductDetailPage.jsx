@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import Badge from '@/components/ui/Badge'
 import Spinner from '@/components/ui/Spinner'
@@ -14,6 +15,7 @@ export default function ProductDetailPage() {
   const navigate = useNavigate()
   const addItem = useCartStore((s) => s.addItem)
   const toast = useToast()
+  const { t } = useTranslation()
 
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -58,17 +60,17 @@ export default function ProductDetailPage() {
 
   const stockBadge = product.stock === 0 ? 'danger' : product.stock <= 3 ? 'warning' : 'success'
   const stockLabel = product.stock === 0
-    ? 'Agotado'
+    ? t('product.outOfStock')
     : product.stock <= 3
-    ? `Solo ${product.stock} disponible${product.stock !== 1 ? 's' : ''}`
-    : 'En stock'
+    ? t('product.lowStock', { count: product.stock })
+    : t('product.inStock')
 
   const handleDecrease = () => setQuantity((q) => Math.max(1, q - 1))
 
   const handleIncrease = () => {
     if (atMax) {
       toast({
-        message: `Solo hay ${product.stock} unidad${product.stock !== 1 ? 'es' : ''} disponible${product.stock !== 1 ? 's' : ''}`,
+        message: t('product.lowStock', { count: product.stock }),
         type: 'warning',
       })
       return
@@ -80,7 +82,7 @@ export default function ProductDetailPage() {
     if (!inStock || justAdded) return
     for (let i = 0; i < quantity; i++) addItem(normalizeProduct(product))
     toast({
-      message: `${quantity > 1 ? `${quantity}× ` : ''}${product.nombre} añadido al carrito`,
+      message: t('product.added', { name: `${quantity > 1 ? `${quantity}× ` : ''}${product.nombre}` }),
       type: 'success',
     })
     setJustAdded(true)
@@ -286,7 +288,7 @@ export default function ProductDetailPage() {
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                     </svg>
-                    <span>{inStock ? 'Añadir al carrito' : 'Sin stock'}</span>
+                    <span>{inStock ? t('product.addToCart') : t('product.outOfStock')}</span>
                   </motion.div>
                 )}
               </AnimatePresence>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import AdminLayout from '@/layouts/AdminLayout'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -10,6 +11,7 @@ import { useToast } from '@/components/ui/Toast'
 const EMPTY = { nombreCategoria: '', descripcion: '' }
 
 export default function AdminCategories() {
+  const { t } = useTranslation()
   const toast = useToast()
   const [cats, setCats] = useState([])
   const [loading, setLoading] = useState(true)
@@ -68,10 +70,10 @@ export default function AdminCategories() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[#e8e8ed]">Categorías</h1>
-            <p className="text-sm text-[#8e8e9a] mt-1">{cats.length} categorías</p>
+            <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.categories.title')}</h1>
+            <p className="text-sm text-[#8e8e9a] mt-1">{cats.length} {t('admin.categories.title').toLowerCase()}</p>
           </div>
-          <Button onClick={openNew}>+ Nueva categoría</Button>
+          <Button onClick={openNew}>+ {t('admin.categories.new')}</Button>
         </div>
 
         {loading ? (
@@ -91,19 +93,19 @@ export default function AdminCategories() {
               </div>
             ))}
             {cats.length === 0 && (
-              <div className="col-span-full text-center py-12 text-[#8e8e9a]">No hay categorías aún</div>
+              <div className="col-span-full text-center py-12 text-[#8e8e9a]">{t('common.noData')}</div>
             )}
           </div>
         )}
       </div>
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Editar categoría' : 'Nueva categoría'}>
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? t('admin.categories.edit') : t('admin.categories.new')}>
         <form onSubmit={handleSave} className="space-y-4">
           <Input label="Nombre *" value={form.nombreCategoria} onChange={set('nombreCategoria')} required />
           <Input label="Descripción" value={form.descripcion} onChange={set('descripcion')} />
           <div className="flex gap-3 pt-1">
-            <Button type="submit" loading={saving} className="flex-1">{editing ? 'Guardar' : 'Crear'}</Button>
-            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>Cancelar</Button>
+            <Button type="submit" loading={saving} className="flex-1">{editing ? t('common.save') : t('admin.categories.new')}</Button>
+            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>{t('common.cancel')}</Button>
           </div>
         </form>
       </Modal>

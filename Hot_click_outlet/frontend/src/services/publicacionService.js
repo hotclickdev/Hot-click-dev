@@ -4,6 +4,13 @@ export const publicacionService = {
   analizar: (formData) =>
     api.post('/extraccion/analizar', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 90000,
+    }),
+
+  detallesProducto: (formData) =>
+    api.post('/extraccion/detalles-producto', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 90000,
     }),
 
   getTipoCambio: () =>

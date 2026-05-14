@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import { productService, normalizeProduct } from '@/services/productService'
 import useCartStore from '@/store/cartStore'
@@ -10,31 +11,32 @@ import Spinner from '@/components/ui/Spinner'
 
 const PAGE_SIZE = 24
 
-const SORT_OPTIONS = [
-  { value: 'default', label: 'Relevancia' },
-  { value: 'price_asc', label: 'Precio: menor a mayor' },
-  { value: 'price_desc', label: 'Precio: mayor a menor' },
-  { value: 'name', label: 'Nombre A-Z' },
-]
-
-const STOCK_OPTIONS = [
-  { value: '', label: 'Todos' },
-  { value: 'ok', label: 'En stock' },
-  { value: 'low', label: 'Últimas unidades' },
-  { value: 'out', label: 'Agotado' },
-]
-
-const COND_OPTIONS = [
-  { value: '', label: 'Todas' },
-  { value: 'NUEVO', label: 'Nuevo' },
-  { value: 'COMO_NUEVO', label: 'Como nuevo' },
-  { value: 'USADO', label: 'Usado' },
-]
-
 export default function ProductsPage() {
   const navigate = useNavigate()
   const addItem = useCartStore((s) => s.addItem)
   const toast = useToast()
+  const { t } = useTranslation()
+
+  const SORT_OPTIONS = [
+    { value: 'default', label: t('products.sortBy') },
+    { value: 'price_asc', label: t('products.priceAsc') },
+    { value: 'price_desc', label: t('products.priceDesc') },
+    { value: 'name', label: t('products.nameAsc') },
+  ]
+
+  const STOCK_OPTIONS = [
+    { value: '', label: t('common.filter') },
+    { value: 'ok', label: t('products.inStock') },
+    { value: 'low', label: t('products.lowStock', { count: '' }).replace(' ', '') },
+    { value: 'out', label: t('products.outOfStock') },
+  ]
+
+  const COND_OPTIONS = [
+    { value: '', label: t('products.allCategories') },
+    { value: 'NUEVO', label: 'Nuevo' },
+    { value: 'COMO_NUEVO', label: 'Como nuevo' },
+    { value: 'USADO', label: 'Usado' },
+  ]
 
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
@@ -94,7 +96,7 @@ export default function ProductsPage() {
   const handleAdd = (e, product) => {
     e.stopPropagation()
     addItem(product)
-    toast({ message: `${product.nombre} añadido al carrito`, type: 'success' })
+    toast({ message: t('product.added', { name: product.nombre }), type: 'success' })
   }
 
   return (
@@ -126,19 +128,19 @@ export default function ProductsPage() {
 
               <div className="px-5 pb-6 space-y-5 max-h-[70vh] overflow-y-auto">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-[#e8e8ed]">Filtros</span>
+                  <span className="text-sm font-semibold text-[#e8e8ed]">{t('common.filter')}</span>
                   <div className="flex items-center gap-3">
                     {hasFilters && (
-                      <button onClick={clearFilters} className="text-xs text-[#4f7cff]">Limpiar</button>
+                      <button onClick={clearFilters} className="text-xs text-[#4f7cff]">{t('common.clear')}</button>
                     )}
-                    <button onClick={() => setFilterDrawerOpen(false)} className="text-xs text-[#8e8e9a] hover:text-white">Cerrar</button>
+                    <button onClick={() => setFilterDrawerOpen(false)} className="text-xs text-[#8e8e9a] hover:text-white">{t('common.close')}</button>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">Categoría</label>
+                  <label className="text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">{t('products.allCategories')}</label>
                   <div className="flex flex-wrap gap-2">
-                    <ChipBtn active={category === ''} onClick={() => setCategory('')}>Todas</ChipBtn>
+                    <ChipBtn active={category === ''} onClick={() => setCategory('')}>{t('products.allCategories')}</ChipBtn>
                     {categories.map((c) => (
                       <ChipBtn key={c.id} active={String(category) === String(c.id)} onClick={() => setCategory(c.id)}>
                         {c.nombreCategoria ?? c.nombre}
@@ -185,7 +187,7 @@ export default function ProductsPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#e8e8ed]">Productos</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#e8e8ed]">{t('products.title')}</h1>
             <p className="text-[#8e8e9a] text-sm mt-0.5">{filtered.length} resultado{filtered.length !== 1 ? 's' : ''}</p>
           </div>
           {/* Desktop: toggle sidebar */}
@@ -202,7 +204,7 @@ export default function ProductsPage() {
             className="md:hidden flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-sm text-[#8e8e9a]"
           >
             <FilterIcon />
-            Filtrar
+            {t('common.filter')}
             {hasFilters && <span className="w-2 h-2 rounded-full bg-[#4f7cff]" />}
           </button>
         </div>
@@ -224,17 +226,17 @@ export default function ProductsPage() {
                 <div className="bg-[#111114] border border-white/8 rounded-2xl p-4 space-y-5 sticky top-24">
                   {/* Filter header */}
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">Filtros</span>
+                    <span className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">{t('common.filter')}</span>
                     {hasFilters && (
-                      <button onClick={clearFilters} className="text-[10px] text-[#4f7cff] hover:underline">Limpiar</button>
+                      <button onClick={clearFilters} className="text-[10px] text-[#4f7cff] hover:underline">{t('common.clear')}</button>
                     )}
                   </div>
 
                   {/* Category */}
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-[#8e8e9a]">Categoría</label>
+                    <label className="text-xs font-medium text-[#8e8e9a]">{t('products.allCategories')}</label>
                     <div className="space-y-0.5">
-                      <FilterBtn active={category === ''} onClick={() => setCategory('')}>Todas</FilterBtn>
+                      <FilterBtn active={category === ''} onClick={() => setCategory('')}>{t('products.allCategories')}</FilterBtn>
                       {categories.map((c) => (
                         <FilterBtn key={c.id} active={String(category) === String(c.id)} onClick={() => setCategory(c.id)}>
                           {c.nombreCategoria ?? c.nombre}
@@ -286,7 +288,7 @@ export default function ProductsPage() {
                 </svg>
                 <input
                   type="text"
-                  placeholder="Buscar productos..."
+                  placeholder={t('products.search')}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full h-10 pl-10 pr-4 bg-[#111114] border border-white/10 rounded-xl text-sm text-[#e8e8ed] placeholder:text-[#8e8e9a]/60 focus:outline-none focus:border-[#4f7cff]/60 transition-colors"
@@ -309,10 +311,10 @@ export default function ProductsPage() {
             ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <span className="text-6xl mb-4 opacity-20">🔍</span>
-                <p className="text-[#8e8e9a]">No se encontraron productos</p>
+                <p className="text-[#8e8e9a]">{t('products.noResults')}</p>
                 {(search || hasFilters) && (
                   <button onClick={clearFilters} className="mt-3 text-sm text-[#4f7cff] hover:underline">
-                    Limpiar filtros
+                    {t('common.clear')}
                   </button>
                 )}
               </div>
@@ -352,7 +354,7 @@ export default function ProductsPage() {
                         )}
                         {product.stock === 0 && (
                           <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
-                            <span className="text-xs font-medium text-white/70 bg-black/50 px-3 py-1 rounded-full">Agotado</span>
+                            <span className="text-xs font-medium text-white/70 bg-black/50 px-3 py-1 rounded-full">{t('products.outOfStock')}</span>
                           </div>
                         )}
                         {product.condicion && product.condicion !== 'NUEVO' && (
@@ -375,8 +377,11 @@ export default function ProductsPage() {
                             product.stock === 0 ? 'text-red-400' :
                             product.stock <= 3 ? 'text-amber-400' : 'text-emerald-400'
                           }`}>
-                            {product.stock === 0 ? 'Agotado' :
-                             product.stock <= 3 ? `${product.stock} disp.` : 'Stock'}
+                            {product.stock === 0
+                              ? t('products.outOfStock')
+                              : product.stock <= 3
+                              ? t('products.lowStock', { count: product.stock })
+                              : t('products.inStock')}
                           </span>
                         </div>
                         {product.stock > 0 && (
@@ -384,7 +389,7 @@ export default function ProductsPage() {
                             onClick={(e) => handleAdd(e, product)}
                             className="w-full h-8 sm:h-9 rounded-xl bg-[#4f7cff]/10 hover:bg-[#4f7cff] border border-[#4f7cff]/20 hover:border-[#4f7cff] text-[#4f7cff] hover:text-white text-xs sm:text-sm font-medium transition-all duration-200"
                           >
-                            + Añadir
+                            {t('products.addToCart')}
                           </button>
                         )}
                       </div>
@@ -402,7 +407,7 @@ export default function ProductsPage() {
                   disabled={page === 0}
                   className="px-4 py-2 rounded-xl text-sm bg-white/5 border border-white/10 text-[#8e8e9a] hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                 >
-                  ← Anterior
+                  {t('common.previous')}
                 </button>
                 <span className="text-sm text-[#8e8e9a] px-2">{page + 1} / {totalPages}</span>
                 <button
@@ -410,7 +415,7 @@ export default function ProductsPage() {
                   disabled={page >= totalPages - 1}
                   className="px-4 py-2 rounded-xl text-sm bg-white/5 border border-white/10 text-[#8e8e9a] hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                 >
-                  Siguiente →
+                  {t('common.next')}
                 </button>
               </div>
             )}

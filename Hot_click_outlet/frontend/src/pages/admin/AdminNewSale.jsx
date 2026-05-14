@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import AdminLayout from '@/layouts/AdminLayout'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -17,6 +18,7 @@ const TABS = [
 ]
 
 export default function AdminNewSale() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const toast = useToast()
   const [tab, setTab] = useState('cliente')
@@ -123,8 +125,7 @@ export default function AdminNewSale() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">
-              <span className="text-[#e8e8ed]">Nueva </span>
-              <span className="text-[#4f7cff]">Venta</span>
+              <span className="text-[#e8e8ed]">{t('admin.sales.title')}</span>
             </h1>
             <p className="text-sm text-[#8e8e9a] mt-1">Registra una venta, venta rápida o cotización por WhatsApp</p>
           </div>
@@ -158,11 +159,11 @@ export default function AdminNewSale() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left: product search */}
           <div className="space-y-4">
-            <h2 className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">Productos disponibles</h2>
-            <Input placeholder="Buscar producto..." value={search} onChange={(e) => setSearch(e.target.value)} />
+            <h2 className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">{t('admin.sales.products')}</h2>
+            <Input placeholder={t('common.search')} value={search} onChange={(e) => setSearch(e.target.value)} />
             <div className="h-72 overflow-y-auto space-y-1.5 pr-1">
               {filteredProducts.length === 0 ? (
-                <p className="text-sm text-[#8e8e9a] text-center py-8">Sin resultados</p>
+                <p className="text-sm text-[#8e8e9a] text-center py-8">{t('common.noData')}</p>
               ) : filteredProducts.map((p) => (
                 <button
                   type="button"
@@ -188,7 +189,7 @@ export default function AdminNewSale() {
             {/* Tab 1: Venta con Cliente */}
             {tab === 'cliente' && (
               <>
-                <h2 className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">Datos del cliente</h2>
+                <h2 className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">{t('admin.sales.client')}</h2>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-medium text-[#e8e8ed]">Cliente registrado</label>
                   <select
@@ -282,7 +283,7 @@ export default function AdminNewSale() {
 
             {/* Total */}
             <div className="flex justify-between items-center pt-3 border-t border-white/8 font-bold text-[#e8e8ed]">
-              <span className="text-sm">Total</span>
+              <span className="text-sm">{t('admin.sales.total')}</span>
               <span className="text-xl">{formatPrice(total)}</span>
             </div>
 
@@ -296,7 +297,7 @@ export default function AdminNewSale() {
                 disabled={items.length === 0}
                 onClick={() => handleSave(true)}
               >
-                Registrar venta con cliente
+                {t('admin.sales.submit')}
               </Button>
             )}
             {tab === 'rapida' && (
@@ -308,7 +309,7 @@ export default function AdminNewSale() {
                 disabled={items.length === 0}
                 onClick={() => handleSave(false)}
               >
-                ⚡ Registrar venta rápida
+                ⚡ {t('admin.sales.submit')}
               </Button>
             )}
             {tab === 'cotizar' && (

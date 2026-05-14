@@ -1,9 +1,12 @@
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ToastProvider } from '@/components/ui/Toast'
 import { PageLoader } from '@/components/ui/Spinner'
 import useAuthStore from '@/store/authStore'
+import useUiStore from '@/store/uiStore'
+import AccessibilityPanel from '@/components/ui/AccessibilityPanel'
+import i18n from './i18n'
 
 const HomePage = lazy(() => import('@/pages/HomePage'))
 const ProductsPage = lazy(() => import('@/pages/ProductsPage'))
@@ -26,6 +29,7 @@ const AdminNewSale = lazy(() => import('@/pages/admin/AdminNewSale'))
 const AdminFinanzas = lazy(() => import('@/pages/admin/AdminFinanzas'))
 const AdminReportes       = lazy(() => import('@/pages/admin/AdminReportes'))
 const AdminPublicaciones  = lazy(() => import('@/pages/admin/AdminPublicaciones'))
+const AdminNuevoProducto  = lazy(() => import('@/pages/admin/AdminNuevoProducto'))
 const CheckoutPage    = lazy(() => import('@/pages/CheckoutPage'))
 const PaymentStatusPage = lazy(() => import('@/pages/PaymentStatusPage'))
 
@@ -47,10 +51,31 @@ function AdminRoute({ children, itOnly = false }) {
   return children
 }
 
+function HtmlClassManager() {
+  const { theme, fontSize, highContrast, reduceMotion, language } = useUiStore()
+
+  useEffect(() => {
+    const html = document.documentElement
+    html.classList.remove('dark', 'light')
+    html.classList.add(theme)
+    html.classList.toggle('fs-lg', fontSize === 'lg')
+    html.classList.toggle('fs-xl', fontSize === 'xl')
+    html.classList.toggle('high-contrast', highContrast)
+    html.classList.toggle('reduce-motion', reduceMotion)
+  }, [theme, fontSize, highContrast, reduceMotion])
+
+  useEffect(() => {
+    i18n.changeLanguage(language)
+  }, [language])
+
+  return null
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
+        <HtmlClassManager />
         <BrowserRouter>
           <Suspense fallback={<PageLoader />}>
             <Routes>
@@ -77,9 +102,11 @@ export default function App() {
               <Route path="/admin/finanzas" element={<AdminRoute><AdminFinanzas /></AdminRoute>} />
               <Route path="/admin/reportes" element={<AdminRoute><AdminReportes /></AdminRoute>} />
               <Route path="/admin/publicaciones" element={<AdminRoute><AdminPublicaciones /></AdminRoute>} />
+              <Route path="/admin/nuevo-producto" element={<AdminRoute><AdminNuevoProducto /></AdminRoute>} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>
+          <AccessibilityPanel />
         </BrowserRouter>
       </ToastProvider>
     </QueryClientProvider>

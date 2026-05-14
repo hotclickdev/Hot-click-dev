@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import AdminLayout from '@/layouts/AdminLayout'
 import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
@@ -245,6 +246,7 @@ function PubRow({ pub, onCopiar, onPublicado, onEliminar }) {
 
 // ─── Página principal ────────────────────────────────────────────────────────
 export default function AdminPublicaciones() {
+  const { t } = useTranslation()
   const toast = useToast()
   const [tab, setTab] = useState('analizar') // 'analizar' | 'cola'
 
@@ -264,6 +266,12 @@ export default function AdminPublicaciones() {
   const [publicaciones, setPublicaciones] = useState([])
   const [loadingCola, setLoadingCola] = useState(false)
   const [filtroEstado, setFiltroEstado] = useState('')
+
+  // ── Modal: Seleccionar productos para Cola FB ──
+  const [modalProductos, setModalProductos] = useState(false)
+  const [seleccionados, setSeleccionados] = useState(new Set())
+  const [searchProd, setSearchProd] = useState('')
+  const [generando, setGenerando] = useState(false)
 
   useEffect(() => {
     publicacionService.getTipoCambio()
@@ -356,6 +364,34 @@ export default function AdminPublicaciones() {
     } catch { toast({ message: 'Error al eliminar', type: 'error' }) }
   }
 
+  const handleGenerarSeleccionados = async () => {
+    if (seleccionados.size === 0) { toast({ message: 'Selecciona al menos un producto', type: 'error' }); return }
+    setGenerando(true)
+    let exitosos = 0
+    for (const id of seleccionados) {
+      try { await publicacionService.generar(id); exitosos++ } catch {}
+    }
+    toast({ message: `${exitosos} publicación${exitosos !== 1 ? 'es' : ''} generada${exitosos !== 1 ? 's' : ''}`, type: 'success' })
+    setSeleccionados(new Set())
+    setModalProductos(false)
+    setSearchProd('')
+    cargarCola()
+    setTab('cola')
+    setGenerando(false)
+  }
+
+  const toggleSeleccion = (id) => {
+    setSeleccionados((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  const productosFiltrados = productos.filter((p) =>
+    !searchProd || p.nombre?.toLowerCase().includes(searchProd.toLowerCase())
+  )
+
   const filtradas = publicaciones.filter((p) =>
     !filtroEstado || p.estadoPublicacion === filtroEstado
   )
@@ -365,17 +401,17 @@ export default function AdminPublicaciones() {
       <div className="space-y-5 max-w-3xl">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-[#e8e8ed]">Publicaciones Facebook</h1>
+          <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.publicaciones.title')}</h1>
           <p className="text-sm text-[#8e8e9a] mt-1">
-            Analiza una foto, extrae precios de internet y genera el texto para Marketplace
+            {t('admin.publicaciones.text')}
           </p>
         </div>
 
         {/* Tabs */}
         <div className="flex gap-1 p-1 rounded-xl bg-white/5 border border-white/8 w-fit">
           {[
-            { key: 'analizar', label: 'Analizar foto' },
-            { key: 'cola', label: `Cola FB${publicaciones.length ? ` (${publicaciones.length})` : ''}` },
+            { key: 'analizar', label: t('admin.publicaciones.new') },
+            { key: 'cola', label: `${t('admin.publicaciones.status')}${publicaciones.length ? ` (${publicaciones.length})` : ''}` },
           ].map(({ key, label }) => (
             <button
               key={key}
@@ -415,7 +451,7 @@ export default function AdminPublicaciones() {
             {modoAnalisis === 'nombre' && (
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs text-[#8e8e9a] block mb-1">Nombre del producto</label>
+                  <label className="text-xs text-[#8e8e9a] block mb-1">{t('admin.publicaciones.product')}</label>
                   <input
                     type="text"
                     value={nombreBusqueda}
@@ -440,8 +476,8 @@ export default function AdminPublicaciones() {
                 </div>
                 <Button onClick={handleAnalizar} disabled={analizando} className="w-full">
                   {analizando
-                    ? <><Spinner size="sm" /><span className="ml-2">Buscando precios...</span></>
-                    : 'Buscar precios en internet'
+                    ? <><Spinner size="sm" /><span className="ml-2">{t('admin.publicaciones.notes')}</span></>
+                    : t('admin.publicaciones.publish')
                   }
                 </Button>
               </div>
@@ -472,8 +508,8 @@ export default function AdminPublicaciones() {
                       </div>
                       <Button onClick={handleAnalizar} disabled={analizando} className="w-full">
                         {analizando
-                          ? <><Spinner size="sm" /><span className="ml-2">Analizando...</span></>
-                          : 'Analizar con Google Vision'
+                          ? <><Spinner size="sm" /><span className="ml-2">{t('common.loading')}</span></>
+                          : t('admin.publicaciones.markReady')
                         }
                       </Button>
                     </div>
@@ -494,7 +530,7 @@ export default function AdminPublicaciones() {
         {/* ── Tab: Cola FB ── */}
         {tab === 'cola' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-            {/* Filtros */}
+            {/* Filtros + botón agregar */}
             <div className="flex items-center gap-2 flex-wrap">
               {['', 'PENDIENTE', 'LISTO', 'PUBLICADO', 'ERROR'].map((e) => (
                 <button
@@ -509,12 +545,20 @@ export default function AdminPublicaciones() {
                   {e || 'Todos'}
                 </button>
               ))}
-              <button
-                onClick={cargarCola}
-                className="ml-auto px-3 py-1 rounded-full text-xs text-[#8e8e9a] hover:text-white border border-white/10 hover:bg-white/5 transition-colors"
-              >
-                Actualizar
-              </button>
+              <div className="ml-auto flex items-center gap-2">
+                <button
+                  onClick={cargarCola}
+                  className="px-3 py-1 rounded-full text-xs text-[#8e8e9a] hover:text-white border border-white/10 hover:bg-white/5 transition-colors"
+                >
+                  Actualizar
+                </button>
+                <button
+                  onClick={() => { setModalProductos(true); setSeleccionados(new Set()); setSearchProd('') }}
+                  className="px-3 py-1 rounded-full text-xs font-medium bg-[#4f7cff]/15 text-[#4f7cff] border border-[#4f7cff]/30 hover:bg-[#4f7cff]/25 transition-colors"
+                >
+                  + Agregar a la cola
+                </button>
+              </div>
             </div>
 
             {/* Lista */}
@@ -525,7 +569,7 @@ export default function AdminPublicaciones() {
                 No hay publicaciones{filtroEstado ? ` con estado ${filtroEstado}` : ''}.
                 <br />
                 <span className="text-xs mt-1 block">
-                  Analiza una foto y asóciala a un producto para generar el texto automáticamente.
+                  Haz clic en "+ Agregar a la cola" para seleccionar productos del catálogo.
                 </span>
               </div>
             ) : (
@@ -542,6 +586,113 @@ export default function AdminPublicaciones() {
             )}
           </motion.div>
         )}
+
+        {/* ── Modal: Seleccionar productos ── */}
+        <AnimatePresence>
+          {modalProductos && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+              onClick={(e) => e.target === e.currentTarget && setModalProductos(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 40 }}
+                transition={{ duration: 0.2 }}
+                className="w-full max-w-lg bg-[#111114] border border-white/10 rounded-2xl overflow-hidden flex flex-col max-h-[80vh]"
+              >
+                {/* Header modal */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-white/8 shrink-0">
+                  <div>
+                    <h3 className="text-base font-semibold text-[#e8e8ed]">Seleccionar productos</h3>
+                    <p className="text-xs text-[#8e8e9a] mt-0.5">
+                      Elige los productos para generar texto de Facebook Marketplace
+                    </p>
+                  </div>
+                  <button onClick={() => setModalProductos(false)}
+                    className="p-1.5 rounded-lg text-[#8e8e9a] hover:text-white hover:bg-white/8 transition-colors">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Búsqueda */}
+                <div className="px-5 py-3 border-b border-white/8 shrink-0">
+                  <div className="relative">
+                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8e8e9a]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <input
+                      type="text"
+                      value={searchProd}
+                      onChange={(e) => setSearchProd(e.target.value)}
+                      placeholder="Buscar producto..."
+                      className="w-full h-9 pl-9 pr-4 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm placeholder-[#8e8e9a] focus:outline-none focus:border-[#4f7cff]/60"
+                    />
+                  </div>
+                </div>
+
+                {/* Lista de productos */}
+                <div className="flex-1 overflow-y-auto px-3 py-2">
+                  {productosFiltrados.length === 0 ? (
+                    <p className="text-center text-sm text-[#8e8e9a] py-8">{t('common.noData')}</p>
+                  ) : (
+                    productosFiltrados.map((p) => (
+                      <label key={p.id}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/4 cursor-pointer transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={seleccionados.has(p.id)}
+                          onChange={() => toggleSeleccion(p.id)}
+                          className="w-4 h-4 rounded border-white/20 accent-[#4f7cff]"
+                        />
+                        {p.imagenUrl ? (
+                          <img src={p.imagenUrl} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0 bg-white/5" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-lg bg-white/5 shrink-0 flex items-center justify-center text-[#8e8e9a]">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                            </svg>
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-[#e8e8ed] truncate">{p.nombre}</p>
+                          <p className="text-xs text-[#8e8e9a]">
+                            {p.precioVenta > 0 ? `₡${new Intl.NumberFormat('es-CR').format(p.precioVenta)}` : '—'}
+                            {p.stock !== undefined && ` · ${p.stock} en stock`}
+                          </p>
+                        </div>
+                      </label>
+                    ))
+                  )}
+                </div>
+
+                {/* Footer modal */}
+                <div className="px-5 py-4 border-t border-white/8 shrink-0 flex items-center justify-between gap-3">
+                  <span className="text-sm text-[#8e8e9a]">
+                    {seleccionados.size > 0 ? `${seleccionados.size} seleccionado${seleccionados.size !== 1 ? 's' : ''}` : 'Ninguno seleccionado'}
+                  </span>
+                  <div className="flex gap-2">
+                    <button onClick={() => setModalProductos(false)}
+                      className="px-4 py-2 rounded-xl border border-white/10 text-sm text-[#8e8e9a] hover:text-white hover:bg-white/5 transition-colors">
+                      {t('common.cancel')}
+                    </button>
+                    <Button onClick={handleGenerarSeleccionados} disabled={generando || seleccionados.size === 0}>
+                      {generando
+                        ? <><Spinner size="sm" /><span className="ml-1.5">Generando...</span></>
+                        : `Generar${seleccionados.size > 0 ? ` (${seleccionados.size})` : ''}`
+                      }
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </AdminLayout>
   )

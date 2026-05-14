@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import useCartStore from '@/store/cartStore'
 import useAuthStore from '@/store/authStore'
@@ -14,6 +15,7 @@ export default function CheckoutPage() {
   const { token }                   = useAuthStore()
   const navigate                    = useNavigate()
   const { estado, error, intentos, maxIntentos, iniciarPago, reintentar } = usePayment()
+  const { t } = useTranslation()
 
   const [metodoEnvio, setMetodoEnvio] = useState('RETIRO_EN_TIENDA')
   const [notas, setNotas]             = useState('')
@@ -27,7 +29,7 @@ export default function CheckoutPage() {
         <div className="max-w-lg mx-auto px-4 py-20 text-center">
           <p className="text-[#e8e8ed] text-lg mb-4">Debes iniciar sesión para pagar.</p>
           <Link to="/login" className="px-6 py-2.5 rounded-xl bg-[#4f7cff] text-white font-medium">
-            Iniciar sesión
+            {t('register.login')}
           </Link>
         </div>
       </MainLayout>
@@ -40,7 +42,7 @@ export default function CheckoutPage() {
         <div className="max-w-lg mx-auto px-4 py-20 text-center">
           <p className="text-[#e8e8ed] text-lg mb-4">Tu carrito está vacío.</p>
           <Link to="/productos" className="px-6 py-2.5 rounded-xl bg-[#4f7cff] text-white font-medium">
-            Ver productos
+            {t('checkout.continueShopping')}
           </Link>
         </div>
       </MainLayout>
@@ -91,9 +93,9 @@ export default function CheckoutPage() {
         {/* Header */}
         <div className="mb-8">
           <Link to="/carrito" className="text-sm text-[#8e8e9a] hover:text-[#4f7cff] transition-colors">
-            ← Volver al carrito
+            ← {t('checkout.backToCart')}
           </Link>
-          <h1 className="text-3xl font-bold text-[#e8e8ed] mt-3">Checkout</h1>
+          <h1 className="text-3xl font-bold text-[#e8e8ed] mt-3">{t('checkout.title')}</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -157,7 +159,7 @@ export default function CheckoutPage() {
               transition={{ delay: 0.05 }}
               className="bg-[#111114] border border-white/8 rounded-2xl p-6"
             >
-              <h2 className="font-semibold text-[#e8e8ed] mb-4">Notas del pedido <span className="text-[#8e8e9a] font-normal text-sm">(opcional)</span></h2>
+              <h2 className="font-semibold text-[#e8e8ed] mb-4">{t('checkout.notes')} <span className="text-[#8e8e9a] font-normal text-sm">(opcional)</span></h2>
               <textarea
                 value={notas}
                 onChange={(e) => setNotas(e.target.value)}
@@ -220,7 +222,7 @@ export default function CheckoutPage() {
               animate={{ opacity: 1, y: 0 }}
               className="sticky top-24 bg-[#111114] border border-white/8 rounded-2xl p-6 space-y-4"
             >
-              <h2 className="font-semibold text-[#e8e8ed]">Resumen del pedido</h2>
+              <h2 className="font-semibold text-[#e8e8ed]">{t('checkout.orderSummary')}</h2>
 
               <div className="space-y-2 text-sm">
                 {items.map((item) => (
@@ -243,7 +245,7 @@ export default function CheckoutPage() {
               </div>
 
               <div className="pt-3 border-t border-white/8 flex justify-between font-bold text-[#e8e8ed]">
-                <span>Total</span>
+                <span>{t('checkout.total')}</span>
                 <span className="text-lg text-[#4f7cff]">{formatPrice(totalFinal)}</span>
               </div>
 
@@ -255,7 +257,7 @@ export default function CheckoutPage() {
                            disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <LockIcon />
-                Pagar {formatPrice(totalFinal)}
+                {t('checkout.payNow')} {formatPrice(totalFinal)}
               </button>
 
               <p className="text-[10px] text-[#8e8e9a] text-center leading-relaxed">

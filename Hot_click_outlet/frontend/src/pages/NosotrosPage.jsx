@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 
 const fadeUp = (delay = 0) => ({
@@ -9,6 +10,14 @@ const fadeUp = (delay = 0) => ({
 })
 
 export default function NosotrosPage() {
+  const { t } = useTranslation()
+
+  const values = [
+    { icon: '💡', titleKey: 'nosotros.val1Title', descKey: 'nosotros.val1Desc' },
+    { icon: '👂', titleKey: 'nosotros.val2Title', descKey: 'nosotros.val2Desc' },
+    { icon: '🔒', titleKey: 'nosotros.val3Title', descKey: 'nosotros.val3Desc' },
+  ]
+
   return (
     <MainLayout>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16 space-y-16">
@@ -21,10 +30,10 @@ export default function NosotrosPage() {
           className="text-center"
         >
           <h1 className="text-4xl sm:text-5xl font-bold text-[#e8e8ed] mb-4">
-            Sobre HOTCLICK
+            {t('nosotros.title')}
           </h1>
           <p className="text-lg text-[#8e8e9a] max-w-2xl mx-auto leading-relaxed">
-            Empecé porque necesitaba un ingreso extra. Se fue convirtiendo en algo que vale la pena.
+            {t('nosotros.subtitle')}
           </p>
         </motion.div>
 
@@ -38,50 +47,38 @@ export default function NosotrosPage() {
             />
           </div>
           <div className="text-center sm:text-left">
-            <p className="text-xs font-semibold text-[#4f7cff] uppercase tracking-widest mb-1">Fundador</p>
-            <h2 className="text-2xl font-bold text-[#e8e8ed] mb-3">La historia detrás de HOTCLICK</h2>
+            <p className="text-xs font-semibold text-[#4f7cff] uppercase tracking-widest mb-1">
+              {t('nosotros.founderLabel')}
+            </p>
+            <h2 className="text-2xl font-bold text-[#e8e8ed] mb-3">
+              {t('nosotros.founderTitle')}
+            </h2>
             <p className="text-sm text-[#8e8e9a] leading-relaxed">
-              HOTCLICK nació porque necesitaba plata mientras estudiaba. Empecé vendiendo de a poco y hoy ando en unos{' '}
-              <span className="text-[#e8e8ed] font-medium">60 productos al mes</span>.
-              No habría llegado hasta acá sin la gente que apostó por mí desde el principio.
+              {t('nosotros.founderBio1')}{' '}
+              <span className="text-[#e8e8ed] font-medium">{t('nosotros.founderBio1Bold')}</span>.{' '}
+              {t('nosotros.founderBio1End')}
             </p>
             <p className="text-sm text-[#8e8e9a] leading-relaxed mt-3">
-              Estudio <span className="text-[#e8e8ed] font-medium">Ingeniería en Sistemas de la Computación</span> en
-              la Fidelitas. Uso lo que aprendo para mejorar esto: la plataforma, el proceso de pedidos, todo.
-              No solo quiero vender bien, quiero que funcione bien.
+              {t('nosotros.founderBio2')}{' '}
+              <span className="text-[#e8e8ed] font-medium">{t('nosotros.founderBio2Bold')}</span>{' '}
+              {t('nosotros.founderBio2End')}
             </p>
           </div>
         </motion.div>
 
         {/* Values */}
         <motion.div {...fadeUp(0.15)}>
-          <h2 className="text-2xl font-bold text-[#e8e8ed] mb-6 text-center">Mis valores</h2>
+          <h2 className="text-2xl font-bold text-[#e8e8ed] mb-6 text-center">{t('nosotros.values')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              {
-                icon: '💡',
-                title: 'Innovación',
-                desc: 'La mayoría de los productos vienen de Estados Unidos y no siempre es obvio qué estás comprando. Pongo fotos, especificaciones y te explico lo que necesitás saber.',
-              },
-              {
-                icon: '👂',
-                title: 'Escucha',
-                desc: 'Si no sabés bien qué querés, me contás y te ayudo a encontrarlo. No te voy a empujar a comprar algo que no te sirve.',
-              },
-              {
-                icon: '🔒',
-                title: 'Confianza',
-                desc: 'Te digo lo que sé y también lo que no sé. Si algo no queda claro, preguntame sin pena.',
-              },
-            ].map(({ icon, title, desc }, i) => (
+            {values.map(({ icon, titleKey, descKey }, i) => (
               <motion.div
-                key={title}
+                key={titleKey}
                 {...fadeUp(0.1 * i)}
                 className="text-center p-6 rounded-2xl bg-[#111114] border border-white/8 hover:border-[#4f7cff]/30 transition-colors"
               >
                 <span className="text-3xl block mb-3">{icon}</span>
-                <h3 className="font-semibold text-[#e8e8ed] mb-2">{title}</h3>
-                <p className="text-xs text-[#8e8e9a] leading-relaxed">{desc}</p>
+                <h3 className="font-semibold text-[#e8e8ed] mb-2">{t(titleKey)}</h3>
+                <p className="text-xs text-[#8e8e9a] leading-relaxed">{t(descKey)}</p>
               </motion.div>
             ))}
           </div>
@@ -95,10 +92,11 @@ export default function NosotrosPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 8h14M5 8a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v2M5 8l1 9a2 2 0 002 2h8a2 2 0 002-2l1-9" />
               </svg>
             </div>
-            <h2 className="text-xl font-bold text-[#e8e8ed] mb-2">Envíos a todo el país</h2>
+            <h2 className="text-xl font-bold text-[#e8e8ed] mb-2">{t('nosotros.shippingTitle')}</h2>
             <p className="text-sm text-[#8e8e9a] max-w-lg mx-auto">
-              Si necesitás algo más rápido, puedo coordinarlo por
-              <span className="text-[#e8e8ed] font-medium"> Uber Flash</span>: me decís la dirección y yo me encargo del resto.
+              {t('nosotros.shippingDesc')}{' '}
+              <span className="text-[#e8e8ed] font-medium">{t('nosotros.shippingDescBold')}</span>
+              {t('nosotros.shippingDescEnd')}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
@@ -109,8 +107,8 @@ export default function NosotrosPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-medium text-[#e8e8ed]">Correos de Costa Rica</p>
-                <p className="text-xs text-[#8e8e9a]">Envío nacional</p>
+                <p className="text-sm font-medium text-[#e8e8ed]">{t('nosotros.correosCR')}</p>
+                <p className="text-xs text-[#8e8e9a]">{t('nosotros.correosCRSub')}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 bg-[#111114] border border-white/8 rounded-xl px-5 py-3">
@@ -120,8 +118,8 @@ export default function NosotrosPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-medium text-[#e8e8ed]">Uber Flash</p>
-                <p className="text-xs text-[#8e8e9a]">Entrega exprés</p>
+                <p className="text-sm font-medium text-[#e8e8ed]">{t('nosotros.uberFlash')}</p>
+                <p className="text-xs text-[#8e8e9a]">{t('nosotros.uberFlashSub')}</p>
               </div>
             </div>
           </div>
@@ -130,13 +128,13 @@ export default function NosotrosPage() {
         {/* CTA */}
         <motion.div {...fadeUp(0.1)} className="text-center">
           <p className="text-[#8e8e9a] text-sm mb-4">
-            Esto sigue creciendo. Cualquier duda, escribime.
+            {t('nosotros.ctaSub')}
           </p>
           <a
             href="/contacto"
             className="inline-block px-6 py-2.5 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white text-sm font-medium transition-all duration-200 shadow-[0_0_16px_rgba(79,124,255,0.25)] hover:shadow-[0_0_24px_rgba(79,124,255,0.4)]"
           >
-            Contactarme
+            {t('nosotros.ctaBtn')}
           </a>
         </motion.div>
 

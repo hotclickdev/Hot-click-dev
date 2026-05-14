@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import AdminLayout from '@/layouts/AdminLayout'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -28,6 +29,7 @@ const STOCK_OPTIONS = [
 const ta = 'w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm placeholder:text-[#8e8e9a]/40 focus:outline-none focus:border-[#4f7cff]/60 focus:ring-2 focus:ring-[#4f7cff]/10 resize-y transition-all'
 
 export default function AdminProducts() {
+  const { t } = useTranslation()
   const toast = useToast()
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
@@ -151,10 +153,10 @@ export default function AdminProducts() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[#e8e8ed]">Productos</h1>
+            <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.products.title')}</h1>
             <p className="text-sm text-[#8e8e9a] mt-1">{filtered.length} de {products.length} productos</p>
           </div>
-          <Button onClick={openNew}>+ Nuevo producto</Button>
+          <Button onClick={openNew}>+ {t('admin.products.new')}</Button>
         </div>
 
         {/* Mobile: búsqueda + filtros rápidos */}
@@ -279,7 +281,7 @@ export default function AdminProducts() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-white/8">
-                        {['★', 'ID', 'Nombre', 'Precio', 'Stock', 'Condición', 'Acciones'].map((h) => (
+                        {['★', 'ID', t('admin.products.name'), t('admin.products.price'), t('admin.products.stock'), t('admin.products.category'), t('admin.products.actions')].map((h) => (
                           <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">{h}</th>
                         ))}
                       </tr>
@@ -330,8 +332,8 @@ export default function AdminProducts() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex gap-2">
-                              <button onClick={() => openEdit(p)} className="px-3 py-1 text-xs rounded-lg bg-white/5 hover:bg-white/10 text-[#8e8e9a] hover:text-white transition-colors">Editar</button>
-                              <button onClick={() => handleDelete(p.id, p.nombre)} className="px-3 py-1 text-xs rounded-lg bg-red-500/8 hover:bg-red-500/15 text-red-400 transition-colors">Eliminar</button>
+                              <button onClick={() => openEdit(p)} className="px-3 py-1 text-xs rounded-lg bg-white/5 hover:bg-white/10 text-[#8e8e9a] hover:text-white transition-colors">{t('admin.products.edit')}</button>
+                              <button onClick={() => handleDelete(p.id, p.nombre)} className="px-3 py-1 text-xs rounded-lg bg-red-500/8 hover:bg-red-500/15 text-red-400 transition-colors">{t('admin.products.delete')}</button>
                             </div>
                           </td>
                         </motion.tr>
@@ -349,7 +351,7 @@ export default function AdminProducts() {
       </div>
 
       {/* ── Modal crear / editar ── */}
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Editar producto' : 'Nuevo producto'} size="lg">
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? t('admin.products.edit') : t('admin.products.new')} size="lg">
         <form onSubmit={handleSave} className="space-y-4">
 
           {/* Información básica */}
@@ -467,8 +469,8 @@ export default function AdminProducts() {
           </div>
 
           <div className="flex gap-3 pt-2">
-            <Button type="submit" loading={saving} className="flex-1">{editing ? 'Guardar cambios' : 'Crear producto'}</Button>
-            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>Cancelar</Button>
+            <Button type="submit" loading={saving} className="flex-1">{editing ? t('admin.products.saved') : t('admin.products.new')}</Button>
+            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>{t('common.cancel')}</Button>
           </div>
         </form>
       </Modal>

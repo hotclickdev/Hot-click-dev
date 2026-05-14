@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
@@ -13,6 +14,7 @@ import { formatDate, formatPrice, statusColor } from '@/utils/format'
 export default function ProfilePage() {
   const navigate = useNavigate()
   const toast = useToast()
+  const { t } = useTranslation()
   const { userId, userName, userEmail, userRole, logout } = useAuthStore()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
@@ -53,19 +55,19 @@ export default function ProfilePage() {
             </div>
           </div>
           <Button variant="danger" size="sm" onClick={handleLogout}>
-            Cerrar sesión
+            {t('profile.logout')}
           </Button>
         </motion.div>
 
         {/* Orders */}
         <div>
-          <h2 className="text-lg font-semibold text-[#e8e8ed] mb-4">Mis pedidos</h2>
+          <h2 className="text-lg font-semibold text-[#e8e8ed] mb-4">{t('profile.orders')}</h2>
           {loading ? (
             <div className="flex justify-center py-10"><Spinner /></div>
           ) : orders.length === 0 ? (
             <div className="text-center py-12 bg-[#111114] border border-white/8 rounded-2xl">
               <span className="text-4xl opacity-20">📋</span>
-              <p className="text-[#8e8e9a] mt-3">Aún no tienes pedidos</p>
+              <p className="text-[#8e8e9a] mt-3">{t('profile.noOrders')}</p>
               <Button onClick={() => navigate('/productos')} variant="secondary" size="sm" className="mt-4">
                 Explorar productos
               </Button>

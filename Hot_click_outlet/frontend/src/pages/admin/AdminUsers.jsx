@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import AdminLayout from '@/layouts/AdminLayout'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
@@ -25,6 +26,7 @@ const getEstadoStr = (u) => ESTADO_NUM[u.estado] ?? 'INACTIVO'
 const getRolStr    = (u) => u.roles?.[0]?.nombreRol ?? 'USUARIO_FINAL'
 
 export default function AdminUsers() {
+  const { t } = useTranslation()
   const toast = useToast()
   const [users, setUsers] = useState([])
   const [pending, setPending] = useState([])
@@ -115,8 +117,8 @@ export default function AdminUsers() {
     <AdminLayout>
       <div className="space-y-5">
         <div>
-          <h1 className="text-2xl font-bold text-[#e8e8ed]">Usuarios</h1>
-          <p className="text-sm text-[#8e8e9a] mt-1">{users.length} registrados · {pending.length} pendientes</p>
+          <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.users.title')}</h1>
+          <p className="text-sm text-[#8e8e9a] mt-1">{users.length} registrados · {pending.length} {t('admin.orders.pending').toLowerCase()}</p>
         </div>
 
         {/* Tabs + búsqueda */}
@@ -151,7 +153,7 @@ export default function AdminUsers() {
               <table className="w-full text-sm min-w-[520px]">
                 <thead>
                   <tr className="border-b border-white/8">
-                    {['Usuario', 'Correo', 'Rol', 'Estado', 'Acciones'].map((h) => (
+                    {[t('admin.users.name'), t('admin.users.email'), t('admin.users.role'), t('admin.users.status'), t('admin.users.actions')].map((h) => (
                       <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
@@ -187,17 +189,17 @@ export default function AdminUsers() {
                               <>
                                 <button onClick={() => approve(u.id)}
                                   className="px-2.5 py-1 text-xs rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-colors">
-                                  Aprobar
+                                  {t('admin.users.approve')}
                                 </button>
                                 <button onClick={() => reject(u.id)}
                                   className="px-2.5 py-1 text-xs rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors">
-                                  Rechazar
+                                  {t('admin.users.reject')}
                                 </button>
                               </>
                             )}
                             <button onClick={() => openEdit(u)}
                               className="px-2.5 py-1 text-xs rounded-lg bg-white/5 hover:bg-white/10 text-[#8e8e9a] hover:text-white transition-colors">
-                              Editar
+                              {t('common.edit')}
                             </button>
                           </div>
                         </td>
@@ -207,7 +209,7 @@ export default function AdminUsers() {
                 </tbody>
               </table>
               {displayed.length === 0 && (
-                <div className="text-center py-12 text-[#8e8e9a]">No hay usuarios en esta sección</div>
+                <div className="text-center py-12 text-[#8e8e9a]">{t('common.noData')}</div>
               )}
             </div>
           </div>
@@ -215,7 +217,7 @@ export default function AdminUsers() {
       </div>
 
       {/* Modal editar usuario */}
-      <Modal open={!!editUser} onClose={() => setEditUser(null)} title="Editar usuario" size="sm">
+      <Modal open={!!editUser} onClose={() => setEditUser(null)} title={t('admin.users.name')} size="sm">
         {editUser && (
           <div className="space-y-5">
             {/* Info */}
@@ -231,7 +233,7 @@ export default function AdminUsers() {
 
             {/* Rol */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">Rol</label>
+              <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">{t('admin.users.role')}</label>
               <div className="grid grid-cols-3 gap-2">
                 {ROLES.map(({ value, label }) => (
                   <button key={value} onClick={() => setEditRol(value)}
@@ -248,7 +250,7 @@ export default function AdminUsers() {
 
             {/* Estado — solo ACTIVO/INACTIVO permitidos por el backend */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">Estado</label>
+              <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">{t('admin.users.status')}</label>
               <div className="grid grid-cols-2 gap-2">
                 {[['ACTIVO', 'Activo', 'bg-emerald-500/15 text-emerald-400 border-emerald-500/40'],
                   ['INACTIVO', 'Inactivo', 'bg-red-500/15 text-red-400 border-red-500/40']].map(([val, lbl, activeClass]) => (
@@ -269,10 +271,10 @@ export default function AdminUsers() {
             <div className="flex gap-3 pt-1">
               <button onClick={() => setEditUser(null)}
                 className="flex-1 h-10 rounded-xl bg-white/5 hover:bg-white/8 text-[#8e8e9a] hover:text-white text-sm transition-colors">
-                Cancelar
+                {t('common.cancel')}
               </button>
               <Button onClick={handleSave} disabled={saving} className="flex-1">
-                {saving ? 'Guardando…' : 'Guardar'}
+                {saving ? t('common.loading') : t('common.save')}
               </Button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, useScroll, useTransform } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import { productService, normalizeProduct } from '@/services/productService'
 import useCartStore from '@/store/cartStore'
@@ -18,6 +19,7 @@ export default function HomePage() {
   const addItem = useCartStore((s) => s.addItem)
   const toast = useToast()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const heroRef = useRef(null)
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
   const leftY = useTransform(scrollYProgress, [0, 1], [0, -120])
@@ -50,7 +52,7 @@ export default function HomePage() {
 
   const handleAdd = (product) => {
     addItem(product)
-    toast({ message: `${product.nombre} añadido al carrito`, type: 'success' })
+    toast({ message: t('product.added', { name: product.nombre }), type: 'success' })
   }
 
   return (
@@ -80,17 +82,17 @@ export default function HomePage() {
           >
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#4f7cff]/10 border border-[#4f7cff]/20 text-sm text-[#4f7cff] mb-6">
               <span className="w-1.5 h-1.5 rounded-full bg-[#4f7cff] animate-pulse" />
-              Tecnología premium en Costa Rica
+              {t('home.badge')}
             </div>
 
             <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold text-[#e8e8ed] leading-[1.1] tracking-tight mb-5 sm:mb-6 text-balance">
-              Descubre lo{' '}
-              <span className="text-gradient-accent inline-block">último</span>{' '}
-              en tecnología
+              {t('home.hero1')}{' '}
+              <span className="text-gradient-accent inline-block">{t('home.hero2')}</span>{' '}
+              {t('home.hero3')}
             </h1>
 
             <p className="text-lg sm:text-xl text-[#8e8e9a] max-w-xl mx-auto mb-10 leading-relaxed">
-              Productos de calidad, precios accesibles. La tienda tech más confiable de Costa Rica.
+              {t('home.heroSub')}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -98,14 +100,14 @@ export default function HomePage() {
                 to="/productos"
                 className="inline-flex items-center justify-center gap-2 h-13 px-8 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-semibold text-base transition-all duration-200 shadow-[0_0_30px_rgba(79,124,255,0.35)] hover:shadow-[0_0_45px_rgba(79,124,255,0.5)] hover:-translate-y-0.5"
               >
-                Ver productos
+                {t('home.verProductos')}
                 <span className="text-lg">→</span>
               </Link>
               <a
                 href="#como-comprar"
                 className="inline-flex items-center justify-center gap-2 h-13 px-8 rounded-xl bg-white/8 hover:bg-white/12 border border-white/10 text-[#e8e8ed] font-semibold text-base transition-all duration-200 hover:-translate-y-0.5"
               >
-                ¿Cómo comprar?
+                {t('home.comoComprar')}
               </a>
             </div>
           </motion.div>
@@ -118,9 +120,9 @@ export default function HomePage() {
             className="flex flex-wrap justify-center gap-6 sm:gap-8 mt-10 sm:mt-20"
           >
             {[
-              ['100%', 'Garantía de calidad'],
-              ['24h', 'Envíos en GAM'],
-              ['5★', 'Satisfacción clientes'],
+              ['100%', t('home.garantia')],
+              ['24h', t('home.envios')],
+              ['5★', t('home.satisfaccion')],
             ].map(([value, label]) => (
               <div key={label} className="text-center">
                 <div className="text-2xl font-bold text-[#e8e8ed]">{value}</div>
@@ -163,11 +165,11 @@ export default function HomePage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
         <div className="flex items-center justify-between mb-10">
           <div>
-            <h2 className="text-2xl font-bold text-[#e8e8ed]">Productos destacados</h2>
-            <p className="text-sm text-[#8e8e9a] mt-1">Seleccionados especialmente para ti</p>
+            <h2 className="text-2xl font-bold text-[#e8e8ed]">{t('home.destacados')}</h2>
+            <p className="text-sm text-[#8e8e9a] mt-1">{t('home.destacadosSub')}</p>
           </div>
           <Link to="/productos" className="text-sm text-[#4f7cff] hover:text-[#3d6ee0] transition-colors">
-            Ver todos →
+            {t('home.verTodos')}
           </Link>
         </div>
 
@@ -202,10 +204,10 @@ export default function HomePage() {
           className="text-center mb-12"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#4f7cff]/10 border border-[#4f7cff]/20 text-sm text-[#4f7cff] mb-4">
-            Proceso de compra
+            {t('home.procesoBadge')}
           </div>
-          <h2 className="text-3xl font-bold text-[#e8e8ed]">¿Cómo comprar?</h2>
-          <p className="text-[#8e8e9a] mt-2">Simple, rápido y seguro</p>
+          <h2 className="text-3xl font-bold text-[#e8e8ed]">{t('home.comoComprarTitle')}</h2>
+          <p className="text-[#8e8e9a] mt-2">{t('home.comoComprarSub')}</p>
         </motion.div>
 
         <div className="relative">
@@ -217,8 +219,8 @@ export default function HomePage() {
               {
                 step: '01',
                 icon: <SearchStepIcon />,
-                title: 'Explora el catálogo',
-                desc: 'Navega nuestros productos, filtra por categoría y encuentra lo que buscas.',
+                title: t('home.step1Title'),
+                desc: t('home.step1Desc'),
                 color: 'text-[#4f7cff]',
                 glow: 'bg-[#4f7cff]/10',
                 border: 'border-[#4f7cff]/20',
@@ -226,8 +228,8 @@ export default function HomePage() {
               {
                 step: '02',
                 icon: <CartStepIcon />,
-                title: 'Agrega al carrito',
-                desc: 'Selecciona los productos que quieres y agrégatelos a tu carrito de compras.',
+                title: t('home.step2Title'),
+                desc: t('home.step2Desc'),
                 color: 'text-purple-400',
                 glow: 'bg-purple-500/10',
                 border: 'border-purple-500/20',
@@ -235,8 +237,8 @@ export default function HomePage() {
               {
                 step: '03',
                 icon: <WhatsStepIcon />,
-                title: 'Pide por WhatsApp',
-                desc: 'Desde el carrito envíanos tu pedido directo por WhatsApp con un solo clic.',
+                title: t('home.step3Title'),
+                desc: t('home.step3Desc'),
                 color: 'text-[#25D366]',
                 glow: 'bg-[#25D366]/10',
                 border: 'border-[#25D366]/20',
@@ -244,8 +246,8 @@ export default function HomePage() {
               {
                 step: '04',
                 icon: <TruckStepIcon />,
-                title: 'Recibe tu producto',
-                desc: 'Coordinamos envío por Correos CR a todo el país o retiro en tienda.',
+                title: t('home.step4Title'),
+                desc: t('home.step4Desc'),
                 color: 'text-amber-400',
                 glow: 'bg-amber-500/10',
                 border: 'border-amber-500/20',
@@ -276,9 +278,9 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
             {[
-              { icon: '🚚', title: 'Envío a todo Costa Rica', desc: 'Correos CR y retiro en tienda' },
-              { icon: '🔒', title: 'Pago 100% seguro', desc: 'Múltiples métodos de pago' },
-              { icon: '✓', title: 'Calidad garantizada', desc: 'Productos verificados y revisados' },
+              { icon: '🚚', title: t('home.feat1Title'), desc: t('home.feat1Desc') },
+              { icon: '🔒', title: t('home.feat2Title'), desc: t('home.feat2Desc') },
+              { icon: '✓', title: t('home.feat3Title'), desc: t('home.feat3Desc') },
             ].map(({ icon, title, desc }) => (
               <motion.div
                 key={title}
@@ -313,16 +315,16 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-gradient-to-br from-[#4f7cff]/8 to-purple-500/5 pointer-events-none" />
           <div className="relative">
             <h2 className="text-3xl sm:text-4xl font-bold text-[#e8e8ed] mb-4">
-              ¿Listo para tu próxima compra?
+              {t('home.ctaTitle')}
             </h2>
             <p className="text-[#8e8e9a] mb-8 max-w-md mx-auto">
-              Explora nuestro catálogo completo de productos tech.
+              {t('home.ctaSub')}
             </p>
             <Link
               to="/productos"
               className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-semibold transition-all duration-200 shadow-[0_0_30px_rgba(79,124,255,0.3)] hover:shadow-[0_0_40px_rgba(79,124,255,0.45)]"
             >
-              Explorar tienda
+              {t('home.ctaBtn')}
             </Link>
           </div>
         </motion.div>
@@ -343,6 +345,7 @@ const TESTIMONIALS = [
 
 function TestimonialsCarousel() {
   const [idx, setIdx] = useState(0)
+  const { t } = useTranslation()
   const prev = () => setIdx((i) => (i - 1 + TESTIMONIALS.length) % TESTIMONIALS.length)
   const next = () => setIdx((i) => (i + 1) % TESTIMONIALS.length)
 
@@ -360,8 +363,8 @@ function TestimonialsCarousel() {
         viewport={{ once: true }}
         className="text-center mb-10"
       >
-        <h2 className="text-2xl font-bold text-[#e8e8ed]">Lo que dicen nuestros clientes</h2>
-        <p className="text-sm text-[#8e8e9a] mt-1">Experiencias reales de quienes ya compraron</p>
+        <h2 className="text-2xl font-bold text-[#e8e8ed]">{t('home.testimoniosTitle')}</h2>
+        <p className="text-sm text-[#8e8e9a] mt-1">{t('home.testimoniosSub')}</p>
       </motion.div>
 
       <div className="relative">
@@ -487,11 +490,12 @@ function BlenderIllustration() {
 
 function ProductCard({ product, onAdd }) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const stockStatus = product.stock === 0
-    ? { label: 'Agotado', class: 'text-red-400' }
+    ? { label: t('common.outOfStock'), class: 'text-red-400' }
     : product.stock <= 3
-    ? { label: `${product.stock} disp.`, class: 'text-amber-400' }
-    : { label: 'En stock', class: 'text-emerald-400' }
+    ? { label: t('products.lowStock', { count: product.stock }), class: 'text-amber-400' }
+    : { label: t('common.inStock'), class: 'text-emerald-400' }
 
   return (
     <motion.div
@@ -514,7 +518,7 @@ function ProductCard({ product, onAdd }) {
         )}
         {product.stock === 0 && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <span className="text-xs font-semibold text-white/60 bg-black/40 px-3 py-1 rounded-full">Agotado</span>
+            <span className="text-xs font-semibold text-white/60 bg-black/40 px-3 py-1 rounded-full">{t('common.outOfStock')}</span>
           </div>
         )}
       </div>
@@ -534,7 +538,7 @@ function ProductCard({ product, onAdd }) {
             onClick={(e) => { e.stopPropagation(); onAdd(product) }}
             className="mt-2 sm:mt-3 w-full h-8 sm:h-9 rounded-xl bg-[#4f7cff]/10 hover:bg-[#4f7cff] border border-[#4f7cff]/20 hover:border-[#4f7cff] text-[#4f7cff] hover:text-white text-xs sm:text-sm font-medium transition-all duration-200"
           >
-            + Añadir
+            {t('products.addToCart')}
           </button>
         )}
       </div>

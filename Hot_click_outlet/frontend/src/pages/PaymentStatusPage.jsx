@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import { usePayment } from '@/hooks/usePayment'
 import { formatPrice } from '@/utils/format'
@@ -15,6 +16,7 @@ export default function PaymentStatusPage() {
   const { clearCart } = useCartStore()
   const { estado, pagoData, error, verificarEstado } = usePayment()
   const [polling, setPolling] = useState(false)
+  const { t } = useTranslation()
 
   useEffect(() => {
     if (!numeroPedido) return
@@ -38,7 +40,7 @@ export default function PaymentStatusPage() {
       <MainLayout>
         <div className="max-w-lg mx-auto px-4 py-32 text-center flex flex-col items-center gap-6">
           <div className="w-16 h-16 rounded-full border-4 border-[#4f7cff] border-t-transparent animate-spin" />
-          <p className="text-[#e8e8ed] text-lg font-medium">Verificando tu pago…</p>
+          <p className="text-[#e8e8ed] text-lg font-medium">{t('common.loading')}</p>
           <p className="text-[#8e8e9a] text-sm">Esto puede tardar unos segundos</p>
         </div>
       </MainLayout>
@@ -61,13 +63,13 @@ export default function PaymentStatusPage() {
               </svg>
             </div>
 
-            <h1 className="text-2xl font-bold text-[#e8e8ed] mb-2">¡Pago exitoso!</h1>
-            <p className="text-[#8e8e9a] text-sm mb-6">Tu pedido ha sido confirmado y está siendo procesado.</p>
+            <h1 className="text-2xl font-bold text-[#e8e8ed] mb-2">{t('payment.success')}</h1>
+            <p className="text-[#8e8e9a] text-sm mb-6">{t('payment.successSub')}</p>
 
             {pagoData && (
               <div className="bg-white/5 rounded-xl p-4 text-sm text-left space-y-2 mb-6">
                 <div className="flex justify-between">
-                  <span className="text-[#8e8e9a]">Pedido</span>
+                  <span className="text-[#8e8e9a]">{t('payment.orderNumber')}</span>
                   <span className="text-[#e8e8ed] font-mono font-medium">{pagoData.numeroPedido}</span>
                 </div>
                 {pagoData.total && (
@@ -93,7 +95,7 @@ export default function PaymentStatusPage() {
               to="/"
               className="inline-block w-full py-3 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-semibold text-sm transition-all text-center"
             >
-              Volver al inicio
+              {t('payment.home')}
             </Link>
           </motion.div>
         </div>
@@ -117,9 +119,9 @@ export default function PaymentStatusPage() {
               </svg>
             </div>
 
-            <h1 className="text-2xl font-bold text-[#e8e8ed] mb-2">Pago cancelado</h1>
+            <h1 className="text-2xl font-bold text-[#e8e8ed] mb-2">{t('payment.cancelled')}</h1>
             <p className="text-[#8e8e9a] text-sm mb-6">
-              Cancelaste el proceso de pago. Tu carrito sigue disponible.
+              {t('payment.cancelledSub')}
             </p>
 
             <div className="flex flex-col gap-3">
@@ -127,13 +129,13 @@ export default function PaymentStatusPage() {
                 to="/checkout"
                 className="w-full py-3 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-semibold text-sm transition-all text-center"
               >
-                Intentar de nuevo
+                {t('payment.retry')}
               </Link>
               <Link
                 to="/carrito"
                 className="w-full py-3 rounded-xl border border-white/10 hover:border-white/20 text-[#8e8e9a] hover:text-[#e8e8ed] font-medium text-sm transition-all text-center"
               >
-                Volver al carrito
+                {t('checkout.backToCart')}
               </Link>
             </div>
           </motion.div>
@@ -173,13 +175,13 @@ export default function PaymentStatusPage() {
               to="/checkout"
               className="w-full py-3 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-semibold text-sm transition-all text-center"
             >
-              Intentar de nuevo
+              {t('payment.retry')}
             </Link>
             <Link
               to="/carrito"
               className="w-full py-3 rounded-xl border border-white/10 hover:border-white/20 text-[#8e8e9a] hover:text-[#e8e8ed] font-medium text-sm transition-all text-center"
             >
-              Volver al carrito
+              {t('checkout.backToCart')}
             </Link>
           </div>
         </motion.div>

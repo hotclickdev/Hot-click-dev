@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import AdminLayout from '@/layouts/AdminLayout'
 import Spinner from '@/components/ui/Spinner'
 import Badge from '@/components/ui/Badge'
@@ -16,6 +17,7 @@ const QUICK = [
 function toISO(d) { return d.toISOString().slice(0, 10) }
 
 export default function AdminFinanzas() {
+  const { t } = useTranslation()
   const [cotizaciones, setCotizaciones] = useState([])
   const [ventas, setVentas] = useState([])
   const [loading, setLoading] = useState(true)
@@ -69,8 +71,8 @@ export default function AdminFinanzas() {
     <AdminLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#e8e8ed]">Finanzas</h1>
-          <p className="text-sm text-[#8e8e9a] mt-1">Ingresos, ventas y cotizaciones</p>
+          <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.finanzas.title')}</h1>
+          <p className="text-sm text-[#8e8e9a] mt-1">{t('admin.finanzas.income')}, ventas y cotizaciones</p>
         </div>
 
         {/* Quick period buttons */}
@@ -93,17 +95,17 @@ export default function AdminFinanzas() {
         {/* Advanced filters */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-[#8e8e9a]">Desde</label>
+            <label className="text-xs text-[#8e8e9a]">{t('admin.reportes.from')}</label>
             <input type="date" value={desde} onChange={(e) => { setDesde(e.target.value); setQuick(-1) }}
               className="h-9 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60" />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-[#8e8e9a]">Hasta</label>
+            <label className="text-xs text-[#8e8e9a]">{t('admin.reportes.to')}</label>
             <input type="date" value={hasta} onChange={(e) => { setHasta(e.target.value); setQuick(-1) }}
               className="h-9 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60" />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-[#8e8e9a]">Método de pago</label>
+            <label className="text-xs text-[#8e8e9a]">{t('admin.finanzas.period')}</label>
             <select value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)}
               className="h-9 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60">
               <option value="">Todos</option>
@@ -111,7 +113,7 @@ export default function AdminFinanzas() {
             </select>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-[#8e8e9a]">Estado</label>
+            <label className="text-xs text-[#8e8e9a]">{t('admin.orders.status')}</label>
             <select value={estadoFiltro} onChange={(e) => setEstadoFiltro(e.target.value)}
               className="h-9 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60">
               <option value="">Todos</option>
@@ -127,7 +129,7 @@ export default function AdminFinanzas() {
             {/* KPI cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-[#111114] border border-white/8 rounded-2xl p-5">
-                <p className="text-xs text-[#8e8e9a] mb-1">Ingresos (completadas)</p>
+                <p className="text-xs text-[#8e8e9a] mb-1">{t('admin.finanzas.income')}</p>
                 <p className="text-2xl font-bold text-emerald-400">{formatPrice(totalIngresos)}</p>
                 <p className="text-xs text-[#8e8e9a] mt-1">{filteredVentas.length} ventas en período</p>
               </div>
@@ -152,7 +154,7 @@ export default function AdminFinanzas() {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-white/8">
-                          {['#', 'Cliente', 'Productos', 'Total', 'Fecha', 'Estado'].map((h) => (
+                          {['#', t('admin.orders.client'), t('admin.sales.products'), t('admin.orders.total'), t('admin.orders.date'), t('admin.orders.status')].map((h) => (
                             <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">{h}</th>
                           ))}
                         </tr>
@@ -186,7 +188,7 @@ export default function AdminFinanzas() {
               </h2>
               {filteredVentas.length === 0 ? (
                 <div className="bg-[#111114] border border-white/8 rounded-2xl p-8 text-center text-[#8e8e9a]">
-                  Sin ventas para los filtros seleccionados
+                  {t('common.noData')}
                 </div>
               ) : (
                 <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
@@ -194,7 +196,7 @@ export default function AdminFinanzas() {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-white/8">
-                          {['#', 'Cliente', 'Total', 'Método', 'Fecha', 'Estado'].map((h) => (
+                          {['#', t('admin.orders.client'), t('admin.orders.total'), t('admin.finanzas.period'), t('admin.orders.date'), t('admin.orders.status')].map((h) => (
                             <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">{h}</th>
                           ))}
                         </tr>

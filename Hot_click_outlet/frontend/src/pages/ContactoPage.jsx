@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -9,6 +10,7 @@ const WHATSAPP = '50689745370'
 
 export default function ContactoPage() {
   const toast = useToast()
+  const { t } = useTranslation()
   const [form, setForm] = useState({ nombre: '', correo: '', mensaje: '' })
   const [sent, setSent] = useState(false)
 
@@ -30,8 +32,8 @@ export default function ContactoPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <h1 className="text-4xl font-bold text-[#e8e8ed] mb-3">Contáctanos</h1>
-          <p className="text-[#8e8e9a]">Estamos aquí para ayudarte con cualquier consulta</p>
+          <h1 className="text-4xl font-bold text-[#e8e8ed] mb-3">{t('contacto.title')}</h1>
+          <p className="text-[#8e8e9a]">{t('contacto.subtitle')}</p>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -46,18 +48,18 @@ export default function ContactoPage() {
             {sent ? (
               <div className="text-center py-8 space-y-2">
                 <span className="text-5xl">✅</span>
-                <p className="text-[#e8e8ed] font-medium mt-3">¡Mensaje enviado!</p>
+                <p className="text-[#e8e8ed] font-medium mt-3">{t('contacto.sent')}</p>
                 <p className="text-sm text-[#8e8e9a]">Te contactaremos pronto vía WhatsApp</p>
                 <Button variant="ghost" onClick={() => { setSent(false); setForm({ nombre: '', correo: '', mensaje: '' }) }} className="mt-3">
-                  Enviar otro
+                  {t('contacto.send')}
                 </Button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
-                <Input label="Nombre *" value={form.nombre} onChange={set('nombre')} required />
-                <Input label="Correo *" type="email" value={form.correo} onChange={set('correo')} required />
+                <Input label={`${t('contacto.name')} *`} value={form.nombre} onChange={set('nombre')} required />
+                <Input label={`${t('contacto.email')} *`} type="email" value={form.correo} onChange={set('correo')} required />
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-[#e8e8ed]">Mensaje *</label>
+                  <label className="text-sm font-medium text-[#e8e8ed]">{t('contacto.message')} *</label>
                   <textarea
                     value={form.mensaje}
                     onChange={set('mensaje')}
@@ -68,7 +70,7 @@ export default function ContactoPage() {
                   />
                 </div>
                 <Button type="submit" className="w-full bg-[#25D366] hover:bg-[#1da851] shadow-[0_0_20px_rgba(37,211,102,0.2)]">
-                  Enviar por WhatsApp
+                  {t('contacto.send')}
                 </Button>
               </form>
             )}
@@ -103,9 +105,9 @@ export default function ContactoPage() {
             ))}
 
             <div className="p-5 bg-[#4f7cff]/8 border border-[#4f7cff]/15 rounded-2xl">
-              <p className="text-sm text-[#8e8e9a] mb-3">Horario de atención</p>
-              <p className="text-sm text-[#e8e8ed]">Lun–Vie: 8:00am – 6:00pm</p>
-              <p className="text-sm text-[#e8e8ed]">Sáb: 9:00am – 2:00pm</p>
+              <p className="text-sm text-[#8e8e9a] mb-3">{t('contacto.schedule')}</p>
+              <p className="text-sm text-[#e8e8ed]">{t('contacto.weekdays')}</p>
+              <p className="text-sm text-[#e8e8ed]">{t('contacto.saturday')}</p>
             </div>
           </motion.div>
         </div>

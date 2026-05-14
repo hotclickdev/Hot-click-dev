@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import AuthLayout from '@/layouts/AuthLayout'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -10,6 +11,7 @@ import { useToast } from '@/components/ui/Toast'
 export default function RegisterPage() {
   const navigate = useNavigate()
   const toast = useToast()
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
@@ -47,13 +49,13 @@ export default function RegisterPage() {
           <div className="w-16 h-16 rounded-full bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center mx-auto mb-4">
             <span className="text-3xl">✓</span>
           </div>
-          <h2 className="text-xl font-bold text-[#e8e8ed] mb-2">¡Solicitud enviada!</h2>
+          <h2 className="text-xl font-bold text-[#e8e8ed] mb-2">{t('register.success')}</h2>
           <p className="text-sm text-[#8e8e9a] mb-6 leading-relaxed">
             Tu cuenta fue creada exitosamente. Un administrador debe aprobar tu solicitud antes de que puedas ingresar.
             Recibirás una notificación por correo cuando sea aprobada.
           </p>
           <Button onClick={() => navigate('/login')} className="w-full">
-            Ir al login
+            {t('register.login')}
           </Button>
         </motion.div>
       </AuthLayout>
@@ -64,8 +66,8 @@ export default function RegisterPage() {
     <AuthLayout>
       <div className="bg-[#111114] border border-white/8 rounded-2xl p-8 shadow-2xl">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-[#e8e8ed] mb-1">Crear cuenta</h1>
-          <p className="text-sm text-[#8e8e9a]">Únete a HOTCLICK</p>
+          <h1 className="text-2xl font-bold text-[#e8e8ed] mb-1">{t('register.title')}</h1>
+          <p className="text-sm text-[#8e8e9a]">{t('register.subtitle')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -92,13 +94,13 @@ export default function RegisterPage() {
           )}
 
           <Button type="submit" loading={loading} className="w-full" size="lg">
-            Crear cuenta
+            {t('register.submit')}
           </Button>
         </form>
 
         <p className="text-center text-xs text-[#8e8e9a] mt-5">
-          ¿Ya tienes cuenta?{' '}
-          <Link to="/login" className="text-[#4f7cff] hover:underline">Inicia sesión</Link>
+          {t('register.alreadyAccount')}{' '}
+          <Link to="/login" className="text-[#4f7cff] hover:underline">{t('register.login')}</Link>
         </p>
       </div>
     </AuthLayout>

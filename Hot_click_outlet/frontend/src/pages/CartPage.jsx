@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import Button from '@/components/ui/Button'
 import useCartStore from '@/store/cartStore'
@@ -14,6 +15,7 @@ export default function CartPage() {
   const { token } = useAuthStore()
   const navigate  = useNavigate()
   const toast     = useToast()
+  const { t } = useTranslation()
 
   const handleWhatsApp = () => {
     if (items.length === 0) return
@@ -34,12 +36,12 @@ export default function CartPage() {
 
   const handleRemove = (item) => {
     removeItem(item.id)
-    toast({ message: `${item.nombre} eliminado del carrito`, type: 'info' })
+    toast({ message: t('cart.removed', { name: item.nombre }), type: 'info' })
   }
 
   const handleClear = () => {
     clearCart()
-    toast({ message: 'Carrito vaciado', type: 'info' })
+    toast({ message: t('cart.cleared'), type: 'info' })
   }
 
   if (items.length === 0) {
@@ -52,13 +54,13 @@ export default function CartPage() {
             className="flex flex-col items-center gap-4"
           >
             <span className="text-7xl opacity-20">🛍</span>
-            <h1 className="text-2xl font-bold text-[#e8e8ed]">Tu carrito está vacío</h1>
-            <p className="text-[#8e8e9a]">Agrega productos para continuar con tu compra</p>
+            <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('cart.empty')}</h1>
+            <p className="text-[#8e8e9a]">{t('cart.emptySub')}</p>
             <Link
               to="/productos"
               className="mt-2 px-6 py-2.5 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-medium text-sm transition-all"
             >
-              Explorar productos
+              {t('cart.explore')}
             </Link>
           </motion.div>
         </div>
@@ -72,16 +74,16 @@ export default function CartPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-[#e8e8ed]">Carrito</h1>
+            <h1 className="text-3xl font-bold text-[#e8e8ed]">{t('cart.title')}</h1>
             <p className="text-sm text-[#8e8e9a] mt-1">
-              {items.length} {items.length === 1 ? 'producto' : 'productos'}
+              {items.length} {items.length === 1 ? t('cart.product') : t('cart.products')}
             </p>
           </div>
           <button
             onClick={handleClear}
             className="text-sm text-[#8e8e9a] hover:text-red-400 transition-colors"
           >
-            Vaciar carrito
+            {t('cart.clear')}
           </button>
         </div>
 
@@ -141,7 +143,7 @@ export default function CartPage() {
                         onClick={() => handleRemove(item)}
                         className="text-xs text-[#8e8e9a] hover:text-red-400 transition-colors"
                       >
-                        Eliminar
+                        {t('cart.remove')}
                       </button>
                     </div>
                   </div>
@@ -164,7 +166,7 @@ export default function CartPage() {
               animate={{ opacity: 1, y: 0 }}
               className="sticky top-24 bg-[#111114] border border-white/8 rounded-2xl p-6 space-y-4"
             >
-              <h2 className="font-semibold text-[#e8e8ed]">Resumen</h2>
+              <h2 className="font-semibold text-[#e8e8ed]">{t('cart.summary')}</h2>
 
               <div className="space-y-2 text-sm">
                 {items.map((item) => (
@@ -176,7 +178,7 @@ export default function CartPage() {
               </div>
 
               <div className="pt-3 border-t border-white/8 flex justify-between font-bold text-[#e8e8ed]">
-                <span>Total</span>
+                <span>{t('cart.total')}</span>
                 <span className="text-lg">{formatPrice(total())}</span>
               </div>
 
@@ -188,7 +190,7 @@ export default function CartPage() {
                   size="lg"
                 >
                   <LockIcon />
-                  Pagar con tarjeta
+                  {t('cart.payCard')}
                 </Button>
 
                 <Button
@@ -197,18 +199,18 @@ export default function CartPage() {
                   size="lg"
                 >
                   <WhatsAppIcon />
-                  Pedir por WhatsApp
+                  {t('cart.orderWhatsapp')}
                 </Button>
                 <Link to="/productos">
                   <Button variant="ghost" className="w-full" size="md">
-                    ← Seguir comprando
+                    {t('cart.keepShopping')}
                   </Button>
                 </Link>
               </div>
 
               <p className="text-xs text-[#8e8e9a] text-center leading-relaxed">
-                Envío a todo Costa Rica vía Correos CR.<br />
-                <span className="text-[10px]">La cotización incluye disponibilidad y tiempos de entrega.</span>
+                {t('cart.shipping')}<br />
+                <span className="text-[10px]">{t('cart.shippingSub')}</span>
               </p>
             </motion.div>
           </div>

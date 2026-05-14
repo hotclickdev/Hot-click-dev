@@ -40,6 +40,8 @@ export function denormalizeProduct(form) {
     tituloProducto: form.titulo || null,
     especificaciones: form.especificaciones || null,
     comoUsar: form.comoUsar || null,
+    descripcionLarga: form.descripcionLarga || null,
+    marcaTexto: form.marca || null,
   }
 }
 
@@ -73,7 +75,7 @@ export const productService = {
     api.delete(`/productos/${id}`),
 
   uploadImage: (formData) =>
-    api.post('/productos/imagen', formData),
+    api.post('/productos/imagen', formData, { headers: { 'Content-Type': undefined } }),
 
   getDestacados: () =>
     api.get('/productos/destacados')

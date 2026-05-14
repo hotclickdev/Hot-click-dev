@@ -95,4 +95,23 @@ public class ExtraccionController {
         int tc = bccrService.getTipoCambioVenta();
         return ResponseEntity.ok(ResponseDTO.success("Tipo de cambio", Map.of("tipoCambio", tc)));
     }
+
+    /** Analiza imagen y devuelve detalles completos del producto para auto-completar el formulario de alta. */
+    @PostMapping("/detalles-producto")
+    public ResponseEntity<ResponseDTO> detallesProducto(
+            @RequestParam MultipartFile imagen) {
+        try {
+            if (imagen.isEmpty())
+                return ResponseEntity.badRequest().body(ResponseDTO.error("La imagen es requerida"));
+            String ct = imagen.getContentType();
+            if (ct == null || !ct.startsWith("image/"))
+                return ResponseEntity.badRequest().body(ResponseDTO.error("El archivo debe ser una imagen"));
+
+            String base64 = Base64.getEncoder().encodeToString(imagen.getBytes());
+            var detalles = extraccionService.extraerDetallesProducto(base64, visionService);
+            return ResponseEntity.ok(ResponseDTO.success("Detalles extraídos", detalles));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        }
+    }
 }

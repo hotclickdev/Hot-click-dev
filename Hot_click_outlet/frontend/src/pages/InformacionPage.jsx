@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 
 const STEPS = [
@@ -95,6 +96,7 @@ const FAQS = [
 
 export default function InformacionPage() {
   const [openFaq, setOpenFaq] = useState(null)
+  const { t } = useTranslation()
 
   return (
     <MainLayout>
@@ -108,7 +110,7 @@ export default function InformacionPage() {
           className="text-center"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#4f7cff]/10 border border-[#4f7cff]/20 text-sm text-[#4f7cff] mb-5">
-            Información
+            {t('informacion.title')}
           </div>
           <h1 className="text-4xl font-bold text-[#e8e8ed] mb-4">Todo lo que necesitas saber</h1>
           <p className="text-[#8e8e9a] text-lg max-w-xl mx-auto">
@@ -250,7 +252,7 @@ export default function InformacionPage() {
                   </li>
                 ))}
               </ul>
-              <div className="p-3 rounded-xl bg-amber-500/8 border border-amber-500/15 text-xs text-amber-300 leading-relaxed">
+              <div className="p-3 rounded-xl bg-amber-500/8 border border-amber-500/15 text-xs leading-relaxed" style={{ color: 'var(--hc-text)' }}>
                 El costo exacto de Uber Flash se calcula al momento y te lo informamos por WhatsApp antes de que confirmes el pedido.
               </div>
             </motion.div>

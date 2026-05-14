@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import AdminLayout from '@/layouts/AdminLayout'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -11,6 +12,7 @@ import { useToast } from '@/components/ui/Toast'
 const EMPTY = { nombreBodega: '', direccionExacta: '', telefono: '', correoContacto: '', encargadoNombre: '' }
 
 export default function AdminWarehouses() {
+  const { t } = useTranslation()
   const toast = useToast()
   const [warehouses, setWarehouses] = useState([])
   const [loading, setLoading] = useState(true)
@@ -76,10 +78,10 @@ export default function AdminWarehouses() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[#e8e8ed]">Bodegas</h1>
+            <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.warehouses.title')}</h1>
             <p className="text-sm text-[#8e8e9a] mt-1">{warehouses.length} registradas</p>
           </div>
-          <Button onClick={openNew}>+ Nueva bodega</Button>
+          <Button onClick={openNew}>+ {t('admin.warehouses.new')}</Button>
         </div>
 
         {loading ? (
@@ -107,13 +109,13 @@ export default function AdminWarehouses() {
               </div>
             ))}
             {warehouses.length === 0 && (
-              <div className="col-span-full text-center py-12 text-[#8e8e9a]">No hay bodegas registradas</div>
+              <div className="col-span-full text-center py-12 text-[#8e8e9a]">{t('common.noData')}</div>
             )}
           </div>
         )}
       </div>
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Editar bodega' : 'Nueva bodega'} size="lg">
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? t('admin.warehouses.edit') : t('admin.warehouses.new')} size="lg">
         <form onSubmit={handleSave} className="space-y-4">
           <Input label="Nombre bodega *" value={form.nombreBodega} onChange={set('nombreBodega')} required placeholder="Bodega principal" />
           <Input label="Dirección exacta *" value={form.direccionExacta} onChange={set('direccionExacta')} required placeholder="San José, Costa Rica" />
@@ -123,8 +125,8 @@ export default function AdminWarehouses() {
             <Input label="Encargado" value={form.encargadoNombre} onChange={set('encargadoNombre')} placeholder="Opcional" />
           </div>
           <div className="flex gap-3 pt-1">
-            <Button type="submit" loading={saving} className="flex-1">{editing ? 'Guardar' : 'Crear'}</Button>
-            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>Cancelar</Button>
+            <Button type="submit" loading={saving} className="flex-1">{editing ? t('common.save') : t('admin.warehouses.new')}</Button>
+            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>{t('common.cancel')}</Button>
           </div>
         </form>
       </Modal>

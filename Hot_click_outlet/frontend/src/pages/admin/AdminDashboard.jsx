@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import AdminLayout from '@/layouts/AdminLayout'
 import Spinner from '@/components/ui/Spinner'
 import { adminService, ventaService } from '@/services/orderService'
@@ -12,6 +13,7 @@ const stagger = {
 }
 
 export default function AdminDashboard() {
+  const { t } = useTranslation()
   const [stats, setStats] = useState(null)
   const [ventas, setVentas] = useState([])
   const [loading, setLoading] = useState(true)
@@ -63,19 +65,19 @@ export default function AdminDashboard() {
   const pendientes = ventas.filter((v) => v.estado === 'PENDIENTE').length
 
   const cards = [
-    { label: 'Ingresos del mes', value: formatPrice(totalMes), icon: <CoinIcon />, color: 'text-emerald-400', sub: `${ventas.length} ventas total` },
-    { label: 'Ventas completadas', value: completadas, icon: <CheckCircleIcon />, color: 'text-[#4f7cff]', sub: `${pendientes} pendientes` },
-    { label: 'Usuarios', value: stats?.totalUsuarios ?? '—', icon: <PeopleIcon />, color: 'text-purple-400', sub: `${stats?.usuariosPendientes ?? 0} por aprobar` },
-    { label: 'Productos', value: stats?.totalProductos ?? '—', icon: <PackageIcon />, color: 'text-amber-400', sub: `${stats?.stockBajo ?? 0} stock bajo` },
+    { label: t('admin.finanzas.income'), value: formatPrice(totalMes), icon: <CoinIcon />, color: 'text-emerald-400', sub: `${ventas.length} ventas total` },
+    { label: t('admin.dashboard.totalOrders'), value: completadas, icon: <CheckCircleIcon />, color: 'text-[#4f7cff]', sub: `${pendientes} pendientes` },
+    { label: t('admin.dashboard.totalUsers'), value: stats?.totalUsuarios ?? '—', icon: <PeopleIcon />, color: 'text-purple-400', sub: `${stats?.usuariosPendientes ?? 0} por aprobar` },
+    { label: t('admin.dashboard.totalProducts'), value: stats?.totalProductos ?? '—', icon: <PackageIcon />, color: 'text-amber-400', sub: `${stats?.stockBajo ?? 0} stock bajo` },
   ]
 
   const quickLinks = [
-    { to: '/admin/pedidos', label: 'Gestionar pedidos', icon: <ClipboardQLIcon /> },
-    { to: '/admin/productos', label: 'Gestionar productos', icon: <PackageIcon /> },
-    { to: '/admin/usuarios', label: 'Aprobar usuarios', icon: <PeopleIcon /> },
-    { to: '/admin/ventas', label: 'Nueva venta', icon: <BoltIcon /> },
-    { to: '/admin/finanzas', label: 'Finanzas', icon: <CoinIcon /> },
-    { to: '/admin/reportes', label: 'Reportes', icon: <BarChartIcon /> },
+    { to: '/admin/pedidos', label: t('admin.orders.title'), icon: <ClipboardQLIcon /> },
+    { to: '/admin/productos', label: t('admin.products.title'), icon: <PackageIcon /> },
+    { to: '/admin/usuarios', label: t('admin.users.title'), icon: <PeopleIcon /> },
+    { to: '/admin/ventas', label: t('admin.sales.title'), icon: <BoltIcon /> },
+    { to: '/admin/finanzas', label: t('admin.finanzas.title'), icon: <CoinIcon /> },
+    { to: '/admin/reportes', label: t('admin.reportes.title'), icon: <BarChartIcon /> },
   ]
 
   const maxSale = Math.max(...salesLast7.map((d) => d.total), 1)
@@ -85,8 +87,8 @@ export default function AdminDashboard() {
     <AdminLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#e8e8ed]">General</h1>
-          <p className="text-sm text-[#8e8e9a] mt-1">Panel de control HOTCLICK</p>
+          <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.dashboard.title')}</h1>
+          <p className="text-sm text-[#8e8e9a] mt-1">{t('admin.dashboard.welcome')}</p>
         </div>
 
         {loading ? (
@@ -113,8 +115,8 @@ export default function AdminDashboard() {
               <div className="lg:col-span-2 bg-[#111114] border border-white/8 rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h2 className="text-sm font-semibold text-[#e8e8ed]">Ventas — últimos 7 días</h2>
-                    <p className="text-xs text-[#8e8e9a] mt-0.5">Solo ventas completadas/entregadas</p>
+                    <h2 className="text-sm font-semibold text-[#e8e8ed]">{t('admin.dashboard.revenue')}</h2>
+                    <p className="text-xs text-[#8e8e9a] mt-0.5">{t('admin.dashboard.thisMonth')}</p>
                   </div>
                   <Link to="/admin/reportes" className="text-xs text-[#4f7cff] hover:underline">Ver reportes →</Link>
                 </div>
@@ -143,7 +145,7 @@ export default function AdminDashboard() {
               <div className="bg-[#111114] border border-white/8 rounded-2xl p-5">
                 <h2 className="text-sm font-semibold text-[#e8e8ed] mb-4">Métodos de pago</h2>
                 {byMethod.length === 0 ? (
-                  <p className="text-xs text-[#8e8e9a] text-center py-8">Sin datos</p>
+                  <p className="text-xs text-[#8e8e9a] text-center py-8">{t('common.noData')}</p>
                 ) : (
                   <div className="space-y-3">
                     {byMethod.map(([method, count]) => (
@@ -187,7 +189,7 @@ export default function AdminDashboard() {
 
             {/* Quick actions */}
             <div>
-              <h2 className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider mb-3">Acciones rápidas</h2>
+              <h2 className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider mb-3">{t('admin.dashboard.recentOrders')}</h2>
               <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
                 {quickLinks.map((link) => (
                   <Link
@@ -206,7 +208,7 @@ export default function AdminDashboard() {
             {ventas.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-sm font-semibold text-[#e8e8ed]">Ventas recientes</h2>
+                  <h2 className="text-sm font-semibold text-[#e8e8ed]">{t('admin.dashboard.topProducts')}</h2>
                   <Link to="/admin/reportes" className="text-xs text-[#4f7cff] hover:underline">Ver todas →</Link>
                 </div>
                 <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">

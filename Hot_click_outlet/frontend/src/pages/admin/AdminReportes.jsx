@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import AdminLayout from '@/layouts/AdminLayout'
 import Spinner from '@/components/ui/Spinner'
 import Badge from '@/components/ui/Badge'
@@ -16,6 +17,7 @@ const QUICK = [
 function toISO(date) { return date.toISOString().slice(0, 10) }
 
 export default function AdminReportes() {
+  const { t } = useTranslation()
   const [ventas, setVentas] = useState([])
   const [loading, setLoading] = useState(true)
   const [quick, setQuick] = useState(30)
@@ -84,15 +86,15 @@ export default function AdminReportes() {
       <div className="space-y-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold text-[#e8e8ed]">Reportes</h1>
-            <p className="text-sm text-[#8e8e9a] mt-1">Análisis y filtros de ventas</p>
+            <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.reportes.title')}</h1>
+            <p className="text-sm text-[#8e8e9a] mt-1">{t('admin.reportes.generate')}</p>
           </div>
           <button
             onClick={exportCSV}
             disabled={filtered.length === 0}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm text-[#8e8e9a] hover:text-white hover:bg-white/10 transition-all disabled:opacity-40"
           >
-            ↓ Exportar CSV
+            ↓ {t('admin.reportes.download')}
           </button>
         </div>
 
@@ -116,7 +118,7 @@ export default function AdminReportes() {
         {/* Advanced filters */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-[#8e8e9a]">Desde</label>
+            <label className="text-xs text-[#8e8e9a]">{t('admin.reportes.from')}</label>
             <input
               type="date"
               value={desde}
@@ -125,7 +127,7 @@ export default function AdminReportes() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-[#8e8e9a]">Hasta</label>
+            <label className="text-xs text-[#8e8e9a]">{t('admin.reportes.to')}</label>
             <input
               type="date"
               value={hasta}
@@ -134,7 +136,7 @@ export default function AdminReportes() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-[#8e8e9a]">Método de pago</label>
+            <label className="text-xs text-[#8e8e9a]">{t('admin.reportes.type')}</label>
             <select
               value={metodoPago}
               onChange={(e) => setMetodoPago(e.target.value)}
@@ -145,7 +147,7 @@ export default function AdminReportes() {
             </select>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-[#8e8e9a]">Estado</label>
+            <label className="text-xs text-[#8e8e9a]">{t('admin.orders.status')}</label>
             <select
               value={estado}
               onChange={(e) => setEstado(e.target.value)}
@@ -159,7 +161,7 @@ export default function AdminReportes() {
 
         <input
           type="text"
-          placeholder="Buscar por cliente o ID..."
+          placeholder={t('common.search')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full max-w-sm h-9 px-4 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm placeholder:text-[#8e8e9a]/60 focus:outline-none focus:border-[#4f7cff]/60"
@@ -189,14 +191,14 @@ export default function AdminReportes() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/8">
-                    {['#', 'Cliente', 'Total', 'Método', 'Fecha', 'Estado'].map((h) => (
+                    {['#', t('admin.orders.client'), t('admin.orders.total'), t('admin.reportes.type'), t('admin.orders.date'), t('admin.orders.status')].map((h) => (
                       <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {filtered.length === 0 ? (
-                    <tr><td colSpan={6} className="px-4 py-12 text-center text-[#8e8e9a]">Sin resultados para los filtros aplicados</td></tr>
+                    <tr><td colSpan={6} className="px-4 py-12 text-center text-[#8e8e9a]">{t('common.noData')}</td></tr>
                   ) : filtered.map((v) => (
                     <tr key={v.id} className="hover:bg-white/3 transition-colors">
                       <td className="px-4 py-3 text-[#8e8e9a] text-xs font-mono">#{v.id}</td>

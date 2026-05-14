@@ -76,6 +76,8 @@ public class ProductoService {
         if (dto.getTituloProducto()    != null) p.setTituloProducto(dto.getTituloProducto());
         if (dto.getEspecificaciones()  != null) p.setEspecificaciones(dto.getEspecificaciones());
         if (dto.getComoUsar()          != null) p.setComoUsar(dto.getComoUsar());
+        if (dto.getDescripcionLarga()  != null) p.setDescripcionLarga(dto.getDescripcionLarga());
+        if (dto.getMarcaTexto()        != null) p.setMarcaTexto(dto.getMarcaTexto());
     }
 
     @Transactional

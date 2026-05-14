@@ -74,6 +74,7 @@ public class SecurityConfig {
                 // Todas las demás rutas /api/** requieren autenticación
                 .requestMatchers("/api/**").authenticated()
                 // Rutas del SPA React (frontend)
+                .requestMatchers("/error", "/error/**").permitAll()
                 .requestMatchers("/", "/*.html", "/*.ico", "/*.jpg", "/*.jpeg", "/*.png",
                     "/*.svg", "/*.webp", "/favicon.ico", "/pages/**", "/css/**", "/js/**",
                     "/images/**", "/assets/**", "/admin/**",

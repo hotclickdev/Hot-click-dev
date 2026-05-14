@@ -57,6 +57,8 @@ public class ProductoRequestDTO {
     private String tituloProducto;
     private String especificaciones;
     private String comoUsar;
+    private String descripcionLarga;
+    private String marcaTexto;
 
     public String getTituloProducto() { return tituloProducto; }
     public void setTituloProducto(String tituloProducto) { this.tituloProducto = tituloProducto; }
@@ -66,4 +68,10 @@ public class ProductoRequestDTO {
 
     public String getComoUsar() { return comoUsar; }
     public void setComoUsar(String comoUsar) { this.comoUsar = comoUsar; }
+
+    public String getDescripcionLarga() { return descripcionLarga; }
+    public void setDescripcionLarga(String descripcionLarga) { this.descripcionLarga = descripcionLarga; }
+
+    public String getMarcaTexto() { return marcaTexto; }
+    public void setMarcaTexto(String marcaTexto) { this.marcaTexto = marcaTexto; }
 }
