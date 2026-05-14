@@ -42,19 +42,21 @@ export default function ProfilePage() {
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-[#111114] border border-white/8 rounded-2xl p-6 flex items-center gap-5"
+          className="bg-[#111114] border border-white/8 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center gap-4"
         >
-          <div className="w-16 h-16 rounded-2xl bg-[#4f7cff]/20 flex items-center justify-center text-2xl font-bold text-[#4f7cff] shrink-0">
-            {userName?.[0]?.toUpperCase() || '?'}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold text-[#e8e8ed]">{userName || 'Usuario'}</h1>
-            <p className="text-sm text-[#8e8e9a]">{userEmail}</p>
-            <div className="flex items-center gap-2 mt-2">
-              <Badge variant="accent">{roleLabel[userRole] ?? userRole}</Badge>
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            <div className="w-16 h-16 rounded-2xl bg-[#4f7cff]/20 flex items-center justify-center text-2xl font-bold text-[#4f7cff] shrink-0">
+              {userName?.[0]?.toUpperCase() || '?'}
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-xl font-bold text-[#e8e8ed] truncate">{userName || 'Usuario'}</h1>
+              <p className="text-sm text-[#8e8e9a] truncate">{userEmail}</p>
+              <div className="flex items-center gap-2 mt-2">
+                <Badge variant="accent">{roleLabel[userRole] ?? userRole}</Badge>
+              </div>
             </div>
           </div>
-          <Button variant="danger" size="sm" onClick={handleLogout}>
+          <Button variant="danger" size="sm" onClick={handleLogout} className="self-start sm:self-center shrink-0">
             {t('profile.logout')}
           </Button>
         </motion.div>
