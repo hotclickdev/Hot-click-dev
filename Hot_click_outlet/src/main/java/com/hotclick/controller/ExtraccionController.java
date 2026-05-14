@@ -62,6 +62,33 @@ public class ExtraccionController {
         }
     }
 
+    /** Busca precios por nombre de producto (sin Vision API). */
+    @PostMapping("/buscar")
+    public ResponseEntity<ResponseDTO> buscarPorNombre(
+            @RequestBody Map<String, Object> body) {
+        try {
+            String nombre = (String) body.get("nombre");
+            if (nombre == null || nombre.isBlank())
+                return ResponseEntity.badRequest().body(ResponseDTO.error("El nombre del producto es requerido"));
+
+            Long productoId = body.get("productoId") != null
+                ? Long.valueOf(body.get("productoId").toString()) : null;
+
+            var resultado = extraccionService.extraerPorNombre(nombre);
+
+            if (productoId != null) {
+                var producto = productoRepo.findById(productoId)
+                    .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                precioService.guardarPrecios(producto, resultado);
+                publicacionService.crearOActualizar(productoId, null);
+            }
+
+            return ResponseEntity.ok(ResponseDTO.success("Búsqueda completada", resultado));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        }
+    }
+
     /** Devuelve el tipo de cambio USD→CRC actual del BCCR. */
     @GetMapping("/tipo-cambio")
     public ResponseEntity<ResponseDTO> tipoCambio() {

@@ -9,6 +9,9 @@ export const publicacionService = {
   getTipoCambio: () =>
     api.get('/extraccion/tipo-cambio'),
 
+  buscarPorNombre: (nombre, productoId) =>
+    api.post('/extraccion/buscar', { nombre, productoId: productoId || null }),
+
   listar: (estado) =>
     api.get('/publicaciones-fb', { params: estado ? { estado } : {} }),
 

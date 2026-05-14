@@ -27,6 +27,96 @@ public class ExtraccionService {
     @Autowired
     private BccrService bccrService;
 
+    /** Busca precios en ecommerce usando el nombre del producto (sin Vision API). */
+    public ResultadoExtraccion extraerPorNombre(String nombreProducto) {
+        ResultadoExtraccion resultado = new ResultadoExtraccion();
+        resultado.etiquetaPrincipal = nombreProducto;
+        resultado.todasEtiquetas = List.of(nombreProducto);
+        resultado.tcUsado = bccrService.getTipoCambioVenta();
+
+        String query = nombreProducto.trim().replace(" ", "+");
+
+        List<String> urlsBusqueda = List.of(
+            "https://www.amazon.com/s?k=" + query,
+            "https://www.ebay.com/sch/i.html?_nkw=" + query,
+            "https://www.walmart.com/search?q=" + query,
+            "https://www.newegg.com/p/pl?d=" + query
+        );
+
+        for (String url : urlsBusqueda) {
+            PrecioExtraido precio = extraerPrecioDeResultados(url, resultado.tcUsado);
+            if (precio != null) resultado.precios.add(precio);
+        }
+
+        if (!resultado.precios.isEmpty()) {
+            resultado.promedioCrc = calcularPromedio(resultado.precios);
+        } else {
+            resultado.error = "No se encontraron precios para \"" + nombreProducto + "\"";
+        }
+        return resultado;
+    }
+
+    private PrecioExtraido extraerPrecioDeResultados(String searchUrl, int tc) {
+        for (int intento = 1; intento <= 2; intento++) {
+            try {
+                Document doc = Jsoup.connect(searchUrl)
+                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36")
+                    .header("Accept-Language", "en-US,en;q=0.9")
+                    .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+                    .timeout(10000)
+                    .get();
+
+                // Selectores de precio en páginas de resultados de búsqueda
+                String[] selectores = {
+                    ".a-price .a-offscreen",   // Amazon
+                    ".s-item__price",           // eBay
+                    "[itemprop=price]",
+                    ".price-main",              // Walmart
+                    ".product-price",
+                    ".price",
+                    ".a-price-whole",
+                };
+
+                for (String sel : selectores) {
+                    Element el = doc.selectFirst(sel);
+                    if (el != null) {
+                        String texto = el.attr("content").isBlank() ? el.text() : el.attr("content");
+                        if (!texto.isBlank()) {
+                            Integer usd = parsearPrecio(texto);
+                            if (usd != null && usd > 0 && usd < 50000) {
+                                PrecioExtraido p = new PrecioExtraido();
+                                p.fuente = extraerNombreFuente(searchUrl);
+                                p.url = searchUrl;
+                                p.precioUsd = usd;
+                                p.precioCrc = usd * tc;
+                                return p;
+                            }
+                        }
+                    }
+                }
+
+                // Fallback: regex en texto completo
+                Matcher m = PRECIO_USD.matcher(doc.text());
+                if (m.find()) {
+                    String val = m.group(1) != null ? m.group(1) : m.group(2);
+                    Integer usd = parsearPrecio(val);
+                    if (usd != null && usd > 5 && usd < 50000) {
+                        PrecioExtraido p = new PrecioExtraido();
+                        p.fuente = extraerNombreFuente(searchUrl);
+                        p.url = searchUrl;
+                        p.precioUsd = usd;
+                        p.precioCrc = usd * tc;
+                        return p;
+                    }
+                }
+                break;
+            } catch (Exception e) {
+                log.debug("Intento {} fallido para búsqueda {}: {}", intento, searchUrl, e.getMessage());
+            }
+        }
+        return null;
+    }
+
     public ResultadoExtraccion extraer(String imagenBase64, GoogleVisionService vision) {
         VisionResult visionResult = vision.analizar(imagenBase64);
         ResultadoExtraccion resultado = new ResultadoExtraccion();

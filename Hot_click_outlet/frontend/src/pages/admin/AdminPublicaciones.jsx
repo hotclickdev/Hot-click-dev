@@ -249,8 +249,10 @@ export default function AdminPublicaciones() {
   const [tab, setTab] = useState('analizar') // 'analizar' | 'cola'
 
   // ── Tab: Analizar ──
+  const [modoAnalisis, setModoAnalisis] = useState('nombre') // 'foto' | 'nombre'
   const [imagen, setImagen] = useState(null)
   const [preview, setPreview] = useState(null)
+  const [nombreBusqueda, setNombreBusqueda] = useState('')
   const [analizando, setAnalizando] = useState(false)
   const [resultado, setResultado] = useState(null)
   const [tc, setTc] = useState(530)
@@ -292,27 +294,42 @@ export default function AdminPublicaciones() {
   }
 
   const handleAnalizar = async () => {
-    if (!imagen) { toast({ message: 'Selecciona una imagen', type: 'error' }); return }
-    setAnalizando(true)
-    setResultado(null)
-    try {
-      const fd = new FormData()
-      fd.append('imagen', imagen)
-      const r = await publicacionService.analizar(fd)
-      setResultado(r.data)
-    } catch (err) {
-      toast({ message: err.response?.data?.message ?? 'Error al analizar', type: 'error' })
-    } finally { setAnalizando(false) }
+    if (modoAnalisis === 'nombre') {
+      if (!nombreBusqueda.trim()) { toast({ message: 'Escribe el nombre del producto', type: 'error' }); return }
+      setAnalizando(true); setResultado(null)
+      try {
+        const r = await publicacionService.buscarPorNombre(nombreBusqueda.trim(), productoId || null)
+        setResultado(r.data)
+        if (productoId) { toast({ message: 'Precios guardados y texto FB generado', type: 'success' }) }
+      } catch (err) {
+        toast({ message: err.response?.data?.message ?? 'Error al buscar', type: 'error' })
+      } finally { setAnalizando(false) }
+    } else {
+      if (!imagen) { toast({ message: 'Selecciona una imagen', type: 'error' }); return }
+      setAnalizando(true); setResultado(null)
+      try {
+        const fd = new FormData()
+        fd.append('imagen', imagen)
+        const r = await publicacionService.analizar(fd)
+        setResultado(r.data)
+      } catch (err) {
+        toast({ message: err.response?.data?.message ?? 'Error al analizar', type: 'error' })
+      } finally { setAnalizando(false) }
+    }
   }
 
   const handleGuardar = async () => {
     if (!productoId) { toast({ message: 'Selecciona un producto para guardar los precios', type: 'error' }); return }
     setGuardando(true)
     try {
-      const fd = new FormData()
-      fd.append('imagen', imagen)
-      fd.append('productoId', productoId)
-      await publicacionService.analizar(fd)
+      if (modoAnalisis === 'nombre') {
+        await publicacionService.buscarPorNombre(nombreBusqueda.trim(), productoId)
+      } else {
+        const fd = new FormData()
+        fd.append('imagen', imagen)
+        fd.append('productoId', productoId)
+        await publicacionService.analizar(fd)
+      }
       toast({ message: 'Precios guardados y texto FB generado', type: 'success' })
       setTab('cola')
     } catch (err) {
@@ -377,45 +394,98 @@ export default function AdminPublicaciones() {
         {/* ── Tab: Analizar ── */}
         {tab === 'analizar' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-            <ImageUploadZone onFile={handleImagen} />
 
-            {preview && (
-              <div className="flex gap-4 items-start">
-                <img
-                  src={preview}
-                  alt="Preview"
-                  className="w-24 h-24 object-cover rounded-xl border border-white/10 shrink-0"
-                />
-                <div className="flex-1 space-y-3">
-                  <div>
-                    <label className="text-xs text-[#8e8e9a] block mb-1">
-                      Asociar a un producto (opcional — guarda precios en BD)
-                    </label>
-                    <select
-                      value={productoId}
-                      onChange={(e) => setProductoId(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60"
-                    >
-                      <option value="">— Solo analizar, no guardar —</option>
-                      {productos.map((p) => (
-                        <option key={p.id} value={p.id}>{p.nombre}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <Button onClick={handleAnalizar} disabled={analizando} className="w-full">
-                    {analizando
-                      ? <><Spinner size="sm" /><span className="ml-2">Analizando...</span></>
-                      : 'Analizar con Google Vision'
-                    }
-                  </Button>
+            {/* Selector de modo */}
+            <div className="flex gap-1 p-1 rounded-xl bg-white/5 border border-white/8 w-fit">
+              {[
+                { key: 'nombre', label: 'Por nombre' },
+                { key: 'foto',   label: 'Por foto (Vision API)' },
+              ].map(({ key, label }) => (
+                <button key={key} onClick={() => { setModoAnalisis(key); setResultado(null) }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    modoAnalisis === key
+                      ? 'bg-[#4f7cff] text-white'
+                      : 'text-[#8e8e9a] hover:text-white'
+                  }`}
+                >{label}</button>
+              ))}
+            </div>
+
+            {/* ── Modo: Por nombre ── */}
+            {modoAnalisis === 'nombre' && (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-[#8e8e9a] block mb-1">Nombre del producto</label>
+                  <input
+                    type="text"
+                    value={nombreBusqueda}
+                    onChange={(e) => setNombreBusqueda(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAnalizar()}
+                    placeholder="Ej: iPhone 15 Pro, Tablet Samsung Galaxy..."
+                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm placeholder:text-[#8e8e9a]/40 focus:outline-none focus:border-[#4f7cff]/60"
+                  />
                 </div>
+                <div>
+                  <label className="text-xs text-[#8e8e9a] block mb-1">
+                    Asociar a un producto (guarda precios en BD y genera texto FB)
+                  </label>
+                  <select value={productoId} onChange={(e) => setProductoId(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60"
+                  >
+                    <option value="">— Solo buscar, no guardar —</option>
+                    {productos.map((p) => (
+                      <option key={p.id} value={p.id}>{p.nombre}</option>
+                    ))}
+                  </select>
+                </div>
+                <Button onClick={handleAnalizar} disabled={analizando} className="w-full">
+                  {analizando
+                    ? <><Spinner size="sm" /><span className="ml-2">Buscando precios...</span></>
+                    : 'Buscar precios en internet'
+                  }
+                </Button>
               </div>
+            )}
+
+            {/* ── Modo: Por foto ── */}
+            {modoAnalisis === 'foto' && (
+              <>
+                <ImageUploadZone onFile={handleImagen} />
+                {preview && (
+                  <div className="flex gap-4 items-start">
+                    <img src={preview} alt="Preview"
+                      className="w-24 h-24 object-cover rounded-xl border border-white/10 shrink-0"
+                    />
+                    <div className="flex-1 space-y-3">
+                      <div>
+                        <label className="text-xs text-[#8e8e9a] block mb-1">
+                          Asociar a un producto (opcional — guarda precios en BD)
+                        </label>
+                        <select value={productoId} onChange={(e) => setProductoId(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60"
+                        >
+                          <option value="">— Solo analizar, no guardar —</option>
+                          {productos.map((p) => (
+                            <option key={p.id} value={p.id}>{p.nombre}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <Button onClick={handleAnalizar} disabled={analizando} className="w-full">
+                        {analizando
+                          ? <><Spinner size="sm" /><span className="ml-2">Analizando...</span></>
+                          : 'Analizar con Google Vision'
+                        }
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
             <VisionPanel
               resultado={resultado}
               tc={tc}
-              onGuardar={productoId ? handleGuardar : null}
+              onGuardar={productoId && resultado?.precios?.length > 0 ? handleGuardar : null}
               saving={guardando}
             />
           </motion.div>
