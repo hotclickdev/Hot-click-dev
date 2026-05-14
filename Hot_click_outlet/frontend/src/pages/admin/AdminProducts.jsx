@@ -478,23 +478,13 @@ export default function AdminProducts() {
   )
 }
 
-const SUPABASE_URL = 'https://nkevwfcjhjaawtdqquns.supabase.co'
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rZXZ3ZmNqaGphYXd0ZHFxdW5zIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzU3MDQ2OSwiZXhwIjoyMDkzMTQ2NDY5fQ.CFvaekC5F0QBUSW5cRlt2k2CoQUvSdmLuEKW7WkA6j4'
-const BUCKET = 'HOT_CLICK'
-
-async function uploadToSupabase(file) {
-  const ext = file.name.split('.').pop().toLowerCase() || 'jpg'
-  const path = `productos/${crypto.randomUUID()}.${ext}`
-  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': file.type },
-    body: file,
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err.message ?? `Error ${res.status}`)
-  }
-  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`
+async function uploadImagen(file) {
+  const fd = new FormData()
+  fd.append('file', file)
+  const r = await productService.uploadImage(fd)
+  const url = r.data?.data?.url ?? r.data?.url ?? r.data
+  if (!url || typeof url !== 'string') throw new Error('No se obtuvo URL de la imagen')
+  return url
 }
 
 function ImagePicker({ value, onChange }) {
@@ -510,7 +500,7 @@ function ImagePicker({ value, onChange }) {
     setError('')
     setUploading(true)
     try {
-      const url = await uploadToSupabase(file)
+      const url = await uploadImagen(file)
       onChange(url)
     } catch (err) {
       setError(err.message ?? 'Error al subir')

@@ -368,10 +368,18 @@ export default function AdminPublicaciones() {
     if (seleccionados.size === 0) { toast({ message: 'Selecciona al menos un producto', type: 'error' }); return }
     setGenerando(true)
     let exitosos = 0
+    const fallidos = []
     for (const id of seleccionados) {
-      try { await publicacionService.generar(id); exitosos++ } catch {}
+      try {
+        await publicacionService.generar(id)
+        exitosos++
+      } catch (err) {
+        fallidos.push(id)
+        console.error(`Error generando publicación para producto ${id}:`, err?.response?.data?.message ?? err?.message)
+      }
     }
-    toast({ message: `${exitosos} publicación${exitosos !== 1 ? 'es' : ''} generada${exitosos !== 1 ? 's' : ''}`, type: 'success' })
+    if (exitosos > 0) toast({ message: `${exitosos} publicación${exitosos !== 1 ? 'es' : ''} generada${exitosos !== 1 ? 's' : ''}`, type: 'success' })
+    if (fallidos.length > 0) toast({ message: `${fallidos.length} producto${fallidos.length !== 1 ? 's' : ''} no se pudo${fallidos.length !== 1 ? 'ieron' : ''} generar`, type: 'error' })
     setSeleccionados(new Set())
     setModalProductos(false)
     setSearchProd('')

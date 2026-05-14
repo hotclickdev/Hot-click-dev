@@ -1408,6 +1408,11 @@ ALTER TABLE hot_click_producto_tb
     ALTER COLUMN titulo_producto   TYPE VARCHAR(300),
     ALTER COLUMN nombre_producto   TYPE VARCHAR(200);
 
+-- 2026-05-14: Columnas 2FA para autenticación de dos factores (Google Authenticator)
+ALTER TABLE "HOT_CLICK_USUARIO_TB"
+    ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN IF NOT EXISTS two_factor_secret   VARCHAR(100);
+
 -- ============================================================
 -- FIN DEL SCRIPT
 -- ============================================================
