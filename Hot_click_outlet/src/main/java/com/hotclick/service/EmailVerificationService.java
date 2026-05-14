@@ -42,8 +42,18 @@ public class EmailVerificationService {
     private final ConcurrentHashMap<String, PendingRegistration> pending = new ConcurrentHashMap<>();
 
     public void iniciarRegistro(Usuario usuario) throws Exception {
+        if (usuario.getCorreo() == null || usuario.getCorreo().isBlank()) {
+            throw new RuntimeException("El correo es requerido");
+        }
+        if (usuarioService.existeCorreo(usuario.getCorreo().trim())) {
+            throw new RuntimeException("El correo ya está registrado");
+        }
+        if (usuario.getIdentificacion() != null && !usuario.getIdentificacion().isBlank()
+                && usuarioService.existeIdentificacion(usuario.getIdentificacion().trim())) {
+            throw new RuntimeException("La identificación ya está registrada");
+        }
         String codigo = String.format("%06d", new Random().nextInt(1_000_000));
-        pending.put(usuario.getCorreo().toLowerCase(), new PendingRegistration(usuario, codigo));
+        pending.put(usuario.getCorreo().toLowerCase().trim(), new PendingRegistration(usuario, codigo));
         enviarEmail(usuario.getCorreo(), usuario.getNombre(), codigo);
     }
 

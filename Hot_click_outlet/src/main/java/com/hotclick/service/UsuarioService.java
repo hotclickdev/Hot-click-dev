@@ -42,6 +42,14 @@ public class UsuarioService {
         return usuarioRepository.findByCorreo(correo);
     }
 
+    public boolean existeCorreo(String correo) {
+        return usuarioRepository.existsByCorreo(correo);
+    }
+
+    public boolean existeIdentificacion(String identificacion) {
+        return usuarioRepository.existsByIdentificacion(identificacion);
+    }
+
     public Optional<Usuario> buscarPorId(Long id) {
         return usuarioRepository.findById(id);
     }
