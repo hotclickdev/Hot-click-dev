@@ -61,37 +61,28 @@ export default function ProfilePage() {
           </Button>
         </motion.div>
 
-        {/* Orders */}
-        <div>
-          <h2 className="text-lg font-semibold text-[#e8e8ed] mb-4">{t('profile.orders')}</h2>
-          {loading ? (
-            <div className="flex justify-center py-10"><Spinner /></div>
-          ) : orders.length === 0 ? (
-            <div className="text-center py-12 bg-[#111114] border border-white/8 rounded-2xl">
-              <span className="text-4xl opacity-20">📋</span>
-              <p className="text-[#8e8e9a] mt-3">{t('profile.noOrders')}</p>
-              <Button onClick={() => navigate('/productos')} variant="secondary" size="sm" className="mt-4">
-                Explorar productos
-              </Button>
+        {/* Orders shortcut */}
+        <div
+          className="flex items-center justify-between p-5 rounded-2xl border cursor-pointer transition-all"
+          style={{ backgroundColor: 'var(--hc-surface)', borderColor: 'var(--hc-border)' }}
+          onClick={() => navigate('/mis-pedidos')}
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">📋</span>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>{t('profile.orders')}</p>
+              {loading ? (
+                <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>Cargando…</p>
+              ) : (
+                <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
+                  {orders.length > 0 ? `${orders.length} pedido${orders.length !== 1 ? 's' : ''}` : 'Sin pedidos aún'}
+                </p>
+              )}
             </div>
-          ) : (
-            <div className="space-y-3">
-              {orders.map((order) => (
-                <div key={order.id} className="bg-[#111114] border border-white/8 rounded-xl px-5 py-4 flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-[#e8e8ed]">Pedido #{order.id}</p>
-                    <p className="text-xs text-[#8e8e9a] mt-0.5">
-                      {order.fechaCreacion ? formatDate(order.fechaCreacion) : '—'}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="font-semibold text-[#e8e8ed]">{formatPrice(order.total ?? 0)}</span>
-                    <Badge variant={statusColor(order.estado)}>{order.estado}</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          </div>
+          <svg className="w-4 h-4" style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
         </div>
       </div>
     </MainLayout>

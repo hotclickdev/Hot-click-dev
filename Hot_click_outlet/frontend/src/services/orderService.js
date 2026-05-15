@@ -3,7 +3,7 @@ import api from './api'
 export const orderService = {
   create: (data) => api.post('/pedidos', data),
   getById: (id) => api.get(`/pedidos/${id}`),
-  getByUser: (userId) => api.get(`/pedidos/usuario/${userId}`),
+  getByUser: (userId, page = 0, size = 20) => api.get(`/pedidos/usuario/${userId}?page=${page}&size=${size}`),
   getAll: () => api.get('/pedidos'),
   getPending: () => api.get('/pedidos/pendientes'),
   updateStatus: (id, estado) => api.put(`/pedidos/${id}/estado`, { estado }),

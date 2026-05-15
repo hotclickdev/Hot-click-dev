@@ -85,7 +85,7 @@ public class SecurityConfig {
                     "/*.svg", "/*.webp", "/favicon.ico", "/pages/**", "/css/**", "/js/**",
                     "/images/**", "/assets/**", "/admin/**",
                     "/nosotros", "/productos", "/productos/**", "/informacion", "/contacto",
-                    "/carrito", "/login", "/registro", "/perfil", "/perfil/**",
+                    "/carrito", "/login", "/registro", "/perfil", "/perfil/**", "/mis-pedidos",
                     "/checkout", "/pago/exito", "/pago/cancelado").permitAll()
                 .anyRequest().authenticated()
             )

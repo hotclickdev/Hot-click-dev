@@ -31,6 +31,7 @@ const AdminFinanzas = lazy(() => import('@/pages/admin/AdminFinanzas'))
 const AdminReportes       = lazy(() => import('@/pages/admin/AdminReportes'))
 const AdminPublicaciones  = lazy(() => import('@/pages/admin/AdminPublicaciones'))
 const AdminNuevoProducto  = lazy(() => import('@/pages/admin/AdminNuevoProducto'))
+const MisPedidosPage  = lazy(() => import('@/pages/MisPedidosPage'))
 const CheckoutPage    = lazy(() => import('@/pages/CheckoutPage'))
 const PaymentStatusPage = lazy(() => import('@/pages/PaymentStatusPage'))
 
@@ -89,7 +90,8 @@ export default function App() {
               <Route path="/nosotros" element={<NosotrosPage />} />
               <Route path="/contacto" element={<ContactoPage />} />
               <Route path="/informacion" element={<InformacionPage />} />
-              <Route path="/perfil"   element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+              <Route path="/perfil"      element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+              <Route path="/mis-pedidos" element={<ProtectedRoute><MisPedidosPage /></ProtectedRoute>} />
               <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
               <Route path="/pago/exito"     element={<PaymentStatusPage />} />
               <Route path="/pago/cancelado" element={<PaymentStatusPage />} />
