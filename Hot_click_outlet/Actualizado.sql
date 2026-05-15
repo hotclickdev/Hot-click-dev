@@ -1416,6 +1416,10 @@ ALTER TABLE HOT_CLICK_USUARIO_TB
     ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN NOT NULL DEFAULT false,
     ADD COLUMN IF NOT EXISTS two_factor_secret   VARCHAR(100);
 
+-- 2026-05-15: Fecha de agotado para ocultar productos automáticamente tras 3 meses sin stock
+ALTER TABLE hot_click_producto_tb
+    ADD COLUMN IF NOT EXISTS fecha_agotado TIMESTAMP;
+
 -- ============================================================
 -- FIN DEL SCRIPT
 -- ============================================================

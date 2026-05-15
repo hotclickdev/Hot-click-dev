@@ -107,6 +107,13 @@ public class StockService {
         if (Boolean.TRUE.equals(producto.getEsUnico())) {
             producto.setVendido(true);
         }
+        if (actDespues <= 0) {
+            producto.setVisibleCatalogo(false);
+            producto.setDestacado(false);
+            if (producto.getFechaAgotado() == null) {
+                producto.setFechaAgotado(java.time.LocalDateTime.now());
+            }
+        }
         productoRepository.save(producto);
 
         registrar(producto, MovimientoStock.VENTA, cantidad,

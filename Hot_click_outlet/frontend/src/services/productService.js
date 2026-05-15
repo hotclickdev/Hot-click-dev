@@ -86,4 +86,10 @@ export const productService = {
 
   getCategories: () =>
     api.get('/categorias'),
+
+  getImagenes: (productoId) =>
+    api.get(`/productos/${productoId}/imagenes`),
+
+  sincronizarImagenes: (productoId, urls) =>
+    api.put(`/productos/${productoId}/imagenes`, { urls }),
 }

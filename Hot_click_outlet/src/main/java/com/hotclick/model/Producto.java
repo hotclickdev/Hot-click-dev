@@ -122,6 +122,9 @@ public class Producto extends BaseEntity {
     @Column(name = "condicion", length = 20, columnDefinition = "VARCHAR(20) DEFAULT 'NUEVO'")
     private String condicion = "NUEVO";
 
+    @Column(name = "fecha_agotado")
+    private LocalDateTime fechaAgotado;
+
     @Column(name = "titulo_producto", length = 300)
     private String tituloProducto;
 
@@ -246,4 +249,7 @@ public class Producto extends BaseEntity {
 
     public String getComoUsar() { return comoUsar; }
     public void setComoUsar(String comoUsar) { this.comoUsar = comoUsar; }
+
+    public LocalDateTime getFechaAgotado() { return fechaAgotado; }
+    public void setFechaAgotado(LocalDateTime fechaAgotado) { this.fechaAgotado = fechaAgotado; }
 }
