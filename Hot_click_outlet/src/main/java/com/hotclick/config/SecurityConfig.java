@@ -89,7 +89,20 @@ public class SecurityConfig {
                     "/checkout", "/pago/exito", "/pago/cancelado").permitAll()
                 .anyRequest().authenticated()
             )
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .headers(headers -> headers
+                .frameOptions(fo -> fo.deny())
+                .contentTypeOptions(ct -> {})
+                .httpStrictTransportSecurity(hsts -> hsts
+                    .includeSubDomains(true)
+                    .maxAgeInSeconds(31536000))
+                .addHeaderWriter((req, res) -> {
+                    res.setHeader("X-Content-Type-Options", "nosniff");
+                    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+                    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+                    res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+                })
+            );
 
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
