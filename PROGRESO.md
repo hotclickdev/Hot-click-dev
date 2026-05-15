@@ -1,6 +1,6 @@
 # HOTCLICK — Progreso del Proyecto
 
-> Fecha última actualización: 2026-05-13
+> Fecha última actualización: 2026-05-15
 
 ---
 
@@ -25,7 +25,8 @@
 | BD | Supabase PostgreSQL — Transaction Pooler `aws-1-us-east-2.pooler.supabase.com:6543` |
 | ORM | JPA/Hibernate, `ddl-auto=none`, `PhysicalNamingStrategyStandardImpl` |
 | Frontend | React 19 + Vite (en `Hot_click_outlet/frontend/`) |
-| Imágenes | Supabase Storage (bucket `HOT_CLICK`) — upload directo desde el frontend |
+| Imágenes | Supabase Storage (bucket `HOT_CLICK`) — upload vía backend `/api/productos/imagen` |
+| Gestor paquetes frontend | pnpm 11.1.2 (en lugar de npm) |
 | Pagos | PayXpert (pendiente respuesta del proveedor) |
 | Build local | Maven local `.\maven\bin\mvn` |
 | Deploy | Render.com (`render.yaml`) |
@@ -39,10 +40,10 @@
 .\maven\bin\mvn spring-boot:run
 
 # Frontend — dev server (puerto 3000, proxy /api → 8080)
-cd Hot_click_outlet/frontend && npm run dev
+cd Hot_click_outlet/frontend && pnpm run dev
 
 # Frontend — build de producción → src/main/resources/static/
-cd Hot_click_outlet/frontend && npm run build
+cd Hot_click_outlet/frontend && pnpm run build
 ```
 
 ---
@@ -72,7 +73,8 @@ cd Hot_click_outlet/frontend && npm run build
 
 ### Panel Admin (React)
 - **Dashboard** — métricas: usuarios, productos, pedidos, ventas, stock bajo, pendientes aprobación
-- **Productos** — CRUD completo con subida de imágenes a Supabase Storage, toggle destacado
+- **Productos** — CRUD completo + galería hasta 10 fotos drag & drop, toggle destacado
+- **Create with AI** — sube foto → Vision AI analiza → rellena formulario + galería multi-imagen
 - **Categorías** — CRUD completo
 - **Bodegas** — CRUD completo
 - **Pedidos** — listado con filtros por estado, cambio de estado
@@ -80,6 +82,7 @@ cd Hot_click_outlet/frontend && npm run build
 - **Nueva Venta** — venta con cliente, venta rápida, cotización WhatsApp
 - **Finanzas** — filtros por fecha, método de pago, estado; totales calculados
 - **Reportes** — análisis de ventas con filtros
+- **Publicaciones FB** — cola de publicación a Facebook Marketplace vía extensión Chrome
 
 ### Stock e Inventario
 - Control estricto: nunca vende más de `stockDisponible = stockActual − stockReservado`
@@ -87,6 +90,8 @@ cd Hot_click_outlet/frontend && npm run build
 - Auditoría completa en `hot_click_movimiento_stock_tb`
 - Ajuste manual de entrada (reposición) desde admin
 - Marcado automático de artículos únicos como vendidos
+- **Agotado automático**: al vender el último stock → `visibleCatalogo=false`, `destacado=false`, `fechaAgotado=now()`
+- **Scheduler diario (3 AM)**: inactiva definitivamente productos agotados hace más de 3 meses
 
 ### Pagos
 - Estructura PayXpert implementada (webhook, tablas en BD, flujo de checkout)
@@ -114,6 +119,16 @@ cd Hot_click_outlet/frontend && npm run build
 | 403 al cambiar estado de pedido | `PedidoService.java` | `LazyInitializationException` en `Pedido.items` → Jackson no podía serializar → Spring reenviaba a `/error` → 403. Fix: `getItems().size()` dentro de la transacción |
 | Docker: frontend no incluido en la imagen | `Dockerfile`, `Hot_click_outlet/Dockerfile` | Dockerfile solo copiaba `src/`. Reescrito con 3 stages: Node 20 (build React) → Maven 21 (build JAR) → JRE Alpine (runtime) |
 | docker-compose.yml usaba puerto 5432 | `docker-compose.yml` | Cambiado a Transaction Pooler puerto 6543; agregadas vars de entorno faltantes |
+
+## BUGS CORREGIDOS (2026-05-15)
+
+| Bug | Archivo(s) | Descripción |
+| --- | --- | --- |
+| `value too long for type character varying(255)` al guardar con Vision AI | `ProductoService.java`, `ProductoController.java` | Truncación aplicada en `descripcion_larga`, `especificaciones`, `como_usar`; error amigable devuelto al frontend |
+| Solo se podía subir 1 foto por producto | `AdminProducts.jsx`, `AdminNuevoProducto.jsx` | Reemplazado `ImagePicker` con `MultiImagePicker` (hasta 10 fotos, drag & drop, subida paralela) |
+| Upload de imagen en Create with AI era al guardar | `AdminNuevoProducto.jsx` | Upload en paralelo con Vision API al analizar — la foto aparece inmediatamente en la galería |
+| Supabase key expuesta en el frontend | `AdminProducts.jsx` | Upload migrado a backend (`POST /api/productos/imagen`) — key ya no está en el código frontend |
+| `npm install` en Docker (riesgo de seguridad) | `Dockerfile`, `package.json` | Migrado a pnpm 11.1.2 con `corepack`; `pnpm-lock.yaml` generado |
 
 ---
 
@@ -253,6 +268,6 @@ Usuario visita tienda
   → Spring → Supabase → JSON → React renderiza
 
 Imágenes
-  → Upload directo desde React → Supabase Storage REST API
-  → URL pública guardada en producto
+  → React sube archivo → POST /api/productos/imagen (backend) → Supabase Storage
+  → URL pública guardada en producto (imagenPrincipalUrl) y galería (hot_click_producto_imagen_tb)
 ```

@@ -96,12 +96,14 @@ Hot_click_outlet/
 │   ├── security/
 │   │   ├── JwtUtil.java
 │   │   └── JwtRequestFilter.java        ← extrae y valida JWT en cada request
+│   ├── scheduler/
+│   │   └── ProductoScheduler.java       ← job diario 3 AM: inactiva productos agotados > 3 meses
 │   ├── service/                         ← lógica de negocio
 │   └── utils/
 │       └── Constants.java               ← estados, roles, estados de pedido
 ├── src/main/resources/
 │   ├── application.properties           ← DB, SMTP, Supabase, JWT
-│   ├── static/                          ← build React (generado por npm run build)
+│   ├── static/                          ← build React (generado por pnpm run build)
 │   └── Actualizado.sql                  ← schema completo de la BD
 └── frontend/                            ← fuente React
     ├── src/
@@ -111,16 +113,17 @@ Hot_click_outlet/
     │   │   └── (tienda pública)
     │   ├── services/
     │   │   ├── api.js                   ← Axios instance + interceptores
-    │   │   ├── productService.js        ← normalizeProduct, denormalizeProduct
+    │   │   ├── productService.js        ← normalizeProduct, denormalizeProduct, getImagenes, sincronizarImagenes
     │   │   └── orderService.js          ← orderService, ventaService, adminService, warehouseService
     │   ├── store/
     │   │   └── authStore.js             ← Zustand: token, userId, userRole, userName
     │   ├── layouts/
     │   │   ├── MainLayout.jsx
     │   │   └── AdminLayout.jsx
-    │   └── components/ui/               ← Button, Input, Modal, Badge, Toast, Spinner
+    │   └── components/ui/               ← Button, Input, Modal, Badge, Toast, Spinner, MultiImagePicker
     ├── vite.config.js                   ← proxy /api → :8080, outDir → ../src/main/resources/static
-    └── package.json
+    ├── package.json                     ← packageManager: pnpm@11.1.2
+    └── pnpm-lock.yaml
 ```
 
 ---
@@ -137,8 +140,8 @@ Hot_click_outlet/
 ### Tienda pública
 
 - Catálogo paginado con filtros (categoría, condición, stock)
-- Detalle de producto (especificaciones, cómo usar, imágenes)
-- Productos destacados en inicio
+- Detalle de producto (especificaciones, cómo usar, galería de imágenes)
+- Productos destacados en inicio (se quitan automáticamente al agotarse)
 - Carrito persistente con reserva de stock
 
 ### Panel Admin
@@ -146,7 +149,8 @@ Hot_click_outlet/
 | Página | Ruta | Funcionalidad |
 |---|---|---|
 | Dashboard | `/admin` | Métricas: usuarios, productos, pedidos, ventas, stock bajo, pendientes aprobación |
-| Productos | `/admin/productos` | CRUD + subida imagen a Supabase, toggle destacado, filtros |
+| Productos | `/admin/productos` | CRUD + galería hasta 10 fotos (drag & drop), toggle destacado, filtros |
+| Create with AI | `/admin/nuevo-producto` | Sube foto → Vision AI analiza → rellena formulario + galería multi-imagen |
 | Categorías | `/admin/categorias` | CRUD |
 | Bodegas | `/admin/bodegas` | CRUD |
 | Pedidos | `/admin/pedidos` | Listado por estado, cambio de estado |
@@ -154,6 +158,7 @@ Hot_click_outlet/
 | Nueva Venta | `/admin/ventas` | Venta con cliente, venta rápida, cotización WhatsApp |
 | Finanzas | `/admin/finanzas` | Ventas filtradas por fecha/método/estado |
 | Reportes | `/admin/reportes` | Análisis de ventas |
+| Publicaciones FB | `/admin/publicaciones` | Cola de publicación a Facebook Marketplace |
 
 ### Stock e Inventario
 
@@ -161,6 +166,16 @@ Hot_click_outlet/
 - `SELECT FOR UPDATE` evita sobreventa concurrente
 - Auditoría completa en `hot_click_movimiento_stock_tb`
 - Ajuste manual de entrada desde admin
+- **Agotado automático**: al vender el último stock → `visibleCatalogo=false`, `destacado=false`, `fechaAgotado=now()`
+- **Scheduler diario (3 AM)**: inactiva definitivamente productos agotados hace más de 3 meses
+
+### Imágenes de Productos
+
+- Upload vía backend (`POST /api/productos/imagen` → Supabase Storage)
+- Galería de hasta 10 fotos por producto (`hot_click_producto_imagen_tb`)
+- Primera foto = imagen principal (`imagenPrincipalUrl` en `Producto`)
+- Drag & drop múltiple en admin — uploads en paralelo con spinners por foto
+- Al editar, carga fotos existentes desde `GET /api/productos/{id}/imagenes`
 
 ### Pedidos y Ventas
 
@@ -194,6 +209,11 @@ Hot_click_outlet/
 | PUT | `/api/productos/{id}` | Actualizar producto |
 | DELETE | `/api/productos/{id}` | Eliminar producto (soft) |
 | PATCH | `/api/productos/{id}/destacado` | Toggle destacado |
+| GET | `/api/productos/{id}/imagenes` | Listar imágenes del producto |
+| POST | `/api/productos/{id}/imagenes` | Agregar imagen al producto |
+| DELETE | `/api/productos/{id}/imagenes/{imgId}` | Eliminar imagen |
+| PUT | `/api/productos/{id}/imagenes` | Sincronizar galería completa (`{ urls: [...] }`) |
+| POST | `/api/productos/imagen` | Upload de archivo → URL en Supabase Storage |
 | POST | `/api/categorias` | Crear categoría |
 | PUT | `/api/categorias/{id}` | Actualizar categoría |
 | DELETE | `/api/categorias/{id}` | Eliminar categoría (soft) |
@@ -261,7 +281,6 @@ Hot_click_outlet/
 
 | Problema | Severidad | Notas |
 |---|---|---|
-| Supabase key expuesta en `AdminProducts.jsx` | Media | El service role key está en el código frontend para upload de imágenes; debería ir por el backend |
 | JWT en `localStorage` | Baja | Vulnerable a XSS; alternativa es `httpOnly` cookie |
 | Sin rate limiting en `/api/auth/**` | Media | Solo tiene bloqueo de cuenta por intentos fallidos |
 | Carga EAGER de roles en Usuario | Baja | `ManyToMany(fetch=EAGER)` puede causar N+1 en listados masivos |
@@ -278,10 +297,10 @@ Hot_click_outlet/
 
 # Iniciar frontend (dev server con hot reload)
 cd Hot_click_outlet/frontend
-npm run dev                  # puerto 3000
+pnpm run dev                 # puerto 3000
 
 # Build de producción (actualiza static/ que sirve Spring Boot)
-npm run build
+pnpm run build
 
 # Compilar solo backend (sin tests)
 .\maven\bin\mvn clean package -DskipTests
