@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import java.util.Optional;
 
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -66,7 +65,7 @@ public class AuthController {
         int estado = usuario.getEstado() == null ? 0 : usuario.getEstado();
         if (estado == Constants.ESTADO_PENDIENTE) {
             return ResponseEntity.status(403).body(ResponseDTO.error(
-                "Tu cuenta está pendiente de aprobación. Un administrador la revisará pronto."));
+                "Debes verificar tu correo antes de iniciar sesión. Revisá tu bandeja de entrada."));
         }
         if (estado == Constants.ESTADO_INACTIVO || estado == Constants.ESTADO_SUSPENDIDO) {
             return ResponseEntity.status(403).body(ResponseDTO.error(
@@ -276,7 +275,13 @@ public class AuthController {
         try {
             passwordResetService.enviarCodigo(correo.trim());
             return ResponseEntity.ok(ResponseDTO.success("Si el correo está registrado, recibirás un código de verificación", null));
+        } catch (RuntimeException e) {
+            // Propagar mensajes de negocio: rate limit, cuenta no verificada, etc.
+            String msg = e.getMessage();
+            return ResponseEntity.badRequest().body(ResponseDTO.error(
+                msg != null && !msg.isBlank() ? msg : "Error al enviar el correo"));
         } catch (Exception e) {
+            System.err.println("[forgot-password] ERROR: " + e.getClass().getSimpleName() + " — " + e.getMessage());
             return ResponseEntity.status(500).body(ResponseDTO.error("Error al enviar el correo"));
         }
     }
@@ -288,9 +293,14 @@ public class AuthController {
         if (correo == null || codigo == null) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Correo y código son requeridos"));
         }
-        boolean ok = passwordResetService.verificarCodigo(correo.trim(), codigo.trim());
-        if (ok) return ResponseEntity.ok(ResponseDTO.success("Código verificado correctamente", null));
-        return ResponseEntity.status(400).body(ResponseDTO.error("Código inválido o expirado"));
+        try {
+            passwordResetService.verificarCodigo(correo.trim(), codigo.trim());
+            return ResponseEntity.ok(ResponseDTO.success("Código verificado correctamente", null));
+        } catch (Exception e) {
+            String msg = e.getMessage();
+            return ResponseEntity.status(400).body(ResponseDTO.error(
+                msg != null && !msg.isBlank() ? msg : "Código inválido o expirado"));
+        }
     }
 
     @PostMapping("/reset-password")

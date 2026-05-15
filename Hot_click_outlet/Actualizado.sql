@@ -1421,5 +1421,26 @@ ALTER TABLE hot_click_producto_tb
     ADD COLUMN IF NOT EXISTS fecha_agotado TIMESTAMP;
 
 -- ============================================================
+-- 2026-05-15: Sistema OTP persistente en BD
+-- ============================================================
+
+-- Estado PENDIENTE para usuarios que no han verificado su correo
+INSERT INTO "HOT_CLICK_ESTADO_TB" ("ID_ESTADO","NOMBRE_ESTADO","DESCRIPCION","CODIGO_COLOR")
+VALUES (5,'PENDIENTE','Pendiente de verificación de correo electrónico','#9CA3AF')
+ON CONFLICT ("ID_ESTADO") DO NOTHING;
+
+-- Tipos de OTP con expiración de 5 minutos
+INSERT INTO "HOT_CLICK_TIPO_OTP_TB" ("NOMBRE","TIEMPO_EXPIRACION_SEG","LONGITUD_CODIGO","FK_ID_ESTADO")
+VALUES
+  ('REGISTRO',       300, 6, 1),
+  ('RESET_PASSWORD', 300, 6, 1)
+ON CONFLICT DO NOTHING;
+
+-- Índices para consultas frecuentes sobre OTPs
+CREATE INDEX IF NOT EXISTS idx_otp_usuario ON "HOT_CLICK_CODIGO_OTP_TB"("FK_ID_USUARIO");
+CREATE INDEX IF NOT EXISTS idx_otp_expires ON "HOT_CLICK_CODIGO_OTP_TB"("EXPIRES_AT");
+CREATE INDEX IF NOT EXISTS idx_otp_tipo    ON "HOT_CLICK_CODIGO_OTP_TB"("FK_ID_TIPO_OTP");
+
+-- ============================================================
 -- FIN DEL SCRIPT
 -- ============================================================

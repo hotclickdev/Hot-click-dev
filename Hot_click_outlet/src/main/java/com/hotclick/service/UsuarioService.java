@@ -5,7 +5,6 @@ import com.hotclick.model.Rol;
 import com.hotclick.utils.Constants;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.repository.RolRepository;
-import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -90,5 +89,35 @@ public class UsuarioService {
         usuario.setEstado(Constants.ESTADO_PENDIENTE);
         usuario.setIntentosFallidos(0);
         return usuarioRepository.save(usuario);
+    }
+
+    /**
+     * Crea la cuenta como PENDIENTE (estado 5) antes de verificar el correo.
+     * El OTP se emite después de llamar a este método.
+     */
+    @Transactional
+    public Usuario registrarPendiente(Usuario usuario) {
+        if (usuarioRepository.existsByCorreo(usuario.getCorreo().trim())) {
+            throw new RuntimeException("El correo ya está registrado");
+        }
+        if (usuario.getIdentificacion() != null && !usuario.getIdentificacion().isBlank()
+                && usuarioRepository.existsByIdentificacion(usuario.getIdentificacion().trim())) {
+            throw new RuntimeException("La identificación ya está registrada");
+        }
+        Optional<Rol> rolDefault = rolRepository.findByNombreRol(Constants.ROL_USUARIO_FINAL);
+        rolDefault.ifPresent(rol -> usuario.getRoles().add(rol));
+        usuario.setEstado(Constants.ESTADO_PENDIENTE);
+        usuario.setIntentosFallidos(0);
+        usuario.setFechaRegistro(LocalDateTime.now());
+        return usuarioRepository.save(usuario);
+    }
+
+    /** Activa la cuenta tras verificación exitosa del OTP de registro. */
+    @Transactional
+    public void activarUsuario(Long id) {
+        usuarioRepository.findById(id).ifPresent(u -> {
+            u.setEstado(Constants.ESTADO_ACTIVO);
+            usuarioRepository.save(u);
+        });
     }
 }

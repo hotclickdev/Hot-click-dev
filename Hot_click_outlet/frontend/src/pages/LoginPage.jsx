@@ -28,6 +28,8 @@ export default function LoginPage() {
   const [showAdminModal, setShowAdminModal] = useState(false)
   const [loginData, setLoginData] = useState(null)
   const [error, setError] = useState('')
+  const [needsVerification, setNeedsVerification] = useState(false)
+  const [resendLoading, setResendLoading] = useState(false)
   const refs2FA = useRef([])
 
   const handleLogin = async (e) => {
@@ -45,14 +47,31 @@ export default function LoginPage() {
       }
     } catch (err) {
       const body = err.response?.data
-      const msg = body?.message || body || t('login.badCredentials')
-      if (err.response?.status === 403) {
-        setError(t('login.pendingApproval'))
+      const msg = typeof body?.message === 'string' ? body.message : t('login.badCredentials')
+      if (err.response?.status === 403 && msg.toLowerCase().includes('verificar')) {
+        setError(msg)
+        setNeedsVerification(true)
       } else {
+        setNeedsVerification(false)
         setError(typeof msg === 'string' ? msg : t('login.error'))
       }
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleResendVerification = async () => {
+    setResendLoading(true)
+    try {
+      await authService.sendVerification({ correo })
+      toast({ message: 'Código reenviado. Revisá tu correo y completá el registro.', type: 'success' })
+      setNeedsVerification(false)
+      setError('')
+    } catch (err) {
+      const msg = err.response?.data?.message
+      toast({ message: typeof msg === 'string' ? msg : 'Error al reenviar el código.', type: 'error' })
+    } finally {
+      setResendLoading(false)
     }
   }
 
@@ -156,13 +175,23 @@ export default function LoginPage() {
               />
 
               {error && (
-                <motion.p
+                <motion.div
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2.5"
+                  className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2.5 space-y-2"
                 >
-                  {error}
-                </motion.p>
+                  <p>{error}</p>
+                  {needsVerification && (
+                    <button
+                      type="button"
+                      onClick={handleResendVerification}
+                      disabled={resendLoading}
+                      className="text-[#4f7cff] hover:underline text-xs disabled:opacity-50"
+                    >
+                      {resendLoading ? 'Enviando...' : 'Reenviar código de verificación →'}
+                    </button>
+                  )}
+                </motion.div>
               )}
 
               <Button type="submit" loading={loading} className="w-full" size="lg">
@@ -311,8 +340,10 @@ function ForgotPasswordModal({ open, onClose }) {
       await authService.forgotPassword(correo)
       toast({ message: t('forgot.codeSent'), type: 'success' })
       setStep('code')
-    } catch { setError(t('forgot.emailNotFound')) }
-    finally { setLoading(false) }
+    } catch (err) {
+      const msg = err.response?.data?.message
+      setError(typeof msg === 'string' && msg ? msg : t('forgot.emailNotFound'))
+    } finally { setLoading(false) }
   }
 
   const handleCode = async (e) => {
@@ -322,8 +353,10 @@ function ForgotPasswordModal({ open, onClose }) {
     try {
       await authService.verifyCode(correo, codigo)
       setStep('password')
-    } catch { setError(t('forgot.badCode')) }
-    finally { setLoading(false) }
+    } catch (err) {
+      const msg = err.response?.data?.message
+      setError(typeof msg === 'string' && msg ? msg : t('forgot.badCode'))
+    } finally { setLoading(false) }
   }
 
   const handlePassword = async (e) => {
