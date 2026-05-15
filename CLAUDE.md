@@ -28,13 +28,16 @@ El frontend React vive dentro del mismo proyecto Spring Boot.
 
 ```bash
 # Servidor de desarrollo (puerto 3000, proxy /api → 8080)
-cd Hot_click_outlet/frontend && npm run dev
+cd Hot_click_outlet/frontend && pnpm dev
 
 # Build de producción → src/main/resources/static/
-cd Hot_click_outlet/frontend && npm run build
+cd Hot_click_outlet/frontend && pnpm build
 
 # Build con watch
-cd Hot_click_outlet/frontend && npm run build:watch
+cd Hot_click_outlet/frontend && pnpm build:watch
+
+# Instalar dependencias
+cd Hot_click_outlet/frontend && pnpm install
 ```
 
 El frontend compilado se sirve desde Spring Boot en producción. `SpaController.java` redirige rutas SPA a `index.html`.
