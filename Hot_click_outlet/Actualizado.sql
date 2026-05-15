@@ -1442,5 +1442,23 @@ CREATE INDEX IF NOT EXISTS idx_otp_expires ON "HOT_CLICK_CODIGO_OTP_TB"("EXPIRES
 CREATE INDEX IF NOT EXISTS idx_otp_tipo    ON "HOT_CLICK_CODIGO_OTP_TB"("FK_ID_TIPO_OTP");
 
 -- ============================================================
+-- 2026-05-15: Evitar duplicados en cola FB por producto
+-- ============================================================
+-- PASO 1 (correr primero): Eliminar duplicados dejando solo el más reciente
+DELETE FROM hot_click_publicacion_fb_tb
+WHERE id_publicacion_fb IN (
+    SELECT id_publicacion_fb FROM (
+        SELECT id_publicacion_fb,
+               ROW_NUMBER() OVER (PARTITION BY fk_id_producto ORDER BY fecha_creacion DESC) AS rn
+        FROM hot_click_publicacion_fb_tb
+    ) t WHERE rn > 1
+);
+
+-- PASO 2: Agregar UNIQUE constraint
+ALTER TABLE hot_click_publicacion_fb_tb
+    DROP CONSTRAINT IF EXISTS uq_publicacion_fb_producto,
+    ADD CONSTRAINT uq_publicacion_fb_producto UNIQUE (fk_id_producto);
+
+-- ============================================================
 -- FIN DEL SCRIPT
 -- ============================================================

@@ -8,5 +8,5 @@ import java.util.Optional;
 public interface PublicacionFacebookRepository extends JpaRepository<PublicacionFacebook, Long> {
     List<PublicacionFacebook> findAllByOrderByFechaCreacionDesc();
     List<PublicacionFacebook> findByEstadoPublicacionOrderByFechaCreacionDesc(String estado);
-    Optional<PublicacionFacebook> findByProductoId(Long productoId);
+    Optional<PublicacionFacebook> findFirstByProductoIdOrderByFechaCreacionDesc(Long productoId);
 }

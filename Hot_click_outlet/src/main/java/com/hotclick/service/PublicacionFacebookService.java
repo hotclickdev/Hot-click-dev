@@ -36,7 +36,7 @@ public class PublicacionFacebookService {
         Producto p = productoRepo.findById(productoId)
             .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + productoId));
 
-        PublicacionFacebook pub = pubRepo.findByProductoId(productoId)
+        PublicacionFacebook pub = pubRepo.findFirstByProductoIdOrderByFechaCreacionDesc(productoId)
             .orElse(new PublicacionFacebook());
 
         pub.setProducto(p);
@@ -81,7 +81,7 @@ public class PublicacionFacebookService {
         List<Producto> productos = productoRepo.findByEstado(Integer.valueOf(Constants.ESTADO_ACTIVO), Pageable.unpaged()).getContent();
         int creados = 0;
         for (Producto p : productos) {
-            if (pubRepo.findByProductoId(p.getId()).isEmpty()) {
+            if (pubRepo.findFirstByProductoIdOrderByFechaCreacionDesc(p.getId()).isEmpty()) {
                 try {
                     crearOActualizar(p.getId(), null);
                     creados++;
