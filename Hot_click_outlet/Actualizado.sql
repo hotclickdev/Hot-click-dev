@@ -1404,12 +1404,15 @@ CREATE TABLE IF NOT EXISTS hot_click_publicacion_fb_tb (
 
 -- 2026-05-14: Ampliar columnas VARCHAR de producto que Vision AI puede exceder
 ALTER TABLE hot_click_producto_tb
-    ALTER COLUMN descripcion_corta TYPE VARCHAR(300),
-    ALTER COLUMN titulo_producto   TYPE VARCHAR(300),
-    ALTER COLUMN nombre_producto   TYPE VARCHAR(200);
+    ALTER COLUMN descripcion_corta  TYPE VARCHAR(300),
+    ALTER COLUMN titulo_producto    TYPE VARCHAR(300),
+    ALTER COLUMN nombre_producto    TYPE VARCHAR(200),
+    ALTER COLUMN descripcion_larga  TYPE TEXT,
+    ALTER COLUMN especificaciones   TYPE TEXT,
+    ALTER COLUMN como_usar          TYPE TEXT;
 
 -- 2026-05-14: Columnas 2FA para autenticación de dos factores (Google Authenticator)
-ALTER TABLE "HOT_CLICK_USUARIO_TB"
+ALTER TABLE HOT_CLICK_USUARIO_TB
     ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN NOT NULL DEFAULT false,
     ADD COLUMN IF NOT EXISTS two_factor_secret   VARCHAR(100);
 

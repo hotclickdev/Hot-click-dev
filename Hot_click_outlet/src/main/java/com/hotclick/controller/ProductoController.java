@@ -76,7 +76,7 @@ public class ProductoController {
             var producto = productoService.crearProducto(dto, userDetails.getUsername());
             return ResponseEntity.ok(ResponseDTO.success("Producto creado", producto));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(mensajeAmigable(e)));
         }
     }
 
@@ -89,8 +89,17 @@ public class ProductoController {
             var producto = productoService.actualizarProducto(id, dto, userDetails.getUsername());
             return ResponseEntity.ok(ResponseDTO.success("Producto actualizado", producto));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(mensajeAmigable(e)));
         }
+    }
+
+    private static String mensajeAmigable(Exception e) {
+        String msg = e.getMessage();
+        if (msg != null && msg.contains("value too long for type character varying")) {
+            return "Uno de los campos de texto supera el límite permitido. " +
+                   "Revisá descripción, especificaciones o cómo usar y reducí el texto.";
+        }
+        return msg != null ? msg : "Error al procesar el producto";
     }
 
     @PostMapping("/imagen")

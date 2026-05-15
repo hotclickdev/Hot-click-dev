@@ -75,9 +75,9 @@ public class ProductoService {
         if (dto.getStockMinimo()        != null) p.setStockMinimo(dto.getStockMinimo());
         if (dto.getVisibleCatalogo()    != null) p.setVisibleCatalogo(dto.getVisibleCatalogo());
         if (dto.getDestacado()          != null) p.setDestacado(dto.getDestacado());
-        if (dto.getEspecificaciones()   != null) p.setEspecificaciones(dto.getEspecificaciones());
-        if (dto.getComoUsar()           != null) p.setComoUsar(dto.getComoUsar());
-        if (dto.getDescripcionLarga()   != null) p.setDescripcionLarga(dto.getDescripcionLarga());
+        if (dto.getEspecificaciones()   != null) p.setEspecificaciones(trunc(dto.getEspecificaciones(), 5000));
+        if (dto.getComoUsar()           != null) p.setComoUsar(trunc(dto.getComoUsar(), 5000));
+        if (dto.getDescripcionLarga()   != null) p.setDescripcionLarga(trunc(dto.getDescripcionLarga(), 5000));
     }
 
     private static String trunc(String s, int max) {
