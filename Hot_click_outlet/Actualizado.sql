@@ -1424,6 +1424,28 @@ ALTER TABLE hot_click_producto_tb
 -- 2026-05-15: Sistema OTP persistente en BD
 -- ============================================================
 
+-- Tabla de tipos de OTP
+CREATE TABLE IF NOT EXISTS hot_click_tipo_otp_tb (
+    id_tipo_otp          SERIAL PRIMARY KEY,
+    nombre               VARCHAR(30)  NOT NULL UNIQUE,
+    tiempo_expiracion_seg INTEGER     NOT NULL DEFAULT 300,
+    longitud_codigo      INTEGER      NOT NULL DEFAULT 6,
+    fk_id_estado         INTEGER      NOT NULL DEFAULT 1
+);
+
+-- Tabla de códigos OTP
+CREATE TABLE IF NOT EXISTS hot_click_codigo_otp_tb (
+    id_otp_code     BIGSERIAL PRIMARY KEY,
+    codigo_hash     VARCHAR(255) NOT NULL,
+    expires_at      TIMESTAMP    NOT NULL,
+    used_at         TIMESTAMP,
+    attempts        INTEGER      NOT NULL DEFAULT 0,
+    active_flag     BOOLEAN      NOT NULL DEFAULT true,
+    fk_id_usuario   BIGINT       NOT NULL REFERENCES hot_click_usuario_tb(id_usuario),
+    fk_id_tipo_otp  INTEGER      NOT NULL REFERENCES hot_click_tipo_otp_tb(id_tipo_otp),
+    fk_id_estado    INTEGER      NOT NULL DEFAULT 1
+);
+
 -- Estado PENDIENTE para usuarios que no han verificado su correo
 INSERT INTO "HOT_CLICK_ESTADO_TB" ("ID_ESTADO","NOMBRE_ESTADO","DESCRIPCION","CODIGO_COLOR")
 VALUES (5,'PENDIENTE','Pendiente de verificación de correo electrónico','#9CA3AF')
