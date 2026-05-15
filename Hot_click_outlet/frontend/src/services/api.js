@@ -29,9 +29,18 @@ api.interceptors.response.use(
     return response
   },
   (error) => {
-    if (error.response?.status === 401) {
+    const status = error.response?.status
+    // 401 = token expirado/inválido; 403 sin token = sesión perdida → redirigir al login
+    if (status === 401) {
       localStorage.removeItem('hotclick-auth')
       window.location.href = '/login'
+    } else if (status === 403) {
+      const stored = localStorage.getItem('hotclick-auth')
+      const hasToken = (() => { try { return !!JSON.parse(stored)?.state?.token } catch { return false } })()
+      if (!hasToken) {
+        localStorage.removeItem('hotclick-auth')
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   }

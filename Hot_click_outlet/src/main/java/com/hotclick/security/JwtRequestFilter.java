@@ -42,7 +42,11 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             try {
                 username = jwtUtil.extractUsername(jwt);
             } catch (JwtException | IllegalArgumentException e) {
-                // Token inválido: ignorar y continuar — Spring Security decide si el endpoint es público o no
+                // Token presente pero inválido/expirado → 401 para que el frontend redirija al login
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write("{\"success\":false,\"message\":\"Sesión expirada. Iniciá sesión de nuevo.\"}");
+                return;
             }
         }
 
