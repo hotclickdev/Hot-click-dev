@@ -1,5 +1,5 @@
 # Stage 1: Build React frontend
-FROM node:20-alpine AS frontend-builder
+FROM node:22-alpine AS frontend-builder
 WORKDIR /app/frontend
 RUN corepack enable && corepack prepare pnpm@11.1.2 --activate
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
