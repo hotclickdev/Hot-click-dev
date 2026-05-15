@@ -1,0 +1,8 @@
+**/node_modules
+**/.pnpm-store
+**/dist
+**/.git
+**/*.md
+.claude
+api_cloud_google
+Hot_click_outlet/dsd.js
