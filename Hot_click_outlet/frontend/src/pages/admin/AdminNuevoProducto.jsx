@@ -9,12 +9,13 @@ import { useToast } from '@/components/ui/Toast'
 import { publicacionService } from '@/services/publicacionService'
 import { productService, denormalizeProduct } from '@/services/productService'
 import { warehouseService } from '@/services/orderService'
+import MultiImagePicker from '@/components/ui/MultiImagePicker'
 
 const EMPTY_FORM = {
   nombre: '', titulo: '', descripcion: '', descripcionLarga: '',
   especificaciones: '', comoUsar: '', marca: '',
   precioVenta: '', precioCompra: '', stock: '1',
-  condicion: 'NUEVO', categoriaId: '', bodegaId: '', imagenUrl: '',
+  condicion: 'NUEVO', categoriaId: '', bodegaId: '', imagenUrl: '', imagenes: [],
 }
 
 function ImagenUpload({ value, onChange, onUploadingChange }) {
@@ -182,8 +183,18 @@ export default function AdminNuevoProducto() {
     try {
       const fd = new FormData()
       fd.append('imagen', imagen)
-      const r = await publicacionService.detallesProducto(fd)
-      const d = r.data
+      // Subir imagen y analizar en paralelo para ahorrar tiempo
+      const fdImg = new FormData()
+      fdImg.append('file', imagen)
+      const [analyzeRes, uploadRes] = await Promise.allSettled([
+        publicacionService.detallesProducto(fd),
+        productService.uploadImage(fdImg),
+      ])
+      if (analyzeRes.status === 'rejected') throw analyzeRes.reason
+      const d = analyzeRes.value.data
+      const uploadedUrl = uploadRes.status === 'fulfilled'
+        ? (uploadRes.value.data?.data?.url ?? uploadRes.value.data?.url ?? uploadRes.value.data ?? '')
+        : ''
       setEtiquetas(d.todasEtiquetas ?? [])
       setFuenteDetalles(d.fuenteDetalles ?? null)
       setForm((prev) => ({
@@ -197,6 +208,8 @@ export default function AdminNuevoProducto() {
         marca:            d.marca           ?? '',
         precioVenta:      d.precioSugerido > 0 ? String(d.precioSugerido) : '',
         bodegaId:         bodegas[0]?.id   ? String(bodegas[0].id) : '',
+        imagenUrl:        uploadedUrl,
+        imagenes:         uploadedUrl ? [uploadedUrl] : [],
       }))
       setPaso(2)
     } catch (err) {
@@ -210,24 +223,13 @@ export default function AdminNuevoProducto() {
     if (!form.bodegaId && bodegas.length > 0) { toast({ message: 'Selecciona una bodega', type: 'error' }); return }
     setSaving(true)
     try {
-      let imagenUrl = form.imagenUrl
-      // Upload the dragged image if not yet uploaded
-      if (!imagenUrl && imagen) {
-        setUploadingImg(true)
-        try {
-          const fdImg = new FormData()
-          fdImg.append('file', imagen)
-          const r = await productService.uploadImage(fdImg)
-          imagenUrl = r.data?.url ?? r.data ?? ''
-        } catch (err) {
-          toast({ message: 'Error al subir imagen: ' + (err?.response?.data?.message ?? err?.message), type: 'error' })
-          setSaving(false)
-          setUploadingImg(false)
-          return
-        }
-        setUploadingImg(false)
+      const imagenUrl = form.imagenes[0] ?? form.imagenUrl ?? ''
+      const dto = denormalizeProduct({ ...form, imagenUrl })
+      const res = await productService.create(dto)
+      const productoId = res.data?.id ?? res.data?.data?.id
+      if (productoId && form.imagenes.length > 0) {
+        await productService.sincronizarImagenes(productoId, form.imagenes)
       }
-      await productService.create(denormalizeProduct({ ...form, imagenUrl }))
       toast({ message: 'Producto creado correctamente', type: 'success' })
       navigate('/admin/productos')
     } catch (err) {
@@ -397,47 +399,16 @@ export default function AdminNuevoProducto() {
                 </div>
               </div>
 
-              {/* Imagen */}
-              <div>
-                <Label>Imagen del producto</Label>
-                {/* Show the dragged preview; allow replacing with a new image */}
-                {(preview || form.imagenUrl) ? (
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={form.imagenUrl || preview}
-                      alt="Producto"
-                      className="w-28 h-28 object-cover rounded-xl border border-white/10 bg-[#1a1a1f]"
-                    />
-                    <div className="space-y-1.5">
-                      {form.imagenUrl
-                        ? <p className="text-xs text-green-400">✓ Imagen guardada en la nube</p>
-                        : <p className="text-xs text-[#8e8e9a]">Se subirá al guardar el producto</p>
-                      }
-                      <label className="cursor-pointer px-3 py-1.5 rounded-xl border border-white/10 text-xs text-[#8e8e9a] hover:text-white hover:bg-white/5 transition-colors block text-center">
-                        Cambiar imagen
-                        <input type="file" accept="image/*" className="hidden"
-                          onChange={(e) => {
-                            const f = e.target.files?.[0]
-                            if (f) { setImagen(f); setPreview(URL.createObjectURL(f)); setForm(p => ({ ...p, imagenUrl: '' })) }
-                          }} />
-                      </label>
-                    </div>
-                  </div>
-                ) : (
-                  <ImagenUpload
-                    value={form.imagenUrl}
-                    onChange={(url) => setForm(p => ({ ...p, imagenUrl: url }))}
-                    onUploadingChange={setUploadingImg}
-                  />
-                )}
-              </div>
+              {/* Imágenes */}
+              <MultiImagePicker
+                imagenes={form.imagenes}
+                onChange={(imgs) => setForm((p) => ({ ...p, imagenes: imgs, imagenUrl: imgs[0] ?? p.imagenUrl }))}
+              />
 
               {/* Botones */}
               <div className="flex gap-3 pt-2">
-                <Button type="submit" disabled={saving || uploadingImg} className="flex-1">
-                  {uploadingImg
-                    ? <><Spinner size="sm" /><span className="ml-2">{t('common.loading')}</span></>
-                    : saving
+                <Button type="submit" disabled={saving} className="flex-1">
+                  {saving
                     ? <><Spinner size="sm" /><span className="ml-2">{t('common.loading')}</span></>
                     : t('admin.nuevoProducto.save')
                   }
