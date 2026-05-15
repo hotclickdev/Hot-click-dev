@@ -40,6 +40,10 @@ export default function AdminUsers() {
   const [editEstado, setEditEstado] = useState('')
   const [saving, setSaving] = useState(false)
 
+  // Delete modal
+  const [deleteUser, setDeleteUser] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+
   const load = async () => {
     setLoading(true)
     try {
@@ -68,6 +72,18 @@ export default function AdminUsers() {
       toast({ message: 'Usuario rechazado', type: 'info' })
       load()
     } catch { toast({ message: 'Error al rechazar', type: 'error' }) }
+  }
+
+  const handleDelete = async () => {
+    if (!deleteUser) return
+    setDeleting(true)
+    try {
+      await adminService.deleteUser(deleteUser.id)
+      toast({ message: 'Usuario eliminado', type: 'success' })
+      setDeleteUser(null)
+      load()
+    } catch { toast({ message: 'Error al eliminar', type: 'error' }) }
+    finally { setDeleting(false) }
   }
 
   const openEdit = (u) => {
@@ -201,6 +217,13 @@ export default function AdminUsers() {
                               className="px-2.5 py-1 text-xs rounded-lg bg-white/5 hover:bg-white/10 text-[#8e8e9a] hover:text-white transition-colors">
                               {t('common.edit')}
                             </button>
+                            <button onClick={() => setDeleteUser(u)}
+                              className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-500/8 hover:bg-red-500/20 text-red-400 transition-colors"
+                              title="Eliminar usuario">
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" />
+                              </svg>
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -215,6 +238,35 @@ export default function AdminUsers() {
           </div>
         )}
       </div>
+
+      {/* Modal confirmar eliminación */}
+      <Modal open={!!deleteUser} onClose={() => setDeleteUser(null)} title="Eliminar usuario" size="sm">
+        {deleteUser && (
+          <div className="space-y-5">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-red-500/8 border border-red-500/20">
+              <div className="w-9 h-9 rounded-full bg-red-500/15 flex items-center justify-center shrink-0">
+                <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-[#e8e8ed] truncate">{deleteUser.nombre ?? deleteUser.correo}</p>
+                <p className="text-xs text-red-400">Esta acción desactivará la cuenta permanentemente.</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteUser(null)}
+                className="flex-1 h-10 rounded-xl bg-white/5 hover:bg-white/8 text-[#8e8e9a] hover:text-white text-sm transition-colors">
+                {t('common.cancel')}
+              </button>
+              <button onClick={handleDelete} disabled={deleting}
+                className="flex-1 h-10 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-400 text-sm font-medium border border-red-500/30 transition-colors disabled:opacity-50">
+                {deleting ? t('common.loading') : t('common.delete')}
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* Modal editar usuario */}
       <Modal open={!!editUser} onClose={() => setEditUser(null)} title={t('admin.users.name')} size="sm">

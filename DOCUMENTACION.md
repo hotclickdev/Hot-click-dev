@@ -1,6 +1,6 @@
 # HOTCLICK Outlet — Documentación Técnica
 
-> Versión: 2.1 | Fecha: 2026-05-13 | Stack migrado a React 19 + Vite
+> Versión: 2.4 | Fecha: 2026-05-15 | Stack: React 19 + Vite + pnpm · Spring Boot 3.4.4 + Java 21
 
 ---
 
@@ -48,7 +48,7 @@
 | Servicio | Propósito |
 |---|---|
 | Supabase PostgreSQL | Base de datos principal |
-| Supabase Storage | Imágenes de productos (bucket `HOT_CLICK`) — upload directo desde React |
+| Supabase Storage | Imágenes de productos (bucket `HOT_CLICK`) — upload vía backend `/api/productos/imagen` |
 | Gmail SMTP | Verificación de email, reset de contraseña |
 | Google Authenticator | 2FA TOTP (RFC 6238) |
 | PayXpert | Pasarela de pago (pendiente activación) |
@@ -67,7 +67,8 @@
 | Base de datos | PostgreSQL (Supabase) | 15 |
 | Build backend | Maven local (`maven/bin/`) | — |
 | Frontend | React | 19 |
-| Bundler | Vite | — |
+| Bundler | Vite | 8.x |
+| Gestor de paquetes | pnpm | 11.1.2 |
 | Estado global | Zustand | — |
 | HTTP client | Axios | — |
 | Query cache | TanStack Query | — |

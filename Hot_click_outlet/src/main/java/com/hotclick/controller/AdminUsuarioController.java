@@ -115,6 +115,21 @@ public class AdminUsuarioController {
     }
 
     /**
+     * Elimina (soft-delete) un usuario.
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ResponseDTO> eliminar(@PathVariable Long id) {
+        Optional<Usuario> opt = usuarioRepository.findById(id);
+        if (opt.isEmpty()) {
+            return ResponseEntity.status(404).body(ResponseDTO.error("Usuario no encontrado"));
+        }
+        Usuario usuario = opt.get();
+        usuario.setEstado(Constants.ESTADO_ELIMINADO);
+        usuarioRepository.save(usuario);
+        return ResponseEntity.ok(ResponseDTO.success("Usuario eliminado", null));
+    }
+
+    /**
      * Activa o desactiva una cuenta existente.
      * Body: { "estado": 1 } (1=activo, 2=inactivo)
      */

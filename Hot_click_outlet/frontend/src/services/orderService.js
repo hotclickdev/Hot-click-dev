@@ -23,6 +23,7 @@ export const adminService = {
   rejectUser: (id) => api.put(`/admin/usuarios/${id}/rechazar`),
   setRole: (id, rol) => api.put(`/admin/usuarios/${id}/rol`, { rol }),
   setStatus: (id, estado) => api.put(`/admin/usuarios/${id}/estado`, { estado }),
+  deleteUser: (id) => api.delete(`/admin/usuarios/${id}`),
 }
 
 export const warehouseService = {
