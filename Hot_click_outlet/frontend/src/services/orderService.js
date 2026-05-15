@@ -7,6 +7,7 @@ export const orderService = {
   getAll: () => api.get('/pedidos'),
   getPending: () => api.get('/pedidos/pendientes'),
   updateStatus: (id, estado) => api.put(`/pedidos/${id}/estado`, { estado }),
+  asignarGuia:  (id, numeroGuia) => api.put(`/pedidos/${id}/guia`, { numeroGuia }),
 }
 
 export const ventaService = {

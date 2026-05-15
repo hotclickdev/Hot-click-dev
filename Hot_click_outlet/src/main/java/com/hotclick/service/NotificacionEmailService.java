@@ -43,6 +43,59 @@ public class NotificacionEmailService {
         }
     }
 
+    @Async
+    public void enviarNotificacionGuia(Pedido pedido) {
+        Usuario cliente = pedido.getUsuarioFinal();
+        if (cliente == null || cliente.getCorreo() == null) return;
+        try {
+            MimeMessage mail = mailSender.createMimeMessage();
+            MimeMessageHelper h = new MimeMessageHelper(mail, false, "UTF-8");
+            h.setFrom(fromEmail, "HOTCLICK");
+            h.setTo(cliente.getCorreo());
+            h.setSubject("🚚 Tu pedido fue enviado — " + pedido.getNumeroPedido());
+            h.setText(buildGuiaHtml(pedido, cliente), true);
+            mailSender.send(mail);
+            log.info("Email guía enviado a {} para pedido {}", cliente.getCorreo(), pedido.getNumeroPedido());
+        } catch (Exception e) {
+            log.error("No se pudo enviar email de guía para pedido {}: {}", pedido.getNumeroPedido(), e.getMessage());
+        }
+    }
+
+    private String buildGuiaHtml(Pedido pedido, Usuario cliente) {
+        String nombre = esc(cliente.getNombre() != null ? cliente.getNombre() : "Cliente");
+        String guia   = esc(pedido.getNumeroGuia());
+        String url    = pedido.getUrlTracking() != null ? pedido.getUrlTracking()
+            : "https://rastreo.correos.go.cr/?codigo=" + pedido.getNumeroGuia();
+
+        return "<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body style='margin:0;padding:0;background:#f5f5f7;font-family:sans-serif'>"
+            + "<div style='max-width:560px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)'>"
+            + "<div style='background:linear-gradient(135deg,#059669,#047857);padding:32px 32px 24px'>"
+            + "<div style='display:inline-flex;align-items:center;gap:10px'>"
+            + "<div style='width:36px;height:36px;background:rgba(255,255,255,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:#fff'>HC</div>"
+            + "<span style='color:#fff;font-size:20px;font-weight:900;letter-spacing:1px'>HOTCLICK</span>"
+            + "</div>"
+            + "<h1 style='color:#fff;margin:16px 0 0;font-size:22px;font-weight:700'>¡Tu pedido fue enviado! 🚚</h1>"
+            + "</div>"
+            + "<div style='padding:28px 32px'>"
+            + "<p style='margin:0;color:#1a1a2e;font-size:15px'>Hola <strong>" + nombre + "</strong>,</p>"
+            + "<p style='margin:8px 0 24px;color:#6e6e82;font-size:14px'>Tu pedido <strong>" + esc(pedido.getNumeroPedido()) + "</strong> está en camino con Correos de Costa Rica.</p>"
+            + "<div style='background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px;text-align:center;margin-bottom:24px'>"
+            + "<p style='margin:0 0 6px;font-size:12px;color:#059669;font-weight:600;text-transform:uppercase;letter-spacing:1px'>Número de guía</p>"
+            + "<p style='margin:0;font-size:24px;font-weight:900;color:#1a1a2e;letter-spacing:2px'>" + guia + "</p>"
+            + "</div>"
+            + "<div style='text-align:center;margin-bottom:24px'>"
+            + "<a href='" + url + "' style='display:inline-block;background:#059669;color:#fff;text-decoration:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700'>📦 Rastrear mi paquete</a>"
+            + "</div>"
+            + "<p style='margin:0;font-size:12px;color:#9ca3af;text-align:center'>También puedes rastrear en: rastreo.correos.go.cr con el número de guía</p>"
+            + "</div>"
+            + "<div style='padding:20px 32px;background:#f5f5f7;text-align:center'>"
+            + "<p style='margin:0 0 8px;color:#6e6e82;font-size:12px'>¿Preguntas sobre tu envío?</p>"
+            + "<a href='https://wa.me/50689745370' style='display:inline-block;background:#25D366;color:#fff;text-decoration:none;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600'>📱 Contáctanos por WhatsApp</a>"
+            + "<p style='margin:12px 0 0;color:#aaa;font-size:11px'>HOTCLICK · hotclick.cr@gmail.com · Costa Rica</p>"
+            + "</div>"
+            + "</div></body></html>";
+    }
+
     private String buildHtml(Pedido pedido, Usuario cliente) {
         StringBuilder items = new StringBuilder();
         for (PedidoItem item : pedido.getItems()) {

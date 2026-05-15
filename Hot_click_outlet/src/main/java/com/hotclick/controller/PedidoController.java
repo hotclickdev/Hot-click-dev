@@ -61,6 +61,21 @@ public class PedidoController {
         }
     }
 
+    @PutMapping("/{id}/guia")
+    public ResponseEntity<ResponseDTO> asignarGuia(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        try {
+            String guia = body.get("numeroGuia");
+            if (guia == null || guia.isBlank())
+                return ResponseEntity.badRequest().body(ResponseDTO.error("Número de guía requerido"));
+            Pedido pedido = pedidoService.asignarGuia(id, guia.trim());
+            return ResponseEntity.ok(ResponseDTO.success("Guía asignada y cliente notificado", pedido));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        }
+    }
+
     @GetMapping("/pendientes")
     public ResponseEntity<ResponseDTO> listarPendientes() {
         return ResponseEntity.ok(ResponseDTO.success("Pedidos pendientes", pedidoService.listarPendientes()));

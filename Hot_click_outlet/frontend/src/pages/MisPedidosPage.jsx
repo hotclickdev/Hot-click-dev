@@ -174,6 +174,30 @@ function OrderCard({ order }) {
                 📦 {order.metodoEnvio === 'ENVIO_A_DOMICILIO' ? 'Envío a domicilio' : 'Retiro en tienda'}
                 {order.notas ? ` · ${order.notas}` : ''}
               </p>
+
+              {/* Guía Correos CR */}
+              {order.numeroGuia && (
+                <div className="flex items-center justify-between px-3 py-2.5 rounded-xl"
+                  style={{ backgroundColor: 'rgba(5,150,105,0.08)', border: '1px solid rgba(5,150,105,0.2)' }}>
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#059669' }}>
+                      🚚 Número de guía Correos CR
+                    </p>
+                    <p className="text-sm font-mono font-bold mt-0.5" style={{ color: '#059669' }}>
+                      {order.numeroGuia}
+                    </p>
+                  </div>
+                  <a
+                    href={order.urlTracking ?? `https://rastreo.correos.go.cr/?codigo=${order.numeroGuia}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg"
+                    style={{ backgroundColor: '#059669', color: '#fff' }}
+                  >
+                    Rastrear
+                  </a>
+                </div>
+              )}
             </div>
           </motion.div>
         )}

@@ -73,6 +73,15 @@ public class Pedido extends BaseEntity {
     @Column(name = "factura_enviada_whatsapp")
     private Boolean facturaEnviadaWhatsapp = false;
 
+    @Column(name = "numero_guia", length = 50)
+    private String numeroGuia;
+
+    @Column(name = "url_tracking", length = 500)
+    private String urlTracking;
+
+    @Column(name = "fecha_envio")
+    private LocalDateTime fechaEnvio;
+
     @ManyToOne
     @JoinColumn(name = "fk_id_usuario_final", nullable = false)
     private Usuario usuarioFinal;
@@ -143,6 +152,15 @@ public class Pedido extends BaseEntity {
 
     public Boolean getFacturaEnviadaWhatsapp() { return facturaEnviadaWhatsapp; }
     public void setFacturaEnviadaWhatsapp(Boolean facturaEnviadaWhatsapp) { this.facturaEnviadaWhatsapp = facturaEnviadaWhatsapp; }
+
+    public String getNumeroGuia() { return numeroGuia; }
+    public void setNumeroGuia(String numeroGuia) { this.numeroGuia = numeroGuia; }
+
+    public String getUrlTracking() { return urlTracking; }
+    public void setUrlTracking(String urlTracking) { this.urlTracking = urlTracking; }
+
+    public LocalDateTime getFechaEnvio() { return fechaEnvio; }
+    public void setFechaEnvio(LocalDateTime fechaEnvio) { this.fechaEnvio = fechaEnvio; }
 
     public Usuario getUsuarioFinal() { return usuarioFinal; }
     public void setUsuarioFinal(Usuario usuarioFinal) { this.usuarioFinal = usuarioFinal; }

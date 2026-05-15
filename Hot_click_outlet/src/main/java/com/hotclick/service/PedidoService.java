@@ -21,6 +21,9 @@ public class PedidoService {
     @Autowired
     private PedidoRepository pedidoRepository;
 
+    @Autowired
+    private NotificacionEmailService notificacionEmailService;
+
     @Transactional
     public Pedido crearPedido(Pedido pedido) {
         pedido.setNumeroPedido("ORD-" + System.currentTimeMillis());
@@ -62,6 +65,20 @@ public class PedidoService {
         List<Pedido> list = pedidoRepository.findByEstadoPedidoAndEstado(Constants.PEDIDO_PENDIENTE, Constants.ESTADO_ACTIVO);
         list.forEach(p -> p.getItems().size());
         return list;
+    }
+
+    @Transactional
+    public Pedido asignarGuia(Long id, String numeroGuia) {
+        Pedido pedido = pedidoRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+        pedido.setNumeroGuia(numeroGuia);
+        pedido.setUrlTracking("https://rastreo.correos.go.cr/?codigo=" + numeroGuia);
+        pedido.setFechaEnvio(LocalDateTime.now());
+        pedido.setEstadoPedido(Constants.PEDIDO_ENVIADO);
+        pedido = pedidoRepository.save(pedido);
+        pedido.getItems().size();
+        notificacionEmailService.enviarNotificacionGuia(pedido);
+        return pedido;
     }
 
     @Transactional(readOnly = true)

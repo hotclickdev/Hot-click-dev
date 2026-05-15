@@ -9,7 +9,7 @@ import { orderService } from '@/services/orderService'
 import { useToast } from '@/components/ui/Toast'
 import { formatDate, formatPrice, statusColor } from '@/utils/format'
 
-const STATUS_OPTIONS = ['PENDIENTE', 'DESPACHADO', 'ENTREGADO', 'CANCELADO']
+const STATUS_OPTIONS = ['PENDIENTE', 'PAGADO', 'EN_PREPARACION', 'ENVIADO', 'ENTREGADO', 'CANCELADO']
 
 export default function AdminOrders() {
   const { t } = useTranslation()
@@ -20,6 +20,8 @@ export default function AdminOrders() {
   const [newStatus, setNewStatus] = useState('')
   const [saving, setSaving] = useState(false)
   const [filter, setFilter] = useState('ALL')
+  const [guia, setGuia] = useState('')
+  const [savingGuia, setSavingGuia] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -33,7 +35,8 @@ export default function AdminOrders() {
 
   const openOrder = (order) => {
     setSelected(order)
-    setNewStatus(order.estado ?? '')
+    setNewStatus(order.estado ?? order.estadoPedido ?? '')
+    setGuia(order.numeroGuia ?? '')
   }
 
   const handleStatusUpdate = async () => {
@@ -46,6 +49,18 @@ export default function AdminOrders() {
       load()
     } catch { toast({ message: 'Error al actualizar', type: 'error' }) }
     finally { setSaving(false) }
+  }
+
+  const handleGuia = async () => {
+    if (!selected || !guia.trim()) return
+    setSavingGuia(true)
+    try {
+      await orderService.asignarGuia(selected.id, guia.trim())
+      toast({ message: 'Guía asignada — cliente notificado por email', type: 'success' })
+      setSelected(null)
+      load()
+    } catch { toast({ message: 'Error al asignar guía', type: 'error' }) }
+    finally { setSavingGuia(false) }
   }
 
   const filtered = filter === 'ALL' ? orders : orders.filter((o) => o.estado === filter)
@@ -179,8 +194,43 @@ export default function AdminOrders() {
                 >
                   {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
-                <Button onClick={handleStatusUpdate} loading={saving} disabled={newStatus === selected.estado}>
+                <Button onClick={handleStatusUpdate} loading={saving} disabled={newStatus === (selected.estadoPedido ?? selected.estado)}>
                   {t('common.save')}
+                </Button>
+              </div>
+            </div>
+
+            {/* Guía Correos CR */}
+            <div className="border-t border-white/8 pt-4">
+              <p className="text-xs font-medium text-[#8e8e9a] mb-1">📦 Número de guía Correos CR</p>
+              <p className="text-[10px] text-[#8e8e9a]/70 mb-2">
+                Al guardar, el estado cambia a ENVIADO y el cliente recibe un email con el número de guía.
+              </p>
+              {selected.numeroGuia && (
+                <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/20">
+                  <span className="text-xs text-green-400">Guía actual:</span>
+                  <a href={selected.urlTracking ?? `https://rastreo.correos.go.cr/?codigo=${selected.numeroGuia}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="text-xs font-mono font-bold text-green-300 hover:underline">
+                    {selected.numeroGuia}
+                  </a>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={guia}
+                  onChange={(e) => setGuia(e.target.value)}
+                  placeholder="Ej: CR123456789CR"
+                  className="flex-1 h-10 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm placeholder:text-[#8e8e9a]/50 focus:outline-none focus:border-green-500/60 font-mono"
+                />
+                <Button
+                  onClick={handleGuia}
+                  loading={savingGuia}
+                  disabled={!guia.trim() || guia.trim() === selected.numeroGuia}
+                  style={{ backgroundColor: '#059669' }}
+                >
+                  Enviar
                 </Button>
               </div>
             </div>
