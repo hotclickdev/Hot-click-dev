@@ -30,16 +30,17 @@ public class PayXpertService {
 
     private static final Logger log = LoggerFactory.getLogger(PayXpertService.class);
 
-    @Autowired private PayXpertConfig           config;
-    @Autowired private PedidoRepository         pedidoRepository;
-    @Autowired private ProductoRepository        productoRepository;
-    @Autowired private BodegaRepository          bodegaRepository;
-    @Autowired private UsuarioRepository         usuarioRepository;
-    @Autowired private PagoRepository            pagoRepository;
-    @Autowired private TransaccionPagoRepository transaccionPagoRepository;
-    @Autowired private WebhookEventRepository    webhookEventRepository;
-    @Autowired private PaymentLogRepository      paymentLogRepository;
-    @Autowired private ObjectMapper              objectMapper;
+    @Autowired private PayXpertConfig             config;
+    @Autowired private PedidoRepository           pedidoRepository;
+    @Autowired private ProductoRepository          productoRepository;
+    @Autowired private BodegaRepository            bodegaRepository;
+    @Autowired private UsuarioRepository           usuarioRepository;
+    @Autowired private PagoRepository              pagoRepository;
+    @Autowired private TransaccionPagoRepository   transaccionPagoRepository;
+    @Autowired private WebhookEventRepository      webhookEventRepository;
+    @Autowired private PaymentLogRepository        paymentLogRepository;
+    @Autowired private ObjectMapper                objectMapper;
+    @Autowired private NotificacionEmailService    notificacionEmailService;
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
@@ -313,6 +314,7 @@ public class PayXpertService {
         pedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
         pedidoRepository.save(pedido);
 
+        notificacionEmailService.enviarConfirmacionPedido(pedido);
         log.info("Pedido {} confirmado como PAGADO", pedido.getNumeroPedido());
     }
 
