@@ -150,6 +150,7 @@ export default function Navbar() {
                 </Link>
                 <button
                   onClick={handleLogout}
+                  aria-label={t('nav.cerrarSesion')}
                   className="hidden md:flex p-2 rounded-lg transition-colors hover:text-red-400"
                   style={{ color: 'var(--hc-muted)' }}
                   title={t('nav.cerrarSesion')}

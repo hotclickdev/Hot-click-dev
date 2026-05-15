@@ -124,7 +124,8 @@ export default function CartPage() {
                       <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-lg p-1">
                         <button
                           onClick={() => updateQuantity(item.id, item.cantidad - 1)}
-                          className="w-7 h-7 flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/8 rounded-md transition-colors text-sm"
+                          aria-label={`Reducir cantidad de ${item.nombre}`}
+                          className="w-8 h-8 flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/8 rounded-md transition-colors text-sm"
                         >
                           −
                         </button>
@@ -134,7 +135,8 @@ export default function CartPage() {
                         <button
                           onClick={() => updateQuantity(item.id, item.cantidad + 1)}
                           disabled={item.cantidad >= (item.stock ?? 99)}
-                          className="w-7 h-7 flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/8 rounded-md transition-colors text-sm disabled:opacity-30"
+                          aria-label={`Aumentar cantidad de ${item.nombre}`}
+                          className="w-8 h-8 flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/8 rounded-md transition-colors text-sm disabled:opacity-30"
                         >
                           +
                         </button>
