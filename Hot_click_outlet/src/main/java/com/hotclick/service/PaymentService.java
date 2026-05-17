@@ -22,8 +22,11 @@ import java.util.List;
 
 /**
  * Servicio central de pagos.
- * Orquesta: validación de ítems → creación de Pedido → delegación al proveedor →
- * creación de Pago → confirmación de stock y email al capturar.
+ *
+ * Flujo de stock:
+ *   checkout()        → reserva stockReservado (SELECT FOR UPDATE)
+ *   confirmarPedido() → descuenta stockActual + libera stockReservado
+ *   liberarReservas() → solo libera stockReservado (pago cancelado/fallido/expirado)
  */
 @Service
 public class PaymentService {
@@ -40,7 +43,7 @@ public class PaymentService {
     @Autowired private NotificacionEmailService    notificacionEmailService;
 
     // ================================================================
-    // CHECKOUT — Crea Pedido + sesión de pago con el proveedor elegido
+    // CHECKOUT — Valida stock (con lock), reserva, crea Pedido + sesión
     // ================================================================
     @Transactional
     public PaymentCheckoutResponse checkout(PaymentCheckoutRequest req, String correoUsuario) {
@@ -60,19 +63,28 @@ public class PaymentService {
         Bodega bodega = bodegaRepository.findById(bodegaId)
             .orElseThrow(() -> new RuntimeException("Bodega no encontrada: " + bodegaId));
 
-        // Calcular totales desde DB (nunca confiar en el frontend)
+        // ── Validar y RESERVAR stock con bloqueo pesimista ──────────────
         int subtotal   = 0;
         int costoTotal = 0;
         for (PaymentCheckoutRequest.ItemDTO item : req.getItems()) {
-            Producto p = productoRepository.findById(item.getProductoId())
+            // SELECT FOR UPDATE — previene race conditions al reservar
+            Producto p = productoRepository.findByIdForUpdate(item.getProductoId())
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + item.getProductoId()));
+
             if (!Boolean.TRUE.equals(p.getVisibleCatalogo()) || Boolean.TRUE.equals(p.getVendido())) {
                 throw new IllegalStateException("Producto no disponible: " + p.getNombreProducto());
             }
-            if (p.getStockActual() < item.getCantidad()) {
-                throw new IllegalStateException("Stock insuficiente para: " + p.getNombreProducto()
-                    + " (disponible: " + p.getStockActual() + ", solicitado: " + item.getCantidad() + ")");
+            // Validar contra stockDisponible (stockActual - stockReservado)
+            if (p.getStockDisponible() < item.getCantidad()) {
+                throw new IllegalStateException(
+                    "Stock insuficiente para \"" + p.getNombreProducto() + "\""
+                    + " (disponible: " + p.getStockDisponible()
+                    + ", solicitado: " + item.getCantidad() + ")");
             }
+            // Reservar unidades
+            p.setStockReservado(p.getStockReservado() + item.getCantidad());
+            productoRepository.save(p);
+
             subtotal   += p.getPrecioVenta()  * item.getCantidad();
             costoTotal += p.getPrecioCompra() * item.getCantidad();
         }
@@ -80,7 +92,7 @@ public class PaymentService {
         int costoEnvio = "ENVIO_A_DOMICILIO".equals(req.getMetodoEnvio()) ? 2000 : 0;
         int total      = subtotal + costoEnvio;
 
-        // Crear Pedido en estado PENDIENTE
+        // ── Crear Pedido PENDIENTE ───────────────────────────────────────
         Pedido pedido = new Pedido();
         pedido.setNumeroPedido("ORD-" + System.currentTimeMillis());
         pedido.setFechaPedido(LocalDateTime.now());
@@ -96,8 +108,7 @@ public class PaymentService {
             pedido.setMargenGananciaPedido(
                 BigDecimal.valueOf(subtotal - costoTotal)
                     .divide(BigDecimal.valueOf(subtotal), 4, RoundingMode.HALF_UP)
-                    .multiply(BigDecimal.valueOf(100))
-            );
+                    .multiply(BigDecimal.valueOf(100)));
         }
         pedido.setMetodoPago(provider);
         pedido.setMetodoEnvio(req.getMetodoEnvio() != null ? req.getMetodoEnvio() : "RETIRO_EN_TIENDA");
@@ -108,7 +119,7 @@ public class PaymentService {
         pedido.setEstado(Constants.ESTADO_ACTIVO);
         pedidoRepository.save(pedido);
 
-        // Crear PedidoItems (snapshot de precios en el momento de compra)
+        // Snapshot de precios al momento de compra
         for (PaymentCheckoutRequest.ItemDTO item : req.getItems()) {
             Producto p = productoRepository.findById(item.getProductoId()).orElseThrow();
             PedidoItem pi = new PedidoItem();
@@ -125,17 +136,20 @@ public class PaymentService {
         }
         pedidoRepository.save(pedido);
 
-        // Delegar la sesión de pago al proveedor elegido
+        // ── Delegar sesión al proveedor ─────────────────────────────────
         PaymentSession session;
         try {
             session = providerFactory.get(provider).crearSesion(pedido, usuario);
         } catch (RuntimeException e) {
+            // Si falla la sesión, liberar reservas ya hechas
+            liberarReservas(pedido);
             throw e;
         } catch (Exception e) {
+            liberarReservas(pedido);
             throw new RuntimeException("Error iniciando sesión de pago: " + e.getMessage(), e);
         }
 
-        // Crear registro Pago
+        // ── Crear registro Pago ─────────────────────────────────────────
         Pago pago = new Pago();
         pago.setMerchantToken(session.externalId());
         pago.setRedirectUrl(session.redirectUrl());
@@ -151,36 +165,47 @@ public class PaymentService {
         pago.setEstado(Constants.ESTADO_ACTIVO);
         pagoRepository.save(pago);
 
-        log.info("Checkout iniciado: provider={} numeroPedido={} total={}",
+        log.info("Checkout iniciado: provider={} pedido={} total={}",
             provider, pedido.getNumeroPedido(), total);
 
         return new PaymentCheckoutResponse(
-            pedido.getId(), pedido.getNumeroPedido(), session.redirectUrl(),
-            Constants.PAGO_PENDIENTE, total, provider
-        );
+            pedido.getId(), pedido.getNumeroPedido(),
+            session.redirectUrl(), Constants.PAGO_PENDIENTE, total, provider);
     }
 
     // ================================================================
-    // CONFIRMAR PEDIDO — Reduce stock, marca PAGADO, envía email
+    // CONFIRMAR PEDIDO — Descuenta stockActual, libera stockReservado,
+    //                    marca PAGADO, envía email.
     // Llamado por los providers tras una captura exitosa.
     // ================================================================
     @Transactional
     public void confirmarPedido(Pago pago) {
         Pedido pedido = pago.getPedido();
-        pedido.getItems().size(); // force-load en sesión activa
+        pedido.getItems().size(); // force-load
+
+        // Verificar que no esté ya confirmado (idempotencia)
+        if (Constants.PEDIDO_PAGADO.equals(pedido.getEstadoPedido())) {
+            log.info("confirmarPedido ignorado — pedido {} ya está PAGADO", pedido.getNumeroPedido());
+            return;
+        }
 
         for (PedidoItem item : pedido.getItems()) {
             Producto producto = productoRepository.findByIdForUpdate(item.getProducto().getId())
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado al confirmar pago"));
 
-            int nuevoStock = producto.getStockActual() - item.getCantidad();
+            int cantidad   = item.getCantidad();
+            int nuevoStock = producto.getStockActual() - cantidad;
+
             if (nuevoStock < 0) {
-                // Registrar como 0 pero loguear la anomalía para revisión manual
-                log.error("STOCK NEGATIVO: producto={} stockActual={} cantidad={}",
-                    producto.getId(), producto.getStockActual(), item.getCantidad());
+                log.error("OVERSELL: producto={} stockActual={} cantidad={}",
+                    producto.getId(), producto.getStockActual(), cantidad);
                 nuevoStock = 0;
             }
             producto.setStockActual(nuevoStock);
+
+            // Liberar la reserva (puede quedar negativa si ya fue liberada antes → clamp a 0)
+            int nuevoReservado = Math.max(0, producto.getStockReservado() - cantidad);
+            producto.setStockReservado(nuevoReservado);
 
             if (Boolean.TRUE.equals(producto.getEsUnico())) {
                 producto.setVendido(true);
@@ -193,23 +218,67 @@ public class PaymentService {
         pedidoRepository.save(pedido);
 
         notificacionEmailService.enviarConfirmacionPedido(pedido);
-        log.info("Pedido {} confirmado como PAGADO via {}", pedido.getNumeroPedido(), pago.getProveedor());
+        log.info("Pedido {} confirmado PAGADO via {}", pedido.getNumeroPedido(), pago.getProveedor());
     }
 
     // ================================================================
-    // CAPTURAR PAYPAL — Llamado desde PaymentController tras el redirect
+    // LIBERAR RESERVAS — Solo libera stockReservado sin tocar stockActual.
+    // Usado en: pago cancelado, pago fallido, pago expirado.
     // ================================================================
     @Transactional
-    public PaymentStatusResponse capturarPayPal(String paypalOrderId, String numeroPedido) {
-        Pago pago = pagoRepository.findByMerchantToken(paypalOrderId)
-            .orElseThrow(() -> new RuntimeException("Pago no encontrado para PayPal orderId: " + paypalOrderId));
+    public void liberarReservas(Pedido pedido) {
+        if (pedido == null) return;
+        pedido.getItems().size(); // force-load
 
+        for (PedidoItem item : pedido.getItems()) {
+            try {
+                Producto producto = productoRepository.findByIdForUpdate(item.getProducto().getId())
+                    .orElse(null);
+                if (producto == null) continue;
+
+                int nuevoReservado = Math.max(0, producto.getStockReservado() - item.getCantidad());
+                producto.setStockReservado(nuevoReservado);
+                productoRepository.save(producto);
+            } catch (Exception e) {
+                log.error("Error liberando reserva producto={}: {}", item.getProducto().getId(), e.getMessage());
+            }
+        }
+        log.info("Reservas liberadas para pedido {}", pedido.getNumeroPedido());
+    }
+
+    // ================================================================
+    // CAPTURAR PAYPAL — Llamado desde PaymentController tras el redirect.
+    // Valida que el usuario sea dueño del pedido.
+    // ================================================================
+    @Transactional
+    public PaymentStatusResponse capturarPayPal(String paypalOrderId, String numeroPedido,
+                                                String correoUsuario) {
+        Pago pago = pagoRepository.findByMerchantToken(paypalOrderId)
+            .orElseThrow(() -> new RuntimeException("Pago no encontrado: " + paypalOrderId));
+
+        // Validar propiedad — el usuario actual debe ser el dueño del pedido
+        if (!pago.getUsuario().getCorreo().equals(correoUsuario)) {
+            throw new SecurityException("No tienes permiso para capturar este pago");
+        }
+
+        // Verificar que el pedido coincida
+        if (!pago.getPedido().getNumeroPedido().equals(numeroPedido)) {
+            throw new IllegalArgumentException("El número de pedido no coincide con el pago");
+        }
+
+        // Idempotencia: ya fue capturado (webhook llegó primero)
         if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
-            // Ya capturado (webhook llegó primero) — devolver estado actual
+            log.info("capturarPayPal: pago {} ya capturado, devolviendo estado actual", paypalOrderId);
             return buildStatusResponse(pago);
         }
 
-        // Obtener el provider PayPal directamente para capturar
+        // Pago en estado inválido para captura
+        if (Constants.PAGO_CANCELADO.equals(pago.getEstadoPago())
+            || Constants.PAGO_FALLIDO.equals(pago.getEstadoPago())) {
+            throw new IllegalStateException("El pago ya fue " + pago.getEstadoPago().toLowerCase()
+                + " y no puede capturarse");
+        }
+
         com.hotclick.payment.PayPalPaymentProvider payPalProvider =
             (com.hotclick.payment.PayPalPaymentProvider) providerFactory.get("PAYPAL");
 
@@ -219,7 +288,6 @@ public class PaymentService {
             throw new RuntimeException("Error capturando pago PayPal: " + e.getMessage(), e);
         }
 
-        // Re-leer estado actualizado
         pago = pagoRepository.findByMerchantToken(paypalOrderId).orElseThrow();
         return buildStatusResponse(pago);
     }
@@ -231,20 +299,40 @@ public class PaymentService {
     public PaymentStatusResponse consultarEstado(String numeroPedido) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
             .orElseThrow(() -> new RuntimeException("Pedido no encontrado: " + numeroPedido));
-
         Pago pago = pagoRepository.findTopByPedidoId(pedido.getId())
             .orElseThrow(() -> new RuntimeException("Pago no encontrado para pedido: " + numeroPedido));
-
         return buildStatusResponse(pago);
     }
 
     // ================================================================
-    // LIMPIEZA PROGRAMADA — Cancela pedidos PENDIENTE expirados
+    // MARCAR PAGO FALLIDO — Llamado por webhooks cuando el pago es denegado.
+    // ================================================================
+    @Transactional
+    public void marcarFallido(Pago pago, String motivo) {
+        if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) return; // ya confirmado, no revertir
+
+        pago.setEstadoPago(Constants.PAGO_FALLIDO);
+        pago.setFechaActualizacion(LocalDateTime.now());
+        pagoRepository.save(pago);
+
+        Pedido pedido = pago.getPedido();
+        if (Constants.PEDIDO_PENDIENTE.equals(pedido.getEstadoPedido())) {
+            pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+            pedidoRepository.save(pedido);
+        }
+
+        liberarReservas(pedido);
+        notificacionEmailService.enviarPagoFallido(pedido, motivo);
+        log.info("Pago {} marcado FALLIDO: {}", pago.getPedido().getNumeroPedido(), motivo);
+    }
+
+    // ================================================================
+    // LIMPIEZA PROGRAMADA — Cancela pedidos PENDIENTE expirados (TTL 30 min)
     // ================================================================
     @Scheduled(fixedRate = 5 * 60 * 1000) // cada 5 minutos
     @Transactional
     public void cancelarExpirados() {
-        LocalDateTime corte = LocalDateTime.now().minusMinutes(35); // TTL 30 min + 5 de margen
+        LocalDateTime corte = LocalDateTime.now().minusMinutes(30);
         List<Pago> expirados = pagoRepository.findExpiradosPendientes(corte);
 
         for (Pago pago : expirados) {
@@ -256,20 +344,20 @@ public class PaymentService {
             if (Constants.PEDIDO_PENDIENTE.equals(pedido.getEstadoPedido())) {
                 pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
                 pedidoRepository.save(pedido);
-                log.info("Pedido {} cancelado por expiración de pago ({})", pedido.getNumeroPedido(), pago.getProveedor());
+                liberarReservas(pedido);
+                log.info("Pedido {} cancelado por expiración de pago TTL", pedido.getNumeroPedido());
             }
         }
 
         if (!expirados.isEmpty()) {
-            log.info("Cleanup: {} pagos expirados cancelados", expirados.size());
+            log.info("Cleanup TTL: {} pagos expirados cancelados", expirados.size());
         }
     }
 
     // ================================================================
     // Helpers
     // ================================================================
-
-    private PaymentStatusResponse buildStatusResponse(Pago pago) {
+    public PaymentStatusResponse buildStatusResponse(Pago pago) {
         TransaccionPago txn = transaccionPagoRepository
             .findTopByPagoIdOrderByFechaTransaccionDesc(pago.getId())
             .orElse(null);

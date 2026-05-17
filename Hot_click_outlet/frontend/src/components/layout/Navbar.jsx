@@ -137,6 +137,13 @@ export default function Navbar() {
                   </Link>
                 )}
                 <Link
+                  to="/mis-pedidos"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors"
+                  style={{ color: 'var(--hc-muted)' }}
+                >
+                  Mis pedidos
+                </Link>
+                <Link
                   to="/perfil"
                   className="flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all duration-200"
                   style={{ backgroundColor: 'var(--hc-surface-2)', borderColor: 'var(--hc-border)' }}
@@ -209,6 +216,12 @@ export default function Navbar() {
                 <Link to="/admin" className="px-4 py-3 rounded-xl text-sm transition-colors"
                   style={{ color: 'var(--hc-muted)' }}>
                   ⚙ {t('nav.admin')}
+                </Link>
+              )}
+              {token && (
+                <Link to="/mis-pedidos" className="px-4 py-3 rounded-xl text-sm transition-colors"
+                  style={{ color: 'var(--hc-muted)' }}>
+                  Mis pedidos
                 </Link>
               )}
               {token && (

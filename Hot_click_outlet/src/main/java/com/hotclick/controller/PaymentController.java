@@ -59,8 +59,11 @@ public class PaymentController {
             @RequestParam String paypalOrderId,
             @RequestParam String numeroPedido) {
         try {
-            PaymentStatusResponse response = paymentService.capturarPayPal(paypalOrderId, numeroPedido);
+            String correoUsuario = SecurityContextHolder.getContext().getAuthentication().getName();
+            PaymentStatusResponse response = paymentService.capturarPayPal(paypalOrderId, numeroPedido, correoUsuario);
             return ResponseEntity.ok(ResponseDTO.success("Pago capturado exitosamente", response));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {

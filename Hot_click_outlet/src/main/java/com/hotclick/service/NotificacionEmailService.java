@@ -183,6 +183,50 @@ public class NotificacionEmailService {
             + "</div></body></html>";
     }
 
+    @Async
+    public void enviarPagoFallido(Pedido pedido, String motivo) {
+        Usuario cliente = pedido.getUsuarioFinal();
+        if (cliente == null || cliente.getCorreo() == null) return;
+        try {
+            MimeMessage mail = mailSender.createMimeMessage();
+            MimeMessageHelper h = new MimeMessageHelper(mail, false, "UTF-8");
+            h.setFrom(fromEmail, "HOTCLICK");
+            h.setTo(cliente.getCorreo());
+            h.setSubject("⚠️ Problema con tu pago — " + pedido.getNumeroPedido());
+            h.setText(buildPagoFallidoHtml(pedido, cliente, motivo), true);
+            mailSender.send(mail);
+            log.info("Email pago fallido enviado a {} para pedido {}", cliente.getCorreo(), pedido.getNumeroPedido());
+        } catch (Exception e) {
+            log.error("No se pudo enviar email de pago fallido para pedido {}: {}", pedido.getNumeroPedido(), e.getMessage());
+        }
+    }
+
+    private String buildPagoFallidoHtml(Pedido pedido, Usuario cliente, String motivo) {
+        String nombre = esc(cliente.getNombre() != null ? cliente.getNombre() : "Cliente");
+        return "<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body style='margin:0;padding:0;background:#f5f5f7;font-family:sans-serif'>"
+            + "<div style='max-width:560px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)'>"
+            + "<div style='background:linear-gradient(135deg,#ef4444,#dc2626);padding:32px 32px 24px'>"
+            + "<span style='color:#fff;font-size:20px;font-weight:900;letter-spacing:1px'>HOTCLICK</span>"
+            + "<h1 style='color:#fff;margin:16px 0 0;font-size:22px;font-weight:700'>Problema con tu pago ⚠️</h1>"
+            + "</div>"
+            + "<div style='padding:28px 32px'>"
+            + "<p style='margin:0;color:#1a1a2e;font-size:15px'>Hola <strong>" + nombre + "</strong>,</p>"
+            + "<p style='margin:8px 0 24px;color:#6e6e82;font-size:14px'>Tu pago para el pedido <strong>" + esc(pedido.getNumeroPedido()) + "</strong> no pudo completarse.</p>"
+            + "<div style='background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:16px 20px;margin-bottom:24px'>"
+            + "<p style='margin:0;font-size:13px;color:#dc2626'>" + esc(motivo != null ? motivo : "El pago fue rechazado o cancelado.") + "</p>"
+            + "</div>"
+            + "<p style='margin:0 0 16px;color:#6e6e82;font-size:14px'>El stock ha sido liberado. Puedes volver a intentarlo.</p>"
+            + "<div style='text-align:center'>"
+            + "<a href='https://hotclick.cr/checkout' style='display:inline-block;background:#4f7cff;color:#fff;text-decoration:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700'>Intentar de nuevo</a>"
+            + "</div>"
+            + "</div>"
+            + "<div style='padding:20px 32px;background:#f5f5f7;text-align:center'>"
+            + "<a href='https://wa.me/50689745370' style='display:inline-block;background:#25D366;color:#fff;text-decoration:none;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600'>📱 Contactar soporte</a>"
+            + "<p style='margin:12px 0 0;color:#aaa;font-size:11px'>HOTCLICK · hotclick.cr@gmail.com · Costa Rica</p>"
+            + "</div>"
+            + "</div></body></html>";
+    }
+
     private String esc(String s) {
         if (s == null) return "";
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");

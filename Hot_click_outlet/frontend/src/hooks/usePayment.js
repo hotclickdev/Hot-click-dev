@@ -1,19 +1,18 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { paymentService } from '../services/paymentService'
 
-const MAX_INTENTOS = 3
+const MAX_INTENTOS     = 3
+const POLL_INTERVAL_MS = 3000
+const POLL_MAX_ATTEMPTS = 30  // 90 segundos
 
 export function usePayment() {
   const [estado, setEstado]     = useState('idle')
-  // idle | loading | redirecting | polling | capturing | success | failed | cancelled | pending
+  // idle | loading | redirecting | polling | capturing | success | failed | cancelled | timeout
   const [pagoData, setPagoData] = useState(null)
   const [error, setError]       = useState(null)
   const [intentos, setIntentos] = useState(0)
+  const pollRef                 = useRef(null)
 
-  /**
-   * Inicia el flujo de pago con el proveedor elegido.
-   * @param {{ items, metodoEnvio, bodegaId, notas, provider }} checkoutPayload
-   */
   const iniciarPago = useCallback(async (checkoutPayload) => {
     setEstado('loading')
     setError(null)
@@ -32,10 +31,6 @@ export function usePayment() {
     }
   }, [])
 
-  /**
-   * Captura el pago PayPal tras el redirect de aprobación.
-   * Solo se llama desde PaymentStatusPage cuando provider=paypal.
-   */
   const capturarPayPal = useCallback(async (paypalOrderId, numeroPedido) => {
     setEstado('capturing')
     setError(null)
@@ -61,9 +56,43 @@ export function usePayment() {
     }
   }, [])
 
-  /**
-   * Consulta el estado del pago (usado para PayXpert y como fallback).
-   */
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) {
+      clearTimeout(pollRef.current)
+      pollRef.current = null
+    }
+  }, [])
+
+  const iniciarPolling = useCallback((numeroPedido) => {
+    stopPolling()
+    let attempts = 0
+    setEstado('polling')
+    setError(null)
+
+    const tick = async () => {
+      attempts++
+      try {
+        const { data } = await paymentService.consultarEstado(numeroPedido)
+        setPagoData(data)
+        const e = data.estadoPago
+        if (e === 'CAPTURADO') { setEstado('success');   return }
+        if (e === 'CANCELADO') { setEstado('cancelled'); return }
+        if (e === 'FALLIDO')   { setEstado('failed');    return }
+      } catch {
+        // red lenta o error transitorio: seguir intentando
+      }
+
+      if (attempts >= POLL_MAX_ATTEMPTS) {
+        setEstado('timeout')
+        return
+      }
+      pollRef.current = setTimeout(tick, POLL_INTERVAL_MS)
+    }
+
+    pollRef.current = setTimeout(tick, 0)
+  }, [stopPolling])
+
+  // Mantenemos verificarEstado como fallback de un solo disparo
   const verificarEstado = useCallback(async (numeroPedido) => {
     setEstado('polling')
     try {
@@ -79,7 +108,7 @@ export function usePayment() {
         setEstado('pending')
       }
       return data
-    } catch (err) {
+    } catch {
       setError('No se pudo verificar el estado del pago.')
       setEstado('failed')
     }
@@ -98,10 +127,11 @@ export function usePayment() {
   )
 
   const reset = useCallback(() => {
+    stopPolling()
     setEstado('idle')
     setError(null)
     setPagoData(null)
-  }, [])
+  }, [stopPolling])
 
   return {
     estado,
@@ -112,6 +142,8 @@ export function usePayment() {
     iniciarPago,
     capturarPayPal,
     verificarEstado,
+    iniciarPolling,
+    stopPolling,
     reintentar,
     reset,
   }

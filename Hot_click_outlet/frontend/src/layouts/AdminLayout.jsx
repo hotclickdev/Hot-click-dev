@@ -21,6 +21,7 @@ export default function AdminLayout({ children }) {
     { to: '/admin/ventas', label: t('admin.sidebar.nuevaVenta'), icon: <PlusCircleIcon /> },
     { to: '/admin/finanzas', label: t('admin.sidebar.finanzas'), icon: <ChartIcon /> },
     { to: '/admin/reportes', label: t('admin.sidebar.reportes'), icon: <BarIcon /> },
+    { to: '/admin/pagos', label: 'Pagos / Webhooks', icon: <CreditCardIcon /> },
     { to: '/admin/nuevo-producto', label: t('admin.sidebar.crearIA'), icon: <CameraIcon /> },
     { to: '/admin/publicaciones', label: t('admin.sidebar.publicarFB'), icon: <ShareIcon /> },
   ]
@@ -199,3 +200,4 @@ function ChartIcon() { return <svg className={ic} {...s}><line x1="12" y1="2" x2
 function BarIcon() { return <svg className={ic} {...s}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg> }
 function ShareIcon() { return <svg className={ic} {...s}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> }
 function CameraIcon() { return <svg className={ic} {...s}><path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z"/></svg> }
+function CreditCardIcon() { return <svg className={ic} {...s}><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg> }

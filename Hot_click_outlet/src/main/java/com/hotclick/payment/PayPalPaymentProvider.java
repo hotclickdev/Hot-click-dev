@@ -205,6 +205,8 @@ public class PayPalPaymentProvider implements PaymentProvider {
 
         if ("PAYMENT.CAPTURE.COMPLETED".equals(eventType)) {
             procesarCapturaCompletada(event, evento);
+        } else if ("PAYMENT.CAPTURE.DENIED".equals(eventType)) {
+            procesarCapturaDenegada(event, evento);
         }
 
         evento.setProcesado(true);
@@ -277,6 +279,44 @@ public class PayPalPaymentProvider implements PaymentProvider {
 
         } catch (Exception e) {
             log.error("Error procesando PAYMENT.CAPTURE.COMPLETED de PayPal: {}", e.getMessage(), e);
+            evento.setErrorProcesamiento(e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void procesarCapturaDenegada(Map<String, Object> event, WebhookEvent evento) {
+        try {
+            Map<String, Object> resource = (Map<String, Object>) event.get("resource");
+            if (resource == null) return;
+
+            String orderId = null;
+            List<Map<String, Object>> links = (List<Map<String, Object>>) resource.get("links");
+            if (links != null) {
+                for (Map<String, Object> link : links) {
+                    if ("up".equals(link.get("rel"))) {
+                        String href = (String) link.get("href");
+                        String[] parts = href.split("/");
+                        orderId = parts[parts.length - 1];
+                        break;
+                    }
+                }
+            }
+
+            if (orderId == null) {
+                log.warn("Webhook PayPal CAPTURE.DENIED sin orderId en links");
+                return;
+            }
+
+            Pago pago = pagoRepository.findByMerchantToken(orderId).orElse(null);
+            if (pago == null) {
+                log.warn("Webhook PayPal CAPTURE.DENIED: no se encontró Pago para orderId={}", orderId);
+                return;
+            }
+
+            paymentService.marcarFallido(pago, "Pago denegado por PayPal");
+
+        } catch (Exception e) {
+            log.error("Error procesando PAYMENT.CAPTURE.DENIED de PayPal: {}", e.getMessage(), e);
             evento.setErrorProcesamiento(e.getMessage());
         }
     }

@@ -298,6 +298,12 @@ export default function CheckoutPage() {
                 </p>
               )}
 
+              <div className="flex items-center justify-center gap-4 py-2.5 px-3 rounded-xl bg-white/3 border border-white/8 text-[11px] text-[#8e8e9a]">
+                <span>🛡 Garantía 40 días</span>
+                <span>🔒 Pago seguro</span>
+                <span>↩ Devoluciones</span>
+              </div>
+
               <button
                 onClick={handlePagar}
                 disabled={estado === 'loading' || estado === 'redirecting' || intentos >= maxIntentos}

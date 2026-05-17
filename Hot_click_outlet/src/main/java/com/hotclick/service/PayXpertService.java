@@ -161,7 +161,8 @@ public class PayXpertService {
         pagoRepository.save(pago);
 
         return new PaymentCheckoutResponse(
-            pedido.getId(), pedido.getNumeroPedido(), redirectUrl, Constants.PAGO_PENDIENTE, total
+            pedido.getId(), pedido.getNumeroPedido(), redirectUrl, Constants.PAGO_PENDIENTE, total,
+            Constants.PROVEEDOR_PAYXPERT
         );
     }
 

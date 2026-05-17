@@ -139,6 +139,9 @@ export default function ProductDetailPage() {
                 <p className="text-sm text-[#8e8e9a]">{product.nombre}</p>
               )}
               <Badge variant={stockBadge}>{stockLabel}</Badge>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-medium">
+                ✓ Garantía 40 días
+              </span>
             </div>
 
             {/* Precio */}
@@ -294,17 +297,18 @@ export default function ProductDetailPage() {
               </AnimatePresence>
             </motion.button>
 
-            {/* Info envío */}
-            <div className="p-4 rounded-xl bg-white/3 border border-white/8 text-sm text-[#8e8e9a] space-y-1.5">
-              <div className="flex items-center gap-2">
-                <span>🚚</span><span>Envío a todo Costa Rica — Correos CR</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span>🏪</span><span>Retiro en tienda disponible</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span>💵</span><span>Pago contra entrega disponible</span>
-              </div>
+            {/* Info envío y confianza */}
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { icon: '🛡', text: 'Garantía 40 días' },
+                { icon: '🔒', text: 'Pago 100% seguro' },
+                { icon: '💬', text: 'Soporte WhatsApp' },
+                { icon: '🚚', text: 'Envío a todo el país' },
+              ].map(({ icon, text }) => (
+                <div key={text} className="flex items-center gap-2 p-3 rounded-xl bg-white/3 border border-white/8 text-sm text-[#8e8e9a]">
+                  <span>{icon}</span><span>{text}</span>
+                </div>
+              ))}
             </div>
           </motion.div>
         </div>

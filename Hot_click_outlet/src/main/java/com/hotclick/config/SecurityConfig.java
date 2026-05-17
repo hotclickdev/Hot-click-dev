@@ -69,6 +69,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/health").permitAll()
                 .requestMatchers(POST, "/api/webhooks/payxpert").permitAll()
+                .requestMatchers(POST, "/api/webhooks/paypal").permitAll()
                 // Catálogo público - solo GETs específicos
                 .requestMatchers(GET, "/api/productos/admin/todos").authenticated()
                 .requestMatchers(GET, "/api/productos").permitAll()

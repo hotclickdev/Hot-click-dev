@@ -73,6 +73,35 @@ function Timeline({ estadoActual }) {
   )
 }
 
+function GarantiaBar({ fechaPedido }) {
+  if (!fechaPedido) return null
+  const limite = new Date(fechaPedido)
+  limite.setDate(limite.getDate() + 40)
+  const diasRestantes = Math.ceil((limite - new Date()) / 86400000)
+  const vence = limite.toLocaleDateString('es-CR', { day: '2-digit', month: 'short', year: 'numeric' })
+
+  if (diasRestantes > 0) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm"
+        style={{ backgroundColor: 'rgba(5,150,105,0.08)', border: '1px solid rgba(5,150,105,0.2)' }}>
+        <span>🛡</span>
+        <span className="font-medium" style={{ color: '#059669' }}>Garantía activa</span>
+        <span className="text-xs ml-auto" style={{ color: '#059669' }}>
+          {diasRestantes} día{diasRestantes !== 1 ? 's' : ''} restante{diasRestantes !== 1 ? 's' : ''} · vence {vence}
+        </span>
+      </div>
+    )
+  }
+  return (
+    <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm"
+      style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
+      <span>⏱</span>
+      <span style={{ color: 'var(--hc-muted)' }}>Garantía vencida</span>
+      <span className="text-xs ml-auto" style={{ color: 'var(--hc-muted)' }}>venció {vence}</span>
+    </div>
+  )
+}
+
 function OrderCard({ order }) {
   const [open, setOpen] = useState(false)
   const estado = order.estadoPedido || order.estado || 'PENDIENTE'
@@ -197,6 +226,11 @@ function OrderCard({ order }) {
                     Rastrear
                   </a>
                 </div>
+              )}
+
+              {/* Garantía */}
+              {!['CANCELADO', 'PENDIENTE'].includes(estado) && (
+                <GarantiaBar fechaPedido={order.fechaPedido} />
               )}
             </div>
           </motion.div>

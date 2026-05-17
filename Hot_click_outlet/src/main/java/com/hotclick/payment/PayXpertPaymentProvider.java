@@ -108,18 +108,23 @@ public class PayXpertPaymentProvider implements PaymentProvider {
             return;
         }
 
-        // Validación anti-fraude: monto debe coincidir
-        if (dto.getAmount() != null) {
-            long montoEsperado = (long) pago.getMonto() * 100;
-            if (montoEsperado != dto.getAmount()) {
-                String alerta = String.format(
-                    "ALERTA FRAUDE PayXpert: esperado=%d centavos recibido=%d token=%s",
-                    montoEsperado, dto.getAmount(), dto.getMerchantToken());
-                log.error(alerta);
-                evento.setErrorProcesamiento(alerta);
-                webhookEventRepository.save(evento);
-                throw new SecurityException("Validación de monto fallida");
-            }
+        // Validación anti-fraude: monto debe coincidir (null rechazado por seguridad)
+        if (dto.getAmount() == null) {
+            String alerta = "Webhook PayXpert sin monto — rechazado por seguridad. token=" + dto.getMerchantToken();
+            log.error(alerta);
+            evento.setErrorProcesamiento(alerta);
+            webhookEventRepository.save(evento);
+            throw new SecurityException("Webhook PayXpert sin monto — rechazado por seguridad");
+        }
+        long montoEsperado = (long) pago.getMonto() * 100;
+        if (montoEsperado != dto.getAmount()) {
+            String alerta = String.format(
+                "ALERTA FRAUDE PayXpert: esperado=%d centavos recibido=%d token=%s",
+                montoEsperado, dto.getAmount(), dto.getMerchantToken());
+            log.error(alerta);
+            evento.setErrorProcesamiento(alerta);
+            webhookEventRepository.save(evento);
+            throw new SecurityException("Validación de monto fallida");
         }
 
         // Registrar transacción
@@ -137,20 +142,17 @@ public class PayXpertPaymentProvider implements PaymentProvider {
         txn.setEstado(Constants.ESTADO_ACTIVO);
         transaccionPagoRepository.save(txn);
 
-        // Actualizar estado del pago
+        // Actualizar estado y disparar lógica de negocio (libera stock en FALLIDO/CANCELADO)
         if (Constants.PAYXPERT_OK.equals(dto.getErrorCode())) {
             pago.setEstadoPago(Constants.PAGO_CAPTURADO);
             pago.setMetodoPagoTipo(dto.getPaymentMethod());
-        } else if ("Cancelled".equalsIgnoreCase(dto.getStatus())) {
-            pago.setEstadoPago(Constants.PAGO_CANCELADO);
-        } else {
-            pago.setEstadoPago(Constants.PAGO_FALLIDO);
-        }
-        pago.setFechaActualizacion(LocalDateTime.now());
-        pagoRepository.save(pago);
-
-        if (Constants.PAYXPERT_OK.equals(dto.getErrorCode())) {
+            pago.setFechaActualizacion(LocalDateTime.now());
+            pagoRepository.save(pago);
             paymentService.confirmarPedido(pago);
+        } else if ("Cancelled".equalsIgnoreCase(dto.getStatus())) {
+            paymentService.marcarFallido(pago, "Pago cancelado por el usuario");
+        } else {
+            paymentService.marcarFallido(pago, "Pago rechazado: " + dto.getErrorMessage());
         }
 
         evento.setProcesado(true);
