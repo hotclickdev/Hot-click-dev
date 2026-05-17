@@ -30,6 +30,9 @@ public class Pago extends BaseEntity {
     @Column(name = "metodo_pago_tipo", length = 30)
     private String metodoPagoTipo;
 
+    @Column(name = "proveedor", length = 20, nullable = false)
+    private String proveedor = "PAYXPERT";
+
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 
@@ -67,6 +70,9 @@ public class Pago extends BaseEntity {
 
     public String getMetodoPagoTipo() { return metodoPagoTipo; }
     public void setMetodoPagoTipo(String metodoPagoTipo) { this.metodoPagoTipo = metodoPagoTipo; }
+
+    public String getProveedor() { return proveedor; }
+    public void setProveedor(String proveedor) { this.proveedor = proveedor; }
 
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }

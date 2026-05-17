@@ -48,4 +48,10 @@ public class Constants {
     // PayXpert error code exitoso
     public static final String PAYXPERT_OK       = "000";
     public static final String METODO_PAYXPERT   = "PAYXPERT";
+
+    // Proveedores de pago
+    public static final String PROVEEDOR_PAYXPERT = "PAYXPERT";
+    public static final String PROVEEDOR_PAYPAL   = "PAYPAL";
+    public static final String PROVEEDOR_STRIPE   = "STRIPE";   // futuro
+    public static final String PROVEEDOR_SINPE    = "SINPE";    // futuro
 }

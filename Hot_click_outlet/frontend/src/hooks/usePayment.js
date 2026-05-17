@@ -4,12 +4,16 @@ import { paymentService } from '../services/paymentService'
 const MAX_INTENTOS = 3
 
 export function usePayment() {
-  const [estado, setEstado]   = useState('idle')
-  // idle | loading | redirecting | polling | success | failed | cancelled
+  const [estado, setEstado]     = useState('idle')
+  // idle | loading | redirecting | polling | capturing | success | failed | cancelled | pending
   const [pagoData, setPagoData] = useState(null)
-  const [error, setError]     = useState(null)
+  const [error, setError]       = useState(null)
   const [intentos, setIntentos] = useState(0)
 
+  /**
+   * Inicia el flujo de pago con el proveedor elegido.
+   * @param {{ items, metodoEnvio, bodegaId, notas, provider }} checkoutPayload
+   */
   const iniciarPago = useCallback(async (checkoutPayload) => {
     setEstado('loading')
     setError(null)
@@ -17,7 +21,6 @@ export function usePayment() {
       const { data } = await paymentService.checkout(checkoutPayload)
       setPagoData(data)
       setEstado('redirecting')
-      // Redirigir a la hosted payment page de PayXpert
       window.location.href = data.redirectUrl
     } catch (err) {
       const msg =
@@ -29,6 +32,38 @@ export function usePayment() {
     }
   }, [])
 
+  /**
+   * Captura el pago PayPal tras el redirect de aprobación.
+   * Solo se llama desde PaymentStatusPage cuando provider=paypal.
+   */
+  const capturarPayPal = useCallback(async (paypalOrderId, numeroPedido) => {
+    setEstado('capturing')
+    setError(null)
+    try {
+      const { data } = await paymentService.capturarPayPal(paypalOrderId, numeroPedido)
+      setPagoData(data)
+      if (data.estadoPago === 'CAPTURADO') {
+        setEstado('success')
+      } else if (data.estadoPago === 'CANCELADO') {
+        setEstado('cancelled')
+      } else {
+        setEstado('failed')
+        setError('El pago no pudo completarse.')
+      }
+      return data
+    } catch (err) {
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data ||
+        'Error al capturar el pago con PayPal.'
+      setError(msg)
+      setEstado('failed')
+    }
+  }, [])
+
+  /**
+   * Consulta el estado del pago (usado para PayXpert y como fallback).
+   */
   const verificarEstado = useCallback(async (numeroPedido) => {
     setEstado('polling')
     try {
@@ -41,7 +76,6 @@ export function usePayment() {
       } else if (data.estadoPago === 'FALLIDO') {
         setEstado('failed')
       } else {
-        // Aún PENDIENTE — el webhook quizás no llegó todavía
         setEstado('pending')
       }
       return data
@@ -76,6 +110,7 @@ export function usePayment() {
     intentos,
     maxIntentos: MAX_INTENTOS,
     iniciarPago,
+    capturarPayPal,
     verificarEstado,
     reintentar,
     reset,

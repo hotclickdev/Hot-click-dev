@@ -7,16 +7,19 @@ public class PaymentCheckoutResponse {
     private String redirectUrl;
     private String estadoPago;
     private Integer total;
+    private String proveedor;
 
     public PaymentCheckoutResponse() {}
 
     public PaymentCheckoutResponse(Long pedidoId, String numeroPedido,
-                                   String redirectUrl, String estadoPago, Integer total) {
+                                   String redirectUrl, String estadoPago,
+                                   Integer total, String proveedor) {
         this.pedidoId = pedidoId;
         this.numeroPedido = numeroPedido;
         this.redirectUrl = redirectUrl;
         this.estadoPago = estadoPago;
         this.total = total;
+        this.proveedor = proveedor;
     }
 
     public Long getPedidoId() { return pedidoId; }
@@ -33,4 +36,7 @@ public class PaymentCheckoutResponse {
 
     public Integer getTotal() { return total; }
     public void setTotal(Integer total) { this.total = total; }
+
+    public String getProveedor() { return proveedor; }
+    public void setProveedor(String proveedor) { this.proveedor = proveedor; }
 }

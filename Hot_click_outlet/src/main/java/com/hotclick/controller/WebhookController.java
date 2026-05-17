@@ -1,7 +1,8 @@
 package com.hotclick.controller;
 
 import com.hotclick.dto.PaymentWebhookDTO;
-import com.hotclick.service.PayXpertService;
+import com.hotclick.payment.PayPalPaymentProvider;
+import com.hotclick.payment.PayXpertPaymentProvider;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,35 +18,63 @@ public class WebhookController {
 
     private static final Logger log = LoggerFactory.getLogger(WebhookController.class);
 
-    @Autowired
-    private PayXpertService payXpertService;
+    @Autowired private PayXpertPaymentProvider payXpertProvider;
+    @Autowired private PayPalPaymentProvider   payPalProvider;
 
     /**
-     * Endpoint público que recibe callbacks de PayXpert al completar un pago.
-     * PayXpert espera recibir {"status":"OK"} en la respuesta.
-     * Siempre respondemos 200 para evitar retries innecesarios de PayXpert.
+     * Callback de PayXpert al completar o fallar un pago.
+     * PayXpert espera {"status":"OK"} — siempre respondemos 200.
      */
     @PostMapping("/payxpert")
-    public ResponseEntity<Map<String, String>> recibirWebhook(
+    public ResponseEntity<Map<String, String>> recibirWebhookPayXpert(
             @RequestBody PaymentWebhookDTO dto,
             HttpServletRequest request) {
 
         String ip = request.getHeader("X-Forwarded-For");
         if (ip == null || ip.isBlank()) ip = request.getRemoteAddr();
 
-        log.info("Webhook PayXpert recibido — order={} errorCode={} status={} ip={}",
+        log.info("Webhook PayXpert: order={} errorCode={} status={} ip={}",
             dto.getOrderID(), dto.getErrorCode(), dto.getStatus(), ip);
 
         try {
-            payXpertService.procesarWebhook(dto, ip);
+            payXpertProvider.procesarWebhook(dto, ip);
             return ResponseEntity.ok(Map.of("status", "OK", "message", "Received"));
         } catch (SecurityException e) {
-            log.error("Webhook rechazado por validación de seguridad: {}", e.getMessage());
+            log.error("Webhook PayXpert rechazado: {}", e.getMessage());
             return ResponseEntity.ok(Map.of("status", "ERROR", "message", "Security validation failed"));
         } catch (Exception e) {
             log.error("Error procesando webhook PayXpert: {}", e.getMessage(), e);
-            // Retornamos 200 igualmente — PayXpert no debe reintentar por errores internos nuestros
-            return ResponseEntity.ok(Map.of("status", "ERROR", "message", "Internal processing error"));
+            return ResponseEntity.ok(Map.of("status", "ERROR", "message", "Internal error"));
+        }
+    }
+
+    /**
+     * Callback de PayPal para eventos de pago (PAYMENT.CAPTURE.COMPLETED, etc.).
+     * Valida la firma de PayPal antes de procesar.
+     * Actúa como respaldo al capture directo: si el usuario no regresó a nuestra página,
+     * el webhook confirma el pedido igualmente.
+     */
+    @PostMapping("/paypal")
+    public ResponseEntity<Map<String, String>> recibirWebhookPayPal(
+            @RequestBody String rawBody,
+            HttpServletRequest request) {
+
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isBlank()) ip = request.getRemoteAddr();
+
+        log.info("Webhook PayPal recibido — event={} ip={}",
+            request.getHeader("PAYPAL-TRANSMISSION-ID"), ip);
+
+        try {
+            payPalProvider.procesarWebhook(rawBody, request);
+            return ResponseEntity.ok(Map.of("status", "OK"));
+        } catch (SecurityException e) {
+            log.error("Webhook PayPal rechazado: {}", e.getMessage());
+            // Respondemos 200 para evitar reintentos, pero logueamos el fallo
+            return ResponseEntity.ok(Map.of("status", "ERROR", "message", "Signature invalid"));
+        } catch (Exception e) {
+            log.error("Error procesando webhook PayPal: {}", e.getMessage(), e);
+            return ResponseEntity.ok(Map.of("status", "ERROR", "message", "Internal error"));
         }
     }
 }

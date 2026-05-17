@@ -10,6 +10,7 @@ public class PaymentStatusResponse {
     private String cardBrand;
     private String fechaTransaccion;
     private Integer total;
+    private String proveedor;
 
     public PaymentStatusResponse() {}
 
@@ -36,4 +37,7 @@ public class PaymentStatusResponse {
 
     public Integer getTotal() { return total; }
     public void setTotal(Integer total) { this.total = total; }
+
+    public String getProveedor() { return proveedor; }
+    public void setProveedor(String proveedor) { this.proveedor = proveedor; }
 }

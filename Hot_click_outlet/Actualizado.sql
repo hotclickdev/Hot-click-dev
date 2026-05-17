@@ -1494,5 +1494,23 @@ CREATE TABLE IF NOT EXISTS hot_click_refresh_token_tb (
 CREATE INDEX IF NOT EXISTS idx_refresh_token ON hot_click_refresh_token_tb(token);
 
 -- ============================================================
+-- MIGRACIÓN: SISTEMA MULTI-PASARELA DE PAGO
+-- ============================================================
+
+-- Agrega columna proveedor a la tabla de pagos
+-- Identifica qué gateway procesó cada pago (PAYXPERT, PAYPAL, STRIPE, SINPE...)
+ALTER TABLE hot_click_pago_tb
+    ADD COLUMN IF NOT EXISTS proveedor VARCHAR(20) NOT NULL DEFAULT 'PAYXPERT';
+
+-- Índice para consultas por proveedor (reportes, reconciliación)
+CREATE INDEX IF NOT EXISTS idx_pago_proveedor
+    ON hot_click_pago_tb(proveedor);
+
+-- Índice para el cleanup de pagos expirados PENDIENTE (cancelarExpirados scheduler)
+CREATE INDEX IF NOT EXISTS idx_pago_estado_fecha
+    ON hot_click_pago_tb(estado_pago, fecha_creacion)
+    WHERE estado_pago = 'PENDIENTE';
+
+-- ============================================================
 -- FIN DEL SCRIPT
 -- ============================================================
