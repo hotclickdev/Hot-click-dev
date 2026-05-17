@@ -1,23 +1,29 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
 import Spinner from '@/components/ui/Spinner'
+import Input from '@/components/ui/Input'
+import Modal from '@/components/ui/Modal'
 import useAuthStore from '@/store/authStore'
 import { useToast } from '@/components/ui/Toast'
 import { orderService } from '@/services/orderService'
+import { authService } from '@/services/authService'
 import { formatDate, formatPrice, statusColor } from '@/utils/format'
 
 export default function ProfilePage() {
   const navigate = useNavigate()
   const toast = useToast()
   const { t } = useTranslation()
-  const { userId, userName, userEmail, userRole, logout } = useAuthStore()
+  const { userId, userName, userEmail, userRole, logout, refreshToken } = useAuthStore()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
+  const [twoFAEnabled, setTwoFAEnabled] = useState(false)
+  const [show2FASetup, setShow2FASetup] = useState(false)
+  const [showChangePassword, setShowChangePassword] = useState(false)
 
   useEffect(() => {
     if (!userId) return
@@ -27,7 +33,14 @@ export default function ProfilePage() {
       .finally(() => setLoading(false))
   }, [userId])
 
+  useEffect(() => {
+    authService.get2FAStatus()
+      .then(({ data }) => setTwoFAEnabled(data?.enabled ?? false))
+      .catch(() => {})
+  }, [])
+
   const handleLogout = () => {
+    if (refreshToken) authService.logout(refreshToken).catch(() => {})
     logout()
     toast({ message: 'Sesión cerrada', type: 'info' })
     navigate('/')
@@ -37,8 +50,9 @@ export default function ProfilePage() {
 
   return (
     <MainLayout>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 space-y-8">
-        {/* Profile header */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 space-y-5">
+
+        {/* Header de perfil */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -53,6 +67,7 @@ export default function ProfilePage() {
               <p className="text-sm text-[#8e8e9a] truncate">{userEmail}</p>
               <div className="flex items-center gap-2 mt-2">
                 <Badge variant="accent">{roleLabel[userRole] ?? userRole}</Badge>
+                {twoFAEnabled && <Badge variant="success">2FA activo</Badge>}
               </div>
             </div>
           </div>
@@ -61,9 +76,9 @@ export default function ProfilePage() {
           </Button>
         </motion.div>
 
-        {/* Orders shortcut */}
+        {/* Mis pedidos */}
         <div
-          className="flex items-center justify-between p-5 rounded-2xl border cursor-pointer transition-all"
+          className="flex items-center justify-between p-5 rounded-2xl border cursor-pointer transition-all hover:bg-white/3"
           style={{ backgroundColor: 'var(--hc-surface)', borderColor: 'var(--hc-border)' }}
           onClick={() => navigate('/mis-pedidos')}
         >
@@ -80,11 +95,323 @@ export default function ProfilePage() {
               )}
             </div>
           </div>
-          <svg className="w-4 h-4" style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
+          <ChevronIcon />
+        </div>
+
+        {/* Seguridad */}
+        <div
+          className="rounded-2xl border overflow-hidden"
+          style={{ backgroundColor: 'var(--hc-surface)', borderColor: 'var(--hc-border)' }}
+        >
+          <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--hc-border)' }}>
+            <h2 className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>Seguridad</h2>
+          </div>
+
+          {/* Cambiar contraseña */}
+          <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--hc-border)' }}>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-white/6 flex items-center justify-center">
+                <LockIcon />
+              </div>
+              <div>
+                <p className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Contraseña</p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>Cambiá tu contraseña actual</p>
+              </div>
+            </div>
+            <Button size="sm" variant="ghost" onClick={() => setShowChangePassword(true)}>
+              Cambiar
+            </Button>
+          </div>
+
+          {/* 2FA */}
+          <div className="flex items-center justify-between px-5 py-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-white/6 flex items-center justify-center">
+                <ShieldIcon />
+              </div>
+              <div>
+                <p className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Autenticación de dos factores</p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
+                  {twoFAEnabled ? 'Activo — tu cuenta tiene protección extra' : 'Inactivo — recomendamos activarlo'}
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant={twoFAEnabled ? 'danger' : 'primary'}
+              onClick={() => setShow2FASetup(true)}
+            >
+              {twoFAEnabled ? 'Desactivar' : 'Activar'}
+            </Button>
+          </div>
         </div>
       </div>
+
+      <ChangePasswordModal
+        open={showChangePassword}
+        onClose={() => setShowChangePassword(false)}
+        refreshToken={refreshToken}
+      />
+
+      <TwoFAModal
+        open={show2FASetup}
+        onClose={() => setShow2FASetup(false)}
+        enabled={twoFAEnabled}
+        onToggle={(val) => setTwoFAEnabled(val)}
+      />
     </MainLayout>
+  )
+}
+
+// ── Modal: Cambiar contraseña ─────────────────────────────────────────────────
+
+function ChangePasswordModal({ open, onClose, refreshToken }) {
+  const [actual, setActual]   = useState('')
+  const [nueva, setNueva]     = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState('')
+  const toast = useToast()
+  const logout = useAuthStore((s) => s.logout)
+  const navigate = useNavigate()
+
+  const reset = () => { setActual(''); setNueva(''); setConfirm(''); setError('') }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (nueva !== confirm) { setError('Las contraseñas no coinciden'); return }
+    if (nueva.length < 6)  { setError('La nueva contraseña debe tener al menos 6 caracteres'); return }
+    setError('')
+    setLoading(true)
+    try {
+      await authService.changePassword(actual, nueva, refreshToken)
+      toast({ message: 'Contraseña actualizada. Iniciá sesión de nuevo.', type: 'success' })
+      logout()
+      navigate('/login')
+    } catch (err) {
+      const msg = err.response?.data?.message
+      setError(typeof msg === 'string' && msg ? msg : 'Error al cambiar la contraseña')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Modal open={open} onClose={() => { onClose(); reset() }} title="Cambiar contraseña">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input
+          label="Contraseña actual"
+          type="password"
+          value={actual}
+          onChange={(e) => setActual(e.target.value)}
+          required
+          autoFocus
+        />
+        <Input
+          label="Nueva contraseña"
+          type="password"
+          value={nueva}
+          onChange={(e) => setNueva(e.target.value)}
+          required
+          minLength={6}
+        />
+        <Input
+          label="Confirmar nueva contraseña"
+          type="password"
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          required
+        />
+        {error && (
+          <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+            {error}
+          </p>
+        )}
+        <p className="text-xs text-[#8e8e9a]">
+          Al cambiar tu contraseña cerrás sesión en todos los dispositivos.
+        </p>
+        <Button type="submit" loading={loading} className="w-full">
+          Actualizar contraseña
+        </Button>
+      </form>
+    </Modal>
+  )
+}
+
+// ── Modal: 2FA ────────────────────────────────────────────────────────────────
+
+function TwoFAModal({ open, onClose, enabled, onToggle }) {
+  const [step, setStep]       = useState('info')
+  const [qrUri, setQrUri]     = useState('')
+  const [code, setCode]       = useState('')
+  const [contrasena, setCont] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState('')
+  const toast = useToast()
+
+  useEffect(() => {
+    if (open) setStep(enabled ? 'disable' : 'info')
+    setCode(''); setCont(''); setError(''); setQrUri('')
+  }, [open, enabled])
+
+  const handleSetup = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const { data } = await authService.setup2FA()
+      setQrUri(data?.qrUri ?? '')
+      setStep('qr')
+    } catch (err) {
+      const msg = err.response?.data?.message
+      setError(typeof msg === 'string' && msg ? msg : 'Error al iniciar configuración 2FA')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleActivate = async (e) => {
+    e.preventDefault()
+    if (code.length !== 6) { setError('Ingresá el código de 6 dígitos'); return }
+    setLoading(true)
+    setError('')
+    try {
+      await authService.activate2FA(code)
+      toast({ message: 'Autenticación de dos factores activada', type: 'success' })
+      onToggle(true)
+      onClose()
+    } catch (err) {
+      const msg = err.response?.data?.message
+      setError(typeof msg === 'string' && msg ? msg : 'Código incorrecto. Intentá de nuevo.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDisable = async (e) => {
+    e.preventDefault()
+    if (!contrasena || code.length !== 6) { setError('Ingresá tu contraseña y el código'); return }
+    setLoading(true)
+    setError('')
+    try {
+      await authService.disable2FA(contrasena, code)
+      toast({ message: 'Autenticación de dos factores desactivada', type: 'info' })
+      onToggle(false)
+      onClose()
+    } catch (err) {
+      const msg = err.response?.data?.message
+      setError(typeof msg === 'string' && msg ? msg : 'Datos incorrectos. Intentá de nuevo.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="Autenticación de dos factores">
+      <AnimatePresence mode="wait">
+        {step === 'info' && (
+          <motion.div key="info" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+            <p className="text-sm text-[#8e8e9a]">
+              El 2FA agrega una capa extra de seguridad. Necesitarás una app como{' '}
+              <strong className="text-[#e8e8ed]">Google Authenticator</strong> para generar códigos.
+            </p>
+            {error && <p className="text-sm text-red-400">{error}</p>}
+            <Button className="w-full" loading={loading} onClick={handleSetup}>
+              Configurar 2FA
+            </Button>
+          </motion.div>
+        )}
+
+        {step === 'qr' && (
+          <motion.div key="qr" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <form onSubmit={handleActivate} className="space-y-4">
+              <p className="text-sm text-[#8e8e9a]">
+                Escaneá este código QR con Google Authenticator y luego ingresá el código de 6 dígitos.
+              </p>
+              {qrUri && (
+                <div className="flex justify-center py-3">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrUri)}`}
+                    alt="QR 2FA"
+                    className="rounded-xl border border-white/10"
+                    width={180}
+                    height={180}
+                  />
+                </div>
+              )}
+              <Input
+                label="Código de verificación"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                maxLength={6}
+                inputMode="numeric"
+                placeholder="000000"
+                required
+              />
+              {error && <p className="text-sm text-red-400">{error}</p>}
+              <Button type="submit" loading={loading} className="w-full">
+                Activar 2FA
+              </Button>
+            </form>
+          </motion.div>
+        )}
+
+        {step === 'disable' && (
+          <motion.div key="disable" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <form onSubmit={handleDisable} className="space-y-4">
+              <p className="text-sm text-[#8e8e9a]">
+                Para desactivar el 2FA necesitás tu contraseña y el código actual de tu app.
+              </p>
+              <Input
+                label="Contraseña"
+                type="password"
+                value={contrasena}
+                onChange={(e) => setCont(e.target.value)}
+                required
+                autoFocus
+              />
+              <Input
+                label="Código de autenticación"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                maxLength={6}
+                inputMode="numeric"
+                placeholder="000000"
+                required
+              />
+              {error && <p className="text-sm text-red-400">{error}</p>}
+              <Button type="submit" loading={loading} variant="danger" className="w-full">
+                Desactivar 2FA
+              </Button>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </Modal>
+  )
+}
+
+// ── Iconos ────────────────────────────────────────────────────────────────────
+
+function ChevronIcon() {
+  return (
+    <svg className="w-4 h-4" style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+    </svg>
+  )
+}
+
+function LockIcon() {
+  return (
+    <svg className="w-4 h-4 text-[#8e8e9a]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+    </svg>
+  )
+}
+
+function ShieldIcon() {
+  return (
+    <svg className="w-4 h-4 text-[#8e8e9a]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+    </svg>
   )
 }

@@ -4,6 +4,12 @@ export const authService = {
   login: (correo, contrasena) =>
     api.post('/auth/login', { correo, contrasena }),
 
+  refresh: (refreshToken) =>
+    api.post('/auth/refresh', { refreshToken }),
+
+  logout: (refreshToken) =>
+    api.post('/auth/logout', { refreshToken }),
+
   verify2FA: (tempToken, code) =>
     api.post('/auth/2fa/verify', { tempToken, code }),
 
@@ -24,6 +30,9 @@ export const authService = {
 
   resetPassword: (correo, nuevaContrasena) =>
     api.post('/auth/reset-password', { correo, nuevaContrasena }),
+
+  changePassword: (contrasenaActual, nuevaContrasena, refreshToken) =>
+    api.post('/auth/change-password', { contrasenaActual, nuevaContrasena, refreshToken }),
 
   setup2FA: () =>
     api.post('/auth/2fa/setup'),

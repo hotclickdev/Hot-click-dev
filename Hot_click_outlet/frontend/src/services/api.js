@@ -6,20 +6,22 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-// Attach JWT token from Zustand store
-api.interceptors.request.use((config) => {
+const getStored = () => {
   try {
-    const stored = localStorage.getItem('hotclick-auth')
-    if (stored) {
-      const { state } = JSON.parse(stored)
-      if (state?.token) config.headers.Authorization = `Bearer ${state.token}`
-    }
-  } catch {}
+    const raw = localStorage.getItem('hotclick-auth')
+    return raw ? JSON.parse(raw)?.state ?? {} : {}
+  } catch { return {} }
+}
+
+// Adjunta access token a cada request
+api.interceptors.request.use((config) => {
+  const { token } = getStored()
+  if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
 
-// Auto-unwrap ResponseDTO { success, message, data } transparently.
-// Responses without that shape (JwtResponse, plain Maps) pass through unchanged.
+// Auto-unwrap ResponseDTO { success, message, data }
+// Responses sin ese shape (AuthResponse, Maps) pasan sin cambios
 api.interceptors.response.use(
   (response) => {
     const d = response.data
@@ -28,20 +30,44 @@ api.interceptors.response.use(
     }
     return response
   },
-  (error) => {
-    const status = error.response?.status
-    // 401 = token expirado/inválido; 403 sin token = sesión perdida → redirigir al login
-    if (status === 401) {
+  async (error) => {
+    const status   = error.response?.status
+    const original = error.config
+
+    // Intenta renovar el access token con el refresh token antes de redirigir
+    if (status === 401 && !original._retry) {
+      original._retry = true
+      const { refreshToken } = getStored()
+
+      if (refreshToken) {
+        try {
+          const { data } = await axios.post('/api/auth/refresh', { refreshToken })
+          if (data?.accessToken) {
+            // Actualizar solo el access token en el store sin perder el resto del estado
+            const raw = localStorage.getItem('hotclick-auth')
+            if (raw) {
+              const parsed = JSON.parse(raw)
+              parsed.state.token = data.accessToken
+              localStorage.setItem('hotclick-auth', JSON.stringify(parsed))
+            }
+            original.headers.Authorization = `Bearer ${data.accessToken}`
+            return api(original) // reintentar request original
+          }
+        } catch {
+          // Refresh falló → logout completo
+        }
+      }
+
       localStorage.removeItem('hotclick-auth')
       window.location.href = '/login'
     } else if (status === 403) {
-      const stored = localStorage.getItem('hotclick-auth')
-      const hasToken = (() => { try { return !!JSON.parse(stored)?.state?.token } catch { return false } })()
-      if (!hasToken) {
+      const { token } = getStored()
+      if (!token) {
         localStorage.removeItem('hotclick-auth')
         window.location.href = '/login'
       }
     }
+
     return Promise.reject(error)
   }
 )

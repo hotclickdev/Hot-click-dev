@@ -1,12 +1,14 @@
 package com.hotclick.controller;
 
+import com.hotclick.dto.AuthResponse;
 import com.hotclick.dto.JwtRequest;
-import com.hotclick.dto.JwtResponse;
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.model.RefreshToken;
 import com.hotclick.model.Usuario;
 import com.hotclick.security.JwtUtil;
 import com.hotclick.service.EmailVerificationService;
 import com.hotclick.service.PasswordResetService;
+import com.hotclick.service.RefreshTokenService;
 import com.hotclick.service.TwoFactorService;
 import com.hotclick.service.UsuarioService;
 import com.hotclick.utils.Constants;
@@ -23,11 +25,12 @@ import java.util.Optional;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    @Autowired private UsuarioService       usuarioService;
-    @Autowired private JwtUtil              jwtUtil;
-    @Autowired private PasswordResetService passwordResetService;
-    @Autowired private EmailVerificationService emailVerificationService;
-    @Autowired private TwoFactorService     twoFactorService;
+    @Autowired private UsuarioService            usuarioService;
+    @Autowired private JwtUtil                   jwtUtil;
+    @Autowired private PasswordResetService      passwordResetService;
+    @Autowired private EmailVerificationService  emailVerificationService;
+    @Autowired private TwoFactorService          twoFactorService;
+    @Autowired private RefreshTokenService       refreshTokenService;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -45,7 +48,7 @@ public class AuthController {
         }
     }
 
-    // ── Login (incluye paso 2FA) ───────────────────────────────────────────────
+    // ── Login ─────────────────────────────────────────────────────────────────
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody JwtRequest request) {
@@ -61,7 +64,6 @@ public class AuthController {
             return ResponseEntity.status(401).body(ResponseDTO.error("Credenciales inválidas"));
         }
 
-        // Verificar estado de la cuenta antes de generar el token
         int estado = usuario.getEstado() == null ? 0 : usuario.getEstado();
         if (estado == Constants.ESTADO_PENDIENTE) {
             return ResponseEntity.status(403).body(ResponseDTO.error(
@@ -69,7 +71,7 @@ public class AuthController {
         }
         if (estado == Constants.ESTADO_INACTIVO || estado == Constants.ESTADO_SUSPENDIDO) {
             return ResponseEntity.status(403).body(ResponseDTO.error(
-                "Tu cuenta no está activa. Contacta al administrador."));
+                "Tu cuenta no está activa. Contactá al administrador."));
         }
         if (estado == Constants.ESTADO_ELIMINADO) {
             return ResponseEntity.status(401).body(ResponseDTO.error("Credenciales inválidas"));
@@ -78,20 +80,78 @@ public class AuthController {
         usuarioService.resetearIntentosFallidos(usuario.getId());
         usuarioService.actualizarUltimoAcceso(usuario.getId());
 
-        // Si el usuario tiene 2FA activo, devolver token temporal en lugar del JWT final
         if (Boolean.TRUE.equals(usuario.getTwoFactorEnabled())) {
             String tempToken = jwtUtil.generateTempToken(usuario.getCorreo(), usuario.getId());
             return ResponseEntity.ok(Map.of(
-                "success",    true,
+                "success",     true,
                 "requires2fa", true,
-                "tempToken",  tempToken,
-                "message",    "Ingresa el código de tu app de autenticación"
+                "tempToken",   tempToken,
+                "message",     "Ingresá el código de tu app de autenticación"
             ));
         }
 
-        String rol   = usuario.getRoles().isEmpty() ? "USUARIO_FINAL" : usuario.getRoles().get(0).getNombreRol();
-        String token = jwtUtil.generateToken(usuario.getCorreo(), usuario.getId(), rol);
-        return ResponseEntity.ok(new JwtResponse(token, usuario.getId(), usuario.getCorreo(), rol));
+        return ResponseEntity.ok(buildAuthResponse(usuario));
+    }
+
+    // ── Refresh access token ──────────────────────────────────────────────────
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh(@RequestBody Map<String, String> body) {
+        String tokenStr = body.get("refreshToken");
+        if (tokenStr == null || tokenStr.isBlank()) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error("Refresh token requerido"));
+        }
+        try {
+            RefreshToken rt = refreshTokenService.validar(tokenStr);
+            Usuario usuario = rt.getUsuario();
+            String rol = usuario.getRoles().isEmpty() ? "USUARIO_FINAL" : usuario.getRoles().get(0).getNombreRol();
+            String newAccessToken = jwtUtil.generateToken(usuario.getCorreo(), usuario.getId(), rol);
+            return ResponseEntity.ok(Map.of(
+                "accessToken", newAccessToken,
+                "tipo",        "Bearer"
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
+        }
+    }
+
+    // ── Logout — revoca refresh token ─────────────────────────────────────────
+
+    @PostMapping("/logout")
+    public ResponseEntity<ResponseDTO> logout(@RequestBody Map<String, String> body) {
+        String tokenStr = body.get("refreshToken");
+        if (tokenStr != null && !tokenStr.isBlank()) {
+            refreshTokenService.revocar(tokenStr);
+        }
+        return ResponseEntity.ok(ResponseDTO.success("Sesión cerrada correctamente", null));
+    }
+
+    // ── Cambiar contraseña (autenticado) ──────────────────────────────────────
+
+    @PostMapping("/change-password")
+    public ResponseEntity<ResponseDTO> changePassword(@RequestBody Map<String, String> body,
+                                                      HttpServletRequest request) {
+        String actual = body.get("contrasenaActual");
+        String nueva  = body.get("nuevaContrasena");
+
+        if (actual == null || nueva == null || nueva.length() < 6) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error("La nueva contraseña debe tener al menos 6 caracteres"));
+        }
+        try {
+            Usuario usuario = usuarioFromRequest(request);
+            if (!passwordEncoder.matches(actual, usuario.getContrasenaHash())) {
+                return ResponseEntity.status(401).body(ResponseDTO.error("La contraseña actual es incorrecta"));
+            }
+            usuario.setContrasenaHash(passwordEncoder.encode(nueva));
+            usuarioService.guardar(usuario);
+            // Revocar todos los refresh tokens para forzar re-login en otros dispositivos
+            refreshTokenService.revocar(body.getOrDefault("refreshToken", ""));
+            return ResponseEntity.ok(ResponseDTO.success("Contraseña actualizada correctamente", null));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(ResponseDTO.error("Error al cambiar la contraseña"));
+        }
     }
 
     // ── 2FA: Verificar código durante login ───────────────────────────────────
@@ -120,31 +180,26 @@ public class AuthController {
                 return ResponseEntity.status(401).body(ResponseDTO.error("Código incorrecto o expirado"));
             }
 
-            String rol   = usuario.getRoles().isEmpty() ? "USUARIO_FINAL" : usuario.getRoles().get(0).getNombreRol();
-            String token = jwtUtil.generateToken(correo, usuario.getId(), rol);
-            return ResponseEntity.ok(new JwtResponse(token, usuario.getId(), correo, rol));
+            return ResponseEntity.ok(buildAuthResponse(usuario));
 
         } catch (Exception e) {
             return ResponseEntity.status(401).body(ResponseDTO.error("Token expirado o inválido"));
         }
     }
 
-    // ── 2FA: Setup — genera secret + URI para QR ─────────────────────────────
+    // ── 2FA: Setup ────────────────────────────────────────────────────────────
 
     @PostMapping("/2fa/setup")
     public ResponseEntity<ResponseDTO> setup2FA(HttpServletRequest request) {
         try {
             Usuario usuario = usuarioFromRequest(request);
-
             String secret = twoFactorService.generateSecret();
-            // Guardar el secret (sin activar aún — se activa al verificar el primer código)
             usuario.setTwoFactorSecret(secret);
             usuario.setTwoFactorEnabled(false);
             usuarioService.guardar(usuario);
-
             String qrUri = twoFactorService.buildQrUri(usuario.getCorreo(), secret);
             return ResponseEntity.ok(ResponseDTO.success(
-                "Escanea el código QR con Google Authenticator y luego ingresa el código para activar",
+                "Escanea el código QR con Google Authenticator y luego ingresá el código para activar",
                 Map.of("secret", secret, "qrUri", qrUri)
             ));
         } catch (SecurityException e) {
@@ -154,7 +209,7 @@ public class AuthController {
         }
     }
 
-    // ── 2FA: Activar — verifica el código y activa 2FA ───────────────────────
+    // ── 2FA: Activar ──────────────────────────────────────────────────────────
 
     @PostMapping("/2fa/activate")
     public ResponseEntity<ResponseDTO> activate2FA(@RequestBody Map<String, String> body,
@@ -165,18 +220,15 @@ public class AuthController {
         }
         try {
             Usuario usuario = usuarioFromRequest(request);
-
             if (usuario.getTwoFactorSecret() == null) {
-                return ResponseEntity.badRequest().body(ResponseDTO.error("Primero inicia la configuración 2FA"));
+                return ResponseEntity.badRequest().body(ResponseDTO.error("Primero iniciá la configuración 2FA"));
             }
             if (!twoFactorService.verifyCode(usuario.getTwoFactorSecret(), code)) {
                 return ResponseEntity.status(400).body(ResponseDTO.error("Código incorrecto o expirado"));
             }
-
             usuario.setTwoFactorEnabled(true);
             usuarioService.guardar(usuario);
-            return ResponseEntity.ok(ResponseDTO.success("2FA activado correctamente", null));
-
+            return ResponseEntity.ok(ResponseDTO.success("Autenticación de dos factores activada correctamente", null));
         } catch (SecurityException e) {
             return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
@@ -184,7 +236,7 @@ public class AuthController {
         }
     }
 
-    // ── 2FA: Desactivar — requiere contraseña + código TOTP ──────────────────
+    // ── 2FA: Desactivar ───────────────────────────────────────────────────────
 
     @PostMapping("/2fa/disable")
     public ResponseEntity<ResponseDTO> disable2FA(@RequestBody Map<String, String> body,
@@ -197,19 +249,16 @@ public class AuthController {
         }
         try {
             Usuario usuario = usuarioFromRequest(request);
-
             if (!passwordEncoder.matches(contrasena, usuario.getContrasenaHash())) {
                 return ResponseEntity.status(401).body(ResponseDTO.error("Contraseña incorrecta"));
             }
             if (!twoFactorService.verifyCode(usuario.getTwoFactorSecret(), code)) {
                 return ResponseEntity.status(401).body(ResponseDTO.error("Código de autenticación incorrecto"));
             }
-
             usuario.setTwoFactorEnabled(false);
             usuario.setTwoFactorSecret(null);
             usuarioService.guardar(usuario);
-            return ResponseEntity.ok(ResponseDTO.success("2FA desactivado correctamente", null));
-
+            return ResponseEntity.ok(ResponseDTO.success("Autenticación de dos factores desactivada correctamente", null));
         } catch (SecurityException e) {
             return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
@@ -217,7 +266,7 @@ public class AuthController {
         }
     }
 
-    // ── 2FA: Estado actual ────────────────────────────────────────────────────
+    // ── 2FA: Estado ───────────────────────────────────────────────────────────
 
     @GetMapping("/2fa/status")
     public ResponseEntity<ResponseDTO> status2FA(HttpServletRequest request) {
@@ -232,7 +281,7 @@ public class AuthController {
         }
     }
 
-    // ── Recuperar contraseña ──────────────────────────────────────────────────
+    // ── Verificación por correo ───────────────────────────────────────────────
 
     @PostMapping("/send-verification")
     public ResponseEntity<ResponseDTO> sendVerification(@RequestBody Usuario usuario) {
@@ -266,6 +315,8 @@ public class AuthController {
         }
     }
 
+    // ── Recuperar contraseña ──────────────────────────────────────────────────
+
     @PostMapping("/forgot-password")
     public ResponseEntity<ResponseDTO> forgotPassword(@RequestBody Map<String, String> body) {
         String correo = body.get("correo");
@@ -276,7 +327,6 @@ public class AuthController {
             passwordResetService.enviarCodigo(correo.trim());
             return ResponseEntity.ok(ResponseDTO.success("Si el correo está registrado, recibirás un código de verificación", null));
         } catch (RuntimeException e) {
-            // Propagar mensajes de negocio: rate limit, cuenta no verificada, etc.
             String msg = e.getMessage();
             return ResponseEntity.badRequest().body(ResponseDTO.error(
                 msg != null && !msg.isBlank() ? msg : "Error al enviar el correo"));
@@ -315,7 +365,15 @@ public class AuthController {
         return ResponseEntity.status(400).body(ResponseDTO.error("Sesión de recuperación inválida o expirada"));
     }
 
-    // ── Helper privado ────────────────────────────────────────────────────────
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private AuthResponse buildAuthResponse(Usuario usuario) {
+        String rol         = usuario.getRoles().isEmpty() ? "USUARIO_FINAL" : usuario.getRoles().get(0).getNombreRol();
+        String accessToken = jwtUtil.generateToken(usuario.getCorreo(), usuario.getId(), rol);
+        RefreshToken rt    = refreshTokenService.crear(usuario);
+        String nombre      = usuario.getNombre() != null ? usuario.getNombre() : usuario.getCorreo().split("@")[0];
+        return new AuthResponse(accessToken, rt.getToken(), usuario.getId(), usuario.getCorreo(), rol, nombre);
+    }
 
     private Usuario usuarioFromRequest(HttpServletRequest request) {
         String auth = request.getHeader("Authorization");

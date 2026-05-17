@@ -1482,5 +1482,17 @@ ALTER TABLE hot_click_publicacion_fb_tb
     ADD CONSTRAINT uq_publicacion_fb_producto UNIQUE (fk_id_producto);
 
 -- ============================================================
+-- 2026-05-16: Refresh tokens (sesiones persistentes)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS hot_click_refresh_token_tb (
+    id              BIGSERIAL PRIMARY KEY,
+    token           VARCHAR(255) NOT NULL UNIQUE,
+    fk_id_usuario   BIGINT NOT NULL REFERENCES hot_click_usuario_tb(id_usuario) ON DELETE CASCADE,
+    expires_at      TIMESTAMP NOT NULL,
+    revoked_at      TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_refresh_token ON hot_click_refresh_token_tb(token);
+
+-- ============================================================
 -- FIN DEL SCRIPT
 -- ============================================================
