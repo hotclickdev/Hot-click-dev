@@ -1,5 +1,5 @@
 # MEMORIA DEL PROYECTO — HOT_CLICK OUTLET
-> Última actualización: 2026-05-13
+> Última actualización: 2026-05-18
 
 ---
 
@@ -24,7 +24,7 @@ bodegas, categorías, finanzas y pedidos desde un panel React.
 | Estilos | TailwindCSS 4 |
 | Build | Maven local en `maven/bin/` → usar `.\maven\bin\mvn` |
 | Imágenes | Supabase Storage (bucket `productos`) |
-| Pagos | PayXpert (API: connect2.payxpert.com) |
+| Pagos | PayXpert + PayPal Orders API v2 |
 | Email | SMTP Gmail (hotclick.cr@gmail.com) |
 
 **URL local:** `http://localhost:8080`  
@@ -203,6 +203,16 @@ Hot_click_outlet/frontend/src/
 | POST | `/api/payment/checkout` | JWT | Iniciar pago PayXpert |
 | GET | `/api/payment/status/{orderId}` | JWT | Estado del pago |
 | POST | `/api/webhooks/payxpert` | No | Webhook de PayXpert |
+| POST | `/api/payment/paypal/create-order` | JWT | Crear orden PayPal → retorna approvalUrl |
+| POST | `/api/payment/paypal/capture/{paypalOrderId}` | JWT | Capturar pago aprobado |
+| POST | `/api/webhooks/paypal` | No | Webhook PayPal (eventos asíncronos) |
+
+### Pedidos extendidos (`/api/pedidos`)
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| PUT | `/api/pedidos/{id}/estado` | JWT admin | Cambiar estado |
+| PUT | `/api/pedidos/{id}/envio` | JWT admin | Marcar enviado + guía Correos CR + costo |
+| DELETE | `/api/pedidos/{id}` | JWT admin | Eliminar pedido |
 
 ### Otros
 | Método | Ruta | Auth | Descripción |
