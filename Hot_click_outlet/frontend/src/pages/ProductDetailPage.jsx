@@ -7,6 +7,8 @@ import Badge from '@/components/ui/Badge'
 import Spinner from '@/components/ui/Spinner'
 import { productService, normalizeProduct } from '@/services/productService'
 import useCartStore from '@/store/cartStore'
+import useWishlistStore from '@/store/wishlistStore'
+import useRecentlyViewedStore from '@/store/recentlyViewedStore'
 import { useToast } from '@/components/ui/Toast'
 import { formatPrice, conditionLabel } from '@/utils/format'
 
@@ -23,22 +25,45 @@ export default function ProductDetailPage() {
   const [activeTab, setActiveTab] = useState(null)
   const [justAdded, setJustAdded] = useState(false)
   const [showSticky, setShowSticky] = useState(false)
+  const [recommendations, setRecommendations] = useState([])
   const addTimeout = useRef(null)
   const mainCTARef = useRef(null)
+  const { toggle: toggleWishlist, isLiked } = useWishlistStore()
+  const addRecentlyViewed = useRecentlyViewedStore((s) => s.addItem)
+  const recentlyViewed = useRecentlyViewedStore((s) => s.items)
 
   useEffect(() => {
     setLoading(true)
+    setRecommendations([])
     productService.getById(id)
       .then(({ data }) => {
         const p = normalizeProduct(data)
         setProduct(p)
-        // set default tab to the first one that has content
+        addRecentlyViewed(p)
         if (p.especificaciones?.trim()) setActiveTab('especificaciones')
         else if (p.comoUsar?.trim()) setActiveTab('como-usar')
       })
       .catch(() => navigate('/productos'))
       .finally(() => setLoading(false))
   }, [id])
+
+  // Fetch same-category recommendations
+  useEffect(() => {
+    if (!product) return
+    productService.getAll(0, 24)
+      .then(({ data }) => {
+        const all = (data.content ?? data ?? []).map(normalizeProduct)
+        const sameCat = all.filter((p) => p.id !== product.id && p.categoriaId === product.categoriaId && p.stock > 0)
+        if (sameCat.length >= 3) {
+          setRecommendations(sameCat.slice(0, 6))
+        } else {
+          setRecommendations(
+            all.filter((p) => p.id !== product.id && p.stock > 0).slice(0, 6)
+          )
+        }
+      })
+      .catch(() => {})
+  }, [product?.id])
 
   useEffect(() => () => clearTimeout(addTimeout.current), [])
 
@@ -158,10 +183,25 @@ export default function ProductDetailPage() {
               </span>
             </div>
 
-            {/* Precio */}
-            <span className="text-4xl font-bold text-[#e8e8ed]">
-              {formatPrice(product.precio)}
-            </span>
+            {/* Precio + wishlist */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-4xl font-bold text-[#e8e8ed]">
+                {formatPrice(product.precio)}
+              </span>
+              <motion.button
+                onClick={() => toggleWishlist(product)}
+                whileTap={{ scale: 0.78 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 28 }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-sm font-medium transition-all duration-200 ${
+                  isLiked(product.id)
+                    ? 'bg-red-500/10 border-red-500/30 text-red-400'
+                    : 'border-white/10 text-[#8e8e9a] hover:text-white hover:border-white/25'
+                }`}
+              >
+                <HeartDetailIcon filled={isLiked(product.id)} />
+                <span className="hidden sm:inline">{isLiked(product.id) ? 'Guardado' : 'Guardar'}</span>
+              </motion.button>
+            </div>
 
             {/* Descripción */}
             {product.descripcion && (
@@ -436,6 +476,95 @@ export default function ProductDetailPage() {
           </motion.div>
         )}
 
+        {/* ── También te puede gustar ── */}
+        {recommendations.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4 }}
+            className="mt-12"
+          >
+            <h2 className="text-xl font-bold text-[#e8e8ed] mb-5">También te puede gustar</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              {recommendations.map((rec, i) => (
+                <motion.div
+                  key={rec.id}
+                  initial={{ opacity: 0, y: 14 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.06 }}
+                  whileHover={{ y: -4 }}
+                  onClick={() => navigate(`/productos/${rec.id}`)}
+                  className="group cursor-pointer rounded-2xl overflow-hidden transition-shadow duration-300 hover:shadow-[0_12px_40px_rgba(0,0,0,0.4)]"
+                  style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
+                >
+                  <div className="h-24 bg-[#1a1a1f] flex items-center justify-center overflow-hidden">
+                    {rec.imagenUrl ? (
+                      <img
+                        src={rec.imagenUrl}
+                        alt={rec.nombre}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="text-3xl opacity-20">📦</span>
+                    )}
+                  </div>
+                  <div className="p-2.5">
+                    <p className="text-[11px] font-medium line-clamp-2 mb-1 leading-snug" style={{ color: 'var(--hc-text)' }}>
+                      {rec.nombre}
+                    </p>
+                    <p className="text-xs font-bold text-[#4f7cff]">{formatPrice(rec.precio)}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* ── Visto recientemente ── */}
+        {recentlyViewed.filter((p) => p.id !== product.id).length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.35 }}
+            className="mt-10"
+          >
+            <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--hc-muted)' }}>
+              Visto recientemente
+            </h3>
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+              {recentlyViewed
+                .filter((p) => p.id !== product.id)
+                .map((p) => (
+                  <motion.button
+                    key={p.id}
+                    whileHover={{ y: -2 }}
+                    onClick={() => navigate(`/productos/${p.id}`)}
+                    className="shrink-0 flex items-center gap-2.5 px-3 py-2 rounded-2xl transition-all"
+                    style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-[#1a1a1f] overflow-hidden shrink-0 border border-white/6">
+                      {p.imagenUrl ? (
+                        <img src={p.imagenUrl} alt={p.nombre} className="w-full h-full object-cover" loading="lazy" />
+                      ) : (
+                        <span className="flex items-center justify-center w-full h-full text-sm">📦</span>
+                      )}
+                    </div>
+                    <div className="text-left">
+                      <p className="text-xs font-medium max-w-[100px] truncate" style={{ color: 'var(--hc-text)' }}>
+                        {p.nombre}
+                      </p>
+                      <p className="text-xs font-bold text-[#4f7cff]">{formatPrice(p.precio)}</p>
+                    </div>
+                  </motion.button>
+                ))}
+            </div>
+          </motion.div>
+        )}
+
       </div>
 
       {/* ── Sticky Add to Cart ── */}
@@ -549,6 +678,20 @@ function StickyCartBar({ product, quantity, onDecrease, onIncrease, onAdd, justA
         </motion.button>
       </div>
     </motion.div>
+  )
+}
+
+// ── Heart icon for detail page ────────────────────────────────────────────────
+
+function HeartDetailIcon({ filled }) {
+  return filled ? (
+    <svg className="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+    </svg>
+  ) : (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+    </svg>
   )
 }
 

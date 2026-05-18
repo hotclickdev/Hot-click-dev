@@ -35,6 +35,7 @@ const AdminPagos          = lazy(() => import('@/pages/admin/AdminPagos'))
 const MisPedidosPage  = lazy(() => import('@/pages/MisPedidosPage'))
 const CheckoutPage    = lazy(() => import('@/pages/CheckoutPage'))
 const PaymentStatusPage = lazy(() => import('@/pages/PaymentStatusPage'))
+const WishlistPage    = lazy(() => import('@/pages/WishlistPage'))
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -94,6 +95,7 @@ export default function App() {
               <Route path="/perfil"      element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
               <Route path="/mis-pedidos" element={<ProtectedRoute><MisPedidosPage /></ProtectedRoute>} />
               <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
+              <Route path="/wishlist" element={<WishlistPage />} />
               <Route path="/pago/exito"     element={<PaymentStatusPage />} />
               <Route path="/pago/cancelado" element={<PaymentStatusPage />} />
               <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />

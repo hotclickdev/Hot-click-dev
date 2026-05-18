@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import useAuthStore from '@/store/authStore'
 import useCartStore from '@/store/cartStore'
+import useWishlistStore from '@/store/wishlistStore'
 
 export default function Navbar() {
   const { t } = useTranslation()
@@ -11,6 +12,7 @@ export default function Navbar() {
   const navigate = useNavigate()
   const { token, userName, logout, isAdmin } = useAuthStore()
   const cartCount = useCartStore((s) => s.count())
+  const wishlistCount = useWishlistStore((s) => s.count())
   const [scrolled, setScrolled] = useState(false)
   const [scrollProgress, setScrollProgress] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -106,6 +108,30 @@ export default function Navbar() {
 
           {/* Actions */}
           <div className="flex items-center gap-1">
+            {/* Wishlist */}
+            <Link
+              to="/wishlist"
+              aria-label="Wishlist"
+              className="relative p-2 rounded-lg transition-colors"
+              style={{ color: 'var(--hc-muted)' }}
+            >
+              <WishlistNavIcon />
+              <AnimatePresence>
+                {wishlistCount > 0 && (
+                  <motion.span
+                    key={wishlistCount}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+                    className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center shadow-[0_0_8px_rgba(239,68,68,0.5)]"
+                  >
+                    {wishlistCount > 9 ? '9+' : wishlistCount}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </Link>
+
             {/* Cart */}
             <Link
               to="/carrito"
@@ -250,6 +276,14 @@ export default function Navbar() {
         )}
       </AnimatePresence>
     </>
+  )
+}
+
+function WishlistNavIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+    </svg>
   )
 }
 

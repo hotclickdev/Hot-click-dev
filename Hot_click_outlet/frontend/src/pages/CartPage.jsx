@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -6,17 +7,47 @@ import Button from '@/components/ui/Button'
 import ShippingProgress from '@/components/ui/ShippingProgress'
 import useCartStore from '@/store/cartStore'
 import useAuthStore from '@/store/authStore'
+import { productService, normalizeProduct } from '@/services/productService'
 import { formatPrice } from '@/utils/format'
 import { useToast } from '@/components/ui/Toast'
 
 const WHATSAPP = '50689745370'
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, clearCart, total, toWhatsAppMessage } = useCartStore()
+  const { items, removeItem, updateQuantity, clearCart, total, toWhatsAppMessage, addItem } = useCartStore()
   const { token } = useAuthStore()
   const navigate  = useNavigate()
   const toast     = useToast()
   const { t } = useTranslation()
+  const [crossSell, setCrossSell] = useState([])
+  const [crossAdded, setCrossAdded] = useState(new Set())
+
+  useEffect(() => {
+    const cartIds = new Set(items.map((i) => i.id))
+    productService.getDestacados()
+      .then(({ data }) => {
+        const all = (Array.isArray(data) ? data : data?.content ?? []).map(normalizeProduct)
+        const filtered = all.filter((p) => !cartIds.has(p.id) && p.stock > 0).slice(0, 4)
+        if (filtered.length > 0) {
+          setCrossSell(filtered)
+        } else {
+          return productService.getAll(0, 12).then(({ data: d }) => {
+            const fallback = (d.content ?? d ?? []).map(normalizeProduct)
+            setCrossSell(fallback.filter((p) => !cartIds.has(p.id) && p.stock > 0).slice(0, 4))
+          })
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  const handleCrossAdd = (product) => {
+    addItem(product)
+    toast({ message: `${product.nombre} añadido`, type: 'success' })
+    setCrossAdded((prev) => new Set([...prev, product.id]))
+    setTimeout(() => {
+      setCrossAdded((prev) => { const n = new Set(prev); n.delete(product.id); return n })
+    }, 1400)
+  }
 
   const handleWhatsApp = () => {
     if (items.length === 0) return
@@ -220,6 +251,64 @@ export default function CartPage() {
             </motion.div>
           </div>
         </div>
+
+        {/* ── Cross-sell: Completa tu compra ── */}
+        {crossSell.length > 0 && (
+          <div className="mt-10">
+            <div className="flex items-center gap-3 mb-5">
+              <h2 className="text-lg font-semibold text-[#e8e8ed]">Completa tu compra</h2>
+              <span className="text-xs text-[#8e8e9a]">Productos que podrían interesarte</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {crossSell.map((product, i) => (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.08 }}
+                  className="group rounded-2xl overflow-hidden"
+                  style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
+                >
+                  <div
+                    className="h-28 bg-[#1a1a1f] flex items-center justify-center overflow-hidden cursor-pointer"
+                    onClick={() => navigate(`/productos/${product.id}`)}
+                  >
+                    {product.imagenUrl ? (
+                      <img
+                        src={product.imagenUrl}
+                        alt={product.nombre}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="text-3xl opacity-20">📦</span>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <p
+                      className="text-xs font-medium line-clamp-2 mb-1.5 cursor-pointer"
+                      style={{ color: 'var(--hc-text)' }}
+                      onClick={() => navigate(`/productos/${product.id}`)}
+                    >
+                      {product.nombre}
+                    </p>
+                    <p className="text-sm font-bold text-[#4f7cff] mb-2">{formatPrice(product.precio)}</p>
+                    <button
+                      onClick={() => handleCrossAdd(product)}
+                      className={`w-full h-7 rounded-lg text-xs font-medium transition-all duration-200 ${
+                        crossAdded.has(product.id)
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-[#4f7cff] hover:bg-[#3d6ee0] text-white'
+                      }`}
+                    >
+                      {crossAdded.has(product.id) ? '✓ Añadido' : '+ Agregar'}
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </MainLayout>
   )

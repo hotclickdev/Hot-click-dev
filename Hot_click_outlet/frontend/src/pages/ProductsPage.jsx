@@ -5,9 +5,11 @@ import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import { productService, normalizeProduct } from '@/services/productService'
 import useCartStore from '@/store/cartStore'
+import useWishlistStore from '@/store/wishlistStore'
 import { useToast } from '@/components/ui/Toast'
 import { formatPrice, conditionLabel } from '@/utils/format'
 import Spinner from '@/components/ui/Spinner'
+import QuickViewModal from '@/components/ui/QuickViewModal'
 
 const PAGE_SIZE = 24
 
@@ -53,6 +55,8 @@ export default function ProductsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false)
   const [recentlyAdded, setRecentlyAdded] = useState(new Set())
+  const [quickView, setQuickView] = useState(null)
+  const { toggle: toggleWishlist, isLiked } = useWishlistStore()
 
   const fetchProducts = useCallback(async (p = 0) => {
     setLoading(true)
@@ -375,21 +379,42 @@ export default function ProductsPage() {
                             </span>
                           </div>
                         )}
+                        {/* Wishlist heart — always visible */}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleWishlist(product) }}
+                          className="absolute top-2 right-2 z-10 w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200"
+                          style={{
+                            background: isLiked(product.id) ? 'rgba(239,68,68,0.18)' : 'rgba(0,0,0,0.45)',
+                            border: isLiked(product.id) ? '1px solid rgba(239,68,68,0.38)' : '1px solid rgba(255,255,255,0.12)',
+                          }}
+                          aria-label={isLiked(product.id) ? 'Quitar de favoritos' : 'Guardar en wishlist'}
+                        >
+                          <HeartCardIcon filled={isLiked(product.id)} />
+                        </button>
                         {/* Quick-add overlay */}
                         {product.stock > 0 && (
                           <>
                             <div className="hc-card-overlay" />
                             <div className="hc-quick-add absolute bottom-0 left-0 right-0 p-2">
-                              <button
-                                onClick={(e) => handleAdd(e, product)}
-                                className={`w-full h-8 rounded-xl text-xs font-bold transition-colors duration-200 ${
-                                  recentlyAdded.has(product.id)
-                                    ? 'bg-emerald-500 text-white'
-                                    : 'bg-[#4f7cff] text-white'
-                                }`}
-                              >
-                                {recentlyAdded.has(product.id) ? '✓ Añadido' : `+ ${t('products.addToCart')}`}
-                              </button>
+                              <div className="flex gap-1.5">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setQuickView(product) }}
+                                  className="shrink-0 h-8 px-2.5 rounded-xl text-xs font-medium bg-white/15 text-white border border-white/20 hover:bg-white/25 flex items-center gap-1 transition-colors"
+                                >
+                                  <EyeIcon />
+                                  <span className="hidden sm:inline">Vista rápida</span>
+                                </button>
+                                <button
+                                  onClick={(e) => handleAdd(e, product)}
+                                  className={`flex-1 h-8 rounded-xl text-xs font-bold transition-colors duration-200 ${
+                                    recentlyAdded.has(product.id)
+                                      ? 'bg-emerald-500 text-white'
+                                      : 'bg-[#4f7cff] text-white'
+                                  }`}
+                                >
+                                  {recentlyAdded.has(product.id) ? '✓ Añadido' : `+ ${t('products.addToCart')}`}
+                                </button>
+                              </div>
                             </div>
                           </>
                         )}
@@ -458,7 +483,35 @@ export default function ProductsPage() {
           </div>
         </div>
       </div>
+
+      {/* Quick View Modal */}
+      <AnimatePresence>
+        {quickView && (
+          <QuickViewModal product={quickView} onClose={() => setQuickView(null)} />
+        )}
+      </AnimatePresence>
     </MainLayout>
+  )
+}
+
+function HeartCardIcon({ filled }) {
+  return filled ? (
+    <svg className="w-3.5 h-3.5 text-red-400" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+    </svg>
+  ) : (
+    <svg className="w-3.5 h-3.5 text-white/70" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+    </svg>
+  )
+}
+
+function EyeIcon() {
+  return (
+    <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
   )
 }
 

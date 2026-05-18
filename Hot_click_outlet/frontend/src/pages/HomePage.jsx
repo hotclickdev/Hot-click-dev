@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import { productService, normalizeProduct } from '@/services/productService'
 import useCartStore from '@/store/cartStore'
+import useWishlistStore from '@/store/wishlistStore'
+import useRecentlyViewedStore from '@/store/recentlyViewedStore'
 import { useToast } from '@/components/ui/Toast'
 import { formatPrice } from '@/utils/format'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
@@ -24,6 +26,7 @@ export default function HomePage() {
   const heroRef = useRef(null)
   const featuredRef = useScrollReveal()
   const featuresRef = useScrollReveal({ threshold: 0.08 })
+  const recentlyViewed = useRecentlyViewedStore((s) => s.items)
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
   const rightY = useTransform(scrollYProgress, [0, 1], [0, -80])
   const rightRotate = useTransform(scrollYProgress, [0, 1], [0, 12])
@@ -277,6 +280,40 @@ export default function HomePage() {
           </motion.div>
         )}
       </section>
+
+      {/* Visto recientemente */}
+      {recentlyViewed.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-10">
+          <div className="flex items-center gap-3 mb-4">
+            <h2 className="text-base font-semibold" style={{ color: 'var(--hc-muted)' }}>Visto recientemente</h2>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+            {recentlyViewed.map((p) => (
+              <motion.button
+                key={p.id}
+                whileHover={{ y: -2 }}
+                onClick={() => navigate(`/productos/${p.id}`)}
+                className="shrink-0 flex items-center gap-2.5 px-3 py-2 rounded-2xl transition-all"
+                style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
+              >
+                <div className="w-9 h-9 rounded-lg bg-[#1a1a1f] overflow-hidden shrink-0 border border-white/6">
+                  {p.imagenUrl ? (
+                    <img src={p.imagenUrl} alt={p.nombre} className="w-full h-full object-cover" loading="lazy" />
+                  ) : (
+                    <span className="flex items-center justify-center w-full h-full text-sm">📦</span>
+                  )}
+                </div>
+                <div className="text-left">
+                  <p className="text-xs font-medium max-w-[100px] truncate" style={{ color: 'var(--hc-text)' }}>
+                    {p.nombre}
+                  </p>
+                  <p className="text-xs font-bold text-[#4f7cff]">{formatPrice(p.precio)}</p>
+                </div>
+              </motion.button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* How to buy section */}
       <section id="como-comprar" className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
@@ -555,6 +592,8 @@ function ProductCard({ product, onAdd }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const [addState, setAddState] = useState('idle')
+  const { toggle: toggleWishlist, isLiked } = useWishlistStore()
+  const liked = isLiked(product.id)
   const stockDot = product.stock === 0 ? 'bg-red-400' : product.stock <= 3 ? 'bg-amber-400' : 'bg-emerald-400'
   const stockLabel = product.stock === 0
     ? t('common.outOfStock')
@@ -588,6 +627,26 @@ function ProductCard({ product, onAdd }) {
             <span className="text-xs font-semibold text-white/60 bg-black/40 px-3 py-1 rounded-full">{t('common.outOfStock')}</span>
           </div>
         )}
+        {/* Wishlist heart */}
+        <button
+          onClick={(e) => { e.stopPropagation(); toggleWishlist(product) }}
+          className="absolute top-2 right-2 z-10 w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200"
+          style={{
+            background: liked ? 'rgba(239,68,68,0.18)' : 'rgba(0,0,0,0.45)',
+            border: liked ? '1px solid rgba(239,68,68,0.38)' : '1px solid rgba(255,255,255,0.12)',
+          }}
+          aria-label={liked ? 'Quitar de favoritos' : 'Guardar en wishlist'}
+        >
+          {liked ? (
+            <svg className="w-3.5 h-3.5 text-red-400" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+            </svg>
+          ) : (
+            <svg className="w-3.5 h-3.5 text-white/70" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          )}
+        </button>
         {/* Quick-add overlay */}
         {product.stock > 0 && (
           <>
