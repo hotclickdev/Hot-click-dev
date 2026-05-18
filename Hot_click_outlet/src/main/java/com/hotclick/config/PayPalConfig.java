@@ -27,10 +27,10 @@ public class PayPalConfig {
     public String getWebhookId()    { return webhookId; }
 
     public String getReturnUrl() {
-        return appUrl + "/pago/exito";
+        return appUrl.trim() + "/pago/exito";
     }
 
     public String getCancelUrl() {
-        return appUrl + "/pago/cancelado";
+        return appUrl.trim() + "/pago/cancelado";
     }
 }
