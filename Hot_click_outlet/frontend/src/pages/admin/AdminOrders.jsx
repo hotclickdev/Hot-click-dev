@@ -27,6 +27,62 @@ function estadoBadge(e) {
   )
 }
 
+const ETAPAS_RETIRO = [
+  { key: 'PENDIENTE',      label: 'Pendiente' },
+  { key: 'PAGADO',         label: 'Pago confirmado' },
+  { key: 'EN_PREPARACION', label: 'En preparación' },
+  { key: 'LISTO_RETIRO',   label: 'Listo p/ retirar' },
+  { key: 'ENTREGADO',      label: 'Retirado' },
+]
+const ETAPAS_ENVIO = [
+  { key: 'PENDIENTE',      label: 'Pendiente' },
+  { key: 'PAGADO',         label: 'Pago confirmado' },
+  { key: 'EN_PREPARACION', label: 'En preparación' },
+  { key: 'ENVIADO',        label: 'Enviado' },
+  { key: 'ENTREGADO',      label: 'Entregado' },
+]
+
+function StepTracker({ estado, esRetiro }) {
+  const etapas = esRetiro ? ETAPAS_RETIRO : ETAPAS_ENVIO
+  const idx    = etapas.findIndex(e => e.key === estado)
+  const idxSafe = idx === -1 ? 0 : idx
+  return (
+    <div className="flex items-center overflow-x-auto pb-1">
+      {etapas.map((e, i) => {
+        const done    = i < idxSafe
+        const current = i === idxSafe
+        return (
+          <div key={e.key} className="flex items-center flex-1 min-w-0">
+            <div className="flex flex-col items-center gap-1 shrink-0">
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
+                style={{
+                  backgroundColor: done || current ? '#4f7cff' : 'transparent',
+                  border: `2px solid ${done || current ? '#4f7cff' : '#ffffff20'}`,
+                  boxShadow: current ? '0 0 12px rgba(79,124,255,0.5)' : 'none',
+                }}
+              >
+                {done
+                  ? <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                  : <div className="w-2 h-2 rounded-full" style={{ backgroundColor: current ? '#fff' : '#ffffff30' }} />
+                }
+              </div>
+              <span className="text-[9px] text-center leading-tight max-w-[56px]"
+                style={{ color: done || current ? '#e8e8ed' : '#8e8e9a55', fontWeight: current ? 700 : 400 }}>
+                {e.label}
+              </span>
+            </div>
+            {i < etapas.length - 1 && (
+              <div className="h-0.5 flex-1 mx-1 rounded-full mb-4"
+                style={{ backgroundColor: i < idxSafe ? '#4f7cff' : '#ffffff15' }} />
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 function getNextStep(estado, esRetiro) {
   if (estado === 'PAGADO')         return { type: 'btn', next: 'EN_PREPARACION', label: 'Marcar en preparación' }
   if (estado === 'EN_PREPARACION') return esRetiro
@@ -133,6 +189,11 @@ function OrderCard({ order, onReload }) {
       {/* Detalle expandible */}
       {open && (
         <div className="border-t px-4 py-4 space-y-4" style={{ borderColor: '#ffffff14' }}>
+
+          {/* Progreso de etapas */}
+          {!['CANCELADO'].includes(estado) && (
+            <StepTracker estado={estado} esRetiro={esRetiro} />
+          )}
 
           {/* Productos con imagen */}
           {items.length > 0 && (
