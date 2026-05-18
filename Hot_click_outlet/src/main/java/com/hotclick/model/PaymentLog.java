@@ -1,6 +1,8 @@
 package com.hotclick.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 
 @Entity
@@ -21,12 +23,14 @@ public class PaymentLog extends BaseEntity {
     @Column(name = "http_method", nullable = false, length = 10)
     private String httpMethod;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "request_body", columnDefinition = "jsonb")
     private String requestBody;
 
     @Column(name = "response_code")
     private Integer responseCode;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "response_body", columnDefinition = "jsonb")
     private String responseBody;
 

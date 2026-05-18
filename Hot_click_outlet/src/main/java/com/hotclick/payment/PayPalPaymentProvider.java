@@ -103,7 +103,7 @@ public class PayPalPaymentProvider implements PaymentProvider {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> links = (List<Map<String, Object>>) response.get("links");
         String approveUrl = links == null ? null : links.stream()
-            .filter(l -> "approve".equals(l.get("rel")))
+            .filter(l -> "approve".equals(l.get("rel")) || "payer-action".equals(l.get("rel")))
             .findFirst()
             .map(l -> (String) l.get("href"))
             .orElse(null);
@@ -349,11 +349,6 @@ public class PayPalPaymentProvider implements PaymentProvider {
         String clientId     = config.getClientId()     == null ? "" : config.getClientId().trim();
         String clientSecret = config.getClientSecret() == null ? "" : config.getClientSecret().trim();
         String apiUrl       = config.getApiUrl();
-
-        log.info("PayPal OAuth → url={} clientId_len={} clientId_prefix={} secret_len={}",
-            apiUrl, clientId.length(),
-            clientId.length() > 8 ? clientId.substring(0, 8) : clientId,
-            clientSecret.length());
 
         String credentials = clientId + ":" + clientSecret;
         String encoded = Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
