@@ -1,33 +1,41 @@
 package com.hotclick.service;
 
-import com.resend.Resend;
-import com.resend.services.emails.model.CreateEmailOptions;
+import com.sendgrid.Method;
+import com.sendgrid.Request;
+import com.sendgrid.SendGrid;
+import com.sendgrid.helpers.mail.Mail;
+import com.sendgrid.helpers.mail.objects.Content;
+import com.sendgrid.helpers.mail.objects.Email;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class ResendEmailService {
 
-    @Value("${resend.api-key}")
+    @Value("${sendgrid.api-key}")
     private String apiKey;
 
-    @Value("${resend.from-address}")
-    private String fromAddress;
+    @Value("${sendgrid.from-email}")
+    private String fromEmail;
+
+    @Value("${sendgrid.from-name}")
+    private String fromName;
 
     public void send(String to, String subject, String html) {
-        Resend resend = new Resend(apiKey);
+        Mail mail = new Mail(
+            new Email(fromEmail, fromName),
+            subject,
+            new Email(to),
+            new Content("text/html", html)
+        );
 
-        CreateEmailOptions request = CreateEmailOptions.builder()
-            .from(fromAddress)
-            .to(List.of(to))
-            .subject(subject)
-            .html(html)
-            .build();
-
+        SendGrid sg = new SendGrid(apiKey);
+        Request request = new Request();
         try {
-            resend.emails().send(request);
+            request.setMethod(Method.POST);
+            request.setEndpoint("mail/send");
+            request.setBody(mail.build());
+            sg.api(request);
         } catch (Exception e) {
             throw new RuntimeException("Error al enviar el correo. Intentá de nuevo en unos minutos.", e);
         }

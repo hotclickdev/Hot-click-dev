@@ -82,11 +82,11 @@
         </dependency>
 
 
-        <!-- Resend — email API sobre HTTPS (reemplaza SMTP) -->
+        <!-- SendGrid — email API sobre HTTPS (reemplaza SMTP) -->
         <dependency>
-            <groupId>com.resend</groupId>
-            <artifactId>resend-java</artifactId>
-            <version>3.1.0</version>
+            <groupId>com.sendgrid</groupId>
+            <artifactId>sendgrid-java</artifactId>
+            <version>4.10.2</version>
         </dependency>
 
         <!-- TOTP / 2FA (Google Authenticator compatible) -->
