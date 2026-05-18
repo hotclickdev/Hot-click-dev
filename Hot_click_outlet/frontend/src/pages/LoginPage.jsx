@@ -130,12 +130,22 @@ export default function LoginPage() {
 
   return (
     <AuthLayout>
-      <div className="bg-[#111114] border border-white/8 rounded-2xl p-8 shadow-2xl">
+      <motion.div
+        initial={{ opacity: 0, y: 20, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="rounded-2xl overflow-hidden"
+        style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)', boxShadow: '0 24px 64px color-mix(in srgb, var(--hc-shadow) 60%, transparent)' }}
+      >
+        {/* Accent line */}
+        <div className="h-0.5 text-gradient-accent"
+          style={{ background: 'linear-gradient(90deg, transparent, var(--hc-accent), color-mix(in srgb, var(--hc-accent) 60%, #a78bfa), transparent)' }} />
+        <div className="p-8">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-[#e8e8ed] mb-2">
+          <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--hc-text)' }}>
             {step === '2fa' ? t('login.title2fa') : t('login.title')}
           </h1>
-          <p className="text-sm text-[#8e8e9a]">
+          <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
             {step === '2fa'
               ? t('login.subtitle2fa')
               : t('login.subtitle')
@@ -275,14 +285,15 @@ export default function LoginPage() {
         </AnimatePresence>
 
         {step === 'login' && (
-          <p className="text-center text-xs text-[#8e8e9a] mt-6">
+          <p className="text-center text-xs mt-6" style={{ color: 'var(--hc-muted)' }}>
             {t('login.noAccount')}{' '}
-            <Link to="/registro" className="text-[#4f7cff] hover:underline">
+            <Link to="/registro" className="hc-underline-hover" style={{ color: 'var(--hc-accent)' }}>
               {t('login.register')}
             </Link>
           </p>
         )}
-      </div>
+        </div>
+      </motion.div>
 
       {/* Modal selección modo admin */}
       <Modal open={showAdminModal} title={t('login.adminModal')}>

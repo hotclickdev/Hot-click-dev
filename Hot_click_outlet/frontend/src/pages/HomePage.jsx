@@ -7,6 +7,7 @@ import { productService, normalizeProduct } from '@/services/productService'
 import useCartStore from '@/store/cartStore'
 import { useToast } from '@/components/ui/Toast'
 import { formatPrice } from '@/utils/format'
+import { useScrollReveal } from '@/hooks/useScrollReveal'
 
 const stagger = {
   container: { hidden: {}, show: { transition: { staggerChildren: 0.08 } } },
@@ -21,6 +22,8 @@ export default function HomePage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const heroRef = useRef(null)
+  const featuredRef = useScrollReveal()
+  const featuresRef = useScrollReveal({ threshold: 0.08 })
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
   const leftY = useTransform(scrollYProgress, [0, 1], [0, -120])
   const leftRotate = useTransform(scrollYProgress, [0, 1], [0, -15])
@@ -163,12 +166,12 @@ export default function HomePage() {
 
       {/* Featured products */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
-        <div className="flex items-center justify-between mb-10">
+        <div ref={featuredRef} className="flex items-center justify-between mb-10 hc-reveal">
           <div>
             <h2 className="text-2xl font-bold text-[#e8e8ed]">{t('home.destacados')}</h2>
             <p className="text-sm text-[#8e8e9a] mt-1">{t('home.destacadosSub')}</p>
           </div>
-          <Link to="/productos" className="text-sm text-[#4f7cff] hover:text-[#3d6ee0] transition-colors">
+          <Link to="/productos" className="text-sm text-[#4f7cff] hc-underline-hover transition-colors">
             {t('home.verTodos')}
           </Link>
         </div>
@@ -259,9 +262,9 @@ export default function HomePage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: i * 0.1 }}
-                className="relative flex flex-col items-center text-center p-6 rounded-2xl bg-[#111114] border border-white/8 hover:border-white/15 transition-colors"
+                className="hc-step-card relative flex flex-col items-center text-center p-6 rounded-2xl bg-[#111114] border border-white/8"
               >
-                <div className={`w-14 h-14 rounded-2xl ${glow} border ${border} flex items-center justify-center mb-4 ${color}`}>
+                <div className={`hc-step-icon w-14 h-14 rounded-2xl ${glow} border ${border} flex items-center justify-center mb-4 ${color}`}>
                   {icon}
                 </div>
                 <span className={`text-[10px] font-bold tracking-widest ${color} mb-2`}>{step}</span>
@@ -274,26 +277,26 @@ export default function HomePage() {
       </section>
 
       {/* Features section */}
-      <section className="border-t border-white/6 bg-[#111114]/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+      <section className="border-t" style={{ borderColor: 'var(--hc-border)', backgroundColor: 'var(--hc-surface)' }}>
+        <div ref={featuresRef} className="hc-reveal max-w-7xl mx-auto px-4 sm:px-6 py-20">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {[
               { icon: '🚚', title: t('home.feat1Title'), desc: t('home.feat1Desc') },
               { icon: '🔒', title: t('home.feat2Title'), desc: t('home.feat2Desc') },
               { icon: '✓', title: t('home.feat3Title'), desc: t('home.feat3Desc') },
-            ].map(({ icon, title, desc }) => (
+            ].map(({ icon, title, desc }, i) => (
               <motion.div
                 key={title}
-                initial={{ opacity: 0, y: 16 }}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.4 }}
-                className="flex items-start gap-4 p-6 rounded-2xl bg-[#0a0a0b] border border-white/6"
+                transition={{ duration: 0.45, delay: i * 0.1 }}
+                className="hc-glass-card flex items-start gap-4 p-6"
               >
                 <span className="text-3xl shrink-0">{icon}</span>
                 <div>
-                  <h3 className="font-semibold text-[#e8e8ed] mb-1">{title}</h3>
-                  <p className="text-sm text-[#8e8e9a]">{desc}</p>
+                  <h3 className="font-semibold mb-1" style={{ color: 'var(--hc-text)' }}>{title}</h3>
+                  <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>{desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -310,19 +313,26 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="relative rounded-3xl bg-[#111114] border border-white/8 p-12 overflow-hidden"
+          className="relative rounded-3xl overflow-hidden p-12"
+          style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-[#4f7cff]/8 to-purple-500/5 pointer-events-none" />
+          {/* Multi-layer gradient backdrop */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] opacity-20"
+              style={{ background: 'radial-gradient(ellipse at center, var(--hc-accent), transparent 70%)' }} />
+            <div className="absolute bottom-0 right-0 w-64 h-64 opacity-10"
+              style={{ background: 'radial-gradient(circle, #a78bfa, transparent 70%)' }} />
+          </div>
           <div className="relative">
-            <h2 className="text-3xl sm:text-4xl font-bold text-[#e8e8ed] mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: 'var(--hc-text)' }}>
               {t('home.ctaTitle')}
             </h2>
-            <p className="text-[#8e8e9a] mb-8 max-w-md mx-auto">
+            <p className="mb-8 max-w-md mx-auto" style={{ color: 'var(--hc-muted)' }}>
               {t('home.ctaSub')}
             </p>
             <Link
               to="/productos"
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-semibold transition-all duration-200 shadow-[0_0_30px_rgba(79,124,255,0.3)] hover:shadow-[0_0_40px_rgba(79,124,255,0.45)]"
+              className="hc-btn hc-btn-primary hc-btn-lg inline-flex"
             >
               {t('home.ctaBtn')}
             </Link>
@@ -375,7 +385,7 @@ function TestimonialsCarousel() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: i * 0.08 }}
-              className="bg-[#111114] border border-white/8 rounded-2xl p-6 flex flex-col gap-3"
+              className="hc-glass-card p-6 flex flex-col gap-3"
             >
               <div className="flex gap-0.5">
                 {Array.from({ length: t.rating }).map((_, s) => (
@@ -384,14 +394,15 @@ function TestimonialsCarousel() {
                   </svg>
                 ))}
               </div>
-              <p className="text-sm text-[#8e8e9a] leading-relaxed flex-1">"{t.text}"</p>
-              <div className="flex items-center gap-2 pt-2 border-t border-white/6">
-                <div className="w-7 h-7 rounded-full bg-[#4f7cff]/20 flex items-center justify-center text-xs font-bold text-[#4f7cff]">
+              <p className="text-sm leading-relaxed flex-1" style={{ color: 'var(--hc-muted)' }}>"{t.text}"</p>
+              <div className="flex items-center gap-2 pt-2" style={{ borderTop: '1px solid var(--hc-border)' }}>
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                  style={{ backgroundColor: 'color-mix(in srgb, var(--hc-accent) 15%, transparent)', color: 'var(--hc-accent)' }}>
                   {t.name[0]}
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-[#e8e8ed]">{t.name}</p>
-                  <p className="text-[10px] text-[#8e8e9a]">{t.location}</p>
+                  <p className="text-xs font-semibold" style={{ color: 'var(--hc-text)' }}>{t.name}</p>
+                  <p className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>{t.location}</p>
                 </div>
               </div>
             </motion.div>

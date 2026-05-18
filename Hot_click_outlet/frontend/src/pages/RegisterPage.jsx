@@ -82,20 +82,26 @@ export default function RegisterPage() {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-[#111114] border border-white/8 rounded-2xl p-8 text-center"
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          className="rounded-2xl overflow-hidden"
+          style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)', boxShadow: '0 24px 64px color-mix(in srgb, var(--hc-shadow) 60%, transparent)' }}
         >
+          <div className="h-0.5"
+            style={{ background: 'linear-gradient(90deg, transparent, var(--hc-success), transparent)' }} />
+          <div className="p-8 text-center">
           <div className="w-16 h-16 rounded-full bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-[#e8e8ed] mb-2">¡Cuenta creada!</h2>
-          <p className="text-sm text-[#8e8e9a] mb-6 leading-relaxed">
+          <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--hc-text)' }}>¡Cuenta creada!</h2>
+          <p className="text-sm mb-6 leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
             Tu cuenta fue verificada y creada exitosamente. Ya podés iniciar sesión.
           </p>
           <Button onClick={() => navigate('/login')} className="w-full">
             Ir al inicio de sesión
           </Button>
+          </div>
         </motion.div>
       </AuthLayout>
     )
@@ -108,8 +114,13 @@ export default function RegisterPage() {
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="bg-[#111114] border border-white/8 rounded-2xl p-8 shadow-2xl"
+          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          className="rounded-2xl overflow-hidden"
+          style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)', boxShadow: '0 24px 64px color-mix(in srgb, var(--hc-shadow) 60%, transparent)' }}
         >
+          <div className="h-0.5"
+            style={{ background: 'linear-gradient(90deg, transparent, var(--hc-accent), color-mix(in srgb, var(--hc-accent) 60%, #a78bfa), transparent)' }} />
+          <div className="p-8">
           <div className="text-center mb-6">
             <div className="w-14 h-14 rounded-full bg-[#4f7cff]/15 border border-[#4f7cff]/25 flex items-center justify-center mx-auto mb-4">
               <svg className="w-7 h-7 text-[#4f7cff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -159,21 +170,23 @@ export default function RegisterPage() {
           </form>
 
           <div className="mt-5 text-center space-y-2">
-            <p className="text-xs text-[#8e8e9a]">
+            <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
               ¿No llegó el correo?{' '}
               <button
                 onClick={handleReenviar}
                 disabled={loading}
-                className="text-[#4f7cff] hover:underline disabled:opacity-50"
+                className="hc-underline-hover disabled:opacity-50"
+                style={{ color: 'var(--hc-accent)' }}
               >
                 Reenviar código
               </button>
             </p>
-            <p className="text-xs text-[#8e8e9a]">
-              <button onClick={() => { setStep('form'); setError('') }} className="text-[#8e8e9a] hover:text-[#e8e8ed]">
+            <p className="text-xs">
+              <button onClick={() => { setStep('form'); setError('') }} style={{ color: 'var(--hc-muted)' }}>
                 ← Volver al formulario
               </button>
             </p>
+          </div>
           </div>
         </motion.div>
       </AuthLayout>
@@ -183,10 +196,19 @@ export default function RegisterPage() {
   // ── Paso 1: Formulario de registro ───────────────────────────────────────────
   return (
     <AuthLayout>
-      <div className="bg-[#111114] border border-white/8 rounded-2xl p-8 shadow-2xl">
+      <motion.div
+        initial={{ opacity: 0, y: 20, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="rounded-2xl overflow-hidden"
+        style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)', boxShadow: '0 24px 64px color-mix(in srgb, var(--hc-shadow) 60%, transparent)' }}
+      >
+        <div className="h-0.5"
+          style={{ background: 'linear-gradient(90deg, transparent, var(--hc-accent), color-mix(in srgb, var(--hc-accent) 60%, #a78bfa), transparent)' }} />
+        <div className="p-8">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-[#e8e8ed] mb-1">{t('register.title')}</h1>
-          <p className="text-sm text-[#8e8e9a]">{t('register.subtitle')}</p>
+          <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--hc-text)' }}>{t('register.title')}</h1>
+          <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>{t('register.subtitle')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -221,11 +243,12 @@ export default function RegisterPage() {
           </Button>
         </form>
 
-        <p className="text-center text-xs text-[#8e8e9a] mt-5">
+        <p className="text-center text-xs mt-5" style={{ color: 'var(--hc-muted)' }}>
           {t('register.alreadyAccount')}{' '}
-          <Link to="/login" className="text-[#4f7cff] hover:underline">{t('register.login')}</Link>
+          <Link to="/login" className="hc-underline-hover" style={{ color: 'var(--hc-accent)' }}>{t('register.login')}</Link>
         </p>
-      </div>
+        </div>
+      </motion.div>
     </AuthLayout>
   )
 }

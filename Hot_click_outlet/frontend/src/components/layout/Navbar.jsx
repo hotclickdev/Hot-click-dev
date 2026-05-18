@@ -12,6 +12,7 @@ export default function Navbar() {
   const { token, userName, logout, isAdmin } = useAuthStore()
   const cartCount = useCartStore((s) => s.count())
   const [scrolled, setScrolled] = useState(false)
+  const [scrollProgress, setScrollProgress] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
   const [cartBounce, setCartBounce] = useState(false)
   const prevCartCount = useRef(cartCount)
@@ -39,8 +40,13 @@ export default function Navbar() {
   }, [cartCount])
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20)
-    window.addEventListener('scroll', onScroll)
+    const onScroll = () => {
+      const y = window.scrollY
+      setScrolled(y > 20)
+      const docH = document.documentElement.scrollHeight - window.innerHeight
+      setScrollProgress(docH > 0 ? Math.min(y / docH, 1) : 0)
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
@@ -53,23 +59,29 @@ export default function Navbar() {
 
   return (
     <>
+      {/* Scroll progress indicator */}
+      <div
+        className="hc-progress"
+        style={{ transform: `scaleX(${scrollProgress})`, opacity: scrollProgress > 0.01 ? 1 : 0 }}
+      />
+
       <header
         className={`
           fixed top-0 left-0 right-0 z-40 transition-all duration-300
           ${scrolled
-            ? 'hc-navbar-scrolled backdrop-blur-xl border-b shadow-[0_1px_0_var(--hc-border)]'
+            ? 'hc-navbar-scrolled backdrop-blur-xl border-b shadow-[0_4px_24px_rgba(0,0,0,0.08)]'
             : 'bg-transparent'
           }
         `}
         style={scrolled ? { borderBottomColor: 'var(--hc-border)', backgroundColor: 'var(--hc-surface)' } : {}}
       >
-        <nav className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+        <nav className={`max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-4 hc-nav-inner ${scrolled ? 'h-14' : 'h-16'}`}>
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 shrink-0">
-            <div className="flex items-center justify-center w-9 h-9 rounded-xl shrink-0 hc-logo-badge">
+          <Link to="/" className="flex items-center gap-2 shrink-0 group">
+            <div className="flex items-center justify-center w-9 h-9 rounded-xl shrink-0 hc-logo-badge transition-transform duration-200 group-hover:scale-105">
               <span className="text-white text-[13px] leading-none" style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 900 }}>HC</span>
             </div>
-            <span className="text-[22px] leading-none uppercase hc-logo-text"
+            <span className="text-[22px] leading-none uppercase hc-logo-text transition-opacity duration-200 group-hover:opacity-80"
               style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 900 }}>
               HOTCLICK
             </span>
@@ -102,6 +114,7 @@ export default function Navbar() {
               style={{ color: 'var(--hc-muted)' }}
             >
               <motion.div
+                className="hc-animate-gpu"
                 animate={cartBounce ? { scale: [1, 1.35, 0.88, 1.12, 1], rotate: [0, -12, 10, -6, 0] } : {}}
                 transition={{ duration: 0.5, ease: 'easeOut' }}
               >

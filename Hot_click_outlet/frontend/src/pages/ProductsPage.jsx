@@ -118,8 +118,8 @@ export default function ProductsPage() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', stiffness: 380, damping: 38 }}
-              className="fixed bottom-0 left-0 right-0 z-50 bg-[#111114] border-t border-white/10 rounded-t-3xl md:hidden"
-              style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
+              className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl md:hidden"
+              style={{ background: 'var(--hc-surface)', borderTop: '1px solid var(--hc-border)', paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
             >
               {/* Handle */}
               <div className="flex justify-center pt-3 pb-4">
@@ -223,7 +223,8 @@ export default function ProductsPage() {
                 className="shrink-0 overflow-hidden"
                 style={{ width: 220 }}
               >
-                <div className="bg-[#111114] border border-white/8 rounded-2xl p-4 space-y-5 sticky top-24">
+                <div className="rounded-2xl p-4 space-y-5 sticky top-24"
+                  style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
                   {/* Filter header */}
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">{t('common.filter')}</span>
@@ -245,7 +246,7 @@ export default function ProductsPage() {
                     </div>
                   </div>
 
-                  <div className="border-t border-white/6" />
+                  <div className="border-t" style={{ borderColor: 'var(--hc-border)' }} />
 
                   {/* Condition */}
                   <div className="space-y-2">
@@ -259,7 +260,7 @@ export default function ProductsPage() {
                     </div>
                   </div>
 
-                  <div className="border-t border-white/6" />
+                  <div className="border-t" style={{ borderColor: 'var(--hc-border)' }} />
 
                   {/* Stock */}
                   <div className="space-y-2">
@@ -291,13 +292,14 @@ export default function ProductsPage() {
                   placeholder={t('products.search')}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full h-10 pl-10 pr-4 bg-[#111114] border border-white/10 rounded-xl text-sm text-[#e8e8ed] placeholder:text-[#8e8e9a]/60 focus:outline-none focus:border-[#4f7cff]/60 transition-colors"
+                  className="hc-input pl-10 pr-4"
                 />
               </div>
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value)}
-                className="h-10 px-3 bg-[#111114] border border-white/10 rounded-xl text-sm text-[#e8e8ed] focus:outline-none focus:border-[#4f7cff]/60 cursor-pointer shrink-0"
+                className="hc-input px-3 cursor-pointer shrink-0"
+                style={{ width: 'auto' }}
               >
                 {SORT_OPTIONS.map(({ value, label }) => (
                   <option key={value} value={value}>{label}</option>
@@ -334,8 +336,8 @@ export default function ProductsPage() {
                       initial={{ opacity: 0, y: 16 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: Math.min(i * 0.04, 0.3) }}
-                      whileHover={{ y: -3 }}
-                      className="group bg-[#111114] border border-white/8 rounded-2xl overflow-hidden cursor-pointer hover:border-white/15 hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all duration-300"
+                      whileHover={{ y: -4 }}
+                      className="group hc-card hc-card-glow rounded-2xl overflow-hidden cursor-pointer transition-all duration-300"
                       onClick={() => navigate(`/productos/${product.id}`, { state: { product } })}
                     >
                       {/* Image */}
@@ -387,7 +389,7 @@ export default function ProductsPage() {
                         {product.stock > 0 && (
                           <button
                             onClick={(e) => handleAdd(e, product)}
-                            className="w-full h-8 sm:h-9 rounded-xl bg-[#4f7cff]/10 hover:bg-[#4f7cff] border border-[#4f7cff]/20 hover:border-[#4f7cff] text-[#4f7cff] hover:text-white text-xs sm:text-sm font-medium transition-all duration-200"
+                            className="hc-btn hc-btn-ghost w-full h-8 sm:h-9 text-xs sm:text-sm"
                           >
                             {t('products.addToCart')}
                           </button>
@@ -405,15 +407,15 @@ export default function ProductsPage() {
                 <button
                   onClick={() => fetchProducts(page - 1)}
                   disabled={page === 0}
-                  className="px-4 py-2 rounded-xl text-sm bg-white/5 border border-white/10 text-[#8e8e9a] hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  className="hc-btn hc-btn-outline hc-btn-sm disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   {t('common.previous')}
                 </button>
-                <span className="text-sm text-[#8e8e9a] px-2">{page + 1} / {totalPages}</span>
+                <span className="text-sm px-2" style={{ color: 'var(--hc-muted)' }}>{page + 1} / {totalPages}</span>
                 <button
                   onClick={() => fetchProducts(page + 1)}
                   disabled={page >= totalPages - 1}
-                  className="px-4 py-2 rounded-xl text-sm bg-white/5 border border-white/10 text-[#8e8e9a] hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  className="hc-btn hc-btn-outline hc-btn-sm disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   {t('common.next')}
                 </button>
@@ -430,11 +432,11 @@ function ChipBtn({ active, onClick, children }) {
   return (
     <button
       onClick={onClick}
-      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-        active
-          ? 'bg-[#4f7cff]/15 text-white border-[#4f7cff]/40'
-          : 'text-[#8e8e9a] border-white/10 hover:text-white hover:border-white/20'
-      }`}
+      className="px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200"
+      style={active
+        ? { background: 'color-mix(in srgb, var(--hc-accent) 15%, transparent)', color: 'var(--hc-text)', borderColor: 'color-mix(in srgb, var(--hc-accent) 40%, transparent)' }
+        : { color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }
+      }
     >
       {children}
     </button>
@@ -445,11 +447,11 @@ function FilterBtn({ active, onClick, children }) {
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-all ${
-        active
-          ? 'bg-[#4f7cff]/15 text-white border border-[#4f7cff]/20'
-          : 'text-[#8e8e9a] hover:text-white hover:bg-white/5'
-      }`}
+      className="w-full text-left px-3 py-2 rounded-lg text-xs transition-all duration-200"
+      style={active
+        ? { background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-text)', border: '1px solid color-mix(in srgb, var(--hc-accent) 28%, transparent)' }
+        : { color: 'var(--hc-muted)', border: '1px solid transparent' }
+      }
     >
       {children}
     </button>

@@ -180,7 +180,9 @@ html.reduce-motion *::after {
   }
 
   .text-gradient-accent {
-    background: linear-gradient(135deg, #4f7cff 0%, #a78bfa 100%);
+    background: linear-gradient(90deg, #4f7cff 0%, #a78bfa 40%, #9333ea 70%, #4f7cff 100%);
+    background-size: 200% auto;
+    animation: hc-gradient-shift 5s ease infinite;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -242,6 +244,10 @@ html.reduce-motion *::after {
 @keyframes hc-count-up {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes hc-gradient-shift {
+  0%, 100% { background-position: 0% center; }
+  50%       { background-position: 100% center; }
 }
 
 .hc-float         { animation: hc-float   5s ease-in-out infinite; }
@@ -635,3 +641,164 @@ html.dark input:not([type="checkbox"]):not([type="radio"]),
 html.dark textarea { background-color: unset !important; color: unset !important; border-color: unset !important; }
 html.dark th, html.dark td { color: unset !important; }
 html.dark tr:hover { background-color: unset !important; }
+
+/* ═══════════════════════════════════════════════════════
+   SCROLL PROGRESS BAR
+   ═══════════════════════════════════════════════════════ */
+
+.hc-progress {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  z-index: 60;
+  transform-origin: 0% 50%;
+  background: linear-gradient(
+    90deg,
+    var(--hc-accent) 0%,
+    color-mix(in srgb, var(--hc-accent) 65%, #a78bfa) 100%
+  );
+  will-change: transform;
+  pointer-events: none;
+  border-radius: 0 2px 2px 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SCROLL REVEAL SYSTEM (driven by useScrollReveal hook)
+   ═══════════════════════════════════════════════════════ */
+
+.hc-reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hc-reveal.hc-revealed {
+  opacity: 1;
+  transform: none;
+}
+
+.hc-reveal-scale {
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hc-reveal-scale.hc-revealed {
+  opacity: 1;
+  transform: none;
+}
+
+/* Stagger delay helpers */
+.hc-delay-1 { transition-delay: 80ms; }
+.hc-delay-2 { transition-delay: 160ms; }
+.hc-delay-3 { transition-delay: 240ms; }
+.hc-delay-4 { transition-delay: 320ms; }
+
+/* ═══════════════════════════════════════════════════════
+   GLASS CARD — testimonials, feature cards
+   ═══════════════════════════════════════════════════════ */
+
+.hc-glass-card {
+  background: var(--hc-glass-bg);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--hc-glass-border);
+  border-radius: 1.125rem;
+  transition:
+    border-color 0.3s ease,
+    box-shadow   0.3s ease,
+    transform    0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hc-glass-card:hover {
+  border-color: color-mix(in srgb, var(--hc-accent) 32%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--hc-accent) 7%, transparent),
+    0 8px 32px color-mix(in srgb, var(--hc-shadow) 28%, transparent);
+  transform: translateY(-4px);
+}
+
+/* ═══════════════════════════════════════════════════════
+   STEP CARD HOVER (How to buy)
+   ═══════════════════════════════════════════════════════ */
+
+.hc-step-card {
+  transition:
+    transform    0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow   0.3s ease,
+    border-color 0.25s ease;
+}
+.hc-step-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 48px color-mix(in srgb, var(--hc-shadow) 35%, transparent);
+  border-color: color-mix(in srgb, var(--hc-accent) 38%, transparent) !important;
+}
+.hc-step-card:hover .hc-step-icon {
+  box-shadow: 0 0 20px color-mix(in srgb, var(--hc-accent) 30%, transparent);
+}
+
+.hc-step-icon {
+  transition: box-shadow 0.3s ease;
+}
+
+/* ═══════════════════════════════════════════════════════
+   MULTI-LAYER SHADOW SYSTEM
+   ═══════════════════════════════════════════════════════ */
+
+.hc-shadow-premium {
+  box-shadow:
+    0 1px 3px  color-mix(in srgb, var(--hc-shadow) 20%, transparent),
+    0 4px 12px color-mix(in srgb, var(--hc-shadow) 15%, transparent),
+    0 16px 40px color-mix(in srgb, var(--hc-shadow) 10%, transparent);
+}
+.hc-shadow-premium:hover {
+  box-shadow:
+    0 2px 8px  color-mix(in srgb, var(--hc-shadow) 30%, transparent),
+    0 8px 24px color-mix(in srgb, var(--hc-shadow) 22%, transparent),
+    0 24px 56px color-mix(in srgb, var(--hc-shadow) 16%, transparent);
+}
+
+/* ═══════════════════════════════════════════════════════
+   NAVBAR HEIGHT TRANSITION
+   ═══════════════════════════════════════════════════════ */
+
+.hc-nav-inner {
+  transition: height 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ═══════════════════════════════════════════════════════
+   ANIMATED LINK UNDERLINE
+   ═══════════════════════════════════════════════════════ */
+
+.hc-underline-hover {
+  position: relative;
+  display: inline-flex;
+}
+.hc-underline-hover::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 0; right: 0;
+  height: 1px;
+  background: var(--hc-accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hc-underline-hover:hover::after { transform: scaleX(1); }
+
+/* ═══════════════════════════════════════════════════════
+   PERFORMANCE HINTS
+   ═══════════════════════════════════════════════════════ */
+
+.hc-animate-gpu {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* ── Light mode: glass card gets warm tones ── */
+:root .hc-glass-card {
+  background: rgba(250, 247, 243, 0.55) !important;
+  border-color: rgba(154, 132, 188, 0.20) !important;
+}
+:root .hc-glass-card:hover {
+  border-color: rgba(154, 132, 188, 0.42) !important;
+}

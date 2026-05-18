@@ -1,0 +1,1 @@
+var e=e=>new Intl.NumberFormat(`en-US`,{style:`currency`,currency:`USD`,minimumFractionDigits:2}).format(e??0),t=e=>new Intl.DateTimeFormat(`es-CR`,{year:`numeric`,month:`long`,day:`numeric`}).format(new Date(e)),n=e=>({NUEVO:`Nuevo`,COMO_NUEVO:`Como nuevo`,USADO:`Usado`})[e]??e;export{t as n,e as r,n as t};
