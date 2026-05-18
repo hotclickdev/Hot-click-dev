@@ -81,6 +81,21 @@ public class PedidoService {
         return pedido;
     }
 
+    @Transactional
+    public Pedido procesarEnvio(Long id, String guia, Integer costoEnvio) {
+        Pedido pedido = pedidoRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+        pedido.setNumeroGuia(guia);
+        pedido.setUrlTracking("https://rastreo.correos.go.cr/?codigo=" + guia);
+        pedido.setFechaEnvio(LocalDateTime.now());
+        if (costoEnvio != null) pedido.setCostoEnvio(costoEnvio);
+        pedido.setEstadoPedido(Constants.PEDIDO_ENVIADO);
+        pedido = pedidoRepository.save(pedido);
+        pedido.getItems().size();
+        notificacionEmailService.enviarNotificacionGuia(pedido);
+        return pedido;
+    }
+
     @Transactional(readOnly = true)
     public List<Map<String, Object>> listarTodosConDetalles() {
         return pedidoRepository.findAllWithDetails().stream().map(p -> {
@@ -91,6 +106,9 @@ public class PedidoService {
             m.put("estado",        p.getEstadoPedido());
             m.put("total",         p.getTotalPedido());
             m.put("metodoPago",    p.getMetodoPago());
+            m.put("metodoEnvio",   p.getMetodoEnvio());
+            m.put("costoEnvio",    p.getCostoEnvio());
+            m.put("numeroGuia",    p.getNumeroGuia());
             m.put("notas",         p.getNotas());
             m.put("clienteId",     p.getUsuarioFinal() != null ? p.getUsuarioFinal().getId()      : null);
             m.put("nombreCliente", p.getUsuarioFinal() != null ? p.getUsuarioFinal().getNombre()  : "—");

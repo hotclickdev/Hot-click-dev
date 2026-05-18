@@ -76,6 +76,23 @@ public class PedidoController {
         }
     }
 
+    @PutMapping("/{id}/envio")
+    public ResponseEntity<ResponseDTO> procesarEnvio(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body) {
+        try {
+            String guia = (String) body.get("guia");
+            if (guia == null || guia.isBlank())
+                return ResponseEntity.badRequest().body(ResponseDTO.error("Número de guía requerido"));
+            Integer costoEnvio = body.get("costoEnvio") != null
+                ? ((Number) body.get("costoEnvio")).intValue() : null;
+            Pedido pedido = pedidoService.procesarEnvio(id, guia.trim(), costoEnvio);
+            return ResponseEntity.ok(ResponseDTO.success("Envío procesado y cliente notificado", pedido));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        }
+    }
+
     @GetMapping("/pendientes")
     public ResponseEntity<ResponseDTO> listarPendientes() {
         return ResponseEntity.ok(ResponseDTO.success("Pedidos pendientes", pedidoService.listarPendientes()));

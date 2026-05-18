@@ -43,7 +43,13 @@ public class Constants {
     public static final String PAGO_REEMBOLSADO  = "REEMBOLSADO";
 
     // Estados de pedido extendidos
-    public static final String PEDIDO_PAGADO     = "PAGADO";
+    public static final String PEDIDO_PAGADO        = "PAGADO";
+    public static final String PEDIDO_EN_PREPARACION = "EN_PREPARACION";
+    public static final String PEDIDO_LISTO_RETIRO   = "LISTO_RETIRO";
+
+    // Métodos de envío
+    public static final String ENVIO_DOMICILIO = "ENVIO_A_DOMICILIO";
+    public static final String ENVIO_RETIRO    = "RETIRO_EN_TIENDA";
 
     // PayXpert error code exitoso
     public static final String PAYXPERT_OK       = "000";
