@@ -1,22 +1,19 @@
 package com.hotclick.controller;
 
+import com.hotclick.service.ResendEmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.web.bind.annotation.*;
-import jakarta.mail.internet.MimeMessage;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
 public class ContactoController {
 
-    @Autowired
-    private JavaMailSender mailSender;
+    @Autowired private ResendEmailService resendEmailService;
 
-    @Value("${spring.mail.username}")
+    @Value("${sendgrid.from-email}")
     private String fromEmail;
 
     @PostMapping("/contacto")
@@ -30,37 +27,29 @@ public class ContactoController {
         }
 
         try {
-            MimeMessage mail = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mail, false, "UTF-8");
-            helper.setFrom(fromEmail);
-            helper.setTo(fromEmail);
-            helper.setReplyTo(correo);
-            helper.setSubject("📩 Nuevo mensaje de contacto – " + nombre);
-            helper.setText(
-                "<div style='font-family:sans-serif;max-width:560px'>"
+            String html = "<div style='font-family:sans-serif;max-width:560px'>"
                 + "<h2 style='color:#4f7cff'>Nuevo mensaje de contacto</h2>"
                 + "<table style='width:100%;border-collapse:collapse'>"
                 + "<tr><td style='padding:8px;font-weight:bold;color:#555'>Nombre</td>"
-                + "<td style='padding:8px'>" + escapeHtml(nombre) + "</td></tr>"
+                + "<td style='padding:8px'>" + esc(nombre) + "</td></tr>"
                 + "<tr style='background:#f5f5f7'><td style='padding:8px;font-weight:bold;color:#555'>Correo</td>"
-                + "<td style='padding:8px'><a href='mailto:" + escapeHtml(correo) + "'>" + escapeHtml(correo) + "</a></td></tr>"
+                + "<td style='padding:8px'><a href='mailto:" + esc(correo) + "'>" + esc(correo) + "</a></td></tr>"
                 + "</table>"
                 + "<div style='margin-top:16px;padding:16px;background:#f5f5f7;border-radius:8px'>"
                 + "<strong style='color:#555'>Mensaje:</strong><br/><br/>"
-                + escapeHtml(mensaje).replace("\n", "<br/>")
+                + esc(mensaje).replace("\n", "<br/>")
                 + "</div>"
                 + "<p style='margin-top:16px;font-size:12px;color:#999'>Enviado desde el formulario de contacto de HOTCLICK</p>"
-                + "</div>",
-                true
-            );
-            mailSender.send(mail);
+                + "</div>";
+
+            resendEmailService.send(fromEmail, "Nuevo mensaje de contacto — " + nombre, html);
             return ResponseEntity.ok(Map.of("ok", true));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", "No se pudo enviar el mensaje"));
         }
     }
 
-    private String escapeHtml(String s) {
+    private String esc(String s) {
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
     }
 }
