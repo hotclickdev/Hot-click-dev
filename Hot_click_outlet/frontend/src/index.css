@@ -795,10 +795,41 @@ html.dark tr:hover { background-color: unset !important; }
 }
 
 /* ── Light mode: glass card gets warm tones ── */
-:root .hc-glass-card {
+html:not(.dark) .hc-glass-card {
   background: rgba(250, 247, 243, 0.55) !important;
   border-color: rgba(154, 132, 188, 0.20) !important;
 }
-:root .hc-glass-card:hover {
+html:not(.dark) .hc-glass-card:hover {
   border-color: rgba(154, 132, 188, 0.42) !important;
+}
+
+/* ── Quick-add overlay on product cards ── */
+.hc-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.12) 55%, transparent 85%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.group:hover .hc-card-overlay {
+  opacity: 1;
+}
+.hc-quick-add {
+  transform: translateY(110%);
+  opacity: 0;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+.group:hover .hc-quick-add {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* ── Hide scrollbar ── */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }

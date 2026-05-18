@@ -25,8 +25,6 @@ export default function HomePage() {
   const featuredRef = useScrollReveal()
   const featuresRef = useScrollReveal({ threshold: 0.08 })
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
-  const leftY = useTransform(scrollYProgress, [0, 1], [0, -120])
-  const leftRotate = useTransform(scrollYProgress, [0, 1], [0, -15])
   const rightY = useTransform(scrollYProgress, [0, 1], [0, -80])
   const rightRotate = useTransform(scrollYProgress, [0, 1], [0, 12])
 
@@ -60,15 +58,15 @@ export default function HomePage() {
 
   return (
     <MainLayout>
-      {/* Hero */}
-      <section ref={heroRef} className="relative min-h-[78vh] sm:min-h-[92vh] flex items-center overflow-hidden">
+      {/* Hero — split layout */}
+      <section ref={heroRef} className="relative min-h-[88vh] flex items-center overflow-hidden">
         {/* Bg glows */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-[#4f7cff]/8 rounded-full blur-[130px]" />
-          <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-purple-500/6 rounded-full blur-[100px]" />
-          {/* Grid overlay */}
+          <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[700px] h-[700px] bg-[#4f7cff]/7 rounded-full blur-[130px]" />
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#4f7cff]/5 rounded-full blur-[100px]" />
+          <div className="absolute bottom-0 right-1/3 w-[300px] h-[300px] bg-purple-500/5 rounded-full blur-[80px]" />
           <div
-            className="absolute inset-0 opacity-[0.03]"
+            className="absolute inset-0 opacity-[0.025]"
             style={{
               backgroundImage: `linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)`,
@@ -77,91 +75,174 @@ export default function HomePage() {
           />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-24 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
+        {/* Watermark */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden select-none">
+          <span
+            className="font-black uppercase tracking-[-0.02em] whitespace-nowrap leading-none"
+            style={{ fontSize: '18vw', color: 'rgba(255,255,255,0.018)' }}
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#4f7cff]/10 border border-[#4f7cff]/20 text-sm text-[#4f7cff] mb-6">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#4f7cff] animate-pulse" />
-              {t('home.badge')}
-            </div>
-
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold text-[#e8e8ed] leading-[1.1] tracking-tight mb-5 sm:mb-6 text-balance">
-              {t('home.hero1')}{' '}
-              <span className="text-gradient-accent inline-block">{t('home.hero2')}</span>{' '}
-              {t('home.hero3')}
-            </h1>
-
-            <p className="text-lg sm:text-xl text-[#8e8e9a] max-w-xl mx-auto mb-10 leading-relaxed">
-              {t('home.heroSub')}
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link
-                to="/productos"
-                className="inline-flex items-center justify-center gap-2 h-13 px-8 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-semibold text-base transition-all duration-200 shadow-[0_0_30px_rgba(79,124,255,0.35)] hover:shadow-[0_0_45px_rgba(79,124,255,0.5)] hover:-translate-y-0.5"
-              >
-                {t('home.verProductos')}
-                <span className="text-lg">→</span>
-              </Link>
-              <a
-                href="#como-comprar"
-                className="inline-flex items-center justify-center gap-2 h-13 px-8 rounded-xl bg-white/8 hover:bg-white/12 border border-white/10 text-[#e8e8ed] font-semibold text-base transition-all duration-200 hover:-translate-y-0.5"
-              >
-                {t('home.comoComprar')}
-              </a>
-            </div>
-          </motion.div>
-
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex flex-wrap justify-center gap-6 sm:gap-8 mt-10 sm:mt-20"
-          >
-            {[
-              ['100%', t('home.garantia')],
-              ['24h', t('home.envios')],
-              ['5★', t('home.satisfaccion')],
-            ].map(([value, label]) => (
-              <div key={label} className="text-center">
-                <div className="text-2xl font-bold text-[#e8e8ed]">{value}</div>
-                <div className="text-sm text-[#8e8e9a] mt-0.5">{label}</div>
-              </div>
-            ))}
-          </motion.div>
+            OUTLET
+          </span>
         </div>
 
-        {/* Floating 3D elements — headphones left */}
-        <motion.div
-          style={{ y: leftY, rotate: leftRotate }}
-          initial={{ opacity: 0, x: -60 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.9, delay: 0.5, ease: 'easeOut' }}
-          className="absolute left-[3%] top-1/2 -translate-y-1/2 hidden lg:block pointer-events-none select-none"
-        >
-          <div className="relative w-52 h-52">
-            <div className="absolute inset-0 bg-[#4f7cff]/10 rounded-full blur-3xl" />
-            <HeadphonesIllustration />
-          </div>
-        </motion.div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 w-full py-16 sm:py-20">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-6 items-center">
 
-        {/* Floating 3D elements — blender right */}
-        <motion.div
-          style={{ y: rightY, rotate: rightRotate }}
-          initial={{ opacity: 0, x: 60 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.9, delay: 0.65, ease: 'easeOut' }}
-          className="absolute right-[3%] top-1/2 -translate-y-1/2 hidden lg:block pointer-events-none select-none"
-        >
-          <div className="relative w-44 h-44">
-            <div className="absolute inset-0 bg-purple-500/10 rounded-full blur-3xl" />
-            <BlenderIllustration />
+            {/* ── Left: text ── */}
+            <motion.div
+              initial={{ opacity: 0, x: -24 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#4f7cff]/10 border border-[#4f7cff]/20 text-sm text-[#4f7cff] mb-6"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-[#4f7cff] animate-pulse" />
+                {t('home.badge')}
+              </motion.div>
+
+              <h1 className="text-5xl sm:text-6xl lg:text-[4.5rem] font-black text-[#e8e8ed] leading-[1.05] tracking-tight mb-6">
+                {t('home.hero1')}{' '}
+                <span className="text-gradient-accent inline-block">{t('home.hero2')}</span>{' '}
+                {t('home.hero3')}
+              </h1>
+
+              <p className="text-lg sm:text-xl text-[#8e8e9a] max-w-lg mb-10 leading-relaxed">
+                {t('home.heroSub')}
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link
+                  to="/productos"
+                  className="group inline-flex items-center justify-center gap-2.5 h-14 px-8 rounded-2xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-bold text-base transition-all duration-200 shadow-[0_0_32px_rgba(79,124,255,0.4)] hover:shadow-[0_0_56px_rgba(79,124,255,0.6)] hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  {t('home.verProductos')}
+                  <span className="inline-block group-hover:translate-x-1 transition-transform duration-200">→</span>
+                </Link>
+                <a
+                  href="#como-comprar"
+                  className="inline-flex items-center justify-center gap-2 h-14 px-8 rounded-2xl bg-white/6 hover:bg-white/10 border border-white/10 text-[#e8e8ed] font-semibold text-base transition-all duration-200 hover:-translate-y-0.5"
+                >
+                  {t('home.comoComprar')}
+                </a>
+              </div>
+
+              {/* Stats */}
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.35 }}
+                className="flex flex-wrap gap-8 mt-10"
+              >
+                {[
+                  ['100%', t('home.garantia')],
+                  ['24h', t('home.envios')],
+                  ['5★', t('home.satisfaccion')],
+                ].map(([value, label]) => (
+                  <div key={label}>
+                    <div className="text-2xl font-bold text-[#e8e8ed]">{value}</div>
+                    <div className="text-sm text-[#8e8e9a] mt-0.5">{label}</div>
+                  </div>
+                ))}
+              </motion.div>
+            </motion.div>
+
+            {/* ── Right: product illustration ── */}
+            <div className="relative flex items-center justify-center lg:justify-end">
+              {/* Ambient glows */}
+              <div className="absolute w-[380px] h-[380px] bg-[#4f7cff]/10 rounded-full blur-[80px] pointer-events-none" />
+              <div className="absolute w-[200px] h-[200px] bg-purple-500/8 rounded-full blur-[60px] translate-x-16 translate-y-10 pointer-events-none" />
+
+              {/* Main illustration — parallax + float */}
+              <motion.div
+                style={{ y: rightY, rotate: rightRotate }}
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.9, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                className="relative z-10 pointer-events-none select-none"
+              >
+                <motion.div
+                  animate={{ y: [0, -14, 0] }}
+                  transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
+                  className="relative w-60 h-60 sm:w-80 sm:h-80"
+                >
+                  <div className="absolute inset-0 bg-[#4f7cff]/12 rounded-full blur-3xl scale-110" />
+                  <HeadphonesIllustration />
+                </motion.div>
+              </motion.div>
+
+              {/* Floating badge — shipping */}
+              <motion.div
+                initial={{ opacity: 0, x: 16, y: -16 }}
+                animate={{ opacity: 1, x: 0, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.9 }}
+                className="absolute top-6 right-2 sm:right-6 flex items-center gap-2 px-3 py-2 rounded-2xl backdrop-blur-sm"
+                style={{ background: 'rgba(17,17,20,0.88)', border: '1px solid rgba(255,255,255,0.1)' }}
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-xs font-semibold text-[#e8e8ed]">Envío 24h</span>
+              </motion.div>
+
+              {/* Floating badge — rating */}
+              <motion.div
+                initial={{ opacity: 0, x: -16, y: 16 }}
+                animate={{ opacity: 1, x: 0, y: 0 }}
+                transition={{ duration: 0.5, delay: 1.1 }}
+                className="absolute bottom-6 left-2 sm:left-6 flex items-center gap-2 px-3 py-2 rounded-2xl backdrop-blur-sm"
+                style={{ background: 'rgba(17,17,20,0.88)', border: '1px solid rgba(255,255,255,0.1)' }}
+              >
+                <span className="text-amber-400 text-sm leading-none">★</span>
+                <span className="text-xs font-semibold text-[#e8e8ed]">5.0 Satisfacción</span>
+              </motion.div>
+            </div>
           </div>
-        </motion.div>
+
+          {/* Bottom: mini product preview cards */}
+          {!loading && products.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.7 }}
+              className="mt-12 lg:mt-14 flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide"
+            >
+              <span className="shrink-0 text-xs font-medium text-[#8e8e9a] whitespace-nowrap">Destacados</span>
+              <div className="w-px h-4 bg-white/15 shrink-0" />
+              {products.slice(0, 3).map((p, i) => (
+                <motion.button
+                  key={p.id}
+                  initial={{ opacity: 0, x: 16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.8 + i * 0.1 }}
+                  whileHover={{ y: -2 }}
+                  onClick={() => navigate(`/productos/${p.id}`, { state: { product: p } })}
+                  className="shrink-0 flex items-center gap-2.5 px-3 py-2 rounded-2xl transition-all duration-200 cursor-pointer"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-[#1a1a1f] overflow-hidden shrink-0 border border-white/6">
+                    {p.imagenUrl ? (
+                      <img src={p.imagenUrl} alt={p.nombre} className="w-full h-full object-cover" loading="lazy" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-base">📦</div>
+                    )}
+                  </div>
+                  <div className="min-w-0 text-left">
+                    <p className="text-xs font-medium text-[#e8e8ed] truncate max-w-[100px]">{p.nombre}</p>
+                    <p className="text-xs font-bold text-[#4f7cff]">{formatPrice(p.precio)}</p>
+                  </div>
+                </motion.button>
+              ))}
+              <Link
+                to="/productos"
+                className="shrink-0 px-3 py-2 rounded-2xl text-xs font-medium text-[#4f7cff] border border-[#4f7cff]/20 hover:bg-[#4f7cff]/10 transition-colors whitespace-nowrap"
+              >
+                Ver todos →
+              </Link>
+            </motion.div>
+          )}
+        </div>
       </section>
 
       {/* Featured products */}
@@ -470,84 +551,76 @@ function HeadphonesIllustration() {
   )
 }
 
-function BlenderIllustration() {
-  return (
-    <svg viewBox="0 0 160 200" className="w-full h-full drop-shadow-[0_0_28px_rgba(168,85,247,0.35)]" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Jar body */}
-      <path d="M40 50 L30 150 Q30 162 45 162 L115 162 Q130 162 130 150 L120 50 Z" fill="#111120" stroke="#a855f7" strokeWidth="2.5" opacity="0.95"/>
-      {/* Jar highlight */}
-      <path d="M46 58 L38 140" stroke="white" strokeWidth="2" strokeLinecap="round" opacity="0.08"/>
-      {/* Jar side shine */}
-      <path d="M50 55 L42 145" stroke="#a855f7" strokeWidth="1.5" strokeLinecap="round" opacity="0.25"/>
-      {/* Liquid fill */}
-      <path d="M34 120 L33 150 Q33 158 45 158 L115 158 Q127 158 127 150 L126 120 Z" fill="#a855f7" opacity="0.12"/>
-      <path d="M34 120 L126 120" stroke="#a855f7" strokeWidth="1.5" opacity="0.4"/>
-      {/* Lid */}
-      <rect x="35" y="38" width="90" height="16" rx="6" fill="#1a1a2e" stroke="#a855f7" strokeWidth="2.5"/>
-      {/* Lid top nub */}
-      <rect x="65" y="24" width="30" height="16" rx="8" fill="#1a1a2e" stroke="#a855f7" strokeWidth="2.5"/>
-      {/* Blade */}
-      <line x1="80" y1="148" x2="60" y2="140" stroke="#e8e8ed" strokeWidth="3" strokeLinecap="round" opacity="0.6"/>
-      <line x1="80" y1="148" x2="100" y2="140" stroke="#e8e8ed" strokeWidth="3" strokeLinecap="round" opacity="0.6"/>
-      <circle cx="80" cy="148" r="4" fill="#a855f7" opacity="0.8"/>
-      {/* Base */}
-      <rect x="25" y="162" width="110" height="22" rx="8" fill="#1a1a2e" stroke="#a855f7" strokeWidth="2"/>
-      {/* Base button */}
-      <circle cx="80" cy="173" r="6" fill="#a855f7" opacity="0.5"/>
-      <circle cx="80" cy="173" r="3" fill="#a855f7" opacity="0.9"/>
-    </svg>
-  )
-}
-
 function ProductCard({ product, onAdd }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const stockStatus = product.stock === 0
-    ? { label: t('common.outOfStock'), class: 'text-red-400' }
+  const stockDot = product.stock === 0 ? 'bg-red-400' : product.stock <= 3 ? 'bg-amber-400' : 'bg-emerald-400'
+  const stockLabel = product.stock === 0
+    ? t('common.outOfStock')
     : product.stock <= 3
-    ? { label: t('products.lowStock', { count: product.stock }), class: 'text-amber-400' }
-    : { label: t('common.inStock'), class: 'text-emerald-400' }
+    ? t('products.lowStock', { count: product.stock })
+    : t('common.inStock')
+  const stockColor = product.stock === 0 ? 'text-red-400' : product.stock <= 3 ? 'text-amber-400' : 'text-emerald-400'
 
   return (
     <motion.div
       variants={stagger.item}
-      whileHover={{ y: -4 }}
-      transition={{ duration: 0.2 }}
-      className="group relative bg-[#111114] border border-white/8 rounded-2xl overflow-hidden cursor-pointer hover:border-white/15 hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all duration-300"
+      whileHover={{ y: -6 }}
+      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+      className="group relative rounded-2xl overflow-hidden cursor-pointer transition-shadow duration-300 hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)]"
+      style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
       onClick={() => navigate(`/productos/${product.id}`, { state: { product } })}
     >
       {/* Image */}
-      <div className="relative h-32 sm:h-44 bg-[#1a1a1f] flex items-center justify-center overflow-hidden">
+      <div className="relative h-36 sm:h-48 bg-[#1a1a1f] flex items-center justify-center overflow-hidden">
         {product.imagenUrl ? (
           <img
             src={product.imagenUrl}
             alt={product.nombre}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
           />
         ) : (
           <span className="text-5xl opacity-30 group-hover:opacity-50 transition-opacity">📦</span>
         )}
         {product.stock === 0 && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
             <span className="text-xs font-semibold text-white/60 bg-black/40 px-3 py-1 rounded-full">{t('common.outOfStock')}</span>
           </div>
+        )}
+        {/* Quick-add overlay */}
+        {product.stock > 0 && (
+          <>
+            <div className="hc-card-overlay" />
+            <div className="hc-quick-add absolute bottom-0 left-0 right-0 p-2.5">
+              <button
+                onClick={(e) => { e.stopPropagation(); onAdd(product) }}
+                className="w-full h-8 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white text-xs font-bold transition-colors duration-150"
+              >
+                + {t('products.addToCart')}
+              </button>
+            </div>
+          </>
         )}
       </div>
 
       {/* Content */}
       <div className="p-3 sm:p-4">
-        <h3 className="font-medium text-[#e8e8ed] text-xs sm:text-sm leading-snug line-clamp-2 mb-2 group-hover:text-white transition-colors">
+        <h3 className="font-medium text-xs sm:text-sm leading-snug line-clamp-2 mb-2.5 group-hover:text-white transition-colors" style={{ color: 'var(--hc-text)' }}>
           {product.nombre}
         </h3>
-        <div className="flex items-center justify-between mb-2 sm:mb-0">
-          <span className="font-bold text-[#e8e8ed] text-sm sm:text-base">{formatPrice(product.precio)}</span>
-          <span className={`text-[10px] sm:text-xs font-medium ${stockStatus.class}`}>{stockStatus.label}</span>
+        <div className="flex items-center justify-between">
+          <span className="font-bold text-sm sm:text-base" style={{ color: 'var(--hc-text)' }}>{formatPrice(product.precio)}</span>
+          <div className="flex items-center gap-1.5">
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${stockDot}`} />
+            <span className={`text-[10px] sm:text-xs font-medium ${stockColor}`}>{stockLabel}</span>
+          </div>
         </div>
-
+        {/* Mobile fallback button (no hover on touch) */}
         {product.stock > 0 && (
           <button
             onClick={(e) => { e.stopPropagation(); onAdd(product) }}
-            className="mt-2 sm:mt-3 w-full h-8 sm:h-9 rounded-xl bg-[#4f7cff]/10 hover:bg-[#4f7cff] border border-[#4f7cff]/20 hover:border-[#4f7cff] text-[#4f7cff] hover:text-white text-xs sm:text-sm font-medium transition-all duration-200"
+            className="sm:hidden mt-2.5 w-full h-8 rounded-xl text-xs font-medium transition-all duration-200"
+            style={{ background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', color: 'var(--hc-accent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 25%, transparent)' }}
           >
             {t('products.addToCart')}
           </button>

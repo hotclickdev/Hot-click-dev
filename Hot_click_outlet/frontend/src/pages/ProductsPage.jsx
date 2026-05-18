@@ -336,8 +336,8 @@ export default function ProductsPage() {
                       initial={{ opacity: 0, y: 16 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: Math.min(i * 0.04, 0.3) }}
-                      whileHover={{ y: -4 }}
-                      className="group hc-card hc-card-glow rounded-2xl overflow-hidden cursor-pointer transition-all duration-300"
+                      whileHover={{ y: -6 }}
+                      className="group hc-card hc-card-glow rounded-2xl overflow-hidden cursor-pointer transition-shadow duration-300 hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)]"
                       onClick={() => navigate(`/productos/${product.id}`, { state: { product } })}
                     >
                       {/* Image */}
@@ -346,7 +346,7 @@ export default function ProductsPage() {
                           <img
                             src={product.imagenUrl}
                             alt={product.nombre}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
                             loading="lazy"
                           />
                         ) : (
@@ -366,30 +366,47 @@ export default function ProductsPage() {
                             </span>
                           </div>
                         )}
+                        {/* Quick-add overlay */}
+                        {product.stock > 0 && (
+                          <>
+                            <div className="hc-card-overlay" />
+                            <div className="hc-quick-add absolute bottom-0 left-0 right-0 p-2">
+                              <button
+                                onClick={(e) => handleAdd(e, product)}
+                                className="w-full h-8 rounded-xl bg-[#4f7cff] text-white text-xs font-bold"
+                              >
+                                + {t('products.addToCart')}
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
 
                       {/* Content */}
                       <div className="p-3 sm:p-4">
-                        <h3 className="font-medium text-[#e8e8ed] text-xs sm:text-sm leading-snug line-clamp-2 mb-2 sm:mb-3">
+                        <h3 className="font-medium text-xs sm:text-sm leading-snug line-clamp-2 mb-2 sm:mb-2.5 group-hover:text-white transition-colors" style={{ color: 'var(--hc-text)' }}>
                           {product.nombre}
                         </h3>
                         <div className="flex items-center justify-between mb-2 sm:mb-3">
-                          <span className="font-bold text-[#e8e8ed] text-sm sm:text-base">{formatPrice(product.precio)}</span>
-                          <span className={`text-[10px] sm:text-xs font-medium ${
-                            product.stock === 0 ? 'text-red-400' :
-                            product.stock <= 3 ? 'text-amber-400' : 'text-emerald-400'
-                          }`}>
-                            {product.stock === 0
-                              ? t('products.outOfStock')
-                              : product.stock <= 3
-                              ? t('products.lowStock', { count: product.stock })
-                              : t('products.inStock')}
-                          </span>
+                          <span className="font-bold text-sm sm:text-base" style={{ color: 'var(--hc-text)' }}>{formatPrice(product.precio)}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${product.stock === 0 ? 'bg-red-400' : product.stock <= 3 ? 'bg-amber-400' : 'bg-emerald-400'}`} />
+                            <span className={`text-[10px] sm:text-xs font-medium ${
+                              product.stock === 0 ? 'text-red-400' :
+                              product.stock <= 3 ? 'text-amber-400' : 'text-emerald-400'
+                            }`}>
+                              {product.stock === 0
+                                ? t('products.outOfStock')
+                                : product.stock <= 3
+                                ? t('products.lowStock', { count: product.stock })
+                                : t('products.inStock')}
+                            </span>
+                          </div>
                         </div>
                         {product.stock > 0 && (
                           <button
                             onClick={(e) => handleAdd(e, product)}
-                            className="hc-btn hc-btn-ghost w-full h-8 sm:h-9 text-xs sm:text-sm"
+                            className="sm:hidden hc-btn hc-btn-ghost w-full h-8 text-xs"
                           >
                             {t('products.addToCart')}
                           </button>
