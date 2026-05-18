@@ -63,7 +63,7 @@ public class PayXpertPaymentProvider implements PaymentProvider {
         body.put("shopperFirstName", usuario.getNombre());
         body.put("shopperLastName",  usuario.getApellidoPaterno());
         body.put("shopperEmail",     usuario.getCorreo());
-        body.put("shopperPhone",     usuario.getTelefono());
+        if (usuario.getTelefono() != null) body.put("shopperPhone", usuario.getTelefono());
 
         Map<String, Object> responseMap = llamarApi("/payment/prepare", body, pedido, usuario);
 

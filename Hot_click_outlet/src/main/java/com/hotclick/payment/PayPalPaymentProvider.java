@@ -146,6 +146,7 @@ public class PayPalPaymentProvider implements PaymentProvider {
 
         // Extraer capture ID
         String captureId = extractCaptureId(response);
+        if (captureId == null) log.warn("PayPal capture sin captureId en response — orderId={}", paypalOrderId);
 
         // Registrar transacción
         TransaccionPago txn = new TransaccionPago();
