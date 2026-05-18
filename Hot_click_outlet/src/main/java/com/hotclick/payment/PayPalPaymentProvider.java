@@ -346,11 +346,18 @@ public class PayPalPaymentProvider implements PaymentProvider {
         if (cachedToken != null && System.currentTimeMillis() < tokenExpiryMs) {
             return cachedToken;
         }
-        String credentials = config.getClientId() + ":" + config.getClientSecret();
+        String clientId     = config.getClientId()     == null ? "" : config.getClientId().trim();
+        String clientSecret = config.getClientSecret() == null ? "" : config.getClientSecret().trim();
+        String apiUrl       = config.getApiUrl();
+
+        log.info("PayPal OAuth → url={} clientId_len={} clientId_prefix={}",
+            apiUrl, clientId.length(), clientId.length() > 8 ? clientId.substring(0, 8) : clientId);
+
+        String credentials = clientId + ":" + clientSecret;
         String encoded = Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
 
         HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(config.getApiUrl() + "/v1/oauth2/token"))
+            .uri(URI.create(apiUrl + "/v1/oauth2/token"))
             .header("Authorization", "Basic " + encoded)
             .header("Content-Type", "application/x-www-form-urlencoded")
             .POST(HttpRequest.BodyPublishers.ofString("grant_type=client_credentials"))
@@ -358,6 +365,7 @@ public class PayPalPaymentProvider implements PaymentProvider {
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() != 200) {
+            log.error("PayPal OAuth falló status={} body={}", response.statusCode(), response.body());
             throw new RuntimeException("PayPal OAuth falló: " + response.body());
         }
 
