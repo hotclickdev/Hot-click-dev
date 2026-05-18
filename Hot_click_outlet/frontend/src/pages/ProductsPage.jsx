@@ -21,6 +21,7 @@ export default function ProductsPage() {
 
   const SORT_OPTIONS = [
     { value: 'default', label: t('products.sortBy') },
+    { value: 'featured', label: 'Destacados' },
     { value: 'price_asc', label: t('products.priceAsc') },
     { value: 'price_desc', label: t('products.priceDesc') },
     { value: 'name', label: t('products.nameAsc') },
@@ -52,6 +53,8 @@ export default function ProductsPage() {
   const [sort, setSort] = useState('default')
   const [filterStock, setFilterStock] = useState('')
   const [filterCond, setFilterCond] = useState('')
+  const [priceMin, setPriceMin] = useState('')
+  const [priceMax, setPriceMax] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false)
   const [recentlyAdded, setRecentlyAdded] = useState(new Set())
@@ -78,25 +81,38 @@ export default function ProductsPage() {
     productService.getCategories().then(({ data }) => setCategories(data ?? [])).catch(() => {})
   }, [])
 
-  const filtered = useMemo(() => products
-    .filter((p) => !search || p.nombre?.toLowerCase().includes(search.toLowerCase()))
-    .filter((p) => !category || String(p.categoriaId) === String(category))
-    .filter((p) => {
-      if (filterStock === 'ok') return p.stock > 3
-      if (filterStock === 'low') return p.stock > 0 && p.stock <= 3
-      if (filterStock === 'out') return p.stock === 0
-      return true
-    })
-    .filter((p) => !filterCond || p.condicion === filterCond)
-    .sort((a, b) => {
-      if (sort === 'price_asc') return a.precio - b.precio
-      if (sort === 'price_desc') return b.precio - a.precio
-      if (sort === 'name') return a.nombre?.localeCompare(b.nombre)
-      return 0
-    }), [products, search, category, sort, filterStock, filterCond])
+  const filtered = useMemo(() => {
+    const minPrice = priceMin !== '' ? Number(priceMin) : null
+    const maxPrice = priceMax !== '' ? Number(priceMax) : null
+    return products
+      .filter((p) => !search || p.nombre?.toLowerCase().includes(search.toLowerCase()))
+      .filter((p) => !category || String(p.categoriaId) === String(category))
+      .filter((p) => {
+        if (filterStock === 'ok') return p.stock > 3
+        if (filterStock === 'low') return p.stock > 0 && p.stock <= 3
+        if (filterStock === 'out') return p.stock === 0
+        return true
+      })
+      .filter((p) => !filterCond || p.condicion === filterCond)
+      .filter((p) => (minPrice === null || p.precio >= minPrice) && (maxPrice === null || p.precio <= maxPrice))
+      .sort((a, b) => {
+        if (sort === 'featured') return (b.destacado ? 1 : 0) - (a.destacado ? 1 : 0)
+        if (sort === 'price_asc') return a.precio - b.precio
+        if (sort === 'price_desc') return b.precio - a.precio
+        if (sort === 'name') return a.nombre?.localeCompare(b.nombre)
+        return 0
+      })
+  }, [products, search, category, sort, filterStock, filterCond, priceMin, priceMax])
 
-  const hasFilters = category || filterStock || filterCond
-  const clearFilters = () => { setCategory(''); setFilterStock(''); setFilterCond(''); setSearch('') }
+  const hasFilters = !!(category || filterStock || filterCond || priceMin || priceMax)
+  const clearFilters = () => { setCategory(''); setFilterStock(''); setFilterCond(''); setSearch(''); setPriceMin(''); setPriceMax('') }
+
+  const activeChips = [
+    category && { key: 'cat', label: categories.find((c) => String(c.id) === String(category))?.nombreCategoria ?? categories.find((c) => String(c.id) === String(category))?.nombre ?? 'Categoría', clear: () => setCategory('') },
+    filterCond && { key: 'cond', label: COND_OPTIONS.find((o) => o.value === filterCond)?.label, clear: () => setFilterCond('') },
+    filterStock && { key: 'stock', label: STOCK_OPTIONS.find((o) => o.value === filterStock)?.label, clear: () => setFilterStock('') },
+    (priceMin || priceMax) && { key: 'price', label: priceMin && priceMax ? `₡${Number(priceMin).toLocaleString()} – ₡${Number(priceMax).toLocaleString()}` : priceMin ? `> ₡${Number(priceMin).toLocaleString()}` : `< ₡${Number(priceMax).toLocaleString()}`, clear: () => { setPriceMin(''); setPriceMax('') } },
+  ].filter(Boolean)
 
   const handleAdd = (e, product) => {
     e.stopPropagation()
@@ -181,6 +197,30 @@ export default function ProductsPage() {
                     {STOCK_OPTIONS.map(({ value, label }) => (
                       <ChipBtn key={value} active={filterStock === value} onClick={() => setFilterStock(value)}>{label}</ChipBtn>
                     ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-white/6" />
+
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">Precio (₡)</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      placeholder="Mínimo"
+                      value={priceMin}
+                      onChange={(e) => setPriceMin(e.target.value)}
+                      className="w-full h-9 rounded-xl px-3 text-sm bg-white/5 border text-[#e8e8ed] placeholder-[#8e8e9a] outline-none"
+                      style={{ borderColor: 'var(--hc-border)' }}
+                    />
+                    <input
+                      type="number"
+                      placeholder="Máximo"
+                      value={priceMax}
+                      onChange={(e) => setPriceMax(e.target.value)}
+                      className="w-full h-9 rounded-xl px-3 text-sm bg-white/5 border text-[#e8e8ed] placeholder-[#8e8e9a] outline-none"
+                      style={{ borderColor: 'var(--hc-border)' }}
+                    />
                   </div>
                 </div>
 
@@ -286,6 +326,31 @@ export default function ProductsPage() {
                       ))}
                     </div>
                   </div>
+
+                  <div className="border-t" style={{ borderColor: 'var(--hc-border)' }} />
+
+                  {/* Price range */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-[#8e8e9a]">Precio (₡)</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        placeholder="Mín"
+                        value={priceMin}
+                        onChange={(e) => setPriceMin(e.target.value)}
+                        className="w-full h-8 rounded-lg px-2 text-xs bg-white/5 border text-[#e8e8ed] placeholder-[#8e8e9a] outline-none focus:border-[#4f7cff]/60 transition-colors"
+                        style={{ borderColor: 'var(--hc-border)' }}
+                      />
+                      <input
+                        type="number"
+                        placeholder="Máx"
+                        value={priceMax}
+                        onChange={(e) => setPriceMax(e.target.value)}
+                        className="w-full h-8 rounded-lg px-2 text-xs bg-white/5 border text-[#e8e8ed] placeholder-[#8e8e9a] outline-none focus:border-[#4f7cff]/60 transition-colors"
+                        style={{ borderColor: 'var(--hc-border)' }}
+                      />
+                    </div>
+                  </div>
                 </div>
               </motion.aside>
             )}
@@ -320,15 +385,52 @@ export default function ProductsPage() {
               </select>
             </div>
 
+            {/* Active filter chips */}
+            {activeChips.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                {activeChips.map((chip) => (
+                  <button
+                    key={chip.key}
+                    onClick={chip.clear}
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-all hover:opacity-80"
+                    style={{ background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', borderColor: 'color-mix(in srgb, var(--hc-accent) 28%, transparent)' }}
+                  >
+                    {chip.label}
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                ))}
+                {activeChips.length > 1 && (
+                  <button onClick={clearFilters} className="text-xs text-[#8e8e9a] hover:text-[#4f7cff] transition-colors underline">
+                    Limpiar todo
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* Product grid */}
             {loading ? (
               <div className="flex justify-center py-20"><Spinner size="lg" /></div>
             ) : filtered.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <span className="text-6xl mb-4 opacity-20">🔍</span>
-                <p className="text-[#8e8e9a]">{t('products.noResults')}</p>
+              <div className="flex flex-col items-center justify-center py-20 text-center gap-5">
+                <div className="relative w-24 h-24 flex items-center justify-center">
+                  <div className="absolute inset-0 rounded-3xl" style={{ background: 'color-mix(in srgb, var(--hc-accent) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 16%, transparent)' }} />
+                  <svg className="relative w-12 h-12 text-[#4f7cff]" fill="none" stroke="currentColor" strokeWidth={1.3} viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    <line x1="8" y1="11" x2="14" y2="11" strokeLinecap="round" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="font-semibold text-base mb-1" style={{ color: 'var(--hc-text)' }}>{t('products.noResults')}</p>
+                  <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>Intenta con otros filtros o busca por nombre</p>
+                </div>
                 {(search || hasFilters) && (
-                  <button onClick={clearFilters} className="mt-3 text-sm text-[#4f7cff] hover:underline">
+                  <button
+                    onClick={clearFilters}
+                    className="px-5 py-2 rounded-xl border text-sm font-medium transition-colors hover:bg-white/5"
+                    style={{ color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }}
+                  >
                     {t('common.clear')}
                   </button>
                 )}
@@ -336,7 +438,7 @@ export default function ProductsPage() {
             ) : (
               <AnimatePresence mode="wait">
                 <motion.div
-                  key={page + search + category + sort + filterStock + filterCond}
+                  key={page + search + category + sort + filterStock + filterCond + priceMin + priceMax}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}

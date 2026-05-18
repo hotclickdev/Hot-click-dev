@@ -81,19 +81,37 @@ export default function CartPage() {
       <MainLayout>
         <div className="max-w-2xl mx-auto px-4 py-20 text-center">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center gap-4"
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            className="flex flex-col items-center gap-5"
           >
-            <span className="text-7xl opacity-20">🛍</span>
-            <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('cart.empty')}</h1>
-            <p className="text-[#8e8e9a]">{t('cart.emptySub')}</p>
-            <Link
-              to="/productos"
-              className="mt-2 px-6 py-2.5 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-medium text-sm transition-all"
-            >
-              {t('cart.explore')}
-            </Link>
+            <div className="relative w-28 h-28 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-3xl" style={{ background: 'color-mix(in srgb, var(--hc-accent) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 16%, transparent)' }} />
+              <div className="absolute inset-0 rounded-3xl blur-2xl opacity-30" style={{ background: 'var(--hc-accent)' }} />
+              <svg className="relative w-14 h-14 text-[#4f7cff]" fill="none" stroke="currentColor" strokeWidth={1.2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--hc-text)' }}>{t('cart.empty')}</h1>
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--hc-muted)' }}>{t('cart.emptySub')}</p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 mt-1">
+              <Link
+                to="/productos"
+                className="px-6 py-2.5 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-medium text-sm transition-all shadow-[0_0_20px_rgba(79,124,255,0.25)] hover:shadow-[0_0_32px_rgba(79,124,255,0.4)]"
+              >
+                {t('cart.explore')}
+              </Link>
+              <Link
+                to="/wishlist"
+                className="px-6 py-2.5 rounded-xl border text-sm font-medium transition-all hover:bg-white/5"
+                style={{ color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }}
+              >
+                Ver Wishlist
+              </Link>
+            </div>
           </motion.div>
         </div>
       </MainLayout>

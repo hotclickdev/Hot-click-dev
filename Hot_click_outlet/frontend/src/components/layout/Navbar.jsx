@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import useAuthStore from '@/store/authStore'
 import useCartStore from '@/store/cartStore'
 import useWishlistStore from '@/store/wishlistStore'
+import useUiStore from '@/store/uiStore'
 
 export default function Navbar() {
   const { t } = useTranslation()
@@ -13,6 +14,7 @@ export default function Navbar() {
   const { token, userName, logout, isAdmin } = useAuthStore()
   const cartCount = useCartStore((s) => s.count())
   const wishlistCount = useWishlistStore((s) => s.count())
+  const { setCartDrawerOpen, setSearchOpen } = useUiStore()
   const [scrolled, setScrolled] = useState(false)
   const [scrollProgress, setScrollProgress] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -108,6 +110,16 @@ export default function Navbar() {
 
           {/* Actions */}
           <div className="flex items-center gap-1">
+            {/* Search */}
+            <button
+              onClick={() => setSearchOpen(true)}
+              aria-label="Buscar"
+              className="p-2 rounded-lg transition-colors hover:bg-white/5"
+              style={{ color: 'var(--hc-muted)' }}
+            >
+              <SearchNavIcon />
+            </button>
+
             {/* Wishlist */}
             <Link
               to="/wishlist"
@@ -133,10 +145,10 @@ export default function Navbar() {
             </Link>
 
             {/* Cart */}
-            <Link
-              to="/carrito"
+            <button
+              onClick={() => setCartDrawerOpen(true)}
               aria-label={t('bnav.carrito')}
-              className="relative p-2 rounded-lg transition-colors"
+              className="relative p-2 rounded-lg transition-colors hover:bg-white/5"
               style={{ color: 'var(--hc-muted)' }}
             >
               <motion.div
@@ -160,7 +172,7 @@ export default function Navbar() {
                   </motion.span>
                 )}
               </AnimatePresence>
-            </Link>
+            </button>
 
             {/* Auth */}
             {token ? (
@@ -276,6 +288,14 @@ export default function Navbar() {
         )}
       </AnimatePresence>
     </>
+  )
+}
+
+function SearchNavIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
   )
 }
 

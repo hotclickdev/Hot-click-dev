@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { analytics } from '@/utils/analytics'
 
 const useCartStore = create(
   persist(
@@ -20,10 +21,14 @@ const useCartStore = create(
         } else {
           set({ items: [...items, { ...product, cantidad: 1 }] })
         }
+        analytics.addToCart(product)
       },
 
-      removeItem: (id) =>
-        set({ items: get().items.filter((i) => i.id !== id) }),
+      removeItem: (id) => {
+        const item = get().items.find((i) => i.id === id)
+        if (item) analytics.removeFromCart(id, item.nombre)
+        set({ items: get().items.filter((i) => i.id !== id) })
+      },
 
       updateQuantity: (id, cantidad) => {
         if (cantidad < 1) return get().removeItem(id)

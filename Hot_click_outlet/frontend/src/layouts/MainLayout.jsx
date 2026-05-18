@@ -1,6 +1,8 @@
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import BottomNav from '@/components/layout/BottomNav'
+import SearchPanel from '@/components/ui/SearchPanel'
+import MiniCartDrawer from '@/components/ui/MiniCartDrawer'
 import { motion } from 'framer-motion'
 
 export default function MainLayout({ children }) {
@@ -17,6 +19,8 @@ export default function MainLayout({ children }) {
       </motion.main>
       <Footer />
       <BottomNav />
+      <SearchPanel />
+      <MiniCartDrawer />
     </div>
   )
 }

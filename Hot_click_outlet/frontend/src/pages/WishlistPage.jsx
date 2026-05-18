@@ -32,19 +32,32 @@ export default function WishlistPage() {
       <MainLayout>
         <div className="max-w-2xl mx-auto px-4 py-20 text-center">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center gap-4"
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            className="flex flex-col items-center gap-5"
           >
-            <span className="text-7xl select-none" style={{ opacity: 0.2 }}>♡</span>
-            <h1 className="text-2xl font-bold text-[#e8e8ed]">Tu wishlist está vacía</h1>
-            <p className="text-[#8e8e9a]">Guarda tus productos favoritos para encontrarlos rápido.</p>
-            <button
-              onClick={() => navigate('/productos')}
-              className="mt-2 px-6 py-2.5 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-medium text-sm transition-all"
-            >
-              Explorar productos
-            </button>
+            <div className="relative w-28 h-28 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-3xl" style={{ background: 'color-mix(in srgb, #ec4899 8%, transparent)', border: '1px solid color-mix(in srgb, #ec4899 18%, transparent)' }} />
+              <div className="absolute inset-0 rounded-3xl blur-2xl opacity-20" style={{ background: '#ec4899' }} />
+              <svg className="relative w-14 h-14 text-pink-400" fill="none" stroke="currentColor" strokeWidth={1.2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--hc-text)' }}>Tu wishlist está vacía</h1>
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
+                Guarda los productos que te gustan para encontrarlos rápido.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 mt-1">
+              <button
+                onClick={() => navigate('/productos')}
+                className="px-6 py-2.5 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-medium text-sm transition-all shadow-[0_0_20px_rgba(79,124,255,0.25)] hover:shadow-[0_0_32px_rgba(79,124,255,0.4)]"
+              >
+                Explorar productos
+              </button>
+            </div>
           </motion.div>
         </div>
       </MainLayout>

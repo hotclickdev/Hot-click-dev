@@ -11,6 +11,7 @@ import useWishlistStore from '@/store/wishlistStore'
 import useRecentlyViewedStore from '@/store/recentlyViewedStore'
 import { useToast } from '@/components/ui/Toast'
 import { formatPrice, conditionLabel } from '@/utils/format'
+import { analytics } from '@/utils/analytics'
 
 export default function ProductDetailPage() {
   const { id } = useParams()
@@ -40,6 +41,7 @@ export default function ProductDetailPage() {
         const p = normalizeProduct(data)
         setProduct(p)
         addRecentlyViewed(p)
+        analytics.productView(p)
         if (p.especificaciones?.trim()) setActiveTab('especificaciones')
         else if (p.comoUsar?.trim()) setActiveTab('como-usar')
       })

@@ -6,6 +6,7 @@ import useWishlistStore from '@/store/wishlistStore'
 import { formatPrice, conditionLabel } from '@/utils/format'
 import Badge from '@/components/ui/Badge'
 import { useToast } from '@/components/ui/Toast'
+import { analytics } from '@/utils/analytics'
 
 export default function QuickViewModal({ product, onClose }) {
   const navigate = useNavigate()
@@ -18,6 +19,8 @@ export default function QuickViewModal({ product, onClose }) {
   const liked = isLiked(product.id)
   const inStock = product.stock > 0
   const atMax = quantity >= (product.stock ?? 99)
+
+  useEffect(() => { analytics.quickViewOpen(product) }, [])
 
   useEffect(() => () => clearTimeout(addTimeout.current), [])
 
