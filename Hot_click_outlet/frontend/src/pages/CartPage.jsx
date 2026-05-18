@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import Button from '@/components/ui/Button'
+import ShippingProgress from '@/components/ui/ShippingProgress'
 import useCartStore from '@/store/cartStore'
 import useAuthStore from '@/store/authStore'
 import { formatPrice } from '@/utils/format'
@@ -183,6 +184,8 @@ export default function CartPage() {
                 <span>{t('cart.total')}</span>
                 <span className="text-lg">{formatPrice(total())}</span>
               </div>
+
+              <ShippingProgress total={total()} />
 
               <div className="pt-2 space-y-2">
                 {/* Pago con tarjeta vía PayXpert */}

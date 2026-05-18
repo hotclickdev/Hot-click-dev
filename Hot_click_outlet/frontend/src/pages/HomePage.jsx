@@ -554,6 +554,7 @@ function HeadphonesIllustration() {
 function ProductCard({ product, onAdd }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const [addState, setAddState] = useState('idle')
   const stockDot = product.stock === 0 ? 'bg-red-400' : product.stock <= 3 ? 'bg-amber-400' : 'bg-emerald-400'
   const stockLabel = product.stock === 0
     ? t('common.outOfStock')
@@ -593,10 +594,23 @@ function ProductCard({ product, onAdd }) {
             <div className="hc-card-overlay" />
             <div className="hc-quick-add absolute bottom-0 left-0 right-0 p-2.5">
               <button
-                onClick={(e) => { e.stopPropagation(); onAdd(product) }}
-                className="w-full h-8 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white text-xs font-bold transition-colors duration-150"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (addState !== 'idle') return
+                  setAddState('adding')
+                  setTimeout(() => {
+                    onAdd(product)
+                    setAddState('added')
+                    setTimeout(() => setAddState('idle'), 1300)
+                  }, 180)
+                }}
+                className={`w-full h-8 rounded-xl text-xs font-bold transition-all duration-200 ${
+                  addState === 'added'
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-[#4f7cff] hover:bg-[#3d6ee0] text-white'
+                }`}
               >
-                + {t('products.addToCart')}
+                {addState === 'added' ? '✓ Añadido' : addState === 'adding' ? '···' : `+ ${t('products.addToCart')}`}
               </button>
             </div>
           </>
@@ -615,14 +629,27 @@ function ProductCard({ product, onAdd }) {
             <span className={`text-[10px] sm:text-xs font-medium ${stockColor}`}>{stockLabel}</span>
           </div>
         </div>
-        {/* Mobile fallback button (no hover on touch) */}
+        {/* Mobile fallback button */}
         {product.stock > 0 && (
           <button
-            onClick={(e) => { e.stopPropagation(); onAdd(product) }}
-            className="sm:hidden mt-2.5 w-full h-8 rounded-xl text-xs font-medium transition-all duration-200"
-            style={{ background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', color: 'var(--hc-accent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 25%, transparent)' }}
+            onClick={(e) => {
+              e.stopPropagation()
+              if (addState !== 'idle') return
+              setAddState('adding')
+              setTimeout(() => {
+                onAdd(product)
+                setAddState('added')
+                setTimeout(() => setAddState('idle'), 1300)
+              }, 180)
+            }}
+            className={`sm:hidden mt-2.5 w-full h-8 rounded-xl text-xs font-medium transition-all duration-200 ${
+              addState === 'added'
+                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                : ''
+            }`}
+            style={addState === 'added' ? {} : { background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', color: 'var(--hc-accent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 25%, transparent)' }}
           >
-            {t('products.addToCart')}
+            {addState === 'added' ? '✓ Añadido' : t('products.addToCart')}
           </button>
         )}
       </div>

@@ -22,7 +22,9 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1)
   const [activeTab, setActiveTab] = useState(null)
   const [justAdded, setJustAdded] = useState(false)
+  const [showSticky, setShowSticky] = useState(false)
   const addTimeout = useRef(null)
+  const mainCTARef = useRef(null)
 
   useEffect(() => {
     setLoading(true)
@@ -39,6 +41,18 @@ export default function ProductDetailPage() {
   }, [id])
 
   useEffect(() => () => clearTimeout(addTimeout.current), [])
+
+  useEffect(() => {
+    if (loading) return
+    const el = mainCTARef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowSticky(!entry.isIntersecting),
+      { threshold: 0.1 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [loading])
 
   if (loading) {
     return (
@@ -91,7 +105,7 @@ export default function ProductDetailPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
+      <div className={`max-w-5xl mx-auto px-4 sm:px-6 py-10 transition-[padding] duration-300 ${showSticky ? 'pb-28 sm:pb-24' : ''}`}>
 
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-[#8e8e9a] mb-8">
@@ -152,6 +166,22 @@ export default function ProductDetailPage() {
             {/* Descripción */}
             {product.descripcion && (
               <p className="text-sm text-[#8e8e9a] leading-relaxed">{product.descripcion}</p>
+            )}
+
+            {/* Urgency: low stock */}
+            {inStock && product.stock <= 5 && (
+              <motion.div
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 w-fit"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
+                <span className="text-xs font-medium text-amber-400">
+                  {product.stock <= 3
+                    ? `¡Solo quedan ${product.stock} unidades!`
+                    : `Solo ${product.stock} unidades disponibles`}
+                </span>
+              </motion.div>
             )}
 
             {/* ── Selector de cantidad ── */}
@@ -231,6 +261,7 @@ export default function ProductDetailPage() {
 
             {/* ── Botón añadir al carrito ── */}
             <motion.button
+              ref={mainCTARef}
               onClick={handleAdd}
               disabled={!inStock}
               whileTap={inStock && !justAdded ? { scale: 0.97 } : {}}
@@ -297,16 +328,17 @@ export default function ProductDetailPage() {
               </AnimatePresence>
             </motion.button>
 
-            {/* Info envío y confianza */}
+            {/* Trust badges */}
             <div className="grid grid-cols-2 gap-2">
               {[
-                { icon: '🛡', text: 'Garantía 40 días' },
-                { icon: '🔒', text: 'Pago 100% seguro' },
-                { icon: '💬', text: 'Soporte WhatsApp' },
-                { icon: '🚚', text: 'Envío a todo el país' },
-              ].map(({ icon, text }) => (
-                <div key={text} className="flex items-center gap-2 p-3 rounded-xl bg-white/3 border border-white/8 text-sm text-[#8e8e9a]">
-                  <span>{icon}</span><span>{text}</span>
+                { svg: <TrustShieldSVG />, text: 'Garantía 40 días', color: 'text-emerald-400', bg: 'bg-emerald-500/8', border: 'border-emerald-500/15' },
+                { svg: <TrustLockSVG />, text: 'Pago 100% seguro', color: 'text-[#4f7cff]', bg: 'bg-[#4f7cff]/8', border: 'border-[#4f7cff]/15' },
+                { svg: <TrustWASVG />, text: 'Soporte WhatsApp', color: 'text-[#25D366]', bg: 'bg-[#25D366]/8', border: 'border-[#25D366]/15' },
+                { svg: <TrustTruckSVG />, text: 'Envío a todo CR', color: 'text-amber-400', bg: 'bg-amber-500/8', border: 'border-amber-500/15' },
+              ].map(({ svg, text, color, bg, border }) => (
+                <div key={text} className={`flex items-center gap-2.5 p-3 rounded-xl ${bg} border ${border}`}>
+                  <span className={`shrink-0 ${color}`}>{svg}</span>
+                  <span className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>{text}</span>
                 </div>
               ))}
             </div>
@@ -405,6 +437,152 @@ export default function ProductDetailPage() {
         )}
 
       </div>
+
+      {/* ── Sticky Add to Cart ── */}
+      <AnimatePresence>
+        {showSticky && inStock && (
+          <StickyCartBar
+            product={product}
+            quantity={quantity}
+            onDecrease={handleDecrease}
+            onIncrease={handleIncrease}
+            onAdd={handleAdd}
+            justAdded={justAdded}
+            atMax={atMax}
+            inStock={inStock}
+          />
+        )}
+      </AnimatePresence>
     </MainLayout>
+  )
+}
+
+// ── Sticky Cart Bar ───────────────────────────────────────────────────────────
+
+function StickyCartBar({ product, quantity, onDecrease, onIncrease, onAdd, justAdded, atMax, inStock }) {
+  return (
+    <motion.div
+      initial={{ y: 80, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: 80, opacity: 0 }}
+      transition={{ type: 'spring', stiffness: 420, damping: 42 }}
+      className="fixed left-0 right-0 z-50 bottom-16 md:bottom-0 backdrop-blur-2xl"
+      style={{
+        background: 'color-mix(in srgb, var(--hc-surface) 90%, transparent)',
+        borderTop: '1px solid var(--hc-border)',
+        boxShadow: '0 -8px 32px rgba(0,0,0,0.25)',
+      }}
+    >
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
+        {/* Thumbnail + info */}
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="w-11 h-11 rounded-xl bg-[#1a1a1f] overflow-hidden shrink-0 border border-white/8">
+            {product.imagenUrl ? (
+              <img src={product.imagenUrl} alt={product.nombre} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-lg">📦</div>
+            )}
+          </div>
+          <div className="min-w-0 hidden sm:block">
+            <p className="text-xs font-semibold truncate" style={{ color: 'var(--hc-text)' }}>
+              {product.titulo || product.nombre}
+            </p>
+            <p className="text-sm font-bold text-[#4f7cff]">{formatPrice(product.precio)}</p>
+          </div>
+          <p className="text-sm font-bold text-[#4f7cff] sm:hidden">{formatPrice(product.precio)}</p>
+        </div>
+
+        {/* Quantity selector */}
+        <div className="flex items-center rounded-xl border overflow-hidden shrink-0" style={{ borderColor: 'var(--hc-border)' }}>
+          <button
+            onClick={onDecrease}
+            disabled={quantity <= 1}
+            className="w-9 h-9 flex items-center justify-center text-[#8e8e9a] hover:text-white disabled:opacity-25 transition-colors select-none text-lg"
+          >
+            −
+          </button>
+          <span className="w-8 text-center text-sm font-bold" style={{ color: 'var(--hc-text)' }}>
+            {quantity}
+          </span>
+          <button
+            onClick={onIncrease}
+            disabled={atMax}
+            className="w-9 h-9 flex items-center justify-center text-[#8e8e9a] hover:text-white disabled:opacity-25 transition-colors select-none text-lg"
+          >
+            +
+          </button>
+        </div>
+
+        {/* CTA */}
+        <motion.button
+          onClick={onAdd}
+          whileTap={inStock && !justAdded ? { scale: 0.95 } : {}}
+          disabled={!inStock}
+          className={`shrink-0 h-10 px-5 sm:px-7 rounded-xl font-bold text-sm transition-all duration-300 ${
+            justAdded
+              ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)]'
+              : inStock
+              ? 'bg-[#4f7cff] hover:bg-[#3d6ee0] text-white shadow-[0_0_20px_rgba(79,124,255,0.35)] hover:shadow-[0_0_32px_rgba(79,124,255,0.55)]'
+              : 'bg-white/5 text-[#8e8e9a] cursor-not-allowed'
+          }`}
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            {justAdded ? (
+              <motion.span
+                key="done"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex items-center gap-1.5"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="hidden sm:inline">Añadido</span>
+              </motion.span>
+            ) : (
+              <motion.span key="add" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                Agregar
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.button>
+      </div>
+    </motion.div>
+  )
+}
+
+// ── Trust badge icons ─────────────────────────────────────────────────────────
+
+function TrustShieldSVG() {
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </svg>
+  )
+}
+function TrustLockSVG() {
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0110 0v4" />
+    </svg>
+  )
+}
+function TrustWASVG() {
+  return (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+    </svg>
+  )
+}
+function TrustTruckSVG() {
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="1" y="3" width="15" height="13" rx="1" />
+      <path d="M16 8h4l3 5v3h-7V8z" />
+      <circle cx="5.5" cy="18.5" r="2.5" />
+      <circle cx="18.5" cy="18.5" r="2.5" />
+    </svg>
   )
 }

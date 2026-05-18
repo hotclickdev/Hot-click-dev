@@ -52,6 +52,7 @@ export default function ProductsPage() {
   const [filterCond, setFilterCond] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false)
+  const [recentlyAdded, setRecentlyAdded] = useState(new Set())
 
   const fetchProducts = useCallback(async (p = 0) => {
     setLoading(true)
@@ -97,6 +98,14 @@ export default function ProductsPage() {
     e.stopPropagation()
     addItem(product)
     toast({ message: t('product.added', { name: product.nombre }), type: 'success' })
+    setRecentlyAdded((prev) => new Set([...prev, product.id]))
+    setTimeout(() => {
+      setRecentlyAdded((prev) => {
+        const next = new Set(prev)
+        next.delete(product.id)
+        return next
+      })
+    }, 1400)
   }
 
   return (
@@ -373,9 +382,13 @@ export default function ProductsPage() {
                             <div className="hc-quick-add absolute bottom-0 left-0 right-0 p-2">
                               <button
                                 onClick={(e) => handleAdd(e, product)}
-                                className="w-full h-8 rounded-xl bg-[#4f7cff] text-white text-xs font-bold"
+                                className={`w-full h-8 rounded-xl text-xs font-bold transition-colors duration-200 ${
+                                  recentlyAdded.has(product.id)
+                                    ? 'bg-emerald-500 text-white'
+                                    : 'bg-[#4f7cff] text-white'
+                                }`}
                               >
-                                + {t('products.addToCart')}
+                                {recentlyAdded.has(product.id) ? '✓ Añadido' : `+ ${t('products.addToCart')}`}
                               </button>
                             </div>
                           </>
@@ -406,9 +419,13 @@ export default function ProductsPage() {
                         {product.stock > 0 && (
                           <button
                             onClick={(e) => handleAdd(e, product)}
-                            className="sm:hidden hc-btn hc-btn-ghost w-full h-8 text-xs"
+                            className={`sm:hidden w-full h-8 rounded-xl text-xs font-medium transition-all duration-200 ${
+                              recentlyAdded.has(product.id)
+                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                                : 'hc-btn hc-btn-ghost'
+                            }`}
                           >
-                            {t('products.addToCart')}
+                            {recentlyAdded.has(product.id) ? '✓ Añadido' : t('products.addToCart')}
                           </button>
                         )}
                       </div>
