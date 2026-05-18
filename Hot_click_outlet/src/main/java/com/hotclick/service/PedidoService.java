@@ -96,6 +96,13 @@ public class PedidoService {
         return pedido;
     }
 
+    @Transactional
+    public void eliminarPedido(Long id) {
+        Pedido pedido = pedidoRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+        pedidoRepository.delete(pedido);
+    }
+
     @Transactional(readOnly = true)
     public List<Map<String, Object>> listarTodosConDetalles() {
         return pedidoRepository.findAllWithDetails().stream().map(p -> {

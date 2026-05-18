@@ -106,4 +106,14 @@ public class PedidoController {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ResponseDTO> eliminarPedido(@PathVariable Long id) {
+        try {
+            pedidoService.eliminarPedido(id);
+            return ResponseEntity.ok(ResponseDTO.success("Pedido eliminado", null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        }
+    }
 }

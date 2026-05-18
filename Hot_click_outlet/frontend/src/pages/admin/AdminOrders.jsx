@@ -42,31 +42,37 @@ const ETAPAS_ENVIO = [
   { key: 'ENTREGADO',      label: 'Entregado' },
 ]
 
-function StepTracker({ estado, esRetiro }) {
-  const etapas = esRetiro ? ETAPAS_RETIRO : ETAPAS_ENVIO
-  const idx    = etapas.findIndex(e => e.key === estado)
+function StepTracker({ estado, esRetiro, onStep, saving }) {
+  const etapas  = esRetiro ? ETAPAS_RETIRO : ETAPAS_ENVIO
+  const idx     = etapas.findIndex(e => e.key === estado)
   const idxSafe = idx === -1 ? 0 : idx
   return (
     <div className="flex items-center overflow-x-auto pb-1">
       {etapas.map((e, i) => {
         const done    = i < idxSafe
         const current = i === idxSafe
+        const clickable = !current && !saving
         return (
           <div key={e.key} className="flex items-center flex-1 min-w-0">
             <div className="flex flex-col items-center gap-1 shrink-0">
-              <div
+              <button
+                onClick={() => clickable && onStep(e.key)}
+                disabled={saving}
+                title={clickable ? `Cambiar a: ${e.label}` : e.label}
                 className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
                 style={{
                   backgroundColor: done || current ? '#4f7cff' : 'transparent',
                   border: `2px solid ${done || current ? '#4f7cff' : '#ffffff20'}`,
                   boxShadow: current ? '0 0 12px rgba(79,124,255,0.5)' : 'none',
+                  cursor: clickable ? 'pointer' : 'default',
+                  opacity: saving ? 0.5 : 1,
                 }}
               >
                 {done
                   ? <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
                   : <div className="w-2 h-2 rounded-full" style={{ backgroundColor: current ? '#fff' : '#ffffff30' }} />
                 }
-              </div>
+              </button>
               <span className="text-[9px] text-center leading-tight max-w-[56px]"
                 style={{ color: done || current ? '#e8e8ed' : '#8e8e9a55', fontWeight: current ? 700 : 400 }}>
                 {e.label}
@@ -140,6 +146,17 @@ function OrderCard({ order, onReload }) {
     finally { setSaving(false) }
   }
 
+  const doDelete = async () => {
+    if (!window.confirm(`¿Eliminar pedido #${order.id}? Esta acción no se puede deshacer.`)) return
+    setSaving(true)
+    try {
+      await orderService.delete(order.id)
+      toast({ message: 'Pedido eliminado', type: 'success' })
+      onReload()
+    } catch { toast({ message: 'Error al eliminar', type: 'error' }) }
+    finally { setSaving(false) }
+  }
+
   return (
     <div className="rounded-2xl border overflow-hidden"
       style={{ backgroundColor: '#111114', borderColor: '#ffffff14' }}>
@@ -190,9 +207,9 @@ function OrderCard({ order, onReload }) {
       {open && (
         <div className="border-t px-4 py-4 space-y-4" style={{ borderColor: '#ffffff14' }}>
 
-          {/* Progreso de etapas */}
+          {/* Progreso de etapas — clickear círculo cambia la etapa */}
           {!['CANCELADO'].includes(estado) && (
-            <StepTracker estado={estado} esRetiro={esRetiro} />
+            <StepTracker estado={estado} esRetiro={esRetiro} onStep={doNext} saving={saving} />
           )}
 
           {/* Productos con imagen */}
@@ -300,37 +317,48 @@ function OrderCard({ order, onReload }) {
             <p className="text-center text-sm text-red-400 py-2">✖ Pedido cancelado</p>
           )}
 
-          {/* Override manual */}
-          {!['ENTREGADO', 'CANCELADO'].includes(estado) && (
-            <div className="pt-2 border-t" style={{ borderColor: '#ffffff0a' }}>
-              <button onClick={() => setShowOver(v => !v)}
-                className="text-xs text-[#8e8e9a]/60 hover:text-[#8e8e9a] transition-colors">
-                {showOver ? '▲' : '▼'} Corrección manual de estado
-              </button>
-              {showOver && (
-                <div className="flex gap-2 mt-2">
-                  <select
-                    value={override || estado}
-                    onChange={e => setOverride(e.target.value)}
-                    className="flex-1 h-9 px-2 rounded-xl text-sm text-[#e8e8ed] focus:outline-none"
-                    style={{ backgroundColor: '#ffffff08', border: '1px solid #ffffff15' }}
-                  >
-                    {FILTERS.filter(f => f !== 'Todos').map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={doOverride}
-                    disabled={saving || !override || override === estado}
-                    className="px-4 rounded-xl text-sm font-medium transition-all disabled:opacity-40"
-                    style={{ backgroundColor: '#ffffff10', color: '#e8e8ed' }}
-                  >
-                    {saving ? '…' : 'Aplicar'}
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+          {/* Override manual + Eliminar */}
+          <div className="pt-2 border-t flex items-start justify-between gap-4" style={{ borderColor: '#ffffff0a' }}>
+            {!['ENTREGADO', 'CANCELADO'].includes(estado) ? (
+              <div className="flex-1">
+                <button onClick={() => setShowOver(v => !v)}
+                  className="text-xs text-[#8e8e9a]/60 hover:text-[#8e8e9a] transition-colors">
+                  {showOver ? '▲' : '▼'} Corrección manual de estado
+                </button>
+                {showOver && (
+                  <div className="flex gap-2 mt-2">
+                    <select
+                      value={override || estado}
+                      onChange={e => setOverride(e.target.value)}
+                      className="flex-1 h-9 px-2 rounded-xl text-sm text-[#e8e8ed] focus:outline-none"
+                      style={{ backgroundColor: '#ffffff08', border: '1px solid #ffffff15' }}
+                    >
+                      {FILTERS.filter(f => f !== 'Todos').map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={doOverride}
+                      disabled={saving || !override || override === estado}
+                      className="px-4 rounded-xl text-sm font-medium transition-all disabled:opacity-40"
+                      style={{ backgroundColor: '#ffffff10', color: '#e8e8ed' }}
+                    >
+                      {saving ? '…' : 'Aplicar'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : <div className="flex-1" />}
+
+            <button
+              onClick={doDelete}
+              disabled={saving}
+              className="text-xs px-3 py-1.5 rounded-lg transition-all disabled:opacity-40 shrink-0"
+              style={{ backgroundColor: '#f8717115', color: '#f87171', border: '1px solid #f8717125' }}
+            >
+              🗑 Eliminar pedido
+            </button>
+          </div>
         </div>
       )}
     </div>
