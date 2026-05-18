@@ -399,8 +399,12 @@ public class PayPalPaymentProvider implements PaymentProvider {
         HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() >= 400) {
-            log.error("PayPal API error {}: {}", response.statusCode(), response.body());
-            throw new RuntimeException("Error PayPal (" + response.statusCode() + "): " + response.body());
+            String responseBody = response.body();
+            if (responseBody.contains("ORDER_NOT_APPROVED")) {
+                throw new IllegalStateException("ORDER_NOT_APPROVED");
+            }
+            log.error("PayPal API error {}: {}", response.statusCode(), responseBody);
+            throw new RuntimeException("Error PayPal (" + response.statusCode() + "): " + responseBody);
         }
 
         return objectMapper.readValue(response.body(), Map.class);

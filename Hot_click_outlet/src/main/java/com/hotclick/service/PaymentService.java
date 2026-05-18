@@ -284,6 +284,8 @@ public class PaymentService {
 
         try {
             payPalProvider.capturar(paypalOrderId, pago);
+        } catch (IllegalStateException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException("Error capturando pago PayPal: " + e.getMessage(), e);
         }

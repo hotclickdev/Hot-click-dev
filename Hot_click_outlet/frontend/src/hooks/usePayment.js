@@ -51,8 +51,12 @@ export function usePayment() {
         err.response?.data?.message ||
         err.response?.data ||
         'Error al capturar el pago con PayPal.'
-      setError(msg)
-      setEstado('failed')
+      if (typeof msg === 'string' && msg.includes('ORDER_NOT_APPROVED')) {
+        setEstado('cancelled')
+      } else {
+        setError(typeof msg === 'string' ? msg : 'Error al capturar el pago con PayPal.')
+        setEstado('failed')
+      }
     }
   }, [])
 
