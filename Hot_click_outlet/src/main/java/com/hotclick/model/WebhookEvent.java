@@ -1,6 +1,8 @@
 package com.hotclick.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 
 @Entity
@@ -24,6 +26,7 @@ public class WebhookEvent extends BaseEntity {
     @Column(name = "evento_tipo", nullable = false, length = 50)
     private String eventoTipo;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "payload_raw", columnDefinition = "jsonb", nullable = false)
     private String payloadRaw;
 

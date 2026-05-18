@@ -1,6 +1,8 @@
 package com.hotclick.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 
 @Entity
@@ -33,6 +35,7 @@ public class TransaccionPago extends BaseEntity {
     @Column(name = "monto_operacion", nullable = false)
     private Integer montoOperacion;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "payload_respuesta", columnDefinition = "jsonb")
     private String payloadRespuesta;
 
