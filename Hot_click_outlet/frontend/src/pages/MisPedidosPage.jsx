@@ -8,7 +8,7 @@ import Spinner from '@/components/ui/Spinner'
 import useAuthStore from '@/store/authStore'
 import { orderService } from '@/services/orderService'
 
-const ESTADOS = [
+const ESTADOS_ENVIO = [
   { key: 'PENDIENTE',      label: 'Pendiente',       icon: '🕐' },
   { key: 'PAGADO',         label: 'Pago confirmado',  icon: '✅' },
   { key: 'EN_PREPARACION', label: 'En preparación',   icon: '📦' },
@@ -16,11 +16,21 @@ const ESTADOS = [
   { key: 'ENTREGADO',      label: 'Entregado',         icon: '🏠' },
 ]
 
-const ESTADO_INDEX = Object.fromEntries(ESTADOS.map((e, i) => [e.key, i]))
+const ESTADOS_RETIRO = [
+  { key: 'PENDIENTE',      label: 'Pendiente',       icon: '🕐' },
+  { key: 'PAGADO',         label: 'Pago confirmado',  icon: '✅' },
+  { key: 'EN_PREPARACION', label: 'En preparación',   icon: '📦' },
+  { key: 'LISTO_RETIRO',   label: 'Listo p/ retirar', icon: '🏪' },
+  { key: 'ENTREGADO',      label: 'Retirado',          icon: '🏠' },
+]
+
+// For icon lookup — all possible states
+const TODOS_ESTADOS = [...ESTADOS_ENVIO, { key: 'LISTO_RETIRO', label: 'Listo p/ retirar', icon: '🏪' }]
 
 function estadoColor(e) {
   if (e === 'ENTREGADO')      return { bg: 'rgba(5,150,105,0.12)', text: '#059669', border: 'rgba(5,150,105,0.25)' }
   if (e === 'ENVIADO')        return { bg: 'rgba(79,124,255,0.1)', text: '#4f7cff', border: 'rgba(79,124,255,0.25)' }
+  if (e === 'LISTO_RETIRO')   return { bg: 'rgba(5,150,105,0.1)',  text: '#059669', border: 'rgba(5,150,105,0.25)' }
   if (e === 'EN_PREPARACION') return { bg: 'rgba(217,119,6,0.1)',  text: '#d97706', border: 'rgba(217,119,6,0.25)' }
   if (e === 'PAGADO')         return { bg: 'rgba(79,124,255,0.08)', text: '#4f7cff', border: 'rgba(79,124,255,0.2)' }
   if (e === 'CANCELADO')      return { bg: 'rgba(220,38,38,0.08)', text: '#dc2626', border: 'rgba(220,38,38,0.2)' }
@@ -36,14 +46,15 @@ function formatDate(d) {
   return new Date(d).toLocaleDateString('es-CR', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-function Timeline({ estadoActual }) {
-  const idx = ESTADO_INDEX[estadoActual] ?? 0
-  const estados = ESTADOS.filter(e => e.key !== 'CANCELADO')
+function Timeline({ estadoActual, esRetiro }) {
+  const estados = esRetiro ? ESTADOS_RETIRO : ESTADOS_ENVIO
+  const idx = estados.findIndex(e => e.key === estadoActual)
+  const idxSafe = idx === -1 ? 0 : idx
   return (
     <div className="flex items-center gap-0 mt-4 mb-2 overflow-x-auto pb-1">
       {estados.map((e, i) => {
-        const done    = i <= idx
-        const current = i === idx
+        const done    = i <= idxSafe
+        const current = i === idxSafe
         return (
           <div key={e.key} className="flex items-center flex-1 min-w-0">
             <div className="flex flex-col items-center gap-1 flex-shrink-0">
@@ -122,7 +133,7 @@ function OrderCard({ order }) {
         style={{ backgroundColor: open ? 'var(--hc-surface-2)' : 'transparent' }}
       >
         <div className="flex items-center gap-3 min-w-0">
-          <div className="text-xl">{ESTADOS.find(e => e.key === estado)?.icon ?? '📋'}</div>
+          <div className="text-xl">{TODOS_ESTADOS.find(e => e.key === estado)?.icon ?? '📋'}</div>
           <div className="min-w-0">
             <p className="text-sm font-semibold truncate" style={{ color: 'var(--hc-text)' }}>
               {order.numeroPedido ?? `Pedido #${order.id}`}
@@ -138,7 +149,7 @@ function OrderCard({ order }) {
           </span>
           <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full"
             style={{ backgroundColor: colors.bg, color: colors.text, border: `1px solid ${colors.border}` }}>
-            {ESTADOS.find(e => e.key === estado)?.label ?? estado}
+            {TODOS_ESTADOS.find(e => e.key === estado)?.label ?? estado}
           </span>
           <svg className="w-4 h-4 transition-transform shrink-0" style={{ color: 'var(--hc-muted)', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
             fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -159,7 +170,9 @@ function OrderCard({ order }) {
           >
             <div className="px-5 pb-5 space-y-4" style={{ borderTop: '1px solid var(--hc-border)' }}>
               {/* Timeline */}
-              {estado !== 'CANCELADO' && <Timeline estadoActual={estado} />}
+              {estado !== 'CANCELADO' && (
+                <Timeline estadoActual={estado} esRetiro={order.metodoEnvio === 'RETIRO_EN_TIENDA'} />
+              )}
 
               {/* Items */}
               {items.length > 0 && (
