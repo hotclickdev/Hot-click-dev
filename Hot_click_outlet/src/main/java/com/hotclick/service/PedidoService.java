@@ -116,8 +116,9 @@ public class PedidoService {
             m.put("clienteTel",    p.getUsuarioFinal() != null ? p.getUsuarioFinal().getTelefono(): "");
             List<Map<String, Object>> items = p.getItems().stream().map(i -> {
                 Map<String, Object> im = new LinkedHashMap<>();
-                im.put("productoId",      i.getProducto() != null ? i.getProducto().getId()              : null);
-                im.put("nombreProducto",  i.getProducto() != null ? i.getProducto().getNombreProducto()  : "—");
+                im.put("productoId",      i.getProducto() != null ? i.getProducto().getId()                        : null);
+                im.put("nombreProducto",  i.getProducto() != null ? i.getProducto().getNombreProducto()              : "—");
+                im.put("imagenUrl",       i.getProducto() != null ? i.getProducto().getImagenPrincipalUrl()          : null);
                 im.put("categoriaId",     i.getProducto() != null && i.getProducto().getCategoria() != null ? i.getProducto().getCategoria().getId()              : null);
                 im.put("categoriaNombre", i.getProducto() != null && i.getProducto().getCategoria() != null ? i.getProducto().getCategoria().getNombreCategoria() : "—");
                 im.put("cantidad",        i.getCantidad());

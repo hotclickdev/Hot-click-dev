@@ -1,388 +1,339 @@
 import { useState, useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
 import AdminLayout from '@/layouts/AdminLayout'
-import Badge from '@/components/ui/Badge'
-import Modal from '@/components/ui/Modal'
 import Spinner from '@/components/ui/Spinner'
 import { orderService } from '@/services/orderService'
 import { useToast } from '@/components/ui/Toast'
-import { formatDate, formatPrice, statusColor } from '@/utils/format'
+import { formatDate, formatPrice } from '@/utils/format'
 
-const STATUS_OPTIONS = ['PENDIENTE', 'PAGADO', 'EN_PREPARACION', 'LISTO_RETIRO', 'ENVIADO', 'ENTREGADO', 'CANCELADO']
+const FILTERS = ['Todos', 'PENDIENTE', 'PAGADO', 'EN_PREPARACION', 'LISTO_RETIRO', 'ENVIADO', 'ENTREGADO', 'CANCELADO']
 
-// Flujos según método de envío
-const ETAPAS_RETIRO = [
-  { key: 'PENDIENTE',      label: 'Pendiente' },
-  { key: 'PAGADO',         label: 'Pagado' },
-  { key: 'EN_PREPARACION', label: 'En preparación' },
-  { key: 'LISTO_RETIRO',   label: 'Listo para retirar' },
-  { key: 'ENTREGADO',      label: 'Entregado' },
-]
-const ETAPAS_ENVIO = [
-  { key: 'PENDIENTE',      label: 'Pendiente' },
-  { key: 'PAGADO',         label: 'Pagado' },
-  { key: 'EN_PREPARACION', label: 'En preparación' },
-  { key: 'ENVIADO',        label: 'Enviado' },
-  { key: 'ENTREGADO',      label: 'Entregado' },
-]
+const ESTADO_STYLE = {
+  PENDIENTE:      { bg: '#2a2a18', text: '#d4b106', border: '#d4b10630' },
+  PAGADO:         { bg: '#0f1f3d', text: '#4f7cff', border: '#4f7cff30' },
+  EN_PREPARACION: { bg: '#1e1400', text: '#f59e0b', border: '#f59e0b30' },
+  LISTO_RETIRO:   { bg: '#0a1f14', text: '#22c55e', border: '#22c55e30' },
+  ENVIADO:        { bg: '#0d1a30', text: '#60a5fa', border: '#60a5fa30' },
+  ENTREGADO:      { bg: '#0a1f14', text: '#4ade80', border: '#4ade8030' },
+  CANCELADO:      { bg: '#1f0a0a', text: '#f87171', border: '#f8717130' },
+}
+
+function estadoBadge(e) {
+  const s = ESTADO_STYLE[e] ?? { bg: '#1a1a1a', text: '#8e8e9a', border: '#8e8e9a20' }
+  return (
+    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+      style={{ backgroundColor: s.bg, color: s.text, border: `1px solid ${s.border}` }}>
+      {e}
+    </span>
+  )
+}
 
 function getNextStep(estado, esRetiro) {
-  if (estado === 'PAGADO')         return { type: 'btn',  next: 'EN_PREPARACION', label: '⚙️ Marcar en preparación' }
-  if (estado === 'EN_PREPARACION') {
-    if (esRetiro) return { type: 'btn', next: 'LISTO_RETIRO', label: '✅ Listo para retirar' }
-    return { type: 'envio' }
-  }
-  if (estado === 'LISTO_RETIRO')   return { type: 'btn',  next: 'ENTREGADO', label: '🏁 Marcar como entregado' }
-  if (estado === 'ENVIADO')        return { type: 'btn',  next: 'ENTREGADO', label: '🏁 Marcar como entregado' }
+  if (estado === 'PAGADO')         return { type: 'btn', next: 'EN_PREPARACION', label: 'Marcar en preparación' }
+  if (estado === 'EN_PREPARACION') return esRetiro
+    ? { type: 'btn', next: 'LISTO_RETIRO', label: 'Listo para retirar' }
+    : { type: 'envio' }
+  if (estado === 'LISTO_RETIRO')   return { type: 'btn', next: 'ENTREGADO', label: 'Marcar entregado' }
+  if (estado === 'ENVIADO')        return { type: 'btn', next: 'ENTREGADO', label: 'Marcar entregado' }
   return null
 }
 
-export default function AdminOrders() {
-  const { t } = useTranslation()
+function OrderCard({ order, onReload }) {
   const toast = useToast()
-  const [orders, setOrders]       = useState([])
-  const [loading, setLoading]     = useState(true)
-  const [selected, setSelected]   = useState(null)
-  const [filter, setFilter]       = useState('ALL')
+  const [open, setOpen]           = useState(false)
   const [saving, setSaving]       = useState(false)
-  const [guia, setGuia]           = useState('')
-  const [costoEnvio, setCostoEnvio] = useState('')
-  const [savingEnvio, setSavingEnvio] = useState(false)
-  // override manual
-  const [showOverride, setShowOverride] = useState(false)
-  const [overrideStatus, setOverrideStatus] = useState('')
+  const [guia, setGuia]           = useState(order.numeroGuia ?? '')
+  const [costo, setCosto]         = useState('')
+  const [override, setOverride]   = useState('')
+  const [showOver, setShowOver]   = useState(false)
+
+  const estado   = order.estado ?? 'PENDIENTE'
+  const esRetiro = order.metodoEnvio !== 'ENVIO_A_DOMICILIO'
+  const next     = getNextStep(estado, esRetiro)
+  const items    = order.items ?? []
+
+  const doNext = async (nextEstado) => {
+    setSaving(true)
+    try {
+      await orderService.updateStatus(order.id, nextEstado)
+      toast({ message: 'Estado actualizado', type: 'success' })
+      onReload()
+    } catch { toast({ message: 'Error al actualizar', type: 'error' }) }
+    finally { setSaving(false) }
+  }
+
+  const doEnvio = async () => {
+    if (!guia.trim()) return
+    setSaving(true)
+    try {
+      const costoNum = costo ? parseInt(costo, 10) : null
+      await orderService.procesarEnvio(order.id, guia.trim(), costoNum)
+      toast({ message: 'Enviado — cliente notificado', type: 'success' })
+      onReload()
+    } catch { toast({ message: 'Error al procesar envío', type: 'error' }) }
+    finally { setSaving(false) }
+  }
+
+  const doOverride = async () => {
+    if (!override || override === estado) return
+    setSaving(true)
+    try {
+      await orderService.updateStatus(order.id, override)
+      toast({ message: 'Estado corregido', type: 'success' })
+      onReload()
+    } catch { toast({ message: 'Error', type: 'error' }) }
+    finally { setSaving(false) }
+  }
+
+  return (
+    <div className="rounded-2xl border overflow-hidden"
+      style={{ backgroundColor: '#111114', borderColor: '#ffffff14' }}>
+
+      {/* Fila resumen — siempre visible */}
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex flex-wrap items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-white/3"
+      >
+        {/* Número + fecha */}
+        <div className="min-w-[110px]">
+          <p className="text-xs font-mono text-[#8e8e9a]">#{order.id}</p>
+          <p className="text-[11px] text-[#8e8e9a]/60 mt-0.5">
+            {order.fechaCreacion ? formatDate(order.fechaCreacion) : '—'}
+          </p>
+        </div>
+
+        {/* Cliente */}
+        <div className="flex-1 min-w-[120px]">
+          <p className="text-sm font-medium text-[#e8e8ed] truncate">
+            {order.nombreCliente ?? '—'}
+          </p>
+          <p className="text-[11px] text-[#8e8e9a] truncate">{order.clienteCorreo ?? ''}</p>
+        </div>
+
+        {/* Tipo entrega */}
+        <span className="text-xs text-[#8e8e9a]">
+          {esRetiro ? '🏪 Retiro' : '🚚 Domicilio'}
+        </span>
+
+        {/* Total */}
+        <span className="text-sm font-bold text-[#e8e8ed] min-w-[80px] text-right">
+          {formatPrice(order.total ?? 0)}
+        </span>
+
+        {/* Estado */}
+        {estadoBadge(estado)}
+
+        {/* Chevron */}
+        <svg className="w-4 h-4 shrink-0 transition-transform"
+          style={{ color: '#8e8e9a', transform: open ? 'rotate(180deg)' : 'rotate(0)' }}
+          fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {/* Detalle expandible */}
+      {open && (
+        <div className="border-t px-4 py-4 space-y-4" style={{ borderColor: '#ffffff14' }}>
+
+          {/* Productos con imagen */}
+          {items.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-[#8e8e9a] mb-2">Productos</p>
+              <div className="space-y-2">
+                {items.map((item, i) => (
+                  <div key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+                    style={{ backgroundColor: '#ffffff08' }}>
+                    {/* Imagen */}
+                    <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0"
+                      style={{ backgroundColor: '#ffffff0a', border: '1px solid #ffffff12' }}>
+                      {item.imagenUrl
+                        ? <img src={item.imagenUrl} alt={item.nombreProducto}
+                            className="w-full h-full object-cover" />
+                        : <div className="w-full h-full flex items-center justify-center text-lg">📦</div>
+                      }
+                    </div>
+                    {/* Nombre + cantidad */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-[#e8e8ed] truncate">{item.nombreProducto ?? '—'}</p>
+                      <p className="text-xs text-[#8e8e9a]">×{item.cantidad} · {formatPrice(item.precioUnitario ?? 0)} c/u</p>
+                    </div>
+                    {/* Subtotal */}
+                    <span className="text-sm font-medium text-[#e8e8ed] shrink-0">
+                      {formatPrice((item.precioUnitario ?? 0) * item.cantidad)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Contacto + notas */}
+          <div className="flex flex-wrap gap-4 text-xs text-[#8e8e9a]">
+            {order.clienteTel  && <span>📱 {order.clienteTel}</span>}
+            {order.costoEnvio > 0 && <span>Envío: {formatPrice(order.costoEnvio)}</span>}
+            {order.notas       && <span>💬 {order.notas}</span>}
+          </div>
+
+          {/* Guía existente */}
+          {order.numeroGuia && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs"
+              style={{ backgroundColor: '#0a1f1410', border: '1px solid #22c55e25' }}>
+              <span className="text-green-400">Guía:</span>
+              <a href={`https://rastreo.correos.go.cr/?codigo=${order.numeroGuia}`}
+                target="_blank" rel="noopener noreferrer"
+                className="font-mono font-bold text-green-300 hover:underline flex-1">
+                {order.numeroGuia}
+              </a>
+            </div>
+          )}
+
+          {/* Acción principal */}
+          {next?.type === 'btn' && (
+            <button
+              onClick={() => doNext(next.next)}
+              disabled={saving}
+              className="w-full py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50"
+              style={{ backgroundColor: '#4f7cff', color: '#fff' }}
+            >
+              {saving ? 'Guardando…' : `✓ ${next.label}`}
+            </button>
+          )}
+
+          {next?.type === 'envio' && (
+            <div className="space-y-3 rounded-xl p-4" style={{ backgroundColor: '#ffffff05', border: '1px solid #ffffff10' }}>
+              <p className="text-sm font-semibold text-[#e8e8ed]">Procesar envío a domicilio</p>
+              <input
+                type="text"
+                value={guia}
+                onChange={e => setGuia(e.target.value)}
+                placeholder="Número de guía Correos CR"
+                className="w-full h-10 px-3 rounded-xl text-sm text-[#e8e8ed] placeholder:text-[#8e8e9a]/50 focus:outline-none font-mono"
+                style={{ backgroundColor: '#ffffff08', border: '1px solid #ffffff15' }}
+              />
+              <div className="flex gap-2 items-center">
+                <span className="text-[#8e8e9a] text-sm">₡</span>
+                <input
+                  type="number"
+                  value={costo}
+                  onChange={e => setCosto(e.target.value)}
+                  placeholder="Costo envío (4000–20000)"
+                  min={4000} max={20000} step={500}
+                  className="flex-1 h-10 px-3 rounded-xl text-sm text-[#e8e8ed] placeholder:text-[#8e8e9a]/50 focus:outline-none"
+                  style={{ backgroundColor: '#ffffff08', border: '1px solid #ffffff15' }}
+                />
+              </div>
+              <button
+                onClick={doEnvio}
+                disabled={saving || !guia.trim()}
+                className="w-full py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50"
+                style={{ backgroundColor: '#16a34a', color: '#fff' }}
+              >
+                {saving ? 'Procesando…' : '📦 Enviar y notificar al cliente'}
+              </button>
+            </div>
+          )}
+
+          {estado === 'ENTREGADO' && (
+            <p className="text-center text-sm text-green-400 py-2">✅ Pedido entregado</p>
+          )}
+          {estado === 'CANCELADO' && (
+            <p className="text-center text-sm text-red-400 py-2">✖ Pedido cancelado</p>
+          )}
+
+          {/* Override manual */}
+          {!['ENTREGADO', 'CANCELADO'].includes(estado) && (
+            <div className="pt-2 border-t" style={{ borderColor: '#ffffff0a' }}>
+              <button onClick={() => setShowOver(v => !v)}
+                className="text-xs text-[#8e8e9a]/60 hover:text-[#8e8e9a] transition-colors">
+                {showOver ? '▲' : '▼'} Corrección manual de estado
+              </button>
+              {showOver && (
+                <div className="flex gap-2 mt-2">
+                  <select
+                    value={override || estado}
+                    onChange={e => setOverride(e.target.value)}
+                    className="flex-1 h-9 px-2 rounded-xl text-sm text-[#e8e8ed] focus:outline-none"
+                    style={{ backgroundColor: '#ffffff08', border: '1px solid #ffffff15' }}
+                  >
+                    {FILTERS.filter(f => f !== 'Todos').map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={doOverride}
+                    disabled={saving || !override || override === estado}
+                    className="px-4 rounded-xl text-sm font-medium transition-all disabled:opacity-40"
+                    style={{ backgroundColor: '#ffffff10', color: '#e8e8ed' }}
+                  >
+                    {saving ? '…' : 'Aplicar'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function AdminOrders() {
+  const [orders, setOrders]   = useState([])
+  const [loading, setLoading] = useState(true)
+  const [filter, setFilter]   = useState('Todos')
 
   const load = async () => {
     setLoading(true)
     try {
       const { data } = await orderService.getAll()
-      setOrders(Array.isArray(data) ? data : data.content ?? [])
+      const raw = data?.data ?? data
+      setOrders(Array.isArray(raw) ? raw : raw?.content ?? [])
     } finally { setLoading(false) }
   }
 
   useEffect(() => { load() }, [])
 
-  const openOrder = (order) => {
-    setSelected(order)
-    setGuia(order.numeroGuia ?? '')
-    setCostoEnvio('')
-    setShowOverride(false)
-    setOverrideStatus(order.estado ?? '')
-  }
-
-  const handleNextStatus = async (next) => {
-    if (!selected || !next) return
-    setSaving(true)
-    try {
-      await orderService.updateStatus(selected.id, next)
-      toast({ message: 'Estado actualizado', type: 'success' })
-      setSelected(null)
-      load()
-    } catch { toast({ message: 'Error al actualizar estado', type: 'error' }) }
-    finally { setSaving(false) }
-  }
-
-  const handleEnvio = async () => {
-    if (!selected || !guia.trim()) return
-    setSavingEnvio(true)
-    try {
-      const costo = costoEnvio ? parseInt(costoEnvio, 10) : null
-      await orderService.procesarEnvio(selected.id, guia.trim(), costo)
-      toast({ message: '📦 Enviado — cliente notificado por email', type: 'success' })
-      setSelected(null)
-      load()
-    } catch { toast({ message: 'Error al procesar envío', type: 'error' }) }
-    finally { setSavingEnvio(false) }
-  }
-
-  const handleOverride = async () => {
-    if (!selected || !overrideStatus) return
-    setSaving(true)
-    try {
-      await orderService.updateStatus(selected.id, overrideStatus)
-      toast({ message: 'Estado actualizado manualmente', type: 'success' })
-      setSelected(null)
-      load()
-    } catch { toast({ message: 'Error al actualizar', type: 'error' }) }
-    finally { setSaving(false) }
-  }
-
-  const filtered = filter === 'ALL' ? orders : orders.filter((o) => o.estado === filter)
-
-  // Datos del modal
-  const estadoActual = selected?.estado ?? ''
-  const esRetiro     = selected?.metodoEnvio !== 'ENVIO_A_DOMICILIO'
-  const etapas       = esRetiro ? ETAPAS_RETIRO : ETAPAS_ENVIO
-  const nextStep     = selected ? getNextStep(estadoActual, esRetiro) : null
-  const idxActual    = etapas.findIndex(e => e.key === estadoActual)
+  const filtered = filter === 'Todos'
+    ? orders
+    : orders.filter(o => o.estado === filter)
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.orders.title')}</h1>
-            <p className="text-sm text-[#8e8e9a] mt-1">{orders.length} {t('admin.orders.title').toLowerCase()}</p>
-          </div>
+      <div className="space-y-5 max-w-3xl">
+        <div>
+          <h1 className="text-xl font-bold text-[#e8e8ed]">Pedidos</h1>
+          <p className="text-sm text-[#8e8e9a] mt-0.5">{orders.length} pedidos en total</p>
         </div>
 
-        {/* Filter tabs */}
-        <div className="flex flex-wrap gap-1 bg-white/3 border border-white/8 rounded-xl p-1 w-fit">
-          {['ALL', ...STATUS_OPTIONS].map((s) => (
+        {/* Filtros */}
+        <div className="flex flex-wrap gap-1.5">
+          {FILTERS.map(f => (
             <button
-              key={s}
-              onClick={() => setFilter(s)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                filter === s ? 'bg-[#4f7cff] text-white shadow-sm' : 'text-[#8e8e9a] hover:text-white'
-              }`}
+              key={f}
+              onClick={() => setFilter(f)}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+              style={{
+                backgroundColor: filter === f ? '#4f7cff' : '#ffffff0a',
+                color: filter === f ? '#fff' : '#8e8e9a',
+                border: `1px solid ${filter === f ? '#4f7cff50' : '#ffffff10'}`,
+              }}
             >
-              {s === 'ALL' ? 'Todos' : s}
+              {f}
             </button>
           ))}
         </div>
 
         {loading ? (
           <div className="flex justify-center py-16"><Spinner size="lg" /></div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-12 text-[#8e8e9a] text-sm">No hay pedidos</div>
         ) : (
-          <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-white/8">
-                    {['#', 'Cliente', 'Total', 'Envío', 'Estado', 'Fecha', ''].map((h) => (
-                      <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {filtered.map((order) => (
-                    <tr key={order.id} className="hover:bg-white/3 transition-colors">
-                      <td className="px-4 py-3 text-[#8e8e9a] text-xs font-mono">#{order.id}</td>
-                      <td className="px-4 py-3 text-[#e8e8ed]">
-                        {order.nombreCliente ?? order.usuario?.nombre ?? '—'}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-[#e8e8ed]">{formatPrice(order.total ?? 0)}</td>
-                      <td className="px-4 py-3 text-xs text-[#8e8e9a]">
-                        {order.metodoEnvio === 'ENVIO_A_DOMICILIO' ? '🚚 Domicilio' : '🏪 Retiro'}
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge variant={statusColor(order.estado)}>{order.estado}</Badge>
-                      </td>
-                      <td className="px-4 py-3 text-[#8e8e9a] text-xs">
-                        {order.fechaCreacion ? formatDate(order.fechaCreacion) : '—'}
-                      </td>
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => openOrder(order)}
-                          className="px-3 py-1 text-xs rounded-lg bg-white/5 hover:bg-white/10 text-[#8e8e9a] hover:text-white transition-colors"
-                        >
-                          Gestionar
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {filtered.length === 0 && (
-                <div className="text-center py-12 text-[#8e8e9a]">{t('common.noData')}</div>
-              )}
-            </div>
+          <div className="space-y-2">
+            {filtered.map(order => (
+              <OrderCard key={order.id} order={order} onReload={load} />
+            ))}
           </div>
         )}
       </div>
-
-      {/* Order detail modal */}
-      <Modal open={!!selected} onClose={() => setSelected(null)} title={`Pedido ${selected?.numeroPedido ?? '#' + selected?.id}`} size="md">
-        {selected && (
-          <div className="space-y-5">
-            {/* Info básica */}
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <p className="text-[#8e8e9a] text-xs mb-1">Cliente</p>
-                <p className="text-[#e8e8ed]">{selected.nombreCliente ?? '—'}</p>
-                {selected.clienteCorreo && <p className="text-[#8e8e9a] text-xs">{selected.clienteCorreo}</p>}
-                {selected.clienteTel  && <p className="text-[#8e8e9a] text-xs">{selected.clienteTel}</p>}
-              </div>
-              <div>
-                <p className="text-[#8e8e9a] text-xs mb-1">Total pagado</p>
-                <p className="text-[#e8e8ed] font-bold text-lg">{formatPrice(selected.total ?? 0)}</p>
-                {selected.costoEnvio > 0 && (
-                  <p className="text-[#8e8e9a] text-xs">Envío: {formatPrice(selected.costoEnvio)}</p>
-                )}
-              </div>
-              {selected.notas && (
-                <div className="col-span-2">
-                  <p className="text-[#8e8e9a] text-xs mb-1">Notas</p>
-                  <p className="text-[#e8e8ed] text-sm bg-white/3 px-3 py-2 rounded-lg">{selected.notas}</p>
-                </div>
-              )}
-            </div>
-
-            {/* Items */}
-            {selected.items?.length > 0 && (
-              <div>
-                <p className="text-xs font-medium text-[#8e8e9a] mb-2">Productos</p>
-                <div className="space-y-1.5">
-                  {selected.items.map((item, i) => (
-                    <div key={i} className="flex justify-between text-sm text-[#e8e8ed] bg-white/3 px-3 py-2 rounded-lg">
-                      <span>{item.nombreProducto ?? item.producto?.nombre ?? '—'} ×{item.cantidad}</span>
-                      <span>{formatPrice((item.precioUnitario ?? 0) * item.cantidad)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Seguimiento de etapas */}
-            <div className="border-t border-white/8 pt-4 space-y-4">
-              {/* Tipo de envío + progreso */}
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-base">{esRetiro ? '🏪' : '🚚'}</span>
-                  <span className="text-sm font-medium text-[#e8e8ed]">
-                    {esRetiro ? 'Retiro en tienda' : 'Envío a domicilio'}
-                  </span>
-                  <Badge variant={statusColor(estadoActual)} className="ml-auto">{estadoActual}</Badge>
-                </div>
-
-                {/* Barra de progreso */}
-                <div className="flex items-center gap-1 overflow-x-auto pb-1">
-                  {etapas.map((e, i) => {
-                    const done    = i < idxActual
-                    const current = e.key === estadoActual
-                    return (
-                      <div key={e.key} className="flex items-center gap-1 shrink-0">
-                        <span className={`text-xs px-2 py-1 rounded-full font-medium transition-colors ${
-                          current ? 'bg-[#4f7cff] text-white' :
-                          done    ? 'bg-green-500/15 text-green-400' :
-                                    'text-[#8e8e9a]/40'
-                        }`}>{e.label}</span>
-                        {i < etapas.length - 1 && (
-                          <span className={`text-xs ${done || current ? 'text-[#8e8e9a]' : 'text-[#8e8e9a]/25'}`}>›</span>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Guía existente */}
-              {selected.numeroGuia && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-green-500/10 border border-green-500/20">
-                  <span className="text-xs text-green-400">Guía:</span>
-                  <a href={`https://rastreo.correos.go.cr/?codigo=${selected.numeroGuia}`}
-                    target="_blank" rel="noopener noreferrer"
-                    className="text-xs font-mono font-bold text-green-300 hover:underline flex-1">
-                    {selected.numeroGuia}
-                  </a>
-                  <span className="text-xs text-[#8e8e9a]">↗ rastrear</span>
-                </div>
-              )}
-
-              {/* Botón siguiente paso (simple) */}
-              {nextStep?.type === 'btn' && (
-                <button
-                  onClick={() => handleNextStatus(nextStep.next)}
-                  disabled={saving}
-                  className="w-full py-3 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-semibold text-sm transition-all disabled:opacity-50"
-                >
-                  {saving ? 'Guardando…' : nextStep.label}
-                </button>
-              )}
-
-              {/* Formulario envío a domicilio */}
-              {nextStep?.type === 'envio' && (
-                <div className="space-y-3 p-4 rounded-xl bg-white/3 border border-white/8">
-                  <p className="text-sm font-semibold text-[#e8e8ed]">📦 Procesar envío a domicilio</p>
-
-                  <div>
-                    <label className="text-xs text-[#8e8e9a] mb-1.5 block">Número de guía Correos CR *</label>
-                    <input
-                      type="text"
-                      value={guia}
-                      onChange={(e) => setGuia(e.target.value)}
-                      placeholder="Ej: CR123456789CR"
-                      className="w-full h-10 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm placeholder:text-[#8e8e9a]/50 focus:outline-none focus:border-[#4f7cff]/60 font-mono"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs text-[#8e8e9a] mb-1.5 block">
-                      Costo de envío real (₡4,000 – ₡20,000)
-                      <span className="ml-1 opacity-60">— varía según zona</span>
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8e8e9a] text-sm">₡</span>
-                      <input
-                        type="number"
-                        value={costoEnvio}
-                        onChange={(e) => setCostoEnvio(e.target.value)}
-                        placeholder="Ej: 6000"
-                        min={4000} max={20000} step={500}
-                        className="w-full h-10 pl-7 pr-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm placeholder:text-[#8e8e9a]/50 focus:outline-none focus:border-[#4f7cff]/60"
-                      />
-                    </div>
-                    <div className="flex justify-between text-[10px] text-[#8e8e9a]/60 mt-1 px-1">
-                      <span>Zona cercana ~₡4,000</span>
-                      <span>Zona lejana ~₡20,000</span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={handleEnvio}
-                    disabled={savingEnvio || !guia.trim()}
-                    className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm transition-all disabled:opacity-50"
-                  >
-                    {savingEnvio ? 'Procesando…' : '📦 Marcar como enviado y notificar al cliente'}
-                  </button>
-                </div>
-              )}
-
-              {/* Finalizado */}
-              {estadoActual === 'ENTREGADO' && (
-                <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm font-medium">
-                  ✅ Pedido entregado — completado
-                </div>
-              )}
-              {estadoActual === 'CANCELADO' && (
-                <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium">
-                  ✖ Pedido cancelado
-                </div>
-              )}
-
-              {/* Override manual (colapsable) */}
-              {!['ENTREGADO', 'CANCELADO'].includes(estadoActual) && (
-                <div className="border-t border-white/8 pt-3">
-                  <button
-                    onClick={() => setShowOverride(v => !v)}
-                    className="text-xs text-[#8e8e9a] hover:text-[#e8e8ed] transition-colors"
-                  >
-                    {showOverride ? '▲' : '▼'} Cambio manual de estado
-                  </button>
-                  {showOverride && (
-                    <div className="flex gap-2 mt-2">
-                      <select
-                        value={overrideStatus}
-                        onChange={(e) => setOverrideStatus(e.target.value)}
-                        className="flex-1 h-9 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none"
-                      >
-                        {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                      <button
-                        onClick={handleOverride}
-                        disabled={saving || overrideStatus === estadoActual}
-                        className="px-4 py-1.5 rounded-xl bg-white/8 hover:bg-white/15 text-[#e8e8ed] text-xs font-medium transition-all disabled:opacity-50"
-                      >
-                        {saving ? '…' : 'Aplicar'}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </Modal>
     </AdminLayout>
   )
 }
