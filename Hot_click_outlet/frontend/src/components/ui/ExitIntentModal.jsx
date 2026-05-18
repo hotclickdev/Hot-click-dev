@@ -6,6 +6,11 @@ import { formatPrice } from '@/utils/format'
 
 const SESSION_KEY = 'hc-exit-intent-shown'
 
+// Show after this many ms if user already had items when they entered
+const ENTRY_DELAY_MS = 12_000   // 12 s
+// Show after this many ms of browsing (cart may have been filled after load)
+const BROWSE_DELAY_MS = 150_000 // 2.5 min
+
 export default function ExitIntentModal() {
   const [visible, setVisible] = useState(false)
   const items = useCartStore((s) => s.items)
@@ -16,20 +21,43 @@ export default function ExitIntentModal() {
     sessionStorage.setItem(SESSION_KEY, '1')
   }, [])
 
+  const show = useCallback(() => {
+    if (sessionStorage.getItem(SESSION_KEY)) return
+    setVisible(true)
+  }, [])
+
+  // Timer: show 12 s after entry if cart already had items (returning visitor)
+  useEffect(() => {
+    if (items.length === 0) return
+    if (sessionStorage.getItem(SESSION_KEY)) return
+    const t = setTimeout(show, ENTRY_DELAY_MS)
+    return () => clearTimeout(t)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // intentionally run only on mount
+
+  // Timer: show after 2.5 min regardless of when items were added
+  useEffect(() => {
+    if (sessionStorage.getItem(SESSION_KEY)) return
+    const t = setTimeout(() => {
+      if (useCartStore.getState().items.length > 0) show()
+    }, BROWSE_DELAY_MS)
+    return () => clearTimeout(t)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Desktop-only: detect mouse leaving viewport through the top
   useEffect(() => {
     if (typeof window === 'undefined') return
     if (items.length === 0) return
     if (sessionStorage.getItem(SESSION_KEY)) return
-    // Only wire on md+ (≥768px)
     if (window.innerWidth < 768) return
 
     const handler = (e) => {
-      if (e.clientY <= 2) setVisible(true)
+      if (e.clientY <= 2) show()
     }
     document.addEventListener('mouseleave', handler)
     return () => document.removeEventListener('mouseleave', handler)
-  }, [items.length])
+  }, [items.length, show])
 
   useEffect(() => {
     if (!visible) return
@@ -50,7 +78,7 @@ export default function ExitIntentModal() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[70] bg-black/55 backdrop-blur-sm hidden md:block"
+            className="fixed inset-0 z-[70] bg-black/55 backdrop-blur-sm"
             onClick={dismiss}
           />
 
@@ -63,7 +91,7 @@ export default function ExitIntentModal() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: -12 }}
             transition={{ type: 'spring', stiffness: 400, damping: 36 }}
-            className="fixed z-[71] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm hidden md:block"
+            className="fixed z-[71] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-sm"
           >
             <div
               className="rounded-3xl p-6 relative"

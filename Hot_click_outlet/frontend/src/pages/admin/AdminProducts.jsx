@@ -44,6 +44,7 @@ export default function AdminProducts() {
   const [filterCat, setFilterCat] = useState('')
   const [filterCond, setFilterCond] = useState('')
   const [filterStock, setFilterStock] = useState('')
+  const [carruselOpen, setCarruselOpen] = useState(true)
 
   const load = async () => {
     setLoading(true)
@@ -91,6 +92,49 @@ export default function AdminProducts() {
       const urls = (Array.isArray(imgs) ? imgs : []).map((i) => i.urlImagen ?? i)
       if (urls.length > 0) setForm((prev) => ({ ...prev, imagenes: urls }))
     } catch { /* silencioso — usa la imagen principal como fallback */ }
+  }
+
+  // Carrusel: productos ordenados por ordenCarrusel
+  const carruselSlots = products
+    .filter((p) => p.enCarrusel)
+    .sort((a, b) => (a.ordenCarrusel ?? 0) - (b.ordenCarrusel ?? 0))
+    .slice(0, 5)
+
+  const handleToggleCarrusel = async (p) => {
+    const yaEsta = p.enCarrusel
+    if (yaEsta) {
+      // Quitar del carrusel
+      setProducts((prev) => prev.map((x) => x.id === p.id ? { ...x, enCarrusel: false, ordenCarrusel: 0 } : x))
+      try { await productService.toggleCarrusel(p.id, false, 0) }
+      catch { setProducts((prev) => prev.map((x) => x.id === p.id ? { ...x, enCarrusel: true } : x)) }
+    } else {
+      if (carruselSlots.length >= 5) { toast({ message: 'El carrusel ya tiene 5 productos (máximo)', type: 'error' }); return }
+      const nuevoOrden = carruselSlots.length + 1
+      setProducts((prev) => prev.map((x) => x.id === p.id ? { ...x, enCarrusel: true, ordenCarrusel: nuevoOrden } : x))
+      try { await productService.toggleCarrusel(p.id, true, nuevoOrden) }
+      catch { setProducts((prev) => prev.map((x) => x.id === p.id ? { ...x, enCarrusel: false } : x)) }
+    }
+  }
+
+  const handleCarruselMover = async (p, dir) => {
+    const slots = products.filter((x) => x.enCarrusel).sort((a, b) => (a.ordenCarrusel ?? 0) - (b.ordenCarrusel ?? 0))
+    const idx = slots.findIndex((x) => x.id === p.id)
+    const swapIdx = idx + dir
+    if (swapIdx < 0 || swapIdx >= slots.length) return
+    const other = slots[swapIdx]
+    const newOrderA = other.ordenCarrusel
+    const newOrderB = p.ordenCarrusel
+    setProducts((prev) => prev.map((x) =>
+      x.id === p.id ? { ...x, ordenCarrusel: newOrderA }
+      : x.id === other.id ? { ...x, ordenCarrusel: newOrderB }
+      : x
+    ))
+    try {
+      await Promise.all([
+        productService.toggleCarrusel(p.id, true, newOrderA),
+        productService.toggleCarrusel(other.id, true, newOrderB),
+      ])
+    } catch { load() }
   }
 
   const handleToggleDestacado = async (p) => {
@@ -171,6 +215,87 @@ export default function AdminProducts() {
             <p className="text-sm text-[#8e8e9a] mt-1">{filtered.length} de {products.length} productos</p>
           </div>
           <Button onClick={openNew}>+ {t('admin.products.new')}</Button>
+        </div>
+
+        {/* ── Carrusel del inicio ── */}
+        <div className="rounded-2xl border border-white/8 overflow-hidden" style={{ background: 'rgba(17,17,20,0.95)' }}>
+          <button
+            onClick={() => setCarruselOpen((o) => !o)}
+            className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/3 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center text-lg" style={{ background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.3)' }}>
+                🎠
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-semibold text-[#e8e8ed]">Carrusel del inicio</p>
+                <p className="text-xs text-[#8e8e9a]">{carruselSlots.length}/5 productos · se muestran en el hero de la tienda</p>
+              </div>
+            </div>
+            <svg className={`w-4 h-4 text-[#8e8e9a] transition-transform duration-200 ${carruselOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+
+          {carruselOpen && (
+            <div className="border-t border-white/8 px-5 py-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                {Array.from({ length: 5 }, (_, i) => {
+                  const slot = carruselSlots[i]
+                  const slotColor = ['rgba(79,124,255,0.2)', 'rgba(168,85,247,0.2)', 'rgba(16,185,129,0.2)', 'rgba(245,158,11,0.2)', 'rgba(244,63,94,0.2)'][i]
+                  const slotBorder = ['rgba(79,124,255,0.4)', 'rgba(168,85,247,0.4)', 'rgba(16,185,129,0.4)', 'rgba(245,158,11,0.4)', 'rgba(244,63,94,0.4)'][i]
+                  return (
+                    <div
+                      key={i}
+                      className="relative rounded-xl overflow-hidden flex flex-col"
+                      style={{ border: `1px solid ${slot ? slotBorder : 'rgba(255,255,255,0.08)'}`, background: slot ? slotColor : 'rgba(255,255,255,0.02)', minHeight: 120 }}
+                    >
+                      <div className="absolute top-2 left-2 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: slot ? slotBorder : 'rgba(255,255,255,0.1)', color: '#e8e8ed' }}>
+                        {i + 1}
+                      </div>
+                      {slot ? (
+                        <>
+                          <div className="flex-1 flex items-center justify-center pt-6 pb-2 px-2">
+                            {slot.imagenUrl ? (
+                              <img src={slot.imagenUrl} alt={slot.nombre} className="w-16 h-16 object-contain" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }} />
+                            ) : (
+                              <span className="text-3xl">📦</span>
+                            )}
+                          </div>
+                          <div className="px-2 pb-2">
+                            <p className="text-[10px] font-medium text-[#e8e8ed] text-center line-clamp-1">{slot.nombre}</p>
+                          </div>
+                          <div className="flex items-center justify-between px-1.5 pb-1.5 gap-1">
+                            <button
+                              onClick={() => handleCarruselMover(slot, -1)}
+                              disabled={i === 0}
+                              className="flex-1 h-6 rounded-lg text-[10px] text-[#8e8e9a] hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30"
+                            >↑</button>
+                            <button
+                              onClick={() => handleToggleCarrusel(slot)}
+                              className="h-6 px-1.5 rounded-lg text-[10px] text-red-400 hover:bg-red-500/15 transition-colors"
+                            >✕</button>
+                            <button
+                              onClick={() => handleCarruselMover(slot, 1)}
+                              disabled={i === carruselSlots.length - 1}
+                              className="flex-1 h-6 rounded-lg text-[10px] text-[#8e8e9a] hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30"
+                            >↓</button>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex-1 flex flex-col items-center justify-center gap-1 text-[#8e8e9a] py-4">
+                          <span className="text-2xl opacity-30">+</span>
+                          <span className="text-[10px]">Vacío</span>
+                          <span className="text-[9px] opacity-60">Usa 🎠 en la tabla</span>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+              <p className="text-[10px] text-[#8e8e9a] mt-3">
+                Para agregar un producto al carrusel, presiona el botón <span className="text-purple-400">🎠</span> en la columna de la tabla. Máximo 5 productos.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Mobile: búsqueda + filtros rápidos */}
@@ -295,7 +420,7 @@ export default function AdminProducts() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-white/8">
-                        {['★', 'ID', t('admin.products.name'), t('admin.products.price'), t('admin.products.stock'), t('admin.products.category'), t('admin.products.actions')].map((h) => (
+                        {['★', '🎠', 'ID', t('admin.products.name'), t('admin.products.price'), t('admin.products.stock'), t('admin.products.category'), t('admin.products.actions')].map((h) => (
                           <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">{h}</th>
                         ))}
                       </tr>
@@ -314,6 +439,23 @@ export default function AdminProducts() {
                               }`}
                             >
                               <StarIcon filled={p.destacado} />
+                            </button>
+                          </td>
+                          <td className="px-4 py-3">
+                            <button
+                              onClick={() => handleToggleCarrusel(p)}
+                              title={p.enCarrusel ? `Quitar del carrusel (pos. ${p.ordenCarrusel})` : carruselSlots.length >= 5 ? 'Carrusel lleno (5/5)' : 'Agregar al carrusel'}
+                              className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all text-sm ${
+                                p.enCarrusel
+                                  ? 'bg-purple-500/20 border border-purple-500/40 text-purple-300'
+                                  : carruselSlots.length >= 5
+                                  ? 'text-[#8e8e9a]/20 cursor-not-allowed'
+                                  : 'text-[#8e8e9a]/40 hover:text-purple-400 hover:bg-purple-500/10'
+                              }`}
+                            >
+                              {p.enCarrusel ? (
+                                <span className="text-[10px] font-bold">{p.ordenCarrusel}</span>
+                              ) : '🎠'}
                             </button>
                           </td>
                           <td className="px-4 py-3 text-[#8e8e9a] text-xs">#{p.id}</td>

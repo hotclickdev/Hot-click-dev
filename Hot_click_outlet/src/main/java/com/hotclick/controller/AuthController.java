@@ -328,11 +328,9 @@ public class AuthController {
             return ResponseEntity.ok(ResponseDTO.success("Si el correo está registrado, recibirás un código de verificación", null));
         } catch (RuntimeException e) {
             String msg = e.getMessage();
+            System.err.println("[forgot-password] ERROR: " + e.getClass().getSimpleName() + " — " + msg);
             return ResponseEntity.badRequest().body(ResponseDTO.error(
                 msg != null && !msg.isBlank() ? msg : "Error al enviar el correo"));
-        } catch (Exception e) {
-            System.err.println("[forgot-password] ERROR: " + e.getClass().getSimpleName() + " — " + e.getMessage());
-            return ResponseEntity.status(500).body(ResponseDTO.error("Error al enviar el correo"));
         }
     }
 

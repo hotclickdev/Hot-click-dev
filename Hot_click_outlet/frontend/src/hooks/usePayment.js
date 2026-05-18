@@ -31,6 +31,16 @@ export function usePayment() {
     }
   }, [])
 
+  const cancelarPedido = useCallback(async (numeroPedido) => {
+    setEstado('polling')
+    try {
+      await paymentService.cancelarPedido(numeroPedido)
+    } catch {
+      // Si ya estaba cancelado o hubo error, igual mostramos estado cancelado
+    }
+    setEstado('cancelled')
+  }, [])
+
   const capturarPayPal = useCallback(async (paypalOrderId, numeroPedido) => {
     setEstado('capturing')
     setError(null)
@@ -144,6 +154,7 @@ export function usePayment() {
     intentos,
     maxIntentos: MAX_INTENTOS,
     iniciarPago,
+    cancelarPedido,
     capturarPayPal,
     verificarEstado,
     iniciarPolling,

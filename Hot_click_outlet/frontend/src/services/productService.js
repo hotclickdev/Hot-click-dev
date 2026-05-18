@@ -16,7 +16,12 @@ export function normalizeProduct(p) {
     categoriaNombre: p.categoria?.nombreCategoria ?? p.categoria?.nombre ?? p.categoriaNombre ?? '',
     bodegaId: p.bodega?.id ?? p.bodegaId ?? '',
     bodegaNombre: p.bodega?.nombreBodega ?? p.bodega?.nombre ?? p.bodegaNombre ?? '',
+    marcaId: p.marca?.id ?? p.marcaId ?? null,
+    marcaNombre: p.marca?.nombreMarca ?? p.marcaTexto ?? p.marcaNombre ?? '',
+    marcaLogoUrl: p.marca?.logoUrl ?? p.marcaLogoUrl ?? null,
     destacado: p.destacado ?? false,
+    enCarrusel: p.enCarrusel ?? false,
+    ordenCarrusel: p.ordenCarrusel ?? 0,
     titulo: p.tituloProducto ?? p.titulo ?? null,
     especificaciones: p.especificaciones ?? null,
     comoUsar: p.comoUsar ?? null,
@@ -41,7 +46,8 @@ export function denormalizeProduct(form) {
     especificaciones: form.especificaciones || null,
     comoUsar: form.comoUsar || null,
     descripcionLarga: form.descripcionLarga || null,
-    marcaTexto: form.marca || null,
+    marcaId: form.marcaId ? Number(form.marcaId) : null,
+    marcaTexto: form.marcaTexto || form.marca || null,
   }
 }
 
@@ -83,6 +89,13 @@ export const productService = {
 
   toggleDestacado: (id, valor) =>
     api.patch(`/productos/${id}/destacado`, { destacado: valor }),
+
+  getCarrusel: () =>
+    api.get('/productos/carrusel')
+       .then((r) => ({ ...r, data: (r.data?.data ?? r.data ?? []).map(normalizeProduct) })),
+
+  toggleCarrusel: (id, valor, orden) =>
+    api.patch(`/productos/${id}/carrusel`, { enCarrusel: valor, orden }),
 
   getCategories: () =>
     api.get('/categorias'),

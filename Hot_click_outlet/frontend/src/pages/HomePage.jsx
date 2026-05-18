@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import { productService, normalizeProduct } from '@/services/productService'
@@ -16,115 +16,184 @@ const stagger = {
   item: { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.4 } } },
 }
 
-export default function HomePage() {
-  const [products, setProducts] = useState([])
-  const [loading, setLoading] = useState(true)
-  const addItem = useCartStore((s) => s.addItem)
-  const toast = useToast()
+// Accent colors por slide (cíclicos)
+const SLIDE_COLORS = [
+  { accent: '#4f7cff', glow: 'rgba(79,124,255,0.28)', bg: 'rgba(79,124,255,0.07)', ring: 'rgba(79,124,255,0.35)' },
+  { accent: '#a855f7', glow: 'rgba(168,85,247,0.28)', bg: 'rgba(168,85,247,0.07)', ring: 'rgba(168,85,247,0.35)' },
+  { accent: '#10b981', glow: 'rgba(16,185,129,0.28)', bg: 'rgba(16,185,129,0.07)', ring: 'rgba(16,185,129,0.35)' },
+  { accent: '#f59e0b', glow: 'rgba(245,158,11,0.28)', bg: 'rgba(245,158,11,0.07)', ring: 'rgba(245,158,11,0.35)' },
+  { accent: '#f43f5e', glow: 'rgba(244,63,94,0.28)', bg: 'rgba(244,63,94,0.07)', ring: 'rgba(244,63,94,0.35)' },
+]
+
+const PLACEHOLDER_SLIDES = Array.from({ length: 5 }, (_, i) => ({
+  id: `ph-${i}`,
+  nombre: 'Tecnología premium',
+  descripcion: 'Productos de calidad al mejor precio en Costa Rica.',
+  precio: 0,
+  imagenUrl: '',
+  categoriaNombre: 'HOTCLICK',
+  stock: 1,
+}))
+
+// ─── Carousel Hero ────────────────────────────────────────────────────────────
+function HeroCarousel({ slides }) {
+  const [current, setCurrent] = useState(0)
+  const [dir, setDir] = useState(1)
+  const [progress, setProgress] = useState(0)
+  const intervalRef = useRef(null)
+  const progressRef = useRef(null)
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const heroRef = useRef(null)
-  const featuredRef = useScrollReveal()
-  const featuresRef = useScrollReveal({ threshold: 0.08 })
-  const recentlyViewed = useRecentlyViewedStore((s) => s.items)
-  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
-  const rightY = useTransform(scrollYProgress, [0, 1], [0, -80])
-  const rightRotate = useTransform(scrollYProgress, [0, 1], [0, 12])
 
+  const DURATION = 6000
+
+  const goTo = useCallback((idx, direction) => {
+    setDir(direction ?? (idx > current ? 1 : -1))
+    setCurrent(idx)
+    setProgress(0)
+  }, [current])
+
+  const next = useCallback(() => goTo((current + 1) % slides.length, 1), [current, slides.length, goTo])
+  const prev = useCallback(() => goTo((current - 1 + slides.length) % slides.length, -1), [current, slides.length, goTo])
+
+  // Auto-advance + progress bar
   useEffect(() => {
-    productService.getDestacados()
-      .then(({ data }) => {
-        const items = Array.isArray(data) ? data : data?.content ?? []
-        if (items.length > 0) {
-          setProducts(items.slice(0, 4))
-          setLoading(false)
-        } else {
-          return productService.getAll(0, 4).then(({ data: d }) => {
-            const fallback = (d.content ?? d ?? [])
-            setProducts(fallback.slice(0, 4))
-            setLoading(false)
-          })
-        }
-      })
-      .catch(() => {
-        productService.getAll(0, 4)
-          .then(({ data }) => setProducts((data.content ?? data ?? []).slice(0, 4)))
-          .catch(() => {})
-          .finally(() => setLoading(false))
-      })
-  }, [])
+    clearInterval(intervalRef.current)
+    clearInterval(progressRef.current)
+    setProgress(0)
+    const step = 50
+    const increment = (step / DURATION) * 100
+    progressRef.current = setInterval(() => {
+      setProgress((p) => Math.min(p + increment, 100))
+    }, step)
+    intervalRef.current = setTimeout(() => next(), DURATION)
+    return () => { clearInterval(intervalRef.current); clearInterval(progressRef.current) }
+  }, [current, next])
 
-  const handleAdd = (product) => {
-    addItem(product)
-    toast({ message: t('product.added', { name: product.nombre }), type: 'success' })
+  const slide = slides[current]
+  const color = SLIDE_COLORS[current % SLIDE_COLORS.length]
+  const watermark = slide.categoriaNombre || slide.nombre || 'HOTCLICK'
+
+  const slideVariants = {
+    enter: (d) => ({ x: d > 0 ? '100%' : '-100%', opacity: 0 }),
+    center: { x: 0, opacity: 1, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } },
+    exit: (d) => ({ x: d > 0 ? '-40%' : '40%', opacity: 0, transition: { duration: 0.45, ease: [0.4, 0, 1, 1] } }),
+  }
+
+  const imgVariants = {
+    enter: (d) => ({ x: d > 0 ? 80 : -80, opacity: 0, scale: 0.88 }),
+    center: { x: 0, opacity: 1, scale: 1, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.08 } },
+    exit: { opacity: 0, scale: 0.92, transition: { duration: 0.35 } },
   }
 
   return (
-    <MainLayout>
-      {/* Hero — split layout */}
-      <section ref={heroRef} className="relative min-h-[88vh] flex items-center overflow-hidden">
-        {/* Bg glows */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[700px] h-[700px] bg-[#4f7cff]/7 rounded-full blur-[130px]" />
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#4f7cff]/5 rounded-full blur-[100px]" />
-          <div className="absolute bottom-0 right-1/3 w-[300px] h-[300px] bg-purple-500/5 rounded-full blur-[80px]" />
-          <div
-            className="absolute inset-0 opacity-[0.025]"
-            style={{
-              backgroundImage: `linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)`,
-              backgroundSize: '60px 60px',
-            }}
-          />
-        </div>
+    <section className="relative overflow-hidden" style={{ minHeight: '92vh' }}>
+      {/* Animated background glow per slide */}
+      <AnimatePresence>
+        <motion.div
+          key={`glow-${current}`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.8 }}
+          className="absolute inset-0 pointer-events-none"
+        >
+          <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 70% 70% at 70% 50%, ${color.glow}, transparent 70%)` }} />
+          <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 40% 60% at 30% 30%, ${color.bg}, transparent 65%)` }} />
+          {/* Grid */}
+          <div className="absolute inset-0 opacity-[0.022]" style={{
+            backgroundImage: `linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)`,
+            backgroundSize: '60px 60px',
+          }} />
+        </motion.div>
+      </AnimatePresence>
 
-        {/* Watermark */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden select-none">
-          <span
+      {/* Watermark */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden select-none">
+        <AnimatePresence mode="wait">
+          <motion.span
+            key={`wm-${current}`}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.55 }}
             className="font-black uppercase tracking-[-0.02em] whitespace-nowrap leading-none"
-            style={{ fontSize: '18vw', color: 'rgba(255,255,255,0.018)' }}
+            style={{ fontSize: '20vw', color: 'rgba(255,255,255,0.022)' }}
           >
-            OUTLET
-          </span>
-        </div>
+            {watermark.split(' ')[0]}
+          </motion.span>
+        </AnimatePresence>
+      </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 w-full py-16 sm:py-20">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-6 items-center">
+      {/* Main content */}
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 w-full" style={{ minHeight: '92vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-4 items-center py-20 lg:py-16">
 
-            {/* ── Left: text ── */}
+          {/* ── Left: text content ── */}
+          <AnimatePresence mode="wait" custom={dir}>
             <motion.div
-              initial={{ opacity: 0, x: -24 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+              key={`text-${current}`}
+              custom={dir}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              className="flex flex-col"
             >
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1 }}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#4f7cff]/10 border border-[#4f7cff]/20 text-sm text-[#4f7cff] mb-6"
+              {/* Category badge */}
+              <div
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold mb-5 w-fit"
+                style={{ background: color.bg, border: `1px solid ${color.ring}`, color: color.accent }}
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-[#4f7cff] animate-pulse" />
-                {t('home.badge')}
-              </motion.div>
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: color.accent }} />
+                {slide.categoriaNombre || 'Tecnología'}
+              </div>
 
-              <h1 className="text-5xl sm:text-6xl lg:text-[4.5rem] font-black text-[#e8e8ed] leading-[1.05] tracking-tight mb-6">
-                {t('home.hero1')}{' '}
-                <span className="text-gradient-accent inline-block">{t('home.hero2')}</span>{' '}
-                {t('home.hero3')}
+              <h1
+                className="font-black leading-[1.02] tracking-tight mb-4"
+                style={{ fontSize: 'clamp(2.4rem, 5.5vw, 4.5rem)', color: '#e8e8ed' }}
+              >
+                {slide.nombre}
               </h1>
 
-              <p className="text-lg sm:text-xl text-[#8e8e9a] max-w-lg mb-10 leading-relaxed">
-                {t('home.heroSub')}
-              </p>
+              {slide.descripcion && (
+                <p className="text-lg text-[#8e8e9a] max-w-lg mb-8 leading-relaxed line-clamp-3">
+                  {slide.descripcion}
+                </p>
+              )}
+
+              {/* Price */}
+              {slide.precio > 0 && (
+                <div className="flex items-baseline gap-3 mb-8">
+                  <span className="text-4xl font-black" style={{ color: color.accent }}>
+                    {formatPrice(slide.precio)}
+                  </span>
+                  {slide.condicion && slide.condicion !== 'NUEVO' && (
+                    <span className="text-sm text-[#8e8e9a] bg-white/5 px-2 py-0.5 rounded-lg">{slide.condicion === 'COMO_NUEVO' ? 'Como nuevo' : 'Usado'}</span>
+                  )}
+                </div>
+              )}
 
               <div className="flex flex-col sm:flex-row gap-3">
-                <Link
-                  to="/productos"
-                  className="group inline-flex items-center justify-center gap-2.5 h-14 px-8 rounded-2xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-bold text-base transition-all duration-200 shadow-[0_0_32px_rgba(79,124,255,0.4)] hover:shadow-[0_0_56px_rgba(79,124,255,0.6)] hover:-translate-y-0.5 active:translate-y-0"
-                >
-                  {t('home.verProductos')}
-                  <span className="inline-block group-hover:translate-x-1 transition-transform duration-200">→</span>
-                </Link>
+                {slide.id && !String(slide.id).startsWith('ph-') ? (
+                  <button
+                    onClick={() => navigate(`/productos/${slide.id}`, { state: { product: slide } })}
+                    className="group inline-flex items-center justify-center gap-2 h-14 px-8 rounded-2xl font-bold text-base text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
+                    style={{ background: color.accent, boxShadow: `0 0 32px ${color.ring}` }}
+                  >
+                    Ver producto
+                    <span className="inline-block group-hover:translate-x-1 transition-transform duration-200">→</span>
+                  </button>
+                ) : (
+                  <Link
+                    to="/productos"
+                    className="group inline-flex items-center justify-center gap-2 h-14 px-8 rounded-2xl font-bold text-base text-white transition-all duration-200 hover:-translate-y-0.5"
+                    style={{ background: color.accent, boxShadow: `0 0 32px ${color.ring}` }}
+                  >
+                    {t('home.verProductos')}
+                    <span className="inline-block group-hover:translate-x-1 transition-transform duration-200">→</span>
+                  </Link>
+                )}
                 <a
                   href="#como-comprar"
                   className="inline-flex items-center justify-center gap-2 h-14 px-8 rounded-2xl bg-white/6 hover:bg-white/10 border border-white/10 text-[#e8e8ed] font-semibold text-base transition-all duration-200 hover:-translate-y-0.5"
@@ -133,18 +202,14 @@ export default function HomePage() {
                 </a>
               </div>
 
-              {/* Stats */}
+              {/* Mini stats */}
               <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.35 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.35 }}
                 className="flex flex-wrap gap-8 mt-10"
               >
-                {[
-                  ['100%', t('home.garantia')],
-                  ['24h', t('home.envios')],
-                  ['5★', t('home.satisfaccion')],
-                ].map(([value, label]) => (
+                {[['100%', t('home.garantia')], ['24h', t('home.envios')], ['5★', t('home.satisfaccion')]].map(([value, label]) => (
                   <div key={label}>
                     <div className="text-2xl font-bold text-[#e8e8ed]">{value}</div>
                     <div className="text-sm text-[#8e8e9a] mt-0.5">{label}</div>
@@ -152,164 +217,253 @@ export default function HomePage() {
                 ))}
               </motion.div>
             </motion.div>
+          </AnimatePresence>
 
-            {/* ── Right: product illustration ── */}
-            <div className="relative flex items-center justify-center lg:justify-end">
-              {/* Ambient glows */}
-              <div className="absolute w-[380px] h-[380px] bg-[#4f7cff]/10 rounded-full blur-[80px] pointer-events-none" />
-              <div className="absolute w-[200px] h-[200px] bg-purple-500/8 rounded-full blur-[60px] translate-x-16 translate-y-10 pointer-events-none" />
-
-              {/* Main illustration — parallax + float */}
+          {/* ── Right: product image ── */}
+          <div className="relative flex items-center justify-center lg:justify-end">
+            {/* Ambient glow behind image */}
+            <AnimatePresence>
               <motion.div
-                style={{ y: rightY, rotate: rightRotate }}
-                initial={{ opacity: 0, scale: 0.85 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.9, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                className="relative z-10 pointer-events-none select-none"
-              >
-                <motion.div
-                  animate={{ y: [0, -14, 0] }}
-                  transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
-                  className="relative w-60 h-60 sm:w-80 sm:h-80"
-                >
-                  <div className="absolute inset-0 bg-[#4f7cff]/12 rounded-full blur-3xl scale-110" />
-                  <HeadphonesIllustration />
-                </motion.div>
-              </motion.div>
+                key={`img-glow-${current}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.6 }}
+                className="absolute w-[420px] h-[420px] rounded-full blur-[100px] pointer-events-none"
+                style={{ background: color.glow }}
+              />
+            </AnimatePresence>
 
-              {/* Floating badge — shipping */}
+            <AnimatePresence mode="wait" custom={dir}>
               <motion.div
-                initial={{ opacity: 0, x: 16, y: -16 }}
-                animate={{ opacity: 1, x: 0, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.9 }}
-                className="absolute top-6 right-2 sm:right-6 flex items-center gap-2 px-3 py-2 rounded-2xl backdrop-blur-sm"
-                style={{ background: 'rgba(17,17,20,0.88)', border: '1px solid rgba(255,255,255,0.1)' }}
+                key={`img-${current}`}
+                custom={dir}
+                variants={imgVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                className="relative z-10 flex items-center justify-center"
+                style={{ width: 'min(400px, 85vw)', height: 'min(400px, 85vw)' }}
               >
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-xs font-semibold text-[#e8e8ed]">Envío 24h</span>
-              </motion.div>
-
-              {/* Floating badge — rating */}
-              <motion.div
-                initial={{ opacity: 0, x: -16, y: 16 }}
-                animate={{ opacity: 1, x: 0, y: 0 }}
-                transition={{ duration: 0.5, delay: 1.1 }}
-                className="absolute bottom-6 left-2 sm:left-6 flex items-center gap-2 px-3 py-2 rounded-2xl backdrop-blur-sm"
-                style={{ background: 'rgba(17,17,20,0.88)', border: '1px solid rgba(255,255,255,0.1)' }}
-              >
-                <span className="text-amber-400 text-sm leading-none">★</span>
-                <span className="text-xs font-semibold text-[#e8e8ed]">5.0 Satisfacción</span>
-              </motion.div>
-            </div>
-          </div>
-
-          {/* Bottom: mini product preview cards */}
-          {!loading && products.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.7 }}
-              className="mt-12 lg:mt-14 flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide"
-            >
-              <span className="shrink-0 text-xs font-medium text-[#8e8e9a] whitespace-nowrap">Destacados</span>
-              <div className="w-px h-4 bg-white/15 shrink-0" />
-              {products.slice(0, 3).map((p, i) => (
-                <motion.button
-                  key={p.id}
-                  initial={{ opacity: 0, x: 16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.8 + i * 0.1 }}
-                  whileHover={{ y: -2 }}
-                  onClick={() => navigate(`/productos/${p.id}`, { state: { product: p } })}
-                  className="shrink-0 flex items-center gap-2.5 px-3 py-2 rounded-2xl transition-all duration-200 cursor-pointer"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}
-                >
-                  <div className="w-8 h-8 rounded-lg bg-[#1a1a1f] overflow-hidden shrink-0 border border-white/6">
-                    {p.imagenUrl ? (
-                      <img src={p.imagenUrl} alt={p.nombre} className="w-full h-full object-cover" loading="lazy" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-base">📦</div>
+                {slide.imagenUrl ? (
+                  <>
+                    {/* Floating animation wrapper */}
+                    <motion.div
+                      animate={{ y: [0, -16, 0] }}
+                      transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+                      className="w-full h-full"
+                    >
+                      <img
+                        src={slide.imagenUrl}
+                        alt={slide.nombre}
+                        className="w-full h-full"
+                        style={{ objectFit: 'contain', filter: `drop-shadow(0 0 48px ${color.glow}) drop-shadow(0 32px 48px rgba(0,0,0,0.6))` }}
+                      />
+                    </motion.div>
+                    {/* Floating badges */}
+                    <motion.div
+                      initial={{ opacity: 0, x: 16, y: -16 }}
+                      animate={{ opacity: 1, x: 0, y: 0 }}
+                      transition={{ delay: 0.7 }}
+                      className="absolute top-4 right-0 flex items-center gap-2 px-3 py-2 rounded-2xl backdrop-blur-sm"
+                      style={{ background: 'rgba(17,17,20,0.88)', border: '1px solid rgba(255,255,255,0.1)' }}
+                    >
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-xs font-semibold text-[#e8e8ed]">Envío 24h</span>
+                    </motion.div>
+                    {slide.stock > 0 && slide.stock <= 3 && (
+                      <motion.div
+                        initial={{ opacity: 0, x: -16, y: 16 }}
+                        animate={{ opacity: 1, x: 0, y: 0 }}
+                        transition={{ delay: 0.9 }}
+                        className="absolute bottom-4 left-0 px-3 py-2 rounded-2xl backdrop-blur-sm"
+                        style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)' }}
+                      >
+                        <span className="text-xs font-semibold text-amber-400">¡Últimas {slide.stock} unidades!</span>
+                      </motion.div>
                     )}
-                  </div>
-                  <div className="min-w-0 text-left">
-                    <p className="text-xs font-medium text-[#e8e8ed] truncate max-w-[100px]">{p.nombre}</p>
-                    <p className="text-xs font-bold text-[#4f7cff]">{formatPrice(p.precio)}</p>
-                  </div>
-                </motion.button>
-              ))}
-              <Link
-                to="/productos"
-                className="shrink-0 px-3 py-2 rounded-2xl text-xs font-medium text-[#4f7cff] border border-[#4f7cff]/20 hover:bg-[#4f7cff]/10 transition-colors whitespace-nowrap"
-              >
-                Ver todos →
-              </Link>
-            </motion.div>
-          )}
-        </div>
-      </section>
-
-      {/* Featured products */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
-        <div ref={featuredRef} className="flex items-center justify-between mb-10 hc-reveal">
-          <div>
-            <h2 className="text-2xl font-bold text-[#e8e8ed]">{t('home.destacados')}</h2>
-            <p className="text-sm text-[#8e8e9a] mt-1">{t('home.destacadosSub')}</p>
+                  </>
+                ) : (
+                  <motion.div
+                    animate={{ y: [0, -14, 0] }}
+                    transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
+                    className="w-full h-full flex items-center justify-center"
+                  >
+                    <FallbackIllustration color={color.accent} />
+                  </motion.div>
+                )}
+              </motion.div>
+            </AnimatePresence>
           </div>
-          <Link to="/productos" className="text-sm text-[#4f7cff] hc-underline-hover transition-colors">
-            {t('home.verTodos')}
-          </Link>
         </div>
 
-        {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="rounded-2xl bg-[#111114] border border-white/6 h-56 sm:h-72 animate-pulse" />
-            ))}
+        {/* ── Bottom: thumbnail navigation ── */}
+        <div className="pb-10 flex flex-col items-center gap-4">
+          {/* Progress bar */}
+          <div className="w-full max-w-xs h-0.5 rounded-full bg-white/10 overflow-hidden">
+            <motion.div
+              className="h-full rounded-full"
+              style={{ width: `${progress}%`, background: color.accent }}
+              transition={{ duration: 0 }}
+            />
           </div>
-        ) : (
-          <motion.div
-            variants={stagger.container}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true }}
-            className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
-          >
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} onAdd={handleAdd} />
-            ))}
-          </motion.div>
-        )}
-      </section>
+
+          {/* Thumbnails */}
+          <div className="flex items-center gap-3">
+            {/* Prev arrow */}
+            <button
+              onClick={prev}
+              aria-label="Anterior"
+              className="w-9 h-9 rounded-xl bg-white/6 border border-white/10 flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/12 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+
+            <div className="flex items-center gap-2">
+              {slides.map((s, i) => {
+                const c = SLIDE_COLORS[i % SLIDE_COLORS.length]
+                const isActive = i === current
+                return (
+                  <button
+                    key={s.id ?? i}
+                    onClick={() => goTo(i)}
+                    aria-label={`Slide ${i + 1}`}
+                    className="relative rounded-xl overflow-hidden transition-all duration-300 shrink-0"
+                    style={{
+                      width: isActive ? 72 : 48,
+                      height: 48,
+                      border: isActive ? `2px solid ${c.accent}` : '2px solid rgba(255,255,255,0.1)',
+                      boxShadow: isActive ? `0 0 16px ${c.ring}` : 'none',
+                      background: '#111114',
+                    }}
+                  >
+                    {s.imagenUrl ? (
+                      <img
+                        src={s.imagenUrl}
+                        alt={s.nombre}
+                        className="w-full h-full"
+                        style={{ objectFit: 'contain' }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <span className="text-lg">📦</span>
+                      </div>
+                    )}
+                    {isActive && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: c.accent }} />
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Next arrow */}
+            <button
+              onClick={next}
+              aria-label="Siguiente"
+              className="w-9 h-9 rounded-xl bg-white/6 border border-white/10 flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/12 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+
+          {/* Slide counter */}
+          <span className="text-xs text-[#8e8e9a]">{current + 1} / {slides.length}</span>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ─── Página principal ─────────────────────────────────────────────────────────
+export default function HomePage() {
+  const [carouselSlides, setCarouselSlides] = useState(PLACEHOLDER_SLIDES)
+  const addItem = useCartStore((s) => s.addItem)
+  const toast = useToast()
+  const navigate = useNavigate()
+  const { t } = useTranslation()
+  const featuresRef = useScrollReveal({ threshold: 0.08 })
+  const recentlyViewed = useRecentlyViewedStore((s) => s.items)
+
+  useEffect(() => {
+    // Load carousel products
+    productService.getCarrusel()
+      .then(({ data }) => {
+        const items = Array.isArray(data) ? data : []
+        if (items.length >= 1) {
+          const padded = [...items]
+          while (padded.length < 5) padded.push({ ...PLACEHOLDER_SLIDES[padded.length], id: `ph-${padded.length}` })
+          setCarouselSlides(padded.slice(0, 5))
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  return (
+    <MainLayout>
+      {/* ── Hero Carousel ── */}
+      <HeroCarousel slides={carouselSlides} />
 
       {/* Visto recientemente */}
       {recentlyViewed.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-10">
-          <div className="flex items-center gap-3 mb-4">
-            <h2 className="text-base font-semibold" style={{ color: 'var(--hc-muted)' }}>Visto recientemente</h2>
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+          <div className="flex items-center gap-2 mb-5">
+            <span className="w-1 h-4 rounded-full bg-[#4f7cff]" />
+            <h2 className="text-sm font-semibold tracking-wide uppercase text-[#8e8e9a]">Visto recientemente</h2>
           </div>
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+          <div role="list" className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide">
             {recentlyViewed.map((p) => (
-              <motion.button
+              <motion.article
                 key={p.id}
-                whileHover={{ y: -2 }}
-                onClick={() => navigate(`/productos/${p.id}`)}
-                className="shrink-0 flex items-center gap-2.5 px-3 py-2 rounded-2xl transition-all"
-                style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
+                role="listitem"
+                whileHover={{ y: -4, scale: 1.02 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                className="shrink-0 relative w-44 rounded-2xl overflow-visible"
+                style={{ background: 'linear-gradient(135deg, #1c1c24 0%, #16161e 100%)', border: '1px solid rgba(255,255,255,0.08)' }}
               >
-                <div className="w-9 h-9 rounded-lg bg-[#1a1a1f] overflow-hidden shrink-0 border border-white/6">
+                {/* imagen desbordante — parte del enlace de navegación */}
+                <Link
+                  to={`/productos/${p.id}`}
+                  aria-hidden="true"
+                  tabIndex={-1}
+                  className="absolute -top-4 -left-3 w-20 h-20 drop-shadow-xl"
+                >
                   {p.imagenUrl ? (
-                    <img src={p.imagenUrl} alt={p.nombre} className="w-full h-full object-cover" loading="lazy" />
+                    <img src={p.imagenUrl} alt="" className="w-full h-full object-contain" loading="lazy" />
                   ) : (
-                    <span className="flex items-center justify-center w-full h-full text-sm">📦</span>
+                    <span aria-hidden="true" className="flex items-center justify-center w-full h-full text-3xl">📦</span>
                   )}
-                </div>
-                <div className="text-left">
-                  <p className="text-xs font-medium max-w-[100px] truncate" style={{ color: 'var(--hc-text)' }}>
+                </Link>
+
+                {/* enlace principal con nombre y precio */}
+                <Link
+                  to={`/productos/${p.id}`}
+                  className="block pl-16 pr-3 pt-3 pb-1 rounded-t-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f7cff] focus-visible:ring-offset-2 focus-visible:ring-offset-[#16161e]"
+                  aria-label={`Ver ${p.nombre}, ${formatPrice(p.precio)}`}
+                >
+                  <p className="text-xs font-medium text-[#c8c8d4] truncate max-w-[90px] leading-tight">
                     {p.nombre}
                   </p>
-                  <p className="text-xs font-bold text-[#4f7cff]">{formatPrice(p.precio)}</p>
+                  <p className="text-sm font-bold text-[#e8e8ed] mt-0.5" aria-hidden="true">
+                    {formatPrice(p.precio)}
+                  </p>
+                </Link>
+
+                {/* botón añadir al carrito */}
+                <div className="flex justify-end px-3 pb-3 pt-1">
+                  <motion.button
+                    whileTap={{ scale: 0.88 }}
+                    aria-label={`Añadir ${p.nombre} al carrito`}
+                    onClick={() => {
+                      addItem(p)
+                      toast({ message: t('product.added', { name: p.nombre }), type: 'success' })
+                    }}
+                    className="w-7 h-7 rounded-full bg-[#4f7cff] flex items-center justify-center text-white text-base font-bold shadow-lg shadow-[#4f7cff]/30 hover:bg-[#6b93ff] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f7cff] focus-visible:ring-offset-2 focus-visible:ring-offset-[#16161e]"
+                  >
+                    <span aria-hidden="true">+</span>
+                  </motion.button>
                 </div>
-              </motion.button>
+              </motion.article>
             ))}
           </div>
         </section>
@@ -332,47 +486,13 @@ export default function HomePage() {
         </motion.div>
 
         <div className="relative">
-          {/* Connector line */}
           <div className="hidden lg:block absolute top-10 left-[12.5%] right-[12.5%] h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              {
-                step: '01',
-                icon: <SearchStepIcon />,
-                title: t('home.step1Title'),
-                desc: t('home.step1Desc'),
-                color: 'text-[#4f7cff]',
-                glow: 'bg-[#4f7cff]/10',
-                border: 'border-[#4f7cff]/20',
-              },
-              {
-                step: '02',
-                icon: <CartStepIcon />,
-                title: t('home.step2Title'),
-                desc: t('home.step2Desc'),
-                color: 'text-purple-400',
-                glow: 'bg-purple-500/10',
-                border: 'border-purple-500/20',
-              },
-              {
-                step: '03',
-                icon: <WhatsStepIcon />,
-                title: t('home.step3Title'),
-                desc: t('home.step3Desc'),
-                color: 'text-[#25D366]',
-                glow: 'bg-[#25D366]/10',
-                border: 'border-[#25D366]/20',
-              },
-              {
-                step: '04',
-                icon: <TruckStepIcon />,
-                title: t('home.step4Title'),
-                desc: t('home.step4Desc'),
-                color: 'text-amber-400',
-                glow: 'bg-amber-500/10',
-                border: 'border-amber-500/20',
-              },
+              { step: '01', icon: <SearchStepIcon />, title: t('home.step1Title'), desc: t('home.step1Desc'), color: 'text-[#4f7cff]', glow: 'bg-[#4f7cff]/10', border: 'border-[#4f7cff]/20' },
+              { step: '02', icon: <CartStepIcon />, title: t('home.step2Title'), desc: t('home.step2Desc'), color: 'text-purple-400', glow: 'bg-purple-500/10', border: 'border-purple-500/20' },
+              { step: '03', icon: <WhatsStepIcon />, title: t('home.step3Title'), desc: t('home.step3Desc'), color: 'text-[#25D366]', glow: 'bg-[#25D366]/10', border: 'border-[#25D366]/20' },
+              { step: '04', icon: <TruckStepIcon />, title: t('home.step4Title'), desc: t('home.step4Desc'), color: 'text-amber-400', glow: 'bg-amber-500/10', border: 'border-amber-500/20' },
             ].map(({ step, icon, title, desc, color, glow, border }, i) => (
               <motion.div
                 key={step}
@@ -434,7 +554,6 @@ export default function HomePage() {
           className="relative rounded-3xl overflow-hidden p-12"
           style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
         >
-          {/* Multi-layer gradient backdrop */}
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] opacity-20"
               style={{ background: 'radial-gradient(ellipse at center, var(--hc-accent), transparent 70%)' }} />
@@ -448,10 +567,7 @@ export default function HomePage() {
             <p className="mb-8 max-w-md mx-auto" style={{ color: 'var(--hc-muted)' }}>
               {t('home.ctaSub')}
             </p>
-            <Link
-              to="/productos"
-              className="hc-btn hc-btn-primary hc-btn-lg inline-flex"
-            >
+            <Link to="/productos" className="hc-btn hc-btn-primary hc-btn-lg inline-flex">
               {t('home.ctaBtn')}
             </Link>
           </div>
@@ -461,8 +577,7 @@ export default function HomePage() {
   )
 }
 
-// ─── Testimonials ────────────────────────────────────────────────────────────
-
+// ─── Testimonials ─────────────────────────────────────────────────────────────
 const TESTIMONIALS = [
   { name: 'Andrés M.', location: 'San José', rating: 5, text: 'Compré unos audífonos y llegaron en perfectas condiciones. El trato por WhatsApp fue muy rápido y claro. 100% recomendado.' },
   { name: 'Valeria R.', location: 'Heredia', rating: 5, text: 'Encontré una laptop como nueva a un precio increíble. El proceso fue sencillo: elegí, mandé el WhatsApp y en 2 días la tenía en casa.' },
@@ -476,46 +591,30 @@ function TestimonialsCarousel() {
   const { t } = useTranslation()
   const prev = () => setIdx((i) => (i - 1 + TESTIMONIALS.length) % TESTIMONIALS.length)
   const next = () => setIdx((i) => (i + 1) % TESTIMONIALS.length)
-
   const visible = [
-    TESTIMONIALS[(idx) % TESTIMONIALS.length],
+    TESTIMONIALS[idx % TESTIMONIALS.length],
     TESTIMONIALS[(idx + 1) % TESTIMONIALS.length],
     TESTIMONIALS[(idx + 2) % TESTIMONIALS.length],
   ]
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        className="text-center mb-10"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-10">
         <h2 className="text-2xl font-bold text-[#e8e8ed]">{t('home.testimoniosTitle')}</h2>
         <p className="text-sm text-[#8e8e9a] mt-1">{t('home.testimoniosSub')}</p>
       </motion.div>
-
       <div className="relative">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 overflow-hidden">
           {visible.map((t, i) => (
-            <motion.div
-              key={idx + i}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: i * 0.08 }}
-              className="hc-glass-card p-6 flex flex-col gap-3"
-            >
+            <motion.div key={idx + i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: i * 0.08 }} className="hc-glass-card p-6 flex flex-col gap-3">
               <div className="flex gap-0.5">
                 {Array.from({ length: t.rating }).map((_, s) => (
-                  <svg key={s} className="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                  </svg>
+                  <svg key={s} className="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                 ))}
               </div>
               <p className="text-sm leading-relaxed flex-1" style={{ color: 'var(--hc-muted)' }}>"{t.text}"</p>
               <div className="flex items-center gap-2 pt-2" style={{ borderTop: '1px solid var(--hc-border)' }}>
-                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
-                  style={{ backgroundColor: 'color-mix(in srgb, var(--hc-accent) 15%, transparent)', color: 'var(--hc-accent)' }}>
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: 'color-mix(in srgb, var(--hc-accent) 15%, transparent)', color: 'var(--hc-accent)' }}>
                   {t.name[0]}
                 </div>
                 <div>
@@ -526,18 +625,16 @@ function TestimonialsCarousel() {
             </motion.div>
           ))}
         </div>
-
-        {/* Controls */}
         <div className="flex items-center justify-center gap-4 mt-6">
-          <button onClick={prev} aria-label="Testimonio anterior" className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/10 transition-colors">
+          <button onClick={prev} aria-label="Anterior" className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/10 transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
           <div className="flex gap-1.5">
             {TESTIMONIALS.map((_, i) => (
-              <button key={i} onClick={() => setIdx(i)} aria-label={`Ir al testimonio ${i + 1}`} className={`w-2.5 h-2.5 rounded-full transition-all ${i === idx ? 'bg-[#4f7cff] w-4' : 'bg-white/20'}`} />
+              <button key={i} onClick={() => setIdx(i)} className={`w-2.5 h-2.5 rounded-full transition-all ${i === idx ? 'bg-[#4f7cff] w-4' : 'bg-white/20'}`} />
             ))}
           </div>
-          <button onClick={next} aria-label="Testimonio siguiente" className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/10 transition-colors">
+          <button onClick={next} aria-label="Siguiente" className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/10 transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
         </div>
@@ -546,48 +643,34 @@ function TestimonialsCarousel() {
   )
 }
 
-// ─── Step icons ──────────────────────────────────────────────────────────────
+// ─── Step icons ───────────────────────────────────────────────────────────────
 const si = 'w-6 h-6'
 const ss = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }
 
-function SearchStepIcon() {
-  return <svg className={si} viewBox="0 0 24 24" {...ss}><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-}
-function CartStepIcon() {
-  return <svg className={si} viewBox="0 0 24 24" {...ss}><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
-}
-function WhatsStepIcon() {
-  return <svg className={si} viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-}
-function TruckStepIcon() {
-  return <svg className={si} viewBox="0 0 24 24" {...ss}><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-}
+function SearchStepIcon() { return <svg className={si} viewBox="0 0 24 24" {...ss}><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> }
+function CartStepIcon() { return <svg className={si} viewBox="0 0 24 24" {...ss}><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg> }
+function WhatsStepIcon() { return <svg className={si} viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> }
+function TruckStepIcon() { return <svg className={si} viewBox="0 0 24 24" {...ss}><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> }
 
-function HeadphonesIllustration() {
+function FallbackIllustration({ color }) {
   return (
-    <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-[0_0_32px_rgba(79,124,255,0.35)]" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Arc / headband */}
-      <path d="M40 110 C40 60 160 60 160 110" stroke="#4f7cff" strokeWidth="8" strokeLinecap="round" fill="none" opacity="0.9"/>
-      {/* Left cup outer */}
-      <rect x="20" y="108" width="36" height="48" rx="18" fill="#1a1a2e" stroke="#4f7cff" strokeWidth="3" opacity="0.95"/>
-      {/* Left cup inner glow */}
-      <rect x="28" y="116" width="20" height="32" rx="10" fill="#4f7cff" opacity="0.18"/>
-      <rect x="28" y="116" width="20" height="32" rx="10" stroke="#4f7cff" strokeWidth="1.5" opacity="0.5"/>
-      {/* Right cup outer */}
-      <rect x="144" y="108" width="36" height="48" rx="18" fill="#1a1a2e" stroke="#4f7cff" strokeWidth="3" opacity="0.95"/>
-      {/* Right cup inner glow */}
-      <rect x="152" y="116" width="20" height="32" rx="10" fill="#4f7cff" opacity="0.18"/>
-      <rect x="152" y="116" width="20" height="32" rx="10" stroke="#4f7cff" strokeWidth="1.5" opacity="0.5"/>
-      {/* Headband highlight */}
+    <svg viewBox="0 0 200 200" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg"
+      style={{ filter: `drop-shadow(0 0 32px ${color}55)` }}>
+      <path d="M40 110 C40 60 160 60 160 110" stroke={color} strokeWidth="8" strokeLinecap="round" fill="none" opacity="0.9"/>
+      <rect x="20" y="108" width="36" height="48" rx="18" fill="#1a1a2e" stroke={color} strokeWidth="3" opacity="0.95"/>
+      <rect x="28" y="116" width="20" height="32" rx="10" fill={color} opacity="0.18"/>
+      <rect x="28" y="116" width="20" height="32" rx="10" stroke={color} strokeWidth="1.5" opacity="0.5"/>
+      <rect x="144" y="108" width="36" height="48" rx="18" fill="#1a1a2e" stroke={color} strokeWidth="3" opacity="0.95"/>
+      <rect x="152" y="116" width="20" height="32" rx="10" fill={color} opacity="0.18"/>
+      <rect x="152" y="116" width="20" height="32" rx="10" stroke={color} strokeWidth="1.5" opacity="0.5"/>
       <path d="M60 78 C80 65 120 65 140 78" stroke="white" strokeWidth="2" strokeLinecap="round" opacity="0.15"/>
-      {/* Speaker dots left */}
-      <circle cx="38" cy="132" r="3" fill="#4f7cff" opacity="0.7"/>
-      {/* Speaker dots right */}
-      <circle cx="162" cy="132" r="3" fill="#4f7cff" opacity="0.7"/>
+      <circle cx="38" cy="132" r="3" fill={color} opacity="0.7"/>
+      <circle cx="162" cy="132" r="3" fill={color} opacity="0.7"/>
     </svg>
   )
 }
 
+// ─── ProductCard ──────────────────────────────────────────────────────────────
 function ProductCard({ product, onAdd }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -595,11 +678,7 @@ function ProductCard({ product, onAdd }) {
   const { toggle: toggleWishlist, isLiked } = useWishlistStore()
   const liked = isLiked(product.id)
   const stockDot = product.stock === 0 ? 'bg-red-400' : product.stock <= 3 ? 'bg-amber-400' : 'bg-emerald-400'
-  const stockLabel = product.stock === 0
-    ? t('common.outOfStock')
-    : product.stock <= 3
-    ? t('products.lowStock', { count: product.stock })
-    : t('common.inStock')
+  const stockLabel = product.stock === 0 ? t('common.outOfStock') : product.stock <= 3 ? t('products.lowStock', { count: product.stock }) : t('common.inStock')
   const stockColor = product.stock === 0 ? 'text-red-400' : product.stock <= 3 ? 'text-amber-400' : 'text-emerald-400'
 
   return (
@@ -611,13 +690,12 @@ function ProductCard({ product, onAdd }) {
       style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
       onClick={() => navigate(`/productos/${product.id}`, { state: { product } })}
     >
-      {/* Image */}
       <div className="relative h-36 sm:h-48 bg-[#1a1a1f] flex items-center justify-center overflow-hidden">
         {product.imagenUrl ? (
           <img
             src={product.imagenUrl}
             alt={product.nombre}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
+            className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500 ease-out p-2"
           />
         ) : (
           <span className="text-5xl opacity-30 group-hover:opacity-50 transition-opacity">📦</span>
@@ -627,27 +705,18 @@ function ProductCard({ product, onAdd }) {
             <span className="text-xs font-semibold text-white/60 bg-black/40 px-3 py-1 rounded-full">{t('common.outOfStock')}</span>
           </div>
         )}
-        {/* Wishlist heart */}
         <button
           onClick={(e) => { e.stopPropagation(); toggleWishlist(product) }}
           className="absolute top-2 right-2 z-10 w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200"
-          style={{
-            background: liked ? 'rgba(239,68,68,0.18)' : 'rgba(0,0,0,0.45)',
-            border: liked ? '1px solid rgba(239,68,68,0.38)' : '1px solid rgba(255,255,255,0.12)',
-          }}
+          style={{ background: liked ? 'rgba(239,68,68,0.18)' : 'rgba(0,0,0,0.45)', border: liked ? '1px solid rgba(239,68,68,0.38)' : '1px solid rgba(255,255,255,0.12)' }}
           aria-label={liked ? 'Quitar de favoritos' : 'Guardar en wishlist'}
         >
           {liked ? (
-            <svg className="w-3.5 h-3.5 text-red-400" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-            </svg>
+            <svg className="w-3.5 h-3.5 text-red-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
           ) : (
-            <svg className="w-3.5 h-3.5 text-white/70" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
+            <svg className="w-3.5 h-3.5 text-white/70" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
           )}
         </button>
-        {/* Quick-add overlay */}
         {product.stock > 0 && (
           <>
             <div className="hc-card-overlay" />
@@ -657,17 +726,9 @@ function ProductCard({ product, onAdd }) {
                   e.stopPropagation()
                   if (addState !== 'idle') return
                   setAddState('adding')
-                  setTimeout(() => {
-                    onAdd(product)
-                    setAddState('added')
-                    setTimeout(() => setAddState('idle'), 1300)
-                  }, 180)
+                  setTimeout(() => { onAdd(product); setAddState('added'); setTimeout(() => setAddState('idle'), 1300) }, 180)
                 }}
-                className={`w-full h-8 rounded-xl text-xs font-bold transition-all duration-200 ${
-                  addState === 'added'
-                    ? 'bg-emerald-500 text-white'
-                    : 'bg-[#4f7cff] hover:bg-[#3d6ee0] text-white'
-                }`}
+                className={`w-full h-8 rounded-xl text-xs font-bold transition-all duration-200 ${addState === 'added' ? 'bg-emerald-500 text-white' : 'bg-[#4f7cff] hover:bg-[#3d6ee0] text-white'}`}
               >
                 {addState === 'added' ? '✓ Añadido' : addState === 'adding' ? '···' : `+ ${t('products.addToCart')}`}
               </button>
@@ -675,8 +736,6 @@ function ProductCard({ product, onAdd }) {
           </>
         )}
       </div>
-
-      {/* Content */}
       <div className="p-3 sm:p-4">
         <h3 className="font-medium text-xs sm:text-sm leading-snug line-clamp-2 mb-2.5 group-hover:text-white transition-colors" style={{ color: 'var(--hc-text)' }}>
           {product.nombre}
@@ -688,24 +747,15 @@ function ProductCard({ product, onAdd }) {
             <span className={`text-[10px] sm:text-xs font-medium ${stockColor}`}>{stockLabel}</span>
           </div>
         </div>
-        {/* Mobile fallback button */}
         {product.stock > 0 && (
           <button
             onClick={(e) => {
               e.stopPropagation()
               if (addState !== 'idle') return
               setAddState('adding')
-              setTimeout(() => {
-                onAdd(product)
-                setAddState('added')
-                setTimeout(() => setAddState('idle'), 1300)
-              }, 180)
+              setTimeout(() => { onAdd(product); setAddState('added'); setTimeout(() => setAddState('idle'), 1300) }, 180)
             }}
-            className={`sm:hidden mt-2.5 w-full h-8 rounded-xl text-xs font-medium transition-all duration-200 ${
-              addState === 'added'
-                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                : ''
-            }`}
+            className={`sm:hidden mt-2.5 w-full h-8 rounded-xl text-xs font-medium transition-all duration-200 ${addState === 'added' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : ''}`}
             style={addState === 'added' ? {} : { background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', color: 'var(--hc-accent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 25%, transparent)' }}
           >
             {addState === 'added' ? '✓ Añadido' : t('products.addToCart')}

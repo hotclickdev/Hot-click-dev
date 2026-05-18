@@ -4,6 +4,7 @@ import com.hotclick.dto.ProductoRequestDTO;
 import com.hotclick.model.Producto;
 import com.hotclick.repository.BodegaRepository;
 import com.hotclick.repository.CategoriaRepository;
+import com.hotclick.repository.MarcaRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.utils.Constants;
@@ -22,6 +23,7 @@ public class ProductoService {
     @Autowired private CategoriaRepository categoriaRepository;
     @Autowired private BodegaRepository bodegaRepository;
     @Autowired private UsuarioRepository usuarioRepository;
+    @Autowired private MarcaRepository marcaRepository;
 
     @Transactional
     public Producto crearProducto(ProductoRequestDTO dto, String adminCorreo) {
@@ -78,6 +80,15 @@ public class ProductoService {
         if (dto.getEspecificaciones()   != null) p.setEspecificaciones(trunc(dto.getEspecificaciones(), 5000));
         if (dto.getComoUsar()           != null) p.setComoUsar(trunc(dto.getComoUsar(), 5000));
         if (dto.getDescripcionLarga()   != null) p.setDescripcionLarga(trunc(dto.getDescripcionLarga(), 5000));
+        Long mid = dto.getMarcaId();
+        if (mid != null) {
+            p.setMarca(marcaRepository.findById(mid)
+                .orElseThrow(() -> new RuntimeException("Marca no encontrada")));
+        }
+    }
+
+    public Page<Producto> listarPorMarca(Long marcaId, Pageable pageable) {
+        return productoRepository.findByMarcaIdAndEstadoAndStockActualGreaterThan(marcaId, Constants.ESTADO_ACTIVO, 0, pageable);
     }
 
     private static String trunc(String s, int max) {
@@ -128,6 +139,19 @@ public class ProductoService {
 
     public List<Producto> listarDestacados() {
         return productoRepository.findByDestacadoTrueAndEstado(Constants.ESTADO_ACTIVO);
+    }
+
+    public List<Producto> listarCarrusel() {
+        return productoRepository.findByEnCarruselTrueAndEstadoOrderByOrdenCarruselAsc(Constants.ESTADO_ACTIVO);
+    }
+
+    @Transactional
+    public Producto toggleCarrusel(Long id, Boolean valor, Integer orden) {
+        Producto p = productoRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+        p.setEnCarrusel(valor);
+        if (orden != null) p.setOrdenCarrusel(orden);
+        return productoRepository.save(p);
     }
 
     public List<Producto> listarArticulosUnicos() {

@@ -64,6 +64,8 @@ public class PaymentService {
             .orElseThrow(() -> new RuntimeException("Bodega no encontrada: " + bodegaId));
 
         // ── Validar y RESERVAR stock con bloqueo pesimista ──────────────
+        // La reserva (stockReservado) impide que dos compradores simultáneos
+        // agoten el mismo item. Solo se descuenta stockActual al confirmar el pago.
         int subtotal   = 0;
         int costoTotal = 0;
         for (PaymentCheckoutRequest.ItemDTO item : req.getItems()) {
@@ -81,7 +83,7 @@ public class PaymentService {
                     + " (disponible: " + p.getStockDisponible()
                     + ", solicitado: " + item.getCantidad() + ")");
             }
-            // Reservar unidades
+            // Reservar unidades — se libera en cancelación/fallo, se consume en confirmación
             p.setStockReservado(p.getStockReservado() + item.getCantidad());
             productoRepository.save(p);
 
@@ -244,6 +246,35 @@ public class PaymentService {
             }
         }
         log.info("Reservas liberadas para pedido {}", pedido.getNumeroPedido());
+    }
+
+    // ================================================================
+    // CANCELAR POR USUARIO — El usuario regresó de la página de pago sin pagar.
+    // Libera el stockReservado y marca el pedido/pago como CANCELADO.
+    // ================================================================
+    @Transactional
+    public void cancelarPorUsuario(String numeroPedido, String correoUsuario) {
+        Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
+            .orElseThrow(() -> new RuntimeException("Pedido no encontrado: " + numeroPedido));
+
+        if (!pedido.getUsuarioFinal().getCorreo().equals(correoUsuario)) {
+            throw new SecurityException("No tienes permiso para cancelar este pedido");
+        }
+
+        if (!Constants.PEDIDO_PENDIENTE.equals(pedido.getEstadoPedido())) {
+            throw new IllegalStateException("El pedido ya fue procesado y no puede cancelarse");
+        }
+
+        Pago pago = pagoRepository.findTopByPedidoId(pedido.getId())
+            .orElseThrow(() -> new RuntimeException("Pago no encontrado para pedido: " + numeroPedido));
+
+        // Si el webhook ya confirmó o capturó el pago, no cancelar
+        if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
+            throw new IllegalStateException("El pago ya fue confirmado y no puede cancelarse");
+        }
+
+        marcarFallido(pago, "Cancelado por el usuario");
+        log.info("Pedido {} cancelado por el usuario {}", numeroPedido, correoUsuario);
     }
 
     // ================================================================

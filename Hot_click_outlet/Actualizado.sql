@@ -1512,5 +1512,22 @@ CREATE INDEX IF NOT EXISTS idx_pago_estado_fecha
     WHERE estado_pago = 'PENDIENTE';
 
 -- ============================================================
+-- MIGRACIÓN: CARRUSEL DEL INICIO
+-- ============================================================
+
+-- Marca si el producto aparece en el carrusel hero de la tienda
+ALTER TABLE hot_click_producto_tb
+    ADD COLUMN IF NOT EXISTS en_carrusel BOOLEAN NOT NULL DEFAULT false;
+
+-- Posición en el carrusel (1–5, menor = primero)
+ALTER TABLE hot_click_producto_tb
+    ADD COLUMN IF NOT EXISTS orden_carrusel INTEGER NOT NULL DEFAULT 0;
+
+-- Índice para consultas de carrusel (GET /api/productos/carrusel)
+CREATE INDEX IF NOT EXISTS idx_producto_carrusel
+    ON hot_click_producto_tb(en_carrusel, orden_carrusel)
+    WHERE en_carrusel = true;
+
+-- ============================================================
 -- FIN DEL SCRIPT
 -- ============================================================

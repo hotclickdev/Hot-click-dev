@@ -50,6 +50,25 @@ public class PaymentController {
     }
 
     /**
+     * Cancela un pedido PENDIENTE y libera el stock reservado.
+     * Llamado por el frontend cuando el usuario regresa de la URL de cancelación de PayXpert/PayPal.
+     */
+    @PostMapping("/cancel/{numeroPedido}")
+    public ResponseEntity<ResponseDTO> cancelarPedido(@PathVariable String numeroPedido) {
+        try {
+            String correoUsuario = SecurityContextHolder.getContext().getAuthentication().getName();
+            paymentService.cancelarPorUsuario(numeroPedido, correoUsuario);
+            return ResponseEntity.ok(ResponseDTO.success("Pedido cancelado", null));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(ResponseDTO.error(e.getMessage()));
+        }
+    }
+
+    /**
      * Captura un pago PayPal tras el redirect de aprobación.
      * PayPal redirige con ?token={paypalOrderId}&PayerID={payerId} en la URL de retorno.
      * El frontend llama este endpoint antes de mostrar la pantalla de éxito.

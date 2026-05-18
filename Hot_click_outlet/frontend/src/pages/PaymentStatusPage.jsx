@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useSearchParams, Link } from 'react-router-dom'
+import { useSearchParams, useLocation, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
@@ -11,13 +11,15 @@ const DELAY_PAYXPERT_MS = 2500
 
 export default function PaymentStatusPage() {
   const [params]      = useSearchParams()
+  const { pathname }  = useLocation()
   const numeroPedido  = params.get('order')
   const provider      = params.get('provider')
   const paypalToken   = params.get('token')
+  const esCancelacion = pathname === '/pago/cancelado'
 
-  const { clearCart }                                                    = useCartStore()
+  const { clearCart }                                                           = useCartStore()
   const { estado, pagoData, error, iniciarPolling, stopPolling,
-          capturarPayPal }                                               = usePayment()
+          capturarPayPal, cancelarPedido }                                      = usePayment()
   const ran = useRef(false)
   const { t } = useTranslation()
 
@@ -29,23 +31,24 @@ export default function PaymentStatusPage() {
     if (estado === 'success') clearCart()
   }, [estado, clearCart])
 
-  // Iniciar el flujo según el proveedor
+  // Iniciar el flujo según si es cancelación o retorno de pago
   useEffect(() => {
     if (!numeroPedido || ran.current) return
     ran.current = true
 
-    if (provider === 'paypal') {
-      if (!paypalToken) {
-        // URL de cancelación de PayPal — iniciar polling para mostrar el estado real
-        iniciarPolling(numeroPedido)
-      } else {
-        // URL de retorno con aprobación — capturar el pago
-        capturarPayPal(paypalToken, numeroPedido)
-      }
+    if (esCancelacion) {
+      // El usuario canceló en la página del proveedor — liberar stock reservado
+      cancelarPedido(numeroPedido)
+      return
+    }
+
+    if (provider === 'paypal' && paypalToken) {
+      // URL de retorno PayPal con aprobación — capturar el pago
+      capturarPayPal(paypalToken, numeroPedido)
     } else {
       // PayXpert — esperar un poco para dar tiempo al webhook, luego hacer polling
-      const t = setTimeout(() => iniciarPolling(numeroPedido), DELAY_PAYXPERT_MS)
-      return () => clearTimeout(t)
+      const timer = setTimeout(() => iniciarPolling(numeroPedido), DELAY_PAYXPERT_MS)
+      return () => clearTimeout(timer)
     }
   }, [numeroPedido])
 

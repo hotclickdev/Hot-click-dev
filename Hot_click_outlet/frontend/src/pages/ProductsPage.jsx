@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import { productService, normalizeProduct } from '@/services/productService'
+import { marcaService } from '@/services/marcaService'
 import useCartStore from '@/store/cartStore'
 import useWishlistStore from '@/store/wishlistStore'
 import { useToast } from '@/components/ui/Toast'
@@ -43,6 +44,7 @@ export default function ProductsPage() {
 
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
+  const [marcas, setMarcas] = useState([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
@@ -50,6 +52,7 @@ export default function ProductsPage() {
   // Filters
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
+  const [marca, setMarca] = useState('')
   const [sort, setSort] = useState('default')
   const [filterStock, setFilterStock] = useState('')
   const [filterCond, setFilterCond] = useState('')
@@ -79,6 +82,10 @@ export default function ProductsPage() {
   useEffect(() => { fetchProducts(0) }, [fetchProducts])
   useEffect(() => {
     productService.getCategories().then(({ data }) => setCategories(data ?? [])).catch(() => {})
+    marcaService.getAll().then(r => {
+      const ms = r.data?.data ?? r.data ?? []
+      setMarcas(Array.isArray(ms) ? ms : [])
+    }).catch(() => {})
   }, [])
 
   const filtered = useMemo(() => {
@@ -87,6 +94,7 @@ export default function ProductsPage() {
     return products
       .filter((p) => !search || p.nombre?.toLowerCase().includes(search.toLowerCase()))
       .filter((p) => !category || String(p.categoriaId) === String(category))
+      .filter((p) => !marca || String(p.marcaId) === String(marca))
       .filter((p) => {
         if (filterStock === 'ok') return p.stock > 3
         if (filterStock === 'low') return p.stock > 0 && p.stock <= 3
@@ -102,13 +110,14 @@ export default function ProductsPage() {
         if (sort === 'name') return a.nombre?.localeCompare(b.nombre)
         return 0
       })
-  }, [products, search, category, sort, filterStock, filterCond, priceMin, priceMax])
+  }, [products, search, category, marca, sort, filterStock, filterCond, priceMin, priceMax])
 
-  const hasFilters = !!(category || filterStock || filterCond || priceMin || priceMax)
-  const clearFilters = () => { setCategory(''); setFilterStock(''); setFilterCond(''); setSearch(''); setPriceMin(''); setPriceMax('') }
+  const hasFilters = !!(category || marca || filterStock || filterCond || priceMin || priceMax)
+  const clearFilters = () => { setCategory(''); setMarca(''); setFilterStock(''); setFilterCond(''); setSearch(''); setPriceMin(''); setPriceMax('') }
 
   const activeChips = [
     category && { key: 'cat', label: categories.find((c) => String(c.id) === String(category))?.nombreCategoria ?? categories.find((c) => String(c.id) === String(category))?.nombre ?? 'Categoría', clear: () => setCategory('') },
+    marca && { key: 'marca', label: marcas.find((m) => String(m.id) === String(marca))?.nombreMarca ?? 'Marca', clear: () => setMarca('') },
     filterCond && { key: 'cond', label: COND_OPTIONS.find((o) => o.value === filterCond)?.label, clear: () => setFilterCond('') },
     filterStock && { key: 'stock', label: STOCK_OPTIONS.find((o) => o.value === filterStock)?.label, clear: () => setFilterStock('') },
     (priceMin || priceMax) && { key: 'price', label: priceMin && priceMax ? `₡${Number(priceMin).toLocaleString()} – ₡${Number(priceMax).toLocaleString()}` : priceMin ? `> ₡${Number(priceMin).toLocaleString()}` : `< ₡${Number(priceMax).toLocaleString()}`, clear: () => { setPriceMin(''); setPriceMax('') } },
@@ -177,6 +186,23 @@ export default function ProductsPage() {
                     ))}
                   </div>
                 </div>
+
+                {marcas.length > 0 && (
+                  <>
+                    <div className="border-t border-white/6" />
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">Marca</label>
+                      <div className="flex flex-wrap gap-2">
+                        <ChipBtn active={marca === ''} onClick={() => setMarca('')}>Todas</ChipBtn>
+                        {marcas.map((m) => (
+                          <ChipBtn key={m.id} active={String(marca) === String(m.id)} onClick={() => setMarca(m.id)}>
+                            {m.nombreMarca}
+                          </ChipBtn>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <div className="border-t border-white/6" />
 
@@ -298,6 +324,26 @@ export default function ProductsPage() {
                       ))}
                     </div>
                   </div>
+
+                  <div className="border-t" style={{ borderColor: 'var(--hc-border)' }} />
+
+                  {/* Marcas */}
+                  {marcas.length > 0 && (
+                    <>
+                      <div className="border-t" style={{ borderColor: 'var(--hc-border)' }} />
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-[#8e8e9a]">Marca</label>
+                        <div className="space-y-0.5">
+                          <FilterBtn active={marca === ''} onClick={() => setMarca('')}>Todas</FilterBtn>
+                          {marcas.map((m) => (
+                            <FilterBtn key={m.id} active={String(marca) === String(m.id)} onClick={() => setMarca(m.id)}>
+                              {m.nombreMarca}
+                            </FilterBtn>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   <div className="border-t" style={{ borderColor: 'var(--hc-border)' }} />
 
@@ -438,7 +484,7 @@ export default function ProductsPage() {
             ) : (
               <AnimatePresence mode="wait">
                 <motion.div
-                  key={page + search + category + sort + filterStock + filterCond + priceMin + priceMax}
+                  key={page + search + category + marca + sort + filterStock + filterCond + priceMin + priceMax}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
@@ -524,6 +570,11 @@ export default function ProductsPage() {
 
                       {/* Content */}
                       <div className="p-3 sm:p-4">
+                        {product.marcaNombre && (
+                          <p className="text-[10px] font-medium uppercase tracking-wide mb-1 truncate" style={{ color: 'var(--hc-accent)' }}>
+                            {product.marcaNombre}
+                          </p>
+                        )}
                         <h3 className="font-medium text-xs sm:text-sm leading-snug line-clamp-2 mb-2 sm:mb-2.5 group-hover:text-white transition-colors" style={{ color: 'var(--hc-text)' }}>
                           {product.nombre}
                         </h3>

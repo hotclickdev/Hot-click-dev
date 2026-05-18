@@ -45,6 +45,26 @@ public class ProductoController {
         return ResponseEntity.ok(ResponseDTO.success("Destacados obtenidos", productoService.listarDestacados()));
     }
 
+    @GetMapping("/carrusel")
+    public ResponseEntity<ResponseDTO> listarCarrusel() {
+        return ResponseEntity.ok(ResponseDTO.success("Carrusel obtenido", productoService.listarCarrusel()));
+    }
+
+    @PatchMapping("/{id}/carrusel")
+    public ResponseEntity<ResponseDTO> toggleCarrusel(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body) {
+        try {
+            Boolean valor = (Boolean) body.get("enCarrusel");
+            Integer orden = body.get("orden") != null ? ((Number) body.get("orden")).intValue() : null;
+            if (valor == null) return ResponseEntity.badRequest().body(ResponseDTO.error("Campo enCarrusel requerido"));
+            var producto = productoService.toggleCarrusel(id, valor, orden);
+            return ResponseEntity.ok(ResponseDTO.success("Carrusel actualizado", producto));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        }
+    }
+
     @PatchMapping("/{id}/destacado")
     public ResponseEntity<ResponseDTO> toggleDestacado(
             @PathVariable Long id,

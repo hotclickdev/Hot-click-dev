@@ -108,23 +108,27 @@ public class PayXpertPaymentProvider implements PaymentProvider {
             return;
         }
 
-        // Validación anti-fraude: monto debe coincidir (null rechazado por seguridad)
-        if (dto.getAmount() == null) {
-            String alerta = "Webhook PayXpert sin monto — rechazado por seguridad. token=" + dto.getMerchantToken();
-            log.error(alerta);
-            evento.setErrorProcesamiento(alerta);
-            webhookEventRepository.save(evento);
-            throw new SecurityException("Webhook PayXpert sin monto — rechazado por seguridad");
-        }
-        long montoEsperado = (long) pago.getMonto() * 100;
-        if (montoEsperado != dto.getAmount()) {
-            String alerta = String.format(
-                "ALERTA FRAUDE PayXpert: esperado=%d centavos recibido=%d token=%s",
-                montoEsperado, dto.getAmount(), dto.getMerchantToken());
-            log.error(alerta);
-            evento.setErrorProcesamiento(alerta);
-            webhookEventRepository.save(evento);
-            throw new SecurityException("Validación de monto fallida");
+        // Validación anti-fraude de monto — solo aplica a pagos exitosos.
+        // Cancelaciones/fallos pueden llegar sin amount; no hay cargo que validar.
+        boolean esPagoExitoso = Constants.PAYXPERT_OK.equals(dto.getErrorCode());
+        if (esPagoExitoso) {
+            if (dto.getAmount() == null) {
+                String alerta = "Webhook PayXpert exitoso sin monto — rechazado. token=" + dto.getMerchantToken();
+                log.error(alerta);
+                evento.setErrorProcesamiento(alerta);
+                webhookEventRepository.save(evento);
+                throw new SecurityException("Webhook exitoso sin monto");
+            }
+            long montoEsperado = (long) pago.getMonto() * 100;
+            if (montoEsperado != dto.getAmount()) {
+                String alerta = String.format(
+                    "ALERTA FRAUDE PayXpert: esperado=%d centavos recibido=%d token=%s",
+                    montoEsperado, dto.getAmount(), dto.getMerchantToken());
+                log.error(alerta);
+                evento.setErrorProcesamiento(alerta);
+                webhookEventRepository.save(evento);
+                throw new SecurityException("Validación de monto fallida");
+            }
         }
 
         // Registrar transacción
@@ -142,8 +146,8 @@ public class PayXpertPaymentProvider implements PaymentProvider {
         txn.setEstado(Constants.ESTADO_ACTIVO);
         transaccionPagoRepository.save(txn);
 
-        // Actualizar estado y disparar lógica de negocio (libera stock en FALLIDO/CANCELADO)
-        if (Constants.PAYXPERT_OK.equals(dto.getErrorCode())) {
+        // Actualizar estado y disparar lógica de negocio (libera stockReservado en FALLIDO/CANCELADO)
+        if (esPagoExitoso) {
             pago.setEstadoPago(Constants.PAGO_CAPTURADO);
             pago.setMetodoPagoTipo(dto.getPaymentMethod());
             pago.setFechaActualizacion(LocalDateTime.now());

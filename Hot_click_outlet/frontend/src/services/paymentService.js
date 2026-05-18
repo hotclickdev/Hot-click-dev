@@ -28,4 +28,13 @@ export const paymentService = {
       params: { paypalOrderId, numeroPedido },
     })
   },
+
+  /**
+   * Cancela un pedido PENDIENTE y libera el stock reservado.
+   * Llamar cuando el usuario regresa de la URL de cancelación del proveedor.
+   * @param {string} numeroPedido
+   */
+  cancelarPedido(numeroPedido) {
+    return api.post(`/payments/cancel/${numeroPedido}`)
+  },
 }

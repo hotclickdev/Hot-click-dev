@@ -134,6 +134,12 @@ public class Producto extends BaseEntity {
     @Column(name = "como_usar", columnDefinition = "TEXT")
     private String comoUsar;
 
+    @Column(name = "en_carrusel", nullable = false)
+    private Boolean enCarrusel = false;
+
+    @Column(name = "orden_carrusel")
+    private Integer ordenCarrusel = 0;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -252,4 +258,10 @@ public class Producto extends BaseEntity {
 
     public LocalDateTime getFechaAgotado() { return fechaAgotado; }
     public void setFechaAgotado(LocalDateTime fechaAgotado) { this.fechaAgotado = fechaAgotado; }
+
+    public Boolean getEnCarrusel() { return enCarrusel != null ? enCarrusel : false; }
+    public void setEnCarrusel(Boolean enCarrusel) { this.enCarrusel = enCarrusel; }
+
+    public Integer getOrdenCarrusel() { return ordenCarrusel != null ? ordenCarrusel : 0; }
+    public void setOrdenCarrusel(Integer ordenCarrusel) { this.ordenCarrusel = ordenCarrusel; }
 }

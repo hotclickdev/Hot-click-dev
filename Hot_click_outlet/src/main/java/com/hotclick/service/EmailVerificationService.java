@@ -22,7 +22,7 @@ public class EmailVerificationService {
      * Si el correo ya existe con estado PENDIENTE, reenvía un código nuevo.
      */
     @Transactional
-    public void iniciarRegistro(Usuario usuario) throws Exception {
+    public void iniciarRegistro(Usuario usuario) {
         if (usuario.getCorreo() == null || usuario.getCorreo().isBlank()) {
             throw new RuntimeException("El correo es requerido");
         }

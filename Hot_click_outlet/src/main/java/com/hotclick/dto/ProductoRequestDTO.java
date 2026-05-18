@@ -59,6 +59,7 @@ public class ProductoRequestDTO {
     private String comoUsar;
     private String descripcionLarga;
     private String marcaTexto;
+    private Long marcaId;
 
     public String getTituloProducto() { return tituloProducto; }
     public void setTituloProducto(String tituloProducto) { this.tituloProducto = tituloProducto; }
@@ -74,4 +75,7 @@ public class ProductoRequestDTO {
 
     public String getMarcaTexto() { return marcaTexto; }
     public void setMarcaTexto(String marcaTexto) { this.marcaTexto = marcaTexto; }
+
+    public Long getMarcaId() { return marcaId; }
+    public void setMarcaId(Long marcaId) { this.marcaId = marcaId; }
 }

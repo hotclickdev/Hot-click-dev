@@ -22,7 +22,7 @@ public class PasswordResetService {
     @Autowired private PasswordEncoder passwordEncoder;
 
     /** Paso 1: envía el código al correo si existe. Silencioso si no existe (anti-enumeración). */
-    public void enviarCodigo(String correo) throws Exception {
+    public void enviarCodigo(String correo) {
         Optional<Usuario> usuarioOpt = usuarioRepository.findByCorreo(correo.trim().toLowerCase());
         if (usuarioOpt.isEmpty()) return;
 

@@ -29,6 +29,8 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     Page<Producto> findByCategoriaIdAndEstado(Long categoriaId, Integer estado, Pageable pageable);
 
+    Page<Producto> findByMarcaIdAndEstadoAndStockActualGreaterThan(Long marcaId, Integer estado, Integer stock, Pageable pageable);
+
     Page<Producto> findByBodegaIdAndEstado(Long bodegaId, Integer estado, Pageable pageable);
 
     List<Producto> findByAdminClienteIdAndEstado(Long adminId, Integer estado);
@@ -41,6 +43,8 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     List<Producto> findByEsUnicoTrueAndVendidoFalseAndEstado(Integer estado);
 
     List<Producto> findByDestacadoTrueAndEstado(Integer estado);
+
+    List<Producto> findByEnCarruselTrueAndEstadoOrderByOrdenCarruselAsc(Integer estado);
 
     List<Producto> findByVisibleCatalogoTrueAndEstado(Integer estado, Pageable pageable);
 

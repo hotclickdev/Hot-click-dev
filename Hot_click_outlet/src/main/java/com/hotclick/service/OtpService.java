@@ -7,13 +7,9 @@ import com.hotclick.repository.CodigoOtpRepository;
 import com.hotclick.repository.TipoOtpRepository;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import jakarta.mail.internet.MimeMessage;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 
@@ -22,11 +18,8 @@ public class OtpService {
 
     @Autowired private CodigoOtpRepository codigoOtpRepository;
     @Autowired private TipoOtpRepository tipoOtpRepository;
-    @Autowired private JavaMailSender mailSender;
+    @Autowired private ResendEmailService resendEmailService;
     @Autowired private PasswordEncoder passwordEncoder;
-
-    @Value("${spring.mail.username}")
-    private String fromEmail;
 
     private final SecureRandom random = new SecureRandom();
 
@@ -36,7 +29,7 @@ public class OtpService {
      * Invalida OTPs anteriores del mismo tipo antes de crear uno nuevo.
      */
     @Transactional
-    public void enviarOtp(Usuario usuario, String tipoNombre) throws Exception {
+    public void enviarOtp(Usuario usuario, String tipoNombre) {
         TipoOtp tipo = tipoOtpRepository.findByNombre(tipoNombre)
                 .orElseThrow(() -> new RuntimeException("Tipo de OTP no configurado: " + tipoNombre));
 
@@ -105,14 +98,8 @@ public class OtpService {
         codigoOtpRepository.save(otp);
     }
 
-    private void enviarEmail(String destinatario, String nombre, String codigo, int expiracionSeg) throws Exception {
+    private void enviarEmail(String destinatario, String nombre, String codigo, int expiracionSeg) {
         int minutos = expiracionSeg / 60;
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-        helper.setFrom(fromEmail);
-        helper.setTo(destinatario);
-        helper.setSubject("HOTCLICK — Tu código de verificación");
-
         String html = """
             <!DOCTYPE html>
             <html lang="es">
@@ -122,14 +109,12 @@ public class OtpService {
                 <tr><td align="center">
                   <table width="520" cellpadding="0" cellspacing="0"
                     style="background:#18181f;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);">
-                    <!-- Header -->
                     <tr>
                       <td style="background:linear-gradient(135deg,#4f46e5 0%%,#7c3aed 100%%);padding:32px;text-align:center;">
                         <span style="font-size:26px;font-weight:900;color:#fff;letter-spacing:3px;">HC</span>
                         <span style="font-size:16px;font-weight:700;color:rgba(255,255,255,0.9);margin-left:10px;letter-spacing:5px;">HOTCLICK</span>
                       </td>
                     </tr>
-                    <!-- Body -->
                     <tr>
                       <td style="padding:40px 36px;">
                         <h2 style="margin:0 0 12px;color:#e8e8ed;font-size:22px;font-weight:700;">
@@ -138,7 +123,6 @@ public class OtpService {
                         <p style="color:#8e8e9a;margin:0 0 28px;font-size:15px;line-height:1.6;">
                           Usá el siguiente código para continuar. Expira en <strong style="color:#e8e8ed;">%d minutos</strong>.
                         </p>
-                        <!-- OTP Code -->
                         <div style="text-align:center;margin:28px 0;">
                           <div style="display:inline-block;background:#111114;border:2px solid rgba(79,70,229,0.4);
                                       border-radius:12px;padding:20px 40px;">
@@ -152,7 +136,6 @@ public class OtpService {
                         </p>
                       </td>
                     </tr>
-                    <!-- Footer -->
                     <tr>
                       <td style="background:#111114;padding:20px 36px;text-align:center;
                                  border-top:1px solid rgba(255,255,255,0.06);">
@@ -168,7 +151,6 @@ public class OtpService {
             </html>
             """.formatted(nombre, minutos, codigo);
 
-        helper.setText(html, true);
-        mailSender.send(message);
+        resendEmailService.send(destinatario, "HOTCLICK — Tu código de verificación", html);
     }
 }

@@ -138,9 +138,8 @@ public class PayPalPaymentProvider implements PaymentProvider {
             null, exitoso ? 201 : 422, response, duracion, pago.getUsuario(), exitoso);
 
         if (!exitoso) {
-            pago.setEstadoPago(Constants.PAGO_FALLIDO);
-            pago.setFechaActualizacion(LocalDateTime.now());
-            pagoRepository.save(pago);
+            // marcarFallido actualiza el pago, el pedido y libera stockReservado
+            paymentService.marcarFallido(pago, "Captura PayPal no completada: " + status);
             throw new RuntimeException("Captura PayPal no completada. Estado: " + status);
         }
 
