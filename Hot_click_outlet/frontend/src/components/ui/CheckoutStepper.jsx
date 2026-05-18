@@ -1,0 +1,73 @@
+import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
+
+const STEPS = [
+  { id: 'cart',    label: 'Carrito',      href: '/carrito' },
+  { id: 'checkout', label: 'Pedido',      href: null },
+  { id: 'payment', label: 'Pago',         href: null },
+  { id: 'confirm', label: 'Confirmación', href: null },
+]
+
+export default function CheckoutStepper({ activeStep = 'checkout' }) {
+  const activeIdx = STEPS.findIndex((s) => s.id === activeStep)
+
+  return (
+    <nav aria-label="Progreso del pedido" className="flex items-center justify-center mb-8 select-none">
+      {STEPS.map((step, i) => {
+        const done    = i < activeIdx
+        const active  = i === activeIdx
+        const pending = i > activeIdx
+
+        return (
+          <div key={step.id} className="flex items-center">
+            <div className="flex flex-col items-center gap-1.5">
+              {done && step.href ? (
+                <Link to={step.href} aria-label={`Volver a ${step.label}`}>
+                  <StepCircle done active={false} pending={false} index={i + 1} />
+                </Link>
+              ) : (
+                <StepCircle done={done} active={active} pending={pending} index={i + 1} />
+              )}
+              <span
+                className="text-[10px] font-medium hidden sm:block transition-colors duration-300"
+                style={{ color: active ? 'var(--hc-accent)' : done ? 'var(--hc-muted)' : 'color-mix(in srgb, var(--hc-muted) 40%, transparent)' }}
+                aria-current={active ? 'step' : undefined}
+              >
+                {step.label}
+              </span>
+            </div>
+
+            {i < STEPS.length - 1 && (
+              <div
+                className="w-8 sm:w-14 h-0.5 mx-1 mb-3 rounded-full transition-colors duration-500"
+                style={{ background: i < activeIdx ? 'var(--hc-accent)' : 'var(--hc-border)' }}
+              />
+            )}
+          </div>
+        )
+      })}
+    </nav>
+  )
+}
+
+function StepCircle({ done, active, pending, index }) {
+  return (
+    <motion.div
+      initial={false}
+      animate={active ? { scale: [1, 1.1, 1] } : { scale: 1 }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
+      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300"
+      style={
+        done    ? { background: '#10b981', color: '#fff', boxShadow: '0 0 12px rgba(16,185,129,0.4)' } :
+        active  ? { background: 'var(--hc-accent)', color: '#fff', boxShadow: '0 0 16px color-mix(in srgb, var(--hc-accent) 50%, transparent)' } :
+                  { background: 'color-mix(in srgb, var(--hc-surface) 60%, transparent)', color: 'color-mix(in srgb, var(--hc-muted) 40%, transparent)', border: '1px solid var(--hc-border)' }
+      }
+    >
+      {done ? (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      ) : index}
+    </motion.div>
+  )
+}

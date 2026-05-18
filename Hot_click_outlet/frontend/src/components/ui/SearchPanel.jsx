@@ -9,6 +9,9 @@ import { analytics } from '@/utils/analytics'
 const RECENT_KEY = 'hotclick-recent-searches'
 const MAX_RECENT = 6
 
+// Module-level cache: survives open/close cycles without re-fetching
+let _productCache = null
+
 function getRecent() {
   try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]') } catch { return [] }
 }
@@ -26,7 +29,7 @@ export default function SearchPanel() {
   const location = useLocation()
 
   const [query, setQuery] = useState('')
-  const [allProducts, setAllProducts] = useState([])
+  const [allProducts, setAllProducts] = useState(_productCache ?? [])
   const [loading, setLoading] = useState(false)
   const [recent, setRecent] = useState([])
   const inputRef = useRef(null)
@@ -35,17 +38,21 @@ export default function SearchPanel() {
   // Close on route change
   useEffect(() => { setSearchOpen(false) }, [location.pathname])
 
-  // On open: load products + recent searches
+  // On open: load products (module-level cache avoids re-fetch) + recent searches
   useEffect(() => {
     if (!searchOpen) { setQuery(''); return }
     setRecent(getRecent())
-    if (allProducts.length > 0) {
+    if (_productCache) {
       setTimeout(() => inputRef.current?.focus(), 60)
       return
     }
     setLoading(true)
     productService.getAll(0, 60)
-      .then(({ data }) => setAllProducts((data.content ?? data ?? []).map(normalizeProduct)))
+      .then(({ data }) => {
+        const products = (data.content ?? data ?? []).map(normalizeProduct)
+        _productCache = products
+        setAllProducts(products)
+      })
       .catch(() => {})
       .finally(() => {
         setLoading(false)

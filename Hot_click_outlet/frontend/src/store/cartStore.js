@@ -7,6 +7,9 @@ const useCartStore = create(
     (set, get) => ({
       items: [],
 
+      // Timestamp of last cart modification — for abandoned cart analytics
+      cartUpdatedAt: null,
+
       addItem: (product) => {
         const { items } = get()
         const existing = items.find((i) => i.id === product.id)
@@ -17,9 +20,10 @@ const useCartStore = create(
                 ? { ...i, cantidad: Math.min(i.cantidad + 1, i.stock ?? 99) }
                 : i
             ),
+            cartUpdatedAt: Date.now(),
           })
         } else {
-          set({ items: [...items, { ...product, cantidad: 1 }] })
+          set({ items: [...items, { ...product, cantidad: 1 }], cartUpdatedAt: Date.now() })
         }
         analytics.addToCart(product)
       },

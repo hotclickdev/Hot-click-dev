@@ -12,6 +12,7 @@ import useRecentlyViewedStore from '@/store/recentlyViewedStore'
 import { useToast } from '@/components/ui/Toast'
 import { formatPrice, conditionLabel } from '@/utils/format'
 import { analytics } from '@/utils/analytics'
+import SocialProof from '@/components/ui/SocialProof'
 
 export default function ProductDetailPage() {
   const { id } = useParams()
@@ -204,6 +205,9 @@ export default function ProductDetailPage() {
                 <span className="hidden sm:inline">{isLiked(product.id) ? 'Guardado' : 'Guardar'}</span>
               </motion.button>
             </div>
+
+            {/* Social proof */}
+            <SocialProof productId={product.id} />
 
             {/* Descripción */}
             {product.descripcion && (
