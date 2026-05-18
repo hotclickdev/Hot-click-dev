@@ -350,8 +350,10 @@ public class PayPalPaymentProvider implements PaymentProvider {
         String clientSecret = config.getClientSecret() == null ? "" : config.getClientSecret().trim();
         String apiUrl       = config.getApiUrl();
 
-        log.info("PayPal OAuth → url={} clientId_len={} clientId_prefix={}",
-            apiUrl, clientId.length(), clientId.length() > 8 ? clientId.substring(0, 8) : clientId);
+        log.info("PayPal OAuth → url={} clientId_len={} clientId_prefix={} secret_len={}",
+            apiUrl, clientId.length(),
+            clientId.length() > 8 ? clientId.substring(0, 8) : clientId,
+            clientSecret.length());
 
         String credentials = clientId + ":" + clientSecret;
         String encoded = Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
