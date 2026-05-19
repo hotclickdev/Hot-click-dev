@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import useCartStore from '@/store/cartStore'
 import useAuthStore from '@/store/authStore'
 import useUiStore from '@/store/uiStore'
@@ -22,7 +22,8 @@ function useIsDesktop() {
 export default function MiniCartDrawer() {
   const { items, removeItem, updateQuantity, total } = useCartStore()
   const { token } = useAuthStore()
-  const { cartDrawerOpen, setCartDrawerOpen } = useUiStore()
+  const { cartDrawerOpen, setCartDrawerOpen, setAuthPromptOpen } = useUiStore()
+  const navigate = useNavigate()
   const location = useLocation()
   const isDesktop = useIsDesktop()
 
@@ -51,7 +52,11 @@ export default function MiniCartDrawer() {
   const handleCheckout = () => {
     analytics.checkoutStart(total(), items.reduce((s, i) => s + i.cantidad, 0))
     setCartDrawerOpen(false)
-    // Navigation handled by Link inside
+    if (token) {
+      navigate('/checkout')
+    } else {
+      setAuthPromptOpen(true)
+    }
   }
 
   return (
@@ -210,13 +215,12 @@ export default function MiniCartDrawer() {
                     <span className="text-xl font-bold text-[#e8e8ed]">{formatPrice(total())}</span>
                   </div>
 
-                  <Link
-                    to={token ? '/checkout' : '/login'}
+                  <button
                     onClick={handleCheckout}
                     className="block w-full text-center h-12 leading-[48px] rounded-2xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-bold text-sm transition-all shadow-[0_0_20px_rgba(79,124,255,0.3)] hover:shadow-[0_0_32px_rgba(79,124,255,0.5)]"
                   >
                     Pagar con tarjeta
-                  </Link>
+                  </button>
 
                   <Link
                     to="/carrito"

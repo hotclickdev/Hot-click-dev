@@ -37,11 +37,12 @@ api.interceptors.response.use(
     // Intenta renovar el access token con el refresh token antes de redirigir
     if (status === 401 && !original._retry) {
       original._retry = true
-      const { refreshToken } = getStored()
+      const stored = getStored()
+      const hadSession = !!stored.token || !!stored.refreshToken
 
-      if (refreshToken) {
+      if (stored.refreshToken) {
         try {
-          const { data } = await axios.post('/api/auth/refresh', { refreshToken })
+          const { data } = await axios.post('/api/auth/refresh', { refreshToken: stored.refreshToken })
           if (data?.accessToken) {
             // Actualizar solo el access token en el store sin perder el resto del estado
             const raw = localStorage.getItem('hotclick-auth')
@@ -59,11 +60,8 @@ api.interceptors.response.use(
       }
 
       localStorage.removeItem('hotclick-auth')
-      window.location.href = '/login'
-    } else if (status === 403) {
-      const { token } = getStored()
-      if (!token) {
-        localStorage.removeItem('hotclick-auth')
+      // Solo redirigir a login si el usuario tenía una sesión activa que expiró
+      if (hadSession) {
         window.location.href = '/login'
       }
     }

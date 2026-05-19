@@ -21,9 +21,11 @@ const useUiStore = create(
       // ── Transient UI state (not persisted) ──────────────────────────────────
       cartDrawerOpen: false,
       searchOpen: false,
+      authPromptOpen: false,
 
       setCartDrawerOpen: (v) => set({ cartDrawerOpen: v }),
       setSearchOpen: (v) => set({ searchOpen: v }),
+      setAuthPromptOpen: (v) => set({ authPromptOpen: v }),
     }),
     {
       name: 'hotclick-ui',

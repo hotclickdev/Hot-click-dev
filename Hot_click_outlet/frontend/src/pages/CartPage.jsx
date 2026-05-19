@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button'
 import ShippingProgress from '@/components/ui/ShippingProgress'
 import useCartStore from '@/store/cartStore'
 import useAuthStore from '@/store/authStore'
+import useUiStore from '@/store/uiStore'
 import { productService, normalizeProduct } from '@/services/productService'
 import { formatPrice } from '@/utils/format'
 import { useToast } from '@/components/ui/Toast'
@@ -16,6 +17,7 @@ const WHATSAPP = '50689745370'
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart, total, toWhatsAppMessage, addItem } = useCartStore()
   const { token } = useAuthStore()
+  const { setAuthPromptOpen } = useUiStore()
   const navigate  = useNavigate()
   const toast     = useToast()
   const { t } = useTranslation()
@@ -239,7 +241,7 @@ export default function CartPage() {
               <div className="pt-2 space-y-2">
                 {/* Pago con tarjeta vía PayXpert */}
                 <Button
-                  onClick={() => token ? navigate('/checkout') : navigate('/login')}
+                  onClick={() => token ? navigate('/checkout') : setAuthPromptOpen(true)}
                   className="w-full bg-[#4f7cff] hover:bg-[#3d6ee0] shadow-[0_0_20px_rgba(79,124,255,0.3)]"
                   size="lg"
                 >
