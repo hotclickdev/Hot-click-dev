@@ -102,11 +102,14 @@ public class NotificacionEmailService {
 
         String guiaSection = "";
         if (pedido.getNumeroGuia() != null && !pedido.getNumeroGuia().isBlank()) {
+            boolean isCorreos = pedido.getUrlTracking() == null || pedido.getUrlTracking().contains("correos.go.cr");
             String url = pedido.getUrlTracking() != null ? pedido.getUrlTracking()
                 : "https://rastreo.correos.go.cr/?codigo=" + pedido.getNumeroGuia();
+            String courierLabel = isCorreos ? "🟡 Correos de Costa Rica" : "🚚 Mensajería privada";
             guiaSection = "<div style='background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px 20px;margin-bottom:20px;text-align:center'>"
-                + "<p style='margin:0 0 4px;font-size:12px;color:#059669;font-weight:600;text-transform:uppercase;letter-spacing:1px'>Número de guía</p>"
-                + "<p style='margin:0 0 10px;font-size:20px;font-weight:900;color:#1a1a2e;letter-spacing:2px'>" + esc(pedido.getNumeroGuia()) + "</p>"
+                + "<p style='margin:0 0 4px;font-size:12px;color:#059669;font-weight:600;text-transform:uppercase;letter-spacing:1px'>Envío · " + esc(courierLabel) + "</p>"
+                + "<p style='margin:0 0 4px;font-size:12px;color:#6e6e82'>Número de guía</p>"
+                + "<p style='margin:0 0 12px;font-size:20px;font-weight:900;color:#1a1a2e;letter-spacing:2px'>" + esc(pedido.getNumeroGuia()) + "</p>"
                 + "<a href='" + url + "' style='display:inline-block;background:#059669;color:#fff;text-decoration:none;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:700'>📦 Rastrear paquete</a>"
                 + "</div>";
         }

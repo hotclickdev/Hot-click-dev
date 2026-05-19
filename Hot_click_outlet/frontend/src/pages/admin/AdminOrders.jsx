@@ -107,7 +107,10 @@ function buildWaMessage(order) {
   const esRetiro = order.metodoEnvio !== 'ENVIO_A_DOMICILIO'
   let extra = ''
   if (order.numeroGuia) {
-    extra = `\n\n📦 *Guía de envío:* ${order.numeroGuia}\nRastrear en: https://rastreo.correos.go.cr/?codigo=${order.numeroGuia}`
+    const isCorreos = !order.urlTracking || order.urlTracking.includes('correos.go.cr')
+    const trackUrl  = order.urlTracking ?? `https://rastreo.correos.go.cr/?codigo=${order.numeroGuia}`
+    const courier   = isCorreos ? '🟡 Correos de Costa Rica' : '🚚 Mensajería privada'
+    extra = `\n\n📦 *Envío:* ${courier}\n*Guía:* ${order.numeroGuia}\n🔍 Rastrear: ${trackUrl}`
   } else if (esRetiro && (estado === 'LISTO_RETIRO' || estado === 'EN_PREPARACION')) {
     extra = `\n\n📍 *Retiro en tienda:* Cuando esté listo te avisamos.\nhttps://waze.com/ul?ll=9.9342,-84.0877&navigate=yes`
   }
