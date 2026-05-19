@@ -8,7 +8,9 @@ import Input from '@/components/ui/Input'
 import Modal from '@/components/ui/Modal'
 import { authService } from '@/services/authService'
 import useAuthStore from '@/store/authStore'
+import useCartStore from '@/store/cartStore'
 import { useToast } from '@/components/ui/Toast'
+import { abandonedCartService } from '@/services/abandonedCartService'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -27,6 +29,10 @@ export default function LoginPage() {
   const [showForgot, setShowForgot] = useState(false)
   const [showAdminModal, setShowAdminModal] = useState(false)
   const [loginData, setLoginData] = useState(null)
+  const [showCartRecovery, setShowCartRecovery] = useState(false)
+  const [recoveryCart, setRecoveryCart] = useState(null)
+  const [recoveryDest, setRecoveryDest] = useState('/')
+  const addItem = useCartStore((s) => s.addItem)
   const [error, setError] = useState('')
   const [needsVerification, setNeedsVerification] = useState(false)
   const [resendLoading, setResendLoading] = useState(false)
@@ -94,7 +100,7 @@ export default function LoginPage() {
   }
 
   // data = JwtResponse: { token, tipo, id, correo, rol }
-  const handleLoginSuccess = (data) => {
+  const handleLoginSuccess = async (data) => {
     login(data)
     const isAdmin = ['ADMIN_IT', 'ADMIN_CLIENTE'].includes(data.rol)
     toast({ message: isAdmin ? t('login.welcomeAdmin') : t('login.welcome'), type: 'success' })
@@ -102,8 +108,34 @@ export default function LoginPage() {
       setLoginData(data)
       setShowAdminModal(true)
     } else {
-      navigate(from === '/login' ? '/' : from, { replace: true })
+      const dest = from === '/login' ? '/' : from
+      try {
+        const { data: res } = await abandonedCartService.getAbandonedCartBySession()
+        if (res?.data?.items?.length > 0) {
+          setRecoveryCart(res.data)
+          setRecoveryDest(dest)
+          setShowCartRecovery(true)
+          return
+        }
+      } catch { /* no cart — proceed normally */ }
+      navigate(dest, { replace: true })
     }
+  }
+
+  const handleRestoreCart = async () => {
+    recoveryCart?.items?.forEach((item) =>
+      addItem({ id: item.productoId, nombre: item.nombre, precio: item.precio,
+                imagenUrl: item.imagenUrl, stock: 99 })
+    )
+    try { await abandonedCartService.deleteAbandonedCart(recoveryCart.id) } catch { /* ok */ }
+    setShowCartRecovery(false)
+    navigate(recoveryDest, { replace: true })
+  }
+
+  const handleDiscardCart = async () => {
+    try { await abandonedCartService.deleteAbandonedCart(recoveryCart.id) } catch { /* ok */ }
+    setShowCartRecovery(false)
+    navigate(recoveryDest, { replace: true })
   }
 
   const handle2FADigit = (idx, val) => {
@@ -294,6 +326,43 @@ export default function LoginPage() {
         )}
         </div>
       </motion.div>
+
+      {/* Modal recuperar carrito abandonado */}
+      <Modal open={showCartRecovery} title="¡Tenés productos guardados!">
+        <div>
+          <p className="text-sm text-[#8e8e9a] mb-4">
+            Dejaste {recoveryCart?.items?.length ?? 0} producto(s) en tu carrito la última vez. ¿Querés restaurarlos?
+          </p>
+          <div className="space-y-2 mb-5">
+            {recoveryCart?.items?.slice(0, 3).map((item, i) => (
+              <div key={i} className="flex items-center gap-2.5 py-1">
+                {item.imagenUrl && (
+                  <img src={item.imagenUrl} alt={item.nombre} width={32} height={32}
+                    className="rounded-lg object-cover shrink-0" />
+                )}
+                <span className="text-sm text-[#e8e8ed] truncate flex-1">{item.nombre}</span>
+                <span className="text-xs text-[#8e8e9a] shrink-0">×{item.cantidad ?? 1}</span>
+              </div>
+            ))}
+            {(recoveryCart?.items?.length ?? 0) > 3 && (
+              <p className="text-xs text-[#8e8e9a] pl-1">
+                y {recoveryCart.items.length - 3} producto(s) más…
+              </p>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button onClick={handleRestoreCart}
+              className="flex-1 h-10 rounded-xl text-sm font-semibold bg-[#4f7cff] text-white hover:bg-[#3d6ee0] transition-colors">
+              Restaurar carrito
+            </button>
+            <button onClick={handleDiscardCart}
+              className="flex-1 h-10 rounded-xl text-sm border transition-colors hover:bg-white/5"
+              style={{ color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }}>
+              Descartar
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Modal selección modo admin */}
       <Modal open={showAdminModal} title={t('login.adminModal')}>

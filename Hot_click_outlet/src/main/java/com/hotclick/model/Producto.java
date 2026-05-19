@@ -140,6 +140,15 @@ public class Producto extends BaseEntity {
     @Column(name = "orden_carrusel")
     private Integer ordenCarrusel = 0;
 
+    @Column(name = "meta_title", length = 70)
+    private String metaTitle;
+
+    @Column(name = "meta_description", length = 160)
+    private String metaDescription;
+
+    @Column(name = "meta_keywords", length = 255)
+    private String metaKeywords;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -264,4 +273,13 @@ public class Producto extends BaseEntity {
 
     public Integer getOrdenCarrusel() { return ordenCarrusel != null ? ordenCarrusel : 0; }
     public void setOrdenCarrusel(Integer ordenCarrusel) { this.ordenCarrusel = ordenCarrusel; }
+
+    public String getMetaTitle() { return metaTitle; }
+    public void setMetaTitle(String metaTitle) { this.metaTitle = metaTitle; }
+
+    public String getMetaDescription() { return metaDescription; }
+    public void setMetaDescription(String metaDescription) { this.metaDescription = metaDescription; }
+
+    public String getMetaKeywords() { return metaKeywords; }
+    public void setMetaKeywords(String metaKeywords) { this.metaKeywords = metaKeywords; }
 }

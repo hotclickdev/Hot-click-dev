@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin/
+Disallow: /perfil/
+Disallow: /carrito
+Disallow: /checkout
+Disallow: /api/
+Disallow: /recuperar-carrito/
+
+Sitemap: https://hotclick.com/sitemap.xml

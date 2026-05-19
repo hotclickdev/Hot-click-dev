@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.dto.ManualPedidoDTO;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Pedido;
 import com.hotclick.service.NotificacionEmailService;
@@ -17,6 +18,16 @@ public class PedidoController {
 
     @Autowired private PedidoService pedidoService;
     @Autowired private NotificacionEmailService notificacionEmailService;
+
+    @PostMapping("/manual")
+    public ResponseEntity<ResponseDTO> crearPedidoManual(@RequestBody ManualPedidoDTO dto) {
+        try {
+            Pedido nuevo = pedidoService.crearPedidoManual(dto);
+            return ResponseEntity.ok(ResponseDTO.success("Pedido creado", nuevo));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        }
+    }
 
     @PostMapping
     public ResponseEntity<ResponseDTO> crearPedido(@RequestBody Pedido pedido) {

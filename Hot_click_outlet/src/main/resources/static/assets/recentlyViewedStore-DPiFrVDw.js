@@ -1,1 +1,0 @@
-import{n as e,r as t}from"./vendor-misc-C98s7Zbb.js";var n=6,r=t(e((e,t)=>({items:[],addItem:r=>{e({items:[r,...t().items.filter(e=>e.id!==r.id)].slice(0,n)})}}),{name:`hotclick-recently-viewed`}));export{r as t};

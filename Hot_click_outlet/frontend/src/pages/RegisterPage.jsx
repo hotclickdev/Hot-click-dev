@@ -8,6 +8,9 @@ import Input from '@/components/ui/Input'
 import { authService } from '@/services/authService'
 import { useToast } from '@/components/ui/Toast'
 import useAuthStore from '@/store/authStore'
+import useCartStore from '@/store/cartStore'
+import Modal from '@/components/ui/Modal'
+import { abandonedCartService } from '@/services/abandonedCartService'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
@@ -18,6 +21,9 @@ export default function RegisterPage() {
   const [step, setStep]                 = useState('form')   // 'form' | 'verify'
   const [loading, setLoading]           = useState(false)
   const [error, setError]               = useState('')
+  const [showCartRecovery, setShowCartRecovery] = useState(false)
+  const [recoveryCart, setRecoveryCart] = useState(null)
+  const addItem = useCartStore((s) => s.addItem)
   const [correoRegistro, setCorreoRegistro] = useState('')
   const [codigo, setCodigo]             = useState('')
   const [form, setForm] = useState({
@@ -57,6 +63,14 @@ export default function RegisterPage() {
       if (authData?.accessToken) {
         loginStore(authData)
         toast({ message: '¡Bienvenido a HOTCLICK! Tu cuenta fue verificada.', type: 'success' })
+        try {
+          const { data: res } = await abandonedCartService.getAbandonedCartBySession()
+          if (res?.data?.items?.length > 0) {
+            setRecoveryCart(res.data)
+            setShowCartRecovery(true)
+            return
+          }
+        } catch { /* no cart */ }
         navigate('/')
       } else {
         // fallback: si no vienen tokens redirigir a login
@@ -249,6 +263,59 @@ export default function RegisterPage() {
         </p>
         </div>
       </motion.div>
+
+      {/* Modal recuperar carrito abandonado */}
+      <Modal open={showCartRecovery} title="¡Tenés productos guardados!">
+        <div>
+          <p className="text-sm text-[#8e8e9a] mb-4">
+            Dejaste {recoveryCart?.items?.length ?? 0} producto(s) en tu carrito antes. ¿Querés restaurarlos?
+          </p>
+          <div className="space-y-2 mb-5">
+            {recoveryCart?.items?.slice(0, 3).map((item, i) => (
+              <div key={i} className="flex items-center gap-2.5 py-1">
+                {item.imagenUrl && (
+                  <img src={item.imagenUrl} alt={item.nombre} width={32} height={32}
+                    className="rounded-lg object-cover shrink-0" />
+                )}
+                <span className="text-sm text-[#e8e8ed] truncate flex-1">{item.nombre}</span>
+                <span className="text-xs text-[#8e8e9a] shrink-0">×{item.cantidad ?? 1}</span>
+              </div>
+            ))}
+            {(recoveryCart?.items?.length ?? 0) > 3 && (
+              <p className="text-xs text-[#8e8e9a] pl-1">
+                y {recoveryCart.items.length - 3} producto(s) más…
+              </p>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={async () => {
+                recoveryCart?.items?.forEach((item) =>
+                  addItem({ id: item.productoId, nombre: item.nombre, precio: item.precio,
+                            imagenUrl: item.imagenUrl, stock: 99 })
+                )
+                try { await abandonedCartService.deleteAbandonedCart(recoveryCart.id) } catch { /* ok */ }
+                setShowCartRecovery(false)
+                navigate('/')
+              }}
+              className="flex-1 h-10 rounded-xl text-sm font-semibold bg-[#4f7cff] text-white hover:bg-[#3d6ee0] transition-colors"
+            >
+              Restaurar carrito
+            </button>
+            <button
+              onClick={async () => {
+                try { await abandonedCartService.deleteAbandonedCart(recoveryCart.id) } catch { /* ok */ }
+                setShowCartRecovery(false)
+                navigate('/')
+              }}
+              className="flex-1 h-10 rounded-xl text-sm border transition-colors hover:bg-white/5"
+              style={{ color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }}
+            >
+              Descartar
+            </button>
+          </div>
+        </div>
+      </Modal>
     </AuthLayout>
   )
 }

@@ -1,8 +1,10 @@
 package com.hotclick.service;
 
+import com.hotclick.dto.CarritoAbandonadoRequestDTO;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.PedidoItem;
 import com.hotclick.model.Usuario;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,6 +67,76 @@ public class NotificacionEmailService {
         } catch (Exception e) {
             log.error("No se pudo enviar email de seguimiento para pedido {}: {}", pedido.getNumeroPedido(), e.getMessage());
         }
+    }
+
+    @Async
+    public void enviarRecuperacionCarrito(
+            String email, Long carritoId,
+            List<CarritoAbandonadoRequestDTO.CartItemDTO> items,
+            String appUrl) {
+        try {
+            resendEmailService.send(
+                email,
+                "¡Todavía tienes productos esperando en HOTCLICK!",
+                buildRecuperacionCarritoHtml(carritoId, items, appUrl)
+            );
+            log.info("Email recuperación carrito enviado a {} (carrito {})", email, carritoId);
+        } catch (Exception e) {
+            log.error("No se pudo enviar email de recuperación de carrito {}: {}", carritoId, e.getMessage());
+        }
+    }
+
+    private String buildRecuperacionCarritoHtml(
+            Long carritoId,
+            List<CarritoAbandonadoRequestDTO.CartItemDTO> items,
+            String appUrl) {
+
+        StringBuilder rows = new StringBuilder();
+        int total = 0;
+        for (CarritoAbandonadoRequestDTO.CartItemDTO item : items) {
+            int subtotal = (item.getPrecio() != null ? item.getPrecio() : 0)
+                         * (item.getCantidad() != null ? item.getCantidad() : 1);
+            total += subtotal;
+            String img = item.getImagenUrl() != null
+                ? "<img src='" + esc(item.getImagenUrl()) + "' width='48' height='48' style='object-fit:cover;border-radius:8px;vertical-align:middle;margin-right:10px'>"
+                : "";
+            rows.append("<tr>")
+                .append("<td style='padding:10px 8px;border-bottom:1px solid #e8e8ed'>")
+                .append(img).append(esc(item.getNombre())).append("</td>")
+                .append("<td style='padding:10px 8px;border-bottom:1px solid #e8e8ed;text-align:center;color:#6e6e82'>×")
+                .append(item.getCantidad() != null ? item.getCantidad() : 1).append("</td>")
+                .append("<td style='padding:10px 8px;border-bottom:1px solid #e8e8ed;text-align:right;font-weight:600;color:#1a1a2e'>₡")
+                .append(CRC.format(subtotal)).append("</td>")
+                .append("</tr>");
+        }
+
+        String recoverUrl = appUrl + "/recuperar-carrito/" + carritoId;
+
+        return "<!DOCTYPE html><html><head><meta charset='UTF-8'></head>"
+            + "<body style='margin:0;padding:0;background:#f5f5f7;font-family:sans-serif'>"
+            + "<div style='max-width:560px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)'>"
+            + "<div style='background:linear-gradient(135deg,#4f7cff,#7c3aed);padding:32px 32px 24px'>"
+            + "<span style='color:#fff;font-size:20px;font-weight:900;letter-spacing:1px'>HOTCLICK</span>"
+            + "<h1 style='color:#fff;margin:16px 0 0;font-size:22px;font-weight:700'>🛒 Tu carrito te está esperando</h1>"
+            + "</div>"
+            + "<div style='padding:28px 32px'>"
+            + "<p style='margin:0 0 20px;color:#6e6e82;font-size:14px'>Dejaste estos productos en tu carrito. ¡No dejes que se agoten!</p>"
+            + "<table style='width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px'>"
+            + "<tbody>" + rows + "</tbody>"
+            + "</table>"
+            + "<div style='border-top:2px solid #e8e8ed;padding-top:14px;text-align:right;margin-bottom:28px'>"
+            + "<span style='color:#1a1a2e;font-weight:700;font-size:15px'>Total: ₡" + CRC.format(total) + "</span>"
+            + "</div>"
+            + "<div style='text-align:center'>"
+            + "<a href='" + recoverUrl + "' style='display:inline-block;background:linear-gradient(135deg,#4f7cff,#7c3aed);color:#fff;text-decoration:none;padding:14px 36px;border-radius:12px;font-size:15px;font-weight:700;letter-spacing:0.5px'>Recuperar mi carrito →</a>"
+            + "</div>"
+            + "</div>"
+            + "<div style='padding:20px 32px;background:#f5f5f7;text-align:center'>"
+            + "<a href='https://wa.me/50689745370' style='display:inline-block;background:#25D366;color:#fff;text-decoration:none;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600'>📱 ¿Necesitás ayuda?</a>"
+            + "<p style='margin:12px 0 0;color:#aaa;font-size:11px'>HOTCLICK · hotclick.cr@gmail.com · Costa Rica</p>"
+            + "<p style='margin:6px 0 0;color:#ccc;font-size:10px'>Si no quieres más recordatorios, simplemente ignorá este mensaje.</p>"
+            + "</div>"
+            + "</div></body></html>";
     }
 
     @Async

@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import AdminLayout from '@/layouts/AdminLayout'
 import Spinner from '@/components/ui/Spinner'
 import { orderService } from '@/services/orderService'
+import { adminService } from '@/services/orderService'
+import { productService } from '@/services/productService'
 import { useToast } from '@/components/ui/Toast'
 import { formatDate, formatPrice } from '@/utils/format'
 
@@ -122,6 +124,372 @@ function buildWaMessage(order) {
     `💰 *Total: ₡${(order.total ?? 0).toLocaleString('es-CR')}*` +
     extra +
     `\n\n¿Tenés alguna duda? Estamos para ayudarte 😊`
+  )
+}
+
+const METODOS_PAGO  = ['SINPE', 'EFECTIVO', 'CONTRA_ENTREGA', 'TRANSFERENCIA']
+const METODOS_ENVIO = [
+  { value: 'RETIRO_EN_TIENDA',   label: '🏪 Retiro en tienda' },
+  { value: 'ENVIO_A_DOMICILIO',  label: '🚚 Envío a domicilio' },
+]
+const ESTADOS_INICIAL = ['PENDIENTE', 'PAGADO', 'EN_PREPARACION']
+
+function CrearPedidoModal({ onClose, onCreated }) {
+  const toast         = useToast()
+  const [saving, setSaving]           = useState(false)
+  const [loadingData, setLoadingData] = useState(true)
+  const [users, setUsers]             = useState([])
+  const [products, setProducts]       = useState([])
+  const [userSearch, setUserSearch]   = useState('')
+  const [prodSearch, setProdSearch]   = useState('')
+  const [showUserDrop, setShowUserDrop] = useState(false)
+  const [showProdDrop, setShowProdDrop] = useState(false)
+  const prodRef  = useRef(null)
+
+  const [form, setForm] = useState({
+    usuarioId:    '',
+    metodoEnvio:  'RETIRO_EN_TIENDA',
+    metodoPago:   'SINPE',
+    costoEnvio:   '',
+    estadoPedido: 'PENDIENTE',
+    notas:        '',
+    items:        [],
+  })
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [ur, pr] = await Promise.all([
+          adminService.getUsers(),
+          productService.adminGetAll(),
+        ])
+        const ud = ur.data?.data ?? ur.data ?? []
+        setUsers(Array.isArray(ud) ? ud : [])
+        const pd = pr.data?.content ?? pr.data ?? []
+        setProducts(Array.isArray(pd) ? pd : [])
+      } catch { toast({ message: 'Error cargando datos', type: 'error' }) }
+      finally { setLoadingData(false) }
+    }
+    load()
+  }, [])
+
+  useEffect(() => {
+    function outside(e) {
+      if (prodRef.current && !prodRef.current.contains(e.target)) setShowProdDrop(false)
+    }
+    document.addEventListener('mousedown', outside)
+    return () => document.removeEventListener('mousedown', outside)
+  }, [])
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const addProduct = (prod) => {
+    const id = prod.id ?? prod.productoId
+    setForm(f => ({
+      ...f,
+      items: f.items.find(i => i.productoId === id)
+        ? f.items.map(i => i.productoId === id ? { ...i, cantidad: i.cantidad + 1 } : i)
+        : [...f.items, { productoId: id, nombre: prod.nombre ?? prod.nombreProducto, precio: prod.precio ?? prod.precioVenta, cantidad: 1, precioUnitario: prod.precio ?? prod.precioVenta }],
+    }))
+    setProdSearch('')
+    setShowProdDrop(false)
+  }
+
+  const removeItem = (id) => setForm(f => ({ ...f, items: f.items.filter(i => i.productoId !== id) }))
+
+  const updateItem = (id, field, val) =>
+    setForm(f => ({ ...f, items: f.items.map(i => i.productoId === id ? { ...i, [field]: val } : i) }))
+
+  const costoEnvioNum = form.metodoEnvio === 'ENVIO_A_DOMICILIO' ? (parseInt(form.costoEnvio) || 0) : 0
+  const subtotal      = form.items.reduce((s, i) => s + (parseInt(i.precioUnitario) || 0) * (parseInt(i.cantidad) || 0), 0)
+  const total         = subtotal + costoEnvioNum
+
+  const filteredUsers = users.filter(u =>
+    (u.nombre ?? '').toLowerCase().includes(userSearch.toLowerCase()) ||
+    (u.correo ?? '').toLowerCase().includes(userSearch.toLowerCase())
+  ).slice(0, 6)
+
+  const filteredProds = prodSearch.length > 1
+    ? products.filter(p =>
+        (p.nombre ?? p.nombreProducto ?? '').toLowerCase().includes(prodSearch.toLowerCase())
+      ).slice(0, 6)
+    : []
+
+  const selectedUser = users.find(u => u.id === Number(form.usuarioId))
+  const canSubmit = form.usuarioId && form.items.length > 0
+
+  const submit = async () => {
+    if (!canSubmit) return
+    setSaving(true)
+    try {
+      const payload = {
+        usuarioId:    Number(form.usuarioId),
+        bodegaId:     1,
+        metodoEnvio:  form.metodoEnvio,
+        metodoPago:   form.metodoPago,
+        costoEnvio:   costoEnvioNum,
+        estadoPedido: form.estadoPedido,
+        notas:        form.notas || null,
+        items: form.items.map(i => ({
+          productoId:     i.productoId,
+          cantidad:       parseInt(i.cantidad) || 1,
+          precioUnitario: parseInt(i.precioUnitario) || i.precio,
+        })),
+      }
+      const res    = await orderService.createManual(payload)
+      const newOrd = res.data?.data ?? res.data
+      toast({ message: 'Pedido creado', type: 'success' })
+      onCreated(newOrd)
+      onClose()
+    } catch (e) {
+      toast({ message: e.response?.data?.message ?? 'Error al crear pedido', type: 'error' })
+    } finally { setSaving(false) }
+  }
+
+  const inp = { backgroundColor: '#ffffff08', border: '1px solid #ffffff15', color: '#e8e8ed' }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-end"
+      style={{ backgroundColor: '#00000080' }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+
+      <div className="h-full w-full max-w-lg flex flex-col overflow-hidden"
+        style={{ backgroundColor: '#0e0e11', borderLeft: '1px solid #ffffff14' }}>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b shrink-0"
+          style={{ borderColor: '#ffffff14' }}>
+          <h2 className="text-base font-bold text-[#e8e8ed]">Nuevo pedido</h2>
+          <button onClick={onClose} className="text-[#8e8e9a] hover:text-[#e8e8ed] transition-colors text-xl leading-none">✕</button>
+        </div>
+
+        {loadingData ? (
+          <div className="flex-1 flex items-center justify-center">
+            <Spinner size="lg" />
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+
+            {/* Cliente */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">Cliente *</label>
+              {selectedUser ? (
+                <div className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+                  style={{ backgroundColor: '#4f7cff12', border: '1px solid #4f7cff30' }}>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-[#e8e8ed]">{selectedUser.nombre}</p>
+                    <p className="text-xs text-[#8e8e9a]">{selectedUser.correo}</p>
+                  </div>
+                  <button onClick={() => { set('usuarioId', ''); setUserSearch(''); setShowUserDrop(true) }}
+                    className="text-xs text-[#8e8e9a] hover:text-[#f87171] transition-colors">✕</button>
+                </div>
+              ) : (
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={userSearch}
+                    onChange={e => { setUserSearch(e.target.value); setShowUserDrop(true) }}
+                    onFocus={() => setShowUserDrop(true)}
+                    placeholder="Buscar cliente por nombre o correo…"
+                    className="w-full h-10 px-3 rounded-xl text-sm placeholder:text-[#8e8e9a]/50 focus:outline-none"
+                    style={inp}
+                  />
+                  {showUserDrop && filteredUsers.length > 0 && (
+                    <div className="absolute z-10 top-full left-0 right-0 mt-1 rounded-xl overflow-hidden"
+                      style={{ backgroundColor: '#1a1a1f', border: '1px solid #ffffff14' }}>
+                      {filteredUsers.map(u => (
+                        <button key={u.id}
+                          onMouseDown={() => { set('usuarioId', u.id); setShowUserDrop(false); setUserSearch('') }}
+                          className="w-full text-left px-3 py-2.5 hover:bg-white/5 transition-colors">
+                          <p className="text-sm text-[#e8e8ed]">{u.nombre}</p>
+                          <p className="text-xs text-[#8e8e9a]">{u.correo}</p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Productos */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">Productos *</label>
+              <div className="relative" ref={prodRef}>
+                <input
+                  type="text"
+                  value={prodSearch}
+                  onChange={e => { setProdSearch(e.target.value); setShowProdDrop(true) }}
+                  onFocus={() => setShowProdDrop(true)}
+                  placeholder="Buscar producto…"
+                  className="w-full h-10 px-3 rounded-xl text-sm placeholder:text-[#8e8e9a]/50 focus:outline-none"
+                  style={inp}
+                />
+                {showProdDrop && filteredProds.length > 0 && (
+                  <div className="absolute z-10 top-full left-0 right-0 mt-1 rounded-xl overflow-hidden"
+                    style={{ backgroundColor: '#1a1a1f', border: '1px solid #ffffff14' }}>
+                    {filteredProds.map(p => {
+                      const id = p.id ?? p.productoId
+                      return (
+                        <button key={id}
+                          onMouseDown={() => addProduct(p)}
+                          className="w-full text-left flex items-center gap-3 px-3 py-2 hover:bg-white/5 transition-colors">
+                          {p.imagenUrl && <img src={p.imagenUrl} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0" />}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-[#e8e8ed] truncate">{p.nombre ?? p.nombreProducto}</p>
+                            <p className="text-xs text-[#8e8e9a]">{formatPrice(p.precio ?? p.precioVenta ?? 0)}</p>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Items agregados */}
+              {form.items.length > 0 && (
+                <div className="space-y-2 mt-2">
+                  {form.items.map(item => (
+                    <div key={item.productoId} className="rounded-xl px-3 py-2.5 space-y-2"
+                      style={{ backgroundColor: '#ffffff06', border: '1px solid #ffffff0e' }}>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm text-[#e8e8ed] flex-1 leading-tight">{item.nombre}</p>
+                        <button onClick={() => removeItem(item.productoId)}
+                          className="text-[#f87171] text-xs shrink-0 hover:opacity-80">✕</button>
+                      </div>
+                      <div className="flex gap-2">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-[#8e8e9a]">Cant.</span>
+                          <input type="number" min={1}
+                            value={item.cantidad}
+                            onChange={e => updateItem(item.productoId, 'cantidad', e.target.value)}
+                            className="w-16 h-8 px-2 rounded-lg text-sm text-center focus:outline-none"
+                            style={inp}
+                          />
+                        </div>
+                        <div className="flex items-center gap-1 flex-1">
+                          <span className="text-xs text-[#8e8e9a]">₡</span>
+                          <input type="number" min={0}
+                            value={item.precioUnitario}
+                            onChange={e => updateItem(item.productoId, 'precioUnitario', e.target.value)}
+                            className="flex-1 h-8 px-2 rounded-lg text-sm focus:outline-none"
+                            style={inp}
+                          />
+                        </div>
+                        <span className="text-xs text-[#8e8e9a] self-center shrink-0">
+                          = {formatPrice((parseInt(item.precioUnitario) || 0) * (parseInt(item.cantidad) || 0))}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Pago y envío */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">Método de pago</label>
+                <select value={form.metodoPago} onChange={e => set('metodoPago', e.target.value)}
+                  className="w-full h-10 px-2 rounded-xl text-sm focus:outline-none" style={inp}>
+                  {METODOS_PAGO.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">Estado inicial</label>
+                <select value={form.estadoPedido} onChange={e => set('estadoPedido', e.target.value)}
+                  className="w-full h-10 px-2 rounded-xl text-sm focus:outline-none" style={inp}>
+                  {ESTADOS_INICIAL.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">Tipo de entrega</label>
+              <div className="flex gap-2">
+                {METODOS_ENVIO.map(m => (
+                  <button key={m.value}
+                    onClick={() => set('metodoEnvio', m.value)}
+                    className="flex-1 py-2 rounded-xl text-sm font-medium transition-all"
+                    style={{
+                      backgroundColor: form.metodoEnvio === m.value ? '#4f7cff20' : '#ffffff08',
+                      border: `1px solid ${form.metodoEnvio === m.value ? '#4f7cff60' : '#ffffff15'}`,
+                      color: form.metodoEnvio === m.value ? '#4f7cff' : '#8e8e9a',
+                    }}>
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Costo de envío */}
+            {form.metodoEnvio === 'ENVIO_A_DOMICILIO' && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">Costo de envío (₡)</label>
+                <div className="flex items-center gap-2">
+                  <span className="text-[#8e8e9a]">₡</span>
+                  <input
+                    type="number" min={0} step={500}
+                    value={form.costoEnvio}
+                    onChange={e => set('costoEnvio', e.target.value)}
+                    placeholder="Ej: 4000"
+                    className="flex-1 h-10 px-3 rounded-xl text-sm focus:outline-none"
+                    style={inp}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Notas */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">Notas (opcional)</label>
+              <textarea
+                value={form.notas}
+                onChange={e => set('notas', e.target.value)}
+                rows={2}
+                placeholder="Instrucciones especiales, dirección, etc."
+                className="w-full px-3 py-2 rounded-xl text-sm resize-none focus:outline-none"
+                style={inp}
+              />
+            </div>
+
+            {/* Resumen */}
+            {form.items.length > 0 && (
+              <div className="rounded-xl px-4 py-3 space-y-1.5" style={{ backgroundColor: '#ffffff06', border: '1px solid #ffffff0e' }}>
+                <p className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest mb-2">Resumen</p>
+                <div className="flex justify-between text-sm text-[#8e8e9a]">
+                  <span>Subtotal productos</span>
+                  <span>{formatPrice(subtotal)}</span>
+                </div>
+                {costoEnvioNum > 0 && (
+                  <div className="flex justify-between text-sm text-[#8e8e9a]">
+                    <span>Envío</span>
+                    <span>{formatPrice(costoEnvioNum)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-base font-bold text-[#e8e8ed] pt-1 border-t" style={{ borderColor: '#ffffff10' }}>
+                  <span>Total</span>
+                  <span>{formatPrice(total)}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="px-5 py-4 border-t shrink-0 flex gap-3" style={{ borderColor: '#ffffff14' }}>
+          <button onClick={onClose} disabled={saving}
+            className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-all"
+            style={{ backgroundColor: '#ffffff08', color: '#8e8e9a' }}>
+            Cancelar
+          </button>
+          <button onClick={submit} disabled={saving || !canSubmit}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-40"
+            style={{ backgroundColor: '#4f7cff', color: '#fff' }}>
+            {saving ? 'Creando…' : 'Crear pedido'}
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -444,9 +812,10 @@ function OrderCard({ order, onUpdate, onDelete }) {
 }
 
 export default function AdminOrders() {
-  const [orders, setOrders]   = useState([])
-  const [loading, setLoading] = useState(true)
-  const [filter, setFilter]   = useState('Todos')
+  const [orders, setOrders]         = useState([])
+  const [loading, setLoading]       = useState(true)
+  const [filter, setFilter]         = useState('Todos')
+  const [showCreate, setShowCreate] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -465,6 +834,11 @@ export default function AdminOrders() {
   const handleDelete = (id) =>
     setOrders(prev => prev.filter(o => o.id !== id))
 
+  const handleCreated = (newOrder) => {
+    if (newOrder?.id) setOrders(prev => [newOrder, ...prev])
+    else load()
+  }
+
   const filtered = filter === 'Todos'
     ? orders
     : orders.filter(o => o.estado === filter)
@@ -472,9 +846,18 @@ export default function AdminOrders() {
   return (
     <AdminLayout>
       <div className="space-y-5 max-w-3xl">
-        <div>
-          <h1 className="text-xl font-bold text-[#e8e8ed]">Pedidos</h1>
-          <p className="text-sm text-[#8e8e9a] mt-0.5">{orders.length} pedidos en total</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold text-[#e8e8ed]">Pedidos</h1>
+            <p className="text-sm text-[#8e8e9a] mt-0.5">{orders.length} pedidos en total</p>
+          </div>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0"
+            style={{ backgroundColor: '#4f7cff', color: '#fff' }}
+          >
+            + Nuevo pedido
+          </button>
         </div>
 
         {/* Filtros */}
@@ -507,6 +890,12 @@ export default function AdminOrders() {
           </div>
         )}
       </div>
+      {showCreate && (
+        <CrearPedidoModal
+          onClose={() => setShowCreate(false)}
+          onCreated={handleCreated}
+        />
+      )}
     </AdminLayout>
   )
 }

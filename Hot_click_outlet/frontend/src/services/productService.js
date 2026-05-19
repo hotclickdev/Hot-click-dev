@@ -25,6 +25,9 @@ export function normalizeProduct(p) {
     titulo: p.tituloProducto ?? p.titulo ?? null,
     especificaciones: p.especificaciones ?? null,
     comoUsar: p.comoUsar ?? null,
+    metaTitle: p.metaTitle ?? null,
+    metaDescription: p.metaDescription ?? null,
+    metaKeywords: p.metaKeywords ?? null,
   }
 }
 
@@ -48,6 +51,9 @@ export function denormalizeProduct(form) {
     descripcionLarga: form.descripcionLarga || null,
     marcaId: form.marcaId ? Number(form.marcaId) : null,
     marcaTexto: form.marcaTexto || form.marca || null,
+    metaTitle: form.metaTitle || null,
+    metaDescription: form.metaDescription || null,
+    metaKeywords: form.metaKeywords || null,
   }
 }
 

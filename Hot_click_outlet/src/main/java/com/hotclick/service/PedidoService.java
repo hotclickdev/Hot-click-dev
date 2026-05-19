@@ -1,7 +1,15 @@
 package com.hotclick.service;
 
+import com.hotclick.dto.ManualPedidoDTO;
+import com.hotclick.model.Bodega;
 import com.hotclick.model.Pedido;
+import com.hotclick.model.PedidoItem;
+import com.hotclick.model.Producto;
+import com.hotclick.model.Usuario;
+import com.hotclick.repository.BodegaRepository;
 import com.hotclick.repository.PedidoRepository;
+import com.hotclick.repository.ProductoRepository;
+import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -10,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,11 +27,11 @@ import java.util.stream.Collectors;
 @Service
 public class PedidoService {
 
-    @Autowired
-    private PedidoRepository pedidoRepository;
-
-    @Autowired
-    private NotificacionEmailService notificacionEmailService;
+    @Autowired private PedidoRepository pedidoRepository;
+    @Autowired private NotificacionEmailService notificacionEmailService;
+    @Autowired private UsuarioRepository usuarioRepository;
+    @Autowired private BodegaRepository bodegaRepository;
+    @Autowired private ProductoRepository productoRepository;
 
     @Transactional
     public Pedido crearPedido(Pedido pedido) {
@@ -33,6 +42,70 @@ public class PedidoService {
         }
         pedido.setEstado(Constants.ESTADO_ACTIVO);
         return pedidoRepository.save(pedido);
+    }
+
+    @Transactional
+    public Pedido crearPedidoManual(ManualPedidoDTO dto) {
+        Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + dto.getUsuarioId()));
+
+        Long bodegaId = dto.getBodegaId() != null ? dto.getBodegaId() : 1L;
+        Bodega bodega = bodegaRepository.findById(bodegaId)
+            .orElseThrow(() -> new RuntimeException("Bodega no encontrada"));
+
+        Pedido pedido = new Pedido();
+        pedido.setNumeroPedido("ORD-" + System.currentTimeMillis());
+        pedido.setFechaPedido(LocalDateTime.now());
+        pedido.setUsuarioFinal(usuario);
+        pedido.setBodega(bodega);
+        pedido.setMetodoEnvio(dto.getMetodoEnvio() != null ? dto.getMetodoEnvio() : Constants.ENVIO_RETIRO);
+        pedido.setMetodoPago(dto.getMetodoPago() != null ? dto.getMetodoPago() : "SINPE");
+        pedido.setCostoEnvio(dto.getCostoEnvio() != null ? dto.getCostoEnvio() : 0);
+        pedido.setEstadoPedido(dto.getEstadoPedido() != null ? dto.getEstadoPedido() : Constants.PEDIDO_PENDIENTE);
+        pedido.setNotas(dto.getNotas());
+        pedido.setDescuentoTotal(0);
+        pedido.setAplicaImpuesto(false);
+        pedido.setMontoImpuesto(0);
+        pedido.setEstado(Constants.ESTADO_ACTIVO);
+
+        int subtotal = 0;
+        int costoTotalProductos = 0;
+        List<PedidoItem> items = new ArrayList<>();
+
+        for (ManualPedidoDTO.ItemDTO itemDto : dto.getItems()) {
+            Producto producto = productoRepository.findById(itemDto.getProductoId())
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + itemDto.getProductoId()));
+
+            int precio   = itemDto.getPrecioUnitario() != null ? itemDto.getPrecioUnitario() : producto.getPrecioVenta();
+            int costo    = producto.getPrecioCompra();
+            int cantidad = itemDto.getCantidad() != null ? itemDto.getCantidad() : 1;
+
+            PedidoItem item = new PedidoItem();
+            item.setPedido(pedido);
+            item.setProducto(producto);
+            item.setCantidad(cantidad);
+            item.setPrecioUnitarioMomento(precio);
+            item.setCostoUnitarioMomento(costo);
+            item.setSubtotalItem(precio * cantidad);
+            item.setUtilidadItem((precio - costo) * cantidad);
+            item.setDescuentoAplicado(0);
+            item.setEstado(Constants.ESTADO_ACTIVO);
+            items.add(item);
+
+            subtotal           += precio * cantidad;
+            costoTotalProductos += costo * cantidad;
+        }
+
+        pedido.setItems(items);
+        pedido.setSubtotal(subtotal);
+        int envio = pedido.getCostoEnvio() != null ? pedido.getCostoEnvio() : 0;
+        pedido.setTotalPedido(subtotal + envio);
+        pedido.setCostoTotalProductos(costoTotalProductos);
+        pedido.setUtilidadBruta(subtotal - costoTotalProductos);
+
+        Pedido saved = pedidoRepository.save(pedido);
+        saved.getItems().size();
+        return saved;
     }
 
     @Transactional

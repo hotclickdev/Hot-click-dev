@@ -3,6 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
+import { Helmet } from 'react-helmet-async'
+import Seo from '@/components/seo/Seo'
+import { generateProductJsonLd } from '@/utils/jsonLd'
 import Badge from '@/components/ui/Badge'
 import Spinner from '@/components/ui/Spinner'
 import { productService, normalizeProduct } from '@/services/productService'
@@ -131,8 +134,22 @@ export default function ProductDetailPage() {
     addTimeout.current = setTimeout(() => setJustAdded(false), 1400)
   }
 
+  const seoTitle = product.metaTitle || `${product.titulo || product.nombre} | HOTCLICK Outlet`
+  const seoDescription = product.metaDescription || `${product.descripcion || product.nombre} | Precio: ₡${new Intl.NumberFormat('es-CR').format(product.precio)} | Envíos en Costa Rica`
+
   return (
     <MainLayout>
+      <Seo
+        title={seoTitle}
+        description={seoDescription}
+        image={product.imagenUrl}
+        type="product"
+      />
+      <Helmet>
+        <script type="application/ld+json">
+          {JSON.stringify(generateProductJsonLd(product, window.location.origin))}
+        </script>
+      </Helmet>
       <div className={`max-w-5xl mx-auto px-4 sm:px-6 py-10 transition-[padding] duration-300 ${showSticky ? 'pb-28 sm:pb-24' : ''}`}>
 
         {/* Breadcrumb */}
@@ -154,7 +171,15 @@ export default function ProductDetailPage() {
             className="aspect-square rounded-2xl bg-[#111114] border border-white/8 flex items-center justify-center overflow-hidden"
           >
             {product.imagenUrl ? (
-              <img src={product.imagenUrl} alt={product.nombre} className="w-full h-full object-cover" />
+              <img
+                src={product.imagenUrl}
+                alt={product.nombre}
+                width={800}
+                height={800}
+                className="w-full aspect-square object-cover"
+                fetchPriority="high"
+                loading="eager"
+              />
             ) : (
               <span className="text-8xl opacity-20">📦</span>
             )}
@@ -520,6 +545,8 @@ export default function ProductDetailPage() {
                       <img
                         src={rec.imagenUrl}
                         alt={rec.nombre}
+                        width={96}
+                        height={96}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         loading="lazy"
                       />
@@ -564,7 +591,7 @@ export default function ProductDetailPage() {
                   >
                     <div className="w-9 h-9 rounded-lg bg-[#1a1a1f] overflow-hidden shrink-0 border border-white/6">
                       {p.imagenUrl ? (
-                        <img src={p.imagenUrl} alt={p.nombre} className="w-full h-full object-cover" loading="lazy" />
+                        <img src={p.imagenUrl} alt={p.nombre} width={36} height={36} className="w-full h-full object-cover" loading="lazy" />
                       ) : (
                         <span className="flex items-center justify-center w-full h-full text-sm">📦</span>
                       )}
@@ -623,7 +650,7 @@ function StickyCartBar({ product, quantity, onDecrease, onIncrease, onAdd, justA
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="w-11 h-11 rounded-xl bg-[#1a1a1f] overflow-hidden shrink-0 border border-white/8">
             {product.imagenUrl ? (
-              <img src={product.imagenUrl} alt={product.nombre} className="w-full h-full object-cover" />
+              <img src={product.imagenUrl} alt={product.nombre} width={44} height={44} className="w-full h-full object-cover" loading="lazy" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-lg">📦</div>
             )}

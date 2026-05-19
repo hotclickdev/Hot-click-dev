@@ -3,13 +3,16 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
+import { Helmet } from 'react-helmet-async'
+import Seo from '@/components/seo/Seo'
+import { generateWebsiteJsonLd, generateOrganizationJsonLd } from '@/utils/jsonLd'
 import { productService, normalizeProduct } from '@/services/productService'
 import useCartStore from '@/store/cartStore'
-import useWishlistStore from '@/store/wishlistStore'
 import useRecentlyViewedStore from '@/store/recentlyViewedStore'
 import { useToast } from '@/components/ui/Toast'
 import { formatPrice } from '@/utils/format'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
+import ProductCard from '@/components/ui/ProductCard'
 
 const stagger = {
   container: { hidden: {}, show: { transition: { staggerChildren: 0.08 } } },
@@ -256,8 +259,12 @@ function HeroCarousel({ slides }) {
                       <img
                         src={slide.imagenUrl}
                         alt={slide.nombre}
+                        width={800}
+                        height={800}
                         className="w-full h-full"
                         style={{ objectFit: 'contain', filter: `drop-shadow(0 0 48px ${color.glow}) drop-shadow(0 32px 48px rgba(0,0,0,0.6))` }}
+                        fetchPriority={current === 0 ? 'high' : 'auto'}
+                        loading={current === 0 ? 'eager' : 'lazy'}
                       />
                     </motion.div>
                     {/* Floating badges */}
@@ -378,6 +385,7 @@ function HeroCarousel({ slides }) {
 // ─── Página principal ─────────────────────────────────────────────────────────
 export default function HomePage() {
   const [carouselSlides, setCarouselSlides] = useState(PLACEHOLDER_SLIDES)
+  const [destacados, setDestacados] = useState([])
   const addItem = useCartStore((s) => s.addItem)
   const toast = useToast()
   const navigate = useNavigate()
@@ -386,7 +394,6 @@ export default function HomePage() {
   const recentlyViewed = useRecentlyViewedStore((s) => s.items)
 
   useEffect(() => {
-    // Load carousel products
     productService.getCarrusel()
       .then(({ data }) => {
         const items = Array.isArray(data) ? data : []
@@ -397,10 +404,31 @@ export default function HomePage() {
         }
       })
       .catch(() => {})
+    productService.getDestacados()
+      .then(({ data }) => setDestacados(Array.isArray(data) ? data.slice(0, 8) : []))
+      .catch(() => {})
   }, [])
 
   return (
     <MainLayout>
+      <Seo
+        title="HOTCLICK Outlet | Ropa, Zapatos y Accesorios de Marca"
+        description="Las mejores marcas a precios de outlet en Costa Rica. Envíos a todo el país."
+        type="website"
+      />
+      <Helmet>
+        <script type="application/ld+json">
+          {JSON.stringify(generateWebsiteJsonLd(window.location.origin))}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify(generateOrganizationJsonLd(window.location.origin, [
+            'https://www.facebook.com/hotclickcr',
+            'https://www.instagram.com/hotclickcr',
+            'https://wa.me/50689745370',
+            'https://www.tiktok.com/@hotclickcr',
+          ]))}
+        </script>
+      </Helmet>
       {/* ── Hero Carousel ── */}
       <HeroCarousel slides={carouselSlides} />
 
@@ -464,6 +492,24 @@ export default function HomePage() {
                   </motion.button>
                 </div>
               </motion.article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Productos destacados */}
+      {destacados.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <span className="w-1 h-4 rounded-full bg-[#4f7cff]" />
+              <h2 className="text-sm font-semibold tracking-wide uppercase text-[#8e8e9a]">{t('home.destacados')}</h2>
+            </div>
+            <Link to="/productos" className="text-xs text-[#4f7cff] hover:underline">{t('home.verTodos')}</Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            {destacados.map((product, i) => (
+              <ProductCard key={product.id} product={product} priority={i < 2} index={i} />
             ))}
           </div>
         </section>
@@ -670,98 +716,3 @@ function FallbackIllustration({ color }) {
   )
 }
 
-// ─── ProductCard ──────────────────────────────────────────────────────────────
-function ProductCard({ product, onAdd }) {
-  const navigate = useNavigate()
-  const { t } = useTranslation()
-  const [addState, setAddState] = useState('idle')
-  const { toggle: toggleWishlist, isLiked } = useWishlistStore()
-  const liked = isLiked(product.id)
-  const stockDot = product.stock === 0 ? 'bg-red-400' : product.stock <= 3 ? 'bg-amber-400' : 'bg-emerald-400'
-  const stockLabel = product.stock === 0 ? t('common.outOfStock') : product.stock <= 3 ? t('products.lowStock', { count: product.stock }) : t('common.inStock')
-  const stockColor = product.stock === 0 ? 'text-red-400' : product.stock <= 3 ? 'text-amber-400' : 'text-emerald-400'
-
-  return (
-    <motion.div
-      variants={stagger.item}
-      whileHover={{ y: -6 }}
-      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-      className="group relative rounded-2xl overflow-hidden cursor-pointer transition-shadow duration-300 hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)]"
-      style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
-      onClick={() => navigate(`/productos/${product.id}`, { state: { product } })}
-    >
-      <div className="relative h-36 sm:h-48 bg-[#1a1a1f] flex items-center justify-center overflow-hidden">
-        {product.imagenUrl ? (
-          <img
-            src={product.imagenUrl}
-            alt={product.nombre}
-            className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500 ease-out p-2"
-          />
-        ) : (
-          <span className="text-5xl opacity-30 group-hover:opacity-50 transition-opacity">📦</span>
-        )}
-        {product.stock === 0 && (
-          <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
-            <span className="text-xs font-semibold text-white/60 bg-black/40 px-3 py-1 rounded-full">{t('common.outOfStock')}</span>
-          </div>
-        )}
-        <button
-          onClick={(e) => { e.stopPropagation(); toggleWishlist(product) }}
-          className="absolute top-2 right-2 z-10 w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200"
-          style={{ background: liked ? 'rgba(239,68,68,0.18)' : 'rgba(0,0,0,0.45)', border: liked ? '1px solid rgba(239,68,68,0.38)' : '1px solid rgba(255,255,255,0.12)' }}
-          aria-label={liked ? 'Quitar de favoritos' : 'Guardar en wishlist'}
-        >
-          {liked ? (
-            <svg className="w-3.5 h-3.5 text-red-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
-          ) : (
-            <svg className="w-3.5 h-3.5 text-white/70" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
-          )}
-        </button>
-        {product.stock > 0 && (
-          <>
-            <div className="hc-card-overlay" />
-            <div className="hc-quick-add absolute bottom-0 left-0 right-0 p-2.5">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  if (addState !== 'idle') return
-                  setAddState('adding')
-                  setTimeout(() => { onAdd(product); setAddState('added'); setTimeout(() => setAddState('idle'), 1300) }, 180)
-                }}
-                className={`w-full h-8 rounded-xl text-xs font-bold transition-all duration-200 ${addState === 'added' ? 'bg-emerald-500 text-white' : 'bg-[#4f7cff] hover:bg-[#3d6ee0] text-white'}`}
-              >
-                {addState === 'added' ? '✓ Añadido' : addState === 'adding' ? '···' : `+ ${t('products.addToCart')}`}
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-      <div className="p-3 sm:p-4">
-        <h3 className="font-medium text-xs sm:text-sm leading-snug line-clamp-2 mb-2.5 group-hover:text-white transition-colors" style={{ color: 'var(--hc-text)' }}>
-          {product.nombre}
-        </h3>
-        <div className="flex items-center justify-between">
-          <span className="font-bold text-sm sm:text-base" style={{ color: 'var(--hc-text)' }}>{formatPrice(product.precio)}</span>
-          <div className="flex items-center gap-1.5">
-            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${stockDot}`} />
-            <span className={`text-[10px] sm:text-xs font-medium ${stockColor}`}>{stockLabel}</span>
-          </div>
-        </div>
-        {product.stock > 0 && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              if (addState !== 'idle') return
-              setAddState('adding')
-              setTimeout(() => { onAdd(product); setAddState('added'); setTimeout(() => setAddState('idle'), 1300) }, 180)
-            }}
-            className={`sm:hidden mt-2.5 w-full h-8 rounded-xl text-xs font-medium transition-all duration-200 ${addState === 'added' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : ''}`}
-            style={addState === 'added' ? {} : { background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', color: 'var(--hc-accent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 25%, transparent)' }}
-          >
-            {addState === 'added' ? '✓ Añadido' : t('products.addToCart')}
-          </button>
-        )}
-      </div>
-    </motion.div>
-  )
-}

@@ -31,19 +31,20 @@ const useCartStore = create(
       removeItem: (id) => {
         const item = get().items.find((i) => i.id === id)
         if (item) analytics.removeFromCart(id, item.nombre)
-        set({ items: get().items.filter((i) => i.id !== id) })
+        set({ items: get().items.filter((i) => i.id !== id), cartUpdatedAt: Date.now() })
       },
 
       updateQuantity: (id, cantidad) => {
         if (cantidad < 1) return get().removeItem(id)
         set({
-          items: get().items.map((i) =>
-            i.id === id ? { ...i, cantidad } : i
-          ),
+          items: get().items.map((i) => i.id === id ? { ...i, cantidad } : i),
+          cartUpdatedAt: Date.now(),
         })
       },
 
-      clearCart: () => set({ items: [] }),
+      clearCart: () => set({ items: [], cartUpdatedAt: null }),
+
+      getCartItems: () => get().items,
 
       total: () =>
         get().items.reduce((sum, i) => sum + (i.precio ?? i.precioVenta ?? 0) * i.cantidad, 0),

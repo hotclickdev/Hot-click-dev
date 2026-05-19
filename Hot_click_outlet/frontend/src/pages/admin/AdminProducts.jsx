@@ -19,6 +19,40 @@ const EMPTY_FORM = {
   precioCompra: '', precioVenta: '', stock: '',
   condicion: 'NUEVO', categoriaId: '', marcaId: '', imagenUrl: '', bodegaId: '', destacado: false,
   especificaciones: '', comoUsar: '', imagenes: [],
+  metaTitle: '', metaDescription: '', metaKeywords: '',
+}
+
+function toSlug(str) {
+  return str
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+}
+
+function SeoStatusIcon({ product }) {
+  const hasTitle = !!(product.metaTitle)
+  const hasDesc = !!(product.metaDescription)
+  const both = hasTitle && hasDesc
+  const none = !hasTitle && !hasDesc
+  const tip = both
+    ? `Título: ${product.metaTitle}\nDescripción: ${product.metaDescription}`
+    : none
+    ? 'Sin título ni descripción SEO'
+    : hasTitle
+    ? `Título: ${product.metaTitle}\nFalta meta descripción`
+    : `Falta título SEO\nDescripción: ${product.metaDescription}`
+  return (
+    <span title={tip} className="text-base cursor-default select-none">
+      {both ? '✅' : none ? '❌' : '⚠️'}
+    </span>
+  )
+}
+
+function CharCounter({ current, max, min = 0 }) {
+  const color = current === 0 ? 'text-[#5e5e6e]' : current < min ? 'text-amber-400' : current > max ? 'text-red-400' : 'text-emerald-400'
+  return <span className={`text-xs tabular-nums ${color}`}>{current}/{max}</span>
 }
 
 const STOCK_OPTIONS = [
@@ -47,6 +81,9 @@ export default function AdminProducts() {
   const [filterCond, setFilterCond] = useState('')
   const [filterStock, setFilterStock] = useState('')
   const [carruselOpen, setCarruselOpen] = useState(true)
+  const [seoOpen, setSeoOpen] = useState(false)
+  const [seoAutoTitle, setSeoAutoTitle] = useState(true)
+  const [seoAutoDesc, setSeoAutoDesc] = useState(true)
 
   const load = async () => {
     setLoading(true)
@@ -68,12 +105,17 @@ export default function AdminProducts() {
 
   const openNew = () => {
     setEditing(null)
+    setSeoAutoTitle(true)
+    setSeoAutoDesc(true)
+    setSeoOpen(false)
     setForm({ ...EMPTY_FORM, bodegaId: bodegas[0]?.id ?? '' })
     setModalOpen(true)
   }
 
   const openEdit = async (p) => {
     setEditing(p)
+    setSeoAutoTitle(false)
+    setSeoAutoDesc(false)
     setForm({
       nombre:           p.nombre          ?? '',
       titulo:           p.titulo          ?? '',
@@ -90,6 +132,9 @@ export default function AdminProducts() {
       especificaciones: p.especificaciones ?? '',
       comoUsar:         p.comoUsar        ?? '',
       imagenes:         p.imagenUrl ? [p.imagenUrl] : [],
+      metaTitle:        p.metaTitle        ?? '',
+      metaDescription:  p.metaDescription  ?? '',
+      metaKeywords:     p.metaKeywords     ?? '',
     })
     setModalOpen(true)
     try {
@@ -152,6 +197,21 @@ export default function AdminProducts() {
       toast({ message: 'Error al actualizar destacado', type: 'error' })
     }
   }
+
+  useEffect(() => {
+    if (!seoAutoTitle || !modalOpen) return
+    setForm(p => ({ ...p, metaTitle: p.nombre ? `${p.nombre} | HOTCLICK Outlet`.slice(0, 60) : '' }))
+  }, [form.nombre, seoAutoTitle, modalOpen]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!seoAutoDesc || !modalOpen) return
+    const precio = form.precioVenta ? Number(form.precioVenta).toLocaleString('es-CR') : ''
+    const base = form.descripcion || ''
+    const suggested = base
+      ? `${base}${precio ? ` | Precio: ₡${precio}` : ''} | Envíos a todo Costa Rica`.slice(0, 160)
+      : ''
+    setForm(p => ({ ...p, metaDescription: suggested }))
+  }, [form.descripcion, form.precioVenta, seoAutoDesc, modalOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSave = async (e) => {
     e.preventDefault()
@@ -425,7 +485,7 @@ export default function AdminProducts() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-white/8">
-                        {['★', '🎠', 'ID', t('admin.products.name'), t('admin.products.price'), t('admin.products.stock'), t('admin.products.category'), t('admin.products.actions')].map((h) => (
+                        {['★', '🎠', 'ID', t('admin.products.name'), t('admin.products.price'), t('admin.products.stock'), t('admin.products.category'), 'SEO', t('admin.products.actions')].map((h) => (
                           <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">{h}</th>
                         ))}
                       </tr>
@@ -490,6 +550,9 @@ export default function AdminProducts() {
                           </td>
                           <td className="px-4 py-3">
                             <Badge variant={p.condicion === 'NUEVO' ? 'success' : 'warning'}>{conditionLabel(p.condicion)}</Badge>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <SeoStatusIcon product={p} />
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex gap-2">
@@ -638,6 +701,88 @@ export default function AdminProducts() {
               />
               <p className="text-xs text-[#8e8e9a]">Pasos numerados. Ej: "1. Primer paso". Se muestra como lista ordenada al cliente.</p>
             </div>
+          </div>
+
+          {/* ── SEO ── */}
+          <div className="rounded-2xl border border-white/10 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setSeoOpen(o => !o)}
+              className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/3 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-[#e8e8ed]">SEO</span>
+                <span className="text-base">🎯</span>
+                {form.metaTitle && form.metaDescription
+                  ? <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Optimizado</span>
+                  : <span className="text-[10px] text-[#8e8e9a] bg-white/5 px-2 py-0.5 rounded-full">Sin configurar</span>
+                }
+              </div>
+              <svg className={`w-4 h-4 text-[#8e8e9a] transition-transform duration-200 ${seoOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+
+            {seoOpen && (
+              <div className="border-t border-white/10 px-4 py-4 space-y-4">
+                {/* Título SEO */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <label className="text-sm font-medium text-[#e8e8ed]">Título SEO</label>
+                      <span title="Aparece en Google. Usa entre 50-60 caracteres, incluye la palabra principal." className="text-[#8e8e9a] cursor-help text-xs">ⓘ</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {seoAutoTitle && <span className="text-[10px] text-[#4f7cff]">auto</span>}
+                      <CharCounter current={(form.metaTitle || '').length} max={60} min={30} />
+                    </div>
+                  </div>
+                  <input
+                    value={form.metaTitle || ''}
+                    maxLength={60}
+                    placeholder="Nombre del producto | HOTCLICK Outlet"
+                    onChange={e => { setSeoAutoTitle(false); setField('metaTitle', e.target.value) }}
+                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm placeholder:text-[#8e8e9a]/40 focus:outline-none focus:border-[#4f7cff]/60 transition-all"
+                  />
+                </div>
+
+                {/* Meta Descripción */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <label className="text-sm font-medium text-[#e8e8ed]">Meta Descripción</label>
+                      <span title="Aparece debajo del título en Google. Usa entre 120-160 caracteres." className="text-[#8e8e9a] cursor-help text-xs">ⓘ</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {seoAutoDesc && <span className="text-[10px] text-[#4f7cff]">auto</span>}
+                      <CharCounter current={(form.metaDescription || '').length} max={160} min={120} />
+                    </div>
+                  </div>
+                  <textarea
+                    value={form.metaDescription || ''}
+                    maxLength={160}
+                    rows={3}
+                    placeholder="Descripción del producto | Precio: ₡X | Envíos a todo Costa Rica"
+                    onChange={e => { setSeoAutoDesc(false); setField('metaDescription', e.target.value) }}
+                    className={`${ta} resize-none`}
+                  />
+                </div>
+
+                {/* Vista previa Google */}
+                <div>
+                  <p className="text-xs text-[#8e8e9a] mb-2">Vista previa en Google</p>
+                  <div className="rounded-xl bg-white px-4 py-3 space-y-0.5">
+                    <p className="text-xs text-green-700 truncate">
+                      hotclick.com › productos › {form.nombre ? toSlug(form.nombre) : '…'}
+                    </p>
+                    <p className="text-base text-blue-700 truncate leading-snug">
+                      {form.metaTitle || 'Título SEO del producto'}
+                    </p>
+                    <p className="text-sm text-[#4d5156] line-clamp-2 leading-snug">
+                      {form.metaDescription || 'La meta descripción aparecerá aquí…'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-3 pt-2">

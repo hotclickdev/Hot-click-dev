@@ -2,6 +2,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Helmet } from 'react-helmet-async'
 import useAuthStore from '@/store/authStore'
 
 export default function AdminLayout({ children }) {
@@ -102,6 +103,9 @@ export default function AdminLayout({ children }) {
 
   return (
     <div className="hc-admin-content min-h-screen" style={{ backgroundColor: 'var(--hc-bg)' }}>
+      <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
 
       {/* ── Desktop sidebar ── */}
       <aside

@@ -2,6 +2,7 @@ import api from './api'
 
 export const orderService = {
   create: (data) => api.post('/pedidos', data),
+  createManual: (data) => api.post('/pedidos/manual', data),
   getById: (id) => api.get(`/pedidos/${id}`),
   getByUser: (userId, page = 0, size = 20) => api.get(`/pedidos/usuario/${userId}?page=${page}&size=${size}`),
   getAll: () => api.get('/pedidos'),

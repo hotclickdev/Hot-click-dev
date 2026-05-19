@@ -1,6 +1,7 @@
-import { Suspense, lazy, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { Suspense, lazy, useEffect, useState } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { HelmetProvider } from 'react-helmet-async'
 import { ToastProvider } from '@/components/ui/Toast'
 import { PageLoader } from '@/components/ui/Spinner'
 import useAuthStore from '@/store/authStore'
@@ -8,6 +9,10 @@ import useUiStore from '@/store/uiStore'
 import AccessibilityPanel from '@/components/ui/AccessibilityPanel'
 import WhatsAppFab from '@/components/ui/WhatsAppFab'
 import AuthPromptModal from '@/components/ui/AuthPromptModal'
+import SocialProofToast from '@/components/ui/SocialProofToast'
+import { useSocialProof } from '@/hooks/useSocialProof'
+import { productService, normalizeProduct } from '@/services/productService'
+import { useAbandonedCart } from '@/hooks/useAbandonedCart'
 import i18n from './i18n'
 
 const HomePage = lazy(() => import('@/pages/HomePage'))
@@ -37,7 +42,8 @@ const AdminMarcas         = lazy(() => import('@/pages/admin/AdminMarcas'))
 const MisPedidosPage  = lazy(() => import('@/pages/MisPedidosPage'))
 const CheckoutPage    = lazy(() => import('@/pages/CheckoutPage'))
 const PaymentStatusPage = lazy(() => import('@/pages/PaymentStatusPage'))
-const WishlistPage    = lazy(() => import('@/pages/WishlistPage'))
+const WishlistPage          = lazy(() => import('@/pages/WishlistPage'))
+const RecuperarCarritoPage  = lazy(() => import('@/pages/RecuperarCarritoPage'))
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -77,8 +83,45 @@ function HtmlClassManager() {
   return null
 }
 
+// Excluded paths — social proof / abandoned-cart watcher skip these
+const EXCLUDED_PREFIXES = ['/admin', '/checkout', '/pago']
+
+// Mounts the abandoned-cart background watcher globally.
+// The hook itself bails out if the cart is empty or was recently sent.
+function AbandonedCartWatcher() {
+  useAbandonedCart()
+  return null
+}
+
+function SocialProofController() {
+  const { pathname } = useLocation()
+  const userRole = useAuthStore((s) => s.userRole)
+  const [products, setProducts] = useState([])
+
+  const isAdmin    = ['ADMIN_IT', 'ADMIN_CLIENTE'].includes(userRole)
+  const isExcluded = EXCLUDED_PREFIXES.some((p) => pathname.startsWith(p))
+
+  useEffect(() => {
+    if (isAdmin || isExcluded) return
+    productService.getAll(0, 20)
+      .then(({ data }) => {
+        const items = (data.content ?? data ?? [])
+          .map(normalizeProduct)
+          .filter((p) => p.imagenUrl && p.stock > 0)
+        setProducts(items)
+      })
+      .catch(() => {})
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const notification = useSocialProof(isAdmin || isExcluded ? [] : products)
+
+  if (isAdmin || isExcluded) return null
+  return <SocialProofToast notification={notification} />
+}
+
 export default function App() {
   return (
+    <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <HtmlClassManager />
@@ -98,6 +141,7 @@ export default function App() {
               <Route path="/mis-pedidos" element={<ProtectedRoute><MisPedidosPage /></ProtectedRoute>} />
               <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
               <Route path="/wishlist" element={<WishlistPage />} />
+              <Route path="/recuperar-carrito/:id" element={<RecuperarCarritoPage />} />
               <Route path="/pago/exito"     element={<PaymentStatusPage />} />
               <Route path="/pago/cancelado" element={<PaymentStatusPage />} />
               <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
@@ -119,8 +163,11 @@ export default function App() {
           <WhatsAppFab />
           <AccessibilityPanel />
           <AuthPromptModal />
+          <SocialProofController />
+          <AbandonedCartWatcher />
         </BrowserRouter>
       </ToastProvider>
     </QueryClientProvider>
+    </HelmetProvider>
   )
 }

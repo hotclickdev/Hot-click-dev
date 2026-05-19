@@ -10,7 +10,7 @@ public interface MarcaRepository extends JpaRepository<Marca, Long> {
 
     List<Marca> findByAdminClienteIdAndEstado(Long adminId, Integer estado);
 
-    boolean existsByNombreMarca(String nombreMarca);
+    boolean existsByNombreMarcaAndEstado(String nombreMarca, Integer estado);
 
     List<Marca> findByEstado(Integer estado);
 }

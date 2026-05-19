@@ -80,6 +80,9 @@ public class ProductoService {
         if (dto.getEspecificaciones()   != null) p.setEspecificaciones(trunc(dto.getEspecificaciones(), 5000));
         if (dto.getComoUsar()           != null) p.setComoUsar(trunc(dto.getComoUsar(), 5000));
         if (dto.getDescripcionLarga()   != null) p.setDescripcionLarga(trunc(dto.getDescripcionLarga(), 5000));
+        if (dto.getMetaTitle()          != null) p.setMetaTitle(trunc(dto.getMetaTitle(), 70));
+        if (dto.getMetaDescription()    != null) p.setMetaDescription(trunc(dto.getMetaDescription(), 160));
+        if (dto.getMetaKeywords()       != null) p.setMetaKeywords(trunc(dto.getMetaKeywords(), 255));
         Long mid = dto.getMarcaId();
         if (mid != null) {
             p.setMarca(marcaRepository.findById(mid)

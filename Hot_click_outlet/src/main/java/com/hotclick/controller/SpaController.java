@@ -19,6 +19,8 @@ public class SpaController {
         "/registro",
         "/perfil",
         "/checkout",
+        "/mis-pedidos",
+        "/wishlist",
         "/pago/exito",
         "/pago/cancelado",
         "/nosotros",
@@ -34,7 +36,9 @@ public class SpaController {
         "/admin/finanzas",
         "/admin/reportes",
         "/admin/publicaciones",
-        "/admin/nuevo-producto"
+        "/admin/nuevo-producto",
+        "/admin/marcas",
+        "/admin/pagos"
     })
     public String spa() {
         return "forward:/index.html";

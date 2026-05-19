@@ -79,6 +79,14 @@ public class SecurityConfig {
                 .requestMatchers(GET, "/api/marcas/publicas").permitAll()
                 .requestMatchers(GET, "/api/ruleta/premios").permitAll()
                 .requestMatchers(POST, "/api/contacto").permitAll()
+                // Carrito abandonado — público (usuarios anónimos y links de email)
+                .requestMatchers(POST, "/api/cart/abandoned").permitAll()
+                .requestMatchers(GET,  "/api/cart/abandoned/recover/**").permitAll()
+                .requestMatchers(GET,  "/api/cart/abandoned/session/**").permitAll()
+                .requestMatchers(DELETE, "/api/cart/abandoned/**").permitAll()
+                // Feeds y sitemap públicos
+                .requestMatchers(GET, "/api/public/**").permitAll()
+                .requestMatchers(GET, "/sitemap.xml").permitAll()
                 // Todas las demás rutas /api/** requieren autenticación
                 .requestMatchers("/api/**").authenticated()
                 // Rutas del SPA React (frontend)
@@ -88,7 +96,8 @@ public class SecurityConfig {
                     "/images/**", "/assets/**", "/admin/**",
                     "/nosotros", "/productos", "/productos/**", "/informacion", "/contacto",
                     "/carrito", "/login", "/registro", "/perfil", "/perfil/**", "/mis-pedidos",
-                    "/checkout", "/pago/exito", "/pago/cancelado").permitAll()
+                    "/checkout", "/pago/exito", "/pago/cancelado",
+                    "/recuperar-carrito", "/recuperar-carrito/**").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

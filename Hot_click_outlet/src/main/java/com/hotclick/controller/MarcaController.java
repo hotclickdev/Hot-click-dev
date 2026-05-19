@@ -48,8 +48,8 @@ public class MarcaController {
             var admin = usuarioRepository.findByCorreo(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-            if (marcaRepository.existsByNombreMarca(nombre.trim()))
-                return ResponseEntity.badRequest().body(ResponseDTO.error("Ya existe una marca con ese nombre"));
+            if (marcaRepository.existsByNombreMarcaAndEstado(nombre.trim(), Constants.ESTADO_ACTIVO))
+                return ResponseEntity.badRequest().body(ResponseDTO.error("Ya existe una marca activa con ese nombre"));
 
             Marca m = new Marca();
             m.setNombreMarca(nombre.trim());
