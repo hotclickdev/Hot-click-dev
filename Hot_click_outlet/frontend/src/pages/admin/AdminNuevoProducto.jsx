@@ -473,11 +473,17 @@ export default function AdminNuevoProducto() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label required>Nombre del producto</Label>
-                  <input className={inp} value={form.nombre} onChange={set('nombre')} placeholder="Nombre" required />
+                  <input className={inp} value={form.nombre} onChange={set('nombre')} placeholder="Nombre" required maxLength={80} />
+                  <p className={`text-xs mt-1 text-right ${form.nombre.length >= 72 ? 'text-amber-500' : 'text-gray-400'}`}>
+                    {form.nombre.length}/80
+                  </p>
                 </div>
                 <div>
                   <Label>Título para FB Marketplace</Label>
-                  <input className={inp} value={form.titulo} onChange={set('titulo')} placeholder="Título corto para publicar" />
+                  <input className={inp} value={form.titulo} onChange={set('titulo')} placeholder="Título corto para publicar" maxLength={80} />
+                  <p className={`text-xs mt-1 text-right ${form.titulo.length >= 72 ? 'text-amber-500' : 'text-gray-400'}`}>
+                    {form.titulo.length}/80
+                  </p>
                 </div>
               </div>
 

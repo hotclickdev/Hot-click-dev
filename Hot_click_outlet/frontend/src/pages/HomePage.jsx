@@ -150,7 +150,7 @@ function HeroCarousel({ slides }) {
               </div>
 
               <h1
-                className="font-black leading-[1.02] tracking-tight mb-4"
+                className="font-black leading-[1.02] tracking-tight mb-4 line-clamp-2"
                 style={{ fontSize: 'clamp(2.4rem, 5.5vw, 4.5rem)', color: '#e8e8ed' }}
               >
                 {slide.nombre}
