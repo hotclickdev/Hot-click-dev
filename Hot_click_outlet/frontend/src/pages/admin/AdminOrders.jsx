@@ -109,7 +109,7 @@ function buildWaMessage(order) {
   if (order.numeroGuia) {
     const isCorreos = !order.urlTracking || order.urlTracking.includes('correos.go.cr')
     const trackUrl  = order.urlTracking ?? `https://rastreo.correos.go.cr/?codigo=${order.numeroGuia}`
-    const courier   = isCorreos ? '🟡 Correos de Costa Rica' : '🚚 Mensajería privada'
+    const courier   = isCorreos ? '🟡 Correos de Costa Rica' : '🛵 Entrega directa por HOTCLICK'
     extra = `\n\n📦 *Envío:* ${courier}\n*Guía:* ${order.numeroGuia}\n🔍 Rastrear: ${trackUrl}`
   } else if (esRetiro && (estado === 'LISTO_RETIRO' || estado === 'EN_PREPARACION')) {
     extra = `\n\n📍 *Retiro en tienda:* Cuando esté listo te avisamos.\nhttps://waze.com/ul?ll=9.9342,-84.0877&navigate=yes`

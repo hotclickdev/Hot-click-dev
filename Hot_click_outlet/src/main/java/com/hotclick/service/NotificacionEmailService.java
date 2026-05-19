@@ -105,7 +105,7 @@ public class NotificacionEmailService {
             boolean isCorreos = pedido.getUrlTracking() == null || pedido.getUrlTracking().contains("correos.go.cr");
             String url = pedido.getUrlTracking() != null ? pedido.getUrlTracking()
                 : "https://rastreo.correos.go.cr/?codigo=" + pedido.getNumeroGuia();
-            String courierLabel = isCorreos ? "🟡 Correos de Costa Rica" : "🚚 Mensajería privada";
+            String courierLabel = isCorreos ? "🟡 Correos de Costa Rica" : "🛵 Entrega directa por HOTCLICK";
             guiaSection = "<div style='background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px 20px;margin-bottom:20px;text-align:center'>"
                 + "<p style='margin:0 0 4px;font-size:12px;color:#059669;font-weight:600;text-transform:uppercase;letter-spacing:1px'>Envío · " + esc(courierLabel) + "</p>"
                 + "<p style='margin:0 0 4px;font-size:12px;color:#6e6e82'>Número de guía</p>"
