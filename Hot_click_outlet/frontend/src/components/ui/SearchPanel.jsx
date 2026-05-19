@@ -86,6 +86,7 @@ export default function SearchPanel() {
       .filter((p) =>
         p.nombre?.toLowerCase().includes(q) ||
         p.categoriaNombre?.toLowerCase().includes(q) ||
+        p.marcaNombre?.toLowerCase().includes(q) ||
         p.descripcion?.toLowerCase().includes(q)
       )
       .slice(0, 8)
@@ -276,7 +277,21 @@ export default function SearchPanel() {
                               <p className="text-sm font-medium truncate" style={{ color: 'var(--hc-text)' }}>
                                 {product.nombre}
                               </p>
-                              <div className="flex items-center gap-2 mt-0.5">
+                              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                {/* Brand logo */}
+                                {product.marcaLogoUrl && (
+                                  <img
+                                    src={product.marcaLogoUrl}
+                                    alt={product.marcaNombre}
+                                    className="h-3.5 w-auto max-w-[40px] object-contain opacity-70"
+                                    onError={(e) => { e.target.style.display = 'none' }}
+                                  />
+                                )}
+                                {!product.marcaLogoUrl && product.marcaNombre && (
+                                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-white/8 text-[#8e8e9a]">
+                                    {product.marcaNombre}
+                                  </span>
+                                )}
                                 {product.categoriaNombre && (
                                   <span className="text-[11px]" style={{ color: 'var(--hc-muted)' }}>
                                     {product.categoriaNombre}

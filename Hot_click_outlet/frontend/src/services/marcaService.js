@@ -1,6 +1,10 @@
 import api from './api'
 
 export const marcaService = {
+  /** Sin auth — usado por catálogo/búsqueda */
+  getPublicas: () =>
+    api.get('/marcas/publicas'),
+
   getAll: () =>
     api.get('/marcas'),
 

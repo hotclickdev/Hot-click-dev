@@ -20,6 +20,13 @@ public class MarcaController {
     @Autowired private MarcaRepository marcaRepository;
     @Autowired private UsuarioRepository usuarioRepository;
 
+    /** Endpoint público — sin autenticación, usado por el catálogo y búsqueda */
+    @GetMapping("/publicas")
+    public ResponseEntity<ResponseDTO> listarPublicas() {
+        var marcas = marcaRepository.findByEstado(Constants.ESTADO_ACTIVO);
+        return ResponseEntity.ok(ResponseDTO.success("Marcas obtenidas", marcas));
+    }
+
     @GetMapping
     public ResponseEntity<ResponseDTO> listar(
             @AuthenticationPrincipal UserDetails userDetails) {

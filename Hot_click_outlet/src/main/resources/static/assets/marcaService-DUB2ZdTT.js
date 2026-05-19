@@ -1,1 +1,0 @@
-import{t as e}from"./api-DvKVDwNc.js";var t={getAll:()=>e.get(`/marcas`),create:t=>e.post(`/marcas`,t),update:(t,n)=>e.put(`/marcas/${t}`,n),delete:t=>e.delete(`/marcas/${t}`)};export{t};

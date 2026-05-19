@@ -76,6 +76,7 @@ public class SecurityConfig {
                 .requestMatchers(GET, "/api/productos/destacados").permitAll()
                 .requestMatchers(GET, "/api/productos/*").permitAll()
                 .requestMatchers(GET, "/api/categorias").permitAll()
+                .requestMatchers(GET, "/api/marcas/publicas").permitAll()
                 .requestMatchers(GET, "/api/ruleta/premios").permitAll()
                 .requestMatchers(POST, "/api/contacto").permitAll()
                 // Todas las demás rutas /api/** requieren autenticación
