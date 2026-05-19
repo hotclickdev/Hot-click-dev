@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 
@@ -130,12 +131,12 @@ export default function NosotrosPage() {
           <p className="text-[#8e8e9a] text-sm mb-4">
             {t('nosotros.ctaSub')}
           </p>
-          <a
-            href="/contacto"
+          <Link
+            to="/contacto"
             className="inline-block px-6 py-2.5 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white text-sm font-medium transition-all duration-200 shadow-[0_0_16px_rgba(79,124,255,0.25)] hover:shadow-[0_0_24px_rgba(79,124,255,0.4)]"
           >
             {t('nosotros.ctaBtn')}
-          </a>
+          </Link>
         </motion.div>
 
       </div>

@@ -111,7 +111,7 @@ export default function CartPage() {
                 className="px-6 py-2.5 rounded-xl border text-sm font-medium transition-all hover:bg-white/5"
                 style={{ color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }}
               >
-                Ver Wishlist
+                {t('nav.wishlist')}
               </Link>
             </div>
           </motion.div>

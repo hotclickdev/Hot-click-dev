@@ -131,7 +131,7 @@ export function usePayment() {
   const reintentar = useCallback(
     async (checkoutPayload) => {
       if (intentos >= MAX_INTENTOS) {
-        setError('Máximo de intentos alcanzado. Contacta soporte en soporte@hotclick.com')
+        setError('Máximo de intentos alcanzado. Contacta soporte en hotclick.cr@gmail.com')
         return
       }
       setIntentos((i) => i + 1)

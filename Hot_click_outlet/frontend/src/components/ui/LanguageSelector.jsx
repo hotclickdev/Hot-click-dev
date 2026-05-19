@@ -33,6 +33,8 @@ export default function LanguageSelector({ className = '' }) {
         onClick={() => setOpen(!open)}
         title={t('lang.select')}
         aria-label={t('lang.select')}
+        aria-expanded={open}
+        aria-haspopup="listbox"
         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm
           text-[var(--hc-muted)] hover:text-[var(--hc-text)]
           hover:bg-[var(--hc-surface-2)] border border-transparent hover:border-[var(--hc-border)]
@@ -54,6 +56,8 @@ export default function LanguageSelector({ className = '' }) {
             <button
               key={lang.code}
               onClick={() => handleSelect(lang.code)}
+              aria-label={lang.name}
+              aria-pressed={lang.code === language}
               className={`
                 w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left
                 transition-colors duration-150
@@ -64,7 +68,7 @@ export default function LanguageSelector({ className = '' }) {
                 hover:bg-[var(--hc-surface-2)]
               `}
             >
-              <span className="text-base">{lang.flag}</span>
+              <span className="text-base" aria-hidden="true">{lang.flag}</span>
               <span>{lang.name}</span>
               {lang.code === language && <CheckIcon />}
             </button>

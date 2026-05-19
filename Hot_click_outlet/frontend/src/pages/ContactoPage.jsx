@@ -28,9 +28,9 @@ export default function ContactoPage() {
       })
       if (!res.ok) throw new Error()
       setSent(true)
-      toast({ message: 'Mensaje enviado correctamente', type: 'success' })
+      toast({ message: t('contacto.successToast'), type: 'success' })
     } catch {
-      toast({ message: 'No se pudo enviar. Intenta por WhatsApp.', type: 'error' })
+      toast({ message: t('contacto.errorToast'), type: 'error' })
     } finally {
       setLoading(false)
     }
@@ -56,14 +56,14 @@ export default function ContactoPage() {
             transition={{ duration: 0.4 }}
             className="bg-[#111114] border border-white/8 rounded-2xl p-6"
           >
-            <h2 className="text-lg font-semibold text-[#e8e8ed] mb-5">Envíanos un mensaje</h2>
+            <h2 className="text-lg font-semibold text-[#e8e8ed] mb-5">{t('contacto.sendForm')}</h2>
             {sent ? (
               <div className="text-center py-8 space-y-2">
                 <span className="text-5xl">✅</span>
                 <p className="text-[#e8e8ed] font-medium mt-3">{t('contacto.sent')}</p>
-                <p className="text-sm text-[#8e8e9a]">Recibimos tu mensaje y te contactaremos pronto.</p>
+                <p className="text-sm text-[#8e8e9a]">{t('contacto.sentSub')}</p>
                 <Button variant="ghost" onClick={() => { setSent(false); setForm({ nombre: '', correo: '', mensaje: '' }) }} className="mt-3">
-                  Enviar otro
+                  {t('contacto.sendAnother')}
                 </Button>
               </div>
             ) : (
@@ -77,7 +77,7 @@ export default function ContactoPage() {
                     onChange={set('mensaje')}
                     required
                     rows={4}
-                    placeholder="¿En qué podemos ayudarte?"
+                    placeholder={t('contacto.messagePlaceholder')}
                     className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-[#e8e8ed] placeholder:text-[#8e8e9a]/60 focus:outline-none focus:border-[#4f7cff]/60 resize-none transition-colors"
                   />
                 </div>
@@ -87,7 +87,7 @@ export default function ContactoPage() {
                   className="w-full"
                   style={{ backgroundColor: '#4f7cff', opacity: loading ? 0.7 : 1 }}
                 >
-                  {loading ? 'Enviando…' : t('contacto.send')}
+                  {loading ? t('contacto.sending') : t('contacto.send')}
                 </Button>
               </form>
             )}

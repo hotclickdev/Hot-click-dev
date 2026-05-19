@@ -105,41 +105,58 @@ public class OtpService {
             <html lang="es">
             <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
             <body style="margin:0;padding:0;background:#0f0f13;font-family:'Segoe UI',Arial,sans-serif;">
-              <table width="100%%" cellpadding="0" cellspacing="0" style="background:#0f0f13;padding:48px 0;">
+              <table width="100%%" cellpadding="0" cellspacing="0" style="background:#0f0f13;padding:48px 16px;">
                 <tr><td align="center">
                   <table width="520" cellpadding="0" cellspacing="0"
-                    style="background:#18181f;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);">
+                    style="background:#18181f;border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);max-width:520px;width:100%%;">
+                    <!-- Header -->
                     <tr>
-                      <td style="background:linear-gradient(135deg,#4f46e5 0%%,#7c3aed 100%%);padding:32px;text-align:center;">
-                        <span style="font-size:26px;font-weight:900;color:#fff;letter-spacing:3px;">HC</span>
-                        <span style="font-size:16px;font-weight:700;color:rgba(255,255,255,0.9);margin-left:10px;letter-spacing:5px;">HOTCLICK</span>
+                      <td style="background:linear-gradient(135deg,#4f46e5 0%%,#7c3aed 100%%);padding:28px 32px;text-align:center;">
+                        <span style="font-size:28px;font-weight:900;color:#fff;letter-spacing:4px;">HC</span>
+                        <span style="font-size:15px;font-weight:700;color:rgba(255,255,255,0.85);margin-left:10px;letter-spacing:6px;">HOTCLICK</span>
                       </td>
                     </tr>
+                    <!-- Body -->
                     <tr>
-                      <td style="padding:40px 36px;">
-                        <h2 style="margin:0 0 12px;color:#e8e8ed;font-size:22px;font-weight:700;">
-                          Hola, %s
+                      <td style="padding:40px 36px 32px;">
+                        <h2 style="margin:0 0 8px;color:#e8e8ed;font-size:22px;font-weight:700;">
+                          Hola, %s 👋
                         </h2>
-                        <p style="color:#8e8e9a;margin:0 0 28px;font-size:15px;line-height:1.6;">
-                          Usá el siguiente código para continuar. Expira en <strong style="color:#e8e8ed;">%d minutos</strong>.
+                        <p style="color:#8e8e9a;margin:0 0 28px;font-size:15px;line-height:1.65;">
+                          Usá el siguiente código para verificar tu cuenta. Expira en <strong style="color:#e8e8ed;">%d minutos</strong>.
                         </p>
-                        <div style="text-align:center;margin:28px 0;">
-                          <div style="display:inline-block;background:#111114;border:2px solid rgba(79,70,229,0.4);
-                                      border-radius:12px;padding:20px 40px;">
-                            <span style="font-size:42px;font-weight:900;color:#fff;letter-spacing:14px;
-                                         font-family:'Courier New',monospace;">%s</span>
+
+                        <!-- Código -->
+                        <div style="text-align:center;margin:0 0 28px;">
+                          <div style="display:inline-block;background:#0f0f13;border:2px solid rgba(79,70,229,0.5);
+                                      border-radius:16px;padding:24px 48px;box-shadow:0 0 32px rgba(79,70,229,0.15);">
+                            <span style="font-size:46px;font-weight:900;color:#fff;letter-spacing:16px;
+                                         font-family:'Courier New',monospace;display:block;line-height:1;">%s</span>
+                            <span style="font-size:11px;color:#5e5e6e;letter-spacing:1px;text-transform:uppercase;margin-top:8px;display:block;">
+                              Código de verificación
+                            </span>
                           </div>
                         </div>
-                        <p style="color:#5e5e6e;font-size:13px;margin:20px 0 0;text-align:center;line-height:1.5;">
-                          Si no solicitaste este código, ignorá este correo.<br>
-                          Nunca compartas este código con nadie.
+
+                        <!-- Aviso de seguridad destacado -->
+                        <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);
+                                    border-radius:12px;padding:16px 20px;margin-bottom:8px;">
+                          <p style="margin:0;font-size:13px;color:#fbbf24;line-height:1.6;">
+                            <strong>⚠️ Este código es solo para verificar tu cuenta.</strong><br>
+                            <span style="color:#d4a040;">No lo compartas con nadie. HOTCLICK nunca te pedirá este código.</span>
+                          </p>
+                        </div>
+
+                        <p style="color:#4a4a5a;font-size:12px;margin:12px 0 0;text-align:center;line-height:1.5;">
+                          Si no creaste esta cuenta, ignorá este correo.
                         </p>
                       </td>
                     </tr>
+                    <!-- Footer -->
                     <tr>
-                      <td style="background:#111114;padding:20px 36px;text-align:center;
-                                 border-top:1px solid rgba(255,255,255,0.06);">
-                        <p style="margin:0;color:#3a3a4a;font-size:12px;">
+                      <td style="background:#111114;padding:18px 36px;text-align:center;
+                                 border-top:1px solid rgba(255,255,255,0.05);">
+                        <p style="margin:0;color:#2e2e3e;font-size:12px;">
                           © 2026 HOTCLICK — Todos los derechos reservados
                         </p>
                       </td>

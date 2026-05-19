@@ -80,6 +80,8 @@ export default function AccessibilityPanel() {
                     <button
                       key={lang.code}
                       onClick={() => setLanguage(lang.code)}
+                      aria-label={lang.name}
+                      aria-pressed={lang.code === language}
                       className="flex-1 flex flex-col items-center gap-1 py-2 rounded-xl text-xs font-semibold transition-all duration-150"
                       style={{
                         backgroundColor: lang.code === language ? 'var(--hc-accent)' : 'var(--hc-surface-2)',
@@ -87,7 +89,7 @@ export default function AccessibilityPanel() {
                         border: `1px solid ${lang.code === language ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
                       }}
                     >
-                      <span className="text-base leading-none">{lang.flag}</span>
+                      <span className="text-base leading-none" aria-hidden="true">{lang.flag}</span>
                       <span>{lang.label}</span>
                     </button>
                   ))}
@@ -102,13 +104,15 @@ export default function AccessibilityPanel() {
                 </p>
                 <div className="flex gap-1.5">
                   {[
-                    { value: 'normal', label: 'A', size: 'text-sm' },
-                    { value: 'lg',     label: 'A',  size: 'text-base' },
-                    { value: 'xl',     label: 'A',  size: 'text-lg' },
+                    { value: 'normal', label: t('a11y.small'),  size: 'text-sm'   },
+                    { value: 'lg',     label: t('a11y.normal'), size: 'text-base' },
+                    { value: 'xl',     label: t('a11y.large'),  size: 'text-lg'   },
                   ].map(({ value, label, size }) => (
                     <button
                       key={value}
                       onClick={() => setFontSize(fontSize === value && value !== 'normal' ? 'normal' : value)}
+                      aria-label={label}
+                      aria-pressed={fontSize === value}
                       className={`flex-1 py-2 rounded-xl font-bold transition-all duration-150 ${size}`}
                       style={{
                         backgroundColor: fontSize === value ? 'var(--hc-accent)' : 'var(--hc-surface-2)',
@@ -171,6 +175,8 @@ function ThemeBtn({ active, onClick, label, icon }) {
   return (
     <button
       onClick={onClick}
+      aria-label={label}
+      aria-pressed={active}
       className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150"
       style={{
         backgroundColor: active ? 'var(--hc-accent)' : 'var(--hc-surface-2)',
@@ -189,16 +195,17 @@ function ToggleRow({ label, checked, onChange, hcText, hcMuted, hcSurface, t }) 
     <div className="flex items-center justify-between py-2.5 px-3 rounded-xl"
       style={{ backgroundColor: hcSurface }}>
       <p className="text-xs font-medium" style={{ color: hcText }}>{label}</p>
-      <Toggle checked={checked} onChange={onChange} />
+      <Toggle checked={checked} onChange={onChange} aria-label={label} />
     </div>
   )
 }
 
-function Toggle({ checked, onChange }) {
+function Toggle({ checked, onChange, 'aria-label': ariaLabel }) {
   return (
     <button
       role="switch"
       aria-checked={checked}
+      aria-label={ariaLabel}
       onClick={onChange}
       className="relative w-9 h-5 rounded-full transition-all duration-200 shrink-0"
       style={{ backgroundColor: checked ? 'var(--hc-accent)' : 'var(--hc-border)' }}

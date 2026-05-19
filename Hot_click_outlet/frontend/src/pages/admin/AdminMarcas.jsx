@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import AdminLayout from '@/layouts/AdminLayout'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -10,6 +11,7 @@ import { useToast } from '@/components/ui/Toast'
 const EMPTY = { nombreMarca: '', logoUrl: '' }
 
 export default function AdminMarcas() {
+  const { t } = useTranslation()
   const toast = useToast()
   const [marcas, setMarcas] = useState([])
   const [loading, setLoading] = useState(true)
@@ -17,13 +19,16 @@ export default function AdminMarcas() {
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(EMPTY)
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [dragOver, setDragOver] = useState(false)
   const [imgError, setImgError] = useState({})
+  const fileInputRef = useRef(null)
 
   const load = () => {
     setLoading(true)
     marcaService.getAll()
-      .then(({ data }) => setMarcas(Array.isArray(data) ? data : []))
-      .catch(() => toast({ message: 'Error al cargar marcas', type: 'error' }))
+      .then(({ data }) => setMarcas(Array.isArray(data.data) ? data.data : []))
+      .catch(() => toast({ message: t('common.error'), type: 'error' }))
       .finally(() => setLoading(false))
   }
 
@@ -46,15 +51,15 @@ export default function AdminMarcas() {
     try {
       if (editing) {
         await marcaService.update(editing.id, form)
-        toast({ message: 'Marca actualizada', type: 'success' })
+        toast({ message: t('admin.marcas.saved'), type: 'success' })
       } else {
         await marcaService.create(form)
-        toast({ message: 'Marca creada', type: 'success' })
+        toast({ message: t('admin.marcas.saved'), type: 'success' })
       }
       setModalOpen(false)
       load()
     } catch (err) {
-      toast({ message: err.response?.data?.message ?? 'Error al guardar', type: 'error' })
+      toast({ message: err.response?.data?.message ?? t('common.error'), type: 'error' })
     } finally { setSaving(false) }
   }
 
@@ -62,14 +67,34 @@ export default function AdminMarcas() {
     if (!confirm(`¿Eliminar marca "${nombre}"?`)) return
     try {
       await marcaService.delete(id)
-      toast({ message: 'Marca eliminada', type: 'success' })
+      toast({ message: t('admin.marcas.deleted'), type: 'success' })
       setMarcas((prev) => prev.filter((m) => m.id !== id))
     } catch {
-      toast({ message: 'Error al eliminar', type: 'error' })
+      toast({ message: t('common.error'), type: 'error' })
     }
   }
 
   const set = (f) => (e) => setForm((p) => ({ ...p, [f]: e.target.value }))
+
+  const handleFile = useCallback(async (file) => {
+    if (!file) return
+    setUploading(true)
+    try {
+      const { data } = await marcaService.uploadLogo(file)
+      setForm((p) => ({ ...p, logoUrl: data.data.url }))
+    } catch {
+      toast({ message: t('common.error'), type: 'error' })
+    } finally {
+      setUploading(false)
+    }
+  }, [])
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    setDragOver(false)
+    const file = e.dataTransfer.files?.[0]
+    if (file) handleFile(file)
+  }
 
   return (
     <AdminLayout>
@@ -77,10 +102,10 @@ export default function AdminMarcas() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[#e8e8ed]">Marcas</h1>
+            <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.marcas.title')}</h1>
             <p className="text-sm text-[#8e8e9a] mt-1">{marcas.length} marca{marcas.length !== 1 ? 's' : ''} registrada{marcas.length !== 1 ? 's' : ''}</p>
           </div>
-          <Button onClick={openNew}>+ Nueva marca</Button>
+          <Button onClick={openNew}>+ {t('admin.marcas.new')}</Button>
         </div>
 
         {/* Table */}
@@ -94,15 +119,14 @@ export default function AdminMarcas() {
                   <th className="px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-[#8e8e9a] w-16">ID</th>
                   <th className="px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-[#8e8e9a] w-20">Logo</th>
                   <th className="px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-[#8e8e9a]">Nombre</th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-[#8e8e9a]">URL de imagen</th>
                   <th className="px-5 py-3.5 text-right text-[11px] font-semibold uppercase tracking-wider text-[#8e8e9a] w-28">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {marcas.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-5 py-12 text-center text-[#8e8e9a]">
-                      No hay marcas registradas. Crea la primera.
+                    <td colSpan={4} className="px-5 py-12 text-center text-[#8e8e9a]">
+                      {t('admin.marcas.empty')}
                     </td>
                   </tr>
                 )}
@@ -124,15 +148,6 @@ export default function AdminMarcas() {
                       </div>
                     </td>
                     <td className="px-5 py-4 font-semibold text-[#e8e8ed]">{m.nombreMarca}</td>
-                    <td className="px-5 py-4 text-[#8e8e9a] max-w-xs">
-                      {m.logoUrl ? (
-                        <span className="truncate block text-xs font-mono opacity-60" title={m.logoUrl}>
-                          {m.logoUrl}
-                        </span>
-                      ) : (
-                        <span className="text-xs italic opacity-40">Sin imagen</span>
-                      )}
-                    </td>
                     <td className="px-5 py-4 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button
@@ -163,7 +178,7 @@ export default function AdminMarcas() {
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={editing ? 'Editar marca' : 'Nueva marca'}
+        title={editing ? t('admin.marcas.edit') : t('admin.marcas.new')}
       >
         <form onSubmit={handleSave} className="space-y-5">
           <Input
@@ -174,25 +189,61 @@ export default function AdminMarcas() {
             required
           />
 
+          {/* Logo upload */}
           <div className="space-y-2">
-            <Input
-              label="URL del logo"
-              value={form.logoUrl}
-              onChange={set('logoUrl')}
-              placeholder="https://..."
-            />
-            {/* Preview */}
-            {form.logoUrl && (
+            <span className="text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">Logo</span>
+            {form.logoUrl ? (
               <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
-                <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center overflow-hidden shrink-0">
+                <div className="w-14 h-14 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
                   <img
                     src={form.logoUrl}
-                    alt="Preview"
+                    alt="Logo"
                     className="w-full h-full object-contain p-1"
                     onError={(e) => { e.target.style.display = 'none' }}
                   />
                 </div>
-                <span className="text-xs text-[#8e8e9a]">Vista previa del logo</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-[#8e8e9a] truncate font-mono">{form.logoUrl}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setForm((p) => ({ ...p, logoUrl: '' }))}
+                  className="p-1.5 rounded-lg text-[#8e8e9a] hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
+                  title="Quitar logo"
+                >
+                  <XIcon />
+                </button>
+              </div>
+            ) : (
+              <div
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`relative flex flex-col items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed cursor-pointer transition-colors ${
+                  dragOver
+                    ? 'border-[#8c5cf6] bg-[#8c5cf6]/10'
+                    : 'border-white/15 bg-white/3 hover:border-white/30 hover:bg-white/5'
+                }`}
+              >
+                {uploading ? (
+                  <Spinner size="sm" />
+                ) : (
+                  <>
+                    <UploadIcon />
+                    <p className="text-sm text-[#8e8e9a]">
+                      <span className="text-white font-medium">Hacé clic</span> o arrastrá una imagen
+                    </p>
+                    <p className="text-xs text-[#8e8e9a]/60">PNG, JPG, SVG · máx. 5 MB</p>
+                  </>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleFile(e.target.files?.[0])}
+                />
               </div>
             )}
           </div>
@@ -202,7 +253,7 @@ export default function AdminMarcas() {
               {editing ? 'Guardar cambios' : 'Crear marca'}
             </Button>
             <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>
-              Cancelar
+              {t('common.cancel')}
             </Button>
           </div>
         </form>
@@ -223,6 +274,22 @@ function TrashIcon() {
   return (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    </svg>
+  )
+}
+
+function XIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  )
+}
+
+function UploadIcon() {
+  return (
+    <svg className="w-8 h-8 text-[#8e8e9a]/50" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
     </svg>
   )
 }

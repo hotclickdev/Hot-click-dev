@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
@@ -16,6 +16,7 @@ const PAGE_SIZE = 24
 
 export default function ProductsPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const addItem = useCartStore((s) => s.addItem)
   const toast = useToast()
   const { t } = useTranslation()
@@ -52,7 +53,7 @@ export default function ProductsPage() {
   // Filters
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
-  const [marca, setMarca] = useState('')
+  const [marca, setMarca] = useState(() => searchParams.get('marcaId') ?? '')
   const [sort, setSort] = useState('default')
   const [filterStock, setFilterStock] = useState('')
   const [filterCond, setFilterCond] = useState('')
@@ -92,7 +93,7 @@ export default function ProductsPage() {
     const minPrice = priceMin !== '' ? Number(priceMin) : null
     const maxPrice = priceMax !== '' ? Number(priceMax) : null
     return products
-      .filter((p) => !search || p.nombre?.toLowerCase().includes(search.toLowerCase()))
+      .filter((p) => !search || p.nombre?.toLowerCase().includes(search.toLowerCase()) || p.marcaNombre?.toLowerCase().includes(search.toLowerCase()))
       .filter((p) => !category || String(p.categoriaId) === String(category))
       .filter((p) => !marca || String(p.marcaId) === String(marca))
       .filter((p) => {
@@ -571,9 +572,9 @@ export default function ProductsPage() {
                       {/* Content */}
                       <div className="p-3 sm:p-4">
                         {product.marcaNombre && (
-                          <p className="text-[10px] font-medium uppercase tracking-wide mb-1 truncate" style={{ color: 'var(--hc-accent)' }}>
+                          <span className="inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full mb-1.5 truncate max-w-full" style={{ background: 'rgba(140,92,246,0.12)', color: 'var(--hc-accent)', border: '1px solid rgba(140,92,246,0.25)' }}>
                             {product.marcaNombre}
-                          </p>
+                          </span>
                         )}
                         <h3 className="font-medium text-xs sm:text-sm leading-snug line-clamp-2 mb-2 sm:mb-2.5 group-hover:text-white transition-colors" style={{ color: 'var(--hc-text)' }}>
                           {product.nombre}

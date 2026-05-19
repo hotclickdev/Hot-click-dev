@@ -157,4 +157,36 @@ public class AdminUsuarioController {
         String msg = nuevoEstado == Constants.ESTADO_ACTIVO ? "Usuario activado" : "Usuario desactivado";
         return ResponseEntity.ok(ResponseDTO.success(msg, null));
     }
+
+    /** Bloquea (suspende) una cuenta activa. */
+    @PutMapping("/{id}/bloquear")
+    public ResponseEntity<ResponseDTO> bloquear(@PathVariable Long id) {
+        Optional<Usuario> opt = usuarioRepository.findById(id);
+        if (opt.isEmpty()) {
+            return ResponseEntity.status(404).body(ResponseDTO.error("Usuario no encontrado"));
+        }
+        Usuario usuario = opt.get();
+        if (usuario.getEstado() != null && usuario.getEstado() == Constants.ESTADO_ELIMINADO) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error("No se puede bloquear un usuario eliminado"));
+        }
+        usuario.setEstado(Constants.ESTADO_SUSPENDIDO);
+        usuarioRepository.save(usuario);
+        return ResponseEntity.ok(ResponseDTO.success("Usuario bloqueado", null));
+    }
+
+    /** Desbloquea una cuenta suspendida, volviéndola activa. */
+    @PutMapping("/{id}/desbloquear")
+    public ResponseEntity<ResponseDTO> desbloquear(@PathVariable Long id) {
+        Optional<Usuario> opt = usuarioRepository.findById(id);
+        if (opt.isEmpty()) {
+            return ResponseEntity.status(404).body(ResponseDTO.error("Usuario no encontrado"));
+        }
+        Usuario usuario = opt.get();
+        if (usuario.getEstado() == null || usuario.getEstado() != Constants.ESTADO_SUSPENDIDO) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error("El usuario no está bloqueado"));
+        }
+        usuario.setEstado(Constants.ESTADO_ACTIVO);
+        usuarioRepository.save(usuario);
+        return ResponseEntity.ok(ResponseDTO.success("Usuario desbloqueado", null));
+    }
 }

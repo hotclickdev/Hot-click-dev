@@ -252,8 +252,8 @@ export default function PaymentStatusPage() {
           </p>
           <p className="text-xs text-[#8e8e9a] mb-6">
             Si el problema persiste, contáctanos a{' '}
-            <a href="mailto:soporte@hotclick.com" className="text-[#4f7cff] hover:underline">
-              soporte@hotclick.com
+            <a href="mailto:hotclick.cr@gmail.com" className="text-[#4f7cff] hover:underline">
+              hotclick.cr@gmail.com
             </a>
           </p>
 

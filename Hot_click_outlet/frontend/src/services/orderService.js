@@ -26,6 +26,8 @@ export const adminService = {
   rejectUser: (id) => api.put(`/admin/usuarios/${id}/rechazar`),
   setRole: (id, rol) => api.put(`/admin/usuarios/${id}/rol`, { rol }),
   setStatus: (id, estado) => api.put(`/admin/usuarios/${id}/estado`, { estado }),
+  blockUser: (id) => api.put(`/admin/usuarios/${id}/bloquear`),
+  unblockUser: (id) => api.put(`/admin/usuarios/${id}/desbloquear`),
   deleteUser: (id) => api.delete(`/admin/usuarios/${id}`),
 }
 

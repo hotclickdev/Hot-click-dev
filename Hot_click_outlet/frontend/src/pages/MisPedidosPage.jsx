@@ -8,24 +8,15 @@ import Spinner from '@/components/ui/Spinner'
 import useAuthStore from '@/store/authStore'
 import { orderService } from '@/services/orderService'
 
-const ESTADOS_ENVIO = [
-  { key: 'PENDIENTE',      label: 'Pendiente',       icon: '🕐' },
-  { key: 'PAGADO',         label: 'Pago confirmado',  icon: '✅' },
-  { key: 'EN_PREPARACION', label: 'En preparación',   icon: '📦' },
-  { key: 'ENVIADO',        label: 'Enviado',           icon: '🚚' },
-  { key: 'ENTREGADO',      label: 'Entregado',         icon: '🏠' },
-]
-
-const ESTADOS_RETIRO = [
-  { key: 'PENDIENTE',      label: 'Pendiente',       icon: '🕐' },
-  { key: 'PAGADO',         label: 'Pago confirmado',  icon: '✅' },
-  { key: 'EN_PREPARACION', label: 'En preparación',   icon: '📦' },
-  { key: 'LISTO_RETIRO',   label: 'Listo p/ retirar', icon: '🏪' },
-  { key: 'ENTREGADO',      label: 'Retirado',          icon: '🏠' },
-]
-
-// For icon lookup — all possible states
-const TODOS_ESTADOS = [...ESTADOS_ENVIO, { key: 'LISTO_RETIRO', label: 'Listo p/ retirar', icon: '🏪' }]
+const STATUS_ICONS = {
+  PENDIENTE:      '🕐',
+  PAGADO:         '✅',
+  EN_PREPARACION: '📦',
+  ENVIADO:        '🚚',
+  ENTREGADO:      '🏠',
+  LISTO_RETIRO:   '🏪',
+  CANCELADO:      '❌',
+}
 
 function estadoColor(e) {
   if (e === 'ENTREGADO')      return { bg: 'rgba(5,150,105,0.12)', text: '#059669', border: 'rgba(5,150,105,0.25)' }
@@ -47,9 +38,28 @@ function formatDate(d) {
 }
 
 function Timeline({ estadoActual, esRetiro }) {
-  const estados = esRetiro ? ESTADOS_RETIRO : ESTADOS_ENVIO
+  const { t } = useTranslation()
+
+  const estadosEnvio = [
+    { key: 'PENDIENTE',      label: t('orders.status.PENDIENTE'),      icon: '🕐' },
+    { key: 'PAGADO',         label: t('orders.status.PAGADO'),         icon: '✅' },
+    { key: 'EN_PREPARACION', label: t('orders.status.EN_PREPARACION'), icon: '📦' },
+    { key: 'ENVIADO',        label: t('orders.status.ENVIADO'),        icon: '🚚' },
+    { key: 'ENTREGADO',      label: t('orders.status.ENTREGADO'),      icon: '🏠' },
+  ]
+
+  const estadosRetiro = [
+    { key: 'PENDIENTE',      label: t('orders.status.PENDIENTE'),       icon: '🕐' },
+    { key: 'PAGADO',         label: t('orders.status.PAGADO'),          icon: '✅' },
+    { key: 'EN_PREPARACION', label: t('orders.status.EN_PREPARACION'),  icon: '📦' },
+    { key: 'LISTO_RETIRO',   label: t('orders.status.LISTO_RETIRO'),    icon: '🏪' },
+    { key: 'ENTREGADO',      label: t('orders.status.ENTREGADO_RETIRO'), icon: '🏠' },
+  ]
+
+  const estados = esRetiro ? estadosRetiro : estadosEnvio
   const idx = estados.findIndex(e => e.key === estadoActual)
   const idxSafe = idx === -1 ? 0 : idx
+
   return (
     <div className="flex items-center gap-0 mt-4 mb-2 overflow-x-auto pb-1">
       {estados.map((e, i) => {
@@ -85,7 +95,9 @@ function Timeline({ estadoActual, esRetiro }) {
 }
 
 function GarantiaBar({ fechaPedido }) {
+  const { t } = useTranslation()
   if (!fechaPedido) return null
+
   const limite = new Date(fechaPedido)
   limite.setDate(limite.getDate() + 40)
   const diasRestantes = Math.ceil((limite - new Date()) / 86400000)
@@ -96,9 +108,9 @@ function GarantiaBar({ fechaPedido }) {
       <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm"
         style={{ backgroundColor: 'rgba(5,150,105,0.08)', border: '1px solid rgba(5,150,105,0.2)' }}>
         <span>🛡</span>
-        <span className="font-medium" style={{ color: '#059669' }}>Garantía activa</span>
+        <span className="font-medium" style={{ color: '#059669' }}>{t('orders.warrantyActive')}</span>
         <span className="text-xs ml-auto" style={{ color: '#059669' }}>
-          {diasRestantes} día{diasRestantes !== 1 ? 's' : ''} restante{diasRestantes !== 1 ? 's' : ''} · vence {vence}
+          {t('orders.warrantyDays', { count: diasRestantes })} · {t('orders.expires')} {vence}
         </span>
       </div>
     )
@@ -107,13 +119,14 @@ function GarantiaBar({ fechaPedido }) {
     <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm"
       style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
       <span>⏱</span>
-      <span style={{ color: 'var(--hc-muted)' }}>Garantía vencida</span>
-      <span className="text-xs ml-auto" style={{ color: 'var(--hc-muted)' }}>venció {vence}</span>
+      <span style={{ color: 'var(--hc-muted)' }}>{t('orders.warrantyExpired')}</span>
+      <span className="text-xs ml-auto" style={{ color: 'var(--hc-muted)' }}>{t('orders.expired')} {vence}</span>
     </div>
   )
 }
 
 function OrderCard({ order }) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const estado = order.estadoPedido || order.estado || 'PENDIENTE'
   const colors = estadoColor(estado)
@@ -126,20 +139,20 @@ function OrderCard({ order }) {
       className="rounded-2xl border overflow-hidden"
       style={{ backgroundColor: 'var(--hc-surface)', borderColor: 'var(--hc-border)' }}
     >
-      {/* Header */}
       <button
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
         className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left transition-colors"
         style={{ backgroundColor: open ? 'var(--hc-surface-2)' : 'transparent' }}
       >
         <div className="flex items-center gap-3 min-w-0">
-          <div className="text-xl">{TODOS_ESTADOS.find(e => e.key === estado)?.icon ?? '📋'}</div>
+          <div className="text-xl">{STATUS_ICONS[estado] ?? '📋'}</div>
           <div className="min-w-0">
             <p className="text-sm font-semibold truncate" style={{ color: 'var(--hc-text)' }}>
               {order.numeroPedido ?? `Pedido #${order.id}`}
             </p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-              {formatDate(order.fechaPedido)} · {items.length} producto{items.length !== 1 ? 's' : ''}
+              {formatDate(order.fechaPedido)} · {t('orders.item', { count: items.length })}
             </p>
           </div>
         </div>
@@ -149,16 +162,16 @@ function OrderCard({ order }) {
           </span>
           <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full"
             style={{ backgroundColor: colors.bg, color: colors.text, border: `1px solid ${colors.border}` }}>
-            {TODOS_ESTADOS.find(e => e.key === estado)?.label ?? estado}
+            {t(`orders.status.${estado}`, { defaultValue: estado })}
           </span>
-          <svg className="w-4 h-4 transition-transform shrink-0" style={{ color: 'var(--hc-muted)', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+          <svg className="w-4 h-4 transition-transform shrink-0"
+            style={{ color: 'var(--hc-muted)', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
             fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
         </div>
       </button>
 
-      {/* Expandable detail */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -169,15 +182,15 @@ function OrderCard({ order }) {
             className="overflow-hidden"
           >
             <div className="px-5 pb-5 space-y-4" style={{ borderTop: '1px solid var(--hc-border)' }}>
-              {/* Timeline */}
               {estado !== 'CANCELADO' && (
                 <Timeline estadoActual={estado} esRetiro={order.metodoEnvio === 'RETIRO_EN_TIENDA'} />
               )}
 
-              {/* Items */}
               {items.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--hc-muted)' }}>Productos</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--hc-muted)' }}>
+                    {t('orders.products')}
+                  </p>
                   {items.map((item, i) => (
                     <div key={i} className="flex items-center justify-between gap-3 py-2.5 px-3 rounded-xl"
                       style={{ backgroundColor: 'var(--hc-surface-2)' }}>
@@ -198,32 +211,30 @@ function OrderCard({ order }) {
                 </div>
               )}
 
-              {/* Totales */}
               <div className="rounded-xl p-3 space-y-1.5" style={{ backgroundColor: 'var(--hc-surface-2)' }}>
                 {order.costoEnvio > 0 && (
                   <div className="flex justify-between text-xs" style={{ color: 'var(--hc-muted)' }}>
-                    <span>Envío</span><span>{formatPrice(order.costoEnvio)}</span>
+                    <span>{t('orders.shipping')}</span><span>{formatPrice(order.costoEnvio)}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-sm font-bold pt-1" style={{ color: 'var(--hc-text)', borderTop: '1px solid var(--hc-border)' }}>
-                  <span>Total pagado</span>
+                <div className="flex justify-between text-sm font-bold pt-1"
+                  style={{ color: 'var(--hc-text)', borderTop: '1px solid var(--hc-border)' }}>
+                  <span>{t('orders.totalPaid')}</span>
                   <span style={{ color: 'var(--hc-accent)' }}>{formatPrice(order.totalPedido ?? order.total)}</span>
                 </div>
               </div>
 
-              {/* Método de entrega */}
               <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-                📦 {order.metodoEnvio === 'ENVIO_A_DOMICILIO' ? 'Envío a domicilio' : 'Retiro en tienda'}
+                📦 {order.metodoEnvio === 'ENVIO_A_DOMICILIO' ? t('orders.homeDelivery') : t('orders.storePickup')}
                 {order.notas ? ` · ${order.notas}` : ''}
               </p>
 
-              {/* Guía Correos CR */}
               {order.numeroGuia && (
                 <div className="flex items-center justify-between px-3 py-2.5 rounded-xl"
                   style={{ backgroundColor: 'rgba(5,150,105,0.08)', border: '1px solid rgba(5,150,105,0.2)' }}>
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#059669' }}>
-                      🚚 Número de guía Correos CR
+                      🚚 {t('orders.trackingLabel')}
                     </p>
                     <p className="text-sm font-mono font-bold mt-0.5" style={{ color: '#059669' }}>
                       {order.numeroGuia}
@@ -236,12 +247,11 @@ function OrderCard({ order }) {
                     className="text-xs font-semibold px-3 py-1.5 rounded-lg"
                     style={{ backgroundColor: '#059669', color: '#fff' }}
                   >
-                    Rastrear
+                    {t('orders.track')}
                   </a>
                 </div>
               )}
 
-              {/* Garantía */}
               {!['CANCELADO', 'PENDIENTE'].includes(estado) && (
                 <GarantiaBar fechaPedido={order.fechaPedido} />
               )}
@@ -283,22 +293,18 @@ export default function MisPedidosPage() {
   return (
     <MainLayout>
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
-        {/* Header */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <button onClick={() => navigate('/perfil')} className="flex items-center gap-1.5 text-sm mb-4 transition-colors"
             style={{ color: 'var(--hc-muted)' }}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
-            Mi perfil
+            {t('nav.perfil')}
           </button>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--hc-text)' }}>Mis pedidos</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>
-            Historial completo y estado de tus compras
-          </p>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--hc-text)' }}>{t('nav.misPedidos')}</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>{t('orders.subtitle')}</p>
         </motion.div>
 
-        {/* Content */}
         {loading ? (
           <div className="flex justify-center py-16"><Spinner /></div>
         ) : orders.length === 0 ? (
@@ -306,9 +312,9 @@ export default function MisPedidosPage() {
             className="text-center py-16 rounded-2xl border"
             style={{ backgroundColor: 'var(--hc-surface)', borderColor: 'var(--hc-border)' }}>
             <span className="text-5xl opacity-30">📋</span>
-            <p className="mt-4 font-medium" style={{ color: 'var(--hc-text)' }}>Aún no tienes pedidos</p>
-            <p className="text-sm mt-1 mb-6" style={{ color: 'var(--hc-muted)' }}>¡Explora la tienda y haz tu primera compra!</p>
-            <Button onClick={() => navigate('/productos')}>Ver productos</Button>
+            <p className="mt-4 font-medium" style={{ color: 'var(--hc-text)' }}>{t('orders.empty')}</p>
+            <p className="text-sm mt-1 mb-6" style={{ color: 'var(--hc-muted)' }}>{t('orders.emptySub')}</p>
+            <Button onClick={() => navigate('/productos')}>{t('orders.viewProducts')}</Button>
           </motion.div>
         ) : (
           <div className="space-y-3">
@@ -320,17 +326,16 @@ export default function MisPedidosPage() {
           </div>
         )}
 
-        {/* Paginación */}
         {totalPages > 1 && (
           <div className="flex justify-center gap-3 mt-8">
             <Button variant="secondary" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
-              ← Anterior
+              ← {t('common.previous')}
             </Button>
             <span className="text-sm self-center" style={{ color: 'var(--hc-muted)' }}>
               {page + 1} / {totalPages}
             </span>
             <Button variant="secondary" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
-              Siguiente →
+              {t('common.next')} →
             </Button>
           </div>
         )}

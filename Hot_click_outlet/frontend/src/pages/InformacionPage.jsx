@@ -4,99 +4,36 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 
-const STEPS = [
-  {
-    n: '01', title: 'Explora el catálogo',
-    desc: 'Ingresa a la sección de Productos y usa los filtros de categoría, condición y disponibilidad para encontrar exactamente lo que buscas. Puedes ordenar por precio o nombre.',
-    icon: <SearchIcon />, color: 'text-[#4f7cff]', bg: 'bg-[#4f7cff]/10', border: 'border-[#4f7cff]/20',
-  },
-  {
-    n: '02', title: 'Revisa los detalles',
-    desc: 'Haz clic en cualquier producto para ver su descripción completa, condición, precio y disponibilidad de stock. Así te aseguras de que es lo que necesitas.',
-    icon: <EyeIcon />, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20',
-  },
-  {
-    n: '03', title: 'Agrega al carrito',
-    desc: 'Selecciona los productos que quieres y agrégalos al carrito. Puedes ajustar la cantidad de cada artículo directamente desde el carrito.',
-    icon: <CartIcon />, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20',
-  },
-  {
-    n: '04', title: 'Envía tu pedido por WhatsApp',
-    desc: 'Desde el carrito, presiona "Pedir por WhatsApp". Te abrirá un mensaje pre-armado con todos los productos, cantidades y el total. Solo envíalo y te atendemos de inmediato.',
-    icon: <WhatsIcon />, color: 'text-[#25D366]', bg: 'bg-[#25D366]/10', border: 'border-[#25D366]/20',
-  },
-  {
-    n: '05', title: 'Confirma y coordina el pago',
-    desc: 'Nuestro equipo te confirma disponibilidad, tiempo de entrega y método de pago: SINPE Móvil, transferencia o efectivo en punto de retiro.',
-    icon: <CheckIcon />, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20',
-  },
-  {
-    n: '06', title: 'Recibe tu producto',
-    desc: 'Enviamos por Correos de Costa Rica a todo el país, o puedes coordinar retiro en punto de entrega en el GAM. Te enviamos el número de guía para que puedas rastrear tu paquete.',
-    icon: <TruckIcon />, color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/20',
-  },
-]
-
-const CONDITIONS = [
-  {
-    label: 'Nuevo', badge: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400',
-    desc: 'Producto sin uso, en su empaque original o con todos sus accesorios. Mismo estado que comprarías en una tienda convencional.',
-    points: ['Empaque original intacto', 'Todos los accesorios incluidos', 'Sin marcas de uso'],
-  },
-  {
-    label: 'Como nuevo', badge: 'bg-[#4f7cff]/15 border-[#4f7cff]/30 text-[#4f7cff]',
-    desc: 'Producto que fue usado muy poco o que fue devuelto en excelente estado. Puede no tener empaque original pero funciona perfectamente.',
-    points: ['Funciona al 100%', 'Marcas de uso mínimas o inexistentes', 'Puede faltar empaque o algún accesorio menor'],
-  },
-  {
-    label: 'Usado', badge: 'bg-amber-500/15 border-amber-500/30 text-amber-400',
-    desc: 'Producto con uso normal visible. Hemos verificado que funciona correctamente. Ideal si buscas precio accesible y no te importan detalles estéticos menores.',
-    points: ['Totalmente funcional', 'Puede presentar rayones o marcas de uso normales', 'Precio significativamente menor'],
-  },
-]
-
-const FAQS = [
-  {
-    q: '¿Qué opciones de envío tienen?',
-    a: 'Trabajamos con dos modalidades: Correos de Costa Rica (para todo el país) y Uber Flash (entregas express en el GAM el mismo día). En ambos casos el costo del envío corre por cuenta del cliente y se coordina por WhatsApp antes de confirmar el pedido.',
-  },
-  {
-    q: '¿Cuánto cuesta el envío por Uber Flash?',
-    a: 'El costo de Uber Flash varía según la distancia entre el punto de entrega y la ubicación del producto. Te damos el estimado exacto por WhatsApp antes de confirmar. Generalmente oscila entre ₡2,000 y ₡6,000 dentro del GAM.',
-  },
-  {
-    q: '¿Cuáles son los métodos de pago aceptados?',
-    a: 'Aceptamos SINPE Móvil, transferencia bancaria y efectivo en punto de retiro. Todo se coordina directamente por WhatsApp una vez que confirmas tu pedido.',
-  },
-  {
-    q: '¿Puedo ver el producto antes de comprarlo?',
-    a: 'Sí. Puedes solicitar fotos o video del producto por WhatsApp antes de confirmar tu compra. Para clientes en el GAM también podemos coordinar que lo veas en persona. Consúltanos y con gusto te lo mostramos.',
-  },
-  {
-    q: '¿Por cuánto tiempo se reserva un producto al contactar por WhatsApp?',
-    a: 'Cuando nos contactás con interés en un producto, te damos 1 hora para tomar tu decisión de compra. Si pasada esa hora no recibimos confirmación, el producto queda disponible para otro cliente interesado. Esto nos permite atender a todos de forma justa.',
-  },
-  {
-    q: '¿Cuántos días de garantía tienen los productos?',
-    a: 'Todos nuestros productos cuentan con 40 días de garantía por fallo de funcionamiento. Si el producto deja de funcionar dentro de ese período, contáctanos por WhatsApp y buscamos la solución: reparación, cambio o reembolso según el caso.',
-  },
-  {
-    q: '¿Cómo aplico la garantía?',
-    a: 'Comunícate con nosotros por WhatsApp dentro de los 40 días de recibido el producto, describe el problema y adjunta una foto o video del fallo. Nuestro equipo te orienta en el proceso de devolución o cambio.',
-  },
-  {
-    q: '¿Cómo sé si un producto está disponible?',
-    a: 'El stock se muestra en tiempo real en el catálogo. Si aparece "En stock" o la cantidad disponible, el producto está listo para envío. Si está "Agotado", puedes contactarnos para saber cuándo regresa.',
-  },
-  {
-    q: '¿Cómo puedo rastrear mi pedido por Correos CR?',
-    a: 'Una vez despachado, te enviamos el número de guía por WhatsApp. Puedes usarlo directamente en el sitio web de Correos de Costa Rica (correoscr.com) para ver el estado de tu paquete.',
-  },
-]
-
 export default function InformacionPage() {
   const [openFaq, setOpenFaq] = useState(null)
   const { t } = useTranslation()
+
+  const STEPS = [
+    { n: '01', title: t('informacion.step1Title'), desc: t('informacion.step1Desc'), icon: <SearchIcon />, color: 'text-[#4f7cff]', bg: 'bg-[#4f7cff]/10', border: 'border-[#4f7cff]/20' },
+    { n: '02', title: t('informacion.step2Title'), desc: t('informacion.step2Desc'), icon: <EyeIcon />, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
+    { n: '03', title: t('informacion.step3Title'), desc: t('informacion.step3Desc'), icon: <CartIcon />, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+    { n: '04', title: t('informacion.step4Title'), desc: t('informacion.step4Desc'), icon: <WhatsIcon />, color: 'text-[#25D366]', bg: 'bg-[#25D366]/10', border: 'border-[#25D366]/20' },
+    { n: '05', title: t('informacion.step5Title'), desc: t('informacion.step5Desc'), icon: <CheckIcon />, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
+    { n: '06', title: t('informacion.step6Title'), desc: t('informacion.step6Desc'), icon: <TruckIcon />, color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/20' },
+  ]
+
+  const CONDITIONS = [
+    { label: t('informacion.cond1Label'), badge: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400', desc: t('informacion.cond1Desc'), points: [t('informacion.cond1p1'), t('informacion.cond1p2'), t('informacion.cond1p3')] },
+    { label: t('informacion.cond2Label'), badge: 'bg-[#4f7cff]/15 border-[#4f7cff]/30 text-[#4f7cff]', desc: t('informacion.cond2Desc'), points: [t('informacion.cond2p1'), t('informacion.cond2p2'), t('informacion.cond2p3')] },
+    { label: t('informacion.cond3Label'), badge: 'bg-amber-500/15 border-amber-500/30 text-amber-400', desc: t('informacion.cond3Desc'), points: [t('informacion.cond3p1'), t('informacion.cond3p2'), t('informacion.cond3p3')] },
+  ]
+
+  const FAQS = [
+    { q: t('informacion.faq1q'), a: t('informacion.faq1a') },
+    { q: t('informacion.faq2q'), a: t('informacion.faq2a') },
+    { q: t('informacion.faq3q'), a: t('informacion.faq3a') },
+    { q: t('informacion.faq4q'), a: t('informacion.faq4a') },
+    { q: t('informacion.faq5q'), a: t('informacion.faq5a') },
+    { q: t('informacion.faq6q'), a: t('informacion.faq6a') },
+    { q: t('informacion.faq7q'), a: t('informacion.faq7a') },
+    { q: t('informacion.faq8q'), a: t('informacion.faq8a') },
+    { q: t('informacion.faq9q'), a: t('informacion.faq9a') },
+  ]
 
   return (
     <MainLayout>
@@ -112,17 +49,17 @@ export default function InformacionPage() {
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#4f7cff]/10 border border-[#4f7cff]/20 text-sm text-[#4f7cff] mb-5">
             {t('informacion.title')}
           </div>
-          <h1 className="text-4xl font-bold text-[#e8e8ed] mb-4">Todo lo que necesitas saber</h1>
+          <h1 className="text-4xl font-bold text-[#e8e8ed] mb-4">{t('informacion.hero')}</h1>
           <p className="text-[#8e8e9a] text-lg max-w-xl mx-auto">
-            Cómo comprar, qué significan las condiciones de los productos y respuestas a las preguntas más frecuentes.
+            {t('informacion.heroSub')}
           </p>
         </motion.div>
 
         {/* How to buy — extended */}
         <section>
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-[#e8e8ed]">¿Cómo comprar?</h2>
-            <p className="text-[#8e8e9a] mt-1 text-sm">Proceso paso a paso, simple y sin complicaciones</p>
+            <h2 className="text-2xl font-bold text-[#e8e8ed]">{t('informacion.howToBuy')}</h2>
+            <p className="text-[#8e8e9a] mt-1 text-sm">{t('informacion.howToBuySub')}</p>
           </div>
           <div className="space-y-4">
             {STEPS.map(({ n, title, desc, icon, color, bg, border }, i) => (
@@ -152,7 +89,7 @@ export default function InformacionPage() {
               to="/productos"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-semibold text-sm transition-all shadow-[0_0_24px_rgba(79,124,255,0.3)]"
             >
-              Ir al catálogo →
+              {t('informacion.goCatalog')}
             </Link>
           </div>
         </section>
@@ -160,8 +97,8 @@ export default function InformacionPage() {
         {/* Product conditions */}
         <section>
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-[#e8e8ed]">Condición de los productos</h2>
-            <p className="text-[#8e8e9a] mt-1 text-sm">Todos nuestros productos son verificados antes de publicarse</p>
+            <h2 className="text-2xl font-bold text-[#e8e8ed]">{t('informacion.conditionsTitle')}</h2>
+            <p className="text-[#8e8e9a] mt-1 text-sm">{t('informacion.conditionsSub')}</p>
           </div>
           <div className="grid sm:grid-cols-3 gap-4">
             {Conditions.map(({ label, badge, desc, points }, i) => (
@@ -191,8 +128,8 @@ export default function InformacionPage() {
         {/* Shipping options */}
         <section>
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-[#e8e8ed]">Envío y entrega</h2>
-            <p className="text-[#8e8e9a] mt-1 text-sm">Dos opciones para que recibas tu producto como prefieras</p>
+            <h2 className="text-2xl font-bold text-[#e8e8ed]">{t('informacion.shippingTitle')}</h2>
+            <p className="text-[#8e8e9a] mt-1 text-sm">{t('informacion.shippingSectionSub')}</p>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
 
@@ -207,17 +144,12 @@ export default function InformacionPage() {
                   <TruckIcon />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-[#e8e8ed]">Correos de Costa Rica</h3>
-                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#4f7cff]/15 border border-[#4f7cff]/20 text-[#4f7cff]">Todo el país</span>
+                  <h3 className="font-semibold text-[#e8e8ed]">{t('informacion.shippingCorreosTitle')}</h3>
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#4f7cff]/15 border border-[#4f7cff]/20 text-[#4f7cff]">{t('informacion.shippingCorreosBadge')}</span>
                 </div>
               </div>
               <ul className="space-y-2.5">
-                {[
-                  'Entrega en sucursal Correos más cercana o a domicilio',
-                  '1 a 5 días hábiles según la zona',
-                  'Número de guía para rastreo en tiempo real',
-                  'Costo según tarifa de Correos CR — lo coordina el cliente',
-                ].map((pt) => (
+                {[t('informacion.correosP1'), t('informacion.correosP2'), t('informacion.correosP3'), t('informacion.correosP4')].map((pt) => (
                   <li key={pt} className="flex items-start gap-2 text-sm text-[#8e8e9a]">
                     <span className="text-[#4f7cff] mt-0.5 shrink-0">→</span>{pt}
                   </li>
@@ -236,24 +168,19 @@ export default function InformacionPage() {
                   <BoltIcon />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-[#e8e8ed]">Uber Flash</h3>
-                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/20 text-amber-400">Solo GAM — Express</span>
+                  <h3 className="font-semibold text-[#e8e8ed]">{t('informacion.shippingUberTitle')}</h3>
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/20 text-amber-400">{t('informacion.shippingUberBadge')}</span>
                 </div>
               </div>
               <ul className="space-y-2.5">
-                {[
-                  'Entrega el mismo día, en horas',
-                  'Disponible dentro del Gran Área Metropolitana',
-                  'Costo según distancia (aprox. ₡2,000–₡6,000) — a cargo del cliente',
-                  'Coordinamos el envío por WhatsApp antes de confirmar',
-                ].map((pt) => (
+                {[t('informacion.uberP1'), t('informacion.uberP2'), t('informacion.uberP3'), t('informacion.uberP4')].map((pt) => (
                   <li key={pt} className="flex items-start gap-2 text-sm text-[#8e8e9a]">
                     <span className="text-amber-400 mt-0.5 shrink-0">→</span>{pt}
                   </li>
                 ))}
               </ul>
               <div className="p-3 rounded-xl bg-amber-500/8 border border-amber-500/15 text-xs leading-relaxed" style={{ color: 'var(--hc-text)' }}>
-                El costo exacto de Uber Flash se calcula al momento y te lo informamos por WhatsApp antes de que confirmes el pedido.
+                {t('informacion.uberNote')}
               </div>
             </motion.div>
 
@@ -274,18 +201,18 @@ export default function InformacionPage() {
               <ClockIcon />
             </div>
             <div>
-              <h3 className="font-bold text-[#e8e8ed] mb-1">Política de reserva: 1 hora para decidir</h3>
+              <h3 className="font-bold text-[#e8e8ed] mb-1">{t('informacion.reserveTitle')}</h3>
               <p className="text-sm text-[#8e8e9a] leading-relaxed mb-3">
-                Cuando nos contactás por WhatsApp con interés en un producto, te reservamos el artículo por <strong className="text-amber-400">1 hora</strong> para que puedas tomar tu decisión. Si pasado ese tiempo no recibimos confirmación de compra, el producto queda disponible para el siguiente cliente interesado.
+                {t('informacion.reserveDesc')}
               </p>
               <div className="flex flex-col sm:flex-row gap-3 text-xs">
                 <div className="flex items-start gap-2 text-[#8e8e9a]">
                   <span className="text-amber-400 mt-0.5 shrink-0">→</span>
-                  Podés pedir fotos o video del producto por WhatsApp antes de confirmar
+                  {t('informacion.reservePoint1')}
                 </div>
                 <div className="flex items-start gap-2 text-[#8e8e9a]">
                   <span className="text-amber-400 mt-0.5 shrink-0">→</span>
-                  En el GAM podés coordinarlo para verlo en persona
+                  {t('informacion.reservePoint2')}
                 </div>
               </div>
             </div>
@@ -295,8 +222,8 @@ export default function InformacionPage() {
         {/* Warranty & returns */}
         <section>
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-[#e8e8ed]">Garantía y devoluciones</h2>
-            <p className="text-[#8e8e9a] mt-1 text-sm">Tu compra está protegida — todos los productos tienen garantía</p>
+            <h2 className="text-2xl font-bold text-[#e8e8ed]">{t('informacion.warrantyTitle')}</h2>
+            <p className="text-[#8e8e9a] mt-1 text-sm">{t('informacion.warrantySub')}</p>
           </div>
 
           {/* 40-day warranty banner */}
@@ -309,7 +236,7 @@ export default function InformacionPage() {
             <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-5">
               <div className="w-16 h-16 rounded-2xl bg-emerald-500/15 border border-emerald-500/25 flex flex-col items-center justify-center shrink-0">
                 <span className="text-2xl font-extrabold text-emerald-400 leading-none">40</span>
-                <span className="text-[9px] font-semibold text-emerald-400/70 uppercase tracking-widest leading-none mt-0.5">días</span>
+                <span className="text-[9px] font-semibold text-emerald-400/70 uppercase tracking-widest leading-none mt-0.5">{t('informacion.days')}</span>
               </div>
               <div>
                 <h3 className="font-bold text-[#e8e8ed] text-lg mb-1">Garantía de 40 días en todos los productos</h3>
@@ -381,6 +308,7 @@ export default function InformacionPage() {
               >
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  aria-expanded={openFaq === i}
                   className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left"
                 >
                   <span className="font-medium text-[#e8e8ed] text-sm">{faq.q}</span>

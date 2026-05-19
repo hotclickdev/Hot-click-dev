@@ -309,7 +309,7 @@ public class AuthController {
         }
         try {
             Usuario nuevo = emailVerificationService.verificarYRegistrar(correo.trim(), codigo.trim());
-            return ResponseEntity.ok(ResponseDTO.success("Cuenta creada exitosamente", nuevo));
+            return ResponseEntity.ok(ResponseDTO.success("Cuenta creada exitosamente", buildAuthResponse(nuevo)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }

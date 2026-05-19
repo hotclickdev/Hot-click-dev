@@ -8,8 +8,7 @@ import Spinner from '@/components/ui/Spinner'
 import { adminService } from '@/services/orderService'
 import { useToast } from '@/components/ui/Toast'
 
-// Mapeo estado int → string
-const ESTADO_NUM = { 0: 'PENDIENTE', 1: 'ACTIVO', 2: 'INACTIVO' }
+const ESTADO_NUM = { 1: 'ACTIVO', 2: 'INACTIVO', 3: 'ELIMINADO', 4: 'SUSPENDIDO', 5: 'PENDIENTE' }
 const ESTADO_INT = { ACTIVO: 1, INACTIVO: 2 }
 
 const ROLES = [
@@ -21,7 +20,14 @@ const ROLES = [
 const ROLE_COLORS = { ADMIN_IT: 'danger', ADMIN_CLIENTE: 'purple', USUARIO_FINAL: 'default' }
 const ROLE_LABELS = { ADMIN_IT: 'Admin IT', ADMIN_CLIENTE: 'Admin Cliente', USUARIO_FINAL: 'Cliente' }
 
-// Helpers para leer la respuesta de la API
+const ESTADO_BADGE = {
+  ACTIVO:     'success',
+  PENDIENTE:  'warning',
+  INACTIVO:   'default',
+  SUSPENDIDO: 'danger',
+  ELIMINADO:  'danger',
+}
+
 const getEstadoStr = (u) => ESTADO_NUM[u.estado] ?? 'INACTIVO'
 const getRolStr    = (u) => u.roles?.[0]?.nombreRol ?? 'USUARIO_FINAL'
 
@@ -40,9 +46,11 @@ export default function AdminUsers() {
   const [editEstado, setEditEstado] = useState('')
   const [saving, setSaving] = useState(false)
 
-  // Delete modal
-  const [deleteUser, setDeleteUser] = useState(null)
-  const [deleting, setDeleting] = useState(false)
+  // Confirm modals
+  const [deleteUser, setDeleteUser]   = useState(null)
+  const [blockUser, setBlockUser]     = useState(null)
+  const [unblockUser, setUnblockUser] = useState(null)
+  const [actionLoading, setActionLoading] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -76,14 +84,40 @@ export default function AdminUsers() {
 
   const handleDelete = async () => {
     if (!deleteUser) return
-    setDeleting(true)
+    setActionLoading(true)
     try {
       await adminService.deleteUser(deleteUser.id)
       toast({ message: 'Usuario eliminado', type: 'success' })
       setDeleteUser(null)
       load()
     } catch { toast({ message: 'Error al eliminar', type: 'error' }) }
-    finally { setDeleting(false) }
+    finally { setActionLoading(false) }
+  }
+
+  const handleBlock = async () => {
+    if (!blockUser) return
+    setActionLoading(true)
+    try {
+      await adminService.blockUser(blockUser.id)
+      toast({ message: `${blockUser.nombre ?? blockUser.correo} fue bloqueado`, type: 'info' })
+      setBlockUser(null)
+      load()
+    } catch (err) {
+      toast({ message: err.response?.data?.message ?? 'Error al bloquear', type: 'error' })
+    } finally { setActionLoading(false) }
+  }
+
+  const handleUnblock = async () => {
+    if (!unblockUser) return
+    setActionLoading(true)
+    try {
+      await adminService.unblockUser(unblockUser.id)
+      toast({ message: `${unblockUser.nombre ?? unblockUser.correo} fue desbloqueado`, type: 'success' })
+      setUnblockUser(null)
+      load()
+    } catch (err) {
+      toast({ message: err.response?.data?.message ?? 'Error al desbloquear', type: 'error' })
+    } finally { setActionLoading(false) }
   }
 
   const openEdit = (u) => {
@@ -103,21 +137,17 @@ export default function AdminUsers() {
       if (editRol !== currentRol) {
         promises.push(adminService.setRole(editUser.id, editRol))
       }
-      if (editEstado !== currentEstado && editEstado !== 'PENDIENTE') {
+      if (editEstado !== currentEstado && ESTADO_INT[editEstado] != null) {
         promises.push(adminService.setStatus(editUser.id, ESTADO_INT[editEstado]))
       }
 
-      if (promises.length === 0) {
-        setEditUser(null)
-        return
-      }
+      if (promises.length === 0) { setEditUser(null); return }
       await Promise.all(promises)
       toast({ message: 'Usuario actualizado', type: 'success' })
       setEditUser(null)
       load()
     } catch (err) {
-      const msg = err.response?.data?.message ?? 'Error al actualizar'
-      toast({ message: msg, type: 'error' })
+      toast({ message: err.response?.data?.message ?? 'Error al actualizar', type: 'error' })
     } finally { setSaving(false) }
   }
 
@@ -166,7 +196,7 @@ export default function AdminUsers() {
         ) : (
           <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm min-w-[520px]">
+              <table className="w-full text-sm min-w-[640px]">
                 <thead>
                   <tr className="border-b border-white/8">
                     {[t('admin.users.name'), t('admin.users.email'), t('admin.users.role'), t('admin.users.status'), t('admin.users.actions')].map((h) => (
@@ -178,14 +208,22 @@ export default function AdminUsers() {
                   {displayed.map((u) => {
                     const estadoStr = getEstadoStr(u)
                     const rolStr    = getRolStr(u)
+                    const isSuspended = estadoStr === 'SUSPENDIDO'
+                    const isEliminated = estadoStr === 'ELIMINADO'
                     return (
-                      <tr key={u.id} className="hover:bg-white/3 transition-colors">
+                      <tr key={u.id} className={`hover:bg-white/3 transition-colors ${isSuspended ? 'opacity-75' : ''}`}>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-[#4f7cff]/15 flex items-center justify-center text-xs font-bold text-[#4f7cff] shrink-0">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                              isSuspended ? 'bg-amber-500/15 text-amber-400' : 'bg-[#4f7cff]/15 text-[#4f7cff]'
+                            }`}>
                               {(u.nombre ?? u.correo)?.[0]?.toUpperCase()}
                             </div>
-                            <span className="font-medium text-[#e8e8ed] truncate max-w-[120px]">{u.nombre ?? '—'}</span>
+                            <div className="min-w-0">
+                              <span className="font-medium text-[#e8e8ed] truncate max-w-[120px] block">{u.nombre ?? '—'}</span>
+                              {isSuspended && <span className="text-[10px] text-amber-400">Bloqueado</span>}
+                              {isEliminated && <span className="text-[10px] text-red-400">Eliminado</span>}
+                            </div>
                           </div>
                         </td>
                         <td className="px-4 py-3 text-[#8e8e9a] text-xs truncate max-w-[160px]">{u.correo}</td>
@@ -195,12 +233,13 @@ export default function AdminUsers() {
                           </Badge>
                         </td>
                         <td className="px-4 py-3">
-                          <Badge variant={estadoStr === 'ACTIVO' ? 'success' : estadoStr === 'PENDIENTE' ? 'warning' : 'danger'}>
+                          <Badge variant={ESTADO_BADGE[estadoStr] ?? 'default'}>
                             {estadoStr}
                           </Badge>
                         </td>
                         <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {/* Aprobar/Rechazar para pendientes */}
                             {estadoStr === 'PENDIENTE' && (
                               <>
                                 <button onClick={() => approve(u.id)}
@@ -213,17 +252,51 @@ export default function AdminUsers() {
                                 </button>
                               </>
                             )}
-                            <button onClick={() => openEdit(u)}
-                              className="px-2.5 py-1 text-xs rounded-lg bg-white/5 hover:bg-white/10 text-[#8e8e9a] hover:text-white transition-colors">
-                              {t('common.edit')}
-                            </button>
-                            <button onClick={() => setDeleteUser(u)}
-                              className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-500/8 hover:bg-red-500/20 text-red-400 transition-colors"
-                              title="Eliminar usuario">
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" />
-                              </svg>
-                            </button>
+
+                            {/* Editar (solo si no eliminado) */}
+                            {!isEliminated && (
+                              <button onClick={() => openEdit(u)}
+                                className="px-2.5 py-1 text-xs rounded-lg bg-white/5 hover:bg-white/10 text-[#8e8e9a] hover:text-white transition-colors">
+                                {t('common.edit')}
+                              </button>
+                            )}
+
+                            {/* Bloquear / Desbloquear */}
+                            {!isEliminated && (
+                              isSuspended ? (
+                                <button
+                                  onClick={() => setUnblockUser(u)}
+                                  title="Desbloquear usuario"
+                                  className="flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-colors">
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                                  </svg>
+                                  Desbloquear
+                                </button>
+                              ) : estadoStr !== 'PENDIENTE' && (
+                                <button
+                                  onClick={() => setBlockUser(u)}
+                                  title="Bloquear usuario"
+                                  className="flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 transition-colors">
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zM10 11V7a2 2 0 114 0v4" />
+                                  </svg>
+                                  Bloquear
+                                </button>
+                              )
+                            )}
+
+                            {/* Eliminar (solo si no ya eliminado) */}
+                            {!isEliminated && (
+                              <button
+                                onClick={() => setDeleteUser(u)}
+                                title="Eliminar usuario"
+                                className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-500/8 hover:bg-red-500/20 text-red-400 transition-colors">
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" />
+                                </svg>
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -239,19 +312,86 @@ export default function AdminUsers() {
         )}
       </div>
 
-      {/* Modal confirmar eliminación */}
+      {/* ── Modal: Bloquear usuario ───────────────────────────── */}
+      <Modal open={!!blockUser} onClose={() => setBlockUser(null)} title="Bloquear usuario" size="sm">
+        {blockUser && (
+          <div className="space-y-5">
+            <div className="flex items-start gap-3 p-3.5 rounded-xl bg-amber-500/8 border border-amber-500/20">
+              <div className="w-9 h-9 rounded-full bg-amber-500/15 flex items-center justify-center shrink-0 mt-0.5">
+                <svg className="w-4.5 h-4.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zM10 11V7a2 2 0 114 0v4" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-[#e8e8ed]">{blockUser.nombre ?? blockUser.correo}</p>
+                <p className="text-xs text-[#8e8e9a] mt-0.5">{blockUser.correo}</p>
+                <p className="text-xs text-amber-400 mt-2">
+                  El usuario no podrá iniciar sesión hasta que sea desbloqueado.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setBlockUser(null)}
+                className="flex-1 h-10 rounded-xl bg-white/5 hover:bg-white/8 text-[#8e8e9a] hover:text-white text-sm transition-colors">
+                Cancelar
+              </button>
+              <button onClick={handleBlock} disabled={actionLoading}
+                className="flex-1 h-10 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 text-sm font-medium border border-amber-500/30 transition-colors disabled:opacity-50">
+                {actionLoading ? 'Bloqueando...' : 'Bloquear'}
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* ── Modal: Desbloquear usuario ────────────────────────── */}
+      <Modal open={!!unblockUser} onClose={() => setUnblockUser(null)} title="Desbloquear usuario" size="sm">
+        {unblockUser && (
+          <div className="space-y-5">
+            <div className="flex items-start gap-3 p-3.5 rounded-xl bg-emerald-500/8 border border-emerald-500/20">
+              <div className="w-9 h-9 rounded-full bg-emerald-500/15 flex items-center justify-center shrink-0 mt-0.5">
+                <svg className="w-4.5 h-4.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-[#e8e8ed]">{unblockUser.nombre ?? unblockUser.correo}</p>
+                <p className="text-xs text-[#8e8e9a] mt-0.5">{unblockUser.correo}</p>
+                <p className="text-xs text-emerald-400 mt-2">
+                  La cuenta quedará activa y el usuario podrá volver a iniciar sesión.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setUnblockUser(null)}
+                className="flex-1 h-10 rounded-xl bg-white/5 hover:bg-white/8 text-[#8e8e9a] hover:text-white text-sm transition-colors">
+                Cancelar
+              </button>
+              <button onClick={handleUnblock} disabled={actionLoading}
+                className="flex-1 h-10 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 text-sm font-medium border border-emerald-500/30 transition-colors disabled:opacity-50">
+                {actionLoading ? 'Desbloqueando...' : 'Desbloquear'}
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* ── Modal: Eliminar usuario ───────────────────────────── */}
       <Modal open={!!deleteUser} onClose={() => setDeleteUser(null)} title="Eliminar usuario" size="sm">
         {deleteUser && (
           <div className="space-y-5">
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-red-500/8 border border-red-500/20">
-              <div className="w-9 h-9 rounded-full bg-red-500/15 flex items-center justify-center shrink-0">
+            <div className="flex items-start gap-3 p-3.5 rounded-xl bg-red-500/8 border border-red-500/20">
+              <div className="w-9 h-9 rounded-full bg-red-500/15 flex items-center justify-center shrink-0 mt-0.5">
                 <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                 </svg>
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-[#e8e8ed] truncate">{deleteUser.nombre ?? deleteUser.correo}</p>
-                <p className="text-xs text-red-400">Esta acción desactivará la cuenta permanentemente.</p>
+                <p className="text-sm font-semibold text-[#e8e8ed]">{deleteUser.nombre ?? deleteUser.correo}</p>
+                <p className="text-xs text-[#8e8e9a] mt-0.5">{deleteUser.correo}</p>
+                <p className="text-xs text-red-400 mt-2">
+                  Esta acción desactivará la cuenta de forma permanente.
+                </p>
               </div>
             </div>
             <div className="flex gap-3">
@@ -259,20 +399,19 @@ export default function AdminUsers() {
                 className="flex-1 h-10 rounded-xl bg-white/5 hover:bg-white/8 text-[#8e8e9a] hover:text-white text-sm transition-colors">
                 {t('common.cancel')}
               </button>
-              <button onClick={handleDelete} disabled={deleting}
+              <button onClick={handleDelete} disabled={actionLoading}
                 className="flex-1 h-10 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-400 text-sm font-medium border border-red-500/30 transition-colors disabled:opacity-50">
-                {deleting ? t('common.loading') : t('common.delete')}
+                {actionLoading ? t('common.loading') : t('common.delete')}
               </button>
             </div>
           </div>
         )}
       </Modal>
 
-      {/* Modal editar usuario */}
+      {/* ── Modal: Editar usuario ─────────────────────────────── */}
       <Modal open={!!editUser} onClose={() => setEditUser(null)} title={t('admin.users.name')} size="sm">
         {editUser && (
           <div className="space-y-5">
-            {/* Info */}
             <div className="flex items-center gap-3 p-3 rounded-xl bg-white/3 border border-white/8">
               <div className="w-10 h-10 rounded-full bg-[#4f7cff]/15 flex items-center justify-center text-sm font-bold text-[#4f7cff] shrink-0">
                 {(editUser.nombre ?? editUser.correo)?.[0]?.toUpperCase()}
@@ -283,7 +422,6 @@ export default function AdminUsers() {
               </div>
             </div>
 
-            {/* Rol */}
             <div className="space-y-2">
               <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">{t('admin.users.role')}</label>
               <div className="grid grid-cols-3 gap-2">
@@ -300,7 +438,6 @@ export default function AdminUsers() {
               </div>
             </div>
 
-            {/* Estado — solo ACTIVO/INACTIVO permitidos por el backend */}
             <div className="space-y-2">
               <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">{t('admin.users.status')}</label>
               <div className="grid grid-cols-2 gap-2">
@@ -314,12 +451,15 @@ export default function AdminUsers() {
                   </button>
                 ))}
               </div>
-              {editEstado === 'PENDIENTE' && (
-                <p className="text-[10px] text-amber-400">Para activar este usuario usa el botón "Aprobar"</p>
+              {(editEstado === 'PENDIENTE' || editEstado === 'SUSPENDIDO') && (
+                <p className="text-[10px] text-amber-400">
+                  {editEstado === 'PENDIENTE'
+                    ? 'Para activar este usuario usá el botón "Aprobar"'
+                    : 'Para desbloquear usá el botón "Desbloquear" en la tabla'}
+                </p>
               )}
             </div>
 
-            {/* Botones */}
             <div className="flex gap-3 pt-1">
               <button onClick={() => setEditUser(null)}
                 className="flex-1 h-10 rounded-xl bg-white/5 hover:bg-white/8 text-[#8e8e9a] hover:text-white text-sm transition-colors">

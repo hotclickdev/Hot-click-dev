@@ -113,7 +113,7 @@ export default function Navbar() {
             {/* Search */}
             <button
               onClick={() => setSearchOpen(true)}
-              aria-label="Buscar"
+              aria-label={t('nav.buscar')}
               className="p-2 rounded-lg transition-colors hover:bg-white/5"
               style={{ color: 'var(--hc-muted)' }}
             >
@@ -123,7 +123,7 @@ export default function Navbar() {
             {/* Wishlist */}
             <Link
               to="/wishlist"
-              aria-label="Wishlist"
+              aria-label={t('nav.wishlist')}
               className="relative p-2 rounded-lg transition-colors"
               style={{ color: 'var(--hc-muted)' }}
             >
@@ -192,7 +192,7 @@ export default function Navbar() {
                   className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors"
                   style={{ color: 'var(--hc-muted)' }}
                 >
-                  Mis pedidos
+                  {t('nav.misPedidos')}
                 </Link>
                 <Link
                   to="/perfil"
@@ -231,6 +231,7 @@ export default function Navbar() {
               style={{ color: 'var(--hc-muted)' }}
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label={t('nav.menu')}
+              aria-expanded={menuOpen}
             >
               <MenuIcon open={menuOpen} />
             </button>
@@ -272,7 +273,7 @@ export default function Navbar() {
               {token && (
                 <Link to="/mis-pedidos" className="px-4 py-3 rounded-xl text-sm transition-colors"
                   style={{ color: 'var(--hc-muted)' }}>
-                  Mis pedidos
+                  {t('nav.misPedidos')}
                 </Link>
               )}
               {token && (

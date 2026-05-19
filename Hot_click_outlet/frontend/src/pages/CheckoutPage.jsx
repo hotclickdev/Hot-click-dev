@@ -13,37 +13,6 @@ import { analytics } from '@/utils/analytics'
 const BODEGA_DEFAULT = 1
 const WHATSAPP = '50689745370'
 
-const METODOS_PAGO = [
-  {
-    id: 'PAYPAL',
-    label: 'PayPal',
-    descripcion: 'Paga con tu cuenta PayPal o tarjeta vía PayPal',
-    badge: 'Recomendado',
-    badgeColor: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    icon: PayPalIcon,
-  },
-  {
-    id: 'PAYXPERT',
-    label: 'Tarjeta de crédito / débito',
-    descripcion: 'Visa, Mastercard, Amex · 3D Secure',
-    badge: null,
-    badgeColor: '',
-    icon: CardIcon,
-  },
-]
-
-// ── Inline field validation ─────────────────────────────────────────────────
-function validatePhone(v) {
-  const d = v.replace(/\D/g, '')
-  if (!v.trim()) return 'Teléfono requerido para envío a domicilio'
-  if (d.length < 8) return 'Ingresa un número válido (8 dígitos)'
-  return ''
-}
-function validateAddress(v) {
-  if (!v.trim()) return 'Dirección requerida para envío a domicilio'
-  if (v.trim().length < 10) return 'Ingresa la dirección completa (provincia, cantón, señas)'
-  return ''
-}
 function formatPhone(v) {
   const d = v.replace(/\D/g, '').slice(0, 8)
   return d.length >= 5 ? `${d.slice(0, 4)}-${d.slice(4)}` : d
@@ -119,6 +88,37 @@ export default function CheckoutPage() {
   const { estado, error, intentos, maxIntentos, iniciarPago } = usePayment()
   const { t } = useTranslation()
 
+  const METODOS_PAGO = [
+    {
+      id: 'PAYPAL',
+      label: 'PayPal',
+      descripcion: t('checkout.paypalDesc'),
+      badge: t('checkout.paypalBadge'),
+      badgeColor: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+      icon: PayPalIcon,
+    },
+    {
+      id: 'PAYXPERT',
+      label: t('checkout.cardLabel'),
+      descripcion: t('checkout.cardDesc'),
+      badge: null,
+      badgeColor: '',
+      icon: CardIcon,
+    },
+  ]
+
+  function validatePhone(v) {
+    const d = v.replace(/\D/g, '')
+    if (!v.trim()) return t('checkout.phoneRequired')
+    if (d.length < 8) return t('checkout.phoneInvalid')
+    return ''
+  }
+  function validateAddress(v) {
+    if (!v.trim()) return t('checkout.addressRequired')
+    if (v.trim().length < 10) return t('checkout.addressMin')
+    return ''
+  }
+
   const [metodoEnvio,  setMetodoEnvio]  = useState('RETIRO_EN_TIENDA')
   const [metodoPago,   setMetodoPago]   = useState('PAYPAL')
   const [notas,        setNotas]        = useState('')
@@ -150,7 +150,7 @@ export default function CheckoutPage() {
     return (
       <MainLayout>
         <div className="max-w-lg mx-auto px-4 py-20 text-center">
-          <p className="text-[#e8e8ed] text-lg mb-4">Debes iniciar sesión para pagar.</p>
+          <p className="text-[#e8e8ed] text-lg mb-4">{t('checkout.loginRequired')}</p>
           <Link to="/login" className="px-6 py-2.5 rounded-xl bg-[#4f7cff] text-white font-medium">
             {t('register.login')}
           </Link>
@@ -163,7 +163,7 @@ export default function CheckoutPage() {
     return (
       <MainLayout>
         <div className="max-w-lg mx-auto px-4 py-20 text-center">
-          <p className="text-[#e8e8ed] text-lg mb-4">Tu carrito está vacío.</p>
+          <p className="text-[#e8e8ed] text-lg mb-4">{t('checkout.cartEmpty')}</p>
           <Link to="/productos" className="px-6 py-2.5 rounded-xl bg-[#4f7cff] text-white font-medium">
             {t('checkout.continueShopping')}
           </Link>
@@ -174,14 +174,14 @@ export default function CheckoutPage() {
 
   if (estado === 'redirecting' || estado === 'loading') {
     const msg = estado === 'redirecting'
-      ? `Redirigiendo a ${metodoPago === 'PAYPAL' ? 'PayPal' : 'la pasarela de pago'}…`
-      : 'Preparando tu pago…'
+      ? (metodoPago === 'PAYPAL' ? t('checkout.redirectingPaypal') : t('checkout.redirectingPayxpert'))
+      : t('checkout.preparing')
     return (
       <MainLayout>
         <div className="max-w-lg mx-auto px-4 py-32 text-center flex flex-col items-center gap-6">
           <div className="w-14 h-14 rounded-full border-4 border-[#4f7cff] border-t-transparent animate-spin" />
           <p className="text-[#e8e8ed] text-lg font-medium">{msg}</p>
-          <p className="text-[#8e8e9a] text-sm">No cierres esta ventana</p>
+          <p className="text-[#8e8e9a] text-sm">{t('checkout.dontClose')}</p>
         </div>
       </MainLayout>
     )
@@ -236,7 +236,7 @@ export default function CheckoutPage() {
               className="rounded-2xl p-5 space-y-3"
               style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
             >
-              <h2 className="font-semibold text-sm" style={{ color: 'var(--hc-text)' }}>Pago exprés</h2>
+              <h2 className="font-semibold text-sm" style={{ color: 'var(--hc-text)' }}>{t('checkout.expressPayment')}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 {/* WhatsApp — functional */}
                 <button
@@ -250,31 +250,31 @@ export default function CheckoutPage() {
                 {/* Apple Pay — placeholder */}
                 <div className="relative flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-medium border cursor-not-allowed opacity-40"
                   style={{ borderColor: 'var(--hc-border)', color: 'var(--hc-muted)' }}
-                  title="Próximamente"
+                  title={t('checkout.comingSoon')}
                 >
                   <ApplePayIcon />
                   Apple Pay
                   <span className="absolute -top-2 -right-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-[#4f7cff]/20 text-[#4f7cff] border border-[#4f7cff]/30">
-                    Pronto
+                    {t('checkout.comingSoon')}
                   </span>
                 </div>
 
                 {/* Google Pay — placeholder */}
                 <div className="relative flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-medium border cursor-not-allowed opacity-40"
                   style={{ borderColor: 'var(--hc-border)', color: 'var(--hc-muted)' }}
-                  title="Próximamente"
+                  title={t('checkout.comingSoon')}
                 >
                   <GooglePayIcon />
                   Google Pay
                   <span className="absolute -top-2 -right-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-[#4f7cff]/20 text-[#4f7cff] border border-[#4f7cff]/30">
-                    Pronto
+                    {t('checkout.comingSoon')}
                   </span>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-px" style={{ background: 'var(--hc-border)' }} />
-                <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>o paga con</span>
+                <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>{t('checkout.orPayWith')}</span>
                 <div className="flex-1 h-px" style={{ background: 'var(--hc-border)' }} />
               </div>
             </motion.div>
@@ -287,11 +287,11 @@ export default function CheckoutPage() {
               className="rounded-2xl p-6 space-y-4"
               style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
             >
-              <h2 className="font-semibold" style={{ color: 'var(--hc-text)' }}>Método de entrega</h2>
+              <h2 className="font-semibold" style={{ color: 'var(--hc-text)' }}>{t('checkout.deliveryMethod')}</h2>
               <div className="space-y-3">
                 {[
-                  { value: 'RETIRO_EN_TIENDA', label: 'Retiro en tienda', sub: 'Gratis · Coordinar vía WhatsApp', precio: '₡0' },
-                  { value: 'ENVIO_A_DOMICILIO', label: 'Envío a domicilio', sub: 'Correos de Costa Rica · 2-3 días hábiles', precio: formatPrice(2000) },
+                  { value: 'RETIRO_EN_TIENDA', label: t('checkout.storePickup'), sub: t('checkout.storePickupSub'), precio: '₡0' },
+                  { value: 'ENVIO_A_DOMICILIO', label: t('checkout.homeDelivery'), sub: t('checkout.homeDeliverySub'), precio: formatPrice(2000) },
                 ].map((op) => (
                   <label
                     key={op.value}
@@ -330,17 +330,17 @@ export default function CheckoutPage() {
                   >
                     <div className="border-t" style={{ borderColor: 'var(--hc-border)' }} />
                     <p className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>
-                      Datos de entrega
+                      {t('checkout.deliveryData')}
                     </p>
                     <SmartField
                       id="telefono"
-                      label="Teléfono de contacto *"
+                      label={t('checkout.phoneContact')}
                       type="tel"
                       value={telefono}
                       placeholder="8888-8888"
                       error={telefonoDirty ? telefonoError : ''}
                       success={telefonoDirty && !telefonoError && telefono.length >= 8}
-                      helpText="Para coordinar la entrega con Correos CR"
+                      helpText={t('checkout.phoneHelp')}
                       onChange={(e) => {
                         const formatted = formatPhone(e.target.value)
                         setTelefono(formatted)
@@ -350,14 +350,14 @@ export default function CheckoutPage() {
                     />
                     <SmartField
                       id="direccion"
-                      label="Dirección completa *"
+                      label={t('checkout.addressLabel')}
                       multiline
                       rows={3}
                       value={direccion}
-                      placeholder="Provincia, cantón, distrito, señas adicionales…"
+                      placeholder={t('checkout.addressPlaceholder')}
                       error={direccionDirty ? direccionError : ''}
                       success={direccionDirty && !direccionError && direccion.trim().length >= 10}
-                      helpText={`${direccion.length}/200 caracteres`}
+                      helpText={t('checkout.charCount', { count: direccion.length, max: 200 })}
                       maxLength={200}
                       onChange={(e) => {
                         setDireccion(e.target.value)
@@ -378,7 +378,7 @@ export default function CheckoutPage() {
               className="rounded-2xl p-6 space-y-4"
               style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
             >
-              <h2 className="font-semibold" style={{ color: 'var(--hc-text)' }}>Método de pago</h2>
+              <h2 className="font-semibold" style={{ color: 'var(--hc-text)' }}>{t('checkout.paymentMethod')}</h2>
               <div className="space-y-3">
                 {METODOS_PAGO.map((mp) => {
                   const Icon = mp.icon
@@ -426,13 +426,11 @@ export default function CheckoutPage() {
               <div className="p-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--hc-surface) 50%, transparent)', border: '1px solid var(--hc-border)' }}>
                 {metodoPago === 'PAYPAL' ? (
                   <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-                    Serás redirigido a <strong style={{ color: 'var(--hc-text)' }}>PayPal</strong> para aprobar el pago.
-                    El monto se convierte a USD al tipo de cambio oficial del BCCR.
+                    {t('checkout.paypalNote')}
                   </p>
                 ) : (
                   <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-                    Serás redirigido a la página segura de <strong style={{ color: 'var(--hc-text)' }}>PayXpert</strong>.
-                    Tus datos bancarios nunca pasan por nuestros servidores.
+                    {t('checkout.payxpertNote')}
                   </p>
                 )}
               </div>
@@ -447,7 +445,7 @@ export default function CheckoutPage() {
               style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
             >
               <h2 className="font-semibold mb-4" style={{ color: 'var(--hc-text)' }}>
-                {t('checkout.notes')} <span className="font-normal text-sm" style={{ color: 'var(--hc-muted)' }}>(opcional)</span>
+                {t('checkout.notes')} <span className="font-normal text-sm" style={{ color: 'var(--hc-muted)' }}>({t('checkout.optional')})</span>
               </h2>
               <SmartField
                 id="notas"
@@ -455,8 +453,8 @@ export default function CheckoutPage() {
                 multiline
                 rows={3}
                 value={notas}
-                placeholder="Instrucciones especiales, horario preferido, etc."
-                helpText={`${notas.length}/300 caracteres`}
+                placeholder={t('checkout.notesPh')}
+                helpText={t('checkout.charCount', { count: notas.length, max: 300 })}
                 maxLength={300}
                 onChange={(e) => setNotas(e.target.value)}
                 onBlur={() => {}}
@@ -471,11 +469,11 @@ export default function CheckoutPage() {
                 className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-red-400"
                 role="alert"
               >
-                <p className="font-medium mb-1">Error al procesar el pago</p>
+                <p className="font-medium mb-1">{t('checkout.payError')}</p>
                 <p>{error}</p>
                 {intentos < maxIntentos && (
                   <button onClick={handlePagar} className="mt-3 text-[#4f7cff] hover:underline text-xs">
-                    Intentar de nuevo ({maxIntentos - intentos} intentos restantes)
+                    {t('checkout.retry', { remaining: maxIntentos - intentos })}
                   </button>
                 )}
               </motion.div>
@@ -504,13 +502,13 @@ export default function CheckoutPage() {
 
               <div className="pt-3 border-t space-y-2 text-sm" style={{ borderColor: 'var(--hc-border)' }}>
                 <div className="flex justify-between" style={{ color: 'var(--hc-muted)' }}>
-                  <span>Subtotal</span>
+                  <span>{t('checkout.subtotal')}</span>
                   <span>{formatPrice(total())}</span>
                 </div>
                 <div className="flex justify-between" style={{ color: 'var(--hc-muted)' }}>
-                  <span>Envío</span>
+                  <span>{t('checkout.shippingCost')}</span>
                   <span className={costoEnvio === 0 ? 'text-emerald-400 font-medium' : ''}>
-                    {costoEnvio === 0 ? 'Gratis' : formatPrice(costoEnvio)}
+                    {costoEnvio === 0 ? t('checkout.free') : formatPrice(costoEnvio)}
                   </span>
                 </div>
               </div>
@@ -522,16 +520,16 @@ export default function CheckoutPage() {
 
               {metodoPago === 'PAYPAL' && (
                 <p className="text-[10px] leading-relaxed rounded-lg p-2.5 bg-blue-500/8 border border-blue-500/20" style={{ color: 'var(--hc-muted)' }}>
-                  El monto se convertirá a USD al tipo de cambio del BCCR al momento del pago.
+                  {t('checkout.paypalNote2')}
                 </p>
               )}
 
               {/* Trust mini badges */}
               <div className="flex items-center justify-center gap-4 py-2.5 px-3 rounded-xl text-[11px]"
                 style={{ background: 'color-mix(in srgb, var(--hc-surface) 50%, transparent)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
-                <span>🛡 Garantía</span>
-                <span>🔒 Seguro</span>
-                <span>↩ Devoluciones</span>
+                <span>{t('checkout.trustWarranty')}</span>
+                <span>{t('checkout.trustSecure')}</span>
+                <span>{t('checkout.trustReturns')}</span>
               </div>
 
               <button
@@ -542,11 +540,11 @@ export default function CheckoutPage() {
                            disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <LockIcon />
-                {metodoPago === 'PAYPAL' ? 'Pagar con PayPal' : t('checkout.payNow')} · {formatPrice(totalFinal)}
+                {metodoPago === 'PAYPAL' ? t('checkout.payWithPaypal') : t('checkout.payNow')} · {formatPrice(totalFinal)}
               </button>
 
               <p className="text-[10px] text-center leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-                Al hacer clic aceptas nuestros <Link to="/informacion" className="hover:underline">términos y condiciones</Link>.
+                {t('checkout.terms')} <Link to="/informacion" className="hover:underline">{t('checkout.termsLink')}</Link>.
               </p>
             </motion.div>
           </div>

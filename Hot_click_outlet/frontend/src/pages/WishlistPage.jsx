@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import useWishlistStore from '@/store/wishlistStore'
 import useCartStore from '@/store/cartStore'
@@ -8,6 +9,7 @@ import { useToast } from '@/components/ui/Toast'
 import { formatPrice } from '@/utils/format'
 
 export default function WishlistPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { items, remove } = useWishlistStore()
   const addItem = useCartStore((s) => s.addItem)
@@ -16,7 +18,7 @@ export default function WishlistPage() {
 
   const handleAddToCart = (product) => {
     addItem(product)
-    toast({ message: `${product.nombre} añadido al carrito`, type: 'success' })
+    toast({ message: t('wishlist.addedToCart', { name: product.nombre }), type: 'success' })
     setRecentlyAdded((prev) => new Set([...prev, product.id]))
     setTimeout(() => {
       setRecentlyAdded((prev) => {
@@ -45,9 +47,9 @@ export default function WishlistPage() {
               </svg>
             </div>
             <div>
-              <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--hc-text)' }}>Tu wishlist está vacía</h1>
+              <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--hc-text)' }}>{t('wishlist.empty')}</h1>
               <p className="text-sm leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-                Guarda los productos que te gustan para encontrarlos rápido.
+                {t('wishlist.emptySub')}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 mt-1">
@@ -55,7 +57,7 @@ export default function WishlistPage() {
                 onClick={() => navigate('/productos')}
                 className="px-6 py-2.5 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-medium text-sm transition-all shadow-[0_0_20px_rgba(79,124,255,0.25)] hover:shadow-[0_0_32px_rgba(79,124,255,0.4)]"
               >
-                Explorar productos
+                {t('wishlist.explore')}
               </button>
             </div>
           </motion.div>
@@ -69,9 +71,9 @@ export default function WishlistPage() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-[#e8e8ed]">Wishlist</h1>
+            <h1 className="text-3xl font-bold text-[#e8e8ed]">{t('wishlist.title')}</h1>
             <p className="text-sm text-[#8e8e9a] mt-1">
-              {items.length} {items.length === 1 ? 'producto guardado' : 'productos guardados'}
+              {t('wishlist.saved', { count: items.length })}
             </p>
           </div>
         </div>
@@ -108,7 +110,7 @@ export default function WishlistPage() {
                   <button
                     onClick={(e) => { e.stopPropagation(); remove(product.id) }}
                     className="absolute top-2 right-2 w-7 h-7 rounded-lg flex items-center justify-center bg-black/45 hover:bg-red-500/30 transition-colors border border-white/10"
-                    aria-label="Quitar de wishlist"
+                    aria-label={t('wishlist.remove')}
                   >
                     <svg className="w-3.5 h-3.5 text-red-400" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
@@ -141,10 +143,10 @@ export default function WishlistPage() {
                     }`}
                   >
                     {product.stock === 0
-                      ? 'Sin stock'
+                      ? t('wishlist.outOfStock')
                       : recentlyAdded.has(product.id)
-                      ? '✓ Añadido'
-                      : 'Agregar al carrito'}
+                      ? t('wishlist.addedFeedback')
+                      : t('wishlist.addToCart')}
                   </button>
                 </div>
               </motion.div>

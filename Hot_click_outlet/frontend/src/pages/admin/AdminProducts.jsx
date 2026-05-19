@@ -9,6 +9,7 @@ import Badge from '@/components/ui/Badge'
 import Spinner from '@/components/ui/Spinner'
 import { productService, denormalizeProduct, normalizeProduct } from '@/services/productService'
 import { warehouseService } from '@/services/orderService'
+import { marcaService } from '@/services/marcaService'
 import MultiImagePicker from '@/components/ui/MultiImagePicker'
 import { useToast } from '@/components/ui/Toast'
 import { formatPrice, conditionLabel } from '@/utils/format'
@@ -16,7 +17,7 @@ import { formatPrice, conditionLabel } from '@/utils/format'
 const EMPTY_FORM = {
   nombre: '', titulo: '', descripcion: '',
   precioCompra: '', precioVenta: '', stock: '',
-  condicion: 'NUEVO', categoriaId: '', imagenUrl: '', bodegaId: '', destacado: false,
+  condicion: 'NUEVO', categoriaId: '', marcaId: '', imagenUrl: '', bodegaId: '', destacado: false,
   especificaciones: '', comoUsar: '', imagenes: [],
 }
 
@@ -35,6 +36,7 @@ export default function AdminProducts() {
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [bodegas, setBodegas] = useState([])
+  const [marcas, setMarcas] = useState([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
@@ -49,14 +51,16 @@ export default function AdminProducts() {
   const load = async () => {
     setLoading(true)
     try {
-      const [{ data: prods }, { data: cats }, { data: bods }] = await Promise.all([
+      const [{ data: prods }, { data: cats }, { data: bods }, { data: marcsR }] = await Promise.all([
         productService.adminGetAll(0, 200),
         productService.getCategories(),
         warehouseService.getAll(),
+        marcaService.getAll(),
       ])
       setProducts(prods.content ?? prods ?? [])
       setCategories(cats ?? [])
       setBodegas(Array.isArray(bods) ? bods : bods?.content ?? [])
+      setMarcas(Array.isArray(marcsR.data) ? marcsR.data : [])
     } finally { setLoading(false) }
   }
 
@@ -79,6 +83,7 @@ export default function AdminProducts() {
       stock:            p.stock           ?? '',
       condicion:        p.condicion       ?? 'NUEVO',
       categoriaId:      p.categoriaId     ?? '',
+      marcaId:          p.marcaId         ? String(p.marcaId) : '',
       imagenUrl:        p.imagenUrl       ?? '',
       bodegaId:         p.bodegaId        ?? bodegas[0]?.id ?? '',
       destacado:        p.destacado       ?? false,
@@ -564,6 +569,17 @@ export default function AdminProducts() {
                 </select>
               </div>
             )}
+          </div>
+
+          {/* Marca */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-[#e8e8ed]">Marca</label>
+            <select value={form.marcaId} onChange={set('marcaId')} className="h-11 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60">
+              <option value="">— Sin marca —</option>
+              {marcas.map((m) => (
+                <option key={m.id} value={m.id}>{m.nombreMarca}</option>
+              ))}
+            </select>
           </div>
 
           <MultiImagePicker

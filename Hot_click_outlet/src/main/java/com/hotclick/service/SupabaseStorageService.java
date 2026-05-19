@@ -41,10 +41,14 @@ public class SupabaseStorageService {
     }
 
     public String subirImagen(MultipartFile file) throws IOException, InterruptedException {
+        return subirImagen(file, "productos");
+    }
+
+    public String subirImagen(MultipartFile file, String carpeta) throws IOException, InterruptedException {
         validarArchivo(file);
 
         String ext = obtenerExtension(file.getOriginalFilename());
-        String path = "productos/" + UUID.randomUUID() + "." + ext;
+        String path = carpeta + "/" + UUID.randomUUID() + "." + ext;
 
         HttpClient client = buildHttpClient();
         HttpRequest request = HttpRequest.newBuilder()

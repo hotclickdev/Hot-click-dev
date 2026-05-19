@@ -96,8 +96,8 @@ export default function ProductDetailPage() {
   const atMax = quantity >= product.stock
 
   const tabs = [
-    product.especificaciones?.trim() ? { id: 'especificaciones', label: 'Especificaciones' } : null,
-    product.comoUsar?.trim()        ? { id: 'como-usar',        label: 'Cómo usar' }         : null,
+    product.especificaciones?.trim() ? { id: 'especificaciones', label: t('product.specsTab') } : null,
+    product.comoUsar?.trim()        ? { id: 'como-usar',        label: t('product.howToUseTab') } : null,
   ].filter(Boolean)
 
   const stockBadge = product.stock === 0 ? 'danger' : product.stock <= 3 ? 'warning' : 'success'
@@ -138,7 +138,7 @@ export default function ProductDetailPage() {
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-[#8e8e9a] mb-8">
           <button onClick={() => navigate('/productos')} className="hover:text-white transition-colors">
-            Productos
+            {t('product.productsNav')}
           </button>
           <span>/</span>
           <span className="text-[#e8e8ed] truncate max-w-xs">{product.titulo || product.nombre}</span>
@@ -169,11 +169,21 @@ export default function ProductDetailPage() {
           >
             {/* Título + badges */}
             <div className="space-y-2">
-              {product.condicion && (
-                <Badge variant={product.condicion === 'NUEVO' ? 'success' : 'warning'}>
-                  {conditionLabel(product.condicion)}
-                </Badge>
-              )}
+              <div className="flex items-center gap-2 flex-wrap">
+                {product.marcaNombre && (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full" style={{ background: 'rgba(140,92,246,0.12)', color: 'var(--hc-accent)', border: '1px solid rgba(140,92,246,0.25)' }}>
+                    {product.marcaLogoUrl && (
+                      <img src={product.marcaLogoUrl} alt="" className="w-4 h-4 object-contain rounded-sm" onError={(e) => { e.target.style.display = 'none' }} />
+                    )}
+                    {product.marcaNombre}
+                  </span>
+                )}
+                {product.condicion && (
+                  <Badge variant={product.condicion === 'NUEVO' ? 'success' : 'warning'}>
+                    {conditionLabel(product.condicion)}
+                  </Badge>
+                )}
+              </div>
               <h1 className="text-2xl sm:text-3xl font-bold text-[#e8e8ed] leading-tight">
                 {product.titulo || product.nombre}
               </h1>
@@ -632,16 +642,18 @@ function StickyCartBar({ product, quantity, onDecrease, onIncrease, onAdd, justA
           <button
             onClick={onDecrease}
             disabled={quantity <= 1}
+            aria-label={t('common.previous')}
             className="w-9 h-9 flex items-center justify-center text-[#8e8e9a] hover:text-white disabled:opacity-25 transition-colors select-none text-lg"
           >
             −
           </button>
-          <span className="w-8 text-center text-sm font-bold" style={{ color: 'var(--hc-text)' }}>
+          <span className="w-8 text-center text-sm font-bold" aria-live="polite" style={{ color: 'var(--hc-text)' }}>
             {quantity}
           </span>
           <button
             onClick={onIncrease}
             disabled={atMax}
+            aria-label={t('common.next')}
             className="w-9 h-9 flex items-center justify-center text-[#8e8e9a] hover:text-white disabled:opacity-25 transition-colors select-none text-lg"
           >
             +

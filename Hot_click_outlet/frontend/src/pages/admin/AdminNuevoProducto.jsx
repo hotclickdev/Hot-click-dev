@@ -290,38 +290,43 @@ export default function AdminNuevoProducto() {
     setAnalizando(true)
 
     try {
-      const uploadedUrls = []
-      let analysisData = null
+      // Subir todas las imágenes + analizar todas con IA en paralelo
+      const fdAnalisis = new FormData()
+      imagenesFile.forEach(f => fdAnalisis.append('imagenes', f))
 
-      // Primera imagen: analizar + subir en paralelo
-      setAnalizandoIdx(0)
-      const fd0 = new FormData(); fd0.append('file', imagenesFile[0])
-      const fdA = new FormData(); fdA.append('imagen', imagenesFile[0])
+      const uploadPromises = imagenesFile.map((f, i) => {
+        setAnalizandoIdx(i)
+        const fd = new FormData()
+        fd.append('file', f)
+        return productService.uploadImage(fd)
+          .then(r => r.data?.data?.url ?? r.data?.url ?? '')
+          .catch(() => '')
+      })
 
-      const [analyzeRes, uploadRes0] = await Promise.allSettled([
-        publicacionService.detallesProducto(fdA),
-        productService.uploadImage(fd0),
+      const [analyzeRes, ...uploadResults] = await Promise.allSettled([
+        publicacionService.detallesProducto(fdAnalisis),
+        ...uploadPromises,
       ])
 
-      if (analyzeRes.status === 'fulfilled') {
-        analysisData = analyzeRes.value.data
-      } else {
-        toast({ message: 'Error al analizar — se guardará sin datos de Vision AI', type: 'warning' })
-      }
-      if (uploadRes0.status === 'fulfilled') {
-        const url = uploadRes0.value.data?.data?.url ?? uploadRes0.value.data?.url ?? uploadRes0.value.data ?? ''
-        if (url) uploadedUrls.push(url)
+      // Avanzar el índice visualmente mientras suben
+      for (let i = 0; i < imagenesFile.length; i++) {
+        setAnalizandoIdx(i)
       }
 
-      // Imágenes restantes: solo subir
-      for (let i = 1; i < imagenesFile.length; i++) {
-        setAnalizandoIdx(i)
-        const fd = new FormData(); fd.append('file', imagenesFile[i])
-        try {
-          const r = await productService.uploadImage(fd)
-          const url = r.data?.data?.url ?? r.data?.url ?? r.data ?? ''
-          if (url && typeof url === 'string') uploadedUrls.push(url)
-        } catch (_) { /* imagen fallida — se omite */ }
+      const uploadedUrls = uploadResults
+        .filter(r => r.status === 'fulfilled' && r.value && typeof r.value === 'string')
+        .map(r => r.value)
+
+      const failedCount = imagenesFile.length - uploadedUrls.length
+      if (failedCount > 0) {
+        toast({ message: `${failedCount} foto${failedCount > 1 ? 's' : ''} no se pudo${failedCount > 1 ? 'ieron' : ''} subir`, type: 'warning' })
+      }
+
+      let analysisData = null
+      if (analyzeRes.status === 'fulfilled') {
+        analysisData = analyzeRes.value.data?.data ?? analyzeRes.value.data
+      } else {
+        toast({ message: 'Análisis IA no disponible — completá el formulario manualmente', type: 'warning' })
       }
 
       const d = analysisData ?? {}
@@ -364,10 +369,17 @@ export default function AdminNuevoProducto() {
       const imagenUrl = form.imagenes[0] ?? form.imagenUrl ?? ''
       const dto = denormalizeProduct({ ...form, imagenUrl })
       const res = await productService.create(dto)
-      const productoId = res.data?.id ?? res.data?.data?.id
+      const productoId = res.data?.data?.id ?? res.data?.id
+
+      // Sincronizar imágenes por separado — un fallo aquí no cancela la creación
       if (productoId && form.imagenes.length > 0) {
-        await productService.sincronizarImagenes(productoId, form.imagenes)
+        try {
+          await productService.sincronizarImagenes(productoId, form.imagenes)
+        } catch {
+          toast({ message: 'Producto creado pero hubo un error al guardar las fotos. Edita el producto para agregarlas.', type: 'warning' })
+        }
       }
+
       toast({ message: 'Producto creado correctamente', type: 'success' })
       navigate('/admin/productos')
     } catch (err) {

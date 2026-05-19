@@ -3,14 +3,15 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate, useLocation } from 'react-router-dom'
 import useUiStore from '@/store/uiStore'
 import { productService, normalizeProduct } from '@/services/productService'
+import { marcaService } from '@/services/marcaService'
 import { formatPrice } from '@/utils/format'
 import { analytics } from '@/utils/analytics'
 
 const RECENT_KEY = 'hotclick-recent-searches'
 const MAX_RECENT = 6
 
-// Module-level cache: survives open/close cycles without re-fetching
 let _productCache = null
+let _brandCache = null
 
 function getRecent() {
   try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]') } catch { return [] }
@@ -22,6 +23,19 @@ function saveRecent(query) {
   localStorage.setItem(RECENT_KEY, JSON.stringify(next))
 }
 
+function highlight(text, query) {
+  if (!text || !query) return text
+  const idx = text.toLowerCase().indexOf(query.toLowerCase())
+  if (idx === -1) return text
+  return (
+    <>
+      {text.slice(0, idx)}
+      <strong className="text-white font-semibold">{text.slice(idx, idx + query.length)}</strong>
+      {text.slice(idx + query.length)}
+    </>
+  )
+}
+
 export default function SearchPanel() {
   const searchOpen = useUiStore((s) => s.searchOpen)
   const setSearchOpen = useUiStore((s) => s.setSearchOpen)
@@ -30,29 +44,39 @@ export default function SearchPanel() {
 
   const [query, setQuery] = useState('')
   const [allProducts, setAllProducts] = useState(_productCache ?? [])
+  const [allBrands, setAllBrands] = useState(_brandCache ?? [])
   const [loading, setLoading] = useState(false)
   const [recent, setRecent] = useState([])
   const inputRef = useRef(null)
   const analyticsTimer = useRef(null)
 
-  // Close on route change
   useEffect(() => { setSearchOpen(false) }, [location.pathname])
 
-  // On open: load products (module-level cache avoids re-fetch) + recent searches
   useEffect(() => {
     if (!searchOpen) { setQuery(''); return }
     setRecent(getRecent())
-    if (_productCache) {
+
+    const needsProducts = !_productCache
+    const needsBrands = !_brandCache
+
+    if (!needsProducts && !needsBrands) {
       setTimeout(() => inputRef.current?.focus(), 60)
       return
     }
+
     setLoading(true)
-    productService.getAll(0, 60)
-      .then(({ data }) => {
+    Promise.all([
+      needsProducts ? productService.getAll(0, 200).then(({ data }) => {
         const products = (data.content ?? data ?? []).map(normalizeProduct)
         _productCache = products
         setAllProducts(products)
-      })
+      }) : Promise.resolve(),
+      needsBrands ? marcaService.getPublicas().then((r) => {
+        const brands = r.data?.data ?? r.data ?? []
+        _brandCache = Array.isArray(brands) ? brands : []
+        setAllBrands(_brandCache)
+      }) : Promise.resolve(),
+    ])
       .catch(() => {})
       .finally(() => {
         setLoading(false)
@@ -60,7 +84,6 @@ export default function SearchPanel() {
       })
   }, [searchOpen])
 
-  // Keyboard close
   useEffect(() => {
     if (!searchOpen) return
     const handler = (e) => { if (e.key === 'Escape') setSearchOpen(false) }
@@ -68,20 +91,25 @@ export default function SearchPanel() {
     return () => document.removeEventListener('keydown', handler)
   }, [searchOpen])
 
-  // Debounced analytics
   useEffect(() => {
     clearTimeout(analyticsTimer.current)
     if (query.trim().length > 1) {
       analyticsTimer.current = setTimeout(() => {
-        analytics.searchQuery(query.trim(), results.length)
+        analytics.searchQuery(query.trim(), productResults.length)
       }, 900)
     }
     return () => clearTimeout(analyticsTimer.current)
   }, [query])
 
-  const results = useMemo(() => {
-    if (!query.trim() || !allProducts.length) return []
-    const q = query.toLowerCase()
+  const q = query.trim().toLowerCase()
+
+  const brandResults = useMemo(() => {
+    if (!q) return []
+    return allBrands.filter((b) => b.nombreMarca?.toLowerCase().includes(q)).slice(0, 3)
+  }, [q, allBrands])
+
+  const productResults = useMemo(() => {
+    if (!q) return []
     return allProducts
       .filter((p) =>
         p.nombre?.toLowerCase().includes(q) ||
@@ -89,10 +117,25 @@ export default function SearchPanel() {
         p.marcaNombre?.toLowerCase().includes(q) ||
         p.descripcion?.toLowerCase().includes(q)
       )
-      .slice(0, 8)
-  }, [query, allProducts])
+      .slice(0, 6)
+  }, [q, allProducts])
+
+  const brandProductCount = useMemo(() => {
+    if (!brandResults.length) return {}
+    return Object.fromEntries(
+      brandResults.map((b) => [b.id, allProducts.filter((p) => String(p.marcaId) === String(b.id)).length])
+    )
+  }, [brandResults, allProducts])
+
+  const hasResults = brandResults.length > 0 || productResults.length > 0
 
   const close = () => setSearchOpen(false)
+
+  const selectBrand = (brand) => {
+    saveRecent(brand.nombreMarca)
+    close()
+    navigate(`/productos?marcaId=${brand.id}`)
+  }
 
   const selectProduct = (product) => {
     saveRecent(query.trim() || product.nombre)
@@ -115,7 +158,6 @@ export default function SearchPanel() {
     <AnimatePresence>
       {searchOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             key="search-backdrop"
             initial={{ opacity: 0 }}
@@ -126,7 +168,6 @@ export default function SearchPanel() {
             onClick={close}
           />
 
-          {/* Panel — full screen on mobile, floating on desktop */}
           <div className="fixed inset-0 z-[51] flex flex-col md:block pointer-events-none">
             <motion.div
               key="search-panel"
@@ -142,7 +183,7 @@ export default function SearchPanel() {
                 maxHeight: '82vh',
               }}
             >
-              {/* Input row */}
+              {/* Input */}
               <div className="flex items-center gap-3 px-4 py-3.5 border-b" style={{ borderColor: 'var(--hc-border)' }}>
                 {loading ? (
                   <div className="w-5 h-5 shrink-0 rounded-full border-2 border-[#4f7cff] border-t-transparent animate-spin" />
@@ -157,7 +198,7 @@ export default function SearchPanel() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') viewAll() }}
-                  placeholder="Buscar productos, categorías..."
+                  placeholder="Buscar productos, marcas, categorías..."
                   className="flex-1 bg-transparent text-base outline-none placeholder:opacity-40"
                   style={{ color: 'var(--hc-text)' }}
                   autoComplete="off"
@@ -189,16 +230,14 @@ export default function SearchPanel() {
               {/* Body */}
               <div className="overflow-y-auto flex-1">
 
-                {/* Recent searches — shown when no query */}
+                {/* Recent — no query */}
                 {!query && recent.length > 0 && (
                   <div className="p-4">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>
                         Búsquedas recientes
                       </span>
-                      <button onClick={clearRecent} className="text-xs text-[#4f7cff] hover:underline">
-                        Limpiar
-                      </button>
+                      <button onClick={clearRecent} className="text-xs text-[#4f7cff] hover:underline">Limpiar</button>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {recent.map((s) => (
@@ -219,17 +258,16 @@ export default function SearchPanel() {
                   </div>
                 )}
 
-                {/* Empty — no query, no recent */}
                 {!query && recent.length === 0 && !loading && (
                   <div className="py-12 text-center">
-                    <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>Escribe para buscar productos</p>
+                    <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>Escribe para buscar productos o marcas</p>
                   </div>
                 )}
 
                 {/* Results */}
                 {query.trim() && (
                   <>
-                    {results.length === 0 && !loading && (
+                    {!hasResults && !loading && (
                       <div className="py-12 text-center px-6">
                         <p className="font-semibold text-sm mb-1" style={{ color: 'var(--hc-text)' }}>
                           Sin resultados para "{query}"
@@ -247,24 +285,77 @@ export default function SearchPanel() {
                       </div>
                     )}
 
-                    {results.length > 0 && (
-                      <>
-                        <div className="px-4 pt-3 pb-1 flex items-center justify-between">
+                    {/* ── MARCAS ── */}
+                    {brandResults.length > 0 && (
+                      <div>
+                        <div className="px-4 pt-4 pb-2">
                           <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>
-                            {results.length} resultado{results.length !== 1 ? 's' : ''}
+                            Marca
+                          </span>
+                        </div>
+                        {brandResults.map((brand, i) => {
+                          const count = brandProductCount[brand.id] ?? 0
+                          return (
+                            <motion.button
+                              key={brand.id}
+                              initial={{ opacity: 0, x: -8 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: i * 0.04 }}
+                              onClick={() => selectBrand(brand)}
+                              className="w-full flex items-center gap-3 px-4 py-3 transition-colors hover:bg-white/5 text-left"
+                            >
+                              {/* Brand logo or initials */}
+                              <div className="w-10 h-10 rounded-xl bg-white/8 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                                {brand.logoUrl ? (
+                                  <img src={brand.logoUrl} alt={brand.nombreMarca} className="w-full h-full object-contain p-1.5" onError={(e) => { e.target.style.display = 'none' }} />
+                                ) : (
+                                  <span className="text-xs font-bold uppercase" style={{ color: 'var(--hc-accent)' }}>
+                                    {brand.nombreMarca?.slice(0, 2)}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>
+                                  {highlight(brand.nombreMarca, query.trim())}
+                                </p>
+                                {count > 0 && (
+                                  <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
+                                    {count} producto{count !== 1 ? 's' : ''}
+                                  </p>
+                                )}
+                              </div>
+                              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--hc-muted)' }}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                              </svg>
+                            </motion.button>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {/* Divider between sections */}
+                    {brandResults.length > 0 && productResults.length > 0 && (
+                      <div className="mx-4 border-t" style={{ borderColor: 'var(--hc-border)' }} />
+                    )}
+
+                    {/* ── PRODUCTOS ── */}
+                    {productResults.length > 0 && (
+                      <div>
+                        <div className="px-4 pt-4 pb-2 flex items-center justify-between">
+                          <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>
+                            Productos
                           </span>
                         </div>
 
-                        {results.map((product, i) => (
+                        {productResults.map((product, i) => (
                           <motion.button
                             key={product.id}
                             initial={{ opacity: 0, x: -8 }}
                             animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: i * 0.035 }}
+                            transition={{ delay: (brandResults.length + i) * 0.035 }}
                             onClick={() => selectProduct(product)}
                             className="w-full flex items-center gap-3 px-4 py-3 transition-colors hover:bg-white/5 text-left"
                           >
-                            {/* Image */}
                             <div className="w-12 h-12 rounded-xl bg-[#1a1a1f] flex items-center justify-center overflow-hidden shrink-0 border border-white/8">
                               {product.imagenUrl ? (
                                 <img src={product.imagenUrl} alt={product.nombre} className="w-full h-full object-cover" loading="lazy" />
@@ -272,23 +363,13 @@ export default function SearchPanel() {
                                 <span className="text-xl opacity-25">📦</span>
                               )}
                             </div>
-                            {/* Info */}
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium truncate" style={{ color: 'var(--hc-text)' }}>
-                                {product.nombre}
+                                {highlight(product.nombre, query.trim())}
                               </p>
                               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                {/* Brand logo */}
-                                {product.marcaLogoUrl && (
-                                  <img
-                                    src={product.marcaLogoUrl}
-                                    alt={product.marcaNombre}
-                                    className="h-3.5 w-auto max-w-[40px] object-contain opacity-70"
-                                    onError={(e) => { e.target.style.display = 'none' }}
-                                  />
-                                )}
-                                {!product.marcaLogoUrl && product.marcaNombre && (
-                                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-white/8 text-[#8e8e9a]">
+                                {product.marcaNombre && (
+                                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md" style={{ background: 'rgba(140,92,246,0.12)', color: 'var(--hc-accent)' }}>
                                     {product.marcaNombre}
                                   </span>
                                 )}
@@ -303,14 +384,13 @@ export default function SearchPanel() {
                                 </span>
                               </div>
                             </div>
-                            {/* Price */}
                             <span className="font-bold text-sm text-[#4f7cff] shrink-0">
                               {formatPrice(product.precio)}
                             </span>
                           </motion.button>
                         ))}
 
-                        {/* View all */}
+                        {/* Ver todos */}
                         <div className="px-4 py-3 border-t" style={{ borderColor: 'var(--hc-border)' }}>
                           <button
                             onClick={viewAll}
@@ -320,7 +400,20 @@ export default function SearchPanel() {
                             Ver todos los resultados para "{query}" →
                           </button>
                         </div>
-                      </>
+                      </div>
+                    )}
+
+                    {/* Solo marcas, sin productos */}
+                    {brandResults.length > 0 && productResults.length === 0 && (
+                      <div className="px-4 py-3 border-t" style={{ borderColor: 'var(--hc-border)' }}>
+                        <button
+                          onClick={viewAll}
+                          className="w-full py-2.5 rounded-xl text-sm font-medium transition-colors hover:opacity-80"
+                          style={{ background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 25%, transparent)' }}
+                        >
+                          Ver todos los productos →
+                        </button>
+                      </div>
                     )}
                   </>
                 )}

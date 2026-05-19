@@ -7,13 +7,15 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { authService } from '@/services/authService'
 import { useToast } from '@/components/ui/Toast'
+import useAuthStore from '@/store/authStore'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
   const toast = useToast()
   const { t } = useTranslation()
+  const loginStore = useAuthStore((s) => s.login)
 
-  const [step, setStep]                 = useState('form')   // 'form' | 'verify' | 'success'
+  const [step, setStep]                 = useState('form')   // 'form' | 'verify'
   const [loading, setLoading]           = useState(false)
   const [error, setError]               = useState('')
   const [correoRegistro, setCorreoRegistro] = useState('')
@@ -28,7 +30,7 @@ export default function RegisterPage() {
   // Paso 1 — enviar formulario y código al correo
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (form.contrasenaHash.length < 6) { setError('La contraseña debe tener al menos 6 caracteres'); return }
+    if (form.contrasenaHash.length < 6) { setError(t('register.minChars')); return }
     setError('')
     setLoading(true)
     try {
@@ -43,15 +45,23 @@ export default function RegisterPage() {
     }
   }
 
-  // Paso 2 — verificar código
+  // Paso 2 — verificar código e iniciar sesión automáticamente
   const handleVerify = async (e) => {
     e.preventDefault()
     if (codigo.trim().length !== 6) { setError('El código tiene 6 dígitos'); return }
     setError('')
     setLoading(true)
     try {
-      await authService.verifyRegistration(correoRegistro, codigo.trim())
-      setStep('success')
+      const res = await authService.verifyRegistration(correoRegistro, codigo.trim())
+      const authData = res.data?.data
+      if (authData?.accessToken) {
+        loginStore(authData)
+        toast({ message: '¡Bienvenido a HOTCLICK! Tu cuenta fue verificada.', type: 'success' })
+        navigate('/')
+      } else {
+        // fallback: si no vienen tokens redirigir a login
+        navigate('/login')
+      }
     } catch (err) {
       const msg = err.response?.data?.message
       setError(typeof msg === 'string' && msg ? msg : 'Código incorrecto o expirado')
@@ -66,45 +76,13 @@ export default function RegisterPage() {
     setLoading(true)
     try {
       await authService.sendVerification(form)
-      toast({ message: 'Código reenviado a tu correo', type: 'success' })
+      toast({ message: t('register.resentSuccess'), type: 'success' })
       setCodigo('')
     } catch {
-      setError('No se pudo reenviar. Intentá de nuevo.')
+      setError(t('register.minChars'))
     } finally {
       setLoading(false)
     }
-  }
-
-  // ── Éxito ────────────────────────────────────────────────────────────────────
-  if (step === 'success') {
-    return (
-      <AuthLayout>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="rounded-2xl overflow-hidden"
-          style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)', boxShadow: '0 24px 64px color-mix(in srgb, var(--hc-shadow) 60%, transparent)' }}
-        >
-          <div className="h-0.5"
-            style={{ background: 'linear-gradient(90deg, transparent, var(--hc-success), transparent)' }} />
-          <div className="p-8 text-center">
-          <div className="w-16 h-16 rounded-full bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--hc-text)' }}>¡Cuenta creada!</h2>
-          <p className="text-sm mb-6 leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-            Tu cuenta fue verificada y creada exitosamente. Ya podés iniciar sesión.
-          </p>
-          <Button onClick={() => navigate('/login')} className="w-full">
-            Ir al inicio de sesión
-          </Button>
-          </div>
-        </motion.div>
-      </AuthLayout>
-    )
   }
 
   // ── Paso 2: Verificar código ─────────────────────────────────────────────────
@@ -118,75 +96,97 @@ export default function RegisterPage() {
           className="rounded-2xl overflow-hidden"
           style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)', boxShadow: '0 24px 64px color-mix(in srgb, var(--hc-shadow) 60%, transparent)' }}
         >
-          <div className="h-0.5"
-            style={{ background: 'linear-gradient(90deg, transparent, var(--hc-accent), color-mix(in srgb, var(--hc-accent) 60%, #a78bfa), transparent)' }} />
+          {/* barra de progreso superior */}
+          <div className="h-1"
+            style={{ background: 'linear-gradient(90deg, #4f7cff, #7c3aed)' }} />
+
           <div className="p-8">
-          <div className="text-center mb-6">
-            <div className="w-14 h-14 rounded-full bg-[#4f7cff]/15 border border-[#4f7cff]/25 flex items-center justify-center mx-auto mb-4">
-              <svg className="w-7 h-7 text-[#4f7cff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {/* encabezado */}
+            <div className="text-center mb-7">
+              <div className="relative w-16 h-16 mx-auto mb-4">
+                <div className="absolute inset-0 rounded-full bg-[#4f7cff]/20 animate-ping opacity-40" />
+                <div className="relative w-16 h-16 rounded-full bg-[#4f7cff]/15 border border-[#4f7cff]/30 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-[#4f7cff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
+                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+              </div>
+              <h1 className="text-2xl font-bold text-[#e8e8ed] mb-1">{t('register.verifyTitle')}</h1>
+              <p className="text-sm text-[#8e8e9a] leading-relaxed">
+                {t('register.verifyCodeSent')}{' '}
+                <span className="text-[#e8e8ed] font-semibold">{correoRegistro}</span>
+              </p>
+            </div>
+
+            {/* aviso de seguridad */}
+            <div className="flex items-start gap-2.5 bg-amber-500/8 border border-amber-500/20 rounded-xl px-4 py-3 mb-5">
+              <svg className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  d="M12 15v2m0-6v2m0 8a9 9 0 100-18 9 9 0 000 18z" />
               </svg>
-            </div>
-            <h1 className="text-2xl font-bold text-[#e8e8ed] mb-1">Verificá tu correo</h1>
-            <p className="text-sm text-[#8e8e9a]">
-              Enviamos un código de 6 dígitos a{' '}
-              <span className="text-[#e8e8ed] font-medium">{correoRegistro}</span>
-            </p>
-          </div>
-
-          <form onSubmit={handleVerify} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-[#8e8e9a] mb-1.5">Código de verificación</label>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={6}
-                value={codigo}
-                onChange={(e) => setCodigo(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                placeholder="000000"
-                autoFocus
-                className="w-full text-center text-3xl font-bold tracking-[0.5em] py-4 px-4
-                  bg-[#1c1c20] border border-white/10 rounded-xl text-[#e8e8ed]
-                  focus:outline-none focus:border-[#4f7cff] focus:ring-1 focus:ring-[#4f7cff]/40
-                  placeholder:text-[#3a3a45] transition-colors"
-              />
+              <p className="text-xs text-amber-300 leading-relaxed">
+                <span className="font-semibold">Este código es para verificar tu cuenta.</span>{' '}
+                No lo compartas con nadie. HOTCLICK nunca te lo pedirá.
+              </p>
             </div>
 
-            {error && (
-              <motion.p
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2.5"
-              >
-                {error}
-              </motion.p>
-            )}
+            <form onSubmit={handleVerify} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#8e8e9a] mb-2">{t('register.verificationCode')}</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  value={codigo}
+                  onChange={(e) => setCodigo(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="000000"
+                  autoFocus
+                  className="w-full text-center text-4xl font-black tracking-[0.6em] py-5 px-4
+                    bg-[#111114] border-2 border-white/8 rounded-2xl text-[#e8e8ed]
+                    focus:outline-none focus:border-[#4f7cff] focus:ring-2 focus:ring-[#4f7cff]/20
+                    placeholder:text-[#2a2a35] transition-all duration-200"
+                />
+                <p className="text-xs text-[#5e5e6e] text-center mt-2">Ingresá los 6 dígitos que llegaron a tu correo</p>
+              </div>
 
-            <Button type="submit" loading={loading} className="w-full" size="lg">
-              Verificar cuenta
-            </Button>
-          </form>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-2 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2.5"
+                >
+                  <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  {error}
+                </motion.div>
+              )}
 
-          <div className="mt-5 text-center space-y-2">
-            <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-              ¿No llegó el correo?{' '}
-              <button
-                onClick={handleReenviar}
-                disabled={loading}
-                className="hc-underline-hover disabled:opacity-50"
-                style={{ color: 'var(--hc-accent)' }}
-              >
-                Reenviar código
-              </button>
-            </p>
-            <p className="text-xs">
-              <button onClick={() => { setStep('form'); setError('') }} style={{ color: 'var(--hc-muted)' }}>
-                ← Volver al formulario
-              </button>
-            </p>
-          </div>
+              <Button type="submit" loading={loading} className="w-full" size="lg">
+                {t('register.verifyBtn')}
+              </Button>
+            </form>
+
+            <div className="mt-5 text-center space-y-2">
+              <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+                {t('register.noEmail')}{' '}
+                <button
+                  onClick={handleReenviar}
+                  disabled={loading}
+                  className="hc-underline-hover disabled:opacity-50 font-medium"
+                  style={{ color: 'var(--hc-accent)' }}
+                >
+                  {t('register.resend')}
+                </button>
+              </p>
+              <p className="text-xs">
+                <button onClick={() => { setStep('form'); setError('') }} style={{ color: 'var(--hc-muted)' }}>
+                  ← {t('register.backToForm')}
+                </button>
+              </p>
+            </div>
           </div>
         </motion.div>
       </AuthLayout>
@@ -213,19 +213,19 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <Input label="Nombre *" value={form.nombre} onChange={set('nombre')} required placeholder="Juan" />
-            <Input label="Apellido *" value={form.apellidoPaterno} onChange={set('apellidoPaterno')} required placeholder="Pérez" />
+            <Input label={`${t('register.name')} *`} value={form.nombre} onChange={set('nombre')} required placeholder="Juan" />
+            <Input label={`${t('register.lastName')} *`} value={form.apellidoPaterno} onChange={set('apellidoPaterno')} required placeholder="Pérez" />
           </div>
-          <Input label="Apellido materno" value={form.apellidoMaterno} onChange={set('apellidoMaterno')} placeholder="Opcional" />
-          <Input label="Correo *" type="email" value={form.correo} onChange={set('correo')} required placeholder="tu@email.com" />
+          <Input label={t('register.motherLastName')} value={form.apellidoMaterno} onChange={set('apellidoMaterno')} placeholder={t('common.optional')} />
+          <Input label={`${t('register.email')} *`} type="email" value={form.correo} onChange={set('correo')} required placeholder="tu@email.com" />
           <div className="grid grid-cols-2 gap-3">
-            <Input label="Teléfono *" type="tel" value={form.telefono} onChange={set('telefono')} required placeholder="8888-8888" />
-            <Input label="Identificación *" value={form.identificacion} onChange={set('identificacion')} required placeholder="1-2345-6789" />
+            <Input label={`${t('register.phone')} *`} type="tel" value={form.telefono} onChange={set('telefono')} required placeholder="8888-8888" />
+            <Input label={`${t('register.identification')} *`} value={form.identificacion} onChange={set('identificacion')} required placeholder="1-2345-6789" />
           </div>
           <Input
-            label="Contraseña *" type="password"
+            label={`${t('register.password')} *`} type="password"
             value={form.contrasenaHash} onChange={set('contrasenaHash')}
-            required minLength={6} placeholder="Mínimo 6 caracteres" hint="Mínimo 6 caracteres"
+            required minLength={6} placeholder={t('register.minChars')} hint={t('register.minChars')}
           />
 
           {error && (
@@ -239,7 +239,7 @@ export default function RegisterPage() {
           )}
 
           <Button type="submit" loading={loading} className="w-full" size="lg">
-            Enviar código de verificación
+            {t('register.sendCode')}
           </Button>
         </form>
 

@@ -4,12 +4,14 @@ import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Marca;
 import com.hotclick.repository.MarcaRepository;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.service.SupabaseStorageService;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 
 @CrossOrigin(origins = "*")
@@ -19,6 +21,7 @@ public class MarcaController {
 
     @Autowired private MarcaRepository marcaRepository;
     @Autowired private UsuarioRepository usuarioRepository;
+    @Autowired private SupabaseStorageService supabaseStorageService;
 
     /** Endpoint público — sin autenticación, usado por el catálogo y búsqueda */
     @GetMapping("/publicas")
@@ -28,11 +31,8 @@ public class MarcaController {
     }
 
     @GetMapping
-    public ResponseEntity<ResponseDTO> listar(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        var admin = usuarioRepository.findByCorreo(userDetails.getUsername())
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        var marcas = marcaRepository.findByAdminClienteIdAndEstado(admin.getId(), Constants.ESTADO_ACTIVO);
+    public ResponseEntity<ResponseDTO> listar() {
+        var marcas = marcaRepository.findByEstado(Constants.ESTADO_ACTIVO);
         return ResponseEntity.ok(ResponseDTO.success("Marcas obtenidas", marcas));
     }
 
@@ -74,6 +74,16 @@ public class MarcaController {
             if (body.containsKey("logoUrl"))
                 m.setLogoUrl(body.get("logoUrl"));
             return ResponseEntity.ok(ResponseDTO.success("Marca actualizada", marcaRepository.save(m)));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        }
+    }
+
+    @PostMapping("/logo")
+    public ResponseEntity<ResponseDTO> subirLogo(@RequestParam("file") MultipartFile file) {
+        try {
+            String url = supabaseStorageService.subirImagen(file, "marcas");
+            return ResponseEntity.ok(ResponseDTO.success("Logo subido", Map.of("url", url)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }

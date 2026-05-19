@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import AdminLayout from '@/layouts/AdminLayout'
 import api from '@/services/api'
 
@@ -23,6 +24,7 @@ function formatCRC(n) {
 }
 
 export default function AdminPagos() {
+  const { t } = useTranslation()
   const [tab, setTab]               = useState('pagos')
 
   // ── Pagos ────────────────────────────────────────────────────────
@@ -82,7 +84,7 @@ export default function AdminPagos() {
   return (
     <AdminLayout>
       <div className="p-6 max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold text-[#e8e8ed] mb-6">Pagos y Webhooks</h1>
+        <h1 className="text-2xl font-bold text-[#e8e8ed] mb-6">{t('admin.pagos.title')} &amp; {t('admin.pagos.webhooks')}</h1>
 
         {/* KPIs */}
         {kpis && (
@@ -105,17 +107,20 @@ export default function AdminPagos() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 border-b border-white/8">
-          {['pagos', 'webhooks'].map((t) => (
+          {[
+            { key: 'pagos',    label: t('admin.pagos.title') },
+            { key: 'webhooks', label: t('admin.pagos.webhooks') },
+          ].map((tabItem) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
+              key={tabItem.key}
+              onClick={() => setTab(tabItem.key)}
               className={`px-5 py-2.5 text-sm font-medium capitalize transition-colors border-b-2 -mb-px ${
-                tab === t
+                tab === tabItem.key
                   ? 'border-[#4f7cff] text-[#4f7cff]'
                   : 'border-transparent text-[#8e8e9a] hover:text-[#e8e8ed]'
               }`}
             >
-              {t === 'pagos' ? 'Pagos' : 'Webhooks'}
+              {tabItem.label}
             </button>
           ))}
         </div>
@@ -126,19 +131,19 @@ export default function AdminPagos() {
             {/* Filtros */}
             <div className="flex flex-wrap gap-3 mb-4">
               <Select value={filtProv} onChange={handleFiltProv}
-                options={PROVEEDORES.map(p => ({ value: p, label: p || 'Todos los proveedores' }))} />
+                options={PROVEEDORES.map(p => ({ value: p, label: p || t('admin.pagos.provider') }))} />
               <Select value={filtEstado} onChange={handleFiltEstado}
-                options={ESTADOS_PAGO.map(e => ({ value: e, label: e || 'Todos los estados' }))} />
+                options={ESTADOS_PAGO.map(e => ({ value: e, label: e || t('admin.pagos.status') }))} />
               <button onClick={fetchPagos}
                 className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/8 text-[#8e8e9a] hover:text-[#e8e8ed] text-sm transition-colors">
-                Actualizar
+                {t('common.retry')}
               </button>
             </div>
 
             {loadingP ? (
-              <div className="text-center py-16 text-[#8e8e9a]">Cargando…</div>
+              <div className="text-center py-16 text-[#8e8e9a]">{t('common.loading')}</div>
             ) : pagos.length === 0 ? (
-              <div className="text-center py-16 text-[#8e8e9a]">Sin resultados</div>
+              <div className="text-center py-16 text-[#8e8e9a]">{t('common.noData')}</div>
             ) : (
               <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
                 <div className="overflow-x-auto">
@@ -199,9 +204,9 @@ export default function AdminPagos() {
             </div>
 
             {loadingW ? (
-              <div className="text-center py-16 text-[#8e8e9a]">Cargando…</div>
+              <div className="text-center py-16 text-[#8e8e9a]">{t('common.loading')}</div>
             ) : webhooks.length === 0 ? (
-              <div className="text-center py-16 text-[#8e8e9a]">Sin webhooks</div>
+              <div className="text-center py-16 text-[#8e8e9a]">{t('common.noData')}</div>
             ) : (
               <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
                 <div className="overflow-x-auto">
@@ -272,6 +277,7 @@ function Select({ value, onChange, options }) {
 }
 
 function Pagination({ page, totalPages, onPage }) {
+  const { t } = useTranslation()
   if (totalPages <= 1) return null
   return (
     <div className="flex items-center justify-between px-4 py-3 border-t border-white/8">
@@ -280,15 +286,15 @@ function Pagination({ page, totalPages, onPage }) {
         disabled={page === 0}
         className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/8 text-[#8e8e9a] text-sm disabled:opacity-30 transition-colors"
       >
-        ← Anterior
+        ← {t('common.previous')}
       </button>
-      <span className="text-[#8e8e9a] text-xs">Página {page + 1} / {totalPages}</span>
+      <span className="text-[#8e8e9a] text-xs">{page + 1} / {totalPages}</span>
       <button
         onClick={() => onPage(page + 1)}
         disabled={page >= totalPages - 1}
         className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/8 text-[#8e8e9a] text-sm disabled:opacity-30 transition-colors"
       >
-        Siguiente →
+        {t('common.next')} →
       </button>
     </div>
   )
