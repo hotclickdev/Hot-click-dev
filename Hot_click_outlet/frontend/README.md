@@ -1,16 +1,82 @@
-# React + Vite
+# HOTCLICK — Frontend React
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicación React para la tienda y panel admin de HOTCLICK.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **React 18** + **Vite**
+- **Tailwind CSS** (utility-first styling)
+- **Zustand** (estado global: auth, carrito, UI, wishlist)
+- **Framer Motion** (animaciones)
+- **Axios** (HTTP con interceptor JWT)
+- **React Router v6**
+- **i18next** (internacionalización)
+- **pnpm** (package manager)
 
-## React Compiler
+## Comandos
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+pnpm dev          # Dev server en http://localhost:3000
+pnpm build        # Build → ../src/main/resources/static/
+pnpm build:watch  # Build con watch
+pnpm lint         # ESLint
+```
 
-## Expanding the ESLint configuration
+## Estructura
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```
+src/
+├── pages/
+│   ├── HomePage.jsx
+│   ├── ProductsPage.jsx
+│   ├── ProductDetailPage.jsx
+│   ├── CartPage.jsx
+│   ├── CheckoutPage.jsx
+│   ├── MisPedidosPage.jsx
+│   ├── LoginPage.jsx
+│   ├── RegisterPage.jsx
+│   └── admin/
+│       ├── AdminDashboard.jsx
+│       ├── AdminProducts.jsx
+│       ├── AdminNuevoProducto.jsx
+│       ├── AdminOrders.jsx        ← tracker + notificaciones WA/email
+│       ├── AdminMarcas.jsx        ← CRUD marcas con logo
+│       ├── AdminFinanzas.jsx      ← desglose productos vs envío
+│       ├── AdminUsers.jsx
+│       ├── AdminReportes.jsx
+│       └── AdminPublicaciones.jsx
+├── components/
+│   ├── ui/                        ← Button, Input, Modal, Toast, Spinner...
+│   │   ├── AuthPromptModal.jsx    ← modal login para usuarios anónimos
+│   │   ├── MiniCartDrawer.jsx
+│   │   └── SearchPanel.jsx        ← búsqueda con marcas
+│   └── ProtectedRoute.jsx
+├── store/
+│   ├── authStore.js
+│   ├── cartStore.js               ← toWhatsAppMessage()
+│   ├── uiStore.js                 ← authPromptOpen
+│   └── wishlistStore.js
+├── services/
+│   ├── api.js                     ← Axios + interceptor JWT
+│   ├── authService.js
+│   ├── orderService.js            ← notificar(id)
+│   ├── marcaService.js            ← getPublicas() sin auth
+│   └── productService.js
+├── layouts/
+│   ├── AdminLayout.jsx
+│   ├── MainLayout.jsx
+│   └── AuthLayout.jsx
+└── utils/
+    ├── format.js                  ← formatPrice (₡), formatDate, formatDateTime
+    └── analytics.js
+```
+
+## Alias de importación
+
+`@/` apunta a `src/` (configurado en `vite.config.js`).
+
+## Notas
+
+- El build de producción se sirve desde Spring Boot — **no hay servidor Node en producción**.
+- La API en dev se proxea a `http://localhost:8080` vía Vite.
+- Los montos siempre son enteros en colones (₡), sin decimales.
