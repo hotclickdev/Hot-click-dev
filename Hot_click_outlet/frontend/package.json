@@ -23,6 +23,13 @@
     "react-router-dom": "^7.15.0",
     "zustand": "^5.0.13"
   },
+  "pnpm": {
+    "supportedArchitectures": {
+      "os": ["linux", "win32", "current"],
+      "cpu": ["x64", "current"],
+      "libc": ["glibc", "current"]
+    }
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@tailwindcss/vite": "^4.2.4",
