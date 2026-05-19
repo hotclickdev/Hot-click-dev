@@ -90,7 +90,9 @@
     "testimoniosSub": "Real experiences from people who already bought",
     "ctaTitle": "Ready for your next purchase?",
     "ctaSub": "Explore our full catalog of tech products.",
-    "ctaBtn": "Explore store"
+    "ctaBtn": "Explore store",
+    "shipping24h": "24h Shipping",
+    "recentlyViewed": "Recently viewed"
   },
   "products": {
     "title": "Catalog",

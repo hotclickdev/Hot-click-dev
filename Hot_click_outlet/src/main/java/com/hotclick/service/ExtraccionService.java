@@ -243,9 +243,34 @@ public class ExtraccionService {
             .orElse(0);
     }
 
-    /** Analiza imagen y devuelve datos completos del producto para auto-completar el formulario de alta. */
-    public DetallesProducto extraerDetallesProducto(String imagenBase64, GoogleVisionService vision) {
-        VisionResult visionResult = vision.analizar(imagenBase64);
+    /** Analiza una o varias imágenes y devuelve datos completos del producto (fusionando resultados). */
+    public DetallesProducto extraerDetallesProducto(List<String> imagenesBase64, GoogleVisionService vision) {
+        // Analizar todas las imágenes y fusionar etiquetas + URLs de ecommerce
+        VisionResult visionResult = fusionarVisionResults(imagenesBase64, vision);
+        return extraerDetallesDeVisionResult(visionResult);
+    }
+
+    private VisionResult fusionarVisionResults(List<String> imagenesBase64, GoogleVisionService vision) {
+        VisionResult merged = null;
+        for (String b64 : imagenesBase64) {
+            VisionResult r = vision.analizar(b64);
+            if (merged == null) {
+                merged = r;
+            } else {
+                // Agregar etiquetas únicas
+                for (String etiqueta : r.etiquetas) {
+                    if (!merged.etiquetas.contains(etiqueta)) merged.etiquetas.add(etiqueta);
+                }
+                // Agregar URLs únicas
+                for (String url : r.urlsEcommerce) {
+                    if (!merged.urlsEcommerce.contains(url)) merged.urlsEcommerce.add(url);
+                }
+            }
+        }
+        return merged != null ? merged : new VisionResult();
+    }
+
+    private DetallesProducto extraerDetallesDeVisionResult(VisionResult visionResult) {
         DetallesProducto d = new DetallesProducto();
         d.tcUsado = bccrService.getTipoCambioVenta();
 

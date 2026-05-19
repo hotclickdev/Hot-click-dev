@@ -42,7 +42,7 @@ export default function ProfilePage() {
   const handleLogout = () => {
     if (refreshToken) authService.logout(refreshToken).catch(() => {})
     logout()
-    toast({ message: 'Sesión cerrada', type: 'info' })
+    toast({ message: t('profile.loggedOut'), type: 'info' })
     navigate('/')
   }
 
@@ -67,7 +67,7 @@ export default function ProfilePage() {
               <p className="text-sm text-[#8e8e9a] truncate">{userEmail}</p>
               <div className="flex items-center gap-2 mt-2">
                 <Badge variant="accent">{roleLabel[userRole] ?? userRole}</Badge>
-                {twoFAEnabled && <Badge variant="success">2FA activo</Badge>}
+                {twoFAEnabled && <Badge variant="success">{t('profile.twoFAActive')}</Badge>}
               </div>
             </div>
           </div>
@@ -87,10 +87,10 @@ export default function ProfilePage() {
             <div>
               <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>{t('profile.orders')}</p>
               {loading ? (
-                <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>Cargando…</p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>{t('profile.ordersLoading')}</p>
               ) : (
                 <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-                  {orders.length > 0 ? `${orders.length} pedido${orders.length !== 1 ? 's' : ''}` : 'Sin pedidos aún'}
+                  {orders.length > 0 ? t('profile.orderCount', { count: orders.length }) : t('profile.ordersNone')}
                 </p>
               )}
             </div>
@@ -104,7 +104,7 @@ export default function ProfilePage() {
           style={{ backgroundColor: 'var(--hc-surface)', borderColor: 'var(--hc-border)' }}
         >
           <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--hc-border)' }}>
-            <h2 className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>Seguridad</h2>
+            <h2 className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>{t('profile.security')}</h2>
           </div>
 
           {/* Cambiar contraseña */}
@@ -114,12 +114,12 @@ export default function ProfilePage() {
                 <LockIcon />
               </div>
               <div>
-                <p className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Contraseña</p>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>Cambiá tu contraseña actual</p>
+                <p className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>{t('profile.passwordLabel')}</p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>{t('profile.passwordSub')}</p>
               </div>
             </div>
             <Button size="sm" variant="ghost" onClick={() => setShowChangePassword(true)}>
-              Cambiar
+              {t('profile.passwordChangeBtn')}
             </Button>
           </div>
 
@@ -130,9 +130,9 @@ export default function ProfilePage() {
                 <ShieldIcon />
               </div>
               <div>
-                <p className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Autenticación de dos factores</p>
+                <p className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>{t('profile.twoFactor')}</p>
                 <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-                  {twoFAEnabled ? 'Activo — tu cuenta tiene protección extra' : 'Inactivo — recomendamos activarlo'}
+                  {twoFAEnabled ? t('profile.twoFactorOn') : t('profile.twoFactorOff')}
                 </p>
               </div>
             </div>
@@ -141,7 +141,7 @@ export default function ProfilePage() {
               variant={twoFAEnabled ? 'danger' : 'primary'}
               onClick={() => setShow2FASetup(true)}
             >
-              {twoFAEnabled ? 'Desactivar' : 'Activar'}
+              {twoFAEnabled ? t('profile.twoFactorDeactivate') : t('profile.twoFactorActivate')}
             </Button>
           </div>
         </div>
@@ -174,33 +174,34 @@ function ChangePasswordModal({ open, onClose, refreshToken }) {
   const toast = useToast()
   const logout = useAuthStore((s) => s.logout)
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   const reset = () => { setActual(''); setNueva(''); setConfirm(''); setError('') }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (nueva !== confirm) { setError('Las contraseñas no coinciden'); return }
-    if (nueva.length < 6)  { setError('La nueva contraseña debe tener al menos 6 caracteres'); return }
+    if (nueva !== confirm) { setError(t('profile.passwordMismatch')); return }
+    if (nueva.length < 6)  { setError(t('profile.passwordTooShort')); return }
     setError('')
     setLoading(true)
     try {
       await authService.changePassword(actual, nueva, refreshToken)
-      toast({ message: 'Contraseña actualizada. Iniciá sesión de nuevo.', type: 'success' })
+      toast({ message: t('profile.passwordUpdated'), type: 'success' })
       logout()
       navigate('/login')
     } catch (err) {
       const msg = err.response?.data?.message
-      setError(typeof msg === 'string' && msg ? msg : 'Error al cambiar la contraseña')
+      setError(typeof msg === 'string' && msg ? msg : t('profile.passwordError'))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Modal open={open} onClose={() => { onClose(); reset() }} title="Cambiar contraseña">
+    <Modal open={open} onClose={() => { onClose(); reset() }} title={t('profile.changePassword')}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
-          label="Contraseña actual"
+          label={t('profile.currentPassword')}
           type="password"
           value={actual}
           onChange={(e) => setActual(e.target.value)}
@@ -208,7 +209,7 @@ function ChangePasswordModal({ open, onClose, refreshToken }) {
           autoFocus
         />
         <Input
-          label="Nueva contraseña"
+          label={t('profile.newPassword')}
           type="password"
           value={nueva}
           onChange={(e) => setNueva(e.target.value)}
@@ -216,7 +217,7 @@ function ChangePasswordModal({ open, onClose, refreshToken }) {
           minLength={6}
         />
         <Input
-          label="Confirmar nueva contraseña"
+          label={t('profile.confirmPassword')}
           type="password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
@@ -228,10 +229,10 @@ function ChangePasswordModal({ open, onClose, refreshToken }) {
           </p>
         )}
         <p className="text-xs text-[#8e8e9a]">
-          Al cambiar tu contraseña cerrás sesión en todos los dispositivos.
+          {t('profile.passwordWarning')}
         </p>
         <Button type="submit" loading={loading} className="w-full">
-          Actualizar contraseña
+          {t('profile.updatePassword')}
         </Button>
       </form>
     </Modal>
@@ -248,6 +249,7 @@ function TwoFAModal({ open, onClose, enabled, onToggle }) {
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
   const toast = useToast()
+  const { t } = useTranslation()
 
   useEffect(() => {
     if (open) setStep(enabled ? 'disable' : 'info')
@@ -263,7 +265,7 @@ function TwoFAModal({ open, onClose, enabled, onToggle }) {
       setStep('qr')
     } catch (err) {
       const msg = err.response?.data?.message
-      setError(typeof msg === 'string' && msg ? msg : 'Error al iniciar configuración 2FA')
+      setError(typeof msg === 'string' && msg ? msg : t('profile.twoFASetupError'))
     } finally {
       setLoading(false)
     }
@@ -271,17 +273,17 @@ function TwoFAModal({ open, onClose, enabled, onToggle }) {
 
   const handleActivate = async (e) => {
     e.preventDefault()
-    if (code.length !== 6) { setError('Ingresá el código de 6 dígitos'); return }
+    if (code.length !== 6) { setError(t('profile.twoFACodeInvalid')); return }
     setLoading(true)
     setError('')
     try {
       await authService.activate2FA(code)
-      toast({ message: 'Autenticación de dos factores activada', type: 'success' })
+      toast({ message: t('profile.twoFAActivated'), type: 'success' })
       onToggle(true)
       onClose()
     } catch (err) {
       const msg = err.response?.data?.message
-      setError(typeof msg === 'string' && msg ? msg : 'Código incorrecto. Intentá de nuevo.')
+      setError(typeof msg === 'string' && msg ? msg : t('profile.twoFACodeError'))
     } finally {
       setLoading(false)
     }
@@ -289,34 +291,33 @@ function TwoFAModal({ open, onClose, enabled, onToggle }) {
 
   const handleDisable = async (e) => {
     e.preventDefault()
-    if (!contrasena || code.length !== 6) { setError('Ingresá tu contraseña y el código'); return }
+    if (!contrasena || code.length !== 6) { setError(t('profile.twoFADisableRequired')); return }
     setLoading(true)
     setError('')
     try {
       await authService.disable2FA(contrasena, code)
-      toast({ message: 'Autenticación de dos factores desactivada', type: 'info' })
+      toast({ message: t('profile.twoFADeactivated'), type: 'info' })
       onToggle(false)
       onClose()
     } catch (err) {
       const msg = err.response?.data?.message
-      setError(typeof msg === 'string' && msg ? msg : 'Datos incorrectos. Intentá de nuevo.')
+      setError(typeof msg === 'string' && msg ? msg : t('profile.twoFADisableError'))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Autenticación de dos factores">
+    <Modal open={open} onClose={onClose} title={t('profile.twoFactor')}>
       <AnimatePresence mode="wait">
         {step === 'info' && (
           <motion.div key="info" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
             <p className="text-sm text-[#8e8e9a]">
-              El 2FA agrega una capa extra de seguridad. Necesitarás una app como{' '}
-              <strong className="text-[#e8e8ed]">Google Authenticator</strong> para generar códigos.
+              {t('profile.twoFASetupInfo')}
             </p>
             {error && <p className="text-sm text-red-400">{error}</p>}
             <Button className="w-full" loading={loading} onClick={handleSetup}>
-              Configurar 2FA
+              {t('profile.twoFASetupBtn')}
             </Button>
           </motion.div>
         )}
@@ -325,7 +326,7 @@ function TwoFAModal({ open, onClose, enabled, onToggle }) {
           <motion.div key="qr" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <form onSubmit={handleActivate} className="space-y-4">
               <p className="text-sm text-[#8e8e9a]">
-                Escaneá este código QR con Google Authenticator y luego ingresá el código de 6 dígitos.
+                {t('profile.twoFAQrInfo')}
               </p>
               {qrUri && (
                 <div className="flex justify-center py-3">
@@ -339,7 +340,7 @@ function TwoFAModal({ open, onClose, enabled, onToggle }) {
                 </div>
               )}
               <Input
-                label="Código de verificación"
+                label={t('profile.twoFACodeLabel')}
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 maxLength={6}
@@ -349,7 +350,7 @@ function TwoFAModal({ open, onClose, enabled, onToggle }) {
               />
               {error && <p className="text-sm text-red-400">{error}</p>}
               <Button type="submit" loading={loading} className="w-full">
-                Activar 2FA
+                {t('profile.twoFAActivateBtn')}
               </Button>
             </form>
           </motion.div>
@@ -359,10 +360,10 @@ function TwoFAModal({ open, onClose, enabled, onToggle }) {
           <motion.div key="disable" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <form onSubmit={handleDisable} className="space-y-4">
               <p className="text-sm text-[#8e8e9a]">
-                Para desactivar el 2FA necesitás tu contraseña y el código actual de tu app.
+                {t('profile.twoFADisableInfo')}
               </p>
               <Input
-                label="Contraseña"
+                label={t('profile.passwordLabel')}
                 type="password"
                 value={contrasena}
                 onChange={(e) => setCont(e.target.value)}
@@ -370,7 +371,7 @@ function TwoFAModal({ open, onClose, enabled, onToggle }) {
                 autoFocus
               />
               <Input
-                label="Código de autenticación"
+                label={t('profile.twoFAAuthCode')}
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 maxLength={6}
@@ -380,7 +381,7 @@ function TwoFAModal({ open, onClose, enabled, onToggle }) {
               />
               {error && <p className="text-sm text-red-400">{error}</p>}
               <Button type="submit" loading={loading} variant="danger" className="w-full">
-                Desactivar 2FA
+                {t('profile.twoFADeactivateBtn')}
               </Button>
             </form>
           </motion.div>

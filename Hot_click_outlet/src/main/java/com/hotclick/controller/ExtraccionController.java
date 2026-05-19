@@ -14,7 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 
 @CrossOrigin(origins = "*")
@@ -96,19 +98,26 @@ public class ExtraccionController {
         return ResponseEntity.ok(ResponseDTO.success("Tipo de cambio", Map.of("tipoCambio", tc)));
     }
 
-    /** Analiza imagen y devuelve detalles completos del producto para auto-completar el formulario de alta. */
+    /** Analiza una o varias imágenes y devuelve detalles del producto para auto-completar el formulario. */
     @PostMapping("/detalles-producto")
     public ResponseEntity<ResponseDTO> detallesProducto(
-            @RequestParam MultipartFile imagen) {
+            @RequestParam("imagenes") List<MultipartFile> imagenes) {
         try {
-            if (imagen.isEmpty())
-                return ResponseEntity.badRequest().body(ResponseDTO.error("La imagen es requerida"));
-            String ct = imagen.getContentType();
-            if (ct == null || !ct.startsWith("image/"))
-                return ResponseEntity.badRequest().body(ResponseDTO.error("El archivo debe ser una imagen"));
+            if (imagenes == null || imagenes.isEmpty())
+                return ResponseEntity.badRequest().body(ResponseDTO.error("Se requiere al menos una imagen"));
 
-            String base64 = Base64.getEncoder().encodeToString(imagen.getBytes());
-            var detalles = extraccionService.extraerDetallesProducto(base64, visionService);
+            List<String> base64List = new ArrayList<>();
+            for (MultipartFile img : imagenes) {
+                if (img.isEmpty()) continue;
+                String ct = img.getContentType();
+                if (ct == null || !ct.startsWith("image/")) continue;
+                base64List.add(Base64.getEncoder().encodeToString(img.getBytes()));
+            }
+
+            if (base64List.isEmpty())
+                return ResponseEntity.badRequest().body(ResponseDTO.error("Ninguna imagen válida recibida"));
+
+            var detalles = extraccionService.extraerDetallesProducto(base64List, visionService);
             return ResponseEntity.ok(ResponseDTO.success("Detalles extraídos", detalles));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));

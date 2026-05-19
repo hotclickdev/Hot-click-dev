@@ -54,10 +54,13 @@ const useCartStore = create(
       toWhatsAppMessage: () => {
         const { items, total } = get()
         const lines = items.map(
-          (i) => `• ${i.nombre ?? i.nombreProducto} x${i.cantidad} = ₡${((i.precio ?? i.precioVenta ?? 0) * i.cantidad).toLocaleString('es-CR')}`
+          (i) => `  • ${i.nombre ?? i.nombreProducto} x${i.cantidad} — ₡${((i.precio ?? i.precioVenta ?? 0) * i.cantidad).toLocaleString('es-CR')}`
         )
         return encodeURIComponent(
-          `Hola HOTCLICK! Me gustaría hacer el siguiente pedido:\n\n${lines.join('\n')}\n\n*Total: ₡${total().toLocaleString('es-CR')}*`
+          `Hola Andrés! 👋 Me interesa hacer el siguiente pedido:\n\n` +
+          `${lines.join('\n')}\n\n` +
+          `💰 *Total: ₡${total().toLocaleString('es-CR')}*\n\n` +
+          `¿Está disponible? ¿Cuál es el tiempo de entrega y cómo puedo pagar? Gracias 😊`
         )
       },
     }),

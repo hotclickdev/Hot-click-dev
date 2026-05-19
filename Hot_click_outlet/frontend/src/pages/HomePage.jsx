@@ -269,7 +269,7 @@ function HeroCarousel({ slides }) {
                       style={{ background: 'rgba(17,17,20,0.88)', border: '1px solid rgba(255,255,255,0.1)' }}
                     >
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="text-xs font-semibold text-[#e8e8ed]">Envío 24h</span>
+                      <span className="text-xs font-semibold text-[#e8e8ed]">{t('home.shipping24h')}</span>
                     </motion.div>
                     {slide.stock > 0 && slide.stock <= 3 && (
                       <motion.div
@@ -313,7 +313,7 @@ function HeroCarousel({ slides }) {
             {/* Prev arrow */}
             <button
               onClick={prev}
-              aria-label="Anterior"
+              aria-label={t('common.previous')}
               className="w-9 h-9 rounded-xl bg-white/6 border border-white/10 flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/12 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -360,7 +360,7 @@ function HeroCarousel({ slides }) {
             {/* Next arrow */}
             <button
               onClick={next}
-              aria-label="Siguiente"
+              aria-label={t('common.next')}
               className="w-9 h-9 rounded-xl bg-white/6 border border-white/10 flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/12 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -409,7 +409,7 @@ export default function HomePage() {
         <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
           <div className="flex items-center gap-2 mb-5">
             <span className="w-1 h-4 rounded-full bg-[#4f7cff]" />
-            <h2 className="text-sm font-semibold tracking-wide uppercase text-[#8e8e9a]">Visto recientemente</h2>
+            <h2 className="text-sm font-semibold tracking-wide uppercase text-[#8e8e9a]">{t('home.recentlyViewed')}</h2>
           </div>
           <div role="list" className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide">
             {recentlyViewed.map((p) => (
@@ -626,7 +626,7 @@ function TestimonialsCarousel() {
           ))}
         </div>
         <div className="flex items-center justify-center gap-4 mt-6">
-          <button onClick={prev} aria-label="Anterior" className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/10 transition-colors">
+          <button onClick={prev} aria-label={t('common.previous')} className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/10 transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
           <div className="flex gap-1.5">
@@ -634,7 +634,7 @@ function TestimonialsCarousel() {
               <button key={i} onClick={() => setIdx(i)} className={`w-2.5 h-2.5 rounded-full transition-all ${i === idx ? 'bg-[#4f7cff] w-4' : 'bg-white/20'}`} />
             ))}
           </div>
-          <button onClick={next} aria-label="Siguiente" className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/10 transition-colors">
+          <button onClick={next} aria-label={t('common.next')} className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/10 transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
         </div>

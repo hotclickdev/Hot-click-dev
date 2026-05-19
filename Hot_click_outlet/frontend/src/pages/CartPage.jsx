@@ -59,11 +59,12 @@ export default function CartPage() {
 
   const handleCotizacion = () => {
     if (items.length === 0) return
-    const lines = items.map((i) => `• ${i.nombre} ×${i.cantidad} — ${formatPrice(i.precio * i.cantidad)}`)
+    const lines = items.map((i) => `  • ${i.nombre} ×${i.cantidad} — ${formatPrice(i.precio * i.cantidad)}`)
     const text = encodeURIComponent(
-      `Hola HOTCLICK, quisiera solicitar una *cotización formal* para los siguientes productos:\n\n` +
+      `Hola Andrés! 👋 Quisiera una *cotización* para los siguientes productos:\n\n` +
       lines.join('\n') +
-      `\n\nTotal estimado: ${formatPrice(total())}\n\n¿Pueden confirmarme disponibilidad, tiempo de entrega y métodos de pago? Gracias.`
+      `\n\n💰 Total estimado: *${formatPrice(total())}*\n\n` +
+      `¿Me podés confirmar disponibilidad, tiempo de entrega y formas de pago? Gracias 😊`
     )
     window.open(`https://wa.me/${WHATSAPP}?text=${text}`, '_blank')
   }

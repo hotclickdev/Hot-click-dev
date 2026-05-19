@@ -101,7 +101,7 @@ export default function InformacionPage() {
             <p className="text-[#8e8e9a] mt-1 text-sm">{t('informacion.conditionsSub')}</p>
           </div>
           <div className="grid sm:grid-cols-3 gap-4">
-            {Conditions.map(({ label, badge, desc, points }, i) => (
+            {CONDITIONS.map(({ label, badge, desc, points }, i) => (
               <motion.div
                 key={label}
                 initial={{ opacity: 0, y: 20 }}
@@ -239,9 +239,9 @@ export default function InformacionPage() {
                 <span className="text-[9px] font-semibold text-emerald-400/70 uppercase tracking-widest leading-none mt-0.5">{t('informacion.days')}</span>
               </div>
               <div>
-                <h3 className="font-bold text-[#e8e8ed] text-lg mb-1">Garantía de 40 días en todos los productos</h3>
+                <h3 className="font-bold text-[#e8e8ed] text-lg mb-1">{t('informacion.warrantyBannerTitle')}</h3>
                 <p className="text-sm text-[#8e8e9a] leading-relaxed">
-                  Todos nuestros productos tienen garantía de funcionamiento por <strong className="text-emerald-400">40 días</strong> desde la fecha de recibido. Si el producto falla o deja de funcionar en ese período, lo resolvemos sin complicaciones.
+                  {t('informacion.warrantyBannerDesc')}
                 </p>
               </div>
             </div>
@@ -250,21 +250,9 @@ export default function InformacionPage() {
           {/* Return process steps */}
           <div className="grid sm:grid-cols-3 gap-4">
             {[
-              {
-                step: '1', title: 'Contáctanos por WhatsApp',
-                desc: 'Escríbenos dentro de los 40 días de recibido el producto. Describe el problema con detalle.',
-                color: 'text-[#4f7cff]', bg: 'bg-[#4f7cff]/10', border: 'border-[#4f7cff]/20',
-              },
-              {
-                step: '2', title: 'Documenta el fallo',
-                desc: 'Adjunta fotos o un video corto mostrando el problema. Esto nos ayuda a evaluar el caso más rápido.',
-                color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20',
-              },
-              {
-                step: '3', title: 'Resolvemos juntos',
-                desc: 'Según el caso: coordinamos devolución, cambio de producto o reembolso. Siempre buscamos la mejor solución.',
-                color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20',
-              },
+              { step: '1', title: t('informacion.returnStep1Title'), desc: t('informacion.returnStep1Desc'), color: 'text-[#4f7cff]', bg: 'bg-[#4f7cff]/10', border: 'border-[#4f7cff]/20' },
+              { step: '2', title: t('informacion.returnStep2Title'), desc: t('informacion.returnStep2Desc'), color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
+              { step: '3', title: t('informacion.returnStep3Title'), desc: t('informacion.returnStep3Desc'), color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
             ].map(({ step, title, desc, color, bg, border }, i) => (
               <motion.div
                 key={step}
@@ -286,15 +274,15 @@ export default function InformacionPage() {
             transition={{ duration: 0.4, delay: 0.3 }}
             className="mt-4 p-4 rounded-xl bg-white/4 border border-white/8 text-xs text-[#8e8e9a] leading-relaxed"
           >
-            <strong className="text-[#e8e8ed]">Nota:</strong> La garantía cubre fallos de funcionamiento. No aplica para daños causados por mal uso, caídas, líquidos o modificaciones del producto. Los costos de envío en caso de devolución se coordinan caso a caso.
+            {t('informacion.warrantyNote')}
           </motion.div>
         </section>
 
         {/* FAQ */}
         <section>
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-[#e8e8ed]">Preguntas frecuentes</h2>
-            <p className="text-[#8e8e9a] mt-1 text-sm">Todo lo que suelen preguntarnos</p>
+            <h2 className="text-2xl font-bold text-[#e8e8ed]">{t('informacion.faqTitle')}</h2>
+            <p className="text-[#8e8e9a] mt-1 text-sm">{t('informacion.faqSub')}</p>
           </div>
           <div className="space-y-2">
             {FAQS.map((faq, i) => (
@@ -339,15 +327,15 @@ export default function InformacionPage() {
           <div className="relative rounded-3xl bg-[#111114] border border-white/8 p-10 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-[#4f7cff]/8 to-purple-500/5 pointer-events-none" />
             <div className="relative">
-              <h2 className="text-2xl font-bold text-[#e8e8ed] mb-3">¿Tienes más dudas?</h2>
-              <p className="text-[#8e8e9a] mb-6 max-w-sm mx-auto text-sm">Escríbenos directamente por WhatsApp y te respondemos al instante.</p>
+              <h2 className="text-2xl font-bold text-[#e8e8ed] mb-3">{t('informacion.ctaTitle')}</h2>
+              <p className="text-[#8e8e9a] mb-6 max-w-sm mx-auto text-sm">{t('informacion.ctaSub')}</p>
               <a
                 href="https://wa.me/50689745370"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#25D366] hover:bg-[#1da851] text-white font-semibold text-sm transition-all shadow-[0_0_24px_rgba(37,211,102,0.25)]"
               >
-                <WhatsIconSm /> Contactar por WhatsApp
+                <WhatsIconSm /> {t('informacion.ctaBtn')}
               </a>
             </div>
           </div>
@@ -358,8 +346,6 @@ export default function InformacionPage() {
   )
 }
 
-// Re-use CONDITIONS array with fixed variable name
-const Conditions = CONDITIONS
 
 function ChevronIcon({ open }) {
   return (
