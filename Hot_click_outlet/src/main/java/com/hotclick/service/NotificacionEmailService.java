@@ -52,6 +52,22 @@ public class NotificacionEmailService {
     }
 
     @Async
+    public void enviarSeguimientoEstado(Pedido pedido) {
+        Usuario cliente = pedido.getUsuarioFinal();
+        if (cliente == null || cliente.getCorreo() == null) return;
+        try {
+            resendEmailService.send(
+                cliente.getCorreo(),
+                "Actualización de tu pedido — " + pedido.getNumeroPedido(),
+                buildSeguimientoHtml(pedido, cliente)
+            );
+            log.info("Email seguimiento enviado a {} para pedido {}", cliente.getCorreo(), pedido.getNumeroPedido());
+        } catch (Exception e) {
+            log.error("No se pudo enviar email de seguimiento para pedido {}: {}", pedido.getNumeroPedido(), e.getMessage());
+        }
+    }
+
+    @Async
     public void enviarPagoFallido(Pedido pedido, String motivo) {
         Usuario cliente = pedido.getUsuarioFinal();
         if (cliente == null || cliente.getCorreo() == null) return;
@@ -65,6 +81,72 @@ public class NotificacionEmailService {
         } catch (Exception e) {
             log.error("No se pudo enviar email de pago fallido para pedido {}: {}", pedido.getNumeroPedido(), e.getMessage());
         }
+    }
+
+    private String buildSeguimientoHtml(Pedido pedido, Usuario cliente) {
+        String nombre  = esc(cliente.getNombre() != null ? cliente.getNombre() : "Cliente");
+        String estado  = esc(pedido.getEstadoPedido() != null ? pedido.getEstadoPedido() : "—");
+        boolean esRetiro = !"ENVIO_A_DOMICILIO".equals(pedido.getMetodoEnvio());
+
+        StringBuilder items = new StringBuilder();
+        if (pedido.getItems() != null) {
+            for (PedidoItem item : pedido.getItems()) {
+                String prod = item.getProducto() != null ? item.getProducto().getNombreProducto() : "Producto";
+                items.append("<tr>")
+                    .append("<td style='padding:8px 0;border-bottom:1px solid #e8e8ed;font-size:13px;color:#1a1a2e'>").append(esc(prod)).append("</td>")
+                    .append("<td style='padding:8px 0;border-bottom:1px solid #e8e8ed;text-align:center;font-size:13px;color:#6e6e82'>×").append(item.getCantidad()).append("</td>")
+                    .append("<td style='padding:8px 0;border-bottom:1px solid #e8e8ed;text-align:right;font-size:13px;color:#1a1a2e'>₡").append(CRC.format(item.getSubtotalItem())).append("</td>")
+                    .append("</tr>");
+            }
+        }
+
+        String guiaSection = "";
+        if (pedido.getNumeroGuia() != null && !pedido.getNumeroGuia().isBlank()) {
+            String url = pedido.getUrlTracking() != null ? pedido.getUrlTracking()
+                : "https://rastreo.correos.go.cr/?codigo=" + pedido.getNumeroGuia();
+            guiaSection = "<div style='background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px 20px;margin-bottom:20px;text-align:center'>"
+                + "<p style='margin:0 0 4px;font-size:12px;color:#059669;font-weight:600;text-transform:uppercase;letter-spacing:1px'>Número de guía</p>"
+                + "<p style='margin:0 0 10px;font-size:20px;font-weight:900;color:#1a1a2e;letter-spacing:2px'>" + esc(pedido.getNumeroGuia()) + "</p>"
+                + "<a href='" + url + "' style='display:inline-block;background:#059669;color:#fff;text-decoration:none;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:700'>📦 Rastrear paquete</a>"
+                + "</div>";
+        }
+
+        String retiroSection = "";
+        if (esRetiro && ("LISTO_RETIRO".equals(pedido.getEstadoPedido()) || "EN_PREPARACION".equals(pedido.getEstadoPedido()))) {
+            retiroSection = "<div style='background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:16px 20px;margin-bottom:20px;text-align:center'>"
+                + "<p style='margin:0 0 8px;font-size:14px;color:#1a1a2e;font-weight:600'>📍 Retiro en tienda</p>"
+                + "<p style='margin:0 0 12px;font-size:13px;color:#6e6e82'>HOTCLICK · Centro Comercial · Costa Rica</p>"
+                + "<a href='https://waze.com/ul?ll=9.9342,-84.0877&navigate=yes' style='display:inline-block;background:#00b4ff;color:#fff;text-decoration:none;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:700'>🗺 Cómo llegar (Waze)</a>"
+                + "</div>";
+        }
+
+        return "<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body style='margin:0;padding:0;background:#f5f5f7;font-family:sans-serif'>"
+            + "<div style='max-width:560px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)'>"
+            + "<div style='background:linear-gradient(135deg,#4f7cff,#7c3aed);padding:32px 32px 24px'>"
+            + "<span style='color:#fff;font-size:20px;font-weight:900;letter-spacing:1px'>HOTCLICK</span>"
+            + "<h1 style='color:#fff;margin:16px 0 0;font-size:22px;font-weight:700'>Actualización de tu pedido 📬</h1>"
+            + "</div>"
+            + "<div style='padding:28px 32px'>"
+            + "<p style='margin:0;color:#1a1a2e;font-size:15px'>Hola <strong>" + nombre + "</strong>,</p>"
+            + "<p style='margin:8px 0 20px;color:#6e6e82;font-size:14px'>Aquí va la información actualizada de tu pedido <strong>" + esc(pedido.getNumeroPedido()) + "</strong>.</p>"
+            + "<div style='background:#f5f5f7;border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;justify-content:space-between'>"
+            + "<span style='color:#6e6e82;font-size:13px'>Estado actual</span>"
+            + "<span style='color:#4f7cff;font-weight:700;font-size:13px'>" + estado + "</span>"
+            + "</div>"
+            + guiaSection
+            + retiroSection
+            + "<table style='width:100%;border-collapse:collapse;margin-bottom:16px'>"
+            + "<tbody>" + items + "</tbody>"
+            + "</table>"
+            + "<div style='border-top:2px solid #e8e8ed;padding-top:12px;text-align:right'>"
+            + "<span style='color:#1a1a2e;font-weight:700;font-size:15px'>Total: ₡" + CRC.format(pedido.getTotalPedido()) + "</span>"
+            + "</div>"
+            + "</div>"
+            + "<div style='padding:20px 32px;background:#f5f5f7;text-align:center'>"
+            + "<a href='https://wa.me/50689745370' style='display:inline-block;background:#25D366;color:#fff;text-decoration:none;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600'>📱 Contáctanos por WhatsApp</a>"
+            + "<p style='margin:12px 0 0;color:#aaa;font-size:11px'>HOTCLICK · hotclick.cr@gmail.com · Costa Rica</p>"
+            + "</div>"
+            + "</div></body></html>";
     }
 
     private String buildGuiaHtml(Pedido pedido, Usuario cliente) {

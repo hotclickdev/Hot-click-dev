@@ -2,6 +2,7 @@ package com.hotclick.controller;
 
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Pedido;
+import com.hotclick.service.NotificacionEmailService;
 import com.hotclick.service.PedidoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -14,8 +15,8 @@ import java.util.Map;
 @RequestMapping("/api/pedidos")
 public class PedidoController {
 
-    @Autowired
-    private PedidoService pedidoService;
+    @Autowired private PedidoService pedidoService;
+    @Autowired private NotificacionEmailService notificacionEmailService;
 
     @PostMapping
     public ResponseEntity<ResponseDTO> crearPedido(@RequestBody Pedido pedido) {
@@ -102,6 +103,17 @@ public class PedidoController {
     public ResponseEntity<ResponseDTO> listarTodos() {
         try {
             return ResponseEntity.ok(ResponseDTO.success("Pedidos", pedidoService.listarTodosConDetalles()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{id}/notificar")
+    public ResponseEntity<ResponseDTO> notificarCliente(@PathVariable Long id) {
+        try {
+            Pedido pedido = pedidoService.buscarPorId(id);
+            notificacionEmailService.enviarSeguimientoEstado(pedido);
+            return ResponseEntity.ok(ResponseDTO.success("Notificación enviada al cliente", null));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }

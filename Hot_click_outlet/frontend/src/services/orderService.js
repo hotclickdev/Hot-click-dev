@@ -10,6 +10,7 @@ export const orderService = {
   asignarGuia:  (id, numeroGuia) => api.put(`/pedidos/${id}/guia`, { numeroGuia }),
   procesarEnvio:(id, guia, costoEnvio) => api.put(`/pedidos/${id}/envio`, { guia, costoEnvio }),
   delete: (id) => api.delete(`/pedidos/${id}`),
+  notificar: (id) => api.post(`/pedidos/${id}/notificar`),
 }
 
 export const ventaService = {
