@@ -3,7 +3,7 @@ import { forwardRef } from 'react'
 
 const variants = {
   primary: 'bg-[#4f7cff] hover:bg-[#3d6ee0] text-white shadow-[0_0_20px_rgba(79,124,255,0.3)] hover:shadow-[0_0_30px_rgba(79,124,255,0.45)]',
-  secondary: 'bg-white/8 hover:bg-white/12 text-white border border-white/10',
+  secondary: 'bg-white/8 hover:bg-white/12 text-[#e8e8ed] border border-white/10',
   ghost: 'hover:bg-white/6 text-[#8e8e9a] hover:text-white',
   danger: 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20',
   success: 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20',

@@ -1,1 +1,0 @@
-import{t as e}from"./api-KmpbogSZ.js";var t={getPublicas:()=>e.get(`/marcas/publicas`),getAll:()=>e.get(`/marcas`),create:t=>e.post(`/marcas`,t),update:(t,n)=>e.put(`/marcas/${t}`,n),delete:t=>e.delete(`/marcas/${t}`),uploadLogo:t=>{let n=new FormData;return n.append(`file`,t),e.post(`/marcas/logo`,n,{headers:{"Content-Type":`multipart/form-data`}})}};export{t};

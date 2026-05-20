@@ -30,7 +30,7 @@ function highlight(text, query) {
   return (
     <>
       {text.slice(0, idx)}
-      <strong className="text-white font-semibold">{text.slice(idx, idx + query.length)}</strong>
+      <strong className="text-[#4f7cff] font-semibold">{text.slice(idx, idx + query.length)}</strong>
       {text.slice(idx + query.length)}
     </>
   )

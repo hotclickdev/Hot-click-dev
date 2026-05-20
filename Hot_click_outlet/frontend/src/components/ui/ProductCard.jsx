@@ -93,7 +93,7 @@ export default function ProductCard({ product, priority = false, index = 0, onQu
               <div className="flex gap-1.5">
                 <button
                   onClick={(e) => { e.stopPropagation(); onQuickView?.(product) }}
-                  className="shrink-0 h-8 px-2.5 rounded-xl text-xs font-medium bg-white/15 text-white border border-white/20 hover:bg-white/25 flex items-center gap-1 transition-colors"
+                  className="shrink-0 h-8 px-2.5 rounded-xl text-xs font-medium bg-white/15 text-[#e8e8ed] border border-white/20 hover:bg-white/25 flex items-center gap-1 transition-colors"
                 >
                   <EyeIcon />
                   <span className="hidden sm:inline">Vista rápida</span>

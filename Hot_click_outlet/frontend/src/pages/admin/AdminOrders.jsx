@@ -10,17 +10,17 @@ import { formatDate, formatPrice } from '@/utils/format'
 const FILTERS = ['Todos', 'PENDIENTE', 'PAGADO', 'EN_PREPARACION', 'LISTO_RETIRO', 'ENVIADO', 'ENTREGADO', 'CANCELADO']
 
 const ESTADO_STYLE = {
-  PENDIENTE:      { bg: '#2a2a18', text: '#d4b106', border: '#d4b10630' },
-  PAGADO:         { bg: '#0f1f3d', text: '#4f7cff', border: '#4f7cff30' },
-  EN_PREPARACION: { bg: '#1e1400', text: '#f59e0b', border: '#f59e0b30' },
-  LISTO_RETIRO:   { bg: '#0a1f14', text: '#22c55e', border: '#22c55e30' },
-  ENVIADO:        { bg: '#0d1a30', text: '#60a5fa', border: '#60a5fa30' },
-  ENTREGADO:      { bg: '#0a1f14', text: '#4ade80', border: '#4ade8030' },
-  CANCELADO:      { bg: '#1f0a0a', text: '#f87171', border: '#f8717130' },
+  PENDIENTE:      { bg: 'rgba(212,177,6,0.15)',   text: '#d4b106', border: 'rgba(212,177,6,0.35)' },
+  PAGADO:         { bg: 'rgba(79,124,255,0.14)',  text: '#4f7cff', border: 'rgba(79,124,255,0.35)' },
+  EN_PREPARACION: { bg: 'rgba(245,158,11,0.14)',  text: '#f59e0b', border: 'rgba(245,158,11,0.35)' },
+  LISTO_RETIRO:   { bg: 'rgba(34,197,94,0.14)',   text: '#22c55e', border: 'rgba(34,197,94,0.35)' },
+  ENVIADO:        { bg: 'rgba(96,165,250,0.14)',  text: '#60a5fa', border: 'rgba(96,165,250,0.35)' },
+  ENTREGADO:      { bg: 'rgba(74,222,128,0.14)',  text: '#4ade80', border: 'rgba(74,222,128,0.35)' },
+  CANCELADO:      { bg: 'rgba(248,113,113,0.14)', text: '#f87171', border: 'rgba(248,113,113,0.35)' },
 }
 
 function estadoBadge(e) {
-  const s = ESTADO_STYLE[e] ?? { bg: '#1a1a1a', text: '#8e8e9a', border: '#8e8e9a20' }
+  const s = ESTADO_STYLE[e] ?? { bg: 'rgba(142,142,154,0.14)', text: '#8e8e9a', border: 'rgba(142,142,154,0.35)' }
   return (
     <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
       style={{ backgroundColor: s.bg, color: s.text, border: `1px solid ${s.border}` }}>
@@ -63,26 +63,26 @@ function StepTracker({ estado, esRetiro, onStep, saving }) {
                 title={clickable ? `Cambiar a: ${e.label}` : e.label}
                 className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
                 style={{
-                  backgroundColor: done || current ? '#4f7cff' : 'transparent',
-                  border: `2px solid ${done || current ? '#4f7cff' : '#ffffff20'}`,
-                  boxShadow: current ? '0 0 12px rgba(79,124,255,0.5)' : 'none',
+                  backgroundColor: done || current ? 'var(--hc-accent)' : 'transparent',
+                  border: `2px solid ${done || current ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
+                  boxShadow: current ? '0 0 12px color-mix(in srgb, var(--hc-accent) 50%, transparent)' : 'none',
                   cursor: clickable ? 'pointer' : 'default',
                   opacity: saving ? 0.5 : 1,
                 }}
               >
                 {done
                   ? <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
-                  : <div className="w-2 h-2 rounded-full" style={{ backgroundColor: current ? '#fff' : '#ffffff30' }} />
+                  : <div className="w-2 h-2 rounded-full" style={{ backgroundColor: current ? 'white' : 'var(--hc-border)' }} />
                 }
               </button>
               <span className="text-[9px] text-center leading-tight max-w-[56px]"
-                style={{ color: done || current ? '#e8e8ed' : '#8e8e9a55', fontWeight: current ? 700 : 400 }}>
+                style={{ color: done || current ? 'var(--hc-text)' : 'var(--hc-muted)', fontWeight: current ? 700 : 400, opacity: done || current ? 1 : 0.45 }}>
                 {e.label}
               </span>
             </div>
             {i < etapas.length - 1 && (
               <div className="h-0.5 flex-1 mx-1 rounded-full mb-4"
-                style={{ backgroundColor: i < idxSafe ? '#4f7cff' : '#ffffff15' }} />
+                style={{ backgroundColor: i < idxSafe ? 'var(--hc-accent)' : 'var(--hc-border)' }} />
             )}
           </div>
         )
@@ -246,19 +246,19 @@ function CrearPedidoModal({ onClose, onCreated }) {
     } finally { setSaving(false) }
   }
 
-  const inp = { backgroundColor: '#ffffff08', border: '1px solid #ffffff15', color: '#e8e8ed' }
+  const inp = { backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-end"
-      style={{ backgroundColor: '#00000080' }}
+      style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}
       onClick={e => e.target === e.currentTarget && onClose()}>
 
       <div className="h-full w-full max-w-lg flex flex-col overflow-hidden"
-        style={{ backgroundColor: '#0e0e11', borderLeft: '1px solid #ffffff14' }}>
+        style={{ backgroundColor: 'var(--hc-surface)', borderLeft: '1px solid var(--hc-border)' }}>
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b shrink-0"
-          style={{ borderColor: '#ffffff14' }}>
+          style={{ borderColor: 'var(--hc-border)' }}>
           <h2 className="text-base font-bold text-[#e8e8ed]">Nuevo pedido</h2>
           <button onClick={onClose} className="text-[#8e8e9a] hover:text-[#e8e8ed] transition-colors text-xl leading-none">✕</button>
         </div>
@@ -275,7 +275,7 @@ function CrearPedidoModal({ onClose, onCreated }) {
               <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">Cliente *</label>
               {selectedUser ? (
                 <div className="flex items-center gap-3 rounded-xl px-3 py-2.5"
-                  style={{ backgroundColor: '#4f7cff12', border: '1px solid #4f7cff30' }}>
+                  style={{ backgroundColor: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 30%, transparent)' }}>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-[#e8e8ed]">{selectedUser.nombre}</p>
                     <p className="text-xs text-[#8e8e9a]">{selectedUser.correo}</p>
@@ -296,7 +296,7 @@ function CrearPedidoModal({ onClose, onCreated }) {
                   />
                   {showUserDrop && filteredUsers.length > 0 && (
                     <div className="absolute z-10 top-full left-0 right-0 mt-1 rounded-xl overflow-hidden"
-                      style={{ backgroundColor: '#1a1a1f', border: '1px solid #ffffff14' }}>
+                      style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
                       {filteredUsers.map(u => (
                         <button key={u.id}
                           onMouseDown={() => { set('usuarioId', u.id); setShowUserDrop(false); setUserSearch('') }}
@@ -326,7 +326,7 @@ function CrearPedidoModal({ onClose, onCreated }) {
                 />
                 {showProdDrop && filteredProds.length > 0 && (
                   <div className="absolute z-10 top-full left-0 right-0 mt-1 rounded-xl overflow-hidden"
-                    style={{ backgroundColor: '#1a1a1f', border: '1px solid #ffffff14' }}>
+                    style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
                     {filteredProds.map(p => {
                       const id = p.id ?? p.productoId
                       return (
@@ -350,7 +350,7 @@ function CrearPedidoModal({ onClose, onCreated }) {
                 <div className="space-y-2 mt-2">
                   {form.items.map(item => (
                     <div key={item.productoId} className="rounded-xl px-3 py-2.5 space-y-2"
-                      style={{ backgroundColor: '#ffffff06', border: '1px solid #ffffff0e' }}>
+                      style={{ backgroundColor: 'var(--hc-glass-bg)', border: '1px solid var(--hc-border)' }}>
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-sm text-[#e8e8ed] flex-1 leading-tight">{item.nombre}</p>
                         <button onClick={() => removeItem(item.productoId)}
@@ -411,9 +411,9 @@ function CrearPedidoModal({ onClose, onCreated }) {
                     onClick={() => set('metodoEnvio', m.value)}
                     className="flex-1 py-2 rounded-xl text-sm font-medium transition-all"
                     style={{
-                      backgroundColor: form.metodoEnvio === m.value ? '#4f7cff20' : '#ffffff08',
-                      border: `1px solid ${form.metodoEnvio === m.value ? '#4f7cff60' : '#ffffff15'}`,
-                      color: form.metodoEnvio === m.value ? '#4f7cff' : '#8e8e9a',
+                      backgroundColor: form.metodoEnvio === m.value ? 'color-mix(in srgb, var(--hc-accent) 15%, transparent)' : 'var(--hc-glass-bg)',
+                      border: `1px solid ${form.metodoEnvio === m.value ? 'color-mix(in srgb, var(--hc-accent) 45%, transparent)' : 'var(--hc-border)'}`,
+                      color: form.metodoEnvio === m.value ? 'var(--hc-accent)' : 'var(--hc-muted)',
                     }}>
                     {m.label}
                   </button>
@@ -454,7 +454,7 @@ function CrearPedidoModal({ onClose, onCreated }) {
 
             {/* Resumen */}
             {form.items.length > 0 && (
-              <div className="rounded-xl px-4 py-3 space-y-1.5" style={{ backgroundColor: '#ffffff06', border: '1px solid #ffffff0e' }}>
+              <div className="rounded-xl px-4 py-3 space-y-1.5" style={{ backgroundColor: 'var(--hc-glass-bg)', border: '1px solid var(--hc-border)' }}>
                 <p className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest mb-2">Resumen</p>
                 <div className="flex justify-between text-sm text-[#8e8e9a]">
                   <span>Subtotal productos</span>
@@ -466,7 +466,7 @@ function CrearPedidoModal({ onClose, onCreated }) {
                     <span>{formatPrice(costoEnvioNum)}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-base font-bold text-[#e8e8ed] pt-1 border-t" style={{ borderColor: '#ffffff10' }}>
+                <div className="flex justify-between text-base font-bold text-[#e8e8ed] pt-1 border-t" style={{ borderColor: 'var(--hc-border)' }}>
                   <span>Total</span>
                   <span>{formatPrice(total)}</span>
                 </div>
@@ -476,15 +476,15 @@ function CrearPedidoModal({ onClose, onCreated }) {
         )}
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t shrink-0 flex gap-3" style={{ borderColor: '#ffffff14' }}>
+        <div className="px-5 py-4 border-t shrink-0 flex gap-3" style={{ borderColor: 'var(--hc-border)' }}>
           <button onClick={onClose} disabled={saving}
             className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-all"
-            style={{ backgroundColor: '#ffffff08', color: '#8e8e9a' }}>
+            style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>
             Cancelar
           </button>
           <button onClick={submit} disabled={saving || !canSubmit}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-40"
-            style={{ backgroundColor: '#4f7cff', color: '#fff' }}>
+            style={{ backgroundColor: 'var(--hc-accent)', color: 'white' }}>
             {saving ? 'Creando…' : 'Crear pedido'}
           </button>
         </div>
@@ -499,6 +499,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
   const [saving, setSaving]         = useState(false)
   const [notifying, setNotifying]   = useState(false)
   const [pendingEstado, setPending] = useState(null)   // etapa seleccionada pero no guardada
+  const [nota, setNota]             = useState('')
   const [guia, setGuia]             = useState(order.numeroGuia ?? '')
   const [costo, setCosto]           = useState('')
   const [showOver, setShowOver]     = useState(false)
@@ -530,10 +531,11 @@ function OrderCard({ order, onUpdate, onDelete }) {
     }
     setSaving(true)
     try {
-      await orderService.updateStatus(order.id, pendingEstado)
-      toast({ message: 'Estado guardado', type: 'success' })
+      await orderService.updateStatus(order.id, pendingEstado, nota.trim() || null)
+      toast({ message: nota.trim() ? 'Estado guardado y cliente notificado' : 'Estado guardado', type: 'success' })
       onUpdate(order.id, { estado: pendingEstado })
       setPending(null)
+      setNota('')
     } catch { toast({ message: 'Error al guardar', type: 'error' }) }
     finally { setSaving(false) }
   }
@@ -561,7 +563,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
 
   return (
     <div className="rounded-2xl border overflow-hidden"
-      style={{ backgroundColor: '#111114', borderColor: '#ffffff14' }}>
+      style={{ backgroundColor: 'var(--hc-surface)', borderColor: 'var(--hc-border)' }}>
 
       {/* Fila resumen — siempre visible */}
       <button
@@ -599,7 +601,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
 
         {/* Chevron */}
         <svg className="w-4 h-4 shrink-0 transition-transform"
-          style={{ color: '#8e8e9a', transform: open ? 'rotate(180deg)' : 'rotate(0)' }}
+          style={{ color: 'var(--hc-muted)', transform: open ? 'rotate(180deg)' : 'rotate(0)' }}
           fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
@@ -607,7 +609,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
 
       {/* Detalle expandible */}
       {open && (
-        <div className="border-t px-4 py-4 space-y-4" style={{ borderColor: '#ffffff14' }}>
+        <div className="border-t px-4 py-4 space-y-4" style={{ borderColor: 'var(--hc-border)' }}>
 
           {/* Stepper — click selecciona etapa, no guarda todavía */}
           {estado !== 'CANCELADO' && (
@@ -619,16 +621,26 @@ function OrderCard({ order, onUpdate, onDelete }) {
                 saving={saving}
               />
               {pendingEstado && pendingEstado !== estado && (
-                <p className="text-[11px] text-[#8e8e9a] text-center -mt-1">
-                  {estado} → <span className="text-[#4f7cff] font-semibold">{pendingEstado}</span>
-                </p>
+                <>
+                  <p className="text-[11px] text-[#8e8e9a] text-center -mt-1">
+                    {estado} → <span className="text-[#4f7cff] font-semibold">{pendingEstado}</span>
+                  </p>
+                  <textarea
+                    value={nota}
+                    onChange={e => setNota(e.target.value)}
+                    rows={2}
+                    placeholder="Nota para el cliente (opcional) — se incluye en el email de notificación"
+                    className="w-full mt-2 px-3 py-2 rounded-xl text-sm resize-none focus:outline-none placeholder:text-[#8e8e9a]/50"
+                    style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
+                  />
+                </>
               )}
             </div>
           )}
 
           {/* Formulario envío si el pending es ENVIADO en flujo domicilio */}
           {needsEnvioForm && (
-            <div className="space-y-2 rounded-xl p-3" style={{ backgroundColor: '#ffffff05', border: '1px solid #ffffff10' }}>
+            <div className="space-y-2 rounded-xl p-3" style={{ backgroundColor: 'var(--hc-glass-bg)', border: '1px solid var(--hc-border)' }}>
               <p className="text-xs font-semibold text-[#e8e8ed]">Datos del envío a domicilio</p>
               <input
                 type="text"
@@ -636,7 +648,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
                 onChange={e => setGuia(e.target.value)}
                 placeholder="Número de guía Correos CR"
                 className="w-full h-10 px-3 rounded-xl text-sm text-[#e8e8ed] placeholder:text-[#8e8e9a]/50 focus:outline-none font-mono"
-                style={{ backgroundColor: '#ffffff08', border: '1px solid #ffffff15' }}
+                style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
               />
               <div className="flex gap-2 items-center">
                 <span className="text-[#8e8e9a] text-sm shrink-0">₡</span>
@@ -647,7 +659,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
                   placeholder="Costo envío (4000–20000)"
                   min={4000} max={20000} step={500}
                   className="flex-1 h-10 px-3 rounded-xl text-sm text-[#e8e8ed] placeholder:text-[#8e8e9a]/50 focus:outline-none"
-                  style={{ backgroundColor: '#ffffff08', border: '1px solid #ffffff15' }}
+                  style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
                 />
               </div>
             </div>
@@ -660,15 +672,15 @@ function OrderCard({ order, onUpdate, onDelete }) {
                 onClick={saveEstado}
                 disabled={saving || (needsEnvioForm && !guia.trim())}
                 className="flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50"
-                style={{ backgroundColor: '#4f7cff', color: '#fff' }}
+                style={{ backgroundColor: 'var(--hc-accent)', color: 'white' }}
               >
                 {saving ? 'Guardando…' : '💾 Guardar cambios'}
               </button>
               <button
-                onClick={() => setPending(null)}
+                onClick={() => { setPending(null); setNota('') }}
                 disabled={saving}
                 className="px-4 py-2.5 rounded-xl text-sm transition-all"
-                style={{ backgroundColor: '#ffffff08', color: '#8e8e9a' }}
+                style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}
               >
                 Cancelar
               </button>
@@ -682,9 +694,9 @@ function OrderCard({ order, onUpdate, onDelete }) {
               <div className="space-y-2">
                 {items.map((item, i) => (
                   <div key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5"
-                    style={{ backgroundColor: '#ffffff08' }}>
+                    style={{ backgroundColor: 'var(--hc-glass-bg)' }}>
                     <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0"
-                      style={{ backgroundColor: '#ffffff0a', border: '1px solid #ffffff12' }}>
+                      style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
                       {item.imagenUrl
                         ? <img src={item.imagenUrl} alt={item.nombreProducto} className="w-full h-full object-cover" />
                         : <div className="w-full h-full flex items-center justify-center text-lg">📦</div>
@@ -723,7 +735,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
                 onClick={sendEmail}
                 disabled={notifying}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50"
-                style={{ backgroundColor: '#4f7cff15', color: '#4f7cff', border: '1px solid #4f7cff25' }}
+                style={{ backgroundColor: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 28%, transparent)' }}
               >
                 📧 {notifying ? 'Enviando…' : 'Email cliente'}
               </button>
@@ -739,7 +751,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
           {/* Guía existente */}
           {order.numeroGuia && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs"
-              style={{ backgroundColor: '#0a1f1408', border: '1px solid #22c55e25' }}>
+              style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}>
               <span className="text-green-400">Guía:</span>
               <a href={`https://rastreo.correos.go.cr/?codigo=${order.numeroGuia}`}
                 target="_blank" rel="noopener noreferrer"
@@ -757,7 +769,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
           )}
 
           {/* Pie: override manual + eliminar */}
-          <div className="pt-2 border-t flex items-start justify-between gap-4" style={{ borderColor: '#ffffff0a' }}>
+          <div className="pt-2 border-t flex items-start justify-between gap-4" style={{ borderColor: 'var(--hc-border)' }}>
             <div className="flex-1">
               <button onClick={() => setShowOver(v => !v)}
                 className="text-xs text-[#8e8e9a]/50 hover:text-[#8e8e9a] transition-colors">
@@ -769,7 +781,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
                     value={override || estado}
                     onChange={e => setOverride(e.target.value)}
                     className="flex-1 h-9 px-2 rounded-xl text-sm text-[#e8e8ed] focus:outline-none"
-                    style={{ backgroundColor: '#ffffff08', border: '1px solid #ffffff15' }}
+                    style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
                   >
                     {FILTERS.filter(f => f !== 'Todos').map(s => (
                       <option key={s} value={s}>{s}</option>
@@ -789,7 +801,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
                     }}
                     disabled={saving || !override || override === estado}
                     className="px-4 rounded-xl text-sm font-medium transition-all disabled:opacity-40"
-                    style={{ backgroundColor: '#ffffff10', color: '#e8e8ed' }}
+                    style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)' }}
                   >
                     {saving ? '…' : 'Aplicar'}
                   </button>
@@ -800,7 +812,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
               onClick={doDelete}
               disabled={saving}
               className="text-xs px-3 py-1.5 rounded-lg transition-all disabled:opacity-40 shrink-0"
-              style={{ backgroundColor: '#f8717112', color: '#f87171', border: '1px solid #f8717120' }}
+              style={{ backgroundColor: 'rgba(248,113,113,0.10)', color: 'var(--hc-danger)', border: '1px solid rgba(248,113,113,0.25)' }}
             >
               🗑 Eliminar
             </button>
@@ -854,7 +866,7 @@ export default function AdminOrders() {
           <button
             onClick={() => setShowCreate(true)}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0"
-            style={{ backgroundColor: '#4f7cff', color: '#fff' }}
+            style={{ backgroundColor: 'var(--hc-accent)', color: 'white' }}
           >
             + Nuevo pedido
           </button>
@@ -868,9 +880,9 @@ export default function AdminOrders() {
               onClick={() => setFilter(f)}
               className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
               style={{
-                backgroundColor: filter === f ? '#4f7cff' : '#ffffff0a',
-                color: filter === f ? '#fff' : '#8e8e9a',
-                border: `1px solid ${filter === f ? '#4f7cff50' : '#ffffff10'}`,
+                backgroundColor: filter === f ? 'var(--hc-accent)' : 'color-mix(in srgb, var(--hc-text) 5%, transparent)',
+                color: filter === f ? 'white' : 'var(--hc-muted)',
+                border: `1px solid ${filter === f ? 'color-mix(in srgb, var(--hc-accent) 40%, transparent)' : 'var(--hc-border)'}`,
               }}
             >
               {f}

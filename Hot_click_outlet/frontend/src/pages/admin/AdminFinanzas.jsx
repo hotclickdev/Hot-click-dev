@@ -75,19 +75,19 @@ export default function AdminFinanzas() {
             <button key={q.days} onClick={() => applyQuick(q.days)}
               className="px-3 py-1.5 rounded-lg text-sm transition-all"
               style={{
-                backgroundColor: quick === q.days ? '#4f7cff' : '#ffffff0a',
-                color: quick === q.days ? '#fff' : '#8e8e9a',
-                border: `1px solid ${quick === q.days ? '#4f7cff50' : '#ffffff10'}`,
+                backgroundColor: quick === q.days ? 'var(--hc-accent)' : 'color-mix(in srgb, var(--hc-text) 5%, transparent)',
+                color: quick === q.days ? 'white' : 'var(--hc-muted)',
+                border: `1px solid ${quick === q.days ? 'color-mix(in srgb, var(--hc-accent) 40%, transparent)' : 'var(--hc-border)'}`,
               }}>
               {q.label}
             </button>
           ))}
           <input type="date" value={desde} onChange={e => { setDesde(e.target.value); setQuick(-1) }}
             className="h-9 px-3 rounded-xl text-sm text-[#e8e8ed] focus:outline-none"
-            style={{ backgroundColor: '#ffffff08', border: '1px solid #ffffff15' }} />
+            />
           <input type="date" value={hasta} onChange={e => { setHasta(e.target.value); setQuick(-1) }}
             className="h-9 px-3 rounded-xl text-sm text-[#e8e8ed] focus:outline-none"
-            style={{ backgroundColor: '#ffffff08', border: '1px solid #ffffff15' }} />
+            />
         </div>
 
         {loading ? (
@@ -171,7 +171,7 @@ export default function AdminFinanzas() {
                       </tbody>
                       {/* Totales */}
                       <tfoot>
-                        <tr style={{ borderTop: '2px solid #ffffff15' }}>
+                        <tr style={{ borderTop: '2px solid var(--hc-border)' }}>
                           <td colSpan={3} className="px-4 py-3 text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">
                             Totales del período
                           </td>

@@ -1,9 +1,0 @@
-import{a as e}from"./rolldown-runtime-BYbx6iT9.js";import{s as t}from"./vendor-misc-C98s7Zbb.js";import{i as n,n as r}from"./vendor-motion-DlSfNYU8.js";var i=e(t(),1),a=n(),o={primary:`bg-[#4f7cff] hover:bg-[#3d6ee0] text-white shadow-[0_0_20px_rgba(79,124,255,0.3)] hover:shadow-[0_0_30px_rgba(79,124,255,0.45)]`,secondary:`bg-white/8 hover:bg-white/12 text-white border border-white/10`,ghost:`hover:bg-white/6 text-[#8e8e9a] hover:text-white`,danger:`bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20`,success:`bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20`},s={sm:`h-8 px-3 text-sm gap-1.5`,md:`h-10 px-4 text-sm gap-2`,lg:`h-12 px-6 text-base gap-2.5`,xl:`h-14 px-8 text-lg gap-3`},c=(0,i.forwardRef)(({variant:e=`primary`,size:t=`md`,className:n=``,disabled:i,loading:c,children:l,icon:u,...d},f)=>(0,a.jsxs)(r.button,{ref:f,whileHover:!i&&!c?{scale:1.01}:{},whileTap:!i&&!c?{scale:.98}:{},transition:{duration:.15},disabled:i||c,className:`
-        inline-flex items-center justify-center font-medium rounded-xl
-        transition-all duration-200 select-none
-        disabled:opacity-40 disabled:cursor-not-allowed
-        focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4f7cff]
-        ${o[e]}
-        ${s[t]}
-        ${n}
-      `,...d,children:[c?(0,a.jsxs)(`svg`,{className:`animate-spin h-4 w-4 shrink-0`,fill:`none`,viewBox:`0 0 24 24`,children:[(0,a.jsx)(`circle`,{className:`opacity-25`,cx:`12`,cy:`12`,r:`10`,stroke:`currentColor`,strokeWidth:`4`}),(0,a.jsx)(`path`,{className:`opacity-75`,fill:`currentColor`,d:`M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z`})]}):u?(0,a.jsx)(`span`,{className:`shrink-0`,children:u}):null,l]}));c.displayName=`Button`;export{c as t};
