@@ -86,6 +86,14 @@ function HtmlClassManager() {
 // Excluded paths — social proof / abandoned-cart watcher skip these
 const EXCLUDED_PREFIXES = ['/admin', '/checkout', '/pago']
 
+const WAB_HIDDEN_PATHS = ['/login', '/registro']
+
+function ConditionalWhatsAppFab() {
+  const { pathname } = useLocation()
+  if (WAB_HIDDEN_PATHS.includes(pathname)) return null
+  return <WhatsAppFab />
+}
+
 // Mounts the abandoned-cart background watcher globally.
 // The hook itself bails out if the cart is empty or was recently sent.
 function AbandonedCartWatcher() {
@@ -160,7 +168,7 @@ export default function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>
-          <WhatsAppFab />
+          <ConditionalWhatsAppFab />
           <AccessibilityPanel />
           <AuthPromptModal />
           <SocialProofController />

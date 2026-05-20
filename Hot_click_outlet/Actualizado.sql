@@ -1565,5 +1565,11 @@ ALTER TABLE hot_click_producto_tb
     ADD COLUMN IF NOT EXISTS meta_description_fr  VARCHAR(160);
 
 -- ============================================================
+-- NOTIFICACIONES POR PEDIDO (historial de notas enviadas al cliente)
+-- ============================================================
+ALTER TABLE hot_click_pedido_tb
+    ADD COLUMN IF NOT EXISTS notificaciones TEXT DEFAULT '[]';
+
+-- ============================================================
 -- FIN DEL SCRIPT
 -- ============================================================

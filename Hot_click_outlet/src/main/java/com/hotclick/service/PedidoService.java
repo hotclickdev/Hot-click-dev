@@ -1,5 +1,7 @@
 package com.hotclick.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.dto.ManualPedidoDTO;
 import com.hotclick.model.Bodega;
 import com.hotclick.model.Pedido;
@@ -11,6 +13,8 @@ import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.utils.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,11 +31,14 @@ import java.util.stream.Collectors;
 @Service
 public class PedidoService {
 
+    private static final Logger log = LoggerFactory.getLogger(PedidoService.class);
+
     @Autowired private PedidoRepository pedidoRepository;
     @Autowired private NotificacionEmailService notificacionEmailService;
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private BodegaRepository bodegaRepository;
     @Autowired private ProductoRepository productoRepository;
+    @Autowired private ObjectMapper objectMapper;
 
     @Transactional
     public Pedido crearPedido(Pedido pedido) {
@@ -109,13 +116,37 @@ public class PedidoService {
     }
 
     @Transactional
-    public Pedido cambiarEstado(Long id, String nuevoEstado) {
+    public Pedido cambiarEstado(Long id, String nuevoEstado, String nota) {
         Pedido pedido = pedidoRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
         pedido.setEstadoPedido(nuevoEstado);
+        if (nota != null && !nota.isBlank()) {
+            appendNotificacion(pedido, nuevoEstado, nota);
+        }
         pedido = pedidoRepository.save(pedido);
         pedido.getItems().size(); // force-initialize within session
+        if (nota != null && !nota.isBlank()) {
+            notificacionEmailService.enviarSeguimientoEstado(pedido, nota);
+        }
         return pedido;
+    }
+
+    private void appendNotificacion(Pedido pedido, String estado, String nota) {
+        try {
+            String raw = pedido.getNotificaciones();
+            List<Map<String, Object>> list = objectMapper.readValue(
+                (raw != null && !raw.isBlank()) ? raw : "[]",
+                new TypeReference<List<Map<String, Object>>>() {}
+            );
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("estado", estado);
+            entry.put("nota",   nota);
+            entry.put("fecha",  LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            list.add(entry);
+            pedido.setNotificaciones(objectMapper.writeValueAsString(list));
+        } catch (Exception e) {
+            log.warn("No se pudo guardar notificacion en pedido {}: {}", pedido.getId(), e.getMessage());
+        }
     }
 
     @Transactional(readOnly = true)
@@ -189,7 +220,13 @@ public class PedidoService {
             m.put("metodoEnvio",   p.getMetodoEnvio());
             m.put("costoEnvio",    p.getCostoEnvio());
             m.put("numeroGuia",    p.getNumeroGuia());
-            m.put("notas",         p.getNotas());
+            m.put("notas",           p.getNotas());
+            try {
+                String rawN = p.getNotificaciones();
+                m.put("notificaciones", objectMapper.readValue(
+                    (rawN != null && !rawN.isBlank()) ? rawN : "[]",
+                    new TypeReference<List<Map<String, Object>>>() {}));
+            } catch (Exception ignored) { m.put("notificaciones", List.of()); }
             m.put("clienteId",     p.getUsuarioFinal() != null ? p.getUsuarioFinal().getId()      : null);
             m.put("nombreCliente", p.getUsuarioFinal() != null ? p.getUsuarioFinal().getNombre()  : "—");
             m.put("clienteCorreo", p.getUsuarioFinal() != null ? p.getUsuarioFinal().getCorreo()  : "—");

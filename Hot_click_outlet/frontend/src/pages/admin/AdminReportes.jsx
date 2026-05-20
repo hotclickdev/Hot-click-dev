@@ -60,20 +60,23 @@ export default function AdminReportes() {
     })
   }, [ventas, desde, hasta, metodoPago, estado, search])
 
-  const totalIngresos = filtered
-    .filter((v) => v.estado === 'COMPLETADO' || v.estado === 'ENTREGADO')
-    .reduce((s, v) => s + (v.total ?? 0), 0)
-  const completadas = filtered.filter((v) => v.estado === 'COMPLETADO' || v.estado === 'ENTREGADO').length
-  const ticketPromedio = completadas > 0 ? totalIngresos / completadas : 0
+  const completadas_list = filtered.filter((v) => v.estado === 'COMPLETADO' || v.estado === 'ENTREGADO')
+  const totalIngresos   = completadas_list.reduce((s, v) => s + (v.total ?? 0), 0)
+  const totalEnvios     = completadas_list.reduce((s, v) => s + (v.costoEnvio ?? 0), 0)
+  const totalProductos  = totalIngresos - totalEnvios
+  const completadas     = completadas_list.length
+  const ticketPromedio  = completadas > 0 ? totalIngresos / completadas : 0
 
   const metodos = [...new Set(ventas.map((v) => v.metodoPago).filter(Boolean))]
   const estados = [...new Set(ventas.map((v) => v.estado).filter(Boolean))]
 
   const exportCSV = () => {
-    const header = 'ID,Cliente,Total,Método,Estado,Fecha'
-    const rows = filtered.map((v) =>
-      [v.id, v.nombreCliente ?? v.cliente?.nombre ?? '', v.total ?? 0, v.metodoPago ?? '', v.estado ?? '', (v.fechaCreacion ?? '').slice(0, 10)].join(',')
-    )
+    const header = 'ID,Cliente,Subtotal Productos,Costo Envío,Total,Método,Estado,Fecha'
+    const rows = filtered.map((v) => {
+      const envio = v.costoEnvio ?? 0
+      const subtotalProd = (v.total ?? 0) - envio
+      return [v.id, v.nombreCliente ?? v.cliente?.nombre ?? '', subtotalProd, envio, v.total ?? 0, v.metodoPago ?? '', v.estado ?? '', (v.fechaCreacion ?? '').slice(0, 10)].join(',')
+    })
     const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -169,17 +172,28 @@ export default function AdminReportes() {
 
         {/* Summary cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[
-            { label: 'Ventas en período', value: filtered.length, color: 'text-[#e8e8ed]' },
-            { label: 'Ingresos (completadas)', value: formatPrice(totalIngresos), color: 'text-emerald-400' },
-            { label: 'Completadas', value: completadas, color: 'text-[#4f7cff]' },
-            { label: 'Ticket promedio', value: formatPrice(ticketPromedio), color: 'text-purple-400' },
-          ].map((c) => (
-            <div key={c.label} className="bg-[#111114] border border-white/8 rounded-2xl p-4">
-              <p className="text-xs text-[#8e8e9a] mb-1">{c.label}</p>
-              <p className={`text-xl font-bold ${c.color}`}>{c.value}</p>
-            </div>
-          ))}
+          <div className="bg-[#111114] border border-white/8 rounded-2xl p-4">
+            <p className="text-xs text-[#8e8e9a] mb-1">Ventas en período</p>
+            <p className="text-xl font-bold text-[#e8e8ed]">{filtered.length}</p>
+          </div>
+          <div className="bg-[#111114] border border-white/8 rounded-2xl p-4">
+            <p className="text-xs text-[#8e8e9a] mb-1">Ingresos (completadas)</p>
+            <p className="text-xl font-bold text-emerald-400">{formatPrice(totalIngresos)}</p>
+            {totalEnvios > 0 && (
+              <div className="mt-2 space-y-0.5">
+                <p className="text-xs text-[#8e8e9a]">Productos: <span className="text-[#e8e8ed]">{formatPrice(totalProductos)}</span></p>
+                <p className="text-xs text-[#8e8e9a]">Envíos: <span className="text-amber-400">{formatPrice(totalEnvios)}</span></p>
+              </div>
+            )}
+          </div>
+          <div className="bg-[#111114] border border-white/8 rounded-2xl p-4">
+            <p className="text-xs text-[#8e8e9a] mb-1">Completadas</p>
+            <p className="text-xl font-bold text-[#4f7cff]">{completadas}</p>
+          </div>
+          <div className="bg-[#111114] border border-white/8 rounded-2xl p-4">
+            <p className="text-xs text-[#8e8e9a] mb-1">Ticket promedio</p>
+            <p className="text-xl font-bold text-purple-400">{formatPrice(ticketPromedio)}</p>
+          </div>
         </div>
 
         {/* Table */}
@@ -191,28 +205,34 @@ export default function AdminReportes() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/8">
-                    {['#', t('admin.orders.client'), t('admin.orders.total'), t('admin.reportes.type'), t('admin.orders.date'), t('admin.orders.status')].map((h) => (
+                    {['#', t('admin.orders.client'), 'Productos', 'Envío', t('admin.orders.total'), t('admin.reportes.type'), t('admin.orders.date'), t('admin.orders.status')].map((h) => (
                       <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {filtered.length === 0 ? (
-                    <tr><td colSpan={6} className="px-4 py-12 text-center text-[#8e8e9a]">{t('common.noData')}</td></tr>
-                  ) : filtered.map((v) => (
-                    <tr key={v.id} className="hover:bg-white/3 transition-colors">
-                      <td className="px-4 py-3 text-[#8e8e9a] text-xs font-mono">#{v.id}</td>
-                      <td className="px-4 py-3 text-[#e8e8ed]">{v.nombreCliente ?? v.cliente?.nombre ?? '—'}</td>
-                      <td className="px-4 py-3 font-semibold text-emerald-400">{formatPrice(v.total ?? 0)}</td>
-                      <td className="px-4 py-3 text-[#8e8e9a] text-xs">{v.metodoPago ?? '—'}</td>
-                      <td className="px-4 py-3 text-[#8e8e9a] text-xs">{v.fechaCreacion ? formatDate(v.fechaCreacion) : '—'}</td>
-                      <td className="px-4 py-3">
-                        <Badge variant={v.estado === 'COMPLETADO' || v.estado === 'ENTREGADO' ? 'success' : 'warning'}>
-                          {v.estado ?? '—'}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
+                    <tr><td colSpan={8} className="px-4 py-12 text-center text-[#8e8e9a]">{t('common.noData')}</td></tr>
+                  ) : filtered.map((v) => {
+                    const envio = v.costoEnvio ?? 0
+                    const subtotalProd = (v.total ?? 0) - envio
+                    return (
+                      <tr key={v.id} className="hover:bg-white/3 transition-colors">
+                        <td className="px-4 py-3 text-[#8e8e9a] text-xs font-mono">#{v.id}</td>
+                        <td className="px-4 py-3 text-[#e8e8ed]">{v.nombreCliente ?? v.cliente?.nombre ?? '—'}</td>
+                        <td className="px-4 py-3 font-semibold text-[#e8e8ed]">{formatPrice(subtotalProd)}</td>
+                        <td className="px-4 py-3 text-xs">{envio > 0 ? <span className="text-amber-400">{formatPrice(envio)}</span> : <span className="text-[#8e8e9a]">—</span>}</td>
+                        <td className="px-4 py-3 font-semibold text-emerald-400">{formatPrice(v.total ?? 0)}</td>
+                        <td className="px-4 py-3 text-[#8e8e9a] text-xs">{v.metodoPago ?? '—'}</td>
+                        <td className="px-4 py-3 text-[#8e8e9a] text-xs">{v.fechaCreacion ? formatDate(v.fechaCreacion) : '—'}</td>
+                        <td className="px-4 py-3">
+                          <Badge variant={v.estado === 'COMPLETADO' || v.estado === 'ENTREGADO' ? 'success' : 'warning'}>
+                            {v.estado ?? '—'}
+                          </Badge>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>

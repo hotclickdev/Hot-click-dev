@@ -1,5 +1,7 @@
 package com.hotclick.model;
 
+import com.fasterxml.jackson.annotation.JsonRawValue;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -78,6 +80,9 @@ public class Pedido extends BaseEntity {
 
     @Column(name = "url_tracking", length = 500)
     private String urlTracking;
+
+    @Column(name = "notificaciones", columnDefinition = "text")
+    private String notificaciones = "[]";
 
     @Column(name = "fecha_envio")
     private LocalDateTime fechaEnvio;
@@ -170,4 +175,9 @@ public class Pedido extends BaseEntity {
 
     public List<PedidoItem> getItems() { return items; }
     public void setItems(List<PedidoItem> items) { this.items = items; }
+
+    @JsonRawValue
+    public String getNotificaciones() { return notificaciones != null ? notificaciones : "[]"; }
+    @JsonSetter
+    public void setNotificaciones(String notificaciones) { this.notificaciones = notificaciones; }
 }

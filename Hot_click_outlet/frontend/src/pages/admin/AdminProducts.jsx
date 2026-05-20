@@ -333,7 +333,7 @@ export default function AdminProducts() {
                               onClick={() => handleCarruselMover(slot, -1)}
                               disabled={i === 0}
                               className="flex-1 h-6 rounded-lg text-[10px] text-[#8e8e9a] hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30"
-                            >↑</button>
+                            >←</button>
                             <button
                               onClick={() => handleToggleCarrusel(slot)}
                               className="h-6 px-1.5 rounded-lg text-[10px] text-red-400 hover:bg-red-500/15 transition-colors"
@@ -342,7 +342,7 @@ export default function AdminProducts() {
                               onClick={() => handleCarruselMover(slot, 1)}
                               disabled={i === carruselSlots.length - 1}
                               className="flex-1 h-6 rounded-lg text-[10px] text-[#8e8e9a] hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30"
-                            >↓</button>
+                            >→</button>
                           </div>
                         </>
                       ) : (

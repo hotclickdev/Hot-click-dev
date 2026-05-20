@@ -55,7 +55,8 @@ public class VentaService {
         pedido.setAplicaImpuesto(false);
         pedido.setMontoImpuesto(0);
         pedido.setDescuentoTotal(0);
-        pedido.setCostoEnvio(0);
+        int costoEnvio = dto.getCostoEnvio() != null && dto.getCostoEnvio() > 0 ? dto.getCostoEnvio() : 0;
+        pedido.setCostoEnvio(costoEnvio);
 
         List<PedidoItem> items = new ArrayList<>();
         int subtotal = 0;
@@ -100,7 +101,7 @@ public class VentaService {
         pedido.setSubtotal(subtotal);
         pedido.setCostoTotalProductos(costo);
         pedido.setUtilidadBruta(subtotal - costo);
-        pedido.setTotalPedido(subtotal);
+        pedido.setTotalPedido(subtotal + costoEnvio);
         pedido.setMargenGananciaPedido(
             costo > 0
                 ? BigDecimal.valueOf((subtotal - costo) * 100.0 / costo).setScale(2, RoundingMode.HALF_UP)

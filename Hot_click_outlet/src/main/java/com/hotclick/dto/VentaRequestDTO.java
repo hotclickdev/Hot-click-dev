@@ -11,6 +11,7 @@ public class VentaRequestDTO {
     private String metodoPago;
     private String metodoEnvio;
     private String notas;
+    private Integer costoEnvio;
     private List<ItemVentaDTO> items;
 
     public Long getClienteId() { return clienteId; }
@@ -30,6 +31,9 @@ public class VentaRequestDTO {
 
     public String getNotas() { return notas; }
     public void setNotas(String notas) { this.notas = notas; }
+
+    public Integer getCostoEnvio() { return costoEnvio; }
+    public void setCostoEnvio(Integer costoEnvio) { this.costoEnvio = costoEnvio; }
 
     public List<ItemVentaDTO> getItems() { return items; }
     public void setItems(List<ItemVentaDTO> items) { this.items = items; }

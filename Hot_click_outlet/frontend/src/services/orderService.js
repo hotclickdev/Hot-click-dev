@@ -7,7 +7,7 @@ export const orderService = {
   getByUser: (userId, page = 0, size = 20) => api.get(`/pedidos/usuario/${userId}?page=${page}&size=${size}`),
   getAll: () => api.get('/pedidos'),
   getPending: () => api.get('/pedidos/pendientes'),
-  updateStatus: (id, estado) => api.put(`/pedidos/${id}/estado`, { estado }),
+  updateStatus: (id, estado, nota) => api.put(`/pedidos/${id}/estado`, { estado, nota: nota || null }),
   asignarGuia:  (id, numeroGuia) => api.put(`/pedidos/${id}/guia`, { numeroGuia }),
   procesarEnvio:(id, guia, costoEnvio) => api.put(`/pedidos/${id}/envio`, { guia, costoEnvio }),
   delete: (id) => api.delete(`/pedidos/${id}`),

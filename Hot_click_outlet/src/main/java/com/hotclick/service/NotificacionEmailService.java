@@ -55,13 +55,18 @@ public class NotificacionEmailService {
 
     @Async
     public void enviarSeguimientoEstado(Pedido pedido) {
+        enviarSeguimientoEstado(pedido, null);
+    }
+
+    @Async
+    public void enviarSeguimientoEstado(Pedido pedido, String nota) {
         Usuario cliente = pedido.getUsuarioFinal();
         if (cliente == null || cliente.getCorreo() == null) return;
         try {
             resendEmailService.send(
                 cliente.getCorreo(),
                 "Actualización de tu pedido — " + pedido.getNumeroPedido(),
-                buildSeguimientoHtml(pedido, cliente)
+                buildSeguimientoHtml(pedido, cliente, nota)
             );
             log.info("Email seguimiento enviado a {} para pedido {}", cliente.getCorreo(), pedido.getNumeroPedido());
         } catch (Exception e) {
@@ -155,7 +160,7 @@ public class NotificacionEmailService {
         }
     }
 
-    private String buildSeguimientoHtml(Pedido pedido, Usuario cliente) {
+    private String buildSeguimientoHtml(Pedido pedido, Usuario cliente, String nota) {
         String nombre  = esc(cliente.getNombre() != null ? cliente.getNombre() : "Cliente");
         String estado  = esc(pedido.getEstadoPedido() != null ? pedido.getEstadoPedido() : "—");
         boolean esRetiro = !"ENVIO_A_DOMICILIO".equals(pedido.getMetodoEnvio());
@@ -195,6 +200,13 @@ public class NotificacionEmailService {
                 + "</div>";
         }
 
+        String notaSection = (nota != null && !nota.isBlank())
+            ? "<div style='background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:14px 18px;margin-bottom:20px'>"
+                + "<p style='margin:0 0 4px;font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:1px'>Mensaje de HOTCLICK</p>"
+                + "<p style='margin:0;font-size:14px;color:#1a1a2e'>" + esc(nota) + "</p>"
+                + "</div>"
+            : "";
+
         return "<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body style='margin:0;padding:0;background:#f5f5f7;font-family:sans-serif'>"
             + "<div style='max-width:560px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)'>"
             + "<div style='background:linear-gradient(135deg,#4f7cff,#7c3aed);padding:32px 32px 24px'>"
@@ -208,6 +220,7 @@ public class NotificacionEmailService {
             + "<span style='color:#6e6e82;font-size:13px'>Estado actual</span>"
             + "<span style='color:#4f7cff;font-weight:700;font-size:13px'>" + estado + "</span>"
             + "</div>"
+            + notaSection
             + guiaSection
             + retiroSection
             + "<table style='width:100%;border-collapse:collapse;margin-bottom:16px'>"

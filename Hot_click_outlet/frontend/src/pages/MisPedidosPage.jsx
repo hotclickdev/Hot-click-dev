@@ -125,12 +125,55 @@ function GarantiaBar({ fechaPedido }) {
   )
 }
 
+const ESTADO_LABELS = {
+  PENDIENTE:      'Pendiente',
+  PAGADO:         'Pago confirmado',
+  EN_PREPARACION: 'En preparación',
+  LISTO_RETIRO:   'Listo p/ retirar',
+  ENVIADO:        'Enviado',
+  ENTREGADO:      'Entregado',
+  CANCELADO:      'Cancelado',
+}
+
+function NotificacionesTab({ notificaciones }) {
+  const list = Array.isArray(notificaciones) ? notificaciones : []
+  if (list.length === 0) {
+    return (
+      <div className="text-center py-6">
+        <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>No hay notificaciones todavía</p>
+      </div>
+    )
+  }
+  return (
+    <div className="space-y-2">
+      {[...list].reverse().map((n, i) => (
+        <div key={i} className="rounded-xl px-4 py-3 space-y-1"
+          style={{ backgroundColor: 'rgba(79,124,255,0.06)', border: '1px solid rgba(79,124,255,0.15)' }}>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: 'rgba(79,124,255,0.12)', color: '#4f7cff' }}>
+              {ESTADO_LABELS[n.estado] ?? n.estado}
+            </span>
+            <span className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>
+              {n.fecha ? new Date(n.fecha).toLocaleString('es-CR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}
+            </span>
+          </div>
+          <p className="text-sm" style={{ color: 'var(--hc-text)' }}>{n.nota}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function OrderCard({ order }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
+  const [tab, setTab]   = useState('detalle')
   const estado = order.estadoPedido || order.estado || 'PENDIENTE'
   const colors = estadoColor(estado)
   const items  = order.items ?? []
+  const notificaciones = Array.isArray(order.notificaciones) ? order.notificaciones : []
+  const hasNotifs = notificaciones.length > 0
 
   return (
     <motion.div
@@ -140,7 +183,7 @@ function OrderCard({ order }) {
       style={{ backgroundColor: 'var(--hc-surface)', borderColor: 'var(--hc-border)' }}
     >
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => { setOpen(v => !v); if (open) setTab('detalle') }}
         aria-expanded={open}
         className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left transition-colors"
         style={{ backgroundColor: open ? 'var(--hc-surface-2)' : 'transparent' }}
@@ -181,79 +224,115 @@ function OrderCard({ order }) {
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-5 pb-5 space-y-4" style={{ borderTop: '1px solid var(--hc-border)' }}>
-              {estado !== 'CANCELADO' && (
-                <Timeline estadoActual={estado} esRetiro={order.metodoEnvio === 'RETIRO_EN_TIENDA'} />
-              )}
-
-              {items.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--hc-muted)' }}>
-                    {t('orders.products')}
-                  </p>
-                  {items.map((item, i) => (
-                    <div key={i} className="flex items-center justify-between gap-3 py-2.5 px-3 rounded-xl"
-                      style={{ backgroundColor: 'var(--hc-surface-2)' }}>
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className="text-xs font-bold px-2 py-0.5 rounded-lg"
-                          style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-                          ×{item.cantidad}
-                        </span>
-                        <span className="text-sm truncate" style={{ color: 'var(--hc-text)' }}>
-                          {item.nombreProducto ?? item.producto?.nombreProducto ?? 'Producto'}
-                        </span>
-                      </div>
-                      <span className="text-sm font-medium shrink-0" style={{ color: 'var(--hc-muted)' }}>
-                        {formatPrice(item.precioUnitarioMomento ?? item.subtotalItem)}
+            <div style={{ borderTop: '1px solid var(--hc-border)' }}>
+              {/* Tab bar */}
+              <div className="flex border-b" style={{ borderColor: 'var(--hc-border)' }}>
+                {['detalle', 'notificaciones'].map(t_ => (
+                  <button
+                    key={t_}
+                    onClick={() => setTab(t_)}
+                    className="relative px-5 py-3 text-xs font-semibold transition-colors"
+                    style={{ color: tab === t_ ? 'var(--hc-accent)' : 'var(--hc-muted)' }}
+                  >
+                    {t_ === 'detalle' ? 'Detalle' : (
+                      <span className="flex items-center gap-1.5">
+                        Notificaciones
+                        {hasNotifs && (
+                          <span className="w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center"
+                            style={{ backgroundColor: '#4f7cff', color: '#fff' }}>
+                            {notificaciones.length}
+                          </span>
+                        )}
                       </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="rounded-xl p-3 space-y-1.5" style={{ backgroundColor: 'var(--hc-surface-2)' }}>
-                {order.costoEnvio > 0 && (
-                  <div className="flex justify-between text-xs" style={{ color: 'var(--hc-muted)' }}>
-                    <span>{t('orders.shipping')}</span><span>{formatPrice(order.costoEnvio)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-sm font-bold pt-1"
-                  style={{ color: 'var(--hc-text)', borderTop: '1px solid var(--hc-border)' }}>
-                  <span>{t('orders.totalPaid')}</span>
-                  <span style={{ color: 'var(--hc-accent)' }}>{formatPrice(order.totalPedido ?? order.total)}</span>
-                </div>
+                    )}
+                    {tab === t_ && (
+                      <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
+                        style={{ backgroundColor: 'var(--hc-accent)' }} />
+                    )}
+                  </button>
+                ))}
               </div>
 
-              <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-                📦 {order.metodoEnvio === 'ENVIO_A_DOMICILIO' ? t('orders.homeDelivery') : t('orders.storePickup')}
-                {order.notas ? ` · ${order.notas}` : ''}
-              </p>
+              {tab === 'detalle' ? (
+                <div className="px-5 pb-5 space-y-4 pt-4">
+                  {estado !== 'CANCELADO' && (
+                    <Timeline estadoActual={estado} esRetiro={order.metodoEnvio === 'RETIRO_EN_TIENDA'} />
+                  )}
 
-              {order.numeroGuia && (
-                <div className="flex items-center justify-between px-3 py-2.5 rounded-xl"
-                  style={{ backgroundColor: 'rgba(5,150,105,0.08)', border: '1px solid rgba(5,150,105,0.2)' }}>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#059669' }}>
-                      🚚 {t('orders.trackingLabel')}
-                    </p>
-                    <p className="text-sm font-mono font-bold mt-0.5" style={{ color: '#059669' }}>
-                      {order.numeroGuia}
-                    </p>
+                  {items.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--hc-muted)' }}>
+                        {t('orders.products')}
+                      </p>
+                      {items.map((item, i) => (
+                        <div key={i} className="flex items-center justify-between gap-3 py-2.5 px-3 rounded-xl"
+                          style={{ backgroundColor: 'var(--hc-surface-2)' }}>
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-lg"
+                              style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
+                              ×{item.cantidad}
+                            </span>
+                            <span className="text-sm truncate" style={{ color: 'var(--hc-text)' }}>
+                              {item.nombreProducto ?? item.producto?.nombreProducto ?? 'Producto'}
+                            </span>
+                          </div>
+                          <span className="text-sm font-medium shrink-0" style={{ color: 'var(--hc-muted)' }}>
+                            {formatPrice(item.precioUnitarioMomento ?? item.subtotalItem)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="rounded-xl p-3 space-y-1.5" style={{ backgroundColor: 'var(--hc-surface-2)' }}>
+                    {order.costoEnvio > 0 && (
+                      <div className="flex justify-between text-xs" style={{ color: 'var(--hc-muted)' }}>
+                        <span>{t('orders.shipping')}</span><span>{formatPrice(order.costoEnvio)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm font-bold pt-1"
+                      style={{ color: 'var(--hc-text)', borderTop: '1px solid var(--hc-border)' }}>
+                      <span>{t('orders.totalPaid')}</span>
+                      <span style={{ color: 'var(--hc-accent)' }}>{formatPrice(order.totalPedido ?? order.total)}</span>
+                    </div>
                   </div>
-                  <a
-                    href={order.urlTracking ?? `https://rastreo.correos.go.cr/?codigo=${order.numeroGuia}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs font-semibold px-3 py-1.5 rounded-lg"
-                    style={{ backgroundColor: '#059669', color: '#fff' }}
-                  >
-                    {t('orders.track')}
-                  </a>
-                </div>
-              )}
 
-              {!['CANCELADO', 'PENDIENTE'].includes(estado) && (
-                <GarantiaBar fechaPedido={order.fechaPedido} />
+                  <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+                    📦 {order.metodoEnvio === 'ENVIO_A_DOMICILIO' ? t('orders.homeDelivery') : t('orders.storePickup')}
+                    {order.notas ? ` · ${order.notas}` : ''}
+                  </p>
+
+                  {order.numeroGuia && (
+                    <div className="flex items-center justify-between px-3 py-2.5 rounded-xl"
+                      style={{ backgroundColor: 'rgba(5,150,105,0.08)', border: '1px solid rgba(5,150,105,0.2)' }}>
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#059669' }}>
+                          🚚 {t('orders.trackingLabel')}
+                        </p>
+                        <p className="text-sm font-mono font-bold mt-0.5" style={{ color: '#059669' }}>
+                          {order.numeroGuia}
+                        </p>
+                      </div>
+                      <a
+                        href={order.urlTracking ?? `https://rastreo.correos.go.cr/?codigo=${order.numeroGuia}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-semibold px-3 py-1.5 rounded-lg"
+                        style={{ backgroundColor: '#059669', color: '#fff' }}
+                      >
+                        {t('orders.track')}
+                      </a>
+                    </div>
+                  )}
+
+                  {!['CANCELADO', 'PENDIENTE'].includes(estado) && (
+                    <GarantiaBar fechaPedido={order.fechaPedido} />
+                  )}
+                </div>
+              ) : (
+                <div className="px-5 pb-5 pt-4">
+                  <NotificacionesTab notificaciones={notificaciones} />
+                </div>
               )}
             </div>
           </motion.div>

@@ -66,7 +66,8 @@ public class PedidoController {
             String estado = body.get("estado");
             if (estado == null || estado.isBlank())
                 return ResponseEntity.badRequest().body(ResponseDTO.error("Estado requerido"));
-            Pedido pedido = pedidoService.cambiarEstado(id, estado);
+            String nota = body.get("nota");
+            Pedido pedido = pedidoService.cambiarEstado(id, estado, nota);
             return ResponseEntity.ok(ResponseDTO.success("Estado actualizado", pedido));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
