@@ -1554,9 +1554,15 @@ CREATE INDEX IF NOT EXISTS idx_carrito_abandonado_status_created
 -- ============================================================
 
 ALTER TABLE hot_click_producto_tb
-    ADD COLUMN IF NOT EXISTS meta_title        VARCHAR(70),
-    ADD COLUMN IF NOT EXISTS meta_description  VARCHAR(160),
-    ADD COLUMN IF NOT EXISTS meta_keywords     VARCHAR(255);
+    ADD COLUMN IF NOT EXISTS meta_title           VARCHAR(70),
+    ADD COLUMN IF NOT EXISTS meta_description     VARCHAR(160),
+    ADD COLUMN IF NOT EXISTS meta_keywords        VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS meta_title_en        VARCHAR(70),
+    ADD COLUMN IF NOT EXISTS meta_title_pt        VARCHAR(70),
+    ADD COLUMN IF NOT EXISTS meta_title_fr        VARCHAR(70),
+    ADD COLUMN IF NOT EXISTS meta_description_en  VARCHAR(160),
+    ADD COLUMN IF NOT EXISTS meta_description_pt  VARCHAR(160),
+    ADD COLUMN IF NOT EXISTS meta_description_fr  VARCHAR(160);
 
 -- ============================================================
 -- FIN DEL SCRIPT

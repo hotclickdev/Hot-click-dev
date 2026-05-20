@@ -149,6 +149,24 @@ public class Producto extends BaseEntity {
     @Column(name = "meta_keywords", length = 255)
     private String metaKeywords;
 
+    @Column(name = "meta_title_en", length = 70)
+    private String metaTitleEn;
+
+    @Column(name = "meta_title_pt", length = 70)
+    private String metaTitlePt;
+
+    @Column(name = "meta_title_fr", length = 70)
+    private String metaTitleFr;
+
+    @Column(name = "meta_description_en", length = 160)
+    private String metaDescriptionEn;
+
+    @Column(name = "meta_description_pt", length = 160)
+    private String metaDescriptionPt;
+
+    @Column(name = "meta_description_fr", length = 160)
+    private String metaDescriptionFr;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -282,4 +300,22 @@ public class Producto extends BaseEntity {
 
     public String getMetaKeywords() { return metaKeywords; }
     public void setMetaKeywords(String metaKeywords) { this.metaKeywords = metaKeywords; }
+
+    public String getMetaTitleEn() { return metaTitleEn; }
+    public void setMetaTitleEn(String metaTitleEn) { this.metaTitleEn = metaTitleEn; }
+
+    public String getMetaTitlePt() { return metaTitlePt; }
+    public void setMetaTitlePt(String metaTitlePt) { this.metaTitlePt = metaTitlePt; }
+
+    public String getMetaTitleFr() { return metaTitleFr; }
+    public void setMetaTitleFr(String metaTitleFr) { this.metaTitleFr = metaTitleFr; }
+
+    public String getMetaDescriptionEn() { return metaDescriptionEn; }
+    public void setMetaDescriptionEn(String metaDescriptionEn) { this.metaDescriptionEn = metaDescriptionEn; }
+
+    public String getMetaDescriptionPt() { return metaDescriptionPt; }
+    public void setMetaDescriptionPt(String metaDescriptionPt) { this.metaDescriptionPt = metaDescriptionPt; }
+
+    public String getMetaDescriptionFr() { return metaDescriptionFr; }
+    public void setMetaDescriptionFr(String metaDescriptionFr) { this.metaDescriptionFr = metaDescriptionFr; }
 }

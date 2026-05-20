@@ -262,8 +262,13 @@ export default function AdminNuevoProducto() {
   const [showNuevaMarca, setShowNuevaMarca] = useState(false)
   const [seoOpen, setSeoOpen] = useState(false)
   const [seoLang, setSeoLang] = useState('es')
-  const [seoAutoTitle, setSeoAutoTitle] = useState(true)
-  const [seoAutoDesc, setSeoAutoDesc] = useState(true)
+  const [seoAuto, setSeoAuto] = useState({ es: true, en: true, pt: true, fr: true })
+
+  // compat aliases for existing useEffects
+  const seoAutoTitle = seoAuto.es
+  const seoAutoDesc  = seoAuto.es
+  const setSeoAutoTitle = (v) => setSeoAuto(p => ({ ...p, es: v }))
+  const setSeoAutoDesc  = (v) => setSeoAuto(p => ({ ...p, es: v }))
 
   useEffect(() => {
     Promise.all([
@@ -280,28 +285,43 @@ export default function AdminNuevoProducto() {
   }, [])
 
   useEffect(() => {
-    if (!seoAutoTitle) return
-    const title = form.nombre ? `${form.nombre} | HOTCLICK Outlet`.slice(0, 60) : ''
-    setForm(p => ({
-      ...p,
-      metaTitle: title,
-      seoByLang: { ...p.seoByLang, es: { ...p.seoByLang.es, title } },
-    }))
-  }, [form.nombre, seoAutoTitle]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (!seoAutoDesc) return
+    const nombre = form.nombre || ''
     const precio = form.precioVenta ? Number(form.precioVenta).toLocaleString('es-CR') : ''
-    const base = form.descripcion || ''
-    const description = base
-      ? `${base}${precio ? ` | Precio: ₡${precio}` : ''} | Envíos a todo Costa Rica`.slice(0, 160)
-      : ''
-    setForm(p => ({
-      ...p,
-      metaDescription: description,
-      seoByLang: { ...p.seoByLang, es: { ...p.seoByLang.es, description } },
-    }))
-  }, [form.descripcion, form.precioVenta, seoAutoDesc]) // eslint-disable-line react-hooks/exhaustive-deps
+    const desc = form.descripcion || ''
+    setForm(p => {
+      const next = { ...p.seoByLang }
+      if (seoAuto.es) {
+        next.es = {
+          title: nombre ? `${nombre} | HOTCLICK Outlet`.slice(0, 60) : '',
+          description: desc ? `${desc}${precio ? ` | Precio: ₡${precio}` : ''} | Envíos a todo Costa Rica`.slice(0, 160) : '',
+        }
+      }
+      if (seoAuto.en) {
+        next.en = {
+          title: nombre ? `${nombre} | HOTCLICK Outlet`.slice(0, 60) : '',
+          description: desc ? `${desc} | Free shipping in Costa Rica | HOTCLICK`.slice(0, 160) : '',
+        }
+      }
+      if (seoAuto.pt) {
+        next.pt = {
+          title: nombre ? `${nombre} | HOTCLICK Outlet`.slice(0, 60) : '',
+          description: desc ? `${desc} | Envio grátis pelo Costa Rica | HOTCLICK`.slice(0, 160) : '',
+        }
+      }
+      if (seoAuto.fr) {
+        next.fr = {
+          title: nombre ? `${nombre} | HOTCLICK Outlet`.slice(0, 60) : '',
+          description: desc ? `${desc} | Livraison gratuite au Costa Rica | HOTCLICK`.slice(0, 160) : '',
+        }
+      }
+      return {
+        ...p,
+        metaTitle: next.es.title,
+        metaDescription: next.es.description,
+        seoByLang: next,
+      }
+    })
+  }, [form.nombre, form.descripcion, form.precioVenta, JSON.stringify(seoAuto)]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCrearMarca = async () => {
     if (!nuevaMarca.trim()) return
@@ -423,13 +443,19 @@ export default function AdminNuevoProducto() {
     setSaving(true)
     try {
       const imagenUrl = form.imagenes[0] ?? form.imagenUrl ?? ''
-      const esSeo = form.seoByLang?.es ?? {}
+      const sl = form.seoByLang ?? {}
       const dto = denormalizeProduct({
         ...form,
         imagenUrl,
-        metaTitle: esSeo.title || form.metaTitle || '',
-        metaDescription: esSeo.description || form.metaDescription || '',
-        metaKeywords: JSON.stringify(form.seoByLang),
+        metaTitle:          sl.es?.title        || form.metaTitle        || '',
+        metaDescription:    sl.es?.description  || form.metaDescription  || '',
+        metaKeywords:       form.metaKeywords    || '',
+        metaTitleEn:        sl.en?.title        || '',
+        metaTitlePt:        sl.pt?.title        || '',
+        metaTitleFr:        sl.fr?.title        || '',
+        metaDescriptionEn:  sl.en?.description  || '',
+        metaDescriptionPt:  sl.pt?.description  || '',
+        metaDescriptionFr:  sl.fr?.description  || '',
       })
       const res = await productService.create(dto)
       const productoId = res.data?.data?.id ?? res.data?.id
@@ -752,7 +778,7 @@ export default function AdminNuevoProducto() {
                       const descLen = currentSeo.description.length
 
                       const handleTitleChange = (val) => {
-                        if (isEs) setSeoAutoTitle(false)
+                        setSeoAuto(prev => ({ ...prev, [seoLang]: false }))
                         setForm(p => ({
                           ...p,
                           metaTitle: isEs ? val : p.metaTitle,
@@ -760,7 +786,7 @@ export default function AdminNuevoProducto() {
                         }))
                       }
                       const handleDescChange = (val) => {
-                        if (isEs) setSeoAutoDesc(false)
+                        setSeoAuto(prev => ({ ...prev, [seoLang]: false }))
                         setForm(p => ({
                           ...p,
                           metaDescription: isEs ? val : p.metaDescription,
@@ -791,7 +817,7 @@ export default function AdminNuevoProducto() {
                                 >ⓘ</span>
                               </div>
                               <div className="flex items-center gap-2">
-                                {isEs && seoAutoTitle && <span className="text-[10px] text-[#4f7cff]">auto</span>}
+                                {seoAuto[seoLang] && <span className="text-[10px] text-[#4f7cff]">auto</span>}
                                 <CharCounter current={titleLen} max={60} min={30} />
                               </div>
                             </div>
@@ -823,7 +849,7 @@ export default function AdminNuevoProducto() {
                                 >ⓘ</span>
                               </div>
                               <div className="flex items-center gap-2">
-                                {isEs && seoAutoDesc && <span className="text-[10px] text-[#4f7cff]">auto</span>}
+                                {seoAuto[seoLang] && <span className="text-[10px] text-[#4f7cff]">auto</span>}
                                 <CharCounter current={descLen} max={160} min={120} />
                               </div>
                             </div>

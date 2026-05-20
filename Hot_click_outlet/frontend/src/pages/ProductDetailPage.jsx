@@ -134,8 +134,18 @@ export default function ProductDetailPage() {
     addTimeout.current = setTimeout(() => setJustAdded(false), 1400)
   }
 
-  const seoTitle = product.metaTitle || `${product.titulo || product.nombre} | HOTCLICK Outlet`
-  const seoDescription = product.metaDescription || `${product.descripcion || product.nombre} | Precio: ₡${new Intl.NumberFormat('es-CR').format(product.precio)} | Envíos en Costa Rica`
+  const userLang = (navigator.language || 'es').split('-')[0].toLowerCase()
+  const seoByLang = {
+    es: { title: product.metaTitle,         description: product.metaDescription },
+    en: { title: product.metaTitleEn,       description: product.metaDescriptionEn },
+    pt: { title: product.metaTitlePt,       description: product.metaDescriptionPt },
+    fr: { title: product.metaTitleFr,       description: product.metaDescriptionFr },
+  }
+  const activeSeo = seoByLang[userLang] ?? {}
+  const fallbackTitle = `${product.titulo || product.nombre} | HOTCLICK Outlet`
+  const fallbackDesc  = `${product.descripcion || product.nombre} | Precio: ₡${new Intl.NumberFormat('es-CR').format(product.precio)} | Envíos en Costa Rica`
+  const seoTitle       = activeSeo.title       || seoByLang.es.title       || fallbackTitle
+  const seoDescription = activeSeo.description || seoByLang.es.description || fallbackDesc
 
   return (
     <MainLayout>

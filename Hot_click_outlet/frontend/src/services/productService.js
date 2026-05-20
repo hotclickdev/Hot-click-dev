@@ -28,6 +28,12 @@ export function normalizeProduct(p) {
     metaTitle: p.metaTitle ?? null,
     metaDescription: p.metaDescription ?? null,
     metaKeywords: p.metaKeywords ?? null,
+    metaTitleEn: p.metaTitleEn ?? null,
+    metaTitlePt: p.metaTitlePt ?? null,
+    metaTitleFr: p.metaTitleFr ?? null,
+    metaDescriptionEn: p.metaDescriptionEn ?? null,
+    metaDescriptionPt: p.metaDescriptionPt ?? null,
+    metaDescriptionFr: p.metaDescriptionFr ?? null,
   }
 }
 
@@ -54,6 +60,12 @@ export function denormalizeProduct(form) {
     metaTitle: form.metaTitle || null,
     metaDescription: form.metaDescription || null,
     metaKeywords: form.metaKeywords || null,
+    metaTitleEn: form.metaTitleEn || null,
+    metaTitlePt: form.metaTitlePt || null,
+    metaTitleFr: form.metaTitleFr || null,
+    metaDescriptionEn: form.metaDescriptionEn || null,
+    metaDescriptionPt: form.metaDescriptionPt || null,
+    metaDescriptionFr: form.metaDescriptionFr || null,
   }
 }
 

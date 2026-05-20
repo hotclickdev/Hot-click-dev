@@ -83,6 +83,12 @@ public class ProductoService {
         if (dto.getMetaTitle()          != null) p.setMetaTitle(trunc(dto.getMetaTitle(), 70));
         if (dto.getMetaDescription()    != null) p.setMetaDescription(trunc(dto.getMetaDescription(), 160));
         if (dto.getMetaKeywords()       != null) p.setMetaKeywords(trunc(dto.getMetaKeywords(), 255));
+        if (dto.getMetaTitleEn()        != null) p.setMetaTitleEn(trunc(dto.getMetaTitleEn(), 70));
+        if (dto.getMetaTitlePt()        != null) p.setMetaTitlePt(trunc(dto.getMetaTitlePt(), 70));
+        if (dto.getMetaTitleFr()        != null) p.setMetaTitleFr(trunc(dto.getMetaTitleFr(), 70));
+        if (dto.getMetaDescriptionEn()  != null) p.setMetaDescriptionEn(trunc(dto.getMetaDescriptionEn(), 160));
+        if (dto.getMetaDescriptionPt()  != null) p.setMetaDescriptionPt(trunc(dto.getMetaDescriptionPt(), 160));
+        if (dto.getMetaDescriptionFr()  != null) p.setMetaDescriptionFr(trunc(dto.getMetaDescriptionFr(), 160));
         Long mid = dto.getMarcaId();
         if (mid != null) {
             p.setMarca(marcaRepository.findById(mid)
