@@ -14,12 +14,25 @@ import MultiImagePicker from '@/components/ui/MultiImagePicker'
 
 const MAX_FOTOS = 10
 
+const SEO_LANGS = [
+  { code: 'es', flag: '🇨🇷', label: 'ES', name: 'Español' },
+  { code: 'en', flag: '🇺🇸', label: 'EN', name: 'English' },
+  { code: 'pt', flag: '🇧🇷', label: 'PT', name: 'Português' },
+  { code: 'fr', flag: '🇫🇷', label: 'FR', name: 'Français' },
+]
+
 const EMPTY_FORM = {
   nombre: '', titulo: '', descripcion: '', descripcionLarga: '',
   especificaciones: '', comoUsar: '', marca: '', marcaId: '',
   precioVenta: '', precioCompra: '', stock: '1',
   condicion: 'NUEVO', categoriaId: '', bodegaId: '', imagenUrl: '', imagenes: [],
   metaTitle: '', metaDescription: '', metaKeywords: '',
+  seoByLang: {
+    es: { title: '', description: '' },
+    en: { title: '', description: '' },
+    pt: { title: '', description: '' },
+    fr: { title: '', description: '' },
+  },
 }
 
 function toSlug(str) {
@@ -248,6 +261,7 @@ export default function AdminNuevoProducto() {
   const [creandoMarca, setCreandoMarca] = useState(false)
   const [showNuevaMarca, setShowNuevaMarca] = useState(false)
   const [seoOpen, setSeoOpen] = useState(false)
+  const [seoLang, setSeoLang] = useState('es')
   const [seoAutoTitle, setSeoAutoTitle] = useState(true)
   const [seoAutoDesc, setSeoAutoDesc] = useState(true)
 
@@ -267,17 +281,26 @@ export default function AdminNuevoProducto() {
 
   useEffect(() => {
     if (!seoAutoTitle) return
-    setForm(p => ({ ...p, metaTitle: p.nombre ? `${p.nombre} | HOTCLICK Outlet`.slice(0, 60) : '' }))
+    const title = form.nombre ? `${form.nombre} | HOTCLICK Outlet`.slice(0, 60) : ''
+    setForm(p => ({
+      ...p,
+      metaTitle: title,
+      seoByLang: { ...p.seoByLang, es: { ...p.seoByLang.es, title } },
+    }))
   }, [form.nombre, seoAutoTitle]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!seoAutoDesc) return
     const precio = form.precioVenta ? Number(form.precioVenta).toLocaleString('es-CR') : ''
     const base = form.descripcion || ''
-    const suggested = base
+    const description = base
       ? `${base}${precio ? ` | Precio: ₡${precio}` : ''} | Envíos a todo Costa Rica`.slice(0, 160)
       : ''
-    setForm(p => ({ ...p, metaDescription: suggested }))
+    setForm(p => ({
+      ...p,
+      metaDescription: description,
+      seoByLang: { ...p.seoByLang, es: { ...p.seoByLang.es, description } },
+    }))
   }, [form.descripcion, form.precioVenta, seoAutoDesc]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCrearMarca = async () => {
@@ -400,7 +423,14 @@ export default function AdminNuevoProducto() {
     setSaving(true)
     try {
       const imagenUrl = form.imagenes[0] ?? form.imagenUrl ?? ''
-      const dto = denormalizeProduct({ ...form, imagenUrl })
+      const esSeo = form.seoByLang?.es ?? {}
+      const dto = denormalizeProduct({
+        ...form,
+        imagenUrl,
+        metaTitle: esSeo.title || form.metaTitle || '',
+        metaDescription: esSeo.description || form.metaDescription || '',
+        metaKeywords: JSON.stringify(form.seoByLang),
+      })
       const res = await productService.create(dto)
       const productoId = res.data?.data?.id ?? res.data?.id
 
@@ -648,88 +678,206 @@ export default function AdminNuevoProducto() {
                   type="button"
                   onClick={() => setSeoOpen(o => !o)}
                   className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/3 transition-colors"
+                  aria-expanded={seoOpen}
+                  aria-controls="seo-panel"
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-[#e8e8ed]">SEO</span>
-                    <span className="text-base">🎯</span>
-                    {form.metaTitle && form.metaDescription
+                    <span className="text-base" aria-hidden="true">🎯</span>
+                    {form.seoByLang.es.title && form.seoByLang.es.description
                       ? <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Optimizado</span>
                       : <span className="text-[10px] text-[#8e8e9a] bg-white/5 px-2 py-0.5 rounded-full">Sin configurar</span>
                     }
+                    {/* Idiomas configurados */}
+                    <div className="flex items-center gap-0.5 ml-1" aria-label="Idiomas con SEO configurado">
+                      {SEO_LANGS.map(l => {
+                        const filled = !!(form.seoByLang[l.code]?.title)
+                        return (
+                          <span
+                            key={l.code}
+                            title={`${l.name}: ${filled ? 'configurado' : 'vacío'}`}
+                            className={`text-[11px] transition-opacity ${filled ? 'opacity-100' : 'opacity-25'}`}
+                          >
+                            {l.flag}
+                          </span>
+                        )
+                      })}
+                    </div>
                   </div>
-                  <svg className={`w-4 h-4 text-[#8e8e9a] transition-transform duration-200 ${seoOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                  <svg className={`w-4 h-4 text-[#8e8e9a] transition-transform duration-200 ${seoOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
                 </button>
 
                 {seoOpen && (
-                  <div className="border-t border-white/10 px-4 py-4 space-y-4">
-                    {/* Título SEO */}
+                  <div id="seo-panel" className="border-t border-white/10 px-4 py-4 space-y-4">
+
+                    {/* Selector de idioma */}
                     <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div className="flex items-center gap-1.5">
-                          <Label>Título SEO</Label>
-                          <span title="Aparece en Google. Usa entre 50-60 caracteres, incluye la palabra principal." className="text-[#8e8e9a] cursor-help text-xs">ⓘ</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {seoAutoTitle && <span className="text-[10px] text-[#4f7cff]">auto</span>}
-                          <CharCounter current={form.metaTitle.length} max={60} min={30} />
-                        </div>
+                      <p className="text-xs text-[#8e8e9a] mb-2">
+                        Configura el título y descripción en cada idioma — Google mostrará el contenido según el país del visitante.
+                      </p>
+                      <div className="flex gap-1.5 flex-wrap" role="tablist" aria-label="Idioma del SEO">
+                        {SEO_LANGS.map(l => {
+                          const filled = !!(form.seoByLang[l.code]?.title)
+                          const active = seoLang === l.code
+                          return (
+                            <button
+                              key={l.code}
+                              type="button"
+                              role="tab"
+                              aria-selected={active}
+                              onClick={() => setSeoLang(l.code)}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+                                active
+                                  ? 'bg-[#4f7cff]/15 border-[#4f7cff]/40 text-[#4f7cff]'
+                                  : 'bg-white/4 border-white/10 text-[#8e8e9a] hover:text-[#e8e8ed] hover:bg-white/6'
+                              }`}
+                            >
+                              <span>{l.flag}</span>
+                              <span>{l.label}</span>
+                              {filled && !active && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" aria-label="configurado" />
+                              )}
+                            </button>
+                          )
+                        })}
                       </div>
-                      <input
-                        className={inp}
-                        value={form.metaTitle}
-                        maxLength={60}
-                        placeholder="Nombre del producto | HOTCLICK Outlet"
-                        onChange={e => { setSeoAutoTitle(false); setForm(p => ({ ...p, metaTitle: e.target.value })) }}
-                      />
                     </div>
 
-                    {/* Meta Descripción */}
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div className="flex items-center gap-1.5">
-                          <Label>Meta Descripción</Label>
-                          <span title="Aparece debajo del título en Google. Usa entre 120-160 caracteres." className="text-[#8e8e9a] cursor-help text-xs">ⓘ</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {seoAutoDesc && <span className="text-[10px] text-[#4f7cff]">auto</span>}
-                          <CharCounter current={form.metaDescription.length} max={160} min={120} />
-                        </div>
-                      </div>
-                      <textarea
-                        className={ta}
-                        rows={3}
-                        value={form.metaDescription}
-                        maxLength={160}
-                        placeholder="Descripción del producto | Precio: ₡X | Envíos a todo Costa Rica"
-                        onChange={e => { setSeoAutoDesc(false); setForm(p => ({ ...p, metaDescription: e.target.value })) }}
-                      />
-                    </div>
+                    {/* Campos del idioma activo */}
+                    {(() => {
+                      const langMeta = SEO_LANGS.find(l => l.code === seoLang)
+                      const currentSeo = form.seoByLang[seoLang] ?? { title: '', description: '' }
+                      const isEs = seoLang === 'es'
+                      const titleLen = currentSeo.title.length
+                      const descLen = currentSeo.description.length
 
-                    {/* URL amigable (solo lectura) */}
-                    {form.nombre && (
-                      <div>
-                        <Label>URL amigable (generada)</Label>
-                        <p className="text-xs text-[#4f7cff] bg-[#4f7cff]/8 border border-[#4f7cff]/20 rounded-xl px-3 py-2 font-mono truncate">
-                          hotclick.com/productos/{toSlug(form.nombre) || '…'}
-                        </p>
-                      </div>
-                    )}
+                      const handleTitleChange = (val) => {
+                        if (isEs) setSeoAutoTitle(false)
+                        setForm(p => ({
+                          ...p,
+                          metaTitle: isEs ? val : p.metaTitle,
+                          seoByLang: { ...p.seoByLang, [seoLang]: { ...p.seoByLang[seoLang], title: val } },
+                        }))
+                      }
+                      const handleDescChange = (val) => {
+                        if (isEs) setSeoAutoDesc(false)
+                        setForm(p => ({
+                          ...p,
+                          metaDescription: isEs ? val : p.metaDescription,
+                          seoByLang: { ...p.seoByLang, [seoLang]: { ...p.seoByLang[seoLang], description: val } },
+                        }))
+                      }
 
-                    {/* Vista previa Google */}
-                    <div>
-                      <Label>Vista previa en Google</Label>
-                      <div className="rounded-xl bg-white px-4 py-3 space-y-0.5">
-                        <p className="text-xs text-green-700 truncate font-normal">
-                          hotclick.com › productos › {form.nombre ? toSlug(form.nombre) : '…'}
-                        </p>
-                        <p className="text-base text-blue-700 truncate font-normal leading-snug">
-                          {form.metaTitle || 'Título SEO del producto'}
-                        </p>
-                        <p className="text-sm text-[#4d5156] line-clamp-2 leading-snug">
-                          {form.metaDescription || 'La meta descripción aparecerá aquí…'}
-                        </p>
-                      </div>
-                    </div>
+                      return (
+                        <div className="space-y-4" role="tabpanel" aria-label={`SEO en ${langMeta?.name}`}>
+                          {/* Indicador de idioma activo */}
+                          <div className="flex items-center gap-2 text-xs text-[#8e8e9a]">
+                            <span className="text-base">{langMeta?.flag}</span>
+                            <span>Editando en <strong className="text-[#e8e8ed]">{langMeta?.name}</strong></span>
+                            {isEs && <span className="text-[#4f7cff]">· idioma principal</span>}
+                          </div>
+
+                          {/* Título SEO */}
+                          <div>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <div className="flex items-center gap-1.5">
+                                <label htmlFor={`seo-title-${seoLang}`} className="text-xs text-[#8e8e9a]">
+                                  Título SEO
+                                </label>
+                                <span
+                                  title="Aparece en Google. Usa entre 50-60 caracteres, incluye la palabra principal."
+                                  className="text-[#8e8e9a] cursor-help text-xs"
+                                  aria-label="Ayuda: Aparece en Google. Usa entre 50-60 caracteres"
+                                >ⓘ</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {isEs && seoAutoTitle && <span className="text-[10px] text-[#4f7cff]">auto</span>}
+                                <CharCounter current={titleLen} max={60} min={30} />
+                              </div>
+                            </div>
+                            <input
+                              id={`seo-title-${seoLang}`}
+                              className={inp}
+                              value={currentSeo.title}
+                              maxLength={60}
+                              placeholder={isEs ? 'Nombre del producto | HOTCLICK Outlet' : `Product name in ${langMeta?.name} | HOTCLICK Outlet`}
+                              onChange={e => handleTitleChange(e.target.value)}
+                              aria-describedby={`seo-title-hint-${seoLang}`}
+                            />
+                            <p id={`seo-title-hint-${seoLang}`} className="sr-only">
+                              Título que aparece en Google para visitantes de habla {langMeta?.name}. Entre 50 y 60 caracteres.
+                            </p>
+                          </div>
+
+                          {/* Meta Descripción */}
+                          <div>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <div className="flex items-center gap-1.5">
+                                <label htmlFor={`seo-desc-${seoLang}`} className="text-xs text-[#8e8e9a]">
+                                  Meta Descripción
+                                </label>
+                                <span
+                                  title="Aparece debajo del título en Google. Usa entre 120-160 caracteres."
+                                  className="text-[#8e8e9a] cursor-help text-xs"
+                                  aria-label="Ayuda: Aparece debajo del título en Google. Usa entre 120-160 caracteres"
+                                >ⓘ</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {isEs && seoAutoDesc && <span className="text-[10px] text-[#4f7cff]">auto</span>}
+                                <CharCounter current={descLen} max={160} min={120} />
+                              </div>
+                            </div>
+                            <textarea
+                              id={`seo-desc-${seoLang}`}
+                              className={ta}
+                              rows={3}
+                              value={currentSeo.description}
+                              maxLength={160}
+                              placeholder={isEs
+                                ? 'Descripción del producto | Precio: ₡X | Envíos a todo Costa Rica'
+                                : `Product description in ${langMeta?.name} | Free shipping`
+                              }
+                              onChange={e => handleDescChange(e.target.value)}
+                              aria-describedby={`seo-desc-hint-${seoLang}`}
+                            />
+                            <p id={`seo-desc-hint-${seoLang}`} className="sr-only">
+                              Descripción que aparece en Google para visitantes de habla {langMeta?.name}. Entre 120 y 160 caracteres.
+                            </p>
+                          </div>
+
+                          {/* URL amigable (solo lectura) */}
+                          {form.nombre && (
+                            <div>
+                              <p className="text-xs text-[#8e8e9a] mb-1.5">URL amigable (generada)</p>
+                              <p className="text-xs text-[#4f7cff] bg-[#4f7cff]/8 border border-[#4f7cff]/20 rounded-xl px-3 py-2 font-mono truncate" aria-label={`URL del producto: hotclick.com/productos/${toSlug(form.nombre)}`}>
+                                hotclick.com/productos/{toSlug(form.nombre) || '…'}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Vista previa Google */}
+                          <div>
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <p className="text-xs text-[#8e8e9a]">Vista previa en Google</p>
+                              <span className="text-[10px] text-[#8e8e9a] bg-white/5 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                {langMeta?.flag} {langMeta?.name}
+                              </span>
+                            </div>
+                            <div className="rounded-xl bg-white px-4 py-3 space-y-0.5" aria-label={`Vista previa de Google en ${langMeta?.name}`}>
+                              <p className="text-xs text-green-700 truncate font-normal">
+                                hotclick.com › productos › {form.nombre ? toSlug(form.nombre) : '…'}
+                              </p>
+                              <p className="text-base text-blue-700 truncate font-normal leading-snug">
+                                {currentSeo.title || `Título SEO en ${langMeta?.name}`}
+                              </p>
+                              <p className="text-sm text-[#4d5156] line-clamp-2 leading-snug">
+                                {currentSeo.description || `La meta descripción en ${langMeta?.name} aparecerá aquí…`}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })()}
                   </div>
                 )}
               </div>
