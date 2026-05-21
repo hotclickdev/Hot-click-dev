@@ -6,13 +6,15 @@ import com.hotclick.repository.CategoriaRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
-@CrossOrigin(origins = "*")
+
 @RestController
 @RequestMapping("/api/categorias")
 public class CategoriaController {
@@ -20,6 +22,7 @@ public class CategoriaController {
     @Autowired private CategoriaRepository categoriaRepository;
     @Autowired private UsuarioRepository usuarioRepository;
 
+    @Cacheable("categorias")
     @GetMapping
     public ResponseEntity<ResponseDTO> listar() {
         return ResponseEntity.ok(
@@ -27,6 +30,7 @@ public class CategoriaController {
         );
     }
 
+    @CacheEvict(value = "categorias", allEntries = true)
     @PostMapping
     public ResponseEntity<ResponseDTO> crear(
             @RequestBody Map<String, String> body,
@@ -49,6 +53,7 @@ public class CategoriaController {
         }
     }
 
+    @CacheEvict(value = "categorias", allEntries = true)
     @PutMapping("/{id}")
     public ResponseEntity<ResponseDTO> actualizar(
             @PathVariable Long id,
@@ -66,6 +71,7 @@ public class CategoriaController {
         }
     }
 
+    @CacheEvict(value = "categorias", allEntries = true)
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseDTO> eliminar(@PathVariable Long id) {
         try {

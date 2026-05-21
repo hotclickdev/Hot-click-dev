@@ -1,4 +1,5 @@
 import axios from 'axios'
+import useAuthStore from '@/store/authStore'
 
 const api = axios.create({
   baseURL: '/api',
@@ -44,13 +45,8 @@ api.interceptors.response.use(
         try {
           const { data } = await axios.post('/api/auth/refresh', { refreshToken: stored.refreshToken })
           if (data?.accessToken) {
-            // Actualizar solo el access token en el store sin perder el resto del estado
-            const raw = localStorage.getItem('hotclick-auth')
-            if (raw) {
-              const parsed = JSON.parse(raw)
-              parsed.state.token = data.accessToken
-              localStorage.setItem('hotclick-auth', JSON.stringify(parsed))
-            }
+            // Sync Zustand in-memory state first, then let persist middleware update localStorage
+            useAuthStore.getState().updateAccessToken(data.accessToken)
             original.headers.Authorization = `Bearer ${data.accessToken}`
             return api(original) // reintentar request original
           }

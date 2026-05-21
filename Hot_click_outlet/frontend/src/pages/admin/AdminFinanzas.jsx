@@ -35,7 +35,7 @@ export default function AdminFinanzas() {
       .then(({ data }) => {
         const raw = data?.data ?? data
         const all = Array.isArray(raw) ? raw : raw?.content ?? []
-        setPedidos(all.filter(p => p.estado === 'ENTREGADO'))
+        setPedidos(all.filter(p => p.estadoPedido === 'ENTREGADO'))
       })
       .finally(() => setLoading(false))
   }, [])
@@ -51,15 +51,15 @@ export default function AdminFinanzas() {
   }
 
   const filtered = useMemo(() => pedidos.filter((p) => {
-    const fecha = (p.fechaCreacion ?? '').slice(0, 10)
+    const fecha = (p.fechaPedido ?? '').slice(0, 10)
     if (desde && fecha < desde) return false
     if (hasta && fecha > hasta) return false
     return true
   }), [pedidos, desde, hasta])
 
-  const totalProductos = filtered.reduce((s, p) => s + (p.subtotal ?? (p.total ?? 0) - (p.costoEnvio ?? 0)), 0)
+  const totalProductos = filtered.reduce((s, p) => s + (p.subtotal ?? (p.totalPedido ?? 0) - (p.costoEnvio ?? 0)), 0)
   const totalEnvio     = filtered.reduce((s, p) => s + (p.costoEnvio ?? 0), 0)
-  const totalCobrado   = filtered.reduce((s, p) => s + (p.total ?? 0), 0)
+  const totalCobrado   = filtered.reduce((s, p) => s + (p.totalPedido ?? 0), 0)
 
   return (
     <AdminLayout>
@@ -140,17 +140,18 @@ export default function AdminFinanzas() {
                       <tbody className="divide-y divide-white/5">
                         {filtered.map((p) => {
                           const envio      = p.costoEnvio ?? 0
-                          const productos  = p.subtotal ?? (p.total ?? 0) - envio
+                          const productos  = p.subtotal ?? (p.totalPedido ?? 0) - envio
                           const esRetiro   = p.metodoEnvio !== 'ENVIO_A_DOMICILIO'
+                          const cliente    = p.usuarioFinal?.nombre ?? p.nombreCliente ?? '—'
                           return (
                             <tr key={p.id} className="hover:bg-white/3 transition-colors">
                               <td className="px-4 py-3 font-mono text-xs text-[#8e8e9a]">#{p.id}</td>
                               <td className="px-4 py-3 text-[#e8e8ed]">
-                                <p className="font-medium truncate max-w-[140px]">{p.nombreCliente ?? '—'}</p>
+                                <p className="font-medium truncate max-w-[140px]">{cliente}</p>
                                 <p className="text-[11px] text-[#8e8e9a]">{esRetiro ? '🏪 Retiro' : '🚚 Domicilio'}</p>
                               </td>
                               <td className="px-4 py-3 text-xs text-[#8e8e9a]">
-                                {p.fechaCreacion ? formatDate(p.fechaCreacion) : '—'}
+                                {p.fechaPedido ? formatDate(p.fechaPedido) : '—'}
                               </td>
                               <td className="px-4 py-3 font-semibold text-[#4ade80]">
                                 {formatPrice(productos)}
@@ -163,7 +164,7 @@ export default function AdminFinanzas() {
                                 )}
                               </td>
                               <td className="px-4 py-3 font-bold text-[#4f7cff]">
-                                {formatPrice(p.total ?? 0)}
+                                {formatPrice(p.totalPedido ?? 0)}
                               </td>
                             </tr>
                           )

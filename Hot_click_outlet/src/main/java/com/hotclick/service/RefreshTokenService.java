@@ -29,6 +29,7 @@ public class RefreshTokenService {
         return repo.save(rt);
     }
 
+    @Transactional(readOnly = true)
     public RefreshToken validar(String tokenStr) {
         return repo.findByToken(tokenStr)
                 .filter(RefreshToken::isValid)

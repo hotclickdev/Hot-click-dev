@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-@CrossOrigin(origins = "*")
+
 @RestController
 @RequestMapping("/api/admin")
 public class AdminPagoController {
@@ -76,12 +76,12 @@ public class AdminPagoController {
     @GetMapping("/pagos/kpis")
     public ResponseEntity<ResponseDTO> kpis() {
         long total      = pagoRepository.count();
-        long capturados = pagoRepository.buscarPagos(null, "CAPTURADO", PageRequest.of(0, 1)).getTotalElements();
-        long pendientes = pagoRepository.buscarPagos(null, "PENDIENTE", PageRequest.of(0, 1)).getTotalElements();
-        long fallidos   = pagoRepository.buscarPagos(null, "FALLIDO",   PageRequest.of(0, 1)).getTotalElements();
-        long paypal     = pagoRepository.buscarPagos("PAYPAL",   null, PageRequest.of(0, 1)).getTotalElements();
-        long payxpert   = pagoRepository.buscarPagos("PAYXPERT", null, PageRequest.of(0, 1)).getTotalElements();
-        long webhooksErr= webhookEventRepository.buscarWebhooks(false, PageRequest.of(0, 1)).getTotalElements();
+        long capturados = pagoRepository.countByEstadoPago("CAPTURADO");
+        long pendientes = pagoRepository.countByEstadoPago("PENDIENTE");
+        long fallidos   = pagoRepository.countByEstadoPago("FALLIDO");
+        long paypal     = pagoRepository.countByProveedor("PAYPAL");
+        long payxpert   = pagoRepository.countByProveedor("PAYXPERT");
+        long webhooksErr= webhookEventRepository.countByProcesado(false);
 
         double tasaExito = total > 0 ? Math.round((double) capturados / total * 1000.0) / 10.0 : 0.0;
 

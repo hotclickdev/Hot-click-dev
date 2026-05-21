@@ -44,14 +44,22 @@ export default function Navbar() {
   }, [cartCount])
 
   useEffect(() => {
+    let rafId = null
     const onScroll = () => {
-      const y = window.scrollY
-      setScrolled(y > 20)
-      const docH = document.documentElement.scrollHeight - window.innerHeight
-      setScrollProgress(docH > 0 ? Math.min(y / docH, 1) : 0)
+      if (rafId) return
+      rafId = requestAnimationFrame(() => {
+        const y = window.scrollY
+        setScrolled(y > 20)
+        const docH = document.documentElement.scrollHeight - window.innerHeight
+        setScrollProgress(docH > 0 ? Math.min(y / docH, 1) : 0)
+        rafId = null
+      })
     }
     window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (rafId) cancelAnimationFrame(rafId)
+    }
   }, [])
 
   useEffect(() => setMenuOpen(false), [location.pathname])

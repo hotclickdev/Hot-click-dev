@@ -38,9 +38,10 @@ export default function ProductDetailPage() {
   const recentlyViewed = useRecentlyViewedStore((s) => s.items)
 
   useEffect(() => {
+    const controller = new AbortController()
     setLoading(true)
     setRecommendations([])
-    productService.getById(id)
+    productService.getById(id, { signal: controller.signal })
       .then(({ data }) => {
         const p = normalizeProduct(data)
         setProduct(p)
@@ -49,26 +50,19 @@ export default function ProductDetailPage() {
         if (p.especificaciones?.trim()) setActiveTab('especificaciones')
         else if (p.comoUsar?.trim()) setActiveTab('como-usar')
       })
-      .catch(() => navigate('/productos'))
-      .finally(() => setLoading(false))
+      .catch((err) => { if (err.name !== 'CanceledError') navigate('/productos') })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false) })
+    return () => controller.abort()
   }, [id])
 
   // Fetch same-category recommendations
   useEffect(() => {
     if (!product) return
-    productService.getAll(0, 24)
-      .then(({ data }) => {
-        const all = (data.content ?? data ?? []).map(normalizeProduct)
-        const sameCat = all.filter((p) => p.id !== product.id && p.categoriaId === product.categoriaId && p.stock > 0)
-        if (sameCat.length >= 3) {
-          setRecommendations(sameCat.slice(0, 6))
-        } else {
-          setRecommendations(
-            all.filter((p) => p.id !== product.id && p.stock > 0).slice(0, 6)
-          )
-        }
-      })
+    const controller = new AbortController()
+    productService.getRecommendations(product.id, { signal: controller.signal })
+      .then((recs) => setRecommendations(recs))
       .catch(() => {})
+    return () => controller.abort()
   }, [product?.id])
 
   useEffect(() => () => clearTimeout(addTimeout.current), [])
@@ -125,7 +119,7 @@ export default function ProductDetailPage() {
 
   const handleAdd = () => {
     if (!inStock || justAdded) return
-    for (let i = 0; i < quantity; i++) addItem(normalizeProduct(product))
+    addItem(normalizeProduct(product), quantity)
     toast({
       message: t('product.added', { name: `${quantity > 1 ? `${quantity}× ` : ''}${product.nombre}` }),
       type: 'success',
@@ -642,6 +636,7 @@ export default function ProductDetailPage() {
 // ── Sticky Cart Bar ───────────────────────────────────────────────────────────
 
 function StickyCartBar({ product, quantity, onDecrease, onIncrease, onAdd, justAdded, atMax, inStock }) {
+  const { t } = useTranslation()
   return (
     <motion.div
       initial={{ y: 80, opacity: 0 }}

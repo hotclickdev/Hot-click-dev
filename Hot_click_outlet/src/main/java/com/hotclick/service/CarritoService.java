@@ -93,8 +93,7 @@ public class CarritoService {
     private void liberarReservasDeItems(List<CarritoItem> items, Long carritoId) {
         String referencia = "liberacion-carrito-" + carritoId;
         items.forEach(item -> {
-            // Para liberar no necesitamos lock pesimista (solo decrementamos, Math.max previene negativos)
-            Producto producto = productoRepository.findById(item.getProducto().getId()).orElse(null);
+            Producto producto = item.getProducto(); // ya en sesión JPA — sin roundtrip extra
             if (producto != null) {
                 stockService.liberarReserva(producto, item.getCantidad(), referencia, "sistema");
             }

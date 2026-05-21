@@ -24,6 +24,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Proveedor PayPal — utiliza PayPal Orders API v2.
@@ -143,9 +144,23 @@ public class PayPalPaymentProvider implements PaymentProvider {
             throw new RuntimeException("Captura PayPal no completada. Estado: " + status);
         }
 
-        // Extraer capture ID
-        String captureId = extractCaptureId(response);
+        // [SECURITY] Verificar que reference_id de PayPal coincide con el pedido esperado
+        String referenceId = extractReferenceId(response);
+        if (referenceId != null && !referenceId.equals(pago.getPedido().getNumeroPedido())) {
+            log.error("ALERTA SEGURIDAD PayPal: reference_id={} no coincide con pedido={}",
+                referenceId, pago.getPedido().getNumeroPedido());
+            paymentService.marcarFallido(pago, "PayPal reference_id mismatch — posible manipulación");
+            throw new SecurityException("PayPal reference_id no coincide con el pedido esperado");
+        }
+
+        // Extraer capture ID y monto capturado (audit trail)
+        String captureId        = extractCaptureId(response);
+        String capturedAmountUsd = extractCapturedAmount(response);
         if (captureId == null) log.warn("PayPal capture sin captureId en response — orderId={}", paypalOrderId);
+        if (capturedAmountUsd != null) {
+            log.info("PayPal monto capturado: {} USD = {} CRC (pedido={})",
+                capturedAmountUsd, pago.getMonto(), pago.getPedido().getNumeroPedido());
+        }
 
         // Registrar transacción
         TransaccionPago txn = new TransaccionPago();
@@ -385,7 +400,7 @@ public class PayPalPaymentProvider implements PaymentProvider {
             .header("Authorization",              "Bearer " + accessToken)
             .header("Content-Type",               "application/json")
             .header("Accept",                     "application/json")
-            .header("PayPal-Request-Id",          "hc-" + System.currentTimeMillis())
+            .header("PayPal-Request-Id",          "hc-" + UUID.randomUUID())
             .header("Prefer",                     "return=representation");
 
         String requestBody = body != null ? objectMapper.writeValueAsString(body) : "{}";
@@ -420,6 +435,33 @@ public class PayPalPaymentProvider implements PaymentProvider {
             List<Map<String, Object>> captures = (List<Map<String, Object>>) payments.get("captures");
             if (captures == null || captures.isEmpty()) return null;
             return (String) captures.get(0).get("id");
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private String extractReferenceId(Map<String, Object> captureResponse) {
+        try {
+            List<Map<String, Object>> units = (List<Map<String, Object>>) captureResponse.get("purchase_units");
+            if (units == null || units.isEmpty()) return null;
+            return (String) units.get(0).get("reference_id");
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private String extractCapturedAmount(Map<String, Object> captureResponse) {
+        try {
+            List<Map<String, Object>> units = (List<Map<String, Object>>) captureResponse.get("purchase_units");
+            if (units == null || units.isEmpty()) return null;
+            Map<String, Object> payments = (Map<String, Object>) units.get(0).get("payments");
+            if (payments == null) return null;
+            List<Map<String, Object>> captures = (List<Map<String, Object>>) payments.get("captures");
+            if (captures == null || captures.isEmpty()) return null;
+            Map<String, Object> amount = (Map<String, Object>) captures.get(0).get("amount");
+            return amount != null ? (String) amount.get("value") : null;
         } catch (Exception e) {
             return null;
         }

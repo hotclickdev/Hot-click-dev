@@ -88,6 +88,8 @@ export default function CheckoutPage() {
   const { estado, error, intentos, maxIntentos, iniciarPago } = usePayment()
   const { t } = useTranslation()
 
+  // TODO[PAYXPERT-REACTIVAR]: agregar de vuelta la opción PAYXPERT aquí.
+  // Ver archive/payxpert/REACTIVACION.md
   const METODOS_PAGO = [
     {
       id: 'PAYPAL',
@@ -96,14 +98,6 @@ export default function CheckoutPage() {
       badge: t('checkout.paypalBadge'),
       badgeColor: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
       icon: PayPalIcon,
-    },
-    {
-      id: 'PAYXPERT',
-      label: t('checkout.cardLabel'),
-      descripcion: t('checkout.cardDesc'),
-      badge: null,
-      badgeColor: '',
-      icon: CardIcon,
     },
   ]
 
@@ -174,7 +168,7 @@ export default function CheckoutPage() {
 
   if (estado === 'redirecting' || estado === 'loading') {
     const msg = estado === 'redirecting'
-      ? (metodoPago === 'PAYPAL' ? t('checkout.redirectingPaypal') : t('checkout.redirectingPayxpert'))
+      ? t('checkout.redirectingPaypal')
       : t('checkout.preparing')
     return (
       <MainLayout>
@@ -424,15 +418,9 @@ export default function CheckoutPage() {
               </div>
 
               <div className="p-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--hc-surface) 50%, transparent)', border: '1px solid var(--hc-border)' }}>
-                {metodoPago === 'PAYPAL' ? (
-                  <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-                    {t('checkout.paypalNote')}
-                  </p>
-                ) : (
-                  <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-                    {t('checkout.payxpertNote')}
-                  </p>
-                )}
+                <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
+                  {t('checkout.paypalNote')}
+                </p>
               </div>
             </motion.div>
 

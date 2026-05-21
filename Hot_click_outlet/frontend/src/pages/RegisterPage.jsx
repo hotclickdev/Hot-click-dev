@@ -40,7 +40,16 @@ export default function RegisterPage() {
     setError('')
     setLoading(true)
     try {
-      await authService.sendVerification(form)
+      const trimmed = {
+        ...form,
+        nombre: form.nombre.trim(),
+        apellidoPaterno: form.apellidoPaterno.trim(),
+        apellidoMaterno: form.apellidoMaterno.trim(),
+        correo: form.correo.trim().toLowerCase(),
+        telefono: form.telefono.trim(),
+        identificacion: form.identificacion.trim(),
+      }
+      await authService.sendVerification(trimmed)
       setCorreoRegistro(form.correo)
       setStep('verify')
     } catch (err) {
@@ -292,7 +301,7 @@ export default function RegisterPage() {
               onClick={async () => {
                 recoveryCart?.items?.forEach((item) =>
                   addItem({ id: item.productoId, nombre: item.nombre, precio: item.precio,
-                            imagenUrl: item.imagenUrl, stock: 99 })
+                            imagenUrl: item.imagenUrl, stock: item.stock ?? item.cantidad ?? 1 }, item.cantidad ?? 1)
                 )
                 try { await abandonedCartService.deleteAbandonedCart(recoveryCart.id) } catch { /* ok */ }
                 setShowCartRecovery(false)

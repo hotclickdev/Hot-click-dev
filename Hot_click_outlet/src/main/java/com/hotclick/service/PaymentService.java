@@ -51,7 +51,8 @@ public class PaymentService {
             throw new IllegalArgumentException("El carrito no tiene productos");
         }
 
-        String provider = req.getProvider() != null ? req.getProvider().toUpperCase() : "PAYXPERT";
+        // TODO[PAYXPERT-REACTIVAR]: restaurar "PAYXPERT" como default al reactivar
+        String provider = req.getProvider() != null ? req.getProvider().toUpperCase() : "PAYPAL";
         if (!providerFactory.soporta(provider)) {
             throw new IllegalArgumentException("Proveedor de pago no soportado: " + provider);
         }
@@ -368,22 +369,27 @@ public class PaymentService {
         LocalDateTime corte = LocalDateTime.now().minusMinutes(30);
         List<Pago> expirados = pagoRepository.findExpiradosPendientes(corte);
 
+        List<Pago> pagosActualizados = new java.util.ArrayList<>();
+        List<Pedido> pedidosActualizados = new java.util.ArrayList<>();
+
         for (Pago pago : expirados) {
             pago.setEstadoPago(Constants.PAGO_CANCELADO);
             pago.setFechaActualizacion(LocalDateTime.now());
-            pagoRepository.save(pago);
+            pagosActualizados.add(pago);
 
             Pedido pedido = pago.getPedido();
             if (Constants.PEDIDO_PENDIENTE.equals(pedido.getEstadoPedido())) {
                 pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
-                pedidoRepository.save(pedido);
+                pedidosActualizados.add(pedido);
                 liberarReservas(pedido);
                 log.info("Pedido {} cancelado por expiración de pago TTL", pedido.getNumeroPedido());
             }
         }
 
-        if (!expirados.isEmpty()) {
-            log.info("Cleanup TTL: {} pagos expirados cancelados", expirados.size());
+        if (!pagosActualizados.isEmpty()) {
+            pagoRepository.saveAll(pagosActualizados);
+            pedidoRepository.saveAll(pedidosActualizados);
+            log.info("Cleanup TTL: {} pagos expirados cancelados", pagosActualizados.size());
         }
     }
 

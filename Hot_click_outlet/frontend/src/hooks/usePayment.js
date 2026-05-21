@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { paymentService } from '../services/paymentService'
 
 const MAX_INTENTOS     = 3
@@ -139,6 +139,8 @@ export function usePayment() {
     },
     [intentos, iniciarPago]
   )
+
+  useEffect(() => () => stopPolling(), [stopPolling])
 
   const reset = useCallback(() => {
     stopPolling()

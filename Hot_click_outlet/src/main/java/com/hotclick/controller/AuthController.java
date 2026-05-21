@@ -13,11 +13,14 @@ import com.hotclick.service.TwoFactorService;
 import com.hotclick.service.UsuarioService;
 import com.hotclick.utils.Constants;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 
@@ -25,14 +28,15 @@ import java.util.Optional;
 @RequestMapping("/api/auth")
 public class AuthController {
 
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
+
     @Autowired private UsuarioService            usuarioService;
     @Autowired private JwtUtil                   jwtUtil;
     @Autowired private PasswordResetService      passwordResetService;
     @Autowired private EmailVerificationService  emailVerificationService;
     @Autowired private TwoFactorService          twoFactorService;
     @Autowired private RefreshTokenService       refreshTokenService;
-
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    @Autowired private PasswordEncoder           passwordEncoder;
 
     // ── Registro ──────────────────────────────────────────────────────────────
 
@@ -59,6 +63,13 @@ public class AuthController {
 
         Usuario usuario = usuarioOpt.get();
 
+        // [FIX-1] Verificar bloqueo por intentos fallidos antes de validar contraseña
+        if (usuario.getBloqueadoHasta() != null && LocalDateTime.now().isBefore(usuario.getBloqueadoHasta())) {
+            log.warn("Login bloqueado para {}: cuenta bloqueada hasta {}", request.getCorreo(), usuario.getBloqueadoHasta());
+            return ResponseEntity.status(403).body(ResponseDTO.error(
+                "Cuenta temporalmente bloqueada por múltiples intentos fallidos. Intentá más tarde."));
+        }
+
         if (!passwordEncoder.matches(request.getContrasena(), usuario.getContrasenaHash())) {
             usuarioService.incrementarIntentosFallidos(usuario.getId());
             return ResponseEntity.status(401).body(ResponseDTO.error("Credenciales inválidas"));
@@ -79,6 +90,16 @@ public class AuthController {
 
         usuarioService.resetearIntentosFallidos(usuario.getId());
         usuarioService.actualizarUltimoAcceso(usuario.getId());
+
+        boolean esAdmin = usuario.getRoles().stream()
+            .anyMatch(r -> "ADMIN_IT".equals(r.getNombreRol()));
+
+        // [FIX-2] Admins sin 2FA configurado no pueden completar el login
+        if (esAdmin && !Boolean.TRUE.equals(usuario.getTwoFactorEnabled())) {
+            log.warn("Admin {} intentó login sin 2FA configurado", request.getCorreo());
+            return ResponseEntity.status(403).body(ResponseDTO.error(
+                "Las cuentas de administrador requieren autenticación de dos factores. Configurala desde el panel de administración."));
+        }
 
         if (Boolean.TRUE.equals(usuario.getTwoFactorEnabled())) {
             String tempToken = jwtUtil.generateTempToken(usuario.getCorreo(), usuario.getId());
@@ -176,10 +197,21 @@ public class AuthController {
             }
 
             Usuario usuario = opt.get();
+
+            // [FIX-1] Revalidar bloqueo también en el paso 2FA
+            if (usuario.getBloqueadoHasta() != null && LocalDateTime.now().isBefore(usuario.getBloqueadoHasta())) {
+                return ResponseEntity.status(403).body(ResponseDTO.error(
+                    "Cuenta temporalmente bloqueada. Intentá más tarde."));
+            }
+
+            // [FIX-3] Contar intentos fallidos de 2FA para prevenir brute-force del código TOTP
             if (!twoFactorService.verifyCode(usuario.getTwoFactorSecret(), code)) {
+                usuarioService.incrementarIntentosFallidos(usuario.getId());
+                log.warn("Código 2FA incorrecto para {}", correo);
                 return ResponseEntity.status(401).body(ResponseDTO.error("Código incorrecto o expirado"));
             }
 
+            usuarioService.resetearIntentosFallidos(usuario.getId());
             return ResponseEntity.ok(buildAuthResponse(usuario));
 
         } catch (Exception e) {
@@ -294,8 +326,7 @@ public class AuthController {
             if (msg == null || msg.isBlank()) {
                 msg = "Error al enviar el código. Revisá que el correo sea válido e intentá de nuevo.";
             }
-            System.err.println("[send-verification] ERROR: " + e.getClass().getSimpleName() + " — " + e.getMessage());
-            if (e.getCause() != null) System.err.println("  Caused by: " + e.getCause().getMessage());
+            log.error("[send-verification] {}: {}", e.getClass().getSimpleName(), e.getMessage(), e);
             return ResponseEntity.badRequest().body(ResponseDTO.error(msg));
         }
     }
@@ -328,7 +359,7 @@ public class AuthController {
             return ResponseEntity.ok(ResponseDTO.success("Si el correo está registrado, recibirás un código de verificación", null));
         } catch (RuntimeException e) {
             String msg = e.getMessage();
-            System.err.println("[forgot-password] ERROR: " + e.getClass().getSimpleName() + " — " + msg);
+            log.error("[forgot-password] {}: {}", e.getClass().getSimpleName(), msg);
             return ResponseEntity.badRequest().body(ResponseDTO.error(
                 msg != null && !msg.isBlank() ? msg : "Error al enviar el correo"));
         }

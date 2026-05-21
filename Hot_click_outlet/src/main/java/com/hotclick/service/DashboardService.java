@@ -9,6 +9,7 @@ import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ public class DashboardService {
     @Autowired private ProductoRepository productoRepository;
     @Autowired private PedidoRepository pedidoRepository;
 
+    @Cacheable("dashboard-metricas")
     @Transactional(readOnly = true)
     public DashboardDTO obtenerMetricas() {
         DashboardDTO dto = new DashboardDTO();
@@ -37,7 +39,7 @@ public class DashboardService {
         );
         dto.setUsuariosPendientes(usuarioRepository.countUsuariosPendientes());
         dto.setStockBajo(
-            productoRepository.findProductosConStockBajo().size()
+            (int) productoRepository.countProductosConStockBajo()
         );
 
         List<CategoriaConteoDTO> categorias = productoRepository.countPorCategoria()

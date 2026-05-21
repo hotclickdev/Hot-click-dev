@@ -3,6 +3,7 @@ package com.hotclick.repository;
 import com.hotclick.model.CodigoOtp;
 import com.hotclick.model.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
+import java.time.LocalDateTime;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -38,4 +39,11 @@ public interface CodigoOtpRepository extends JpaRepository<CodigoOtp, Long> {
     @Transactional
     @Query("UPDATE CodigoOtp o SET o.activeFlag = false WHERE o.idOtpCode = :id")
     void invalidar(@Param("id") Long id);
+
+    @Query("SELECT COUNT(o) FROM CodigoOtp o " +
+           "WHERE o.usuario = :usuario AND o.tipoOtp.nombre = :tipo " +
+           "AND o.usedAt IS NOT NULL AND o.activeFlag = false AND o.usedAt > :desde")
+    long countRecentlyConsumedOtps(@Param("usuario") Usuario usuario,
+                                    @Param("tipo") String tipo,
+                                    @Param("desde") LocalDateTime desde);
 }

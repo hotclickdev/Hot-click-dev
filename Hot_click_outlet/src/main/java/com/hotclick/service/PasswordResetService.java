@@ -57,6 +57,10 @@ public class PasswordResetService {
         if (usuarioOpt.isEmpty()) return false;
 
         Usuario usuario = usuarioOpt.get();
+        if (!otpService.tieneOtpConsumidoReciente(usuario, Constants.OTP_TIPO_RESET_PASSWORD)) {
+            return false;
+        }
+
         usuario.setContrasenaHash(passwordEncoder.encode(nuevaContrasena));
         usuarioRepository.save(usuario);
         return true;

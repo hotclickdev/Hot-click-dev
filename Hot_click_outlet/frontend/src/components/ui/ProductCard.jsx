@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
@@ -13,7 +13,7 @@ import { formatPrice, conditionLabel } from '@/utils/format'
  * @param {number}   index        - position in the list (drives stagger animation delay)
  * @param {function} onQuickView  - opens the quick-view modal in the parent
  */
-export default function ProductCard({ product, priority = false, index = 0, onQuickView }) {
+function ProductCard({ product, priority = false, index = 0, onQuickView }) {
   const navigate = useNavigate()
   const addItem = useCartStore((s) => s.addItem)
   const { toggle: toggleWishlist, isLiked } = useWishlistStore()
@@ -167,6 +167,14 @@ export default function ProductCard({ product, priority = false, index = 0, onQu
     </motion.div>
   )
 }
+
+export default memo(ProductCard, (prev, next) =>
+  prev.product.id    === next.product.id    &&
+  prev.product.stock === next.product.stock &&
+  prev.priority      === next.priority      &&
+  prev.index         === next.index         &&
+  prev.onQuickView   === next.onQuickView
+)
 
 function HeartCardIcon({ filled }) {
   return filled ? (

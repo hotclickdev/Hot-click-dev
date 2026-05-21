@@ -19,7 +19,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
-@CrossOrigin(origins = "*")
+
 @RestController
 @RequestMapping("/api/extraccion")
 public class ExtraccionController {

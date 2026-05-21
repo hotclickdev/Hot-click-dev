@@ -10,6 +10,7 @@ import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -94,6 +95,18 @@ public class ProductoService {
             p.setMarca(marcaRepository.findById(mid)
                 .orElseThrow(() -> new RuntimeException("Marca no encontrada")));
         }
+    }
+
+    public List<Producto> getRecomendaciones(Long id, int limit) {
+        Producto base = productoRepository.findById(id).orElse(null);
+        if (base == null || base.getCategoria() == null) return List.of();
+        return productoRepository
+            .findByCategoriaIdAndEstadoAndStockActualGreaterThan(
+                base.getCategoria().getId(), Constants.ESTADO_ACTIVO, 0, PageRequest.of(0, limit + 1))
+            .getContent().stream()
+            .filter(p -> !p.getId().equals(id))
+            .limit(limit)
+            .toList();
     }
 
     public Page<Producto> listarPorMarca(Long marcaId, Pageable pageable) {

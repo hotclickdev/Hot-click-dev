@@ -10,7 +10,14 @@ const useRecentlyViewedStore = create(
 
       addItem: (product) => {
         const filtered = get().items.filter((i) => i.id !== product.id)
-        set({ items: [product, ...filtered].slice(0, MAX_ITEMS) })
+        // Guardar solo los campos que los componentes necesitan para renderizar
+        const slim = {
+          id: product.id,
+          nombre: product.nombre,
+          precio: product.precio,
+          imagenUrl: product.imagenUrl,
+        }
+        set({ items: [slim, ...filtered].slice(0, MAX_ITEMS) })
       },
     }),
     { name: 'hotclick-recently-viewed' }

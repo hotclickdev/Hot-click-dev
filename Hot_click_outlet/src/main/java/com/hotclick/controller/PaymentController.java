@@ -1,6 +1,7 @@
 package com.hotclick.controller;
 
 import com.hotclick.dto.PaymentCheckoutRequest;
+import jakarta.validation.Valid;
 import com.hotclick.dto.PaymentCheckoutResponse;
 import com.hotclick.dto.PaymentStatusResponse;
 import com.hotclick.dto.ResponseDTO;
@@ -10,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/payments")
 public class PaymentController {
@@ -23,7 +23,7 @@ public class PaymentController {
      * (PAYXPERT o PAYPAL). Devuelve la redirectUrl al proveedor externo.
      */
     @PostMapping("/checkout")
-    public ResponseEntity<ResponseDTO> checkout(@RequestBody PaymentCheckoutRequest request) {
+    public ResponseEntity<ResponseDTO> checkout(@Valid @RequestBody PaymentCheckoutRequest request) {
         try {
             String correoUsuario = SecurityContextHolder.getContext().getAuthentication().getName();
             PaymentCheckoutResponse response = paymentService.checkout(request, correoUsuario);

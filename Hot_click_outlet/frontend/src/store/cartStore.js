@@ -10,20 +10,20 @@ const useCartStore = create(
       // Timestamp of last cart modification — for abandoned cart analytics
       cartUpdatedAt: null,
 
-      addItem: (product) => {
+      addItem: (product, qty = 1) => {
         const { items } = get()
         const existing = items.find((i) => i.id === product.id)
         if (existing) {
           set({
             items: items.map((i) =>
               i.id === product.id
-                ? { ...i, cantidad: Math.min(i.cantidad + 1, i.stock ?? 99) }
+                ? { ...i, cantidad: Math.min(i.cantidad + qty, i.stock ?? 99) }
                 : i
             ),
             cartUpdatedAt: Date.now(),
           })
         } else {
-          set({ items: [...items, { ...product, cantidad: 1 }], cartUpdatedAt: Date.now() })
+          set({ items: [...items, { ...product, cantidad: Math.min(qty, product.stock ?? 99) }], cartUpdatedAt: Date.now() })
         }
         analytics.addToCart(product)
       },

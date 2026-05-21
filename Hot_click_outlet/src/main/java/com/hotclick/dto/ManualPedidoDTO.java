@@ -1,16 +1,33 @@
 package com.hotclick.dto;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+
 import java.util.List;
 
 public class ManualPedidoDTO {
 
+    @NotNull(message = "El usuario es requerido")
     private Long usuarioId;
+
+    @NotNull(message = "La bodega es requerida")
     private Long bodegaId;
+
+    @NotBlank(message = "El método de envío es requerido")
     private String metodoEnvio;
+
+    @NotBlank(message = "El método de pago es requerido")
     private String metodoPago;
+
     private Integer costoEnvio;
     private String estadoPedido;
     private String notas;
+
+    @NotEmpty(message = "El pedido debe tener al menos un producto")
+    @Valid
     private List<ItemDTO> items;
 
     public Long getUsuarioId() { return usuarioId; }
@@ -38,8 +55,16 @@ public class ManualPedidoDTO {
     public void setItems(List<ItemDTO> items) { this.items = items; }
 
     public static class ItemDTO {
+
+        @NotNull(message = "El ID de producto es requerido")
         private Long productoId;
+
+        @NotNull(message = "La cantidad es requerida")
+        @Min(value = 1, message = "La cantidad debe ser al menos 1")
         private Integer cantidad;
+
+        @NotNull(message = "El precio unitario es requerido")
+        @Min(value = 0, message = "El precio no puede ser negativo")
         private Integer precioUnitario;
 
         public Long getProductoId() { return productoId; }

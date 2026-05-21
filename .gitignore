@@ -30,3 +30,6 @@ application-local.yml
 
 # Environment
 .env
+
+# Reportes internos — no subir a git
+REPORTE_*.md

@@ -16,7 +16,7 @@ export const orderService = {
 
 export const ventaService = {
   create: (data) => api.post('/ventas', data),
-  getAll: () => api.get('/ventas'),
+  getAll: (page = 0, size = 300) => api.get('/ventas', { params: { page, size } }),
   getClientes: () => api.get('/ventas/clientes'),
 }
 

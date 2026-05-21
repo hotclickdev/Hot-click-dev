@@ -2,19 +2,56 @@ package com.hotclick.config;
 
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.exception.StockInsuficienteException;
+import jakarta.validation.ConstraintViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
+import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    // ── Dominio ───────────────────────────────────────────────────────────────
+
     @ExceptionHandler(StockInsuficienteException.class)
-    public ResponseEntity<ResponseDTO> handleStockInsuficiente(StockInsuficienteException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-            .body(ResponseDTO.error(ex.getMessage()));
+    public ResponseEntity<ResponseDTO> handleStock(StockInsuficienteException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseDTO.error(ex.getMessage()));
+    }
+
+    // ── Validación de entrada ─────────────────────────────────────────────────
+
+    /** Disparado por @Valid en parámetros de controller */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ResponseDTO> handleValidation(MethodArgumentNotValidException ex) {
+        String errors = ex.getBindingResult().getFieldErrors().stream()
+                .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
+                .collect(Collectors.joining("; "));
+        return ResponseEntity.badRequest().body(ResponseDTO.error(errors));
+    }
+
+    /** Disparado por @Validated en path variables / request params */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ResponseDTO> handleConstraint(ConstraintViolationException ex) {
+        String errors = ex.getConstraintViolations().stream()
+                .map(cv -> cv.getPropertyPath().toString() + ": " + cv.getMessage())
+                .collect(Collectors.joining("; "));
+        return ResponseEntity.badRequest().body(ResponseDTO.error(errors));
+    }
+
+    /** JSON malformado o tipo incorrecto en el body */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ResponseDTO> handleUnreadable(HttpMessageNotReadableException ex) {
+        return ResponseEntity.badRequest().body(ResponseDTO.error("Formato de datos inválido"));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -22,8 +59,41 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(ResponseDTO.error(ex.getMessage()));
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ResponseDTO> handleIllegalState(IllegalStateException ex) {
+        return ResponseEntity.badRequest().body(ResponseDTO.error(ex.getMessage()));
+    }
+
+    /** Recurso no encontrado (Optional.get() sin valor, etc.) */
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<ResponseDTO> handleNotFound(NoSuchElementException ex) {
+        String msg = ex.getMessage();
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ResponseDTO.error(msg != null ? msg : "Recurso no encontrado"));
+    }
+
+    // ── Autenticación ─────────────────────────────────────────────────────────
+
+    @ExceptionHandler(SecurityException.class)
+    public ResponseEntity<ResponseDTO> handleSecurity(SecurityException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseDTO.error(ex.getMessage()));
+    }
+
+    // ── Archivos ──────────────────────────────────────────────────────────────
+
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ResponseDTO> handleMaxSize(MaxUploadSizeExceededException ex) {
-        return ResponseEntity.status(413).body(ResponseDTO.error("La imagen no puede superar 5 MB"));
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(ResponseDTO.error("La imagen no puede superar 5 MB"));
+    }
+
+    // ── Fallback ──────────────────────────────────────────────────────────────
+
+    /** Captura cualquier excepción no manejada explícitamente arriba */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ResponseDTO> handleGeneral(Exception ex) {
+        log.error("Unhandled exception [{}]: {}", ex.getClass().getSimpleName(), ex.getMessage(), ex);
+        return ResponseEntity.internalServerError()
+                .body(ResponseDTO.error("Error interno del servidor"));
     }
 }

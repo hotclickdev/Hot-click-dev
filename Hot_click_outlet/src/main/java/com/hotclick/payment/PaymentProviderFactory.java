@@ -18,11 +18,13 @@ public class PaymentProviderFactory {
 
     public PaymentProviderFactory(List<PaymentProvider> providers) {
         this.registry = providers.stream()
+            .filter(p -> p.getNombre() != null)
             .collect(Collectors.toMap(p -> p.getNombre().toUpperCase(), p -> p));
     }
 
     public PaymentProvider get(String nombre) {
-        String key = (nombre != null) ? nombre.toUpperCase() : "PAYXPERT";
+        // TODO[PAYXPERT-REACTIVAR]: restaurar "PAYXPERT" como default al reactivar
+        String key = (nombre != null) ? nombre.toUpperCase() : "PAYPAL";
         PaymentProvider provider = registry.get(key);
         if (provider == null) {
             throw new IllegalArgumentException("Proveedor de pago no soportado: " + nombre

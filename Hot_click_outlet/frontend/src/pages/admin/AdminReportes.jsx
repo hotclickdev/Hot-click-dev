@@ -6,6 +6,8 @@ import Badge from '@/components/ui/Badge'
 import { ventaService } from '@/services/orderService'
 import { formatPrice, formatDate } from '@/utils/format'
 
+const TABLE_PAGE_SIZE = 25
+
 const QUICK = [
   { label: 'Hoy', days: 0 },
   { label: '7 días', days: 7 },
@@ -26,6 +28,7 @@ export default function AdminReportes() {
   const [metodoPago, setMetodoPago] = useState('')
   const [estado, setEstado] = useState('')
   const [search, setSearch] = useState('')
+  const [tablePage, setTablePage] = useState(0)
 
   useEffect(() => {
     ventaService.getAll()
@@ -36,6 +39,7 @@ export default function AdminReportes() {
 
   const applyQuick = (days) => {
     setQuick(days)
+    setTablePage(0)
     if (days === -1) { setDesde(''); setHasta(''); return }
     const end = new Date()
     const start = new Date()
@@ -45,6 +49,7 @@ export default function AdminReportes() {
   }
 
   const filtered = useMemo(() => {
+    setTablePage(0)
     return ventas.filter((v) => {
       const fecha = (v.fechaCreacion ?? '').slice(0, 10)
       if (desde && fecha < desde) return false
@@ -69,6 +74,9 @@ export default function AdminReportes() {
 
   const metodos = [...new Set(ventas.map((v) => v.metodoPago).filter(Boolean))]
   const estados = [...new Set(ventas.map((v) => v.estado).filter(Boolean))]
+
+  const totalPages = Math.ceil(filtered.length / TABLE_PAGE_SIZE)
+  const paginated  = filtered.slice(tablePage * TABLE_PAGE_SIZE, (tablePage + 1) * TABLE_PAGE_SIZE)
 
   const exportCSV = () => {
     const header = 'ID,Cliente,Subtotal Productos,Costo Envío,Total,Método,Estado,Fecha'
@@ -213,7 +221,7 @@ export default function AdminReportes() {
                 <tbody className="divide-y divide-white/5">
                   {filtered.length === 0 ? (
                     <tr><td colSpan={8} className="px-4 py-12 text-center text-[#8e8e9a]">{t('common.noData')}</td></tr>
-                  ) : filtered.map((v) => {
+                  ) : paginated.map((v) => {
                     const envio = v.costoEnvio ?? 0
                     const subtotalProd = (v.total ?? 0) - envio
                     return (
@@ -237,8 +245,27 @@ export default function AdminReportes() {
               </table>
             </div>
             {filtered.length > 0 && (
-              <div className="px-4 py-3 border-t border-white/8 text-xs text-[#8e8e9a]">
-                {filtered.length} resultado{filtered.length !== 1 ? 's' : ''}
+              <div className="px-4 py-3 border-t border-white/8 flex items-center justify-between text-xs text-[#8e8e9a]">
+                <span>{filtered.length} resultado{filtered.length !== 1 ? 's' : ''}</span>
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setTablePage((p) => Math.max(0, p - 1))}
+                      disabled={tablePage === 0}
+                      className="px-2 py-1 rounded-lg bg-white/5 border border-white/10 disabled:opacity-30 hover:bg-white/10 transition-colors"
+                    >
+                      ←
+                    </button>
+                    <span>{tablePage + 1} / {totalPages}</span>
+                    <button
+                      onClick={() => setTablePage((p) => Math.min(totalPages - 1, p + 1))}
+                      disabled={tablePage >= totalPages - 1}
+                      className="px-2 py-1 rounded-lg bg-white/5 border border-white/10 disabled:opacity-30 hover:bg-white/10 transition-colors"
+                    >
+                      →
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

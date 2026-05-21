@@ -2,25 +2,31 @@ package com.hotclick.controller;
 
 import com.hotclick.dto.ManualPedidoDTO;
 import com.hotclick.dto.ResponseDTO;
+import jakarta.validation.Valid;
 import com.hotclick.model.Pedido;
+import com.hotclick.security.JwtUtil;
 import com.hotclick.service.NotificacionEmailService;
 import com.hotclick.service.PedidoService;
+import com.hotclick.utils.Constants;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
-@CrossOrigin(origins = "*")
+
 @RestController
 @RequestMapping("/api/pedidos")
 public class PedidoController {
 
     @Autowired private PedidoService pedidoService;
     @Autowired private NotificacionEmailService notificacionEmailService;
+    @Autowired private JwtUtil jwtUtil;
 
     @PostMapping("/manual")
-    public ResponseEntity<ResponseDTO> crearPedidoManual(@RequestBody ManualPedidoDTO dto) {
+    public ResponseEntity<ResponseDTO> crearPedidoManual(@Valid @RequestBody ManualPedidoDTO dto) {
         try {
             Pedido nuevo = pedidoService.crearPedidoManual(dto);
             return ResponseEntity.ok(ResponseDTO.success("Pedido creado", nuevo));
@@ -31,6 +37,7 @@ public class PedidoController {
 
     @PostMapping
     public ResponseEntity<ResponseDTO> crearPedido(@RequestBody Pedido pedido) {
+        pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
         try {
             Pedido nuevo = pedidoService.crearPedido(pedido);
             return ResponseEntity.ok(ResponseDTO.success("Pedido creado", nuevo));
@@ -40,10 +47,16 @@ public class PedidoController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseDTO> obtenerPedido(@PathVariable Long id) {
+    public ResponseEntity<ResponseDTO> obtenerPedido(@PathVariable Long id, HttpServletRequest request) {
         try {
             Pedido pedido = pedidoService.buscarPorId(id);
+            Long userId = extractUserId(request);
+            if (!isAdmin() && !userId.equals(pedido.getUsuarioFinal().getId())) {
+                return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));
+            }
             return ResponseEntity.ok(ResponseDTO.success("Pedido encontrado", pedido));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(404).body(ResponseDTO.error(e.getMessage()));
         }
@@ -53,7 +66,12 @@ public class PedidoController {
     public ResponseEntity<ResponseDTO> pedidosPorUsuario(
             @PathVariable Long usuarioId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            HttpServletRequest request) {
+        Long userId = extractUserId(request);
+        if (!isAdmin() && !userId.equals(usuarioId)) {
+            return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));
+        }
         var pedidos = pedidoService.listarPorUsuario(usuarioId, PageRequest.of(page, size));
         return ResponseEntity.ok(ResponseDTO.success("Pedidos obtenidos", pedidos));
     }
@@ -139,5 +157,21 @@ public class PedidoController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
+    }
+
+    private Long extractUserId(HttpServletRequest request) {
+        String auth = request.getHeader("Authorization");
+        if (auth == null || !auth.startsWith("Bearer ")) {
+            throw new SecurityException("Token de autenticación requerido");
+        }
+        return jwtUtil.extractUserId(auth.substring(7));
+    }
+
+    private boolean isAdmin() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) return false;
+        return auth.getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_" + Constants.ROL_ADMIN_IT) ||
+                           a.getAuthority().equals("ROLE_" + Constants.ROL_ADMIN_CLIENTE));
     }
 }

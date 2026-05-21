@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 
-@CrossOrigin(origins = "*")
+
 @RestController
 @RequestMapping("/api/productos")
 public class ProductoController {
@@ -77,6 +77,14 @@ public class ProductoController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
+    }
+
+    @GetMapping("/{id}/recomendaciones")
+    public ResponseEntity<ResponseDTO> recomendaciones(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "6") int limit) {
+        return ResponseEntity.ok(ResponseDTO.success("Recomendaciones obtenidas",
+                productoService.getRecomendaciones(id, limit)));
     }
 
     @GetMapping("/{id}")

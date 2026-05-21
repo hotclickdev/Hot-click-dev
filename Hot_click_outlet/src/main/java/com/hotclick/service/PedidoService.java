@@ -17,7 +17,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
@@ -205,6 +207,27 @@ public class PedidoService {
         Pedido pedido = pedidoRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
         pedidoRepository.delete(pedido);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> listarResumenPaginado(int page, int size) {
+        return pedidoRepository.findAllByOrderByFechaPedidoDesc(
+                PageRequest.of(page, size, Sort.by("fechaPedido").descending()))
+            .getContent().stream().map(p -> {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("id",            p.getId());
+                m.put("numeroPedido",  p.getNumeroPedido());
+                m.put("fechaCreacion", p.getFechaPedido());
+                m.put("estado",        p.getEstadoPedido());
+                m.put("total",         p.getTotalPedido());
+                m.put("metodoPago",    p.getMetodoPago());
+                m.put("metodoEnvio",   p.getMetodoEnvio());
+                m.put("costoEnvio",    p.getCostoEnvio());
+                m.put("nombreCliente", p.getUsuarioFinal() != null ? p.getUsuarioFinal().getNombre() : "—");
+                m.put("clienteCorreo", p.getUsuarioFinal() != null ? p.getUsuarioFinal().getCorreo() : "—");
+                m.put("items", List.of());
+                return m;
+            }).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)

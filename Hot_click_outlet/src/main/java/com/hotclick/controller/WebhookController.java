@@ -2,7 +2,6 @@ package com.hotclick.controller;
 
 import com.hotclick.dto.PaymentWebhookDTO;
 import com.hotclick.payment.PayPalPaymentProvider;
-import com.hotclick.payment.PayXpertPaymentProvider;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,34 +17,18 @@ public class WebhookController {
 
     private static final Logger log = LoggerFactory.getLogger(WebhookController.class);
 
-    @Autowired private PayXpertPaymentProvider payXpertProvider;
-    @Autowired private PayPalPaymentProvider   payPalProvider;
+    @Autowired private PayPalPaymentProvider payPalProvider;
 
-    /**
-     * Callback de PayXpert al completar o fallar un pago.
-     * PayXpert espera {"status":"OK"} — siempre respondemos 200.
-     */
+    // TODO[PAYXPERT-REACTIVAR]: Para reactivar PayXpert, restaurar el handler completo
+    // desde archive/payxpert/REACTIVACION.md y quitar este bloque de 410.
     @PostMapping("/payxpert")
     public ResponseEntity<Map<String, String>> recibirWebhookPayXpert(
-            @RequestBody PaymentWebhookDTO dto,
+            @RequestBody(required = false) PaymentWebhookDTO dto,
             HttpServletRequest request) {
-
         String ip = request.getHeader("X-Forwarded-For");
         if (ip == null || ip.isBlank()) ip = request.getRemoteAddr();
-
-        log.info("Webhook PayXpert: order={} errorCode={} status={} ip={}",
-            dto.getOrderID(), dto.getErrorCode(), dto.getStatus(), ip);
-
-        try {
-            payXpertProvider.procesarWebhook(dto, ip);
-            return ResponseEntity.ok(Map.of("status", "OK", "message", "Received"));
-        } catch (SecurityException e) {
-            log.error("Webhook PayXpert rechazado: {}", e.getMessage());
-            return ResponseEntity.ok(Map.of("status", "ERROR", "message", "Security validation failed"));
-        } catch (Exception e) {
-            log.error("Error procesando webhook PayXpert: {}", e.getMessage(), e);
-            return ResponseEntity.ok(Map.of("status", "ERROR", "message", "Internal error"));
-        }
+        log.warn("Webhook PayXpert recibido pero proveedor está ARCHIVADO — ip={}", ip);
+        return ResponseEntity.status(410).body(Map.of("status", "GONE", "message", "PayXpert archived"));
     }
 
     /**

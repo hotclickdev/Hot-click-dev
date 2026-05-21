@@ -89,6 +89,15 @@ public class OtpService {
     }
 
     /**
+     * Verifica que exista un OTP consumido recientemente (paso 2 completado).
+     * Impide saltar el verify-code e ir directo a reset-password.
+     */
+    public boolean tieneOtpConsumidoReciente(Usuario usuario, String tipoNombre) {
+        LocalDateTime ventana = LocalDateTime.now().minusMinutes(Constants.OTP_VENTANA_REENVIO_MIN);
+        return codigoOtpRepository.countRecentlyConsumedOtps(usuario, tipoNombre, ventana) > 0;
+    }
+
+    /**
      * Marca el OTP como usado (consumed). Llamar después de verificarOtp exitoso.
      */
     @Transactional

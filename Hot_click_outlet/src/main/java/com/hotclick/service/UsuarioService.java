@@ -86,6 +86,9 @@ public class UsuarioService {
         if (usuarioRepository.existsByIdentificacion(usuario.getIdentificacion())) {
             throw new RuntimeException("La identificación ya está registrada");
         }
+        usuario.setId(null);
+        usuario.getRoles().clear();
+        usuario.setBloqueadoHasta(null);
         usuario.setEstado(Constants.ESTADO_PENDIENTE);
         usuario.setIntentosFallidos(0);
         return usuarioRepository.save(usuario);
@@ -105,6 +108,9 @@ public class UsuarioService {
             throw new RuntimeException("La identificación ya está registrada");
         }
         Optional<Rol> rolDefault = rolRepository.findByNombreRol(Constants.ROL_USUARIO_FINAL);
+        usuario.setId(null);
+        usuario.getRoles().clear();
+        usuario.setBloqueadoHasta(null);
         rolDefault.ifPresent(rol -> usuario.getRoles().add(rol));
         usuario.setEstado(Constants.ESTADO_PENDIENTE);
         usuario.setIntentosFallidos(0);

@@ -14,7 +14,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -24,6 +26,7 @@ import static org.springframework.http.HttpMethod.*;
 
 @Configuration
 @EnableWebSecurity
+@org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 public class SecurityConfig {
 
     @Autowired
@@ -75,6 +78,7 @@ public class SecurityConfig {
                 .requestMatchers(GET, "/api/productos").permitAll()
                 .requestMatchers(GET, "/api/productos/destacados").permitAll()
                 .requestMatchers(GET, "/api/productos/*").permitAll()
+                .requestMatchers(GET, "/api/productos/*/recomendaciones").permitAll()
                 .requestMatchers(GET, "/api/categorias").permitAll()
                 .requestMatchers(GET, "/api/marcas/publicas").permitAll()
                 .requestMatchers(GET, "/api/ruleta/premios").permitAll()
@@ -87,6 +91,16 @@ public class SecurityConfig {
                 // Feeds y sitemap públicos
                 .requestMatchers(GET, "/api/public/**").permitAll()
                 .requestMatchers(GET, "/sitemap.xml").permitAll()
+                // Admin-only routes — ADMIN_IT required
+                .requestMatchers("/api/admin/**").hasRole("ADMIN_IT")
+                .requestMatchers(GET,    "/api/pedidos").hasRole("ADMIN_IT")
+                .requestMatchers(GET,    "/api/pedidos/pendientes").hasRole("ADMIN_IT")
+                .requestMatchers(POST,   "/api/pedidos/manual").hasRole("ADMIN_IT")
+                .requestMatchers(PUT,    "/api/pedidos/*/estado").hasRole("ADMIN_IT")
+                .requestMatchers(PUT,    "/api/pedidos/*/guia").hasRole("ADMIN_IT")
+                .requestMatchers(PUT,    "/api/pedidos/*/envio").hasRole("ADMIN_IT")
+                .requestMatchers(DELETE, "/api/pedidos/*").hasRole("ADMIN_IT")
+                .requestMatchers(POST,   "/api/pedidos/*/notificar").hasRole("ADMIN_IT")
                 // Todas las demás rutas /api/** requieren autenticación
                 .requestMatchers("/api/**").authenticated()
                 // Rutas del SPA React (frontend)
@@ -115,6 +129,9 @@ public class SecurityConfig {
                 })
             );
 
+        http.exceptionHandling(ex -> ex
+            .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+        );
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

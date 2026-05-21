@@ -15,4 +15,7 @@ public interface WebhookEventRepository extends JpaRepository<WebhookEvent, Long
 
     @Query("SELECT w FROM WebhookEvent w WHERE (:procesado IS NULL OR w.procesado = :procesado) ORDER BY w.fechaRecepcion DESC")
     Page<WebhookEvent> buscarWebhooks(@Param("procesado") Boolean procesado, Pageable pageable);
+
+    @Query("SELECT COUNT(w) FROM WebhookEvent w WHERE w.procesado = :procesado")
+    long countByProcesado(@Param("procesado") Boolean procesado);
 }

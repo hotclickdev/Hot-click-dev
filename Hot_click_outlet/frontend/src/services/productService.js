@@ -89,6 +89,10 @@ export const productService = {
     api.get(`/productos/${id}`)
        .then((r) => ({ ...r, data: normalizeProduct(r.data) })),
 
+  getRecommendations: (id, config = {}) =>
+    api.get(`/productos/${id}/recomendaciones`, config)
+       .then((r) => (r.data?.data ?? r.data ?? []).map(normalizeProduct)),
+
   create: (data) =>
     api.post('/productos', data),
 

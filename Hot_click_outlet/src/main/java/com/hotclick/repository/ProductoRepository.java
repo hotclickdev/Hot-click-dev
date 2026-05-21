@@ -29,6 +29,8 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     Page<Producto> findByCategoriaIdAndEstado(Long categoriaId, Integer estado, Pageable pageable);
 
+    Page<Producto> findByCategoriaIdAndEstadoAndStockActualGreaterThan(Long categoriaId, Integer estado, Integer stock, Pageable pageable);
+
     Page<Producto> findByMarcaIdAndEstadoAndStockActualGreaterThan(Long marcaId, Integer estado, Integer stock, Pageable pageable);
 
     Page<Producto> findByBodegaIdAndEstado(Long bodegaId, Integer estado, Pageable pageable);
@@ -39,6 +41,9 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     @Query("SELECT p FROM Producto p WHERE p.stockActual <= p.stockMinimo AND p.estado = 1")
     List<Producto> findProductosConStockBajo();
+
+    @Query("SELECT COUNT(p) FROM Producto p WHERE p.stockActual <= p.stockMinimo AND p.estado = 1")
+    long countProductosConStockBajo();
 
     List<Producto> findByEsUnicoTrueAndVendidoFalseAndEstado(Integer estado);
 
@@ -61,10 +66,14 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     int inactivarProductosAgotadosAntesDe(@Param("limite") LocalDateTime limite);
 
     /** Productos activos con stock > 0 y visibles en catálogo — para el feed de Google Shopping */
-    @Query("SELECT p FROM Producto p WHERE p.estado = 1 AND p.stockActual > 0 AND p.visibleCatalogo = true ORDER BY p.id ASC")
+    @Query("SELECT p FROM Producto p LEFT JOIN FETCH p.marca WHERE p.estado = 1 AND p.stockActual > 0 AND p.visibleCatalogo = true ORDER BY p.id ASC")
     List<Producto> findParaFeed();
 
     /** Productos activos y visibles en catálogo (sin filtro de stock) — para sitemap */
-    @Query("SELECT p FROM Producto p WHERE p.estado = 1 AND p.visibleCatalogo = true ORDER BY p.id ASC")
+    @Query("SELECT p FROM Producto p LEFT JOIN FETCH p.categoria WHERE p.estado = 1 AND p.visibleCatalogo = true ORDER BY p.id ASC")
     List<Producto> findActivosVisibles();
+
+    /** Productos activos sin publicación en Facebook — para el scheduler, paginado */
+    @Query("SELECT p FROM Producto p WHERE p.estado = 1 AND NOT EXISTS (SELECT 1 FROM PublicacionFacebook fb WHERE fb.producto.id = p.id) ORDER BY p.id ASC")
+    List<Producto> findActivosSinPublicacion(Pageable pageable);
 }

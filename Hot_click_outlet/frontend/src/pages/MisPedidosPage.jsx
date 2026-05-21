@@ -169,7 +169,7 @@ function OrderCard({ order }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [tab, setTab]   = useState('detalle')
-  const estado = order.estadoPedido || order.estado || 'PENDIENTE'
+  const estado = order.estadoPedido ?? order.estado ?? 'PENDIENTE'
   const colors = estadoColor(estado)
   const items  = order.items ?? []
   const notificaciones = Array.isArray(order.notificaciones) ? order.notificaciones : []

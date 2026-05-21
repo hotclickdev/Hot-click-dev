@@ -72,6 +72,8 @@ export default function AdminProducts() {
   const [bodegas, setBodegas] = useState([])
   const [marcas, setMarcas] = useState([])
   const [loading, setLoading] = useState(true)
+  const [prodPage, setProdPage] = useState(0)
+  const PROD_PAGE_SIZE = 50
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
@@ -85,23 +87,27 @@ export default function AdminProducts() {
   const [seoAutoTitle, setSeoAutoTitle] = useState(true)
   const [seoAutoDesc, setSeoAutoDesc] = useState(true)
 
-  const load = async () => {
+  const load = async (page = prodPage) => {
     setLoading(true)
     try {
       const [{ data: prods }, { data: cats }, { data: bods }, { data: marcsR }] = await Promise.all([
-        productService.adminGetAll(0, 200),
+        productService.adminGetAll(page, PROD_PAGE_SIZE),
         productService.getCategories(),
         warehouseService.getAll(),
         marcaService.getAll(),
       ])
-      setProducts(prods.content ?? prods ?? [])
+      const pageData = prods.content ?? prods ?? []
+      setProducts(pageData)
+      setTotalProds(prods.totalElements ?? pageData.length)
       setCategories(cats ?? [])
       setBodegas(Array.isArray(bods) ? bods : bods?.content ?? [])
       setMarcas(Array.isArray(marcsR.data) ? marcsR.data : [])
     } finally { setLoading(false) }
   }
 
-  useEffect(() => { load() }, [])
+  const [totalProds, setTotalProds] = useState(0)
+
+  useEffect(() => { load(prodPage) }, [prodPage])
 
   const openNew = () => {
     setEditing(null)
@@ -277,7 +283,7 @@ export default function AdminProducts() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.products.title')}</h1>
-            <p className="text-sm text-[#8e8e9a] mt-1">{filtered.length} de {products.length} productos</p>
+            <p className="text-sm text-[#8e8e9a] mt-1">{filtered.length} de {totalProds} productos</p>
           </div>
           <Button onClick={openNew}>+ {t('admin.products.new')}</Button>
         </div>
@@ -568,6 +574,27 @@ export default function AdminProducts() {
                     <div className="text-center py-12 text-[#8e8e9a]">{search || hasFilters ? 'Sin resultados para los filtros' : 'No hay productos aún'}</div>
                   )}
                 </div>
+                {totalProds > PROD_PAGE_SIZE && (
+                  <div className="px-4 py-3 border-t border-white/8 flex items-center justify-between text-xs text-[#8e8e9a]">
+                    <span>Página {prodPage + 1} · {products.length} de {totalProds} productos</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setProdPage((p) => Math.max(0, p - 1))}
+                        disabled={prodPage === 0}
+                        className="px-2 py-1 rounded-lg bg-white/5 border border-white/10 disabled:opacity-30 hover:bg-white/10 transition-colors"
+                      >
+                        ← Anterior
+                      </button>
+                      <button
+                        onClick={() => setProdPage((p) => p + 1)}
+                        disabled={(prodPage + 1) * PROD_PAGE_SIZE >= totalProds}
+                        className="px-2 py-1 rounded-lg bg-white/5 border border-white/10 disabled:opacity-30 hover:bg-white/10 transition-colors"
+                      >
+                        Siguiente →
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

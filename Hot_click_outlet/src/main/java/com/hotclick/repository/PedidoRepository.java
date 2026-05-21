@@ -33,4 +33,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
            "LEFT JOIN FETCH pr.categoria " +
            "ORDER BY p.fechaPedido DESC")
     List<Pedido> findAllWithDetails();
+
+    /** Paginated header-only — para AdminReportes (sin items, evita in-memory full table scan) */
+    Page<Pedido> findAllByOrderByFechaPedidoDesc(Pageable pageable);
 }

@@ -10,9 +10,21 @@ const useWishlistStore = create(
       toggle: (product) => {
         const { items } = get()
         const exists = items.some((i) => i.id === product.id)
-        set({ items: exists ? items.filter((i) => i.id !== product.id) : [...items, product] })
-        if (exists) analytics.wishlistRemove(product.id)
-        else analytics.wishlistAdd(product)
+        if (!exists) {
+          // Guardar solo los campos que WishlistPage necesita para renderizar
+          const slim = {
+            id: product.id,
+            nombre: product.nombre,
+            precio: product.precio,
+            imagenUrl: product.imagenUrl,
+            stock: product.stock ?? 0,
+          }
+          set({ items: [...items, slim] })
+          analytics.wishlistAdd(product)
+        } else {
+          set({ items: items.filter((i) => i.id !== product.id) })
+          analytics.wishlistRemove(product.id)
+        }
       },
 
       isLiked: (id) => get().items.some((i) => i.id === id),

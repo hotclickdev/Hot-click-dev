@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@CrossOrigin(origins = "*")
+
 @RestController
 @RequestMapping("/api/ventas")
 public class VentaController {
@@ -29,9 +29,11 @@ public class VentaController {
     @Autowired private UsuarioRepository usuarioRepository;
 
     @GetMapping
-    public ResponseEntity<ResponseDTO> listarVentas() {
+    public ResponseEntity<ResponseDTO> listarVentas(
+            @RequestParam(defaultValue = "0")   int page,
+            @RequestParam(defaultValue = "300") int size) {
         try {
-            return ResponseEntity.ok(ResponseDTO.success("Ventas", pedidoService.listarTodosConDetalles()));
+            return ResponseEntity.ok(ResponseDTO.success("Ventas", pedidoService.listarResumenPaginado(page, size)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }

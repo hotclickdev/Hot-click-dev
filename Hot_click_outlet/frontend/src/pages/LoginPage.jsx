@@ -18,7 +18,8 @@ export default function LoginPage() {
   const login = useAuthStore((s) => s.login)
   const toast = useToast()
   const { t } = useTranslation()
-  const from = location.state?.from || '/'
+  const rawFrom = location.state?.from ?? '/'
+  const from = typeof rawFrom === 'string' && rawFrom.startsWith('/') && !rawFrom.startsWith('//') ? rawFrom : '/'
 
   const [step, setStep] = useState('login') // 'login' | '2fa'
   const [loading, setLoading] = useState(false)
@@ -125,7 +126,7 @@ export default function LoginPage() {
   const handleRestoreCart = async () => {
     recoveryCart?.items?.forEach((item) =>
       addItem({ id: item.productoId, nombre: item.nombre, precio: item.precio,
-                imagenUrl: item.imagenUrl, stock: 99 })
+                imagenUrl: item.imagenUrl, stock: item.stock ?? item.cantidad ?? 1 }, item.cantidad ?? 1)
     )
     try { await abandonedCartService.deleteAbandonedCart(recoveryCart.id) } catch { /* ok */ }
     setShowCartRecovery(false)

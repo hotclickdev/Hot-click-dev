@@ -28,4 +28,10 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
 
     @Query("SELECT p FROM Pago p WHERE (:proveedor IS NULL OR p.proveedor = :proveedor) AND (:estadoPago IS NULL OR p.estadoPago = :estadoPago) ORDER BY p.fechaCreacion DESC")
     Page<Pago> buscarPagos(@Param("proveedor") String proveedor, @Param("estadoPago") String estadoPago, Pageable pageable);
+
+    @Query("SELECT COUNT(p) FROM Pago p WHERE p.estadoPago = :estadoPago")
+    long countByEstadoPago(@Param("estadoPago") String estadoPago);
+
+    @Query("SELECT COUNT(p) FROM Pago p WHERE p.proveedor = :proveedor")
+    long countByProveedor(@Param("proveedor") String proveedor);
 }

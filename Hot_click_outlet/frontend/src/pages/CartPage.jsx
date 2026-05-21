@@ -240,7 +240,6 @@ export default function CartPage() {
               <ShippingProgress total={total()} />
 
               <div className="pt-2 space-y-2">
-                {/* Pago con tarjeta vía PayXpert */}
                 <Button
                   onClick={() => token ? navigate('/checkout') : setAuthPromptOpen(true)}
                   className="w-full bg-[#4f7cff] hover:bg-[#3d6ee0] shadow-[0_0_20px_rgba(79,124,255,0.3)]"

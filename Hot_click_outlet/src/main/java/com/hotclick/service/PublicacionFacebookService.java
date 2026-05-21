@@ -4,12 +4,11 @@ import com.hotclick.model.Producto;
 import com.hotclick.model.PublicacionFacebook;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.PublicacionFacebookRepository;
-import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -78,16 +77,15 @@ public class PublicacionFacebookService {
     @Transactional
     public void generarParaProductosNuevos() {
         if (!publicacionEnabled) return;
-        List<Producto> productos = productoRepo.findByEstado(Integer.valueOf(Constants.ESTADO_ACTIVO), Pageable.unpaged()).getContent();
+        // Solo los productos que aún no tienen publicación — máximo 50 por ejecución
+        List<Producto> productos = productoRepo.findActivosSinPublicacion(PageRequest.of(0, 50));
         int creados = 0;
         for (Producto p : productos) {
-            if (pubRepo.findFirstByProductoIdOrderByFechaCreacionDesc(p.getId()).isEmpty()) {
-                try {
-                    crearOActualizar(p.getId(), null);
-                    creados++;
-                } catch (Exception e) {
-                    log.warn("No se pudo generar publicación para producto {}: {}", p.getId(), e.getMessage());
-                }
+            try {
+                crearOActualizar(p.getId(), null);
+                creados++;
+            } catch (Exception e) {
+                log.warn("No se pudo generar publicación para producto {}: {}", p.getId(), e.getMessage());
             }
         }
         if (creados > 0) log.info("PublicacionScheduler: {} entradas FB generadas", creados);

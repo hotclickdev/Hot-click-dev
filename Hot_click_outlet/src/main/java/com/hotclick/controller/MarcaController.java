@@ -7,6 +7,8 @@ import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.service.SupabaseStorageService;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 
-@CrossOrigin(origins = "*")
+
 @RestController
 @RequestMapping("/api/marcas")
 public class MarcaController {
@@ -24,6 +26,7 @@ public class MarcaController {
     @Autowired private SupabaseStorageService supabaseStorageService;
 
     /** Endpoint público — sin autenticación, usado por el catálogo y búsqueda */
+    @Cacheable("marcas-publicas")
     @GetMapping("/publicas")
     public ResponseEntity<ResponseDTO> listarPublicas() {
         var marcas = marcaRepository.findByEstado(Constants.ESTADO_ACTIVO);
@@ -36,6 +39,7 @@ public class MarcaController {
         return ResponseEntity.ok(ResponseDTO.success("Marcas obtenidas", marcas));
     }
 
+    @CacheEvict(value = "marcas-publicas", allEntries = true)
     @PostMapping
     public ResponseEntity<ResponseDTO> crear(
             @RequestBody Map<String, String> body,
@@ -62,6 +66,7 @@ public class MarcaController {
         }
     }
 
+    @CacheEvict(value = "marcas-publicas", allEntries = true)
     @PutMapping("/{id}")
     public ResponseEntity<ResponseDTO> actualizar(
             @PathVariable Long id,

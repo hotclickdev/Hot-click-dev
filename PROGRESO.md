@@ -1,6 +1,6 @@
 # HOTCLICK — Progreso del Proyecto
 
-> Fecha última actualización: 2026-05-15
+> Fecha última actualización: 2026-05-21
 
 ---
 
@@ -27,7 +27,9 @@
 | Frontend | React 19 + Vite (en `Hot_click_outlet/frontend/`) |
 | Imágenes | Supabase Storage (bucket `HOT_CLICK`) — upload vía backend `/api/productos/imagen` |
 | Gestor paquetes frontend | pnpm 11.1.2 (en lugar de npm) |
-| Pagos | PayXpert (pendiente respuesta del proveedor) |
+| Pagos online | PayPal Orders API v2 |
+| Pagos offline | SINPE manual (pendiente) · Efectivo |
+| Pagos archivados | PayXpert (ver `archive/payxpert/REACTIVACION.md`) |
 | Build local | Maven local `.\maven\bin\mvn` |
 | Deploy | Render.com (`render.yaml`) |
 
@@ -94,8 +96,10 @@ cd Hot_click_outlet/frontend && pnpm run build
 - **Scheduler diario (3 AM)**: inactiva definitivamente productos agotados hace más de 3 meses
 
 ### Pagos
-- Estructura PayXpert implementada (webhook, tablas en BD, flujo de checkout)
-- **Pendiente**: activación real (esperando respuesta del proveedor)
+- **PayPal** — integración completa (Orders API v2, webhook, capture, anti-fraude)
+- **PayXpert** — archivado temporalmente (ver `archive/payxpert/REACTIVACION.md`)
+- **SINPE manual** — pendiente de implementación
+- **Efectivo** — pendiente de implementación
 
 ### Correos CR
 - Plan de integración en 3 etapas documentado en `CORREOS_CR_INTEGRACION.md`
