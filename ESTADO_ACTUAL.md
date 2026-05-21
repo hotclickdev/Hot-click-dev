@@ -1,7 +1,7 @@
 # HOTCLICK — Estado Actual del Proyecto
 
-> Fecha: 2026-05-21 (actualizado — sesión 2)
-> Cubre: cambios de sesión 1 + backup automático + Flyway + tests
+> Fecha: 2026-05-21 (actualizado — sesión 3)
+> Cubre: sesión 1 + sesión 2 (backup/Flyway/tests) + fix deploy Render
 
 ---
 
@@ -37,7 +37,19 @@
 
 ---
 
-## 2. Cambios Aplicados — Sesión 2026-05-21
+## 2. Cambios Aplicados — Sesión 3 (2026-05-21)
+
+### F. Fix deploy Render — spring-boot-starter-cache
+
+| Archivo | Cambio |
+|---------|--------|
+| `pom.xml` | Agregado `spring-boot-starter-cache` — sin este starter `CacheAutoConfiguration` no corre y el bean `cacheManager` no se crea, causando crash de `entityManagerFactory` en startup |
+
+**Causa raíz**: Caffeine (`com.github.ben-manes.caffeine:caffeine`) estaba en el classpath y `spring.cache.type=caffeine` estaba configurado, pero Spring Boot requiere `spring-boot-starter-cache` para activar `CacheAutoConfiguration` y crear el bean `cacheManager`.
+
+---
+
+## 3. Cambios Aplicados — Sesión 2 (2026-05-21)
 
 ### A. PayXpert archivado
 

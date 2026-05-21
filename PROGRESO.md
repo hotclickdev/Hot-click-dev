@@ -1,6 +1,6 @@
 # HOTCLICK — Progreso del Proyecto
 
-> Fecha última actualización: 2026-05-21
+> Fecha última actualización: 2026-05-21 (sesión 3)
 
 ---
 
@@ -61,9 +61,11 @@ cd Hot_click_outlet/frontend && pnpm run build
 
 ### Autenticación y Seguridad
 - Registro + verificación email (código 6 dígitos, 10 min)
-- Login con JWT (24 h) + 2FA TOTP (Google Authenticator)
+- Login con JWT (15 min) + refresh token revocable + 2FA TOTP (Google Authenticator)
 - Recuperación de contraseña por email
-- Bloqueo de cuenta tras 5 intentos fallidos
+- Bloqueo de cuenta tras 5 intentos fallidos (lockout funcional — brute-force bloqueado)
+- 2FA **obligatorio** para `ADMIN_IT` — sin 2FA configurado → 403 en login
+- TOTP protegido: intentos fallidos en `/2fa/verify` incrementan el contador de lockout
 - Roles: `ADMIN_IT`, `ADMIN_CLIENTE`, `USUARIO_FINAL`
 - `AdminRoute` en React bloquea acceso al panel si no es admin
 
@@ -96,7 +98,10 @@ cd Hot_click_outlet/frontend && pnpm run build
 - **Scheduler diario (3 AM)**: inactiva definitivamente productos agotados hace más de 3 meses
 
 ### Pagos
-- **PayPal** — integración completa (Orders API v2, webhook, capture, anti-fraude)
+- **PayPal** — integración completa (Orders API v2, webhook, capture)
+  - Idempotency key con UUID (anti-colisión)
+  - `reference_id` validado contra pedido (anti-order substitution)
+  - Audit trail: monto USD capturado logueado por pedido
 - **PayXpert** — archivado temporalmente (ver `archive/payxpert/REACTIVACION.md`)
 - **SINPE manual** — pendiente de implementación
 - **Efectivo** — pendiente de implementación
@@ -104,6 +109,17 @@ cd Hot_click_outlet/frontend && pnpm run build
 ### Correos CR
 - Plan de integración en 3 etapas documentado en `CORREOS_CR_INTEGRACION.md`
 - Volumen bajo actual → mayoría contra entrega; integración en etapas
+
+### Infraestructura y Operaciones
+- **Flyway** — migraciones versionadas; `V1__initial_schema.sql` como baseline; nuevos cambios de schema van en `V2__...sql`, `V3__...sql`
+- **Backup diario** — `.github/workflows/backup.yml`; `pg_dump` → gzip → GitHub Actions Artifact (30 días); `scripts/restore.sh` con procedimiento completo
+- **Logging estructurado** — `logback-spring.xml` + `MdcRequestIdFilter`; cada request tiene un `request-id` trazable en todos los logs
+- **Cache L1 Caffeine** — `spring-boot-starter-cache` + `caffeine`; 200 entradas, TTL 120s
+
+### Tests (91/91 PASS)
+- Suite de integración: `AuthIntegrationTest`, `SecurityEndpointsTest`, `PedidoAuthorizationTest`
+- Suite unitaria: `PaymentServiceTest`, `PedidoServiceTest`, `RefreshTokenServiceTest`, `JwtUtilTest`
+- Perfil H2 in-memory (`application-test.properties`) con Flyway deshabilitado
 
 ---
 
@@ -224,7 +240,10 @@ Foto del producto (celular/PC)
 
 ### Alta prioridad
 
-- [ ] **PayXpert** — activar integración real cuando el proveedor responda
+- [ ] **Configurar secrets en GitHub** — `SUPABASE_BACKUP_URL` + `SUPABASE_DB_PASSWORD` para que el backup diario funcione (ver `ROADMAP.md` sección P0)
+- [ ] **CI/CD** — `.github/workflows/ci.yml` con `mvn test` en cada push (ver `ROADMAP.md` P1-1)
+- [ ] **Rate limiting** — Bucket4j en `/api/auth/login`, `/api/auth/2fa/verify`, `/api/auth/forgot-password` (ver `ROADMAP.md` P1-2)
+- [ ] **SINPE manual** — flujo completo de comprobante (ver `ROADMAP.md` P1-3)
 - [ ] **Verificar RLS Supabase** — si `rowsecurity = true` en las tablas, los INSERTs fallan silenciosamente:
 
   ```sql
@@ -249,9 +268,7 @@ Foto del producto (celular/PC)
 ### Baja prioridad
 
 - [ ] Imagen de perfil de usuario (campo existe en BD, falta flujo de upload)
-- [ ] Marcas (`MarcaController` no existe)
 - [ ] Métodos de pago y envío configurables (tablas existen en BD, sin entidad JPA)
-- [ ] Tests de integración (directorio `test/` existe pero sin tests)
 
 ---
 
