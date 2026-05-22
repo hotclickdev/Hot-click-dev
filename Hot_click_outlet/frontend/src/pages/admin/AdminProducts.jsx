@@ -165,32 +165,54 @@ export default function AdminProducts() {
       catch { setProducts((prev) => prev.map((x) => x.id === p.id ? { ...x, enCarrusel: true } : x)) }
     } else {
       if (carruselSlots.length >= 5) { toast({ message: 'El carrusel ya tiene 5 productos (máximo)', type: 'error' }); return }
-      const nuevoOrden = carruselSlots.length + 1
-      setProducts((prev) => prev.map((x) => x.id === p.id ? { ...x, enCarrusel: true, ordenCarrusel: nuevoOrden } : x))
-      try { await productService.toggleCarrusel(p.id, true, nuevoOrden) }
-      catch { setProducts((prev) => prev.map((x) => x.id === p.id ? { ...x, enCarrusel: false } : x)) }
+      // Reassign all existing carousel orders + new one to ensure sequential values
+      const existing = [...carruselSlots]
+      const allAssignments = [
+        ...existing.map((s, i) => ({ id: s.id, orden: i + 1 })),
+        { id: p.id, orden: existing.length + 1 },
+      ]
+      setProducts((prev) => prev.map((x) => {
+        const a = allAssignments.find((n) => n.id === x.id)
+        return a ? { ...x, enCarrusel: true, ordenCarrusel: a.orden } : x
+      }))
+      try {
+        await Promise.all(allAssignments.map(({ id, orden }) =>
+          productService.toggleCarrusel(id, true, orden)
+        ))
+      } catch { setProducts((prev) => prev.map((x) => x.id === p.id ? { ...x, enCarrusel: false } : x)) }
     }
   }
 
   const handleCarruselMover = async (p, dir) => {
-    const slots = products.filter((x) => x.enCarrusel).sort((a, b) => (a.ordenCarrusel ?? 0) - (b.ordenCarrusel ?? 0))
-    const idx = slots.findIndex((x) => x.id === p.id)
+    const sorted = [...products]
+      .filter((x) => x.enCarrusel)
+      .sort((a, b) => (a.ordenCarrusel ?? 0) - (b.ordenCarrusel ?? 0))
+
+    const idx = sorted.findIndex((x) => x.id === p.id)
     const swapIdx = idx + dir
-    if (swapIdx < 0 || swapIdx >= slots.length) return
-    const other = slots[swapIdx]
-    const newOrderA = other.ordenCarrusel
-    const newOrderB = p.ordenCarrusel
-    setProducts((prev) => prev.map((x) =>
-      x.id === p.id ? { ...x, ordenCarrusel: newOrderA }
-      : x.id === other.id ? { ...x, ordenCarrusel: newOrderB }
-      : x
-    ))
+    if (swapIdx < 0 || swapIdx >= sorted.length) return
+
+    // Swap positions in the array
+    const reordered = [...sorted]
+    ;[reordered[idx], reordered[swapIdx]] = [reordered[swapIdx], reordered[idx]]
+
+    // Assign sequential orders 1…N so values are always distinct
+    const assignments = reordered.map((s, i) => ({ id: s.id, orden: i + 1 }))
+
+    // Optimistic update
+    setProducts((prev) => prev.map((x) => {
+      const a = assignments.find((n) => n.id === x.id)
+      return a ? { ...x, ordenCarrusel: a.orden } : x
+    }))
+
     try {
-      await Promise.all([
-        productService.toggleCarrusel(p.id, true, newOrderA),
-        productService.toggleCarrusel(other.id, true, newOrderB),
-      ])
-    } catch { load() }
+      await Promise.all(assignments.map(({ id, orden }) =>
+        productService.toggleCarrusel(id, true, orden)
+      ))
+    } catch {
+      toast({ message: 'Error al reordenar el carrusel', type: 'error' })
+      load()
+    }
   }
 
   const handleToggleDestacado = async (p) => {
