@@ -1,0 +1,1 @@
+import{t as e}from"./api-WQtl2tSG.js";var t={getPublicas:()=>e.get(`/marcas/publicas`),getAll:()=>e.get(`/marcas`),create:t=>e.post(`/marcas`,t),update:(t,n)=>e.put(`/marcas/${t}`,n),delete:t=>e.delete(`/marcas/${t}`),uploadLogo:t=>{let n=new FormData;return n.append(`file`,t),e.post(`/marcas/logo`,n)}};export{t};

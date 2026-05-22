@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Helmet } from 'react-helmet-async'
 import useAuthStore from '@/store/authStore'
+import LanguageSelector from '@/components/ui/LanguageSelector'
 
 export default function AdminLayout({ children }) {
   const { t } = useTranslation()
@@ -78,6 +79,9 @@ export default function AdminLayout({ children }) {
 
       {/* User */}
       <div className="p-3 space-y-1 shrink-0" style={{ borderTop: '1px solid var(--hc-border)' }}>
+        <div className="px-3 py-1">
+          <LanguageSelector />
+        </div>
         <NavLink
           to="/"
           className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors hover:bg-[var(--hc-surface-2)]"
@@ -129,6 +133,7 @@ export default function AdminLayout({ children }) {
           </div>
           <span className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>Admin</span>
         </div>
+        <LanguageSelector />
         <button
           onClick={() => setDrawerOpen(true)}
           className="p-2 rounded-lg hover:bg-[var(--hc-surface-2)] transition-colors"

@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import LanguageSelector from '@/components/ui/LanguageSelector'
 
 export default function AuthLayout({ children }) {
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--hc-bg)' }}>
       {/* Header */}
-      <header className="h-16 flex items-center px-6">
+      <header className="h-16 flex items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 hc-logo-badge">
             <span className="text-white font-extrabold text-[13px] tracking-tight leading-none">HC</span>
@@ -14,6 +15,7 @@ export default function AuthLayout({ children }) {
             HOTCLICK
           </span>
         </Link>
+        <LanguageSelector />
       </header>
 
       {/* Background decorations */}

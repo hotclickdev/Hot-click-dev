@@ -289,7 +289,7 @@ export default function AdminProducts() {
         </div>
 
         {/* ── Carrusel del inicio ── */}
-        <div className="rounded-2xl border border-white/8 overflow-hidden" style={{ background: 'rgba(17,17,20,0.95)' }}>
+        <div className="rounded-2xl border border-white/8 overflow-hidden" style={{ background: 'var(--hc-surface)' }}>
           <button
             onClick={() => setCarruselOpen((o) => !o)}
             className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/3 transition-colors"
@@ -319,7 +319,7 @@ export default function AdminProducts() {
                       className="relative rounded-xl overflow-hidden flex flex-col"
                       style={{ border: `1px solid ${slot ? slotBorder : 'rgba(255,255,255,0.08)'}`, background: slot ? slotColor : 'rgba(255,255,255,0.02)', minHeight: 120 }}
                     >
-                      <div className="absolute top-2 left-2 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: slot ? slotBorder : 'rgba(255,255,255,0.1)', color: '#e8e8ed' }}>
+                      <div className="absolute top-2 left-2 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: slot ? slotBorder : 'var(--hc-surface-2)', color: 'var(--hc-text)' }}>
                         {i + 1}
                       </div>
                       {slot ? (

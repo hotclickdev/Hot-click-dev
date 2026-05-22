@@ -6,6 +6,7 @@ import useAuthStore from '@/store/authStore'
 import useCartStore from '@/store/cartStore'
 import useWishlistStore from '@/store/wishlistStore'
 import useUiStore from '@/store/uiStore'
+import LanguageSelector from '@/components/ui/LanguageSelector'
 
 export default function Navbar() {
   const { t } = useTranslation()
@@ -232,6 +233,9 @@ export default function Navbar() {
                 {t('nav.ingresar')}
               </Link>
             )}
+
+            {/* Language selector */}
+            <LanguageSelector />
 
             {/* Mobile menu */}
             <button

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import LanguageSelector from '@/components/ui/LanguageSelector'
 
 const footerLinks = (t) => [
   {
@@ -91,7 +92,10 @@ export default function Footer() {
           <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
             © {new Date().getFullYear()} HOTCLICK. {t('footer.derechos')}
           </p>
-          <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Costa Rica 🇨🇷</p>
+          <div className="flex items-center gap-3">
+            <LanguageSelector />
+            <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Costa Rica 🇨🇷</p>
+          </div>
         </div>
       </div>
     </footer>

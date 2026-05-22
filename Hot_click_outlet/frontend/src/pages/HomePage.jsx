@@ -104,8 +104,8 @@ function HeroCarousel({ slides }) {
           <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 70% 70% at 70% 50%, ${color.glow}, transparent 70%)` }} />
           <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 40% 60% at 30% 30%, ${color.bg}, transparent 65%)` }} />
           {/* Grid */}
-          <div className="absolute inset-0 opacity-[0.022]" style={{
-            backgroundImage: `linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)`,
+          <div className="absolute inset-0 opacity-[0.35]" style={{
+            backgroundImage: `linear-gradient(var(--hc-border) 1px, transparent 1px), linear-gradient(90deg, var(--hc-border) 1px, transparent 1px)`,
             backgroundSize: '60px 60px',
           }} />
         </motion.div>
@@ -121,7 +121,7 @@ function HeroCarousel({ slides }) {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.55 }}
             className="font-black uppercase tracking-[-0.02em] whitespace-nowrap leading-none"
-            style={{ fontSize: '20vw', color: 'rgba(255,255,255,0.022)' }}
+            style={{ fontSize: '20vw', color: 'color-mix(in srgb, var(--hc-text) 4%, transparent)' }}
           >
             {watermark.split(' ')[0]}
           </motion.span>
@@ -154,7 +154,7 @@ function HeroCarousel({ slides }) {
 
               <h1
                 className="font-black leading-[1.02] tracking-tight mb-4 line-clamp-2"
-                style={{ fontSize: 'clamp(2.4rem, 5.5vw, 4.5rem)', color: '#e8e8ed' }}
+                style={{ fontSize: 'clamp(2.4rem, 5.5vw, 4.5rem)', color: 'var(--hc-text)' }}
               >
                 {slide.nombre}
               </h1>
@@ -273,10 +273,10 @@ function HeroCarousel({ slides }) {
                       animate={{ opacity: 1, x: 0, y: 0 }}
                       transition={{ delay: 0.7 }}
                       className="absolute top-4 right-0 flex items-center gap-2 px-3 py-2 rounded-2xl backdrop-blur-sm"
-                      style={{ background: 'rgba(17,17,20,0.88)', border: '1px solid rgba(255,255,255,0.1)' }}
+                      style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
                     >
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="text-xs font-semibold text-[#e8e8ed]">{t('home.shipping24h')}</span>
+                      <span className="text-xs font-semibold" style={{ color: 'var(--hc-text)' }}>{t('home.shipping24h')}</span>
                     </motion.div>
                     {slide.stock > 0 && slide.stock <= 3 && (
                       <motion.div
@@ -339,9 +339,9 @@ function HeroCarousel({ slides }) {
                     style={{
                       width: isActive ? 72 : 48,
                       height: 48,
-                      border: isActive ? `2px solid ${c.accent}` : '2px solid rgba(255,255,255,0.1)',
+                      border: isActive ? `2px solid ${c.accent}` : '2px solid var(--hc-border)',
                       boxShadow: isActive ? `0 0 16px ${c.ring}` : 'none',
-                      background: '#111114',
+                      background: 'var(--hc-surface)',
                     }}
                   >
                     {s.imagenUrl ? (
@@ -447,7 +447,7 @@ export default function HomePage() {
                 whileHover={{ y: -4, scale: 1.02 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                 className="shrink-0 relative w-44 rounded-2xl overflow-visible"
-                style={{ background: 'linear-gradient(135deg, #1c1c24 0%, #16161e 100%)', border: '1px solid rgba(255,255,255,0.08)' }}
+                style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
               >
                 {/* imagen desbordante — parte del enlace de navegación */}
                 <Link
@@ -466,13 +466,13 @@ export default function HomePage() {
                 {/* enlace principal con nombre y precio */}
                 <Link
                   to={`/productos/${p.id}`}
-                  className="block pl-16 pr-3 pt-3 pb-1 rounded-t-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f7cff] focus-visible:ring-offset-2 focus-visible:ring-offset-[#16161e]"
+                  className="block pl-16 pr-3 pt-3 pb-1 rounded-t-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--hc-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--hc-surface)]"
                   aria-label={`Ver ${p.nombre}, ${formatPrice(p.precio)}`}
                 >
-                  <p className="text-xs font-medium text-[#c8c8d4] truncate max-w-[90px] leading-tight">
+                  <p className="text-xs font-medium truncate max-w-[90px] leading-tight" style={{ color: 'var(--hc-muted)' }}>
                     {p.nombre}
                   </p>
-                  <p className="text-sm font-bold text-[#e8e8ed] mt-0.5" aria-hidden="true">
+                  <p className="text-sm font-bold mt-0.5" style={{ color: 'var(--hc-text)' }} aria-hidden="true">
                     {formatPrice(p.precio)}
                   </p>
                 </Link>
@@ -486,7 +486,8 @@ export default function HomePage() {
                       addItem(p)
                       toast({ message: t('product.added', { name: p.nombre }), type: 'success' })
                     }}
-                    className="w-7 h-7 rounded-full bg-[#4f7cff] flex items-center justify-center text-white text-base font-bold shadow-lg shadow-[#4f7cff]/30 hover:bg-[#6b93ff] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f7cff] focus-visible:ring-offset-2 focus-visible:ring-offset-[#16161e]"
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-white text-base font-bold shadow-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                    style={{ background: 'var(--hc-accent)', boxShadow: '0 4px 12px color-mix(in srgb, var(--hc-accent) 30%, transparent)' }}
                   >
                     <span aria-hidden="true">+</span>
                   </motion.button>
