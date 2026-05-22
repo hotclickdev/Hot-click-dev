@@ -25,7 +25,7 @@ export default function Footer() {
   const { t } = useTranslation()
 
   return (
-    <footer className="mt-auto" style={{ borderTop: '1px solid var(--hc-border)', backgroundColor: 'var(--hc-surface)' }}>
+    <footer className="mt-auto pb-16 md:pb-0" style={{ borderTop: '1px solid var(--hc-border)', backgroundColor: 'var(--hc-surface)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
