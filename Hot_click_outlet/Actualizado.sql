@@ -273,13 +273,15 @@ CREATE TABLE IF NOT EXISTS "HOT_CLICK_CATEGORIA_ETIQUETA_TB" (
   PRIMARY KEY ("FK_ID_CATEGORIA", "FK_ID_ETIQUETA")
 );
 
-CREATE TABLE IF NOT EXISTS "HOT_CLICK_MARCA_TB" (
-  "ID_MARCA" SERIAL PRIMARY KEY,
-  "NOMBRE_MARCA" varchar(100) UNIQUE NOT NULL,
-  "LOGO_URL" varchar(500),
-  "FK_ID_ADMIN_CLIENTE" integer NOT NULL,
-  "FK_ID_ESTADO" integer NOT NULL DEFAULT 1
+CREATE TABLE IF NOT EXISTS hot_click_marca_tb (
+  id_marca             SERIAL PRIMARY KEY,
+  nombre_marca         VARCHAR(100) UNIQUE NOT NULL,
+  logo_url             VARCHAR(500),
+  fk_id_admin_cliente  INTEGER NOT NULL,
+  fk_id_estado         INTEGER NOT NULL DEFAULT 1
 );
+
+CREATE INDEX IF NOT EXISTS idx_marca_estado ON hot_click_marca_tb(fk_id_estado);
 
 
 

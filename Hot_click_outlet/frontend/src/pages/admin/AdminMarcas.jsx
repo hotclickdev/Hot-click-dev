@@ -193,26 +193,25 @@ export default function AdminMarcas() {
           <div className="space-y-2">
             <span className="text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">Logo</span>
             {form.logoUrl ? (
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
-                <div className="w-14 h-14 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
-                  <img
-                    src={form.logoUrl}
-                    alt="Logo"
-                    className="w-full h-full object-contain p-1"
-                    onError={(e) => { e.target.style.display = 'none' }}
-                  />
+              <div className="flex items-center justify-center">
+                <div className="relative group">
+                  <div className="w-24 h-24 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
+                    <img
+                      src={form.logoUrl}
+                      alt="Logo"
+                      className="w-full h-full object-contain p-2"
+                      onError={(e) => { e.target.style.display = 'none' }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setForm((p) => ({ ...p, logoUrl: '' }))}
+                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                    title="Quitar logo"
+                  >
+                    <XIcon />
+                  </button>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-[#8e8e9a] truncate font-mono">{form.logoUrl}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setForm((p) => ({ ...p, logoUrl: '' }))}
-                  className="p-1.5 rounded-lg text-[#8e8e9a] hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
-                  title="Quitar logo"
-                >
-                  <XIcon />
-                </button>
               </div>
             ) : (
               <div
