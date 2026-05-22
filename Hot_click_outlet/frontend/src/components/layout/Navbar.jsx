@@ -6,7 +6,6 @@ import useAuthStore from '@/store/authStore'
 import useCartStore from '@/store/cartStore'
 import useWishlistStore from '@/store/wishlistStore'
 import useUiStore from '@/store/uiStore'
-import LanguageSelector from '@/components/ui/LanguageSelector'
 
 export default function Navbar() {
   const { t } = useTranslation()
@@ -234,9 +233,6 @@ export default function Navbar() {
               </Link>
             )}
 
-            {/* Language selector */}
-            <LanguageSelector />
-
             {/* Mobile menu */}
             <button
               className="md:hidden p-2 rounded-lg transition-colors"
@@ -322,9 +318,9 @@ function WishlistNavIcon() {
 
 function CartIcon() {
   return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
+      <path d="M1 1h4l2.68 13.39a2 2 0 001.95 1.61h9.72a2 2 0 001.95-1.61L23 6H6" />
     </svg>
   )
 }
