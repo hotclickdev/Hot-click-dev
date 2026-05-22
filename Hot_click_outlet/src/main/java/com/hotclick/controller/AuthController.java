@@ -94,13 +94,6 @@ public class AuthController {
         boolean esAdmin = usuario.getRoles().stream()
             .anyMatch(r -> "ADMIN_IT".equals(r.getNombreRol()));
 
-        // [FIX-2] Admins sin 2FA configurado no pueden completar el login
-        if (esAdmin && !Boolean.TRUE.equals(usuario.getTwoFactorEnabled())) {
-            log.warn("Admin {} intentó login sin 2FA configurado", request.getCorreo());
-            return ResponseEntity.status(403).body(ResponseDTO.error(
-                "Las cuentas de administrador requieren autenticación de dos factores. Configurala desde el panel de administración."));
-        }
-
         if (Boolean.TRUE.equals(usuario.getTwoFactorEnabled())) {
             String tempToken = jwtUtil.generateTempToken(usuario.getCorreo(), usuario.getId());
             return ResponseEntity.ok(Map.of(

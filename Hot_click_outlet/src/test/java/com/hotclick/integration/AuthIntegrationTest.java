@@ -95,16 +95,17 @@ class AuthIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("POST /api/auth/login → admin sin 2FA configurado → 403 (2FA obligatorio para ADMIN_IT)")
+    @DisplayName("POST /api/auth/login → admin sin 2FA configurado → 200 (2FA opcional)")
     void login_adminUser_returnsAdminRole() throws Exception {
-        // Admin sin twoFactorEnabled=true recibe 403: comportamiento esperado tras FIX-2
+        // Admin sin twoFactorEnabled=true puede entrar con solo contraseña
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(Map.of(
                     "correo",    "adminit@hotclick.cr",
                     "contrasena", "Test1234!"
                 ))))
-            .andExpect(status().isForbidden());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.accessToken").isNotEmpty());
     }
 
     // ── Refresh token ─────────────────────────────────────────────────────────
