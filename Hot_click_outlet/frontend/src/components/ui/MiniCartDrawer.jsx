@@ -52,11 +52,7 @@ export default function MiniCartDrawer() {
   const handleCheckout = () => {
     analytics.checkoutStart(total(), items.reduce((s, i) => s + i.cantidad, 0))
     setCartDrawerOpen(false)
-    if (token) {
-      navigate('/checkout')
-    } else {
-      setAuthPromptOpen(true)
-    }
+    navigate('/checkout')
   }
 
   return (

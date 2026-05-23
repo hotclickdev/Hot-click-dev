@@ -87,23 +87,41 @@ export default function AuthPromptModal() {
 
               {/* Copy */}
               <h2 className="text-xl font-bold text-center mb-2" style={{ color: 'var(--hc-text)' }}>
-                Crea tu cuenta gratis
+                ¿Cómo querés continuar?
               </h2>
               <p className="text-sm text-center leading-relaxed mb-6" style={{ color: 'var(--hc-muted)' }}>
-                Para completar tu compra necesitas registrarte o iniciar sesión. Es rápido y sin costo.
+                Podés pagar sin cuenta o registrarte para guardar tu historial de pedidos.
               </p>
 
               {/* Actions */}
               <div className="flex flex-col gap-3">
                 <button
-                  onClick={() => go('/registro')}
-                  className="hc-btn hc-btn-primary w-full h-12 rounded-2xl font-bold text-sm"
+                  onClick={() => go('/checkout')}
+                  className="w-full h-12 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+                  style={{ background: 'var(--hc-accent)', color: '#fff' }}
                 >
-                  Crear cuenta
+                  <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                  </svg>
+                  Continuar sin cuenta
+                </button>
+
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-px" style={{ background: 'var(--hc-border)' }} />
+                  <span className="text-[11px]" style={{ color: 'var(--hc-muted)' }}>o</span>
+                  <div className="flex-1 h-px" style={{ background: 'var(--hc-border)' }} />
+                </div>
+
+                <button
+                  onClick={() => go('/registro')}
+                  className="hc-btn hc-btn-outline w-full h-12 rounded-2xl text-sm font-semibold"
+                >
+                  Crear cuenta gratis
                 </button>
                 <button
                   onClick={() => go('/login')}
-                  className="hc-btn hc-btn-outline w-full h-12 rounded-2xl text-sm font-semibold"
+                  className="text-xs text-center transition-colors hover:underline"
+                  style={{ color: 'var(--hc-muted)' }}
                 >
                   Ya tengo cuenta — Iniciar sesión
                 </button>
