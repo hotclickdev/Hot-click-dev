@@ -88,6 +88,9 @@ public class SecurityConfig {
                 .requestMatchers(GET, "/api/marcas/publicas").permitAll()
                 .requestMatchers(GET, "/api/ruleta/premios").permitAll()
                 .requestMatchers(POST, "/api/contacto").permitAll()
+                // Servicios HOT — fotos y solicitudes son públicas
+                .requestMatchers(POST, "/api/servicios/fotos").permitAll()
+                .requestMatchers(POST, "/api/servicios").permitAll()
                 // Carrito abandonado — público (usuarios anónimos y links de email)
                 .requestMatchers(POST, "/api/cart/abandoned").permitAll()
                 .requestMatchers(GET,  "/api/cart/abandoned/recover/**").permitAll()
