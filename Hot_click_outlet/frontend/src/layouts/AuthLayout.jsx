@@ -1,7 +1,5 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import LanguageSelector from '@/components/ui/LanguageSelector'
-
 export default function AuthLayout({ children }) {
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--hc-bg)' }}>
@@ -15,7 +13,6 @@ export default function AuthLayout({ children }) {
             HOTCLICK
           </span>
         </Link>
-        <LanguageSelector />
       </header>
 
       {/* Background decorations */}

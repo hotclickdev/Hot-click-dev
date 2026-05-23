@@ -45,7 +45,9 @@
     "on": "Activo",
     "off": "Inactivo",
     "open": "Abrir opciones de accesibilidad",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "filtroColor": "Filtro de color / visión",
+    "filtroColorDesc": "Simula distintos tipos de visión del color para verificar el contraste."
   },
   "theme": {
     "light": "Modo claro",

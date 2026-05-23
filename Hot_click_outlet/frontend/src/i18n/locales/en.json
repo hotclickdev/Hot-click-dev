@@ -45,7 +45,9 @@
     "on": "On",
     "off": "Off",
     "open": "Open accessibility options",
-    "close": "Close"
+    "close": "Close",
+    "filtroColor": "Color / vision filter",
+    "filtroColorDesc": "Simulates different types of color vision to check contrast."
   },
   "theme": {
     "light": "Light mode",

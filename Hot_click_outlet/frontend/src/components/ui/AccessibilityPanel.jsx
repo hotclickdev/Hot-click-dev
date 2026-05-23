@@ -9,6 +9,14 @@ const LANGUAGES = [
   { code: 'pt', label: 'PT', flag: '🇧🇷', name: 'Português' },
 ]
 
+const COLOR_FILTERS = [
+  { value: 'none',         label: 'Normal',      icon: '👁' },
+  { value: 'grayscale',    label: 'B&N',         icon: '⬛' },
+  { value: 'deuteranopia', label: 'Deuteran.',   icon: '🟢' },
+  { value: 'protanopia',   label: 'Protan.',     icon: '🔴' },
+  { value: 'tritanopia',   label: 'Tritan.',     icon: '🔵' },
+]
+
 export default function AccessibilityPanel() {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -18,10 +26,10 @@ export default function AccessibilityPanel() {
     fontSize, setFontSize,
     highContrast, toggleHighContrast,
     reduceMotion, toggleReduceMotion,
+    colorFilter, setColorFilter,
   } = useUiStore()
 
   const isDark = theme === 'dark'
-  const currentLang = LANGUAGES.find((l) => l.code === language) || LANGUAGES[0]
 
   return (
     <div className="fixed bottom-28 md:bottom-6 right-6 z-50 flex flex-col items-end gap-2">
@@ -32,7 +40,7 @@ export default function AccessibilityPanel() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.96 }}
             transition={{ duration: 0.18 }}
-            className="rounded-2xl w-64 shadow-[0_8px_40px_var(--hc-shadow)] overflow-hidden"
+            className="rounded-2xl w-72 shadow-[0_8px_40px_var(--hc-shadow)] overflow-hidden overflow-y-auto max-h-[80vh]"
             style={{
               backgroundColor: 'var(--hc-surface)',
               border: '1px solid var(--hc-border)',
@@ -40,8 +48,8 @@ export default function AccessibilityPanel() {
             }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3"
-              style={{ borderBottom: '1px solid var(--hc-border)' }}>
+            <div className="flex items-center justify-between px-4 py-3 sticky top-0"
+              style={{ borderBottom: '1px solid var(--hc-border)', backgroundColor: 'var(--hc-surface)' }}>
               <span className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
                 ⚙ {t('a11y.panel')}
               </span>
@@ -59,10 +67,7 @@ export default function AccessibilityPanel() {
 
               {/* ── Tema ── */}
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-widest mb-2"
-                  style={{ color: 'var(--hc-muted)' }}>
-                  {t('theme.toggle')}
-                </p>
+                <SectionLabel>{t('theme.toggle')}</SectionLabel>
                 <div className="flex gap-2">
                   <ThemeBtn active={!isDark} onClick={() => setTheme('light')} label={t('theme.light')} icon="☀️" />
                   <ThemeBtn active={isDark} onClick={() => setTheme('dark')} label={t('theme.dark')} icon="🌙" />
@@ -71,10 +76,7 @@ export default function AccessibilityPanel() {
 
               {/* ── Idioma ── */}
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-widest mb-2"
-                  style={{ color: 'var(--hc-muted)' }}>
-                  {t('lang.select')}
-                </p>
+                <SectionLabel>{t('lang.select')}</SectionLabel>
                 <div className="flex gap-1.5">
                   {LANGUAGES.map((lang) => (
                     <button
@@ -98,10 +100,7 @@ export default function AccessibilityPanel() {
 
               {/* ── Tamaño de fuente ── */}
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-widest mb-2"
-                  style={{ color: 'var(--hc-muted)' }}>
-                  {t('a11y.tamanoFuente')}
-                </p>
+                <SectionLabel>{t('a11y.tamanoFuente')}</SectionLabel>
                 <div className="flex gap-1.5">
                   {[
                     { value: 'normal', label: t('a11y.small'),  size: 'text-sm'   },
@@ -126,25 +125,44 @@ export default function AccessibilityPanel() {
                 </div>
               </div>
 
+              {/* ── Filtro de color / visión ── */}
+              <div>
+                <SectionLabel>{t('a11y.filtroColor')}</SectionLabel>
+                <div className="grid grid-cols-5 gap-1">
+                  {COLOR_FILTERS.map(({ value, label, icon }) => (
+                    <button
+                      key={value}
+                      onClick={() => setColorFilter(value)}
+                      aria-label={label}
+                      aria-pressed={colorFilter === value}
+                      className="flex flex-col items-center gap-1 py-2 px-1 rounded-xl text-[10px] font-semibold transition-all duration-150"
+                      style={{
+                        backgroundColor: colorFilter === value ? 'var(--hc-accent)' : 'var(--hc-surface-2)',
+                        color: colorFilter === value ? '#fff' : 'var(--hc-muted)',
+                        border: `1px solid ${colorFilter === value ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
+                      }}
+                    >
+                      <span className="text-sm leading-none" aria-hidden="true">{icon}</span>
+                      <span className="leading-tight text-center">{label}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] mt-1.5 px-0.5" style={{ color: 'var(--hc-muted)' }}>
+                  {t('a11y.filtroColorDesc')}
+                </p>
+              </div>
+
               {/* ── Toggles ── */}
               <div className="space-y-2">
                 <ToggleRow
                   label={t('a11y.altoContraste')}
                   checked={highContrast}
                   onChange={toggleHighContrast}
-                  hcText='var(--hc-text)'
-                  hcMuted='var(--hc-muted)'
-                  hcSurface='var(--hc-surface-2)'
-                  t={t}
                 />
                 <ToggleRow
                   label={t('a11y.reducirMovimiento')}
                   checked={reduceMotion}
                   onChange={toggleReduceMotion}
-                  hcText='var(--hc-text)'
-                  hcMuted='var(--hc-muted)'
-                  hcSurface='var(--hc-surface-2)'
-                  t={t}
                 />
               </div>
             </div>
@@ -171,6 +189,15 @@ export default function AccessibilityPanel() {
   )
 }
 
+function SectionLabel({ children }) {
+  return (
+    <p className="text-[10px] font-semibold uppercase tracking-widest mb-2"
+      style={{ color: 'var(--hc-muted)' }}>
+      {children}
+    </p>
+  )
+}
+
 function ThemeBtn({ active, onClick, label, icon }) {
   return (
     <button
@@ -190,11 +217,11 @@ function ThemeBtn({ active, onClick, label, icon }) {
   )
 }
 
-function ToggleRow({ label, checked, onChange, hcText, hcMuted, hcSurface, t }) {
+function ToggleRow({ label, checked, onChange }) {
   return (
     <div className="flex items-center justify-between py-2.5 px-3 rounded-xl"
-      style={{ backgroundColor: hcSurface }}>
-      <p className="text-xs font-medium" style={{ color: hcText }}>{label}</p>
+      style={{ backgroundColor: 'var(--hc-surface-2)' }}>
+      <p className="text-xs font-medium" style={{ color: 'var(--hc-text)' }}>{label}</p>
       <Toggle checked={checked} onChange={onChange} aria-label={label} />
     </div>
   )

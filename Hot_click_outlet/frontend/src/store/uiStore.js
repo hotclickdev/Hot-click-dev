@@ -11,12 +11,14 @@ const useUiStore = create(
       fontSize: 'normal',
       highContrast: false,
       reduceMotion: false,
+      colorFilter: 'none',
 
       setTheme: (theme) => set({ theme }),
       setLanguage: (language) => { i18n.changeLanguage(language); set({ language }) },
       setFontSize: (fontSize) => set({ fontSize }),
       toggleHighContrast: () => set((s) => ({ highContrast: !s.highContrast })),
       toggleReduceMotion: () => set((s) => ({ reduceMotion: !s.reduceMotion })),
+      setColorFilter: (colorFilter) => set({ colorFilter }),
 
       // ── Transient UI state (not persisted) ──────────────────────────────────
       cartDrawerOpen: false,
@@ -36,6 +38,7 @@ const useUiStore = create(
         fontSize: s.fontSize,
         highContrast: s.highContrast,
         reduceMotion: s.reduceMotion,
+        colorFilter: s.colorFilter,
       }),
     }
   )
