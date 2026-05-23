@@ -84,7 +84,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ResponseDTO> handleMaxSize(MaxUploadSizeExceededException ex) {
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
-                .body(ResponseDTO.error("La imagen no puede superar 5 MB"));
+                .body(ResponseDTO.error("La imagen no puede superar 10 MB"));
+    }
+
+    @ExceptionHandler(org.springframework.web.multipart.MultipartException.class)
+    public ResponseEntity<ResponseDTO> handleMultipart(org.springframework.web.multipart.MultipartException ex) {
+        if (ex.getCause() instanceof IllegalStateException ise &&
+                ise.getCause() instanceof org.apache.tomcat.util.http.fileupload.impl.FileSizeLimitExceededException) {
+            return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                    .body(ResponseDTO.error("La imagen no puede superar 10 MB"));
+        }
+        return ResponseEntity.badRequest().body(ResponseDTO.error("Error procesando el archivo: " + ex.getMessage()));
     }
 
     // ── Fallback ──────────────────────────────────────────────────────────────

@@ -42,11 +42,10 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             try {
                 username = jwtUtil.extractUsername(jwt);
             } catch (JwtException | IllegalArgumentException e) {
-                // Token presente pero inválido/expirado → 401 para que el frontend redirija al login
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.setContentType("application/json;charset=UTF-8");
-                response.getWriter().write("{\"success\":false,\"message\":\"Sesión expirada. Iniciá sesión de nuevo.\"}");
-                return;
+                // Token inválido/expirado → limpia contexto y continúa.
+                // Spring Security evaluará si el endpoint es permitAll o requiere auth.
+                log.debug("JWT inválido en {}: {}", request.getRequestURI(), e.getMessage());
+                SecurityContextHolder.clearContext();
             }
         }
 
