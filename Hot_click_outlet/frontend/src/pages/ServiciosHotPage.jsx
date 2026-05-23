@@ -46,7 +46,7 @@ export default function ServiciosHotPage() {
 
   const { data: misSolicitudes, isLoading: loadingMias, refetch } = useQuery({
     queryKey: ['mis-solicitudes-servicio'],
-    queryFn: () => servicioService.misSolicitudes().then(r => r.data.data),
+    queryFn: () => servicioService.misSolicitudes().then(r => r.data),
     enabled: !!token && tab === 'mis-solicitudes',
   })
 

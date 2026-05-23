@@ -35,7 +35,7 @@ export default function AdminSolicitudesServicio() {
 
   const { data: solicitudes = [], isLoading } = useQuery({
     queryKey: ['admin-solicitudes-servicio'],
-    queryFn: () => servicioService.listarTodas().then(r => r.data.data),
+    queryFn: () => servicioService.listarTodas().then(r => r.data),
   })
 
   const filtradas = filtroEstado === 'TODOS'
