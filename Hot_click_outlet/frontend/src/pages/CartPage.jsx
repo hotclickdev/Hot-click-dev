@@ -93,7 +93,8 @@ export default function CartPage() {
               <div className="absolute inset-0 rounded-3xl" style={{ background: 'color-mix(in srgb, var(--hc-accent) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 16%, transparent)' }} />
               <div className="absolute inset-0 rounded-3xl blur-2xl opacity-30" style={{ background: 'var(--hc-accent)' }} />
               <svg className="relative w-14 h-14 text-[#4f7cff]" fill="none" stroke="currentColor" strokeWidth={1.2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M1 1h4l2.68 13.39a2 2 0 001.95 1.61h9.72a2 2 0 001.95-1.61L23 6H6" />
               </svg>
             </div>
             <div>
@@ -241,7 +242,7 @@ export default function CartPage() {
 
               <div className="pt-2 space-y-2">
                 <Button
-                  onClick={() => token ? navigate('/checkout') : setAuthPromptOpen(true)}
+                  onClick={() => navigate('/checkout')}
                   className="w-full bg-[#4f7cff] hover:bg-[#3d6ee0] shadow-[0_0_20px_rgba(79,124,255,0.3)]"
                   size="lg"
                 >

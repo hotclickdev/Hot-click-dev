@@ -6,6 +6,7 @@ import MainLayout from '@/layouts/MainLayout'
 import { usePayment } from '@/hooks/usePayment'
 import { formatPrice } from '@/utils/format'
 import useCartStore from '@/store/cartStore'
+import useAuthStore from '@/store/authStore'
 
 const DELAY_PAYXPERT_MS = 2500
 
@@ -18,6 +19,7 @@ export default function PaymentStatusPage() {
   const esCancelacion = pathname === '/pago/cancelado'
 
   const { clearCart }                                                           = useCartStore()
+  const { token }                                                               = useAuthStore()
   const { estado, pagoData, error, iniciarPolling, stopPolling,
           capturarPayPal, cancelarPedido }                                      = usePayment()
   const ran = useRef(false)
@@ -131,18 +133,37 @@ export default function PaymentStatusPage() {
             </p>
 
             <div className="flex flex-col gap-3">
-              <Link
-                to="/mis-pedidos"
-                className="inline-block w-full py-3 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-semibold text-sm transition-all text-center"
-              >
-                Ver mis pedidos
-              </Link>
+              {token ? (
+                <Link
+                  to="/mis-pedidos"
+                  className="inline-block w-full py-3 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-semibold text-sm transition-all text-center"
+                >
+                  Ver mis pedidos
+                </Link>
+              ) : (
+                <a
+                  href="https://wa.me/50689745370"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block w-full py-3 rounded-xl bg-[#25D366] hover:bg-[#1da851] text-white font-semibold text-sm transition-all text-center"
+                >
+                  📱 Consultar mi pedido por WhatsApp
+                </a>
+              )}
               <Link
                 to="/"
                 className="inline-block w-full py-3 rounded-xl border border-white/10 hover:border-white/20 text-[#8e8e9a] hover:text-[#e8e8ed] font-medium text-sm transition-all text-center"
               >
                 {t('payment.home')}
               </Link>
+              {!token && (
+                <Link
+                  to="/registro"
+                  className="text-xs text-center text-[#4f7cff] hover:underline"
+                >
+                  Crear cuenta para ver el historial de pedidos →
+                </Link>
+              )}
             </div>
           </motion.div>
         </div>
