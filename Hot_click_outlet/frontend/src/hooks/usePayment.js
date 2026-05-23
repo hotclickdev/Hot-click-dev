@@ -5,6 +5,8 @@ const MAX_INTENTOS     = 3
 const POLL_INTERVAL_MS = 3000
 const POLL_MAX_ATTEMPTS = 30  // 90 segundos
 
+const GUEST_KEY = 'hc-guest-checkout'
+
 export function usePayment() {
   const [estado, setEstado]     = useState('idle')
   // idle | loading | redirecting | polling | capturing | success | failed | cancelled | timeout
@@ -13,11 +15,14 @@ export function usePayment() {
   const [intentos, setIntentos] = useState(0)
   const pollRef                 = useRef(null)
 
-  const iniciarPago = useCallback(async (checkoutPayload) => {
+  // iniciarPago acepta isGuest=true para compras sin cuenta
+  const iniciarPago = useCallback(async (checkoutPayload, isGuest = false) => {
+    sessionStorage.setItem(GUEST_KEY, isGuest ? '1' : '0')
     setEstado('loading')
     setError(null)
     try {
-      const { data } = await paymentService.checkout(checkoutPayload)
+      const method = isGuest ? paymentService.guestCheckout : paymentService.checkout
+      const { data } = await method(checkoutPayload)
       setPagoData(data)
       setEstado('redirecting')
       window.location.href = data.redirectUrl
@@ -32,9 +37,14 @@ export function usePayment() {
   }, [])
 
   const cancelarPedido = useCallback(async (numeroPedido) => {
+    const isGuest = sessionStorage.getItem(GUEST_KEY) === '1'
     setEstado('polling')
     try {
-      await paymentService.cancelarPedido(numeroPedido)
+      if (isGuest) {
+        await paymentService.guestCancelarPedido(numeroPedido)
+      } else {
+        await paymentService.cancelarPedido(numeroPedido)
+      }
     } catch {
       // Si ya estaba cancelado o hubo error, igual mostramos estado cancelado
     }
@@ -42,10 +52,12 @@ export function usePayment() {
   }, [])
 
   const capturarPayPal = useCallback(async (paypalOrderId, numeroPedido) => {
+    const isGuest = sessionStorage.getItem(GUEST_KEY) === '1'
     setEstado('capturing')
     setError(null)
     try {
-      const { data } = await paymentService.capturarPayPal(paypalOrderId, numeroPedido)
+      const method = isGuest ? paymentService.guestCapturarPayPal : paymentService.capturarPayPal
+      const { data } = await method(paypalOrderId, numeroPedido)
       setPagoData(data)
       if (data.estadoPago === 'CAPTURADO') {
         setEstado('success')

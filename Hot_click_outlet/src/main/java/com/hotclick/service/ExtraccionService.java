@@ -257,14 +257,15 @@ public class ExtraccionService {
             if (merged == null) {
                 merged = r;
             } else {
-                // Agregar etiquetas únicas
-                for (String etiqueta : r.etiquetas) {
+                for (String etiqueta : r.etiquetas)
                     if (!merged.etiquetas.contains(etiqueta)) merged.etiquetas.add(etiqueta);
-                }
-                // Agregar URLs únicas
-                for (String url : r.urlsEcommerce) {
+                for (String url : r.urlsEcommerce)
                     if (!merged.urlsEcommerce.contains(url)) merged.urlsEcommerce.add(url);
-                }
+                for (GoogleVisionService.WebEntity we : r.webEntities)
+                    if (merged.webEntities.stream().noneMatch(e -> e.description.equals(we.description)))
+                        merged.webEntities.add(we);
+                for (String lf : r.labelsFisicos)
+                    if (!merged.labelsFisicos.contains(lf)) merged.labelsFisicos.add(lf);
             }
         }
         return merged != null ? merged : new VisionResult();
@@ -278,12 +279,17 @@ public class ExtraccionService {
             d.error = "Vision API no identificó el producto";
             return d;
         }
-        d.nombre = visionResult.getEtiquetaPrincipal();
+        // Preferir webEntity de alto score; si falla, usar categoría física detectada
+        String nombrePrincipal = visionResult.getEtiquetaPrincipal();
+        if (nombrePrincipal == null || nombrePrincipal.endsWith("?"))
+            nombrePrincipal = visionResult.getCategoriaFisica();
+        d.nombre = nombrePrincipal;
         d.todasEtiquetas = new ArrayList<>(visionResult.etiquetas);
 
-        // Intentar extraer descripción y specs de la primera página de ecommerce reconocida
+        // Intentar extraer descripción y specs de páginas de producto (no resultados)
         for (String url : visionResult.urlsEcommerce) {
             if (!esUrlEcommerce(url)) continue;
+            if (esPaginaDeResultados(url)) continue;
             DetallesProducto scraped = extraerDetallesDeUrl(url);
             if (scraped != null) {
                 if (scraped.nombre != null && !scraped.nombre.isBlank()) d.nombre = scraped.nombre;
@@ -310,7 +316,7 @@ public class ExtraccionService {
             d.precioSugerido = (int)(d.promedioCrc * 1.13 * 1.25 * 1.20);
         }
 
-        // Fallback: si no obtuvimos descripción de las URLs de Vision, buscar por nombre
+        // Fallback: buscar por nombre solo si la URL era de producto y no trajo datos
         if (d.descripcionCorta == null && d.nombre != null) {
             d.descripcionCorta = buscarDescripcionPorNombre(d.nombre);
         }
@@ -320,11 +326,37 @@ public class ExtraccionService {
 
         d.comoUsar = generarComoUsar(d.nombre);
 
-        // Truncar campos a los límites de la BD
-        d.nombre          = truncar(d.nombre, 198);
-        d.descripcionCorta = truncar(d.descripcionCorta, 298);
+        // Truncar respetando los límites del formulario
+        d.nombre           = truncar(d.nombre, 80);
+        d.titulo           = truncar(d.nombre, 40);
+        d.descripcionCorta = truncar(limpiarDescripcion(d.descripcionCorta), 200);
+        d.especificaciones = truncar(d.especificaciones, 500);
+        d.comoUsar         = truncar(d.comoUsar, 150);
         d.marca            = truncar(d.marca, 98);
         return d;
+    }
+
+    /** Detecta URLs de páginas de resultados de búsqueda (no páginas de producto). */
+    private boolean esPaginaDeResultados(String url) {
+        if (url == null) return true;
+        String lower = url.toLowerCase();
+        return lower.contains("/s?") || lower.contains("/search") || lower.contains("?q=") ||
+               lower.contains("?k=") || lower.contains("?st=") || lower.contains("_nkw=") ||
+               lower.contains("/pl?") || lower.contains("?d=") || lower.contains("/sch/");
+    }
+
+    /** Filtra texto genérico de ecommerce que no describe el producto. */
+    private String limpiarDescripcion(String desc) {
+        if (desc == null || desc.isBlank()) return null;
+        String lower = desc.toLowerCase();
+        if (lower.startsWith("search ") || lower.startsWith("shop ") ||
+            lower.contains("fast shipping") || lower.contains("free returns") ||
+            lower.contains("top-rated customer") || lower.contains("great prices") ||
+            lower.contains("find the best") || lower.contains("browse our") ||
+            desc.length() < 20) {
+            return null;
+        }
+        return desc;
     }
 
     private String buscarDescripcionPorNombre(String nombre) {
@@ -399,23 +431,34 @@ public class ExtraccionService {
                 if (el != null && !el.text().isBlank()) { d.nombre = el.text().trim(); break; }
             }
 
-            // Feature bullets de Amazon → descripción corta
+            // Feature bullets de Amazon → descripción corta (3 más útiles, en una sola línea)
             Elements bullets = doc.select("#feature-bullets .a-list-item, #feature-bullets li");
             if (!bullets.isEmpty()) {
-                StringBuilder sb = new StringBuilder();
-                int n = 0;
+                List<String> utiles = new ArrayList<>();
                 for (Element b : bullets) {
                     String t = b.text().trim();
-                    if (!t.isBlank() && n++ < 5) sb.append("• ").append(t).append("\n");
+                    if (t.isBlank() || t.length() < 15) continue;
+                    String tl = t.toLowerCase();
+                    if (tl.contains("make sure") || tl.contains("click here") ||
+                        tl.contains("warranty") || tl.contains("garantía") ||
+                        tl.contains("customer service") || tl.contains("free return")) continue;
+                    utiles.add(t.length() > 70 ? t.substring(0, 70) : t);
+                    if (utiles.size() == 3) break;
                 }
-                d.descripcionCorta = sb.toString().trim();
+                if (!utiles.isEmpty()) d.descripcionCorta = String.join(". ", utiles);
             }
 
-            // Meta description como fallback
+            // Meta description como fallback (solo si es descripción de producto, no de búsqueda)
             if (d.descripcionCorta == null) {
                 Element meta = doc.selectFirst("meta[name=description], meta[property=og:description]");
-                if (meta != null && !meta.attr("content").isBlank())
-                    d.descripcionCorta = meta.attr("content").trim();
+                if (meta != null) {
+                    String content = meta.attr("content").trim();
+                    if (!content.isBlank() && content.length() > 20) {
+                        String cl = content.toLowerCase();
+                        if (!cl.startsWith("search ") && !cl.startsWith("shop ") && !cl.contains("fast shipping"))
+                            d.descripcionCorta = content;
+                    }
+                }
             }
 
             // Descripción larga
@@ -463,21 +506,28 @@ public class ExtraccionService {
         String lower = nombre.toLowerCase();
         if (lower.contains("crema") || lower.contains("serum") || lower.contains("moisturizer") ||
                 lower.contains("skincare") || lower.contains("lotion") || lower.contains("skin")) {
-            return "Aplicar una pequeña cantidad en la piel limpia y seca. Masajear suavemente en movimientos circulares hasta absorber completamente. Usar según las indicaciones del fabricante.";
+            return "Aplicar en piel limpia. Masajear hasta absorber. Repetir según indicaciones.";
         }
         if (lower.contains("charger") || lower.contains("cargador") || lower.contains("cable") || lower.contains("adapter")) {
-            return "Conectar el cable al dispositivo y al adaptador de corriente. Verificar que los conectores encajen correctamente antes de iniciar la carga.";
+            return "Conectar al dispositivo y al cargador. Verificar que los conectores encajen bien.";
         }
         if (lower.contains("headphone") || lower.contains("auricular") || lower.contains("earphone") || lower.contains("earbuds")) {
-            return "Conectar los auriculares al dispositivo de audio o emparejar vía Bluetooth. Ajustar el volumen a un nivel cómodo. Usar a volumen moderado para proteger la audición.";
+            return "Conectar o emparejar vía Bluetooth. Ajustar volumen a nivel cómodo.";
         }
         if (lower.contains("phone") || lower.contains("celular") || lower.contains("smartphone") || lower.contains("iphone")) {
-            return "Insertar la tarjeta SIM y encender el dispositivo. Seguir las instrucciones en pantalla para la configuración inicial. Cargar completamente antes del primer uso.";
+            return "Insertar SIM y encender. Seguir configuración inicial. Cargar antes del primer uso.";
         }
         if (lower.contains("tablet") || lower.contains("laptop") || lower.contains("computer")) {
-            return "Cargar completamente el dispositivo antes del primer uso. Seguir las instrucciones de configuración inicial en pantalla. Consultar el manual para funciones avanzadas.";
+            return "Cargar antes del primer uso. Seguir la configuración inicial en pantalla.";
         }
-        return "Seguir las instrucciones del fabricante para el uso correcto del producto. Mantener fuera del alcance de los niños. Conservar en un lugar fresco y seco.";
+        if (lower.contains("tenis") || lower.contains("zapato") || lower.contains("shoe") || lower.contains("sneaker")) {
+            return "Usar con calcetines adecuados. Limpiar con paño húmedo. No lavar a máquina.";
+        }
+        if (lower.contains("ropa") || lower.contains("camisa") || lower.contains("pantalon") ||
+                lower.contains("shirt") || lower.contains("dress") || lower.contains("jacket")) {
+            return "Lavar según etiqueta. Planchar a temperatura indicada. No usar blanqueador.";
+        }
+        return "Usar según indicaciones del fabricante. Guardar en lugar fresco y seco.";
     }
 
     // ---- DTOs internos ----
@@ -502,6 +552,7 @@ public class ExtraccionService {
 
     public static class DetallesProducto {
         public String nombre;
+        public String titulo;
         public List<String> todasEtiquetas = new ArrayList<>();
         public String descripcionCorta;
         public String descripcionLarga;

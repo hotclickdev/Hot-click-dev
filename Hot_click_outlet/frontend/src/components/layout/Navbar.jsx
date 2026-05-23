@@ -100,20 +100,41 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                to={link.href}
-                className="px-3 py-1.5 rounded-lg text-sm transition-colors duration-200"
-                style={{
-                  color: location.pathname === link.href ? 'var(--hc-text)' : 'var(--hc-muted)',
-                  backgroundColor: location.pathname === link.href ? 'var(--hc-surface-2)' : 'transparent',
-                }}
-              >
-                {link.label}
-              </Link>
-            ))}
+          <div className="hidden md:flex items-center gap-0.5">
+            {navLinks.map((link) => {
+              const isActive = location.pathname === link.href
+              return (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  className="relative px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200"
+                  style={{
+                    color: isActive ? 'var(--hc-text)' : 'var(--hc-muted)',
+                    backgroundColor: isActive ? 'var(--hc-surface-2)' : 'transparent',
+                  }}
+                  onMouseEnter={e => {
+                    if (!isActive) {
+                      e.currentTarget.style.color = 'var(--hc-text)'
+                      e.currentTarget.style.backgroundColor = 'var(--hc-surface-2)'
+                    }
+                  }}
+                  onMouseLeave={e => {
+                    if (!isActive) {
+                      e.currentTarget.style.color = 'var(--hc-muted)'
+                      e.currentTarget.style.backgroundColor = 'transparent'
+                    }
+                  }}
+                >
+                  {link.label}
+                  {isActive && (
+                    <span
+                      className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
+                      style={{ backgroundColor: 'var(--hc-accent)' }}
+                    />
+                  )}
+                </Link>
+              )
+            })}
           </div>
 
           {/* Actions */}
@@ -122,8 +143,10 @@ export default function Navbar() {
             <button
               onClick={() => setSearchOpen(true)}
               aria-label={t('nav.buscar')}
-              className="p-2 rounded-lg transition-colors hover:bg-white/5"
+              className="p-2 rounded-lg transition-all duration-150 hover:scale-105"
               style={{ color: 'var(--hc-muted)' }}
+              onMouseEnter={e => { e.currentTarget.style.color = 'var(--hc-text)'; e.currentTarget.style.backgroundColor = 'var(--hc-surface-2)' }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'var(--hc-muted)'; e.currentTarget.style.backgroundColor = 'transparent' }}
             >
               <SearchNavIcon />
             </button>
@@ -132,8 +155,10 @@ export default function Navbar() {
             <Link
               to="/wishlist"
               aria-label={t('nav.wishlist')}
-              className="relative p-2 rounded-lg transition-colors"
+              className="relative p-2 rounded-lg transition-all duration-150 hover:scale-105"
               style={{ color: 'var(--hc-muted)' }}
+              onMouseEnter={e => { e.currentTarget.style.color = 'var(--hc-text)'; e.currentTarget.style.backgroundColor = 'var(--hc-surface-2)' }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'var(--hc-muted)'; e.currentTarget.style.backgroundColor = 'transparent' }}
             >
               <WishlistNavIcon />
               <AnimatePresence>
@@ -144,7 +169,8 @@ export default function Navbar() {
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
                     transition={{ type: 'spring', stiffness: 500, damping: 20 }}
-                    className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center shadow-[0_0_8px_rgba(239,68,68,0.5)]"
+                    className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center"
+                    style={{ boxShadow: '0 0 10px rgba(239,68,68,0.55)' }}
                   >
                     {wishlistCount > 9 ? '9+' : wishlistCount}
                   </motion.span>
@@ -156,8 +182,10 @@ export default function Navbar() {
             <button
               onClick={() => setCartDrawerOpen(true)}
               aria-label={t('bnav.carrito')}
-              className="relative p-2 rounded-lg transition-colors hover:bg-white/5"
+              className="relative p-2 rounded-lg transition-all duration-150 hover:scale-105"
               style={{ color: 'var(--hc-muted)' }}
+              onMouseEnter={e => { e.currentTarget.style.color = 'var(--hc-text)'; e.currentTarget.style.backgroundColor = 'var(--hc-surface-2)' }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'var(--hc-muted)'; e.currentTarget.style.backgroundColor = 'transparent' }}
             >
               <motion.div
                 className="hc-animate-gpu"
@@ -174,7 +202,8 @@ export default function Navbar() {
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
                     transition={{ type: 'spring', stiffness: 500, damping: 20 }}
-                    className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#4f7cff] text-white text-[10px] font-bold flex items-center justify-center shadow-[0_0_8px_rgba(79,124,255,0.6)]"
+                    className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-white text-[10px] font-bold flex items-center justify-center"
+                    style={{ backgroundColor: 'var(--hc-accent)', boxShadow: '0 0 10px color-mix(in srgb, var(--hc-accent) 60%, transparent)' }}
                   >
                     {cartCount > 9 ? '9+' : cartCount}
                   </motion.span>
@@ -207,7 +236,7 @@ export default function Navbar() {
                   className="flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all duration-200"
                   style={{ backgroundColor: 'var(--hc-surface-2)', borderColor: 'var(--hc-border)' }}
                 >
-                  <div className="w-6 h-6 rounded-full bg-[#4f7cff]/20 flex items-center justify-center text-xs font-semibold text-[#4f7cff]">
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold" style={{ backgroundColor: 'color-mix(in srgb, var(--hc-accent) 18%, transparent)', color: 'var(--hc-accent)' }}>
                     {userName?.[0]?.toUpperCase() || '?'}
                   </div>
                   <span className="text-sm max-w-[80px] truncate hidden sm:block" style={{ color: 'var(--hc-text)' }}>
@@ -227,7 +256,7 @@ export default function Navbar() {
             ) : (
               <Link
                 to="/login"
-                className="px-4 py-1.5 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white text-sm font-medium transition-all duration-200 shadow-[0_0_16px_rgba(79,124,255,0.25)] hover:shadow-[0_0_24px_rgba(79,124,255,0.4)]"
+                className="hc-btn hc-btn-primary hc-btn-sm text-sm font-semibold"
               >
                 {t('nav.ingresar')}
               </Link>

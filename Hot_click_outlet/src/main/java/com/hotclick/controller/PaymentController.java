@@ -68,6 +68,55 @@ public class PaymentController {
         }
     }
 
+    // ── Endpoints para compra sin registro (invitados) ─────────────────────
+
+    /**
+     * Igual que /checkout pero sin autenticación. El correo viene en el body.
+     */
+    @PostMapping("/guest-checkout")
+    public ResponseEntity<ResponseDTO> guestCheckout(@Valid @RequestBody PaymentCheckoutRequest request) {
+        try {
+            PaymentCheckoutResponse response = paymentService.checkout(request, null);
+            return ResponseEntity.ok(ResponseDTO.success("Sesión de pago creada", response));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(ResponseDTO.error(e.getMessage()));
+        }
+    }
+
+    /** Captura PayPal sin autenticación (invitados). */
+    @PostMapping("/guest/paypal/capture")
+    public ResponseEntity<ResponseDTO> guestCapturarPayPal(
+            @RequestParam String paypalOrderId,
+            @RequestParam String numeroPedido) {
+        try {
+            PaymentStatusResponse response = paymentService.capturarPayPalAnon(paypalOrderId, numeroPedido);
+            return ResponseEntity.ok(ResponseDTO.success("Pago capturado exitosamente", response));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(ResponseDTO.error(e.getMessage()));
+        }
+    }
+
+    /** Cancela un pedido pendiente sin autenticación (invitados). */
+    @PostMapping("/guest/cancel/{numeroPedido}")
+    public ResponseEntity<ResponseDTO> guestCancelarPedido(@PathVariable String numeroPedido) {
+        try {
+            paymentService.cancelarAnon(numeroPedido);
+            return ResponseEntity.ok(ResponseDTO.success("Pedido cancelado", null));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(ResponseDTO.error(e.getMessage()));
+        }
+    }
+
+    // ── Endpoints autenticados ─────────────────────────────────────────────
+
     /**
      * Captura un pago PayPal tras el redirect de aprobación.
      * PayPal redirige con ?token={paypalOrderId}&PayerID={payerId} en la URL de retorno.

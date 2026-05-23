@@ -37,4 +37,23 @@ export const paymentService = {
   cancelarPedido(numeroPedido) {
     return api.post(`/payments/cancel/${numeroPedido}`)
   },
+
+  // ── Invitados (sin autenticación) ────────────────────────────────────
+
+  /** Checkout sin cuenta — guestEmail requerido en payload. */
+  guestCheckout(payload) {
+    return api.post('/payments/guest-checkout', payload)
+  },
+
+  /** Captura PayPal para compra de invitado. */
+  guestCapturarPayPal(paypalOrderId, numeroPedido) {
+    return api.post('/payments/guest/paypal/capture', null, {
+      params: { paypalOrderId, numeroPedido },
+    })
+  },
+
+  /** Cancela pedido de invitado y libera stock. */
+  guestCancelarPedido(numeroPedido) {
+    return api.post(`/payments/guest/cancel/${numeroPedido}`)
+  },
 }

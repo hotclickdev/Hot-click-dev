@@ -415,7 +415,7 @@ export default function AdminNuevoProducto() {
       setForm(prev => ({
         ...prev,
         nombre:           d.nombre           ?? '',
-        titulo:           d.nombre           ?? '',
+        titulo:           d.titulo           ?? (d.nombre ? d.nombre.slice(0, 40) : ''),
         descripcion:      d.descripcionCorta ?? '',
         descripcionLarga: d.descripcionLarga ?? '',
         especificaciones: d.especificaciones ?? '',
@@ -562,16 +562,18 @@ export default function AdminNuevoProducto() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label required>Nombre del producto</Label>
-                  <input className={inp} value={form.nombre} onChange={set('nombre')} placeholder="Nombre" required maxLength={80} />
+                  <input className={inp} value={form.nombre} onChange={set('nombre')}
+                    placeholder="Ej: Tenis Nike Air Max 90 Blanco" required maxLength={80} />
                   <p className={`text-xs mt-1 text-right ${form.nombre.length >= 72 ? 'text-amber-500' : 'text-gray-400'}`}>
                     {form.nombre.length}/80
                   </p>
                 </div>
                 <div>
                   <Label>Título para FB Marketplace</Label>
-                  <input className={inp} value={form.titulo} onChange={set('titulo')} placeholder="Título corto para publicar" maxLength={80} />
-                  <p className={`text-xs mt-1 text-right ${form.titulo.length >= 72 ? 'text-amber-500' : 'text-gray-400'}`}>
-                    {form.titulo.length}/80
+                  <input className={inp} value={form.titulo} onChange={set('titulo')}
+                    placeholder="Ej: Tenis Nike Air Max Blanco" maxLength={40} />
+                  <p className={`text-xs mt-1 text-right ${form.titulo.length >= 36 ? 'text-amber-500' : 'text-gray-400'}`}>
+                    {form.titulo.length}/40
                   </p>
                 </div>
               </div>
@@ -580,66 +582,90 @@ export default function AdminNuevoProducto() {
               <div>
                 <Label>Descripción corta</Label>
                 <textarea className={ta} rows={3} value={form.descripcion} onChange={set('descripcion')}
-                  placeholder="Descripción breve del producto..." />
+                  placeholder="Ej: Tenis running con suela de aire, talla 42, color blanco." maxLength={200} />
+                <p className={`text-xs mt-1 text-right ${form.descripcion.length >= 180 ? 'text-amber-500' : 'text-gray-400'}`}>
+                  {form.descripcion.length}/200
+                </p>
               </div>
 
               {/* Especificaciones */}
               <div>
                 <Label>Especificaciones técnicas</Label>
                 <textarea className={ta} rows={5} value={form.especificaciones} onChange={set('especificaciones')}
-                  placeholder="Marca: ...&#10;Modelo: ...&#10;Material: ...&#10;Dimensiones: ..." />
+                  placeholder={'Marca: \nModelo: \nMaterial: \nTalla: \nColor: '} maxLength={500} />
+                <p className={`text-xs mt-1 text-right ${form.especificaciones.length >= 450 ? 'text-amber-500' : 'text-gray-400'}`}>
+                  {form.especificaciones.length}/500
+                </p>
               </div>
 
               {/* Cómo usar */}
               <div>
                 <Label>Cómo usar</Label>
                 <textarea className={ta} rows={3} value={form.comoUsar} onChange={set('comoUsar')}
-                  placeholder="Instrucciones de uso del producto..." />
+                  placeholder="Ej: Lavar a mano. No usar secadora." maxLength={150} />
+                <p className={`text-xs mt-1 text-right ${form.comoUsar.length >= 135 ? 'text-amber-500' : 'text-gray-400'}`}>
+                  {form.comoUsar.length}/150
+                </p>
               </div>
 
-              {/* Marca */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <Label>Marca</Label>
-                  <button
-                    type="button"
-                    onClick={() => setShowNuevaMarca(v => !v)}
-                    className="text-[10px] text-[#4f7cff] hover:underline"
-                  >
-                    {showNuevaMarca ? 'Cancelar' : '+ Nueva marca'}
-                  </button>
+              {/* Nombre de marca detectada (texto libre) + selector */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Nombre de marca</Label>
+                  <input
+                    className={inp}
+                    value={form.marca}
+                    onChange={set('marca')}
+                    placeholder="Ej: Nike, Samsung, Zara..."
+                    maxLength={40}
+                  />
+                  <p className={`text-xs mt-1 text-right ${form.marca.length >= 36 ? 'text-amber-500' : 'text-gray-400'}`}>
+                    {form.marca.length}/40
+                  </p>
                 </div>
-                {showNuevaMarca ? (
-                  <div className="flex gap-2">
-                    <input
-                      className={inp}
-                      value={nuevaMarca}
-                      onChange={e => setNuevaMarca(e.target.value)}
-                      placeholder="Nombre de la nueva marca"
-                      onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleCrearMarca())}
-                      autoFocus
-                    />
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <Label>Marca (catálogo)</Label>
                     <button
                       type="button"
-                      onClick={handleCrearMarca}
-                      disabled={creandoMarca || !nuevaMarca.trim()}
-                      className="shrink-0 px-4 py-2 rounded-xl bg-[#4f7cff] text-white text-sm font-medium disabled:opacity-40 transition-opacity"
+                      onClick={() => setShowNuevaMarca(v => !v)}
+                      className="text-[10px] text-[#4f7cff] hover:underline"
                     >
-                      {creandoMarca ? '...' : 'Crear'}
+                      {showNuevaMarca ? 'Cancelar' : '+ Nueva marca'}
                     </button>
                   </div>
-                ) : (
-                  <select
-                    className={sel}
-                    value={form.marcaId}
-                    onChange={e => setForm(p => ({ ...p, marcaId: e.target.value }))}
-                  >
-                    <option value="">-- Sin marca --</option>
-                    {marcas.map(m => (
-                      <option key={m.id} value={m.id}>{m.nombreMarca}</option>
-                    ))}
-                  </select>
-                )}
+                  {showNuevaMarca ? (
+                    <div className="flex gap-2">
+                      <input
+                        className={inp}
+                        value={nuevaMarca}
+                        onChange={e => setNuevaMarca(e.target.value)}
+                        placeholder="Nombre de la nueva marca"
+                        onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleCrearMarca())}
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={handleCrearMarca}
+                        disabled={creandoMarca || !nuevaMarca.trim()}
+                        className="shrink-0 px-4 py-2 rounded-xl bg-[#4f7cff] text-white text-sm font-medium disabled:opacity-40 transition-opacity"
+                      >
+                        {creandoMarca ? '...' : 'Crear'}
+                      </button>
+                    </div>
+                  ) : (
+                    <select
+                      className={sel}
+                      value={form.marcaId}
+                      onChange={e => setForm(p => ({ ...p, marcaId: e.target.value }))}
+                    >
+                      <option value="">-- Sin marca --</option>
+                      {marcas.map(m => (
+                        <option key={m.id} value={m.id}>{m.nombreMarca}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
               </div>
 
               {/* Precios y Stock */}

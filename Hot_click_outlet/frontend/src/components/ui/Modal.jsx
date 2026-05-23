@@ -30,28 +30,30 @@ export default function Modal({ open, onClose, title, children, size = 'md' }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            transition={{ duration: 0.22 }}
+            className="absolute inset-0 backdrop-blur-md"
+            style={{ backgroundColor: 'rgba(0, 0, 12, 0.55)' }}
             onClick={onClose}
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 8 }}
+            initial={{ opacity: 0, scale: 0.95, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 8 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            className={`
-              relative w-full ${sizes[size]}
-              bg-[#111114] border border-white/10 rounded-2xl shadow-2xl
-              max-h-[90vh] overflow-y-auto
-            `}
+            exit={{ opacity: 0, scale: 0.95, y: 12 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            className={`relative w-full ${sizes[size]} hc-modal-bg rounded-2xl max-h-[90vh] overflow-y-auto`}
           >
             {title && (
-              <div className="flex items-center justify-between px-6 py-4 border-b border-white/8">
-                <h2 className="text-base font-semibold text-[#e8e8ed]">{title}</h2>
+              <div
+                className="flex items-center justify-between px-6 py-4"
+                style={{ borderBottom: '1px solid var(--hc-border)' }}
+              >
+                <h2 className="text-base font-semibold" style={{ color: 'var(--hc-text)' }}>
+                  {title}
+                </h2>
                 <button
                   onClick={onClose}
                   aria-label="Cerrar"
-                  className="text-[#8e8e9a] hover:text-white transition-colors rounded-lg p-2"
+                  className="hc-modal-close rounded-lg p-1.5"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

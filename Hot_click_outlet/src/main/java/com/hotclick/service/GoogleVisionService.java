@@ -31,8 +31,11 @@ public class GoogleVisionService {
             String url = String.format(VISION_URL, apiKey);
 
             Map<String, Object> imageContent = Map.of("content", imagenBase64);
-            Map<String, Object> feature = Map.of("type", "WEB_DETECTION", "maxResults", 10);
-            Map<String, Object> request = Map.of("image", imageContent, "features", List.of(feature));
+            List<Map<String, Object>> features = List.of(
+                Map.of("type", "WEB_DETECTION",    "maxResults", 15),
+                Map.of("type", "LABEL_DETECTION",  "maxResults", 10)
+            );
+            Map<String, Object> request = Map.of("image", imageContent, "features", features);
             Map<String, Object> body = Map.of("requests", List.of(request));
 
             HttpHeaders headers = new HttpHeaders();
@@ -85,42 +88,97 @@ public class GoogleVisionService {
         if (responses == null || responses.isEmpty()) return result;
 
         Map<?, ?> resp = (Map<?, ?>) responses.get(0);
-        Map<?, ?> web = (Map<?, ?>) resp.get("webDetection");
-        if (web == null) return result;
+        Map<?, ?> web  = (Map<?, ?>) resp.get("webDetection");
 
-        // Etiquetas del producto
-        List<?> labels = (List<?>) web.get("bestGuessLabels");
-        if (labels != null) {
-            for (Object l : labels) {
-                Map<?, ?> label = (Map<?, ?>) l;
-                result.etiquetas.add((String) label.get("label"));
+        if (web != null) {
+            // webEntities: las más precisas para nombre del producto (tienen score)
+            List<?> entities = (List<?>) web.get("webEntities");
+            if (entities != null) {
+                for (Object e : entities) {
+                    Map<?, ?> ent = (Map<?, ?>) e;
+                    String desc  = (String) ent.get("description");
+                    Object scoreObj = ent.get("score");
+                    if (desc == null || desc.isBlank()) continue;
+                    double score = scoreObj instanceof Number n ? n.doubleValue() : 0;
+                    // Descartar: puntaje bajo, texto muy corto, preguntas, marcas de agua genéricas
+                    if (score < 0.4) continue;
+                    if (desc.length() < 3) continue;
+                    if (desc.endsWith("?") || desc.endsWith("!")) continue;
+                    if (desc.equalsIgnoreCase("product") || desc.equalsIgnoreCase("image")) continue;
+                    result.webEntities.add(new WebEntity(desc, score));
+                }
+                // Ordenar por score descendente
+                result.webEntities.sort((a, b) -> Double.compare(b.score, a.score));
+            }
+
+            // bestGuessLabels solo como fallback si no hay webEntities útiles
+            if (result.webEntities.isEmpty()) {
+                List<?> labels = (List<?>) web.get("bestGuessLabels");
+                if (labels != null) {
+                    for (Object l : labels) {
+                        Map<?, ?> label = (Map<?, ?>) l;
+                        String lbl = (String) label.get("label");
+                        if (lbl != null && !lbl.endsWith("?") && !lbl.endsWith("!"))
+                            result.etiquetas.add(lbl);
+                    }
+                }
+            } else {
+                result.webEntities.forEach(we -> result.etiquetas.add(we.description));
+            }
+
+            // pagesWithMatchingImages: son páginas de producto directas (mejor que búsquedas)
+            List<?> pages = (List<?>) web.get("pagesWithMatchingImages");
+            if (pages != null) {
+                for (Object p : pages) {
+                    Map<?, ?> page = (Map<?, ?>) p;
+                    String pageUrl = (String) page.get("url");
+                    if (pageUrl != null) result.urlsEcommerce.add(pageUrl);
+                    if (result.urlsEcommerce.size() >= 15) break;
+                }
             }
         }
 
-        // Páginas con imágenes similares (URLs de ecommerce)
-        List<?> pages = (List<?>) web.get("pagesWithMatchingImages");
-        if (pages != null) {
-            for (Object p : pages) {
-                Map<?, ?> page = (Map<?, ?>) p;
-                String pageUrl = (String) page.get("url");
-                if (pageUrl != null) result.urlsEcommerce.add(pageUrl);
-                if (result.urlsEcommerce.size() >= 10) break;
+        // LABEL_DETECTION: categorías físicas del objeto (zapato, reloj, electrónico...)
+        List<?> labelAnnotations = (List<?>) resp.get("labelAnnotations");
+        if (labelAnnotations != null) {
+            for (Object la : labelAnnotations) {
+                Map<?, ?> ann = (Map<?, ?>) la;
+                String desc = (String) ann.get("description");
+                Object confObj = ann.get("score");
+                double conf = confObj instanceof Number n ? n.doubleValue() : 0;
+                if (desc != null && conf >= 0.7 && !result.etiquetas.contains(desc))
+                    result.labelsFisicos.add(desc);
             }
         }
 
         return result;
     }
 
+    public static class WebEntity {
+        public String description;
+        public double score;
+        WebEntity(String d, double s) { description = d; score = s; }
+    }
+
     public static class VisionResult {
-        public List<String> etiquetas = new ArrayList<>();
+        public List<String> etiquetas    = new ArrayList<>();
         public List<String> urlsEcommerce = new ArrayList<>();
+        public List<WebEntity> webEntities = new ArrayList<>();
+        public List<String> labelsFisicos  = new ArrayList<>();
 
         public boolean tieneResultados() {
             return !etiquetas.isEmpty() || !urlsEcommerce.isEmpty();
         }
 
+        /** Nombre más preciso disponible: mejor webEntity con score alto. */
         public String getEtiquetaPrincipal() {
+            if (!webEntities.isEmpty()) return webEntities.get(0).description;
             return etiquetas.isEmpty() ? null : etiquetas.get(0);
+        }
+
+        /** Etiqueta física más probable (categoría del objeto). */
+        public String getCategoriaFisica() {
+            return labelsFisicos.isEmpty() ? null : labelsFisicos.get(0);
         }
     }
 }

@@ -73,6 +73,11 @@ public class SecurityConfig {
                 .requestMatchers("/api/health").permitAll()
                 .requestMatchers(POST, "/api/webhooks/payxpert").permitAll()
                 .requestMatchers(POST, "/api/webhooks/paypal").permitAll()
+                // Compra sin registro (invitados)
+                .requestMatchers(POST, "/api/payments/guest-checkout").permitAll()
+                .requestMatchers(POST, "/api/payments/guest/paypal/capture").permitAll()
+                .requestMatchers(POST, "/api/payments/guest/cancel/*").permitAll()
+                .requestMatchers(GET,  "/api/payments/status/*").permitAll()
                 // Catálogo público - solo GETs específicos
                 .requestMatchers(GET, "/api/productos/admin/todos").authenticated()
                 .requestMatchers(GET, "/api/productos").permitAll()

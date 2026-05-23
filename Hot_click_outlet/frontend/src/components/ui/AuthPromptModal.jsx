@@ -75,11 +75,11 @@ export default function AuthPromptModal() {
                 <div
                   className="w-16 h-16 rounded-2xl flex items-center justify-center"
                   style={{
-                    background: 'color-mix(in srgb, #4f7cff 12%, transparent)',
-                    border: '1px solid color-mix(in srgb, #4f7cff 24%, transparent)',
+                    background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)',
+                    border: '1px solid color-mix(in srgb, var(--hc-accent) 24%, transparent)',
                   }}
                 >
-                  <svg className="w-8 h-8 text-[#4f7cff]" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
+                  <svg className="w-8 h-8" style={{ color: 'var(--hc-accent)' }} fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                 </div>
@@ -97,14 +97,13 @@ export default function AuthPromptModal() {
               <div className="flex flex-col gap-3">
                 <button
                   onClick={() => go('/registro')}
-                  className="w-full h-12 rounded-2xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-bold text-sm transition-all shadow-[0_0_20px_rgba(79,124,255,0.3)] hover:shadow-[0_0_32px_rgba(79,124,255,0.5)]"
+                  className="hc-btn hc-btn-primary w-full h-12 rounded-2xl font-bold text-sm"
                 >
                   Crear cuenta
                 </button>
                 <button
                   onClick={() => go('/login')}
-                  className="w-full h-12 rounded-2xl border text-sm font-semibold transition-all hover:bg-white/5"
-                  style={{ color: 'var(--hc-text)', borderColor: 'var(--hc-border)' }}
+                  className="hc-btn hc-btn-outline w-full h-12 rounded-2xl text-sm font-semibold"
                 >
                   Ya tengo cuenta — Iniciar sesión
                 </button>

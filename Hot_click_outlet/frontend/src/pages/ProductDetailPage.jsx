@@ -405,7 +405,8 @@ export default function ProductDetailPage() {
                     className="flex items-center justify-center gap-2.5"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                      <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M1 1h4l2.68 13.39a2 2 0 001.95 1.61h9.72a2 2 0 001.95-1.61L23 6H6" />
                     </svg>
                     <span>{inStock ? t('product.addToCart') : t('product.outOfStock')}</span>
                   </motion.div>

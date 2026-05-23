@@ -120,8 +120,9 @@ export default function MiniCartDrawer() {
             {items.length === 0 && (
               <div className="flex-1 flex flex-col items-center justify-center gap-3 p-8 text-center">
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-1" style={{ background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 20%, transparent)' }}>
-                  <svg className="w-8 h-8 text-[#4f7cff]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                  <svg className="w-8 h-8" style={{ color: 'var(--hc-accent)' }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                    <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M1 1h4l2.68 13.39a2 2 0 001.95 1.61h9.72a2 2 0 001.95-1.61L23 6H6" />
                   </svg>
                 </div>
                 <p className="font-semibold text-sm" style={{ color: 'var(--hc-text)' }}>Tu carrito está vacío</p>
@@ -130,7 +131,7 @@ export default function MiniCartDrawer() {
                 </p>
                 <Link
                   to="/productos"
-                  className="mt-2 px-5 py-2 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white text-sm font-medium transition-colors"
+                  className="hc-btn hc-btn-primary hc-btn-sm mt-2"
                 >
                   Explorar productos
                 </Link>
@@ -167,14 +168,15 @@ export default function MiniCartDrawer() {
                           <p className="text-xs font-medium truncate leading-snug" style={{ color: 'var(--hc-text)' }}>
                             {item.nombre}
                           </p>
-                          <p className="text-sm font-bold text-[#4f7cff] mt-0.5">{formatPrice(item.precio)}</p>
+                          <p className="text-sm font-bold mt-0.5" style={{ color: 'var(--hc-accent)' }}>{formatPrice(item.precio)}</p>
 
                           {/* Qty controls */}
                           <div className="flex items-center gap-2 mt-2">
                             <div className="flex items-center rounded-lg border overflow-hidden" style={{ borderColor: 'var(--hc-border)' }}>
                               <button
                                 onClick={() => updateQuantity(item.id, item.cantidad - 1)}
-                                className="w-7 h-7 flex items-center justify-center text-xs transition-colors text-[#8e8e9a] hover:text-white"
+                                className="w-7 h-7 flex items-center justify-center text-xs transition-colors"
+                                style={{ color: 'var(--hc-muted)' }}
                               >−</button>
                               <span className="w-7 text-center text-xs font-bold" style={{ color: 'var(--hc-text)' }}>
                                 {item.cantidad}
@@ -182,7 +184,8 @@ export default function MiniCartDrawer() {
                               <button
                                 onClick={() => updateQuantity(item.id, item.cantidad + 1)}
                                 disabled={item.cantidad >= (item.stock ?? 99)}
-                                className="w-7 h-7 flex items-center justify-center text-xs transition-colors text-[#8e8e9a] hover:text-white disabled:opacity-25"
+                                className="w-7 h-7 flex items-center justify-center text-xs transition-colors disabled:opacity-25"
+                                style={{ color: 'var(--hc-muted)' }}
                               >+</button>
                             </div>
                             <button
@@ -212,20 +215,19 @@ export default function MiniCartDrawer() {
 
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-sm" style={{ color: 'var(--hc-text)' }}>Total</span>
-                    <span className="text-xl font-bold text-[#e8e8ed]">{formatPrice(total())}</span>
+                    <span className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>{formatPrice(total())}</span>
                   </div>
 
                   <button
                     onClick={handleCheckout}
-                    className="block w-full text-center h-12 leading-[48px] rounded-2xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-bold text-sm transition-all shadow-[0_0_20px_rgba(79,124,255,0.3)] hover:shadow-[0_0_32px_rgba(79,124,255,0.5)]"
+                    className="hc-btn hc-btn-primary hc-btn-lg w-full"
                   >
                     Pagar con tarjeta
                   </button>
 
                   <Link
                     to="/carrito"
-                    className="block w-full text-center py-2.5 rounded-2xl text-sm border transition-colors hover:bg-white/5"
-                    style={{ color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }}
+                    className="hc-btn hc-btn-outline w-full"
                   >
                     Ver carrito completo
                   </Link>

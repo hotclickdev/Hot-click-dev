@@ -344,7 +344,15 @@
     "phoneRequired": "Phone required for home delivery",
     "phoneInvalid": "Enter a valid number (8 digits)",
     "addressRequired": "Address required for home delivery",
-    "addressMin": "Enter the full address (province, canton, directions)"
+    "addressMin": "Enter the full address (province, canton, directions)",
+    "guestSection": "Buy without registering",
+    "guestSectionSub": "We only need your email to send your receipt",
+    "guestEmail": "Email address *",
+    "guestEmailRequired": "Enter your email to continue",
+    "guestEmailInvalid": "Enter a valid email (e.g. name@email.com)",
+    "guestPhone": "Phone (optional)",
+    "guestPhoneHelp": "To coordinate delivery if you choose home shipping",
+    "guestLoginLink": "Already have an account? Sign in →"
   },
   "payment": {
     "success": "Payment successful!",

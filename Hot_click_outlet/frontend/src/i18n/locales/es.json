@@ -344,7 +344,15 @@
     "phoneRequired": "Teléfono requerido para envío a domicilio",
     "phoneInvalid": "Ingresá un número válido (8 dígitos)",
     "addressRequired": "Dirección requerida para envío a domicilio",
-    "addressMin": "Ingresá la dirección completa (provincia, cantón, señas)"
+    "addressMin": "Ingresá la dirección completa (provincia, cantón, señas)",
+    "guestSection": "Comprar sin registrarse",
+    "guestSectionSub": "Solo necesitamos tu correo para enviarte el comprobante",
+    "guestEmail": "Correo electrónico *",
+    "guestEmailRequired": "Ingresá tu correo para continuar",
+    "guestEmailInvalid": "Ingresá un correo válido (ej: nombre@correo.com)",
+    "guestPhone": "Teléfono (opcional)",
+    "guestPhoneHelp": "Para coordinar el envío si elegís domicilio",
+    "guestLoginLink": "¿Ya tenés cuenta? Iniciá sesión →"
   },
   "payment": {
     "success": "¡Pago exitoso!",
@@ -665,7 +673,7 @@
     "nuevoProducto": {
       "title": "Crear producto con IA",
       "uploadPhoto": "Subir foto",
-      "analyze": "Analizar con IA",
+      "analyze": "Analizar imagen",
       "analyzing": "Analizando...",
       "result": "Resultado del análisis",
       "name": "Nombre del producto",

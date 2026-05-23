@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Servicio central de pagos.
@@ -38,9 +40,11 @@ public class PaymentService {
     @Autowired private ProductoRepository          productoRepository;
     @Autowired private BodegaRepository            bodegaRepository;
     @Autowired private UsuarioRepository           usuarioRepository;
+    @Autowired private RolRepository               rolRepository;
     @Autowired private PagoRepository              pagoRepository;
     @Autowired private TransaccionPagoRepository   transaccionPagoRepository;
     @Autowired private NotificacionEmailService    notificacionEmailService;
+    @Autowired private PasswordEncoder             passwordEncoder;
 
     // ================================================================
     // CHECKOUT — Valida stock (con lock), reserva, crea Pedido + sesión
@@ -57,8 +61,15 @@ public class PaymentService {
             throw new IllegalArgumentException("Proveedor de pago no soportado: " + provider);
         }
 
-        Usuario usuario = usuarioRepository.findByCorreo(correoUsuario)
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + correoUsuario));
+        // Invitado: correoUsuario viene vacío, usar guestEmail del request
+        String emailEfectivo = (correoUsuario != null && !correoUsuario.equals("anonymousUser"))
+            ? correoUsuario : req.getGuestEmail();
+        if (emailEfectivo == null || emailEfectivo.isBlank()) {
+            throw new IllegalArgumentException("Se requiere correo electrónico para procesar el pedido");
+        }
+
+        Usuario usuario = usuarioRepository.findByCorreo(emailEfectivo)
+            .orElseGet(() -> crearUsuarioInvitado(emailEfectivo, req.getGuestPhone()));
 
         Long bodegaId = req.getBodegaId() != null ? req.getBodegaId() : 1L;
         Bodega bodega = bodegaRepository.findById(bodegaId)
@@ -394,8 +405,89 @@ public class PaymentService {
     }
 
     // ================================================================
+    // CAPTURAR PAYPAL ANÓNIMO — Sin validación de propiedad de usuario.
+    // Solo valida que paypalOrderId corresponda al numeroPedido (ambos
+    // vienen del redirect URL de PayPal, que solo el comprador real tiene).
+    // ================================================================
+    @Transactional
+    public PaymentStatusResponse capturarPayPalAnon(String paypalOrderId, String numeroPedido) {
+        Pago pago = pagoRepository.findByMerchantToken(paypalOrderId)
+            .orElseThrow(() -> new RuntimeException("Pago no encontrado: " + paypalOrderId));
+
+        if (!pago.getPedido().getNumeroPedido().equals(numeroPedido)) {
+            throw new IllegalArgumentException("El número de pedido no coincide con el pago");
+        }
+
+        if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
+            return buildStatusResponse(pago);
+        }
+
+        if (Constants.PAGO_CANCELADO.equals(pago.getEstadoPago())
+            || Constants.PAGO_FALLIDO.equals(pago.getEstadoPago())) {
+            throw new IllegalStateException("El pago ya fue " + pago.getEstadoPago().toLowerCase()
+                + " y no puede capturarse");
+        }
+
+        com.hotclick.payment.PayPalPaymentProvider payPalProvider =
+            (com.hotclick.payment.PayPalPaymentProvider) providerFactory.get("PAYPAL");
+
+        try {
+            payPalProvider.capturar(paypalOrderId, pago);
+        } catch (IllegalStateException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Error capturando pago PayPal: " + e.getMessage(), e);
+        }
+
+        pago = pagoRepository.findByMerchantToken(paypalOrderId).orElseThrow();
+        return buildStatusResponse(pago);
+    }
+
+    // ================================================================
+    // CANCELAR ANÓNIMO — Sin validación de usuario (invitados).
+    // Libera stock reservado y marca el pedido/pago como CANCELADO.
+    // ================================================================
+    @Transactional
+    public void cancelarAnon(String numeroPedido) {
+        Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
+            .orElseThrow(() -> new RuntimeException("Pedido no encontrado: " + numeroPedido));
+
+        if (!Constants.PEDIDO_PENDIENTE.equals(pedido.getEstadoPedido())) {
+            throw new IllegalStateException("El pedido ya fue procesado y no puede cancelarse");
+        }
+
+        Pago pago = pagoRepository.findTopByPedidoId(pedido.getId())
+            .orElseThrow(() -> new RuntimeException("Pago no encontrado para pedido: " + numeroPedido));
+
+        if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
+            throw new IllegalStateException("El pago ya fue confirmado y no puede cancelarse");
+        }
+
+        marcarFallido(pago, "Cancelado por el usuario");
+        log.info("Pedido {} cancelado (invitado)", numeroPedido);
+    }
+
+    // ================================================================
     // Helpers
     // ================================================================
+
+    private Usuario crearUsuarioInvitado(String correo, String telefono) {
+        Usuario u = new Usuario();
+        String uid = UUID.randomUUID().toString().replace("-", "");
+        u.setIdentificacion("GUEST-" + uid.substring(0, 13));
+        u.setNombre("Invitado");
+        u.setApellidoPaterno("Guest");
+        u.setCorreo(correo);
+        u.setTelefono(telefono != null && !telefono.isBlank()
+            ? telefono.replaceAll("[^0-9]", "") : "00000000");
+        u.setContrasenaHash(passwordEncoder.encode(UUID.randomUUID().toString()));
+        u.setFechaRegistro(LocalDateTime.now());
+        u.setEstado(Constants.ESTADO_ACTIVO);
+        rolRepository.findByNombreRol(Constants.ROL_USUARIO_FINAL)
+            .ifPresent(rol -> u.setRoles(List.of(rol)));
+        return usuarioRepository.save(u);
+    }
+
     public PaymentStatusResponse buildStatusResponse(Pago pago) {
         TransaccionPago txn = transaccionPagoRepository
             .findTopByPagoIdOrderByFechaTransaccionDesc(pago.getId())

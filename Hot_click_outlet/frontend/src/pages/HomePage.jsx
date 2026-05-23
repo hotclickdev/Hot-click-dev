@@ -7,6 +7,7 @@ import { Helmet } from 'react-helmet-async'
 import Seo from '@/components/seo/Seo'
 import { generateWebsiteJsonLd, generateOrganizationJsonLd } from '@/utils/jsonLd'
 import { productService, normalizeProduct } from '@/services/productService'
+import { marcaService } from '@/services/marcaService'
 import useCartStore from '@/store/cartStore'
 import useRecentlyViewedStore from '@/store/recentlyViewedStore'
 import { useToast } from '@/components/ui/Toast'
@@ -386,6 +387,7 @@ function HeroCarousel({ slides }) {
 export default function HomePage() {
   const [carouselSlides, setCarouselSlides] = useState(PLACEHOLDER_SLIDES)
   const [destacados, setDestacados] = useState([])
+  const [marcas, setMarcas] = useState([])
   const addItem = useCartStore((s) => s.addItem)
   const toast = useToast()
   const navigate = useNavigate()
@@ -406,6 +408,9 @@ export default function HomePage() {
       .catch(() => {})
     productService.getDestacados()
       .then(({ data }) => setDestacados(Array.isArray(data) ? data.slice(0, 8) : []))
+      .catch(() => {})
+    marcaService.getPublicas()
+      .then(({ data }) => setMarcas(Array.isArray(data.data) ? data.data : []))
       .catch(() => {})
   }, [])
 
@@ -511,6 +516,41 @@ export default function HomePage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {destacados.map((product, i) => (
               <ProductCard key={product.id} product={product} priority={i < 2} index={i} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Marcas */}
+      {marcas.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+          <div className="flex items-center gap-2 mb-6">
+            <span className="w-1 h-4 rounded-full bg-[#4f7cff]" />
+            <h2 className="text-sm font-semibold tracking-wide uppercase text-[#8e8e9a]">Nuestras marcas</h2>
+          </div>
+          <div className="flex flex-wrap gap-4 justify-center">
+            {marcas.map((m) => (
+              <motion.div
+                key={m.id}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.35 }}
+                className="flex flex-col items-center gap-2 px-5 py-4 rounded-2xl bg-[#111114] border border-white/8 hover:border-white/20 transition-colors min-w-[90px]"
+              >
+                <div className="w-14 h-14 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
+                  {m.logoUrl ? (
+                    <img
+                      src={m.logoUrl}
+                      alt={m.nombreMarca}
+                      className="w-full h-full object-contain p-1.5"
+                    />
+                  ) : (
+                    <span className="text-2xl opacity-30">🏷</span>
+                  )}
+                </div>
+                <span className="text-xs font-semibold text-[#e8e8ed] text-center leading-tight">{m.nombreMarca}</span>
+              </motion.div>
             ))}
           </div>
         </section>

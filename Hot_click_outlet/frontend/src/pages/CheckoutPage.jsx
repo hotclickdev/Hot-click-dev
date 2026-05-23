@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
@@ -12,6 +12,8 @@ import { analytics } from '@/utils/analytics'
 
 const BODEGA_DEFAULT = 1
 const WHATSAPP = '50689745370'
+const SINPE_NUMERO = '8974-5370'
+const SINPE_TITULAR = 'Andrés Zúñiga (HOTCLICK)'
 
 function formatPhone(v) {
   const d = v.replace(/\D/g, '').slice(0, 8)
@@ -99,6 +101,14 @@ export default function CheckoutPage() {
       badgeColor: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
       icon: PayPalIcon,
     },
+    {
+      id: 'SINPE',
+      label: 'SINPE Móvil',
+      descripcion: 'Transferencia directa · Se verifica en minutos',
+      badge: 'Costa Rica',
+      badgeColor: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+      icon: SinpeIcon,
+    },
   ]
 
   function validatePhone(v) {
@@ -117,6 +127,12 @@ export default function CheckoutPage() {
   const [metodoPago,   setMetodoPago]   = useState('PAYPAL')
   const [notas,        setNotas]        = useState('')
 
+  // SINPE state
+  const [sinpePaso,       setSinpePaso]       = useState(null) // null | 'confirmado'
+  const [sinpeNombre,     setSinpeNombre]     = useState('')
+  const [sinpeComprobante, setSinpeComprobante] = useState(null)
+  const sinpeInputRef = useRef(null)
+
   // Domicilio fields
   const [telefono,       setTelefono]       = useState('')
   const [telefonoError,  setTelefonoError]  = useState('')
@@ -125,33 +141,36 @@ export default function CheckoutPage() {
   const [direccionError, setDireccionError] = useState('')
   const [direccionDirty, setDireccionDirty] = useState(false)
 
+  // Invitado — datos de contacto cuando no hay sesión
+  const [guestEmail,      setGuestEmail]      = useState('')
+  const [guestEmailError, setGuestEmailError] = useState('')
+  const [guestEmailDirty, setGuestEmailDirty] = useState(false)
+  const [guestPhone,      setGuestPhone]      = useState('')
+
+  function validateGuestEmail(v) {
+    if (!v.trim()) return t('checkout.guestEmailRequired')
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())) return t('checkout.guestEmailInvalid')
+    return ''
+  }
+
   const costoEnvio = metodoEnvio === 'ENVIO_A_DOMICILIO' ? 2000 : 0
   const totalFinal = total() + costoEnvio
 
   // Validate domicilio fields before pay
   const validateDomicilio = useCallback(() => {
     if (metodoEnvio !== 'ENVIO_A_DOMICILIO') return true
-    const tErr = validatePhone(telefono)
     const dErr = validateAddress(direccion)
-    setTelefonoError(tErr)
     setDireccionError(dErr)
-    setTelefonoDirty(true)
     setDireccionDirty(true)
-    return !tErr && !dErr
-  }, [metodoEnvio, telefono, direccion])
-
-  if (!token) {
-    return (
-      <MainLayout>
-        <div className="max-w-lg mx-auto px-4 py-20 text-center">
-          <p className="text-[#e8e8ed] text-lg mb-4">{t('checkout.loginRequired')}</p>
-          <Link to="/login" className="px-6 py-2.5 rounded-xl bg-[#4f7cff] text-white font-medium">
-            {t('register.login')}
-          </Link>
-        </div>
-      </MainLayout>
-    )
-  }
+    // Teléfono solo se valida para usuarios con sesión; invitados usan guestPhone
+    if (token) {
+      const tErr = validatePhone(telefono)
+      setTelefonoError(tErr)
+      setTelefonoDirty(true)
+      return !tErr && !dErr
+    }
+    return !dErr
+  }, [metodoEnvio, telefono, direccion, token])
 
   if (items.length === 0) {
     return (
@@ -161,6 +180,124 @@ export default function CheckoutPage() {
           <Link to="/productos" className="px-6 py-2.5 rounded-xl bg-[#4f7cff] text-white font-medium">
             {t('checkout.continueShopping')}
           </Link>
+        </div>
+      </MainLayout>
+    )
+  }
+
+  if (sinpePaso === 'confirmado') {
+    return (
+      <MainLayout>
+        <div className="max-w-xl mx-auto px-4 py-14">
+          <CheckoutStepper activeStep="checkout" />
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl p-7 space-y-6 mt-8"
+            style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
+          >
+            {/* Header */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="font-bold text-base" style={{ color: 'var(--hc-text)' }}>Instrucciones de pago SINPE</h2>
+                <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Realiza la transferencia y sube tu comprobante</p>
+              </div>
+            </div>
+
+            {/* SINPE Info card */}
+            <div className="rounded-xl p-5 space-y-3" style={{ background: 'color-mix(in srgb, var(--hc-accent) 5%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 20%, transparent)' }}>
+              <div className="flex justify-between items-center text-sm">
+                <span style={{ color: 'var(--hc-muted)' }}>📱 Número SINPE</span>
+                <span className="font-bold text-base tracking-wider" style={{ color: 'var(--hc-text)' }}>{SINPE_NUMERO}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span style={{ color: 'var(--hc-muted)' }}>👤 Titular</span>
+                <span className="font-medium" style={{ color: 'var(--hc-text)' }}>{SINPE_TITULAR}</span>
+              </div>
+              <div className="border-t" style={{ borderColor: 'var(--hc-border)' }} />
+              <div className="flex justify-between items-center">
+                <span className="text-sm" style={{ color: 'var(--hc-muted)' }}>💰 Monto exacto</span>
+                <span className="font-bold text-lg text-[#4f7cff]">{formatPrice(totalFinal)}</span>
+              </div>
+            </div>
+
+            {/* Nombre completo */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>
+                Tu nombre completo <span className="text-red-400">*</span>
+              </label>
+              <input
+                type="text"
+                value={sinpeNombre}
+                onChange={(e) => setSinpeNombre(e.target.value)}
+                placeholder="Ej: María González Solano"
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all"
+                style={{ background: 'var(--hc-surface-2, var(--hc-surface))', border: '1.5px solid var(--hc-border)', color: 'var(--hc-text)' }}
+                onFocus={(e) => { e.target.style.borderColor = 'var(--hc-accent)'; e.target.style.boxShadow = '0 0 0 3px rgba(79,124,255,0.12)' }}
+                onBlur={(e) => { e.target.style.boxShadow = '' }}
+              />
+              <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+                El nombre debe coincidir con quien realiza la transferencia
+              </p>
+            </div>
+
+            {/* Upload comprobante */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>Comprobante de pago</label>
+              <input
+                ref={sinpeInputRef}
+                type="file"
+                accept="image/*,.pdf"
+                className="hidden"
+                onChange={(e) => setSinpeComprobante(e.target.files?.[0] ?? null)}
+              />
+              <button
+                onClick={() => sinpeInputRef.current?.click()}
+                className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl text-sm font-medium transition-all border-dashed border-2"
+                style={sinpeComprobante
+                  ? { borderColor: 'color-mix(in srgb, var(--hc-accent) 60%, transparent)', background: 'color-mix(in srgb, var(--hc-accent) 8%, transparent)', color: 'var(--hc-accent)' }
+                  : { borderColor: 'var(--hc-border)', color: 'var(--hc-muted)' }}
+              >
+                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                {sinpeComprobante ? sinpeComprobante.name : 'Adjuntar comprobante (foto o PDF)'}
+              </button>
+            </div>
+
+            {/* Nota admin */}
+            <div className="flex gap-2.5 p-3.5 rounded-xl" style={{ background: 'color-mix(in srgb, #f59e0b 8%, transparent)', border: '1px solid color-mix(in srgb, #f59e0b 25%, transparent)' }}>
+              <svg className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-xs leading-relaxed text-amber-300/90">
+                Tu pago será <strong>verificado por un administrador</strong>. Te notificaremos lo antes posible una vez confirmado.
+              </p>
+            </div>
+
+            {/* Acciones */}
+            <div className="flex flex-col gap-2.5 pt-1">
+              <button
+                onClick={handleSinpeWhatsApp}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-sm transition-all bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/18"
+              >
+                <WhatsAppIcon />
+                Enviar comprobante por WhatsApp
+              </button>
+              <button
+                onClick={() => setSinpePaso(null)}
+                className="text-xs text-center transition-colors hover:text-[#4f7cff]"
+                style={{ color: 'var(--hc-muted)' }}
+              >
+                ← Volver al checkout
+              </button>
+            </div>
+          </motion.div>
         </div>
       </MainLayout>
     )
@@ -183,9 +320,24 @@ export default function CheckoutPage() {
 
   const handlePagar = () => {
     if (!validateDomicilio()) return
+
+    // Validar email de invitado si no hay sesión
+    if (!token) {
+      const eErr = validateGuestEmail(guestEmail)
+      setGuestEmailError(eErr)
+      setGuestEmailDirty(true)
+      if (eErr) return
+    }
+
+    if (metodoPago === 'SINPE') {
+      setSinpePaso('confirmado')
+      return
+    }
+
+    const phoneEfectivo = !token ? guestPhone : telefono
     const notasFull = [
       notas.trim(),
-      metodoEnvio === 'ENVIO_A_DOMICILIO' && telefono ? `Teléfono: ${telefono}` : '',
+      metodoEnvio === 'ENVIO_A_DOMICILIO' && phoneEfectivo ? `Teléfono: ${phoneEfectivo}` : '',
       metodoEnvio === 'ENVIO_A_DOMICILIO' && direccion ? `Dirección: ${direccion}` : '',
     ].filter(Boolean).join(' | ')
 
@@ -196,7 +348,20 @@ export default function CheckoutPage() {
       notas:       notasFull || null,
       provider:    metodoPago,
       items: items.map((i) => ({ productoId: i.id, cantidad: i.cantidad })),
-    })
+      ...(token ? {} : { guestEmail: guestEmail.trim(), guestPhone: guestPhone || null }),
+    }, !token)
+  }
+
+  const handleSinpeWhatsApp = () => {
+    const productos = items.map((i) => `• ${i.nombre} x${i.cantidad}`).join('\n')
+    const msg = encodeURIComponent(
+      `Hola HOTCLICK 👋\n\n*Comprobante SINPE Móvil*\n\n` +
+      `Nombre: ${sinpeNombre || '(sin nombre)'}\n` +
+      `Monto: ${formatPrice(totalFinal)}\n\n` +
+      `Productos:\n${productos}\n\n` +
+      `_Adjunto el comprobante de pago._`
+    )
+    window.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank')
   }
 
   const handleWhatsApp = () => {
@@ -222,6 +387,55 @@ export default function CheckoutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* ── Formulario ── */}
           <div className="lg:col-span-2 space-y-6">
+
+            {/* ── Datos de contacto (solo invitados) ── */}
+            {!token && (
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-2xl p-6 space-y-4"
+                style={{ background: 'var(--hc-surface)', border: '1.5px solid var(--hc-accent)' }}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="font-semibold" style={{ color: 'var(--hc-text)' }}>{t('checkout.guestSection')}</h2>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>{t('checkout.guestSectionSub')}</p>
+                  </div>
+                  <Link
+                    to="/login"
+                    className="text-xs font-medium text-[#4f7cff] hover:underline shrink-0 ml-4"
+                  >
+                    {t('checkout.guestLoginLink')}
+                  </Link>
+                </div>
+
+                <SmartField
+                  id="guestEmail"
+                  label={t('checkout.guestEmail')}
+                  type="email"
+                  value={guestEmail}
+                  placeholder="tu@correo.com"
+                  error={guestEmailDirty ? guestEmailError : ''}
+                  success={guestEmailDirty && !guestEmailError && guestEmail.trim().length > 0}
+                  onChange={(e) => {
+                    setGuestEmail(e.target.value)
+                    if (guestEmailDirty) setGuestEmailError(validateGuestEmail(e.target.value))
+                  }}
+                  onBlur={() => { setGuestEmailDirty(true); setGuestEmailError(validateGuestEmail(guestEmail)) }}
+                />
+
+                <SmartField
+                  id="guestPhone"
+                  label={t('checkout.guestPhone')}
+                  type="tel"
+                  value={guestPhone}
+                  placeholder="8888-8888"
+                  onChange={(e) => setGuestPhone(formatPhone(e.target.value))}
+                  onBlur={() => {}}
+                  helpText={t('checkout.guestPhoneHelp')}
+                />
+              </motion.div>
+            )}
 
             {/* Express Checkout */}
             <motion.div
@@ -326,22 +540,24 @@ export default function CheckoutPage() {
                     <p className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>
                       {t('checkout.deliveryData')}
                     </p>
-                    <SmartField
-                      id="telefono"
-                      label={t('checkout.phoneContact')}
-                      type="tel"
-                      value={telefono}
-                      placeholder="8888-8888"
-                      error={telefonoDirty ? telefonoError : ''}
-                      success={telefonoDirty && !telefonoError && telefono.length >= 8}
-                      helpText={t('checkout.phoneHelp')}
-                      onChange={(e) => {
-                        const formatted = formatPhone(e.target.value)
-                        setTelefono(formatted)
-                        if (telefonoDirty) setTelefonoError(validatePhone(formatted))
-                      }}
-                      onBlur={() => { setTelefonoDirty(true); setTelefonoError(validatePhone(telefono)) }}
-                    />
+                    {token && (
+                      <SmartField
+                        id="telefono"
+                        label={t('checkout.phoneContact')}
+                        type="tel"
+                        value={telefono}
+                        placeholder="8888-8888"
+                        error={telefonoDirty ? telefonoError : ''}
+                        success={telefonoDirty && !telefonoError && telefono.length >= 8}
+                        helpText={t('checkout.phoneHelp')}
+                        onChange={(e) => {
+                          const formatted = formatPhone(e.target.value)
+                          setTelefono(formatted)
+                          if (telefonoDirty) setTelefonoError(validatePhone(formatted))
+                        }}
+                        onBlur={() => { setTelefonoDirty(true); setTelefonoError(validatePhone(telefono)) }}
+                      />
+                    )}
                     <SmartField
                       id="direccion"
                       label={t('checkout.addressLabel')}
@@ -417,11 +633,42 @@ export default function CheckoutPage() {
                 })}
               </div>
 
-              <div className="p-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--hc-surface) 50%, transparent)', border: '1px solid var(--hc-border)' }}>
-                <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-                  {t('checkout.paypalNote')}
-                </p>
-              </div>
+              {metodoPago === 'PAYPAL' && (
+                <div className="p-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--hc-surface) 50%, transparent)', border: '1px solid var(--hc-border)' }}>
+                  <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
+                    {t('checkout.paypalNote')}
+                  </p>
+                </div>
+              )}
+
+              <AnimatePresence>
+                {metodoPago === 'SINPE' && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.22 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="rounded-xl p-4 space-y-2.5" style={{ background: 'color-mix(in srgb, #10b981 6%, transparent)', border: '1px solid color-mix(in srgb, #10b981 20%, transparent)' }}>
+                      <p className="text-xs font-semibold text-emerald-400">Datos para tu transferencia</p>
+                      <div className="flex justify-between text-xs">
+                        <span style={{ color: 'var(--hc-muted)' }}>📱 Número SINPE</span>
+                        <span className="font-bold tracking-wider" style={{ color: 'var(--hc-text)' }}>{SINPE_NUMERO}</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span style={{ color: 'var(--hc-muted)' }}>👤 Titular</span>
+                        <span style={{ color: 'var(--hc-text)' }}>{SINPE_TITULAR}</span>
+                      </div>
+                      <div className="border-t pt-2" style={{ borderColor: 'color-mix(in srgb, #10b981 20%, transparent)' }}>
+                        <p className="text-[11px]" style={{ color: 'var(--hc-muted)' }}>
+                          Al hacer clic en "Confirmar SINPE" podrás adjuntar tu comprobante de pago.
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
 
             {/* Notas opcionales */}
@@ -511,6 +758,12 @@ export default function CheckoutPage() {
                   {t('checkout.paypalNote2')}
                 </p>
               )}
+              {metodoPago === 'SINPE' && (
+                <div className="text-[10px] leading-relaxed rounded-lg p-2.5 space-y-0.5" style={{ background: 'color-mix(in srgb, #10b981 8%, transparent)', border: '1px solid color-mix(in srgb, #10b981 20%, transparent)', color: 'var(--hc-muted)' }}>
+                  <p>📱 SINPE: <strong className="text-emerald-400">{SINPE_NUMERO}</strong></p>
+                  <p>💰 Monto: <strong style={{ color: 'var(--hc-text)' }}>{formatPrice(totalFinal)}</strong></p>
+                </div>
+              )}
 
               {/* Trust mini badges */}
               <div className="flex items-center justify-center gap-4 py-2.5 px-3 rounded-xl text-[11px]"
@@ -523,12 +776,18 @@ export default function CheckoutPage() {
               <button
                 onClick={handlePagar}
                 disabled={estado === 'loading' || estado === 'redirecting' || intentos >= maxIntentos}
-                className="w-full py-3.5 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-semibold text-sm
-                           transition-all shadow-[0_0_20px_rgba(79,124,255,0.3)] hover:shadow-[0_0_32px_rgba(79,124,255,0.45)]
-                           disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className={`w-full py-3.5 rounded-xl font-semibold text-sm transition-all
+                           disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2
+                           ${metodoPago === 'SINPE'
+                             ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_32px_rgba(16,185,129,0.45)]'
+                             : 'bg-[#4f7cff] hover:bg-[#3d6ee0] text-white shadow-[0_0_20px_rgba(79,124,255,0.3)] hover:shadow-[0_0_32px_rgba(79,124,255,0.45)]'
+                           }`}
               >
-                <LockIcon />
-                {metodoPago === 'PAYPAL' ? t('checkout.payWithPaypal') : t('checkout.payNow')} · {formatPrice(totalFinal)}
+                {metodoPago === 'SINPE' ? <SinpeIcon selected /> : <LockIcon />}
+                {metodoPago === 'SINPE'
+                  ? `Confirmar SINPE · ${formatPrice(totalFinal)}`
+                  : `${metodoPago === 'PAYPAL' ? t('checkout.payWithPaypal') : t('checkout.payNow')} · ${formatPrice(totalFinal)}`
+                }
               </button>
 
               <p className="text-[10px] text-center leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
@@ -583,6 +842,17 @@ function ApplePayIcon() {
   return (
     <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
       <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+    </svg>
+  )
+}
+
+function SinpeIcon({ selected }) {
+  return (
+    <svg className={`w-7 h-5 ${selected ? 'opacity-100' : 'opacity-70'}`} viewBox="0 0 36 20" fill="none">
+      <rect width="36" height="20" rx="4" fill={selected ? '#065f46' : '#064e3b'} />
+      <text x="4" y="14" fontSize="9" fontWeight="800" fontFamily="sans-serif" fill="#34d399">SINPE</text>
+      <rect x="26" y="5" width="7" height="10" rx="1.5" fill="#34d399" opacity="0.8" />
+      <rect x="27.5" y="3.5" width="4" height="1.5" rx="0.75" fill="#34d399" opacity="0.5" />
     </svg>
   )
 }

@@ -25,6 +25,12 @@ public class PaymentCheckoutRequest {
     /** Proveedor de pago: "PAYXPERT" (default) o "PAYPAL". */
     private String provider;
 
+    /** Correo del comprador invitado (no autenticado). */
+    private String guestEmail;
+
+    /** Teléfono del comprador invitado (opcional). */
+    private String guestPhone;
+
     public Long getBodegaId() { return bodegaId; }
     public void setBodegaId(Long bodegaId) { this.bodegaId = bodegaId; }
 
@@ -39,6 +45,12 @@ public class PaymentCheckoutRequest {
 
     public String getProvider() { return provider; }
     public void setProvider(String provider) { this.provider = provider; }
+
+    public String getGuestEmail() { return guestEmail; }
+    public void setGuestEmail(String guestEmail) { this.guestEmail = guestEmail; }
+
+    public String getGuestPhone() { return guestPhone; }
+    public void setGuestPhone(String guestPhone) { this.guestPhone = guestPhone; }
 
     public static class ItemDTO {
 

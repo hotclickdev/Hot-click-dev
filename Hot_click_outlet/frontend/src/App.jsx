@@ -191,7 +191,7 @@ export default function App() {
               <Route path="/informacion" element={<InformacionPage />} />
               <Route path="/perfil"      element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
               <Route path="/mis-pedidos" element={<ProtectedRoute><MisPedidosPage /></ProtectedRoute>} />
-              <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
+              <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/wishlist" element={<WishlistPage />} />
               <Route path="/recuperar-carrito/:id" element={<RecuperarCarritoPage />} />
               <Route path="/pago/exito"     element={<PaymentStatusPage />} />

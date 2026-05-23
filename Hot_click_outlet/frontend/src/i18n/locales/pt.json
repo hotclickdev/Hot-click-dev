@@ -344,7 +344,15 @@
     "phoneRequired": "Telefone obrigatório para entrega em domicílio",
     "phoneInvalid": "Digite um número válido (8 dígitos)",
     "addressRequired": "Endereço obrigatório para entrega em domicílio",
-    "addressMin": "Digite o endereço completo (província, cantão, instruções)"
+    "addressMin": "Digite o endereço completo (província, cantão, instruções)",
+    "guestSection": "Comprar sem se registrar",
+    "guestSectionSub": "Só precisamos do seu e-mail para enviar o comprovante",
+    "guestEmail": "E-mail *",
+    "guestEmailRequired": "Digite seu e-mail para continuar",
+    "guestEmailInvalid": "Digite um e-mail válido (ex: nome@email.com)",
+    "guestPhone": "Telefone (opcional)",
+    "guestPhoneHelp": "Para coordenar a entrega se escolher envio a domicílio",
+    "guestLoginLink": "Já tem conta? Entrar →"
   },
   "payment": {
     "success": "Pagamento bem-sucedido!",
