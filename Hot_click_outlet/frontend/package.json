@@ -21,13 +21,24 @@
     "react-helmet-async": "^3.0.0",
     "react-i18next": "^17.0.7",
     "react-router-dom": "^7.15.0",
+    "xlsx": "^0.18.5",
     "zustand": "^5.0.13"
   },
   "pnpm": {
     "supportedArchitectures": {
-      "os": ["linux", "win32", "current"],
-      "cpu": ["x64", "current"],
-      "libc": ["glibc", "current"]
+      "os": [
+        "linux",
+        "win32",
+        "current"
+      ],
+      "cpu": [
+        "x64",
+        "current"
+      ],
+      "libc": [
+        "glibc",
+        "current"
+      ]
     }
   },
   "devDependencies": {

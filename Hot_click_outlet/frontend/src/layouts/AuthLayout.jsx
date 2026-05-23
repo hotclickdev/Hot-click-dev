@@ -7,7 +7,9 @@ export default function AuthLayout({ children }) {
       <header className="h-16 flex items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 hc-logo-badge">
-            <span className="text-white font-extrabold text-[13px] tracking-tight leading-none">HC</span>
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+              <path d="M13 2L3 14h8l-2 8 12-12h-8z"/>
+            </svg>
           </div>
           <span className="font-extrabold text-lg tracking-tight leading-none uppercase hc-logo-text">
             HOTCLICK

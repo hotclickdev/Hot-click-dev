@@ -23,6 +23,7 @@ export default function AdminLayout({ children }) {
     { to: '/admin/ventas', label: t('admin.sidebar.nuevaVenta'), icon: <PlusCircleIcon /> },
     { to: '/admin/finanzas', label: t('admin.sidebar.finanzas'), icon: <ChartIcon /> },
     { to: '/admin/reportes', label: t('admin.sidebar.reportes'), icon: <BarIcon /> },
+    { to: '/admin/servicios', label: 'Servicios HOT', icon: <SearchHeartIcon /> },
     { to: '/admin/pagos', label: 'Pagos / Webhooks', icon: <CreditCardIcon /> },
     { to: '/admin/nuevo-producto', label: t('admin.sidebar.crearIA'), icon: <CameraIcon /> },
     { to: '/admin/publicaciones', label: t('admin.sidebar.publicarFB'), icon: <ShareIcon /> },
@@ -38,13 +39,13 @@ export default function AdminLayout({ children }) {
       {/* Logo */}
       <div className="h-16 flex items-center px-5 shrink-0" style={{ borderBottom: '1px solid var(--hc-border)' }}>
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-[#4f7cff] flex items-center justify-center shadow-[0_0_12px_rgba(79,124,255,0.4)] shrink-0">
-            <span className="text-white font-extrabold text-[11px] tracking-tight leading-none">HC</span>
+          <div className="w-7 h-7 rounded-lg hc-logo-badge flex items-center justify-center shrink-0">
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+              <path d="M13 2L3 14h8l-2 8 12-12h-8z"/>
+            </svg>
           </div>
           <div>
-            <div className="font-extrabold text-sm tracking-tight leading-none">
-              <span style={{ color: 'var(--hc-text)' }}>HOT</span><span className="text-[#4f7cff]">CLICK</span>
-            </div>
+            <div className="font-extrabold text-sm tracking-tight leading-none hc-logo-text">HOTCLICK</div>
             <div className="text-[10px] mt-0.5" style={{ color: 'var(--hc-muted)' }}>{t('admin.sidebar.panelAdmin')}</div>
           </div>
         </div>
@@ -122,12 +123,12 @@ export default function AdminLayout({ children }) {
         style={{ backgroundColor: 'var(--hc-surface)', borderBottom: '1px solid var(--hc-border)' }}
       >
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-[#4f7cff] flex items-center justify-center shrink-0">
-            <span className="text-white font-extrabold text-[11px]">HC</span>
+          <div className="w-7 h-7 rounded-lg hc-logo-badge flex items-center justify-center shrink-0">
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+              <path d="M13 2L3 14h8l-2 8 12-12h-8z"/>
+            </svg>
           </div>
-          <div className="font-extrabold text-sm">
-            <span style={{ color: 'var(--hc-text)' }}>HOT</span><span className="text-[#4f7cff]">CLICK</span>
-          </div>
+          <div className="font-extrabold text-sm hc-logo-text">HOTCLICK</div>
           <span className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>Admin</span>
         </div>
         <button
@@ -209,3 +210,4 @@ function CameraIcon() { return <svg className={ic} {...s}><path strokeLinecap="r
 function CreditCardIcon() { return <svg className={ic} {...s}><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg> }
 function MarcaIcon()  { return <svg className={ic} {...s}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> }
 function ConfigIcon() { return <svg className={ic} {...s}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg> }
+function SearchHeartIcon() { return <svg className={ic} {...s}><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8c-1.5 0-3 1-3 2.5 0 2 2 3 3 4 1-1 3-2 3-4C14 9 12.5 8 11 8z"/></svg> }

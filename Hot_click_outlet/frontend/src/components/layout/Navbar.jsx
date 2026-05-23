@@ -24,12 +24,14 @@ export default function Navbar() {
   const navLinks = [
     { href: '/', label: t('nav.inicio') },
     { href: '/productos', label: t('nav.productos') },
+    { href: '/servicios', label: 'Servicios HOT', highlight: true },
     { href: '/informacion', label: t('nav.informacion') },
     { href: '/nosotros', label: t('nav.nosotros') },
     { href: '/contacto', label: t('nav.contacto') },
   ]
 
   const mobileSecondaryLinks = [
+    { href: '/servicios', label: '✦ Servicios HOT', highlight: true },
     { href: '/informacion', label: t('nav.informacion') },
     { href: '/nosotros', label: t('nav.nosotros') },
     { href: '/contacto', label: t('nav.contacto') },
@@ -91,7 +93,9 @@ export default function Navbar() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 shrink-0 group">
             <div className="flex items-center justify-center w-9 h-9 rounded-xl shrink-0 hc-logo-badge transition-transform duration-200 group-hover:scale-105">
-              <span className="text-white text-[13px] leading-none" style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 900 }}>HC</span>
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                <path d="M13 2L3 14h8l-2 8 12-12h-8z"/>
+              </svg>
             </div>
             <span className="text-[22px] leading-none uppercase hc-logo-text transition-opacity duration-200 group-hover:opacity-80"
               style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 900 }}>
@@ -103,6 +107,26 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-0.5">
             {navLinks.map((link) => {
               const isActive = location.pathname === link.href
+              if (link.highlight) {
+                return (
+                  <Link
+                    key={link.href}
+                    to={link.href}
+                    className="relative px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200"
+                    style={{
+                      color: isActive ? '#fff' : 'var(--hc-accent)',
+                      backgroundColor: isActive ? 'var(--hc-accent)' : 'color-mix(in srgb, var(--hc-accent) 10%, transparent)',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--hc-accent)'; e.currentTarget.style.color = '#fff' }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.backgroundColor = isActive ? 'var(--hc-accent)' : 'color-mix(in srgb, var(--hc-accent) 10%, transparent)'
+                      e.currentTarget.style.color = isActive ? '#fff' : 'var(--hc-accent)'
+                    }}
+                  >
+                    ✦ {link.label}
+                  </Link>
+                )
+              }
               return (
                 <Link
                   key={link.href}
@@ -294,8 +318,13 @@ export default function Navbar() {
                   to={link.href}
                   className="px-4 py-3 rounded-xl text-sm font-medium transition-colors"
                   style={{
-                    color: location.pathname === link.href ? 'var(--hc-text)' : 'var(--hc-muted)',
-                    backgroundColor: location.pathname === link.href ? 'var(--hc-surface-2)' : 'transparent',
+                    color: link.highlight
+                      ? 'var(--hc-accent)'
+                      : location.pathname === link.href ? 'var(--hc-text)' : 'var(--hc-muted)',
+                    backgroundColor: link.highlight
+                      ? 'color-mix(in srgb, var(--hc-accent) 10%, transparent)'
+                      : location.pathname === link.href ? 'var(--hc-surface-2)' : 'transparent',
+                    fontWeight: link.highlight ? 600 : undefined,
                   }}
                 >
                   {link.label}

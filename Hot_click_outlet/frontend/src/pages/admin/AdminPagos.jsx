@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import AdminLayout from '@/layouts/AdminLayout'
 import api from '@/services/api'
+import ImportExportBar from '@/components/admin/ImportExportBar'
 
 const PROVEEDORES  = ['', 'PAYPAL', 'PAYXPERT']
 const ESTADOS_PAGO = ['', 'CAPTURADO', 'PENDIENTE', 'FALLIDO', 'CANCELADO']
@@ -84,7 +85,27 @@ export default function AdminPagos() {
   return (
     <AdminLayout>
       <div className="p-6 max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold text-[#e8e8ed] mb-6">{t('admin.pagos.title')} &amp; {t('admin.pagos.webhooks')}</h1>
+        <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
+          <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.pagos.title')} &amp; {t('admin.pagos.webhooks')}</h1>
+          <ImportExportBar
+            exportOnly
+            data={tab === 'pagos'
+              ? pagos.map((p) => ({
+                  id: p.id, pedidoId: p.pedidoId ?? '', proveedor: p.proveedor ?? '',
+                  estado: p.estadoPago ?? '', monto: p.monto ?? 0,
+                  moneda: p.moneda ?? '', fecha: (p.fechaPago ?? p.createdAt ?? '').slice(0, 10),
+                }))
+              : webhooks.map((w) => ({
+                  id: w.id, proveedor: w.proveedor ?? '', evento: w.evento ?? '',
+                  procesado: w.procesado ? 'SI' : 'NO', fecha: (w.createdAt ?? '').slice(0, 10),
+                }))}
+            columns={tab === 'pagos'
+              ? ['id','pedidoId','proveedor','estado','monto','moneda','fecha']
+              : ['id','proveedor','evento','procesado','fecha']}
+            filename={tab === 'pagos' ? 'pagos' : 'webhooks'}
+            sheetName={tab === 'pagos' ? 'Pagos' : 'Webhooks'}
+          />
+        </div>
 
         {/* KPIs */}
         {kpis && (

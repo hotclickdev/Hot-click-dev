@@ -4,6 +4,7 @@ import BottomNav from '@/components/layout/BottomNav'
 import SearchPanel from '@/components/ui/SearchPanel'
 import MiniCartDrawer from '@/components/ui/MiniCartDrawer'
 import ExitIntentModal from '@/components/ui/ExitIntentModal'
+import PromoWelcomePopup from '@/components/ui/PromoWelcomePopup'
 import { motion } from 'framer-motion'
 
 export default function MainLayout({ children }) {
@@ -23,6 +24,7 @@ export default function MainLayout({ children }) {
       <SearchPanel />
       <MiniCartDrawer />
       <ExitIntentModal />
+      <PromoWelcomePopup />
     </div>
   )
 }

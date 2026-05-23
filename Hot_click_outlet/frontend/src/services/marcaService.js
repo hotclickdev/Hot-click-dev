@@ -17,9 +17,12 @@ export const marcaService = {
   delete: (id) =>
     api.delete(`/marcas/${id}`),
 
+  importBulk: (items) =>
+    api.post('/marcas/bulk', items),
+
   uploadLogo: (file) => {
     const fd = new FormData()
     fd.append('file', file)
-    return api.post('/marcas/logo', fd)
+    return api.post('/marcas/logo', fd, { headers: { 'Content-Type': undefined } })
   },
 }

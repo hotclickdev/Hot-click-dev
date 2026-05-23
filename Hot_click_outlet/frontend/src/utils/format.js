@@ -23,6 +23,9 @@ export const formatDateTime = (date) =>
 export const conditionLabel = (cond) =>
   ({ NUEVO: 'Nuevo', COMO_NUEVO: 'Como nuevo', USADO: 'Usado' }[cond] ?? cond)
 
+export const conditionVariant = (cond) =>
+  ({ NUEVO: 'success', COMO_NUEVO: 'accent', USADO: 'warning' }[cond] ?? 'default')
+
 export const statusColor = (estado) => ({
   PENDIENTE: 'warning',
   ACTIVO: 'success',

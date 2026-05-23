@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 import java.util.Map;
 
 
@@ -51,6 +52,28 @@ public class CategoriaController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
+    }
+
+    @CacheEvict(value = "categorias", allEntries = true)
+    @PostMapping("/bulk")
+    public ResponseEntity<ResponseDTO> importarBulk(
+            @RequestBody List<Map<String, String>> items,
+            @AuthenticationPrincipal UserDetails ud) {
+        var admin = usuarioRepository.findByCorreo(ud.getUsername())
+            .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
+        int ok = 0;
+        for (Map<String, String> item : items) {
+            String nombre = item.get("nombreCategoria");
+            if (nombre == null || nombre.isBlank()) continue;
+            Categoria cat = new Categoria();
+            cat.setNombreCategoria(nombre.trim());
+            cat.setDescripcion(item.getOrDefault("descripcion", ""));
+            cat.setEstado(Constants.ESTADO_ACTIVO);
+            cat.setAdminCliente(admin);
+            categoriaRepository.save(cat);
+            ok++;
+        }
+        return ResponseEntity.ok(ResponseDTO.success("Importadas: " + ok + " categorías", Map.of("ok", ok)));
     }
 
     @CacheEvict(value = "categorias", allEntries = true)

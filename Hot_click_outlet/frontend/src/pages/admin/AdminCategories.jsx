@@ -7,6 +7,8 @@ import Modal from '@/components/ui/Modal'
 import Spinner from '@/components/ui/Spinner'
 import api from '@/services/api'
 import { useToast } from '@/components/ui/Toast'
+import { categoriaService } from '@/services/orderService'
+import ImportExportBar from '@/components/admin/ImportExportBar'
 
 const EMPTY = { nombreCategoria: '', descripcion: '' }
 
@@ -68,12 +70,26 @@ export default function AdminCategories() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.categories.title')}</h1>
             <p className="text-sm text-[#8e8e9a] mt-1">{cats.length} {t('admin.categories.title').toLowerCase()}</p>
           </div>
-          <Button onClick={openNew}>+ {t('admin.categories.new')}</Button>
+          <div className="flex items-center gap-3 flex-wrap">
+            <ImportExportBar
+              data={cats.map((c) => ({ id: c.id, nombreCategoria: c.nombreCategoria, descripcion: c.descripcion ?? '' }))}
+              columns={['id', 'nombreCategoria', 'descripcion']}
+              filename="categorias"
+              sheetName="Categorías"
+              importColumns={['nombreCategoria', 'descripcion']}
+              mapImportRow={(row) => ({ nombreCategoria: row.nombreCategoria ?? '', descripcion: row.descripcion ?? '' })}
+              onImport={async (rows) => {
+                await categoriaService.importBulk(rows)
+                load()
+              }}
+            />
+            <Button onClick={openNew}>+ {t('admin.categories.new')}</Button>
+          </div>
         </div>
 
         {loading ? (

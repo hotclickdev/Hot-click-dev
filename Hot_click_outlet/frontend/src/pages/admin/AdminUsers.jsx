@@ -7,6 +7,7 @@ import Modal from '@/components/ui/Modal'
 import Spinner from '@/components/ui/Spinner'
 import { adminService } from '@/services/orderService'
 import { useToast } from '@/components/ui/Toast'
+import ImportExportBar from '@/components/admin/ImportExportBar'
 
 const ESTADO_NUM = { 1: 'ACTIVO', 2: 'INACTIVO', 3: 'ELIMINADO', 4: 'SUSPENDIDO', 5: 'PENDIENTE' }
 const ESTADO_INT = { ACTIVO: 1, INACTIVO: 2 }
@@ -162,9 +163,24 @@ export default function AdminUsers() {
   return (
     <AdminLayout>
       <div className="space-y-5">
-        <div>
-          <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.users.title')}</h1>
-          <p className="text-sm text-[#8e8e9a] mt-1">{users.length} registrados · {pending.length} {t('admin.orders.pending').toLowerCase()}</p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.users.title')}</h1>
+            <p className="text-sm text-[#8e8e9a] mt-1">{users.length} registrados · {pending.length} {t('admin.orders.pending').toLowerCase()}</p>
+          </div>
+          <ImportExportBar
+            exportOnly
+            data={users.map((u) => ({
+              id: u.id,
+              nombre: u.nombre ?? '',
+              correo: u.correo ?? '',
+              rol: getRolStr(u),
+              estado: getEstadoStr(u),
+            }))}
+            columns={['id','nombre','correo','rol','estado']}
+            filename="usuarios"
+            sheetName="Usuarios"
+          />
         </div>
 
         {/* Tabs + búsqueda */}

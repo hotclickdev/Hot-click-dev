@@ -84,6 +84,9 @@ public class Pedido extends BaseEntity {
     @Column(name = "notificaciones", columnDefinition = "text")
     private String notificaciones = "[]";
 
+    @Column(name = "cupon_codigo", length = 20)
+    private String cuponCodigo;
+
     @Column(name = "fecha_envio")
     private LocalDateTime fechaEnvio;
 
@@ -180,4 +183,7 @@ public class Pedido extends BaseEntity {
     public String getNotificaciones() { return notificaciones != null ? notificaciones : "[]"; }
     @JsonSetter
     public void setNotificaciones(String notificaciones) { this.notificaciones = notificaciones; }
+
+    public String getCuponCodigo() { return cuponCodigo; }
+    public void setCuponCodigo(String cuponCodigo) { this.cuponCodigo = cuponCodigo; }
 }

@@ -147,14 +147,39 @@ export default function CheckoutPage() {
   const [guestEmailDirty, setGuestEmailDirty] = useState(false)
   const [guestPhone,      setGuestPhone]      = useState('')
 
+  // Cupón de descuento
+  const [cuponInput,    setCuponInput]    = useState('')
+  const [cuponEstado,   setCuponEstado]   = useState('idle') // idle | loading | valid | invalid
+  const [cuponDescuento, setCuponDescuento] = useState(0)   // porcentaje aplicado
+  const [cuponCodigo,   setCuponCodigo]   = useState(null)  // código validado
+
   function validateGuestEmail(v) {
     if (!v.trim()) return t('checkout.guestEmailRequired')
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())) return t('checkout.guestEmailInvalid')
     return ''
   }
 
-  const costoEnvio = metodoEnvio === 'ENVIO_A_DOMICILIO' ? 2000 : 0
-  const totalFinal = total() + costoEnvio
+  const costoEnvio   = metodoEnvio === 'ENVIO_A_DOMICILIO' ? 2000 : 0
+  const subtotalCart = total()
+  const descuentoMonto = cuponDescuento > 0 ? Math.round(subtotalCart * cuponDescuento / 100) : 0
+  const totalFinal   = subtotalCart - descuentoMonto + costoEnvio
+
+  const validarCupon = useCallback(async () => {
+    if (!cuponInput.trim()) return
+    setCuponEstado('loading')
+    try {
+      const { data } = await import('@/services/api').then(m => m.default.get(`/cupones/validar?codigo=${encodeURIComponent(cuponInput.trim())}`))
+      const pct = data?.data?.descuento ?? data?.descuento ?? 0
+      const cod = data?.data?.codigo    ?? data?.codigo    ?? cuponInput.trim().toUpperCase()
+      setCuponDescuento(pct)
+      setCuponCodigo(cod)
+      setCuponEstado('valid')
+    } catch {
+      setCuponDescuento(0)
+      setCuponCodigo(null)
+      setCuponEstado('invalid')
+    }
+  }, [cuponInput])
 
   // Validate domicilio fields before pay
   const validateDomicilio = useCallback(() => {
@@ -171,6 +196,59 @@ export default function CheckoutPage() {
     }
     return !dErr
   }, [metodoEnvio, telefono, direccion, token])
+
+  const handlePagar = () => {
+    if (!validateDomicilio()) return
+
+    // Validar email de invitado si no hay sesión
+    if (!token) {
+      const eErr = validateGuestEmail(guestEmail)
+      setGuestEmailError(eErr)
+      setGuestEmailDirty(true)
+      if (eErr) return
+    }
+
+    if (metodoPago === 'SINPE') {
+      setSinpePaso('confirmado')
+      return
+    }
+
+    const phoneEfectivo = !token ? guestPhone : telefono
+    const notasFull = [
+      notas.trim(),
+      metodoEnvio === 'ENVIO_A_DOMICILIO' && phoneEfectivo ? `Teléfono: ${phoneEfectivo}` : '',
+      metodoEnvio === 'ENVIO_A_DOMICILIO' && direccion ? `Dirección: ${direccion}` : '',
+    ].filter(Boolean).join(' | ')
+
+    analytics.checkoutStart(totalFinal, items.reduce((s, i) => s + i.cantidad, 0))
+    iniciarPago({
+      bodegaId:    BODEGA_DEFAULT,
+      metodoEnvio,
+      notas:       notasFull || null,
+      provider:    metodoPago,
+      items: items.map((i) => ({ productoId: i.id, cantidad: i.cantidad })),
+      codigoCupon: cuponCodigo || null,
+      ...(token ? {} : { guestEmail: guestEmail.trim(), guestPhone: guestPhone || null }),
+    }, !token)
+  }
+
+  const handleSinpeWhatsApp = () => {
+    const productos = items.map((i) => `• ${i.nombre} x${i.cantidad}`).join('\n')
+    const msg = encodeURIComponent(
+      `Hola HOTCLICK 👋\n\n*Comprobante SINPE Móvil*\n\n` +
+      `Nombre: ${sinpeNombre || '(sin nombre)'}\n` +
+      `Monto: ${formatPrice(totalFinal)}\n\n` +
+      `Productos:\n${productos}\n\n` +
+      `_Adjunto el comprobante de pago._`
+    )
+    window.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank')
+  }
+
+  const handleWhatsApp = () => {
+    analytics.checkoutStart(totalFinal, items.reduce((s, i) => s + i.cantidad, 0))
+    const msg = toWhatsAppMessage()
+    window.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank')
+  }
 
   if (items.length === 0) {
     return (
@@ -316,58 +394,6 @@ export default function CheckoutPage() {
         </div>
       </MainLayout>
     )
-  }
-
-  const handlePagar = () => {
-    if (!validateDomicilio()) return
-
-    // Validar email de invitado si no hay sesión
-    if (!token) {
-      const eErr = validateGuestEmail(guestEmail)
-      setGuestEmailError(eErr)
-      setGuestEmailDirty(true)
-      if (eErr) return
-    }
-
-    if (metodoPago === 'SINPE') {
-      setSinpePaso('confirmado')
-      return
-    }
-
-    const phoneEfectivo = !token ? guestPhone : telefono
-    const notasFull = [
-      notas.trim(),
-      metodoEnvio === 'ENVIO_A_DOMICILIO' && phoneEfectivo ? `Teléfono: ${phoneEfectivo}` : '',
-      metodoEnvio === 'ENVIO_A_DOMICILIO' && direccion ? `Dirección: ${direccion}` : '',
-    ].filter(Boolean).join(' | ')
-
-    analytics.checkoutStart(totalFinal, items.reduce((s, i) => s + i.cantidad, 0))
-    iniciarPago({
-      bodegaId:    BODEGA_DEFAULT,
-      metodoEnvio,
-      notas:       notasFull || null,
-      provider:    metodoPago,
-      items: items.map((i) => ({ productoId: i.id, cantidad: i.cantidad })),
-      ...(token ? {} : { guestEmail: guestEmail.trim(), guestPhone: guestPhone || null }),
-    }, !token)
-  }
-
-  const handleSinpeWhatsApp = () => {
-    const productos = items.map((i) => `• ${i.nombre} x${i.cantidad}`).join('\n')
-    const msg = encodeURIComponent(
-      `Hola HOTCLICK 👋\n\n*Comprobante SINPE Móvil*\n\n` +
-      `Nombre: ${sinpeNombre || '(sin nombre)'}\n` +
-      `Monto: ${formatPrice(totalFinal)}\n\n` +
-      `Productos:\n${productos}\n\n` +
-      `_Adjunto el comprobante de pago._`
-    )
-    window.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank')
-  }
-
-  const handleWhatsApp = () => {
-    analytics.checkoutStart(totalFinal, items.reduce((s, i) => s + i.cantidad, 0))
-    const msg = toWhatsAppMessage()
-    window.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank')
   }
 
   return (
@@ -735,11 +761,63 @@ export default function CheckoutPage() {
                 ))}
               </div>
 
+              {/* Campo de cupón */}
+              <div className="pt-2">
+                <p className="text-xs font-medium mb-1.5" style={{ color: 'var(--hc-muted)' }}>¿Tenés un cupón?</p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={cuponInput}
+                    onChange={(e) => { setCuponInput(e.target.value.toUpperCase()); setCuponEstado('idle'); setCuponDescuento(0); setCuponCodigo(null) }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); validarCupon() } }}
+                    placeholder="HOT17-XXXXXX"
+                    maxLength={20}
+                    className="flex-1 px-3 py-2 rounded-xl text-xs outline-none transition-all"
+                    style={{
+                      background: 'var(--hc-bg)',
+                      border: `1.5px solid ${cuponEstado === 'valid' ? '#10b981' : cuponEstado === 'invalid' ? '#f87171' : 'var(--hc-border)'}`,
+                      color: 'var(--hc-text)',
+                      letterSpacing: '0.05em',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={validarCupon}
+                    disabled={cuponEstado === 'loading' || !cuponInput.trim()}
+                    className="shrink-0 px-3 py-2 rounded-xl text-xs font-semibold transition-all disabled:opacity-40"
+                    style={{ background: 'rgba(79,124,255,0.12)', color: '#4f7cff', border: '1px solid rgba(79,124,255,0.25)' }}
+                  >
+                    {cuponEstado === 'loading' ? '...' : 'Aplicar'}
+                  </button>
+                </div>
+                <AnimatePresence mode="wait">
+                  {cuponEstado === 'valid' && (
+                    <motion.p key="ok" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                      className="text-xs text-emerald-400 mt-1 flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      {cuponDescuento}% de descuento aplicado
+                    </motion.p>
+                  )}
+                  {cuponEstado === 'invalid' && (
+                    <motion.p key="err" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                      className="text-xs text-red-400 mt-1">
+                      Código inválido o ya utilizado
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </div>
+
               <div className="pt-3 border-t space-y-2 text-sm" style={{ borderColor: 'var(--hc-border)' }}>
                 <div className="flex justify-between" style={{ color: 'var(--hc-muted)' }}>
                   <span>{t('checkout.subtotal')}</span>
-                  <span>{formatPrice(total())}</span>
+                  <span>{formatPrice(subtotalCart)}</span>
                 </div>
+                {descuentoMonto > 0 && (
+                  <div className="flex justify-between text-emerald-400">
+                    <span>Descuento ({cuponDescuento}%)</span>
+                    <span>-{formatPrice(descuentoMonto)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between" style={{ color: 'var(--hc-muted)' }}>
                   <span>{t('checkout.shippingCost')}</span>
                   <span className={costoEnvio === 0 ? 'text-emerald-400 font-medium' : ''}>

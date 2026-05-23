@@ -167,6 +167,9 @@ public class Producto extends BaseEntity {
     @Column(name = "meta_description_fr", length = 160)
     private String metaDescriptionFr;
 
+    @Column(name = "video_url", length = 500)
+    private String videoUrl;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -318,4 +321,7 @@ public class Producto extends BaseEntity {
 
     public String getMetaDescriptionFr() { return metaDescriptionFr; }
     public void setMetaDescriptionFr(String metaDescriptionFr) { this.metaDescriptionFr = metaDescriptionFr; }
+
+    public String getVideoUrl() { return videoUrl; }
+    public void setVideoUrl(String videoUrl) { this.videoUrl = videoUrl; }
 }

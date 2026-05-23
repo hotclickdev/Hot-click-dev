@@ -38,6 +38,15 @@ export const warehouseService = {
   create: (data) => api.post('/bodegas', data),
   update: (id, data) => api.put(`/bodegas/${id}`, data),
   delete: (id) => api.delete(`/bodegas/${id}`),
+  importBulk: (items) => api.post('/bodegas/bulk', items),
   getStockMovements: (productoId) => api.get(`/stock/movimientos/${productoId}`),
   adjustStock: (productoId, data) => api.post(`/stock/ajuste-entrada/${productoId}`, data),
+}
+
+export const categoriaService = {
+  getAll: () => api.get('/categorias'),
+  create: (data) => api.post('/categorias', data),
+  update: (id, data) => api.put(`/categorias/${id}`, data),
+  delete: (id) => api.delete(`/categorias/${id}`),
+  importBulk: (items) => api.post('/categorias/bulk', items),
 }

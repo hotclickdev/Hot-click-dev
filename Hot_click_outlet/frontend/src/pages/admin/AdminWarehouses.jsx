@@ -8,6 +8,7 @@ import Badge from '@/components/ui/Badge'
 import Spinner from '@/components/ui/Spinner'
 import { warehouseService } from '@/services/orderService'
 import { useToast } from '@/components/ui/Toast'
+import ImportExportBar from '@/components/admin/ImportExportBar'
 
 const EMPTY = { nombreBodega: '', direccionExacta: '', telefono: '', correoContacto: '', encargadoNombre: '' }
 
@@ -76,12 +77,35 @@ export default function AdminWarehouses() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.warehouses.title')}</h1>
             <p className="text-sm text-[#8e8e9a] mt-1">{warehouses.length} registradas</p>
           </div>
-          <Button onClick={openNew}>+ {t('admin.warehouses.new')}</Button>
+          <div className="flex items-center gap-3 flex-wrap">
+            <ImportExportBar
+              data={warehouses.map((w) => ({
+                id: w.id, nombreBodega: w.nombreBodega, direccionExacta: w.direccionExacta,
+                telefono: w.telefono, correoContacto: w.correoContacto ?? '', encargadoNombre: w.encargadoNombre ?? '',
+              }))}
+              columns={['id','nombreBodega','direccionExacta','telefono','correoContacto','encargadoNombre']}
+              filename="bodegas"
+              sheetName="Bodegas"
+              importColumns={['nombreBodega','direccionExacta','telefono','correoContacto','encargadoNombre']}
+              mapImportRow={(row) => ({
+                nombreBodega: row.nombreBodega ?? '',
+                direccionExacta: row.direccionExacta ?? '',
+                telefono: row.telefono ?? '',
+                correoContacto: row.correoContacto ?? '',
+                encargadoNombre: row.encargadoNombre ?? '',
+              })}
+              onImport={async (rows) => {
+                await warehouseService.importBulk(rows)
+                load()
+              }}
+            />
+            <Button onClick={openNew}>+ {t('admin.warehouses.new')}</Button>
+          </div>
         </div>
 
         {loading ? (

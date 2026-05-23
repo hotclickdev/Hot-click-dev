@@ -115,4 +115,8 @@ public class ProductoRequestDTO {
 
     public String getMetaDescriptionFr() { return metaDescriptionFr; }
     public void setMetaDescriptionFr(String metaDescriptionFr) { this.metaDescriptionFr = metaDescriptionFr; }
+
+    private String videoUrl;
+    public String getVideoUrl() { return videoUrl; }
+    public void setVideoUrl(String videoUrl) { this.videoUrl = videoUrl; }
 }

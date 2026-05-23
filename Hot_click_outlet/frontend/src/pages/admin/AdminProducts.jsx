@@ -10,9 +10,10 @@ import Spinner from '@/components/ui/Spinner'
 import { productService, denormalizeProduct, normalizeProduct } from '@/services/productService'
 import { warehouseService } from '@/services/orderService'
 import { marcaService } from '@/services/marcaService'
+import ImportExportBar from '@/components/admin/ImportExportBar'
 import MultiImagePicker from '@/components/ui/MultiImagePicker'
 import { useToast } from '@/components/ui/Toast'
-import { formatPrice, conditionLabel } from '@/utils/format'
+import { formatPrice, conditionLabel, conditionVariant } from '@/utils/format'
 
 const EMPTY_FORM = {
   nombre: '', titulo: '', descripcion: '',
@@ -20,6 +21,7 @@ const EMPTY_FORM = {
   condicion: 'NUEVO', categoriaId: '', marcaId: '', imagenUrl: '', bodegaId: '', destacado: false,
   especificaciones: '', comoUsar: '', imagenes: [],
   metaTitle: '', metaDescription: '', metaKeywords: '',
+  videoUrl: '',
 }
 
 function toSlug(str) {
@@ -141,6 +143,7 @@ export default function AdminProducts() {
       metaTitle:        p.metaTitle        ?? '',
       metaDescription:  p.metaDescription  ?? '',
       metaKeywords:     p.metaKeywords     ?? '',
+      videoUrl:         p.videoUrl         ?? '',
     })
     setModalOpen(true)
     try {
@@ -302,12 +305,51 @@ export default function AdminProducts() {
     <AdminLayout>
       <div className="space-y-5">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.products.title')}</h1>
             <p className="text-sm text-[#8e8e9a] mt-1">{filtered.length} de {totalProds} productos</p>
           </div>
-          <Button onClick={openNew}>+ {t('admin.products.new')}</Button>
+          <div className="flex items-center gap-3 flex-wrap">
+            <ImportExportBar
+              data={products.map((p) => ({
+                nombre: p.nombre,
+                precioCompra: p.precioCompra,
+                precioVenta: p.precioVenta,
+                stock: p.stock,
+                condicion: p.condicion,
+                categoriaId: p.categoriaId,
+                categoriaNombre: p.categoriaNombre,
+                bodegaId: p.bodegaId,
+                bodegaNombre: p.bodegaNombre,
+                marcaId: p.marcaId ?? '',
+                marcaNombre: p.marcaNombre ?? '',
+                destacado: p.destacado ? 'SI' : 'NO',
+                descripcion: p.descripcion ?? '',
+              }))}
+              columns={['nombre','precioCompra','precioVenta','stock','condicion','categoriaId','categoriaNombre','bodegaId','bodegaNombre','marcaId','marcaNombre','destacado','descripcion']}
+              filename="productos"
+              sheetName="Productos"
+              importColumns={['nombre','precioCompra','precioVenta','stock','condicion','categoriaId','bodegaId','marcaId','descripcion']}
+              mapImportRow={(row) => ({
+                nombreProducto: row.nombre ?? row.nombreProducto ?? '',
+                precioCompra: Number(row.precioCompra) || 0,
+                precioVenta: Number(row.precioVenta) || 0,
+                stockActual: Number(row.stock ?? row.stockActual) || 0,
+                condicion: row.condicion ?? 'NUEVO',
+                categoriaId: row.categoriaId ? Number(row.categoriaId) : null,
+                bodegaId: row.bodegaId ? Number(row.bodegaId) : (bodegas[0]?.id ?? null),
+                marcaId: row.marcaId ? Number(row.marcaId) : null,
+                descripcionCorta: row.descripcion ?? row.descripcionCorta ?? '',
+                visibleCatalogo: true,
+              })}
+              onImport={async (rows) => {
+                await productService.importBulk(rows)
+                load(0)
+              }}
+            />
+            <Button onClick={openNew}>+ {t('admin.products.new')}</Button>
+          </div>
         </div>
 
         {/* ── Carrusel del inicio ── */}
@@ -577,7 +619,7 @@ export default function AdminProducts() {
                             <Badge variant={p.stock === 0 ? 'danger' : p.stock <= 3 ? 'warning' : 'success'}>{p.stock}</Badge>
                           </td>
                           <td className="px-4 py-3">
-                            <Badge variant={p.condicion === 'NUEVO' ? 'success' : 'warning'}>{conditionLabel(p.condicion)}</Badge>
+                            <Badge variant={conditionVariant(p.condicion)}>{conditionLabel(p.condicion)}</Badge>
                           </td>
                           <td className="px-4 py-3 text-center">
                             <SeoStatusIcon product={p} />
@@ -749,6 +791,36 @@ export default function AdminProducts() {
                 className={`${ta} min-h-[90px]`}
               />
               <p className="text-xs text-[#8e8e9a]">Pasos numerados. Ej: "1. Primer paso". Se muestra como lista ordenada al cliente.</p>
+            </div>
+
+            {/* ── Video YouTube ── */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[#e8e8ed] flex items-center gap-2">
+                <span>Video YouTube</span>
+                {form.videoUrl && <span className="text-[10px] text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded-full">▶ con video</span>}
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={form.videoUrl}
+                  onChange={(e) => setField('videoUrl', e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm placeholder:text-[#8e8e9a]/40 focus:outline-none focus:border-[#4f7cff]/60 focus:ring-2 focus:ring-[#4f7cff]/10 transition-all"
+                />
+                <a
+                  href={`https://www.youtube.com/results?search_query=${encodeURIComponent((form.titulo || form.nombre || '').trim())}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Buscar en YouTube"
+                  className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors text-xs font-medium"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                  </svg>
+                  Buscar
+                </a>
+              </div>
+              <p className="text-xs text-[#8e8e9a]">Pega el link de YouTube del producto. Se mostrará como video embed en la página de detalle.</p>
             </div>
           </div>
 

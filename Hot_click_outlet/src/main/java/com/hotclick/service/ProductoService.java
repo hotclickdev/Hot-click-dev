@@ -90,6 +90,7 @@ public class ProductoService {
         if (dto.getMetaDescriptionEn()  != null) p.setMetaDescriptionEn(trunc(dto.getMetaDescriptionEn(), 160));
         if (dto.getMetaDescriptionPt()  != null) p.setMetaDescriptionPt(trunc(dto.getMetaDescriptionPt(), 160));
         if (dto.getMetaDescriptionFr()  != null) p.setMetaDescriptionFr(trunc(dto.getMetaDescriptionFr(), 160));
+        if (dto.getVideoUrl()           != null) p.setVideoUrl(trunc(dto.getVideoUrl(), 500));
         Long mid = dto.getMarcaId();
         if (mid != null) {
             p.setMarca(marcaRepository.findById(mid)

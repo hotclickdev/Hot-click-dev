@@ -11,6 +11,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import java.util.List;
 import java.util.Map;
 
 
@@ -128,6 +129,25 @@ public class ProductoController {
                    "Revisá descripción, especificaciones o cómo usar y reducí el texto.";
         }
         return msg != null ? msg : "Error al procesar el producto";
+    }
+
+    @PostMapping("/bulk")
+    public ResponseEntity<ResponseDTO> importarBulk(
+            @RequestBody List<ProductoRequestDTO> dtos,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        int ok = 0; int errors = 0;
+        StringBuilder errMsg = new StringBuilder();
+        for (int i = 0; i < dtos.size(); i++) {
+            try {
+                productoService.crearProducto(dtos.get(i), userDetails.getUsername());
+                ok++;
+            } catch (Exception e) {
+                errors++;
+                if (errors <= 5) errMsg.append("Fila ").append(i + 1).append(": ").append(e.getMessage()).append(". ");
+            }
+        }
+        String msg = "Importados: " + ok + " productos" + (errors > 0 ? ", errores: " + errors + ". " + errMsg : "");
+        return ResponseEntity.ok(ResponseDTO.success(msg, Map.of("ok", ok, "errors", errors)));
     }
 
     @PostMapping("/imagen")

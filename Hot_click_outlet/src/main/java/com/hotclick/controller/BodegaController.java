@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 import java.util.Map;
 
 
@@ -54,6 +55,36 @@ public class BodegaController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
+    }
+
+    @PostMapping("/bulk")
+    public ResponseEntity<ResponseDTO> importarBulk(
+            @RequestBody List<Map<String, String>> items,
+            @AuthenticationPrincipal UserDetails ud) {
+        var admin = usuarioRepository.findByCorreo(ud.getUsername())
+            .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
+        int ok = 0; int errors = 0;
+        for (Map<String, String> item : items) {
+            String nombre = item.get("nombreBodega");
+            String dir    = item.get("direccionExacta");
+            String tel    = item.get("telefono");
+            if (nombre == null || nombre.isBlank() || dir == null || dir.isBlank() || tel == null || tel.isBlank()) {
+                errors++;
+                continue;
+            }
+            Bodega b = new Bodega();
+            b.setNombreBodega(nombre.trim());
+            b.setDireccionExacta(dir.trim());
+            b.setTelefono(tel.trim());
+            b.setCorreoContacto(item.getOrDefault("correoContacto", ""));
+            b.setEncargadoNombre(item.getOrDefault("encargadoNombre", ""));
+            b.setEstado(Constants.ESTADO_ACTIVO);
+            b.setAdminCliente(admin);
+            bodegaRepository.save(b);
+            ok++;
+        }
+        String msg = "Importadas: " + ok + " bodegas" + (errors > 0 ? ", omitidas por datos incompletos: " + errors : "");
+        return ResponseEntity.ok(ResponseDTO.success(msg, Map.of("ok", ok, "errors", errors)));
     }
 
     @PutMapping("/{id}")

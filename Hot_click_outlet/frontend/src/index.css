@@ -554,21 +554,21 @@ html.reduce-motion *::after {
 
 /* ── Logo adaptive colors ── */
 .hc-logo-badge {
-  background: linear-gradient(135deg, #8855e0 0%, #6230c0 100%);
-  box-shadow: 0 2px 16px rgba(120, 64, 224, 0.42);
+  background: linear-gradient(135deg, #863bff 0%, #47bfff 100%);
+  box-shadow: 0 2px 16px rgba(134, 59, 255, 0.40);
 }
 .hc-logo-text {
-  background: linear-gradient(90deg, #9068d8 0%, #7840e0 50%, #a070ee 100%);
+  background: linear-gradient(90deg, #863bff 0%, #47bfff 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 html.dark .hc-logo-badge {
-  background: linear-gradient(135deg, #9060f0 0%, #4828b8 100%);
-  box-shadow: 0 2px 20px rgba(144, 96, 240, 0.52);
+  background: linear-gradient(135deg, #9b55ff 0%, #5cd0ff 100%);
+  box-shadow: 0 2px 20px rgba(155, 85, 255, 0.50);
 }
 html.dark .hc-logo-text {
-  background: linear-gradient(90deg, #c090ff 0%, #9060f0 48%, #fbbf24 100%);
+  background: linear-gradient(90deg, #a96fff 0%, #5cd0ff 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

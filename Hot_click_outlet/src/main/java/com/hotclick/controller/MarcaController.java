@@ -14,6 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import java.util.List;
 import java.util.Map;
 
 
@@ -82,6 +83,33 @@ public class MarcaController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
+    }
+
+    @CacheEvict(value = "marcas-publicas", allEntries = true)
+    @PostMapping("/bulk")
+    public ResponseEntity<ResponseDTO> importarBulk(
+            @RequestBody List<Map<String, String>> items,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        var admin = usuarioRepository.findByCorreo(userDetails.getUsername())
+            .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
+        int ok = 0; int duplicates = 0;
+        for (Map<String, String> item : items) {
+            String nombre = item.get("nombreMarca");
+            if (nombre == null || nombre.isBlank()) continue;
+            if (marcaRepository.existsByNombreMarcaAndEstado(nombre.trim(), Constants.ESTADO_ACTIVO)) {
+                duplicates++;
+                continue;
+            }
+            Marca m = new Marca();
+            m.setNombreMarca(nombre.trim());
+            m.setLogoUrl(item.get("logoUrl"));
+            m.setAdminCliente(admin);
+            m.setEstado(Constants.ESTADO_ACTIVO);
+            marcaRepository.save(m);
+            ok++;
+        }
+        String msg = "Importadas: " + ok + " marcas" + (duplicates > 0 ? ", omitidas (ya existían): " + duplicates : "");
+        return ResponseEntity.ok(ResponseDTO.success(msg, Map.of("ok", ok, "duplicates", duplicates)));
     }
 
     @PostMapping("/logo")

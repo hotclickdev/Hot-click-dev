@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import useCartStore from '@/store/cartStore'
 import useWishlistStore from '@/store/wishlistStore'
-import { formatPrice, conditionLabel } from '@/utils/format'
+import { formatPrice, conditionLabel, conditionVariant } from '@/utils/format'
 import Badge from '@/components/ui/Badge'
 import { useToast } from '@/components/ui/Toast'
 import { analytics } from '@/utils/analytics'
@@ -88,7 +88,7 @@ export default function QuickViewModal({ product, onClose }) {
               <div className="flex items-start gap-3">
                 <div className="flex-1 space-y-1.5">
                   {product.condicion && (
-                    <Badge variant={product.condicion === 'NUEVO' ? 'success' : 'warning'}>
+                    <Badge variant={conditionVariant(product.condicion)}>
                       {conditionLabel(product.condicion)}
                     </Badge>
                   )}

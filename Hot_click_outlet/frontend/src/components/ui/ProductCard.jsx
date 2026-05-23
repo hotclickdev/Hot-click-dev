@@ -1,27 +1,14 @@
-import { memo, useState } from 'react'
+import { memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import useCartStore from '@/store/cartStore'
 import useWishlistStore from '@/store/wishlistStore'
-import { useToast } from '@/components/ui/Toast'
-import { formatPrice, conditionLabel } from '@/utils/format'
+import { formatPrice, conditionLabel, conditionVariant } from '@/utils/format'
 
-function ProductCard({ product, priority = false, index = 0, onQuickView }) {
+function ProductCard({ product, priority = false, index = 0 }) {
   const navigate = useNavigate()
-  const addItem = useCartStore((s) => s.addItem)
   const { toggle: toggleWishlist, isLiked } = useWishlistStore()
-  const toast = useToast()
   const { t } = useTranslation()
-  const [justAdded, setJustAdded] = useState(false)
-
-  const handleAdd = (e) => {
-    e.stopPropagation()
-    addItem(product)
-    toast({ message: t('product.added', { name: product.nombre }), type: 'success' })
-    setJustAdded(true)
-    setTimeout(() => setJustAdded(false), 1400)
-  }
 
   const liked = isLiked(product.id)
 
@@ -75,11 +62,21 @@ function ProductCard({ product, priority = false, index = 0, onQuickView }) {
         )}
 
         {/* Condition badge */}
-        {product.condicion && product.condicion !== 'NUEVO' && (
+        {product.condicion && (
           <div className="absolute top-2.5 left-2.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-400/35 text-amber-400">
-              {conditionLabel(product.condicion)}
-            </span>
+            {product.condicion === 'NUEVO' ? (
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400">
+                {conditionLabel(product.condicion)}
+              </span>
+            ) : product.condicion === 'COMO_NUEVO' ? (
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#4f7cff]/15 border border-[#4f7cff]/30 text-[#4f7cff]">
+                {conditionLabel(product.condicion)}
+              </span>
+            ) : (
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400">
+                {conditionLabel(product.condicion)}
+              </span>
+            )}
           </div>
         )}
 
@@ -97,40 +94,6 @@ function ProductCard({ product, priority = false, index = 0, onQuickView }) {
           <HeartCardIcon filled={liked} />
         </button>
 
-        {/* Quick-add overlay — desktop hover */}
-        {product.stock > 0 && (
-          <>
-            <div className="hc-card-overlay" />
-            <div className="hc-quick-add absolute bottom-0 left-0 right-0 p-3">
-              <div className="flex gap-2">
-                <button
-                  onClick={(e) => { e.stopPropagation(); onQuickView?.(product) }}
-                  className="shrink-0 h-9 px-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
-                  style={{
-                    background: 'rgba(255,255,255,0.12)',
-                    color: 'rgba(255,255,255,0.92)',
-                    border: '1px solid rgba(255,255,255,0.20)',
-                    backdropFilter: 'blur(8px)',
-                  }}
-                >
-                  <EyeIcon />
-                  <span className="hidden sm:inline">Vista rápida</span>
-                </button>
-                <button
-                  onClick={handleAdd}
-                  className={`flex-1 h-9 rounded-xl text-xs font-bold transition-all duration-200 ${justAdded ? 'bg-emerald-500 text-white' : ''}`}
-                  style={justAdded ? {} : {
-                    background: 'var(--hc-accent)',
-                    color: 'white',
-                    boxShadow: '0 2px 14px color-mix(in srgb, var(--hc-accent) 45%, transparent)',
-                  }}
-                >
-                  {justAdded ? '✓ Añadido' : `+ ${t('products.addToCart')}`}
-                </button>
-              </div>
-            </div>
-          </>
-        )}
       </div>
 
       {/* ── Content ── */}
@@ -176,22 +139,6 @@ function ProductCard({ product, priority = false, index = 0, onQuickView }) {
           </div>
         </div>
 
-        {/* Mobile add button — always visible on small screens */}
-        {product.stock > 0 && (
-          <button
-            onClick={handleAdd}
-            className={`sm:hidden w-full h-9 rounded-xl text-xs font-semibold transition-all duration-200 ${
-              justAdded ? '' : 'hc-btn hc-btn-ghost'
-            }`}
-            style={justAdded ? {
-              background: 'color-mix(in srgb, var(--hc-success) 12%, transparent)',
-              color: 'var(--hc-success)',
-              border: '1px solid color-mix(in srgb, var(--hc-success) 28%, transparent)',
-            } : {}}
-          >
-            {justAdded ? '✓ Añadido' : t('products.addToCart')}
-          </button>
-        )}
       </div>
     </motion.div>
   )
@@ -201,8 +148,7 @@ export default memo(ProductCard, (prev, next) =>
   prev.product.id    === next.product.id    &&
   prev.product.stock === next.product.stock &&
   prev.priority      === next.priority      &&
-  prev.index         === next.index         &&
-  prev.onQuickView   === next.onQuickView
+  prev.index         === next.index
 )
 
 function HeartCardIcon({ filled }) {
@@ -213,15 +159,6 @@ function HeartCardIcon({ filled }) {
   ) : (
     <svg className="w-3.5 h-3.5" style={{ color: 'rgba(255,255,255,0.75)' }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-    </svg>
-  )
-}
-
-function EyeIcon() {
-  return (
-    <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-      <circle cx="12" cy="12" r="3" />
     </svg>
   )
 }

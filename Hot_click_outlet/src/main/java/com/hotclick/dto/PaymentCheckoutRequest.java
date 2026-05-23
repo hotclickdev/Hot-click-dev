@@ -31,6 +31,9 @@ public class PaymentCheckoutRequest {
     /** Teléfono del comprador invitado (opcional). */
     private String guestPhone;
 
+    /** Código de cupón de descuento (opcional). */
+    private String codigoCupon;
+
     public Long getBodegaId() { return bodegaId; }
     public void setBodegaId(Long bodegaId) { this.bodegaId = bodegaId; }
 
@@ -51,6 +54,9 @@ public class PaymentCheckoutRequest {
 
     public String getGuestPhone() { return guestPhone; }
     public void setGuestPhone(String guestPhone) { this.guestPhone = guestPhone; }
+
+    public String getCodigoCupon() { return codigoCupon; }
+    public void setCodigoCupon(String codigoCupon) { this.codigoCupon = codigoCupon; }
 
     public static class ItemDTO {
 

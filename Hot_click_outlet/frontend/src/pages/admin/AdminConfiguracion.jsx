@@ -714,6 +714,9 @@ function SeccionSistema({ toast }) {
   const [restoring, setRestoring] = useState(false)
   const [healthOk,  setHealthOk]  = useState(null)
   const [checking,  setChecking]  = useState(false)
+  const [resetModal,  setResetModal]  = useState(false)
+  const [resetInput,  setResetInput]  = useState('')
+  const [resetting,   setResetting]   = useState(false)
 
   const checkHealth = async () => {
     setChecking(true)
@@ -740,6 +743,21 @@ function SeccionSistema({ toast }) {
       toast({ message: 'Interfaz restaurada · Recargá la página para ver los cambios', type: 'success' })
       setRestoring(false)
     }, 700)
+  }
+
+  const openResetModal = () => { setResetInput(''); setResetModal(true) }
+  const closeResetModal = () => { setResetModal(false); setResetInput('') }
+
+  const handleReset = async () => {
+    if (resetInput !== 'ELIMINAR') return
+    setResetting(true)
+    try {
+      await api.post('/admin/reset-datos')
+      toast({ message: 'Base de datos restablecida. Todos los datos fueron eliminados.', type: 'success' })
+      closeResetModal()
+    } catch (err) {
+      toast({ message: err.response?.data?.message ?? 'Error al restablecer datos', type: 'error' })
+    } finally { setResetting(false) }
   }
 
   const forceRefreshCache = async () => {
@@ -821,6 +839,122 @@ function SeccionSistema({ toast }) {
           ))}
         </div>
       </Block>
+
+      {/* Zona peligrosa */}
+      <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.04)' }}>
+        <div className="px-5 py-4 border-b flex items-center gap-2.5" style={{ borderColor: 'rgba(239,68,68,0.15)' }}>
+          <SkullIcon className="w-4 h-4 text-red-500 shrink-0" />
+          <div>
+            <p className="text-[13px] font-semibold text-red-400">Zona peligrosa</p>
+            <p className="text-xs text-[#8e8e9a] mt-0.5">Acciones irreversibles sobre los datos del sistema</p>
+          </div>
+        </div>
+        <div className="px-5 py-4">
+          <div className="flex items-start gap-4">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'rgba(239,68,68,0.12)' }}>
+              <TrashLiteIcon className="w-4 h-4 text-red-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-[#e8e8ed]">Restablecer todos los datos</p>
+              <p className="text-xs text-[#8e8e9a] mt-1 leading-relaxed">
+                Elimina <strong className="text-[#e8e8ed]">permanentemente</strong> todos los pedidos, productos, marcas, categorías, pagos y registros de negocio.
+                La estructura de la base de datos se conserva. <strong className="text-red-400">Esta acción no se puede deshacer.</strong>
+              </p>
+            </div>
+            <button
+              onClick={openResetModal}
+              className="shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all"
+              style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171' }}
+            >
+              <SkullIcon className="w-3.5 h-3.5" />
+              Restablecer
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal de confirmación de reset */}
+      {resetModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}>
+          <div className="w-full max-w-md rounded-2xl overflow-hidden shadow-2xl" style={{ background: '#111114', border: '1px solid rgba(239,68,68,0.3)' }}>
+            {/* Header */}
+            <div className="px-6 pt-6 pb-4 flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0" style={{ background: 'rgba(239,68,68,0.15)' }}>
+                <SkullIcon className="w-6 h-6 text-red-500" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-[#e8e8ed]">¿Restablecer todos los datos?</h3>
+                <p className="text-xs text-[#8e8e9a] mt-1 leading-relaxed">
+                  Esta acción eliminará permanentemente todos los datos de negocio. <strong className="text-red-400">No hay forma de recuperarlos.</strong>
+                </p>
+              </div>
+            </div>
+
+            {/* Warning list */}
+            <div className="mx-6 mb-4 p-3.5 rounded-xl space-y-2" style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.18)' }}>
+              {[
+                'Todos los pedidos y pagos',
+                'Todos los productos, marcas y categorías',
+                'Carritos, cotizaciones y facturas',
+                'Historial de inventario y métricas',
+                'Publicaciones, testimonios y premios',
+              ].map(item => (
+                <div key={item} className="flex items-center gap-2 text-xs text-red-300/80">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                  {item}
+                </div>
+              ))}
+              <div className="pt-1 border-t border-red-500/15 mt-2">
+                <div className="flex items-center gap-2 text-xs text-green-400/70">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+                  Se conservan usuarios, roles y estructura de tablas
+                </div>
+              </div>
+            </div>
+
+            {/* Confirmation input */}
+            <div className="px-6 pb-2 space-y-2">
+              <label className="text-xs font-medium uppercase tracking-wider" style={{ color: '#8e8e9a' }}>
+                Escribí <span className="font-bold text-red-400">ELIMINAR</span> para confirmar
+              </label>
+              <StyledInput
+                value={resetInput}
+                onChange={e => setResetInput(e.target.value)}
+                placeholder="ELIMINAR"
+                autoFocus
+                onKeyDown={e => { if (e.key === 'Enter' && resetInput === 'ELIMINAR') handleReset() }}
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${resetInput === 'ELIMINAR' ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.1)'}`,
+                  color: '#e8e8ed',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                }}
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="px-6 py-5 flex gap-3 justify-end">
+              <button
+                onClick={closeResetModal}
+                disabled={resetting}
+                className="px-4 py-2 rounded-xl text-sm text-[#8e8e9a] hover:text-white hover:bg-white/5 transition-colors disabled:opacity-40"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleReset}
+                disabled={resetInput !== 'ELIMINAR' || resetting}
+                className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all disabled:opacity-35"
+                style={{ background: resetInput === 'ELIMINAR' ? '#dc2626' : 'rgba(239,68,68,0.2)', color: resetInput === 'ELIMINAR' ? '#fff' : '#f87171', boxShadow: resetInput === 'ELIMINAR' ? '0 2px 12px rgba(220,38,38,0.35)' : 'none' }}
+              >
+                {resetting ? <Spinner size="xs" /> : <SkullIcon className="w-4 h-4" />}
+                {resetting ? 'Eliminando...' : 'Sí, eliminar todo'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* External links */}
       <Block label="Paneles externos">
@@ -992,3 +1126,4 @@ function ServerIcon(p)    { return <svg viewBox="0 0 24 24" {...sv} {...p}><rect
 function CardIcon(p)      { return <svg viewBox="0 0 24 24" {...sv} {...p}><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg> }
 function ShoppingIcon(p)  { return <svg viewBox="0 0 24 24" {...sv} {...p}><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg> }
 function TruckIcon(p)     { return <svg viewBox="0 0 24 24" {...sv} {...p}><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> }
+function SkullIcon(p)     { return <svg viewBox="0 0 24 24" {...sv} {...p}><path d="M12 2a9 9 0 00-9 9c0 3.07 1.54 5.78 3.9 7.43V21h10v-2.57A9 9 0 0012 2z"/><line x1="9" y1="17" x2="9" y2="21"/><line x1="15" y1="17" x2="15" y2="21"/><circle cx="9" cy="10" r="1.5" fill="currentColor" strokeWidth="0"/><circle cx="15" cy="10" r="1.5" fill="currentColor" strokeWidth="0"/></svg> }

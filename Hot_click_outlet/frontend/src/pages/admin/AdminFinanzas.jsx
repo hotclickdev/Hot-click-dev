@@ -3,6 +3,7 @@ import AdminLayout from '@/layouts/AdminLayout'
 import Spinner from '@/components/ui/Spinner'
 import { orderService } from '@/services/orderService'
 import { formatPrice, formatDate } from '@/utils/format'
+import ImportExportBar from '@/components/admin/ImportExportBar'
 
 const QUICK = [
   { label: 'Hoy',    days: 0  },
@@ -64,9 +65,25 @@ export default function AdminFinanzas() {
   return (
     <AdminLayout>
       <div className="space-y-6 max-w-4xl">
-        <div>
-          <h1 className="text-2xl font-bold text-[#e8e8ed]">Finanzas</h1>
-          <p className="text-sm text-[#8e8e9a] mt-1">Pedidos entregados · desglose productos vs envío</p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold text-[#e8e8ed]">Finanzas</h1>
+            <p className="text-sm text-[#8e8e9a] mt-1">Pedidos entregados · desglose productos vs envío</p>
+          </div>
+          <ImportExportBar
+            exportOnly
+            data={filtered.map((p) => ({
+              id: p.id,
+              fecha: (p.fechaPedido ?? '').slice(0, 10),
+              cliente: p.nombreCliente ?? '',
+              subtotalProductos: p.subtotal ?? (p.totalPedido ?? 0) - (p.costoEnvio ?? 0),
+              costoEnvio: p.costoEnvio ?? 0,
+              totalCobrado: p.totalPedido ?? 0,
+            }))}
+            columns={['id','fecha','cliente','subtotalProductos','costoEnvio','totalCobrado']}
+            filename="finanzas"
+            sheetName="Finanzas"
+          />
         </div>
 
         {/* Período */}

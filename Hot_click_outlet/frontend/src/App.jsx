@@ -43,8 +43,10 @@ const AdminConfiguracion  = lazy(() => import('@/pages/admin/AdminConfiguracion'
 const MisPedidosPage  = lazy(() => import('@/pages/MisPedidosPage'))
 const CheckoutPage    = lazy(() => import('@/pages/CheckoutPage'))
 const PaymentStatusPage = lazy(() => import('@/pages/PaymentStatusPage'))
-const WishlistPage          = lazy(() => import('@/pages/WishlistPage'))
-const RecuperarCarritoPage  = lazy(() => import('@/pages/RecuperarCarritoPage'))
+const WishlistPage              = lazy(() => import('@/pages/WishlistPage'))
+const RecuperarCarritoPage      = lazy(() => import('@/pages/RecuperarCarritoPage'))
+const ServiciosHotPage          = lazy(() => import('@/pages/ServiciosHotPage'))
+const AdminSolicitudesServicio  = lazy(() => import('@/pages/admin/AdminSolicitudesServicio'))
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -132,6 +134,12 @@ const EXCLUDED_PREFIXES = ['/admin', '/checkout', '/pago']
 
 const WAB_HIDDEN_PATHS = ['/login', '/registro']
 
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  return null
+}
+
 function ConditionalWhatsAppFab() {
   const { pathname } = useLocation()
   if (WAB_HIDDEN_PATHS.includes(pathname)) return null
@@ -178,6 +186,7 @@ export default function App() {
       <ToastProvider>
         <HtmlClassManager />
         <BrowserRouter>
+          <ScrollToTop />
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<HomePage />} />
@@ -194,6 +203,7 @@ export default function App() {
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/wishlist" element={<WishlistPage />} />
               <Route path="/recuperar-carrito/:id" element={<RecuperarCarritoPage />} />
+              <Route path="/servicios" element={<ServiciosHotPage />} />
               <Route path="/pago/exito"     element={<PaymentStatusPage />} />
               <Route path="/pago/cancelado" element={<PaymentStatusPage />} />
               <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
@@ -210,6 +220,7 @@ export default function App() {
               <Route path="/admin/pagos" element={<AdminRoute><AdminPagos /></AdminRoute>} />
               <Route path="/admin/marcas" element={<AdminRoute><AdminMarcas /></AdminRoute>} />
               <Route path="/admin/configuracion" element={<AdminRoute><AdminConfiguracion /></AdminRoute>} />
+              <Route path="/admin/servicios" element={<AdminRoute><AdminSolicitudesServicio /></AdminRoute>} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>

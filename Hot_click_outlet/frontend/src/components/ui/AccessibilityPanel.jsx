@@ -4,17 +4,17 @@ import { useTranslation } from 'react-i18next'
 import useUiStore from '@/store/uiStore'
 
 const LANGUAGES = [
-  { code: 'es', label: 'ES', flag: '🇨🇷', name: 'Español' },
-  { code: 'en', label: 'EN', flag: '🇺🇸', name: 'English' },
-  { code: 'pt', label: 'PT', flag: '🇧🇷', name: 'Português' },
+  { code: 'es', label: 'Español',   flagSrc: 'https://flagcdn.com/cr.svg', country: 'CR' },
+  { code: 'en', label: 'English',   flagSrc: 'https://flagcdn.com/us.svg', country: 'US' },
+  { code: 'pt', label: 'Português', flagSrc: 'https://flagcdn.com/br.svg', country: 'BR' },
 ]
 
 const COLOR_FILTERS = [
-  { value: 'none',         label: 'Normal',      icon: '👁' },
-  { value: 'grayscale',    label: 'B&N',         icon: '⬛' },
-  { value: 'deuteranopia', label: 'Deuteran.',   icon: '🟢' },
-  { value: 'protanopia',   label: 'Protan.',     icon: '🔴' },
-  { value: 'tritanopia',   label: 'Tritan.',     icon: '🔵' },
+  { value: 'none',         label: 'Normal',         desc: 'Todos los colores',         dot: '#a855f7' },
+  { value: 'grayscale',    label: 'Sin color',       desc: 'Escala de grises',          dot: '#888' },
+  { value: 'deuteranopia', label: 'Dalton. verde',   desc: 'Dificultad para ver verde', dot: '#22c55e' },
+  { value: 'protanopia',   label: 'Dalton. rojo',    desc: 'Dificultad para ver rojo',  dot: '#ef4444' },
+  { value: 'tritanopia',   label: 'Dalton. azul',    desc: 'Dificultad para ver azul',  dot: '#3b82f6' },
 ]
 
 export default function AccessibilityPanel() {
@@ -82,16 +82,22 @@ export default function AccessibilityPanel() {
                     <button
                       key={lang.code}
                       onClick={() => setLanguage(lang.code)}
-                      aria-label={lang.name}
+                      aria-label={lang.label}
                       aria-pressed={lang.code === language}
-                      className="flex-1 flex flex-col items-center gap-1 py-2 rounded-xl text-xs font-semibold transition-all duration-150"
+                      className="flex-1 flex flex-col items-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150"
                       style={{
                         backgroundColor: lang.code === language ? 'var(--hc-accent)' : 'var(--hc-surface-2)',
                         color: lang.code === language ? '#fff' : 'var(--hc-muted)',
                         border: `1px solid ${lang.code === language ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
                       }}
                     >
-                      <span className="text-base leading-none" aria-hidden="true">{lang.flag}</span>
+                      <img
+                        src={lang.flagSrc}
+                        alt={lang.country}
+                        aria-hidden="true"
+                        className="w-7 h-5 rounded object-cover shadow-sm"
+                        onError={(e) => { e.currentTarget.style.display = 'none' }}
+                      />
                       <span>{lang.label}</span>
                     </button>
                   ))}
@@ -128,28 +134,30 @@ export default function AccessibilityPanel() {
               {/* ── Filtro de color / visión ── */}
               <div>
                 <SectionLabel>{t('a11y.filtroColor')}</SectionLabel>
-                <div className="grid grid-cols-5 gap-1">
-                  {COLOR_FILTERS.map(({ value, label, icon }) => (
+                <div className="flex flex-col gap-1">
+                  {COLOR_FILTERS.map(({ value, label, desc, dot }) => (
                     <button
                       key={value}
                       onClick={() => setColorFilter(value)}
-                      aria-label={label}
+                      aria-label={`${label} — ${desc}`}
                       aria-pressed={colorFilter === value}
-                      className="flex flex-col items-center gap-1 py-2 px-1 rounded-xl text-[10px] font-semibold transition-all duration-150"
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150 text-left"
                       style={{
                         backgroundColor: colorFilter === value ? 'var(--hc-accent)' : 'var(--hc-surface-2)',
-                        color: colorFilter === value ? '#fff' : 'var(--hc-muted)',
+                        color: colorFilter === value ? '#fff' : 'var(--hc-text)',
                         border: `1px solid ${colorFilter === value ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
                       }}
                     >
-                      <span className="text-sm leading-none" aria-hidden="true">{icon}</span>
-                      <span className="leading-tight text-center">{label}</span>
+                      <span
+                        aria-hidden="true"
+                        className="w-3 h-3 rounded-full shrink-0"
+                        style={{ backgroundColor: dot, opacity: colorFilter === value ? 1 : 0.8 }}
+                      />
+                      <span className="font-semibold">{label}</span>
+                      <span className="ml-auto text-[10px] font-normal opacity-70">{desc}</span>
                     </button>
                   ))}
                 </div>
-                <p className="text-[10px] mt-1.5 px-0.5" style={{ color: 'var(--hc-muted)' }}>
-                  {t('a11y.filtroColorDesc')}
-                </p>
               </div>
 
               {/* ── Toggles ── */}

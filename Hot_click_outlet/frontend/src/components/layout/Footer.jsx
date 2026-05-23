@@ -38,7 +38,9 @@ export default function Footer() {
           <div className="col-span-1 sm:col-span-2 lg:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-4 group w-fit">
               <div className="flex items-center justify-center w-8 h-8 rounded-xl shrink-0 hc-logo-badge transition-transform duration-200 group-hover:scale-105">
-                <span className="text-white text-[12px] leading-none" style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 900 }}>HC</span>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M13 2L3 14h8l-2 8 12-12h-8z"/>
+                </svg>
               </div>
               <span className="text-[18px] leading-none uppercase hc-logo-text"
                 style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 900 }}>

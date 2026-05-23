@@ -34,6 +34,7 @@ export function normalizeProduct(p) {
     metaDescriptionEn: p.metaDescriptionEn ?? null,
     metaDescriptionPt: p.metaDescriptionPt ?? null,
     metaDescriptionFr: p.metaDescriptionFr ?? null,
+    videoUrl: p.videoUrl ?? null,
   }
 }
 
@@ -66,6 +67,7 @@ export function denormalizeProduct(form) {
     metaDescriptionEn: form.metaDescriptionEn || null,
     metaDescriptionPt: form.metaDescriptionPt || null,
     metaDescriptionFr: form.metaDescriptionFr || null,
+    videoUrl: form.videoUrl || null,
   }
 }
 
@@ -101,6 +103,9 @@ export const productService = {
 
   delete: (id) =>
     api.delete(`/productos/${id}`),
+
+  importBulk: (dtos) =>
+    api.post('/productos/bulk', dtos),
 
   uploadImage: (formData) =>
     api.post('/productos/imagen', formData, { headers: { 'Content-Type': undefined } }),

@@ -173,7 +173,11 @@ function HeroCarousel({ slides }) {
                     {formatPrice(slide.precio)}
                   </span>
                   {slide.condicion && slide.condicion !== 'NUEVO' && (
-                    <span className="text-sm text-[#8e8e9a] bg-white/5 px-2 py-0.5 rounded-lg">{slide.condicion === 'COMO_NUEVO' ? 'Como nuevo' : 'Usado'}</span>
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
+                      slide.condicion === 'COMO_NUEVO'
+                        ? 'bg-[#4f7cff]/15 border-[#4f7cff]/30 text-[#4f7cff]'
+                        : 'bg-amber-500/15 border-amber-500/30 text-amber-400'
+                    }`}>{slide.condicion === 'COMO_NUEVO' ? 'Como nuevo' : 'Usado'}</span>
                   )}
                 </div>
               )}
@@ -631,6 +635,58 @@ export default function HomePage() {
 
       {/* Testimonials */}
       <TestimonialsCarousel />
+
+      {/* Servicios Hot promo */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          className="relative rounded-3xl overflow-hidden p-8 sm:p-12"
+          style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
+        >
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-0 right-0 w-80 h-80 opacity-10"
+              style={{ background: 'radial-gradient(circle, #f59e0b, transparent 70%)' }} />
+            <div className="absolute bottom-0 left-0 w-64 h-64 opacity-8"
+              style={{ background: 'radial-gradient(circle, var(--hc-accent), transparent 70%)' }} />
+          </div>
+          <div className="relative flex flex-col sm:flex-row items-center gap-8">
+            <div className="flex-1 text-center sm:text-left">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-3"
+                style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
+                ✦ Nuevo servicio
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black mb-3 leading-tight"
+                style={{ fontFamily: "'Barlow', sans-serif", color: 'var(--hc-text)' }}>
+                Servicios <span style={{ color: 'var(--hc-accent)' }}>HOT</span>
+              </h2>
+              <p className="mb-2" style={{ color: 'var(--hc-muted)' }}>
+                ¿No encontrás el producto que buscás? <strong style={{ color: 'var(--hc-text)' }}>Envianos una foto y lo conseguimos por vos.</strong>
+              </p>
+              <p className="text-sm mb-6" style={{ color: 'var(--hc-muted)' }}>
+                Buscamos en nuestros proveedores y te avisamos por WhatsApp con precio y disponibilidad.
+              </p>
+              <Link to="/servicios" className="hc-btn hc-btn-primary inline-flex items-center gap-2">
+                📸 Solicitar búsqueda
+              </Link>
+            </div>
+            <div className="grid grid-cols-3 gap-3 shrink-0">
+              {[
+                { icon: '📸', label: 'Enviás la foto' },
+                { icon: '🔍', label: 'Lo buscamos' },
+                { icon: '🤝', label: 'Te avisamos' },
+              ].map(s => (
+                <div key={s.label} className="flex flex-col items-center gap-1.5 p-3 rounded-2xl text-center w-24"
+                  style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
+                  <span className="text-2xl">{s.icon}</span>
+                  <span className="text-xs font-medium leading-tight" style={{ color: 'var(--hc-muted)' }}>{s.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      </section>
 
       {/* CTA */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-20 text-center">

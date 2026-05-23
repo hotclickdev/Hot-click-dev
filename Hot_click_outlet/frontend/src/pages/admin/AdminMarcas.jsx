@@ -7,6 +7,7 @@ import Modal from '@/components/ui/Modal'
 import Spinner from '@/components/ui/Spinner'
 import { marcaService } from '@/services/marcaService'
 import { useToast } from '@/components/ui/Toast'
+import ImportExportBar from '@/components/admin/ImportExportBar'
 
 const EMPTY = { nombreMarca: '', logoUrl: '' }
 
@@ -100,12 +101,26 @@ export default function AdminMarcas() {
     <AdminLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.marcas.title')}</h1>
             <p className="text-sm text-[#8e8e9a] mt-1">{marcas.length} marca{marcas.length !== 1 ? 's' : ''} registrada{marcas.length !== 1 ? 's' : ''}</p>
           </div>
-          <Button onClick={openNew}>+ {t('admin.marcas.new')}</Button>
+          <div className="flex items-center gap-3 flex-wrap">
+            <ImportExportBar
+              data={marcas.map((m) => ({ id: m.id, nombreMarca: m.nombreMarca, logoUrl: m.logoUrl ?? '' }))}
+              columns={['id', 'nombreMarca', 'logoUrl']}
+              filename="marcas"
+              sheetName="Marcas"
+              importColumns={['nombreMarca', 'logoUrl']}
+              mapImportRow={(row) => ({ nombreMarca: row.nombreMarca ?? '', logoUrl: row.logoUrl ?? '' })}
+              onImport={async (rows) => {
+                await marcaService.importBulk(rows)
+                load()
+              }}
+            />
+            <Button onClick={openNew}>+ {t('admin.marcas.new')}</Button>
+          </div>
         </div>
 
         {/* Table */}

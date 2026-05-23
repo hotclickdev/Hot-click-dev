@@ -5,6 +5,7 @@ import Spinner from '@/components/ui/Spinner'
 import Badge from '@/components/ui/Badge'
 import { ventaService } from '@/services/orderService'
 import { formatPrice, formatDate } from '@/utils/format'
+import ImportExportBar from '@/components/admin/ImportExportBar'
 
 const TABLE_PAGE_SIZE = 25
 
@@ -100,13 +101,26 @@ export default function AdminReportes() {
             <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.reportes.title')}</h1>
             <p className="text-sm text-[#8e8e9a] mt-1">{t('admin.reportes.generate')}</p>
           </div>
-          <button
-            onClick={exportCSV}
-            disabled={filtered.length === 0}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm text-[#8e8e9a] hover:text-white hover:bg-white/10 transition-all disabled:opacity-40"
-          >
-            ↓ {t('admin.reportes.download')}
-          </button>
+          <ImportExportBar
+            exportOnly
+            data={filtered.map((v) => {
+              const envio = v.costoEnvio ?? 0
+              const subtotalProd = (v.total ?? 0) - envio
+              return {
+                id: v.id,
+                cliente: v.nombreCliente ?? v.cliente?.nombre ?? '',
+                subtotalProductos: subtotalProd,
+                costoEnvio: envio,
+                total: v.total ?? 0,
+                metodoPago: v.metodoPago ?? '',
+                estado: v.estado ?? '',
+                fecha: (v.fechaCreacion ?? '').slice(0, 10),
+              }
+            })}
+            columns={['id','cliente','subtotalProductos','costoEnvio','total','metodoPago','estado','fecha']}
+            filename={`ventas-${toISO(new Date())}`}
+            sheetName="Ventas"
+          />
         </div>
 
         {/* Quick filters */}

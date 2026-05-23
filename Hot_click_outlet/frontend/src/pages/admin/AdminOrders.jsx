@@ -6,6 +6,7 @@ import { adminService } from '@/services/orderService'
 import { productService } from '@/services/productService'
 import { useToast } from '@/components/ui/Toast'
 import { formatDate, formatPrice } from '@/utils/format'
+import ImportExportBar from '@/components/admin/ImportExportBar'
 
 const FILTERS = ['Todos', 'PENDIENTE', 'PAGADO', 'EN_PREPARACION', 'LISTO_RETIRO', 'ENVIADO', 'ENTREGADO', 'CANCELADO']
 
@@ -863,13 +864,33 @@ export default function AdminOrders() {
             <h1 className="text-xl font-bold text-[#e8e8ed]">Pedidos</h1>
             <p className="text-sm text-[#8e8e9a] mt-0.5">{orders.length} pedidos en total</p>
           </div>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0"
-            style={{ backgroundColor: 'var(--hc-accent)', color: 'white' }}
-          >
-            + Nuevo pedido
-          </button>
+          <div className="flex items-center gap-2 flex-wrap shrink-0">
+            <ImportExportBar
+              exportOnly
+              data={orders.map((o) => ({
+                id: o.id,
+                fecha: (o.fechaCreacion ?? '').slice(0, 10),
+                cliente: o.nombreCliente ?? '',
+                correo: o.clienteCorreo ?? '',
+                estado: o.estadoPedido ?? '',
+                total: o.totalPedido ?? 0,
+                subtotal: o.subtotal ?? 0,
+                envio: o.costoEnvio ?? 0,
+                tipoEntrega: o.tipoEntrega ?? '',
+                guia: o.numeroGuia ?? '',
+              }))}
+              columns={['id','fecha','cliente','correo','estado','total','subtotal','envio','tipoEntrega','guia']}
+              filename="pedidos"
+              sheetName="Pedidos"
+            />
+            <button
+              onClick={() => setShowCreate(true)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0"
+              style={{ backgroundColor: 'var(--hc-accent)', color: 'white' }}
+            >
+              + Nuevo pedido
+            </button>
+          </div>
         </div>
 
         {/* Filtros */}

@@ -1598,5 +1598,52 @@ CREATE INDEX IF NOT EXISTS idx_pago_fecha_estado
     ON "hot_click_pago_tb" ("fecha_creacion", "estado_pago");
 
 -- ============================================================
+-- SERVICIOS HOT — búsqueda de productos por foto
+-- ============================================================
+CREATE TABLE IF NOT EXISTS "HOT_CLICK_SOLICITUD_SERVICIO_TB" (
+    "ID_SOLICITUD_SERVICIO" SERIAL PRIMARY KEY,
+    "FK_ID_USUARIO"         INTEGER REFERENCES "HOT_CLICK_USUARIO_TB"("ID_USUARIO"),
+    "NOMBRE_CONTACTO"       VARCHAR(100),
+    "TELEFONO_CONTACTO"     VARCHAR(30),
+    "DESCRIPCION"           TEXT NOT NULL,
+    "PRESUPUESTO"           VARCHAR(100),
+    "FOTOS_URLS"            TEXT,
+    "ESTADO"                VARCHAR(30) NOT NULL DEFAULT 'PENDIENTE',
+    "NOTAS_ADMIN"           TEXT,
+    "FECHA_CREACION"        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_solicitud_servicio_usuario
+    ON "HOT_CLICK_SOLICITUD_SERVICIO_TB" ("FK_ID_USUARIO");
+
+CREATE INDEX IF NOT EXISTS idx_solicitud_servicio_estado
+    ON "HOT_CLICK_SOLICITUD_SERVICIO_TB" ("ESTADO");
+
+-- ============================================================
+-- Video URL por producto (YouTube embed)
+-- ============================================================
+ALTER TABLE "hot_click_producto_tb"
+    ADD COLUMN IF NOT EXISTS "video_url" VARCHAR(500);
+
+-- ============================================================
+-- Sistema de cupones de descuento (17% primera compra)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS "hot_click_cupon_tb" (
+    "id_cupon"              SERIAL PRIMARY KEY,
+    "codigo"                VARCHAR(20) UNIQUE NOT NULL,
+    "email"                 VARCHAR(100) NOT NULL,
+    "descuento_porcentaje"  INTEGER NOT NULL DEFAULT 17,
+    "usado"                 BOOLEAN NOT NULL DEFAULT FALSE,
+    "fecha_creacion"        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "fecha_uso"             TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_cupon_email  ON "hot_click_cupon_tb" ("email");
+CREATE INDEX IF NOT EXISTS idx_cupon_codigo ON "hot_click_cupon_tb" ("codigo");
+
+ALTER TABLE "hot_click_pedido_tb"
+    ADD COLUMN IF NOT EXISTS "cupon_codigo" VARCHAR(20);
+
+-- ============================================================
 -- FIN DEL SCRIPT
 -- ============================================================

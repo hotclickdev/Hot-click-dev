@@ -45,6 +45,7 @@ public class PaymentService {
     @Autowired private TransaccionPagoRepository   transaccionPagoRepository;
     @Autowired private NotificacionEmailService    notificacionEmailService;
     @Autowired private PasswordEncoder             passwordEncoder;
+    @Autowired private CuponService               cuponService;
 
     // ================================================================
     // CHECKOUT — Valida stock (con lock), reserva, crea Pedido + sesión
@@ -104,7 +105,19 @@ public class PaymentService {
         }
 
         int costoEnvio = "ENVIO_A_DOMICILIO".equals(req.getMetodoEnvio()) ? 2000 : 0;
-        int total      = subtotal + costoEnvio;
+
+        // ── Validar y aplicar cupón de descuento ────────────────────────
+        int descuento = 0;
+        String codigoCuponAplicado = null;
+        String codigoCupon = req.getCodigoCupon();
+        if (codigoCupon != null && !codigoCupon.isBlank()) {
+            var cuponOpt = cuponService.validarCodigo(codigoCupon);
+            if (cuponOpt.isPresent()) {
+                descuento = (int) Math.round(subtotal * cuponOpt.get().getDescuentoPorcentaje() / 100.0);
+                codigoCuponAplicado = cuponOpt.get().getCodigo();
+            }
+        }
+        int total = subtotal - descuento + costoEnvio;
 
         // ── Crear Pedido PENDIENTE ───────────────────────────────────────
         Pedido pedido = new Pedido();
@@ -114,8 +127,9 @@ public class PaymentService {
         pedido.setTotalPedido(total);
         pedido.setCostoEnvio(costoEnvio);
         pedido.setCostoTotalProductos(costoTotal);
-        pedido.setUtilidadBruta(subtotal - costoTotal);
-        pedido.setDescuentoTotal(0);
+        pedido.setUtilidadBruta(subtotal - costoTotal - descuento);
+        pedido.setDescuentoTotal(descuento);
+        pedido.setCuponCodigo(codigoCuponAplicado);
         pedido.setMontoImpuesto(0);
         pedido.setAplicaImpuesto(false);
         if (subtotal > 0) {
@@ -231,6 +245,9 @@ public class PaymentService {
         pedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
         pedidoRepository.save(pedido);
 
+        if (pedido.getCuponCodigo() != null) {
+            cuponService.marcarUsado(pedido.getCuponCodigo());
+        }
         notificacionEmailService.enviarConfirmacionPedido(pedido);
         log.info("Pedido {} confirmado PAGADO via {}", pedido.getNumeroPedido(), pago.getProveedor());
     }
