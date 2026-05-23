@@ -71,7 +71,7 @@ public class SupabaseStorageService {
         if (file.isEmpty()) throw new RuntimeException("El archivo está vacío");
         String ct = file.getContentType();
         if (ct == null || !ct.startsWith("image/")) throw new RuntimeException("Solo se permiten imágenes");
-        if (file.getSize() > 5 * 1024 * 1024) throw new RuntimeException("La imagen no puede superar 5 MB");
+        if (file.getSize() > 10 * 1024 * 1024) throw new RuntimeException("La imagen no puede superar 10 MB");
     }
 
     private String obtenerExtension(String filename) {
