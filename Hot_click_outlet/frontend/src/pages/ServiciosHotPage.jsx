@@ -63,7 +63,7 @@ export default function ServiciosHotPage() {
       }))
       setFotos(prev => [...prev, ...nuevas].slice(0, 3))
     } catch {
-      setError('Error al subir imagen. Máximo 5 MB por foto.')
+      setError('Error al subir imagen. Máximo 10 MB por foto.')
     } finally {
       setUploading(false)
       e.target.value = ''

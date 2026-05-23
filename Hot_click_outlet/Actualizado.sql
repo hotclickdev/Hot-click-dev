@@ -1600,24 +1600,24 @@ CREATE INDEX IF NOT EXISTS idx_pago_fecha_estado
 -- ============================================================
 -- SERVICIOS HOT — búsqueda de productos por foto
 -- ============================================================
-CREATE TABLE IF NOT EXISTS "HOT_CLICK_SOLICITUD_SERVICIO_TB" (
-    "ID_SOLICITUD_SERVICIO" SERIAL PRIMARY KEY,
-    "FK_ID_USUARIO"         INTEGER REFERENCES "HOT_CLICK_USUARIO_TB"("ID_USUARIO"),
-    "NOMBRE_CONTACTO"       VARCHAR(100),
-    "TELEFONO_CONTACTO"     VARCHAR(30),
-    "DESCRIPCION"           TEXT NOT NULL,
-    "PRESUPUESTO"           VARCHAR(100),
-    "FOTOS_URLS"            TEXT,
-    "ESTADO"                VARCHAR(30) NOT NULL DEFAULT 'PENDIENTE',
-    "NOTAS_ADMIN"           TEXT,
-    "FECHA_CREACION"        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS hot_click_solicitud_servicio_tb (
+    id_solicitud_servicio SERIAL PRIMARY KEY,
+    fk_id_usuario         INTEGER REFERENCES "HOT_CLICK_USUARIO_TB"("ID_USUARIO"),
+    nombre_contacto       VARCHAR(100),
+    telefono_contacto     VARCHAR(30),
+    descripcion           TEXT NOT NULL,
+    presupuesto           VARCHAR(100),
+    fotos_urls            TEXT,
+    estado                VARCHAR(30) NOT NULL DEFAULT 'PENDIENTE',
+    notas_admin           TEXT,
+    fecha_creacion        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_solicitud_servicio_usuario
-    ON "HOT_CLICK_SOLICITUD_SERVICIO_TB" ("FK_ID_USUARIO");
+    ON hot_click_solicitud_servicio_tb (fk_id_usuario);
 
 CREATE INDEX IF NOT EXISTS idx_solicitud_servicio_estado
-    ON "HOT_CLICK_SOLICITUD_SERVICIO_TB" ("ESTADO");
+    ON hot_click_solicitud_servicio_tb (estado);
 
 -- ============================================================
 -- Video URL por producto (YouTube embed)
