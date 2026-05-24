@@ -2,9 +2,10 @@ package com.hotclick.controller;
 
 import com.hotclick.dto.ProductoRequestDTO;
 import com.hotclick.dto.ResponseDTO;
-import com.hotclick.service.ImageModerationService;
 import com.hotclick.service.ProductoService;
 import com.hotclick.service.SupabaseStorageService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
@@ -20,14 +21,13 @@ import java.util.Map;
 @RequestMapping("/api/productos")
 public class ProductoController {
 
+    private static final Logger log = LoggerFactory.getLogger(ProductoController.class);
+
     @Autowired
     private ProductoService productoService;
 
     @Autowired
     private SupabaseStorageService supabaseStorageService;
-
-    @Autowired
-    private ImageModerationService moderationService;
 
     @GetMapping
     public ResponseEntity<ResponseDTO> listarProductos(
@@ -165,14 +165,16 @@ public class ProductoController {
 
     @PostMapping("/imagen")
     public ResponseEntity<ResponseDTO> subirImagen(@RequestParam("file") MultipartFile file) {
+        if (file == null || file.isEmpty())
+            return ResponseEntity.badRequest().body(ResponseDTO.error("No se recibió ningún archivo"));
         try {
-            var mod = moderationService.moderar(file);
-            if (!mod.safe())
-                return ResponseEntity.badRequest().body(ResponseDTO.error("Imagen rechazada: " + mod.reason()));
             String url = supabaseStorageService.subirImagen(file);
             return ResponseEntity.ok(ResponseDTO.success("Imagen subida", Map.of("url", url)));
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("[productos/imagen] Error al subir: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(ResponseDTO.error("Error al subir imagen: " + e.getMessage()));
         }
     }
 

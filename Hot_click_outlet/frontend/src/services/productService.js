@@ -55,7 +55,6 @@ export function denormalizeProduct(form) {
     tituloProducto: form.titulo || null,
     especificaciones: form.especificaciones || null,
     comoUsar: form.comoUsar || null,
-    descripcionLarga: form.descripcionLarga || null,
     marcaId: form.marcaId ? Number(form.marcaId) : null,
     marcaTexto: form.marcaTexto || form.marca || null,
     metaTitle: form.metaTitle || null,
