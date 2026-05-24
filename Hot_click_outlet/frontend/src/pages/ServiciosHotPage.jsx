@@ -62,7 +62,7 @@ export default function ServiciosHotPage() {
       const nuevas = await Promise.all(files.map(async (file) => {
         const preview = URL.createObjectURL(file)
         const res = await servicioService.subirFoto(file)
-        return { file, preview, url: res.data.data }
+        return { file, preview, url: res.data }
       }))
       setFotos(prev => [...prev, ...nuevas].slice(0, 3))
     } catch {

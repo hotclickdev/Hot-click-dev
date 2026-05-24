@@ -245,7 +245,7 @@ function TestimonioSection() {
       const fd = new FormData()
       fd.append('file', file)
       const { data } = await testimonioService.subirImagen(fd)
-      setImagenUrl(data?.data?.url ?? null)
+      setImagenUrl(data?.url ?? null)
     } catch (err) {
       const msg = err.response?.data?.message
       toast({ message: typeof msg === 'string' ? msg : t('profile.testimonios.uploadError'), type: 'error' })
