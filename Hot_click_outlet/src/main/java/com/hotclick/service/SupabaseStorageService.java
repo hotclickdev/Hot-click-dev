@@ -49,30 +49,33 @@ public class SupabaseStorageService {
 
         String ext = obtenerExtension(file.getOriginalFilename());
         String path = carpeta + "/" + UUID.randomUUID() + "." + ext;
+        String contentType = file.getContentType() != null ? file.getContentType() : "image/jpeg";
 
         HttpClient client = buildHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(supabaseUrl + "/storage/v1/object/" + BUCKET + "/" + path))
                 .header("Authorization", "Bearer " + serviceKey)
                 .header("apikey", serviceKey)
-                .header("Content-Type", file.getContentType())
+                .header("Content-Type", contentType)
                 .POST(HttpRequest.BodyPublishers.ofByteArray(file.getBytes()))
                 .build();
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw new RuntimeException("Supabase Storage respondió " + response.statusCode() + ": " + response.body());
+            throw new RuntimeException("Supabase Storage error " + response.statusCode() + ": " + response.body());
         }
 
         return supabaseUrl + "/storage/v1/object/public/" + BUCKET + "/" + path;
     }
 
     private void validarArchivo(MultipartFile file) {
-        if (file.isEmpty()) throw new RuntimeException("El archivo está vacío");
+        if (file == null || file.isEmpty()) throw new IllegalArgumentException("El archivo está vacío");
         String ct = file.getContentType();
-        if (ct == null || !ct.startsWith("image/")) throw new RuntimeException("Solo se permiten imágenes");
-        if (file.getSize() > 10 * 1024 * 1024) throw new RuntimeException("La imagen no puede superar 10 MB");
+        // Aceptar image/* o application/octet-stream (algunos browsers no detectan MIME)
+        if (ct != null && !ct.startsWith("image/") && !ct.equals("application/octet-stream"))
+            throw new IllegalArgumentException("Solo se permiten imágenes");
+        if (file.getSize() > 10 * 1024 * 1024) throw new IllegalArgumentException("La imagen no puede superar 10 MB");
     }
 
     private String obtenerExtension(String filename) {

@@ -4,6 +4,8 @@ import com.hotclick.dto.ResponseDTO;
 import com.hotclick.service.ImageModerationService;
 import com.hotclick.service.SupabaseStorageService;
 import com.hotclick.service.TestimonioService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -16,6 +18,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/testimonios")
 public class TestimonioController {
+
+    private static final Logger log = LoggerFactory.getLogger(TestimonioController.class);
 
     @Autowired private TestimonioService testimonioService;
     @Autowired private SupabaseStorageService supabaseStorageService;
@@ -43,6 +47,8 @@ public class TestimonioController {
     /** Sube foto del testimonio — requiere auth, pasa por moderación de contenido */
     @PostMapping("/imagen")
     public ResponseEntity<ResponseDTO> subirImagen(@RequestParam("file") MultipartFile file) {
+        if (file == null || file.isEmpty())
+            return ResponseEntity.badRequest().body(ResponseDTO.error("No se recibió ningún archivo"));
         try {
             var mod = moderationService.moderar(file);
             if (!mod.safe())
@@ -50,8 +56,11 @@ public class TestimonioController {
                     .body(ResponseDTO.error("Imagen rechazada: " + mod.reason()));
             String url = supabaseStorageService.subirImagen(file, "testimonios");
             return ResponseEntity.ok(ResponseDTO.success("Imagen subida", Map.of("url", url)));
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("[testimonios/imagen] Error al subir: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(ResponseDTO.error("Error al subir imagen: " + e.getMessage()));
         }
     }
 

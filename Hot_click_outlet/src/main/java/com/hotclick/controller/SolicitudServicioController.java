@@ -4,8 +4,9 @@ import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.SolicitudServicio;
 import com.hotclick.repository.SolicitudServicioRepository;
 import com.hotclick.repository.UsuarioRepository;
-import com.hotclick.service.ImageModerationService;
 import com.hotclick.service.SupabaseStorageService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,22 +21,25 @@ import java.util.Map;
 @RequestMapping("/api/servicios")
 public class SolicitudServicioController {
 
+    private static final Logger log = LoggerFactory.getLogger(SolicitudServicioController.class);
+
     @Autowired private SolicitudServicioRepository solicitudRepo;
     @Autowired private UsuarioRepository usuarioRepo;
     @Autowired private SupabaseStorageService supabaseStorageService;
-    @Autowired private ImageModerationService moderationService;
 
     /** Subir foto para una solicitud — devuelve la URL pública */
     @PostMapping("/fotos")
     public ResponseEntity<ResponseDTO> subirFoto(@RequestParam("file") MultipartFile file) {
+        if (file == null || file.isEmpty())
+            return ResponseEntity.badRequest().body(ResponseDTO.error("No se recibió ningún archivo"));
         try {
-            var mod = moderationService.moderar(file);
-            if (!mod.safe())
-                return ResponseEntity.badRequest().body(ResponseDTO.error("Imagen rechazada: " + mod.reason()));
             String url = supabaseStorageService.subirImagen(file, "servicios");
             return ResponseEntity.ok(ResponseDTO.success("Foto subida", url));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error("Error al subir foto: " + e.getMessage()));
+            log.error("[servicios/fotos] Error al subir: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(ResponseDTO.error("Error al subir foto: " + e.getMessage()));
         }
     }
 

@@ -4,9 +4,10 @@ import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Marca;
 import com.hotclick.repository.MarcaRepository;
 import com.hotclick.repository.UsuarioRepository;
-import com.hotclick.service.ImageModerationService;
 import com.hotclick.service.SupabaseStorageService;
 import com.hotclick.utils.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -23,10 +24,11 @@ import java.util.Map;
 @RequestMapping("/api/marcas")
 public class MarcaController {
 
+    private static final Logger log = LoggerFactory.getLogger(MarcaController.class);
+
     @Autowired private MarcaRepository marcaRepository;
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private SupabaseStorageService supabaseStorageService;
-    @Autowired private ImageModerationService moderationService;
 
     /** Endpoint público — sin autenticación, usado por el catálogo y búsqueda */
     @Cacheable("marcas-publicas")
@@ -124,14 +126,16 @@ public class MarcaController {
 
     @PostMapping("/logo")
     public ResponseEntity<ResponseDTO> subirLogo(@RequestParam("file") MultipartFile file) {
+        if (file == null || file.isEmpty())
+            return ResponseEntity.badRequest().body(ResponseDTO.error("No se recibió ningún archivo"));
         try {
-            var mod = moderationService.moderar(file);
-            if (!mod.safe())
-                return ResponseEntity.badRequest().body(ResponseDTO.error("Imagen rechazada: " + mod.reason()));
             String url = supabaseStorageService.subirImagen(file, "marcas");
             return ResponseEntity.ok(ResponseDTO.success("Logo subido", Map.of("url", url)));
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("[marcas/logo] Error al subir: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(ResponseDTO.error("Error al subir logo: " + e.getMessage()));
         }
     }
 
