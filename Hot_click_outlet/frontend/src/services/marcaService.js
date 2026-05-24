@@ -20,9 +20,6 @@ export const marcaService = {
   importBulk: (items) =>
     api.post('/marcas/bulk', items),
 
-  uploadLogo: (file) => {
-    const fd = new FormData()
-    fd.append('file', file)
-    return api.post('/marcas/logo', fd, { headers: { 'Content-Type': undefined } })
-  },
+  uploadLogo: (formData) =>
+    api.post('/marcas/logo', formData, { headers: { 'Content-Type': undefined } }),
 }
