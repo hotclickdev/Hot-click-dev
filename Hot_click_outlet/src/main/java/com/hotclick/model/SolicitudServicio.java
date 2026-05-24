@@ -1,5 +1,6 @@
 package com.hotclick.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -12,6 +13,7 @@ public class SolicitudServicio {
     @Column(name = "id_solicitud_servicio")
     private Long id;
 
+    @JsonIgnoreProperties({"contrasenaHash", "roles", "pedidos", "carritos"})
     @ManyToOne
     @JoinColumn(name = "fk_id_usuario")
     private Usuario usuario;

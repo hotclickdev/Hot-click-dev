@@ -1,5 +1,6 @@
 package com.hotclick.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
@@ -17,6 +18,7 @@ public class CarritoItem extends BaseEntity {
     @Column(name = "precio_unitario_momento", nullable = false)
     private Integer precioUnitarioMomento;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "fk_id_carrito", nullable = false)
     private Carrito carrito;

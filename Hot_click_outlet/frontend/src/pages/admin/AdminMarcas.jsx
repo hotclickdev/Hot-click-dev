@@ -82,7 +82,8 @@ export default function AdminMarcas() {
     setUploading(true)
     try {
       const { data } = await marcaService.uploadLogo(file)
-      setForm((p) => ({ ...p, logoUrl: data.url }))
+      const url = data?.url ?? (typeof data === 'string' ? data : '')
+      setForm((p) => ({ ...p, logoUrl: url }))
     } catch {
       toast({ message: t('common.error'), type: 'error' })
     } finally {

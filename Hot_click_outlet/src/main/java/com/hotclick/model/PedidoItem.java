@@ -1,5 +1,6 @@
 package com.hotclick.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
@@ -29,6 +30,7 @@ public class PedidoItem extends BaseEntity {
     @Column(name = "utilidad_item", nullable = false)
     private Integer utilidadItem;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "fk_id_pedido", nullable = false)
     private Pedido pedido;
