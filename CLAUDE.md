@@ -44,6 +44,28 @@ El frontend compilado se sirve desde Spring Boot en producción. `SpaController.
 
 **IMPORTANTE:** Siempre correr `pnpm build` antes de hacer commit. Los archivos compilados en `src/main/resources/static/` son los que se despliegan en Render.
 
+## Regla obligatoria: cambios de esquema DB
+
+**Nunca cambiar una entidad JPA sin crear la migración Flyway correspondiente.**
+
+Cuando agregas o modificas `@Column`, `@Table`, `@JoinColumn` en cualquier entidad de `com.hotclick.model`:
+
+1. Crea el archivo de migración en `Hot_click_outlet/src/main/resources/db/migration/`
+2. El nombre sigue el patrón `V{N}__descripcion_breve.sql` (V2, V3, V4…)
+3. Usa siempre `IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS` para que sea idempotente
+4. Agrega el mismo SQL al final de `Hot_click_outlet/Actualizado.sql`
+
+```text
+Ejemplo: agregás campo en Java → creás V3__nuevo_campo.sql al mismo tiempo
+```
+
+Flyway ejecuta las migraciones automáticamente al arrancar en Render. Sin migración → la columna no existe en Supabase → 500 en producción.
+
+Migraciones existentes:
+
+- `V1__initial_schema.sql` — baseline (no se ejecuta, ya estaba aplicado)
+- `V2__marcas_y_fk_producto.sql` — tabla marcas, fk_id_marca en producto, testimonio+producto
+
 ## Arquitectura
 
 Proyecto Spring Boot 3.4.4 con Java 24. El código vive bajo `Hot_click_outlet/`.
