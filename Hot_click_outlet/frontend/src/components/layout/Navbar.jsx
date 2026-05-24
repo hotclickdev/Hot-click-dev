@@ -249,7 +249,7 @@ export default function Navbar() {
                   </Link>
                 )}
                 <Link
-                  to="/mis-pedidos"
+                  to="/perfil"
                   className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors"
                   style={{ color: 'var(--hc-muted)' }}
                 >
@@ -337,7 +337,7 @@ export default function Navbar() {
                 </Link>
               )}
               {token && (
-                <Link to="/mis-pedidos" className="px-4 py-3 rounded-xl text-sm transition-colors"
+                <Link to="/perfil" className="px-4 py-3 rounded-xl text-sm transition-colors"
                   style={{ color: 'var(--hc-muted)' }}>
                   {t('nav.misPedidos')}
                 </Link>
