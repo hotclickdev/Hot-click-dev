@@ -103,7 +103,7 @@ export default function AdminProducts() {
       setTotalProds(prods.totalElements ?? pageData.length)
       setCategories(cats ?? [])
       setBodegas(Array.isArray(bods) ? bods : bods?.content ?? [])
-      setMarcas(Array.isArray(marcsR.data) ? marcsR.data : [])
+      setMarcas(Array.isArray(marcsR) ? marcsR : [])
     } finally { setLoading(false) }
   }
 

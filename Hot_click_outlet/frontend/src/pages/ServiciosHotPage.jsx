@@ -356,7 +356,7 @@ export default function ServiciosHotPage() {
               ) : (
                 <div className="space-y-3">
                   {misSolicitudes.map(s => {
-                    const fotos = s.fotosUrls ? JSON.parse(s.fotosUrls) : []
+                    const fotos = (() => { try { return s.fotosUrls ? JSON.parse(s.fotosUrls) : [] } catch { return [] } })()
                     return (
                       <div key={s.id} className="p-4 rounded-2xl"
                         style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
