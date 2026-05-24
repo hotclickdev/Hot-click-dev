@@ -243,12 +243,22 @@ export default function AdminSolicitudesServicio() {
                   return urls.length > 0 ? (
                     <div>
                       <p className="text-xs font-semibold mb-2" style={{ color: 'var(--hc-muted)' }}>{t('adminSolicitudes.photosSection')}</p>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-3">
                         {urls.map((url, i) => (
-                          <img key={i} src={url} alt=""
-                            className="w-24 h-24 rounded-xl object-cover cursor-zoom-in"
-                            style={{ border: '1px solid var(--hc-border)' }}
-                            onClick={() => setFotoModal(url)} />
+                          <div key={i} className="flex flex-col items-center gap-1.5">
+                            <img src={url} alt=""
+                              className="w-24 h-24 rounded-xl object-cover cursor-zoom-in"
+                              style={{ border: '1px solid var(--hc-border)' }}
+                              onClick={() => setFotoModal(url)} />
+                            <a
+                              href={`https://lens.google.com/uploadbyurl?url=${encodeURIComponent(url)}`}
+                              target="_blank" rel="noopener noreferrer"
+                              className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-colors"
+                              style={{ backgroundColor: 'rgba(66,133,244,0.10)', color: '#4285f4' }}
+                              title="Buscar producto por imagen en Google Lens">
+                              🔍 Lens
+                            </a>
+                          </div>
                         ))}
                       </div>
                     </div>
