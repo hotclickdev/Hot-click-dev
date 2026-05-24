@@ -95,6 +95,10 @@ export const productService = {
     api.get(`/productos/${id}/recomendaciones`, config)
        .then((r) => (r.data?.data ?? r.data ?? []).map(normalizeProduct)),
 
+  getByMarca: (marcaId, page = 0, size = 12) =>
+    api.get(`/productos/marca/${marcaId}`, { params: { page, size } })
+       .then((r) => ({ ...r, data: normalizeList(r.data) })),
+
   create: (data) =>
     api.post('/productos', data),
 

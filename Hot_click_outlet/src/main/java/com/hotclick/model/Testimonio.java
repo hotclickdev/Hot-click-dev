@@ -16,6 +16,10 @@ public class Testimonio {
     @JoinColumn(name = "fk_id_usuario")
     private Usuario usuario;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fk_id_producto")
+    private Producto producto;
+
     @Column(name = "comentario", columnDefinition = "TEXT", nullable = false)
     private String comentario;
 
@@ -38,6 +42,9 @@ public class Testimonio {
 
     public String getComentario() { return comentario; }
     public void setComentario(String comentario) { this.comentario = comentario; }
+
+    public Producto getProducto() { return producto; }
+    public void setProducto(Producto producto) { this.producto = producto; }
 
     public String getImagenUrl() { return imagenUrl; }
     public void setImagenUrl(String imagenUrl) { this.imagenUrl = imagenUrl; }

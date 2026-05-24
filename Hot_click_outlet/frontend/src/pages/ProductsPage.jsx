@@ -49,6 +49,7 @@ export default function ProductsPage() {
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
   const [marca, setMarca] = useState(() => searchParams.get('marcaId') ?? '')
+  const [marcaNombreParam] = useState(() => searchParams.get('marcaNombre') ?? '')
   const [sort, setSort] = useState('default')
   const [filterStock, setFilterStock] = useState('')
   const [filterCond, setFilterCond] = useState('')
@@ -77,7 +78,7 @@ export default function ProductsPage() {
   useEffect(() => { fetchProducts(0) }, [fetchProducts])
   useEffect(() => {
     productService.getCategories().then(({ data }) => setCategories(data ?? [])).catch(() => {})
-    marcaService.getAll().then(r => {
+    marcaService.getPublicas().then(r => {
       const ms = r.data?.data ?? r.data ?? []
       setMarcas(Array.isArray(ms) ? ms : [])
     }).catch(() => {})
@@ -244,10 +245,35 @@ export default function ProductsPage() {
       </AnimatePresence>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+        {/* Breadcrumb when brand is active */}
+        {marca && (
+          <nav className="flex items-center gap-2 text-sm text-[#8e8e9a] mb-4">
+            <button onClick={() => setMarca('')} className="hover:text-white transition-colors">
+              {t('products.title')}
+            </button>
+            <span>/</span>
+            <span className="text-[#e8e8ed] flex items-center gap-1.5">
+              {(() => {
+                const m = marcas.find((m) => String(m.id) === String(marca))
+                return (
+                  <>
+                    {m?.logoUrl && <img src={m.logoUrl} alt="" className="w-4 h-4 object-contain rounded-sm" onError={(e) => { e.target.style.display = 'none' }} />}
+                    {m?.nombreMarca ?? marcaNombreParam ?? 'Marca'}
+                  </>
+                )
+              })()}
+            </span>
+          </nav>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#e8e8ed]">{t('products.title')}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#e8e8ed]">
+              {marca
+                ? (marcas.find((m) => String(m.id) === String(marca))?.nombreMarca ?? marcaNombreParam ?? t('products.title'))
+                : t('products.title')}
+            </h1>
             <p className="text-[#8e8e9a] text-sm mt-0.5">{filtered.length} resultado{filtered.length !== 1 ? 's' : ''}</p>
           </div>
           {/* Desktop: toggle sidebar */}

@@ -31,6 +31,7 @@ export default function ProductDetailPage() {
   const [justAdded, setJustAdded] = useState(false)
   const [showSticky, setShowSticky] = useState(false)
   const [recommendations, setRecommendations] = useState([])
+  const [brandProducts, setBrandProducts] = useState([])
   const addTimeout = useRef(null)
   const mainCTARef = useRef(null)
   const { toggle: toggleWishlist, isLiked } = useWishlistStore()
@@ -64,6 +65,19 @@ export default function ProductDetailPage() {
       .catch(() => {})
     return () => controller.abort()
   }, [product?.id])
+
+  // Fetch same-brand products
+  useEffect(() => {
+    if (!product?.marcaId) { setBrandProducts([]); return }
+    const controller = new AbortController()
+    productService.getByMarca(product.marcaId, 0, 8)
+      .then(({ data }) => {
+        const items = (data?.content ?? data ?? []).filter((p) => p.id !== product.id).slice(0, 6)
+        setBrandProducts(items)
+      })
+      .catch(() => {})
+    return () => controller.abort()
+  }, [product?.marcaId, product?.id])
 
   useEffect(() => () => clearTimeout(addTimeout.current), [])
 
@@ -156,11 +170,25 @@ export default function ProductDetailPage() {
       </Helmet>
       <div className={`max-w-5xl mx-auto px-4 sm:px-6 py-10 transition-[padding] duration-300 ${showSticky ? 'pb-28 sm:pb-24' : ''}`}>
 
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm text-[#8e8e9a] mb-8">
+        {/* Breadcrumb: Productos / [Marca] / Producto */}
+        <nav className="flex items-center gap-2 text-sm text-[#8e8e9a] mb-8 flex-wrap">
           <button onClick={() => navigate('/productos')} className="hover:text-white transition-colors">
             {t('product.productsNav')}
           </button>
+          {product.marcaNombre && product.marcaId && (
+            <>
+              <span>/</span>
+              <button
+                onClick={() => navigate(`/productos?marcaId=${product.marcaId}&marcaNombre=${encodeURIComponent(product.marcaNombre)}`)}
+                className="hover:text-white transition-colors flex items-center gap-1"
+              >
+                {product.marcaLogoUrl && (
+                  <img src={product.marcaLogoUrl} alt="" className="w-3.5 h-3.5 object-contain rounded-sm" onError={(e) => { e.target.style.display = 'none' }} />
+                )}
+                {product.marcaNombre}
+              </button>
+            </>
+          )}
           <span>/</span>
           <span className="text-[#e8e8ed] truncate max-w-xs">{product.titulo || product.nombre}</span>
         </nav>
@@ -200,12 +228,16 @@ export default function ProductDetailPage() {
             <div className="space-y-2">
               <div className="flex items-center gap-2 flex-wrap">
                 {product.marcaNombre && (
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full" style={{ background: 'rgba(140,92,246,0.12)', color: 'var(--hc-accent)', border: '1px solid rgba(140,92,246,0.25)' }}>
+                  <button
+                    onClick={() => navigate(`/productos?marcaId=${product.marcaId}&marcaNombre=${encodeURIComponent(product.marcaNombre)}`)}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full transition-opacity hover:opacity-80"
+                    style={{ background: 'rgba(140,92,246,0.12)', color: 'var(--hc-accent)', border: '1px solid rgba(140,92,246,0.25)' }}
+                  >
                     {product.marcaLogoUrl && (
                       <img src={product.marcaLogoUrl} alt="" className="w-4 h-4 object-contain rounded-sm" onError={(e) => { e.target.style.display = 'none' }} />
                     )}
                     {product.marcaNombre}
-                  </span>
+                  </button>
                 )}
                 {product.condicion && (
                   <Badge variant={conditionVariant(product.condicion)}>
@@ -548,6 +580,59 @@ export default function ProductDetailPage() {
                 </motion.div>
               )}
             </AnimatePresence>
+          </motion.div>
+        )}
+
+        {/* ── Más de esta marca ── */}
+        {brandProducts.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4 }}
+            className="mt-12"
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-xl font-bold text-[#e8e8ed] flex items-center gap-2">
+                {product.marcaLogoUrl && (
+                  <img src={product.marcaLogoUrl} alt="" className="w-5 h-5 object-contain rounded" onError={(e) => { e.target.style.display = 'none' }} />
+                )}
+                Más de {product.marcaNombre}
+              </h2>
+              <button
+                onClick={() => navigate(`/productos?marcaId=${product.marcaId}&marcaNombre=${encodeURIComponent(product.marcaNombre)}`)}
+                className="text-xs font-medium text-[#4f7cff] hover:text-[#6b94ff] transition-colors"
+              >
+                Ver todos →
+              </button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              {brandProducts.map((bp, i) => (
+                <motion.div
+                  key={bp.id}
+                  initial={{ opacity: 0, y: 14 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.06 }}
+                  whileHover={{ y: -4 }}
+                  onClick={() => navigate(`/productos/${bp.id}`)}
+                  className="group cursor-pointer rounded-2xl overflow-hidden transition-shadow duration-300 hover:shadow-[0_12px_40px_rgba(0,0,0,0.4)]"
+                  style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
+                >
+                  <div className="h-24 bg-[#1a1a1f] flex items-center justify-center overflow-hidden">
+                    {bp.imagenUrl ? (
+                      <img src={bp.imagenUrl} alt={bp.nombre} width={96} height={96} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
+                    ) : (
+                      <span className="text-3xl opacity-20">📦</span>
+                    )}
+                  </div>
+                  <div className="p-2.5">
+                    <p className="text-[11px] font-medium line-clamp-2 mb-1 leading-snug" style={{ color: 'var(--hc-text)' }}>{bp.nombre}</p>
+                    <p className="text-xs font-bold text-[#4f7cff]">{formatPrice(bp.precio)}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </motion.div>
         )}
 

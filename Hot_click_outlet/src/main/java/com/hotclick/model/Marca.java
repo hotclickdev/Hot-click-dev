@@ -1,5 +1,6 @@
 package com.hotclick.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
@@ -17,6 +18,7 @@ public class Marca extends BaseEntity {
     @Column(name = "logo_url", length = 500)
     private String logoUrl;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "fk_id_admin_cliente", nullable = false)
     private Usuario adminCliente;

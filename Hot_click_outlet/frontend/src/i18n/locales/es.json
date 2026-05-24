@@ -300,7 +300,11 @@
       "success": "¡Gracias! Tu testimonio fue enviado y será revisado pronto.",
       "another": "Dejar otro testimonio",
       "error": "Error al enviar el testimonio.",
-      "uploadError": "La imagen fue rechazada. Verificá que sea apropiada."
+      "uploadError": "La imagen fue rechazada. Verificá que sea apropiada.",
+      "noProducts": "Aún no tenés compras para reseñar. Cuando recibás un pedido podrás dejar tu testimonio.",
+      "productLabel": "¿Sobre qué producto querés opinar?",
+      "productPlaceholder": "Seleccioná un producto...",
+      "alreadyReviewed": "ya reseñado"
     }
   },
   "checkout": {

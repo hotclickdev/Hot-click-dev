@@ -32,14 +32,22 @@ public class MarcaController {
     @Cacheable("marcas-publicas")
     @GetMapping("/publicas")
     public ResponseEntity<ResponseDTO> listarPublicas() {
-        var marcas = marcaRepository.findByEstado(Constants.ESTADO_ACTIVO);
-        return ResponseEntity.ok(ResponseDTO.success("Marcas obtenidas", marcas));
+        try {
+            var marcas = marcaRepository.findByEstado(Constants.ESTADO_ACTIVO);
+            return ResponseEntity.ok(ResponseDTO.success("Marcas obtenidas", marcas));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(ResponseDTO.error("Error al obtener marcas: " + e.getMessage()));
+        }
     }
 
     @GetMapping
     public ResponseEntity<ResponseDTO> listar() {
-        var marcas = marcaRepository.findByEstado(Constants.ESTADO_ACTIVO);
-        return ResponseEntity.ok(ResponseDTO.success("Marcas obtenidas", marcas));
+        try {
+            var marcas = marcaRepository.findByEstado(Constants.ESTADO_ACTIVO);
+            return ResponseEntity.ok(ResponseDTO.success("Marcas obtenidas", marcas));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(ResponseDTO.error("Error al obtener marcas: " + e.getMessage()));
+        }
     }
 
     @CacheEvict(value = "marcas-publicas", allEntries = true)

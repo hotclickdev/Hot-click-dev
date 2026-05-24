@@ -300,7 +300,11 @@
       "success": "Thank you! Your testimonial was submitted and will be reviewed soon.",
       "another": "Leave another testimonial",
       "error": "Error submitting testimonial.",
-      "uploadError": "Image was rejected. Please make sure it is appropriate."
+      "uploadError": "Image was rejected. Please make sure it is appropriate.",
+      "noProducts": "You have no purchases to review yet. Once you receive an order you'll be able to leave a testimonial.",
+      "productLabel": "Which product would you like to review?",
+      "productPlaceholder": "Select a product...",
+      "alreadyReviewed": "already reviewed"
     }
   },
   "checkout": {

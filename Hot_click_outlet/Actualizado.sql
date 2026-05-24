@@ -1656,6 +1656,7 @@ ALTER TABLE hot_click_usuario_tb
 CREATE TABLE IF NOT EXISTS hot_click_testimonio_tb (
     id_testimonio    SERIAL PRIMARY KEY,
     fk_id_usuario    INTEGER REFERENCES hot_click_usuario_tb(id_usuario),
+    fk_id_producto   INTEGER REFERENCES hot_click_producto_tb(id_producto),
     comentario       TEXT NOT NULL,
     imagen_url       VARCHAR(500),
     estado           VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
@@ -1663,11 +1664,51 @@ CREATE TABLE IF NOT EXISTS hot_click_testimonio_tb (
     fecha_aprobacion TIMESTAMP
 );
 
+-- Si la tabla ya existía, agregar columna producto (idempotente)
+ALTER TABLE hot_click_testimonio_tb
+    ADD COLUMN IF NOT EXISTS fk_id_producto INTEGER REFERENCES hot_click_producto_tb(id_producto);
+
+-- Restricción única: un testimonio por usuario por producto
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE table_name   = 'hot_click_testimonio_tb'
+          AND constraint_name = 'uq_testimonio_usuario_producto'
+    ) THEN
+        ALTER TABLE hot_click_testimonio_tb
+            ADD CONSTRAINT uq_testimonio_usuario_producto
+            UNIQUE (fk_id_usuario, fk_id_producto);
+    END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_testimonio_estado
     ON hot_click_testimonio_tb (estado);
 
 CREATE INDEX IF NOT EXISTS idx_testimonio_usuario
     ON hot_click_testimonio_tb (fk_id_usuario);
+
+CREATE INDEX IF NOT EXISTS idx_testimonio_producto
+    ON hot_click_testimonio_tb (fk_id_producto);
+
+-- ============================================================
+-- MARCAS: asegurar tabla y FK en producto (idempotente)
+-- ============================================================
+
+-- Tabla de marcas (si no existe aún en producción)
+CREATE TABLE IF NOT EXISTS hot_click_marca_tb (
+    id_marca             SERIAL PRIMARY KEY,
+    nombre_marca         VARCHAR(100) UNIQUE NOT NULL,
+    logo_url             VARCHAR(500),
+    fk_id_admin_cliente  INTEGER NOT NULL,
+    fk_id_estado         INTEGER NOT NULL DEFAULT 1
+);
+
+CREATE INDEX IF NOT EXISTS idx_marca_estado ON hot_click_marca_tb(fk_id_estado);
+
+-- FK en producto hacia marca (si no existe aún)
+ALTER TABLE hot_click_producto_tb
+    ADD COLUMN IF NOT EXISTS fk_id_marca INTEGER;
 
 -- ============================================================
 -- FIN DEL SCRIPT

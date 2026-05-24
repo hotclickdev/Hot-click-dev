@@ -82,6 +82,7 @@ public class SecurityConfig {
                 .requestMatchers(GET, "/api/productos/admin/todos").authenticated()
                 .requestMatchers(GET, "/api/productos").permitAll()
                 .requestMatchers(GET, "/api/productos/destacados").permitAll()
+                .requestMatchers(GET, "/api/productos/marca/*").permitAll()
                 .requestMatchers(GET, "/api/productos/*").permitAll()
                 .requestMatchers(GET, "/api/productos/*/recomendaciones").permitAll()
                 .requestMatchers(GET, "/api/categorias").permitAll()

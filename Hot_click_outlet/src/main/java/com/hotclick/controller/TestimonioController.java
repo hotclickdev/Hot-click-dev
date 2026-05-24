@@ -21,23 +21,28 @@ public class TestimonioController {
     @Autowired private SupabaseStorageService supabaseStorageService;
     @Autowired private ImageModerationService moderationService;
 
-    /** Público — devuelve solo testimonios APROBADO */
+    /** Público — devuelve solo APROBADO */
     @GetMapping("/publicos")
     public ResponseEntity<ResponseDTO> listarPublicos() {
         return ResponseEntity.ok(ResponseDTO.success("Testimonios", testimonioService.listarAprobadosPublico()));
     }
 
-    /** Admin — devuelve todos con correo y estado */
+    /** Admin — devuelve todos */
     @GetMapping("/admin")
     public ResponseEntity<ResponseDTO> listarAdmin() {
         return ResponseEntity.ok(ResponseDTO.success("Testimonios", testimonioService.listarTodosAdmin()));
     }
 
-    /** Sube foto del testimonio — requiere auth, pasa por moderación */
+    /** Usuario autenticado — sus propios testimonios (para saber qué productos ya reseñó) */
+    @GetMapping("/mis-testimonios")
+    public ResponseEntity<ResponseDTO> misTestimonios(@AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(ResponseDTO.success("Mis testimonios",
+            testimonioService.listarPorUsuario(userDetails.getUsername())));
+    }
+
+    /** Sube foto del testimonio — requiere auth, pasa por moderación de contenido */
     @PostMapping("/imagen")
-    public ResponseEntity<ResponseDTO> subirImagen(
-            @RequestParam("file") MultipartFile file,
-            @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<ResponseDTO> subirImagen(@RequestParam("file") MultipartFile file) {
         try {
             var mod = moderationService.moderar(file);
             if (!mod.safe())
@@ -50,19 +55,28 @@ public class TestimonioController {
         }
     }
 
-    /** Crear testimonio — requiere auth, queda en estado PENDIENTE */
+    /**
+     * Crear testimonio — requiere auth.
+     * Body: { comentario, imagenUrl (opcional), productoId }
+     * Valida que el usuario haya comprado el producto y que no tenga uno previo.
+     */
     @PostMapping
     public ResponseEntity<ResponseDTO> crear(
-            @RequestBody Map<String, String> body,
+            @RequestBody Map<String, Object> body,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            String comentario = body.get("comentario");
+            String comentario = (String) body.get("comentario");
             if (comentario == null || comentario.isBlank())
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El comentario es requerido"));
             if (comentario.length() > 500)
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El comentario no puede superar 500 caracteres"));
 
-            var t = testimonioService.crear(userDetails.getUsername(), comentario, body.get("imagenUrl"));
+            Object pidObj = body.get("productoId");
+            Long productoId = pidObj instanceof Number n ? n.longValue() : null;
+
+            String imagenUrl = (String) body.get("imagenUrl");
+
+            var t = testimonioService.crear(userDetails.getUsername(), comentario, imagenUrl, productoId);
             return ResponseEntity.ok(ResponseDTO.success("Testimonio enviado, pendiente de aprobación", t));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));

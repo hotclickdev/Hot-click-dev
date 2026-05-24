@@ -92,6 +92,15 @@ public class ProductoController {
                 productoService.getRecomendaciones(id, limit)));
     }
 
+    @GetMapping("/marca/{marcaId}")
+    public ResponseEntity<ResponseDTO> listarPorMarca(
+            @PathVariable Long marcaId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size) {
+        var productos = productoService.listarPorMarca(marcaId, PageRequest.of(page, size));
+        return ResponseEntity.ok(ResponseDTO.success("Productos por marca", productos));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ResponseDTO> obtenerProducto(@PathVariable Long id) {
         try {

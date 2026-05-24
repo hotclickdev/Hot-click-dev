@@ -204,7 +204,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Testimonios */}
-        <TestimonioSection />
+        <TestimonioSection orders={orders} ordersLoading={loading} />
 
       </div>
 
@@ -225,16 +225,38 @@ export default function ProfilePage() {
 
 // ── Sección: Dejar testimonio ─────────────────────────────────────────────────
 
-function TestimonioSection() {
+function TestimonioSection({ orders = [], ordersLoading = false }) {
   const { t } = useTranslation()
   const toast = useToast()
   const fileRef = useRef(null)
-  const [comentario, setComentario] = useState('')
-  const [imagenUrl, setImagenUrl]   = useState(null)
-  const [preview, setPreview]       = useState(null)
-  const [uploading, setUploading]   = useState(false)
-  const [sending, setSending]       = useState(false)
-  const [done, setDone]             = useState(false)
+  const [comentario, setComentario]       = useState('')
+  const [productoId, setProductoId]       = useState('')
+  const [imagenUrl, setImagenUrl]         = useState(null)
+  const [preview, setPreview]             = useState(null)
+  const [uploading, setUploading]         = useState(false)
+  const [sending, setSending]             = useState(false)
+  const [done, setDone]                   = useState(false)
+  const [misTestimonios, setMisTestimonios] = useState([])
+
+  const ESTADOS_VALIDOS = new Set(['PAGADO','EN_PREPARACION','ENVIADO','ENTREGADO','LISTO_RETIRO'])
+
+  const productosComprados = orders
+    .filter(o => ESTADOS_VALIDOS.has(o.estadoPedido))
+    .flatMap(o => o.items ?? [])
+    .reduce((acc, item) => {
+      const id = item.productoId ?? item.producto?.id
+      const nombre = item.nombreProducto ?? item.producto?.nombreProducto ?? 'Producto'
+      if (id && !acc.find(p => p.id === id)) acc.push({ id, nombre })
+      return acc
+    }, [])
+
+  const resenadosIds = new Set(misTestimonios.map(m => m.productoId))
+
+  useEffect(() => {
+    testimonioService.getMisTestimonios()
+      .then(({ data }) => setMisTestimonios(Array.isArray(data) ? data : []))
+      .catch(() => {})
+  }, [done])
 
   const handleFile = async (e) => {
     const file = e.target.files?.[0]
@@ -245,9 +267,11 @@ function TestimonioSection() {
       const fd = new FormData()
       fd.append('file', file)
       const { data } = await testimonioService.subirImagen(fd)
-      setImagenUrl(data?.url ?? null)
+      const url = data?.url ?? null
+      if (!url) throw new Error('No se recibió URL de la imagen')
+      setImagenUrl(url)
     } catch (err) {
-      const msg = err.response?.data?.message
+      const msg = err.response?.data?.message ?? err.message
       toast({ message: typeof msg === 'string' ? msg : t('profile.testimonios.uploadError'), type: 'error' })
       setPreview(null)
     } finally {
@@ -257,12 +281,13 @@ function TestimonioSection() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!comentario.trim()) return
+    if (!comentario.trim() || !productoId) return
     setSending(true)
     try {
-      await testimonioService.crear({ comentario, imagenUrl })
+      await testimonioService.crear({ comentario, imagenUrl, productoId: Number(productoId) })
       setDone(true)
       setComentario('')
+      setProductoId('')
       setImagenUrl(null)
       setPreview(null)
       toast({ message: t('profile.testimonios.success'), type: 'success' })
@@ -288,7 +313,13 @@ function TestimonioSection() {
         </p>
       </div>
 
-      {done ? (
+      {ordersLoading ? (
+        <div className="flex justify-center py-6"><Spinner /></div>
+      ) : productosComprados.length === 0 ? (
+        <div className="px-5 py-5 text-center">
+          <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>{t('profile.testimonios.noProducts')}</p>
+        </div>
+      ) : done ? (
         <div className="px-5 py-6 text-center space-y-2">
           <p className="text-2xl">🎉</p>
           <p className="text-sm font-medium" style={{ color: '#059669' }}>{t('profile.testimonios.success')}</p>
@@ -298,6 +329,32 @@ function TestimonioSection() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
+          {/* Selector de producto */}
+          <div>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--hc-muted)' }}>
+              {t('profile.testimonios.productLabel')}
+            </label>
+            <select
+              value={productoId}
+              onChange={(e) => setProductoId(e.target.value)}
+              required
+              className="w-full rounded-xl px-3 py-2.5 text-sm transition-colors"
+              style={{
+                backgroundColor: 'var(--hc-surface-2)',
+                border: '1px solid var(--hc-border)',
+                color: productoId ? 'var(--hc-text)' : 'var(--hc-muted)',
+                outline: 'none',
+              }}
+            >
+              <option value="" disabled>{t('profile.testimonios.productPlaceholder')}</option>
+              {productosComprados.map(p => (
+                <option key={p.id} value={p.id} disabled={resenadosIds.has(p.id)}>
+                  {p.nombre}{resenadosIds.has(p.id) ? ' ✓ (ya reseñado)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div>
             <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--hc-muted)' }}>
               {t('profile.testimonios.label')}
@@ -359,7 +416,7 @@ function TestimonioSection() {
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
           </div>
 
-          <Button type="submit" loading={sending} disabled={uploading || !comentario.trim()} className="w-full">
+          <Button type="submit" loading={sending} disabled={uploading || !comentario.trim() || !productoId} className="w-full">
             {t('profile.testimonios.submit')}
           </Button>
         </form>
