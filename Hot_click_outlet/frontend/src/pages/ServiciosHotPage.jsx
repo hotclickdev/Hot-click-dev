@@ -7,6 +7,7 @@ import Footer from '@/components/layout/Footer'
 import useAuthStore from '@/store/authStore'
 import { servicioService } from '@/services/servicioService'
 import { publicacionService } from '@/services/publicacionService'
+import { productService } from '@/services/productService'
 import { useQuery } from '@tanstack/react-query'
 
 const ESTADO_STYLES = {
@@ -73,8 +74,8 @@ export default function ServiciosHotPage() {
         const preview = URL.createObjectURL(file)
         const fd = new FormData()
         fd.append('file', file)
-        const res = await servicioService.subirFoto(fd)
-        const url = res.data?.data?.url ?? res.data?.url ?? (typeof res.data === 'string' ? res.data : '')
+        const res = await productService.uploadImage(fd)
+        const url = res.data?.data?.url ?? res.data?.url ?? res.data
         return { file, preview, url }
       }))
       setFotos(prev => [...prev, ...nuevas].slice(0, 3))
