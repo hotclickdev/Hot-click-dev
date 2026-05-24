@@ -92,8 +92,8 @@ public class ImageModerationService {
         String violence = (String) ss.get("violence");
         String racy     = (String) ss.get("racy");
 
-        // adult >= POSSIBLE → rechazar
-        if (likelihood(adult) >= likelihood("POSSIBLE"))
+        // adult >= LIKELY → rechazar (POSSIBLE rechaza productos con formas ambiguas)
+        if (likelihood(adult) >= likelihood("LIKELY"))
             return new ModerationResult(false, "Contenido adulto detectado");
         // violence >= LIKELY → rechazar
         if (likelihood(violence) >= likelihood("LIKELY"))
