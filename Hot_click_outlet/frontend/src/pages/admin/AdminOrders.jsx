@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import AdminLayout from '@/layouts/AdminLayout'
 import Spinner from '@/components/ui/Spinner'
 import { orderService } from '@/services/orderService'
@@ -20,32 +21,34 @@ const ESTADO_STYLE = {
   CANCELADO:      { bg: 'rgba(248,113,113,0.14)', text: '#f87171', border: 'rgba(248,113,113,0.35)' },
 }
 
-function estadoBadge(e) {
-  const s = ESTADO_STYLE[e] ?? { bg: 'rgba(142,142,154,0.14)', text: '#8e8e9a', border: 'rgba(142,142,154,0.35)' }
+function EstadoBadge({ estado }) {
+  const { t } = useTranslation()
+  const s = ESTADO_STYLE[estado] ?? { bg: 'rgba(142,142,154,0.14)', text: '#8e8e9a', border: 'rgba(142,142,154,0.35)' }
   return (
     <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
       style={{ backgroundColor: s.bg, color: s.text, border: `1px solid ${s.border}` }}>
-      {e}
+      {t(`adminOrders.status${estado}`, { defaultValue: estado })}
     </span>
   )
 }
 
 const ETAPAS_RETIRO = [
-  { key: 'PENDIENTE',      label: 'Pendiente' },
-  { key: 'PAGADO',         label: 'Pago confirmado' },
-  { key: 'EN_PREPARACION', label: 'En preparación' },
-  { key: 'LISTO_RETIRO',   label: 'Listo p/ retirar' },
-  { key: 'ENTREGADO',      label: 'Retirado' },
+  { key: 'PENDIENTE',      labelKey: 'adminOrders.stepPending' },
+  { key: 'PAGADO',         labelKey: 'adminOrders.stepPaid' },
+  { key: 'EN_PREPARACION', labelKey: 'adminOrders.stepPrep' },
+  { key: 'LISTO_RETIRO',   labelKey: 'adminOrders.stepReady' },
+  { key: 'ENTREGADO',      labelKey: 'adminOrders.stepPickedUp' },
 ]
 const ETAPAS_ENVIO = [
-  { key: 'PENDIENTE',      label: 'Pendiente' },
-  { key: 'PAGADO',         label: 'Pago confirmado' },
-  { key: 'EN_PREPARACION', label: 'En preparación' },
-  { key: 'ENVIADO',        label: 'Enviado' },
-  { key: 'ENTREGADO',      label: 'Entregado' },
+  { key: 'PENDIENTE',      labelKey: 'adminOrders.stepPending' },
+  { key: 'PAGADO',         labelKey: 'adminOrders.stepPaid' },
+  { key: 'EN_PREPARACION', labelKey: 'adminOrders.stepPrep' },
+  { key: 'ENVIADO',        labelKey: 'adminOrders.stepShipped' },
+  { key: 'ENTREGADO',      labelKey: 'adminOrders.stepDelivered' },
 ]
 
 function StepTracker({ estado, esRetiro, onStep, saving }) {
+  const { t } = useTranslation()
   const etapas  = esRetiro ? ETAPAS_RETIRO : ETAPAS_ENVIO
   const idx     = etapas.findIndex(e => e.key === estado)
   const idxSafe = idx === -1 ? 0 : idx
@@ -55,13 +58,14 @@ function StepTracker({ estado, esRetiro, onStep, saving }) {
         const done    = i < idxSafe
         const current = i === idxSafe
         const clickable = !current && !saving
+        const label   = t(e.labelKey)
         return (
           <div key={e.key} className="flex items-center flex-1 min-w-0">
             <div className="flex flex-col items-center gap-1 shrink-0">
               <button
                 onClick={() => clickable && onStep(e.key)}
                 disabled={saving}
-                title={clickable ? `Cambiar a: ${e.label}` : e.label}
+                title={clickable ? `${t('adminOrders.changeTo')} ${label}` : label}
                 className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
                 style={{
                   backgroundColor: done || current ? 'var(--hc-accent)' : 'transparent',
@@ -78,7 +82,7 @@ function StepTracker({ estado, esRetiro, onStep, saving }) {
               </button>
               <span className="text-[9px] text-center leading-tight max-w-[56px]"
                 style={{ color: done || current ? 'var(--hc-text)' : 'var(--hc-muted)', fontWeight: current ? 700 : 400, opacity: done || current ? 1 : 0.45 }}>
-                {e.label}
+                {label}
               </span>
             </div>
             {i < etapas.length - 1 && (
@@ -93,12 +97,12 @@ function StepTracker({ estado, esRetiro, onStep, saving }) {
 }
 
 function getNextStep(estado, esRetiro) {
-  if (estado === 'PAGADO')         return { type: 'btn', next: 'EN_PREPARACION', label: 'Marcar en preparación' }
+  if (estado === 'PAGADO')         return { type: 'btn', next: 'EN_PREPARACION', labelKey: 'adminOrders.markPrep' }
   if (estado === 'EN_PREPARACION') return esRetiro
-    ? { type: 'btn', next: 'LISTO_RETIRO', label: 'Listo para retirar' }
+    ? { type: 'btn', next: 'LISTO_RETIRO', labelKey: 'adminOrders.readyPickup' }
     : { type: 'envio' }
-  if (estado === 'LISTO_RETIRO')   return { type: 'btn', next: 'ENTREGADO', label: 'Marcar entregado' }
-  if (estado === 'ENVIADO')        return { type: 'btn', next: 'ENTREGADO', label: 'Marcar entregado' }
+  if (estado === 'LISTO_RETIRO')   return { type: 'btn', next: 'ENTREGADO', labelKey: 'adminOrders.markDelivered' }
+  if (estado === 'ENVIADO')        return { type: 'btn', next: 'ENTREGADO', labelKey: 'adminOrders.markDelivered' }
   return null
 }
 
@@ -130,12 +134,13 @@ function buildWaMessage(order) {
 
 const METODOS_PAGO  = ['SINPE', 'EFECTIVO', 'CONTRA_ENTREGA', 'TRANSFERENCIA']
 const METODOS_ENVIO = [
-  { value: 'RETIRO_EN_TIENDA',   label: '🏪 Retiro en tienda' },
-  { value: 'ENVIO_A_DOMICILIO',  label: '🚚 Envío a domicilio' },
+  { value: 'RETIRO_EN_TIENDA',   labelKey: 'adminOrders.pickupStoreLabel' },
+  { value: 'ENVIO_A_DOMICILIO',  labelKey: 'adminOrders.homeDeliveryLabel' },
 ]
 const ESTADOS_INICIAL = ['PENDIENTE', 'PAGADO', 'EN_PREPARACION']
 
 function CrearPedidoModal({ onClose, onCreated }) {
+  const { t } = useTranslation()
   const toast         = useToast()
   const [saving, setSaving]           = useState(false)
   const [loadingData, setLoadingData] = useState(true)
@@ -168,7 +173,7 @@ function CrearPedidoModal({ onClose, onCreated }) {
         setUsers(Array.isArray(ud) ? ud : [])
         const pd = pr.data?.content ?? pr.data ?? []
         setProducts(Array.isArray(pd) ? pd : [])
-      } catch { toast({ message: 'Error cargando datos', type: 'error' }) }
+      } catch { toast({ message: t('adminOrders.errorLoading'), type: 'error' }) }
       finally { setLoadingData(false) }
     }
     load()
@@ -239,11 +244,11 @@ function CrearPedidoModal({ onClose, onCreated }) {
       }
       const res    = await orderService.createManual(payload)
       const newOrd = res.data?.data ?? res.data
-      toast({ message: 'Pedido creado', type: 'success' })
+      toast({ message: t('adminOrders.orderCreated'), type: 'success' })
       onCreated(newOrd)
       onClose()
     } catch (e) {
-      toast({ message: e.response?.data?.message ?? 'Error al crear pedido', type: 'error' })
+      toast({ message: e.response?.data?.message ?? t('adminOrders.errorCreate'), type: 'error' })
     } finally { setSaving(false) }
   }
 
@@ -260,7 +265,7 @@ function CrearPedidoModal({ onClose, onCreated }) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b shrink-0"
           style={{ borderColor: 'var(--hc-border)' }}>
-          <h2 className="text-base font-bold text-[#e8e8ed]">Nuevo pedido</h2>
+          <h2 className="text-base font-bold text-[#e8e8ed]">{t('adminOrders.newOrderTitle')}</h2>
           <button onClick={onClose} className="text-[#8e8e9a] hover:text-[#e8e8ed] transition-colors text-xl leading-none">✕</button>
         </div>
 
@@ -273,7 +278,7 @@ function CrearPedidoModal({ onClose, onCreated }) {
 
             {/* Cliente */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">Cliente *</label>
+              <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">{t('adminOrders.clientLabel')}</label>
               {selectedUser ? (
                 <div className="flex items-center gap-3 rounded-xl px-3 py-2.5"
                   style={{ backgroundColor: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 30%, transparent)' }}>
@@ -291,7 +296,7 @@ function CrearPedidoModal({ onClose, onCreated }) {
                     value={userSearch}
                     onChange={e => { setUserSearch(e.target.value); setShowUserDrop(true) }}
                     onFocus={() => setShowUserDrop(true)}
-                    placeholder="Buscar cliente por nombre o correo…"
+                    placeholder={t('adminOrders.clientSearch')}
                     className="w-full h-10 px-3 rounded-xl text-sm placeholder:text-[#8e8e9a]/50 focus:outline-none"
                     style={inp}
                   />
@@ -314,14 +319,14 @@ function CrearPedidoModal({ onClose, onCreated }) {
 
             {/* Productos */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">Productos *</label>
+              <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">{t('adminOrders.productsLabel')}</label>
               <div className="relative" ref={prodRef}>
                 <input
                   type="text"
                   value={prodSearch}
                   onChange={e => { setProdSearch(e.target.value); setShowProdDrop(true) }}
                   onFocus={() => setShowProdDrop(true)}
-                  placeholder="Buscar producto…"
+                  placeholder={t('adminOrders.searchProduct')}
                   className="w-full h-10 px-3 rounded-xl text-sm placeholder:text-[#8e8e9a]/50 focus:outline-none"
                   style={inp}
                 />
@@ -359,7 +364,7 @@ function CrearPedidoModal({ onClose, onCreated }) {
                       </div>
                       <div className="flex gap-2">
                         <div className="flex items-center gap-1">
-                          <span className="text-xs text-[#8e8e9a]">Cant.</span>
+                          <span className="text-xs text-[#8e8e9a]">{t('adminOrders.quantity')}</span>
                           <input type="number" min={1}
                             value={item.cantidad}
                             onChange={e => updateItem(item.productoId, 'cantidad', e.target.value)}
@@ -389,14 +394,14 @@ function CrearPedidoModal({ onClose, onCreated }) {
             {/* Pago y envío */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">Método de pago</label>
+                <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">{t('adminOrders.paymentMethod')}</label>
                 <select value={form.metodoPago} onChange={e => set('metodoPago', e.target.value)}
                   className="w-full h-10 px-2 rounded-xl text-sm focus:outline-none" style={inp}>
                   {METODOS_PAGO.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">Estado inicial</label>
+                <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">{t('adminOrders.initialStatus')}</label>
                 <select value={form.estadoPedido} onChange={e => set('estadoPedido', e.target.value)}
                   className="w-full h-10 px-2 rounded-xl text-sm focus:outline-none" style={inp}>
                   {ESTADOS_INICIAL.map(s => <option key={s} value={s}>{s}</option>)}
@@ -405,7 +410,7 @@ function CrearPedidoModal({ onClose, onCreated }) {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">Tipo de entrega</label>
+              <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">{t('adminOrders.shippingMethod')}</label>
               <div className="flex gap-2">
                 {METODOS_ENVIO.map(m => (
                   <button key={m.value}
@@ -416,7 +421,7 @@ function CrearPedidoModal({ onClose, onCreated }) {
                       border: `1px solid ${form.metodoEnvio === m.value ? 'color-mix(in srgb, var(--hc-accent) 45%, transparent)' : 'var(--hc-border)'}`,
                       color: form.metodoEnvio === m.value ? 'var(--hc-accent)' : 'var(--hc-muted)',
                     }}>
-                    {m.label}
+                    {t(m.labelKey)}
                   </button>
                 ))}
               </div>
@@ -425,7 +430,7 @@ function CrearPedidoModal({ onClose, onCreated }) {
             {/* Costo de envío */}
             {form.metodoEnvio === 'ENVIO_A_DOMICILIO' && (
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">Costo de envío (₡)</label>
+                <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">{t('adminOrders.shippingCostLabel')}</label>
                 <div className="flex items-center gap-2">
                   <span className="text-[#8e8e9a]">₡</span>
                   <input
@@ -442,12 +447,12 @@ function CrearPedidoModal({ onClose, onCreated }) {
 
             {/* Notas */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">Notas (opcional)</label>
+              <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">{t('adminOrders.orderNotes')}</label>
               <textarea
                 value={form.notas}
                 onChange={e => set('notas', e.target.value)}
                 rows={2}
-                placeholder="Instrucciones especiales, dirección, etc."
+                placeholder={t('adminOrders.notesPlaceholder')}
                 className="w-full px-3 py-2 rounded-xl text-sm resize-none focus:outline-none"
                 style={inp}
               />
@@ -456,19 +461,19 @@ function CrearPedidoModal({ onClose, onCreated }) {
             {/* Resumen */}
             {form.items.length > 0 && (
               <div className="rounded-xl px-4 py-3 space-y-1.5" style={{ backgroundColor: 'var(--hc-glass-bg)', border: '1px solid var(--hc-border)' }}>
-                <p className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest mb-2">Resumen</p>
+                <p className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest mb-2">{t('adminOrders.subtotal')}</p>
                 <div className="flex justify-between text-sm text-[#8e8e9a]">
-                  <span>Subtotal productos</span>
+                  <span>{t('adminOrders.productsLabel')}</span>
                   <span>{formatPrice(subtotal)}</span>
                 </div>
                 {costoEnvioNum > 0 && (
                   <div className="flex justify-between text-sm text-[#8e8e9a]">
-                    <span>Envío</span>
+                    <span>{t('adminOrders.shippingCost')}</span>
                     <span>{formatPrice(costoEnvioNum)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-base font-bold text-[#e8e8ed] pt-1 border-t" style={{ borderColor: 'var(--hc-border)' }}>
-                  <span>Total</span>
+                  <span>{t('adminOrders.total')}</span>
                   <span>{formatPrice(total)}</span>
                 </div>
               </div>
@@ -481,12 +486,12 @@ function CrearPedidoModal({ onClose, onCreated }) {
           <button onClick={onClose} disabled={saving}
             className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-all"
             style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>
-            Cancelar
+            {t('importExport.cancel')}
           </button>
           <button onClick={submit} disabled={saving || !canSubmit}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-40"
             style={{ backgroundColor: 'var(--hc-accent)', color: 'white' }}>
-            {saving ? 'Creando…' : 'Crear pedido'}
+            {saving ? t('adminOrders.creating') : t('adminOrders.createOrder')}
           </button>
         </div>
       </div>
@@ -495,6 +500,7 @@ function CrearPedidoModal({ onClose, onCreated }) {
 }
 
 function OrderCard({ order, onUpdate, onDelete }) {
+  const { t } = useTranslation()
   const toast = useToast()
   const [open, setOpen]             = useState(false)
   const [saving, setSaving]         = useState(false)
@@ -518,26 +524,26 @@ function OrderCard({ order, onUpdate, onDelete }) {
     if (!pendingEstado || pendingEstado === estado) return
     // Si va a ENVIADO en flujo domicilio, necesita guía
     if (pendingEstado === 'ENVIADO' && !esRetiro) {
-      if (!guia.trim()) { toast({ message: 'Ingresa el número de guía', type: 'error' }); return }
+      if (!guia.trim()) { toast({ message: t('adminOrders.enterGuia'), type: 'error' }); return }
       setSaving(true)
       try {
         const costoNum = costo ? parseInt(costo, 10) : null
         await orderService.procesarEnvio(order.id, guia.trim(), costoNum)
-        toast({ message: 'Enviado — cliente notificado', type: 'success' })
+        toast({ message: t('adminOrders.sentNotified'), type: 'success' })
         onUpdate(order.id, { estado: 'ENVIADO', numeroGuia: guia.trim(), costoEnvio: costoNum ?? order.costoEnvio })
         setPending(null)
-      } catch { toast({ message: 'Error al procesar envío', type: 'error' }) }
+      } catch { toast({ message: t('adminOrders.shipError'), type: 'error' }) }
       finally { setSaving(false) }
       return
     }
     setSaving(true)
     try {
       await orderService.updateStatus(order.id, pendingEstado, nota.trim() || null)
-      toast({ message: nota.trim() ? 'Estado guardado y cliente notificado' : 'Estado guardado', type: 'success' })
+      toast({ message: nota.trim() ? t('adminOrders.savedNotified') : t('adminOrders.saved'), type: 'success' })
       onUpdate(order.id, { estado: pendingEstado })
       setPending(null)
       setNota('')
-    } catch { toast({ message: 'Error al guardar', type: 'error' }) }
+    } catch { toast({ message: t('adminOrders.errorSave'), type: 'error' }) }
     finally { setSaving(false) }
   }
 
@@ -545,20 +551,20 @@ function OrderCard({ order, onUpdate, onDelete }) {
     setNotifying(true)
     try {
       await orderService.notificar(order.id)
-      toast({ message: 'Email enviado al cliente', type: 'success' })
+      toast({ message: t('adminOrders.sent'), type: 'success' })
     } catch {
-      toast({ message: 'Error al enviar email', type: 'error' })
+      toast({ message: t('adminOrders.errorEmail'), type: 'error' })
     } finally { setNotifying(false) }
   }
 
   const doDelete = async () => {
-    if (!window.confirm(`¿Eliminar pedido #${order.id}? Esta acción no se puede deshacer.`)) return
+    if (!window.confirm(t('adminOrders.confirmDelete', { id: order.id }))) return
     setSaving(true)
     try {
       await orderService.delete(order.id)
-      toast({ message: 'Pedido eliminado', type: 'success' })
+      toast({ message: t('adminOrders.deleted'), type: 'success' })
       onDelete(order.id)
-    } catch { toast({ message: 'Error al eliminar', type: 'error' }) }
+    } catch { toast({ message: t('adminOrders.errorDelete'), type: 'error' }) }
     finally { setSaving(false) }
   }
 
@@ -589,7 +595,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
 
         {/* Tipo entrega */}
         <span className="text-xs text-[#8e8e9a]">
-          {esRetiro ? '🏪 Retiro' : '🚚 Domicilio'}
+          {esRetiro ? t('adminOrders.pickupBadge') : t('adminOrders.deliveryBadge')}
         </span>
 
         {/* Total */}
@@ -598,7 +604,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
         </span>
 
         {/* Estado */}
-        {estadoBadge(estado)}
+        <EstadoBadge estado={estado} />
 
         {/* Chevron */}
         <svg className="w-4 h-4 shrink-0 transition-transform"
@@ -630,7 +636,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
                     value={nota}
                     onChange={e => setNota(e.target.value)}
                     rows={2}
-                    placeholder="Nota para el cliente (opcional) — se incluye en el email de notificación"
+                    placeholder={t('adminOrders.notaPlaceholder')}
                     className="w-full mt-2 px-3 py-2 rounded-xl text-sm resize-none focus:outline-none placeholder:text-[#8e8e9a]/50"
                     style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
                   />
@@ -642,12 +648,12 @@ function OrderCard({ order, onUpdate, onDelete }) {
           {/* Formulario envío si el pending es ENVIADO en flujo domicilio */}
           {needsEnvioForm && (
             <div className="space-y-2 rounded-xl p-3" style={{ backgroundColor: 'var(--hc-glass-bg)', border: '1px solid var(--hc-border)' }}>
-              <p className="text-xs font-semibold text-[#e8e8ed]">Datos del envío a domicilio</p>
+              <p className="text-xs font-semibold text-[#e8e8ed]">{t('adminOrders.envioSection')}</p>
               <input
                 type="text"
                 value={guia}
                 onChange={e => setGuia(e.target.value)}
-                placeholder="Número de guía Correos CR"
+                placeholder={t('adminOrders.guiaInputPh')}
                 className="w-full h-10 px-3 rounded-xl text-sm text-[#e8e8ed] placeholder:text-[#8e8e9a]/50 focus:outline-none font-mono"
                 style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
               />
@@ -657,7 +663,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
                   type="number"
                   value={costo}
                   onChange={e => setCosto(e.target.value)}
-                  placeholder="Costo envío (4000–20000)"
+                  placeholder={t('adminOrders.costInputPh')}
                   min={4000} max={20000} step={500}
                   className="flex-1 h-10 px-3 rounded-xl text-sm text-[#e8e8ed] placeholder:text-[#8e8e9a]/50 focus:outline-none"
                   style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
@@ -675,7 +681,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
                 className="flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50"
                 style={{ backgroundColor: 'var(--hc-accent)', color: 'white' }}
               >
-                {saving ? 'Guardando…' : '💾 Guardar cambios'}
+                {saving ? t('adminOrders.saving') : t('adminOrders.saveChanges')}
               </button>
               <button
                 onClick={() => { setPending(null); setNota('') }}
@@ -683,7 +689,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
                 className="px-4 py-2.5 rounded-xl text-sm transition-all"
                 style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}
               >
-                Cancelar
+                {t('importExport.cancel')}
               </button>
             </div>
           )}
@@ -691,7 +697,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
           {/* Productos con imagen */}
           {items.length > 0 && (
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-[#8e8e9a] mb-2">Productos</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-[#8e8e9a] mb-2">{t('adminOrders.productsSection')}</p>
               <div className="space-y-2">
                 {items.map((item, i) => (
                   <div key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5"
@@ -728,7 +734,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
                 <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                 </svg>
-                WhatsApp cliente
+                {t('adminOrders.whatsappClient')}
               </a>
             )}
             {order.clienteCorreo && (
@@ -738,11 +744,11 @@ function OrderCard({ order, onUpdate, onDelete }) {
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50"
                 style={{ backgroundColor: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 28%, transparent)' }}
               >
-                📧 {notifying ? 'Enviando…' : 'Email cliente'}
+                📧 {notifying ? t('adminOrders.sending') : t('adminOrders.emailClient')}
               </button>
             )}
             {order.costoEnvio > 0 && (
-              <span className="flex items-center text-xs text-[#8e8e9a] px-2">Envío: {formatPrice(order.costoEnvio)}</span>
+              <span className="flex items-center text-xs text-[#8e8e9a] px-2">{t('adminOrders.shippingDisplay', { amount: formatPrice(order.costoEnvio) })}</span>
             )}
             {order.notas && (
               <span className="flex items-center text-xs text-[#8e8e9a] px-2">💬 {order.notas}</span>
@@ -753,7 +759,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
           {order.numeroGuia && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs"
               style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}>
-              <span className="text-green-400">Guía:</span>
+              <span className="text-green-400">{t('adminOrders.guiaSection')}</span>
               <a href={`https://rastreo.correos.go.cr/?codigo=${order.numeroGuia}`}
                 target="_blank" rel="noopener noreferrer"
                 className="font-mono font-bold text-green-300 hover:underline flex-1">
@@ -763,10 +769,10 @@ function OrderCard({ order, onUpdate, onDelete }) {
           )}
 
           {estado === 'ENTREGADO' && (
-            <p className="text-center text-sm text-green-400 py-1">✅ Pedido entregado</p>
+            <p className="text-center text-sm text-green-400 py-1">{t('adminOrders.orderDelivered')}</p>
           )}
           {estado === 'CANCELADO' && (
-            <p className="text-center text-sm text-red-400 py-1">✖ Pedido cancelado</p>
+            <p className="text-center text-sm text-red-400 py-1">{t('adminOrders.orderCancelled')}</p>
           )}
 
           {/* Pie: override manual + eliminar */}
@@ -774,7 +780,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
             <div className="flex-1">
               <button onClick={() => setShowOver(v => !v)}
                 className="text-xs text-[#8e8e9a]/50 hover:text-[#8e8e9a] transition-colors">
-                {showOver ? '▲' : '▼'} Corrección manual
+                {showOver ? '▲' : '▼'} {t('adminOrders.manualCorrection')}
               </button>
               {showOver && (
                 <div className="flex gap-2 mt-2">
@@ -794,17 +800,17 @@ function OrderCard({ order, onUpdate, onDelete }) {
                       setSaving(true)
                       try {
                         await orderService.updateStatus(order.id, override)
-                        toast({ message: 'Estado corregido', type: 'success' })
+                        toast({ message: t('adminOrders.corrected'), type: 'success' })
                         onUpdate(order.id, { estado: override })
                         setShowOver(false)
-                      } catch { toast({ message: 'Error', type: 'error' }) }
+                      } catch { toast({ message: t('adminOrders.errorCorrect'), type: 'error' }) }
                       finally { setSaving(false) }
                     }}
                     disabled={saving || !override || override === estado}
                     className="px-4 rounded-xl text-sm font-medium transition-all disabled:opacity-40"
                     style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)' }}
                   >
-                    {saving ? '…' : 'Aplicar'}
+                    {saving ? '…' : t('adminOrders.apply')}
                   </button>
                 </div>
               )}
@@ -815,7 +821,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
               className="text-xs px-3 py-1.5 rounded-lg transition-all disabled:opacity-40 shrink-0"
               style={{ backgroundColor: 'rgba(248,113,113,0.10)', color: 'var(--hc-danger)', border: '1px solid rgba(248,113,113,0.25)' }}
             >
-              🗑 Eliminar
+              {t('adminOrders.deleteOrder')}
             </button>
           </div>
         </div>
@@ -825,6 +831,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
 }
 
 export default function AdminOrders() {
+  const { t } = useTranslation()
   const [orders, setOrders]         = useState([])
   const [loading, setLoading]       = useState(true)
   const [filter, setFilter]         = useState('Todos')
@@ -861,8 +868,8 @@ export default function AdminOrders() {
       <div className="space-y-5 max-w-3xl">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold text-[#e8e8ed]">Pedidos</h1>
-            <p className="text-sm text-[#8e8e9a] mt-0.5">{orders.length} pedidos en total</p>
+            <h1 className="text-xl font-bold text-[#e8e8ed]">{t('adminOrders.title')}</h1>
+            <p className="text-sm text-[#8e8e9a] mt-0.5">{t('adminOrders.subtitle', { count: orders.length })}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap shrink-0">
             <ImportExportBar
@@ -888,7 +895,7 @@ export default function AdminOrders() {
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0"
               style={{ backgroundColor: 'var(--hc-accent)', color: 'white' }}
             >
-              + Nuevo pedido
+              {t('adminOrders.newOrderBtn')}
             </button>
           </div>
         </div>
@@ -906,7 +913,7 @@ export default function AdminOrders() {
                 border: `1px solid ${filter === f ? 'color-mix(in srgb, var(--hc-accent) 40%, transparent)' : 'var(--hc-border)'}`,
               }}
             >
-              {f}
+              {f === 'Todos' ? t('adminOrders.filterAll') : f}
             </button>
           ))}
         </div>
@@ -914,7 +921,7 @@ export default function AdminOrders() {
         {loading ? (
           <div className="flex justify-center py-16"><Spinner size="lg" /></div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-12 text-[#8e8e9a] text-sm">No hay pedidos</div>
+          <div className="text-center py-12 text-[#8e8e9a] text-sm">{t('adminOrders.noOrders')}</div>
         ) : (
           <div className="space-y-2">
             {filtered.map(order => (

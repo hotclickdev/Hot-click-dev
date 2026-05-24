@@ -1,16 +1,12 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import AdminLayout from '@/layouts/AdminLayout'
 import Spinner from '@/components/ui/Spinner'
 import { orderService } from '@/services/orderService'
 import { formatPrice, formatDate } from '@/utils/format'
 import ImportExportBar from '@/components/admin/ImportExportBar'
 
-const QUICK = [
-  { label: 'Hoy',    days: 0  },
-  { label: '7 días', days: 7  },
-  { label: '30 días',days: 30 },
-  { label: 'Todo',   days: -1 },
-]
+const QUICK_DAYS = [0, 7, 30, -1]
 
 function toISO(d) { return d.toISOString().slice(0, 10) }
 
@@ -25,6 +21,7 @@ function KPI({ label, value, sub, color = '#4ade80' }) {
 }
 
 export default function AdminFinanzas() {
+  const { t } = useTranslation()
   const [pedidos, setPedidos] = useState([])
   const [loading, setLoading] = useState(true)
   const [quick, setQuick]     = useState(30)
@@ -67,8 +64,8 @@ export default function AdminFinanzas() {
       <div className="space-y-6 max-w-4xl">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold text-[#e8e8ed]">Finanzas</h1>
-            <p className="text-sm text-[#8e8e9a] mt-1">Pedidos entregados · desglose productos vs envío</p>
+            <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('adminFinanzas.title')}</h1>
+            <p className="text-sm text-[#8e8e9a] mt-1">{t('adminFinanzas.subtitle')}</p>
           </div>
           <ImportExportBar
             exportOnly
@@ -88,17 +85,20 @@ export default function AdminFinanzas() {
 
         {/* Período */}
         <div className="flex flex-wrap gap-2">
-          {QUICK.map((q) => (
-            <button key={q.days} onClick={() => applyQuick(q.days)}
-              className="px-3 py-1.5 rounded-lg text-sm transition-all"
-              style={{
-                backgroundColor: quick === q.days ? 'var(--hc-accent)' : 'color-mix(in srgb, var(--hc-text) 5%, transparent)',
-                color: quick === q.days ? 'white' : 'var(--hc-muted)',
-                border: `1px solid ${quick === q.days ? 'color-mix(in srgb, var(--hc-accent) 40%, transparent)' : 'var(--hc-border)'}`,
-              }}>
-              {q.label}
-            </button>
-          ))}
+          {QUICK_DAYS.map((days) => {
+            const labelKey = days === 0 ? 'today' : days === 7 ? 'days7' : days === 30 ? 'days30' : 'all'
+            return (
+              <button key={days} onClick={() => applyQuick(days)}
+                className="px-3 py-1.5 rounded-lg text-sm transition-all"
+                style={{
+                  backgroundColor: quick === days ? 'var(--hc-accent)' : 'color-mix(in srgb, var(--hc-text) 5%, transparent)',
+                  color: quick === days ? 'white' : 'var(--hc-muted)',
+                  border: `1px solid ${quick === days ? 'color-mix(in srgb, var(--hc-accent) 40%, transparent)' : 'var(--hc-border)'}`,
+                }}>
+                {t(`adminFinanzas.${labelKey}`)}
+              </button>
+            )
+          })}
           <input type="date" value={desde} onChange={e => { setDesde(e.target.value); setQuick(-1) }}
             className="h-9 px-3 rounded-xl text-sm text-[#e8e8ed] focus:outline-none"
             />
@@ -114,21 +114,21 @@ export default function AdminFinanzas() {
             {/* KPIs */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <KPI
-                label="Ingresos por productos"
+                label={t('adminFinanzas.kpiProducts')}
                 value={totalProductos}
-                sub={`${filtered.length} pedido${filtered.length !== 1 ? 's' : ''} entregado${filtered.length !== 1 ? 's' : ''}`}
+                sub={t('adminFinanzas.delivered', { count: filtered.length })}
                 color="#4ade80"
               />
               <KPI
-                label="Costos de envío (moto)"
+                label={t('adminFinanzas.kpiShipping')}
                 value={totalEnvio}
-                sub={`${filtered.filter(p => (p.costoEnvio ?? 0) > 0).length} envíos a domicilio`}
+                sub={t('adminFinanzas.shippingCount', { count: filtered.filter(p => (p.costoEnvio ?? 0) > 0).length })}
                 color="#f59e0b"
               />
               <KPI
-                label="Total cobrado"
+                label={t('adminFinanzas.kpiTotal')}
                 value={totalCobrado}
-                sub="Productos + envío"
+                sub={t('adminFinanzas.productsPlusShipping')}
                 color="#4f7cff"
               />
             </div>
@@ -136,12 +136,12 @@ export default function AdminFinanzas() {
             {/* Tabla */}
             <div>
               <h2 className="text-base font-semibold text-[#e8e8ed] mb-3">
-                Pedidos entregados <span className="text-[#8e8e9a] text-sm font-normal">({filtered.length})</span>
+                {t('adminFinanzas.tableTitle')} <span className="text-[#8e8e9a] text-sm font-normal">({filtered.length})</span>
               </h2>
 
               {filtered.length === 0 ? (
                 <div className="bg-[#111114] border border-white/8 rounded-2xl p-10 text-center text-[#8e8e9a]">
-                  No hay pedidos entregados en este período
+                  {t('adminFinanzas.noData')}
                 </div>
               ) : (
                 <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
@@ -149,7 +149,7 @@ export default function AdminFinanzas() {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-white/8">
-                          {['#', 'Cliente', 'Fecha', 'Productos', 'Envío (moto)', 'Total cobrado'].map(h => (
+                          {[t('adminFinanzas.colId'), t('adminFinanzas.colClient'), t('adminFinanzas.colDate'), t('adminFinanzas.colProducts'), t('adminFinanzas.colShipping'), t('adminFinanzas.colTotal')].map(h => (
                             <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-[#8e8e9a]">{h}</th>
                           ))}
                         </tr>
@@ -165,7 +165,7 @@ export default function AdminFinanzas() {
                               <td className="px-4 py-3 font-mono text-xs text-[#8e8e9a]">#{p.id}</td>
                               <td className="px-4 py-3 text-[#e8e8ed]">
                                 <p className="font-medium truncate max-w-[140px]">{cliente}</p>
-                                <p className="text-[11px] text-[#8e8e9a]">{esRetiro ? '🏪 Retiro' : '🚚 Domicilio'}</p>
+                                <p className="text-[11px] text-[#8e8e9a]">{esRetiro ? t('adminFinanzas.pickup') : t('adminFinanzas.delivery')}</p>
                               </td>
                               <td className="px-4 py-3 text-xs text-[#8e8e9a]">
                                 {p.fechaPedido ? formatDate(p.fechaPedido) : '—'}
@@ -191,7 +191,7 @@ export default function AdminFinanzas() {
                       <tfoot>
                         <tr style={{ borderTop: '2px solid var(--hc-border)' }}>
                           <td colSpan={3} className="px-4 py-3 text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">
-                            Totales del período
+                            {t('adminFinanzas.periodTotals')}
                           </td>
                           <td className="px-4 py-3 font-bold text-[#4ade80]">{formatPrice(totalProductos)}</td>
                           <td className="px-4 py-3 font-bold text-amber-400">{formatPrice(totalEnvio)}</td>

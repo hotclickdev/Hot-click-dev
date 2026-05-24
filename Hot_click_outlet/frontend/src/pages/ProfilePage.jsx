@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
@@ -12,17 +12,34 @@ import useAuthStore from '@/store/authStore'
 import { useToast } from '@/components/ui/Toast'
 import { orderService } from '@/services/orderService'
 import { authService } from '@/services/authService'
-import { formatDate, formatPrice, statusColor } from '@/utils/format'
+import { testimonioService } from '@/services/testimonioService'
+import { formatDate, formatPrice } from '@/utils/format'
+
+// ── Utilidades locales ────────────────────────────────────────────────────────
+
+function garantiaDias(fechaPedido) {
+  if (!fechaPedido) return null
+  const limite = new Date(fechaPedido)
+  limite.setDate(limite.getDate() + 40)
+  return Math.ceil((limite - new Date()) / 86400000)
+}
+
+function primerProducto(order) {
+  const items = order.items ?? []
+  if (items.length === 0) return 'Sin productos'
+  const nombre = items[0].nombreProducto ?? items[0].producto?.nombreProducto ?? 'Producto'
+  return items.length > 1 ? `${nombre} +${items.length - 1}` : nombre
+}
 
 export default function ProfilePage() {
   const navigate = useNavigate()
   const toast = useToast()
   const { t } = useTranslation()
   const { userId, userName, userEmail, userRole, logout, refreshToken } = useAuthStore()
-  const [orders, setOrders] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [twoFAEnabled, setTwoFAEnabled] = useState(false)
-  const [show2FASetup, setShow2FASetup] = useState(false)
+  const [orders, setOrders]               = useState([])
+  const [loading, setLoading]             = useState(true)
+  const [twoFAEnabled, setTwoFAEnabled]   = useState(false)
+  const [show2FASetup, setShow2FASetup]   = useState(false)
   const [showChangePassword, setShowChangePassword] = useState(false)
 
   useEffect(() => {
@@ -47,10 +64,18 @@ export default function ProfilePage() {
   }
 
   const roleLabel = { ADMIN_IT: 'Admin IT', ADMIN_CLIENTE: 'Admin Cliente', USUARIO_FINAL: 'Cliente' }
+  const recentOrders = orders.slice(0, 3)
 
   return (
     <MainLayout>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 space-y-5">
+
+        {/* Título de página */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--hc-text)' }}>
+            {t('profile.datosTitle')}
+          </h1>
+        </motion.div>
 
         {/* Header de perfil */}
         <motion.div
@@ -63,7 +88,7 @@ export default function ProfilePage() {
               {userName?.[0]?.toUpperCase() || '?'}
             </div>
             <div className="min-w-0">
-              <h1 className="text-xl font-bold text-[#e8e8ed] truncate">{userName || 'Usuario'}</h1>
+              <p className="text-xl font-bold text-[#e8e8ed] truncate">{userName || 'Usuario'}</p>
               <p className="text-sm text-[#8e8e9a] truncate">{userEmail}</p>
               <div className="flex items-center gap-2 mt-2">
                 <Badge variant="accent">{roleLabel[userRole] ?? userRole}</Badge>
@@ -76,26 +101,60 @@ export default function ProfilePage() {
           </Button>
         </motion.div>
 
-        {/* Mis pedidos */}
+        {/* Pedidos recientes */}
         <div
-          className="flex items-center justify-between p-5 rounded-2xl border cursor-pointer transition-all hover:bg-white/3"
+          className="rounded-2xl border overflow-hidden"
           style={{ backgroundColor: 'var(--hc-surface)', borderColor: 'var(--hc-border)' }}
-          onClick={() => navigate('/mis-pedidos')}
         >
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">📋</span>
-            <div>
-              <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>{t('profile.orders')}</p>
-              {loading ? (
-                <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>{t('profile.ordersLoading')}</p>
-              ) : (
-                <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-                  {orders.length > 0 ? t('profile.orderCount', { count: orders.length }) : t('profile.ordersNone')}
-                </p>
-              )}
-            </div>
+          <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--hc-border)' }}>
+            <h2 className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
+              📋 {t('profile.recentOrders')}
+            </h2>
+            <button
+              onClick={() => navigate('/mis-pedidos')}
+              className="text-xs font-semibold transition-colors"
+              style={{ color: 'var(--hc-accent)' }}
+            >
+              {t('profile.verTodos')} →
+            </button>
           </div>
-          <ChevronIcon />
+
+          {loading ? (
+            <div className="flex justify-center py-6"><Spinner /></div>
+          ) : recentOrders.length === 0 ? (
+            <div className="px-5 py-5 text-center">
+              <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>{t('profile.ordersNone')}</p>
+            </div>
+          ) : (
+            <div className="divide-y" style={{ borderColor: 'var(--hc-border)' }}>
+              {recentOrders.map((order) => {
+                const dias = garantiaDias(order.fechaPedido)
+                return (
+                  <div key={order.id} className="flex items-center gap-4 px-5 py-3.5">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate" style={{ color: 'var(--hc-text)' }}>
+                        {primerProducto(order)}
+                      </p>
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
+                        {formatDate(order.fechaPedido)}
+                      </p>
+                    </div>
+                    {dias !== null && dias > 0 ? (
+                      <span className="text-[11px] font-semibold px-2 py-1 rounded-lg shrink-0"
+                        style={{ backgroundColor: 'rgba(5,150,105,0.1)', color: '#059669' }}>
+                        🛡 {t('profile.warrantyDays', { count: dias })}
+                      </span>
+                    ) : dias !== null ? (
+                      <span className="text-[11px] px-2 py-1 rounded-lg shrink-0"
+                        style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>
+                        {t('profile.warrantyExpired')}
+                      </span>
+                    ) : null}
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         {/* Seguridad */}
@@ -107,7 +166,6 @@ export default function ProfilePage() {
             <h2 className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>{t('profile.security')}</h2>
           </div>
 
-          {/* Cambiar contraseña */}
           <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--hc-border)' }}>
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-white/6 flex items-center justify-center">
@@ -123,7 +181,6 @@ export default function ProfilePage() {
             </Button>
           </div>
 
-          {/* 2FA */}
           <div className="flex items-center justify-between px-5 py-4">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-white/6 flex items-center justify-center">
@@ -145,6 +202,10 @@ export default function ProfilePage() {
             </Button>
           </div>
         </div>
+
+        {/* Testimonios */}
+        <TestimonioSection />
+
       </div>
 
       <ChangePasswordModal
@@ -152,7 +213,6 @@ export default function ProfilePage() {
         onClose={() => setShowChangePassword(false)}
         refreshToken={refreshToken}
       />
-
       <TwoFAModal
         open={show2FASetup}
         onClose={() => setShow2FASetup(false)}
@@ -160,6 +220,151 @@ export default function ProfilePage() {
         onToggle={(val) => setTwoFAEnabled(val)}
       />
     </MainLayout>
+  )
+}
+
+// ── Sección: Dejar testimonio ─────────────────────────────────────────────────
+
+function TestimonioSection() {
+  const { t } = useTranslation()
+  const toast = useToast()
+  const fileRef = useRef(null)
+  const [comentario, setComentario] = useState('')
+  const [imagenUrl, setImagenUrl]   = useState(null)
+  const [preview, setPreview]       = useState(null)
+  const [uploading, setUploading]   = useState(false)
+  const [sending, setSending]       = useState(false)
+  const [done, setDone]             = useState(false)
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPreview(URL.createObjectURL(file))
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const { data } = await testimonioService.subirImagen(fd)
+      setImagenUrl(data?.data?.url ?? null)
+    } catch (err) {
+      const msg = err.response?.data?.message
+      toast({ message: typeof msg === 'string' ? msg : t('profile.testimonios.uploadError'), type: 'error' })
+      setPreview(null)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!comentario.trim()) return
+    setSending(true)
+    try {
+      await testimonioService.crear({ comentario, imagenUrl })
+      setDone(true)
+      setComentario('')
+      setImagenUrl(null)
+      setPreview(null)
+      toast({ message: t('profile.testimonios.success'), type: 'success' })
+    } catch (err) {
+      const msg = err.response?.data?.message
+      toast({ message: typeof msg === 'string' ? msg : t('profile.testimonios.error'), type: 'error' })
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <div
+      className="rounded-2xl border overflow-hidden"
+      style={{ backgroundColor: 'var(--hc-surface)', borderColor: 'var(--hc-border)' }}
+    >
+      <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--hc-border)' }}>
+        <h2 className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
+          ⭐ {t('profile.testimonios.title')}
+        </h2>
+        <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
+          {t('profile.testimonios.subtitle')}
+        </p>
+      </div>
+
+      {done ? (
+        <div className="px-5 py-6 text-center space-y-2">
+          <p className="text-2xl">🎉</p>
+          <p className="text-sm font-medium" style={{ color: '#059669' }}>{t('profile.testimonios.success')}</p>
+          <button className="text-xs" style={{ color: 'var(--hc-muted)' }} onClick={() => setDone(false)}>
+            {t('profile.testimonios.another')}
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--hc-muted)' }}>
+              {t('profile.testimonios.label')}
+            </label>
+            <textarea
+              value={comentario}
+              onChange={(e) => setComentario(e.target.value)}
+              maxLength={500}
+              rows={3}
+              placeholder={t('profile.testimonios.placeholder')}
+              required
+              className="w-full rounded-xl px-3 py-2.5 text-sm resize-none transition-colors"
+              style={{
+                backgroundColor: 'var(--hc-surface-2)',
+                border: '1px solid var(--hc-border)',
+                color: 'var(--hc-text)',
+                outline: 'none',
+              }}
+            />
+            <p className="text-[11px] mt-1 text-right" style={{ color: 'var(--hc-muted)' }}>
+              {comentario.length}/500
+            </p>
+          </div>
+
+          {/* Foto opcional */}
+          <div>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--hc-muted)' }}>
+              {t('profile.testimonios.imageLabel')}
+            </label>
+            {preview ? (
+              <div className="relative w-20 h-20">
+                <img src={preview} alt="preview" className="w-20 h-20 rounded-xl object-cover" />
+                {uploading && (
+                  <div className="absolute inset-0 rounded-xl flex items-center justify-center bg-black/50">
+                    <Spinner size="sm" />
+                  </div>
+                )}
+                {!uploading && (
+                  <button
+                    type="button"
+                    onClick={() => { setPreview(null); setImagenUrl(null) }}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
+                    style={{ backgroundColor: '#dc2626', color: '#fff' }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors"
+                style={{ border: '1px dashed var(--hc-border)', color: 'var(--hc-muted)' }}
+              >
+                📷 {t('profile.testimonios.addPhoto')}
+              </button>
+            )}
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+          </div>
+
+          <Button type="submit" loading={sending} disabled={uploading || !comentario.trim()} className="w-full">
+            {t('profile.testimonios.submit')}
+          </Button>
+        </form>
+      )}
+    </div>
   )
 }
 
@@ -200,40 +405,17 @@ function ChangePasswordModal({ open, onClose, refreshToken }) {
   return (
     <Modal open={open} onClose={() => { onClose(); reset() }} title={t('profile.changePassword')}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Input
-          label={t('profile.currentPassword')}
-          type="password"
-          value={actual}
-          onChange={(e) => setActual(e.target.value)}
-          required
-          autoFocus
-        />
-        <Input
-          label={t('profile.newPassword')}
-          type="password"
-          value={nueva}
-          onChange={(e) => setNueva(e.target.value)}
-          required
-          minLength={6}
-        />
-        <Input
-          label={t('profile.confirmPassword')}
-          type="password"
-          value={confirm}
-          onChange={(e) => setConfirm(e.target.value)}
-          required
-        />
+        <Input label={t('profile.currentPassword')} type="password" value={actual}
+          onChange={(e) => setActual(e.target.value)} required autoFocus />
+        <Input label={t('profile.newPassword')} type="password" value={nueva}
+          onChange={(e) => setNueva(e.target.value)} required minLength={6} />
+        <Input label={t('profile.confirmPassword')} type="password" value={confirm}
+          onChange={(e) => setConfirm(e.target.value)} required />
         {error && (
-          <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
-            {error}
-          </p>
+          <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{error}</p>
         )}
-        <p className="text-xs text-[#8e8e9a]">
-          {t('profile.passwordWarning')}
-        </p>
-        <Button type="submit" loading={loading} className="w-full">
-          {t('profile.updatePassword')}
-        </Button>
+        <p className="text-xs text-[#8e8e9a]">{t('profile.passwordWarning')}</p>
+        <Button type="submit" loading={loading} className="w-full">{t('profile.updatePassword')}</Button>
       </form>
     </Modal>
   )
@@ -257,8 +439,7 @@ function TwoFAModal({ open, onClose, enabled, onToggle }) {
   }, [open, enabled])
 
   const handleSetup = async () => {
-    setLoading(true)
-    setError('')
+    setLoading(true); setError('')
     try {
       const { data } = await authService.setup2FA()
       setQrUri(data?.qrUri ?? '')
@@ -266,45 +447,35 @@ function TwoFAModal({ open, onClose, enabled, onToggle }) {
     } catch (err) {
       const msg = err.response?.data?.message
       setError(typeof msg === 'string' && msg ? msg : t('profile.twoFASetupError'))
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
   const handleActivate = async (e) => {
     e.preventDefault()
     if (code.length !== 6) { setError(t('profile.twoFACodeInvalid')); return }
-    setLoading(true)
-    setError('')
+    setLoading(true); setError('')
     try {
       await authService.activate2FA(code)
       toast({ message: t('profile.twoFAActivated'), type: 'success' })
-      onToggle(true)
-      onClose()
+      onToggle(true); onClose()
     } catch (err) {
       const msg = err.response?.data?.message
       setError(typeof msg === 'string' && msg ? msg : t('profile.twoFACodeError'))
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
   const handleDisable = async (e) => {
     e.preventDefault()
     if (!contrasena || code.length !== 6) { setError(t('profile.twoFADisableRequired')); return }
-    setLoading(true)
-    setError('')
+    setLoading(true); setError('')
     try {
       await authService.disable2FA(contrasena, code)
       toast({ message: t('profile.twoFADeactivated'), type: 'info' })
-      onToggle(false)
-      onClose()
+      onToggle(false); onClose()
     } catch (err) {
       const msg = err.response?.data?.message
       setError(typeof msg === 'string' && msg ? msg : t('profile.twoFADisableError'))
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
   return (
@@ -312,73 +483,40 @@ function TwoFAModal({ open, onClose, enabled, onToggle }) {
       <AnimatePresence mode="wait">
         {step === 'info' && (
           <motion.div key="info" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-            <p className="text-sm text-[#8e8e9a]">
-              {t('profile.twoFASetupInfo')}
-            </p>
+            <p className="text-sm text-[#8e8e9a]">{t('profile.twoFASetupInfo')}</p>
             {error && <p className="text-sm text-red-400">{error}</p>}
-            <Button className="w-full" loading={loading} onClick={handleSetup}>
-              {t('profile.twoFASetupBtn')}
-            </Button>
+            <Button className="w-full" loading={loading} onClick={handleSetup}>{t('profile.twoFASetupBtn')}</Button>
           </motion.div>
         )}
-
         {step === 'qr' && (
           <motion.div key="qr" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <form onSubmit={handleActivate} className="space-y-4">
-              <p className="text-sm text-[#8e8e9a]">
-                {t('profile.twoFAQrInfo')}
-              </p>
+              <p className="text-sm text-[#8e8e9a]">{t('profile.twoFAQrInfo')}</p>
               {qrUri && (
                 <div className="flex justify-center py-3">
                   <img
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrUri)}`}
-                    alt="QR 2FA"
-                    className="rounded-xl border border-white/10"
-                    width={180}
-                    height={180}
+                    alt="QR 2FA" className="rounded-xl border border-white/10" width={180} height={180}
                   />
                 </div>
               )}
-              <Input
-                label={t('profile.twoFACodeLabel')}
-                value={code}
+              <Input label={t('profile.twoFACodeLabel')} value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                maxLength={6}
-                inputMode="numeric"
-                placeholder="000000"
-                required
-              />
+                maxLength={6} inputMode="numeric" placeholder="000000" required />
               {error && <p className="text-sm text-red-400">{error}</p>}
-              <Button type="submit" loading={loading} className="w-full">
-                {t('profile.twoFAActivateBtn')}
-              </Button>
+              <Button type="submit" loading={loading} className="w-full">{t('profile.twoFAActivateBtn')}</Button>
             </form>
           </motion.div>
         )}
-
         {step === 'disable' && (
           <motion.div key="disable" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <form onSubmit={handleDisable} className="space-y-4">
-              <p className="text-sm text-[#8e8e9a]">
-                {t('profile.twoFADisableInfo')}
-              </p>
-              <Input
-                label={t('profile.passwordLabel')}
-                type="password"
-                value={contrasena}
-                onChange={(e) => setCont(e.target.value)}
-                required
-                autoFocus
-              />
-              <Input
-                label={t('profile.twoFAAuthCode')}
-                value={code}
+              <p className="text-sm text-[#8e8e9a]">{t('profile.twoFADisableInfo')}</p>
+              <Input label={t('profile.passwordLabel')} type="password" value={contrasena}
+                onChange={(e) => setCont(e.target.value)} required autoFocus />
+              <Input label={t('profile.twoFAAuthCode')} value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                maxLength={6}
-                inputMode="numeric"
-                placeholder="000000"
-                required
-              />
+                maxLength={6} inputMode="numeric" placeholder="000000" required />
               {error && <p className="text-sm text-red-400">{error}</p>}
               <Button type="submit" loading={loading} variant="danger" className="w-full">
                 {t('profile.twoFADeactivateBtn')}
@@ -392,14 +530,6 @@ function TwoFAModal({ open, onClose, enabled, onToggle }) {
 }
 
 // ── Iconos ────────────────────────────────────────────────────────────────────
-
-function ChevronIcon() {
-  return (
-    <svg className="w-4 h-4" style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-    </svg>
-  )
-}
 
 function LockIcon() {
   return (

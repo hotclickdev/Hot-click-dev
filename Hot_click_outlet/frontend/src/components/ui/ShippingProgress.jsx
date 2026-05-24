@@ -1,9 +1,11 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { formatPrice } from '@/utils/format'
+import { useTranslation } from 'react-i18next'
 
 const SHIPPING_GOAL = 15000
 
 export default function ShippingProgress({ total, goal = SHIPPING_GOAL }) {
+  const { t } = useTranslation()
   const remaining = Math.max(0, goal - total)
   const progress = Math.min(1, total / goal)
   const achieved = remaining === 0
@@ -24,7 +26,7 @@ export default function ShippingProgress({ total, goal = SHIPPING_GOAL }) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </span>
-            <p className="text-xs font-semibold text-emerald-400">¡Envío gratis desbloqueado!</p>
+            <p className="text-xs font-semibold text-emerald-400">{t('shippingProgress.achieved')}</p>
           </motion.div>
         ) : (
           <motion.p
@@ -35,10 +37,7 @@ export default function ShippingProgress({ total, goal = SHIPPING_GOAL }) {
             className="text-xs"
             style={{ color: 'var(--hc-muted)' }}
           >
-            Te faltan{' '}
-            <span className="font-bold" style={{ color: 'var(--hc-text)' }}>{formatPrice(remaining)}</span>
-            {' '}para{' '}
-            <span className="font-semibold text-[#4f7cff]">envío gratis</span>
+            {t('shippingProgress.remaining', { amount: formatPrice(remaining) })}
           </motion.p>
         )}
       </AnimatePresence>

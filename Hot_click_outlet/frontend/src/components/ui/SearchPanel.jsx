@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import useUiStore from '@/store/uiStore'
 import { productService, normalizeProduct } from '@/services/productService'
 import { marcaService } from '@/services/marcaService'
@@ -37,6 +38,7 @@ function highlight(text, query) {
 }
 
 export default function SearchPanel() {
+  const { t } = useTranslation()
   const searchOpen = useUiStore((s) => s.searchOpen)
   const setSearchOpen = useUiStore((s) => s.setSearchOpen)
   const navigate = useNavigate()
@@ -198,7 +200,7 @@ export default function SearchPanel() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') viewAll() }}
-                  placeholder="Buscar productos, marcas, categorías..."
+                  placeholder={t('search.placeholder')}
                   className="flex-1 bg-transparent text-base outline-none placeholder:opacity-40"
                   style={{ color: 'var(--hc-text)' }}
                   autoComplete="off"
@@ -210,7 +212,7 @@ export default function SearchPanel() {
                     onClick={() => setQuery('')}
                     className="p-1 rounded-lg transition-colors hover:bg-white/8"
                     style={{ color: 'var(--hc-muted)' }}
-                    aria-label="Limpiar búsqueda"
+                    aria-label={t('search.clearSearch')}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -223,7 +225,7 @@ export default function SearchPanel() {
                   className="shrink-0 px-3 py-1.5 rounded-xl text-sm transition-colors hover:bg-white/8"
                   style={{ color: 'var(--hc-muted)' }}
                 >
-                  Cancelar
+                  {t('search.cancel')}
                 </button>
               </div>
 
@@ -235,9 +237,9 @@ export default function SearchPanel() {
                   <div className="p-4">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>
-                        Búsquedas recientes
+                        {t('search.recent')}
                       </span>
-                      <button onClick={clearRecent} className="text-xs text-[#4f7cff] hover:underline">Limpiar</button>
+                      <button onClick={clearRecent} className="text-xs text-[#4f7cff] hover:underline">{t('search.clearRecent')}</button>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {recent.map((s) => (
@@ -260,7 +262,7 @@ export default function SearchPanel() {
 
                 {!query && recent.length === 0 && !loading && (
                   <div className="py-12 text-center">
-                    <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>Escribe para buscar productos o marcas</p>
+                    <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>{t('search.typeToSearch')}</p>
                   </div>
                 )}
 
@@ -270,17 +272,17 @@ export default function SearchPanel() {
                     {!hasResults && !loading && (
                       <div className="py-12 text-center px-6">
                         <p className="font-semibold text-sm mb-1" style={{ color: 'var(--hc-text)' }}>
-                          Sin resultados para "{query}"
+                          {t('search.noResults')} "{query}"
                         </p>
                         <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-                          Intenta con otras palabras o revisa la ortografía
+                          {t('search.noResultsSub')}
                         </p>
                         <button
                           onClick={viewAll}
                           className="mt-4 px-5 py-2 rounded-xl text-sm border transition-colors hover:bg-white/5"
                           style={{ color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }}
                         >
-                          Ver todos los productos
+                          {t('search.viewAll')}
                         </button>
                       </div>
                     )}
@@ -290,7 +292,7 @@ export default function SearchPanel() {
                       <div>
                         <div className="px-4 pt-4 pb-2">
                           <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>
-                            Marca
+                            {t('search.brandSection')}
                           </span>
                         </div>
                         {brandResults.map((brand, i) => {
@@ -320,7 +322,7 @@ export default function SearchPanel() {
                                 </p>
                                 {count > 0 && (
                                   <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-                                    {count} producto{count !== 1 ? 's' : ''}
+                                    {count} {t('search.item', { count })}
                                   </p>
                                 )}
                               </div>
@@ -343,7 +345,7 @@ export default function SearchPanel() {
                       <div>
                         <div className="px-4 pt-4 pb-2 flex items-center justify-between">
                           <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>
-                            Productos
+                            {t('search.productsSection')}
                           </span>
                         </div>
 
@@ -380,7 +382,7 @@ export default function SearchPanel() {
                                 )}
                                 <span className={`text-[10px] font-medium flex items-center gap-1 ${product.stock === 0 ? 'text-red-400' : 'text-emerald-400'}`}>
                                   <span className={`w-1 h-1 rounded-full ${product.stock === 0 ? 'bg-red-400' : 'bg-emerald-400'}`} />
-                                  {product.stock === 0 ? 'Sin stock' : 'En stock'}
+                                  {product.stock === 0 ? t('search.outOfStock') : t('search.inStock')}
                                 </span>
                               </div>
                             </div>
@@ -397,7 +399,7 @@ export default function SearchPanel() {
                             className="w-full py-2.5 rounded-xl text-sm font-medium transition-colors hover:opacity-80"
                             style={{ background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 25%, transparent)' }}
                           >
-                            Ver todos los resultados para "{query}" →
+                            {t('search.viewAllFor')} "{query}" →
                           </button>
                         </div>
                       </div>
@@ -411,7 +413,7 @@ export default function SearchPanel() {
                           className="w-full py-2.5 rounded-xl text-sm font-medium transition-colors hover:opacity-80"
                           style={{ background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 25%, transparent)' }}
                         >
-                          Ver todos los productos →
+                          {t('search.viewAll')} →
                         </button>
                       </div>
                     )}

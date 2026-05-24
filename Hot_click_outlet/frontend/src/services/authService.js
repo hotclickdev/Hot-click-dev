@@ -10,8 +10,12 @@ export const authService = {
   logout: (refreshToken) =>
     api.post('/auth/logout', { refreshToken }),
 
-  verify2FA: (tempToken, code) =>
-    api.post('/auth/2fa/verify', { tempToken, code }),
+  verify2FA: (tempToken, code, recoveryCode) => {
+    const body = { tempToken }
+    if (recoveryCode) body.recoveryCode = recoveryCode
+    else body.code = code
+    return api.post('/auth/2fa/verify', body)
+  },
 
   register: (data) =>
     api.post('/auth/register', data),
@@ -45,4 +49,7 @@ export const authService = {
 
   get2FAStatus: () =>
     api.get('/auth/2fa/status'),
+
+  regenerateRecoveryCodes: (code) =>
+    api.post('/auth/2fa/recovery-codes/regenerate', { code }),
 }

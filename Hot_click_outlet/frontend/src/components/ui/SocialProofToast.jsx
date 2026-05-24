@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 
 const AUTO_DISMISS_MS = 5_000
 const MAX_VISIBLE     = 2   // never stack more than 2 at once
@@ -42,6 +43,7 @@ export default function SocialProofToast({ notification }) {
 // ── Individual toast item ────────────────────────────────────────────────────
 
 function ToastItem({ item, onDismiss }) {
+  const { t } = useTranslation()
   const shouldReduce = useReducedMotion()
 
   // Auto-dismiss
@@ -107,14 +109,14 @@ function ToastItem({ item, onDismiss }) {
         <p className="text-xs leading-snug" style={{ color: 'var(--hc-text)' }}>
           <span className="font-semibold">{buyer.nombre}</span>
           {' '}
-          <span style={{ color: 'var(--hc-muted)' }}>de {buyer.ciudad}</span>
+          <span style={{ color: 'var(--hc-muted)' }}>{t('socialProofToast.from')} {buyer.ciudad}</span>
           {' '}
           <span>{action.text}</span>
           {' '}
           <span className="font-medium truncate">{product.nombre}</span>
         </p>
         <p className="text-[10px] mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-          hace un momento
+          {t('socialProofToast.moment')}
         </p>
       </div>
 
@@ -122,7 +124,7 @@ function ToastItem({ item, onDismiss }) {
       <div className="shrink-0 flex flex-col items-center gap-1.5">
         <button
           onClick={onDismiss}
-          aria-label="Cerrar notificación"
+          aria-label={t('socialProofToast.closeNotif')}
           className="w-5 h-5 rounded-full flex items-center justify-center transition-colors"
           style={{ color: 'var(--hc-muted)' }}
         >

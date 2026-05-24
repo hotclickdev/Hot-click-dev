@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import useCartStore from '@/store/cartStore'
 import { formatPrice } from '@/utils/format'
 
@@ -12,6 +13,7 @@ const ENTRY_DELAY_MS = 12_000   // 12 s
 const BROWSE_DELAY_MS = 150_000 // 2.5 min
 
 export default function ExitIntentModal() {
+  const { t } = useTranslation()
   const [visible, setVisible] = useState(false)
   const items = useCartStore((s) => s.items)
   const total = useCartStore((s) => s.total)
@@ -124,12 +126,12 @@ export default function ExitIntentModal() {
               {/* Copy */}
               <div className="text-center mb-4">
                 <h3 id="exit-title" className="font-bold text-base mb-1.5" style={{ color: 'var(--hc-text)' }}>
-                  ¿Aún pensando?
+                  {t('exitIntent.title')}
                 </h3>
                 <p className="text-sm leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-                  Tu carrito sigue aquí con{' '}
+                  {t('exitIntent.cartHas')}{' '}
                   <strong style={{ color: 'var(--hc-text)' }}>
-                    {items.length} {items.length === 1 ? 'producto' : 'productos'}
+                    {items.length} {t('exitIntent.item', { count: items.length })}
                   </strong>.
                 </p>
               </div>
@@ -155,7 +157,7 @@ export default function ExitIntentModal() {
                 ))}
                 {items.length > 3 && (
                   <p className="text-center text-xs" style={{ color: 'var(--hc-muted)' }}>
-                    +{items.length - 3} producto{items.length - 3 !== 1 ? 's' : ''} más
+                    {t('exitIntent.more', { count: items.length - 3 })}
                   </p>
                 )}
               </div>
@@ -165,7 +167,7 @@ export default function ExitIntentModal() {
                 className="flex justify-between items-center py-3 mb-4 border-t border-b"
                 style={{ borderColor: 'var(--hc-border)' }}
               >
-                <span className="text-sm font-medium" style={{ color: 'var(--hc-muted)' }}>Total</span>
+                <span className="text-sm font-medium" style={{ color: 'var(--hc-muted)' }}>{t('exitIntent.total')}</span>
                 <span className="font-bold text-lg" style={{ color: 'var(--hc-text)' }}>{formatPrice(total())}</span>
               </div>
 
@@ -176,14 +178,14 @@ export default function ExitIntentModal() {
                   onClick={dismiss}
                   className="block w-full text-center py-3 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-semibold text-sm transition-all shadow-[0_0_20px_rgba(79,124,255,0.3)] hover:shadow-[0_0_32px_rgba(79,124,255,0.45)]"
                 >
-                  Finalizar compra →
+                  {t('exitIntent.checkout')}
                 </Link>
                 <button
                   onClick={dismiss}
                   className="w-full py-2.5 rounded-xl text-sm transition-colors hover:bg-white/5"
                   style={{ color: 'var(--hc-muted)' }}
                 >
-                  Seguir explorando
+                  {t('exitIntent.continue')}
                 </button>
               </div>
             </div>

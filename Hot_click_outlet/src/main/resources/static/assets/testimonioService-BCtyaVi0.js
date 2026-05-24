@@ -1,0 +1,1 @@
+import{t as e}from"./api-BwDzAlHh.js";var t={getPublicos:()=>e.get(`/testimonios/publicos`),getAdmin:()=>e.get(`/testimonios/admin`),subirImagen:t=>e.post(`/testimonios/imagen`,t),crear:t=>e.post(`/testimonios`,t),aprobar:t=>e.put(`/testimonios/${t}/aprobar`),rechazar:t=>e.put(`/testimonios/${t}/rechazar`)};export{t};

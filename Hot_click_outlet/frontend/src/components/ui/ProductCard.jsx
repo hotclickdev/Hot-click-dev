@@ -22,7 +22,7 @@ function ProductCard({ product, priority = false, index = 0 }) {
       onClick={() => navigate(`/productos/${product.id}`, { state: { product } })}
     >
       {/* ── Image ── */}
-      <div className="hc-product-img relative h-44 sm:h-56 flex items-center justify-center overflow-hidden">
+      <div className="hc-product-img relative h-36 sm:h-48 flex items-center justify-center overflow-hidden">
         {product.imagenUrl ? (
           <img
             src={product.imagenUrl}

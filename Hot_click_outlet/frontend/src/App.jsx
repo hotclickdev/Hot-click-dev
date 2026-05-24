@@ -47,6 +47,7 @@ const WishlistPage              = lazy(() => import('@/pages/WishlistPage'))
 const RecuperarCarritoPage      = lazy(() => import('@/pages/RecuperarCarritoPage'))
 const ServiciosHotPage          = lazy(() => import('@/pages/ServiciosHotPage'))
 const AdminSolicitudesServicio  = lazy(() => import('@/pages/admin/AdminSolicitudesServicio'))
+const AdminTestimonios          = lazy(() => import('@/pages/admin/AdminTestimonios'))
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -220,7 +221,8 @@ export default function App() {
               <Route path="/admin/pagos" element={<AdminRoute><AdminPagos /></AdminRoute>} />
               <Route path="/admin/marcas" element={<AdminRoute><AdminMarcas /></AdminRoute>} />
               <Route path="/admin/configuracion" element={<AdminRoute><AdminConfiguracion /></AdminRoute>} />
-              <Route path="/admin/servicios" element={<AdminRoute><AdminSolicitudesServicio /></AdminRoute>} />
+              <Route path="/admin/servicios"    element={<AdminRoute><AdminSolicitudesServicio /></AdminRoute>} />
+              <Route path="/admin/testimonios" element={<AdminRoute><AdminTestimonios /></AdminRoute>} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>

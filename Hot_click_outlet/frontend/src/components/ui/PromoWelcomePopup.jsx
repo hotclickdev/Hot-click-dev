@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import api from '@/services/api'
 
 const LS_KEY = 'hc-promo-seen'
@@ -20,6 +21,7 @@ function markSeen() {
 }
 
 export default function PromoWelcomePopup() {
+  const { t } = useTranslation()
   const [visible, setVisible]   = useState(false)
   const [email, setEmail]       = useState('')
   const [status, setStatus]     = useState('idle') // idle | loading | success | error
@@ -101,7 +103,7 @@ export default function PromoWelcomePopup() {
 
                 <div className="relative text-center">
                   <div className="text-3xl font-black text-white tracking-tight">17% OFF</div>
-                  <div className="text-xs font-semibold text-[#4f7cff] tracking-widest uppercase mt-0.5">en tu primera compra</div>
+                  <div className="text-xs font-semibold text-[#4f7cff] tracking-widest uppercase mt-0.5">{t('promo.firstPurchase')}</div>
                 </div>
 
                 <button
@@ -124,10 +126,10 @@ export default function PromoWelcomePopup() {
                   {(status === 'idle' || status === 'loading' || status === 'error') && (
                     <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                       <h3 id="promo-title" className="text-base font-bold mb-1" style={{ color: 'var(--hc-text)' }}>
-                        ¡Bienvenido a HOTCLICK!
+                        {t('promo.title')}
                       </h3>
                       <p className="text-sm mb-4" style={{ color: 'var(--hc-muted)' }}>
-                        Ingresá tu correo y te enviamos un código de descuento único e intransferible.
+                        {t('promo.subtitle')}
                       </p>
 
                       <form onSubmit={handleSubmit} className="space-y-3">
@@ -136,7 +138,7 @@ export default function PromoWelcomePopup() {
                             type="email"
                             value={email}
                             onChange={(e) => { setEmail(e.target.value); setStatus('idle'); setErrorMsg('') }}
-                            placeholder="tu@correo.com"
+                            placeholder={t('promo.emailPlaceholder')}
                             required
                             disabled={status === 'loading'}
                             className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
@@ -166,9 +168,9 @@ export default function PromoWelcomePopup() {
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                               </svg>
-                              Enviando...
+                              {t('promo.sending')}
                             </span>
-                          ) : 'Recibir mi cupón'}
+                          ) : t('promo.getCoupon')}
                         </motion.button>
                       </form>
 
@@ -177,7 +179,7 @@ export default function PromoWelcomePopup() {
                         className="w-full mt-2 py-2 rounded-xl text-xs transition-colors hover:bg-white/5"
                         style={{ color: 'var(--hc-muted)' }}
                       >
-                        No gracias
+                        {t('promo.noThanks')}
                       </button>
                     </motion.div>
                   )}
@@ -201,10 +203,10 @@ export default function PromoWelcomePopup() {
                       </div>
                       <div>
                         <h3 className="font-bold text-base mb-1" style={{ color: 'var(--hc-text)' }}>
-                          ¡Revisá tu correo!
+                          {t('promo.successTitle')}
                         </h3>
                         <p className="text-sm leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-                          Te enviamos tu código de <strong style={{ color: 'var(--hc-text)' }}>17% OFF</strong>. Ingresalo en el checkout al hacer tu primera compra.
+                          {t('promo.successSub')}
                         </p>
                       </div>
                       <motion.button
@@ -213,7 +215,7 @@ export default function PromoWelcomePopup() {
                         className="w-full py-3 rounded-xl font-semibold text-sm text-white"
                         style={{ background: '#4f7cff', boxShadow: '0 0 20px rgba(79,124,255,0.3)' }}
                       >
-                        Ver productos →
+                        {t('promo.viewProducts')}
                       </motion.button>
                     </motion.div>
                   )}

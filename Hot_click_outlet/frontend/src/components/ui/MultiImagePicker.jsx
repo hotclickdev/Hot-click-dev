@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { productService } from '@/services/productService'
+import { useTranslation } from 'react-i18next'
 
 const MAX_FOTOS = 10
 
@@ -13,6 +14,7 @@ async function uploadImagen(file) {
 }
 
 export default function MultiImagePicker({ imagenes = [], onChange }) {
+  const { t } = useTranslation()
   const [uploadingCount, setUploadingCount] = useState(0)
   const [error, setError] = useState('')
   const [dragging, setDragging] = useState(false)
@@ -20,9 +22,9 @@ export default function MultiImagePicker({ imagenes = [], onChange }) {
 
   const processFiles = async (fileList) => {
     const remaining = MAX_FOTOS - imagenes.length
-    if (remaining <= 0) { setError(`Máximo ${MAX_FOTOS} fotos`); return }
+    if (remaining <= 0) { setError(t('multiImagePicker.maxPhotos', { max: MAX_FOTOS })); return }
     const toUpload = Array.from(fileList).filter((f) => f.type.startsWith('image/')).slice(0, remaining)
-    if (toUpload.length === 0) { setError('Solo imágenes (PNG, JPG, WebP)'); return }
+    if (toUpload.length === 0) { setError(t('multiImagePicker.onlyImages')); return }
     setError('')
     setUploadingCount(toUpload.length)
     const results = await Promise.allSettled(
@@ -45,7 +47,7 @@ export default function MultiImagePicker({ imagenes = [], onChange }) {
   return (
     <div className="flex flex-col gap-2">
       <label className="text-sm font-medium text-[#e8e8ed]">
-        Fotos del producto
+        {t('multiImagePicker.label')}
         <span className="ml-2 text-xs text-[#8e8e9a]">{imagenes.length}/{MAX_FOTOS}</span>
       </label>
 
@@ -55,7 +57,7 @@ export default function MultiImagePicker({ imagenes = [], onChange }) {
             <div key={url + idx} className="relative group aspect-square rounded-xl overflow-hidden bg-[#1a1a1f] border border-white/8">
               <img src={url} alt={`foto ${idx + 1}`} className="w-full h-full object-cover" />
               {idx === 0 && (
-                <span className="absolute bottom-0 inset-x-0 text-center text-[9px] bg-[#4f7cff]/80 text-white py-0.5">Principal</span>
+                <span className="absolute bottom-0 inset-x-0 text-center text-[9px] bg-[#4f7cff]/80 text-white py-0.5">{t('multiImagePicker.principal')}</span>
               )}
               <button
                 type="button"
@@ -85,7 +87,7 @@ export default function MultiImagePicker({ imagenes = [], onChange }) {
           {uploadingCount > 0 ? (
             <>
               <span className="w-5 h-5 border-2 border-[#4f7cff]/30 border-t-[#4f7cff] rounded-full animate-spin" />
-              <span className="text-xs text-[#8e8e9a]">Subiendo {uploadingCount} foto{uploadingCount !== 1 ? 's' : ''}…</span>
+              <span className="text-xs text-[#8e8e9a]">{t('multiImagePicker.uploading', { count: uploadingCount })}</span>
             </>
           ) : (
             <>
@@ -93,10 +95,10 @@ export default function MultiImagePicker({ imagenes = [], onChange }) {
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
               </svg>
               <p className="text-sm text-[#8e8e9a]">
-                {imagenes.length === 0 ? 'Arrastrá fotos o ' : 'Agregar más — '}
-                <span className="text-[#4f7cff]">hacé clic</span>
+                {imagenes.length === 0 ? t('multiImagePicker.dropZone') : t('multiImagePicker.addMore') + ' — '}
+                {' '}<span className="text-[#4f7cff]">{t('multiImagePicker.browse')}</span>
               </p>
-              <p className="text-xs text-[#8e8e9a]/60">PNG, JPG, WebP — máx 5 MB c/u · hasta {MAX_FOTOS} fotos</p>
+              <p className="text-xs text-[#8e8e9a]/60">{t('multiImagePicker.dropzoneHint', { max: MAX_FOTOS })}</p>
             </>
           )}
           <input ref={inputRef} type="file" accept="image/*" multiple className="hidden"
@@ -106,7 +108,7 @@ export default function MultiImagePicker({ imagenes = [], onChange }) {
 
       {error && <p className="text-xs text-red-400">{error}</p>}
       {imagenes.length > 1 && (
-        <p className="text-xs text-[#8e8e9a]">La primera foto es la imagen principal del catálogo.</p>
+        <p className="text-xs text-[#8e8e9a]">{t('multiImagePicker.firstIsMain')}</p>
       )}
     </div>
   )

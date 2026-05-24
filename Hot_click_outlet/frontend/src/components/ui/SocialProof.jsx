@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 
 // Deterministic mock stats — same product always shows same numbers
 function getMockStats(id) {
@@ -12,6 +13,7 @@ function getMockStats(id) {
 }
 
 export default function SocialProof({ productId }) {
+  const { t } = useTranslation()
   const { stars, count, bought } = getMockStats(productId)
   const fullStars = Math.floor(stars)
   const hasHalf  = stars % 1 >= 0.3
@@ -20,7 +22,7 @@ export default function SocialProof({ productId }) {
     <div className="space-y-3">
       {/* Stars row */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-        <div className="flex items-center gap-0.5" aria-label={`Calificación: ${stars} de 5 estrellas`}>
+        <div className="flex items-center gap-0.5" aria-label={t('socialProof.ratingLabel', { stars })}>
           {[1, 2, 3, 4, 5].map((s) => (
             <StarIcon
               key={s}
@@ -31,13 +33,13 @@ export default function SocialProof({ productId }) {
         </div>
         <span className="font-bold text-sm" style={{ color: 'var(--hc-text)' }}>{stars}</span>
         <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-          ({count.toLocaleString('es-CR')} reseñas)
+          ({count.toLocaleString('es-CR')} {t('socialProof.reviews')})
         </span>
         <span className="flex items-center gap-1 text-xs text-emerald-400">
           <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
           </svg>
-          {bought.toLocaleString('es-CR')} compras
+          {bought.toLocaleString('es-CR')} {t('socialProof.purchases')}
         </span>
       </div>
 
@@ -45,14 +47,14 @@ export default function SocialProof({ productId }) {
       <div className="flex flex-wrap gap-2">
         {TRUST_BADGES.map((b) => (
           <motion.span
-            key={b.label}
+            key={b.key}
             whileHover={{ scale: 1.03 }}
             transition={{ type: 'spring', stiffness: 500, damping: 30 }}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium border"
             style={{ color: 'var(--hc-muted)', borderColor: 'var(--hc-border)', background: 'color-mix(in srgb, var(--hc-surface) 70%, transparent)' }}
           >
             <span className="text-xs">{b.icon}</span>
-            {b.label}
+            {t(b.key)}
           </motion.span>
         ))}
       </div>
@@ -61,10 +63,10 @@ export default function SocialProof({ productId }) {
 }
 
 const TRUST_BADGES = [
-  { icon: '🔒', label: 'Compra 100% segura' },
-  { icon: '↩', label: 'Garantía 40 días' },
-  { icon: '🚚', label: 'Envío Correos CR' },
-  { icon: '⭐', label: 'Clientes satisfechos' },
+  { icon: '🔒', key: 'socialProof.secure' },
+  { icon: '↩',  key: 'socialProof.warranty' },
+  { icon: '🚚', key: 'socialProof.shipping' },
+  { icon: '⭐', key: 'socialProof.satisfied' },
 ]
 
 function StarIcon({ filled, half }) {

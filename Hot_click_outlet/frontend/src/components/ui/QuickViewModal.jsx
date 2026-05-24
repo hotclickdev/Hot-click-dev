@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import useCartStore from '@/store/cartStore'
 import useWishlistStore from '@/store/wishlistStore'
 import { formatPrice, conditionLabel, conditionVariant } from '@/utils/format'
@@ -9,6 +10,7 @@ import { useToast } from '@/components/ui/Toast'
 import { analytics } from '@/utils/analytics'
 
 export default function QuickViewModal({ product, onClose }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [quantity, setQuantity] = useState(1)
   const [justAdded, setJustAdded] = useState(false)
@@ -33,7 +35,7 @@ export default function QuickViewModal({ product, onClose }) {
   const handleAdd = () => {
     if (!inStock || justAdded) return
     for (let i = 0; i < quantity; i++) addItem(product)
-    toast({ message: `${quantity > 1 ? `${quantity}× ` : ''}${product.nombre} añadido`, type: 'success' })
+    toast({ message: `${quantity > 1 ? `${quantity}× ` : ''}${product.nombre} ${t('quickView.addedToast')}`, type: 'success' })
     setJustAdded(true)
     addTimeout.current = setTimeout(() => setJustAdded(false), 1400)
   }
@@ -100,7 +102,7 @@ export default function QuickViewModal({ product, onClose }) {
                   onClick={onClose}
                   className="p-1.5 rounded-xl transition-colors shrink-0 hover:bg-white/8"
                   style={{ color: 'var(--hc-muted)' }}
-                  aria-label="Cerrar"
+                  aria-label={t('quickView.close')}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -114,7 +116,7 @@ export default function QuickViewModal({ product, onClose }) {
                 <div className="flex items-center gap-1.5">
                   <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${inStock ? 'bg-emerald-400' : 'bg-red-400'}`} />
                   <span className={`text-xs font-medium ${inStock ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {inStock ? `${product.stock} disponibles` : 'Sin stock'}
+                    {inStock ? t('quickView.available', { count: product.stock }) : t('quickView.outOfStock')}
                   </span>
                 </div>
               </div>
@@ -152,13 +154,13 @@ export default function QuickViewModal({ product, onClose }) {
                       borderColor: liked ? 'rgba(239,68,68,0.4)' : 'var(--hc-border)',
                       background: liked ? 'rgba(239,68,68,0.1)' : 'transparent',
                     }}
-                    aria-label={liked ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                    aria-label={liked ? t('quickView.removeWishlist') : t('quickView.addWishlist')}
                   >
                     <HeartIcon filled={liked} />
                   </motion.button>
 
                   <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-                    {liked ? 'En wishlist' : 'Guardar'}
+                    {liked ? t('quickView.inWishlist') : t('quickView.save')}
                   </span>
                 </div>
               )}
@@ -189,11 +191,11 @@ export default function QuickViewModal({ product, onClose }) {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
-                        Añadido
+                        {t('quickView.added')}
                       </motion.span>
                     ) : (
                       <motion.span key="add" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                        {inStock ? 'Añadir al carrito' : 'Sin stock'}
+                        {inStock ? t('quickView.addToCart') : t('quickView.outOfStock')}
                       </motion.span>
                     )}
                   </AnimatePresence>
@@ -204,7 +206,7 @@ export default function QuickViewModal({ product, onClose }) {
                   className="h-11 px-4 rounded-xl text-sm font-medium border transition-colors whitespace-nowrap hover:bg-white/5"
                   style={{ color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }}
                 >
-                  Ver detalle
+                  {t('quickView.viewDetail')}
                 </button>
               </div>
             </div>

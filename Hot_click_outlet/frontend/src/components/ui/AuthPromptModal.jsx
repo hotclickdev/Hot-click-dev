@@ -1,10 +1,12 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import useUiStore from '@/store/uiStore'
 import useCartStore from '@/store/cartStore'
 
 export default function AuthPromptModal() {
+  const { t } = useTranslation()
   const { authPromptOpen, setAuthPromptOpen } = useUiStore()
   const toWhatsAppMessage = useCartStore((s) => s.toWhatsAppMessage)
   const navigate = useNavigate()
@@ -63,7 +65,7 @@ export default function AuthPromptModal() {
                 onClick={() => setAuthPromptOpen(false)}
                 className="absolute top-4 right-4 p-1.5 rounded-xl transition-colors hover:bg-white/8"
                 style={{ color: 'var(--hc-muted)' }}
-                aria-label="Cerrar"
+                aria-label={t('authPrompt.close')}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -87,10 +89,10 @@ export default function AuthPromptModal() {
 
               {/* Copy */}
               <h2 className="text-xl font-bold text-center mb-2" style={{ color: 'var(--hc-text)' }}>
-                ¿Cómo querés continuar?
+                {t('authPrompt.title')}
               </h2>
               <p className="text-sm text-center leading-relaxed mb-6" style={{ color: 'var(--hc-muted)' }}>
-                Podés pagar sin cuenta o registrarte para guardar tu historial de pedidos.
+                {t('authPrompt.subtitle')}
               </p>
 
               {/* Actions */}
@@ -103,7 +105,7 @@ export default function AuthPromptModal() {
                   <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                   </svg>
-                  Continuar sin cuenta
+                  {t('authPrompt.guestCheckout')}
                 </button>
 
                 <div className="flex items-center gap-3">
@@ -116,14 +118,14 @@ export default function AuthPromptModal() {
                   onClick={() => go('/registro')}
                   className="hc-btn hc-btn-outline w-full h-12 rounded-2xl text-sm font-semibold"
                 >
-                  Crear cuenta gratis
+                  {t('authPrompt.createAccount')}
                 </button>
                 <button
                   onClick={() => go('/login')}
                   className="text-xs text-center transition-colors hover:underline"
                   style={{ color: 'var(--hc-muted)' }}
                 >
-                  Ya tengo cuenta — Iniciar sesión
+                  {t('authPrompt.hasAccount')}
                 </button>
 
                 <div className="flex items-center gap-3 my-1">
@@ -140,7 +142,7 @@ export default function AuthPromptModal() {
                   className="w-full h-12 rounded-2xl bg-[#25D366] hover:bg-[#1da851] text-white font-bold text-sm transition-all flex items-center justify-center gap-2.5 shadow-[0_0_16px_rgba(37,211,102,0.2)] hover:shadow-[0_0_24px_rgba(37,211,102,0.35)]"
                 >
                   <WhatsAppIcon />
-                  Pedir por WhatsApp
+                  {t('authPrompt.whatsapp')}
                 </button>
               </div>
             </div>

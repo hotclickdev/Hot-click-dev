@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { parseFile, exportCSV, exportExcel, downloadTemplate } from '@/utils/importExport'
+import { useTranslation } from 'react-i18next'
 
 /**
  * Barra de import/export reutilizable para páginas admin.
@@ -26,6 +27,7 @@ export default function ImportExportBar({
   exportOnly = false,
   label,
 }) {
+  const { t } = useTranslation()
   const fileRef     = useRef(null)
   const [modal, setModal]       = useState(false)  // preview modal
   const [preview, setPreview]   = useState([])
@@ -47,12 +49,12 @@ export default function ImportExportBar({
     setImportOk(false)
     try {
       const rows = await parseFile(file)
-      if (!rows.length) { setImportErr('El archivo está vacío o no tiene filas válidas.'); return }
+      if (!rows.length) { setImportErr(t('importExport.emptyFile')); return }
       const mapped = mapImportRow ? rows.map(mapImportRow) : rows
       setPreview(mapped)
       setModal(true)
     } catch {
-      setImportErr('No se pudo leer el archivo. Verificá que sea CSV o Excel válido.')
+      setImportErr(t('importExport.readError'))
     }
   }
 
@@ -65,7 +67,7 @@ export default function ImportExportBar({
       setImportOk(true)
       setTimeout(() => { setModal(false); setImportOk(false) }, 1200)
     } catch (err) {
-      setImportErr(err?.message ?? 'Error al importar los datos.')
+      setImportErr(err?.message ?? t('importExport.importError'))
     } finally {
       setImporting(false)
     }
@@ -91,7 +93,7 @@ export default function ImportExportBar({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
-              Importar
+              {t('importExport.import')}
             </button>
             <button
               onClick={handleTemplate}
@@ -102,7 +104,7 @@ export default function ImportExportBar({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              Plantilla
+              {t('importExport.template')}
             </button>
             <input
               ref={fileRef}
@@ -154,8 +156,8 @@ export default function ImportExportBar({
             {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-white/8">
               <div>
-                <h2 className="text-[#e8e8ed] font-semibold text-base">Vista previa de importación</h2>
-                <p className="text-[#8e8e9a] text-xs mt-0.5">{preview.length} fila{preview.length !== 1 ? 's' : ''} detectada{preview.length !== 1 ? 's' : ''}</p>
+                <h2 className="text-[#e8e8ed] font-semibold text-base">{t('importExport.previewTitle')}</h2>
+                <p className="text-[#8e8e9a] text-xs mt-0.5">{t('importExport.rows', { count: preview.length })}</p>
               </div>
               <button
                 onClick={() => { setModal(false); setImportErr('') }}
@@ -193,7 +195,7 @@ export default function ImportExportBar({
               </table>
               {preview.length > 50 && (
                 <p className="text-[#8e8e9a] text-xs mt-3 text-center">
-                  Mostrando las primeras 50 de {preview.length} filas
+                  {t('importExport.preview50', { total: preview.length })}
                 </p>
               )}
             </div>
@@ -203,10 +205,10 @@ export default function ImportExportBar({
               {importErr ? (
                 <p className="text-red-400 text-xs flex-1">{importErr}</p>
               ) : importOk ? (
-                <p className="text-[#4ade80] text-xs flex-1">Importación completada con éxito</p>
+                <p className="text-[#4ade80] text-xs flex-1">{t('importExport.success')}</p>
               ) : (
                 <p className="text-[#8e8e9a] text-xs flex-1">
-                  Revisá los datos antes de confirmar. Los registros se crearán en la base de datos.
+                  {t('importExport.previewNote')}
                 </p>
               )}
               <div className="flex gap-2">
@@ -214,14 +216,14 @@ export default function ImportExportBar({
                   onClick={() => { setModal(false); setImportErr('') }}
                   className="px-4 py-2 rounded-lg bg-white/6 hover:bg-white/10 text-[#e8e8ed] text-sm transition-colors"
                 >
-                  Cancelar
+                  {t('importExport.cancel')}
                 </button>
                 <button
                   onClick={handleConfirmImport}
                   disabled={importing || importOk || !onImport}
                   className="px-4 py-2 rounded-lg bg-[#4f7cff] hover:bg-[#3d6ae8] text-white text-sm font-medium transition-colors disabled:opacity-50"
                 >
-                  {importing ? 'Importando…' : importOk ? 'Listo ✓' : `Importar ${preview.length} registros`}
+                  {importing ? t('importExport.importing') : importOk ? t('importExport.ready') : t('importExport.confirmImport', { count: preview.length })}
                 </button>
               </div>
             </div>

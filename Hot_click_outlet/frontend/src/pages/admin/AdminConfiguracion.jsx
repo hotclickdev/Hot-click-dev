@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import AdminLayout from '@/layouts/AdminLayout'
 import { useToast } from '@/components/ui/Toast'
 import Spinner from '@/components/ui/Spinner'
 import api from '@/services/api'
+import { authService } from '@/services/authService'
 import useAuthStore from '@/store/authStore'
 import useUiStore from '@/store/uiStore'
+import QRCode from 'qrcode'
 
 /* ── Saved notifications prefs key ── */
 const NOTIF_KEY = 'hotclick-notif-prefs'
@@ -16,17 +19,18 @@ const defaultNotifPrefs = {
 }
 
 export default function AdminConfiguracion() {
+  const { t } = useTranslation()
   const toast  = useToast()
   const { userId, userEmail, userName, setUserName, refreshToken } = useAuthStore()
   const [section, setSection]   = useState('perfil')
   const [twoFAOn, setTwoFAOn]   = useState(false)
 
   const nav = [
-    { id: 'perfil',         label: 'Perfil',           icon: UserIcon },
-    { id: 'seguridad',      label: 'Seguridad & 2FA',  icon: ShieldIcon,  badge: !twoFAOn ? '!' : null },
-    { id: 'notificaciones', label: 'Notificaciones',   icon: BellIcon },
-    { id: 'apariencia',     label: 'Apariencia',       icon: PaletteIcon },
-    { id: 'sistema',        label: 'Sistema',          icon: CogIcon },
+    { id: 'perfil',         label: t('adminConfig.navPerfil'),         icon: UserIcon },
+    { id: 'seguridad',      label: t('adminConfig.navSeguridad'),      icon: ShieldIcon,  badge: !twoFAOn ? '!' : null },
+    { id: 'notificaciones', label: t('adminConfig.navNotificaciones'), icon: BellIcon },
+    { id: 'apariencia',     label: t('adminConfig.navApariencia'),     icon: PaletteIcon },
+    { id: 'sistema',        label: t('adminConfig.navSistema'),        icon: CogIcon },
   ]
 
   return (
@@ -35,8 +39,8 @@ export default function AdminConfiguracion() {
         {/* Page header */}
         <div className="mb-6">
           <h1 style={{ fontFamily: '"DM Sans", system-ui, sans-serif', fontWeight: 700 }}
-              className="text-2xl text-[#e8e8ed] tracking-tight">Configuración</h1>
-          <p className="text-sm text-[#8e8e9a] mt-0.5">Gestioná tu cuenta, seguridad y preferencias del sistema</p>
+              className="text-2xl text-[#e8e8ed] tracking-tight">{t('adminConfig.title')}</h1>
+          <p className="text-sm text-[#8e8e9a] mt-0.5">{t('adminConfig.subtitle')}</p>
         </div>
 
         <div className="flex gap-6 items-start">
@@ -110,6 +114,7 @@ export default function AdminConfiguracion() {
    SECCIÓN PERFIL
 ══════════════════════════════════════════════════════ */
 function SeccionPerfil({ userId, userEmail, userName, setUserName, toast }) {
+  const { t } = useTranslation()
   const [form, setForm] = useState({ nombre: '', apellidoPaterno: '', apellidoMaterno: '', telefono: '' })
   const [loading, setLoading] = useState(true)
   const [saving,  setSaving]  = useState(false)
@@ -127,7 +132,7 @@ function SeccionPerfil({ userId, userEmail, userName, setUserName, toast }) {
           telefono:        u.telefono        ?? '',
         })
       })
-      .catch(() => toast({ message: 'Error al cargar datos', type: 'error' }))
+      .catch(() => toast({ message: t('adminConfig.perfilErrorLoad'), type: 'error' }))
       .finally(() => setLoading(false))
   }, [userId])
 
@@ -135,16 +140,16 @@ function SeccionPerfil({ userId, userEmail, userName, setUserName, toast }) {
 
   const handleSave = async (e) => {
     e.preventDefault()
-    if (!form.nombre.trim()) { toast({ message: 'El nombre es requerido', type: 'error' }); return }
+    if (!form.nombre.trim()) { toast({ message: t('adminConfig.perfilErrorName'), type: 'error' }); return }
     setSaving(true)
     try {
       await api.put(`/usuarios/${userId}`, form)
       setUserName(form.nombre)
       setSaved(true)
-      toast({ message: 'Perfil actualizado correctamente', type: 'success' })
+      toast({ message: t('adminConfig.perfilSaved'), type: 'success' })
       setTimeout(() => setSaved(false), 2500)
     } catch (err) {
-      toast({ message: err.response?.data?.message ?? 'Error al guardar', type: 'error' })
+      toast({ message: err.response?.data?.message ?? t('adminConfig.perfilErrorSave'), type: 'error' })
     } finally { setSaving(false) }
   }
 
@@ -154,7 +159,7 @@ function SeccionPerfil({ userId, userEmail, userName, setUserName, toast }) {
 
   return (
     <div className="space-y-5">
-      <SectionHeader title="Información personal" desc="Tu nombre e información de contacto visible en el panel" />
+      <SectionHeader title={t('adminConfig.perfilTitle')} desc={t('adminConfig.perfilDesc')} />
 
       {/* Avatar row */}
       <Block>
@@ -170,7 +175,7 @@ function SeccionPerfil({ userId, userEmail, userName, setUserName, toast }) {
             <p className="text-xs text-[#8e8e9a] mt-0.5 font-mono">{userEmail}</p>
             <div className="flex items-center gap-1.5 mt-2">
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
-              <span className="text-[11px] text-[#8e8e9a]">Cuenta activa · Admin</span>
+              <span className="text-[11px] text-[#8e8e9a]">{t('adminConfig.perfilActive')}</span>
             </div>
           </div>
         </div>
@@ -180,34 +185,34 @@ function SeccionPerfil({ userId, userEmail, userName, setUserName, toast }) {
       <Block>
         <form onSubmit={handleSave} className="space-y-5">
           {/* Email readonly */}
-          <FormGroup label="Correo electrónico" hint="No se puede cambiar">
+          <FormGroup label={t('adminConfig.perfilEmailLabel')} hint={t('adminConfig.perfilEmailHint')}>
             <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white/3 border border-white/8 text-[#8e8e9a] text-sm font-mono">
               <MailIcon className="w-4 h-4 shrink-0 opacity-40" />
               {userEmail}
-              <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-[#8e8e9a]/60 uppercase tracking-wider">Solo lectura</span>
+              <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-[#8e8e9a]/60 uppercase tracking-wider">{t('adminConfig.perfilReadOnly')}</span>
             </div>
           </FormGroup>
 
           <Divider />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormGroup label="Nombre *">
-              <StyledInput value={form.nombre} onChange={set('nombre')} placeholder="Tu nombre" required />
+            <FormGroup label={t('adminConfig.perfilNameLabel')}>
+              <StyledInput value={form.nombre} onChange={set('nombre')} placeholder={t('adminConfig.perfilNamePh')} required />
             </FormGroup>
-            <FormGroup label="Apellido paterno">
-              <StyledInput value={form.apellidoPaterno} onChange={set('apellidoPaterno')} placeholder="Primer apellido" />
+            <FormGroup label={t('adminConfig.perfilLastName1')}>
+              <StyledInput value={form.apellidoPaterno} onChange={set('apellidoPaterno')} placeholder={t('adminConfig.perfilLastName1Ph')} />
             </FormGroup>
-            <FormGroup label="Apellido materno">
-              <StyledInput value={form.apellidoMaterno} onChange={set('apellidoMaterno')} placeholder="Segundo apellido" />
+            <FormGroup label={t('adminConfig.perfilLastName2')}>
+              <StyledInput value={form.apellidoMaterno} onChange={set('apellidoMaterno')} placeholder={t('adminConfig.perfilLastName2Ph')} />
             </FormGroup>
-            <FormGroup label="Teléfono">
-              <StyledInput value={form.telefono} onChange={set('telefono')} placeholder="+506 8888-8888" type="tel" />
+            <FormGroup label={t('adminConfig.perfilPhone')}>
+              <StyledInput value={form.telefono} onChange={set('telefono')} placeholder={t('adminConfig.perfilPhonePh')} type="tel" />
             </FormGroup>
           </div>
 
           <div className="flex items-center gap-3 pt-1">
             <SaveButton saving={saving} saved={saved} />
-            {saved && <span className="text-xs text-green-400 flex items-center gap-1"><CheckIcon className="w-3.5 h-3.5" />Guardado</span>}
+            {saved && <span className="text-xs text-green-400 flex items-center gap-1"><CheckIcon className="w-3.5 h-3.5" />{t('adminConfig.perfilSavedLabel')}</span>}
           </div>
         </form>
       </Block>
@@ -219,6 +224,7 @@ function SeccionPerfil({ userId, userEmail, userName, setUserName, toast }) {
    SECCIÓN SEGURIDAD
 ══════════════════════════════════════════════════════ */
 function SeccionSeguridad({ refreshToken, toast, onTwoFAChange }) {
+  const { t } = useTranslation()
   const [twoFAEnabled, setTwoFAEnabled] = useState(false)
   const [loadingStatus, setLoadingStatus] = useState(true)
 
@@ -234,19 +240,19 @@ function SeccionSeguridad({ refreshToken, toast, onTwoFAChange }) {
   }, [])
 
   const score = twoFAEnabled ? 2 : 1
-  const scoreLabel = ['', 'Media', 'Alta', 'Máxima'][score] ?? 'Media'
+  const scoreLabel = ['', t('adminConfig.secScoreMid'), t('adminConfig.secScoreHigh'), t('adminConfig.secScoreMax')][score] ?? t('adminConfig.secScoreMid')
   const scoreColor = score >= 2 ? '#22c55e' : '#f59e0b'
 
   return (
     <div className="space-y-5">
-      <SectionHeader title="Seguridad & 2FA" desc="Contraseña y autenticación de dos factores" />
+      <SectionHeader title={t('adminConfig.navSeguridad')} desc={t('adminConfig.pwdSubtitle')} />
 
       {/* Security score */}
       <Block>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold text-[#e8e8ed]">Puntuación de seguridad</p>
-            <p className="text-xs text-[#8e8e9a] mt-0.5">Basada en contraseña + 2FA</p>
+            <p className="text-sm font-semibold text-[#e8e8ed]">{t('adminConfig.secScore')}</p>
+            <p className="text-xs text-[#8e8e9a] mt-0.5">{t('adminConfig.secScoreBase')}</p>
           </div>
           <div className="text-right">
             <p className="text-lg font-bold" style={{ color: scoreColor }}>{scoreLabel}</p>
@@ -261,7 +267,7 @@ function SeccionSeguridad({ refreshToken, toast, onTwoFAChange }) {
         {!twoFAEnabled && (
           <div className="mt-3 flex items-center gap-2 px-3 py-2.5 rounded-xl bg-amber-500/8 border border-amber-500/20">
             <span className="text-amber-400 shrink-0"><AlertIcon className="w-4 h-4" /></span>
-            <p className="text-xs text-amber-300/90">Activá el 2FA para mejorar la seguridad de tu cuenta</p>
+            <p className="text-xs text-amber-300/90">{t('adminConfig.secEnable2FA')}</p>
           </div>
         )}
       </Block>
@@ -275,6 +281,7 @@ function SeccionSeguridad({ refreshToken, toast, onTwoFAChange }) {
 }
 
 function PanelCambiarContrasena({ refreshToken, toast }) {
+  const { t } = useTranslation()
   const [form, setForm] = useState({ contrasenaActual: '', nuevaContrasena: '', confirmar: '' })
   const [saving, setSaving] = useState(false)
   const [saved,  setSaved]  = useState(false)
@@ -282,12 +289,12 @@ function PanelCambiarContrasena({ refreshToken, toast }) {
   const [showNew, setShowNew] = useState(false)
   const set = (f) => (e) => setForm((p) => ({ ...p, [f]: e.target.value }))
 
-  const strength = passwordStrength(form.nuevaContrasena)
+  const strength = passwordStrength(form.nuevaContrasena, t)
 
   const handleSave = async (e) => {
     e.preventDefault()
-    if (form.nuevaContrasena.length < 6) { toast({ message: 'Mínimo 6 caracteres', type: 'error' }); return }
-    if (form.nuevaContrasena !== form.confirmar) { toast({ message: 'Las contraseñas no coinciden', type: 'error' }); return }
+    if (form.nuevaContrasena.length < 6) { toast({ message: t('adminConfig.pwdMin6'), type: 'error' }); return }
+    if (form.nuevaContrasena !== form.confirmar) { toast({ message: t('adminConfig.pwdNoMatch'), type: 'error' }); return }
     setSaving(true)
     try {
       await api.post('/auth/change-password', {
@@ -297,24 +304,24 @@ function PanelCambiarContrasena({ refreshToken, toast }) {
       })
       setForm({ contrasenaActual: '', nuevaContrasena: '', confirmar: '' })
       setSaved(true)
-      toast({ message: 'Contraseña actualizada · Otras sesiones cerradas', type: 'success' })
+      toast({ message: t('adminConfig.pwdUpdated'), type: 'success' })
       setTimeout(() => setSaved(false), 2500)
     } catch (err) {
-      toast({ message: err.response?.data?.message ?? 'Error al cambiar contraseña', type: 'error' })
+      toast({ message: err.response?.data?.message ?? t('adminConfig.pwdError'), type: 'error' })
     } finally { setSaving(false) }
   }
 
   return (
-    <Block label="Contraseña" sublabel="Cambiá tu contraseña de acceso al panel">
+    <Block label={t('adminConfig.pwdTitle')} sublabel={t('adminConfig.pwdSubtitle')}>
       <form onSubmit={handleSave} className="space-y-4">
-        <FormGroup label="Contraseña actual">
-          <PasswordInput value={form.contrasenaActual} onChange={set('contrasenaActual')} show={showCurrent} onToggle={() => setShowCurrent(p => !p)} placeholder="••••••••" required />
+        <FormGroup label={t('adminConfig.pwdCurrentLabel')}>
+          <PasswordInput value={form.contrasenaActual} onChange={set('contrasenaActual')} show={showCurrent} onToggle={() => setShowCurrent(p => !p)} placeholder={t('adminConfig.pwdCurrentPh')} required />
         </FormGroup>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <FormGroup label="Nueva contraseña">
-              <PasswordInput value={form.nuevaContrasena} onChange={set('nuevaContrasena')} show={showNew} onToggle={() => setShowNew(p => !p)} placeholder="Mínimo 6 caracteres" required />
+            <FormGroup label={t('adminConfig.pwdNewLabel')}>
+              <PasswordInput value={form.nuevaContrasena} onChange={set('nuevaContrasena')} show={showNew} onToggle={() => setShowNew(p => !p)} placeholder={t('adminConfig.pwdNewPh')} required />
             </FormGroup>
             {form.nuevaContrasena && (
               <div className="space-y-1">
@@ -328,15 +335,15 @@ function PanelCambiarContrasena({ refreshToken, toast }) {
               </div>
             )}
           </div>
-          <FormGroup label="Confirmar contraseña">
-            <PasswordInput value={form.confirmar} onChange={set('confirmar')} show={showNew} onToggle={() => setShowNew(p => !p)} placeholder="Repetí la contraseña" required
+          <FormGroup label={t('adminConfig.pwdConfirmLabel')}>
+            <PasswordInput value={form.confirmar} onChange={set('confirmar')} show={showNew} onToggle={() => setShowNew(p => !p)} placeholder={t('adminConfig.pwdConfirmPh')} required
               error={form.confirmar && form.confirmar !== form.nuevaContrasena} />
           </FormGroup>
         </div>
 
         <div className="flex items-center gap-3">
-          <SaveButton saving={saving} saved={saved} label="Actualizar contraseña" />
-          {saved && <span className="text-xs text-green-400 flex items-center gap-1"><CheckIcon className="w-3.5 h-3.5" />Actualizada</span>}
+          <SaveButton saving={saving} saved={saved} label={t('adminConfig.pwdUpdateBtn')} />
+          {saved && <span className="text-xs text-green-400 flex items-center gap-1"><CheckIcon className="w-3.5 h-3.5" />{t('adminConfig.pwdUpdatedLabel')}</span>}
         </div>
       </form>
     </Block>
@@ -344,14 +351,26 @@ function PanelCambiarContrasena({ refreshToken, toast }) {
 }
 
 function Panel2FA({ enabled, loading, toast, onEnabled, onDisabled }) {
-  const [step, setStep]     = useState('idle')   // idle | setup | disable
-  const [qrData, setQrData] = useState(null)
-  const [code, setCode]     = useState(['','','','','',''])
+  const { t } = useTranslation()
+  const [step, setStep]         = useState('idle') // idle | setup | disable | regen
+  const [qrData, setQrData]     = useState(null)
+  const [qrDataUrl, setQrDataUrl] = useState(null)
+  const [code, setCode]         = useState(['','','','','',''])
   const [password, setPassword] = useState('')
   const [working, setWorking]   = useState(false)
+  const [recoveryCodes, setRecoveryCodes] = useState(null) // shown in modal after activate/regen
+  const [copiedAll, setCopiedAll] = useState(false)
   const inputRefs = useRef([])
 
   const codeStr = code.join('')
+
+  // Generate QR data URL client-side when qrData changes
+  useEffect(() => {
+    if (!qrData?.qrUri) { setQrDataUrl(null); return }
+    QRCode.toDataURL(qrData.qrUri, { width: 160, margin: 1, color: { dark: '#000000', light: '#ffffff' } })
+      .then(url => setQrDataUrl(url))
+      .catch(() => setQrDataUrl(null))
+  }, [qrData])
 
   const handleDigit = (i, val) => {
     const digit = val.replace(/\D/g, '').slice(-1)
@@ -382,27 +401,29 @@ function Panel2FA({ enabled, loading, toast, onEnabled, onDisabled }) {
       setStep('setup')
       resetCode()
     } catch (err) {
-      toast({ message: err.response?.data?.message ?? 'Error al iniciar configuración', type: 'error' })
+      toast({ message: err.response?.data?.message ?? t('adminConfig.tfaErrorInit'), type: 'error' })
     } finally { setWorking(false) }
   }
 
   const activate = async () => {
-    if (codeStr.length !== 6) { toast({ message: 'Ingresá los 6 dígitos', type: 'error' }); return }
+    if (codeStr.length !== 6) { toast({ message: t('adminConfig.tfaEnterCode'), type: 'error' }); return }
     setWorking(true)
     try {
-      await api.post('/auth/2fa/activate', { code: codeStr })
+      const { data } = await api.post('/auth/2fa/activate', { code: codeStr })
       onEnabled()
       setStep('idle')
       setQrData(null)
+      setQrDataUrl(null)
       resetCode()
-      toast({ message: '✓ 2FA activado correctamente', type: 'success' })
+      setCopiedAll(false)
+      setRecoveryCodes(data.data?.recoveryCodes ?? null)
     } catch (err) {
-      toast({ message: err.response?.data?.message ?? 'Código incorrecto', type: 'error' })
+      toast({ message: err.response?.data?.message ?? t('adminConfig.tfaWrongCode'), type: 'error' })
     } finally { setWorking(false) }
   }
 
   const disable = async () => {
-    if (!password || codeStr.length !== 6) { toast({ message: 'Completá la contraseña y el código', type: 'error' }); return }
+    if (!password || codeStr.length !== 6) { toast({ message: t('adminConfig.tfaFillAll'), type: 'error' }); return }
     setWorking(true)
     try {
       await api.post('/auth/2fa/disable', { contrasena: password, code: codeStr })
@@ -410,161 +431,273 @@ function Panel2FA({ enabled, loading, toast, onEnabled, onDisabled }) {
       setStep('idle')
       setPassword('')
       resetCode()
-      toast({ message: '2FA desactivado', type: 'success' })
+      toast({ message: t('adminConfig.tfaDisabledToast'), type: 'success' })
     } catch (err) {
-      toast({ message: err.response?.data?.message ?? 'Error al desactivar', type: 'error' })
+      toast({ message: err.response?.data?.message ?? t('adminConfig.tfaErrorDisable'), type: 'error' })
     } finally { setWorking(false) }
   }
 
-  const cancel = () => { setStep('idle'); resetCode(); setPassword(''); setQrData(null) }
+  const regenerate = async () => {
+    if (codeStr.length !== 6) { toast({ message: t('adminConfig.tfaEnterTotp'), type: 'error' }); return }
+    setWorking(true)
+    try {
+      const { data } = await authService.regenerateRecoveryCodes(codeStr)
+      setStep('idle')
+      resetCode()
+      setCopiedAll(false)
+      setRecoveryCodes(data.data?.recoveryCodes ?? null)
+      toast({ message: t('adminConfig.tfaCodesRegen'), type: 'success' })
+    } catch (err) {
+      toast({ message: err.response?.data?.message ?? t('adminConfig.tfaErrorRegen'), type: 'error' })
+    } finally { setWorking(false) }
+  }
+
+  const cancel = () => { setStep('idle'); resetCode(); setPassword(''); setQrData(null); setQrDataUrl(null) }
+
+  const copyAllCodes = () => {
+    navigator.clipboard.writeText(recoveryCodes.join('\n'))
+    setCopiedAll(true)
+    toast({ message: t('adminConfig.tfaCopiedToast'), type: 'success' })
+  }
+
+  const downloadCodes = () => {
+    const blob = new Blob([
+      'HOTCLICK — Códigos de recuperación 2FA\n',
+      '========================================\n',
+      'Guardá estos códigos en un lugar seguro.\n',
+      'Cada código solo se puede usar una vez.\n\n',
+      recoveryCodes.join('\n'),
+      '\n',
+    ], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = 'hotclick-recovery-codes.txt'; a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // OTP digit inputs (shared between setup and disable/regen)
+  const OtpInputs = ({ accent = '#4f7cff' }) => (
+    <div className="flex gap-2" onPaste={handlePaste}>
+      {code.map((d, i) => (
+        <input key={i} ref={el => inputRefs.current[i] = el}
+          type="text" inputMode="numeric" maxLength={1}
+          value={d} onChange={e => handleDigit(i, e.target.value)} onKeyDown={e => handleKeyDown(i, e)}
+          className="w-10 h-11 rounded-xl text-center text-base font-bold font-mono outline-none transition-all"
+          style={{
+            background: d ? `${accent}20` : 'rgba(255,255,255,0.05)',
+            border: `1px solid ${d ? `${accent}60` : 'rgba(255,255,255,0.12)'}`,
+            color: '#e8e8ed',
+          }}
+        />
+      ))}
+    </div>
+  )
 
   return (
-    <Block label="Autenticación de dos factores" sublabel="Protección extra con Google Authenticator o Authy">
-      {loading ? <div className="flex justify-center py-6"><Spinner /></div> : (
-        <div className="space-y-4">
-          {/* Status row */}
-          <div className="flex items-center justify-between p-3.5 rounded-xl"
-               style={{ background: enabled ? 'rgba(34,197,94,0.08)' : 'rgba(245,158,11,0.08)', border: `1px solid ${enabled ? 'rgba(34,197,94,0.2)' : 'rgba(245,158,11,0.2)'}` }}>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-                   style={{ background: enabled ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)' }}>
-                {enabled ? <LockIcon className="w-4 h-4 text-green-400" /> : <AlertIcon className="w-4 h-4 text-amber-400" />}
+    <>
+      <Block label={t('adminConfig.tfaTitle')} sublabel={t('adminConfig.tfaSubtitle')}>
+        {loading ? <div className="flex justify-center py-6"><Spinner /></div> : (
+          <div className="space-y-4">
+            {/* Status row */}
+            <div className="flex items-center justify-between p-3.5 rounded-xl"
+                 style={{ background: enabled ? 'rgba(34,197,94,0.08)' : 'rgba(245,158,11,0.08)', border: `1px solid ${enabled ? 'rgba(34,197,94,0.2)' : 'rgba(245,158,11,0.2)'}` }}>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+                     style={{ background: enabled ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)' }}>
+                  {enabled ? <LockIcon className="w-4 h-4 text-green-400" /> : <AlertIcon className="w-4 h-4 text-amber-400" />}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: enabled ? '#4ade80' : '#fbbf24' }}>
+                    {enabled ? t('adminConfig.tfaEnabledStatus') : t('adminConfig.tfaDisabledStatus')}
+                  </p>
+                  <p className="text-xs text-[#8e8e9a] mt-0.5">
+                    {enabled ? t('adminConfig.tfaProtected') : t('adminConfig.tfaRecommend')}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-semibold" style={{ color: enabled ? '#4ade80' : '#fbbf24' }}>
-                  2FA {enabled ? 'activado' : 'desactivado'}
-                </p>
-                <p className="text-xs text-[#8e8e9a] mt-0.5">
-                  {enabled ? 'Cuenta protegida con verificación en dos pasos' : 'Recomendado: activá el 2FA para mayor seguridad'}
-                </p>
-              </div>
+              {step === 'idle' && (
+                enabled
+                  ? <button onClick={() => setStep('disable')} className="text-xs px-3 py-1.5 rounded-lg border border-red-500/25 text-red-400 hover:bg-red-500/10 transition-colors">{t('adminConfig.tfaDeactivateBtn')}</button>
+                  : <button onClick={startSetup} disabled={working} className="text-xs px-3 py-1.5 rounded-lg bg-[#4f7cff] text-white hover:bg-[#4f7cff]/80 transition-colors disabled:opacity-50 flex items-center gap-1.5">
+                      {working ? <Spinner size="xs" /> : null} {t('adminConfig.tfaActivateBtn')}
+                    </button>
+              )}
             </div>
-            {step === 'idle' && (
-              enabled
-                ? <button onClick={() => setStep('disable')} className="text-xs px-3 py-1.5 rounded-lg border border-red-500/25 text-red-400 hover:bg-red-500/10 transition-colors">Desactivar</button>
-                : <button onClick={startSetup} disabled={working} className="text-xs px-3 py-1.5 rounded-lg bg-[#4f7cff] text-white hover:bg-[#4f7cff]/80 transition-colors disabled:opacity-50 flex items-center gap-1.5">
-                    {working ? <Spinner size="xs" /> : null} Activar 2FA
-                  </button>
-            )}
-          </div>
 
-          {/* Setup flow */}
-          {step === 'setup' && qrData && (
-            <div className="rounded-2xl p-4 space-y-4" style={{ background: 'rgba(79,124,255,0.06)', border: '1px solid rgba(79,124,255,0.18)' }}>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="w-5 h-5 rounded-full bg-[#4f7cff] text-white text-[10px] font-bold flex items-center justify-center">1</span>
-                <p className="text-sm font-semibold text-[#e8e8ed]">Escaneá el código QR</p>
+            {/* Recovery codes shortcut — only when enabled and idle */}
+            {enabled && step === 'idle' && (
+              <div className="flex items-center justify-between px-3.5 py-3 rounded-xl"
+                   style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <div className="flex items-center gap-3">
+                  <KeyIcon className="w-4 h-4 text-[#8e8e9a] shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-[#e8e8ed]">{t('adminConfig.tfaRecoveryCodes')}</p>
+                    <p className="text-xs text-[#8e8e9a] mt-0.5">{t('adminConfig.tfaRecoveryDesc')}</p>
+                  </div>
+                </div>
+                <button onClick={() => { setStep('regen'); resetCode() }}
+                  className="text-xs px-3 py-1.5 rounded-lg border border-white/10 text-[#8e8e9a] hover:text-white hover:bg-white/5 transition-colors">
+                  {t('adminConfig.tfaRegenBtn')}
+                </button>
               </div>
+            )}
 
-              <div className="flex flex-col sm:flex-row gap-5 items-start">
-                {/* QR */}
-                <div className="shrink-0 p-3 bg-white rounded-2xl shadow-xl">
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(qrData.qrUri)}&margin=0`}
-                    alt="Código QR 2FA"
-                    className="w-40 h-40 block"
-                  />
+            {/* Setup flow */}
+            {step === 'setup' && qrData && (
+              <div className="rounded-2xl p-4 space-y-4" style={{ background: 'rgba(79,124,255,0.06)', border: '1px solid rgba(79,124,255,0.18)' }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-5 h-5 rounded-full bg-[#4f7cff] text-white text-[10px] font-bold flex items-center justify-center">1</span>
+                  <p className="text-sm font-semibold text-[#e8e8ed]">{t('adminConfig.tfaStep1')}</p>
                 </div>
 
-                <div className="flex-1 space-y-3">
-                  <p className="text-xs text-[#8e8e9a]">Abrí <strong className="text-white">Google Authenticator</strong> o <strong className="text-white">Authy</strong> y escaneá el QR. Si no podés, ingresá la clave manual:</p>
+                <div className="flex flex-col sm:flex-row gap-5 items-start">
+                  <div className="shrink-0 p-3 bg-white rounded-2xl shadow-xl">
+                    {qrDataUrl
+                      ? <img src={qrDataUrl} alt="Código QR 2FA" className="w-40 h-40 block" />
+                      : <div className="w-40 h-40 flex items-center justify-center"><Spinner /></div>
+                    }
+                  </div>
 
-                  {/* Secret key */}
-                  <div className="p-3 rounded-xl" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    <p className="text-[10px] uppercase tracking-widest text-[#8e8e9a] mb-1.5">Clave de configuración</p>
+                  <div className="flex-1 space-y-3">
+                    <p className="text-xs text-[#8e8e9a]">{t('adminConfig.tfaStep2Desc')}</p>
+
+                    <div className="p-3 rounded-xl" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <p className="text-[10px] uppercase tracking-widest text-[#8e8e9a] mb-1.5">{t('adminConfig.tfaSetupKey')}</p>
+                      <div className="flex items-center gap-2">
+                        <code className="text-[13px] text-[#e8e8ed] font-mono tracking-widest break-all leading-relaxed flex-1">{qrData.secret}</code>
+                        <button type="button"
+                          onClick={() => { navigator.clipboard.writeText(qrData.secret); toast({ message: t('adminConfig.tfaKeyCopied'), type: 'success' }) }}
+                          className="shrink-0 p-1.5 rounded-lg transition-colors hover:bg-white/10" style={{ color: '#8e8e9a' }}>
+                          <CopyIcon className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
                     <div className="flex items-center gap-2">
-                      <code className="text-[13px] text-[#e8e8ed] font-mono tracking-widest break-all leading-relaxed flex-1">{qrData.secret}</code>
-                      <button
-                        type="button"
-                        onClick={() => { navigator.clipboard.writeText(qrData.secret); toast({ message: 'Clave copiada', type: 'success' }) }}
-                        className="shrink-0 p-1.5 rounded-lg transition-colors hover:bg-white/10"
-                        style={{ color: '#8e8e9a' }}
-                      >
-                        <CopyIcon className="w-3.5 h-3.5" />
-                      </button>
+                      <span className="w-5 h-5 rounded-full bg-[#4f7cff] text-white text-[10px] font-bold flex items-center justify-center shrink-0">2</span>
+                      <p className="text-xs text-[#8e8e9a]">{t('adminConfig.tfaStep2Label')}</p>
                     </div>
                   </div>
+                </div>
 
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-[#4f7cff] text-white text-[10px] font-bold flex items-center justify-center shrink-0">2</span>
-                    <p className="text-xs text-[#8e8e9a]">Ingresá el código de 6 dígitos que muestra la app:</p>
-                  </div>
+                <OtpInputs accent="#4f7cff" />
+
+                <div className="flex gap-2.5 pt-1">
+                  <button onClick={activate} disabled={codeStr.length !== 6 || working}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-[#4f7cff] text-white transition-all disabled:opacity-40 hover:bg-[#4f7cff]/80">
+                    {working ? <Spinner size="xs" /> : <CheckIcon className="w-4 h-4" />}
+                    {t('adminConfig.tfaActivateSubmit')}
+                  </button>
+                  <button onClick={cancel} className="px-4 py-2 rounded-xl text-sm text-[#8e8e9a] hover:text-white hover:bg-white/5 transition-colors">
+                    {t('adminConfig.tfaCancel')}
+                  </button>
                 </div>
               </div>
+            )}
 
-              {/* OTP boxes */}
-              <div className="flex gap-2 justify-center sm:justify-start" onPaste={handlePaste}>
-                {code.map((d, i) => (
-                  <input
-                    key={i}
-                    ref={el => inputRefs.current[i] = el}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={d}
-                    onChange={e => handleDigit(i, e.target.value)}
-                    onKeyDown={e => handleKeyDown(i, e)}
-                    className="w-11 h-12 rounded-xl text-center text-lg font-bold font-mono outline-none transition-all duration-150"
-                    style={{
-                      background: d ? 'rgba(79,124,255,0.15)' : 'rgba(255,255,255,0.05)',
-                      border: `1px solid ${d ? 'rgba(79,124,255,0.5)' : 'rgba(255,255,255,0.12)'}`,
-                      color: '#e8e8ed',
-                      boxShadow: d ? '0 0 0 3px rgba(79,124,255,0.12)' : 'none',
-                    }}
-                  />
-                ))}
+            {/* Disable flow */}
+            {step === 'disable' && (
+              <div className="rounded-2xl p-4 space-y-4" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.18)' }}>
+                <p className="text-sm font-semibold text-[#e8e8ed]">{t('adminConfig.tfaDisableTitle')}</p>
+                <p className="text-xs text-[#8e8e9a]">{t('adminConfig.tfaDisableDesc')}</p>
+                <FormGroup label={t('adminConfig.tfaCurrentPwd')}>
+                  <StyledInput type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder={t('adminConfig.pwdCurrentPh')} />
+                </FormGroup>
+                <div>
+                  <label className="text-xs font-medium text-[#8e8e9a] uppercase tracking-wider block mb-2">{t('adminConfig.tfaAuthCode')}</label>
+                  <OtpInputs accent="#ef4444" />
+                </div>
+                <div className="flex gap-2.5">
+                  <button onClick={disable} disabled={working || !password || codeStr.length !== 6}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-red-600 text-white hover:bg-red-500 transition-colors disabled:opacity-40">
+                    {working ? <Spinner size="xs" /> : null} {t('adminConfig.tfaDisableSubmit')}
+                  </button>
+                  <button onClick={cancel} className="px-4 py-2 rounded-xl text-sm text-[#8e8e9a] hover:text-white hover:bg-white/5 transition-colors">{t('adminConfig.tfaCancel')}</button>
+                </div>
               </div>
+            )}
 
-              <div className="flex gap-2.5 pt-1">
-                <button
-                  onClick={activate}
-                  disabled={codeStr.length !== 6 || working}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-[#4f7cff] text-white transition-all disabled:opacity-40 hover:bg-[#4f7cff]/80"
-                >
-                  {working ? <Spinner size="xs" /> : <CheckIcon className="w-4 h-4" />}
-                  Activar 2FA
-                </button>
-                <button onClick={cancel} className="px-4 py-2 rounded-xl text-sm text-[#8e8e9a] hover:text-white hover:bg-white/5 transition-colors">
-                  Cancelar
-                </button>
+            {/* Regenerate recovery codes flow */}
+            {step === 'regen' && (
+              <div className="rounded-2xl p-4 space-y-4" style={{ background: 'rgba(168,85,247,0.06)', border: '1px solid rgba(168,85,247,0.2)' }}>
+                <div className="flex items-center gap-2">
+                  <KeyIcon className="w-4 h-4 text-purple-400" />
+                  <p className="text-sm font-semibold text-[#e8e8ed]">{t('adminConfig.tfaRegenTitle')}</p>
+                </div>
+                <p className="text-xs text-[#8e8e9a]">{t('adminConfig.tfaRegenDesc')}</p>
+                <div>
+                  <label className="text-xs font-medium text-[#8e8e9a] uppercase tracking-wider block mb-2">{t('adminConfig.tfaAuthCode')}</label>
+                  <OtpInputs accent="#a855f7" />
+                </div>
+                <div className="flex gap-2.5">
+                  <button onClick={regenerate} disabled={working || codeStr.length !== 6}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all disabled:opacity-40"
+                    style={{ background: '#7c3aed', color: '#fff' }}>
+                    {working ? <Spinner size="xs" /> : <RefreshIcon className="w-4 h-4" />}
+                    {t('adminConfig.tfaRegenSubmit')}
+                  </button>
+                  <button onClick={cancel} className="px-4 py-2 rounded-xl text-sm text-[#8e8e9a] hover:text-white hover:bg-white/5 transition-colors">{t('adminConfig.tfaCancel')}</button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+        )}
+      </Block>
 
-          {/* Disable flow */}
-          {step === 'disable' && (
-            <div className="rounded-2xl p-4 space-y-4" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.18)' }}>
-              <p className="text-sm font-semibold text-[#e8e8ed]">Confirmar desactivación</p>
-              <p className="text-xs text-[#8e8e9a]">Ingresá tu contraseña y el código actual de tu app para desactivar el 2FA.</p>
-              <FormGroup label="Contraseña actual">
-                <StyledInput type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Tu contraseña" />
-              </FormGroup>
+      {/* Recovery codes modal */}
+      {recoveryCodes && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)' }}>
+          <div className="w-full max-w-md rounded-2xl overflow-hidden shadow-2xl" style={{ background: '#111114', border: '1px solid rgba(168,85,247,0.3)' }}>
+            <div className="px-6 pt-6 pb-4 flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0" style={{ background: 'rgba(168,85,247,0.15)' }}>
+                <KeyIcon className="w-6 h-6 text-purple-400" />
+              </div>
               <div>
-                <label className="text-xs font-medium text-[#8e8e9a] uppercase tracking-wider block mb-2">Código de autenticación</label>
-                <div className="flex gap-2" onPaste={handlePaste}>
-                  {code.map((d, i) => (
-                    <input key={i} ref={el => inputRefs.current[i] = el} type="text" inputMode="numeric" maxLength={1}
-                      value={d} onChange={e => handleDigit(i, e.target.value)} onKeyDown={e => handleKeyDown(i, e)}
-                      className="w-10 h-11 rounded-xl text-center text-base font-bold font-mono outline-none transition-all"
-                      style={{ background: d ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.05)', border: `1px solid ${d ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.12)'}`, color: '#e8e8ed' }}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div className="flex gap-2.5">
-                <button onClick={disable} disabled={working || !password || codeStr.length !== 6}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-red-600 text-white hover:bg-red-500 transition-colors disabled:opacity-40">
-                  {working ? <Spinner size="xs" /> : null} Desactivar 2FA
-                </button>
-                <button onClick={cancel} className="px-4 py-2 rounded-xl text-sm text-[#8e8e9a] hover:text-white hover:bg-white/5 transition-colors">
-                  Cancelar
-                </button>
+                <h3 className="text-base font-bold text-[#e8e8ed]">{t('adminConfig.tfaModalTitle')}</h3>
+                <p className="text-xs text-[#8e8e9a] mt-1 leading-relaxed">
+                  {t('adminConfig.tfaModalDesc')}
+                </p>
               </div>
             </div>
-          )}
+
+            <div className="mx-6 mb-4 p-4 rounded-xl space-y-1.5" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.07)' }}>
+              {recoveryCodes.map((c, i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <code className="text-sm font-mono tracking-widest text-[#e8e8ed]">{c}</code>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded text-[#8e8e9a]" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                    #{i + 1}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mx-6 mb-4 flex items-center gap-2 px-3 py-2.5 rounded-xl" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
+              <AlertIcon className="w-4 h-4 text-amber-400 shrink-0" />
+              <p className="text-xs text-amber-300/90">{t('adminConfig.tfaModalWarning')}</p>
+            </div>
+
+            <div className="px-6 pb-5 flex gap-2.5">
+              <button onClick={copyAllCodes}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all flex-1 justify-center"
+                style={{ background: copiedAll ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${copiedAll ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.1)'}`, color: copiedAll ? '#4ade80' : '#e8e8ed' }}>
+                {copiedAll ? <CheckIcon className="w-4 h-4" /> : <CopyIcon className="w-4 h-4" />}
+                {copiedAll ? t('adminConfig.tfaCopiedAll') : t('adminConfig.tfaCopyAll')}
+              </button>
+              <button onClick={downloadCodes}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all flex-1 justify-center"
+                style={{ background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.25)', color: '#c084fc' }}>
+                <DownloadIcon className="w-4 h-4" />
+                {t('adminConfig.tfaDownload')}
+              </button>
+              <button onClick={() => setRecoveryCodes(null)}
+                className="px-4 py-2 rounded-xl text-sm text-[#8e8e9a] hover:text-white hover:bg-white/5 transition-colors">
+                {t('adminConfig.tfaClose')}
+              </button>
+            </div>
+          </div>
         </div>
       )}
-    </Block>
+    </>
   )
 }
 
@@ -572,6 +705,7 @@ function Panel2FA({ enabled, loading, toast, onEnabled, onDisabled }) {
    SECCIÓN NOTIFICACIONES
 ══════════════════════════════════════════════════════ */
 function SeccionNotificaciones({ toast }) {
+  const { t } = useTranslation()
   const [prefs, setPrefs] = useState(() => {
     try { return { ...defaultNotifPrefs, ...JSON.parse(localStorage.getItem(NOTIF_KEY) || '{}') } }
     catch { return defaultNotifPrefs }
@@ -581,22 +715,22 @@ function SeccionNotificaciones({ toast }) {
     const next = { ...prefs, [key]: !prefs[key] }
     setPrefs(next)
     localStorage.setItem(NOTIF_KEY, JSON.stringify(next))
-    toast({ message: 'Preferencias guardadas', type: 'success' })
+    toast({ message: t('adminConfig.notifSaved'), type: 'success' })
   }
 
   const items = [
-    { key: 'emailPedidos',      icon: ShoppingIcon, title: 'Email: nuevo pedido',         desc: 'Recibí un email cada vez que se crea un pedido nuevo' },
-    { key: 'emailGuia',         icon: TruckIcon,    title: 'Email: guía asignada',         desc: 'Notificación al cliente cuando se asigna una guía de Correos CR' },
-    { key: 'emailFallido',      icon: AlertIcon,    title: 'Email: pago fallido',          desc: 'Alerta cuando un pago no se completa correctamente' },
-    { key: 'sonidoNuevoPedido', icon: BellIcon,     title: 'Sonido: nuevo pedido',         desc: 'Reproducir sonido en el navegador cuando llega un pedido' },
+    { key: 'emailPedidos',      icon: ShoppingIcon, titleKey: 'adminConfig.notifEmailOrders',  descKey: 'adminConfig.notifEmailOrdersDesc' },
+    { key: 'emailGuia',         icon: TruckIcon,    titleKey: 'adminConfig.notifEmailGuia',    descKey: 'adminConfig.notifEmailGuiaDesc' },
+    { key: 'emailFallido',      icon: AlertIcon,    titleKey: 'adminConfig.notifEmailFailed',  descKey: 'adminConfig.notifEmailFailedDesc' },
+    { key: 'sonidoNuevoPedido', icon: BellIcon,     titleKey: 'adminConfig.notifSoundNew',     descKey: 'adminConfig.notifSoundNewDesc' },
   ]
 
   return (
     <div className="space-y-5">
-      <SectionHeader title="Notificaciones" desc="Configurá qué alertas querés recibir del sistema" />
+      <SectionHeader title={t('adminConfig.notifTitle')} desc={t('adminConfig.notifDesc')} />
       <Block>
         <div className="space-y-1">
-          {items.map(({ key, icon: Icon, title, desc }, idx) => (
+          {items.map(({ key, icon: Icon, titleKey, descKey }, idx) => (
             <div key={key}>
               {idx > 0 && <Divider />}
               <div className="flex items-center gap-4 py-3">
@@ -604,8 +738,8 @@ function SeccionNotificaciones({ toast }) {
                   <Icon className="w-4 h-4 text-[#8e8e9a]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[#e8e8ed]">{title}</p>
-                  <p className="text-xs text-[#8e8e9a] mt-0.5">{desc}</p>
+                  <p className="text-sm font-medium text-[#e8e8ed]">{t(titleKey)}</p>
+                  <p className="text-xs text-[#8e8e9a] mt-0.5">{t(descKey)}</p>
                 </div>
                 <Toggle checked={prefs[key]} onChange={() => toggle(key)} />
               </div>
@@ -614,7 +748,7 @@ function SeccionNotificaciones({ toast }) {
         </div>
       </Block>
 
-      <Block label="WhatsApp de negocio" sublabel="Número para el botón de contacto rápido en el panel">
+      <Block label={t('adminConfig.notifWaTitle')} sublabel={t('adminConfig.notifWaSubtitle')}>
         <div className="flex items-center gap-3">
           <div className="flex-1">
             <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white/3 border border-white/8 text-[#8e8e9a] text-sm font-mono">
@@ -624,7 +758,7 @@ function SeccionNotificaciones({ toast }) {
             </div>
           </div>
         </div>
-        <p className="text-xs text-[#8e8e9a]/60 mt-2">Configurado en CLAUDE.md · Contactar al desarrollador para cambiarlo</p>
+        <p className="text-xs text-[#8e8e9a]/60 mt-2">{t('adminConfig.notifWaNote')}</p>
       </Block>
     </div>
   )
@@ -634,67 +768,68 @@ function SeccionNotificaciones({ toast }) {
    SECCIÓN APARIENCIA
 ══════════════════════════════════════════════════════ */
 function SeccionApariencia() {
+  const { t } = useTranslation()
   const { theme, setTheme, fontSize, setFontSize, highContrast, setHighContrast, reduceMotion, setReduceMotion } = useUiStore()
 
   const themes = [
-    { id: 'dark',  label: 'Oscuro', bg: '#0a0a0d', accent: '#4f7cff' },
-    { id: 'light', label: 'Claro',  bg: '#f5f5f5', accent: '#4f7cff' },
+    { id: 'dark',  labelKey: 'adminConfig.apThemeDark',  bg: '#0a0a0d', accent: '#4f7cff' },
+    { id: 'light', labelKey: 'adminConfig.apThemeLight', bg: '#f5f5f5', accent: '#4f7cff' },
   ]
 
   const sizes = [
-    { id: 'base', label: 'Normal' },
-    { id: 'lg',   label: 'Grande' },
-    { id: 'xl',   label: 'Extra grande' },
+    { id: 'base', labelKey: 'adminConfig.apFontNormal' },
+    { id: 'lg',   labelKey: 'adminConfig.apFontLarge' },
+    { id: 'xl',   labelKey: 'adminConfig.apFontXL' },
   ]
 
   return (
     <div className="space-y-5">
-      <SectionHeader title="Apariencia" desc="Personalizá el aspecto visual del panel de administración" />
+      <SectionHeader title={t('adminConfig.apTitle')} desc={t('adminConfig.apDesc')} />
 
       {/* Theme */}
-      <Block label="Tema de color" sublabel="Elegí entre el modo oscuro o claro">
+      <Block label={t('adminConfig.apThemeTitle')} sublabel={t('adminConfig.apThemeSubtitle')}>
         <div className="flex gap-3">
-          {themes.map(t => (
-            <button key={t.id} onClick={() => setTheme(t.id)}
+          {themes.map(th => (
+            <button key={th.id} onClick={() => setTheme(th.id)}
               className="flex-1 flex flex-col items-center gap-2 p-4 rounded-xl transition-all"
-              style={{ border: `1px solid ${theme === t.id ? '#4f7cff' : 'rgba(255,255,255,0.08)'}`, background: theme === t.id ? 'rgba(79,124,255,0.08)' : 'rgba(255,255,255,0.03)' }}>
-              <div className="w-12 h-8 rounded-lg border border-white/10 overflow-hidden relative" style={{ background: t.bg }}>
-                <div className="absolute top-1.5 left-1.5 w-3 h-1 rounded-sm" style={{ background: t.accent, opacity: 0.8 }} />
+              style={{ border: `1px solid ${theme === th.id ? '#4f7cff' : 'rgba(255,255,255,0.08)'}`, background: theme === th.id ? 'rgba(79,124,255,0.08)' : 'rgba(255,255,255,0.03)' }}>
+              <div className="w-12 h-8 rounded-lg border border-white/10 overflow-hidden relative" style={{ background: th.bg }}>
+                <div className="absolute top-1.5 left-1.5 w-3 h-1 rounded-sm" style={{ background: th.accent, opacity: 0.8 }} />
                 <div className="absolute bottom-1.5 left-1.5 right-1.5 h-1 rounded-sm bg-white/10" />
               </div>
-              <p className="text-xs font-medium" style={{ color: theme === t.id ? '#4f7cff' : '#8e8e9a' }}>{t.label}</p>
-              {theme === t.id && <CheckIcon className="w-3.5 h-3.5 text-[#4f7cff]" />}
+              <p className="text-xs font-medium" style={{ color: theme === th.id ? '#4f7cff' : '#8e8e9a' }}>{t(th.labelKey)}</p>
+              {theme === th.id && <CheckIcon className="w-3.5 h-3.5 text-[#4f7cff]" />}
             </button>
           ))}
         </div>
       </Block>
 
       {/* Font size */}
-      <Block label="Tamaño de texto" sublabel="Ajustá el tamaño del texto en el panel">
+      <Block label={t('adminConfig.apFontTitle')} sublabel={t('adminConfig.apFontSubtitle')}>
         <div className="flex gap-2">
           {sizes.map(s => (
             <button key={s.id} onClick={() => setFontSize(s.id)}
               className="flex-1 py-2 rounded-xl text-sm transition-all"
               style={{ border: `1px solid ${fontSize === s.id ? '#4f7cff' : 'rgba(255,255,255,0.08)'}`, background: fontSize === s.id ? 'rgba(79,124,255,0.1)' : 'rgba(255,255,255,0.03)', color: fontSize === s.id ? '#4f7cff' : '#8e8e9a', fontWeight: fontSize === s.id ? 600 : 400 }}>
-              {s.label}
+              {t(s.labelKey)}
             </button>
           ))}
         </div>
       </Block>
 
       {/* Accessibility toggles */}
-      <Block label="Accesibilidad">
+      <Block label={t('adminConfig.apAccessTitle')}>
         <div className="space-y-1">
           {[
-            { key: 'highContrast', label: 'Alto contraste', desc: 'Aumenta el contraste de colores para mejor legibilidad', value: highContrast, fn: setHighContrast },
-            { key: 'reduceMotion', label: 'Reducir animaciones', desc: 'Desactivá las transiciones y efectos de movimiento', value: reduceMotion, fn: setReduceMotion },
-          ].map(({ key, label, desc, value, fn }, idx) => (
+            { key: 'highContrast', labelKey: 'adminConfig.apHighContrast',   descKey: 'adminConfig.apHighContrastDesc',   value: highContrast, fn: setHighContrast },
+            { key: 'reduceMotion', labelKey: 'adminConfig.apReduceMotion',   descKey: 'adminConfig.apReduceMotionDesc',   value: reduceMotion, fn: setReduceMotion },
+          ].map(({ key, labelKey, descKey, value, fn }, idx) => (
             <div key={key}>
               {idx > 0 && <Divider />}
               <div className="flex items-center gap-4 py-3">
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-[#e8e8ed]">{label}</p>
-                  <p className="text-xs text-[#8e8e9a] mt-0.5">{desc}</p>
+                  <p className="text-sm font-medium text-[#e8e8ed]">{t(labelKey)}</p>
+                  <p className="text-xs text-[#8e8e9a] mt-0.5">{t(descKey)}</p>
                 </div>
                 <Toggle checked={value} onChange={() => fn(!value)} />
               </div>
@@ -710,6 +845,7 @@ function SeccionApariencia() {
    SECCIÓN SISTEMA
 ══════════════════════════════════════════════════════ */
 function SeccionSistema({ toast }) {
+  const { t } = useTranslation()
   const [clearing,  setClearing]  = useState(false)
   const [restoring, setRestoring] = useState(false)
   const [healthOk,  setHealthOk]  = useState(null)
@@ -723,24 +859,24 @@ function SeccionSistema({ toast }) {
     try {
       await api.get('/health')
       setHealthOk(true)
-      toast({ message: '✓ Servicio en línea y operativo', type: 'success' })
+      toast({ message: t('adminConfig.sysHealthOkToast'), type: 'success' })
     } catch {
       setHealthOk(false)
-      toast({ message: 'El servidor no respondió correctamente', type: 'error' })
+      toast({ message: t('adminConfig.sysHealthFailToast'), type: 'error' })
     } finally { setChecking(false) }
   }
 
   const clearLocalData = () => {
     const keep = ['hotclick-auth', 'hotclick-ui']
     Object.keys(localStorage).forEach(k => { if (!keep.includes(k)) localStorage.removeItem(k) })
-    toast({ message: 'Datos locales limpiados', type: 'success' })
+    toast({ message: t('adminConfig.sysLocalToast'), type: 'success' })
   }
 
   const restoreUI = () => {
     setRestoring(true)
     setTimeout(() => {
       localStorage.removeItem('hotclick-ui')
-      toast({ message: 'Interfaz restaurada · Recargá la página para ver los cambios', type: 'success' })
+      toast({ message: t('adminConfig.sysRestoreToast'), type: 'success' })
       setRestoring(false)
     }, 700)
   }
@@ -753,10 +889,10 @@ function SeccionSistema({ toast }) {
     setResetting(true)
     try {
       await api.post('/admin/reset-datos')
-      toast({ message: 'Base de datos restablecida. Todos los datos fueron eliminados.', type: 'success' })
+      toast({ message: t('adminConfig.sysResetToast'), type: 'success' })
       closeResetModal()
     } catch (err) {
-      toast({ message: err.response?.data?.message ?? 'Error al restablecer datos', type: 'error' })
+      toast({ message: err.response?.data?.message ?? t('adminConfig.sysResetError'), type: 'error' })
     } finally { setResetting(false) }
   }
 
@@ -764,28 +900,28 @@ function SeccionSistema({ toast }) {
     setClearing(true)
     try {
       await api.get('/marcas/publicas')
-      toast({ message: 'Caché del catálogo actualizado', type: 'success' })
-    } catch { toast({ message: 'Error al actualizar caché', type: 'error' }) }
+      toast({ message: t('adminConfig.sysCacheToast'), type: 'success' })
+    } catch { toast({ message: t('adminConfig.sysCacheError'), type: 'error' }) }
     finally { setClearing(false) }
   }
 
   return (
     <div className="space-y-5">
-      <SectionHeader title="Sistema" desc="Estado del servidor y herramientas de mantenimiento" />
+      <SectionHeader title={t('adminConfig.sysTitle')} desc={t('adminConfig.sysDesc')} />
 
       {/* System info */}
-      <Block label="Información de la plataforma">
+      <Block label={t('adminConfig.sysInfoTitle')}>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {[
-            { label: 'Backend',      value: 'Spring Boot 3.4', color: '#4f7cff' },
-            { label: 'Frontend',     value: 'React + Vite',    color: '#a78bfa' },
-            { label: 'Base de datos',value: 'Supabase (PG)',   color: '#34d399' },
-            { label: 'Deploy',       value: 'Render',          color: '#fb923c' },
-            { label: 'Pagos',        value: 'PayXpert/PayPal', color: '#f472b6' },
-            { label: 'Storage',      value: 'Supabase S3',     color: '#60a5fa' },
-          ].map(({ label, value, color }) => (
-            <div key={label} className="p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}>
-              <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#8e8e9a' }}>{label}</p>
+            { labelKey: 'adminConfig.sysBackend',  value: 'Spring Boot 3.4', color: '#4f7cff' },
+            { labelKey: 'adminConfig.sysFrontend', value: 'React + Vite',    color: '#a78bfa' },
+            { labelKey: 'adminConfig.sysDB',       value: 'Supabase (PG)',   color: '#34d399' },
+            { labelKey: 'adminConfig.sysDeploy',   value: 'Render',          color: '#fb923c' },
+            { labelKey: 'adminConfig.sysPayments', value: 'PayXpert/PayPal', color: '#f472b6' },
+            { labelKey: 'adminConfig.sysStorage',  value: 'Supabase S3',     color: '#60a5fa' },
+          ].map(({ labelKey, value, color }) => (
+            <div key={labelKey} className="p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#8e8e9a' }}>{t(labelKey)}</p>
               <p className="text-sm font-semibold" style={{ color }}>{value}</p>
             </div>
           ))}
@@ -793,31 +929,31 @@ function SeccionSistema({ toast }) {
       </Block>
 
       {/* Health check */}
-      <Block label="Estado del servidor" sublabel="Verificá que el backend esté respondiendo correctamente">
+      <Block label={t('adminConfig.sysHealthTitle')} sublabel={t('adminConfig.sysHealthSubtitle')}>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 flex-1">
             <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: healthOk === null ? '#8e8e9a' : healthOk ? '#22c55e' : '#ef4444' }} />
             <span className="text-sm" style={{ color: healthOk === null ? '#8e8e9a' : healthOk ? '#4ade80' : '#f87171' }}>
-              {healthOk === null ? 'Sin verificar' : healthOk ? 'En línea y operativo' : 'Sin respuesta'}
+              {healthOk === null ? t('adminConfig.sysHealthUnknown') : healthOk ? t('adminConfig.sysHealthOk') : t('adminConfig.sysHealthFail')}
             </span>
           </div>
           <button onClick={checkHealth} disabled={checking}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-all disabled:opacity-50"
             style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#e8e8ed' }}>
             {checking ? <Spinner size="xs" /> : <RefreshIcon className="w-4 h-4" />}
-            Verificar
+            {t('adminConfig.sysCheckBtn')}
           </button>
         </div>
       </Block>
 
       {/* Maintenance tools */}
-      <Block label="Herramientas de mantenimiento">
+      <Block label={t('adminConfig.sysMaintenanceTitle')}>
         <div className="space-y-1">
           {[
-            { icon: RefreshIcon, title: 'Actualizar caché del catálogo', desc: 'Fuerza la recarga de marcas y productos en caché', loading: clearing, action: forceRefreshCache, label: 'Actualizar' },
-            { icon: TrashLiteIcon, title: 'Limpiar datos locales',       desc: 'Elimina carrito, historial y datos temporales del navegador', loading: false, action: clearLocalData, label: 'Limpiar' },
-            { icon: RestoreIcon, title: 'Restaurar interfaz',            desc: 'Vuelve la UI al estado por defecto (tema, fuente, idioma)', loading: restoring, action: restoreUI, label: 'Restaurar' },
-          ].map(({ icon: Icon, title, desc, loading, action, label }, idx) => (
+            { icon: RefreshIcon,   titleKey: 'adminConfig.sysCacheTitle',   descKey: 'adminConfig.sysCacheDesc',   loading: clearing,  action: forceRefreshCache, labelKey: 'adminConfig.sysCacheBtn' },
+            { icon: TrashLiteIcon, titleKey: 'adminConfig.sysLocalTitle',   descKey: 'adminConfig.sysLocalDesc',   loading: false,     action: clearLocalData,    labelKey: 'adminConfig.sysLocalBtn' },
+            { icon: RestoreIcon,   titleKey: 'adminConfig.sysRestoreTitle', descKey: 'adminConfig.sysRestoreDesc', loading: restoring, action: restoreUI,          labelKey: 'adminConfig.sysRestoreBtn' },
+          ].map(({ icon: Icon, titleKey, descKey, loading, action, labelKey }, idx) => (
             <div key={title}>
               {idx > 0 && <Divider />}
               <div className="flex items-center gap-4 py-3">
@@ -825,14 +961,14 @@ function SeccionSistema({ toast }) {
                   <Icon className="w-4 h-4 text-[#8e8e9a]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[#e8e8ed]">{title}</p>
-                  <p className="text-xs text-[#8e8e9a] mt-0.5">{desc}</p>
+                  <p className="text-sm font-medium text-[#e8e8ed]">{t(titleKey)}</p>
+                  <p className="text-xs text-[#8e8e9a] mt-0.5">{t(descKey)}</p>
                 </div>
                 <button onClick={action} disabled={loading}
                   className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all disabled:opacity-50"
                   style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#e8e8ed' }}>
                   {loading ? <Spinner size="xs" /> : null}
-                  {label}
+                  {t(labelKey)}
                 </button>
               </div>
             </div>
@@ -845,8 +981,8 @@ function SeccionSistema({ toast }) {
         <div className="px-5 py-4 border-b flex items-center gap-2.5" style={{ borderColor: 'rgba(239,68,68,0.15)' }}>
           <SkullIcon className="w-4 h-4 text-red-500 shrink-0" />
           <div>
-            <p className="text-[13px] font-semibold text-red-400">Zona peligrosa</p>
-            <p className="text-xs text-[#8e8e9a] mt-0.5">Acciones irreversibles sobre los datos del sistema</p>
+            <p className="text-[13px] font-semibold text-red-400">{t('adminConfig.sysDangerTitle')}</p>
+            <p className="text-xs text-[#8e8e9a] mt-0.5">{t('adminConfig.sysDangerDesc')}</p>
           </div>
         </div>
         <div className="px-5 py-4">
@@ -855,11 +991,8 @@ function SeccionSistema({ toast }) {
               <TrashLiteIcon className="w-4 h-4 text-red-400" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[#e8e8ed]">Restablecer todos los datos</p>
-              <p className="text-xs text-[#8e8e9a] mt-1 leading-relaxed">
-                Elimina <strong className="text-[#e8e8ed]">permanentemente</strong> todos los pedidos, productos, marcas, categorías, pagos y registros de negocio.
-                La estructura de la base de datos se conserva. <strong className="text-red-400">Esta acción no se puede deshacer.</strong>
-              </p>
+              <p className="text-sm font-semibold text-[#e8e8ed]">{t('adminConfig.sysResetTitle')}</p>
+              <p className="text-xs text-[#8e8e9a] mt-1 leading-relaxed">{t('adminConfig.sysResetDesc')}</p>
             </div>
             <button
               onClick={openResetModal}
@@ -867,7 +1000,7 @@ function SeccionSistema({ toast }) {
               style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171' }}
             >
               <SkullIcon className="w-3.5 h-3.5" />
-              Restablecer
+              {t('adminConfig.sysResetBtn')}
             </button>
           </div>
         </div>
@@ -883,21 +1016,19 @@ function SeccionSistema({ toast }) {
                 <SkullIcon className="w-6 h-6 text-red-500" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-[#e8e8ed]">¿Restablecer todos los datos?</h3>
-                <p className="text-xs text-[#8e8e9a] mt-1 leading-relaxed">
-                  Esta acción eliminará permanentemente todos los datos de negocio. <strong className="text-red-400">No hay forma de recuperarlos.</strong>
-                </p>
+                <h3 className="text-base font-bold text-[#e8e8ed]">{t('adminConfig.sysModalTitle')}</h3>
+                <p className="text-xs text-[#8e8e9a] mt-1 leading-relaxed">{t('adminConfig.sysModalDesc')}</p>
               </div>
             </div>
 
             {/* Warning list */}
             <div className="mx-6 mb-4 p-3.5 rounded-xl space-y-2" style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.18)' }}>
               {[
-                'Todos los pedidos y pagos',
-                'Todos los productos, marcas y categorías',
-                'Carritos, cotizaciones y facturas',
-                'Historial de inventario y métricas',
-                'Publicaciones, testimonios y premios',
+                t('adminConfig.sysResetItem1'),
+                t('adminConfig.sysResetItem2'),
+                t('adminConfig.sysResetItem3'),
+                t('adminConfig.sysResetItem4'),
+                t('adminConfig.sysResetItem5'),
               ].map(item => (
                 <div key={item} className="flex items-center gap-2 text-xs text-red-300/80">
                   <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
@@ -907,7 +1038,7 @@ function SeccionSistema({ toast }) {
               <div className="pt-1 border-t border-red-500/15 mt-2">
                 <div className="flex items-center gap-2 text-xs text-green-400/70">
                   <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
-                  Se conservan usuarios, roles y estructura de tablas
+                  {t('adminConfig.sysResetKeep')}
                 </div>
               </div>
             </div>
@@ -915,7 +1046,7 @@ function SeccionSistema({ toast }) {
             {/* Confirmation input */}
             <div className="px-6 pb-2 space-y-2">
               <label className="text-xs font-medium uppercase tracking-wider" style={{ color: '#8e8e9a' }}>
-                Escribí <span className="font-bold text-red-400">ELIMINAR</span> para confirmar
+                {t('adminConfig.sysResetInputLabel')}
               </label>
               <StyledInput
                 value={resetInput}
@@ -940,7 +1071,7 @@ function SeccionSistema({ toast }) {
                 disabled={resetting}
                 className="px-4 py-2 rounded-xl text-sm text-[#8e8e9a] hover:text-white hover:bg-white/5 transition-colors disabled:opacity-40"
               >
-                Cancelar
+                {t('adminConfig.sysResetCancel')}
               </button>
               <button
                 onClick={handleReset}
@@ -949,7 +1080,7 @@ function SeccionSistema({ toast }) {
                 style={{ background: resetInput === 'ELIMINAR' ? '#dc2626' : 'rgba(239,68,68,0.2)', color: resetInput === 'ELIMINAR' ? '#fff' : '#f87171', boxShadow: resetInput === 'ELIMINAR' ? '0 2px 12px rgba(220,38,38,0.35)' : 'none' }}
               >
                 {resetting ? <Spinner size="xs" /> : <SkullIcon className="w-4 h-4" />}
-                {resetting ? 'Eliminando...' : 'Sí, eliminar todo'}
+                {resetting ? t('adminConfig.sysResetDeleting') : t('adminConfig.sysResetConfirm')}
               </button>
             </div>
           </div>
@@ -957,14 +1088,14 @@ function SeccionSistema({ toast }) {
       )}
 
       {/* External links */}
-      <Block label="Paneles externos">
+      <Block label={t('adminConfig.sysExternalTitle')}>
         <div className="grid grid-cols-2 gap-2.5">
           {[
-            { label: 'Supabase',  desc: 'DB & Storage',        color: '#3ecf8e', icon: DBIcon },
-            { label: 'Render',    desc: 'Servidor prod',       color: '#46e3b7', icon: ServerIcon },
-            { label: 'SendGrid',  desc: 'Email transaccional', color: '#1a82e2', icon: MailIcon },
-            { label: 'PayXpert',  desc: 'Pasarela de pagos',   color: '#a78bfa', icon: CardIcon },
-          ].map(({ label, desc, color, icon: Icon }) => (
+            { label: 'Supabase',  descKey: 'adminConfig.sysSupabaseDesc', color: '#3ecf8e', icon: DBIcon },
+            { label: 'Render',    descKey: 'adminConfig.sysRenderDesc',   color: '#46e3b7', icon: ServerIcon },
+            { label: 'SendGrid',  descKey: 'adminConfig.sysSendGridDesc', color: '#1a82e2', icon: MailIcon },
+            { label: 'PayXpert',  descKey: 'adminConfig.sysPayXpertDesc', color: '#a78bfa', icon: CardIcon },
+          ].map(({ label, descKey, color, icon: Icon }) => (
             <div key={label} className="flex items-center gap-2.5 p-3 rounded-xl cursor-pointer transition-all group"
                  style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}
                  onMouseEnter={e => e.currentTarget.style.borderColor = `${color}40`}
@@ -974,7 +1105,7 @@ function SeccionSistema({ toast }) {
               </div>
               <div>
                 <p className="text-sm font-semibold text-[#e8e8ed]">{label}</p>
-                <p className="text-[11px] text-[#8e8e9a]">{desc}</p>
+                <p className="text-[11px] text-[#8e8e9a]">{t(descKey)}</p>
               </div>
             </div>
           ))}
@@ -1062,7 +1193,9 @@ function Toggle({ checked, onChange }) {
   )
 }
 
-function SaveButton({ saving, saved, label = 'Guardar cambios' }) {
+function SaveButton({ saving, saved, label }) {
+  const { t } = useTranslation()
+  const defaultLabel = t('adminConfig.saveBtn')
   return (
     <button type="submit" disabled={saving || saved}
       className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 disabled:opacity-70"
@@ -1073,7 +1206,7 @@ function SaveButton({ saving, saved, label = 'Guardar cambios' }) {
         boxShadow: !saved ? '0 2px 12px rgba(79,124,255,0.25)' : 'none',
       }}>
       {saving ? <Spinner size="xs" /> : saved ? <CheckIcon className="w-4 h-4" /> : null}
-      {saved ? 'Guardado' : label}
+      {saved ? t('adminConfig.savedLabel') : (label ?? defaultLabel)}
     </button>
   )
 }
@@ -1090,16 +1223,21 @@ function LoadingSkeleton({ rows = 3 }) {
   )
 }
 
-function passwordStrength(pw) {
+function passwordStrength(pw, t) {
   if (!pw) return { score: 0, label: '', color: '#8e8e9a' }
   let s = 0
   if (pw.length >= 8)  s++
   if (/[A-Z]/.test(pw)) s++
   if (/[0-9]/.test(pw)) s++
   if (/[^a-zA-Z0-9]/.test(pw)) s++
-  const labels = ['Muy débil','Débil','Moderada','Fuerte']
+  const labels = [
+    t('adminConfig.pwdStrengthWeak'),
+    t('adminConfig.pwdStrengthFair'),
+    t('adminConfig.pwdStrengthGood'),
+    t('adminConfig.pwdStrengthStrong'),
+  ]
   const colors = ['#ef4444','#f59e0b','#3b82f6','#22c55e']
-  return { score: s, label: labels[s-1] ?? 'Muy débil', color: colors[s-1] ?? '#ef4444' }
+  return { score: s, label: labels[s-1] ?? labels[0], color: colors[s-1] ?? '#ef4444' }
 }
 
 /* ══════════════════════════════════════════════════════
@@ -1127,3 +1265,5 @@ function CardIcon(p)      { return <svg viewBox="0 0 24 24" {...sv} {...p}><rect
 function ShoppingIcon(p)  { return <svg viewBox="0 0 24 24" {...sv} {...p}><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg> }
 function TruckIcon(p)     { return <svg viewBox="0 0 24 24" {...sv} {...p}><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> }
 function SkullIcon(p)     { return <svg viewBox="0 0 24 24" {...sv} {...p}><path d="M12 2a9 9 0 00-9 9c0 3.07 1.54 5.78 3.9 7.43V21h10v-2.57A9 9 0 0012 2z"/><line x1="9" y1="17" x2="9" y2="21"/><line x1="15" y1="17" x2="15" y2="21"/><circle cx="9" cy="10" r="1.5" fill="currentColor" strokeWidth="0"/><circle cx="15" cy="10" r="1.5" fill="currentColor" strokeWidth="0"/></svg> }
+function KeyIcon(p)       { return <svg viewBox="0 0 24 24" {...sv} {...p}><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2l-9.6 9.6"/><path d="M15.5 7.5l3 3L22 7l-3-3"/></svg> }
+function DownloadIcon(p)  { return <svg viewBox="0 0 24 24" {...sv} {...p}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> }

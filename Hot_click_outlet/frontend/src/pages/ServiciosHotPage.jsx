@@ -1,31 +1,34 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import useAuthStore from '@/store/authStore'
 import { servicioService } from '@/services/servicioService'
 import { useQuery } from '@tanstack/react-query'
 
-const ESTADOS = {
-  PENDIENTE:    { label: 'Pendiente',     color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
-  EN_BUSQUEDA:  { label: 'En búsqueda',   color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
-  ENCONTRADO:   { label: 'Encontrado',    color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
-  NO_ENCONTRADO:{ label: 'No encontrado', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
-  CANCELADO:    { label: 'Cancelado',     color: '#6b7280', bg: 'rgba(107,114,128,0.12)' },
+const ESTADO_STYLES = {
+  PENDIENTE:    { color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+  EN_BUSQUEDA:  { color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+  ENCONTRADO:   { color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
+  NO_ENCONTRADO:{ color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
+  CANCELADO:    { color: '#6b7280', bg: 'rgba(107,114,128,0.12)' },
 }
 
 function EstadoBadge({ estado }) {
-  const cfg = ESTADOS[estado] || ESTADOS.PENDIENTE
+  const { t } = useTranslation()
+  const cfg = ESTADO_STYLES[estado] || ESTADO_STYLES.PENDIENTE
   return (
     <span className="px-2 py-0.5 rounded-full text-xs font-semibold"
       style={{ color: cfg.color, backgroundColor: cfg.bg }}>
-      {cfg.label}
+      {t(`serviciosPage.status.${estado}`, { defaultValue: estado })}
     </span>
   )
 }
 
 export default function ServiciosHotPage() {
+  const { t } = useTranslation()
   const { token, userName } = useAuthStore()
   const navigate = useNavigate()
 
@@ -63,7 +66,7 @@ export default function ServiciosHotPage() {
       }))
       setFotos(prev => [...prev, ...nuevas].slice(0, 3))
     } catch {
-      setError('Error al subir imagen. Máximo 10 MB por foto.')
+      setError(t('serviciosPage.uploadErrorFull'))
     } finally {
       setUploading(false)
       e.target.value = ''
@@ -76,8 +79,11 @@ export default function ServiciosHotPage() {
 
   const handleEnviar = async (e) => {
     e.preventDefault()
-    if (!form.descripcion.trim()) { setError('Describe qué producto estás buscando.'); return }
-    if (!token) { navigate('/login'); return }
+    if (!form.descripcion.trim()) { setError(t('serviciosPage.errorDescRequired')); return }
+    if (!token) {
+      if (!form.nombreContacto.trim()) { setError(t('serviciosPage.errorNameRequired')); return }
+      if (!form.telefonoContacto.trim()) { setError(t('serviciosPage.errorPhoneRequired')); return }
+    }
     setSending(true)
     setError('')
     try {
@@ -89,7 +95,7 @@ export default function ServiciosHotPage() {
       setForm({ descripcion: '', presupuesto: '', nombreContacto: '', telefonoContacto: '' })
       setFotos([])
     } catch {
-      setError('No se pudo enviar la solicitud. Intentá de nuevo.')
+      setError(t('serviciosPage.sendErrorFull'))
     } finally {
       setSending(false)
     }
@@ -107,26 +113,26 @@ export default function ServiciosHotPage() {
           className="relative max-w-2xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold mb-4"
             style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-            ✦ Nuevo servicio
+            {t('serviciosPage.newService')}
           </div>
           <h1 className="text-4xl sm:text-5xl font-black mb-4 leading-tight"
             style={{ fontFamily: "'Barlow', sans-serif", color: 'var(--hc-text)' }}>
-            Servicios <span style={{ color: 'var(--hc-accent)' }}>HOT</span>
+            {t('serviciosPage.title')} <span style={{ color: 'var(--hc-accent)' }}>HOT</span>
           </h1>
           <p className="text-lg mb-2" style={{ color: 'var(--hc-muted)' }}>
-            ¿No encontrás lo que buscás? <strong style={{ color: 'var(--hc-text)' }}>Nosotros lo conseguimos por vos.</strong>
+            {t('serviciosPage.heroSubtitle')} <strong style={{ color: 'var(--hc-text)' }}>{t('serviciosPage.heroSubtitleStrong')}</strong>
           </p>
           <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
-            Envianos una foto o descripción del producto y lo buscamos en nuestros proveedores.
+            {t('serviciosPage.heroDesc')}
           </p>
         </motion.div>
 
         {/* How it works */}
         <div className="max-w-3xl mx-auto mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
-            { n: '1', icon: '📸', title: 'Enviás la foto', desc: 'Adjuntá fotos del producto que querés y describí qué necesitás.' },
-            { n: '2', icon: '🔍', title: 'Lo buscamos', desc: 'Nuestro equipo revisa tu solicitud y busca el producto con proveedores.' },
-            { n: '3', icon: '🤝', title: 'Te contactamos', desc: 'Si lo encontramos te avisamos por WhatsApp con precio y disponibilidad.' },
+            { n: '1', icon: '📸', titleKey: 'step1Title', descKey: 'step1Desc' },
+            { n: '2', icon: '🔍', titleKey: 'step2Title', descKey: 'step2Desc' },
+            { n: '3', icon: '🤝', titleKey: 'step3Title', descKey: 'step3Desc' },
           ].map(step => (
             <motion.div key={step.n}
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
@@ -134,9 +140,9 @@ export default function ServiciosHotPage() {
               className="p-5 rounded-2xl text-center"
               style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
               <div className="text-3xl mb-3">{step.icon}</div>
-              <div className="text-xs font-bold mb-1" style={{ color: 'var(--hc-accent)' }}>PASO {step.n}</div>
-              <div className="font-bold mb-1" style={{ color: 'var(--hc-text)' }}>{step.title}</div>
-              <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>{step.desc}</p>
+              <div className="text-xs font-bold mb-1" style={{ color: 'var(--hc-accent)' }}>{t('serviciosPage.step')} {step.n}</div>
+              <div className="font-bold mb-1" style={{ color: 'var(--hc-text)' }}>{t(`serviciosPage.${step.titleKey}`)}</div>
+              <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>{t(`serviciosPage.${step.descKey}`)}</p>
             </motion.div>
           ))}
         </div>
@@ -147,16 +153,16 @@ export default function ServiciosHotPage() {
         {token && (
           <div className="flex gap-2 mb-6 p-1 rounded-xl" style={{ backgroundColor: 'var(--hc-surface-2)' }}>
             {[
-              { key: 'solicitar', label: '+ Nueva solicitud' },
-              { key: 'mis-solicitudes', label: 'Mis solicitudes' },
-            ].map(t => (
-              <button key={t.key} onClick={() => setTab(t.key)}
+              { key: 'solicitar', label: t('serviciosPage.tabNewRequest') },
+              { key: 'mis-solicitudes', label: t('serviciosPage.tabMine') },
+            ].map(tab2 => (
+              <button key={tab2.key} onClick={() => setTab(tab2.key)}
                 className="flex-1 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
                 style={{
-                  backgroundColor: tab === t.key ? 'var(--hc-accent)' : 'transparent',
-                  color: tab === t.key ? '#fff' : 'var(--hc-muted)',
+                  backgroundColor: tab === tab2.key ? 'var(--hc-accent)' : 'transparent',
+                  color: tab === tab2.key ? '#fff' : 'var(--hc-muted)',
                 }}>
-                {t.label}
+                {tab2.label}
               </button>
             ))}
           </div>
@@ -174,31 +180,31 @@ export default function ServiciosHotPage() {
                   style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
                   <div className="text-5xl mb-4">🎉</div>
                   <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--hc-text)' }}>
-                    ¡Solicitud enviada!
+                    {t('serviciosPage.successTitle')}
                   </h2>
                   <p className="text-sm mb-6" style={{ color: 'var(--hc-muted)' }}>
-                    Nuestro equipo la revisará y te contactará por WhatsApp en las próximas horas.
+                    {t('serviciosPage.successSub2')}
                   </p>
                   <button onClick={() => { setSuccess(false); setTab(token ? 'mis-solicitudes' : 'solicitar') }}
                     className="px-6 py-2 rounded-xl text-sm font-semibold"
                     style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-                    {token ? 'Ver mis solicitudes' : 'Nueva solicitud'}
+                    {token ? t('serviciosPage.viewMine') : t('serviciosPage.newRequestBtn')}
                   </button>
                 </motion.div>
               ) : (
                 <form onSubmit={handleEnviar} className="rounded-2xl p-6 space-y-5"
                   style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
                   <h2 className="text-lg font-bold" style={{ color: 'var(--hc-text)' }}>
-                    ¿Qué producto buscás?
+                    {t('serviciosPage.formH2')}
                   </h2>
 
                   {/* Descripción */}
                   <div>
                     <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--hc-muted)' }}>
-                      Descripción del producto <span style={{ color: 'var(--hc-accent)' }}>*</span>
+                      {t('serviciosPage.descLabelFull')} <span style={{ color: 'var(--hc-accent)' }}>*</span>
                     </label>
                     <textarea rows={4}
-                      placeholder="Ej: Teclado mecánico con switches azules, retroiluminado RGB, en español..."
+                      placeholder={t('serviciosPage.descPhFull')}
                       value={form.descripcion}
                       onChange={e => setForm(f => ({ ...f, descripcion: e.target.value }))}
                       className="w-full px-3 py-2.5 rounded-xl text-sm resize-none outline-none focus:ring-2"
@@ -212,7 +218,7 @@ export default function ServiciosHotPage() {
                   {/* Fotos */}
                   <div>
                     <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--hc-muted)' }}>
-                      Fotos de referencia (máx. 3)
+                      {t('serviciosPage.photosLabelFull')}
                     </label>
                     <div className="flex flex-wrap gap-3">
                       {fotos.map((f, i) => (
@@ -240,7 +246,7 @@ export default function ServiciosHotPage() {
                           ) : (
                             <>
                               <span className="text-2xl leading-none">+</span>
-                              <span>Foto</span>
+                              <span>{t('serviciosPage.photoBtn')}</span>
                             </>
                           )}
                         </button>
@@ -253,10 +259,10 @@ export default function ServiciosHotPage() {
                   {/* Presupuesto */}
                   <div>
                     <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--hc-muted)' }}>
-                      Presupuesto aproximado (opcional)
+                      {t('serviciosPage.budgetLabelFull')}
                     </label>
                     <input type="text"
-                      placeholder="Ej: ₡30.000 – ₡50.000"
+                      placeholder={t('serviciosPage.budgetPhFull')}
                       value={form.presupuesto}
                       onChange={e => setForm(f => ({ ...f, presupuesto: e.target.value }))}
                       className="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
@@ -272,9 +278,9 @@ export default function ServiciosHotPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--hc-muted)' }}>
-                          Tu nombre <span style={{ color: 'var(--hc-accent)' }}>*</span>
+                          {t('serviciosPage.nameLabel2')} <span style={{ color: 'var(--hc-accent)' }}>*</span>
                         </label>
-                        <input type="text" placeholder="Juan Pérez"
+                        <input type="text" placeholder={t('serviciosPage.namePh')}
                           value={form.nombreContacto}
                           onChange={e => setForm(f => ({ ...f, nombreContacto: e.target.value }))}
                           className="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
@@ -282,7 +288,7 @@ export default function ServiciosHotPage() {
                       </div>
                       <div>
                         <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--hc-muted)' }}>
-                          WhatsApp <span style={{ color: 'var(--hc-accent)' }}>*</span>
+                          {t('serviciosPage.phoneLabel')} <span style={{ color: 'var(--hc-accent)' }}>*</span>
                         </label>
                         <input type="tel" placeholder="8888-8888"
                           value={form.telefonoContacto}
@@ -295,11 +301,11 @@ export default function ServiciosHotPage() {
 
                   {!token && (
                     <p className="text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>
-                      ¿Tenés cuenta?{' '}
+                      {t('serviciosPage.loginPrompt')}{' '}
                       <button type="button" onClick={() => navigate('/login')} className="font-semibold underline"
                         style={{ color: 'var(--hc-accent)' }}>
-                        Iniciá sesión
-                      </button>{' '}para dar seguimiento a tus solicitudes.
+                        {t('serviciosPage.loginLink2')}
+                      </button>{' '}{t('serviciosPage.loginSuffix')}
                     </p>
                   )}
 
@@ -310,7 +316,7 @@ export default function ServiciosHotPage() {
                   <button type="submit" disabled={sending || uploading}
                     className="w-full py-3 rounded-xl font-bold text-sm transition-all duration-200 active:scale-95 disabled:opacity-60"
                     style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-                    {sending ? 'Enviando...' : 'Enviar solicitud'}
+                    {sending ? t('serviciosPage.sending') : t('serviciosPage.submit')}
                   </button>
                 </form>
               )}
@@ -325,18 +331,18 @@ export default function ServiciosHotPage() {
                 <div className="text-center py-16" style={{ color: 'var(--hc-muted)' }}>
                   <div className="w-8 h-8 rounded-full border-2 animate-spin mx-auto mb-3"
                     style={{ borderColor: 'var(--hc-border)', borderTopColor: 'var(--hc-accent)' }} />
-                  Cargando...
+                  {t('serviciosPage.loading')}
                 </div>
               ) : !misSolicitudes?.length ? (
                 <div className="text-center py-16 rounded-2xl"
                   style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
                   <div className="text-4xl mb-3">📋</div>
-                  <p className="font-semibold mb-1" style={{ color: 'var(--hc-text)' }}>Sin solicitudes aún</p>
-                  <p className="text-sm mb-4" style={{ color: 'var(--hc-muted)' }}>Usá el formulario para pedir un producto.</p>
+                  <p className="font-semibold mb-1" style={{ color: 'var(--hc-text)' }}>{t('serviciosPage.noReqTitle2')}</p>
+                  <p className="text-sm mb-4" style={{ color: 'var(--hc-muted)' }}>{t('serviciosPage.noReqSub2')}</p>
                   <button onClick={() => setTab('solicitar')}
                     className="px-5 py-2 rounded-xl text-sm font-semibold"
                     style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-                    Hacer solicitud
+                    {t('serviciosPage.makeRequest')}
                   </button>
                 </div>
               ) : (
@@ -354,7 +360,7 @@ export default function ServiciosHotPage() {
                         </div>
                         {s.presupuesto && (
                           <p className="text-xs mb-2" style={{ color: 'var(--hc-muted)' }}>
-                            Presupuesto: {s.presupuesto}
+                            {t('serviciosPage.budgetShowLabel')} {s.presupuesto}
                           </p>
                         )}
                         {fotos.length > 0 && (
@@ -369,7 +375,7 @@ export default function ServiciosHotPage() {
                         {s.notasAdmin && (
                           <div className="mt-2 px-3 py-2 rounded-lg text-xs"
                             style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)' }}>
-                            <span className="font-semibold">Nota de HOTCLICK:</span> {s.notasAdmin}
+                            <span className="font-semibold">{t('serviciosPage.hotclickNote')}</span> {s.notasAdmin}
                           </div>
                         )}
                         <p className="text-xs mt-2" style={{ color: 'var(--hc-muted)' }}>

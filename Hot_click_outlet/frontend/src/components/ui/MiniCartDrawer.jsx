@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import useCartStore from '@/store/cartStore'
 import useAuthStore from '@/store/authStore'
 import useUiStore from '@/store/uiStore'
@@ -20,6 +21,7 @@ function useIsDesktop() {
 }
 
 export default function MiniCartDrawer() {
+  const { t } = useTranslation()
   const { items, removeItem, updateQuantity, total } = useCartStore()
   const { token } = useAuthStore()
   const { cartDrawerOpen, setCartDrawerOpen, setAuthPromptOpen } = useUiStore()
@@ -95,16 +97,16 @@ export default function MiniCartDrawer() {
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b shrink-0" style={{ borderColor: 'var(--hc-border)' }}>
               <div>
-                <h2 className="font-bold text-base" style={{ color: 'var(--hc-text)' }}>Tu carrito</h2>
+                <h2 className="font-bold text-base" style={{ color: 'var(--hc-text)' }}>{t('miniCart.title')}</h2>
                 <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-                  {items.length} {items.length === 1 ? 'producto' : 'productos'}
+                  {items.length} {t('miniCart.item', { count: items.length })}
                 </p>
               </div>
               <button
                 onClick={() => setCartDrawerOpen(false)}
                 className="p-2 rounded-xl transition-colors hover:bg-white/8"
                 style={{ color: 'var(--hc-muted)' }}
-                aria-label="Cerrar carrito"
+                aria-label={t('miniCart.close')}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -121,15 +123,15 @@ export default function MiniCartDrawer() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M1 1h4l2.68 13.39a2 2 0 001.95 1.61h9.72a2 2 0 001.95-1.61L23 6H6" />
                   </svg>
                 </div>
-                <p className="font-semibold text-sm" style={{ color: 'var(--hc-text)' }}>Tu carrito está vacío</p>
+                <p className="font-semibold text-sm" style={{ color: 'var(--hc-text)' }}>{t('miniCart.empty')}</p>
                 <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-                  Agrega productos para continuar
+                  {t('miniCart.emptySub')}
                 </p>
                 <Link
                   to="/productos"
                   className="hc-btn hc-btn-primary hc-btn-sm mt-2"
                 >
-                  Explorar productos
+                  {t('miniCart.explore')}
                 </Link>
               </div>
             )}
@@ -189,7 +191,7 @@ export default function MiniCartDrawer() {
                               className="text-xs transition-colors hover:text-red-400"
                               style={{ color: 'var(--hc-muted)' }}
                             >
-                              Quitar
+                              {t('miniCart.remove')}
                             </button>
                           </div>
                         </div>
@@ -210,7 +212,7 @@ export default function MiniCartDrawer() {
                   <ShippingProgress total={total()} />
 
                   <div className="flex justify-between items-center">
-                    <span className="font-semibold text-sm" style={{ color: 'var(--hc-text)' }}>Total</span>
+                    <span className="font-semibold text-sm" style={{ color: 'var(--hc-text)' }}>{t('miniCart.total')}</span>
                     <span className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>{formatPrice(total())}</span>
                   </div>
 
@@ -218,14 +220,14 @@ export default function MiniCartDrawer() {
                     onClick={handleCheckout}
                     className="hc-btn hc-btn-primary hc-btn-lg w-full"
                   >
-                    Pagar con tarjeta
+                    {t('miniCart.checkout')}
                   </button>
 
                   <Link
                     to="/carrito"
                     className="hc-btn hc-btn-outline w-full"
                   >
-                    Ver carrito completo
+                    {t('miniCart.viewCart')}
                   </Link>
                 </div>
               </>

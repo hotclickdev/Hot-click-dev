@@ -91,7 +91,7 @@ function HeroCarousel({ slides }) {
   }
 
   return (
-    <section className="relative overflow-hidden" style={{ minHeight: '92vh' }}>
+    <section className="relative overflow-hidden" style={{ minHeight: '82vh' }}>
       {/* Animated background glow per slide */}
       <AnimatePresence>
         <motion.div
@@ -130,8 +130,8 @@ function HeroCarousel({ slides }) {
       </div>
 
       {/* Main content */}
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 w-full" style={{ minHeight: '92vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-4 items-center py-20 lg:py-16">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 w-full" style={{ minHeight: '82vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-4 items-center py-10 lg:py-8">
 
           {/* ── Left: text content ── */}
           <AnimatePresence mode="wait" custom={dir}>
@@ -155,7 +155,7 @@ function HeroCarousel({ slides }) {
 
               <h1
                 className="font-black leading-[1.02] tracking-tight mb-4 line-clamp-2"
-                style={{ fontSize: 'clamp(2.4rem, 5.5vw, 4.5rem)', color: 'var(--hc-text)' }}
+                style={{ fontSize: 'clamp(1.8rem, 3.5vw, 3rem)', color: 'var(--hc-text)' }}
               >
                 {slide.nombre}
               </h1>
@@ -169,7 +169,7 @@ function HeroCarousel({ slides }) {
               {/* Price */}
               {slide.precio > 0 && (
                 <div className="flex items-baseline gap-3 mb-8">
-                  <span className="text-4xl font-black" style={{ color: color.accent }}>
+                  <span className="text-3xl font-black" style={{ color: color.accent }}>
                     {formatPrice(slide.precio)}
                   </span>
                   {slide.condicion && slide.condicion !== 'NUEVO' && (
@@ -186,7 +186,7 @@ function HeroCarousel({ slides }) {
                 {slide.id && !String(slide.id).startsWith('ph-') ? (
                   <button
                     onClick={() => navigate(`/productos/${slide.id}`, { state: { product: slide } })}
-                    className="group inline-flex items-center justify-center gap-2 h-14 px-8 rounded-2xl font-bold text-base text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
+                    className="group inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl font-bold text-sm text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
                     style={{ background: color.accent, boxShadow: `0 0 32px ${color.ring}` }}
                   >
                     Ver producto
@@ -195,7 +195,7 @@ function HeroCarousel({ slides }) {
                 ) : (
                   <Link
                     to="/productos"
-                    className="group inline-flex items-center justify-center gap-2 h-14 px-8 rounded-2xl font-bold text-base text-white transition-all duration-200 hover:-translate-y-0.5"
+                    className="group inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl font-bold text-sm text-white transition-all duration-200 hover:-translate-y-0.5"
                     style={{ background: color.accent, boxShadow: `0 0 32px ${color.ring}` }}
                   >
                     {t('home.verProductos')}
@@ -204,7 +204,7 @@ function HeroCarousel({ slides }) {
                 )}
                 <a
                   href="#como-comprar"
-                  className="inline-flex items-center justify-center gap-2 h-14 px-8 rounded-2xl bg-white/6 hover:bg-white/10 border border-white/10 text-[#e8e8ed] font-semibold text-base transition-all duration-200 hover:-translate-y-0.5"
+                  className="inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl bg-white/6 hover:bg-white/10 border border-white/10 text-[#e8e8ed] font-semibold text-sm transition-all duration-200 hover:-translate-y-0.5"
                 >
                   {t('home.comoComprar')}
                 </a>
@@ -215,11 +215,11 @@ function HeroCarousel({ slides }) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.35 }}
-                className="flex flex-wrap gap-8 mt-10"
+                className="flex flex-wrap gap-5 mt-6"
               >
                 {[['100%', t('home.garantia')], ['24h', t('home.envios')], ['5★', t('home.satisfaccion')]].map(([value, label]) => (
                   <div key={label}>
-                    <div className="text-2xl font-bold text-[#e8e8ed]">{value}</div>
+                    <div className="text-xl font-bold text-[#e8e8ed]">{value}</div>
                     <div className="text-sm text-[#8e8e9a] mt-0.5">{label}</div>
                   </div>
                 ))}
@@ -561,13 +561,13 @@ export default function HomePage() {
       )}
 
       {/* How to buy section */}
-      <section id="como-comprar" className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
+      <section id="como-comprar" className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-12"
+          className="text-center mb-8"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#4f7cff]/10 border border-[#4f7cff]/20 text-sm text-[#4f7cff] mb-4">
             {t('home.procesoBadge')}
@@ -607,7 +607,7 @@ export default function HomePage() {
 
       {/* Features section */}
       <section className="border-t" style={{ borderColor: 'var(--hc-border)', backgroundColor: 'var(--hc-surface)' }}>
-        <div ref={featuresRef} className="hc-reveal max-w-7xl mx-auto px-4 sm:px-6 py-20">
+        <div ref={featuresRef} className="hc-reveal max-w-7xl mx-auto px-4 sm:px-6 py-12">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {[
               { icon: '🚚', title: t('home.feat1Title'), desc: t('home.feat1Desc') },
@@ -637,7 +637,7 @@ export default function HomePage() {
       <TestimonialsCarousel />
 
       {/* Servicios Hot promo */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}

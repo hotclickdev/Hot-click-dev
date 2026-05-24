@@ -1,28 +1,31 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 const STEPS = [
-  { id: 'cart',    label: 'Carrito',      href: '/carrito' },
-  { id: 'checkout', label: 'Pedido',      href: null },
-  { id: 'payment', label: 'Pago',         href: null },
-  { id: 'confirm', label: 'Confirmación', href: null },
+  { id: 'cart',     href: '/carrito' },
+  { id: 'checkout', href: null },
+  { id: 'payment',  href: null },
+  { id: 'confirm',  href: null },
 ]
 
 export default function CheckoutStepper({ activeStep = 'checkout' }) {
+  const { t } = useTranslation()
   const activeIdx = STEPS.findIndex((s) => s.id === activeStep)
 
   return (
-    <nav aria-label="Progreso del pedido" className="flex items-center justify-center mb-8 select-none">
+    <nav aria-label={t('checkoutStepper.progress')} className="flex items-center justify-center mb-8 select-none">
       {STEPS.map((step, i) => {
         const done    = i < activeIdx
         const active  = i === activeIdx
         const pending = i > activeIdx
+        const label   = t(`checkoutStepper.${step.id}`)
 
         return (
           <div key={step.id} className="flex items-center">
             <div className="flex flex-col items-center gap-1.5">
               {done && step.href ? (
-                <Link to={step.href} aria-label={`Volver a ${step.label}`}>
+                <Link to={step.href} aria-label={t('checkoutStepper.backTo', { step: label })}>
                   <StepCircle done active={false} pending={false} index={i + 1} />
                 </Link>
               ) : (
@@ -33,7 +36,7 @@ export default function CheckoutStepper({ activeStep = 'checkout' }) {
                 style={{ color: active ? 'var(--hc-accent)' : done ? 'var(--hc-muted)' : 'color-mix(in srgb, var(--hc-muted) 40%, transparent)' }}
                 aria-current={active ? 'step' : undefined}
               >
-                {step.label}
+                {label}
               </span>
             </div>
 

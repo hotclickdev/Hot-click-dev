@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import Spinner from '@/components/ui/Spinner'
 import { abandonedCartService } from '@/services/abandonedCartService'
@@ -9,6 +10,7 @@ import { formatPrice } from '@/utils/format'
 import { useToast } from '@/components/ui/Toast'
 
 export default function RecuperarCarritoPage() {
+  const { t } = useTranslation()
   const { id } = useParams()
   const navigate = useNavigate()
   const addItem = useCartStore((s) => s.addItem)
@@ -46,7 +48,7 @@ export default function RecuperarCarritoPage() {
       })
     )
     try { await abandonedCartService.deleteAbandonedCart(id) } catch { /* ok */ }
-    toast({ message: `${items.length} producto(s) añadido(s) al carrito`, type: 'success' })
+    toast({ message: t('recuperarCarrito.addedToast', { count: items.length }), type: 'success' })
     navigate('/carrito')
   }
 
@@ -66,16 +68,16 @@ export default function RecuperarCarritoPage() {
         <div className="max-w-md mx-auto px-4 py-20 text-center">
           <p className="text-4xl mb-4">🛒</p>
           <h1 className="text-xl font-bold mb-2" style={{ color: 'var(--hc-text)' }}>
-            Carrito no disponible
+            {t('recuperarCarrito.notAvailable')}
           </h1>
           <p className="text-sm mb-6" style={{ color: 'var(--hc-muted)' }}>
-            Este enlace ya fue utilizado o expiró.
+            {t('recuperarCarrito.expired')}
           </p>
           <button
             onClick={() => navigate('/productos')}
             className="hc-btn hc-btn-primary"
           >
-            Ver productos
+            {t('recuperarCarrito.viewProducts')}
           </button>
         </div>
       </MainLayout>
@@ -94,10 +96,10 @@ export default function RecuperarCarritoPage() {
           <div className="text-center mb-8">
             <span className="text-5xl">🛒</span>
             <h1 className="text-2xl font-bold mt-3 mb-1" style={{ color: 'var(--hc-text)' }}>
-              Tu carrito guardado
+              {t('recuperarCarrito.title')}
             </h1>
             <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
-              Encontramos estos productos que dejaste antes
+              {t('recuperarCarrito.subtitle')}
             </p>
           </div>
 
@@ -135,7 +137,7 @@ export default function RecuperarCarritoPage() {
                     {item.nombre}
                   </p>
                   <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-                    Cantidad: {item.cantidad ?? 1}
+                    {t('recuperarCarrito.quantity')} {item.cantidad ?? 1}
                   </p>
                 </div>
                 <span className="font-semibold text-sm shrink-0" style={{ color: 'var(--hc-text)' }}>
@@ -149,7 +151,7 @@ export default function RecuperarCarritoPage() {
               className="flex items-center justify-between px-4 py-3"
               style={{ borderTop: '2px solid var(--hc-border)' }}
             >
-              <span className="font-semibold text-sm" style={{ color: 'var(--hc-muted)' }}>Total</span>
+              <span className="font-semibold text-sm" style={{ color: 'var(--hc-muted)' }}>{t('recuperarCarrito.total')}</span>
               <span className="font-bold text-base" style={{ color: 'var(--hc-text)' }}>
                 {formatPrice(total)}
               </span>
@@ -163,14 +165,14 @@ export default function RecuperarCarritoPage() {
               disabled={adding}
               className="hc-btn hc-btn-primary w-full h-12 text-sm font-bold disabled:opacity-60"
             >
-              {adding ? 'Añadiendo…' : `Agregar al carrito y continuar →`}
+              {adding ? t('recuperarCarrito.adding') : t('recuperarCarrito.restore')}
             </button>
             <button
               onClick={() => navigate('/productos')}
               className="hc-btn hc-btn-ghost w-full h-10 text-sm"
               style={{ color: 'var(--hc-muted)' }}
             >
-              Explorar productos nuevos
+              {t('recuperarCarrito.exploreNew')}
             </button>
           </div>
         </motion.div>

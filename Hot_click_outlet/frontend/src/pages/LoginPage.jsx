@@ -27,6 +27,8 @@ export default function LoginPage() {
   const [contrasena, setContrasena] = useState('')
   const [tempToken, setTempToken] = useState('')
   const [code2FA, setCode2FA] = useState(['', '', '', '', '', ''])
+  const [useRecovery, setUseRecovery] = useState(false)
+  const [recoveryInput, setRecoveryInput] = useState('')
   const [showForgot, setShowForgot] = useState(false)
   const [showAdminModal, setShowAdminModal] = useState(false)
   const [loginData, setLoginData] = useState(null)
@@ -84,17 +86,23 @@ export default function LoginPage() {
 
   const handle2FA = async (e) => {
     e.preventDefault()
-    const fullCode = code2FA.join('')
-    if (fullCode.length !== 6) { setError(t('login.code6digits')); return }
     setError('')
     setLoading(true)
     try {
-      const { data } = await authService.verify2FA(tempToken, fullCode)
+      let data
+      if (useRecovery) {
+        if (!recoveryInput.trim()) { setError('Ingresá tu código de recuperación'); setLoading(false); return }
+        ;({ data } = await authService.verify2FA(tempToken, null, recoveryInput.trim()))
+      } else {
+        const fullCode = code2FA.join('')
+        if (fullCode.length !== 6) { setError(t('login.code6digits')); setLoading(false); return }
+        ;({ data } = await authService.verify2FA(tempToken, fullCode))
+      }
       handleLoginSuccess(data)
     } catch {
-      setError(t('login.error'))
-      setCode2FA(['', '', '', '', '', ''])
-      refs2FA.current[0]?.focus()
+      setError(useRecovery ? 'Código de recuperación inválido' : t('login.error'))
+      if (!useRecovery) { setCode2FA(['', '', '', '', '', '']); refs2FA.current[0]?.focus() }
+      else setRecoveryInput('')
     } finally {
       setLoading(false)
     }
@@ -266,32 +274,56 @@ export default function LoginPage() {
               onSubmit={handle2FA}
               className="space-y-6"
             >
-              <div>
-                <label className="block text-sm font-medium text-[#e8e8ed] mb-3 text-center">
-                  {t('login.code6digits')}
-                </label>
-                <div className="flex gap-2 justify-center" onPaste={handle2FAPaste}>
-                  {code2FA.map((digit, i) => (
-                    <input
-                      key={i}
-                      ref={(el) => (refs2FA.current[i] = el)}
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={1}
-                      value={digit}
-                      onChange={(e) => handle2FADigit(i, e.target.value)}
-                      onKeyDown={(e) => handle2FAKey(i, e)}
-                      className={`
-                        w-11 h-14 text-center text-xl font-bold
-                        bg-white/5 border rounded-xl
-                        text-[#e8e8ed] transition-all duration-200
-                        focus:outline-none focus:border-[#4f7cff]/60 focus:ring-2 focus:ring-[#4f7cff]/15
-                        ${digit ? 'border-white/20' : 'border-white/8'}
-                      `}
-                    />
-                  ))}
+              {!useRecovery ? (
+                <div>
+                  <label className="block text-sm font-medium text-[#e8e8ed] mb-3 text-center">
+                    {t('login.code6digits')}
+                  </label>
+                  <div className="flex gap-2 justify-center" onPaste={handle2FAPaste}>
+                    {code2FA.map((digit, i) => (
+                      <input
+                        key={i}
+                        ref={(el) => (refs2FA.current[i] = el)}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handle2FADigit(i, e.target.value)}
+                        onKeyDown={(e) => handle2FAKey(i, e)}
+                        className={`
+                          w-11 h-14 text-center text-xl font-bold
+                          bg-white/5 border rounded-xl
+                          text-[#e8e8ed] transition-all duration-200
+                          focus:outline-none focus:border-[#4f7cff]/60 focus:ring-2 focus:ring-[#4f7cff]/15
+                          ${digit ? 'border-white/20' : 'border-white/8'}
+                        `}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-[#e8e8ed] mb-2">
+                    Código de recuperación
+                  </label>
+                  <input
+                    type="text"
+                    value={recoveryInput}
+                    onChange={e => setRecoveryInput(e.target.value.toUpperCase())}
+                    placeholder="XXXXX-XXXXX"
+                    autoFocus
+                    className="w-full px-4 py-3 rounded-xl text-center text-base font-mono tracking-widest outline-none transition-all"
+                    style={{
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      color: '#e8e8ed',
+                    }}
+                    onFocus={e => { e.target.style.borderColor = '#4f7cff'; e.target.style.boxShadow = '0 0 0 3px rgba(79,124,255,0.12)' }}
+                    onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.12)'; e.target.style.boxShadow = 'none' }}
+                  />
+                  <p className="text-xs text-[#8e8e9a] mt-2 text-center">Ingresá uno de tus códigos de emergencia</p>
+                </div>
+              )}
 
               {error && (
                 <p className="text-sm text-red-400 text-center bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2.5">
@@ -301,14 +333,21 @@ export default function LoginPage() {
 
               <div className="space-y-2">
                 <Button type="submit" loading={loading} className="w-full" size="lg">
-                  {t('login.verify')}
+                  {useRecovery ? 'Usar código de recuperación' : t('login.verify')}
                 </Button>
+                <button
+                  type="button"
+                  onClick={() => { setUseRecovery(p => !p); setError(''); setRecoveryInput(''); setCode2FA(['','','','','','']) }}
+                  className="w-full text-xs text-[#8e8e9a] hover:text-[#4f7cff] transition-colors py-1.5"
+                >
+                  {useRecovery ? '← Volver a código TOTP' : '¿Perdiste tu dispositivo? Usá un código de recuperación'}
+                </button>
                 <Button
                   type="button"
                   variant="ghost"
                   size="md"
                   className="w-full"
-                  onClick={() => { setStep('login'); setCode2FA(['','','','','','']); setError('') }}
+                  onClick={() => { setStep('login'); setCode2FA(['','','','','','']); setError(''); setUseRecovery(false); setRecoveryInput('') }}
                 >
                   {t('login.backToLogin')}
                 </Button>

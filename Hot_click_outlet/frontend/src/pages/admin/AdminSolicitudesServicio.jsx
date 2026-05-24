@@ -1,30 +1,33 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import AdminLayout from '@/layouts/AdminLayout'
 import { servicioService } from '@/services/servicioService'
 
 const ESTADOS = ['PENDIENTE', 'EN_BUSQUEDA', 'ENCONTRADO', 'NO_ENCONTRADO', 'CANCELADO']
 
-const ESTADO_META = {
-  PENDIENTE:     { label: 'Pendiente',     color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
-  EN_BUSQUEDA:   { label: 'En búsqueda',   color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
-  ENCONTRADO:    { label: 'Encontrado',    color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
-  NO_ENCONTRADO: { label: 'No encontrado', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
-  CANCELADO:     { label: 'Cancelado',     color: '#6b7280', bg: 'rgba(107,114,128,0.12)' },
+const ESTADO_STYLES = {
+  PENDIENTE:     { color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+  EN_BUSQUEDA:   { color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+  ENCONTRADO:    { color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
+  NO_ENCONTRADO: { color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
+  CANCELADO:     { color: '#6b7280', bg: 'rgba(107,114,128,0.12)' },
 }
 
 function EstadoBadge({ estado }) {
-  const m = ESTADO_META[estado] || ESTADO_META.PENDIENTE
+  const { t } = useTranslation()
+  const m = ESTADO_STYLES[estado] || ESTADO_STYLES.PENDIENTE
   return (
     <span className="px-2.5 py-1 rounded-full text-xs font-bold"
       style={{ color: m.color, backgroundColor: m.bg }}>
-      {m.label}
+      {t(`adminSolicitudes.status.${estado}`, { defaultValue: estado })}
     </span>
   )
 }
 
 export default function AdminSolicitudesServicio() {
+  const { t } = useTranslation()
   const qc = useQueryClient()
   const [filtroEstado, setFiltroEstado] = useState('TODOS')
   const [selected, setSelected] = useState(null)
@@ -63,7 +66,7 @@ export default function AdminSolicitudesServicio() {
   }
 
   const handleEliminar = async (id) => {
-    if (!confirm('¿Eliminar esta solicitud?')) return
+    if (!confirm(t('adminSolicitudes.confirmDelete'))) return
     await servicioService.eliminar(id)
     qc.invalidateQueries({ queryKey: ['admin-solicitudes-servicio'] })
     setSelected(null)
@@ -87,16 +90,16 @@ export default function AdminSolicitudesServicio() {
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <div>
             <h1 className="text-2xl font-black" style={{ fontFamily: "'Barlow', sans-serif", color: 'var(--hc-text)' }}>
-              Servicios HOT
+              {t('adminSolicitudes.title')}
             </h1>
             <p className="text-sm mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-              Solicitudes de búsqueda de productos
+              {t('adminSolicitudes.subtitle')}
             </p>
           </div>
           {pendientes > 0 && (
             <span className="px-3 py-1.5 rounded-full text-sm font-bold"
               style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
-              {pendientes} pendiente{pendientes !== 1 ? 's' : ''}
+              {t('adminSolicitudes.pending', { count: pendientes })}
             </span>
           )}
         </div>
@@ -112,7 +115,7 @@ export default function AdminSolicitudesServicio() {
                 color: filtroEstado === e ? '#fff' : 'var(--hc-muted)',
                 border: '1px solid var(--hc-border)',
               }}>
-              {e === 'TODOS' ? 'Todos' : (ESTADO_META[e]?.label || e)}
+              {e === 'TODOS' ? t('adminSolicitudes.filterAll') : t(`adminSolicitudes.status.${e}`, { defaultValue: e })}
               {e !== 'TODOS' && (
                 <span className="ml-1 opacity-70">
                   ({solicitudes.filter(s => s.estado === e).length})
@@ -127,13 +130,13 @@ export default function AdminSolicitudesServicio() {
           <div className="text-center py-20" style={{ color: 'var(--hc-muted)' }}>
             <div className="w-8 h-8 rounded-full border-2 animate-spin mx-auto mb-3"
               style={{ borderColor: 'var(--hc-border)', borderTopColor: 'var(--hc-accent)' }} />
-            Cargando solicitudes...
+            {t('adminSolicitudes.loading')}
           </div>
         ) : !filtradas.length ? (
           <div className="text-center py-20 rounded-2xl"
             style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
             <div className="text-4xl mb-3">📋</div>
-            <p style={{ color: 'var(--hc-muted)' }}>No hay solicitudes{filtroEstado !== 'TODOS' ? ' con este estado' : ''}.</p>
+            <p style={{ color: 'var(--hc-muted)' }}>{filtroEstado !== 'TODOS' ? t('adminSolicitudes.noRequestsFiltered') : t('adminSolicitudes.noRequests')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -163,7 +166,7 @@ export default function AdminSolicitudesServicio() {
                           <span>👤 {s.nombreContacto || `${s.usuario.nombre} ${s.usuario.apellidoPaterno || ''}`}</span>
                         )}
                         {s.presupuesto && <span>💰 {s.presupuesto}</span>}
-                        {fotos.length > 0 && <span>📸 {fotos.length} foto{fotos.length !== 1 ? 's' : ''}</span>}
+                        {fotos.length > 0 && <span>📸 {t('adminSolicitudes.photos', { count: fotos.length })}</span>}
                       </div>
                     </div>
                     <div className="flex flex-col gap-2 shrink-0" onClick={e => e.stopPropagation()}>
@@ -198,7 +201,7 @@ export default function AdminSolicitudesServicio() {
               <div className="flex items-center justify-between px-5 py-4 border-b"
                 style={{ borderColor: 'var(--hc-border)' }}>
                 <div>
-                  <h2 className="font-bold" style={{ color: 'var(--hc-text)' }}>Solicitud #{selected.id}</h2>
+                  <h2 className="font-bold" style={{ color: 'var(--hc-text)' }}>{t('adminSolicitudes.requestId', { id: selected.id })}</h2>
                   <EstadoBadge estado={selected.estado} />
                 </div>
                 <button onClick={() => setSelected(null)} className="text-xl" style={{ color: 'var(--hc-muted)' }}>×</button>
@@ -207,9 +210,9 @@ export default function AdminSolicitudesServicio() {
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 {/* Cliente */}
                 <div className="p-3 rounded-xl" style={{ backgroundColor: 'var(--hc-surface-2)' }}>
-                  <p className="text-xs font-semibold mb-1" style={{ color: 'var(--hc-muted)' }}>CLIENTE</p>
+                  <p className="text-xs font-semibold mb-1" style={{ color: 'var(--hc-muted)' }}>{t('adminSolicitudes.clientSection')}</p>
                   <p className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>
-                    {selected.nombreContacto || (selected.usuario ? `${selected.usuario.nombre} ${selected.usuario.apellidoPaterno || ''}` : 'Anónimo')}
+                    {selected.nombreContacto || (selected.usuario ? `${selected.usuario.nombre} ${selected.usuario.apellidoPaterno || ''}` : t('adminSolicitudes.anonymous'))}
                   </p>
                   {(selected.telefonoContacto || selected.usuario?.telefono) && (
                     <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
@@ -223,13 +226,13 @@ export default function AdminSolicitudesServicio() {
 
                 {/* Descripción */}
                 <div>
-                  <p className="text-xs font-semibold mb-1" style={{ color: 'var(--hc-muted)' }}>DESCRIPCIÓN</p>
+                  <p className="text-xs font-semibold mb-1" style={{ color: 'var(--hc-muted)' }}>{t('adminSolicitudes.descSection')}</p>
                   <p className="text-sm" style={{ color: 'var(--hc-text)', whiteSpace: 'pre-wrap' }}>{selected.descripcion}</p>
                 </div>
 
                 {selected.presupuesto && (
                   <div>
-                    <p className="text-xs font-semibold mb-1" style={{ color: 'var(--hc-muted)' }}>PRESUPUESTO</p>
+                    <p className="text-xs font-semibold mb-1" style={{ color: 'var(--hc-muted)' }}>{t('adminSolicitudes.budgetSection')}</p>
                     <p className="text-sm" style={{ color: 'var(--hc-text)' }}>{selected.presupuesto}</p>
                   </div>
                 )}
@@ -239,7 +242,7 @@ export default function AdminSolicitudesServicio() {
                   const urls = JSON.parse(selected.fotosUrls)
                   return urls.length > 0 ? (
                     <div>
-                      <p className="text-xs font-semibold mb-2" style={{ color: 'var(--hc-muted)' }}>FOTOS</p>
+                      <p className="text-xs font-semibold mb-2" style={{ color: 'var(--hc-muted)' }}>{t('adminSolicitudes.photosSection')}</p>
                       <div className="flex flex-wrap gap-2">
                         {urls.map((url, i) => (
                           <img key={i} src={url} alt=""
@@ -254,17 +257,17 @@ export default function AdminSolicitudesServicio() {
 
                 {/* Estado */}
                 <div>
-                  <p className="text-xs font-semibold mb-2" style={{ color: 'var(--hc-muted)' }}>CAMBIAR ESTADO</p>
+                  <p className="text-xs font-semibold mb-2" style={{ color: 'var(--hc-muted)' }}>{t('adminSolicitudes.changeStatus')}</p>
                   <div className="grid grid-cols-2 gap-2">
                     {ESTADOS.map(e => (
                       <button key={e} onClick={() => setNuevoEstado(e)}
                         className="py-2 px-3 rounded-xl text-xs font-semibold transition-all text-left"
                         style={{
-                          backgroundColor: nuevoEstado === e ? ESTADO_META[e].bg : 'var(--hc-surface-2)',
-                          color: nuevoEstado === e ? ESTADO_META[e].color : 'var(--hc-muted)',
-                          border: `1px solid ${nuevoEstado === e ? ESTADO_META[e].color : 'transparent'}`,
+                          backgroundColor: nuevoEstado === e ? ESTADO_STYLES[e].bg : 'var(--hc-surface-2)',
+                          color: nuevoEstado === e ? ESTADO_STYLES[e].color : 'var(--hc-muted)',
+                          border: `1px solid ${nuevoEstado === e ? ESTADO_STYLES[e].color : 'transparent'}`,
                         }}>
-                        {ESTADO_META[e].label}
+                        {t(`adminSolicitudes.status.${e}`, { defaultValue: e })}
                       </button>
                     ))}
                   </div>
@@ -272,9 +275,9 @@ export default function AdminSolicitudesServicio() {
 
                 {/* Notas */}
                 <div>
-                  <p className="text-xs font-semibold mb-1" style={{ color: 'var(--hc-muted)' }}>NOTAS PARA EL CLIENTE</p>
+                  <p className="text-xs font-semibold mb-1" style={{ color: 'var(--hc-muted)' }}>{t('adminSolicitudes.notesSection')}</p>
                   <textarea rows={3}
-                    placeholder="Ej: Encontramos el producto, precio aprox ₡45.000..."
+                    placeholder={t('adminSolicitudes.notesPh')}
                     value={notas}
                     onChange={e => setNotas(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl text-sm resize-none outline-none"
@@ -290,7 +293,7 @@ export default function AdminSolicitudesServicio() {
                       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
                       <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.122 1.526 5.858L.057 23.75a.75.75 0 00.944.944l5.892-1.469A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.944 9.944 0 01-5.079-1.39l-.363-.215-3.762.937.956-3.76-.234-.375A9.974 9.974 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
                     </svg>
-                    Contactar por WhatsApp
+                    {t('adminSolicitudes.whatsappContact')}
                   </a>
                 )}
               </div>
@@ -300,12 +303,12 @@ export default function AdminSolicitudesServicio() {
                 <button onClick={() => handleEliminar(selected.id)}
                   className="px-4 py-2 rounded-xl text-xs font-semibold"
                   style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
-                  Eliminar
+                  {t('adminSolicitudes.delete')}
                 </button>
                 <button onClick={handleGuardar} disabled={saving}
                   className="flex-1 py-2 rounded-xl text-sm font-bold disabled:opacity-60"
                   style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-                  {saving ? 'Guardando...' : 'Guardar cambios'}
+                  {saving ? t('adminSolicitudes.saving') : t('adminSolicitudes.save')}
                 </button>
               </div>
             </motion.div>
