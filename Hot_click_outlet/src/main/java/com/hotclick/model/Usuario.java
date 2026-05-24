@@ -62,6 +62,10 @@ public class Usuario extends BaseEntity {
     @Column(name = "two_factor_secret", length = 100)
     private String twoFactorSecret;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Column(name = "recovery_codes", columnDefinition = "TEXT")
+    private String recoveryCodes;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
         name = "hot_click_usuario_rol_tb",
@@ -120,4 +124,7 @@ public class Usuario extends BaseEntity {
 
     public String getTwoFactorSecret() { return twoFactorSecret; }
     public void setTwoFactorSecret(String twoFactorSecret) { this.twoFactorSecret = twoFactorSecret; }
+
+    public String getRecoveryCodes() { return recoveryCodes; }
+    public void setRecoveryCodes(String recoveryCodes) { this.recoveryCodes = recoveryCodes; }
 }

@@ -4,6 +4,7 @@ import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Marca;
 import com.hotclick.repository.MarcaRepository;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.service.ImageModerationService;
 import com.hotclick.service.SupabaseStorageService;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,7 @@ public class MarcaController {
     @Autowired private MarcaRepository marcaRepository;
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private SupabaseStorageService supabaseStorageService;
+    @Autowired private ImageModerationService moderationService;
 
     /** Endpoint público — sin autenticación, usado por el catálogo y búsqueda */
     @Cacheable("marcas-publicas")
@@ -115,6 +117,9 @@ public class MarcaController {
     @PostMapping("/logo")
     public ResponseEntity<ResponseDTO> subirLogo(@RequestParam("file") MultipartFile file) {
         try {
+            var mod = moderationService.moderar(file);
+            if (!mod.safe())
+                return ResponseEntity.badRequest().body(ResponseDTO.error("Imagen rechazada: " + mod.reason()));
             String url = supabaseStorageService.subirImagen(file, "marcas");
             return ResponseEntity.ok(ResponseDTO.success("Logo subido", Map.of("url", url)));
         } catch (Exception e) {

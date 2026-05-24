@@ -59,5 +59,19 @@ public class Constants {
     public static final String PROVEEDOR_PAYXPERT = "PAYXPERT";
     public static final String PROVEEDOR_PAYPAL   = "PAYPAL";
     public static final String PROVEEDOR_STRIPE   = "STRIPE";   // futuro
-    public static final String PROVEEDOR_SINPE    = "SINPE";    // futuro
+    public static final String PROVEEDOR_SINPE    = "SINPE";
+
+    // Estados de pedido SINPE
+    public static final String PEDIDO_PENDIENTE_COMPROBANTE = "PENDIENTE_COMPROBANTE";
+    public static final String PEDIDO_PENDIENTE_APROBACION  = "PENDIENTE_APROBACION";
+
+    // Estados de comprobante SINPE
+    public static final String COMPROBANTE_PENDIENTE  = "PENDIENTE";
+    public static final String COMPROBANTE_APROBADO   = "APROBADO";
+    public static final String COMPROBANTE_RECHAZADO  = "RECHAZADO";
+
+    // Acciones de auditoría admin
+    public static final String AUDITORIA_APROBAR_SINPE      = "APROBAR_SINPE";
+    public static final String AUDITORIA_RECHAZAR_SINPE     = "RECHAZAR_SINPE";
+    public static final String AUDITORIA_AUTO_APROBAR_SINPE = "AUTO_APROBAR_SINPE";
 }

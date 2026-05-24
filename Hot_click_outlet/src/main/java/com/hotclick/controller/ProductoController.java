@@ -2,6 +2,7 @@ package com.hotclick.controller;
 
 import com.hotclick.dto.ProductoRequestDTO;
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.service.ImageModerationService;
 import com.hotclick.service.ProductoService;
 import com.hotclick.service.SupabaseStorageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,9 @@ public class ProductoController {
 
     @Autowired
     private SupabaseStorageService supabaseStorageService;
+
+    @Autowired
+    private ImageModerationService moderationService;
 
     @GetMapping
     public ResponseEntity<ResponseDTO> listarProductos(
@@ -153,6 +157,9 @@ public class ProductoController {
     @PostMapping("/imagen")
     public ResponseEntity<ResponseDTO> subirImagen(@RequestParam("file") MultipartFile file) {
         try {
+            var mod = moderationService.moderar(file);
+            if (!mod.safe())
+                return ResponseEntity.badRequest().body(ResponseDTO.error("Imagen rechazada: " + mod.reason()));
             String url = supabaseStorageService.subirImagen(file);
             return ResponseEntity.ok(ResponseDTO.success("Imagen subida", Map.of("url", url)));
         } catch (Exception e) {

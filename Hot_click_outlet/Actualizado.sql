@@ -1645,5 +1645,30 @@ ALTER TABLE "hot_click_pedido_tb"
     ADD COLUMN IF NOT EXISTS "cupon_codigo" VARCHAR(20);
 
 -- ============================================================
+-- RECOVERY CODES 2FA
+-- ============================================================
+ALTER TABLE hot_click_usuario_tb
+    ADD COLUMN IF NOT EXISTS recovery_codes TEXT;
+
+-- ============================================================
+-- TESTIMONIOS DE CLIENTES
+-- ============================================================
+CREATE TABLE IF NOT EXISTS hot_click_testimonio_tb (
+    id_testimonio    SERIAL PRIMARY KEY,
+    fk_id_usuario    INTEGER REFERENCES hot_click_usuario_tb(id_usuario),
+    comentario       TEXT NOT NULL,
+    imagen_url       VARCHAR(500),
+    estado           VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
+    fecha_creacion   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_aprobacion TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_testimonio_estado
+    ON hot_click_testimonio_tb (estado);
+
+CREATE INDEX IF NOT EXISTS idx_testimonio_usuario
+    ON hot_click_testimonio_tb (fk_id_usuario);
+
+-- ============================================================
 -- FIN DEL SCRIPT
 -- ============================================================

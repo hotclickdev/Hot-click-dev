@@ -21,8 +21,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -90,9 +93,6 @@ public class AuthController {
 
         usuarioService.resetearIntentosFallidos(usuario.getId());
         usuarioService.actualizarUltimoAcceso(usuario.getId());
-
-        boolean esAdmin = usuario.getRoles().stream()
-            .anyMatch(r -> "ADMIN_IT".equals(r.getNombreRol()));
 
         if (Boolean.TRUE.equals(usuario.getTwoFactorEnabled())) {
             String tempToken = jwtUtil.generateTempToken(usuario.getCorreo(), usuario.getId());
@@ -172,10 +172,11 @@ public class AuthController {
 
     @PostMapping("/2fa/verify")
     public ResponseEntity<?> verify2FA(@RequestBody Map<String, String> body) {
-        String tempToken = body.get("tempToken");
-        String code      = body.get("code");
+        String tempToken    = body.get("tempToken");
+        String code         = body.get("code");
+        String recoveryCode = body.get("recoveryCode");
 
-        if (tempToken == null || code == null) {
+        if (tempToken == null || (code == null && recoveryCode == null)) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Datos incompletos"));
         }
         try {
@@ -191,13 +192,34 @@ public class AuthController {
 
             Usuario usuario = opt.get();
 
-            // [FIX-1] Revalidar bloqueo también en el paso 2FA
             if (usuario.getBloqueadoHasta() != null && LocalDateTime.now().isBefore(usuario.getBloqueadoHasta())) {
                 return ResponseEntity.status(403).body(ResponseDTO.error(
                     "Cuenta temporalmente bloqueada. Intentá más tarde."));
             }
 
-            // [FIX-3] Contar intentos fallidos de 2FA para prevenir brute-force del código TOTP
+            // Verificación con código de recuperación
+            if (recoveryCode != null && !recoveryCode.isBlank()) {
+                String normalized = twoFactorService.normalizeRecoveryCode(recoveryCode);
+                List<String> stored = new ArrayList<>(twoFactorService.jsonToCodes(usuario.getRecoveryCodes()));
+                int matchIdx = -1;
+                for (int i = 0; i < stored.size(); i++) {
+                    if (passwordEncoder.matches(normalized, stored.get(i))) { matchIdx = i; break; }
+                }
+                if (matchIdx < 0) {
+                    usuarioService.incrementarIntentosFallidos(usuario.getId());
+                    log.warn("Código de recuperación inválido para {}", correo);
+                    return ResponseEntity.status(401).body(ResponseDTO.error("Código de recuperación inválido"));
+                }
+                stored.remove(matchIdx);
+                usuario.setRecoveryCodes(twoFactorService.codesToJson(stored));
+                usuarioService.guardar(usuario);
+                usuarioService.resetearIntentosFallidos(usuario.getId());
+                int remaining = stored.size();
+                log.info("Login con código de recuperación para {}. Códigos restantes: {}", correo, remaining);
+                return ResponseEntity.ok(buildAuthResponse(usuario));
+            }
+
+            // Verificación TOTP estándar
             if (!twoFactorService.verifyCode(usuario.getTwoFactorSecret(), code)) {
                 usuarioService.incrementarIntentosFallidos(usuario.getId());
                 log.warn("Código 2FA incorrecto para {}", correo);
@@ -252,8 +274,18 @@ public class AuthController {
                 return ResponseEntity.status(400).body(ResponseDTO.error("Código incorrecto o expirado"));
             }
             usuario.setTwoFactorEnabled(true);
+
+            List<String> plainCodes  = twoFactorService.generateRecoveryCodes();
+            List<String> hashedCodes = plainCodes.stream()
+                    .map(c -> passwordEncoder.encode(twoFactorService.normalizeRecoveryCode(c)))
+                    .collect(Collectors.toList());
+            usuario.setRecoveryCodes(twoFactorService.codesToJson(hashedCodes));
+
             usuarioService.guardar(usuario);
-            return ResponseEntity.ok(ResponseDTO.success("Autenticación de dos factores activada correctamente", null));
+            return ResponseEntity.ok(ResponseDTO.success(
+                "Autenticación de dos factores activada correctamente",
+                Map.of("recoveryCodes", plainCodes)
+            ));
         } catch (SecurityException e) {
             return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
@@ -288,6 +320,38 @@ public class AuthController {
             return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(ResponseDTO.error("Error al desactivar 2FA"));
+        }
+    }
+
+    // ── 2FA: Regenerar códigos de recuperación ────────────────────────────────
+
+    @PostMapping("/2fa/recovery-codes/regenerate")
+    public ResponseEntity<ResponseDTO> regenerateRecoveryCodes(@RequestBody Map<String, String> body,
+                                                               HttpServletRequest request) {
+        String code = body.get("code");
+        if (code == null || code.isBlank()) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error("Código TOTP requerido"));
+        }
+        try {
+            Usuario usuario = usuarioFromRequest(request);
+            if (!Boolean.TRUE.equals(usuario.getTwoFactorEnabled())) {
+                return ResponseEntity.badRequest().body(ResponseDTO.error("El 2FA no está activado"));
+            }
+            if (!twoFactorService.verifyCode(usuario.getTwoFactorSecret(), code)) {
+                return ResponseEntity.status(401).body(ResponseDTO.error("Código incorrecto o expirado"));
+            }
+            List<String> plainCodes  = twoFactorService.generateRecoveryCodes();
+            List<String> hashedCodes = plainCodes.stream()
+                    .map(c -> passwordEncoder.encode(twoFactorService.normalizeRecoveryCode(c)))
+                    .collect(Collectors.toList());
+            usuario.setRecoveryCodes(twoFactorService.codesToJson(hashedCodes));
+            usuarioService.guardar(usuario);
+            return ResponseEntity.ok(ResponseDTO.success("Códigos de recuperación regenerados",
+                    Map.of("recoveryCodes", plainCodes)));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(ResponseDTO.error("Error al regenerar códigos"));
         }
     }
 

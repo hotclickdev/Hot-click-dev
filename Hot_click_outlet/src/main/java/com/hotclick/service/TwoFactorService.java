@@ -11,11 +11,19 @@ import org.springframework.stereotype.Service;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class TwoFactorService {
 
+    private static final String   RECOVERY_CHARS  = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    private static final int      RECOVERY_COUNT  = 8;
     private final SecretGenerator secretGenerator = new DefaultSecretGenerator(32);
+    private final SecureRandom    secureRandom    = new SecureRandom();
     private final CodeVerifier    codeVerifier;
 
     public TwoFactorService() {
@@ -58,5 +66,43 @@ public class TwoFactorService {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    // ── Recovery codes ────────────────────────────────────────────────────────
+
+    /** Genera 8 códigos de recuperación en formato XXXXX-XXXXX. */
+    public List<String> generateRecoveryCodes() {
+        List<String> codes = new ArrayList<>(RECOVERY_COUNT);
+        for (int i = 0; i < RECOVERY_COUNT; i++) {
+            StringBuilder sb = new StringBuilder(11);
+            for (int j = 0; j < 5; j++) sb.append(RECOVERY_CHARS.charAt(secureRandom.nextInt(RECOVERY_CHARS.length())));
+            sb.append('-');
+            for (int j = 0; j < 5; j++) sb.append(RECOVERY_CHARS.charAt(secureRandom.nextInt(RECOVERY_CHARS.length())));
+            codes.add(sb.toString());
+        }
+        return codes;
+    }
+
+    /** Serializa una lista de hashes a JSON array plano. */
+    public String codesToJson(List<String> hashedCodes) {
+        return "[" + hashedCodes.stream()
+                .map(c -> "\"" + c.replace("\\", "\\\\").replace("\"", "\\\"") + "\"")
+                .collect(Collectors.joining(",")) + "]";
+    }
+
+    /** Deserializa el JSON array de hashes almacenado en BD. */
+    public List<String> jsonToCodes(String json) {
+        if (json == null || json.isBlank() || json.equals("[]")) return new ArrayList<>();
+        String stripped = json.trim().replaceAll("^\\[|\\]$", "").trim();
+        if (stripped.isEmpty()) return new ArrayList<>();
+        return Arrays.stream(stripped.split(","))
+                .map(s -> s.trim().replaceAll("^\"|\"$", ""))
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
+    }
+
+    /** Normaliza un código de recuperación: mayúsculas, sin guiones ni espacios. */
+    public String normalizeRecoveryCode(String code) {
+        return code.toUpperCase().replaceAll("[^A-Z0-9]", "");
     }
 }

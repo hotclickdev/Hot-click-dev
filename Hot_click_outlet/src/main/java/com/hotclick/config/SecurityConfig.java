@@ -88,9 +88,17 @@ public class SecurityConfig {
                 .requestMatchers(GET, "/api/marcas/publicas").permitAll()
                 .requestMatchers(GET, "/api/ruleta/premios").permitAll()
                 .requestMatchers(POST, "/api/contacto").permitAll()
-                // Servicios HOT — fotos y solicitudes son públicas
+                // Servicios HOT — fotos y solicitudes son públicas; gestión requiere ADMIN_IT
                 .requestMatchers(POST, "/api/servicios/fotos").permitAll()
                 .requestMatchers(POST, "/api/servicios").permitAll()
+                .requestMatchers(GET,    "/api/servicios").hasRole("ADMIN_IT")
+                .requestMatchers(PUT,    "/api/servicios/*/estado").hasRole("ADMIN_IT")
+                .requestMatchers(DELETE, "/api/servicios/*").hasRole("ADMIN_IT")
+                // Testimonios — público: GET aprobados; auth: crear + subir imagen; admin: listar todos + moderar
+                .requestMatchers(GET, "/api/testimonios/publicos").permitAll()
+                .requestMatchers(GET, "/api/testimonios/admin").hasRole("ADMIN_IT")
+                .requestMatchers(PUT, "/api/testimonios/*/aprobar").hasRole("ADMIN_IT")
+                .requestMatchers(PUT, "/api/testimonios/*/rechazar").hasRole("ADMIN_IT")
                 // Carrito abandonado — público (usuarios anónimos y links de email)
                 .requestMatchers(POST, "/api/cart/abandoned").permitAll()
                 .requestMatchers(GET,  "/api/cart/abandoned/recover/**").permitAll()
@@ -119,7 +127,8 @@ public class SecurityConfig {
                     "/nosotros", "/productos", "/productos/**", "/informacion", "/contacto",
                     "/carrito", "/login", "/registro", "/perfil", "/perfil/**", "/mis-pedidos",
                     "/checkout", "/pago/exito", "/pago/cancelado",
-                    "/recuperar-carrito", "/recuperar-carrito/**").permitAll()
+                    "/recuperar-carrito", "/recuperar-carrito/**",
+                    "/servicios", "/servicios/**").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
