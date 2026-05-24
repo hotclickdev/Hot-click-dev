@@ -54,6 +54,7 @@ public class SupabaseStorageService {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(supabaseUrl + "/storage/v1/object/" + BUCKET + "/" + path))
                 .header("Authorization", "Bearer " + serviceKey)
+                .header("apikey", serviceKey)
                 .header("Content-Type", file.getContentType())
                 .POST(HttpRequest.BodyPublishers.ofByteArray(file.getBytes()))
                 .build();

@@ -28,7 +28,7 @@ export default function AdminMarcas() {
   const load = () => {
     setLoading(true)
     marcaService.getAll()
-      .then(({ data }) => setMarcas(Array.isArray(data.data) ? data.data : []))
+      .then(({ data }) => setMarcas(Array.isArray(data) ? data : []))
       .catch(() => toast({ message: t('common.error'), type: 'error' }))
       .finally(() => setLoading(false))
   }

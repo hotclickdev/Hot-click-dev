@@ -4,7 +4,7 @@ export const servicioService = {
   subirFoto: (file) => {
     const fd = new FormData()
     fd.append('file', file)
-    return api.post('/servicios/fotos', fd)
+    return api.post('/servicios/fotos', fd, { headers: { 'Content-Type': undefined } })
   },
 
   crear: (data) => api.post('/servicios', data),

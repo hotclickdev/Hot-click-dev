@@ -56,6 +56,14 @@ export default function ServiciosHotPage() {
   const handleFotoChange = async (e) => {
     const files = Array.from(e.target.files).slice(0, 3 - fotos.length)
     if (!files.length) return
+
+    const tooBig = files.find(f => f.size > 5 * 1024 * 1024)
+    if (tooBig) {
+      setError(t('serviciosPage.uploadSizeError', { defaultValue: 'Cada foto debe pesar menos de 5 MB.' }))
+      e.target.value = ''
+      return
+    }
+
     setUploading(true)
     setError('')
     try {

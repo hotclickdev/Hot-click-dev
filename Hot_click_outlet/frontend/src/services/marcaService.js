@@ -23,12 +23,6 @@ export const marcaService = {
   uploadLogo: (file) => {
     const fd = new FormData()
     fd.append('file', file)
-    return api.post('/marcas/logo', fd, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-      transformRequest: (data, headers) => {
-        delete headers['Content-Type']
-        return data
-      },
-    })
+    return api.post('/marcas/logo', fd, { headers: { 'Content-Type': undefined } })
   },
 }
