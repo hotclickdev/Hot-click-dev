@@ -1,28 +1,14 @@
-# Stage 1: Build React frontend
-# - node:22-slim (glibc) requerido por rolldown/Vite 8 (bindings nativos)
-# - NO usar --frozen-lockfile: pnpm necesita resolver los optional deps de
-#   plataforma (rolldown linux-x64-gnu) que el lockfile generado en Windows
-#   no incluye. La version de cada paquete sigue siendo la del lockfile.
-FROM node:22-slim AS frontend-builder
-WORKDIR /app/frontend
-RUN corepack enable && corepack prepare pnpm@11.1.2 --activate
-COPY Hot_click_outlet/frontend/package.json Hot_click_outlet/frontend/pnpm-lock.yaml ./
-RUN pnpm install --no-frozen-lockfile
-COPY Hot_click_outlet/frontend/ ./
-RUN mkdir -p /app/src/main/resources/static && pnpm run build
-
-# Stage 2: Build Spring Boot
-FROM maven:3.9-eclipse-temurin-21 AS backend-builder
+# Frontend pre-compilado localmente y committeado en src/main/resources/static/
+# Render solo necesita compilar Java — sin Node/pnpm en el build.
+FROM maven:3.9-eclipse-temurin-21 AS builder
 WORKDIR /build
 COPY Hot_click_outlet/pom.xml .
 RUN mvn dependency:go-offline -q
 COPY Hot_click_outlet/src ./src
-COPY --from=frontend-builder /app/src/main/resources/static ./src/main/resources/static
 RUN mvn clean package -DskipTests -q
 
-# Stage 3: Run
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-COPY --from=backend-builder /build/target/*.jar app.jar
+COPY --from=builder /build/target/*.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
