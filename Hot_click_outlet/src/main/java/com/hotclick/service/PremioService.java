@@ -74,12 +74,17 @@ public class PremioService {
     }
 
     private Premio sortearPremio(List<Premio> premios) {
+        if (premios == null || premios.isEmpty()) {
+            throw new RuntimeException("No hay premios disponibles para sorteo");
+        }
         double aleatorio = new Random().nextDouble() * 100;
         double acumulado = 0;
         for (Premio premio : premios) {
-            acumulado += premio.getProbabilidad().doubleValue();
-            if (aleatorio <= acumulado) {
-                return premio;
+            if (premio.getProbabilidad() != null) {
+                acumulado += premio.getProbabilidad().doubleValue();
+                if (aleatorio <= acumulado) {
+                    return premio;
+                }
             }
         }
         return premios.get(premios.size() - 1);

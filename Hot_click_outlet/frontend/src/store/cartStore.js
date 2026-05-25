@@ -37,7 +37,7 @@ const useCartStore = create(
       updateQuantity: (id, cantidad) => {
         if (cantidad < 1) return get().removeItem(id)
         set({
-          items: get().items.map((i) => i.id === id ? { ...i, cantidad } : i),
+          items: get().items.map((i) => i.id === id ? { ...i, cantidad: Math.min(cantidad, i.stock ?? 99) } : i),
           cartUpdatedAt: Date.now(),
         })
       },

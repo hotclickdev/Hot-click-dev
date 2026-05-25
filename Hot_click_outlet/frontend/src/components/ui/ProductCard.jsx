@@ -148,10 +148,12 @@ function ProductCard({ product, priority = false, index = 0 }) {
 }
 
 export default memo(ProductCard, (prev, next) =>
-  prev.product.id    === next.product.id    &&
-  prev.product.stock === next.product.stock &&
-  prev.priority      === next.priority      &&
-  prev.index         === next.index
+  prev.product.id     === next.product.id     &&
+  prev.product.stock  === next.product.stock  &&
+  prev.product.precio === next.product.precio &&
+  prev.product.nombre === next.product.nombre &&
+  prev.priority       === next.priority       &&
+  prev.index          === next.index
 )
 
 function HeartCardIcon({ filled }) {

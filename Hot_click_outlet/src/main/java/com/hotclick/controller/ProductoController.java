@@ -61,7 +61,8 @@ public class ProductoController {
             @RequestBody Map<String, Object> body) {
         try {
             Boolean valor = (Boolean) body.get("enCarrusel");
-            Integer orden = body.get("orden") != null ? ((Number) body.get("orden")).intValue() : null;
+            Object ordenObj = body.get("orden");
+            Integer orden = (ordenObj instanceof Number n) ? n.intValue() : null;
             if (valor == null) return ResponseEntity.badRequest().body(ResponseDTO.error("Campo enCarrusel requerido"));
             var producto = productoService.toggleCarrusel(id, valor, orden);
             return ResponseEntity.ok(ResponseDTO.success("Carrusel actualizado", producto));

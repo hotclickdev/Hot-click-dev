@@ -120,6 +120,8 @@ public class SecurityConfig {
                 .requestMatchers(PUT,    "/api/pedidos/*/envio").hasRole("ADMIN_IT")
                 .requestMatchers(DELETE, "/api/pedidos/*").hasRole("ADMIN_IT")
                 .requestMatchers(POST,   "/api/pedidos/*/notificar").hasRole("ADMIN_IT")
+                // Lista de usuarios — solo admin (perfil propio y actualización siguen autenticados)
+                .requestMatchers(GET, "/api/usuarios").hasRole("ADMIN_IT")
                 // Todas las demás rutas /api/** requieren autenticación
                 .requestMatchers("/api/**").authenticated()
                 // Rutas del SPA React (frontend)

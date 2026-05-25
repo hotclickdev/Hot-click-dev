@@ -59,7 +59,7 @@ export default function AdminFinanzas() {
     return true
   }), [pedidos, desde, hasta])
 
-  const totalProductos = filtered.reduce((s, p) => s + (p.subtotal ?? (p.total ?? p.totalPedido ?? 0) - (p.costoEnvio ?? 0)), 0)
+  const totalProductos = filtered.reduce((s, p) => s + (p.subtotal ?? ((p.total ?? p.totalPedido ?? 0) - (p.costoEnvio ?? 0))), 0)
   const totalEnvio     = filtered.reduce((s, p) => s + (p.costoEnvio ?? 0), 0)
   const totalCobrado   = filtered.reduce((s, p) => s + (p.total ?? p.totalPedido ?? 0), 0)
 
@@ -77,7 +77,7 @@ export default function AdminFinanzas() {
               id: p.id,
               fecha: (p.fechaCreacion ?? p.fechaPedido ?? '').slice(0, 10),
               cliente: p.nombreCliente ?? '',
-              subtotalProductos: p.subtotal ?? (p.total ?? p.totalPedido ?? 0) - (p.costoEnvio ?? 0),
+              subtotalProductos: p.subtotal ?? ((p.total ?? p.totalPedido ?? 0) - (p.costoEnvio ?? 0)),
               costoEnvio: p.costoEnvio ?? 0,
               totalCobrado: p.total ?? p.totalPedido ?? 0,
             }))}

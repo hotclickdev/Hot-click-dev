@@ -248,8 +248,10 @@ public class PayPalPaymentProvider implements PaymentProvider {
                 for (Map<String, Object> link : links) {
                     if ("up".equals(link.get("rel"))) {
                         String href = (String) link.get("href");
-                        String[] parts = href.split("/");
-                        orderId = parts[parts.length - 1];
+                        if (href != null && !href.isBlank()) {
+                            String[] parts = href.split("/");
+                            if (parts.length > 0) orderId = parts[parts.length - 1];
+                        }
                         break;
                     }
                 }
@@ -310,8 +312,10 @@ public class PayPalPaymentProvider implements PaymentProvider {
                 for (Map<String, Object> link : links) {
                     if ("up".equals(link.get("rel"))) {
                         String href = (String) link.get("href");
-                        String[] parts = href.split("/");
-                        orderId = parts[parts.length - 1];
+                        if (href != null && !href.isBlank()) {
+                            String[] parts = href.split("/");
+                            if (parts.length > 0) orderId = parts[parts.length - 1];
+                        }
                         break;
                     }
                 }

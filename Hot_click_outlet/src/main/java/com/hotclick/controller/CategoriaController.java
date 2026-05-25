@@ -11,7 +11,9 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -54,6 +56,7 @@ public class CategoriaController {
         }
     }
 
+    @Transactional
     @CacheEvict(value = "categorias", allEntries = true)
     @PostMapping("/bulk")
     public ResponseEntity<ResponseDTO> importarBulk(
@@ -61,7 +64,7 @@ public class CategoriaController {
             @AuthenticationPrincipal UserDetails ud) {
         var admin = usuarioRepository.findByCorreo(ud.getUsername())
             .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
-        int ok = 0;
+        List<Categoria> batch = new ArrayList<>();
         for (Map<String, String> item : items) {
             String nombre = item.get("nombreCategoria");
             if (nombre == null || nombre.isBlank()) continue;
@@ -70,10 +73,10 @@ public class CategoriaController {
             cat.setDescripcion(item.getOrDefault("descripcion", ""));
             cat.setEstado(Constants.ESTADO_ACTIVO);
             cat.setAdminCliente(admin);
-            categoriaRepository.save(cat);
-            ok++;
+            batch.add(cat);
         }
-        return ResponseEntity.ok(ResponseDTO.success("Importadas: " + ok + " categorías", Map.of("ok", ok)));
+        categoriaRepository.saveAll(batch);
+        return ResponseEntity.ok(ResponseDTO.success("Importadas: " + batch.size() + " categorías", Map.of("ok", batch.size())));
     }
 
     @CacheEvict(value = "categorias", allEntries = true)
