@@ -7,7 +7,9 @@
 // public URL is returned directly. The bucket HOT_CLICK is public so <img>
 // tags can load cross-origin images without CORS or ORB issues.
 
-const TRANSFORMS_ENABLED = import.meta.env.VITE_SUPABASE_TRANSFORMS === 'true'
+// Image Transforms requieren Supabase Pro. Mientras se use el plan gratuito,
+// siempre usar URLs directas del bucket público (no transforms).
+const TRANSFORMS_ENABLED = false
 const STORAGE_SEGMENT = '/storage/v1/object/public/'
 const RENDER_SEGMENT  = '/storage/v1/render/image/public/'
 
