@@ -17,6 +17,7 @@ import { formatPrice, conditionLabel, conditionVariant } from '@/utils/format'
 import { analytics } from '@/utils/analytics'
 import SocialProof from '@/components/ui/SocialProof'
 import OptimizedImage from '@/components/ui/OptimizedImage'
+import { getOptimizedUrl } from '@/utils/imageUtils'
 
 export default function ProductDetailPage() {
   const { id } = useParams()
@@ -184,7 +185,7 @@ export default function ProductDetailPage() {
                 className="hover:text-white transition-colors flex items-center gap-1"
               >
                 {product.marcaLogoUrl && (
-                  <img src={product.marcaLogoUrl} alt="" className="w-3.5 h-3.5 object-contain rounded-sm" onError={(e) => { e.target.style.display = 'none' }} />
+                  <img src={getOptimizedUrl(product.marcaLogoUrl, { width: 28 })} alt="" className="w-3.5 h-3.5 object-contain rounded-sm" onError={(e) => { e.target.style.display = 'none' }} />
                 )}
                 {product.marcaNombre}
               </button>
@@ -622,7 +623,7 @@ export default function ProductDetailPage() {
                 >
                   <div className="h-24 bg-[#1a1a1f] flex items-center justify-center overflow-hidden">
                     {bp.imagenUrl ? (
-                      <img src={bp.imagenUrl} alt={bp.nombre} width={96} height={96} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
+                      <img src={getOptimizedUrl(bp.imagenUrl, { width: 96 })} alt={bp.nombre} width={96} height={96} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
                     ) : (
                       <span className="text-3xl opacity-20">📦</span>
                     )}
@@ -663,7 +664,7 @@ export default function ProductDetailPage() {
                   <div className="h-24 bg-[#1a1a1f] flex items-center justify-center overflow-hidden">
                     {rec.imagenUrl ? (
                       <img
-                        src={rec.imagenUrl}
+                        src={getOptimizedUrl(rec.imagenUrl, { width: 96 })}
                         alt={rec.nombre}
                         width={96}
                         height={96}
@@ -711,7 +712,7 @@ export default function ProductDetailPage() {
                   >
                     <div className="w-9 h-9 rounded-lg bg-[#1a1a1f] overflow-hidden shrink-0 border border-white/6">
                       {p.imagenUrl ? (
-                        <img src={p.imagenUrl} alt={p.nombre} width={36} height={36} className="w-full h-full object-cover" loading="lazy" />
+                        <img src={getOptimizedUrl(p.imagenUrl, { width: 36 })} alt={p.nombre} width={36} height={36} className="w-full h-full object-cover" loading="lazy" />
                       ) : (
                         <span className="flex items-center justify-center w-full h-full text-sm">📦</span>
                       )}
@@ -785,7 +786,7 @@ function StickyCartBar({ product, quantity, onDecrease, onIncrease, onAdd, justA
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="w-11 h-11 rounded-xl bg-[#1a1a1f] overflow-hidden shrink-0 border border-white/8">
             {product.imagenUrl ? (
-              <img src={product.imagenUrl} alt={product.nombre} width={44} height={44} className="w-full h-full object-cover" loading="lazy" />
+              <img src={getOptimizedUrl(product.imagenUrl, { width: 44 })} alt={product.nombre} width={44} height={44} className="w-full h-full object-cover" loading="lazy" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-lg">📦</div>
             )}

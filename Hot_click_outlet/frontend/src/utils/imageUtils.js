@@ -14,10 +14,25 @@ const RENDER_SEGMENT  = '/storage/v1/render/image/public/'
 /** Returns a same-origin proxy URL for any Supabase Storage URL. */
 function toProxyUrl(url) {
   if (!url || url.startsWith('/api/img')) return url
-  const idx = url.indexOf(STORAGE_SEGMENT)
-  if (idx === -1) return url
-  const storagePath = url.substring(idx + STORAGE_SEGMENT.length)
-  return `/api/img?p=${encodeURIComponent(storagePath)}`
+
+  // Handle regular object/public URLs
+  let idx = url.indexOf(STORAGE_SEGMENT)
+  if (idx !== -1) {
+    const storagePath = url.substring(idx + STORAGE_SEGMENT.length)
+    return `/api/img?p=${encodeURIComponent(storagePath)}`
+  }
+
+  // Handle render/image URLs (stored in DB by old builds with transforms enabled)
+  // Strip query params (quality, format, width) and convert to proxy URL
+  idx = url.indexOf(RENDER_SEGMENT)
+  if (idx !== -1) {
+    let storagePath = url.substring(idx + RENDER_SEGMENT.length)
+    const qIdx = storagePath.indexOf('?')
+    if (qIdx !== -1) storagePath = storagePath.substring(0, qIdx)
+    return `/api/img?p=${encodeURIComponent(storagePath)}`
+  }
+
+  return url
 }
 
 /**
