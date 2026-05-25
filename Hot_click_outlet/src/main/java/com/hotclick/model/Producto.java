@@ -1,5 +1,6 @@
 package com.hotclick.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -99,6 +100,7 @@ public class Producto extends BaseEntity {
     @JoinColumn(name = "fk_id_marca")
     private Marca marca;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "fk_id_admin_cliente", nullable = false)
     private Usuario adminCliente;

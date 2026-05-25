@@ -420,7 +420,7 @@ export default function HomePage() {
       .then(({ data }) => setDestacados(Array.isArray(data) ? data.slice(0, 8) : []))
       .catch(() => {})
     marcaService.getPublicas()
-      .then(({ data }) => setMarcas(Array.isArray(data.data) ? data.data : []))
+      .then(({ data }) => setMarcas(Array.isArray(data) ? data : []))
       .catch(() => {})
   }, [])
 

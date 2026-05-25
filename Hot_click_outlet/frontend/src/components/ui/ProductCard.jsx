@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
@@ -10,6 +10,7 @@ function ProductCard({ product, priority = false, index = 0 }) {
   const navigate = useNavigate()
   const { toggle: toggleWishlist, isLiked } = useWishlistStore()
   const { t } = useTranslation()
+  const [imgError, setImgError] = useState(false)
 
   const liked = isLiked(product.id)
 
@@ -24,7 +25,7 @@ function ProductCard({ product, priority = false, index = 0 }) {
     >
       {/* ── Image ── */}
       <div className="hc-product-img relative h-36 sm:h-48 flex items-center justify-center overflow-hidden">
-        {product.imagenUrl ? (
+        {product.imagenUrl && !imgError ? (
           <OptimizedImage
             src={product.imagenUrl}
             alt={product.nombre}
@@ -33,6 +34,7 @@ function ProductCard({ product, priority = false, index = 0 }) {
             className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
             priority={priority}
             quality={80}
+            onError={() => setImgError(true)}
           />
         ) : (
           <div className="flex flex-col items-center gap-3 opacity-20">
