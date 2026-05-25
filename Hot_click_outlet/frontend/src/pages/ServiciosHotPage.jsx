@@ -6,7 +6,6 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import useAuthStore from '@/store/authStore'
 import { servicioService } from '@/services/servicioService'
-import { publicacionService } from '@/services/publicacionService'
 import { useQuery } from '@tanstack/react-query'
 
 const ESTADO_STYLES = {
@@ -36,7 +35,6 @@ export default function ServiciosHotPage() {
   const [tab, setTab] = useState('solicitar')
   const [fotos, setFotos] = useState([])         // { file, preview, url }
   const [uploading, setUploading] = useState(false)
-  const [analizando, setAnalizando] = useState(false)
   const [sending, setSending] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
@@ -88,23 +86,6 @@ export default function ServiciosHotPage() {
 
   const quitarFoto = (idx) => {
     setFotos(prev => prev.filter((_, i) => i !== idx))
-  }
-
-  const handleAnalizar = async () => {
-    if (!fotos.length) return
-    setAnalizando(true)
-    try {
-      const fd = new FormData()
-      fotos.forEach(f => fd.append('imagenes', f.file))
-      const res = await publicacionService.detallesProducto(fd)
-      const d = res.data?.data ?? res.data ?? {}
-      const desc = [d.nombre, d.descripcionCorta].filter(Boolean).join(' — ')
-      if (desc) setForm(f => ({ ...f, descripcion: f.descripcion || desc }))
-    } catch {
-      // analysis failed — user fills manually
-    } finally {
-      setAnalizando(false)
-    }
   }
 
   const handleEnviar = async (e) => {
@@ -284,14 +265,9 @@ export default function ServiciosHotPage() {
                     </div>
                     <input ref={fileRef} type="file" accept="image/*" multiple className="hidden"
                       onChange={handleFotoChange} />
-                    {fotos.length > 0 && (
-                      <button type="button" onClick={handleAnalizar}
-                        disabled={analizando || uploading}
-                        className="mt-2 text-xs px-3 py-1.5 rounded-lg font-semibold transition-all disabled:opacity-50"
-                        style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-accent)', border: '1px solid var(--hc-border)' }}>
-                        {analizando ? t('serviciosPage.analyzing', { defaultValue: 'Analizando...' }) : t('serviciosPage.analyzeBtn', { defaultValue: '🔍 Analizar foto con IA' })}
-                      </button>
-                    )}
+                    <p className="mt-2 text-xs" style={{ color: 'var(--hc-muted)' }}>
+                      ⏱ Tendrás una respuesta en menos de un día
+                    </p>
                   </div>
 
                   {/* Presupuesto */}

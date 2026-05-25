@@ -187,7 +187,11 @@ public class PaymentService {
         pago.setProveedor(provider);
         pago.setFechaCreacion(LocalDateTime.now());
         pago.setFechaActualizacion(LocalDateTime.now());
-        pago.setFechaExpiracion(LocalDateTime.now().plusMinutes(30));
+        // SINPE requiere más tiempo para revisión manual; resto expira en 30 min
+        boolean esSinpe = "SINPE".equalsIgnoreCase(provider);
+        pago.setFechaExpiracion(esSinpe
+            ? LocalDateTime.now().plusHours(24)
+            : LocalDateTime.now().plusMinutes(30));
         pago.setPedido(pedido);
         pago.setUsuario(usuario);
         pago.setEstado(Constants.ESTADO_ACTIVO);
@@ -386,6 +390,53 @@ public class PaymentService {
         liberarReservas(pedido);
         notificacionEmailService.enviarPagoFallido(pedido, motivo);
         log.info("Pago {} marcado FALLIDO: {}", pago.getPedido().getNumeroPedido(), motivo);
+    }
+
+    // ================================================================
+    // CONFIRMAR SINPE — Admin confirma el comprobante manualmente.
+    // ================================================================
+    @Transactional
+    public PaymentStatusResponse confirmarSinpe(Long pagoId) {
+        Pago pago = pagoRepository.findById(pagoId)
+            .orElseThrow(() -> new RuntimeException("Pago no encontrado: " + pagoId));
+
+        if (!Constants.PROVEEDOR_SINPE.equals(pago.getProveedor())) {
+            throw new IllegalArgumentException("El pago no es de tipo SINPE");
+        }
+        if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
+            return buildStatusResponse(pago);
+        }
+        if (!Constants.PAGO_PENDIENTE.equals(pago.getEstadoPago())) {
+            throw new IllegalStateException("El pago ya fue " + pago.getEstadoPago().toLowerCase() + " y no puede confirmarse");
+        }
+
+        pago.setEstadoPago(Constants.PAGO_CAPTURADO);
+        pago.setFechaActualizacion(LocalDateTime.now());
+        pagoRepository.save(pago);
+
+        confirmarPedido(pago);
+        log.info("Pago SINPE {} confirmado manualmente", pago.getPedido().getNumeroPedido());
+        return buildStatusResponse(pago);
+    }
+
+    // ================================================================
+    // RECHAZAR SINPE — Admin rechaza el comprobante manualmente.
+    // ================================================================
+    @Transactional
+    public void rechazarSinpe(Long pagoId, String motivo) {
+        Pago pago = pagoRepository.findById(pagoId)
+            .orElseThrow(() -> new RuntimeException("Pago no encontrado: " + pagoId));
+
+        if (!Constants.PROVEEDOR_SINPE.equals(pago.getProveedor())) {
+            throw new IllegalArgumentException("El pago no es de tipo SINPE");
+        }
+        if (!Constants.PAGO_PENDIENTE.equals(pago.getEstadoPago())) {
+            throw new IllegalStateException("El pago ya fue procesado y no puede rechazarse");
+        }
+
+        marcarFallido(pago, motivo != null && !motivo.isBlank()
+            ? motivo : "Comprobante rechazado por administrador");
+        log.info("Pago SINPE {} rechazado", pago.getPedido().getNumeroPedido());
     }
 
     // ================================================================

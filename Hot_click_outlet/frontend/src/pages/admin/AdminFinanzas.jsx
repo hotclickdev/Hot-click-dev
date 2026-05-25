@@ -29,11 +29,15 @@ export default function AdminFinanzas() {
   const [hasta, setHasta]     = useState('')
 
   useEffect(() => {
+    applyQuick(30)
     orderService.getAll()
       .then(({ data }) => {
         const raw = data?.data ?? data
         const all = Array.isArray(raw) ? raw : raw?.content ?? []
-        setPedidos(all.filter(p => p.estadoPedido === 'ENTREGADO'))
+        setPedidos(all.filter(p => {
+          const e = p.estado ?? p.estadoPedido
+          return e === 'ENTREGADO' || e === 'COMPLETADO'
+        }))
       })
       .finally(() => setLoading(false))
   }, [])
@@ -49,15 +53,15 @@ export default function AdminFinanzas() {
   }
 
   const filtered = useMemo(() => pedidos.filter((p) => {
-    const fecha = (p.fechaPedido ?? '').slice(0, 10)
+    const fecha = (p.fechaCreacion ?? p.fechaPedido ?? '').slice(0, 10)
     if (desde && fecha < desde) return false
     if (hasta && fecha > hasta) return false
     return true
   }), [pedidos, desde, hasta])
 
-  const totalProductos = filtered.reduce((s, p) => s + (p.subtotal ?? (p.totalPedido ?? 0) - (p.costoEnvio ?? 0)), 0)
+  const totalProductos = filtered.reduce((s, p) => s + (p.subtotal ?? (p.total ?? p.totalPedido ?? 0) - (p.costoEnvio ?? 0)), 0)
   const totalEnvio     = filtered.reduce((s, p) => s + (p.costoEnvio ?? 0), 0)
-  const totalCobrado   = filtered.reduce((s, p) => s + (p.totalPedido ?? 0), 0)
+  const totalCobrado   = filtered.reduce((s, p) => s + (p.total ?? p.totalPedido ?? 0), 0)
 
   return (
     <AdminLayout>
@@ -71,11 +75,11 @@ export default function AdminFinanzas() {
             exportOnly
             data={filtered.map((p) => ({
               id: p.id,
-              fecha: (p.fechaPedido ?? '').slice(0, 10),
+              fecha: (p.fechaCreacion ?? p.fechaPedido ?? '').slice(0, 10),
               cliente: p.nombreCliente ?? '',
-              subtotalProductos: p.subtotal ?? (p.totalPedido ?? 0) - (p.costoEnvio ?? 0),
+              subtotalProductos: p.subtotal ?? (p.total ?? p.totalPedido ?? 0) - (p.costoEnvio ?? 0),
               costoEnvio: p.costoEnvio ?? 0,
-              totalCobrado: p.totalPedido ?? 0,
+              totalCobrado: p.total ?? p.totalPedido ?? 0,
             }))}
             columns={['id','fecha','cliente','subtotalProductos','costoEnvio','totalCobrado']}
             filename="finanzas"
@@ -157,7 +161,7 @@ export default function AdminFinanzas() {
                       <tbody className="divide-y divide-white/5">
                         {filtered.map((p) => {
                           const envio      = p.costoEnvio ?? 0
-                          const productos  = p.subtotal ?? (p.totalPedido ?? 0) - envio
+                          const productos  = p.subtotal ?? (p.total ?? p.totalPedido ?? 0) - envio
                           const esRetiro   = p.metodoEnvio !== 'ENVIO_A_DOMICILIO'
                           const cliente    = p.usuarioFinal?.nombre ?? p.nombreCliente ?? '—'
                           return (
@@ -168,7 +172,7 @@ export default function AdminFinanzas() {
                                 <p className="text-[11px] text-[#8e8e9a]">{esRetiro ? t('adminFinanzas.pickup') : t('adminFinanzas.delivery')}</p>
                               </td>
                               <td className="px-4 py-3 text-xs text-[#8e8e9a]">
-                                {p.fechaPedido ? formatDate(p.fechaPedido) : '—'}
+                                {(p.fechaCreacion ?? p.fechaPedido) ? formatDate(p.fechaCreacion ?? p.fechaPedido) : '—'}
                               </td>
                               <td className="px-4 py-3 font-semibold text-[#4ade80]">
                                 {formatPrice(productos)}
@@ -181,7 +185,7 @@ export default function AdminFinanzas() {
                                 )}
                               </td>
                               <td className="px-4 py-3 font-bold text-[#4f7cff]">
-                                {formatPrice(p.totalPedido ?? 0)}
+                                {formatPrice(p.total ?? p.totalPedido ?? 0)}
                               </td>
                             </tr>
                           )

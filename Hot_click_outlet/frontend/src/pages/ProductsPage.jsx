@@ -18,7 +18,7 @@ export default function ProductsPage() {
 
   const SORT_OPTIONS = [
     { value: 'default', label: t('products.sortBy') },
-    { value: 'featured', label: 'Destacados' },
+    { value: 'featured', label: t('products.featured') },
     { value: 'price_asc', label: t('products.priceAsc') },
     { value: 'price_desc', label: t('products.priceDesc') },
     { value: 'name', label: t('products.nameAsc') },
@@ -33,9 +33,9 @@ export default function ProductsPage() {
 
   const COND_OPTIONS = [
     { value: '', label: t('products.allCategories') },
-    { value: 'NUEVO', label: 'Nuevo' },
-    { value: 'COMO_NUEVO', label: 'Como nuevo' },
-    { value: 'USADO', label: 'Usado' },
+    { value: 'NUEVO', label: t('products.condNuevo') },
+    { value: 'COMO_NUEVO', label: t('products.condComoNuevo') },
+    { value: 'USADO', label: t('products.condUsado') },
   ]
 
   const [products, setProducts] = useState([])
@@ -112,8 +112,8 @@ export default function ProductsPage() {
   const clearFilters = () => { setCategory(''); setMarca(''); setFilterStock(''); setFilterCond(''); setSearch(''); setPriceMin(''); setPriceMax('') }
 
   const activeChips = [
-    category && { key: 'cat', label: categories.find((c) => String(c.id) === String(category))?.nombreCategoria ?? categories.find((c) => String(c.id) === String(category))?.nombre ?? 'Categoría', clear: () => setCategory('') },
-    marca && { key: 'marca', label: marcas.find((m) => String(m.id) === String(marca))?.nombreMarca ?? 'Marca', clear: () => setMarca('') },
+    category && { key: 'cat', label: categories.find((c) => String(c.id) === String(category))?.nombreCategoria ?? categories.find((c) => String(c.id) === String(category))?.nombre ?? t('products.categoryLabel'), clear: () => setCategory('') },
+    marca && { key: 'marca', label: marcas.find((m) => String(m.id) === String(marca))?.nombreMarca ?? t('products.brand'), clear: () => setMarca('') },
     filterCond && { key: 'cond', label: COND_OPTIONS.find((o) => o.value === filterCond)?.label, clear: () => setFilterCond('') },
     filterStock && { key: 'stock', label: STOCK_OPTIONS.find((o) => o.value === filterStock)?.label, clear: () => setFilterStock('') },
     (priceMin || priceMax) && { key: 'price', label: priceMin && priceMax ? `₡${Number(priceMin).toLocaleString()} – ₡${Number(priceMax).toLocaleString()}` : priceMin ? `> ₡${Number(priceMin).toLocaleString()}` : `< ₡${Number(priceMax).toLocaleString()}`, clear: () => { setPriceMin(''); setPriceMax('') } },
@@ -173,9 +173,9 @@ export default function ProductsPage() {
                   <>
                     <div className="border-t border-white/6" />
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">Marca</label>
+                      <label className="text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">{t('products.brand')}</label>
                       <div className="flex flex-wrap gap-2">
-                        <ChipBtn active={marca === ''} onClick={() => setMarca('')}>Todas</ChipBtn>
+                        <ChipBtn active={marca === ''} onClick={() => setMarca('')}>{t('products.allBrands')}</ChipBtn>
                         {marcas.map((m) => (
                           <ChipBtn key={m.id} active={String(marca) === String(m.id)} onClick={() => setMarca(m.id)}>
                             {m.nombreMarca}
@@ -189,7 +189,7 @@ export default function ProductsPage() {
                 <div className="border-t border-white/6" />
 
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">Condición</label>
+                  <label className="text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">{t('products.condition')}</label>
                   <div className="flex flex-wrap gap-2">
                     {COND_OPTIONS.map(({ value, label }) => (
                       <ChipBtn key={value} active={filterCond === value} onClick={() => setFilterCond(value)}>{label}</ChipBtn>
@@ -200,7 +200,7 @@ export default function ProductsPage() {
                 <div className="border-t border-white/6" />
 
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">Disponibilidad</label>
+                  <label className="text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">{t('products.availability')}</label>
                   <div className="flex flex-wrap gap-2">
                     {STOCK_OPTIONS.map(({ value, label }) => (
                       <ChipBtn key={value} active={filterStock === value} onClick={() => setFilterStock(value)}>{label}</ChipBtn>
@@ -211,11 +211,11 @@ export default function ProductsPage() {
                 <div className="border-t border-white/6" />
 
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">Precio (₡)</label>
+                  <label className="text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">{t('products.price')}</label>
                   <div className="flex gap-2">
                     <input
                       type="number"
-                      placeholder="Mínimo"
+                      placeholder={t('products.priceMin')}
                       value={priceMin}
                       onChange={(e) => setPriceMin(e.target.value)}
                       className="w-full h-9 rounded-xl px-3 text-sm bg-white/5 border text-[#e8e8ed] placeholder-[#8e8e9a] outline-none"
@@ -223,7 +223,7 @@ export default function ProductsPage() {
                     />
                     <input
                       type="number"
-                      placeholder="Máximo"
+                      placeholder={t('products.priceMax')}
                       value={priceMax}
                       onChange={(e) => setPriceMax(e.target.value)}
                       className="w-full h-9 rounded-xl px-3 text-sm bg-white/5 border text-[#e8e8ed] placeholder-[#8e8e9a] outline-none"
@@ -236,7 +236,7 @@ export default function ProductsPage() {
                   onClick={() => setFilterDrawerOpen(false)}
                   className="w-full h-12 rounded-2xl bg-[#4f7cff] text-white font-semibold text-sm mt-2"
                 >
-                  Ver {filtered.length} resultado{filtered.length !== 1 ? 's' : ''}
+                  {t('products.viewResults', { count: filtered.length })}
                 </button>
               </div>
             </motion.div>
@@ -274,7 +274,7 @@ export default function ProductsPage() {
                 ? (marcas.find((m) => String(m.id) === String(marca))?.nombreMarca ?? marcaNombreParam ?? t('products.title'))
                 : t('products.title')}
             </h1>
-            <p className="text-[#8e8e9a] text-sm mt-0.5">{filtered.length} resultado{filtered.length !== 1 ? 's' : ''}</p>
+            <p className="text-[#8e8e9a] text-sm mt-0.5">{t('products.resultsCount', { count: filtered.length })}</p>
           </div>
           {/* Desktop: toggle sidebar */}
           <button
@@ -282,7 +282,7 @@ export default function ProductsPage() {
             className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-sm text-[#8e8e9a] hover:text-white transition-colors"
           >
             <FilterIcon />
-            {sidebarOpen ? 'Ocultar filtros' : 'Mostrar filtros'}
+            {sidebarOpen ? t('products.hideFilters') : t('products.showFilters')}
           </button>
           {/* Mobile: open drawer */}
           <button
@@ -339,9 +339,9 @@ export default function ProductsPage() {
                     <>
                       <div className="border-t" style={{ borderColor: 'var(--hc-border)' }} />
                       <div className="space-y-2">
-                        <label className="text-xs font-medium text-[#8e8e9a]">Marca</label>
+                        <label className="text-xs font-medium text-[#8e8e9a]">{t('products.brand')}</label>
                         <div className="space-y-0.5">
-                          <FilterBtn active={marca === ''} onClick={() => setMarca('')}>Todas</FilterBtn>
+                          <FilterBtn active={marca === ''} onClick={() => setMarca('')}>{t('products.allBrands')}</FilterBtn>
                           {marcas.map((m) => (
                             <FilterBtn key={m.id} active={String(marca) === String(m.id)} onClick={() => setMarca(m.id)}>
                               {m.nombreMarca}
@@ -356,7 +356,7 @@ export default function ProductsPage() {
 
                   {/* Condition */}
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-[#8e8e9a]">Condición</label>
+                    <label className="text-xs font-medium text-[#8e8e9a]">{t('products.condition')}</label>
                     <div className="space-y-0.5">
                       {COND_OPTIONS.map(({ value, label }) => (
                         <FilterBtn key={value} active={filterCond === value} onClick={() => setFilterCond(value)}>
@@ -370,7 +370,7 @@ export default function ProductsPage() {
 
                   {/* Stock */}
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-[#8e8e9a]">Disponibilidad</label>
+                    <label className="text-xs font-medium text-[#8e8e9a]">{t('products.availability')}</label>
                     <div className="space-y-0.5">
                       {STOCK_OPTIONS.map(({ value, label }) => (
                         <FilterBtn key={value} active={filterStock === value} onClick={() => setFilterStock(value)}>
@@ -384,11 +384,11 @@ export default function ProductsPage() {
 
                   {/* Price range */}
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-[#8e8e9a]">Precio (₡)</label>
+                    <label className="text-xs font-medium text-[#8e8e9a]">{t('products.price')}</label>
                     <div className="flex gap-2">
                       <input
                         type="number"
-                        placeholder="Mín"
+                        placeholder={t('products.priceMinShort')}
                         value={priceMin}
                         onChange={(e) => setPriceMin(e.target.value)}
                         className="w-full h-8 rounded-lg px-2 text-xs bg-white/5 border text-[#e8e8ed] placeholder-[#8e8e9a] outline-none focus:border-[#4f7cff]/60 transition-colors"
@@ -396,7 +396,7 @@ export default function ProductsPage() {
                       />
                       <input
                         type="number"
-                        placeholder="Máx"
+                        placeholder={t('products.priceMaxShort')}
                         value={priceMax}
                         onChange={(e) => setPriceMax(e.target.value)}
                         className="w-full h-8 rounded-lg px-2 text-xs bg-white/5 border text-[#e8e8ed] placeholder-[#8e8e9a] outline-none focus:border-[#4f7cff]/60 transition-colors"
@@ -456,7 +456,7 @@ export default function ProductsPage() {
                 ))}
                 {activeChips.length > 1 && (
                   <button onClick={clearFilters} className="text-xs text-[#8e8e9a] hover:text-[#4f7cff] transition-colors underline">
-                    Limpiar todo
+                    {t('products.clearAll')}
                   </button>
                 )}
               </div>
@@ -479,7 +479,7 @@ export default function ProductsPage() {
                 </div>
                 <div>
                   <p className="font-semibold text-base mb-1" style={{ color: 'var(--hc-text)' }}>{t('products.noResults')}</p>
-                  <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>Intenta con otros filtros o busca por nombre</p>
+                  <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>{t('products.noResultsHint')}</p>
                 </div>
                 {(search || hasFilters) && (
                   <button

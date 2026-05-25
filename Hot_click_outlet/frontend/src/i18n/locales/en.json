@@ -12,7 +12,8 @@
     "menu": "Menu",
     "misPedidos": "My Orders",
     "wishlist": "Wishlist",
-    "buscar": "Search"
+    "buscar": "Search",
+    "servicios": "HOT Services"
   },
   "bnav": {
     "inicio": "Home",
@@ -94,7 +95,15 @@
     "ctaSub": "Explore our full catalog of tech products.",
     "ctaBtn": "Explore store",
     "shipping24h": "24h Shipping",
-    "recentlyViewed": "Recently viewed"
+    "recentlyViewed": "Recently viewed",
+    "brands": "Our brands",
+    "servicesNotFound": "Can't find the product you're looking for?",
+    "servicesSend": "Send us a photo and we'll get it for you.",
+    "servicesSearch": "We search with our suppliers and notify you via WhatsApp with price and availability.",
+    "servicesRequest": "📸 Request search",
+    "servicesStep1": "Send a photo",
+    "servicesStep2": "We search",
+    "servicesStep3": "We notify you"
   },
   "products": {
     "title": "Catalog",
@@ -115,7 +124,29 @@
     "loading": "Loading products...",
     "of": "of",
     "results": "results",
-    "searchByName": "Search by name"
+    "searchByName": "Search by name",
+    "featured": "Featured",
+    "condNuevo": "New",
+    "condComoNuevo": "Like new",
+    "condUsado": "Used",
+    "brand": "Brand",
+    "allBrands": "All",
+    "condition": "Condition",
+    "availability": "Availability",
+    "price": "Price (₡)",
+    "priceMin": "Minimum",
+    "priceMax": "Maximum",
+    "priceMinShort": "Min",
+    "priceMaxShort": "Max",
+    "clearAll": "Clear all",
+    "noResultsHint": "Try other filters or search by name",
+    "showFilters": "Show filters",
+    "hideFilters": "Hide filters",
+    "resultsCount_one": "{{count}} result",
+    "resultsCount_other": "{{count}} results",
+    "viewResults_one": "View {{count}} result",
+    "viewResults_other": "View {{count}} results",
+    "categoryLabel": "Category"
   },
   "product": {
     "addToCart": "Add to cart",
@@ -133,7 +164,19 @@
     "notFound": "Product not found",
     "specsTab": "Specifications",
     "howToUseTab": "How to use",
-    "productsNav": "Products"
+    "productsNav": "Products",
+    "urgentStock": "Only {{count}} left!",
+    "quantity": "Quantity",
+    "maxAvailable": "Maximum available",
+    "outOf": "of {{count}}",
+    "addedBtn": "Added",
+    "saved": "Saved",
+    "trustPayment": "100% secure payment",
+    "trustWhatsapp": "WhatsApp support",
+    "trustShipping": "Shipping across CR",
+    "videoTitle": "Product video",
+    "moreFromBrand": "More from {{brand}}",
+    "youMayLike": "You may also like"
   },
   "cart": {
     "title": "Cart",
@@ -180,7 +223,13 @@
     "enterAdmin": "Enter as Administrator",
     "enterAdminSub": "Access the control panel",
     "enterClient": "Enter as Customer",
-    "enterClientSub": "View the store as a user"
+    "enterClientSub": "View the store as a user",
+    "codeResent": "Code resent. Check your email to complete registration.",
+    "resendError": "Error resending the code.",
+    "recoveryCodePrompt": "Enter your recovery code",
+    "invalidRecoveryCode": "Invalid recovery code",
+    "recoveryCodeLabel": "Recovery code",
+    "emergencyCodeHint": "Enter one of your emergency codes"
   },
   "forgot": {
     "title": "Recover password",
@@ -429,6 +478,12 @@
     "whatsapp": "Message us on WhatsApp",
     "schedule": "Business hours",
     "weekdays": "Monday to Friday",
+    "weekdaysHours": "8:00 a.m. – 5:00 p.m.",
+    "weekend": "Saturday & Sunday",
+    "closed": "Closed",
+    "country": "Country",
+    "waHint": "Quick response via chat",
+    "waDefault": "Hi, I'm reaching out from the HOTCLICK store.",
     "sendForm": "Send us a message",
     "sentSub": "We received your message and will contact you soon.",
     "sendAnother": "Send another",
@@ -1031,9 +1086,13 @@
     "statusENVIADO": "Shipped",
     "statusENTREGADO": "Delivered",
     "statusCANCELADO": "Cancelled",
+    "statusCOMPLETADO": "Completed",
     "markPrep": "Mark in preparation",
     "readyPickup": "Ready for pickup",
     "markDelivered": "Mark delivered",
+    "markCompleted": "Mark completed",
+    "stepCompleted": "Completed",
+    "orderCompleted": "✅ Order completed",
     "shipOrder": "Process shipment",
     "newOrderTitle": "New order",
     "clientLabel": "Client *",
@@ -1303,16 +1362,6 @@
     "days7": "7 days",
     "days30": "30 days",
     "all": "All"
-  },
-  "adminConfig": {
-    "title": "Settings",
-    "subtitle": "Manage your account, security and system preferences",
-    "navPerfil": "Profile",
-    "navSecurity": "Security & 2FA",
-    "navNotifications": "Notifications",
-    "navAppearance": "Appearance",
-    "navSystem": "System",
-    "version": "v1.0 · Admin Panel"
   },
   "adminSolicitudes": {
     "title": "HOT Services",

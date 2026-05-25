@@ -24,8 +24,12 @@ export function usePayment() {
       const method = isGuest ? paymentService.guestCheckout : paymentService.checkout
       const { data } = await method(checkoutPayload)
       setPagoData(data)
-      setEstado('redirecting')
-      window.location.href = data.redirectUrl
+      if (!data.redirectUrl || data.proveedor === 'SINPE') {
+        setEstado('sinpe_pendiente')
+      } else {
+        setEstado('redirecting')
+        window.location.href = data.redirectUrl
+      }
     } catch (err) {
       const msg =
         err.response?.data?.message ||

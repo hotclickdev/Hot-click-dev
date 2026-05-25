@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next'
 import AdminLayout from '@/layouts/AdminLayout'
 import api from '@/services/api'
 import ImportExportBar from '@/components/admin/ImportExportBar'
+import { paymentService } from '@/services/paymentService'
 
-const PROVEEDORES  = ['', 'PAYPAL', 'PAYXPERT']
+const PROVEEDORES  = ['', 'PAYPAL', 'SINPE', 'PAYXPERT']
 const ESTADOS_PAGO = ['', 'CAPTURADO', 'PENDIENTE', 'FALLIDO', 'CANCELADO']
 
 const BADGE = {
@@ -43,6 +44,7 @@ export default function AdminPagos() {
   const [whPage, setWhPage]         = useState(0)
   const [whTotal, setWhTotal]       = useState(0)
   const [loadingW, setLoadingW]     = useState(false)
+  const [actionLoading, setActionLoading] = useState(null) // pagoId procesándose
 
   const fetchKpis = useCallback(async () => {
     try {
@@ -77,6 +79,34 @@ export default function AdminPagos() {
   useEffect(() => { fetchKpis() }, [fetchKpis])
   useEffect(() => { fetchPagos() }, [fetchPagos])
   useEffect(() => { fetchWebhooks() }, [fetchWebhooks])
+
+  const handleConfirmarSinpe = async (pagoId) => {
+    if (!window.confirm('¿Confirmar este pago SINPE? Se marcará como CAPTURADO y se procesará el pedido.')) return
+    setActionLoading(pagoId)
+    try {
+      await paymentService.confirmarSinpe(pagoId)
+      await fetchPagos()
+      await fetchKpis()
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error confirmando pago SINPE')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleRechazarSinpe = async (pagoId) => {
+    if (!window.confirm('¿Rechazar este pago SINPE? Se liberará el stock reservado y se notificará al cliente.')) return
+    setActionLoading(pagoId)
+    try {
+      await paymentService.rechazarSinpe(pagoId)
+      await fetchPagos()
+      await fetchKpis()
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error rechazando pago SINPE')
+    } finally {
+      setActionLoading(null)
+    }
+  }
 
   const handleFiltProv   = (v) => { setFiltProv(v);   setPagePage(0) }
   const handleFiltEstado = (v) => { setFiltEstado(v); setPagePage(0) }
@@ -122,7 +152,7 @@ export default function AdminPagos() {
             <KpiCard label="Capturados"  value={kpis.capturados} color="text-green-400" />
             <KpiCard label="Fallidos"    value={kpis.fallidos}   color="text-red-400" />
             <KpiCard label="PayPal"      value={kpis.paypal} />
-            <KpiCard label="PayXpert"    value={kpis.payxpert} />
+            <KpiCard label="SINPE"       value={kpis.sinpe}  color="text-emerald-400" />
           </div>
         )}
 
@@ -171,7 +201,7 @@ export default function AdminPagos() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-white/8 bg-white/3">
-                        {['Pedido', 'Proveedor', 'Estado', 'Monto', 'Usuario', 'Token', 'Fecha'].map(h => (
+                        {['Pedido', 'Proveedor', 'Estado', 'Monto', 'Usuario', 'Token', 'Fecha', 'Acciones'].map(h => (
                           <th key={h} className="px-4 py-3 text-left text-[#8e8e9a] font-medium text-xs">{h}</th>
                         ))}
                       </tr>
@@ -184,7 +214,9 @@ export default function AdminPagos() {
                             <span className={`px-2 py-0.5 rounded-full border text-[10px] font-semibold ${
                               p.proveedor === 'PAYPAL'
                                 ? 'bg-blue-500/15 text-blue-400 border-blue-500/30'
-                                : 'bg-purple-500/15 text-purple-400 border-purple-500/30'
+                                : p.proveedor === 'SINPE'
+                                  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                                  : 'bg-purple-500/15 text-purple-400 border-purple-500/30'
                             }`}>{p.proveedor}</span>
                           </td>
                           <td className="px-4 py-3">
@@ -197,6 +229,26 @@ export default function AdminPagos() {
                           <td className="px-4 py-3 font-mono text-[#8e8e9a] text-[10px] truncate max-w-[120px]"
                               title={p.merchantToken}>{p.merchantToken?.slice(0, 12)}…</td>
                           <td className="px-4 py-3 text-[#8e8e9a] text-xs whitespace-nowrap">{p.fechaCreacion}</td>
+                          <td className="px-4 py-3">
+                            {p.proveedor === 'SINPE' && p.estadoPago === 'PENDIENTE' && (
+                              <div className="flex gap-1.5">
+                                <button
+                                  onClick={() => handleConfirmarSinpe(p.id)}
+                                  disabled={actionLoading === p.id}
+                                  className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors disabled:opacity-50 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
+                                >
+                                  {actionLoading === p.id ? '…' : 'Confirmar'}
+                                </button>
+                                <button
+                                  onClick={() => handleRechazarSinpe(p.id)}
+                                  disabled={actionLoading === p.id}
+                                  className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors disabled:opacity-50 bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25"
+                                >
+                                  Rechazar
+                                </button>
+                              </div>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

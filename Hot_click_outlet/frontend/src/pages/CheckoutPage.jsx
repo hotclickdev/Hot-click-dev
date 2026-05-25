@@ -87,7 +87,7 @@ export default function CheckoutPage() {
   const { items, total, clearCart, toWhatsAppMessage } = useCartStore()
   const { token }                    = useAuthStore()
   const navigate                     = useNavigate()
-  const { estado, error, intentos, maxIntentos, iniciarPago } = usePayment()
+  const { estado, pagoData, error, intentos, maxIntentos, iniciarPago } = usePayment()
   const { t } = useTranslation()
 
   // TODO[PAYXPERT-REACTIVAR]: agregar de vuelta la opción PAYXPERT aquí.
@@ -128,7 +128,6 @@ export default function CheckoutPage() {
   const [notas,        setNotas]        = useState('')
 
   // SINPE state
-  const [sinpePaso,       setSinpePaso]       = useState(null) // null | 'confirmado'
   const [sinpeNombre,     setSinpeNombre]     = useState('')
   const [sinpeComprobante, setSinpeComprobante] = useState(null)
   const sinpeInputRef = useRef(null)
@@ -208,11 +207,6 @@ export default function CheckoutPage() {
       if (eErr) return
     }
 
-    if (metodoPago === 'SINPE') {
-      setSinpePaso('confirmado')
-      return
-    }
-
     const phoneEfectivo = !token ? guestPhone : telefono
     const notasFull = [
       notas.trim(),
@@ -234,9 +228,11 @@ export default function CheckoutPage() {
 
   const handleSinpeWhatsApp = () => {
     const productos = items.map((i) => `• ${i.nombre} x${i.cantidad}`).join('\n')
+    const numeroPedido = pagoData?.numeroPedido ?? ''
     const msg = encodeURIComponent(
       `Hola HOTCLICK 👋\n\n*Comprobante SINPE Móvil*\n\n` +
       `Nombre: ${sinpeNombre || '(sin nombre)'}\n` +
+      (numeroPedido ? `Pedido: ${numeroPedido}\n` : '') +
       `Monto: ${formatPrice(totalFinal)}\n\n` +
       `Productos:\n${productos}\n\n` +
       `_Adjunto el comprobante de pago._`
@@ -263,7 +259,7 @@ export default function CheckoutPage() {
     )
   }
 
-  if (sinpePaso === 'confirmado') {
+  if (estado === 'sinpe_pendiente') {
     return (
       <MainLayout>
         <div className="max-w-xl mx-auto px-4 py-14">
@@ -297,6 +293,12 @@ export default function CheckoutPage() {
                 <span style={{ color: 'var(--hc-muted)' }}>👤 Titular</span>
                 <span className="font-medium" style={{ color: 'var(--hc-text)' }}>{SINPE_TITULAR}</span>
               </div>
+              {pagoData?.numeroPedido && (
+                <div className="flex justify-between items-center text-sm">
+                  <span style={{ color: 'var(--hc-muted)' }}>🔖 Referencia</span>
+                  <span className="font-mono font-semibold text-[#4f7cff]">{pagoData.numeroPedido}</span>
+                </div>
+              )}
               <div className="border-t" style={{ borderColor: 'var(--hc-border)' }} />
               <div className="flex justify-between items-center">
                 <span className="text-sm" style={{ color: 'var(--hc-muted)' }}>💰 Monto exacto</span>
@@ -367,13 +369,9 @@ export default function CheckoutPage() {
                 <WhatsAppIcon />
                 Enviar comprobante por WhatsApp
               </button>
-              <button
-                onClick={() => setSinpePaso(null)}
-                className="text-xs text-center transition-colors hover:text-[#4f7cff]"
-                style={{ color: 'var(--hc-muted)' }}
-              >
-                ← Volver al checkout
-              </button>
+              <p className="text-[10px] text-center" style={{ color: 'var(--hc-muted)' }}>
+                Tu pedido quedó registrado. Expira en 24 horas si no se confirma el pago.
+              </p>
             </div>
           </motion.div>
         </div>

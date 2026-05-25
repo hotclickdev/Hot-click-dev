@@ -56,4 +56,17 @@ export const paymentService = {
   guestCancelarPedido(numeroPedido) {
     return api.post(`/payments/guest/cancel/${numeroPedido}`)
   },
+
+  // ── Admin SINPE ──────────────────────────────────────────────────────────
+
+  /** Confirma un pago SINPE tras verificar el comprobante (solo admin). */
+  confirmarSinpe(pagoId) {
+    return api.post(`/admin/pagos/${pagoId}/confirmar-sinpe`)
+  },
+
+  /** Rechaza un pago SINPE (solo admin). */
+  rechazarSinpe(pagoId, motivo) {
+    return api.post(`/admin/pagos/${pagoId}/rechazar-sinpe`, null,
+      motivo ? { params: { motivo } } : undefined)
+  },
 }

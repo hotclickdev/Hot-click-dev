@@ -24,14 +24,14 @@ export default function Navbar() {
   const navLinks = [
     { href: '/', label: t('nav.inicio') },
     { href: '/productos', label: t('nav.productos') },
-    { href: '/servicios', label: 'Servicios HOT', highlight: true },
+    { href: '/servicios', label: t('nav.servicios'), highlight: true },
     { href: '/informacion', label: t('nav.informacion') },
     { href: '/nosotros', label: t('nav.nosotros') },
     { href: '/contacto', label: t('nav.contacto') },
   ]
 
   const mobileSecondaryLinks = [
-    { href: '/servicios', label: '✦ Servicios HOT', highlight: true },
+    { href: '/servicios', label: `✦ ${t('nav.servicios')}`, highlight: true },
     { href: '/informacion', label: t('nav.informacion') },
     { href: '/nosotros', label: t('nav.nosotros') },
     { href: '/contacto', label: t('nav.contacto') },

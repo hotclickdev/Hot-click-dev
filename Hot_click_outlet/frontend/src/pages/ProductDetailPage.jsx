@@ -254,7 +254,7 @@ export default function ProductDetailPage() {
               )}
               <Badge variant={stockBadge}>{stockLabel}</Badge>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-medium">
-                ✓ Garantía 40 días
+                ✓ {t('socialProof.warranty')}
               </span>
             </div>
 
@@ -274,7 +274,7 @@ export default function ProductDetailPage() {
                 }`}
               >
                 <HeartDetailIcon filled={isLiked(product.id)} />
-                <span className="hidden sm:inline">{isLiked(product.id) ? 'Guardado' : 'Guardar'}</span>
+                <span className="hidden sm:inline">{isLiked(product.id) ? t('product.saved') : t('common.save')}</span>
               </motion.button>
             </div>
 
@@ -296,8 +296,8 @@ export default function ProductDetailPage() {
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
                 <span className="text-xs font-medium text-amber-400">
                   {product.stock <= 3
-                    ? `¡Solo quedan ${product.stock} unidades!`
-                    : `Solo ${product.stock} unidades disponibles`}
+                    ? t('product.urgentStock', { count: product.stock })
+                    : t('product.lowStock', { count: product.stock })}
                 </span>
               </motion.div>
             )}
@@ -305,7 +305,7 @@ export default function ProductDetailPage() {
             {/* ── Selector de cantidad ── */}
             {inStock && (
               <div className="flex items-center gap-4">
-                <span className="text-sm text-[#8e8e9a] shrink-0">Cantidad</span>
+                <span className="text-sm text-[#8e8e9a] shrink-0">{t('product.quantity')}</span>
 
                 <div className="flex items-center rounded-2xl border border-white/12 bg-white/4 overflow-hidden">
                   {/* Botón − */}
@@ -360,7 +360,7 @@ export default function ProductDetailPage() {
                       exit={{ opacity: 0, x: -4 }}
                       className="text-xs font-medium text-amber-400"
                     >
-                      Máximo disponible
+                      {t('product.maxAvailable')}
                     </motion.span>
                   ) : (
                     <motion.span
@@ -370,7 +370,7 @@ export default function ProductDetailPage() {
                       exit={{ opacity: 0, x: -4 }}
                       className="text-xs text-[#8e8e9a]"
                     >
-                      de {product.stock}
+                      {t('product.outOf', { count: product.stock })}
                     </motion.span>
                   )}
                 </AnimatePresence>
@@ -426,7 +426,7 @@ export default function ProductDetailPage() {
                     >
                       <motion.path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </motion.svg>
-                    <span>Añadido</span>
+                    <span>{t('product.addedBtn')}</span>
                   </motion.div>
                 ) : (
                   <motion.div
@@ -450,10 +450,10 @@ export default function ProductDetailPage() {
             {/* Trust badges */}
             <div className="grid grid-cols-2 gap-2">
               {[
-                { svg: <TrustShieldSVG />, text: 'Garantía 40 días', color: 'text-emerald-400', bg: 'bg-emerald-500/8', border: 'border-emerald-500/15' },
-                { svg: <TrustLockSVG />, text: 'Pago 100% seguro', color: 'text-[#4f7cff]', bg: 'bg-[#4f7cff]/8', border: 'border-[#4f7cff]/15' },
-                { svg: <TrustWASVG />, text: 'Soporte WhatsApp', color: 'text-[#25D366]', bg: 'bg-[#25D366]/8', border: 'border-[#25D366]/15' },
-                { svg: <TrustTruckSVG />, text: 'Envío a todo CR', color: 'text-amber-400', bg: 'bg-amber-500/8', border: 'border-amber-500/15' },
+                { svg: <TrustShieldSVG />, text: t('socialProof.warranty'), color: 'text-emerald-400', bg: 'bg-emerald-500/8', border: 'border-emerald-500/15' },
+                { svg: <TrustLockSVG />, text: t('product.trustPayment'), color: 'text-[#4f7cff]', bg: 'bg-[#4f7cff]/8', border: 'border-[#4f7cff]/15' },
+                { svg: <TrustWASVG />, text: t('product.trustWhatsapp'), color: 'text-[#25D366]', bg: 'bg-[#25D366]/8', border: 'border-[#25D366]/15' },
+                { svg: <TrustTruckSVG />, text: t('product.trustShipping'), color: 'text-amber-400', bg: 'bg-amber-500/8', border: 'border-amber-500/15' },
               ].map(({ svg, text, color, bg, border }) => (
                 <div key={text} className={`flex items-center gap-2.5 p-3 rounded-xl ${bg} border ${border}`}>
                   <span className={`shrink-0 ${color}`}>{svg}</span>
@@ -478,7 +478,7 @@ export default function ProductDetailPage() {
                   <path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                 </svg>
               </span>
-              Video del producto
+              {t('product.videoTitle')}
             </h2>
             <div className="relative w-full rounded-2xl overflow-hidden bg-black border border-white/8" style={{ paddingBottom: '56.25%' }}>
               <iframe
@@ -598,7 +598,7 @@ export default function ProductDetailPage() {
                 {product.marcaLogoUrl && (
                   <img src={product.marcaLogoUrl} alt="" className="w-5 h-5 object-contain rounded" onError={(e) => { e.target.style.display = 'none' }} />
                 )}
-                Más de {product.marcaNombre}
+                {t('product.moreFromBrand', { brand: product.marcaNombre })}
               </h2>
               <button
                 onClick={() => navigate(`/productos?marcaId=${product.marcaId}&marcaNombre=${encodeURIComponent(product.marcaNombre)}`)}
@@ -646,7 +646,7 @@ export default function ProductDetailPage() {
             transition={{ duration: 0.4 }}
             className="mt-12"
           >
-            <h2 className="text-xl font-bold text-[#e8e8ed] mb-5">También te puede gustar</h2>
+            <h2 className="text-xl font-bold text-[#e8e8ed] mb-5">{t('product.youMayLike')}</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               {recommendations.map((rec, i) => (
                 <motion.div
@@ -696,7 +696,7 @@ export default function ProductDetailPage() {
             className="mt-10"
           >
             <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--hc-muted)' }}>
-              Visto recientemente
+              {t('home.recentlyViewed')}
             </h3>
             <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
               {recentlyViewed

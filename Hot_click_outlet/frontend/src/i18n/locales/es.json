@@ -12,7 +12,8 @@
     "menu": "Menú",
     "misPedidos": "Cuenta",
     "wishlist": "Lista de deseos",
-    "buscar": "Buscar"
+    "buscar": "Buscar",
+    "servicios": "Servicios HOT"
   },
   "bnav": {
     "inicio": "Inicio",
@@ -94,7 +95,15 @@
     "ctaSub": "Explora nuestro catálogo completo de productos tech.",
     "ctaBtn": "Explorar tienda",
     "shipping24h": "Envío 24h",
-    "recentlyViewed": "Visto recientemente"
+    "recentlyViewed": "Visto recientemente",
+    "brands": "Nuestras marcas",
+    "servicesNotFound": "¿No encontrás el producto que buscás?",
+    "servicesSend": "Envianos una foto y lo conseguimos por vos.",
+    "servicesSearch": "Buscamos en nuestros proveedores y te avisamos por WhatsApp con precio y disponibilidad.",
+    "servicesRequest": "📸 Solicitar búsqueda",
+    "servicesStep1": "Enviás la foto",
+    "servicesStep2": "Lo buscamos",
+    "servicesStep3": "Te avisamos"
   },
   "products": {
     "title": "Catálogo",
@@ -115,7 +124,29 @@
     "loading": "Cargando productos...",
     "of": "de",
     "results": "resultados",
-    "searchByName": "Buscar por nombre"
+    "searchByName": "Buscar por nombre",
+    "featured": "Destacados",
+    "condNuevo": "Nuevo",
+    "condComoNuevo": "Como nuevo",
+    "condUsado": "Usado",
+    "brand": "Marca",
+    "allBrands": "Todas",
+    "condition": "Condición",
+    "availability": "Disponibilidad",
+    "price": "Precio (₡)",
+    "priceMin": "Mínimo",
+    "priceMax": "Máximo",
+    "priceMinShort": "Mín",
+    "priceMaxShort": "Máx",
+    "clearAll": "Limpiar todo",
+    "noResultsHint": "Intenta con otros filtros o busca por nombre",
+    "showFilters": "Mostrar filtros",
+    "hideFilters": "Ocultar filtros",
+    "resultsCount_one": "{{count}} resultado",
+    "resultsCount_other": "{{count}} resultados",
+    "viewResults_one": "Ver {{count}} resultado",
+    "viewResults_other": "Ver {{count}} resultados",
+    "categoryLabel": "Categoría"
   },
   "product": {
     "addToCart": "Añadir al carrito",
@@ -133,7 +164,19 @@
     "notFound": "Producto no encontrado",
     "specsTab": "Especificaciones",
     "howToUseTab": "Cómo usar",
-    "productsNav": "Productos"
+    "productsNav": "Productos",
+    "urgentStock": "¡Solo quedan {{count}} unidades!",
+    "quantity": "Cantidad",
+    "maxAvailable": "Máximo disponible",
+    "outOf": "de {{count}}",
+    "addedBtn": "Añadido",
+    "saved": "Guardado",
+    "trustPayment": "Pago 100% seguro",
+    "trustWhatsapp": "Soporte WhatsApp",
+    "trustShipping": "Envío a todo CR",
+    "videoTitle": "Video del producto",
+    "moreFromBrand": "Más de {{brand}}",
+    "youMayLike": "También te puede gustar"
   },
   "cart": {
     "title": "Carrito",
@@ -180,7 +223,13 @@
     "enterAdmin": "Entrar como Administrador",
     "enterAdminSub": "Acceso al panel de control",
     "enterClient": "Entrar como Cliente",
-    "enterClientSub": "Ver la tienda como usuario"
+    "enterClientSub": "Ver la tienda como usuario",
+    "codeResent": "Código reenviado. Revisá tu correo y completá el registro.",
+    "resendError": "Error al reenviar el código.",
+    "recoveryCodePrompt": "Ingresá tu código de recuperación",
+    "invalidRecoveryCode": "Código de recuperación inválido",
+    "recoveryCodeLabel": "Código de recuperación",
+    "emergencyCodeHint": "Ingresá uno de tus códigos de emergencia"
   },
   "forgot": {
     "title": "Recuperar contraseña",
@@ -429,6 +478,12 @@
     "whatsapp": "Escríbenos por WhatsApp",
     "schedule": "Horario de atención",
     "weekdays": "Lunes a Viernes",
+    "weekdaysHours": "8:00 a.m. – 5:00 p.m.",
+    "weekend": "Sábado y Domingo",
+    "closed": "Cerrado",
+    "country": "País",
+    "waHint": "Respuesta rápida por chat",
+    "waDefault": "Hola, me comunico desde la tienda HOTCLICK.",
     "sendForm": "Envíanos un mensaje",
     "sentSub": "Recibimos tu mensaje y te contactaremos pronto.",
     "sendAnother": "Enviar otro",
@@ -1031,9 +1086,13 @@
     "statusENVIADO": "Enviado",
     "statusENTREGADO": "Entregado",
     "statusCANCELADO": "Cancelado",
+    "statusCOMPLETADO": "Completado",
     "markPrep": "Marcar en preparación",
     "readyPickup": "Listo para retirar",
     "markDelivered": "Marcar entregado",
+    "markCompleted": "Marcar completado",
+    "stepCompleted": "Completado",
+    "orderCompleted": "✅ Pedido completado",
     "shipOrder": "Procesar envío",
     "newOrderTitle": "Nuevo pedido",
     "clientLabel": "Cliente *",
@@ -1303,16 +1362,6 @@
     "days7": "7 días",
     "days30": "30 días",
     "all": "Todo"
-  },
-  "adminConfig": {
-    "title": "Configuración",
-    "subtitle": "Gestioná tu cuenta, seguridad y preferencias del sistema",
-    "navPerfil": "Perfil",
-    "navSecurity": "Seguridad & 2FA",
-    "navNotifications": "Notificaciones",
-    "navAppearance": "Apariencia",
-    "navSystem": "Sistema",
-    "version": "v1.0 · Admin Panel"
   },
   "adminSolicitudes": {
     "title": "Servicios HOT",

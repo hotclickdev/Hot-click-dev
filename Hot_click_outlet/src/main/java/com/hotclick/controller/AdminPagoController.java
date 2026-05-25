@@ -5,6 +5,7 @@ import com.hotclick.dto.ResponseDTO;
 import com.hotclick.dto.WebhookEventResumenDTO;
 import com.hotclick.repository.PagoRepository;
 import com.hotclick.repository.WebhookEventRepository;
+import com.hotclick.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,6 +22,7 @@ public class AdminPagoController {
 
     @Autowired private PagoRepository         pagoRepository;
     @Autowired private WebhookEventRepository webhookEventRepository;
+    @Autowired private PaymentService         paymentService;
 
     /**
      * Lista pagos con filtros opcionales de proveedor y estadoPago.
@@ -81,6 +83,7 @@ public class AdminPagoController {
         long fallidos   = pagoRepository.countByEstadoPago("FALLIDO");
         long paypal     = pagoRepository.countByProveedor("PAYPAL");
         long payxpert   = pagoRepository.countByProveedor("PAYXPERT");
+        long sinpe      = pagoRepository.countByProveedor("SINPE");
         long webhooksErr= webhookEventRepository.countByProcesado(false);
 
         double tasaExito = total > 0 ? Math.round((double) capturados / total * 1000.0) / 10.0 : 0.0;
@@ -92,8 +95,31 @@ public class AdminPagoController {
             "fallidos",    fallidos,
             "paypal",      paypal,
             "payxpert",    payxpert,
+            "sinpe",       sinpe,
             "tasaExito",   tasaExito,
             "webhooksErr", webhooksErr
         )));
+    }
+
+    /**
+     * Confirma un pago SINPE pendiente (admin revisó el comprobante).
+     * POST /api/admin/pagos/{pagoId}/confirmar-sinpe
+     */
+    @PostMapping("/pagos/{pagoId}/confirmar-sinpe")
+    public ResponseEntity<ResponseDTO> confirmarSinpe(@PathVariable Long pagoId) {
+        var resultado = paymentService.confirmarSinpe(pagoId);
+        return ResponseEntity.ok(ResponseDTO.success("Pago SINPE confirmado", resultado));
+    }
+
+    /**
+     * Rechaza un pago SINPE pendiente (comprobante inválido o monto incorrecto).
+     * POST /api/admin/pagos/{pagoId}/rechazar-sinpe?motivo=...
+     */
+    @PostMapping("/pagos/{pagoId}/rechazar-sinpe")
+    public ResponseEntity<ResponseDTO> rechazarSinpe(
+            @PathVariable Long pagoId,
+            @RequestParam(required = false) String motivo) {
+        paymentService.rechazarSinpe(pagoId, motivo);
+        return ResponseEntity.ok(ResponseDTO.success("Pago SINPE rechazado", null));
     }
 }

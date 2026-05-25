@@ -536,7 +536,7 @@ export default function HomePage() {
         <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
           <div className="flex items-center gap-2 mb-6">
             <span className="w-1 h-4 rounded-full bg-[#4f7cff]" />
-            <h2 className="text-sm font-semibold tracking-wide uppercase text-[#8e8e9a]">Nuestras marcas</h2>
+            <h2 className="text-sm font-semibold tracking-wide uppercase text-[#8e8e9a]">{t('home.brands')}</h2>
           </div>
           <div className="flex flex-wrap gap-4 justify-center">
             {marcas.map((m) => (
@@ -665,27 +665,27 @@ export default function HomePage() {
             <div className="flex-1 text-center sm:text-left">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-3"
                 style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
-                ✦ Nuevo servicio
+                {t('serviciosPage.newService')}
               </div>
               <h2 className="text-2xl sm:text-3xl font-black mb-3 leading-tight"
                 style={{ fontFamily: "'Barlow', sans-serif", color: 'var(--hc-text)' }}>
-                Servicios <span style={{ color: 'var(--hc-accent)' }}>HOT</span>
+                {t('serviciosPage.title')}
               </h2>
               <p className="mb-2" style={{ color: 'var(--hc-muted)' }}>
-                ¿No encontrás el producto que buscás? <strong style={{ color: 'var(--hc-text)' }}>Envianos una foto y lo conseguimos por vos.</strong>
+                {t('home.servicesNotFound')} <strong style={{ color: 'var(--hc-text)' }}>{t('home.servicesSend')}</strong>
               </p>
               <p className="text-sm mb-6" style={{ color: 'var(--hc-muted)' }}>
-                Buscamos en nuestros proveedores y te avisamos por WhatsApp con precio y disponibilidad.
+                {t('home.servicesSearch')}
               </p>
               <Link to="/servicios" className="hc-btn hc-btn-primary inline-flex items-center gap-2">
-                📸 Solicitar búsqueda
+                {t('home.servicesRequest')}
               </Link>
             </div>
             <div className="grid grid-cols-3 gap-3 shrink-0">
               {[
-                { icon: '📸', label: 'Enviás la foto' },
-                { icon: '🔍', label: 'Lo buscamos' },
-                { icon: '🤝', label: 'Te avisamos' },
+                { icon: '📸', label: t('home.servicesStep1') },
+                { icon: '🔍', label: t('home.servicesStep2') },
+                { icon: '🤝', label: t('home.servicesStep3') },
               ].map(s => (
                 <div key={s.label} className="flex flex-col items-center gap-1.5 p-3 rounded-2xl text-center w-24"
                   style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>

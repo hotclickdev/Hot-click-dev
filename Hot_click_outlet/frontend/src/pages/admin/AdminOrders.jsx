@@ -9,7 +9,7 @@ import { useToast } from '@/components/ui/Toast'
 import { formatDate, formatPrice } from '@/utils/format'
 import ImportExportBar from '@/components/admin/ImportExportBar'
 
-const FILTERS = ['Todos', 'PENDIENTE', 'PAGADO', 'EN_PREPARACION', 'LISTO_RETIRO', 'ENVIADO', 'ENTREGADO', 'CANCELADO']
+const FILTERS = ['Todos', 'PENDIENTE', 'PAGADO', 'EN_PREPARACION', 'LISTO_RETIRO', 'ENVIADO', 'ENTREGADO', 'COMPLETADO', 'CANCELADO']
 
 const ESTADO_STYLE = {
   PENDIENTE:      { bg: 'rgba(212,177,6,0.15)',   text: '#d4b106', border: 'rgba(212,177,6,0.35)' },
@@ -18,6 +18,7 @@ const ESTADO_STYLE = {
   LISTO_RETIRO:   { bg: 'rgba(34,197,94,0.14)',   text: '#22c55e', border: 'rgba(34,197,94,0.35)' },
   ENVIADO:        { bg: 'rgba(96,165,250,0.14)',  text: '#60a5fa', border: 'rgba(96,165,250,0.35)' },
   ENTREGADO:      { bg: 'rgba(74,222,128,0.14)',  text: '#4ade80', border: 'rgba(74,222,128,0.35)' },
+  COMPLETADO:     { bg: 'rgba(147,51,234,0.14)',  text: '#a855f7', border: 'rgba(147,51,234,0.35)' },
   CANCELADO:      { bg: 'rgba(248,113,113,0.14)', text: '#f87171', border: 'rgba(248,113,113,0.35)' },
 }
 
@@ -38,6 +39,7 @@ const ETAPAS_RETIRO = [
   { key: 'EN_PREPARACION', labelKey: 'adminOrders.stepPrep' },
   { key: 'LISTO_RETIRO',   labelKey: 'adminOrders.stepReady' },
   { key: 'ENTREGADO',      labelKey: 'adminOrders.stepPickedUp' },
+  { key: 'COMPLETADO',     labelKey: 'adminOrders.stepCompleted' },
 ]
 const ETAPAS_ENVIO = [
   { key: 'PENDIENTE',      labelKey: 'adminOrders.stepPending' },
@@ -45,6 +47,7 @@ const ETAPAS_ENVIO = [
   { key: 'EN_PREPARACION', labelKey: 'adminOrders.stepPrep' },
   { key: 'ENVIADO',        labelKey: 'adminOrders.stepShipped' },
   { key: 'ENTREGADO',      labelKey: 'adminOrders.stepDelivered' },
+  { key: 'COMPLETADO',     labelKey: 'adminOrders.stepCompleted' },
 ]
 
 function StepTracker({ estado, esRetiro, onStep, saving }) {
@@ -103,6 +106,7 @@ function getNextStep(estado, esRetiro) {
     : { type: 'envio' }
   if (estado === 'LISTO_RETIRO')   return { type: 'btn', next: 'ENTREGADO', labelKey: 'adminOrders.markDelivered' }
   if (estado === 'ENVIADO')        return { type: 'btn', next: 'ENTREGADO', labelKey: 'adminOrders.markDelivered' }
+  if (estado === 'ENTREGADO')      return { type: 'btn', next: 'COMPLETADO', labelKey: 'adminOrders.markCompleted' }
   return null
 }
 
@@ -593,10 +597,18 @@ function OrderCard({ order, onUpdate, onDelete }) {
           <p className="text-[11px] text-[#8e8e9a] truncate">{order.clienteCorreo ?? ''}</p>
         </div>
 
-        {/* Tipo entrega */}
-        <span className="text-xs text-[#8e8e9a]">
-          {esRetiro ? t('adminOrders.pickupBadge') : t('adminOrders.deliveryBadge')}
-        </span>
+        {/* Tipo entrega + método de pago */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-xs text-[#8e8e9a]">
+            {esRetiro ? t('adminOrders.pickupBadge') : t('adminOrders.deliveryBadge')}
+          </span>
+          {order.metodoPago && (
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+              style={{ backgroundColor: 'rgba(79,124,255,0.12)', color: '#4f7cff', border: '1px solid rgba(79,124,255,0.25)' }}>
+              {order.metodoPago}
+            </span>
+          )}
+        </div>
 
         {/* Total */}
         <span className="text-sm font-bold text-[#e8e8ed] min-w-[80px] text-right">
@@ -770,6 +782,9 @@ function OrderCard({ order, onUpdate, onDelete }) {
 
           {estado === 'ENTREGADO' && (
             <p className="text-center text-sm text-green-400 py-1">{t('adminOrders.orderDelivered')}</p>
+          )}
+          {estado === 'COMPLETADO' && (
+            <p className="text-center text-sm py-1" style={{ color: '#a855f7' }}>{t('adminOrders.orderCompleted')}</p>
           )}
           {estado === 'CANCELADO' && (
             <p className="text-center text-sm text-red-400 py-1">{t('adminOrders.orderCancelled')}</p>

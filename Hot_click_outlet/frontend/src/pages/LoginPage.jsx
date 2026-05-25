@@ -73,12 +73,12 @@ export default function LoginPage() {
     setResendLoading(true)
     try {
       await authService.sendVerification({ correo })
-      toast({ message: 'Código reenviado. Revisá tu correo y completá el registro.', type: 'success' })
+      toast({ message: t('login.codeResent'), type: 'success' })
       setNeedsVerification(false)
       setError('')
     } catch (err) {
       const msg = err.response?.data?.message
-      toast({ message: typeof msg === 'string' ? msg : 'Error al reenviar el código.', type: 'error' })
+      toast({ message: typeof msg === 'string' ? msg : t('login.resendError'), type: 'error' })
     } finally {
       setResendLoading(false)
     }
@@ -91,7 +91,7 @@ export default function LoginPage() {
     try {
       let data
       if (useRecovery) {
-        if (!recoveryInput.trim()) { setError('Ingresá tu código de recuperación'); setLoading(false); return }
+        if (!recoveryInput.trim()) { setError(t('login.recoveryCodePrompt')); setLoading(false); return }
         ;({ data } = await authService.verify2FA(tempToken, null, recoveryInput.trim()))
       } else {
         const fullCode = code2FA.join('')
@@ -100,7 +100,7 @@ export default function LoginPage() {
       }
       handleLoginSuccess(data)
     } catch {
-      setError(useRecovery ? 'Código de recuperación inválido' : t('login.error'))
+      setError(useRecovery ? t('login.invalidRecoveryCode') : t('login.error'))
       if (!useRecovery) { setCode2FA(['', '', '', '', '', '']); refs2FA.current[0]?.focus() }
       else setRecoveryInput('')
     } finally {
@@ -304,7 +304,7 @@ export default function LoginPage() {
               ) : (
                 <div>
                   <label className="block text-sm font-medium text-[#e8e8ed] mb-2">
-                    Código de recuperación
+                    {t('login.recoveryCodeLabel')}
                   </label>
                   <input
                     type="text"
@@ -321,7 +321,7 @@ export default function LoginPage() {
                     onFocus={e => { e.target.style.borderColor = '#4f7cff'; e.target.style.boxShadow = '0 0 0 3px rgba(79,124,255,0.12)' }}
                     onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.12)'; e.target.style.boxShadow = 'none' }}
                   />
-                  <p className="text-xs text-[#8e8e9a] mt-2 text-center">Ingresá uno de tus códigos de emergencia</p>
+                  <p className="text-xs text-[#8e8e9a] mt-2 text-center">{t('login.emergencyCodeHint')}</p>
                 </div>
               )}
 
