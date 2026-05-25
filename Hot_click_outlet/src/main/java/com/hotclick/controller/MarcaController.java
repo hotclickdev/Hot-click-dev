@@ -129,7 +129,7 @@ public class MarcaController {
         if (file == null || file.isEmpty())
             return ResponseEntity.badRequest().body(ResponseDTO.error("No se recibió ningún archivo"));
         try {
-            String url = supabaseStorageService.subirImagen(file, "marcas");
+            String url = supabaseStorageService.subirImagen(file, "Marcas");
             return ResponseEntity.ok(ResponseDTO.success("Logo subido", Map.of("url", url)));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));

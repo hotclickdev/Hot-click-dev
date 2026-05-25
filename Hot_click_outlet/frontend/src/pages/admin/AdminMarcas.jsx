@@ -6,7 +6,6 @@ import Input from '@/components/ui/Input'
 import Modal from '@/components/ui/Modal'
 import Spinner from '@/components/ui/Spinner'
 import { marcaService } from '@/services/marcaService'
-import { productService } from '@/services/productService'
 import { useToast } from '@/components/ui/Toast'
 import ImportExportBar from '@/components/admin/ImportExportBar'
 
@@ -84,8 +83,8 @@ export default function AdminMarcas() {
     try {
       const fd = new FormData()
       fd.append('file', file)
-      const res = await productService.uploadImage(fd)
-      const url = res.data?.data?.url ?? res.data?.url ?? res.data
+      const res = await marcaService.uploadLogo(fd)
+      const url = res.data?.url ?? res.data
       setForm((p) => ({ ...p, logoUrl: url }))
     } catch {
       toast({ message: t('common.error'), type: 'error' })
