@@ -33,7 +33,7 @@ public class SolicitudServicioController {
         if (file == null || file.isEmpty())
             return ResponseEntity.badRequest().body(ResponseDTO.error("No se recibió ningún archivo"));
         try {
-            String url = supabaseStorageService.subirImagen(file, "Servicios");
+            String url = supabaseStorageService.subirImagen(file, "Servicios/Solicitudes");
             return ResponseEntity.ok(ResponseDTO.success("Foto subida", Map.of("url", url)));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
