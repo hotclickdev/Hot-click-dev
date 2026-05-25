@@ -35,7 +35,7 @@ export default function ProfilePage() {
   const navigate = useNavigate()
   const toast = useToast()
   const { t } = useTranslation()
-  const { userId, userName, userEmail, userRole, logout, refreshToken } = useAuthStore()
+  const { userId, userName, userEmail, userRole, logout, refreshToken, isAdmin } = useAuthStore()
   const [orders, setOrders]               = useState([])
   const [loading, setLoading]             = useState(true)
   const [twoFAEnabled, setTwoFAEnabled]   = useState(false)
@@ -181,6 +181,7 @@ export default function ProfilePage() {
             </Button>
           </div>
 
+          {isAdmin() && (
           <div className="flex items-center justify-between px-5 py-4">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-white/6 flex items-center justify-center">
@@ -201,6 +202,7 @@ export default function ProfilePage() {
               {twoFAEnabled ? t('profile.twoFactorDeactivate') : t('profile.twoFactorActivate')}
             </Button>
           </div>
+          )}
         </div>
 
         {/* Testimonios */}
@@ -213,12 +215,14 @@ export default function ProfilePage() {
         onClose={() => setShowChangePassword(false)}
         refreshToken={refreshToken}
       />
+      {isAdmin() && (
       <TwoFAModal
         open={show2FASetup}
         onClose={() => setShow2FASetup(false)}
         enabled={twoFAEnabled}
         onToggle={(val) => setTwoFAEnabled(val)}
       />
+      )}
     </MainLayout>
   )
 }

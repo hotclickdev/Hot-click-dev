@@ -5,6 +5,9 @@
 #   no instala automáticamente con frozen-lockfile.
 #   La version de cada paquete sigue siendo la del lockfile (pnpm-lock.yaml).
 FROM node:22-slim AS frontend-builder
+# Declare build arg so Render's --build-arg reaches pnpm build (Vite reads it as import.meta.env.VITE_*)
+ARG VITE_SUPABASE_TRANSFORMS=false
+ENV VITE_SUPABASE_TRANSFORMS=$VITE_SUPABASE_TRANSFORMS
 WORKDIR /app/frontend
 RUN corepack enable && corepack prepare pnpm@11.1.2 --activate
 COPY frontend/package.json frontend/pnpm-lock.yaml ./

@@ -14,6 +14,7 @@ import { useToast } from '@/components/ui/Toast'
 import { formatPrice } from '@/utils/format'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
 import ProductCard from '@/components/ui/ProductCard'
+import { getOptimizedUrl } from '@/utils/imageUtils'
 
 const stagger = {
   container: { hidden: {}, show: { transition: { staggerChildren: 0.08 } } },
@@ -262,7 +263,7 @@ function HeroCarousel({ slides }) {
                       className="w-full h-full"
                     >
                       <img
-                        src={slide.imagenUrl}
+                        src={getOptimizedUrl(slide.imagenUrl, { width: 800, quality: 80 })}
                         alt={slide.nombre}
                         width={800}
                         height={800}
@@ -270,6 +271,7 @@ function HeroCarousel({ slides }) {
                         style={{ objectFit: 'contain', filter: `drop-shadow(0 0 48px ${color.glow}) drop-shadow(0 32px 48px rgba(0,0,0,0.6))` }}
                         fetchPriority={current === 0 ? 'high' : 'auto'}
                         loading={current === 0 ? 'eager' : 'lazy'}
+                        decoding={current === 0 ? 'sync' : 'async'}
                       />
                     </motion.div>
                     {/* Floating badges */}
@@ -351,10 +353,14 @@ function HeroCarousel({ slides }) {
                   >
                     {s.imagenUrl ? (
                       <img
-                        src={s.imagenUrl}
+                        src={getOptimizedUrl(s.imagenUrl, { width: 96, quality: 70 })}
                         alt={s.nombre}
                         className="w-full h-full"
                         style={{ objectFit: 'contain' }}
+                        loading="lazy"
+                        decoding="async"
+                        width={96}
+                        height={48}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
@@ -466,7 +472,7 @@ export default function HomePage() {
                   className="absolute -top-4 -left-3 w-20 h-20 drop-shadow-xl"
                 >
                   {p.imagenUrl ? (
-                    <img src={p.imagenUrl} alt="" className="w-full h-full object-contain" loading="lazy" />
+                    <img src={getOptimizedUrl(p.imagenUrl, { width: 80, quality: 75 })} alt="" className="w-full h-full object-contain" loading="lazy" decoding="async" width={80} height={80} />
                   ) : (
                     <span aria-hidden="true" className="flex items-center justify-center w-full h-full text-3xl">📦</span>
                   )}
@@ -545,9 +551,13 @@ export default function HomePage() {
                 <div className="w-14 h-14 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
                   {m.logoUrl ? (
                     <img
-                      src={m.logoUrl}
+                      src={getOptimizedUrl(m.logoUrl, { width: 56, quality: 80 })}
                       alt={m.nombreMarca}
                       className="w-full h-full object-contain p-1.5"
+                      loading="lazy"
+                      decoding="async"
+                      width={56}
+                      height={56}
                     />
                   ) : (
                     <span className="text-2xl opacity-30">🏷</span>

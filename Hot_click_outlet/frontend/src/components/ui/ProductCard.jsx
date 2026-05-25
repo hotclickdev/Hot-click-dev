@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import useWishlistStore from '@/store/wishlistStore'
 import { formatPrice, conditionLabel, conditionVariant } from '@/utils/format'
+import OptimizedImage from '@/components/ui/OptimizedImage'
 
 function ProductCard({ product, priority = false, index = 0 }) {
   const navigate = useNavigate()
@@ -24,14 +25,14 @@ function ProductCard({ product, priority = false, index = 0 }) {
       {/* ── Image ── */}
       <div className="hc-product-img relative h-36 sm:h-48 flex items-center justify-center overflow-hidden">
         {product.imagenUrl ? (
-          <img
+          <OptimizedImage
             src={product.imagenUrl}
             alt={product.nombre}
             width={400}
             height={400}
             className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
-            loading={priority ? 'eager' : 'lazy'}
-            fetchPriority={priority ? 'high' : 'auto'}
+            priority={priority}
+            quality={80}
           />
         ) : (
           <div className="flex flex-col items-center gap-3 opacity-20">

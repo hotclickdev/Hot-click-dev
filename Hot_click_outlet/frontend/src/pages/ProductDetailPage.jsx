@@ -16,6 +16,7 @@ import { useToast } from '@/components/ui/Toast'
 import { formatPrice, conditionLabel, conditionVariant } from '@/utils/format'
 import { analytics } from '@/utils/analytics'
 import SocialProof from '@/components/ui/SocialProof'
+import OptimizedImage from '@/components/ui/OptimizedImage'
 
 export default function ProductDetailPage() {
   const { id } = useParams()
@@ -203,14 +204,14 @@ export default function ProductDetailPage() {
             className="aspect-square rounded-2xl bg-[#111114] border border-white/8 flex items-center justify-center overflow-hidden"
           >
             {product.imagenUrl ? (
-              <img
+              <OptimizedImage
                 src={product.imagenUrl}
                 alt={product.nombre}
                 width={800}
                 height={800}
                 className="w-full aspect-square object-cover"
-                fetchPriority="high"
-                loading="eager"
+                priority={true}
+                quality={85}
               />
             ) : (
               <span className="text-8xl opacity-20">📦</span>
