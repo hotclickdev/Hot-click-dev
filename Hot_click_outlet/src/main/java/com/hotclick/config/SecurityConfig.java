@@ -105,6 +105,8 @@ public class SecurityConfig {
                 .requestMatchers(GET,  "/api/cart/abandoned/recover/**").permitAll()
                 .requestMatchers(GET,  "/api/cart/abandoned/session/**").permitAll()
                 .requestMatchers(DELETE, "/api/cart/abandoned/**").permitAll()
+                // Proxy de imágenes Supabase — público, sin auth
+                .requestMatchers(GET, "/api/img").permitAll()
                 // Feeds y sitemap públicos
                 .requestMatchers(GET, "/api/public/**").permitAll()
                 .requestMatchers(GET, "/sitemap.xml").permitAll()

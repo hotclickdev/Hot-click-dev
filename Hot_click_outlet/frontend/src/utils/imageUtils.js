@@ -1,35 +1,45 @@
 // Supabase Storage Image Transformation utility
 //
-// Transforms public storage URLs to use the Supabase Image Transformation API,
-// which resizes images on-the-fly and converts them to WebP/AVIF.
+// When VITE_SUPABASE_TRANSFORMS=true (Supabase Pro), rewrites URLs to use the
+// Image Transformation API for on-the-fly resize + WebP conversion.
 //
-// REQUIRES: Supabase Pro plan (or higher).
-// To enable, add VITE_SUPABASE_TRANSFORMS=true to your .env file.
-// Without it, all functions return the original URL unchanged.
-//
-// Docs: https://supabase.com/docs/guides/storage/serving/image-transformations
+// When transforms are disabled (default / free tier), images are served via the
+// local /api/img proxy. This avoids cross-origin / ORB issues that occur when
+// the browser fetches Supabase Storage URLs directly from the Render domain.
 
 const TRANSFORMS_ENABLED = import.meta.env.VITE_SUPABASE_TRANSFORMS === 'true'
 const STORAGE_SEGMENT = '/storage/v1/object/public/'
 const RENDER_SEGMENT  = '/storage/v1/render/image/public/'
 
+/** Returns a same-origin proxy URL for any Supabase Storage URL. */
+function toProxyUrl(url) {
+  if (!url || url.startsWith('/api/img')) return url
+  const idx = url.indexOf(STORAGE_SEGMENT)
+  if (idx === -1) return url
+  const storagePath = url.substring(idx + STORAGE_SEGMENT.length)
+  return `/api/img?p=${encodeURIComponent(storagePath)}`
+}
+
 /**
- * Returns an optimized Supabase Storage URL with resize + format params.
- * Falls back to the original URL when transforms are disabled or the URL
- * is not from Supabase Storage.
+ * Returns an image URL suitable for display.
  *
- * @param {string} url      - Original Supabase public URL
+ * - Transforms enabled: Supabase Image Transformation API (resize + WebP)
+ * - Transforms disabled: same-origin proxy (/api/img) — avoids CORS/ORB
+ *
+ * @param {string} url      - Original Supabase public URL (or any URL)
  * @param {object} options
- * @param {number} [options.width]    - Target width in px
- * @param {number} [options.height]   - Target height in px
- * @param {number} [options.quality=80] - 1-100 (default 80)
- * @param {string} [options.format='webp'] - 'webp' | 'avif' | 'origin'
+ * @param {number} [options.width]
+ * @param {number} [options.height]
+ * @param {number} [options.quality=80]
+ * @param {string} [options.format='webp']
  * @returns {string}
  */
 export function getOptimizedUrl(url, { width, height, quality = 80, format = 'webp' } = {}) {
   if (!url) return ''
-  if (!TRANSFORMS_ENABLED || !url.includes(STORAGE_SEGMENT)) return url
 
+  if (!TRANSFORMS_ENABLED) return toProxyUrl(url)
+
+  if (!url.includes(STORAGE_SEGMENT)) return url
   const renderUrl = url.replace(STORAGE_SEGMENT, RENDER_SEGMENT)
   const params = new URLSearchParams({ quality: String(quality), format })
   if (width)  params.set('width',  String(width))
