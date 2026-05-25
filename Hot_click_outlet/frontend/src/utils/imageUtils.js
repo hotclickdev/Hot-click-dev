@@ -3,35 +3,25 @@
 // When VITE_SUPABASE_TRANSFORMS=true (Supabase Pro), rewrites URLs to use the
 // Image Transformation API for on-the-fly resize + WebP conversion.
 //
-// When transforms are disabled (default / free tier), images are served via the
-// local /api/img proxy. This avoids cross-origin / ORB issues that occur when
-// the browser fetches Supabase Storage URLs directly from the Render domain.
+// When transforms are disabled (default / free tier), the original Supabase
+// public URL is returned directly. The bucket HOT_CLICK is public so <img>
+// tags can load cross-origin images without CORS or ORB issues.
 
 const TRANSFORMS_ENABLED = import.meta.env.VITE_SUPABASE_TRANSFORMS === 'true'
 const STORAGE_SEGMENT = '/storage/v1/object/public/'
 const RENDER_SEGMENT  = '/storage/v1/render/image/public/'
 
-/** Returns a same-origin proxy URL for any Supabase Storage URL. */
-function toProxyUrl(url) {
-  if (!url || url.startsWith('/api/img')) return url
-
-  // Handle regular object/public URLs
-  let idx = url.indexOf(STORAGE_SEGMENT)
+/** Strips render/image URLs back to the plain public storage URL. */
+function normalizeUrl(url) {
+  if (!url) return url
+  const idx = url.indexOf(RENDER_SEGMENT)
   if (idx !== -1) {
-    const storagePath = url.substring(idx + STORAGE_SEGMENT.length)
-    return `/api/img?p=${encodeURIComponent(storagePath)}`
+    let path = url.substring(idx + RENDER_SEGMENT.length)
+    const qIdx = path.indexOf('?')
+    if (qIdx !== -1) path = path.substring(0, qIdx)
+    const base = url.substring(0, idx)
+    return base + STORAGE_SEGMENT + path
   }
-
-  // Handle render/image URLs (stored in DB by old builds with transforms enabled)
-  // Strip query params (quality, format, width) and convert to proxy URL
-  idx = url.indexOf(RENDER_SEGMENT)
-  if (idx !== -1) {
-    let storagePath = url.substring(idx + RENDER_SEGMENT.length)
-    const qIdx = storagePath.indexOf('?')
-    if (qIdx !== -1) storagePath = storagePath.substring(0, qIdx)
-    return `/api/img?p=${encodeURIComponent(storagePath)}`
-  }
-
   return url
 }
 
@@ -39,7 +29,7 @@ function toProxyUrl(url) {
  * Returns an image URL suitable for display.
  *
  * - Transforms enabled: Supabase Image Transformation API (resize + WebP)
- * - Transforms disabled: same-origin proxy (/api/img) — avoids CORS/ORB
+ * - Transforms disabled: original Supabase public URL (bucket is public)
  *
  * @param {string} url      - Original Supabase public URL (or any URL)
  * @param {object} options
@@ -52,10 +42,11 @@ function toProxyUrl(url) {
 export function getOptimizedUrl(url, { width, height, quality = 80, format = 'webp' } = {}) {
   if (!url) return ''
 
-  if (!TRANSFORMS_ENABLED) return toProxyUrl(url)
+  if (!TRANSFORMS_ENABLED) return normalizeUrl(url)
 
-  if (!url.includes(STORAGE_SEGMENT)) return url
-  const renderUrl = url.replace(STORAGE_SEGMENT, RENDER_SEGMENT)
+  const normalized = normalizeUrl(url)
+  if (!normalized.includes(STORAGE_SEGMENT)) return normalized
+  const renderUrl = normalized.replace(STORAGE_SEGMENT, RENDER_SEGMENT)
   const params = new URLSearchParams({ quality: String(quality), format })
   if (width)  params.set('width',  String(width))
   if (height) params.set('height', String(height))
