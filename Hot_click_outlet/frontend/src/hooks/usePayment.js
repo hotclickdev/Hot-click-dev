@@ -41,27 +41,29 @@ export function usePayment() {
   }, [])
 
   const cancelarPedido = useCallback(async (numeroPedido) => {
-    const isGuest = sessionStorage.getItem(GUEST_KEY) === '1'
     setEstado('polling')
     try {
-      if (isGuest) {
-        await paymentService.guestCancelarPedido(numeroPedido)
-      } else {
-        await paymentService.cancelarPedido(numeroPedido)
-      }
+      // Try guest cancel first (works regardless of auth state).
+      // Falls back to authenticated cancel if guest endpoint rejects.
+      await paymentService.guestCancelarPedido(numeroPedido)
     } catch {
-      // Si ya estaba cancelado o hubo error, igual mostramos estado cancelado
+      try {
+        await paymentService.cancelarPedido(numeroPedido)
+      } catch {
+        // Si ya estaba cancelado o hubo error, igual mostramos estado cancelado
+      }
     }
     setEstado('cancelled')
   }, [])
 
   const capturarPayPal = useCallback(async (paypalOrderId, numeroPedido) => {
-    const isGuest = sessionStorage.getItem(GUEST_KEY) === '1'
     setEstado('capturing')
     setError(null)
     try {
-      const method = isGuest ? paymentService.guestCapturarPayPal : paymentService.capturarPayPal
-      const { data } = await method(paypalOrderId, numeroPedido)
+      // Always use the guest capture endpoint: paypalOrderId + numeroPedido is
+      // proof the caller completed the PayPal flow. This avoids JWT expiry issues
+      // when the user's token expires during the PayPal payment session.
+      const { data } = await paymentService.guestCapturarPayPal(paypalOrderId, numeroPedido)
       setPagoData(data)
       if (data.estadoPago === 'CAPTURADO') {
         setEstado('success')

@@ -37,7 +37,10 @@ public class ImageProxyController {
             return ResponseEntity.badRequest().build();
         }
 
-        String imageUrl = supabaseUrl + "/storage/v1/object/public/" + p;
+        // Use the authenticated path so the service key bypasses any bucket-level
+        // public/private policy. /object/public/ relies on the bucket being public;
+        // /object/ + service key works regardless of bucket visibility.
+        String imageUrl = supabaseUrl + "/storage/v1/object/" + p;
 
         try {
             HttpRequest req = HttpRequest.newBuilder()
