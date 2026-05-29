@@ -35,7 +35,9 @@ public class VentaController {
             @RequestParam(defaultValue = "0")   int page,
             @RequestParam(defaultValue = "300") int size) {
         try {
-            return ResponseEntity.ok(ResponseDTO.success("Ventas", pedidoService.listarResumenPaginado(page, size)));
+            Long empresaId = companyScope.getCurrentEmpresaId();
+            return ResponseEntity.ok(ResponseDTO.success("Ventas",
+                pedidoService.listarResumenPaginadoPorEmpresa(page, size, empresaId)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }

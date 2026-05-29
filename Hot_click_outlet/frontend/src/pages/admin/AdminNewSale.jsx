@@ -114,7 +114,7 @@ export default function AdminNewSale() {
 
   useEffect(() => {
     Promise.all([
-      productService.getAll(0, 200),
+      productService.adminGetAll(0, 500),
       ventaService.getClientes(),
     ]).then(([{ data: prods }, { data: cl }]) => {
       setProducts(prods.content ?? prods ?? [])

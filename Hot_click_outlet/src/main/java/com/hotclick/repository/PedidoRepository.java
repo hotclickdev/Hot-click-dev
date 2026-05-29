@@ -38,6 +38,9 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     /** Paginated header-only — para AdminReportes (sin items, evita in-memory full table scan) */
     Page<Pedido> findAllByOrderByFechaPedidoDesc(Pageable pageable);
 
+    /** Ídem pero filtrado por empresa — para EMPRENDEDOR */
+    Page<Pedido> findByEmpresaIdOrderByFechaPedidoDesc(@Param("empresaId") Long empresaId, Pageable pageable);
+
     @Query("SELECT DISTINCT p FROM Pedido p " +
            "LEFT JOIN FETCH p.usuarioFinal " +
            "LEFT JOIN FETCH p.items i " +

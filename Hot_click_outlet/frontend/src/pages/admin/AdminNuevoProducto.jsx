@@ -251,6 +251,10 @@ export default function AdminNuevoProducto() {
   const [etiquetas, setEtiquetas] = useState([])
   const [fuenteDetalles, setFuenteDetalles] = useState(null)
 
+  // Borrador
+  const DRAFT_KEY = 'hotclick-draft-producto'
+  const [tieneBorrador, setTieneBorrador] = useState(() => !!localStorage.getItem(DRAFT_KEY))
+
   // Formulario
   const [form, setForm] = useState(EMPTY_FORM)
   const [categories, setCategories] = useState([])
@@ -283,6 +287,31 @@ export default function AdminNuevoProducto() {
       setMarcas(Array.isArray(ms) ? ms : [])
     }).catch(() => {})
   }, [])
+
+  const guardarBorrador = () => {
+    try {
+      const draft = { ...form, imagenes: [], seoByLang: form.seoByLang }
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
+      setTieneBorrador(true)
+      toast({ message: 'Borrador guardado', type: 'success' })
+    } catch { toast({ message: 'No se pudo guardar el borrador', type: 'error' }) }
+  }
+
+  const cargarBorrador = () => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY)
+      if (!raw) return
+      const draft = JSON.parse(raw)
+      setForm({ ...EMPTY_FORM, ...draft })
+      toast({ message: 'Borrador cargado', type: 'success' })
+    } catch { toast({ message: 'Error al cargar el borrador', type: 'error' }) }
+  }
+
+  const limpiarBorrador = () => {
+    localStorage.removeItem(DRAFT_KEY)
+    setTieneBorrador(false)
+    setForm(EMPTY_FORM)
+  }
 
   useEffect(() => {
     const nombre = form.nombre || ''
@@ -506,6 +535,30 @@ export default function AdminNuevoProducto() {
             </p>
           </div>
         </div>
+
+        {/* Aviso borrador guardado */}
+        {tieneBorrador && paso === 1 && (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm"
+            style={{ background: 'rgba(79,124,255,0.08)', border: '1px solid rgba(79,124,255,0.25)' }}>
+            <svg className="w-4 h-4 text-[#4f7cff] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span style={{ color: '#a0b4ff' }} className="flex-1">Tenés un borrador guardado.</span>
+            <button onClick={cargarBorrador} className="text-xs font-semibold px-3 py-1 rounded-lg"
+              style={{ background: '#4f7cff', color: '#fff' }}>Cargar</button>
+            <button onClick={limpiarBorrador} className="text-xs px-2 py-1 rounded-lg"
+              style={{ color: '#8e8e9a' }}>Descartar</button>
+          </div>
+        )}
+
+        {/* Aviso sin bodegas */}
+        {bodegas.length === 0 && paso === 2 && (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm"
+            style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
+            <svg className="w-4 h-4 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span className="text-amber-300 flex-1">No tenés bodegas creadas. El producto no podrá guardarse sin una bodega.</span>
+            <a href="/admin/bodegas" className="text-xs font-semibold px-3 py-1 rounded-lg"
+              style={{ background: 'rgba(245,158,11,0.2)', color: '#fbbf24' }}>Crear bodega →</a>
+          </div>
+        )}
 
         {/* ── Paso 1: seleccionar fotos ── */}
         {paso === 1 && !analizando && (
@@ -997,13 +1050,21 @@ export default function AdminNuevoProducto() {
               </div>
 
               {/* Botones */}
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-3 pt-2 flex-wrap">
                 <Button type="submit" disabled={saving} className="flex-1">
                   {saving
                     ? <><Spinner size="sm" /><span className="ml-2">{t('common.loading')}</span></>
                     : t('admin.nuevoProducto.save')
                   }
                 </Button>
+                <button
+                  type="button"
+                  onClick={guardarBorrador}
+                  className="px-4 py-2.5 rounded-xl border border-white/10 text-[#8e8e9a] hover:text-white hover:bg-white/5 text-sm transition-colors flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                  Borrador
+                </button>
                 <button
                   type="button"
                   onClick={() => navigate('/admin/productos')}

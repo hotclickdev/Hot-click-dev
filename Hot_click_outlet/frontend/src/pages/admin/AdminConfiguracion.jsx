@@ -220,7 +220,7 @@ export default function AdminConfiguracion() {
               {section === 'tienda'         && <SeccionTienda toast={toast} />}
               {section === 'seguridad'      && <SeccionSeguridad refreshToken={refreshToken} toast={toast} onTwoFAChange={setTwoFAOn} />}
               {section === 'notificaciones' && <SeccionNotificaciones toast={toast} soloVentas={isEmprendedor} />}
-              {section === 'datos'          && <SeccionDatos toast={toast} />}
+              {section === 'datos'          && <SeccionDatos toast={toast} isEmprendedor={isEmprendedor} />}
               {section === 'apariencia'     && <SeccionApariencia />}
               {section === 'sistema'        && <SeccionSistema toast={toast} />}
             </div>
@@ -836,7 +836,7 @@ function SeccionTienda({ toast }) {
 /* ─────────────────────────────────────────────────────────
    SECCIÓN DATOS
 ───────────────────────────────────────────────────────── */
-function SeccionDatos({ toast }) {
+function SeccionDatos({ toast, isEmprendedor = false }) {
   const { t } = useTranslation()
   const [stats, setStats]   = useState(null)
   const [loadingStats, setLoadingStats] = useState(true)
@@ -852,15 +852,17 @@ function SeccionDatos({ toast }) {
   const [applyingPct, setApplyingPct] = useState(false)
 
   useEffect(() => {
+    // EMPRENDEDOR usa /admin/todos para productos de su empresa; ADMIN_IT usa el catálogo global
+    const prodEndpoint = isEmprendedor ? '/productos/admin/todos?size=1&page=0' : '/productos?size=1&page=0'
     Promise.allSettled([
-      api.get('/productos?size=1&page=0'),
+      api.get(prodEndpoint),
       api.get('/pedidos'),
     ]).then(([p, o]) => {
       const totalProd = p.status === 'fulfilled' ? (p.value.data?.data?.totalElements ?? p.value.data?.totalElements ?? '—') : '—'
       const totalOrd  = o.status === 'fulfilled' ? (Array.isArray(o.value.data?.data) ? o.value.data.data.length : Array.isArray(o.value.data) ? o.value.data.length : '—') : '—'
       setStats({ productos: totalProd, pedidos: totalOrd, clientes: '—' })
     }).finally(() => setLoadingStats(false))
-  }, [])
+  }, [isEmprendedor])
 
   const downloadCSV = (rows, filename) => {
     if (!rows.length) { toast({ message: 'Sin datos para exportar', type: 'error' }); return }
@@ -879,9 +881,11 @@ function SeccionDatos({ toast }) {
   const exportProductos = async () => {
     setExpProd(true)
     try {
-      const { data } = await api.get('/productos?size=9999&page=0')
+      // EMPRENDEDOR: solo sus productos; ADMIN_IT: todos
+      const endpoint = isEmprendedor ? '/productos/admin/todos?size=9999&page=0' : '/productos?size=9999&page=0'
+      const { data } = await api.get(endpoint)
       const list = data?.data?.content ?? data?.content ?? data?.data ?? []
-      downloadCSV(list.map(p => ({ id: p.id, nombre: p.nombre, precio: p.precio, stock: p.stock, descripcion: p.descripcion ?? '', activo: p.activo ?? true })), `productos-${date()}.csv`)
+      downloadCSV(list.map(p => ({ id: p.id, nombre: p.nombreProducto ?? p.nombre, precio: p.precioVenta ?? p.precio, stock: p.stockActual ?? p.stock, descripcion: p.descripcionCorta ?? p.descripcion ?? '', activo: p.estado === 1 })), `productos-${date()}.csv`)
       toast({ message: t('adminConfig.datosExportOk'), type: 'success' })
     } catch { toast({ message: t('adminConfig.datosExportError'), type: 'error' }) }
     finally { setExpProd(false) }
@@ -989,10 +993,10 @@ function SeccionDatos({ toast }) {
       <SectionHeader title={t('adminConfig.datosTitle')} desc={t('adminConfig.datosDesc')} />
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className={`grid gap-3 ${isEmprendedor ? 'grid-cols-2' : 'grid-cols-3'}`}>
         <StatCard label={t('adminConfig.datosStatsProducts')} value={stats?.productos} color="#4f7cff" icon={BoxIcon} />
         <StatCard label={t('adminConfig.datosStatsOrders')}   value={stats?.pedidos}   color="#22c55e" icon={ShoppingIcon} />
-        <StatCard label={t('adminConfig.datosStatsClients')}  value={stats?.clientes}  color="#a78bfa" icon={UserIcon} />
+        {!isEmprendedor && <StatCard label={t('adminConfig.datosStatsClients')} value={stats?.clientes} color="#a78bfa" icon={UserIcon} />}
       </div>
 
       {/* Export */}
@@ -1001,8 +1005,10 @@ function SeccionDatos({ toast }) {
           <ExportRow label={t('adminConfig.datosExportProductsLabel')} desc={t('adminConfig.datosExportProductsDesc')} loading={expProd} onExport={exportProductos} color="#4f7cff" />
           <hr className="cfg-divider" />
           <ExportRow label={t('adminConfig.datosExportOrdersLabel')}   desc={t('adminConfig.datosExportOrdersDesc')}   loading={expOrd}  onExport={exportPedidos}  color="#22c55e" />
-          <hr className="cfg-divider" />
-          <ExportRow label={t('adminConfig.datosExportClientsLabel')}  desc={t('adminConfig.datosExportClientsDesc')}  loading={expCli}  onExport={exportClientes} color="#a78bfa" />
+          {!isEmprendedor && <>
+            <hr className="cfg-divider" />
+            <ExportRow label={t('adminConfig.datosExportClientsLabel')} desc={t('adminConfig.datosExportClientsDesc')} loading={expCli} onExport={exportClientes} color="#a78bfa" />
+          </>}
         </div>
       </Block>
 
@@ -1032,9 +1038,11 @@ function SeccionDatos({ toast }) {
       {/* Cleanup */}
       <Block label={t('adminConfig.datosCleanTitle')}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <CleanRow label={t('adminConfig.datosCleanCancelledLabel')} desc={t('adminConfig.datosCleanCancelledDesc')} loading={cleanCancelled} onAction={eliminarCancelados} btnLabel={t('adminConfig.datosCleanCancelledBtn')} />
-          <hr className="cfg-divider" />
-          <CleanRow label={t('adminConfig.datosCleanInactiveLabel')}  desc={t('adminConfig.datosCleanInactiveDesc')}  loading={cleanInactive}  onAction={archivarSinStock}   btnLabel={t('adminConfig.datosCleanInactiveBtn')} />
+          {!isEmprendedor && <>
+            <CleanRow label={t('adminConfig.datosCleanCancelledLabel')} desc={t('adminConfig.datosCleanCancelledDesc')} loading={cleanCancelled} onAction={eliminarCancelados} btnLabel={t('adminConfig.datosCleanCancelledBtn')} />
+            <hr className="cfg-divider" />
+          </>}
+          <CleanRow label={t('adminConfig.datosCleanInactiveLabel')} desc={t('adminConfig.datosCleanInactiveDesc')} loading={cleanInactive} onAction={archivarSinStock} btnLabel={t('adminConfig.datosCleanInactiveBtn')} />
         </div>
       </Block>
     </div>
@@ -1092,14 +1100,16 @@ function SeccionNotificaciones({ toast, soloVentas = false }) {
         </div>
       </Block>
 
-      <Block label={t('adminConfig.notifWaTitle')} sublabel={t('adminConfig.notifWaSubtitle')}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', borderRadius: '10px', background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)', fontSize: '13px', fontFamily: F.mono }}>
-          <span style={{ fontSize: '16px' }}>📱</span>
-          <span style={{ flex: 1 }}>+506 8974-5370</span>
-          <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>Andrés Zúñiga</span>
-        </div>
-        <p style={{ fontSize: '12px', color: 'var(--hc-muted)', marginTop: '8px', fontFamily: F.body }}>{t('adminConfig.notifWaNote')}</p>
-      </Block>
+      {!soloVentas && (
+        <Block label={t('adminConfig.notifWaTitle')} sublabel={t('adminConfig.notifWaSubtitle')}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', borderRadius: '10px', background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)', fontSize: '13px', fontFamily: F.mono }}>
+            <span style={{ fontSize: '16px' }}>📱</span>
+            <span style={{ flex: 1 }}>+506 8974-5370</span>
+            <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>Andrés Zúñiga</span>
+          </div>
+          <p style={{ fontSize: '12px', color: 'var(--hc-muted)', marginTop: '8px', fontFamily: F.body }}>{t('adminConfig.notifWaNote')}</p>
+        </Block>
+      )}
     </div>
   )
 }

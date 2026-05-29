@@ -217,9 +217,16 @@ public class PedidoService {
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> listarResumenPaginado(int page, int size) {
-        return pedidoRepository.findAllByOrderByFechaPedidoDesc(
-                PageRequest.of(page, size, Sort.by("fechaPedido").descending()))
-            .getContent().stream().map(p -> {
+        return listarResumenPaginadoPorEmpresa(page, size, null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> listarResumenPaginadoPorEmpresa(int page, int size, Long empresaId) {
+        var pageable = PageRequest.of(page, size, Sort.by("fechaPedido").descending());
+        var content = empresaId != null
+            ? pedidoRepository.findByEmpresaIdOrderByFechaPedidoDesc(empresaId, pageable).getContent()
+            : pedidoRepository.findAllByOrderByFechaPedidoDesc(pageable).getContent();
+        return content.stream().map(p -> {
                 Map<String, Object> m = new LinkedHashMap<>();
                 m.put("id",            p.getId());
                 m.put("numeroPedido",  p.getNumeroPedido());
