@@ -62,7 +62,7 @@ function EmprendimientoCloud({ onRegistrar }) {
         <button onClick={onRegistrar}
           className="group inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl font-bold text-sm text-white w-full transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
           style={{ background: EMPR.color, boxShadow: `0 0 32px ${EMPR.ring}` }}>
-          Registrá tu emprendimiento
+          Registrá tu negocio
           <span className="inline-block group-hover:translate-x-1 transition-transform duration-200">→</span>
         </button>
         <div className="flex gap-5 mt-5 pt-5 border-t" style={{ borderColor: 'var(--hc-border)' }}>
@@ -95,7 +95,7 @@ function EmprendimientoForm({ onVolver }) {
 
   const handleNext = (e) => {
     e.preventDefault(); setError('')
-    if (!form.nombreEmpresa.trim()) { setError('El nombre de la empresa es requerido'); return }
+    if (!form.nombreEmpresa.trim()) { setError('El nombre del negocio es requerido'); return }
     setStep(1)
   }
 
@@ -114,7 +114,7 @@ function EmprendimientoForm({ onVolver }) {
         passwordAdmin:   form.passwordAdmin,
         telefonoAdmin:   form.telefonoAdmin.trim() || undefined,
       })
-      if (data?.data) { loginStore(data.data); toast.success('¡Empresa creada! Bienvenido a tu panel.'); navigate('/admin') }
+      if (data?.data) { loginStore(data.data); toast.success('¡Negocio creado! Bienvenido a tu panel.'); navigate('/admin') }
     } catch (err) {
       const msg = err.response?.data?.message
       setError(typeof msg === 'string' && msg ? msg : 'Error al registrar. Intentá de nuevo.')
@@ -139,7 +139,7 @@ function EmprendimientoForm({ onVolver }) {
         <h1 className="font-black leading-[1.0] tracking-tight"
           style={{ fontSize: 'clamp(2rem, 6vw, 2.8rem)', color: 'var(--hc-text)' }}>Registrá tu</h1>
         <h1 className="font-black leading-[1.0] tracking-tight"
-          style={{ fontSize: 'clamp(2rem, 6vw, 2.8rem)', color: '#f97316' }}>empresa</h1>
+          style={{ fontSize: 'clamp(2rem, 6vw, 2.8rem)', color: '#f97316' }}>negocio</h1>
         <div className="flex items-center gap-2 mt-3">
           <div className="w-5 h-[2px] rounded-full bg-orange-500" />
           <p className="text-sm font-medium" style={{ color: 'var(--hc-muted)' }}>Completá los datos y empezá a vender hoy.</p>
@@ -154,7 +154,7 @@ function EmprendimientoForm({ onVolver }) {
 
           {/* Progreso */}
           <div className="flex items-center gap-3 mb-6">
-            {['Tu empresa', 'Tu cuenta'].map((label, i) => (
+            {['Tu negocio', 'Tu cuenta'].map((label, i) => (
               <div key={i} className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300"
                   style={i < step ? { background: 'var(--hc-success, #22c55e)', color: '#fff' }
@@ -173,11 +173,11 @@ function EmprendimientoForm({ onVolver }) {
               <motion.form key="s0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }}
                 onSubmit={handleNext} className="space-y-4">
-                <Input label="Nombre de la empresa *" placeholder="Ej: Mi Tienda Tica"
+                <Input label="Nombre del negocio *" placeholder="Ej: Mi Tienda Tica"
                   value={form.nombreEmpresa} onChange={set('nombreEmpresa')} autoFocus required />
-                <Input label="Correo de la empresa" type="email" placeholder="contacto@miempresa.com"
+                <Input label="Correo del negocio" type="email" placeholder="contacto@minegocio.com"
                   value={form.correoEmpresa} onChange={set('correoEmpresa')} hint="Opcional" />
-                <Input label="Teléfono empresarial" type="tel" placeholder="+506 8888-8888"
+                <Input label="Teléfono del negocio" type="tel" placeholder="+506 8888-8888"
                   value={form.telefonoEmpresa} onChange={set('telefonoEmpresa')} />
                 {error && <ErrMsg>{error}</ErrMsg>}
                 <button type="submit" className="hc-btn hc-btn-primary hc-btn-lg w-full"
@@ -193,7 +193,7 @@ function EmprendimientoForm({ onVolver }) {
                 <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl mb-2"
                   style={{ background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
                   <span style={{ fontSize: '0.75rem', color: 'var(--hc-muted)' }}>
-                    Empresa: <strong style={{ color: 'var(--hc-text)' }}>{form.nombreEmpresa}</strong>
+                    Negocio: <strong style={{ color: 'var(--hc-text)' }}>{form.nombreEmpresa}</strong>
                   </span>
                 </div>
                 <Input label="Tu nombre completo" placeholder="Ana García" value={form.nombreAdmin} onChange={set('nombreAdmin')} autoFocus />

@@ -42,7 +42,7 @@ function buildSidebarLinks(t, userRole) {
     { to: '/admin/publicaciones',  label: t('admin.sidebar.publicarFB'),  icon: 'share' },
     { to: '/admin/configuracion',  label: 'Configuración',                icon: 'config' },
     { divider: true },
-    { to: '/admin/mi-empresa', label: 'Mi empresa', icon: 'empresa' },
+    { to: '/admin/mi-empresa', label: 'Mi negocio', icon: 'empresa' },
     { to: '/admin/equipo',     label: 'Mi equipo',  icon: 'users' },
   ]
 

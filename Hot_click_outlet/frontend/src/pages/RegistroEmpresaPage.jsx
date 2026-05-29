@@ -45,7 +45,7 @@ export default function RegistroEmpresaPage() {
   /* Paso 1 → 2 */
   const handleNext = (e) => {
     e.preventDefault(); setError('')
-    if (!form.nombreEmpresa.trim()) { setError('El nombre de la empresa es requerido'); return }
+    if (!form.nombreEmpresa.trim()) { setError('El nombre del negocio es requerido'); return }
     setStep(1)
   }
 
@@ -67,7 +67,7 @@ export default function RegistroEmpresaPage() {
       })
       if (data?.data) {
         loginStore(data.data)
-        toast.success('¡Empresa creada! Bienvenido a tu panel.')
+        toast.success('¡Negocio creado! Bienvenido a tu panel.')
         navigate('/admin')
       }
     } catch (err) {
@@ -282,11 +282,11 @@ export default function RegistroEmpresaPage() {
                       initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }}
                       onSubmit={handleNext} className="space-y-4">
-                      <Input label="Nombre de la empresa *" placeholder="Ej: Mi Tienda Tica"
+                      <Input label="Nombre del negocio *" placeholder="Ej: Mi Tienda Tica"
                         value={form.nombreEmpresa} onChange={set('nombreEmpresa')} autoFocus required />
-                      <Input label="Correo de la empresa" type="email" placeholder="contacto@miempresa.com"
+                      <Input label="Correo del negocio" type="email" placeholder="contacto@minegocio.com"
                         value={form.correoEmpresa} onChange={set('correoEmpresa')} hint="Opcional" />
-                      <Input label="Teléfono empresarial" type="tel" placeholder="+506 8888-8888"
+                      <Input label="Teléfono del negocio" type="tel" placeholder="+506 8888-8888"
                         value={form.telefonoEmpresa} onChange={set('telefonoEmpresa')} />
                       {error && <ErrMsg>{error}</ErrMsg>}
                       <button type="submit" className="hc-btn hc-btn-primary hc-btn-lg w-full"
@@ -305,7 +305,7 @@ export default function RegistroEmpresaPage() {
                       <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl mb-2"
                         style={{ background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
                         <span style={{ fontSize: '0.75rem', color: 'var(--hc-muted)' }}>
-                          Empresa: <strong style={{ color: 'var(--hc-text)' }}>{form.nombreEmpresa}</strong>
+                          Negocio: <strong style={{ color: 'var(--hc-text)' }}>{form.nombreEmpresa}</strong>
                         </span>
                       </div>
                       <Input label="Tu nombre completo" placeholder="Ana García"

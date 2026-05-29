@@ -51,7 +51,7 @@ export default function AdminMiEmpresa() {
       const { data } = await api.get('/empresa/perfil')
       // El interceptor de Axios ya hace unwrap de ResponseDTO → data ES la empresa directamente
       const e = data?.id ? data : (data?.data ?? data)
-      if (!e?.id) { showToast('No se encontró la empresa', 'error'); return }
+      if (!e?.id) { showToast('No se encontró el negocio', 'error'); return }
       setEmpresa(e)
       const descRaw = e.descripcion ?? ''
       // Separar fotos de la descripción visible
@@ -73,7 +73,7 @@ export default function AdminMiEmpresa() {
         else setFotos([])
       } catch { setFotos([]) }
     } catch {
-      showToast('Error al cargar perfil de empresa', 'error')
+      showToast('Error al cargar perfil del negocio', 'error')
     } finally {
       setLoading(false)
     }
@@ -131,7 +131,7 @@ export default function AdminMiEmpresa() {
         colorPrimario:   form.colorPrimario,
         colorSecundario: form.colorSecundario,
       })
-      showToast('Perfil de empresa actualizado')
+      showToast('Perfil del negocio actualizado')
       cargar()
     } catch {
       showToast('Error al guardar cambios', 'error')
@@ -191,7 +191,7 @@ export default function AdminMiEmpresa() {
   if (!empresa) {
     return (
       <AdminLayout>
-        <div className="py-20 text-center text-sm" style={{ color: 'var(--hc-muted)' }}>No se encontró la empresa asociada a tu cuenta.</div>
+        <div className="py-20 text-center text-sm" style={{ color: 'var(--hc-muted)' }}>No se encontró el negocio asociado a tu cuenta.</div>
       </AdminLayout>
     )
   }
@@ -201,8 +201,8 @@ export default function AdminMiEmpresa() {
       <div className="max-w-2xl space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>Mi empresa</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>Configura el perfil público de tu empresa en HOTCLICK</p>
+          <h1 className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>Mi negocio</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>Configura el perfil público de tu negocio en HOTCLICK</p>
         </div>
 
         {/* Estado y plan */}
@@ -228,7 +228,7 @@ export default function AdminMiEmpresa() {
           </div>
           {empresa.estadoEmpresa === 'PENDIENTE_APROBACION' && (
             <div className="w-full mt-2 px-3 py-2 rounded-lg text-xs bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
-              Tu empresa está pendiente de aprobación por el equipo de HOTCLICK. Te notificaremos por correo cuando sea aprobada.
+              Tu negocio está pendiente de aprobación por el equipo de HOTCLICK. Te notificaremos por correo cuando sea aprobado.
             </div>
           )}
         </div>
@@ -251,7 +251,7 @@ export default function AdminMiEmpresa() {
                 onChange={e => setForm(s => ({ ...s, descripcion: e.target.value }))}
                 rows={3}
                 disabled={!canEdit}
-                placeholder="Describe brevemente tu empresa y lo que ofrecés…"
+                placeholder="Describe brevemente tu negocio y lo que ofrecés…"
                 className="w-full px-3 py-2.5 rounded-xl text-sm outline-none resize-none disabled:opacity-60"
                 style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
               />
@@ -260,18 +260,18 @@ export default function AdminMiEmpresa() {
 
           <Section title="Contacto">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="Correo de la empresa">
+              <Field label="Correo del negocio">
                 <input
                   type="email"
                   value={form.correoEmpresa}
                   onChange={e => setForm(s => ({ ...s, correoEmpresa: e.target.value }))}
                   disabled={!canEdit}
-                  placeholder="contacto@miempresa.com"
+                  placeholder="contacto@minegocio.com"
                   className="w-full px-3 py-2.5 rounded-xl text-sm outline-none disabled:opacity-60"
                   style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
                 />
               </Field>
-              <Field label="Teléfono empresa">
+              <Field label="Teléfono del negocio">
                 <input
                   value={form.telefonoEmpresa}
                   onChange={e => setForm(s => ({ ...s, telefonoEmpresa: e.target.value }))}
@@ -335,7 +335,7 @@ export default function AdminMiEmpresa() {
                 </div>
               </Field>
             </div>
-            <Field label="Logo de la empresa">
+            <Field label="Logo del negocio">
               <input
                 ref={fileInputRef}
                 type="file"
