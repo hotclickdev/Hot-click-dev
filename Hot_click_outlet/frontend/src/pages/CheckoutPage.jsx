@@ -9,6 +9,7 @@ import useAuthStore from '@/store/authStore'
 import { usePayment } from '@/hooks/usePayment'
 import { formatPrice } from '@/utils/format'
 import { analytics } from '@/utils/analytics'
+import PhoneField from '@/components/ui/PhoneField'
 
 const BODEGA_DEFAULT = 1
 const WHATSAPP = '50689745370'
@@ -396,28 +397,28 @@ export default function CheckoutPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
         {/* Stepper */}
         <CheckoutStepper activeStep="checkout" />
 
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-4 sm:mb-6">
           <Link to="/carrito" className="text-sm transition-colors hover:text-[#4f7cff]" style={{ color: 'var(--hc-muted)' }}>
             ← {t('checkout.backToCart')}
           </Link>
-          <h1 className="text-3xl font-bold mt-3" style={{ color: 'var(--hc-text)' }}>{t('checkout.title')}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mt-2" style={{ color: 'var(--hc-text)' }}>{t('checkout.title')}</h1>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* ── Formulario ── */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-3 sm:space-y-6">
 
             {/* ── Datos de contacto (solo invitados) ── */}
             {!token && (
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="rounded-2xl p-6 space-y-4"
+                className="rounded-2xl p-4 sm:p-6 space-y-3 sm:space-y-4"
                 style={{ background: 'var(--hc-surface)', border: '1.5px solid var(--hc-accent)' }}
               >
                 <div className="flex items-center justify-between">
@@ -448,15 +449,11 @@ export default function CheckoutPage() {
                   onBlur={() => { setGuestEmailDirty(true); setGuestEmailError(validateGuestEmail(guestEmail)) }}
                 />
 
-                <SmartField
-                  id="guestPhone"
+                <PhoneField
                   label={t('checkout.guestPhone')}
-                  type="tel"
                   value={guestPhone}
-                  placeholder="8888-8888"
-                  onChange={(e) => setGuestPhone(formatPhone(e.target.value))}
-                  onBlur={() => {}}
-                  helpText={t('checkout.guestPhoneHelp')}
+                  onChange={setGuestPhone}
+                  hint={t('checkout.guestPhoneHelp')}
                 />
               </motion.div>
             )}
@@ -516,7 +513,7 @@ export default function CheckoutPage() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.04 }}
-              className="rounded-2xl p-6 space-y-4"
+              className="rounded-2xl p-4 sm:p-6 space-y-3 sm:space-y-4"
               style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
             >
               <h2 className="font-semibold" style={{ color: 'var(--hc-text)' }}>{t('checkout.deliveryMethod')}</h2>
@@ -565,21 +562,16 @@ export default function CheckoutPage() {
                       {t('checkout.deliveryData')}
                     </p>
                     {token && (
-                      <SmartField
-                        id="telefono"
+                      <PhoneField
                         label={t('checkout.phoneContact')}
-                        type="tel"
                         value={telefono}
-                        placeholder="8888-8888"
-                        error={telefonoDirty ? telefonoError : ''}
-                        success={telefonoDirty && !telefonoError && telefono.length >= 8}
-                        helpText={t('checkout.phoneHelp')}
-                        onChange={(e) => {
-                          const formatted = formatPhone(e.target.value)
-                          setTelefono(formatted)
-                          if (telefonoDirty) setTelefonoError(validatePhone(formatted))
+                        onChange={(val) => {
+                          setTelefono(val)
+                          if (telefonoDirty) setTelefonoError(validatePhone(val))
                         }}
-                        onBlur={() => { setTelefonoDirty(true); setTelefonoError(validatePhone(telefono)) }}
+                        error={telefonoDirty ? telefonoError : ''}
+                        hint={t('checkout.phoneHelp')}
+                        required
                       />
                     )}
                     <SmartField
@@ -609,7 +601,7 @@ export default function CheckoutPage() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.08 }}
-              className="rounded-2xl p-6 space-y-4"
+              className="rounded-2xl p-4 sm:p-6 space-y-3 sm:space-y-4"
               style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
             >
               <h2 className="font-semibold" style={{ color: 'var(--hc-text)' }}>{t('checkout.paymentMethod')}</h2>
@@ -745,7 +737,7 @@ export default function CheckoutPage() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.06 }}
-              className="sticky top-24 rounded-2xl p-6 space-y-4"
+              className="sticky top-24 rounded-2xl p-4 sm:p-6 space-y-3 sm:space-y-4"
               style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
             >
               <h2 className="font-semibold" style={{ color: 'var(--hc-text)' }}>{t('checkout.orderSummary')}</h2>

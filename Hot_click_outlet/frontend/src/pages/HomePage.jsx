@@ -131,8 +131,8 @@ function HeroCarousel({ slides }) {
       </div>
 
       {/* Main content */}
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 w-full" style={{ minHeight: '82vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-4 items-center py-10 lg:py-8">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 w-full" style={{ minHeight: 'min(60vh, 460px)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-4 items-center py-5 lg:py-8">
 
           {/* ── Left: text content ── */}
           <AnimatePresence mode="wait" custom={dir}>
@@ -155,21 +155,21 @@ function HeroCarousel({ slides }) {
               </div>
 
               <h1
-                className="font-black leading-[1.02] tracking-tight mb-4 line-clamp-2"
-                style={{ fontSize: 'clamp(1.8rem, 3.5vw, 3rem)', color: 'var(--hc-text)' }}
+                className="font-black leading-[1.02] tracking-tight mb-3 line-clamp-2"
+                style={{ fontSize: 'clamp(1.5rem, 3.5vw, 3rem)', color: 'var(--hc-text)' }}
               >
                 {slide.nombre}
               </h1>
 
               {slide.descripcion && (
-                <p className="text-lg text-[#8e8e9a] max-w-lg mb-8 leading-relaxed line-clamp-3">
+                <p className="text-base text-[#8e8e9a] max-w-lg mb-4 sm:mb-6 leading-relaxed line-clamp-2 sm:line-clamp-3">
                   {slide.descripcion}
                 </p>
               )}
 
               {/* Price */}
               {slide.precio > 0 && (
-                <div className="flex items-baseline gap-3 mb-8">
+                <div className="flex items-baseline gap-3 mb-4 sm:mb-6">
                   <span className="text-3xl font-black" style={{ color: color.accent }}>
                     {formatPrice(slide.precio)}
                   </span>
@@ -216,7 +216,7 @@ function HeroCarousel({ slides }) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.35 }}
-                className="flex flex-wrap gap-5 mt-6"
+                className="flex flex-wrap gap-4 sm:gap-5 mt-3 sm:mt-6"
               >
                 {[['100%', t('home.garantia')], ['24h', t('home.envios')], ['5★', t('home.satisfaccion')]].map(([value, label]) => (
                   <div key={label}>
@@ -229,7 +229,7 @@ function HeroCarousel({ slides }) {
           </AnimatePresence>
 
           {/* ── Right: product image ── */}
-          <div className="relative flex items-center justify-center lg:justify-end">
+          <div className="relative hidden sm:flex items-center justify-center lg:justify-end">
             {/* Ambient glow behind image */}
             <AnimatePresence>
               <motion.div
@@ -312,7 +312,7 @@ function HeroCarousel({ slides }) {
         </div>
 
         {/* ── Bottom: thumbnail navigation ── */}
-        <div className="pb-10 flex flex-col items-center gap-4">
+        <div className="pb-4 sm:pb-8 flex flex-col items-center gap-3">
           {/* Progress bar */}
           <div className="w-full max-w-xs h-0.5 rounded-full bg-white/10 overflow-hidden">
             <motion.div
@@ -449,8 +449,8 @@ export default function HomePage() {
 
       {/* Visto recientemente */}
       {recentlyViewed.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-          <div className="flex items-center gap-2 mb-5">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+          <div className="flex items-center gap-2 mb-3 sm:mb-5">
             <span className="w-1 h-4 rounded-full bg-[#4f7cff]" />
             <h2 className="text-sm font-semibold tracking-wide uppercase text-[#8e8e9a]">{t('home.recentlyViewed')}</h2>
           </div>
@@ -515,8 +515,8 @@ export default function HomePage() {
 
       {/* Productos destacados */}
       {destacados.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-          <div className="flex items-center justify-between mb-5">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+          <div className="flex items-center justify-between mb-3 sm:mb-5">
             <div className="flex items-center gap-2">
               <span className="w-1 h-4 rounded-full bg-[#4f7cff]" />
               <h2 className="text-sm font-semibold tracking-wide uppercase text-[#8e8e9a]">{t('home.destacados')}</h2>
@@ -533,12 +533,12 @@ export default function HomePage() {
 
       {/* Marcas */}
       {marcas.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-          <div className="flex items-center gap-2 mb-6">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+          <div className="flex items-center gap-2 mb-3 sm:mb-5">
             <span className="w-1 h-4 rounded-full bg-[#4f7cff]" />
             <h2 className="text-sm font-semibold tracking-wide uppercase text-[#8e8e9a]">{t('home.brands')}</h2>
           </div>
-          <div className="flex flex-wrap gap-4 justify-center">
+          <div className="flex flex-wrap gap-3 sm:gap-4 justify-center">
             {marcas.map((m) => (
               <motion.div
                 key={m.id}
@@ -571,13 +571,13 @@ export default function HomePage() {
       )}
 
       {/* How to buy section */}
-      <section id="como-comprar" className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+      <section id="como-comprar" className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-8"
+          className="text-center mb-5 sm:mb-8"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#4f7cff]/10 border border-[#4f7cff]/20 text-sm text-[#4f7cff] mb-4">
             {t('home.procesoBadge')}
@@ -588,7 +588,7 @@ export default function HomePage() {
 
         <div className="relative">
           <div className="hidden lg:block absolute top-10 left-[12.5%] right-[12.5%] h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             {[
               { step: '01', icon: <SearchStepIcon />, title: t('home.step1Title'), desc: t('home.step1Desc'), color: 'text-[#4f7cff]', glow: 'bg-[#4f7cff]/10', border: 'border-[#4f7cff]/20' },
               { step: '02', icon: <CartStepIcon />, title: t('home.step2Title'), desc: t('home.step2Desc'), color: 'text-purple-400', glow: 'bg-purple-500/10', border: 'border-purple-500/20' },
@@ -601,9 +601,9 @@ export default function HomePage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: i * 0.1 }}
-                className="hc-step-card relative flex flex-col items-center text-center p-6 rounded-2xl bg-[#111114] border border-white/8"
+                className="hc-step-card relative flex flex-col items-center text-center p-4 sm:p-6 rounded-2xl bg-[#111114] border border-white/8"
               >
-                <div className={`hc-step-icon w-14 h-14 rounded-2xl ${glow} border ${border} flex items-center justify-center mb-4 ${color}`}>
+                <div className={`hc-step-icon w-11 h-11 sm:w-14 sm:h-14 rounded-2xl ${glow} border ${border} flex items-center justify-center mb-3 sm:mb-4 ${color}`}>
                   {icon}
                 </div>
                 <span className={`text-[10px] font-bold tracking-widest ${color} mb-2`}>{step}</span>
@@ -617,8 +617,8 @@ export default function HomePage() {
 
       {/* Features section */}
       <section className="border-t" style={{ borderColor: 'var(--hc-border)', backgroundColor: 'var(--hc-surface)' }}>
-        <div ref={featuresRef} className="hc-reveal max-w-7xl mx-auto px-4 sm:px-6 py-12">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div ref={featuresRef} className="hc-reveal max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-10">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6">
             {[
               { icon: '🚚', title: t('home.feat1Title'), desc: t('home.feat1Desc') },
               { icon: '🔒', title: t('home.feat2Title'), desc: t('home.feat2Desc') },
@@ -630,7 +630,7 @@ export default function HomePage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.45, delay: i * 0.1 }}
-                className="hc-glass-card flex items-start gap-4 p-6"
+                className="hc-glass-card flex items-start gap-3 p-4 sm:p-6"
               >
                 <span className="text-3xl shrink-0">{icon}</span>
                 <div>
@@ -647,12 +647,12 @@ export default function HomePage() {
       <TestimonialsCarousel />
 
       {/* Servicios Hot promo */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-10">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
-          className="relative rounded-3xl overflow-hidden p-8 sm:p-12"
+          className="relative rounded-3xl overflow-hidden p-5 sm:p-12"
           style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
         >
           <div className="absolute inset-0 pointer-events-none">
@@ -661,7 +661,7 @@ export default function HomePage() {
             <div className="absolute bottom-0 left-0 w-64 h-64 opacity-8"
               style={{ background: 'radial-gradient(circle, var(--hc-accent), transparent 70%)' }} />
           </div>
-          <div className="relative flex flex-col sm:flex-row items-center gap-8">
+          <div className="relative flex flex-col sm:flex-row items-center gap-4 sm:gap-8">
             <div className="flex-1 text-center sm:text-left">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-3"
                 style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
@@ -699,12 +699,12 @@ export default function HomePage() {
       </section>
 
       {/* CTA */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-20 text-center">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-16 text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="relative rounded-3xl overflow-hidden p-12"
+          className="relative rounded-3xl overflow-hidden p-7 sm:p-12"
           style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
         >
           <div className="absolute inset-0 pointer-events-none">
@@ -717,7 +717,7 @@ export default function HomePage() {
             <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: 'var(--hc-text)' }}>
               {t('home.ctaTitle')}
             </h2>
-            <p className="mb-8 max-w-md mx-auto" style={{ color: 'var(--hc-muted)' }}>
+            <p className="mb-5 sm:mb-8 max-w-md mx-auto" style={{ color: 'var(--hc-muted)' }}>
               {t('home.ctaSub')}
             </p>
             <Link to="/productos" className="hc-btn hc-btn-primary hc-btn-lg inline-flex">
@@ -751,15 +751,15 @@ function TestimonialsCarousel() {
   ]
 
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
-      <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-10">
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
+      <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-5 sm:mb-8">
         <h2 className="text-2xl font-bold text-[#e8e8ed]">{t('home.testimoniosTitle')}</h2>
         <p className="text-sm text-[#8e8e9a] mt-1">{t('home.testimoniosSub')}</p>
       </motion.div>
       <div className="relative">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 overflow-hidden">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 overflow-hidden">
           {visible.map((t, i) => (
-            <motion.div key={idx + i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: i * 0.08 }} className="hc-glass-card p-6 flex flex-col gap-3">
+            <motion.div key={idx + i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: i * 0.08 }} className="hc-glass-card p-4 sm:p-6 flex flex-col gap-3">
               <div className="flex gap-0.5">
                 {Array.from({ length: t.rating }).map((_, s) => (
                   <svg key={s} className="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>

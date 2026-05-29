@@ -64,7 +64,7 @@ public class Producto extends BaseEntity {
     @Column(name = "peso_en_gramos")
     private Integer pesoEnGramos;
 
-    @Column(name = "sku", unique = true, length = 50)
+    @Column(name = "sku", length = 50)
     private String sku;
 
     @Column(name = "marca", length = 100)
@@ -104,6 +104,11 @@ public class Producto extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "fk_id_admin_cliente", nullable = false)
     private Usuario adminCliente;
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fk_id_empresa")
+    private Empresa empresa;
 
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
@@ -171,6 +176,12 @@ public class Producto extends BaseEntity {
 
     @Column(name = "video_url", length = 500)
     private String videoUrl;
+
+    @Column(name = "talla", length = 20)
+    private String talla;
+
+    @Column(name = "garantia_dias", columnDefinition = "INTEGER DEFAULT 0")
+    private Integer garantiaDias = 0;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -261,6 +272,10 @@ public class Producto extends BaseEntity {
     public Usuario getAdminCliente() { return adminCliente; }
     public void setAdminCliente(Usuario adminCliente) { this.adminCliente = adminCliente; }
 
+    public Empresa getEmpresa() { return empresa; }
+    public void setEmpresa(Empresa empresa) { this.empresa = empresa; }
+    public Long getEmpresaId() { return empresa != null ? empresa.getId() : null; }
+
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
 
@@ -326,4 +341,10 @@ public class Producto extends BaseEntity {
 
     public String getVideoUrl() { return videoUrl; }
     public void setVideoUrl(String videoUrl) { this.videoUrl = videoUrl; }
+
+    public String getTalla() { return talla; }
+    public void setTalla(String talla) { this.talla = talla; }
+
+    public Integer getGarantiaDias() { return garantiaDias != null ? garantiaDias : 0; }
+    public void setGarantiaDias(Integer garantiaDias) { this.garantiaDias = garantiaDias; }
 }

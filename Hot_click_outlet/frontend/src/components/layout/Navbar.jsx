@@ -112,7 +112,7 @@ export default function Navbar() {
                   <Link
                     key={link.href}
                     to={link.href}
-                    className="relative px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200"
+                    className="relative px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap"
                     style={{
                       color: isActive ? '#fff' : 'var(--hc-accent)',
                       backgroundColor: isActive ? 'var(--hc-accent)' : 'color-mix(in srgb, var(--hc-accent) 10%, transparent)',
@@ -203,8 +203,8 @@ export default function Navbar() {
             </Link>
 
             {/* Cart */}
-            <button
-              onClick={() => setCartDrawerOpen(true)}
+            <Link
+              to="/carrito"
               aria-label={t('bnav.carrito')}
               className="relative p-2 rounded-lg transition-all duration-150 hover:scale-105"
               style={{ color: 'var(--hc-muted)' }}
@@ -233,7 +233,7 @@ export default function Navbar() {
                   </motion.span>
                 )}
               </AnimatePresence>
-            </button>
+            </Link>
 
             {/* Auth */}
             {token ? (
@@ -308,7 +308,7 @@ export default function Navbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.15 }}
-            className="hc-mobile-menu fixed top-16 left-0 right-0 z-30 backdrop-blur-xl border-b md:hidden"
+            className="hc-mobile-menu fixed top-16 left-0 right-0 z-[60] backdrop-blur-xl border-b md:hidden"
             style={{ borderBottomColor: 'var(--hc-border)' }}
           >
             <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col gap-0.5">

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import AdminLayout from '@/layouts/AdminLayout'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
+import PhoneField from '@/components/ui/PhoneField'
 import Modal from '@/components/ui/Modal'
 import Badge from '@/components/ui/Badge'
 import Spinner from '@/components/ui/Spinner'
@@ -143,7 +144,7 @@ export default function AdminWarehouses() {
         <form onSubmit={handleSave} className="space-y-4">
           <Input label="Nombre bodega *" value={form.nombreBodega} onChange={set('nombreBodega')} required placeholder="Bodega principal" />
           <Input label="Dirección exacta *" value={form.direccionExacta} onChange={set('direccionExacta')} required placeholder="San José, Costa Rica" />
-          <Input label="Teléfono *" value={form.telefono} onChange={set('telefono')} required placeholder="8888-8888" />
+          <PhoneField label="Teléfono" value={form.telefono} onChange={(val) => setForm(f => ({ ...f, telefono: val }))} required />
           <div className="grid grid-cols-2 gap-3">
             <Input label="Correo contacto" value={form.correoContacto} onChange={set('correoContacto')} type="email" placeholder="Opcional" />
             <Input label="Encargado" value={form.encargadoNombre} onChange={set('encargadoNombre')} placeholder="Opcional" />

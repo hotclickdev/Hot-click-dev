@@ -1,6 +1,7 @@
 package com.hotclick.service;
 
 import com.hotclick.dto.ProductoRequestDTO;
+import com.hotclick.model.Empresa;
 import com.hotclick.model.Producto;
 import com.hotclick.repository.BodegaRepository;
 import com.hotclick.repository.CategoriaRepository;
@@ -9,6 +10,7 @@ import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,8 +28,15 @@ public class ProductoService {
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private MarcaRepository marcaRepository;
 
+    @CacheEvict(value = "dashboard-metricas", allEntries = true)
     @Transactional
     public Producto crearProducto(ProductoRequestDTO dto, String adminCorreo) {
+        return crearProducto(dto, adminCorreo, null);
+    }
+
+    @CacheEvict(value = "dashboard-metricas", allEntries = true)
+    @Transactional
+    public Producto crearProducto(ProductoRequestDTO dto, String adminCorreo, Empresa empresa) {
         if (dto.getCategoriaId() == null)
             throw new IllegalArgumentException("Debe seleccionar una categoría");
         if (dto.getBodegaId() == null)
@@ -45,9 +54,11 @@ public class ProductoService {
             .orElseThrow(() -> new RuntimeException("Bodega no encontrada")));
         p.setAdminCliente(usuarioRepository.findByCorreo(adminCorreo)
             .orElseThrow(() -> new RuntimeException("Admin no encontrado")));
+        p.setEmpresa(empresa);
         return productoRepository.save(p);
     }
 
+    @CacheEvict(value = "dashboard-metricas", allEntries = true)
     @Transactional
     public Producto actualizarProducto(Long id, ProductoRequestDTO dto, String adminCorreo) {
         Producto p = productoRepository.findById(id)
@@ -91,6 +102,7 @@ public class ProductoService {
         if (dto.getMetaDescriptionPt()  != null) p.setMetaDescriptionPt(trunc(dto.getMetaDescriptionPt(), 160));
         if (dto.getMetaDescriptionFr()  != null) p.setMetaDescriptionFr(trunc(dto.getMetaDescriptionFr(), 160));
         if (dto.getVideoUrl()           != null) p.setVideoUrl(trunc(dto.getVideoUrl(), 500));
+        if (dto.getTalla()              != null) p.setTalla(trunc(dto.getTalla(), 20));
         Long mid = dto.getMarcaId();
         if (mid != null) {
             p.setMarca(marcaRepository.findById(mid)
@@ -100,14 +112,38 @@ public class ProductoService {
 
     public List<Producto> getRecomendaciones(Long id, int limit) {
         Producto base = productoRepository.findById(id).orElse(null);
-        if (base == null || base.getCategoria() == null) return List.of();
-        return productoRepository
-            .findByCategoriaIdAndEstadoAndStockActualGreaterThan(
-                base.getCategoria().getId(), Constants.ESTADO_ACTIVO, 0, PageRequest.of(0, limit + 1))
-            .getContent().stream()
-            .filter(p -> !p.getId().equals(id))
-            .limit(limit)
-            .toList();
+        if (base == null) return List.of();
+
+        List<Producto> result = new java.util.ArrayList<>();
+
+        // Primero intentar misma categoría
+        if (base.getCategoria() != null) {
+            List<Producto> sameCategory = productoRepository
+                .findByCategoriaIdAndEstadoAndStockActualGreaterThan(
+                    base.getCategoria().getId(), Constants.ESTADO_ACTIVO, 0, PageRequest.of(0, limit + 1))
+                .getContent().stream()
+                .filter(p -> !p.getId().equals(id))
+                .limit(limit)
+                .toList();
+            result.addAll(sameCategory);
+        }
+
+        // Rellenar con productos de cualquier categoría si faltan
+        if (result.size() < limit) {
+            int needed = limit - result.size() + 1;
+            java.util.Set<Long> exclude = new java.util.HashSet<>();
+            exclude.add(id);
+            result.forEach(p -> exclude.add(p.getId()));
+            List<Producto> general = productoRepository
+                .findByEstadoAndStockActualGreaterThan(Constants.ESTADO_ACTIVO, 0, PageRequest.of(0, needed * 3))
+                .getContent().stream()
+                .filter(p -> !exclude.contains(p.getId()))
+                .limit(needed)
+                .toList();
+            result.addAll(general);
+        }
+
+        return result.stream().limit(limit).toList();
     }
 
     public Page<Producto> listarPorMarca(Long marcaId, Pageable pageable) {
@@ -149,7 +185,7 @@ public class ProductoService {
     }
 
     public Page<Producto> listarProductosDisponibles(Pageable pageable) {
-        return productoRepository.findByEstadoAndStockActualGreaterThan(Constants.ESTADO_ACTIVO, 0, pageable);
+        return productoRepository.findByEstado(Constants.ESTADO_ACTIVO, pageable);
     }
 
     public Page<Producto> listarTodosActivos(Pageable pageable) {

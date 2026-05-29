@@ -9,6 +9,9 @@ public class AuthResponse {
     private String correo;
     private String rol;
     private String nombre;
+    private Long   empresaId;
+    private String empresaSlug;
+    private String empresaNombre;
 
     public AuthResponse() {}
 
@@ -34,6 +37,12 @@ public class AuthResponse {
     public void setCorreo(String correo)         { this.correo = correo; }
     public String getRol()                       { return rol; }
     public void setRol(String rol)               { this.rol = rol; }
-    public String getNombre()                    { return nombre; }
-    public void setNombre(String nombre)         { this.nombre = nombre; }
+    public String getNombre()                         { return nombre; }
+    public void setNombre(String nombre)              { this.nombre = nombre; }
+    public Long getEmpresaId()                        { return empresaId; }
+    public void setEmpresaId(Long empresaId)          { this.empresaId = empresaId; }
+    public String getEmpresaSlug()                    { return empresaSlug; }
+    public void setEmpresaSlug(String empresaSlug)    { this.empresaSlug = empresaSlug; }
+    public String getEmpresaNombre()                  { return empresaNombre; }
+    public void setEmpresaNombre(String empresaNombre){ this.empresaNombre = empresaNombre; }
 }

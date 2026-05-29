@@ -83,8 +83,13 @@ public class SecurityConfig {
                 .requestMatchers(GET, "/api/productos").permitAll()
                 .requestMatchers(GET, "/api/productos/destacados").permitAll()
                 .requestMatchers(GET, "/api/productos/marca/*").permitAll()
-                .requestMatchers(GET, "/api/productos/*").permitAll()
                 .requestMatchers(GET, "/api/productos/*/recomendaciones").permitAll()
+                .requestMatchers(GET, "/api/productos/*").permitAll()
+                // Gestión de productos — solo roles de empresa
+                .requestMatchers(POST,   "/api/productos").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
+                .requestMatchers(PUT,    "/api/productos/*").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
+                .requestMatchers(DELETE, "/api/productos/*").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
+                .requestMatchers(POST,   "/api/productos/**").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
                 .requestMatchers(GET, "/api/categorias").permitAll()
                 .requestMatchers(GET, "/api/marcas/publicas").permitAll()
                 .requestMatchers(GET, "/api/ruleta/premios").permitAll()
@@ -95,6 +100,10 @@ public class SecurityConfig {
                 .requestMatchers(GET,    "/api/servicios").hasRole("ADMIN_IT")
                 .requestMatchers(PUT,    "/api/servicios/*/estado").hasRole("ADMIN_IT")
                 .requestMatchers(DELETE, "/api/servicios/*").hasRole("ADMIN_IT")
+                // Garantías — mis-garantias y mis-solicitudes: auth; admin: ADMIN_IT
+                .requestMatchers(GET, "/api/garantias/solicitudes/mis-solicitudes").authenticated()
+                .requestMatchers(GET, "/api/garantias/solicitudes").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
+                .requestMatchers(PUT, "/api/garantias/solicitudes/*/estado").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
                 // Testimonios — público: GET aprobados; auth: crear + subir imagen; admin: listar todos + moderar
                 .requestMatchers(GET, "/api/testimonios/publicos").permitAll()
                 .requestMatchers(GET, "/api/testimonios/admin").hasRole("ADMIN_IT")
@@ -110,16 +119,28 @@ public class SecurityConfig {
                 // Feeds y sitemap públicos
                 .requestMatchers(GET, "/api/public/**").permitAll()
                 .requestMatchers(GET, "/sitemap.xml").permitAll()
-                // Admin-only routes — ADMIN_IT required
-                .requestMatchers("/api/admin/**").hasRole("ADMIN_IT")
-                .requestMatchers(GET,    "/api/pedidos").hasRole("ADMIN_IT")
-                .requestMatchers(GET,    "/api/pedidos/pendientes").hasRole("ADMIN_IT")
-                .requestMatchers(POST,   "/api/pedidos/manual").hasRole("ADMIN_IT")
-                .requestMatchers(PUT,    "/api/pedidos/*/estado").hasRole("ADMIN_IT")
-                .requestMatchers(PUT,    "/api/pedidos/*/guia").hasRole("ADMIN_IT")
-                .requestMatchers(PUT,    "/api/pedidos/*/envio").hasRole("ADMIN_IT")
-                .requestMatchers(DELETE, "/api/pedidos/*").hasRole("ADMIN_IT")
-                .requestMatchers(POST,   "/api/pedidos/*/notificar").hasRole("ADMIN_IT")
+                // Perfil de empresa — solo lectura para todos los roles de la empresa; escritura solo EMPRENDEDOR
+                .requestMatchers(GET,  "/api/empresa/perfil").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
+                .requestMatchers(PUT,  "/api/empresa/perfil").hasAnyRole("EMPRENDEDOR", "ADMIN_IT")
+                .requestMatchers(POST, "/api/empresa/perfil/logo").hasAnyRole("EMPRENDEDOR", "ADMIN_IT")
+                // Gestión de equipo — accesible para EMPRENDEDOR y ADMIN_CLIENTE de la misma empresa
+                .requestMatchers(GET,    "/api/empresa/equipo").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
+                .requestMatchers(POST,   "/api/empresa/equipo").hasRole("EMPRENDEDOR")
+                .requestMatchers(DELETE, "/api/empresa/equipo/*").hasRole("EMPRENDEDOR")
+                // Admin-only routes — ADMIN_IT only (superadmin exclusivos)
+                .requestMatchers("/api/admin/empresas/**").hasRole("ADMIN_IT")
+                .requestMatchers("/api/admin/solicitudes-aprobacion/**").hasRole("ADMIN_IT")
+                // Dashboard y KPIs — ADMIN_IT, EMPRENDEDOR y ADMIN_CLIENTE
+                .requestMatchers("/api/admin/**").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
+                // Pedidos admin — ADMIN_IT, EMPRENDEDOR y ADMIN_CLIENTE
+                .requestMatchers(GET,    "/api/pedidos").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
+                .requestMatchers(GET,    "/api/pedidos/pendientes").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
+                .requestMatchers(POST,   "/api/pedidos/manual").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
+                .requestMatchers(PUT,    "/api/pedidos/*/estado").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
+                .requestMatchers(PUT,    "/api/pedidos/*/guia").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
+                .requestMatchers(PUT,    "/api/pedidos/*/envio").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
+                .requestMatchers(DELETE, "/api/pedidos/*").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
+                .requestMatchers(POST,   "/api/pedidos/*/notificar").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
                 // Lista de usuarios — solo admin (perfil propio y actualización siguen autenticados)
                 .requestMatchers(GET, "/api/usuarios").hasRole("ADMIN_IT")
                 // Todas las demás rutas /api/** requieren autenticación
@@ -130,10 +151,13 @@ public class SecurityConfig {
                     "/*.svg", "/*.webp", "/favicon.ico", "/pages/**", "/css/**", "/js/**",
                     "/images/**", "/assets/**", "/admin/**",
                     "/nosotros", "/productos", "/productos/**", "/informacion", "/contacto",
-                    "/carrito", "/login", "/registro", "/perfil", "/perfil/**", "/mis-pedidos",
+                    "/carrito", "/login", "/registro", "/registro-empresa", "/perfil", "/perfil/**", "/mis-pedidos",
                     "/checkout", "/pago/exito", "/pago/cancelado",
                     "/recuperar-carrito", "/recuperar-carrito/**",
-                    "/servicios", "/servicios/**").permitAll()
+                    "/servicios", "/servicios/**",
+                    "/admin/empresas", "/admin/empresas/**",
+                    "/admin/equipo", "/admin/aprobaciones",
+                    "/admin/mi-empresa").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

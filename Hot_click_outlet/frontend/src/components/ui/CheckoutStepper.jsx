@@ -14,7 +14,7 @@ export default function CheckoutStepper({ activeStep = 'checkout' }) {
   const activeIdx = STEPS.findIndex((s) => s.id === activeStep)
 
   return (
-    <nav aria-label={t('checkoutStepper.progress')} className="flex items-center justify-center mb-8 select-none">
+    <nav aria-label={t('checkoutStepper.progress')} className="flex items-center justify-center mb-4 sm:mb-6 select-none">
       {STEPS.map((step, i) => {
         const done    = i < activeIdx
         const active  = i === activeIdx

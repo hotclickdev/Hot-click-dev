@@ -1,6 +1,7 @@
 package com.hotclick.service;
 
 import com.hotclick.model.Testimonio;
+import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.TestimonioRepository;
 import com.hotclick.repository.UsuarioRepository;
@@ -8,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +20,7 @@ public class TestimonioService {
     @Autowired private TestimonioRepository repo;
     @Autowired private UsuarioRepository usuarioRepo;
     @Autowired private ProductoRepository productoRepo;
+    @Autowired private PedidoRepository pedidoRepo;
 
     /**
      * Crea un testimonio. Valida:
@@ -97,6 +100,35 @@ public class TestimonioService {
             .orElseThrow(() -> new RuntimeException("Testimonio no encontrado"));
         t.setEstado("RECHAZADO");
         return repo.save(t);
+    }
+
+    /**
+     * Productos entregados al usuario, enriquecidos con si ya dejó reseña.
+     * Desduplicado por producto (varios pedidos del mismo item → una entrada).
+     */
+    public List<Map<String, Object>> productosParaResenar(String correo) {
+        var usuario = usuarioRepo.findByCorreo(correo)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        var pedidos = pedidoRepo.findEntregadosConItemsByUsuarioId(usuario.getId());
+
+        Map<Long, Map<String, Object>> vistos = new LinkedHashMap<>();
+        for (var pedido : pedidos) {
+            if (pedido.getItems() == null) continue;
+            for (var item : pedido.getItems()) {
+                var p = item.getProducto();
+                if (p == null || vistos.containsKey(p.getId())) continue;
+                boolean yaReseno = repo.existsByUsuarioIdAndProductoId(usuario.getId(), p.getId());
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("productoId", p.getId());
+                m.put("nombre", p.getNombreProducto());
+                m.put("imagenUrl", p.getImagenUrl());
+                m.put("pedidoId", pedido.getId());
+                m.put("yaReseno", yaReseno);
+                vistos.put(p.getId(), m);
+            }
+        }
+        return new ArrayList<>(vistos.values());
     }
 
     // ── Proyecciones ─────────────────────────────────────────────────────────

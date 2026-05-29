@@ -993,3 +993,31 @@ html:not(.dark) .hc-product-img {
   border-top: 1px solid var(--hc-border);
 }
 
+/* ── react-international-phone dark theme override ── */
+.react-international-phone-input-container {
+  width: 100% !important;
+  display: flex !important;
+}
+.react-international-phone-input-container .react-international-phone-input {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  background-color: var(--hc-surface-2) !important;
+  color: var(--hc-text) !important;
+}
+.react-international-phone-country-selector-dropdown {
+  background-color: var(--hc-surface) !important;
+  border: 1px solid var(--hc-border) !important;
+  color: var(--hc-text) !important;
+  z-index: 50 !important;
+}
+.react-international-phone-country-selector-dropdown__list-item:hover {
+  background-color: var(--hc-surface-2) !important;
+}
+.react-international-phone-country-selector-dropdown__list-item--selected {
+  background-color: rgba(124,58,237,0.15) !important;
+}
+.react-international-phone-flag-emoji {
+  font-size: 1.25rem;
+}
+

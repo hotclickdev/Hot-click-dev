@@ -9,6 +9,7 @@ import Spinner from '@/components/ui/Spinner'
 import Input from '@/components/ui/Input'
 import Modal from '@/components/ui/Modal'
 import useAuthStore from '@/store/authStore'
+import { Link } from 'react-router-dom'
 import { useToast } from '@/components/ui/Toast'
 import { orderService } from '@/services/orderService'
 import { authService } from '@/services/authService'
@@ -63,7 +64,8 @@ export default function ProfilePage() {
     navigate('/')
   }
 
-  const roleLabel = { ADMIN_IT: 'Admin IT', ADMIN_CLIENTE: 'Admin Cliente', USUARIO_FINAL: 'Cliente' }
+  const roleLabel = { ADMIN_IT: 'Admin IT', ADMIN_CLIENTE: 'Admin Cliente', EMPRENDEDOR: 'Emprendedor', USUARIO_FINAL: 'Cliente' }
+  const { empresaNombre, empresaSlug } = useAuthStore()
   const recentOrders = orders.slice(0, 3)
 
   return (
@@ -100,6 +102,45 @@ export default function ProfilePage() {
             {t('profile.logout')}
           </Button>
         </motion.div>
+
+        {/* Tarjeta empresa — solo para emprendedores */}
+        {(userRole === 'EMPRENDEDOR' || userRole === 'ADMIN_CLIENTE') && empresaNombre && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl border p-5 flex items-center justify-between gap-4"
+            style={{ backgroundColor: 'var(--hc-surface)', borderColor: 'var(--hc-border)' }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: 'var(--hc-accent)', opacity: 0.15 }}>
+                <svg className="w-5 h-5" fill="none" stroke="var(--hc-accent)" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>{empresaNombre}</p>
+                {empresaSlug && <p className="text-xs font-mono mt-0.5" style={{ color: 'var(--hc-muted)' }}>/{empresaSlug}</p>}
+              </div>
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <Link
+                to="/admin/mi-empresa"
+                className="text-xs px-3 py-1.5 rounded-lg font-medium transition-opacity hover:opacity-80"
+                style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
+              >
+                Configurar empresa
+              </Link>
+              <Link
+                to="/admin"
+                className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
+                style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
+              >
+                Panel admin
+              </Link>
+            </div>
+          </motion.div>
+        )}
 
         {/* Pedidos recientes */}
         <div

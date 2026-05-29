@@ -32,6 +32,11 @@ public class Categoria extends BaseEntity {
     @JoinColumn(name = "fk_id_admin_cliente", nullable = false)
     private Usuario adminCliente;
 
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fk_id_empresa")
+    private Empresa empresa;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -53,4 +58,8 @@ public class Categoria extends BaseEntity {
     @JsonIgnore
     public Usuario getAdminCliente() { return adminCliente; }
     public void setAdminCliente(Usuario adminCliente) { this.adminCliente = adminCliente; }
+
+    public Empresa getEmpresa() { return empresa; }
+    public void setEmpresa(Empresa empresa) { this.empresa = empresa; }
+    public Long getEmpresaId() { return empresa != null ? empresa.getId() : null; }
 }

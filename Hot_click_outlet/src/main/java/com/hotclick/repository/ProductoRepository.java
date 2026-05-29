@@ -76,4 +76,28 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     /** Productos activos sin publicación en Facebook — para el scheduler, paginado */
     @Query("SELECT p FROM Producto p WHERE p.estado = 1 AND NOT EXISTS (SELECT 1 FROM PublicacionFacebook fb WHERE fb.producto.id = p.id) ORDER BY p.id ASC")
     List<Producto> findActivosSinPublicacion(Pageable pageable);
+
+    @Query("SELECT p FROM Producto p WHERE p.empresa.id = :empresaId AND p.estado = :estado")
+    Page<Producto> findByEmpresaIdAndEstado(@Param("empresaId") Long empresaId, @Param("estado") Integer estado, Pageable pageable);
+
+    @Query("SELECT p FROM Producto p WHERE p.estado = 1 AND (p.stockActual IS NULL OR p.stockActual <= 0) AND p.empresa.id = :empresaId")
+    List<Producto> findActivosSinStockByEmpresaId(@Param("empresaId") Long empresaId);
+
+    @Query("SELECT p FROM Producto p WHERE p.estado = 1 AND (p.stockActual IS NULL OR p.stockActual <= 0)")
+    List<Producto> findActivosSinStock();
+
+    @Query("SELECT p FROM Producto p WHERE p.estado = 1 AND p.empresa.id = :empresaId")
+    List<Producto> findActivosByEmpresaId(@Param("empresaId") Long empresaId);
+
+    @Query("SELECT p FROM Producto p WHERE p.estado = 1")
+    List<Producto> findAllActivos();
+
+    @Query("SELECT COUNT(p) FROM Producto p WHERE p.empresa.id = :empresaId AND p.estado = 1")
+    long countProductosActivosByEmpresaId(@Param("empresaId") Long empresaId);
+
+    @Query("SELECT COUNT(p) FROM Producto p WHERE p.empresa.id = :empresaId AND p.stockActual <= p.stockMinimo AND p.estado = 1")
+    long countProductosConStockBajoByEmpresaId(@Param("empresaId") Long empresaId);
+
+    @Query("SELECT p.categoria.nombreCategoria, COUNT(p) FROM Producto p WHERE p.empresa.id = :empresaId AND p.estado = 1 GROUP BY p.categoria.nombreCategoria ORDER BY COUNT(p) DESC")
+    List<Object[]> countPorCategoriaByEmpresaId(@Param("empresaId") Long empresaId);
 }

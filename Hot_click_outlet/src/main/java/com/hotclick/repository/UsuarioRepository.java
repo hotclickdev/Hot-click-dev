@@ -14,13 +14,19 @@ import java.util.List;
 @Repository
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
-    Optional<Usuario> findByCorreo(String correo);
+    @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.empresa WHERE u.correo = :correo")
+    Optional<Usuario> findByCorreo(@Param("correo") String correo);
 
-    Optional<Usuario> findByIdentificacion(String identificacion);
+    @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.empresa WHERE u.identificacion = :identificacion")
+    Optional<Usuario> findByIdentificacion(@Param("identificacion") String identificacion);
 
     boolean existsByCorreo(String correo);
 
     boolean existsByIdentificacion(String identificacion);
+
+    boolean existsByCorreoAndEstadoNot(String correo, Integer estado);
+
+    boolean existsByIdentificacionAndEstadoNot(String identificacion, Integer estado);
 
     @Modifying
     @Transactional
@@ -51,4 +57,10 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     @Query("SELECT COUNT(u) FROM Usuario u WHERE u.estado = 0")
     long countUsuariosPendientes();
+
+    @Query("SELECT COUNT(u) FROM Usuario u WHERE u.empresa.id = :empresaId AND u.estado = 1")
+    long countActivosByEmpresaId(@Param("empresaId") Long empresaId);
+
+    @Query("SELECT u FROM Usuario u WHERE u.empresa.id = :empresaId ORDER BY u.id DESC")
+    List<Usuario> findByEmpresaIdOrderByIdDesc(@Param("empresaId") Long empresaId);
 }

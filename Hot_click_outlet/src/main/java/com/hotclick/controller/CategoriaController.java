@@ -4,6 +4,7 @@ import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Categoria;
 import com.hotclick.repository.CategoriaRepository;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.security.CompanyScope;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -24,13 +25,16 @@ public class CategoriaController {
 
     @Autowired private CategoriaRepository categoriaRepository;
     @Autowired private UsuarioRepository usuarioRepository;
+    @Autowired private CompanyScope companyScope;
 
     @Cacheable("categorias")
     @GetMapping
     public ResponseEntity<ResponseDTO> listar() {
-        return ResponseEntity.ok(
-            ResponseDTO.success("Categorías", categoriaRepository.findByEstado(Constants.ESTADO_ACTIVO))
-        );
+        Long empresaId = companyScope.getCurrentEmpresaId();
+        var cats = empresaId != null
+            ? categoriaRepository.findByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO)
+            : categoriaRepository.findByEstado(Constants.ESTADO_ACTIVO);
+        return ResponseEntity.ok(ResponseDTO.success("Categorías", cats));
     }
 
     @CacheEvict(value = "categorias", allEntries = true)
@@ -42,10 +46,12 @@ public class CategoriaController {
             if (body.get("nombreCategoria") == null || body.get("nombreCategoria").isBlank())
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El nombre es obligatorio"));
 
+            var empresa = companyScope.getCurrentUser() != null ? companyScope.getCurrentUser().getEmpresa() : null;
             Categoria cat = new Categoria();
             cat.setNombreCategoria(body.get("nombreCategoria").trim());
             cat.setDescripcion(body.getOrDefault("descripcion", ""));
             cat.setEstado(Constants.ESTADO_ACTIVO);
+            cat.setEmpresa(empresa);
             cat.setAdminCliente(
                 usuarioRepository.findByCorreo(ud.getUsername())
                     .orElseThrow(() -> new RuntimeException("Admin no encontrado"))
@@ -64,6 +70,7 @@ public class CategoriaController {
             @AuthenticationPrincipal UserDetails ud) {
         var admin = usuarioRepository.findByCorreo(ud.getUsername())
             .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
+        var empresa = companyScope.getCurrentUser() != null ? companyScope.getCurrentUser().getEmpresa() : null;
         List<Categoria> batch = new ArrayList<>();
         for (Map<String, String> item : items) {
             String nombre = item.get("nombreCategoria");
@@ -72,6 +79,7 @@ public class CategoriaController {
             cat.setNombreCategoria(nombre.trim());
             cat.setDescripcion(item.getOrDefault("descripcion", ""));
             cat.setEstado(Constants.ESTADO_ACTIVO);
+            cat.setEmpresa(empresa);
             cat.setAdminCliente(admin);
             batch.add(cat);
         }
@@ -87,6 +95,7 @@ public class CategoriaController {
         try {
             Categoria cat = categoriaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Categoría no encontrada"));
+            companyScope.assertCanAccessNullable(cat.getEmpresaId());
             if (body.get("nombreCategoria") != null && !body.get("nombreCategoria").isBlank())
                 cat.setNombreCategoria(body.get("nombreCategoria").trim());
             if (body.get("descripcion") != null)
@@ -103,6 +112,7 @@ public class CategoriaController {
         try {
             Categoria cat = categoriaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Categoría no encontrada"));
+            companyScope.assertCanAccessNullable(cat.getEmpresaId());
             cat.setEstado(Constants.ESTADO_INACTIVO);
             categoriaRepository.save(cat);
             return ResponseEntity.ok(ResponseDTO.success("Categoría eliminada", null));

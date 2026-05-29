@@ -60,18 +60,21 @@ public class NotificacionEmailService {
 
     @Async
     public void enviarSeguimientoEstado(Pedido pedido, String nota) {
+        try { enviarSeguimientoEstadoSync(pedido, nota); }
+        catch (Exception e) { log.error("No se pudo enviar email de seguimiento para pedido {}: {}", pedido.getNumeroPedido(), e.getMessage()); }
+    }
+
+    /** Versión síncrona — lanza excepción si SendGrid falla (usar desde el endpoint /notificar). */
+    public void enviarSeguimientoEstadoSync(Pedido pedido, String nota) {
         Usuario cliente = pedido.getUsuarioFinal();
-        if (cliente == null || cliente.getCorreo() == null) return;
-        try {
-            resendEmailService.send(
-                cliente.getCorreo(),
-                "Actualización de tu pedido — " + pedido.getNumeroPedido(),
-                buildSeguimientoHtml(pedido, cliente, nota)
-            );
-            log.info("Email seguimiento enviado a {} para pedido {}", cliente.getCorreo(), pedido.getNumeroPedido());
-        } catch (Exception e) {
-            log.error("No se pudo enviar email de seguimiento para pedido {}: {}", pedido.getNumeroPedido(), e.getMessage());
-        }
+        if (cliente == null || cliente.getCorreo() == null)
+            throw new RuntimeException("El pedido no tiene correo de cliente registrado");
+        resendEmailService.send(
+            cliente.getCorreo(),
+            "Actualización de tu pedido — " + pedido.getNumeroPedido(),
+            buildSeguimientoHtml(pedido, cliente, nota)
+        );
+        log.info("Email seguimiento enviado a {} para pedido {}", cliente.getCorreo(), pedido.getNumeroPedido());
     }
 
     @Async
@@ -502,6 +505,36 @@ public class NotificacionEmailService {
             log.info("Email cupón bienvenida enviado a {}", email);
         } catch (Exception e) {
             log.error("No se pudo enviar email de cupón a {}: {}", email, e.getMessage());
+        }
+    }
+
+    @Async
+    public void enviarBienvenidaEmprendedor(String correo, String nombre, String nombreEmpresa) {
+        try {
+            String html = "<div style='font-family:sans-serif;max-width:520px;margin:0 auto;background:#0d0d14;color:#e8e8ed;padding:32px;border-radius:16px'>"
+                + "<div style='text-align:center;margin-bottom:24px'>"
+                + "<div style='display:inline-block;background:linear-gradient(135deg,#ff4b12,#ff7b00);padding:12px 20px;border-radius:12px;font-weight:900;font-size:18px;letter-spacing:2px;color:#fff'>HOTCLICK</div>"
+                + "</div>"
+                + "<h2 style='color:#ff4b12;margin-bottom:8px'>¡Bienvenido a HOTCLICK, " + esc(nombre) + "!</h2>"
+                + "<p style='color:#8e8e9a;margin-bottom:20px'>Tu empresa <strong style='color:#e8e8ed'>" + esc(nombreEmpresa) + "</strong> fue registrada exitosamente. "
+                + "Ya podés acceder a tu panel de administración y empezar a configurar tu tienda.</p>"
+                + "<div style='background:#1a1a2e;border-radius:12px;padding:20px;margin-bottom:20px'>"
+                + "<p style='margin:0 0 10px;font-weight:700;color:#e8e8ed'>Próximos pasos:</p>"
+                + "<ul style='margin:0;padding-left:20px;color:#8e8e9a;line-height:1.8'>"
+                + "<li>Agrega tus primeros productos desde el panel</li>"
+                + "<li>Configura el perfil de tu empresa (logo, colores, WhatsApp)</li>"
+                + "<li>Invita a tu equipo de administración</li>"
+                + "</ul>"
+                + "</div>"
+                + "<div style='text-align:center;margin-top:24px'>"
+                + "<a href='https://hotclick.cr/admin' style='background:linear-gradient(135deg,#ff4b12,#ff7b00);color:#fff;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px'>Ir a mi panel →</a>"
+                + "</div>"
+                + "<p style='color:#5e5e6e;font-size:11px;text-align:center;margin-top:24px'>HOTCLICK Outlet · Costa Rica · <a href='https://hotclick.cr' style='color:#5e5e6e'>hotclick.cr</a></p>"
+                + "</div>";
+            resendEmailService.send(correo, "¡Bienvenido a HOTCLICK! Tu tienda está lista — " + esc(nombreEmpresa), html);
+            log.info("Email bienvenida emprendedor enviado a {}", correo);
+        } catch (Exception e) {
+            log.error("No se pudo enviar email de bienvenida a {}: {}", correo, e.getMessage());
         }
     }
 

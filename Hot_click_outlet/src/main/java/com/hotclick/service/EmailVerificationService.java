@@ -31,12 +31,15 @@ public class EmailVerificationService {
                 .orElse(null);
 
         if (pendiente != null) {
-            if (pendiente.getEstado() != null && pendiente.getEstado() == Constants.ESTADO_ACTIVO) {
+            if (pendiente.getEstado() != null && pendiente.getEstado() == Constants.ESTADO_ELIMINADO) {
+                pendiente = null; // cuenta eliminada → permitir nuevo registro con ese correo
+            } else if (pendiente.getEstado() != null && pendiente.getEstado() == Constants.ESTADO_ACTIVO) {
                 throw new RuntimeException("El correo ya está registrado");
+            } else {
+                // Cuenta existe pero está PENDIENTE → reenviar código
+                otpService.enviarOtp(pendiente, Constants.OTP_TIPO_REGISTRO);
+                return;
             }
-            // Cuenta existe pero está PENDIENTE → reenviar código
-            otpService.enviarOtp(pendiente, Constants.OTP_TIPO_REGISTRO);
-            return;
         }
 
         Usuario nuevo = usuarioService.registrarPendiente(usuario);

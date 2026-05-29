@@ -9,6 +9,7 @@ import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.security.JwtUtil;
 import com.hotclick.service.BccrService;
+import com.hotclick.service.GeminiService;
 import com.hotclick.service.NotificacionEmailService;
 import com.hotclick.service.ResendEmailService;
 import com.hotclick.service.SupabaseStorageService;
@@ -48,6 +49,7 @@ public abstract class BaseIntegrationTest {
     @MockitoBean protected PayXpertPaymentProvider  payXpertProvider;
     @MockitoBean protected PayPalPaymentProvider    payPalProvider;
     @MockitoBean protected BccrService              bccrService;
+    @MockitoBean protected GeminiService            geminiService;
 
     // ── Beans del contexto ────────────────────────────────────────────────────
     @Autowired protected MockMvc        mockMvc;

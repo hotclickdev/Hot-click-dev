@@ -2,6 +2,7 @@ package com.hotclick.config;
 
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.exception.StockInsuficienteException;
+import com.hotclick.exception.TenantAccessDeniedException;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +23,12 @@ public class GlobalExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     // ── Dominio ───────────────────────────────────────────────────────────────
+
+    @ExceptionHandler(TenantAccessDeniedException.class)
+    public ResponseEntity<ResponseDTO> handleTenantDenied(TenantAccessDeniedException ex) {
+        log.warn("Tenant access denied: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseDTO.error(ex.getMessage()));
+    }
 
     @ExceptionHandler(StockInsuficienteException.class)
     public ResponseEntity<ResponseDTO> handleStock(StockInsuficienteException ex) {

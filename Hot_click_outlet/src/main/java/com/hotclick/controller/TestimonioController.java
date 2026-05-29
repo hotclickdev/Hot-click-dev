@@ -44,6 +44,13 @@ public class TestimonioController {
             testimonioService.listarPorUsuario(userDetails.getUsername())));
     }
 
+    /** Usuario autenticado — productos que puede reseñar (comprados, con flag yaReseno) */
+    @GetMapping("/productos-para-resenar")
+    public ResponseEntity<ResponseDTO> productosParaResenar(@AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(ResponseDTO.success("Productos para reseñar",
+            testimonioService.productosParaResenar(userDetails.getUsername())));
+    }
+
     /** Sube foto del testimonio — requiere auth, pasa por moderación de contenido */
     @PostMapping("/imagen")
     public ResponseEntity<ResponseDTO> subirImagen(@RequestParam("file") MultipartFile file) {

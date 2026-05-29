@@ -46,13 +46,14 @@ export default function ProductsPage() {
   const [totalPages, setTotalPages] = useState(1)
 
   // Filters
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(() => searchParams.get('search') ?? '')
   const [category, setCategory] = useState('')
   const [marca, setMarca] = useState(() => searchParams.get('marcaId') ?? '')
   const [marcaNombreParam] = useState(() => searchParams.get('marcaNombre') ?? '')
   const [sort, setSort] = useState('default')
   const [filterStock, setFilterStock] = useState('')
   const [filterCond, setFilterCond] = useState('')
+  const [filterTalla, setFilterTalla] = useState('')
   const [priceMin, setPriceMin] = useState('')
   const [priceMax, setPriceMax] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -98,6 +99,7 @@ export default function ProductsPage() {
         return true
       })
       .filter((p) => !filterCond || p.condicion === filterCond)
+      .filter((p) => !filterTalla || p.talla === filterTalla)
       .filter((p) => (minPrice === null || p.precio >= minPrice) && (maxPrice === null || p.precio <= maxPrice))
       .sort((a, b) => {
         if (sort === 'featured') return (b.destacado ? 1 : 0) - (a.destacado ? 1 : 0)
@@ -108,14 +110,34 @@ export default function ProductsPage() {
       })
   }, [products, search, category, marca, sort, filterStock, filterCond, priceMin, priceMax])
 
-  const hasFilters = !!(category || marca || filterStock || filterCond || priceMin || priceMax)
-  const clearFilters = () => { setCategory(''); setMarca(''); setFilterStock(''); setFilterCond(''); setSearch(''); setPriceMin(''); setPriceMax('') }
+  const marcaProductCount = useMemo(() =>
+    Object.fromEntries(marcas.map((m) => [m.id, products.filter((p) => String(p.marcaId) === String(m.id)).length]))
+  , [marcas, products])
+
+  const tallaOptions = useMemo(() => {
+    const all = [...new Set(products.map(p => p.talla).filter(Boolean))]
+    const zapatos = all.filter(t => /^\d/.test(t)).sort((a, b) => Number(a) - Number(b))
+    const ropa = all.filter(t => !/^\d/.test(t))
+    const ROPA_ORDER = ['XS','S','M','L','XL','XXL','XXXL']
+    ropa.sort((a, b) => {
+      const ia = ROPA_ORDER.indexOf(a.toUpperCase()), ib = ROPA_ORDER.indexOf(b.toUpperCase())
+      if (ia >= 0 && ib >= 0) return ia - ib
+      if (ia >= 0) return -1
+      if (ib >= 0) return 1
+      return a.localeCompare(b)
+    })
+    return { zapatos, ropa }
+  }, [products])
+
+  const hasFilters = !!(category || marca || filterStock || filterCond || filterTalla || priceMin || priceMax)
+  const clearFilters = () => { setCategory(''); setMarca(''); setFilterStock(''); setFilterCond(''); setFilterTalla(''); setSearch(''); setPriceMin(''); setPriceMax('') }
 
   const activeChips = [
     category && { key: 'cat', label: categories.find((c) => String(c.id) === String(category))?.nombreCategoria ?? categories.find((c) => String(c.id) === String(category))?.nombre ?? t('products.categoryLabel'), clear: () => setCategory('') },
     marca && { key: 'marca', label: marcas.find((m) => String(m.id) === String(marca))?.nombreMarca ?? t('products.brand'), clear: () => setMarca('') },
     filterCond && { key: 'cond', label: COND_OPTIONS.find((o) => o.value === filterCond)?.label, clear: () => setFilterCond('') },
     filterStock && { key: 'stock', label: STOCK_OPTIONS.find((o) => o.value === filterStock)?.label, clear: () => setFilterStock('') },
+    filterTalla && { key: 'talla', label: `Talla ${filterTalla}`, clear: () => setFilterTalla('') },
     (priceMin || priceMax) && { key: 'price', label: priceMin && priceMax ? `₡${Number(priceMin).toLocaleString()} – ₡${Number(priceMax).toLocaleString()}` : priceMin ? `> ₡${Number(priceMin).toLocaleString()}` : `< ₡${Number(priceMax).toLocaleString()}`, clear: () => { setPriceMin(''); setPriceMax('') } },
   ].filter(Boolean)
 
@@ -178,7 +200,16 @@ export default function ProductsPage() {
                         <ChipBtn active={marca === ''} onClick={() => setMarca('')}>{t('products.allBrands')}</ChipBtn>
                         {marcas.map((m) => (
                           <ChipBtn key={m.id} active={String(marca) === String(m.id)} onClick={() => setMarca(m.id)}>
-                            {m.nombreMarca}
+                            <span className="flex items-center gap-1.5">
+                              {m.logoUrl
+                                ? <img src={m.logoUrl} alt="" className="w-4 h-4 object-contain rounded-sm flex-shrink-0" onError={(e) => { e.target.style.display = 'none' }} />
+                                : <span className="w-4 h-4 rounded-sm bg-white/10 flex items-center justify-center text-[8px] font-bold flex-shrink-0">{m.nombreMarca?.[0]}</span>
+                              }
+                              {m.nombreMarca}
+                              {marcaProductCount[m.id] > 0 && (
+                                <span className="text-[10px] text-[#8e8e9a]">{marcaProductCount[m.id]}</span>
+                              )}
+                            </span>
                           </ChipBtn>
                         ))}
                       </div>
@@ -207,6 +238,35 @@ export default function ProductsPage() {
                     ))}
                   </div>
                 </div>
+
+                {(tallaOptions.zapatos.length > 0 || tallaOptions.ropa.length > 0) && (
+                  <>
+                    <div className="border-t border-white/6" />
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">Talla</label>
+                      {tallaOptions.ropa.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-[10px] text-[#8e8e9a]/60 uppercase tracking-wider flex items-center gap-1"><span>👕</span> Ropa</p>
+                          <div className="flex flex-wrap gap-2">
+                            {tallaOptions.ropa.map(t => (
+                              <ChipBtn key={t} active={filterTalla === t} onClick={() => setFilterTalla(filterTalla === t ? '' : t)}>{t}</ChipBtn>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {tallaOptions.zapatos.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-[10px] text-[#8e8e9a]/60 uppercase tracking-wider flex items-center gap-1"><span>👟</span> Zapatos</p>
+                          <div className="flex flex-wrap gap-2">
+                            {tallaOptions.zapatos.map(t => (
+                              <ChipBtn key={t} active={filterTalla === t} onClick={() => setFilterTalla(filterTalla === t ? '' : t)}>{t}</ChipBtn>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
 
                 <div className="border-t border-white/6" />
 
@@ -337,14 +397,22 @@ export default function ProductsPage() {
                   {/* Marcas */}
                   {marcas.length > 0 && (
                     <>
-                      <div className="border-t" style={{ borderColor: 'var(--hc-border)' }} />
                       <div className="space-y-2">
                         <label className="text-xs font-medium text-[#8e8e9a]">{t('products.brand')}</label>
                         <div className="space-y-0.5">
                           <FilterBtn active={marca === ''} onClick={() => setMarca('')}>{t('products.allBrands')}</FilterBtn>
                           {marcas.map((m) => (
                             <FilterBtn key={m.id} active={String(marca) === String(m.id)} onClick={() => setMarca(m.id)}>
-                              {m.nombreMarca}
+                              <span className="flex items-center gap-2 w-full">
+                                {m.logoUrl
+                                  ? <img src={m.logoUrl} alt="" className="w-5 h-5 object-contain rounded-sm flex-shrink-0" onError={(e) => { e.target.style.display = 'none' }} />
+                                  : <span className="w-5 h-5 rounded-sm bg-white/10 flex items-center justify-center text-[9px] font-bold flex-shrink-0">{m.nombreMarca?.[0]}</span>
+                                }
+                                <span className="flex-1 truncate">{m.nombreMarca}</span>
+                                {marcaProductCount[m.id] > 0 && (
+                                  <span className="text-[10px] text-[#8e8e9a] ml-auto flex-shrink-0">{marcaProductCount[m.id]}</span>
+                                )}
+                              </span>
                             </FilterBtn>
                           ))}
                         </div>
@@ -379,6 +447,54 @@ export default function ProductsPage() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Talla */}
+                  {(tallaOptions.zapatos.length > 0 || tallaOptions.ropa.length > 0) && (
+                    <>
+                      <div className="border-t" style={{ borderColor: 'var(--hc-border)' }} />
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-[#8e8e9a]">Talla</label>
+                        {tallaOptions.ropa.length > 0 && (
+                          <div className="space-y-1">
+                            <p className="text-[10px] text-[#8e8e9a]/60 uppercase tracking-wider flex items-center gap-1">
+                              <span>👕</span> Ropa
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {tallaOptions.ropa.map(t => (
+                                <button key={t} type="button"
+                                  onClick={() => setFilterTalla(filterTalla === t ? '' : t)}
+                                  className={`px-2 py-1 rounded-lg border text-[10px] font-semibold transition-all ${
+                                    filterTalla === t
+                                      ? 'bg-[#4f7cff]/15 border-[#4f7cff]/40 text-[#4f7cff]'
+                                      : 'border-white/10 text-[#8e8e9a] hover:border-white/20 hover:text-white'
+                                  }`}
+                                >{t}</button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {tallaOptions.zapatos.length > 0 && (
+                          <div className="space-y-1">
+                            <p className="text-[10px] text-[#8e8e9a]/60 uppercase tracking-wider flex items-center gap-1">
+                              <span>👟</span> Zapatos
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {tallaOptions.zapatos.map(t => (
+                                <button key={t} type="button"
+                                  onClick={() => setFilterTalla(filterTalla === t ? '' : t)}
+                                  className={`px-2 py-1 rounded-lg border text-[10px] font-semibold transition-all ${
+                                    filterTalla === t
+                                      ? 'bg-[#4f7cff]/15 border-[#4f7cff]/40 text-[#4f7cff]'
+                                      : 'border-white/10 text-[#8e8e9a] hover:border-white/20 hover:text-white'
+                                  }`}
+                                >{t}</button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
 
                   <div className="border-t" style={{ borderColor: 'var(--hc-border)' }} />
 
@@ -423,7 +539,8 @@ export default function ProductsPage() {
                   placeholder={t('products.search')}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="hc-input pl-10 pr-4"
+                  className="hc-input pr-4"
+                  style={{ paddingLeft: '2.25rem' }}
                 />
               </div>
               <select

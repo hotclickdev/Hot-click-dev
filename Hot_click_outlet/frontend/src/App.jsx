@@ -47,7 +47,12 @@ const WishlistPage              = lazy(() => import('@/pages/WishlistPage'))
 const RecuperarCarritoPage      = lazy(() => import('@/pages/RecuperarCarritoPage'))
 const ServiciosHotPage          = lazy(() => import('@/pages/ServiciosHotPage'))
 const AdminSolicitudesServicio  = lazy(() => import('@/pages/admin/AdminSolicitudesServicio'))
+const AdminSolicitudesGarantia  = lazy(() => import('@/pages/admin/AdminSolicitudesGarantia'))
 const AdminTestimonios          = lazy(() => import('@/pages/admin/AdminTestimonios'))
+const AdminEmpresas             = lazy(() => import('@/pages/admin/AdminEmpresas'))
+const AdminEquipo               = lazy(() => import('@/pages/admin/AdminEquipo'))
+const AdminAprobaciones         = lazy(() => import('@/pages/admin/AdminAprobaciones'))
+const AdminMiEmpresa            = lazy(() => import('@/pages/admin/AdminMiEmpresa'))
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -71,7 +76,7 @@ function ProtectedRoute({ children }) {
 function AdminRoute({ children, itOnly = false }) {
   const { token, userRole } = useAuthStore()
   if (!token) return <Navigate to="/login" replace />
-  const isAdmin = ['ADMIN_IT', 'ADMIN_CLIENTE'].includes(userRole)
+  const isAdmin = ['ADMIN_IT', 'ADMIN_CLIENTE', 'EMPRENDEDOR'].includes(userRole)
   if (!isAdmin) return <Navigate to="/" replace />
   if (itOnly && userRole !== 'ADMIN_IT') return <Navigate to="/admin" replace />
   return children
@@ -133,7 +138,7 @@ function HtmlClassManager() {
 // Excluded paths — social proof / abandoned-cart watcher skip these
 const EXCLUDED_PREFIXES = ['/admin', '/checkout', '/pago']
 
-const WAB_HIDDEN_PATHS = ['/login', '/registro']
+const WAB_HIDDEN_PATHS = ['/login', '/registro', '/carrito']
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -144,6 +149,7 @@ function ScrollToTop() {
 function ConditionalWhatsAppFab() {
   const { pathname } = useLocation()
   if (WAB_HIDDEN_PATHS.includes(pathname)) return null
+  if (pathname.startsWith('/admin')) return null
   return <WhatsAppFab />
 }
 
@@ -159,7 +165,7 @@ function SocialProofController() {
   const userRole = useAuthStore((s) => s.userRole)
   const [products, setProducts] = useState([])
 
-  const isAdmin    = ['ADMIN_IT', 'ADMIN_CLIENTE'].includes(userRole)
+  const isAdmin    = ['ADMIN_IT', 'ADMIN_CLIENTE', 'EMPRENDEDOR'].includes(userRole)
   const isExcluded = EXCLUDED_PREFIXES.some((p) => pathname.startsWith(p))
 
   useEffect(() => {
@@ -222,7 +228,12 @@ export default function App() {
               <Route path="/admin/marcas" element={<AdminRoute><AdminMarcas /></AdminRoute>} />
               <Route path="/admin/configuracion" element={<AdminRoute><AdminConfiguracion /></AdminRoute>} />
               <Route path="/admin/servicios"    element={<AdminRoute><AdminSolicitudesServicio /></AdminRoute>} />
+              <Route path="/admin/garantias"    element={<AdminRoute><AdminSolicitudesGarantia /></AdminRoute>} />
               <Route path="/admin/testimonios" element={<AdminRoute><AdminTestimonios /></AdminRoute>} />
+              <Route path="/admin/empresas"      element={<AdminRoute itOnly><AdminEmpresas /></AdminRoute>} />
+              <Route path="/admin/equipo"        element={<AdminRoute><AdminEquipo /></AdminRoute>} />
+              <Route path="/admin/aprobaciones"  element={<AdminRoute itOnly><AdminAprobaciones /></AdminRoute>} />
+              <Route path="/admin/mi-empresa"    element={<AdminRoute><AdminMiEmpresa /></AdminRoute>} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>

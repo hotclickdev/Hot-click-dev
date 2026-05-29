@@ -34,6 +34,8 @@ export default function ProductDetailPage() {
   const [showSticky, setShowSticky] = useState(false)
   const [recommendations, setRecommendations] = useState([])
   const [brandProducts, setBrandProducts] = useState([])
+  const [galeria, setGaleria] = useState([])
+  const [activeImg, setActiveImg] = useState(0)
   const addTimeout = useRef(null)
   const mainCTARef = useRef(null)
   const { toggle: toggleWishlist, isLiked } = useWishlistStore()
@@ -44,6 +46,8 @@ export default function ProductDetailPage() {
     const controller = new AbortController()
     setLoading(true)
     setRecommendations([])
+    setGaleria([])
+    setActiveImg(0)
     productService.getById(id, { signal: controller.signal })
       .then(({ data }) => {
         const p = normalizeProduct(data)
@@ -52,6 +56,23 @@ export default function ProductDetailPage() {
         analytics.productView(p)
         if (p.especificaciones?.trim()) setActiveTab('especificaciones')
         else if (p.comoUsar?.trim()) setActiveTab('como-usar')
+        // Cargar galería de imágenes adicionales
+        productService.getImagenes(p.id)
+          .then((r) => {
+            const imgs = (r.data?.data ?? r.data ?? [])
+            const urls = imgs
+              .sort((a, b) => (a.posicion ?? 0) - (b.posicion ?? 0))
+              .map((i) => i.urlImagen)
+              .filter(Boolean)
+            // Si hay imágenes extra, construir galería completa
+            if (urls.length > 0) {
+              const todas = p.imagenUrl ? [p.imagenUrl, ...urls.filter((u) => u !== p.imagenUrl)] : urls
+              setGaleria(todas)
+            } else {
+              setGaleria(p.imagenUrl ? [p.imagenUrl] : [])
+            }
+          })
+          .catch(() => { setGaleria(p.imagenUrl ? [p.imagenUrl] : []) })
       })
       .catch((err) => { if (err.name !== 'CanceledError') navigate('/productos') })
       .finally(() => { if (!controller.signal.aborted) setLoading(false) })
@@ -170,10 +191,10 @@ export default function ProductDetailPage() {
           {JSON.stringify(generateProductJsonLd(product, window.location.origin))}
         </script>
       </Helmet>
-      <div className={`max-w-5xl mx-auto px-4 sm:px-6 py-10 transition-[padding] duration-300 ${showSticky ? 'pb-28 sm:pb-24' : ''}`}>
+      <div className={`max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-8 transition-[padding] duration-300 ${showSticky ? 'pb-28 sm:pb-24' : ''}`}>
 
         {/* Breadcrumb: Productos / [Marca] / Producto */}
-        <nav className="flex items-center gap-2 text-sm text-[#8e8e9a] mb-8 flex-wrap">
+        <nav className="flex items-center gap-2 text-sm text-[#8e8e9a] mb-3 sm:mb-6 flex-wrap">
           <button onClick={() => navigate('/productos')} className="hover:text-white transition-colors">
             {t('product.productsNav')}
           </button>
@@ -195,27 +216,65 @@ export default function ProductDetailPage() {
           <span className="text-[#e8e8ed] truncate max-w-xs">{product.titulo || product.nombre}</span>
         </nav>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-10">
 
-          {/* ── Imagen ── */}
+          {/* ── Galería de imágenes ── */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4 }}
-            className="aspect-square rounded-2xl bg-[#111114] border border-white/8 flex items-center justify-center overflow-hidden"
+            className="flex flex-col gap-3"
           >
-            {product.imagenUrl ? (
-              <OptimizedImage
-                src={product.imagenUrl}
-                alt={product.nombre}
-                width={800}
-                height={800}
-                className="w-full aspect-square object-cover"
-                priority={true}
-                quality={85}
-              />
-            ) : (
-              <span className="text-8xl opacity-20">📦</span>
+            {/* Imagen principal */}
+            <div className="aspect-[3/2] sm:aspect-square rounded-2xl bg-[#111114] border border-white/8 flex items-center justify-center overflow-hidden">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeImg}
+                  initial={{ opacity: 0, scale: 0.97 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="w-full h-full"
+                >
+                  {galeria[activeImg] ? (
+                    <OptimizedImage
+                      src={galeria[activeImg]}
+                      alt={product.nombre}
+                      width={800}
+                      height={800}
+                      className="w-full h-full object-cover"
+                      priority={true}
+                      quality={85}
+                    />
+                  ) : (
+                    <span className="text-8xl opacity-20 flex items-center justify-center w-full h-full">📦</span>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            {/* Miniaturas — solo si hay más de 1 imagen */}
+            {galeria.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                {galeria.map((url, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveImg(i)}
+                    className="shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all duration-200"
+                    style={{
+                      borderColor: i === activeImg ? 'var(--hc-accent)' : 'transparent',
+                      opacity: i === activeImg ? 1 : 0.55,
+                    }}
+                  >
+                    <img
+                      src={getOptimizedUrl(url, { width: 64 })}
+                      alt={`${product.nombre} ${i + 1}`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </button>
+                ))}
+              </div>
             )}
           </motion.div>
 
@@ -224,7 +283,7 @@ export default function ProductDetailPage() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4 }}
-            className="flex flex-col gap-5"
+            className="flex flex-col gap-3 sm:gap-5"
           >
             {/* Título + badges */}
             <div className="space-y-2">
@@ -253,7 +312,14 @@ export default function ProductDetailPage() {
               {product.titulo && product.titulo !== product.nombre && (
                 <p className="text-sm text-[#8e8e9a]">{product.nombre}</p>
               )}
-              <Badge variant={stockBadge}>{stockLabel}</Badge>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant={stockBadge}>{stockLabel}</Badge>
+                {product.talla && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/8 border border-white/15 text-[#e8e8ed] text-xs font-semibold">
+                    {/^\d/.test(product.talla) ? '👟' : '👕'} Talla {product.talla}
+                  </span>
+                )}
+              </div>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-medium">
                 ✓ {t('socialProof.warranty')}
               </span>
@@ -261,7 +327,7 @@ export default function ProductDetailPage() {
 
             {/* Precio + wishlist */}
             <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-4xl font-bold text-[#e8e8ed]">
+              <span className="text-3xl sm:text-4xl font-bold text-[#e8e8ed]">
                 {formatPrice(product.precio)}
               </span>
               <motion.button
@@ -471,7 +537,7 @@ export default function ProductDetailPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.2 }}
-            className="mt-12"
+            className="mt-6 sm:mt-12"
           >
             <h2 className="text-lg font-bold text-[#e8e8ed] mb-4 flex items-center gap-2">
               <span className="w-7 h-7 rounded-lg bg-red-500/15 border border-red-500/25 flex items-center justify-center shrink-0">
@@ -500,17 +566,16 @@ export default function ProductDetailPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.25 }}
-            className="mt-12"
+            className="mt-5 sm:mt-12"
           >
             {/* Tab bar */}
-            <div className="flex gap-1 border-b border-white/10 mb-6">
+            <div className="flex gap-1 mb-6" style={{ borderBottom: '1px solid var(--hc-border)' }}>
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`relative px-6 py-3 text-sm font-medium transition-colors ${
-                    activeTab === tab.id ? 'text-white' : 'text-[#8e8e9a] hover:text-white'
-                  }`}
+                  style={{ color: activeTab === tab.id ? 'var(--hc-text)' : 'var(--hc-muted)' }}
+                  className="relative px-6 py-3 text-sm font-medium transition-colors hover:[color:var(--hc-text)]"
                 >
                   {tab.label}
                   {activeTab === tab.id && (
@@ -532,7 +597,8 @@ export default function ProductDetailPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.2 }}
-                  className="bg-[#111114] border border-white/8 rounded-2xl p-6"
+                  style={{ background: 'var(--hc-surface)', borderColor: 'var(--hc-border)' }}
+                  className="border rounded-2xl p-6"
                 >
                   <ul className="space-y-3">
                     {product.especificaciones.split('\n').filter((l) => l.trim()).map((linea, i) => (
@@ -543,8 +609,8 @@ export default function ProductDetailPage() {
                         transition={{ delay: i * 0.04 }}
                         className="flex items-start gap-3 text-sm"
                       >
-                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#4f7cff] shrink-0" />
-                        <span className="text-[#c8c8d0]">{linea.replace(/^[-•·]\s*/, '')}</span>
+                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'var(--hc-accent)' }} />
+                        <span style={{ color: 'var(--hc-text)' }}>{linea.replace(/^[-•·]\s*/, '')}</span>
                       </motion.li>
                     ))}
                   </ul>
@@ -559,7 +625,8 @@ export default function ProductDetailPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.2 }}
-                  className="bg-[#111114] border border-white/8 rounded-2xl p-6"
+                  style={{ background: 'var(--hc-surface)', borderColor: 'var(--hc-border)' }}
+                  className="border rounded-2xl p-6"
                 >
                   <ol className="space-y-5">
                     {product.comoUsar.split('\n').filter((l) => l.trim()).map((linea, i) => (
@@ -570,10 +637,13 @@ export default function ProductDetailPage() {
                         transition={{ delay: i * 0.05 }}
                         className="flex items-start gap-4"
                       >
-                        <span className="shrink-0 w-7 h-7 rounded-full bg-[#4f7cff]/15 border border-[#4f7cff]/30 text-[#4f7cff] text-xs font-bold flex items-center justify-center">
+                        <span
+                          style={{ background: 'var(--hc-accent)', color: '#fff' }}
+                          className="shrink-0 w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center"
+                        >
                           {i + 1}
                         </span>
-                        <span className="text-sm text-[#c8c8d0] pt-1 leading-relaxed">
+                        <span className="text-sm pt-1 leading-relaxed" style={{ color: 'var(--hc-text)' }}>
                           {linea.replace(/^\d+\.\s*/, '')}
                         </span>
                       </motion.li>
@@ -585,52 +655,66 @@ export default function ProductDetailPage() {
           </motion.div>
         )}
 
-        {/* ── Más de esta marca ── */}
+        {/* ── MÁS DE [MARCA] — Logo grande + productos sin precio ── */}
         {brandProducts.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.4 }}
-            className="mt-12"
+            className="mt-8 sm:mt-16"
           >
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-xl font-bold text-[#e8e8ed] flex items-center gap-2">
-                {product.marcaLogoUrl && (
-                  <img src={product.marcaLogoUrl} alt="" className="w-5 h-5 object-contain rounded" onError={(e) => { e.target.style.display = 'none' }} />
-                )}
-                {t('product.moreFromBrand', { brand: product.marcaNombre })}
-              </h2>
+            {/* Cabecera: logo grande centrado + botón ver todos */}
+            <div className="flex flex-col items-center gap-3 mb-6">
+              {product.marcaLogoUrl ? (
+                <img
+                  src={product.marcaLogoUrl}
+                  alt={product.marcaNombre}
+                  className="h-14 w-auto object-contain"
+                  onError={(e) => { e.target.style.display = 'none' }}
+                />
+              ) : (
+                <span className="text-2xl font-black tracking-tight" style={{ color: 'var(--hc-text)' }}>
+                  {product.marcaNombre}
+                </span>
+              )}
               <button
                 onClick={() => navigate(`/productos?marcaId=${product.marcaId}&marcaNombre=${encodeURIComponent(product.marcaNombre)}`)}
-                className="text-xs font-medium text-[#4f7cff] hover:text-[#6b94ff] transition-colors"
+                className="text-[11px] font-semibold px-4 py-1 rounded-full border transition-opacity hover:opacity-70"
+                style={{ color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }}
               >
-                Ver todos →
+                Ver todos los productos
               </button>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+
+            {/* Productos: imágenes grandes sin precio */}
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
               {brandProducts.map((bp, i) => (
                 <motion.div
                   key={bp.id}
-                  initial={{ opacity: 0, y: 14 }}
+                  initial={{ opacity: 0, y: 10 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: i * 0.06 }}
-                  whileHover={{ y: -4 }}
+                  transition={{ delay: i * 0.05 }}
+                  whileHover={{ y: -5 }}
                   onClick={() => navigate(`/productos/${bp.id}`)}
-                  className="group cursor-pointer rounded-2xl overflow-hidden transition-shadow duration-300 hover:shadow-[0_12px_40px_rgba(0,0,0,0.4)]"
-                  style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
+                  className="group shrink-0 cursor-pointer relative rounded-2xl overflow-hidden"
+                  style={{ width: 140, height: 140, background: 'var(--hc-surface-2)' }}
                 >
-                  <div className="h-24 bg-[#1a1a1f] flex items-center justify-center overflow-hidden">
-                    {bp.imagenUrl ? (
-                      <img src={getOptimizedUrl(bp.imagenUrl, { width: 96 })} alt={bp.nombre} width={96} height={96} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
-                    ) : (
-                      <span className="text-3xl opacity-20">📦</span>
-                    )}
-                  </div>
-                  <div className="p-2.5">
-                    <p className="text-[11px] font-medium line-clamp-2 mb-1 leading-snug" style={{ color: 'var(--hc-text)' }}>{bp.nombre}</p>
-                    <p className="text-xs font-bold text-[#4f7cff]">{formatPrice(bp.precio)}</p>
+                  {bp.imagenUrl ? (
+                    <img
+                      src={getOptimizedUrl(bp.imagenUrl, { width: 140 })}
+                      alt={bp.nombre}
+                      className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <span className="flex items-center justify-center w-full h-full text-4xl opacity-20">📦</span>
+                  )}
+                  {/* Nombre solo en hover */}
+                  <div className="absolute inset-x-0 bottom-0 py-2 px-2 translate-y-full group-hover:translate-y-0 transition-transform duration-300"
+                    style={{ background: 'rgba(0,0,0,0.72)' }}>
+                    <p className="text-[10px] text-white font-medium line-clamp-2 leading-tight">{bp.nombre}</p>
                   </div>
                 </motion.div>
               ))}
@@ -638,48 +722,53 @@ export default function ProductDetailPage() {
           </motion.div>
         )}
 
-        {/* ── También te puede gustar ── */}
+        {/* ── TAMBIÉN TE PUEDE GUSTAR — Carrusel rectangular mismo tamaño ── */}
         {recommendations.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.4 }}
-            className="mt-12"
+            className="mt-7 sm:mt-14"
           >
-            <h2 className="text-xl font-bold text-[#e8e8ed] mb-5">{t('product.youMayLike')}</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              {recommendations.map((rec, i) => (
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] mb-4" style={{ color: 'var(--hc-muted)' }}>
+              {t('product.youMayLike')}
+            </p>
+
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+              {recommendations.slice(0, 5).map((rec, i) => (
                 <motion.div
                   key={rec.id}
-                  initial={{ opacity: 0, y: 14 }}
-                  whileInView={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, x: 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: i * 0.06 }}
+                  transition={{ delay: i * 0.07 }}
                   whileHover={{ y: -4 }}
                   onClick={() => navigate(`/productos/${rec.id}`)}
-                  className="group cursor-pointer rounded-2xl overflow-hidden transition-shadow duration-300 hover:shadow-[0_12px_40px_rgba(0,0,0,0.4)]"
-                  style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
+                  className="group shrink-0 cursor-pointer rounded-2xl overflow-hidden flex flex-col"
+                  style={{ width: 160, background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
                 >
-                  <div className="h-24 bg-[#1a1a1f] flex items-center justify-center overflow-hidden">
+                  {/* Imagen rectangular fija */}
+                  <div className="w-full overflow-hidden" style={{ height: 160, background: 'var(--hc-surface-2)' }}>
                     {rec.imagenUrl ? (
                       <img
-                        src={getOptimizedUrl(rec.imagenUrl, { width: 96 })}
+                        src={getOptimizedUrl(rec.imagenUrl, { width: 160 })}
                         alt={rec.nombre}
-                        width={96}
-                        height={96}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
                         loading="lazy"
                       />
                     ) : (
-                      <span className="text-3xl opacity-20">📦</span>
+                      <span className="flex items-center justify-center w-full h-full text-4xl opacity-20">📦</span>
                     )}
                   </div>
-                  <div className="p-2.5">
-                    <p className="text-[11px] font-medium line-clamp-2 mb-1 leading-snug" style={{ color: 'var(--hc-text)' }}>
+                  {/* Info debajo */}
+                  <div className="p-3 flex flex-col gap-1">
+                    <p className="text-[11px] font-medium line-clamp-2 leading-snug" style={{ color: 'var(--hc-text)' }}>
                       {rec.nombre}
                     </p>
-                    <p className="text-xs font-bold text-[#4f7cff]">{formatPrice(rec.precio)}</p>
+                    <p className="text-sm font-extrabold" style={{ color: 'var(--hc-accent)' }}>
+                      {formatPrice(rec.precio)}
+                    </p>
                   </div>
                 </motion.div>
               ))}
@@ -687,41 +776,40 @@ export default function ProductDetailPage() {
           </motion.div>
         )}
 
-        {/* ── Visto recientemente ── */}
+        {/* ── VISTO RECIENTEMENTE — Grid 2 columnas compacto ── */}
         {recentlyViewed.filter((p) => p.id !== product.id).length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.35 }}
-            className="mt-10"
+            className="mt-5 sm:mt-10 pt-4 sm:pt-6"
+            style={{ borderTop: '1px solid var(--hc-border)' }}
           >
-            <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--hc-muted)' }}>
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] mb-3" style={{ color: 'var(--hc-muted)' }}>
               {t('home.recentlyViewed')}
-            </h3>
-            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+            </p>
+            <div className="grid grid-cols-2 gap-2">
               {recentlyViewed
                 .filter((p) => p.id !== product.id)
-                .map((p) => (
+                .slice(0, 4)
+                .map((p, i) => (
                   <motion.button
                     key={p.id}
-                    whileHover={{ y: -2 }}
+                    whileHover={{ scale: 1.02 }}
                     onClick={() => navigate(`/productos/${p.id}`)}
-                    className="shrink-0 flex items-center gap-2.5 px-3 py-2 rounded-2xl transition-all"
+                    className="flex items-center gap-2.5 p-2 rounded-xl text-left transition-all"
                     style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
                   >
-                    <div className="w-9 h-9 rounded-lg bg-[#1a1a1f] overflow-hidden shrink-0 border border-white/6">
-                      {p.imagenUrl ? (
-                        <img src={getOptimizedUrl(p.imagenUrl, { width: 36 })} alt={p.nombre} width={36} height={36} className="w-full h-full object-cover" loading="lazy" />
-                      ) : (
-                        <span className="flex items-center justify-center w-full h-full text-sm">📦</span>
-                      )}
+                    <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0" style={{ background: 'var(--hc-surface-2)' }}>
+                      {p.imagenUrl
+                        ? <img src={getOptimizedUrl(p.imagenUrl, { width: 40 })} alt="" width={40} height={40} className="w-full h-full object-cover" loading="lazy" />
+                        : <span className="flex items-center justify-center w-full h-full text-sm">📦</span>
+                      }
                     </div>
-                    <div className="text-left">
-                      <p className="text-xs font-medium max-w-[100px] truncate" style={{ color: 'var(--hc-text)' }}>
-                        {p.nombre}
-                      </p>
-                      <p className="text-xs font-bold text-[#4f7cff]">{formatPrice(p.precio)}</p>
+                    <div className="min-w-0">
+                      <p className="text-[10px] truncate leading-tight" style={{ color: 'var(--hc-text-2)' }}>{p.nombre}</p>
+                      <p className="text-xs font-extrabold mt-0.5" style={{ color: 'var(--hc-accent)' }}>{formatPrice(p.precio)}</p>
                     </div>
                   </motion.button>
                 ))}
@@ -764,6 +852,80 @@ function extractYouTubeId(url) {
   return null
 }
 
+// ── Spotlight Recommendations ─────────────────────────────────────────────────
+function SpotlightRecommendations({ recommendations, navigate, getOptimizedUrl, formatPrice, label }) {
+  const [active, setActive] = useState(0)
+  const rec = recommendations[active]
+
+  return (
+    <div>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] mb-4" style={{ color: 'var(--hc-muted)' }}>
+        {label}
+      </p>
+      <div className="flex gap-4 items-start">
+        {/* Imagen grande spotlight */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={rec.id}
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            onClick={() => navigate(`/productos/${rec.id}`)}
+            className="shrink-0 cursor-pointer relative rounded-2xl overflow-hidden"
+            style={{ width: 180, height: 180, background: 'var(--hc-surface-2)' }}
+          >
+            {rec.imagenUrl ? (
+              <img
+                src={getOptimizedUrl(rec.imagenUrl, { width: 180 })}
+                alt={rec.nombre}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="flex items-center justify-center w-full h-full text-5xl opacity-10">📦</span>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+            <div className="absolute bottom-3 left-3 right-3">
+              <p className="text-white text-xs font-semibold line-clamp-2 leading-snug mb-1">{rec.nombre}</p>
+              <span
+                className="text-xs font-extrabold px-2 py-0.5 rounded-full"
+                style={{ background: 'var(--hc-accent)', color: '#fff' }}
+              >
+                {formatPrice(rec.precio)}
+              </span>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Tira vertical de thumbs */}
+        <div className="flex flex-col gap-2 overflow-y-auto" style={{ maxHeight: 180 }}>
+          {recommendations.map((r, i) => (
+            <motion.button
+              key={r.id}
+              whileHover={{ scale: 1.05 }}
+              onClick={() => setActive(i)}
+              className="shrink-0 rounded-xl overflow-hidden transition-all duration-200"
+              style={{
+                width: 52, height: 52,
+                background: 'var(--hc-surface-2)',
+                outline: i === active ? '2px solid var(--hc-accent)' : '2px solid transparent',
+                outlineOffset: '2px',
+                opacity: i === active ? 1 : 0.55,
+              }}
+            >
+              {r.imagenUrl ? (
+                <img src={getOptimizedUrl(r.imagenUrl, { width: 52 })} alt={r.nombre} className="w-full h-full object-cover" loading="lazy" />
+              ) : (
+                <span className="flex items-center justify-center w-full h-full text-lg opacity-20">📦</span>
+              )}
+            </motion.button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Sticky Cart Bar ───────────────────────────────────────────────────────────
 
 function StickyCartBar({ product, quantity, onDecrease, onIncrease, onAdd, justAdded, atMax, inStock }) {
@@ -784,7 +946,7 @@ function StickyCartBar({ product, quantity, onDecrease, onIncrease, onAdd, justA
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
         {/* Thumbnail + info */}
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="w-11 h-11 rounded-xl bg-[#1a1a1f] overflow-hidden shrink-0 border border-white/8">
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-[#1a1a1f] overflow-hidden shrink-0 border border-white/8">
             {product.imagenUrl ? (
               <img src={getOptimizedUrl(product.imagenUrl, { width: 44 })} alt={product.nombre} width={44} height={44} className="w-full h-full object-cover" loading="lazy" />
             ) : (
@@ -797,7 +959,7 @@ function StickyCartBar({ product, quantity, onDecrease, onIncrease, onAdd, justA
             </p>
             <p className="text-sm font-bold text-[#4f7cff]">{formatPrice(product.precio)}</p>
           </div>
-          <p className="text-sm font-bold text-[#4f7cff] sm:hidden">{formatPrice(product.precio)}</p>
+          <p className="text-sm font-bold text-[#4f7cff] sm:hidden whitespace-nowrap">{formatPrice(product.precio)}</p>
         </div>
 
         {/* Quantity selector */}
@@ -806,18 +968,18 @@ function StickyCartBar({ product, quantity, onDecrease, onIncrease, onAdd, justA
             onClick={onDecrease}
             disabled={quantity <= 1}
             aria-label={t('common.previous')}
-            className="w-9 h-9 flex items-center justify-center text-[#8e8e9a] hover:text-white disabled:opacity-25 transition-colors select-none text-lg"
+            className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-[#8e8e9a] hover:text-white disabled:opacity-25 transition-colors select-none text-lg"
           >
             −
           </button>
-          <span className="w-8 text-center text-sm font-bold" aria-live="polite" style={{ color: 'var(--hc-text)' }}>
+          <span className="w-7 sm:w-8 text-center text-sm font-bold" aria-live="polite" style={{ color: 'var(--hc-text)' }}>
             {quantity}
           </span>
           <button
             onClick={onIncrease}
             disabled={atMax}
             aria-label={t('common.next')}
-            className="w-9 h-9 flex items-center justify-center text-[#8e8e9a] hover:text-white disabled:opacity-25 transition-colors select-none text-lg"
+            className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-[#8e8e9a] hover:text-white disabled:opacity-25 transition-colors select-none text-lg"
           >
             +
           </button>

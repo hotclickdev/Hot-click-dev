@@ -158,6 +158,24 @@ public class AdminUsuarioController {
         return ResponseEntity.ok(ResponseDTO.success(msg, null));
     }
 
+    /**
+     * Restaura un usuario eliminado, devolviéndolo a estado ACTIVO.
+     */
+    @PutMapping("/{id}/restaurar")
+    public ResponseEntity<ResponseDTO> restaurar(@PathVariable Long id) {
+        Optional<Usuario> opt = usuarioRepository.findById(id);
+        if (opt.isEmpty()) {
+            return ResponseEntity.status(404).body(ResponseDTO.error("Usuario no encontrado"));
+        }
+        Usuario usuario = opt.get();
+        if (usuario.getEstado() == null || usuario.getEstado() != Constants.ESTADO_ELIMINADO) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error("El usuario no está eliminado"));
+        }
+        usuario.setEstado(Constants.ESTADO_ACTIVO);
+        usuarioRepository.save(usuario);
+        return ResponseEntity.ok(ResponseDTO.success("Usuario restaurado correctamente", null));
+    }
+
     /** Bloquea (suspende) una cuenta activa. */
     @PutMapping("/{id}/bloquear")
     public ResponseEntity<ResponseDTO> bloquear(@PathVariable Long id) {

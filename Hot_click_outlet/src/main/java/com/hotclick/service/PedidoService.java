@@ -20,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
@@ -42,6 +43,7 @@ public class PedidoService {
     @Autowired private ProductoRepository productoRepository;
     @Autowired private ObjectMapper objectMapper;
 
+    @CacheEvict(value = "dashboard-metricas", allEntries = true)
     @Transactional
     public Pedido crearPedido(Pedido pedido) {
         pedido.setNumeroPedido("ORD-" + System.currentTimeMillis());
@@ -53,8 +55,9 @@ public class PedidoService {
         return pedidoRepository.save(pedido);
     }
 
+    @CacheEvict(value = "dashboard-metricas", allEntries = true)
     @Transactional
-    public Pedido crearPedidoManual(ManualPedidoDTO dto) {
+    public Pedido crearPedidoManual(ManualPedidoDTO dto, com.hotclick.model.Empresa empresa) {
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
             .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + dto.getUsuarioId()));
 
@@ -111,6 +114,7 @@ public class PedidoService {
         pedido.setTotalPedido(subtotal + envio);
         pedido.setCostoTotalProductos(costoTotalProductos);
         pedido.setUtilidadBruta(subtotal - costoTotalProductos);
+        pedido.setEmpresa(empresa);
 
         Pedido saved = pedidoRepository.save(pedido);
         saved.getItems().size();
@@ -167,8 +171,10 @@ public class PedidoService {
     }
 
     @Transactional(readOnly = true)
-    public List<Pedido> listarPendientes() {
-        List<Pedido> list = pedidoRepository.findByEstadoPedidoAndEstado(Constants.PEDIDO_PENDIENTE, Constants.ESTADO_ACTIVO);
+    public List<Pedido> listarPendientes(Long empresaId) {
+        List<Pedido> list = empresaId != null
+            ? pedidoRepository.findByEmpresaIdAndEstadoPedidoAndEstado(empresaId, Constants.PEDIDO_PENDIENTE, Constants.ESTADO_ACTIVO)
+            : pedidoRepository.findByEstadoPedidoAndEstado(Constants.PEDIDO_PENDIENTE, Constants.ESTADO_ACTIVO);
         list.forEach(p -> p.getItems().size());
         return list;
     }
@@ -231,42 +237,51 @@ public class PedidoService {
     }
 
     @Transactional(readOnly = true)
+    public List<Map<String, Object>> listarTodosConDetallesByEmpresa(Long empresaId) {
+        return pedidoRepository.findAllWithDetailsByEmpresaId(empresaId).stream()
+            .map(this::mapPedidoDetalle).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
     public List<Map<String, Object>> listarTodosConDetalles() {
-        return pedidoRepository.findAllWithDetails().stream().map(p -> {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("id",            p.getId());
-            m.put("numeroPedido",  p.getNumeroPedido());
-            m.put("fechaCreacion", p.getFechaPedido());
-            m.put("estado",        p.getEstadoPedido());
-            m.put("total",         p.getTotalPedido());
-            m.put("metodoPago",    p.getMetodoPago());
-            m.put("metodoEnvio",   p.getMetodoEnvio());
-            m.put("costoEnvio",    p.getCostoEnvio());
-            m.put("numeroGuia",    p.getNumeroGuia());
-            m.put("notas",           p.getNotas());
-            try {
-                String rawN = p.getNotificaciones();
-                m.put("notificaciones", objectMapper.readValue(
-                    (rawN != null && !rawN.isBlank()) ? rawN : "[]",
-                    new TypeReference<List<Map<String, Object>>>() {}));
-            } catch (Exception ignored) { m.put("notificaciones", List.of()); }
-            m.put("clienteId",     p.getUsuarioFinal() != null ? p.getUsuarioFinal().getId()      : null);
-            m.put("nombreCliente", p.getUsuarioFinal() != null ? p.getUsuarioFinal().getNombre()  : "—");
-            m.put("clienteCorreo", p.getUsuarioFinal() != null ? p.getUsuarioFinal().getCorreo()  : "—");
-            m.put("clienteTel",    p.getUsuarioFinal() != null ? p.getUsuarioFinal().getTelefono(): "");
-            List<Map<String, Object>> items = p.getItems().stream().map(i -> {
-                Map<String, Object> im = new LinkedHashMap<>();
-                im.put("productoId",      i.getProducto() != null ? i.getProducto().getId()                        : null);
-                im.put("nombreProducto",  i.getProducto() != null ? i.getProducto().getNombreProducto()              : "—");
-                im.put("imagenUrl",       i.getProducto() != null ? i.getProducto().getImagenPrincipalUrl()          : null);
-                im.put("categoriaId",     i.getProducto() != null && i.getProducto().getCategoria() != null ? i.getProducto().getCategoria().getId()              : null);
-                im.put("categoriaNombre", i.getProducto() != null && i.getProducto().getCategoria() != null ? i.getProducto().getCategoria().getNombreCategoria() : "—");
-                im.put("cantidad",        i.getCantidad());
-                im.put("precioUnitario",  i.getPrecioUnitarioMomento());
-                return im;
-            }).collect(Collectors.toList());
-            m.put("items", items);
-            return m;
+        return pedidoRepository.findAllWithDetails().stream()
+            .map(this::mapPedidoDetalle).collect(Collectors.toList());
+    }
+
+    private Map<String, Object> mapPedidoDetalle(Pedido p) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id",            p.getId());
+        m.put("numeroPedido",  p.getNumeroPedido());
+        m.put("fechaCreacion", p.getFechaPedido());
+        m.put("estado",        p.getEstadoPedido());
+        m.put("total",         p.getTotalPedido());
+        m.put("metodoPago",    p.getMetodoPago());
+        m.put("metodoEnvio",   p.getMetodoEnvio());
+        m.put("costoEnvio",    p.getCostoEnvio());
+        m.put("numeroGuia",    p.getNumeroGuia());
+        m.put("notas",         p.getNotas());
+        try {
+            String rawN = p.getNotificaciones();
+            m.put("notificaciones", objectMapper.readValue(
+                (rawN != null && !rawN.isBlank()) ? rawN : "[]",
+                new TypeReference<List<Map<String, Object>>>() {}));
+        } catch (Exception ignored) { m.put("notificaciones", List.of()); }
+        m.put("clienteId",     p.getUsuarioFinal() != null ? p.getUsuarioFinal().getId()       : null);
+        m.put("nombreCliente", p.getUsuarioFinal() != null ? p.getUsuarioFinal().getNombre()   : "—");
+        m.put("clienteCorreo", p.getUsuarioFinal() != null ? p.getUsuarioFinal().getCorreo()   : "—");
+        m.put("clienteTel",    p.getUsuarioFinal() != null ? p.getUsuarioFinal().getTelefono() : "");
+        List<Map<String, Object>> items = p.getItems().stream().map(i -> {
+            Map<String, Object> im = new LinkedHashMap<>();
+            im.put("productoId",      i.getProducto() != null ? i.getProducto().getId() : null);
+            im.put("nombreProducto",  i.getProducto() != null ? i.getProducto().getNombreProducto() : "—");
+            im.put("imagenUrl",       i.getProducto() != null ? i.getProducto().getImagenPrincipalUrl() : null);
+            im.put("categoriaId",     i.getProducto() != null && i.getProducto().getCategoria() != null ? i.getProducto().getCategoria().getId() : null);
+            im.put("categoriaNombre", i.getProducto() != null && i.getProducto().getCategoria() != null ? i.getProducto().getCategoria().getNombreCategoria() : "—");
+            im.put("cantidad",        i.getCantidad());
+            im.put("precioUnitario",  i.getPrecioUnitarioMomento());
+            return im;
         }).collect(Collectors.toList());
+        m.put("items", items);
+        return m;
     }
 }

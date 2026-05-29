@@ -4,11 +4,72 @@ import { useTranslation } from 'react-i18next'
 import AdminLayout from '@/layouts/AdminLayout'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
+import PhoneField from '@/components/ui/PhoneField'
 import Spinner from '@/components/ui/Spinner'
 import { productService } from '@/services/productService'
 import { ventaService } from '@/services/orderService'
 import { useToast } from '@/components/ui/Toast'
 import { formatPrice } from '@/utils/format'
+
+const ETAPAS_RETIRO = [
+  { key: 'PENDIENTE',      label: 'Pendiente' },
+  { key: 'PAGADO',         label: 'Pago confirmado' },
+  { key: 'EN_PREPARACION', label: 'En preparación' },
+  { key: 'LISTO_RETIRO',   label: 'Listo p/ retirar' },
+  { key: 'ENTREGADO',      label: 'Retirado' },
+  { key: 'COMPLETADO',     label: 'Completado' },
+]
+const ETAPAS_ENVIO = [
+  { key: 'PENDIENTE',      label: 'Pendiente' },
+  { key: 'PAGADO',         label: 'Pago confirmado' },
+  { key: 'EN_PREPARACION', label: 'En preparación' },
+  { key: 'ENVIADO',        label: 'Enviado' },
+  { key: 'ENTREGADO',      label: 'Entregado' },
+  { key: 'COMPLETADO',     label: 'Completado' },
+]
+
+function SaleStepTracker({ estado, esRetiro }) {
+  const etapas  = esRetiro ? ETAPAS_RETIRO : ETAPAS_ENVIO
+  const idx     = etapas.findIndex(e => e.key === estado)
+  const idxSafe = idx === -1 ? 0 : idx
+  return (
+    <div className="flex items-center overflow-x-auto pb-1">
+      {etapas.map((e, i) => {
+        const done    = i < idxSafe
+        const current = i === idxSafe
+        return (
+          <div key={e.key} className="flex items-center flex-1 min-w-0">
+            <div className="flex flex-col items-center gap-1 shrink-0">
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{
+                  backgroundColor: done || current ? '#10b981' : 'transparent',
+                  border: `2px solid ${done || current ? '#10b981' : 'var(--hc-border)'}`,
+                  boxShadow: current ? '0 0 12px rgba(16,185,129,0.4)' : 'none',
+                }}
+              >
+                {done || current
+                  ? <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                  : <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--hc-border)' }} />
+                }
+              </div>
+              <span
+                className="text-[9px] text-center leading-tight max-w-[56px]"
+                style={{ color: done || current ? 'var(--hc-text)' : 'var(--hc-muted)', fontWeight: current ? 700 : 400, opacity: done || current ? 1 : 0.4 }}
+              >
+                {e.label}
+              </span>
+            </div>
+            {i < etapas.length - 1 && (
+              <div className="h-0.5 flex-1 mx-1 rounded-full mb-4"
+                style={{ backgroundColor: i < idxSafe ? '#10b981' : 'var(--hc-border)' }} />
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
 
 const WHATSAPP = '50689745370'
 const TABS = [
@@ -26,6 +87,7 @@ export default function AdminNewSale() {
   const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [createdOrder, setCreatedOrder] = useState(null)
 
   // Shared state
   const [items, setItems] = useState([])
@@ -44,6 +106,12 @@ export default function AdminNewSale() {
   // Shared – costo de envío opcional
   const [costoEnvio, setCostoEnvio] = useState('')
 
+  // Tipo de entrega
+  const [tipoEntrega, setTipoEntrega] = useState('LOCAL')
+
+  // Estado inicial del pedido
+  const [estadoInicial, setEstadoInicial] = useState('COMPLETADO')
+
   useEffect(() => {
     Promise.all([
       productService.getAll(0, 200),
@@ -55,7 +123,7 @@ export default function AdminNewSale() {
   }, [])
 
   // Reset items when switching tabs
-  const switchTab = (id) => { setTab(id); setItems([]); setCostoEnvio('') }
+  const switchTab = (id) => { setTab(id); setItems([]); setCostoEnvio(''); setTipoEntrega('LOCAL'); setEstadoInicial('COMPLETADO') }
 
   const filteredProducts = products.filter((p) =>
     p.stock > 0 && (!search || p.nombre?.toLowerCase().includes(search.toLowerCase()))
@@ -92,13 +160,24 @@ export default function AdminNewSale() {
         clienteId: withClient ? (clientId || null) : null,
         nombreCliente: withClient ? clientName : 'Venta rápida',
         metodoPago: paymentMethod,
+        tipoEntrega,
+        estadoInicial,
         items: items.map((i) => ({ productoId: i.id, cantidad: i.cantidad, precioUnitario: i.precio })),
         costoEnvio: envioNum,
         total,
       }
       await ventaService.create(payload)
       toast({ message: 'Venta registrada con éxito', type: 'success' })
-      navigate('/admin/pedidos')
+      setCreatedOrder({
+        estado: estadoInicial,
+        esRetiro: tipoEntrega === 'LOCAL',
+        nombreCliente: withClient ? clientName || 'Cliente' : 'Venta rápida',
+        metodoPago: paymentMethod,
+        items: [...items],
+        subtotal,
+        costoEnvio: envioNum,
+        total,
+      })
     } catch (err) {
       toast({ message: err.response?.data?.message ?? 'Error al registrar venta', type: 'error' })
     } finally { setSaving(false) }
@@ -126,9 +205,65 @@ export default function AdminNewSale() {
 
   if (loading) return <AdminLayout><div className="flex justify-center py-20"><Spinner size="lg" /></div></AdminLayout>
 
+  if (createdOrder) return (
+    <AdminLayout>
+      <div className="max-w-lg mx-auto space-y-6 py-4">
+        {/* Header éxito */}
+        <div className="flex flex-col items-center gap-2 text-center">
+          <div className="w-14 h-14 rounded-full bg-emerald-500/15 flex items-center justify-center">
+            <svg className="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-[#e8e8ed]">Venta registrada</h2>
+          <p className="text-sm text-[#8e8e9a]">{createdOrder.nombreCliente} · {createdOrder.metodoPago}</p>
+        </div>
+
+        {/* Stepper de etapas */}
+        <div className="bg-white/3 border border-white/8 rounded-2xl px-4 py-5 space-y-3">
+          <p className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">Estado del pedido</p>
+          <SaleStepTracker estado={createdOrder.estado} esRetiro={createdOrder.esRetiro} />
+        </div>
+
+        {/* Resumen de productos */}
+        <div className="bg-white/3 border border-white/8 rounded-2xl px-4 py-4 space-y-2">
+          <p className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">Productos</p>
+          {createdOrder.items.map((i) => (
+            <div key={i.id} className="flex justify-between items-center text-sm">
+              <span className="text-[#e8e8ed] truncate flex-1 mr-3">{i.nombre} <span className="text-[#8e8e9a]">×{i.cantidad}</span></span>
+              <span className="text-[#e8e8ed] font-medium shrink-0">{formatPrice(i.precio * i.cantidad)}</span>
+            </div>
+          ))}
+          <div className="border-t border-white/8 pt-2 mt-2 space-y-1">
+            {createdOrder.costoEnvio > 0 && (
+              <div className="flex justify-between text-sm text-[#8e8e9a]">
+                <span>Envío</span>
+                <span>{formatPrice(createdOrder.costoEnvio)}</span>
+              </div>
+            )}
+            <div className="flex justify-between font-bold text-[#e8e8ed]">
+              <span>Total</span>
+              <span className="text-lg">{formatPrice(createdOrder.total)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Acciones */}
+        <div className="flex gap-3">
+          <Button variant="ghost" size="lg" className="flex-1" onClick={() => { setCreatedOrder(null); setItems([]); setCostoEnvio(''); setClientId(''); setClientName(''); setTipoEntrega('LOCAL') }}>
+            + Nueva venta
+          </Button>
+          <Button size="lg" className="flex-1" onClick={() => navigate('/admin/pedidos')}>
+            Ver pedidos →
+          </Button>
+        </div>
+      </div>
+    </AdminLayout>
+  )
+
   return (
     <AdminLayout>
-      <div className="space-y-6 max-w-5xl">
+      <div className="space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -236,7 +371,7 @@ export default function AdminNewSale() {
               <>
                 <h2 className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">Datos de la cotización</h2>
                 <Input label="Nombre del cliente" value={cotNombre} onChange={(e) => setCotNombre(e.target.value)} placeholder="Opcional" />
-                <Input label="Teléfono / WhatsApp" value={cotTelefono} onChange={(e) => setCotTelefono(e.target.value)} placeholder="Opcional" />
+                <PhoneField label="Teléfono / WhatsApp" value={cotTelefono} onChange={setCotTelefono} hint="Opcional" />
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-medium text-[#e8e8ed]">Nota adicional</label>
                   <textarea
@@ -250,18 +385,71 @@ export default function AdminNewSale() {
               </>
             )}
 
-            {/* Payment method (tabs 1 & 2 only) */}
+            {/* Payment method + tipo entrega (tabs 1 & 2 only) */}
             {tab !== 'cotizar' && (
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-[#e8e8ed]">Método de pago</label>
-                <select
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="h-11 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60"
-                >
-                  {['EFECTIVO', 'SINPE', 'TARJETA', 'TRANSFERENCIA'].map((m) => <option key={m} value={m}>{m}</option>)}
-                </select>
-              </div>
+              <>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-[#e8e8ed]">Método de pago</label>
+                  <select
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="h-11 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60"
+                  >
+                    {['EFECTIVO', 'SINPE', 'TARJETA', 'TRANSFERENCIA'].map((m) => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-[#e8e8ed]">Tipo de entrega</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { value: 'LOCAL', label: 'Retiro en local', icon: '🏪' },
+                      { value: 'DOMICILIO', label: 'Envío a domicilio', icon: '🚚' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => { setTipoEntrega(opt.value); setEstadoInicial('COMPLETADO') }}
+                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all ${
+                          tipoEntrega === opt.value
+                            ? 'bg-[#4f7cff]/15 border-[#4f7cff]/50 text-[#7fa3ff]'
+                            : 'bg-white/3 border-white/8 text-[#8e8e9a] hover:border-white/15 hover:text-[#e8e8ed]'
+                        }`}
+                      >
+                        <span>{opt.icon}</span>
+                        <span>{opt.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Estado inicial del pedido */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-[#e8e8ed]">
+                    Etapa actual
+                    {(estadoInicial === 'ENTREGADO' || estadoInicial === 'COMPLETADO')
+                      ? <span className="ml-2 text-xs text-emerald-400 font-normal">aparece en finanzas</span>
+                      : <span className="ml-2 text-xs text-amber-400 font-normal">no aparece en finanzas aún</span>
+                    }
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(tipoEntrega === 'LOCAL' ? ETAPAS_RETIRO : ETAPAS_ENVIO).map((e) => (
+                      <button
+                        key={e.key}
+                        type="button"
+                        onClick={() => setEstadoInicial(e.key)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                          estadoInicial === e.key
+                            ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
+                            : 'bg-white/3 border-white/8 text-[#8e8e9a] hover:border-white/20 hover:text-[#e8e8ed]'
+                        }`}
+                      >
+                        {e.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
 
             {/* Cart items */}

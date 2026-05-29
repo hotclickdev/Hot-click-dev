@@ -119,4 +119,8 @@ public class ProductoRequestDTO {
     private String videoUrl;
     public String getVideoUrl() { return videoUrl; }
     public void setVideoUrl(String videoUrl) { this.videoUrl = videoUrl; }
+
+    private String talla;
+    public String getTalla() { return talla; }
+    public void setTalla(String talla) { this.talla = talla; }
 }

@@ -4,6 +4,7 @@ import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Bodega;
 import com.hotclick.repository.BodegaRepository;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.security.CompanyScope;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -20,12 +21,15 @@ public class BodegaController {
 
     @Autowired private BodegaRepository bodegaRepository;
     @Autowired private UsuarioRepository usuarioRepository;
+    @Autowired private CompanyScope companyScope;
 
     @GetMapping
     public ResponseEntity<ResponseDTO> listar() {
-        return ResponseEntity.ok(
-            ResponseDTO.success("Bodegas", bodegaRepository.findByEstado(Constants.ESTADO_ACTIVO))
-        );
+        Long empresaId = companyScope.getCurrentEmpresaId();
+        var bodegas = empresaId != null
+            ? bodegaRepository.findByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO)
+            : bodegaRepository.findByEstado(Constants.ESTADO_ACTIVO);
+        return ResponseEntity.ok(ResponseDTO.success("Bodegas", bodegas));
     }
 
     @PostMapping
@@ -40,6 +44,7 @@ public class BodegaController {
             if (body.get("telefono") == null || body.get("telefono").isBlank())
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El teléfono es obligatorio"));
 
+            var empresa = companyScope.getCurrentUser() != null ? companyScope.getCurrentUser().getEmpresa() : null;
             Bodega b = new Bodega();
             b.setNombreBodega(body.get("nombreBodega").trim());
             b.setDireccionExacta(body.get("direccionExacta").trim());
@@ -47,6 +52,7 @@ public class BodegaController {
             b.setCorreoContacto(body.getOrDefault("correoContacto", ""));
             b.setEncargadoNombre(body.getOrDefault("encargadoNombre", ""));
             b.setEstado(Constants.ESTADO_ACTIVO);
+            b.setEmpresa(empresa);
             b.setAdminCliente(
                 usuarioRepository.findByCorreo(ud.getUsername())
                     .orElseThrow(() -> new RuntimeException("Admin no encontrado"))
@@ -63,6 +69,7 @@ public class BodegaController {
             @AuthenticationPrincipal UserDetails ud) {
         var admin = usuarioRepository.findByCorreo(ud.getUsername())
             .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
+        var empresa = companyScope.getCurrentUser() != null ? companyScope.getCurrentUser().getEmpresa() : null;
         int ok = 0; int errors = 0;
         for (Map<String, String> item : items) {
             String nombre = item.get("nombreBodega");
@@ -79,6 +86,7 @@ public class BodegaController {
             b.setCorreoContacto(item.getOrDefault("correoContacto", ""));
             b.setEncargadoNombre(item.getOrDefault("encargadoNombre", ""));
             b.setEstado(Constants.ESTADO_ACTIVO);
+            b.setEmpresa(empresa);
             b.setAdminCliente(admin);
             bodegaRepository.save(b);
             ok++;
@@ -94,6 +102,7 @@ public class BodegaController {
         try {
             Bodega b = bodegaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Bodega no encontrada"));
+            companyScope.assertCanAccessNullable(b.getEmpresaId());
             if (body.get("nombreBodega") != null && !body.get("nombreBodega").isBlank())
                 b.setNombreBodega(body.get("nombreBodega").trim());
             if (body.get("direccionExacta") != null && !body.get("direccionExacta").isBlank())
@@ -115,6 +124,7 @@ public class BodegaController {
         try {
             Bodega b = bodegaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Bodega no encontrada"));
+            companyScope.assertCanAccessNullable(b.getEmpresaId());
             b.setEstado(Constants.ESTADO_INACTIVO);
             bodegaRepository.save(b);
             return ResponseEntity.ok(ResponseDTO.success("Bodega eliminada", null));

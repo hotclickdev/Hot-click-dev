@@ -406,7 +406,7 @@ export default function AdminPublicaciones() {
 
   return (
     <AdminLayout>
-      <div className="space-y-5 max-w-3xl">
+      <div className="space-y-5">
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.publicaciones.title')}</h1>

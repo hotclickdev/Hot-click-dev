@@ -1,5 +1,6 @@
 package com.hotclick.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import jakarta.persistence.*;
@@ -90,6 +91,11 @@ public class Pedido extends BaseEntity {
     @Column(name = "fecha_envio")
     private LocalDateTime fechaEnvio;
 
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fk_id_empresa")
+    private Empresa empresa;
+
     @ManyToOne
     @JoinColumn(name = "fk_id_usuario_final", nullable = false)
     private Usuario usuarioFinal;
@@ -169,6 +175,10 @@ public class Pedido extends BaseEntity {
 
     public LocalDateTime getFechaEnvio() { return fechaEnvio; }
     public void setFechaEnvio(LocalDateTime fechaEnvio) { this.fechaEnvio = fechaEnvio; }
+
+    public Empresa getEmpresa() { return empresa; }
+    public void setEmpresa(Empresa empresa) { this.empresa = empresa; }
+    public Long getEmpresaId() { return empresa != null ? empresa.getId() : null; }
 
     public Usuario getUsuarioFinal() { return usuarioFinal; }
     public void setUsuarioFinal(Usuario usuarioFinal) { this.usuarioFinal = usuarioFinal; }

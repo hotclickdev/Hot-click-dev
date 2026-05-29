@@ -68,7 +68,7 @@ class PedidoServiceTest {
         setupManualMocks();
 
         ManualPedidoDTO dto = buildDto(1, 25000, 2000);
-        Pedido result = service.crearPedidoManual(dto);
+        Pedido result = service.crearPedidoManual(dto, null);
 
         assertThat(result.getSubtotal()).isEqualTo(25000);
         assertThat(result.getCostoEnvio()).isEqualTo(2000);
@@ -114,7 +114,7 @@ class PedidoServiceTest {
         i2.setPrecioUnitario(15000);
 
         dto.setItems(List.of(i1, i2));
-        Pedido result = service.crearPedidoManual(dto);
+        Pedido result = service.crearPedidoManual(dto, null);
 
         // 2×25000 + 1×15000 = 65000 subtotal, + 2000 envío = 67000
         assertThat(result.getSubtotal()).isEqualTo(65000);
@@ -133,7 +133,7 @@ class PedidoServiceTest {
         dto.setMetodoPago("SINPE");
         dto.setItems(List.of());
 
-        assertThatThrownBy(() -> service.crearPedidoManual(dto))
+        assertThatThrownBy(() -> service.crearPedidoManual(dto, null))
             .isInstanceOf(RuntimeException.class)
             .hasMessageContaining("999");
     }
@@ -157,7 +157,7 @@ class PedidoServiceTest {
         dto.setMetodoPago("SINPE");
         dto.setItems(List.of(item));
 
-        assertThatThrownBy(() -> service.crearPedidoManual(dto))
+        assertThatThrownBy(() -> service.crearPedidoManual(dto, null))
             .isInstanceOf(RuntimeException.class)
             .hasMessageContaining("Producto no encontrado");
     }

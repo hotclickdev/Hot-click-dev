@@ -9,6 +9,8 @@ import com.hotclick.service.ExtraccionService.ResultadoExtraccion;
 import com.hotclick.service.GoogleVisionService;
 import com.hotclick.service.PrecioSugeridoService;
 import com.hotclick.service.PublicacionFacebookService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +25,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/extraccion")
 public class ExtraccionController {
+
+    private static final Logger log = LoggerFactory.getLogger(ExtraccionController.class);
 
     @Autowired private GoogleVisionService visionService;
     @Autowired private ExtraccionService extraccionService;
@@ -120,7 +124,8 @@ public class ExtraccionController {
             var detalles = extraccionService.extraerDetallesProducto(base64List, visionService);
             return ResponseEntity.ok(ResponseDTO.success("Detalles extraídos", detalles));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            log.error("Error en detalles-producto: {}", e.getMessage());
+            return ResponseEntity.ok(ResponseDTO.success("Análisis completado", new ExtraccionService.DetallesProducto()));
         }
     }
 }

@@ -48,9 +48,10 @@ export default function AdminUsers() {
   const [saving, setSaving] = useState(false)
 
   // Confirm modals
-  const [deleteUser, setDeleteUser]   = useState(null)
-  const [blockUser, setBlockUser]     = useState(null)
-  const [unblockUser, setUnblockUser] = useState(null)
+  const [deleteUser, setDeleteUser]     = useState(null)
+  const [blockUser, setBlockUser]       = useState(null)
+  const [unblockUser, setUnblockUser]   = useState(null)
+  const [restoreUser, setRestoreUser]   = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
 
   const load = async () => {
@@ -66,6 +67,10 @@ export default function AdminUsers() {
   }
 
   useEffect(() => { load() }, [])
+
+  // Usuarios activos/inactivos/suspendidos (excluye eliminados y pendientes — pendientes van en su propia tab)
+  const activeUsers   = users.filter((u) => getEstadoStr(u) !== 'ELIMINADO' && getEstadoStr(u) !== 'PENDIENTE')
+  const deletedUsers  = users.filter((u) => getEstadoStr(u) === 'ELIMINADO')
 
   const approve = async (id) => {
     try {
@@ -121,6 +126,19 @@ export default function AdminUsers() {
     } finally { setActionLoading(false) }
   }
 
+  const handleRestore = async () => {
+    if (!restoreUser) return
+    setActionLoading(true)
+    try {
+      await adminService.restoreUser(restoreUser.id)
+      toast({ message: `${restoreUser.nombre ?? restoreUser.correo} fue restaurado`, type: 'success' })
+      setRestoreUser(null)
+      load()
+    } catch (err) {
+      toast({ message: err.response?.data?.message ?? 'Error al restaurar', type: 'error' })
+    } finally { setActionLoading(false) }
+  }
+
   const openEdit = (u) => {
     setEditUser(u)
     setEditRol(getRolStr(u))
@@ -152,13 +170,19 @@ export default function AdminUsers() {
     } finally { setSaving(false) }
   }
 
-  const base = tab === 'pending' ? pending : users
+  const baseForTab = tab === 'pending' ? pending : tab === 'deleted' ? deletedUsers : activeUsers
   const displayed = search
-    ? base.filter((u) =>
+    ? baseForTab.filter((u) =>
         (u.nombre ?? '').toLowerCase().includes(search.toLowerCase()) ||
         (u.correo ?? '').toLowerCase().includes(search.toLowerCase())
       )
-    : base
+    : baseForTab
+
+  const tabs = [
+    ['all',     `Activos (${activeUsers.length})`],
+    ['pending', `Pendientes (${pending.length})`],
+    ['deleted', `Eliminados (${deletedUsers.length})`],
+  ]
 
   return (
     <AdminLayout>
@@ -166,7 +190,9 @@ export default function AdminUsers() {
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.users.title')}</h1>
-            <p className="text-sm text-[#8e8e9a] mt-1">{users.length} registrados · {pending.length} {t('admin.orders.pending').toLowerCase()}</p>
+            <p className="text-sm text-[#8e8e9a] mt-1">
+              {users.length} registrados · {pending.length} {t('admin.orders.pending').toLowerCase()} · {deletedUsers.length} eliminados
+            </p>
           </div>
           <ImportExportBar
             exportOnly
@@ -186,9 +212,15 @@ export default function AdminUsers() {
         {/* Tabs + búsqueda */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex gap-1 bg-white/3 border border-white/8 rounded-xl p-1 w-fit">
-            {[['all', 'Todos'], ['pending', `Pendientes (${pending.length})`]].map(([key, label]) => (
+            {tabs.map(([key, label]) => (
               <button key={key} onClick={() => setTab(key)}
-                className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${tab === key ? 'bg-[#4f7cff] text-white' : 'text-[#8e8e9a] hover:text-white'}`}>
+                className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  tab === key
+                    ? key === 'deleted'
+                      ? 'bg-red-500/80 text-white'
+                      : 'bg-[#4f7cff] text-white'
+                    : 'text-[#8e8e9a] hover:text-white'
+                }`}>
                 {label}
               </button>
             ))}
@@ -207,6 +239,16 @@ export default function AdminUsers() {
           </div>
         </div>
 
+        {/* Banner informativo para tab eliminados */}
+        {tab === 'deleted' && (
+          <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-red-500/8 border border-red-500/20 text-xs text-red-300">
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z" />
+            </svg>
+            Los datos de estos usuarios se conservan en la base de datos. Podés restaurar una cuenta para que vuelva a estar activa.
+          </div>
+        )}
+
         {loading ? (
           <div className="flex justify-center py-16"><Spinner size="lg" /></div>
         ) : (
@@ -222,23 +264,24 @@ export default function AdminUsers() {
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {displayed.map((u) => {
-                    const estadoStr = getEstadoStr(u)
-                    const rolStr    = getRolStr(u)
+                    const estadoStr   = getEstadoStr(u)
+                    const rolStr      = getRolStr(u)
                     const isSuspended = estadoStr === 'SUSPENDIDO'
-                    const isEliminated = estadoStr === 'ELIMINADO'
+                    const isDeleted   = estadoStr === 'ELIMINADO'
                     return (
-                      <tr key={u.id} className={`hover:bg-white/3 transition-colors ${isSuspended ? 'opacity-75' : ''}`}>
+                      <tr key={u.id} className={`hover:bg-white/3 transition-colors ${isDeleted ? 'opacity-60' : isSuspended ? 'opacity-75' : ''}`}>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2.5">
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                              isSuspended ? 'bg-amber-500/15 text-amber-400' : 'bg-[#4f7cff]/15 text-[#4f7cff]'
+                              isDeleted   ? 'bg-red-500/15 text-red-400' :
+                              isSuspended ? 'bg-amber-500/15 text-amber-400' :
+                                            'bg-[#4f7cff]/15 text-[#4f7cff]'
                             }`}>
                               {(u.nombre ?? u.correo)?.[0]?.toUpperCase()}
                             </div>
                             <div className="min-w-0">
                               <span className="font-medium text-[#e8e8ed] truncate max-w-[120px] block">{u.nombre ?? '—'}</span>
                               {isSuspended && <span className="text-[10px] text-amber-400">Bloqueado</span>}
-                              {isEliminated && <span className="text-[10px] text-red-400">Eliminado</span>}
                             </div>
                           </div>
                         </td>
@@ -255,8 +298,20 @@ export default function AdminUsers() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1.5 flex-wrap">
+
+                            {/* Usuarios eliminados: solo botón restaurar */}
+                            {isDeleted && (
+                              <button onClick={() => setRestoreUser(u)}
+                                className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-colors">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                Restaurar
+                              </button>
+                            )}
+
                             {/* Aprobar/Rechazar para pendientes */}
-                            {estadoStr === 'PENDIENTE' && (
+                            {!isDeleted && estadoStr === 'PENDIENTE' && (
                               <>
                                 <button onClick={() => approve(u.id)}
                                   className="px-2.5 py-1 text-xs rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-colors">
@@ -269,8 +324,8 @@ export default function AdminUsers() {
                               </>
                             )}
 
-                            {/* Editar (solo si no eliminado) */}
-                            {!isEliminated && (
+                            {/* Editar */}
+                            {!isDeleted && (
                               <button onClick={() => openEdit(u)}
                                 className="px-2.5 py-1 text-xs rounded-lg bg-white/5 hover:bg-white/10 text-[#8e8e9a] hover:text-white transition-colors">
                                 {t('common.edit')}
@@ -278,11 +333,9 @@ export default function AdminUsers() {
                             )}
 
                             {/* Bloquear / Desbloquear */}
-                            {!isEliminated && (
+                            {!isDeleted && (
                               isSuspended ? (
-                                <button
-                                  onClick={() => setUnblockUser(u)}
-                                  title="Desbloquear usuario"
+                                <button onClick={() => setUnblockUser(u)}
                                   className="flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-colors">
                                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
@@ -290,9 +343,7 @@ export default function AdminUsers() {
                                   Desbloquear
                                 </button>
                               ) : estadoStr !== 'PENDIENTE' && (
-                                <button
-                                  onClick={() => setBlockUser(u)}
-                                  title="Bloquear usuario"
+                                <button onClick={() => setBlockUser(u)}
                                   className="flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 transition-colors">
                                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zM10 11V7a2 2 0 114 0v4" />
@@ -302,11 +353,9 @@ export default function AdminUsers() {
                               )
                             )}
 
-                            {/* Eliminar (solo si no ya eliminado) */}
-                            {!isEliminated && (
-                              <button
-                                onClick={() => setDeleteUser(u)}
-                                title="Eliminar usuario"
+                            {/* Eliminar */}
+                            {!isDeleted && (
+                              <button onClick={() => setDeleteUser(u)}
                                 className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-500/8 hover:bg-red-500/20 text-red-400 transition-colors">
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" />
@@ -327,6 +376,38 @@ export default function AdminUsers() {
           </div>
         )}
       </div>
+
+      {/* ── Modal: Restaurar usuario eliminado ───────────────── */}
+      <Modal open={!!restoreUser} onClose={() => setRestoreUser(null)} title="Restaurar usuario" size="sm">
+        {restoreUser && (
+          <div className="space-y-5">
+            <div className="flex items-start gap-3 p-3.5 rounded-xl bg-emerald-500/8 border border-emerald-500/20">
+              <div className="w-9 h-9 rounded-full bg-emerald-500/15 flex items-center justify-center shrink-0 mt-0.5">
+                <svg className="w-4.5 h-4.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-[#e8e8ed]">{restoreUser.nombre ?? restoreUser.correo}</p>
+                <p className="text-xs text-[#8e8e9a] mt-0.5">{restoreUser.correo}</p>
+                <p className="text-xs text-emerald-400 mt-2">
+                  La cuenta volverá a estar activa y el usuario podrá iniciar sesión.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setRestoreUser(null)}
+                className="flex-1 h-10 rounded-xl bg-white/5 hover:bg-white/8 text-[#8e8e9a] hover:text-white text-sm transition-colors">
+                Cancelar
+              </button>
+              <button onClick={handleRestore} disabled={actionLoading}
+                className="flex-1 h-10 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 text-sm font-medium border border-emerald-500/30 transition-colors disabled:opacity-50">
+                {actionLoading ? 'Restaurando...' : 'Restaurar cuenta'}
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* ── Modal: Bloquear usuario ───────────────────────────── */}
       <Modal open={!!blockUser} onClose={() => setBlockUser(null)} title="Bloquear usuario" size="sm">
@@ -406,7 +487,7 @@ export default function AdminUsers() {
                 <p className="text-sm font-semibold text-[#e8e8ed]">{deleteUser.nombre ?? deleteUser.correo}</p>
                 <p className="text-xs text-[#8e8e9a] mt-0.5">{deleteUser.correo}</p>
                 <p className="text-xs text-red-400 mt-2">
-                  Esta acción desactivará la cuenta de forma permanente.
+                  La cuenta quedará desactivada. Los datos se conservan y podés restaurarla desde la pestaña "Eliminados".
                 </p>
               </div>
             </div>

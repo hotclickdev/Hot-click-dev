@@ -1,5 +1,6 @@
 package com.hotclick.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -66,6 +67,11 @@ public class Usuario extends BaseEntity {
     @Column(name = "recovery_codes", columnDefinition = "TEXT")
     private String recoveryCodes;
 
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fk_id_empresa")
+    private Empresa empresa;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
         name = "hot_click_usuario_rol_tb",
@@ -115,6 +121,11 @@ public class Usuario extends BaseEntity {
 
     public LocalDateTime getBloqueadoHasta() { return bloqueadoHasta; }
     public void setBloqueadoHasta(LocalDateTime bloqueadoHasta) { this.bloqueadoHasta = bloqueadoHasta; }
+
+    public Empresa getEmpresa() { return empresa; }
+    public void setEmpresa(Empresa empresa) { this.empresa = empresa; }
+
+    public Long getEmpresaId() { return empresa != null ? empresa.getId() : null; }
 
     public List<Rol> getRoles() { return roles; }
     public void setRoles(List<Rol> roles) { this.roles = roles; }

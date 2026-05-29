@@ -114,8 +114,8 @@ export default function AdminPagos() {
 
   return (
     <AdminLayout>
-      <div className="p-6 max-w-7xl mx-auto">
-        <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
+      <div className="space-y-6">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.pagos.title')} &amp; {t('admin.pagos.webhooks')}</h1>
           <ImportExportBar
             exportOnly

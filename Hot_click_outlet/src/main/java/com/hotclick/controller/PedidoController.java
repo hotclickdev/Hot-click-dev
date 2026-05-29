@@ -4,6 +4,7 @@ import com.hotclick.dto.ManualPedidoDTO;
 import com.hotclick.dto.ResponseDTO;
 import jakarta.validation.Valid;
 import com.hotclick.model.Pedido;
+import com.hotclick.security.CompanyScope;
 import com.hotclick.security.JwtUtil;
 import com.hotclick.service.NotificacionEmailService;
 import com.hotclick.service.PedidoService;
@@ -24,11 +25,14 @@ public class PedidoController {
     @Autowired private PedidoService pedidoService;
     @Autowired private NotificacionEmailService notificacionEmailService;
     @Autowired private JwtUtil jwtUtil;
+    @Autowired private CompanyScope companyScope;
 
     @PostMapping("/manual")
     public ResponseEntity<ResponseDTO> crearPedidoManual(@Valid @RequestBody ManualPedidoDTO dto) {
         try {
-            Pedido nuevo = pedidoService.crearPedidoManual(dto);
+            com.hotclick.model.Empresa empresa = companyScope.getCurrentUser() != null
+                ? companyScope.getCurrentUser().getEmpresa() : null;
+            Pedido nuevo = pedidoService.crearPedidoManual(dto, empresa);
             return ResponseEntity.ok(ResponseDTO.success("Pedido creado", nuevo));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
@@ -85,8 +89,12 @@ public class PedidoController {
             if (estado == null || estado.isBlank())
                 return ResponseEntity.badRequest().body(ResponseDTO.error("Estado requerido"));
             String nota = body.get("nota");
+            Pedido existente = pedidoService.buscarPorId(id);
+            companyScope.assertCanAccessNullable(existente.getEmpresaId());
             Pedido pedido = pedidoService.cambiarEstado(id, estado, nota);
             return ResponseEntity.ok(ResponseDTO.success("Estado actualizado", pedido));
+        } catch (com.hotclick.exception.TenantAccessDeniedException e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
@@ -100,8 +108,12 @@ public class PedidoController {
             String guia = body.get("numeroGuia");
             if (guia == null || guia.isBlank())
                 return ResponseEntity.badRequest().body(ResponseDTO.error("Número de guía requerido"));
+            Pedido existente = pedidoService.buscarPorId(id);
+            companyScope.assertCanAccessNullable(existente.getEmpresaId());
             Pedido pedido = pedidoService.asignarGuia(id, guia.trim());
             return ResponseEntity.ok(ResponseDTO.success("Guía asignada y cliente notificado", pedido));
+        } catch (com.hotclick.exception.TenantAccessDeniedException e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
@@ -117,8 +129,12 @@ public class PedidoController {
                 return ResponseEntity.badRequest().body(ResponseDTO.error("Número de guía requerido"));
             Integer costoEnvio = body.get("costoEnvio") != null
                 ? ((Number) body.get("costoEnvio")).intValue() : null;
+            Pedido existente = pedidoService.buscarPorId(id);
+            companyScope.assertCanAccessNullable(existente.getEmpresaId());
             Pedido pedido = pedidoService.procesarEnvio(id, guia.trim(), costoEnvio);
             return ResponseEntity.ok(ResponseDTO.success("Envío procesado y cliente notificado", pedido));
+        } catch (com.hotclick.exception.TenantAccessDeniedException e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
@@ -126,13 +142,19 @@ public class PedidoController {
 
     @GetMapping("/pendientes")
     public ResponseEntity<ResponseDTO> listarPendientes() {
-        return ResponseEntity.ok(ResponseDTO.success("Pedidos pendientes", pedidoService.listarPendientes()));
+        Long empresaId = companyScope.getCurrentEmpresaId();
+        return ResponseEntity.ok(ResponseDTO.success("Pedidos pendientes",
+            pedidoService.listarPendientes(empresaId)));
     }
 
     @GetMapping
     public ResponseEntity<ResponseDTO> listarTodos() {
         try {
-            return ResponseEntity.ok(ResponseDTO.success("Pedidos", pedidoService.listarTodosConDetalles()));
+            Long empresaId = companyScope.getCurrentEmpresaId();
+            var resultado = empresaId != null
+                ? pedidoService.listarTodosConDetallesByEmpresa(empresaId)
+                : pedidoService.listarTodosConDetalles();
+            return ResponseEntity.ok(ResponseDTO.success("Pedidos", resultado));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
@@ -142,8 +164,11 @@ public class PedidoController {
     public ResponseEntity<ResponseDTO> notificarCliente(@PathVariable Long id) {
         try {
             Pedido pedido = pedidoService.buscarPorId(id);
-            notificacionEmailService.enviarSeguimientoEstado(pedido);
-            return ResponseEntity.ok(ResponseDTO.success("Notificación enviada al cliente", null));
+            companyScope.assertCanAccessNullable(pedido.getEmpresaId());
+            notificacionEmailService.enviarSeguimientoEstadoSync(pedido, null);
+            return ResponseEntity.ok(ResponseDTO.success("Email enviado al cliente", null));
+        } catch (com.hotclick.exception.TenantAccessDeniedException e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
@@ -152,8 +177,12 @@ public class PedidoController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseDTO> eliminarPedido(@PathVariable Long id) {
         try {
+            Pedido existente = pedidoService.buscarPorId(id);
+            companyScope.assertCanAccessNullable(existente.getEmpresaId());
             pedidoService.eliminarPedido(id);
             return ResponseEntity.ok(ResponseDTO.success("Pedido eliminado", null));
+        } catch (com.hotclick.exception.TenantAccessDeniedException e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
@@ -172,6 +201,7 @@ public class PedidoController {
         if (auth == null) return false;
         return auth.getAuthorities().stream()
             .anyMatch(a -> a.getAuthority().equals("ROLE_" + Constants.ROL_ADMIN_IT) ||
-                           a.getAuthority().equals("ROLE_" + Constants.ROL_ADMIN_CLIENTE));
+                           a.getAuthority().equals("ROLE_" + Constants.ROL_ADMIN_CLIENTE) ||
+                           a.getAuthority().equals("ROLE_" + Constants.ROL_EMPRENDEDOR));
     }
 }

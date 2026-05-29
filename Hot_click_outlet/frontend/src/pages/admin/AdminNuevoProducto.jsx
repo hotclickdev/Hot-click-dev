@@ -24,7 +24,7 @@ const SEO_LANGS = [
 const EMPTY_FORM = {
   nombre: '', titulo: '', descripcion: '', descripcionLarga: '',
   especificaciones: '', comoUsar: '', marca: '', marcaId: '',
-  precioVenta: '', precioCompra: '', stock: '1',
+  precioVenta: '', precioCompra: '', stock: '1', talla: '', garantiaDias: '0',
   condicion: 'NUEVO', categoriaId: '', bodegaId: '', imagenUrl: '', imagenes: [],
   metaTitle: '', metaDescription: '', metaKeywords: '',
   seoByLang: {
@@ -424,6 +424,7 @@ export default function AdminNuevoProducto() {
         marcaId:          marcaMatch ? String(marcaMatch.id) : '',
         precioVenta:      d.precioSugerido > 0 ? String(d.precioSugerido) : '',
         bodegaId:         bodegas[0]?.id ? String(bodegas[0].id) : '',
+        talla:            d.talla        ?? '',
         imagenUrl:        uploadedUrls[0] ?? '',
         imagenes:         uploadedUrls,
       }))
@@ -480,7 +481,7 @@ export default function AdminNuevoProducto() {
 
   return (
     <AdminLayout>
-      <div className="space-y-5 max-w-2xl">
+      <div className="space-y-5 max-w-2xl mx-auto xl:mx-0 xl:max-w-3xl">
         {/* Header */}
         <div className="flex items-center gap-3">
           {paso === 2 && !analizando && (
@@ -684,6 +685,67 @@ export default function AdminNuevoProducto() {
                   <Label>Stock inicial</Label>
                   <input className={inp} type="number" value={form.stock} onChange={set('stock')}
                     placeholder="1" min="0" />
+                </div>
+              </div>
+
+              {/* Garantía */}
+              <div>
+                <Label>Días de garantía <span className="text-[#8e8e9a] font-normal">(0 = sin garantía)</span></Label>
+                <div className="flex items-center gap-3">
+                  <input className={`${inp} w-36`} type="number" value={form.garantiaDias} onChange={set('garantiaDias')}
+                    placeholder="0" min="0" />
+                  <div className="flex gap-2 flex-wrap">
+                    {[0, 30, 90, 180, 365].map(d => (
+                      <button key={d} type="button"
+                        onClick={() => setForm(p => ({ ...p, garantiaDias: String(d) }))}
+                        className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
+                          String(form.garantiaDias) === String(d)
+                            ? 'bg-[#4f7cff]/20 border-[#4f7cff]/60 text-[#4f7cff]'
+                            : 'bg-white/4 border-white/10 text-[#8e8e9a] hover:border-white/25 hover:text-white'
+                        }`}
+                      >{d === 0 ? 'Sin' : d === 365 ? '1 año' : `${d}d`}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Talla */}
+              <div>
+                <Label>Talla <span className="text-[#8e8e9a] font-normal">(número para zapatos · letra para ropa · dejar vacío si no aplica)</span></Label>
+                <div className="flex flex-wrap gap-2">
+                  {/* Tallas letras */}
+                  {['XS','S','M','L','XL','XXL','XXXL'].map(t => (
+                    <button
+                      key={t} type="button"
+                      onClick={() => setForm(p => ({ ...p, talla: p.talla === t ? '' : t }))}
+                      className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
+                        form.talla === t
+                          ? 'bg-[#4f7cff]/20 border-[#4f7cff]/60 text-[#4f7cff]'
+                          : 'bg-white/4 border-white/10 text-[#8e8e9a] hover:border-white/25 hover:text-white'
+                      }`}
+                    >{t}</button>
+                  ))}
+                  <span className="text-[#8e8e9a]/30 self-center text-xs">|</span>
+                  {/* Tallas número */}
+                  {['35','36','37','38','39','40','41','42','43','44','45'].map(t => (
+                    <button
+                      key={t} type="button"
+                      onClick={() => setForm(p => ({ ...p, talla: p.talla === t ? '' : t }))}
+                      className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
+                        form.talla === t
+                          ? 'bg-[#4f7cff]/20 border-[#4f7cff]/60 text-[#4f7cff]'
+                          : 'bg-white/4 border-white/10 text-[#8e8e9a] hover:border-white/25 hover:text-white'
+                      }`}
+                    >{t}</button>
+                  ))}
+                  {/* Campo libre */}
+                  <input
+                    className={`${inp} w-24`}
+                    value={form.talla}
+                    onChange={set('talla')}
+                    placeholder="Otra…"
+                    maxLength={20}
+                  />
                 </div>
               </div>
 

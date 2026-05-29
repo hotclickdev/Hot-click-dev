@@ -35,6 +35,8 @@ export function normalizeProduct(p) {
     metaDescriptionPt: p.metaDescriptionPt ?? null,
     metaDescriptionFr: p.metaDescriptionFr ?? null,
     videoUrl: p.videoUrl ?? null,
+    talla: p.talla ?? null,
+    garantiaDias: p.garantiaDias ?? 0,
   }
 }
 
@@ -67,6 +69,8 @@ export function denormalizeProduct(form) {
     metaDescriptionPt: form.metaDescriptionPt || null,
     metaDescriptionFr: form.metaDescriptionFr || null,
     videoUrl: form.videoUrl || null,
+    talla: form.talla || null,
+    garantiaDias: Number(form.garantiaDias) || 0,
   }
 }
 

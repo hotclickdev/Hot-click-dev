@@ -4,6 +4,7 @@ import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Marca;
 import com.hotclick.repository.MarcaRepository;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.security.CompanyScope;
 import com.hotclick.service.SupabaseStorageService;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
@@ -29,6 +30,7 @@ public class MarcaController {
     @Autowired private MarcaRepository marcaRepository;
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private SupabaseStorageService supabaseStorageService;
+    @Autowired private CompanyScope companyScope;
 
     /** Endpoint público — sin autenticación, usado por el catálogo y búsqueda */
     @Cacheable("marcas-publicas")
@@ -45,7 +47,10 @@ public class MarcaController {
     @GetMapping
     public ResponseEntity<ResponseDTO> listar() {
         try {
-            var marcas = marcaRepository.findByEstado(Constants.ESTADO_ACTIVO);
+            Long empresaId = companyScope.getCurrentEmpresaId();
+            var marcas = empresaId != null
+                ? marcaRepository.findByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO)
+                : marcaRepository.findByEstado(Constants.ESTADO_ACTIVO);
             return ResponseEntity.ok(ResponseDTO.success("Marcas obtenidas", marcas));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(ResponseDTO.error("Error al obtener marcas: " + e.getMessage()));
@@ -64,14 +69,20 @@ public class MarcaController {
 
             var admin = usuarioRepository.findByCorreo(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            var empresa = companyScope.getCurrentUser() != null ? companyScope.getCurrentUser().getEmpresa() : null;
+            Long empresaId = empresa != null ? empresa.getId() : null;
 
-            if (marcaRepository.existsByNombreMarcaAndEstado(nombre.trim(), Constants.ESTADO_ACTIVO))
+            boolean duplicado = empresaId != null
+                ? marcaRepository.existsByNombreMarcaAndEmpresaIdAndEstado(nombre.trim(), empresaId, Constants.ESTADO_ACTIVO)
+                : marcaRepository.existsByNombreMarcaAndEstado(nombre.trim(), Constants.ESTADO_ACTIVO);
+            if (duplicado)
                 return ResponseEntity.badRequest().body(ResponseDTO.error("Ya existe una marca activa con ese nombre"));
 
             Marca m = new Marca();
             m.setNombreMarca(nombre.trim());
             m.setLogoUrl(body.get("logoUrl"));
             m.setAdminCliente(admin);
+            m.setEmpresa(empresa);
             m.setEstado(Constants.ESTADO_ACTIVO);
             return ResponseEntity.ok(ResponseDTO.success("Marca creada", marcaRepository.save(m)));
         } catch (Exception e) {
@@ -87,8 +98,17 @@ public class MarcaController {
         try {
             Marca m = marcaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Marca no encontrada"));
-            if (body.containsKey("nombreMarca") && !body.get("nombreMarca").isBlank())
-                m.setNombreMarca(body.get("nombreMarca").trim());
+            companyScope.assertCanAccessNullable(m.getEmpresaId());
+            if (body.containsKey("nombreMarca") && !body.get("nombreMarca").isBlank()) {
+                String nuevoNombre = body.get("nombreMarca").trim();
+                Long empresaId = m.getEmpresaId();
+                boolean duplicado = empresaId != null
+                    ? marcaRepository.existsByNombreMarcaAndEmpresaIdAndEstadoAndIdNot(nuevoNombre, empresaId, Constants.ESTADO_ACTIVO, id)
+                    : marcaRepository.existsByNombreMarcaAndEstadoAndIdNot(nuevoNombre, Constants.ESTADO_ACTIVO, id);
+                if (duplicado)
+                    return ResponseEntity.badRequest().body(ResponseDTO.error("Ya existe una marca activa con ese nombre"));
+                m.setNombreMarca(nuevoNombre);
+            }
             if (body.containsKey("logoUrl"))
                 m.setLogoUrl(body.get("logoUrl"));
             return ResponseEntity.ok(ResponseDTO.success("Marca actualizada", marcaRepository.save(m)));
@@ -104,18 +124,21 @@ public class MarcaController {
             @AuthenticationPrincipal UserDetails userDetails) {
         var admin = usuarioRepository.findByCorreo(userDetails.getUsername())
             .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
+        var empresa = companyScope.getCurrentUser() != null ? companyScope.getCurrentUser().getEmpresa() : null;
+        Long empresaId = empresa != null ? empresa.getId() : null;
         int ok = 0; int duplicates = 0;
         for (Map<String, String> item : items) {
             String nombre = item.get("nombreMarca");
             if (nombre == null || nombre.isBlank()) continue;
-            if (marcaRepository.existsByNombreMarcaAndEstado(nombre.trim(), Constants.ESTADO_ACTIVO)) {
-                duplicates++;
-                continue;
-            }
+            boolean dup = empresaId != null
+                ? marcaRepository.existsByNombreMarcaAndEmpresaIdAndEstado(nombre.trim(), empresaId, Constants.ESTADO_ACTIVO)
+                : marcaRepository.existsByNombreMarcaAndEstado(nombre.trim(), Constants.ESTADO_ACTIVO);
+            if (dup) { duplicates++; continue; }
             Marca m = new Marca();
             m.setNombreMarca(nombre.trim());
             m.setLogoUrl(item.get("logoUrl"));
             m.setAdminCliente(admin);
+            m.setEmpresa(empresa);
             m.setEstado(Constants.ESTADO_ACTIVO);
             marcaRepository.save(m);
             ok++;
@@ -144,6 +167,7 @@ public class MarcaController {
         try {
             Marca m = marcaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Marca no encontrada"));
+            companyScope.assertCanAccessNullable(m.getEmpresaId());
             m.setEstado(Constants.ESTADO_INACTIVO);
             marcaRepository.save(m);
             return ResponseEntity.ok(ResponseDTO.success("Marca eliminada", null));

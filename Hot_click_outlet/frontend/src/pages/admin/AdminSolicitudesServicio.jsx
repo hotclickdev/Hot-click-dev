@@ -85,9 +85,9 @@ export default function AdminSolicitudesServicio() {
 
   return (
     <AdminLayout>
-      <div className="p-6 max-w-6xl mx-auto">
+      <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-black" style={{ fontFamily: "'Barlow', sans-serif", color: 'var(--hc-text)' }}>
               {t('adminSolicitudes.title')}

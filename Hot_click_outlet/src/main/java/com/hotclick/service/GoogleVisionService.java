@@ -45,8 +45,37 @@ public class GoogleVisionService {
             ResponseEntity<Map> response = rt.exchange(url, HttpMethod.POST, entity, Map.class);
             return parseResponse(response.getBody());
         } catch (Exception e) {
-            log.error("Error Google Vision API: {}", e.getMessage());
-            throw new RuntimeException("Error al analizar imagen con Vision API: " + e.getMessage());
+            log.warn("Vision API no disponible, continuando sin resultados web: {}", e.getMessage());
+            return new VisionResult();
+        }
+    }
+
+    /** Extrae texto OCR de una imagen. Devuelve cadena vacía si falla. */
+    public String extraerTextoOcr(String imagenBase64) {
+        try {
+            String url = String.format(VISION_URL, apiKey);
+            Map<String, Object> body = Map.of("requests", List.of(
+                Map.of(
+                    "image",    Map.of("content", imagenBase64),
+                    "features", List.of(Map.of("type", "DOCUMENT_TEXT_DETECTION"))
+                )
+            ));
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            ResponseEntity<Map> response = buildRestTemplate().exchange(
+                url, HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
+            Map<?, ?> respBody = response.getBody();
+            if (respBody == null) return "";
+            List<?> responses = (List<?>) respBody.get("responses");
+            if (responses == null || responses.isEmpty()) return "";
+            Map<?, ?> resp = (Map<?, ?>) responses.get(0);
+            Map<?, ?> fullText = (Map<?, ?>) resp.get("fullTextAnnotation");
+            if (fullText == null) return "";
+            String text = (String) fullText.get("text");
+            return text != null ? text : "";
+        } catch (Exception e) {
+            log.debug("OCR no disponible para imagen: {}", e.getMessage());
+            return "";
         }
     }
 
@@ -101,7 +130,7 @@ public class GoogleVisionService {
                     if (desc == null || desc.isBlank()) continue;
                     double score = scoreObj instanceof Number n ? n.doubleValue() : 0;
                     // Descartar: puntaje bajo, texto muy corto, preguntas, marcas de agua genéricas
-                    if (score < 0.4) continue;
+                    if (score < 0.25) continue;
                     if (desc.length() < 3) continue;
                     if (desc.endsWith("?") || desc.endsWith("!")) continue;
                     if (desc.equalsIgnoreCase("product") || desc.equalsIgnoreCase("image")) continue;
@@ -111,20 +140,21 @@ public class GoogleVisionService {
                 result.webEntities.sort((a, b) -> Double.compare(b.score, a.score));
             }
 
-            // bestGuessLabels solo como fallback si no hay webEntities útiles
-            if (result.webEntities.isEmpty()) {
-                List<?> labels = (List<?>) web.get("bestGuessLabels");
-                if (labels != null) {
-                    for (Object l : labels) {
-                        Map<?, ?> label = (Map<?, ?>) l;
-                        String lbl = (String) label.get("label");
-                        if (lbl != null && !lbl.endsWith("?") && !lbl.endsWith("!"))
-                            result.etiquetas.add(lbl);
-                    }
+            // Siempre incluir bestGuessLabels como contexto adicional
+            List<?> bestLabels = (List<?>) web.get("bestGuessLabels");
+            if (bestLabels != null) {
+                for (Object l : bestLabels) {
+                    Map<?, ?> label = (Map<?, ?>) l;
+                    String lbl = (String) label.get("label");
+                    if (lbl != null && !lbl.isBlank() && !lbl.endsWith("?") && !lbl.endsWith("!"))
+                        result.etiquetas.add(lbl);
                 }
-            } else {
-                result.webEntities.forEach(we -> result.etiquetas.add(we.description));
             }
+            // webEntities tienen más detalle; agregarlas también (si no están ya)
+            result.webEntities.forEach(we -> {
+                if (!result.etiquetas.contains(we.description))
+                    result.etiquetas.add(we.description);
+            });
 
             // pagesWithMatchingImages: son páginas de producto directas (mejor que búsquedas)
             List<?> pages = (List<?>) web.get("pagesWithMatchingImages");
@@ -151,6 +181,13 @@ public class GoogleVisionService {
             }
         }
 
+        // DOCUMENT_TEXT_DETECTION: todo el texto visible en la imagen (OCR)
+        Map<?, ?> fullText = (Map<?, ?>) resp.get("fullTextAnnotation");
+        if (fullText != null) {
+            String text = (String) fullText.get("text");
+            if (text != null && !text.isBlank()) result.textoOcr = text;
+        }
+
         return result;
     }
 
@@ -165,6 +202,7 @@ public class GoogleVisionService {
         public List<String> urlsEcommerce = new ArrayList<>();
         public List<WebEntity> webEntities = new ArrayList<>();
         public List<String> labelsFisicos  = new ArrayList<>();
+        public String textoOcr = "";
 
         public boolean tieneResultados() {
             return !etiquetas.isEmpty() || !urlsEcommerce.isEmpty();

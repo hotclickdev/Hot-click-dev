@@ -31,6 +31,7 @@ export const adminService = {
   blockUser: (id) => api.put(`/admin/usuarios/${id}/bloquear`),
   unblockUser: (id) => api.put(`/admin/usuarios/${id}/desbloquear`),
   deleteUser: (id) => api.delete(`/admin/usuarios/${id}`),
+  restoreUser: (id) => api.put(`/admin/usuarios/${id}/restaurar`),
 }
 
 export const warehouseService = {

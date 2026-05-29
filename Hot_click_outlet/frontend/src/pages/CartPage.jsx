@@ -124,11 +124,11 @@ export default function CartPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-[#e8e8ed]">{t('cart.title')}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#e8e8ed]">{t('cart.title')}</h1>
             <p className="text-sm text-[#8e8e9a] mt-1">
               {items.length} {items.length === 1 ? t('cart.product') : t('cart.products')}
             </p>
@@ -141,7 +141,7 @@ export default function CartPage() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6">
           {/* Items list */}
           <div className="lg:col-span-2 space-y-3">
             <AnimatePresence>
@@ -220,7 +220,7 @@ export default function CartPage() {
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              className="sticky top-24 bg-[#111114] border border-white/8 rounded-2xl p-6 space-y-4"
+              className="sticky top-24 bg-[#111114] border border-white/8 rounded-2xl p-4 pr-16 sm:p-6 sm:pr-6 space-y-3 sm:space-y-4"
             >
               <h2 className="font-semibold text-[#e8e8ed]">{t('cart.summary')}</h2>
 
@@ -275,7 +275,7 @@ export default function CartPage() {
 
         {/* ── Cross-sell: Completa tu compra ── */}
         {crossSell.length > 0 && (
-          <div className="mt-10">
+          <div className="mt-5 sm:mt-10">
             <div className="flex items-center gap-3 mb-5">
               <h2 className="text-lg font-semibold text-[#e8e8ed]">Completa tu compra</h2>
               <span className="text-xs text-[#8e8e9a]">Productos que podrían interesarte</span>

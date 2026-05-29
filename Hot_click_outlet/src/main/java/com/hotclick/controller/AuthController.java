@@ -2,11 +2,13 @@ package com.hotclick.controller;
 
 import com.hotclick.dto.AuthResponse;
 import com.hotclick.dto.JwtRequest;
+import com.hotclick.dto.RegistroEmpresaDTO;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.RefreshToken;
 import com.hotclick.model.Usuario;
 import com.hotclick.security.JwtUtil;
 import com.hotclick.service.EmailVerificationService;
+import com.hotclick.service.EmprendedorRegistroService;
 import com.hotclick.service.PasswordResetService;
 import com.hotclick.service.RefreshTokenService;
 import com.hotclick.service.TwoFactorService;
@@ -33,13 +35,14 @@ public class AuthController {
 
     private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
-    @Autowired private UsuarioService            usuarioService;
-    @Autowired private JwtUtil                   jwtUtil;
-    @Autowired private PasswordResetService      passwordResetService;
-    @Autowired private EmailVerificationService  emailVerificationService;
-    @Autowired private TwoFactorService          twoFactorService;
-    @Autowired private RefreshTokenService       refreshTokenService;
-    @Autowired private PasswordEncoder           passwordEncoder;
+    @Autowired private UsuarioService              usuarioService;
+    @Autowired private JwtUtil                     jwtUtil;
+    @Autowired private PasswordResetService        passwordResetService;
+    @Autowired private EmailVerificationService    emailVerificationService;
+    @Autowired private TwoFactorService            twoFactorService;
+    @Autowired private RefreshTokenService         refreshTokenService;
+    @Autowired private PasswordEncoder             passwordEncoder;
+    @Autowired private EmprendedorRegistroService  emprendedorRegistroService;
 
     // ── Registro ──────────────────────────────────────────────────────────────
 
@@ -52,6 +55,20 @@ public class AuthController {
                 "Solicitud enviada. Un administrador revisará y activará tu cuenta pronto.", nuevo));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        }
+    }
+
+    @PostMapping("/registro-empresa")
+    public ResponseEntity<ResponseDTO> registroEmpresa(@RequestBody RegistroEmpresaDTO dto) {
+        try {
+            Usuario emprendedor = emprendedorRegistroService.registrar(dto);
+            AuthResponse authResponse = buildAuthResponse(emprendedor);
+            return ResponseEntity.ok(ResponseDTO.success("Empresa registrada exitosamente", authResponse));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("[registro-empresa] {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(ResponseDTO.error("Error al registrar la empresa"));
         }
     }
 
@@ -119,7 +136,11 @@ public class AuthController {
             RefreshToken rt = refreshTokenService.validar(tokenStr);
             Usuario usuario = rt.getUsuario();
             String rol = usuario.getRoles().isEmpty() ? "USUARIO_FINAL" : usuario.getRoles().get(0).getNombreRol();
-            String newAccessToken = jwtUtil.generateToken(usuario.getCorreo(), usuario.getId(), rol);
+            String empresaSlug = usuario.getEmpresa() != null ? usuario.getEmpresa().getSlug() : null;
+            String newAccessToken = jwtUtil.generateToken(
+                usuario.getCorreo(), usuario.getId(), rol,
+                usuario.getEmpresaId(), empresaSlug
+            );
             return ResponseEntity.ok(Map.of(
                 "accessToken", newAccessToken,
                 "tipo",        "Bearer"
@@ -454,11 +475,20 @@ public class AuthController {
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private AuthResponse buildAuthResponse(Usuario usuario) {
-        String rol         = usuario.getRoles().isEmpty() ? "USUARIO_FINAL" : usuario.getRoles().get(0).getNombreRol();
-        String accessToken = jwtUtil.generateToken(usuario.getCorreo(), usuario.getId(), rol);
-        RefreshToken rt    = refreshTokenService.crear(usuario);
-        String nombre      = usuario.getNombre() != null ? usuario.getNombre() : usuario.getCorreo().split("@")[0];
-        return new AuthResponse(accessToken, rt.getToken(), usuario.getId(), usuario.getCorreo(), rol, nombre);
+        String rol          = usuario.getRoles().isEmpty() ? "USUARIO_FINAL" : usuario.getRoles().get(0).getNombreRol();
+        String empresaSlug  = usuario.getEmpresa() != null ? usuario.getEmpresa().getSlug()         : null;
+        String empresaNombre= usuario.getEmpresa() != null ? usuario.getEmpresa().getNombreEmpresa() : null;
+        String accessToken  = jwtUtil.generateToken(
+            usuario.getCorreo(), usuario.getId(), rol,
+            usuario.getEmpresaId(), empresaSlug
+        );
+        RefreshToken rt     = refreshTokenService.crear(usuario);
+        String nombre       = usuario.getNombre() != null ? usuario.getNombre() : usuario.getCorreo().split("@")[0];
+        AuthResponse resp   = new AuthResponse(accessToken, rt.getToken(), usuario.getId(), usuario.getCorreo(), rol, nombre);
+        resp.setEmpresaId(usuario.getEmpresaId());
+        resp.setEmpresaSlug(empresaSlug);
+        resp.setEmpresaNombre(empresaNombre);
+        return resp;
     }
 
     private Usuario usuarioFromRequest(HttpServletRequest request) {

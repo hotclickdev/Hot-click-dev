@@ -19,6 +19,7 @@ public class Constants {
     // Roles
     public static final String ROL_ADMIN_IT = "ADMIN_IT";
     public static final String ROL_ADMIN_CLIENTE = "ADMIN_CLIENTE";
+    public static final String ROL_EMPRENDEDOR = "EMPRENDEDOR";
     public static final String ROL_USUARIO_FINAL = "USUARIO_FINAL";
 
     // Estados de pedido

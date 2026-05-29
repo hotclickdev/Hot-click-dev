@@ -6,6 +6,7 @@ import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.security.CompanyScope;
 import com.hotclick.service.PedidoService;
 import com.hotclick.service.VentaService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,7 @@ public class VentaController {
     @Autowired private VentaService ventaService;
     @Autowired private PedidoService pedidoService;
     @Autowired private UsuarioRepository usuarioRepository;
+    @Autowired private CompanyScope companyScope;
 
     @GetMapping
     public ResponseEntity<ResponseDTO> listarVentas(
@@ -57,7 +59,10 @@ public class VentaController {
 
     @GetMapping("/clientes")
     public ResponseEntity<ResponseDTO> buscarClientes(@RequestParam(required = false) String q) {
-        List<Usuario> todos = usuarioRepository.findAll();
+        Long empresaId = companyScope.getCurrentEmpresaId();
+        List<Usuario> todos = usuarioRepository.findAll().stream()
+            .filter(u -> empresaId == null || empresaId.equals(u.getEmpresaId()))
+            .collect(Collectors.toList());
         if (q != null && !q.isBlank()) {
             String lower = q.toLowerCase();
             todos = todos.stream().filter(u ->

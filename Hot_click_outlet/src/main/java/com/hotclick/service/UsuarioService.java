@@ -22,10 +22,10 @@ public class UsuarioService {
 
     @Transactional
     public Usuario registrarUsuario(Usuario usuario) {
-        if (usuarioRepository.existsByCorreo(usuario.getCorreo())) {
+        if (usuarioRepository.existsByCorreoAndEstadoNot(usuario.getCorreo(), Constants.ESTADO_ELIMINADO)) {
             throw new RuntimeException("El correo ya está registrado");
         }
-        if (usuarioRepository.existsByIdentificacion(usuario.getIdentificacion())) {
+        if (usuarioRepository.existsByIdentificacionAndEstadoNot(usuario.getIdentificacion(), Constants.ESTADO_ELIMINADO)) {
             throw new RuntimeException("La identificación ya está registrada");
         }
         Optional<Rol> rolDefault = rolRepository.findByNombreRol(Constants.ROL_USUARIO_FINAL);
@@ -80,10 +80,10 @@ public class UsuarioService {
     /** Registro sin email: guarda con estado PENDIENTE, sin rol asignado. */
     @Transactional
     public Usuario registrarSolicitud(Usuario usuario) {
-        if (usuarioRepository.existsByCorreo(usuario.getCorreo())) {
+        if (usuarioRepository.existsByCorreoAndEstadoNot(usuario.getCorreo(), Constants.ESTADO_ELIMINADO)) {
             throw new RuntimeException("El correo ya está registrado");
         }
-        if (usuarioRepository.existsByIdentificacion(usuario.getIdentificacion())) {
+        if (usuarioRepository.existsByIdentificacionAndEstadoNot(usuario.getIdentificacion(), Constants.ESTADO_ELIMINADO)) {
             throw new RuntimeException("La identificación ya está registrada");
         }
         usuario.setId(null);
@@ -100,11 +100,11 @@ public class UsuarioService {
      */
     @Transactional
     public Usuario registrarPendiente(Usuario usuario) {
-        if (usuarioRepository.existsByCorreo(usuario.getCorreo().trim())) {
+        if (usuarioRepository.existsByCorreoAndEstadoNot(usuario.getCorreo().trim(), Constants.ESTADO_ELIMINADO)) {
             throw new RuntimeException("El correo ya está registrado");
         }
         if (usuario.getIdentificacion() != null && !usuario.getIdentificacion().isBlank()
-                && usuarioRepository.existsByIdentificacion(usuario.getIdentificacion().trim())) {
+                && usuarioRepository.existsByIdentificacionAndEstadoNot(usuario.getIdentificacion().trim(), Constants.ESTADO_ELIMINADO)) {
             throw new RuntimeException("La identificación ya está registrada");
         }
         Optional<Rol> rolDefault = rolRepository.findByNombreRol(Constants.ROL_USUARIO_FINAL);

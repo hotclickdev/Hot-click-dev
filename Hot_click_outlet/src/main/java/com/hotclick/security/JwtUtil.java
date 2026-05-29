@@ -55,6 +55,28 @@ public class JwtUtil {
         return createToken(claims, username, EXPIRATION_TIME);
     }
 
+    public String generateToken(String username, Long userId, String rol, Long empresaId, String empresaSlug) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId);
+        claims.put("rol", rol);
+        claims.put("empresaId", empresaId);
+        claims.put("empresaSlug", empresaSlug != null ? empresaSlug : "");
+        return createToken(claims, username, EXPIRATION_TIME);
+    }
+
+    public Long extractEmpresaId(String token) {
+        Object raw = extractAllClaims(token).get("empresaId");
+        if (raw == null) return null;
+        if (raw instanceof Long l)    return l;
+        if (raw instanceof Integer i) return i.longValue();
+        return Long.parseLong(raw.toString());
+    }
+
+    public String extractEmpresaSlug(String token) {
+        Object raw = extractAllClaims(token).get("empresaSlug");
+        return raw != null ? raw.toString() : null;
+    }
+
     private String createToken(Map<String, Object> claims, String subject, long expiresIn) {
         return Jwts.builder()
                 .setClaims(claims)

@@ -52,4 +52,7 @@ export const authService = {
 
   regenerateRecoveryCodes: (code) =>
     api.post('/auth/2fa/recovery-codes/regenerate', { code }),
+
+  registroEmpresa: (data) =>
+    api.post('/auth/registro-empresa', data),
 }

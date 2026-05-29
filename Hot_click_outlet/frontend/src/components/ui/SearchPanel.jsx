@@ -146,9 +146,10 @@ export default function SearchPanel() {
   }
 
   const viewAll = () => {
-    if (query.trim()) saveRecent(query.trim())
+    const q = query.trim()
+    if (q) saveRecent(q)
     close()
-    navigate('/productos')
+    navigate(q ? `/productos?search=${encodeURIComponent(q)}` : '/productos')
   }
 
   const clearRecent = () => {

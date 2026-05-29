@@ -12,7 +12,7 @@ public class Marca extends BaseEntity {
     @Column(name = "id_marca")
     private Long id;
 
-    @Column(name = "nombre_marca", nullable = false, unique = true, length = 100)
+    @Column(name = "nombre_marca", nullable = false, length = 100)
     private String nombreMarca;
 
     @Column(name = "logo_url", length = 500)
@@ -22,6 +22,11 @@ public class Marca extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "fk_id_admin_cliente", nullable = false)
     private Usuario adminCliente;
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fk_id_empresa")
+    private Empresa empresa;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -34,4 +39,8 @@ public class Marca extends BaseEntity {
 
     public Usuario getAdminCliente() { return adminCliente; }
     public void setAdminCliente(Usuario adminCliente) { this.adminCliente = adminCliente; }
+
+    public Empresa getEmpresa() { return empresa; }
+    public void setEmpresa(Empresa empresa) { this.empresa = empresa; }
+    public Long getEmpresaId() { return empresa != null ? empresa.getId() : null; }
 }

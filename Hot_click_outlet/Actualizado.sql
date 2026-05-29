@@ -1731,6 +1731,83 @@ CREATE TABLE IF NOT EXISTS hot_click_producto_imagen_tb (
 CREATE INDEX IF NOT EXISTS idx_producto_imagen_producto
     ON hot_click_producto_imagen_tb (fk_id_producto, posicion);
 
+-- ── V5: Índice único parcial en marcas (solo activas) ─────────
+ALTER TABLE hot_click_marca_tb
+    DROP CONSTRAINT IF EXISTS hot_click_marca_tb_nombre_marca_key;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_marca_nombre_activo
+    ON hot_click_marca_tb (nombre_marca)
+    WHERE fk_id_estado = 1;
+
+-- ── V7: Talla en producto ─────────────────────────────────────
+ALTER TABLE hot_click_producto_tb
+    ADD COLUMN IF NOT EXISTS talla VARCHAR(20);
+
+-- ── V12: Días de garantía en producto ────────────────────────
+ALTER TABLE hot_click_producto_tb
+    ADD COLUMN IF NOT EXISTS garantia_dias INTEGER DEFAULT 0;
+
+-- ============================================================
+-- V13: SEED CATÁLOGO — BODEGA + CATEGORÍAS + 100 PRODUCTOS
+-- ============================================================
+
+ALTER TABLE "HOT_CLICK_PRODUCTO_TB"
+    ADD COLUMN IF NOT EXISTS imagen_principal_url VARCHAR(500);
+
+INSERT INTO "HOT_CLICK_BODEGA_TB"
+    ("ID_BODEGA","NOMBRE_BODEGA","DIRECCION_EXACTA","TELEFONO","FK_ID_ADMIN_CLIENTE","FK_ID_ESTADO",fk_id_empresa)
+VALUES
+    (1,'Bodega Central HOTCLICK','San José, Costa Rica','88888888',1,1,1)
+ON CONFLICT ("ID_BODEGA") DO NOTHING;
+
+INSERT INTO "HOT_CLICK_CATEGORIA_TB"
+    ("NOMBRE_CATEGORIA","DESCRIPCION","FK_ID_ADMIN_CLIENTE","FK_ID_ESTADO",fk_id_empresa)
+VALUES
+    ('Electrónica',          'Celulares, laptops, audio y más',               1,1,1),
+    ('Ropa y Accesorios',    'Moda para hombre y mujer',                      1,1,1),
+    ('Hogar y Jardín',       'Muebles, decoración y jardín',                  1,1,1),
+    ('Deportes y Fitness',   'Equipos y ropa deportiva',                      1,1,1),
+    ('Belleza y Cuidado',    'Skincare, maquillaje y perfumes',                1,1,1),
+    ('Juguetes y Juegos',    'Para niños y adultos',                          1,1,1),
+    ('Herramientas',         'Ferretería y construcción',                     1,1,1),
+    ('Libros y Papelería',   'Libros, útiles escolares y oficina',            1,1,1),
+    ('Mascotas',             'Alimento, accesorios y juguetes para mascotas', 1,1,1),
+    ('Cocina y Alimentos',   'Electrodomésticos y artículos de cocina',       1,1,1)
+ON CONFLICT DO NOTHING;
+
+-- ── V12: Días de garantía en producto ────────────────────────
+ALTER TABLE hot_click_producto_tb
+    ADD COLUMN IF NOT EXISTS garantia_dias INTEGER DEFAULT 0;
+
+-- ── V13: Solicitudes de garantía ─────────────────────────────
+CREATE TABLE IF NOT EXISTS hot_click_solicitud_garantia_tb (
+    id_solicitud_garantia BIGSERIAL PRIMARY KEY,
+    fk_id_usuario         BIGINT NOT NULL REFERENCES hot_click_usuario_tb(id_usuario),
+    fk_id_producto        BIGINT NOT NULL REFERENCES hot_click_producto_tb(id_producto),
+    fk_id_pedido          BIGINT REFERENCES hot_click_pedido_tb(id_pedido),
+    descripcion           TEXT   NOT NULL,
+    estado                VARCHAR(30) NOT NULL DEFAULT 'PENDIENTE',
+    notas_admin           TEXT,
+    fecha_creacion        TIMESTAMP NOT NULL DEFAULT NOW(),
+    estado_registro       INTEGER NOT NULL DEFAULT 1
+);
+
+-- ── V3: Índice único parcial en correo/identificacion ────────
+-- Permite reusar el correo/identificacion de usuarios eliminados (estado=3)
+ALTER TABLE hot_click_usuario_tb DROP CONSTRAINT IF EXISTS "hot_click_usuario_tb_CORREO_key";
+ALTER TABLE hot_click_usuario_tb DROP CONSTRAINT IF EXISTS hot_click_usuario_tb_correo_key;
+
+ALTER TABLE hot_click_usuario_tb DROP CONSTRAINT IF EXISTS "hot_click_usuario_tb_IDENTIFICACION_key";
+ALTER TABLE hot_click_usuario_tb DROP CONSTRAINT IF EXISTS hot_click_usuario_tb_identificacion_key;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_usuario_correo_no_eliminado
+    ON hot_click_usuario_tb (correo)
+    WHERE estado <> 3;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_usuario_identificacion_no_eliminado
+    ON hot_click_usuario_tb (identificacion)
+    WHERE estado <> 3;
+
 -- ============================================================
 -- FIN DEL SCRIPT
 -- ============================================================

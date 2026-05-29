@@ -49,8 +49,8 @@ public class VentaService {
         Pedido pedido = new Pedido();
         pedido.setUsuarioFinal(usuario);
         pedido.setBodega(bodega);
-        pedido.setMetodoPago(dto.getMetodoPago()   != null ? dto.getMetodoPago()   : "EFECTIVO");
-        pedido.setMetodoEnvio(dto.getMetodoEnvio() != null ? dto.getMetodoEnvio()  : "RETIRO_TIENDA");
+        pedido.setMetodoPago(dto.getMetodoPago() != null ? dto.getMetodoPago() : "EFECTIVO");
+        pedido.setMetodoEnvio(resolverMetodoEnvio(dto));
         pedido.setNotas(dto.getNotas());
         pedido.setAplicaImpuesto(false);
         pedido.setMontoImpuesto(0);
@@ -108,7 +108,10 @@ public class VentaService {
                 : BigDecimal.ZERO
         );
         pedido.setItems(items);
-        pedido.setEstadoPedido(Constants.PEDIDO_COMPLETADO);
+        String estadoInicial = dto.getEstadoInicial();
+        pedido.setEstadoPedido(estadoInicial != null && !estadoInicial.isBlank()
+            ? estadoInicial
+            : Constants.PEDIDO_COMPLETADO);
 
         Pedido nuevo = pedidoService.crearPedido(pedido);
 
@@ -175,6 +178,12 @@ public class VentaService {
         }
         return usuarioRepository.findByCorreo(correoOperador)
             .orElseThrow(() -> new RuntimeException("Usuario operador no encontrado: " + correoOperador));
+    }
+
+    private String resolverMetodoEnvio(VentaRequestDTO dto) {
+        if (dto.getMetodoEnvio() != null) return dto.getMetodoEnvio();
+        if ("DOMICILIO".equalsIgnoreCase(dto.getTipoEntrega())) return Constants.ENVIO_DOMICILIO;
+        return Constants.ENVIO_RETIRO;
     }
 
     private Bodega resolverBodega(VentaRequestDTO dto) {

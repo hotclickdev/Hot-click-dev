@@ -2,6 +2,7 @@ package com.hotclick.service;
 
 import com.sendgrid.Method;
 import com.sendgrid.Request;
+import com.sendgrid.Response;
 import com.sendgrid.SendGrid;
 import com.sendgrid.helpers.mail.Mail;
 import com.sendgrid.helpers.mail.objects.Content;
@@ -35,7 +36,12 @@ public class ResendEmailService {
             request.setMethod(Method.POST);
             request.setEndpoint("mail/send");
             request.setBody(mail.build());
-            sg.api(request);
+            Response response = sg.api(request);
+            if (response.getStatusCode() < 200 || response.getStatusCode() >= 300) {
+                throw new RuntimeException("SendGrid respondió " + response.getStatusCode() + ": " + response.getBody());
+            }
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException("Error al enviar el correo. Intentá de nuevo en unos minutos.", e);
         }
