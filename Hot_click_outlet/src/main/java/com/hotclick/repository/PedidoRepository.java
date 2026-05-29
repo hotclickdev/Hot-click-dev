@@ -39,6 +39,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     Page<Pedido> findAllByOrderByFechaPedidoDesc(Pageable pageable);
 
     /** Ídem pero filtrado por empresa — para EMPRENDEDOR */
+    @Query("SELECT p FROM Pedido p WHERE p.empresa.id = :empresaId ORDER BY p.fechaPedido DESC")
     Page<Pedido> findByEmpresaIdOrderByFechaPedidoDesc(@Param("empresaId") Long empresaId, Pageable pageable);
 
     @Query("SELECT DISTINCT p FROM Pedido p " +
