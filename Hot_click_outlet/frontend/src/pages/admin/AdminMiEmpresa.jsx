@@ -21,6 +21,8 @@ function fmtDate(d) {
   return new Date(d).toLocaleDateString('es-CR', { day: '2-digit', month: 'long', year: 'numeric' })
 }
 
+const MAX_FOTOS = 10
+
 export default function AdminMiEmpresa() {
   const userRole = useAuthStore(s => s.userRole)
   const [empresa, setEmpresa]   = useState(null)
@@ -47,11 +49,16 @@ export default function AdminMiEmpresa() {
     try {
       setLoading(true)
       const { data } = await api.get('/empresa/perfil')
-      const e = data.data
+      // El interceptor de Axios ya hace unwrap de ResponseDTO → data ES la empresa directamente
+      const e = data?.id ? data : (data?.data ?? data)
+      if (!e?.id) { showToast('No se encontró la empresa', 'error'); return }
       setEmpresa(e)
+      const descRaw = e.descripcion ?? ''
+      // Separar fotos de la descripción visible
+      const descVisible = descRaw.replace(/\[FOTOS\].*?(\[\/FOTOS\]|$)/s, '').trim()
       setForm({
         nombreComercial:  e.nombreComercial  ?? '',
-        descripcion:      e.descripcion      ?? '',
+        descripcion:      descVisible,
         telefonoEmpresa:  e.telefonoEmpresa  ?? '',
         correoEmpresa:    e.correoEmpresa    ?? '',
         numeroWhatsapp:   e.numeroWhatsapp   ?? '',
@@ -59,11 +66,12 @@ export default function AdminMiEmpresa() {
         colorSecundario:  e.colorSecundario  ?? '#1A1A2E',
         logoUrl:          e.logoUrl          ?? '',
       })
-      // fotos guardadas en descripcion como JSON si hay prefijo [FOTOS]
+      // Extraer fotos guardadas en descripcion como JSON
       try {
-        const match = (e.descripcion ?? '').match(/\[FOTOS\](.*?)(\[\/FOTOS\]|$)/s)
+        const match = descRaw.match(/\[FOTOS\](.*?)(\[\/FOTOS\]|$)/s)
         if (match) setFotos(JSON.parse(match[1]))
-      } catch { /* sin fotos */ }
+        else setFotos([])
+      } catch { setFotos([]) }
     } catch {
       showToast('Error al cargar perfil de empresa', 'error')
     } finally {
@@ -134,7 +142,7 @@ export default function AdminMiEmpresa() {
 
   const handleFotoFile = useCallback(async (file) => {
     if (!file) return
-    if (fotos.length >= 8) { showToast('Máximo 8 fotos por galería', 'error'); return }
+    if (fotos.length >= MAX_FOTOS) { showToast(`Máximo ${MAX_FOTOS} fotos`, 'error'); return }
     setUploadingFoto(true)
     try {
       const fd = new FormData()
@@ -143,14 +151,27 @@ export default function AdminMiEmpresa() {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       const url = data?.data ?? data
-      setFotos(prev => [...prev, url])
-      showToast('Foto agregada')
+      const nuevasFotos = [...fotos, url]
+      setFotos(nuevasFotos)
+
+      // Auto-guardar la descripción con las nuevas fotos
+      const descClean = form.descripcion.trim().replace(/\[FOTOS\].*?(\[\/FOTOS\]|$)/s, '').trim()
+      await api.put('/empresa/perfil', {
+        nombreComercial: form.nombreComercial || empresa?.nombreComercial || '',
+        descripcion: descClean + `\n[FOTOS]${JSON.stringify(nuevasFotos)}[/FOTOS]`,
+        telefonoEmpresa: form.telefonoEmpresa,
+        correoEmpresa:   form.correoEmpresa,
+        numeroWhatsapp:  form.numeroWhatsapp,
+        colorPrimario:   form.colorPrimario,
+        colorSecundario: form.colorSecundario,
+      })
+      showToast('Foto agregada y guardada')
     } catch {
       showToast('Error al subir la foto', 'error')
     } finally {
       setUploadingFoto(false)
     }
-  }, [fotos])
+  }, [fotos, form, empresa])
 
   function showToast(msg, type = 'ok') {
     setToast({ msg, type })
@@ -393,7 +414,8 @@ export default function AdminMiEmpresa() {
           {/* Galería de fotos para galería de emprendedores */}
           <Section title="Galería de fotos">
             <p className="text-xs mb-3" style={{ color: 'var(--hc-muted)' }}>
-              Estas fotos se mostrarán en la galería de emprendedores de HOTCLICK. Máximo 8 imágenes.
+              Estas fotos se mostrarán en la galería de emprendedores de HOTCLICK. Máximo 10 imágenes.
+              Las fotos se guardan automáticamente al subirlas.
             </p>
             <input
               ref={fotoInputRef}
@@ -410,7 +432,20 @@ export default function AdminMiEmpresa() {
                   {canEdit && (
                     <button
                       type="button"
-                      onClick={() => setFotos(prev => prev.filter((_, j) => j !== i))}
+                      onClick={async () => {
+                        const nuevasFotos = fotos.filter((_, j) => j !== i)
+                        setFotos(nuevasFotos)
+                        const descClean = form.descripcion.trim().replace(/\[FOTOS\].*?(\[\/FOTOS\]|$)/s, '').trim()
+                        try {
+                          await api.put('/empresa/perfil', {
+                            nombreComercial: form.nombreComercial || empresa?.nombreComercial || '',
+                            descripcion: descClean + (nuevasFotos.length ? `\n[FOTOS]${JSON.stringify(nuevasFotos)}[/FOTOS]` : ''),
+                            telefonoEmpresa: form.telefonoEmpresa, correoEmpresa: form.correoEmpresa,
+                            numeroWhatsapp: form.numeroWhatsapp, colorPrimario: form.colorPrimario, colorSecundario: form.colorSecundario,
+                          })
+                          showToast('Foto eliminada')
+                        } catch { showToast('Error al eliminar foto', 'error') }
+                      }}
                       className="absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                       style={{ backgroundColor: '#ef4444', color: '#fff' }}
                     >
@@ -421,7 +456,7 @@ export default function AdminMiEmpresa() {
                   )}
                 </div>
               ))}
-              {canEdit && fotos.length < 8 && (
+              {canEdit && fotos.length < MAX_FOTOS && (
                 <button
                   type="button"
                   onClick={() => fotoInputRef.current?.click()}
