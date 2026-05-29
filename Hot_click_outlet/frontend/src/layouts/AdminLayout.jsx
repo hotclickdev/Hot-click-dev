@@ -26,8 +26,22 @@ function buildSidebarLinks(t, userRole) {
     { to: '/admin/configuracion',label: 'Configuración',                  icon: 'config' },
   ]
 
-  const sharedWithEquipo = [
-    ...shared,
+  // Links específicos para EMPRENDEDOR — sin Servicios HOT, Pagos, Testimonios
+  const emprendedorLinks = [
+    { to: '/admin',              label: t('admin.sidebar.general'),      icon: 'home',     exact: true },
+    { to: '/admin/productos',    label: t('admin.sidebar.productos'),     icon: 'box'  },
+    { to: '/admin/pedidos',      label: t('admin.sidebar.pedidos'),       icon: 'clipboard' },
+    { to: '/admin/categorias',   label: t('admin.sidebar.categorias'),    icon: 'tag'  },
+    { to: '/admin/marcas',       label: 'Marcas',                         icon: 'marca' },
+    { to: '/admin/bodegas',      label: t('admin.sidebar.bodegas'),       icon: 'building' },
+    { to: '/admin/ventas',       label: t('admin.sidebar.nuevaVenta'),    icon: 'plus' },
+    { to: '/admin/finanzas',     label: t('admin.sidebar.finanzas'),      icon: 'chart' },
+    { to: '/admin/reportes',     label: t('admin.sidebar.reportes'),      icon: 'bar' },
+    { to: '/admin/garantias',    label: 'Garantías',                      icon: 'shield' },
+    { to: '/admin/nuevo-producto', label: t('admin.sidebar.crearIA'),     icon: 'camera' },
+    { to: '/admin/publicaciones',  label: t('admin.sidebar.publicarFB'),  icon: 'share' },
+    { to: '/admin/configuracion',  label: 'Configuración',                icon: 'config' },
+    { divider: true },
     { to: '/admin/mi-empresa', label: 'Mi empresa', icon: 'empresa' },
     { to: '/admin/equipo',     label: 'Mi equipo',  icon: 'users' },
   ]
@@ -42,7 +56,7 @@ function buildSidebarLinks(t, userRole) {
     ]
   }
 
-  if (userRole === 'EMPRENDEDOR') return sharedWithEquipo
+  if (userRole === 'EMPRENDEDOR') return emprendedorLinks
 
   // ADMIN_CLIENTE: subconjunto básico
   return [

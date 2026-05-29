@@ -32,8 +32,12 @@ export default function AdminMiEmpresa() {
   const fileInputRef = useRef(null)
   const [form, setForm]         = useState({
     nombreComercial: '', descripcion: '', telefonoEmpresa: '',
-    numeroWhatsapp: '', colorPrimario: '#FF4B12', colorSecundario: '#1A1A2E', logoUrl: '',
+    correoEmpresa: '', numeroWhatsapp: '',
+    colorPrimario: '#FF4B12', colorSecundario: '#1A1A2E', logoUrl: '',
   })
+  const [fotos, setFotos]       = useState([])
+  const [uploadingFoto, setUploadingFoto] = useState(false)
+  const fotoInputRef = useRef(null)
   // logoUrl se maneja separado del PUT — se actualiza via POST /logo directamente
   const [errors, setErrors] = useState({})
 
@@ -49,11 +53,17 @@ export default function AdminMiEmpresa() {
         nombreComercial:  e.nombreComercial  ?? '',
         descripcion:      e.descripcion      ?? '',
         telefonoEmpresa:  e.telefonoEmpresa  ?? '',
+        correoEmpresa:    e.correoEmpresa    ?? '',
         numeroWhatsapp:   e.numeroWhatsapp   ?? '',
         colorPrimario:    e.colorPrimario    ?? '#FF4B12',
         colorSecundario:  e.colorSecundario  ?? '#1A1A2E',
         logoUrl:          e.logoUrl          ?? '',
       })
+      // fotos guardadas en descripcion como JSON si hay prefijo [FOTOS]
+      try {
+        const match = (e.descripcion ?? '').match(/\[FOTOS\](.*?)(\[\/FOTOS\]|$)/s)
+        if (match) setFotos(JSON.parse(match[1]))
+      } catch { /* sin fotos */ }
     } catch {
       showToast('Error al cargar perfil de empresa', 'error')
     } finally {
@@ -99,10 +109,16 @@ export default function AdminMiEmpresa() {
     if (Object.keys(errs).length) { setErrors(errs); return }
     setSaving(true)
     try {
+      // Serializar fotos dentro de la descripción
+      const fotosTag = fotos.length
+        ? `\n[FOTOS]${JSON.stringify(fotos)}[/FOTOS]`
+        : ''
+      const descClean = form.descripcion.trim().replace(/\[FOTOS\].*?(\[\/FOTOS\]|$)/s, '').trim()
       await api.put('/empresa/perfil', {
         nombreComercial: form.nombreComercial.trim(),
-        descripcion:     form.descripcion.trim(),
+        descripcion:     descClean + fotosTag,
         telefonoEmpresa: form.telefonoEmpresa.trim(),
+        correoEmpresa:   form.correoEmpresa.trim(),
         numeroWhatsapp:  form.numeroWhatsapp.trim(),
         colorPrimario:   form.colorPrimario,
         colorSecundario: form.colorSecundario,
@@ -115,6 +131,26 @@ export default function AdminMiEmpresa() {
       setSaving(false)
     }
   }
+
+  const handleFotoFile = useCallback(async (file) => {
+    if (!file) return
+    if (fotos.length >= 8) { showToast('Máximo 8 fotos por galería', 'error'); return }
+    setUploadingFoto(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const { data } = await api.post('/empresa/perfil/logo', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      const url = data?.data ?? data
+      setFotos(prev => [...prev, url])
+      showToast('Foto agregada')
+    } catch {
+      showToast('Error al subir la foto', 'error')
+    } finally {
+      setUploadingFoto(false)
+    }
+  }, [fotos])
 
   function showToast(msg, type = 'ok') {
     setToast({ msg, type })
@@ -203,6 +239,17 @@ export default function AdminMiEmpresa() {
 
           <Section title="Contacto">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Correo de la empresa">
+                <input
+                  type="email"
+                  value={form.correoEmpresa}
+                  onChange={e => setForm(s => ({ ...s, correoEmpresa: e.target.value }))}
+                  disabled={!canEdit}
+                  placeholder="contacto@miempresa.com"
+                  className="w-full px-3 py-2.5 rounded-xl text-sm outline-none disabled:opacity-60"
+                  style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
+                />
+              </Field>
               <Field label="Teléfono empresa">
                 <input
                   value={form.telefonoEmpresa}
@@ -341,6 +388,60 @@ export default function AdminMiEmpresa() {
                 <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>Sin logo configurado</p>
               )}
             </Field>
+          </Section>
+
+          {/* Galería de fotos para galería de emprendedores */}
+          <Section title="Galería de fotos">
+            <p className="text-xs mb-3" style={{ color: 'var(--hc-muted)' }}>
+              Estas fotos se mostrarán en la galería de emprendedores de HOTCLICK. Máximo 8 imágenes.
+            </p>
+            <input
+              ref={fotoInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={e => handleFotoFile(e.target.files?.[0])}
+            />
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {fotos.map((url, i) => (
+                <div key={i} className="relative group rounded-xl overflow-hidden aspect-square"
+                  style={{ border: '1px solid var(--hc-border)' }}>
+                  <img src={url} alt={`Foto ${i+1}`} className="w-full h-full object-cover" />
+                  {canEdit && (
+                    <button
+                      type="button"
+                      onClick={() => setFotos(prev => prev.filter((_, j) => j !== i))}
+                      className="absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      style={{ backgroundColor: '#ef4444', color: '#fff' }}
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              ))}
+              {canEdit && fotos.length < 8 && (
+                <button
+                  type="button"
+                  onClick={() => fotoInputRef.current?.click()}
+                  disabled={uploadingFoto}
+                  className="rounded-xl aspect-square flex flex-col items-center justify-center gap-1 transition-colors disabled:opacity-50"
+                  style={{ border: '2px dashed var(--hc-border)', backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}
+                >
+                  {uploadingFoto ? (
+                    <span className="text-xs">Subiendo…</span>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                      </svg>
+                      <span className="text-xs font-medium">Agregar</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
           </Section>
 
           {canEdit && (

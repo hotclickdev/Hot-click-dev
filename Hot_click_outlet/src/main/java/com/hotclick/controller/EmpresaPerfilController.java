@@ -45,6 +45,7 @@ public class EmpresaPerfilController {
         if (body.containsKey("nombreComercial"))  e.setNombreComercial(body.get("nombreComercial"));
         if (body.containsKey("descripcion"))      e.setDescripcion(body.get("descripcion"));
         if (body.containsKey("telefonoEmpresa"))  e.setTelefonoEmpresa(body.get("telefonoEmpresa"));
+        if (body.containsKey("correoEmpresa"))    e.setCorreoEmpresa(body.get("correoEmpresa"));
         if (body.containsKey("numeroWhatsapp"))   e.setNumeroWhatsapp(body.get("numeroWhatsapp"));
         if (body.containsKey("colorPrimario"))    e.setColorPrimario(body.get("colorPrimario"));
         if (body.containsKey("colorSecundario"))  e.setColorSecundario(body.get("colorSecundario"));

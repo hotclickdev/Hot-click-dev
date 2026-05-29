@@ -58,26 +58,51 @@ public class EquipoController {
             return ResponseEntity.badRequest().body(ResponseDTO.error("El correo es requerido"));
         if (password == null || password.length() < 6)
             return ResponseEntity.badRequest().body(ResponseDTO.error("La contraseña debe tener al menos 6 caracteres"));
-        if (usuarioRepository.existsByCorreo(correo.trim().toLowerCase()))
-            return ResponseEntity.badRequest().body(ResponseDTO.error("El correo ya está registrado"));
-
         Empresa empresa = currentUser.getEmpresa();
+        String correoNorm = correo.trim().toLowerCase();
 
-        Usuario nuevo = new Usuario();
+        var rolAdminCliente = rolRepository.findByNombreRol(Constants.ROL_ADMIN_CLIENTE)
+            .orElseThrow(() -> new RuntimeException("Rol ADMIN_CLIENTE no configurado"));
+
+        // Verificar si ya existe un usuario con ese correo
+        Optional<Usuario> existenteOpt = usuarioRepository.findByCorreo(correoNorm);
+        if (existenteOpt.isPresent()) {
+            Usuario u = existenteOpt.get();
+            // Ya es miembro activo de ESTE equipo → duplicado real
+            if (u.getEstado() != null && u.getEstado() == Constants.ESTADO_ACTIVO
+                    && empresa.getId().equals(u.getEmpresaId())) {
+                return ResponseEntity.badRequest().body(
+                    ResponseDTO.error("Este usuario ya es miembro activo de tu equipo"));
+            }
+            // Fue removido o es USUARIO_FINAL → reasignar a este equipo
+            String[] p = nombre.trim().split("\\s+", 2);
+            u.setNombre(p[0]);
+            u.setApellidoPaterno(p.length > 1 ? p[1] : "Admin");
+            u.setEmpresa(empresa);
+            u.setEstado(Constants.ESTADO_ACTIVO);
+            u.setIntentosFallidos(0);
+            if (password != null && !password.isBlank())
+                u.setContrasenaHash(passwordEncoder.encode(password));
+            boolean tieneRol = u.getRoles().stream()
+                .anyMatch(r -> Constants.ROL_ADMIN_CLIENTE.equals(r.getNombreRol()));
+            if (!tieneRol) u.getRoles().add(rolAdminCliente);
+            usuarioRepository.save(u);
+            return ResponseEntity.ok(ResponseDTO.success("Miembro reactivado en el equipo", null));
+        }
+
+        // Usuario nuevo — crear
         String[] partes = nombre.trim().split("\\s+", 2);
+        Usuario nuevo = new Usuario();
         nuevo.setNombre(partes[0]);
         nuevo.setApellidoPaterno(partes.length > 1 ? partes[1] : "Admin");
         nuevo.setIdentificacion("ADM-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12));
-        nuevo.setCorreo(correo.trim().toLowerCase());
+        nuevo.setCorreo(correoNorm);
         nuevo.setContrasenaHash(passwordEncoder.encode(password));
         nuevo.setTelefono(telefono);
         nuevo.setEstado(Constants.ESTADO_ACTIVO);
         nuevo.setIntentosFallidos(0);
         nuevo.setFechaRegistro(LocalDateTime.now());
         nuevo.setEmpresa(empresa);
-
-        var rolAdminCliente = rolRepository.findByNombreRol(Constants.ROL_ADMIN_CLIENTE)
-            .orElseThrow(() -> new RuntimeException("Rol ADMIN_CLIENTE no configurado"));
         nuevo.getRoles().add(rolAdminCliente);
 
         usuarioRepository.save(nuevo);

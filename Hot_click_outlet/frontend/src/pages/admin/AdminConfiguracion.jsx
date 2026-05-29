@@ -43,20 +43,23 @@ export default function AdminConfiguracion() {
   usePremiumFonts()
   const { t } = useTranslation()
   const toast = useToast()
-  const { userId, userEmail, userName, setUserName, refreshToken } = useAuthStore()
+  const { userId, userEmail, userName, setUserName, refreshToken, userRole } = useAuthStore()
   const [section, setSection] = useState('perfil')
   const [twoFAOn, setTwoFAOn] = useState(false)
   const [animKey, setAnimKey] = useState(0)
+  const isEmprendedor = userRole === 'EMPRENDEDOR'
 
-  const nav = [
+  const allNav = [
     { id: 'perfil',         label: t('adminConfig.navPerfil'),         icon: UserIcon,     desc: 'Nombre y datos personales' },
-    { id: 'tienda',         label: t('adminConfig.navTienda'),         icon: StoreIcon,    desc: 'Contacto y horario' },
-    { id: 'seguridad',      label: t('adminConfig.navSeguridad'),      icon: ShieldIcon,   desc: 'Contraseña y 2FA', badge: !twoFAOn ? '!' : null },
+    { id: 'tienda',         label: t('adminConfig.navTienda'),         icon: StoreIcon,    desc: 'Contacto y horario',        emprendedor: false },
+    { id: 'seguridad',      label: t('adminConfig.navSeguridad'),      icon: ShieldIcon,   desc: 'Contraseña y 2FA',           badge: !twoFAOn ? '!' : null },
     { id: 'notificaciones', label: t('adminConfig.navNotificaciones'), icon: BellIcon,     desc: 'Alertas y emails' },
     { id: 'datos',          label: t('adminConfig.navDatos'),          icon: DatabaseIcon, desc: 'Exportar información' },
     { id: 'apariencia',     label: t('adminConfig.navApariencia'),     icon: PaletteIcon,  desc: 'Tema, fuente e idioma' },
-    { id: 'sistema',        label: t('adminConfig.navSistema'),        icon: CogIcon,      desc: 'Servidor y mantenimiento' },
+    { id: 'sistema',        label: t('adminConfig.navSistema'),        icon: CogIcon,      desc: 'Servidor y mantenimiento',  emprendedor: false },
   ]
+  // EMPRENDEDOR: ocultar tabs marcados con emprendedor: false
+  const nav = isEmprendedor ? allNav.filter(n => n.emprendedor !== false) : allNav
 
   const go = (id) => { setSection(id); setAnimKey(k => k + 1) }
 
@@ -216,7 +219,7 @@ export default function AdminConfiguracion() {
               {section === 'perfil'         && <SeccionPerfil userId={userId} userEmail={userEmail} userName={userName} setUserName={setUserName} toast={toast} />}
               {section === 'tienda'         && <SeccionTienda toast={toast} />}
               {section === 'seguridad'      && <SeccionSeguridad refreshToken={refreshToken} toast={toast} onTwoFAChange={setTwoFAOn} />}
-              {section === 'notificaciones' && <SeccionNotificaciones toast={toast} />}
+              {section === 'notificaciones' && <SeccionNotificaciones toast={toast} soloVentas={isEmprendedor} />}
               {section === 'datos'          && <SeccionDatos toast={toast} />}
               {section === 'apariencia'     && <SeccionApariencia />}
               {section === 'sistema'        && <SeccionSistema toast={toast} />}
@@ -1043,7 +1046,7 @@ function date() { return new Date().toISOString().split('T')[0] }
 /* ─────────────────────────────────────────────────────────
    SECCIÓN NOTIFICACIONES
 ───────────────────────────────────────────────────────── */
-function SeccionNotificaciones({ toast }) {
+function SeccionNotificaciones({ toast, soloVentas = false }) {
   const { t } = useTranslation()
   const [prefs, setPrefs] = useState(() => {
     try { return { ...defaultNotifPrefs, ...JSON.parse(localStorage.getItem(NOTIF_KEY) || '{}') } }
@@ -1057,12 +1060,14 @@ function SeccionNotificaciones({ toast }) {
     toast({ message: t('adminConfig.notifSaved'), type: 'success' })
   }
 
-  const items = [
+  const allItems = [
     { key: 'emailPedidos',      icon: ShoppingIcon, titleKey: 'adminConfig.notifEmailOrders',  descKey: 'adminConfig.notifEmailOrdersDesc' },
     { key: 'emailGuia',         icon: TruckIcon,    titleKey: 'adminConfig.notifEmailGuia',    descKey: 'adminConfig.notifEmailGuiaDesc' },
     { key: 'emailFallido',      icon: AlertIcon,    titleKey: 'adminConfig.notifEmailFailed',  descKey: 'adminConfig.notifEmailFailedDesc' },
     { key: 'sonidoNuevoPedido', icon: BellIcon,     titleKey: 'adminConfig.notifSoundNew',     descKey: 'adminConfig.notifSoundNewDesc' },
   ]
+  // EMPRENDEDOR: solo ve notificación de venta de sus productos
+  const items = soloVentas ? allItems.filter(i => i.key === 'emailPedidos') : allItems
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
