@@ -185,7 +185,7 @@ public class SecurityConfig {
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .headers(headers -> headers
-                .frameOptions(fo -> fo.deny())
+                .frameOptions(fo -> fo.sameOrigin())
                 .contentTypeOptions(ct -> {})
                 .httpStrictTransportSecurity(hsts -> hsts
                     .includeSubDomains(true)
@@ -202,7 +202,7 @@ public class SecurityConfig {
                         "font-src 'self' https://fonts.gstatic.com; " +
                         "img-src 'self' data: blob: " + supabaseUrl + " https://www.paypalobjects.com; " +
                         "connect-src 'self' " + supabaseUrl + " https://api-m.paypal.com https://api-m.sandbox.paypal.com; " +
-                        "frame-src https://www.paypal.com https://www.sandbox.paypal.com; " +
+                        "frame-src https://www.paypal.com https://www.sandbox.paypal.com https://www.youtube.com https://www.youtube-nocookie.com; " +
                         "object-src 'none'; " +
                         "base-uri 'self';"
                     );
