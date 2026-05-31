@@ -26,6 +26,12 @@ public class SpaController {
         "/nosotros",
         "/contacto",
         "/informacion",
+        "/servicios",
+        "/blog",
+        "/blog/{slug}",
+        "/emprendimientos",
+        "/seleccionar-negocio",
+        "/recuperar-carrito/{id}",
         "/admin",
         "/admin/{*path}"
     })
