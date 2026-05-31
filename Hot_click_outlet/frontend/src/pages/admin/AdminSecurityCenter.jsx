@@ -385,8 +385,8 @@ export default function AdminSecurityCenter() {
                           </td>
                           <td className="px-4 py-2.5"><SeverityBadge severity={ev.severity} /></td>
                           <td className="px-4 py-2.5 font-mono" style={{ color: 'var(--hc-muted)' }}>{ev.ipAddress || '—'}</td>
-                          <td className="px-4 py-2.5 truncate max-w-[160px]" style={{ color: 'var(--hc-muted)' }}>{ev.email || '—'}</td>
-                          <td className="px-4 py-2.5 font-mono truncate max-w-[160px]" style={{ color: 'var(--hc-muted)' }}>{ev.endpoint || '—'}</td>
+                          <td className="px-4 py-2.5" style={{ color: 'var(--hc-muted)' }} title={ev.email || ''}><span className="truncate block max-w-[200px]">{ev.email || '—'}</span></td>
+                          <td className="px-4 py-2.5 font-mono" style={{ color: 'var(--hc-muted)' }} title={ev.endpoint || ''}><span className="truncate block max-w-[200px]">{ev.endpoint || '—'}</span></td>
                         </tr>
                       ))}
                     </tbody>

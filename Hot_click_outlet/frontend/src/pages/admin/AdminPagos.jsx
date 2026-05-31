@@ -197,7 +197,7 @@ export default function AdminPagos() {
             ) : (
               <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-sm min-w-[800px]">
                     <thead>
                       <tr className="border-b border-white/8 bg-white/3">
                         {['Pedido', 'Proveedor', 'Estado', 'Monto', 'Usuario', 'Token', 'Fecha', 'Acciones'].map(h => (
@@ -224,9 +224,9 @@ export default function AdminPagos() {
                             </span>
                           </td>
                           <td className="px-4 py-3 text-[#4f7cff] font-semibold">{formatCRC(p.monto)}</td>
-                          <td className="px-4 py-3 text-[#8e8e9a] text-xs truncate max-w-[160px]">{p.correoUsuario}</td>
-                          <td className="px-4 py-3 font-mono text-[#8e8e9a] text-[10px] truncate max-w-[120px]"
-                              title={p.merchantToken}>{p.merchantToken?.slice(0, 12)}…</td>
+                          <td className="px-4 py-3 text-[#8e8e9a] text-xs" title={p.correoUsuario}><span className="truncate block max-w-[220px]">{p.correoUsuario}</span></td>
+                          <td className="px-4 py-3 font-mono text-[#8e8e9a] text-[10px]"
+                              title={p.merchantToken}>{p.merchantToken?.slice(0, 16)}…</td>
                           <td className="px-4 py-3 text-[#8e8e9a] text-xs whitespace-nowrap">{p.fechaCreacion}</td>
                           <td className="px-4 py-3">
                             {p.proveedor === 'SINPE' && p.estadoPago === 'PENDIENTE' && (
@@ -282,7 +282,7 @@ export default function AdminPagos() {
             ) : (
               <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-sm min-w-[860px]">
                     <thead>
                       <tr className="border-b border-white/8 bg-white/3">
                         {['Token / ID evento', 'Tipo', 'IP origen', 'Estado', 'Error', 'Recibido', 'Procesado en'].map(h => (
@@ -303,8 +303,8 @@ export default function AdminPagos() {
                               {w.procesado ? 'OK' : 'Error'}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-red-400 text-xs max-w-[200px] truncate" title={w.errorProcesamiento}>
-                            {w.errorProcesamiento ?? '—'}
+                          <td className="px-4 py-3 text-red-400 text-xs" title={w.errorProcesamiento ?? ''}>
+                            <span className="truncate block max-w-[280px]">{w.errorProcesamiento ?? '—'}</span>
                           </td>
                           <td className="px-4 py-3 text-[#8e8e9a] text-xs whitespace-nowrap">{w.fechaRecepcion}</td>
                           <td className="px-4 py-3 text-[#8e8e9a] text-xs whitespace-nowrap">{w.procesadoEn ?? '—'}</td>

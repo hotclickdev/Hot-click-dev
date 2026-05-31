@@ -593,11 +593,11 @@ function OrderCard({ order, onUpdate, onDelete }) {
         </div>
 
         {/* Cliente */}
-        <div className="flex-1 min-w-[120px]">
-          <p className="text-sm font-medium text-[#e8e8ed] truncate">
+        <div className="flex-1 min-w-[140px]">
+          <p className="text-sm font-medium text-[#e8e8ed] truncate" title={order.nombreCliente ?? ''}>
             {order.nombreCliente ?? '—'}
           </p>
-          <p className="text-[11px] text-[#8e8e9a] truncate">{order.clienteCorreo ?? ''}</p>
+          <p className="text-[11px] text-[#8e8e9a] truncate" title={order.clienteCorreo ?? ''}>{order.clienteCorreo ?? ''}</p>
         </div>
 
         {/* Tipo entrega + método de pago */}

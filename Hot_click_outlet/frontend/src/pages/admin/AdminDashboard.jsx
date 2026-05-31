@@ -473,7 +473,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm min-w-[420px]">
+                    <table className="w-full text-sm min-w-[560px]">
                       <thead>
                         <tr className="border-b border-white/8">
                           {['#', 'Cliente', 'Total', 'Estado'].map((h) => (
@@ -490,8 +490,8 @@ export default function AdminDashboard() {
                         {ventas.slice(0, 5).map((v) => (
                           <tr key={v.id} className="hover:bg-white/3 transition-colors">
                             <td className="px-3 sm:px-4 py-2.5 text-[#8e8e9a] text-xs">#{v.id}</td>
-                            <td className="px-3 sm:px-4 py-2.5 text-[#e8e8ed] text-xs sm:text-sm max-w-[120px] truncate">
-                              {v.nombreCliente ?? v.cliente?.nombre ?? '—'}
+                            <td className="px-3 sm:px-4 py-2.5 text-[#e8e8ed] text-xs sm:text-sm" title={v.nombreCliente ?? v.cliente?.nombre ?? ''}>
+                              <span className="truncate block max-w-[180px]">{v.nombreCliente ?? v.cliente?.nombre ?? '—'}</span>
                             </td>
                             <td className="px-3 sm:px-4 py-2.5 font-semibold text-emerald-400 text-xs sm:text-sm whitespace-nowrap">
                               {formatPrice(v.total ?? 0)}

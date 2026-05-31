@@ -156,7 +156,7 @@ export default function AdminFinanzas() {
               ) : (
                 <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm min-w-[700px]">
                       <thead>
                         <tr className="border-b border-white/8">
                           {[t('adminFinanzas.colId'), t('adminFinanzas.colClient'), t('adminFinanzas.colDate'), t('adminFinanzas.colProducts'), t('adminFinanzas.colShipping'), t('adminFinanzas.colTotal')].map(h => (
@@ -174,7 +174,7 @@ export default function AdminFinanzas() {
                             <tr key={p.id} className="hover:bg-white/3 transition-colors">
                               <td className="px-4 py-3 font-mono text-xs text-[#8e8e9a]">#{p.id}</td>
                               <td className="px-4 py-3 text-[#e8e8ed]">
-                                <p className="font-medium truncate max-w-[140px]">{cliente}</p>
+                                <p className="font-medium truncate" title={cliente}>{cliente}</p>
                                 <p className="text-[11px] text-[#8e8e9a]">{esRetiro ? t('adminFinanzas.pickup') : t('adminFinanzas.delivery')}</p>
                               </td>
                               <td className="px-4 py-3 text-xs text-[#8e8e9a]">

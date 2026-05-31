@@ -253,7 +253,7 @@ export default function AdminUsers() {
         ) : (
           <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm min-w-[640px]">
+              <table className="w-full text-sm min-w-[800px]">
                 <thead>
                   <tr className="border-b border-white/8">
                     {[t('admin.users.name'), t('admin.users.email'), t('admin.users.role'), t('admin.users.status'), t('admin.users.actions')].map((h) => (
@@ -279,12 +279,12 @@ export default function AdminUsers() {
                               {(u.nombre ?? u.correo)?.[0]?.toUpperCase()}
                             </div>
                             <div className="min-w-0">
-                              <span className="font-medium text-[#e8e8ed] truncate max-w-[120px] block">{u.nombre ?? '—'}</span>
+                              <span className="font-medium text-[#e8e8ed] truncate block" title={u.nombre ?? ''}>{u.nombre ?? '—'}</span>
                               {isSuspended && <span className="text-[10px] text-amber-400">Bloqueado</span>}
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-[#8e8e9a] text-xs truncate max-w-[160px]">{u.correo}</td>
+                        <td className="px-4 py-3 text-[#8e8e9a] text-xs" title={u.correo}><span className="truncate block max-w-[220px]">{u.correo}</span></td>
                         <td className="px-4 py-3">
                           <Badge variant={ROLE_COLORS[rolStr] ?? 'default'}>
                             {ROLE_LABELS[rolStr] ?? rolStr}

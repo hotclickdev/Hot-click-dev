@@ -679,7 +679,7 @@ export default function AdminProducts() {
                                 </div>
                               )}
                               <div className="min-w-0">
-                                <span className="font-medium text-[#e8e8ed] max-w-[200px] truncate block">{p.nombre}</span>
+                                <span className="font-medium text-[#e8e8ed] truncate block" title={p.nombre}>{p.nombre}</span>
                                 <div className="flex items-center gap-1.5 mt-0.5">
                                   {p.categoriaNombre && <span className="text-[10px] text-[#8e8e9a]">{p.categoriaNombre}</span>}
                                   {p.especificaciones && <span className="text-[9px] text-[#4f7cff]/70 bg-[#4f7cff]/10 px-1.5 py-0.5 rounded-full">con specs</span>}
