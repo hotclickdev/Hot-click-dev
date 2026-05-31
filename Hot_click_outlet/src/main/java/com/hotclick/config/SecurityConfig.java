@@ -1,6 +1,7 @@
 package com.hotclick.config;
 
 import com.hotclick.security.JwtRequestFilter;
+import com.hotclick.security.RateLimitingFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -33,10 +34,16 @@ public class SecurityConfig {
     private JwtRequestFilter jwtRequestFilter;
 
     @Autowired
+    private RateLimitingFilter rateLimitingFilter;
+
+    @Autowired
     private UserDetailsService userDetailsService;
 
     @Value("${cors.allowed.origins:http://localhost:3000,http://localhost:5173}")
     private String allowedOrigins;
+
+    @Value("${supabase.url:https://nkevwfcjhjaawtdqquns.supabase.co}")
+    private String supabaseUrl;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -66,9 +73,18 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                // Auth: 2FA verify es público; el resto requiere JWT
+                // Actuator — locked to ADMIN_IT only
+                .requestMatchers("/actuator/**").hasRole("ADMIN_IT")
+                // Auth: 2FA verify y envío de EMAIL OTP durante login son públicos (validan tempToken internamente)
                 .requestMatchers(POST, "/api/auth/2fa/verify").permitAll()
+                .requestMatchers(POST, "/api/auth/2fa/email/send").permitAll()
+                // Gestión de métodos 2FA requiere sesión activa
+                .requestMatchers(POST, "/api/auth/2fa/email/enable").authenticated()
+                .requestMatchers(POST, "/api/auth/2fa/email/activate").authenticated()
+                .requestMatchers(POST, "/api/auth/2fa/email/disable").authenticated()
                 .requestMatchers("/api/auth/2fa/**").authenticated()
+                .requestMatchers("/api/auth/verificar-correo-negocio").permitAll()
+                .requestMatchers(POST, "/api/auth/reenviar-codigo-negocio").authenticated()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/health").permitAll()
                 .requestMatchers(POST, "/api/webhooks/payxpert").permitAll()
@@ -109,7 +125,7 @@ public class SecurityConfig {
                 .requestMatchers(GET, "/api/testimonios/admin").hasRole("ADMIN_IT")
                 .requestMatchers(PUT, "/api/testimonios/*/aprobar").hasRole("ADMIN_IT")
                 .requestMatchers(PUT, "/api/testimonios/*/rechazar").hasRole("ADMIN_IT")
-                // Carrito abandonado — público (usuarios anónimos y links de email)
+                // Carrito abandonado — público (incluye DELETE; el controller valida sessionId)
                 .requestMatchers(POST, "/api/cart/abandoned").permitAll()
                 .requestMatchers(GET,  "/api/cart/abandoned/recover/**").permitAll()
                 .requestMatchers(GET,  "/api/cart/abandoned/session/**").permitAll()
@@ -122,14 +138,21 @@ public class SecurityConfig {
                 // Perfil de empresa — solo lectura para todos los roles de la empresa; escritura solo EMPRENDEDOR
                 .requestMatchers(GET,  "/api/empresa/perfil").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
                 .requestMatchers(PUT,  "/api/empresa/perfil").hasAnyRole("EMPRENDEDOR", "ADMIN_IT")
+                .requestMatchers(PUT,  "/api/empresa/perfil/visibilidad").hasAnyRole("EMPRENDEDOR", "ADMIN_IT")
                 .requestMatchers(POST, "/api/empresa/perfil/logo").hasAnyRole("EMPRENDEDOR", "ADMIN_IT")
                 // Gestión de equipo — accesible para EMPRENDEDOR y ADMIN_CLIENTE de la misma empresa
                 .requestMatchers(GET,    "/api/empresa/equipo").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
                 .requestMatchers(POST,   "/api/empresa/equipo").hasRole("EMPRENDEDOR")
+                .requestMatchers(PUT,    "/api/empresa/equipo/*/rol").hasRole("EMPRENDEDOR")
                 .requestMatchers(DELETE, "/api/empresa/equipo/*").hasRole("EMPRENDEDOR")
+                // Security Center — ADMIN_IT only
+                .requestMatchers("/api/security/**").hasRole("ADMIN_IT")
                 // Admin-only routes — ADMIN_IT only (superadmin exclusivos)
                 .requestMatchers("/api/admin/empresas/**").hasRole("ADMIN_IT")
-                .requestMatchers("/api/admin/solicitudes-aprobacion/**").hasRole("ADMIN_IT")
+                .requestMatchers("/api/auth/seleccionar-empresa").permitAll()
+                .requestMatchers("/api/auth/mis-negocios").authenticated()
+                .requestMatchers("/api/auth/cambiar-negocio").authenticated()
+                .requestMatchers("/api/auth/nuevo-negocio").authenticated()
                 // Dashboard y KPIs — ADMIN_IT, EMPRENDEDOR y ADMIN_CLIENTE
                 .requestMatchers("/api/admin/**").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
                 // Pedidos admin — ADMIN_IT, EMPRENDEDOR y ADMIN_CLIENTE
@@ -157,7 +180,7 @@ public class SecurityConfig {
                     "/servicios", "/servicios/**",
                     "/admin/empresas", "/admin/empresas/**",
                     "/admin/equipo", "/admin/aprobaciones",
-                    "/admin/mi-empresa").permitAll()
+                    "/admin/mi-empresa", "/admin/security").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -172,12 +195,24 @@ public class SecurityConfig {
                     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
                     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
                     res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+                    res.setHeader("Content-Security-Policy",
+                        "default-src 'self'; " +
+                        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.paypal.com https://www.sandbox.paypal.com; " +
+                        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                        "font-src 'self' https://fonts.gstatic.com; " +
+                        "img-src 'self' data: blob: " + supabaseUrl + " https://www.paypalobjects.com; " +
+                        "connect-src 'self' " + supabaseUrl + " https://api-m.paypal.com https://api-m.sandbox.paypal.com; " +
+                        "frame-src https://www.paypal.com https://www.sandbox.paypal.com; " +
+                        "object-src 'none'; " +
+                        "base-uri 'self';"
+                    );
                 })
             );
 
         http.exceptionHandling(ex -> ex
             .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
         );
+        http.addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

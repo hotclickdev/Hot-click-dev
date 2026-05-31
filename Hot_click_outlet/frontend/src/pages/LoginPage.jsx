@@ -38,29 +38,62 @@ export default function LoginPage() {
   const [recoveryInput,     setRecoveryInput]     = useState('')
   const [showForgot,        setShowForgot]        = useState(false)
   const [showAdminModal,    setShowAdminModal]    = useState(false)
-  const [loginData,         setLoginData]         = useState(null) // eslint-disable-line no-unused-vars
   const [showCartRecovery,  setShowCartRecovery]  = useState(false)
   const [recoveryCart,      setRecoveryCart]      = useState(null)
   const [recoveryDest,      setRecoveryDest]      = useState('/')
   const addItem             = useCartStore((s) => s.addItem)
-  const [error,             setError]             = useState('')
-  const [needsVerification, setNeedsVerification] = useState(false)
-  const [resendLoading,     setResendLoading]     = useState(false)
+  const [error,              setError]              = useState('')
+  const [needsVerification,  setNeedsVerification]  = useState(false)
+  const [needsPasswordReset, setNeedsPasswordReset] = useState(false)
+  const [resendLoading,      setResendLoading]      = useState(false)
   const refs2FA             = useRef([])
+  // Multi-method 2FA
+  const [twoFaMethods,       setTwoFaMethods]      = useState([])   // available methods
+  const [selectedMethod,     setSelectedMethod]    = useState('TOTP')
+  const [resendCooldown,     setResendCooldown]    = useState(0)    // seconds until resend allowed
 
   const handleLogin = async (e) => {
     e.preventDefault(); setError(''); setLoading(true)
     try {
       const { data } = await authService.login(correo, contrasena)
-      if (data.requires2fa) { setTempToken(data.tempToken); setStep('2fa') }
-      else handleLoginSuccess(data)
+      if (data.requires2fa) {
+        setTempToken(data.tempToken)
+        // Multiple methods → show picker
+        if (data.methods && data.methods.length > 1) {
+          setTwoFaMethods(data.methods)
+          setSelectedMethod(data.methods[0])
+          setStep('picker')
+        } else {
+          // Single method already determined
+          const method = data.method || 'TOTP'
+          setSelectedMethod(method)
+          setTwoFaMethods([method])
+          if (method === 'EMAIL_OTP') {
+            // Auto-send OTP email then show input
+            await sendEmailOtp(data.tempToken)
+            setStep('email-otp')
+          } else {
+            setStep('2fa')
+          }
+        }
+      } else if (data.requiresEmpresaSelection) {
+        navigate('/seleccionar-negocio', {
+          replace: true,
+          state: { empresas: data.empresas, tempToken: data.tempToken },
+        })
+      } else {
+        handleLoginSuccess(data)
+      }
     } catch (err) {
       const body = err.response?.data
       const msg  = typeof body?.message === 'string' ? body.message : t('login.badCredentials')
       if (err.response?.status === 403 && msg.toLowerCase().includes('verificar')) {
         setError(msg); setNeedsVerification(true)
+      } else if (err.response?.status === 403 && msg.toLowerCase().includes('bloqueada')) {
+        setNeedsVerification(false); setNeedsPasswordReset(true)
+        setError(msg)
       } else {
-        setNeedsVerification(false)
+        setNeedsVerification(false); setNeedsPasswordReset(false)
         setError(typeof msg === 'string' ? msg : t('login.error'))
       }
     } finally { setLoading(false) }
@@ -78,6 +111,34 @@ export default function LoginPage() {
     } finally { setResendLoading(false) }
   }
 
+  const sendEmailOtp = async (token) => {
+    try {
+      await authService.sendLoginEmailOtp(token || tempToken)
+      startResendCooldown()
+    } catch (err) {
+      const msg = err.response?.data?.message
+      toast({ message: typeof msg === 'string' ? msg : 'Error al enviar código', type: 'error' })
+    }
+  }
+
+  const startResendCooldown = () => {
+    setResendCooldown(60)
+    const id = setInterval(() => {
+      setResendCooldown(s => { if (s <= 1) { clearInterval(id); return 0 } return s - 1 })
+    }, 1000)
+  }
+
+  const handlePickMethod = async (method) => {
+    setSelectedMethod(method)
+    setError('')
+    if (method === 'EMAIL_OTP') {
+      await sendEmailOtp()
+      setStep('email-otp')
+    } else {
+      setStep('2fa')
+    }
+  }
+
   const handle2FA = async (e) => {
     e.preventDefault(); setError(''); setLoading(true)
     try {
@@ -88,7 +149,8 @@ export default function LoginPage() {
       } else {
         const fullCode = code2FA.join('')
         if (fullCode.length !== 6) { setError(t('login.code6digits')); setLoading(false); return }
-        ;({ data } = await authService.verify2FA(tempToken, fullCode))
+        // Pass the selected method so the backend validates the correct factor
+        ;({ data } = await authService.verify2FA(tempToken, fullCode, null, 'TOTP'))
       }
       handleLoginSuccess(data)
     } catch {
@@ -98,18 +160,33 @@ export default function LoginPage() {
     } finally { setLoading(false) }
   }
 
+  const handleEmailOtp = async (e) => {
+    e.preventDefault(); setError(''); setLoading(true)
+    try {
+      const fullCode = code2FA.join('')
+      if (fullCode.length !== 6) { setError(t('login.code6digits')); setLoading(false); return }
+      const { data } = await authService.verify2FA(tempToken, fullCode, null, 'EMAIL_OTP')
+      handleLoginSuccess(data)
+    } catch (err) {
+      const msg = err.response?.data?.message
+      setError(typeof msg === 'string' ? msg : t('login.error'))
+      setCode2FA(['', '', '', '', '', '']); refs2FA.current[0]?.focus()
+    } finally { setLoading(false) }
+  }
+
   const handleLoginSuccess = async (data) => {
     login(data)
-    const isAdmin = ['ADMIN_IT', 'ADMIN_CLIENTE'].includes(data.rol)
+    const isAdmin = ['ADMIN_IT', 'ADMIN_CLIENTE', 'EMPRENDEDOR'].includes(data.rol)
     toast({ message: isAdmin ? t('login.welcomeAdmin') : t('login.welcome'), type: 'success' })
     if (isAdmin) {
-      setLoginData(data); setShowAdminModal(true)
+      setShowAdminModal(true)
     } else {
       const dest = from === '/login' ? '/' : from
       try {
         const { data: res } = await abandonedCartService.getAbandonedCartBySession()
-        if (res?.data?.items?.length > 0) {
-          setRecoveryCart(res.data); setRecoveryDest(dest); setShowCartRecovery(true); return
+        const cart = res?.id ? res : (res?.data ?? null)
+        if (cart?.items?.length > 0) {
+          setRecoveryCart(cart); setRecoveryDest(dest); setShowCartRecovery(true); return
         }
       } catch { /* no cart */ }
       navigate(dest, { replace: true })
@@ -250,6 +327,12 @@ export default function LoginPage() {
                               {resendLoading ? 'Enviando…' : 'Reenviar código de verificación →'}
                             </button>
                           )}
+                          {needsPasswordReset && (
+                            <button type="button" onClick={() => setShowForgot(true)}
+                              style={{ textAlign: 'left', color: A.color, fontSize: 12, background: 'none', border: 'none', cursor: 'pointer' }}>
+                              Recuperar acceso por correo →
+                            </button>
+                          )}
                         </motion.div>
                       )}
 
@@ -268,13 +351,7 @@ export default function LoginPage() {
                       </button>
                     </form>
 
-                    <div className="flex items-center gap-3 my-5">
-                      <div className="flex-1 h-px" style={{ background: 'var(--hc-border)' }} />
-                      <span className="text-xs uppercase tracking-widest" style={{ color: 'var(--hc-muted)' }}>o</span>
-                      <div className="flex-1 h-px" style={{ background: 'var(--hc-border)' }} />
-                    </div>
-
-                    <p className="text-center text-sm" style={{ color: 'var(--hc-muted)' }}>
+                    <p className="text-center text-sm mt-4" style={{ color: 'var(--hc-muted)' }}>
                       ¿No tenés cuenta?{' '}
                       <Link to="/registro" className="font-semibold" style={{ color: A.color }}>
                         Registrate gratis
@@ -304,6 +381,115 @@ export default function LoginPage() {
                     </div>
                   ))}
                 </motion.div>
+              </motion.div>
+            )}
+
+            {/* ── PASO SELECTOR DE MÉTODO 2FA ── */}
+            {step === 'picker' && (
+              <motion.div key="picker"
+                initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.3 }}>
+                <h1 className="font-black leading-[1.02] tracking-tight mb-3"
+                  style={{ fontSize: 'clamp(1.8rem, 5vw, 2.6rem)', color: 'var(--hc-text)' }}>
+                  Verificación en 2 pasos
+                </h1>
+                <p className="text-base mb-7" style={{ color: 'var(--hc-muted)' }}>
+                  ¿Cómo querés verificar tu identidad?
+                </p>
+                <div className="rounded-2xl overflow-hidden"
+                  style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)', boxShadow: '0 4px 32px var(--hc-shadow)' }}>
+                  <div className="h-[3px]" style={{ background: `linear-gradient(90deg, transparent, ${A.color}, transparent)` }} />
+                  <div className="p-6 flex flex-col gap-3">
+                    {twoFaMethods.includes('TOTP') && (
+                      <button onClick={() => handlePickMethod('TOTP')} disabled={loading}
+                        className="flex items-center gap-4 p-4 rounded-xl text-left transition-all"
+                        style={{ background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
+                        <span style={{ fontSize: 28 }}>🔐</span>
+                        <div>
+                          <p className="font-bold text-sm" style={{ color: 'var(--hc-text)' }}>App de autenticación</p>
+                          <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Google Authenticator, Authy, etc.</p>
+                        </div>
+                      </button>
+                    )}
+                    {twoFaMethods.includes('EMAIL_OTP') && (
+                      <button onClick={() => handlePickMethod('EMAIL_OTP')} disabled={loading}
+                        className="flex items-center gap-4 p-4 rounded-xl text-left transition-all"
+                        style={{ background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
+                        <span style={{ fontSize: 28 }}>📧</span>
+                        <div>
+                          <p className="font-bold text-sm" style={{ color: 'var(--hc-text)' }}>Código por correo</p>
+                          <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Te enviamos un código a tu email</p>
+                        </div>
+                      </button>
+                    )}
+                    <button type="button" className="hc-btn hc-btn-outline w-full mt-1"
+                      onClick={() => { setStep('login'); setError('') }}>
+                      ← Volver
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── PASO EMAIL OTP ── */}
+            {step === 'email-otp' && (
+              <motion.div key="email-otp"
+                initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.3 }}>
+                <h1 className="font-black leading-[1.02] tracking-tight mb-3"
+                  style={{ fontSize: 'clamp(1.8rem, 5vw, 2.6rem)', color: 'var(--hc-text)' }}>
+                  Código de verificación
+                </h1>
+                <p className="text-base mb-7" style={{ color: 'var(--hc-muted)' }}>
+                  Revisá tu correo e ingresá el código de 6 dígitos.
+                </p>
+                <div className="rounded-2xl overflow-hidden"
+                  style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)', boxShadow: '0 4px 32px var(--hc-shadow)' }}>
+                  <div className="h-[3px]" style={{ background: `linear-gradient(90deg, transparent, ${A.color}, transparent)` }} />
+                  <div className="p-6 sm:p-7">
+                    <form onSubmit={handleEmailOtp} className="flex flex-col gap-4">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-center mb-4"
+                          style={{ color: 'var(--hc-muted)' }}>Código de 6 dígitos</p>
+                        <div className="flex gap-2 justify-center" onPaste={handle2FAPaste}>
+                          {code2FA.map((digit, i) => (
+                            <input key={i}
+                              ref={el => (refs2FA.current[i] = el)}
+                              type="text" inputMode="numeric" maxLength={1} value={digit}
+                              onChange={e => handle2FADigit(i, e.target.value)}
+                              onKeyDown={e => handle2FAKey(i, e)}
+                              className="hc-input"
+                              style={{ width: 46, height: 58, textAlign: 'center', fontSize: 22, fontWeight: 900, padding: 0 }}
+                            />
+                          ))}
+                        </div>
+                        <p className="text-xs text-center mt-3" style={{ color: 'var(--hc-muted)' }}>
+                          El código expira en 5 minutos.
+                        </p>
+                      </div>
+                      {error && (
+                        <div className="px-3 py-2.5 rounded-xl text-sm text-center"
+                          style={{ color: 'var(--hc-danger)', background: 'color-mix(in srgb, var(--hc-danger) 7%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-danger) 22%, transparent)' }}>
+                          {error}
+                        </div>
+                      )}
+                      <button type="submit" disabled={loading}
+                        className="inline-flex items-center justify-center h-11 px-6 rounded-xl font-bold text-sm text-white w-full transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-60"
+                        style={{ background: A.color, boxShadow: `0 0 32px ${A.ring}` }}>
+                        {loading ? 'Verificando…' : 'Verificar código'}
+                      </button>
+                      <button type="button" disabled={resendCooldown > 0 || loading}
+                        className="hc-btn hc-btn-outline hc-btn-lg w-full disabled:opacity-40"
+                        onClick={() => { setCode2FA(['', '', '', '', '', '']); sendEmailOtp() }}>
+                        {resendCooldown > 0 ? `Reenviar en ${resendCooldown}s` : '↻ Reenviar código'}
+                      </button>
+                      <button type="button" className="hc-btn hc-btn-outline w-full"
+                        onClick={() => { setStep(twoFaMethods.length > 1 ? 'picker' : 'login'); setCode2FA(['', '', '', '', '', '']); setError('') }}>
+                        ← Volver
+                      </button>
+                    </form>
+                  </div>
+                </div>
               </motion.div>
             )}
 

@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import AdminLayout from '@/layouts/AdminLayout'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Modal from '@/components/ui/Modal'
@@ -9,6 +8,7 @@ import api from '@/services/api'
 import { useToast } from '@/components/ui/Toast'
 import { categoriaService } from '@/services/orderService'
 import ImportExportBar from '@/components/admin/ImportExportBar'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 
 const EMPTY = { nombreCategoria: '', descripcion: '' }
 
@@ -21,6 +21,7 @@ export default function AdminCategories() {
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(EMPTY)
   const [saving, setSaving] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null) // { id, nombre }
 
   const load = () => {
     setLoading(true)
@@ -56,8 +57,12 @@ export default function AdminCategories() {
     } finally { setSaving(false) }
   }
 
-  const handleDelete = async (id, nombre) => {
-    if (!confirm(`¿Eliminar categoría "${nombre}"?`)) return
+  const handleDelete = (id, nombre) => setDeleteTarget({ id, nombre })
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    const { id } = deleteTarget
+    setDeleteTarget(null)
     try {
       await api.delete(`/categorias/${id}`)
       toast({ message: 'Categoría eliminada', type: 'success' })
@@ -68,7 +73,7 @@ export default function AdminCategories() {
   const set = (f) => (e) => setForm((p) => ({ ...p, [f]: e.target.value }))
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
@@ -109,7 +114,20 @@ export default function AdminCategories() {
               </div>
             ))}
             {cats.length === 0 && (
-              <div className="col-span-full text-center py-12 text-[#8e8e9a]">{t('common.noData')}</div>
+              <div className="col-span-full text-center py-14 space-y-3">
+                <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center" style={{ backgroundColor: 'rgba(79,124,255,0.08)', border: '1px solid rgba(79,124,255,0.15)' }}>
+                  <svg className="w-7 h-7" style={{ color: '#4f7cff' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                </div>
+                <p className="font-semibold text-[#e8e8ed]">Sin categorías todavía</p>
+                <p className="text-sm text-[#8e8e9a] max-w-xs mx-auto">Las categorías organizan tu catálogo. Los productos las necesitan para publicarse.</p>
+                <button
+                  onClick={openNew}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold mt-1 transition-opacity hover:opacity-80"
+                  style={{ backgroundColor: '#4f7cff', color: '#fff' }}
+                >
+                  + Crear primera categoría
+                </button>
+              </div>
             )}
           </div>
         )}
@@ -125,6 +143,14 @@ export default function AdminCategories() {
           </div>
         </form>
       </Modal>
-    </AdminLayout>
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        title="Eliminar categoría"
+        message={`¿Eliminar "${deleteTarget?.nombre}"? Los productos con esta categoría quedarán sin asignar.`}
+      />
+    </>
   )
 }

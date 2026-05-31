@@ -1,8 +1,7 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import AdminLayout from '@/layouts/AdminLayout'
 import { servicioService } from '@/services/servicioService'
 
 const ESTADOS = ['PENDIENTE', 'EN_BUSQUEDA', 'ENCONTRADO', 'NO_ENCONTRADO', 'CANCELADO']
@@ -84,7 +83,7 @@ export default function AdminSolicitudesServicio() {
   }
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -336,6 +335,6 @@ export default function AdminSolicitudesServicio() {
           </motion.div>
         )}
       </AnimatePresence>
-    </AdminLayout>
+    </>
   )
 }

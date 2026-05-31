@@ -78,11 +78,27 @@ public class CarritoAbandonadoController {
 
     /**
      * Marks the cart as recovered and removes it (called after successful restore).
+     * Requires the sessionId that originally created the cart OR an authenticated
+     * user whose userId matches the cart owner — prevents IDOR enumeration/deletion.
      */
     @DeleteMapping("/abandoned/{id}")
-    public ResponseEntity<ResponseDTO> eliminar(@PathVariable Long id) {
-        service.eliminar(id);
-        return ResponseEntity.ok(ResponseDTO.success("Eliminado", null));
+    public ResponseEntity<ResponseDTO> eliminar(
+            @PathVariable Long id,
+            @RequestParam(required = false) String sessionId,
+            HttpServletRequest request) {
+
+        return service.findById(id).map(cart -> {
+            boolean ownedBySession = sessionId != null && sessionId.equals(cart.getSessionId());
+            Long callerUserId = extractUserId(request);
+            boolean ownedByUser = callerUserId != null && callerUserId.equals(cart.getUserId());
+
+            if (!ownedBySession && !ownedByUser) {
+                return ResponseEntity.status(403)
+                    .body(ResponseDTO.error("No tenés permiso para eliminar este carrito"));
+            }
+            service.eliminar(id);
+            return ResponseEntity.ok(ResponseDTO.success("Eliminado", null));
+        }).orElse(ResponseEntity.notFound().build());
     }
 
     // ── helpers ─────────────────────────────────────────────────────────────

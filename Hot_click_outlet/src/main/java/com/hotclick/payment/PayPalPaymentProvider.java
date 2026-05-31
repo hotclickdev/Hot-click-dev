@@ -14,11 +14,16 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.annotation.PostConstruct;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.security.cert.X509Certificate;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.HashMap;
@@ -49,11 +54,27 @@ public class PayPalPaymentProvider implements PaymentProvider {
     @Lazy
     @Autowired private com.hotclick.service.PaymentService paymentService;
 
-    private final HttpClient httpClient = HttpClient.newHttpClient();
+    private HttpClient httpClient;
 
     // Cache del access token OAuth (evitar un round-trip por request)
     private volatile String cachedToken;
     private volatile long   tokenExpiryMs = 0;
+
+    @PostConstruct
+    public void init() throws Exception {
+        if (config.isSslSkipVerify()) {
+            log.warn("PayPal SSL skip-verify habilitado — solo para sandbox/dev");
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, new TrustManager[]{new X509TrustManager() {
+                public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
+                public void checkClientTrusted(X509Certificate[] c, String a) {}
+                public void checkServerTrusted(X509Certificate[] c, String a) {}
+            }}, null);
+            httpClient = HttpClient.newBuilder().sslContext(sslContext).build();
+        } else {
+            httpClient = HttpClient.newHttpClient();
+        }
+    }
 
     @Override
     public String getNombre() {

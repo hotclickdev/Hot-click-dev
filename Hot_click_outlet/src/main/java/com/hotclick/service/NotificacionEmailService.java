@@ -538,6 +538,106 @@ public class NotificacionEmailService {
         }
     }
 
+    @Async
+    public void enviarAprobacionNegocio(String correo, String nombre, String nombreEmpresa) {
+        try {
+            String html = "<div style='font-family:sans-serif;max-width:520px;margin:0 auto;background:#0d0d14;color:#e8e8ed;padding:32px;border-radius:16px'>"
+                + "<div style='text-align:center;margin-bottom:24px'><div style='display:inline-block;background:linear-gradient(135deg,#ff4b12,#ff7b00);padding:12px 20px;border-radius:12px;font-weight:900;font-size:18px;letter-spacing:2px;color:#fff'>HOTCLICK</div></div>"
+                + "<div style='text-align:center;margin-bottom:20px'><div style='font-size:48px'>✅</div></div>"
+                + "<h2 style='color:#22c55e;text-align:center;margin-bottom:8px'>¡Tu negocio fue aprobado!</h2>"
+                + "<p style='color:#8e8e9a;text-align:center;margin-bottom:24px'>Hola <strong style='color:#e8e8ed'>" + esc(nombre) + "</strong>, tu negocio <strong style='color:#e8e8ed'>" + esc(nombreEmpresa) + "</strong> fue revisado y aprobado. "
+                + "Ahora tus productos son visibles al público en HOTCLICK.</p>"
+                + "<div style='background:#0f2b1e;border:1px solid #22c55e33;border-radius:12px;padding:20px;margin-bottom:24px'>"
+                + "<p style='margin:0 0 10px;font-weight:700;color:#22c55e'>Tu tienda ya está en línea</p>"
+                + "<p style='margin:0;color:#8e8e9a;line-height:1.7'>Podés activar la visibilidad, agregar más productos y configurar tu perfil desde el panel de administración.</p>"
+                + "</div>"
+                + "<div style='text-align:center'><a href='https://hotclick.cr/admin' style='background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px'>Ver mi panel →</a></div>"
+                + "<p style='color:#5e5e6e;font-size:11px;text-align:center;margin-top:24px'>HOTCLICK Outlet · Costa Rica</p></div>";
+            resendEmailService.send(correo, "¡Tu negocio " + esc(nombreEmpresa) + " fue aprobado en HOTCLICK!", html);
+            log.info("Email aprobación enviado a {}", correo);
+        } catch (Exception e) {
+            log.error("No se pudo enviar email de aprobación a {}: {}", correo, e.getMessage());
+        }
+    }
+
+    @Async
+    public void enviarRechazoNegocio(String correo, String nombre, String nombreEmpresa) {
+        try {
+            String html = "<div style='font-family:sans-serif;max-width:520px;margin:0 auto;background:#0d0d14;color:#e8e8ed;padding:32px;border-radius:16px'>"
+                + "<div style='text-align:center;margin-bottom:24px'><div style='display:inline-block;background:linear-gradient(135deg,#ff4b12,#ff7b00);padding:12px 20px;border-radius:12px;font-weight:900;font-size:18px;letter-spacing:2px;color:#fff'>HOTCLICK</div></div>"
+                + "<h2 style='color:#ef4444;text-align:center;margin-bottom:8px'>Solicitud no aprobada</h2>"
+                + "<p style='color:#8e8e9a;margin-bottom:20px'>Hola <strong style='color:#e8e8ed'>" + esc(nombre) + "</strong>, lamentablemente tu solicitud para <strong style='color:#e8e8ed'>" + esc(nombreEmpresa) + "</strong> no fue aprobada en esta ocasión.</p>"
+                + "<p style='color:#8e8e9a;margin-bottom:24px'>Si tenés dudas o querés más información, escribinos a <a href='mailto:soporte@hotclick.cr' style='color:#ff4b12'>soporte@hotclick.cr</a>.</p>"
+                + "<p style='color:#5e5e6e;font-size:11px;text-align:center;margin-top:24px'>HOTCLICK Outlet · Costa Rica</p></div>";
+            resendEmailService.send(correo, "Actualización sobre tu solicitud — " + esc(nombreEmpresa), html);
+            log.info("Email rechazo enviado a {}", correo);
+        } catch (Exception e) {
+            log.error("No se pudo enviar email de rechazo a {}: {}", correo, e.getMessage());
+        }
+    }
+
+    /**
+     * Enviada al nuevo miembro cuando el emprendedor lo agrega al equipo.
+     * Si passwordPlano != null es un usuario nuevo y se incluyen las credenciales.
+     * Si passwordPlano == null es un usuario existente que se suma a otro negocio.
+     */
+    @Async
+    public void enviarInvitacionMiembro(String correo, String nombre, String rolEnEmpresa,
+                                        String nombreEmpresa, String passwordPlano) {
+        try {
+            String rolLabel = switch (rolEnEmpresa) {
+                case "EDITOR" -> "Editor — puede editar productos y pedidos";
+                case "LECTOR" -> "Lector — solo visualización";
+                case "ADMIN"  -> "Admin — acceso completo";
+                default -> rolEnEmpresa;
+            };
+
+            String credencialesBlock = "";
+            if (passwordPlano != null) {
+                credencialesBlock = "<div style='background:#111827;border:1px solid #374151;border-radius:12px;padding:20px;margin:20px 0'>"
+                    + "<p style='margin:0 0 12px;font-weight:700;color:#e8e8ed'>Tus credenciales de acceso</p>"
+                    + "<table style='width:100%;border-collapse:collapse'>"
+                    + "<tr><td style='color:#8e8e9a;padding:4px 0;width:110px'>Correo:</td>"
+                    + "<td style='color:#e8e8ed;font-family:monospace'>" + esc(correo) + "</td></tr>"
+                    + "<tr><td style='color:#8e8e9a;padding:4px 0'>Contraseña:</td>"
+                    + "<td style='color:#f59e0b;font-family:monospace;font-weight:700'>" + esc(passwordPlano) + "</td></tr>"
+                    + "</table>"
+                    + "<p style='margin:12px 0 0;font-size:12px;color:#6b7280'>Te recomendamos cambiar la contraseña al ingresar desde Configuración → Seguridad.</p>"
+                    + "</div>";
+            } else {
+                credencialesBlock = "<p style='color:#8e8e9a;background:#1a1a2e;border-radius:10px;padding:14px;margin:16px 0'>"
+                    + "Ingresá con tu correo <strong style='color:#e8e8ed'>" + esc(correo) + "</strong> y tu contraseña habitual.</p>";
+            }
+
+            String html = "<div style='font-family:sans-serif;max-width:520px;margin:0 auto;background:#0d0d14;color:#e8e8ed;padding:32px;border-radius:16px'>"
+                + "<div style='text-align:center;margin-bottom:24px'>"
+                + "<div style='display:inline-block;background:linear-gradient(135deg,#ff4b12,#ff7b00);padding:12px 20px;border-radius:12px;font-weight:900;font-size:18px;letter-spacing:2px;color:#fff'>HOTCLICK</div>"
+                + "</div>"
+                + "<div style='text-align:center;margin-bottom:16px'><div style='font-size:40px'>👋</div></div>"
+                + "<h2 style='color:#4f7cff;text-align:center;margin-bottom:8px'>Te agregaron a un equipo</h2>"
+                + "<p style='color:#8e8e9a;text-align:center;margin-bottom:4px'>Hola <strong style='color:#e8e8ed'>" + esc(nombre) + "</strong>,</p>"
+                + "<p style='color:#8e8e9a;text-align:center;margin-bottom:24px'>"
+                + "Fuiste invitado al negocio <strong style='color:#e8e8ed'>" + esc(nombreEmpresa) + "</strong> en HOTCLICK.</p>"
+                + "<div style='background:#1a1a2e;border:1px solid #2d2d44;border-radius:12px;padding:16px;margin-bottom:20px'>"
+                + "<p style='margin:0 0 6px;color:#8e8e9a;font-size:13px'>Tu rol asignado</p>"
+                + "<p style='margin:0;color:#4f7cff;font-weight:700'>" + esc(rolLabel) + "</p>"
+                + "</div>"
+                + credencialesBlock
+                + "<div style='text-align:center;margin-top:24px'>"
+                + "<a href='https://hotclick.cr/login' style='background:linear-gradient(135deg,#4f7cff,#7fa0ff);color:#fff;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px'>Ingresar al panel →</a>"
+                + "</div>"
+                + "<p style='color:#5e5e6e;font-size:11px;text-align:center;margin-top:24px'>HOTCLICK Outlet · Costa Rica · <a href='https://hotclick.cr' style='color:#5e5e6e'>hotclick.cr</a></p>"
+                + "</div>";
+
+            resendEmailService.send(correo,
+                "Te invitaron al equipo de " + esc(nombreEmpresa) + " en HOTCLICK",
+                html);
+            log.info("Email invitación miembro enviado a {}", correo);
+        } catch (Exception e) {
+            log.error("No se pudo enviar email de invitación a {}: {}", correo, e.getMessage());
+        }
+    }
+
     private String esc(String s) {
         if (s == null) return "";
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");

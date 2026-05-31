@@ -1,11 +1,11 @@
-import { useEffect, useState, useMemo } from 'react'
+﻿import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import AdminLayout from '@/layouts/AdminLayout'
 import Spinner from '@/components/ui/Spinner'
 import { adminService, ventaService } from '@/services/orderService'
 import { formatPrice } from '@/utils/format'
+import useAuthStore from '@/store/authStore'
 
 const stagger = {
   container: { show: { transition: { staggerChildren: 0.07 } } },
@@ -34,24 +34,37 @@ const badgeStyle = (badge) => {
   return 'bg-white/10 text-[#8e8e9a]'
 }
 
+const SETUP_KEY = 'hotclick-setup-dismissed'
+
 export default function AdminDashboard() {
   const { t } = useTranslation()
+  const userRole = useAuthStore((s) => s.userRole)
   const [stats, setStats] = useState(null)
   const [ventas, setVentas] = useState([])
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
+  const [setupDismissed, setSetupDismissed] = useState(() => {
+    try { return localStorage.getItem(SETUP_KEY) === '1' } catch { return false }
+  })
+
+  const dismissSetup = () => {
+    try { localStorage.setItem(SETUP_KEY, '1') } catch { /* ok */ }
+    setSetupDismissed(true)
+  }
 
   useEffect(() => {
     Promise.all([
       adminService.getDashboard().catch(() => ({ data: {} })),
       ventaService.getAll().catch(() => ({ data: [] })),
-      adminService.getUsers().catch(() => ({ data: [] })),
+      userRole === 'ADMIN_IT'
+        ? adminService.getUsers().catch(() => ({ data: [] }))
+        : Promise.resolve({ data: [] }),
     ]).then(([{ data: s }, { data: vs }, { data: us }]) => {
       setStats(s)
       setVentas(Array.isArray(vs) ? vs : vs?.content ?? [])
       setUsers(Array.isArray(us) ? us : us?.content ?? [])
     }).finally(() => setLoading(false))
-  }, [])
+  }, [userRole])
 
   const now = new Date()
   const mesKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
@@ -160,24 +173,62 @@ export default function AdminDashboard() {
   ]
 
   const quickLinks = [
-    { to: '/admin/pedidos', label: t('admin.orders.title'), icon: <ClipboardQLIcon /> },
-    { to: '/admin/productos', label: t('admin.products.title'), icon: <PackageIcon /> },
-    { to: '/admin/usuarios', label: t('admin.users.title'), icon: <PeopleIcon /> },
-    { to: '/admin/ventas', label: t('admin.sales.title'), icon: <BoltIcon /> },
-    { to: '/admin/finanzas', label: t('admin.finanzas.title'), icon: <CoinIcon /> },
-    { to: '/admin/reportes', label: t('admin.reportes.title'), icon: <BarChartIcon /> },
-  ]
+    { to: '/admin/pedidos',   label: t('admin.orders.title'),   icon: <ClipboardQLIcon />, roles: ['ADMIN_IT', 'ADMIN_CLIENTE', 'EMPRENDEDOR'] },
+    { to: '/admin/productos', label: t('admin.products.title'), icon: <PackageIcon />,     roles: ['ADMIN_IT', 'ADMIN_CLIENTE', 'EMPRENDEDOR'] },
+    { to: '/admin/usuarios',  label: t('admin.users.title'),    icon: <PeopleIcon />,      roles: ['ADMIN_IT'] },
+    { to: '/admin/ventas',    label: t('admin.sales.title'),    icon: <BoltIcon />,        roles: ['ADMIN_IT', 'ADMIN_CLIENTE', 'EMPRENDEDOR'] },
+    { to: '/admin/finanzas',  label: t('admin.finanzas.title'), icon: <CoinIcon />,        roles: ['ADMIN_IT', 'ADMIN_CLIENTE', 'EMPRENDEDOR'] },
+    { to: '/admin/reportes',  label: t('admin.reportes.title'), icon: <BarChartIcon />,    roles: ['ADMIN_IT', 'ADMIN_CLIENTE', 'EMPRENDEDOR'] },
+    { to: '/admin/mi-empresa', label: 'Mi negocio',              icon: <PackageIcon />,    roles: ['EMPRENDEDOR', 'ADMIN_CLIENTE'] },
+  ].filter(link => link.roles.includes(userRole))
 
   const maxSale = Math.max(...salesLast7.map((d) => d.total), 1)
   const maxMethod = byMethod[0]?.[1] ?? 1
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.dashboard.title')}</h1>
           <p className="text-sm text-[#8e8e9a] mt-1">{t('admin.dashboard.welcome')}</p>
         </div>
+
+        {/* Banner: Primeros pasos — solo para negocios nuevos sin productos */}
+        {!loading && !setupDismissed && (stats?.totalProductos === 0 || stats?.totalProductos == null) && ['EMPRENDEDOR', 'ADMIN_CLIENTE'].includes(userRole) && (
+          <div className="rounded-2xl p-5" style={{ backgroundColor: 'rgba(79,124,255,0.06)', border: '1px solid rgba(79,124,255,0.2)' }}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm text-[#e8e8ed] mb-1">Empezá en 3 pasos</p>
+                <p className="text-xs text-[#8e8e9a] mb-4">Tu negocio está listo. Completá esto para recibir tus primeros clientes.</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { label: 'Completar perfil',    to: '/admin/mi-empresa',   step: 1 },
+                    { label: 'Agregar un producto', to: '/admin/productos',    step: 2 },
+                    { label: 'Activar visibilidad', to: '/admin/mi-empresa',   step: 3 },
+                  ].map(({ label, to, step }) => (
+                    <Link
+                      key={step}
+                      to={to}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all hover:opacity-80"
+                      style={{ backgroundColor: 'rgba(79,124,255,0.12)', border: '1px solid rgba(79,124,255,0.25)', color: '#7fa0ff' }}
+                    >
+                      <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0" style={{ backgroundColor: '#4f7cff', color: '#fff' }}>{step}</span>
+                      {label} →
+                    </Link>
+                  ))}
+                </div>
+              </div>
+              <button
+                onClick={dismissSetup}
+                className="p-1 rounded-lg hover:bg-white/5 transition-colors shrink-0"
+                style={{ color: '#8e8e9a' }}
+                title="Cerrar"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <div className="flex justify-center py-20"><Spinner size="lg" /></div>
@@ -467,7 +518,7 @@ export default function AdminDashboard() {
           </>
         )}
       </div>
-    </AdminLayout>
+    </>
   )
 }
 

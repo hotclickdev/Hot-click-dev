@@ -63,6 +63,9 @@ public class Empresa {
     @Column(name = "descripcion", columnDefinition = "TEXT")
     private String descripcion;
 
+    @Column(name = "visibilidad_publica", nullable = false)
+    private Boolean visibilidadPublica = true;
+
     @Column(name = "fk_id_estado", nullable = false)
     private Integer estado = 1;
 
@@ -119,6 +122,9 @@ public class Empresa {
 
     public String getDescripcion() { return descripcion; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+
+    public Boolean getVisibilidadPublica() { return visibilidadPublica; }
+    public void setVisibilidadPublica(Boolean visibilidadPublica) { this.visibilidadPublica = visibilidadPublica; }
 
     public Integer getEstado() { return estado; }
     public void setEstado(Integer estado) { this.estado = estado; }

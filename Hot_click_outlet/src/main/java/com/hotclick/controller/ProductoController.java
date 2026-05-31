@@ -29,25 +29,34 @@ public class ProductoController {
 
     private static final Logger log = LoggerFactory.getLogger(ProductoController.class);
 
-    @Autowired private ProductoService productoService;
+    @Autowired private ProductoService    productoService;
     @Autowired private SupabaseStorageService supabaseStorageService;
     @Autowired private ProductoRepository productoRepository;
-    @Autowired private CompanyScope companyScope;
+    @Autowired private CompanyScope       companyScope;
+    @Autowired private com.hotclick.repository.EmpresaRepository empresaRepository;
+
+    private static final int MAX_PAGE_SIZE = 100;
 
     @GetMapping
     public ResponseEntity<ResponseDTO> listarProductos(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        var productos = productoService.listarProductosDisponibles(PageRequest.of(page, size));
+        Long empresaId = companyScope.getCurrentEmpresaId();
+        var pageable  = PageRequest.of(Math.max(0, page), Math.min(size, MAX_PAGE_SIZE));
+        // Si hay empresaId en el JWT (contexto admin de ese negocio) → mostrar sus propios productos
+        // Si es público (sin empresa) → usar catálogo filtrado (solo negocios aprobados y visibles)
+        var productos = empresaId != null
+            ? productoRepository.findByEmpresaIdAndEstado(empresaId, com.hotclick.utils.Constants.ESTADO_ACTIVO, pageable)
+            : productoService.listarTodosActivos(pageable);
         return ResponseEntity.ok(ResponseDTO.success("Productos obtenidos", productos));
     }
 
     @GetMapping("/admin/todos")
     public ResponseEntity<ResponseDTO> listarTodosAdmin(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "200") int size) {
+            @RequestParam(defaultValue = "100") int size) {
         Long empresaId = companyScope.getCurrentEmpresaId();
-        var pageable = PageRequest.of(page, size);
+        var pageable = PageRequest.of(Math.max(0, page), Math.min(size, MAX_PAGE_SIZE));
         var productos = empresaId != null
             ? productoRepository.findByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO, pageable)
             : productoService.listarTodosActivos(pageable);
@@ -135,7 +144,8 @@ public class ProductoController {
             @RequestBody ProductoRequestDTO dto,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            Empresa empresa = companyScope.getCurrentUser() != null ? companyScope.getCurrentUser().getEmpresa() : null;
+            Empresa empresa = companyScope.getCurrentEmpresaId() != null
+                ? empresaRepository.findById(companyScope.getCurrentEmpresaId()).orElse(null) : null;
             var producto = productoService.crearProducto(dto, userDetails.getUsername(), empresa);
             return ResponseEntity.ok(ResponseDTO.success("Producto creado", producto));
         } catch (Exception e) {
@@ -213,7 +223,10 @@ public class ProductoController {
     public ResponseEntity<ResponseDTO> importarBulk(
             @RequestBody List<ProductoRequestDTO> dtos,
             @AuthenticationPrincipal UserDetails userDetails) {
-        Empresa empresa = companyScope.getCurrentUser() != null ? companyScope.getCurrentUser().getEmpresa() : null;
+        if (dtos == null || dtos.size() > 200)
+            return ResponseEntity.badRequest().body(ResponseDTO.error("El bulk acepta entre 1 y 200 productos por lote"));
+        Empresa empresa = companyScope.getCurrentEmpresaId() != null
+                ? empresaRepository.findById(companyScope.getCurrentEmpresaId()).orElse(null) : null;
         int ok = 0; int errors = 0;
         StringBuilder errMsg = new StringBuilder();
         for (int i = 0; i < dtos.size(); i++) {

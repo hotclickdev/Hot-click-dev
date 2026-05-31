@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+﻿import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import AdminLayout from '@/layouts/AdminLayout'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Modal from '@/components/ui/Modal'
@@ -8,6 +7,7 @@ import Spinner from '@/components/ui/Spinner'
 import { marcaService } from '@/services/marcaService'
 import { useToast } from '@/components/ui/Toast'
 import ImportExportBar from '@/components/admin/ImportExportBar'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 
 const EMPTY = { nombreMarca: '', logoUrl: '' }
 
@@ -23,6 +23,7 @@ export default function AdminMarcas() {
   const [uploading, setUploading] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const [imgError, setImgError] = useState({})
+  const [deleteTarget, setDeleteTarget] = useState(null)
   const fileInputRef = useRef(null)
 
   const load = () => {
@@ -64,8 +65,12 @@ export default function AdminMarcas() {
     } finally { setSaving(false) }
   }
 
-  const handleDelete = async (id, nombre) => {
-    if (!confirm(`¿Eliminar marca "${nombre}"?`)) return
+  const handleDelete = (id, nombre) => setDeleteTarget({ id, nombre })
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    const { id } = deleteTarget
+    setDeleteTarget(null)
     try {
       await marcaService.delete(id)
       toast({ message: t('admin.marcas.deleted'), type: 'success' })
@@ -101,7 +106,7 @@ export default function AdminMarcas() {
   }
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -143,8 +148,12 @@ export default function AdminMarcas() {
               <tbody className="divide-y divide-white/5">
                 {marcas.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-5 py-12 text-center text-[#8e8e9a]">
-                      {t('admin.marcas.empty')}
+                    <td colSpan={4} className="px-5 py-14 text-center">
+                      <p className="font-semibold text-[#e8e8ed] mb-1">Sin marcas registradas</p>
+                      <p className="text-sm text-[#8e8e9a] mb-3">Las marcas aparecen en el catálogo y en cada producto.</p>
+                      <button onClick={openNew} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80" style={{ backgroundColor: '#4f7cff', color: '#fff' }}>
+                        + Crear primera marca
+                      </button>
                     </td>
                   </tr>
                 )}
@@ -161,7 +170,7 @@ export default function AdminMarcas() {
                             onError={() => setImgError((p) => ({ ...p, [m.id]: true }))}
                           />
                         ) : (
-                          <span className="text-lg opacity-30">🏷</span>
+                          <svg className="w-4 h-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
                         )}
                       </div>
                     </td>
@@ -275,7 +284,15 @@ export default function AdminMarcas() {
           </div>
         </form>
       </Modal>
-    </AdminLayout>
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        title="Eliminar marca"
+        message={`¿Eliminar la marca "${deleteTarget?.nombre}"? Los productos que la usen quedarán sin marca asignada.`}
+      />
+    </>
   )
 }
 

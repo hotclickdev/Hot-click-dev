@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import AdminLayout from '@/layouts/AdminLayout'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import PhoneField from '@/components/ui/PhoneField'
@@ -203,10 +202,10 @@ export default function AdminNewSale() {
     window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(body.join('\n'))}`, '_blank')
   }
 
-  if (loading) return <AdminLayout><div className="flex justify-center py-20"><Spinner size="lg" /></div></AdminLayout>
+  if (loading) return <><div className="flex justify-center py-20"><Spinner size="lg" /></div></>
 
   if (createdOrder) return (
-    <AdminLayout>
+    <>
       <div className="max-w-lg mx-auto space-y-6 py-4">
         {/* Header éxito */}
         <div className="flex flex-col items-center gap-2 text-center">
@@ -258,11 +257,11 @@ export default function AdminNewSale() {
           </Button>
         </div>
       </div>
-    </AdminLayout>
+    </>
   )
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
@@ -553,7 +552,7 @@ export default function AdminNewSale() {
           </div>
         </div>
       </div>
-    </AdminLayout>
+    </>
   )
 }
 

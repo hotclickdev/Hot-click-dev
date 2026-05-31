@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import AdminLayout from '@/layouts/AdminLayout'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import PhoneField from '@/components/ui/PhoneField'
@@ -10,6 +9,7 @@ import Spinner from '@/components/ui/Spinner'
 import { warehouseService } from '@/services/orderService'
 import { useToast } from '@/components/ui/Toast'
 import ImportExportBar from '@/components/admin/ImportExportBar'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 
 const EMPTY = { nombreBodega: '', direccionExacta: '', telefono: '', correoContacto: '', encargadoNombre: '' }
 
@@ -22,6 +22,7 @@ export default function AdminWarehouses() {
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(EMPTY)
   const [saving, setSaving] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
   const load = () => {
     setLoading(true)
@@ -64,8 +65,12 @@ export default function AdminWarehouses() {
     } finally { setSaving(false) }
   }
 
-  const handleDelete = async (id, nombre) => {
-    if (!confirm(`¿Eliminar bodega "${nombre}"?`)) return
+  const handleDelete = (id, nombre) => setDeleteTarget({ id, nombre })
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    const { id } = deleteTarget
+    setDeleteTarget(null)
     try {
       await warehouseService.delete(id)
       toast({ message: 'Bodega eliminada', type: 'success' })
@@ -76,7 +81,7 @@ export default function AdminWarehouses() {
   const set = (f) => (e) => setForm((p) => ({ ...p, [f]: e.target.value }))
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
@@ -155,6 +160,14 @@ export default function AdminWarehouses() {
           </div>
         </form>
       </Modal>
-    </AdminLayout>
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        title="Eliminar bodega"
+        message={`¿Eliminar la bodega "${deleteTarget?.nombre}"? Los productos asignados a esta bodega quedarán sin bodega.`}
+      />
+    </>
   )
 }

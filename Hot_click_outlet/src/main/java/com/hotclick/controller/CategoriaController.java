@@ -3,6 +3,7 @@ package com.hotclick.controller;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Categoria;
 import com.hotclick.repository.CategoriaRepository;
+import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.utils.Constants;
@@ -24,20 +25,29 @@ import java.util.Map;
 public class CategoriaController {
 
     @Autowired private CategoriaRepository categoriaRepository;
-    @Autowired private UsuarioRepository usuarioRepository;
-    @Autowired private CompanyScope companyScope;
+    @Autowired private EmpresaRepository   empresaRepository;
+    @Autowired private UsuarioRepository   usuarioRepository;
+    @Autowired private CompanyScope        companyScope;
 
-    @Cacheable("categorias")
+    // Sin @Cacheable: el resultado varía según el usuario autenticado (empresa) vs público.
+    // Cachear con clave única causaría que un usuario contamine el caché del otro.
     @GetMapping
     public ResponseEntity<ResponseDTO> listar() {
         Long empresaId = companyScope.getCurrentEmpresaId();
         var cats = empresaId != null
             ? categoriaRepository.findByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO)
-            : categoriaRepository.findByEstado(Constants.ESTADO_ACTIVO);
+            : categoriaRepository.findPublicasByEstado(Constants.ESTADO_ACTIVO);
         return ResponseEntity.ok(ResponseDTO.success("Categorías", cats));
     }
 
-    @CacheEvict(value = "categorias", allEntries = true)
+    @Cacheable(value = "categorias-publicas", key = "'public'")
+    @GetMapping("/publicas")
+    public ResponseEntity<ResponseDTO> listarPublicas() {
+        var cats = categoriaRepository.findPublicasByEstado(Constants.ESTADO_ACTIVO);
+        return ResponseEntity.ok(ResponseDTO.success("Categorías", cats));
+    }
+
+    @CacheEvict(value = {"categorias", "categorias-publicas"}, allEntries = true)
     @PostMapping
     public ResponseEntity<ResponseDTO> crear(
             @RequestBody Map<String, String> body,
@@ -46,7 +56,8 @@ public class CategoriaController {
             if (body.get("nombreCategoria") == null || body.get("nombreCategoria").isBlank())
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El nombre es obligatorio"));
 
-            var empresa = companyScope.getCurrentUser() != null ? companyScope.getCurrentUser().getEmpresa() : null;
+            var empresa = companyScope.getCurrentEmpresaId() != null
+                ? empresaRepository.findById(companyScope.getCurrentEmpresaId()).orElse(null) : null;
             Categoria cat = new Categoria();
             cat.setNombreCategoria(body.get("nombreCategoria").trim());
             cat.setDescripcion(body.getOrDefault("descripcion", ""));
@@ -63,14 +74,15 @@ public class CategoriaController {
     }
 
     @Transactional
-    @CacheEvict(value = "categorias", allEntries = true)
+    @CacheEvict(value = {"categorias", "categorias-publicas"}, allEntries = true)
     @PostMapping("/bulk")
     public ResponseEntity<ResponseDTO> importarBulk(
             @RequestBody List<Map<String, String>> items,
             @AuthenticationPrincipal UserDetails ud) {
         var admin = usuarioRepository.findByCorreo(ud.getUsername())
             .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
-        var empresa = companyScope.getCurrentUser() != null ? companyScope.getCurrentUser().getEmpresa() : null;
+        var empresa = companyScope.getCurrentEmpresaId() != null
+                ? empresaRepository.findById(companyScope.getCurrentEmpresaId()).orElse(null) : null;
         List<Categoria> batch = new ArrayList<>();
         for (Map<String, String> item : items) {
             String nombre = item.get("nombreCategoria");
@@ -87,7 +99,7 @@ public class CategoriaController {
         return ResponseEntity.ok(ResponseDTO.success("Importadas: " + batch.size() + " categorías", Map.of("ok", batch.size())));
     }
 
-    @CacheEvict(value = "categorias", allEntries = true)
+    @CacheEvict(value = {"categorias", "categorias-publicas"}, allEntries = true)
     @PutMapping("/{id}")
     public ResponseEntity<ResponseDTO> actualizar(
             @PathVariable Long id,
@@ -106,7 +118,7 @@ public class CategoriaController {
         }
     }
 
-    @CacheEvict(value = "categorias", allEntries = true)
+    @CacheEvict(value = {"categorias", "categorias-publicas"}, allEntries = true)
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseDTO> eliminar(@PathVariable Long id) {
         try {

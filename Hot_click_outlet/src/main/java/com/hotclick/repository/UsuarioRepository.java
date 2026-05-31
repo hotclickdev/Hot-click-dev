@@ -63,4 +63,15 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     @Query("SELECT u FROM Usuario u WHERE u.empresa.id = :empresaId ORDER BY u.id DESC")
     List<Usuario> findByEmpresaIdOrderByIdDesc(@Param("empresaId") Long empresaId);
+
+    @Query("SELECT COUNT(u) FROM Usuario u WHERE u.twoFactorEnabled = true AND u.estado = 1")
+    long countWith2FAEnabled();
+
+    /** Updates TOTP replay-protection fields atomically after a successful TOTP verify. */
+    @Modifying
+    @Transactional
+    @Query("UPDATE Usuario u SET u.totpLastUsedOtp = :code, u.totpLastUsedAt = :usedAt WHERE u.id = :id")
+    void updateTotpReplayProtection(@Param("id")    Long          id,
+                                    @Param("code")  String        code,
+                                    @Param("usedAt") java.time.LocalDateTime usedAt);
 }

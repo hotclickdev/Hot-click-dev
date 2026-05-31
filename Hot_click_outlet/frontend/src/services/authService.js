@@ -10,8 +10,8 @@ export const authService = {
   logout: (refreshToken) =>
     api.post('/auth/logout', { refreshToken }),
 
-  verify2FA: (tempToken, code, recoveryCode) => {
-    const body = { tempToken }
+  verify2FA: (tempToken, code, recoveryCode, method = 'TOTP') => {
+    const body = { tempToken, method }
     if (recoveryCode) body.recoveryCode = recoveryCode
     else body.code = code
     return api.post('/auth/2fa/verify', body)
@@ -55,4 +55,44 @@ export const authService = {
 
   registroEmpresa: (data) =>
     api.post('/auth/registro-empresa', data),
+
+  misNegocios: () =>
+    api.get('/auth/mis-negocios'),
+
+  cambiarNegocio: (empresaId) =>
+    api.post('/auth/cambiar-negocio', { empresaId }),
+
+  seleccionarEmpresa: (tempToken, empresaId) =>
+    api.post('/auth/seleccionar-empresa', { tempToken, empresaId }),
+
+  nuevoNegocio: (data) =>
+    api.post('/auth/nuevo-negocio', data),
+
+  verificarCorreoNegocio: (correo, codigo) =>
+    api.post('/auth/verificar-correo-negocio', { correo, codigo }),
+
+  reenviarCodigoNegocio: () =>
+    api.post('/auth/reenviar-codigo-negocio'),
+
+  // ── Multi-method 2FA ──────────────────────────────────────────────────────
+
+  /** Send EMAIL OTP during login (uses tempToken, no session required) */
+  sendLoginEmailOtp: (tempToken) =>
+    api.post('/auth/2fa/email/send', { tempToken }),
+
+  /** Get current 2FA status and active methods */
+  get2FAStatus: () =>
+    api.get('/auth/2fa/status'),
+
+  /** Send EMAIL OTP to start enabling Email 2FA (requires session) */
+  enableEmailOtp: () =>
+    api.post('/auth/2fa/email/enable'),
+
+  /** Verify OTP and activate Email 2FA */
+  activateEmailOtp: (code) =>
+    api.post('/auth/2fa/email/activate', { code }),
+
+  /** Disable Email OTP (requires password confirmation) */
+  disableEmailOtp: (contrasena) =>
+    api.post('/auth/2fa/email/disable', { contrasena }),
 }

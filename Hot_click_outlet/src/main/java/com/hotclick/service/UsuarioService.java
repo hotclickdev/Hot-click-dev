@@ -6,6 +6,7 @@ import com.hotclick.utils.Constants;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.repository.RolRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
@@ -19,6 +20,10 @@ public class UsuarioService {
 
     @Autowired
     private RolRepository rolRepository;
+
+    @Lazy
+    @Autowired
+    private PasswordResetService passwordResetService;
 
     @Transactional
     public Usuario registrarUsuario(Usuario usuario) {
@@ -64,6 +69,9 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findById(id).orElse(null);
         if (usuario != null && usuario.getIntentosFallidos() >= 5) {
             usuarioRepository.bloquearUsuario(id, LocalDateTime.now().plusMinutes(30));
+            try {
+                passwordResetService.enviarCodigo(usuario.getCorreo());
+            } catch (Exception ignored) { /* no interrumpe el flujo si falla el email */ }
         }
     }
 

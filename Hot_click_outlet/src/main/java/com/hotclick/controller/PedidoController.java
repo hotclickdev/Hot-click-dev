@@ -22,16 +22,17 @@ import java.util.Map;
 @RequestMapping("/api/pedidos")
 public class PedidoController {
 
-    @Autowired private PedidoService pedidoService;
-    @Autowired private NotificacionEmailService notificacionEmailService;
-    @Autowired private JwtUtil jwtUtil;
-    @Autowired private CompanyScope companyScope;
+    @Autowired private PedidoService             pedidoService;
+    @Autowired private NotificacionEmailService  notificacionEmailService;
+    @Autowired private JwtUtil                   jwtUtil;
+    @Autowired private CompanyScope              companyScope;
+    @Autowired private com.hotclick.repository.EmpresaRepository empresaRepository;
 
     @PostMapping("/manual")
     public ResponseEntity<ResponseDTO> crearPedidoManual(@Valid @RequestBody ManualPedidoDTO dto) {
         try {
-            com.hotclick.model.Empresa empresa = companyScope.getCurrentUser() != null
-                ? companyScope.getCurrentUser().getEmpresa() : null;
+            com.hotclick.model.Empresa empresa = companyScope.getCurrentEmpresaId() != null
+                ? empresaRepository.findById(companyScope.getCurrentEmpresaId()).orElse(null) : null;
             Pedido nuevo = pedidoService.crearPedidoManual(dto, empresa);
             return ResponseEntity.ok(ResponseDTO.success("Pedido creado", nuevo));
         } catch (Exception e) {

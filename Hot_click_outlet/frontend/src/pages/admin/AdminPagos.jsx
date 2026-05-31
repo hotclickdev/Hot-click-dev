@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import AdminLayout from '@/layouts/AdminLayout'
 import api from '@/services/api'
 import ImportExportBar from '@/components/admin/ImportExportBar'
 import { paymentService } from '@/services/paymentService'
@@ -113,7 +112,7 @@ export default function AdminPagos() {
   const handleFiltProc   = (v) => { setFiltProc(v);   setWhPage(0) }
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.pagos.title')} &amp; {t('admin.pagos.webhooks')}</h1>
@@ -320,7 +319,7 @@ export default function AdminPagos() {
           </>
         )}
       </div>
-    </AdminLayout>
+    </>
   )
 }
 

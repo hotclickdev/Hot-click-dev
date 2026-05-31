@@ -5,6 +5,7 @@ import com.hotclick.model.Empresa;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.service.SupabaseStorageService;
+import org.springframework.cache.annotation.CacheEvict;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +54,25 @@ public class EmpresaPerfilController {
 
         empresaRepository.save(e);
         return ResponseEntity.ok(ResponseDTO.success("Perfil actualizado", e));
+    }
+
+    /** Emprendedor puede pausar/activar la visibilidad pública de su tienda */
+    @CacheEvict(value = {"marcas-publicas", "categorias", "categorias-publicas"}, allEntries = true)
+    @PutMapping("/visibilidad")
+    public ResponseEntity<ResponseDTO> toggleVisibilidad(@RequestBody Map<String, Object> body) {
+        Long empresaId = companyScope.getCurrentEmpresaId();
+        if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada"));
+        Optional<Empresa> opt = empresaRepository.findById(empresaId);
+        if (opt.isEmpty()) return ResponseEntity.status(404).body(ResponseDTO.error("Empresa no encontrada"));
+        Empresa e = opt.get();
+        if ("PENDIENTE_APROBACION".equals(e.getEstadoEmpresa()))
+            return ResponseEntity.badRequest().body(ResponseDTO.error("No podés cambiar la visibilidad mientras el negocio está pendiente de aprobación"));
+        Object val = body.get("visibilidadPublica");
+        if (val == null) return ResponseEntity.badRequest().body(ResponseDTO.error("Campo visibilidadPublica requerido"));
+        e.setVisibilidadPublica(Boolean.parseBoolean(val.toString()));
+        empresaRepository.save(e);
+        String msg = Boolean.TRUE.equals(e.getVisibilidadPublica()) ? "Tu negocio ahora es visible al público" : "Tu negocio está en modo invisible";
+        return ResponseEntity.ok(ResponseDTO.success(msg, Map.of("visibilidadPublica", e.getVisibilidadPublica(), "estadoEmpresa", e.getEstadoEmpresa())));
     }
 
     @PostMapping("/logo")

@@ -8,6 +8,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 /**
  * Punto central de control de aislamiento por empresa (tenant).
@@ -22,15 +24,34 @@ public class CompanyScope {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
     /**
      * Retorna el empresa_id del usuario autenticado.
+     * Lee primero del JWT (claim empresaId) para soportar multi-negocio.
      * Retorna null si es ADMIN_IT (puede ver todo).
      */
     public Long getCurrentEmpresaId() {
         Usuario user = getCurrentUser();
         if (user == null) return null;
         if (isAdminIT(user)) return null;
-        return user.getEmpresaId();
+        // JWT claim tiene precedencia — soporta multi-negocio activo
+        Long fromJwt = extractEmpresaIdFromJwt();
+        return fromJwt != null ? fromJwt : user.getEmpresaId();
+    }
+
+    private Long extractEmpresaIdFromJwt() {
+        try {
+            ServletRequestAttributes attrs =
+                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attrs == null) return null;
+            String auth = attrs.getRequest().getHeader("Authorization");
+            if (auth == null || !auth.startsWith("Bearer ")) return null;
+            return jwtUtil.extractEmpresaId(auth.substring(7));
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**
@@ -48,10 +69,15 @@ public class CompanyScope {
     }
 
     /**
-     * Igual que assertCanAccess pero acepta Long nullable sin NPE.
+     * Like assertCanAccess but handles nullable resourceEmpresaId.
+     * Resources with no empresa (null) are only accessible to ADMIN_IT;
+     * any other role is denied to prevent orphaned-resource access.
      */
     public void assertCanAccessNullable(Long resourceEmpresaId) {
-        if (resourceEmpresaId == null) return;
+        if (resourceEmpresaId == null) {
+            if (!isAdminIT()) throw new TenantAccessDeniedException("Acceso denegado: recurso sin empresa asignada");
+            return;
+        }
         assertCanAccess(resourceEmpresaId);
     }
 

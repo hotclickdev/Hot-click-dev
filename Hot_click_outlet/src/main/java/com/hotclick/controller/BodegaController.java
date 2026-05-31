@@ -19,9 +19,10 @@ import java.util.Map;
 @RequestMapping("/api/bodegas")
 public class BodegaController {
 
-    @Autowired private BodegaRepository bodegaRepository;
+    @Autowired private BodegaRepository  bodegaRepository;
     @Autowired private UsuarioRepository usuarioRepository;
-    @Autowired private CompanyScope companyScope;
+    @Autowired private CompanyScope      companyScope;
+    @Autowired private com.hotclick.repository.EmpresaRepository empresaRepository;
 
     @GetMapping
     public ResponseEntity<ResponseDTO> listar() {
@@ -44,7 +45,8 @@ public class BodegaController {
             if (body.get("telefono") == null || body.get("telefono").isBlank())
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El teléfono es obligatorio"));
 
-            var empresa = companyScope.getCurrentUser() != null ? companyScope.getCurrentUser().getEmpresa() : null;
+            var empresa = companyScope.getCurrentEmpresaId() != null
+                ? empresaRepository.findById(companyScope.getCurrentEmpresaId()).orElse(null) : null;
             Bodega b = new Bodega();
             b.setNombreBodega(body.get("nombreBodega").trim());
             b.setDireccionExacta(body.get("direccionExacta").trim());
@@ -69,7 +71,8 @@ public class BodegaController {
             @AuthenticationPrincipal UserDetails ud) {
         var admin = usuarioRepository.findByCorreo(ud.getUsername())
             .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
-        var empresa = companyScope.getCurrentUser() != null ? companyScope.getCurrentUser().getEmpresa() : null;
+        var empresa = companyScope.getCurrentEmpresaId() != null
+                ? empresaRepository.findById(companyScope.getCurrentEmpresaId()).orElse(null) : null;
         int ok = 0; int errors = 0;
         for (Map<String, String> item : items) {
             String nombre = item.get("nombreBodega");

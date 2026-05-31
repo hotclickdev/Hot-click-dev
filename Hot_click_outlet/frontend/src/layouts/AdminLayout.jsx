@@ -1,77 +1,197 @@
-import { NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useLayoutEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Helmet } from 'react-helmet-async'
 import useAuthStore from '@/store/authStore'
+import { authService } from '@/services/authService'
 
-// Devuelve los links del sidebar según el rol activo
+// Devuelve los links del sidebar con secciones según el rol activo
 function buildSidebarLinks(t, userRole) {
-  const shared = [
-    { to: '/admin',              label: t('admin.sidebar.general'),      icon: 'home',     exact: true },
-    { to: '/admin/productos',    label: t('admin.sidebar.productos'),     icon: 'box'  },
-    { to: '/admin/pedidos',      label: t('admin.sidebar.pedidos'),       icon: 'clipboard' },
-    { to: '/admin/categorias',   label: t('admin.sidebar.categorias'),    icon: 'tag'  },
-    { to: '/admin/marcas',       label: 'Marcas',                         icon: 'marca' },
-    { to: '/admin/bodegas',      label: t('admin.sidebar.bodegas'),       icon: 'building' },
-    { to: '/admin/ventas',       label: t('admin.sidebar.nuevaVenta'),    icon: 'plus' },
-    { to: '/admin/finanzas',     label: t('admin.sidebar.finanzas'),      icon: 'chart' },
-    { to: '/admin/reportes',     label: t('admin.sidebar.reportes'),      icon: 'bar' },
-    { to: '/admin/servicios',    label: 'Servicios HOT',                  icon: 'heart' },
-    { to: '/admin/garantias',    label: 'Garantías',                      icon: 'shield' },
-    { to: '/admin/pagos',        label: 'Pagos / Webhooks',               icon: 'card' },
-    { to: '/admin/nuevo-producto', label: t('admin.sidebar.crearIA'),     icon: 'camera' },
-    { to: '/admin/publicaciones',  label: t('admin.sidebar.publicarFB'),  icon: 'share' },
-    { to: '/admin/testimonios',  label: 'Testimonios',                    icon: 'star' },
-    { to: '/admin/configuracion',label: 'Configuración',                  icon: 'config' },
-  ]
-
-  // Links específicos para EMPRENDEDOR — sin Servicios HOT, Pagos, Testimonios
-  const emprendedorLinks = [
-    { to: '/admin',              label: t('admin.sidebar.general'),      icon: 'home',     exact: true },
-    { to: '/admin/productos',    label: t('admin.sidebar.productos'),     icon: 'box'  },
-    { to: '/admin/pedidos',      label: t('admin.sidebar.pedidos'),       icon: 'clipboard' },
-    { to: '/admin/categorias',   label: t('admin.sidebar.categorias'),    icon: 'tag'  },
-    { to: '/admin/marcas',       label: 'Marcas',                         icon: 'marca' },
-    { to: '/admin/bodegas',      label: t('admin.sidebar.bodegas'),       icon: 'building' },
-    { to: '/admin/ventas',       label: t('admin.sidebar.nuevaVenta'),    icon: 'plus' },
-    { to: '/admin/finanzas',     label: t('admin.sidebar.finanzas'),      icon: 'chart' },
-    { to: '/admin/reportes',     label: t('admin.sidebar.reportes'),      icon: 'bar' },
-    { to: '/admin/garantias',    label: 'Garantías',                      icon: 'shield' },
-    { to: '/admin/nuevo-producto', label: t('admin.sidebar.crearIA'),     icon: 'camera' },
-    { to: '/admin/publicaciones',  label: t('admin.sidebar.publicarFB'),  icon: 'share' },
-    { to: '/admin/configuracion',  label: 'Configuración',                icon: 'config' },
-    { divider: true },
-    { to: '/admin/mi-empresa', label: 'Mi negocio', icon: 'empresa' },
-    { to: '/admin/equipo',     label: 'Mi equipo',  icon: 'users' },
-  ]
-
   if (userRole === 'ADMIN_IT') {
     return [
-      ...shared,
-      { divider: true },
-      { to: '/admin/usuarios',     label: t('admin.sidebar.usuarios'),    icon: 'users' },
-      { to: '/admin/empresas',     label: 'Empresas',                     icon: 'empresa' },
-      { to: '/admin/aprobaciones', label: 'Aprobaciones',                 icon: 'check' },
+      { to: '/admin', label: 'Inicio', icon: 'home', exact: true},
+      { section: 'Catálogo' },
+      { to: '/admin/productos',    label: t('admin.sidebar.productos'),  icon: 'box'      },
+      { to: '/admin/categorias',   label: t('admin.sidebar.categorias'), icon: 'tag'      },
+      { to: '/admin/marcas',       label: 'Marcas',                      icon: 'marca'    },
+      { to: '/admin/bodegas',      label: t('admin.sidebar.bodegas'),    icon: 'building' },
+      { to: '/admin/garantias',    label: 'Garantías',                   icon: 'shield'   },
+      { section: 'Ventas' },
+      { to: '/admin/pedidos',      label: t('admin.sidebar.pedidos'),    icon: 'clipboard' },
+      { to: '/admin/ventas',       label: t('admin.sidebar.nuevaVenta'), icon: 'plus'     },
+      { to: '/admin/finanzas',     label: t('admin.sidebar.finanzas'),   icon: 'chart'    },
+      { to: '/admin/reportes',     label: t('admin.sidebar.reportes'),   icon: 'bar'      },
+      { section: 'Marketing' },
+      { to: '/admin/nuevo-producto', label: t('admin.sidebar.crearIA'),  icon: 'camera'   },
+      { to: '/admin/publicaciones',  label: t('admin.sidebar.publicarFB'), icon: 'share'  },
+      { to: '/admin/servicios',    label: 'Servicios HOT',               icon: 'heart'    },
+      { to: '/admin/testimonios',  label: 'Testimonios',                 icon: 'star'     },
+      { section: 'Sistema' },
+      { to: '/admin/pagos',        label: 'Pagos / Webhooks',            icon: 'card'     },
+      { to: '/admin/usuarios',     label: t('admin.sidebar.usuarios'),   icon: 'users'    },
+      { to: '/admin/empresas',     label: 'Empresas',                    icon: 'empresa'  },
+      { to: '/admin/aprobaciones', label: 'Aprobaciones',                icon: 'check'    },
+      { to: '/admin/security',     label: 'Security Center',             icon: 'shield'   },
+      { to: '/admin/configuracion', label: 'Configuración',              icon: 'config'   },
     ]
   }
 
-  if (userRole === 'EMPRENDEDOR') return emprendedorLinks
+  if (userRole === 'EMPRENDEDOR') {
+    return [
+      { to: '/admin', label: 'Inicio', icon: 'home', exact: true},
+      { section: 'Catálogo' },
+      { to: '/admin/productos',      label: t('admin.sidebar.productos'),  icon: 'box'      },
+      { to: '/admin/categorias',     label: t('admin.sidebar.categorias'), icon: 'tag'      },
+      { to: '/admin/marcas',         label: 'Marcas',                      icon: 'marca'    },
+      { to: '/admin/bodegas',        label: t('admin.sidebar.bodegas'),    icon: 'building' },
+      { to: '/admin/garantias',      label: 'Garantías',                   icon: 'shield'   },
+      { section: 'Ventas' },
+      { to: '/admin/pedidos',        label: t('admin.sidebar.pedidos'),    icon: 'clipboard' },
+      { to: '/admin/ventas',         label: t('admin.sidebar.nuevaVenta'), icon: 'plus'     },
+      { to: '/admin/finanzas',       label: t('admin.sidebar.finanzas'),   icon: 'chart'    },
+      { to: '/admin/reportes',       label: t('admin.sidebar.reportes'),   icon: 'bar'      },
+      { section: 'Marketing' },
+      { to: '/admin/nuevo-producto', label: t('admin.sidebar.crearIA'),    icon: 'camera'   },
+      { to: '/admin/publicaciones',  label: t('admin.sidebar.publicarFB'), icon: 'share'    },
+      { section: 'Mi negocio' },
+      { to: '/admin/mi-empresa',     label: 'Mi negocio',                  icon: 'empresa'  },
+      { to: '/admin/equipo',         label: 'Mi equipo',                   icon: 'users'    },
+      { to: '/admin/configuracion',  label: 'Configuración',               icon: 'config'   },
+    ]
+  }
 
   // ADMIN_CLIENTE: subconjunto básico
   return [
     { to: '/admin',            label: t('admin.sidebar.general'),    icon: 'home', exact: true },
-    { to: '/admin/productos',  label: t('admin.sidebar.productos'),  icon: 'box'  },
+    { section: 'Catálogo' },
+    { to: '/admin/productos',  label: t('admin.sidebar.productos'),  icon: 'box'      },
+    { to: '/admin/bodegas',    label: t('admin.sidebar.bodegas'),    icon: 'building' },
+    { section: 'Ventas' },
     { to: '/admin/pedidos',    label: t('admin.sidebar.pedidos'),    icon: 'clipboard' },
-    { to: '/admin/finanzas',   label: t('admin.sidebar.finanzas'),   icon: 'chart' },
-    { to: '/admin/bodegas',       label: t('admin.sidebar.bodegas'), icon: 'building' },
-    { to: '/admin/mi-empresa',    label: 'Mi empresa',               icon: 'empresa' },
-    { to: '/admin/configuracion', label: 'Configuración',            icon: 'config' },
+    { to: '/admin/finanzas',   label: t('admin.sidebar.finanzas'),   icon: 'chart'    },
+    { section: 'Mi negocio' },
+    { to: '/admin/mi-empresa',    label: 'Mi negocio',               icon: 'empresa'  },
+    { to: '/admin/configuracion', label: 'Configuración',            icon: 'config'   },
   ]
 }
 
+/* ── Switcher de negocio (solo EMPRENDEDOR / ADMIN_CLIENTE) ── */
+function NegocioSwitcher({ empresaNombre, empresaId }) {
+  const [open, setOpen]       = useState(false)
+  const [negocios, setNegocios] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [switching, setSwitching] = useState(null)
+  const ref = useRef(null)
+  const loginStore = useAuthStore((s) => s.login)
+  const navigate   = useNavigate()
+
+  useEffect(() => {
+    if (!open) return
+    setLoading(true)
+    authService.misNegocios()
+      .then(({ data }) => setNegocios(Array.isArray(data) ? data : (data?.data ?? [])))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [open])
+
+  // Cerrar al click fuera
+  useEffect(() => {
+    if (!open) return
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  async function cambiar(negocio) {
+    if (negocio.id === empresaId) { setOpen(false); return }
+    setSwitching(negocio.id)
+    try {
+      const { data } = await authService.cambiarNegocio(negocio.id)
+      const authData = data?.data ?? data
+      loginStore(authData)
+      setOpen(false)
+      navigate('/admin', { replace: true })
+      window.location.reload()
+    } catch {
+      setSwitching(null)
+    }
+  }
+
+  return (
+    <div ref={ref} className="relative px-3 pb-2">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs transition-all text-left"
+        style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
+      >
+        <svg className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--hc-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+        <span className="flex-1 truncate font-medium">{empresaNombre || 'Mi negocio'}</span>
+        <svg className={`w-3 h-3 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute left-3 right-3 top-full mt-1 rounded-xl shadow-xl z-50 overflow-hidden"
+          style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+          <div className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>
+            Cambiar negocio
+          </div>
+          {loading ? (
+            <div className="px-3 py-3 text-xs text-center" style={{ color: 'var(--hc-muted)' }}>Cargando…</div>
+          ) : negocios.length === 0 ? (
+            <div className="px-3 py-3 text-xs text-center" style={{ color: 'var(--hc-muted)' }}>Sin otros negocios</div>
+          ) : (
+            negocios.map(n => (
+              <button key={n.id} onClick={() => cambiar(n)} disabled={switching !== null}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left text-xs transition-colors hover:bg-[var(--hc-surface-2)] disabled:opacity-50"
+                style={{ color: n.id === empresaId ? 'var(--hc-accent)' : 'var(--hc-text)' }}
+              >
+                <div className="w-6 h-6 rounded-lg shrink-0 flex items-center justify-center overflow-hidden"
+                  style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
+                  {n.logoUrl
+                    ? <img src={n.logoUrl} alt="" className="w-full h-full object-cover" />
+                    : <span className="font-bold text-[10px]" style={{ color: 'var(--hc-accent)' }}>{n.nombre?.[0]?.toUpperCase()}</span>
+                  }
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="truncate font-medium">{n.nombre}</div>
+                  {n.estadoEmpresa === 'PENDIENTE_APROBACION' && (
+                    <div className="text-[9px] text-yellow-400">Pendiente aprobación</div>
+                  )}
+                </div>
+                {n.id === empresaId && (
+                  <svg className="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+                {switching === n.id && (
+                  <div className="w-3.5 h-3.5 border-2 rounded-full animate-spin shrink-0"
+                    style={{ borderColor: 'var(--hc-border)', borderTopColor: 'var(--hc-accent)' }} />
+                )}
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Persiste el scroll del sidebar entre navegaciones (AdminLayout remonta en cada ruta)
+let _sidebarScrollTop = 0
+
 /* ── SidebarContent fuera de AdminLayout para que React no desmonte/remonte al navegar ── */
-function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, handleLogout }) {
+function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, empresaId, userRole, handleLogout }) {
+  const navRef = useRef(null)
+
+  useLayoutEffect(() => {
+    if (navRef.current) navRef.current.scrollTop = _sidebarScrollTop
+  }, [])
+
   return (
     <>
       {/* Logo */}
@@ -96,11 +216,23 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, h
         </span>
       </div>
 
+      {/* Negocio switcher — solo EMPRENDEDOR y ADMIN_CLIENTE */}
+      {(userRole === 'EMPRENDEDOR' || userRole === 'ADMIN_CLIENTE') && (
+        <NegocioSwitcher empresaNombre={empresaNombre} empresaId={empresaId} />
+      )}
+
       {/* Nav */}
-      <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
+      <nav ref={navRef} onScroll={e => { _sidebarScrollTop = e.currentTarget.scrollTop }} className="flex-1 px-3 py-2 overflow-y-auto">
         {sidebarLinks.map((link, i) => {
           if (link.divider) return (
             <div key={`div-${i}`} className="my-2" style={{ borderTop: '1px solid var(--hc-border)' }} />
+          )
+          if (link.section) return (
+            <div key={`sec-${i}`} className="px-3 pt-4 pb-1">
+              <span className="text-[9px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--hc-muted)', opacity: 0.6 }}>
+                {link.section}
+              </span>
+            </div>
           )
           return (
             <NavLink
@@ -108,7 +240,7 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, h
               to={link.to}
               end={link.exact}
               className={({ isActive }) => `
-                flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150
+                flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-150 mb-0.5
                 ${isActive
                   ? 'bg-[#4f7cff]/15 border border-[#4f7cff]/20'
                   : 'hover:bg-[var(--hc-surface-2)] border border-transparent'
@@ -162,14 +294,25 @@ export default function AdminLayout({ children }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
-  const { userName, userRole, empresaNombre, logout } = useAuthStore()
-  const [drawerOpen, setDrawerOpen] = useState(false)
+  const { userName, userRole, empresaNombre, empresaId, logout } = useAuthStore()
+  const [drawerOpen,    setDrawerOpen]    = useState(false)
+  const [empresaStatus, setEmpresaStatus] = useState(null) // { estadoEmpresa, visibilidadPublica }
 
   const sidebarLinks = buildSidebarLinks(t, userRole)
-
   const handleLogout = () => { logout(); navigate('/') }
 
-  useEffect(() => { setDrawerOpen(false) }, [location.pathname])
+  // Cargar estado de empresa para mostrar banners de aprobación / visibilidad
+  useEffect(() => {
+    if (userRole !== 'EMPRENDEDOR' && userRole !== 'ADMIN_CLIENTE') return
+    import('@/services/api').then(({ default: api }) => {
+      api.get('/empresa/perfil')
+        .then(({ data }) => {
+          const e = data?.id ? data : (data?.data ?? data)
+          if (e?.id) setEmpresaStatus({ estadoEmpresa: e.estadoEmpresa, visibilidadPublica: e.visibilidadPublica })
+        })
+        .catch(() => {})
+    })
+  }, [userRole, empresaId])
 
   const roleBadge = {
     ADMIN_IT:      { label: 'IT Admin',      color: 'bg-red-500/20 text-red-400' },
@@ -177,7 +320,7 @@ export default function AdminLayout({ children }) {
     ADMIN_CLIENTE: { label: 'Admin',         color: 'bg-blue-500/20 text-blue-400' },
   }[userRole] ?? { label: userRole, color: 'bg-gray-500/20 text-gray-400' }
 
-  const sidebarProps = { sidebarLinks, roleBadge, t, userName, empresaNombre, handleLogout }
+  const sidebarProps = { sidebarLinks, roleBadge, t, userName, empresaNombre, empresaId, userRole, handleLogout }
 
   return (
     <div className="hc-admin-content min-h-screen" style={{ backgroundColor: 'var(--hc-bg)' }}>
@@ -263,6 +406,35 @@ export default function AdminLayout({ children }) {
           transition={{ duration: 0.2 }}
           className="h-full overflow-y-auto px-4 py-4 pt-[66px] md:pt-6 md:px-6 lg:px-8"
         >
+          {/* Banner: negocio pendiente de aprobación */}
+          {empresaStatus?.estadoEmpresa === 'PENDIENTE_APROBACION' && (
+            <div className="mb-5 flex items-start gap-3 px-4 py-3 rounded-xl text-sm"
+              style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b' }}>
+              <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div>
+                <p className="font-semibold">Tu negocio está pendiente de aprobación</p>
+                <p className="text-xs mt-0.5 opacity-80">
+                  Un administrador IT revisará tu solicitud. Mientras tanto podés preparar tu catálogo, pero tu tienda no será visible al público hasta recibir la aprobación.
+                </p>
+              </div>
+            </div>
+          )}
+          {/* Banner: negocio en modo invisible (aprobado pero pausado por el emprendedor) */}
+          {empresaStatus?.estadoEmpresa === 'ACTIVO' && empresaStatus?.visibilidadPublica === false && (
+            <div className="mb-5 flex items-center gap-3 px-4 py-3 rounded-xl text-sm"
+              style={{ backgroundColor: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8' }}>
+              <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+              </svg>
+              <span>
+                <span className="font-semibold">Negocio en modo invisible</span>
+                <span className="ml-2 opacity-80">— Tus productos no son visibles al público. Activá la visibilidad desde</span>
+                <Link to="/admin/mi-empresa" className="ml-1 underline font-medium">Mi negocio</Link>.
+              </span>
+            </div>
+          )}
           {children}
         </motion.main>
       </div>

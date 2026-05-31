@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+﻿import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import AdminLayout from '@/layouts/AdminLayout'
 import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import Badge from '@/components/ui/Badge'
@@ -405,7 +404,7 @@ export default function AdminPublicaciones() {
   )
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-5">
         {/* Header */}
         <div>
@@ -702,6 +701,6 @@ export default function AdminPublicaciones() {
           )}
         </AnimatePresence>
       </div>
-    </AdminLayout>
+    </>
   )
 }

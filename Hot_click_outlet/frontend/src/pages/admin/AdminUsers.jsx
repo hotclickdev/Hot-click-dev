@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import AdminLayout from '@/layouts/AdminLayout'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
@@ -185,7 +184,7 @@ export default function AdminUsers() {
   ]
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-5">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
@@ -569,6 +568,6 @@ export default function AdminUsers() {
           </div>
         )}
       </Modal>
-    </AdminLayout>
+    </>
   )
 }

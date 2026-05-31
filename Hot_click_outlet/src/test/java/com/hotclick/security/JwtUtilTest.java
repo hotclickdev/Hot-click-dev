@@ -103,4 +103,70 @@ class JwtUtilTest {
         assertThatThrownBy(() -> jwtUtil.validateToken(tampered, EMAIL))
             .isInstanceOf(Exception.class);
     }
+
+    // ── EmpresaSelectionToken (single-purpose — must NOT act as full auth) ───
+
+    @Test
+    @DisplayName("generateEmpresaSelectionToken → isEmpresaSelectionToken returns true")
+    void generateEmpresaSelectionToken_isEmpresaSelectionToken_true() {
+        String token = jwtUtil.generateEmpresaSelectionToken(EMAIL, 1L);
+        assertThat(jwtUtil.isEmpresaSelectionToken(token)).isTrue();
+    }
+
+    @Test
+    @DisplayName("normal token → isEmpresaSelectionToken returns false")
+    void normalToken_isNotEmpresaSelectionToken() {
+        String token = jwtUtil.generateToken(EMAIL, 1L, "EMPRENDEDOR");
+        assertThat(jwtUtil.isEmpresaSelectionToken(token)).isFalse();
+    }
+
+    @Test
+    @DisplayName("tempToken (2FA) → isEmpresaSelectionToken returns false")
+    void tempToken_isNotEmpresaSelectionToken() {
+        String temp = jwtUtil.generateTempToken(EMAIL, 1L);
+        assertThat(jwtUtil.isEmpresaSelectionToken(temp)).isFalse();
+    }
+
+    @Test
+    @DisplayName("isEmpresaSelectionToken → false for malformed token")
+    void isEmpresaSelectionToken_malformedToken_false() {
+        assertThat(jwtUtil.isEmpresaSelectionToken("garbage.token.here")).isFalse();
+    }
+
+    @Test
+    @DisplayName("empresaSelectionToken carries correct userId")
+    void empresaSelectionToken_extractUserId_correct() {
+        String token = jwtUtil.generateEmpresaSelectionToken(EMAIL, 55L);
+        assertThat(jwtUtil.extractUserId(token)).isEqualTo(55L);
+    }
+
+    @Test
+    @DisplayName("empresaSelectionToken carries correct username (email)")
+    void empresaSelectionToken_extractUsername_correct() {
+        String token = jwtUtil.generateEmpresaSelectionToken("biz@hotclick.cr", 9L);
+        assertThat(jwtUtil.extractUsername(token)).isEqualTo("biz@hotclick.cr");
+    }
+
+    // ── empresaId / empresaSlug claims ───────────────────────────────────────
+
+    @Test
+    @DisplayName("generateToken with empresa → extractEmpresaId returns correct id")
+    void generateToken_withEmpresa_extractEmpresaId() {
+        String token = jwtUtil.generateToken(EMAIL, 1L, "EMPRENDEDOR", 42L, "mi-tienda");
+        assertThat(jwtUtil.extractEmpresaId(token)).isEqualTo(42L);
+    }
+
+    @Test
+    @DisplayName("generateToken with empresa → extractEmpresaSlug returns correct slug")
+    void generateToken_withEmpresa_extractEmpresaSlug() {
+        String token = jwtUtil.generateToken(EMAIL, 1L, "EMPRENDEDOR", 42L, "mi-tienda");
+        assertThat(jwtUtil.extractEmpresaSlug(token)).isEqualTo("mi-tienda");
+    }
+
+    @Test
+    @DisplayName("generateToken without empresa → extractEmpresaId returns null")
+    void generateToken_withoutEmpresa_extractEmpresaIdNull() {
+        String token = jwtUtil.generateToken(EMAIL, 1L, "USUARIO_FINAL");
+        assertThat(jwtUtil.extractEmpresaId(token)).isNull();
+    }
 }

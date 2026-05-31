@@ -2,8 +2,10 @@ package com.hotclick.service;
 
 import com.hotclick.dto.RegistroEmpresaDTO;
 import com.hotclick.model.Empresa;
+import com.hotclick.model.MiembroEmpresa;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.EmpresaRepository;
+import com.hotclick.repository.MiembroEmpresaRepository;
 import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.utils.Constants;
@@ -24,9 +26,26 @@ public class EmprendedorRegistroService {
     @Autowired private RolRepository            rolRepository;
     @Autowired private PasswordEncoder          passwordEncoder;
     @Autowired private NotificacionEmailService notificacionEmailService;
+    @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
+
+    /** Elimina tags HTML, scripts y caracteres peligrosos de un string */
+    private static String sanitizar(String s) {
+        if (s == null) return null;
+        return s.trim()
+                .replaceAll("<[^>]*>", "")           // elimina tags HTML/script
+                .replaceAll("[;\\-\\-]", "")          // elimina ; y -- (SQL injection)
+                .replaceAll("['\"]", "")              // elimina comillas
+                .replaceAll("(?i)(select|insert|update|delete|drop|create|alter|exec|union|script)", "")
+                .trim();
+    }
 
     @Transactional
     public Usuario registrar(RegistroEmpresaDTO dto) {
+        // Sanitizar entradas para prevenir XSS y SQL injection
+        if (dto.getNombreEmpresa() != null) dto.setNombreEmpresa(sanitizar(dto.getNombreEmpresa()));
+        if (dto.getNombreComercial() != null) dto.setNombreComercial(sanitizar(dto.getNombreComercial()));
+        if (dto.getNombreAdmin() != null) dto.setNombreAdmin(sanitizar(dto.getNombreAdmin()));
+
         // Validaciones básicas
         if (dto.getNombreEmpresa() == null || dto.getNombreEmpresa().isBlank())
             throw new IllegalArgumentException("El nombre de la empresa es requerido");
@@ -65,6 +84,7 @@ public class EmprendedorRegistroService {
         empresa.setTelefonoEmpresa(dto.getTelefonoEmpresa());
         empresa.setPlanSaas("GRATUITO");
         empresa.setEstadoEmpresa("PENDIENTE_APROBACION");
+        empresa.setVisibilidadPublica(false);
         empresa.setFechaRegistro(LocalDateTime.now());
         empresa.setEstado(Constants.ESTADO_ACTIVO);
         empresa = empresaRepository.save(empresa);
@@ -100,6 +120,10 @@ public class EmprendedorRegistroService {
             saved.getEmpresa().getSlug();
             saved.getEmpresa().getNombreEmpresa();
         }
+
+        // Registrar membresía en junction table (PROPIETARIO del negocio)
+        MiembroEmpresa miembro = new MiembroEmpresa(saved, saved.getEmpresa(), "PROPIETARIO");
+        miembroEmpresaRepository.save(miembro);
 
         notificacionEmailService.enviarBienvenidaEmprendedor(
             saved.getCorreo(),

@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import AdminLayout from '@/layouts/AdminLayout'
 import { useToast } from '@/components/ui/Toast'
 import Spinner from '@/components/ui/Spinner'
 import api from '@/services/api'
@@ -64,7 +64,7 @@ export default function AdminConfiguracion() {
   const go = (id) => { setSection(id); setAnimKey(k => k + 1) }
 
   return (
-    <AdminLayout>
+    <>
       <style>{`
         @keyframes cfgUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
         .cfg-in { animation: cfgUp 0.22s ease both; }
@@ -227,7 +227,7 @@ export default function AdminConfiguracion() {
           </div>
         </div>
       </div>
-    </AdminLayout>
+    </>
   )
 }
 
@@ -240,6 +240,14 @@ function SeccionPerfil({ userId, userEmail, userName, setUserName, toast }) {
   const [loading, setLoading] = useState(true)
   const [saving,  setSaving]  = useState(false)
   const [saved,   setSaved]   = useState(false)
+  const { userRole, login: storeLogin } = useAuthStore()
+  const navigate = useNavigate()
+  const isEmprendedor = userRole === 'EMPRENDEDOR'
+  const [showNuevoNegocio, setShowNuevoNegocio]   = useState(false)
+  const [negocioNombre,    setNegocioNombre]       = useState('')
+  const [negocioCorreo,    setNegocioCorreo]       = useState('')
+  const [negocioTelefono,  setNegocioTelefono]     = useState('')
+  const [savingNegocio,    setSavingNegocio]       = useState(false)
 
   useEffect(() => {
     if (!userId) return
@@ -258,6 +266,30 @@ function SeccionPerfil({ userId, userEmail, userName, setUserName, toast }) {
   }, [userId])
 
   const set = (f) => (e) => setForm(p => ({ ...p, [f]: e.target.value }))
+
+  const handleCrearNegocio = async (e) => {
+    e.preventDefault()
+    if (!negocioNombre.trim()) return
+    if (!negocioCorreo.trim()) { toast({ message: 'El correo oficial del negocio es requerido', type: 'error' }); return }
+    setSavingNegocio(true)
+    try {
+      const { data } = await authService.nuevoNegocio({
+        nombreEmpresa:   negocioNombre.trim(),
+        correoEmpresa:   negocioCorreo.trim().toLowerCase(),
+        telefonoEmpresa: negocioTelefono.trim() || undefined,
+      })
+      const authData = data?.data ?? data
+      storeLogin(authData)
+      toast({ message: '¡Negocio creado! Ahora estás trabajando en el nuevo negocio.', type: 'success' })
+      setShowNuevoNegocio(false)
+      setNegocioNombre('')
+      setNegocioCorreo('')
+      setNegocioTelefono('')
+      navigate('/admin')
+    } catch (err) {
+      toast({ message: err?.response?.data?.message ?? 'Error al crear el negocio', type: 'error' })
+    } finally { setSavingNegocio(false) }
+  }
 
   const handleSave = async (e) => {
     e.preventDefault()
@@ -313,6 +345,7 @@ function SeccionPerfil({ userId, userEmail, userName, setUserName, toast }) {
             </div>
           </FormGroup>
 
+
           <hr className="cfg-divider" />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -340,6 +373,72 @@ function SeccionPerfil({ userId, userEmail, userName, setUserName, toast }) {
           </div>
         </form>
       </Block>
+
+      {/* Crear otro negocio — solo EMPRENDEDOR */}
+      {isEmprendedor && (
+        <Block>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+            <div>
+              <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--hc-text)', fontFamily: F.display, margin: 0 }}>Crear otro negocio</p>
+              <p style={{ fontSize: '12px', color: 'var(--hc-muted)', marginTop: '4px', fontFamily: F.body }}>
+                Agregá un segundo negocio a tu cuenta. Podés alternar entre ambos al hacer login.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowNuevoNegocio(v => !v)}
+              style={{ padding: '8px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, fontFamily: F.body, background: 'var(--hc-accent)', color: '#fff', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
+            >
+              + Crear negocio
+            </button>
+          </div>
+
+          {showNuevoNegocio && (
+            <form onSubmit={handleCrearNegocio} style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <input
+                  value={negocioNombre}
+                  onChange={e => setNegocioNombre(e.target.value)}
+                  placeholder="Nombre del negocio *"
+                  required
+                  style={{ flex: 1, minWidth: '180px', padding: '9px 14px', borderRadius: '10px', background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)', fontSize: '13px', fontFamily: F.body, outline: 'none' }}
+                />
+                <input
+                  type="email"
+                  value={negocioCorreo}
+                  onChange={e => setNegocioCorreo(e.target.value)}
+                  placeholder="Correo oficial del negocio *"
+                  required
+                  style={{ flex: 1, minWidth: '200px', padding: '9px 14px', borderRadius: '10px', background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)', fontSize: '13px', fontFamily: F.body, outline: 'none' }}
+                />
+                <input
+                  type="tel"
+                  value={negocioTelefono}
+                  onChange={e => setNegocioTelefono(e.target.value)}
+                  placeholder="Teléfono (opcional)"
+                  style={{ flex: 1, minWidth: '150px', padding: '9px 14px', borderRadius: '10px', background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)', fontSize: '13px', fontFamily: F.body, outline: 'none' }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="submit"
+                  disabled={savingNegocio || !negocioNombre.trim() || !negocioCorreo.trim()}
+                  style={{ padding: '9px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, fontFamily: F.body, background: '#22c55e', color: '#fff', border: 'none', cursor: 'pointer', opacity: savingNegocio || !negocioNombre.trim() || !negocioCorreo.trim() ? 0.5 : 1 }}
+                >
+                  {savingNegocio ? 'Creando…' : 'Confirmar'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowNuevoNegocio(false); setNegocioNombre(''); setNegocioCorreo(''); setNegocioTelefono('') }}
+                  style={{ padding: '9px 14px', borderRadius: '10px', fontSize: '13px', fontFamily: F.body, background: 'transparent', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)', cursor: 'pointer' }}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          )}
+        </Block>
+      )}
     </div>
   )
 }
@@ -349,28 +448,38 @@ function SeccionPerfil({ userId, userEmail, userName, setUserName, toast }) {
 ───────────────────────────────────────────────────────── */
 function SeccionSeguridad({ refreshToken, toast, onTwoFAChange }) {
   const { t } = useTranslation()
-  const [twoFAEnabled, setTwoFAEnabled] = useState(false)
-  const [loadingStatus, setLoadingStatus] = useState(true)
+  const [twoFAEnabled,    setTwoFAEnabled]    = useState(false)
+  const [totpEnabled,     setTotpEnabled]     = useState(false)
+  const [emailOtpEnabled, setEmailOtpEnabled] = useState(false)
+  const [loadingStatus,   setLoadingStatus]   = useState(true)
 
-  useEffect(() => {
+  const fetchStatus = () => {
     api.get('/auth/2fa/status')
       .then(({ data }) => {
-        const enabled = data.data?.enabled ?? false
-        setTwoFAEnabled(enabled)
-        onTwoFAChange(enabled)
+        const s = data.data ?? data
+        setTwoFAEnabled(s.enabled ?? false)
+        setTotpEnabled(s.totpEnabled ?? false)
+        setEmailOtpEnabled(s.emailOtpEnabled ?? false)
+        onTwoFAChange(s.enabled ?? false)
       })
       .catch(() => {})
       .finally(() => setLoadingStatus(false))
-  }, [])
+  }
 
-  const score = twoFAEnabled ? 2 : 1
-  const scoreLabel = ['', t('adminConfig.secScoreMid'), t('adminConfig.secScoreHigh'), t('adminConfig.secScoreMax')][score] ?? t('adminConfig.secScoreMid')
-  const scoreColor = score >= 2 ? '#22c55e' : '#f59e0b'
+  useEffect(() => { fetchStatus() }, [])
+
+  // Score: 1 (password only) + 1 per 2FA method, max 3
+  const methodCount = (totpEnabled ? 1 : 0) + (emailOtpEnabled ? 1 : 0)
+  const score = Math.min(1 + methodCount, 3)
+  const scoreLabels = ['', t('adminConfig.secScoreMid'), t('adminConfig.secScoreHigh'), t('adminConfig.secScoreMax')]
+  const scoreLabel = scoreLabels[score] ?? t('adminConfig.secScoreMid')
+  const scoreColor = score >= 3 ? '#22c55e' : score === 2 ? '#84cc16' : '#f59e0b'
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <SectionHeader title={t('adminConfig.navSeguridad')} desc={t('adminConfig.pwdSubtitle')} />
 
+      {/* Security score */}
       <Block>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
@@ -380,11 +489,27 @@ function SeccionSeguridad({ refreshToken, toast, onTwoFAChange }) {
           <div style={{ textAlign: 'right' }}>
             <p style={{ fontSize: '17px', fontWeight: 700, color: scoreColor, fontFamily: F.display, margin: 0 }}>{scoreLabel}</p>
             <div style={{ display: 'flex', gap: '4px', marginTop: '6px', justifyContent: 'flex-end' }}>
-              {[1, 2].map(i => (
-                <div key={i} style={{ width: '32px', height: '5px', borderRadius: '3px', background: i <= score ? scoreColor : 'var(--hc-border)', transition: 'background .4s' }} />
+              {[1, 2, 3].map(i => (
+                <div key={i} style={{ width: '28px', height: '5px', borderRadius: '3px', background: i <= score ? scoreColor : 'var(--hc-border)', transition: 'background .4s' }} />
               ))}
             </div>
           </div>
+        </div>
+        {/* Active methods badges */}
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '12px' }}>
+          <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '6px', background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.2)' }}>
+            🔑 Contraseña
+          </span>
+          {totpEnabled && (
+            <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '6px', background: 'rgba(79,124,255,0.1)', color: '#4f7cff', border: '1px solid rgba(79,124,255,0.2)' }}>
+              🔐 App Authenticator
+            </span>
+          )}
+          {emailOtpEnabled && (
+            <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '6px', background: 'rgba(14,165,233,0.1)', color: '#0ea5e9', border: '1px solid rgba(14,165,233,0.2)' }}>
+              📧 Email OTP
+            </span>
+          )}
         </div>
         {!twoFAEnabled && (
           <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '10px', background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.2)' }}>
@@ -395,9 +520,12 @@ function SeccionSeguridad({ refreshToken, toast, onTwoFAChange }) {
       </Block>
 
       <PanelCambiarContrasena refreshToken={refreshToken} toast={toast} />
-      <Panel2FA enabled={twoFAEnabled} loading={loadingStatus} toast={toast}
-        onEnabled={() => { setTwoFAEnabled(true); onTwoFAChange(true) }}
-        onDisabled={() => { setTwoFAEnabled(false); onTwoFAChange(false) }} />
+      <Panel2FA enabled={totpEnabled} loading={loadingStatus} toast={toast}
+        onEnabled={() => { setTotpEnabled(true); setTwoFAEnabled(true); onTwoFAChange(true) }}
+        onDisabled={() => { setTotpEnabled(false); if (!emailOtpEnabled) { setTwoFAEnabled(false); onTwoFAChange(false) } }} />
+      <PanelEmailOtp enabled={emailOtpEnabled} loading={loadingStatus} toast={toast}
+        onEnabled={() => { setEmailOtpEnabled(true); setTwoFAEnabled(true); onTwoFAChange(true) }}
+        onDisabled={() => { setEmailOtpEnabled(false); if (!totpEnabled) { setTwoFAEnabled(false); onTwoFAChange(false) } }} />
     </div>
   )
 }
@@ -718,6 +846,153 @@ function Panel2FA({ enabled, loading, toast, onEnabled, onDisabled }) {
         </div>
       )}
     </>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────
+   PANEL EMAIL OTP 2FA
+───────────────────────────────────────────────────────── */
+function PanelEmailOtp({ enabled, loading, toast, onEnabled, onDisabled }) {
+  const [step,      setStep]      = useState('idle')   // idle | setup | verify | disable
+  const [code,      setCode]      = useState('')
+  const [password,  setPassword]  = useState('')
+  const [working,   setWorking]   = useState(false)
+  const [cooldown,  setCooldown]  = useState(0)
+
+  const startCooldown = () => {
+    setCooldown(60)
+    const id = setInterval(() => setCooldown(s => { if (s <= 1) { clearInterval(id); return 0 } return s - 1 }), 1000)
+  }
+
+  const cancel = () => { setStep('idle'); setCode(''); setPassword(''); setWorking(false) }
+
+  const sendOtp = async () => {
+    setWorking(true)
+    try {
+      await api.post('/auth/2fa/email/enable')
+      startCooldown()
+      setStep('verify')
+      toast({ message: 'Código enviado a tu correo', type: 'success' })
+    } catch (err) {
+      toast({ message: err.response?.data?.message ?? 'Error al enviar código', type: 'error' })
+      setStep('idle')
+    } finally { setWorking(false) }
+  }
+
+  const activate = async () => {
+    if (!code || code.length !== 6) { toast({ message: 'Ingresá los 6 dígitos', type: 'error' }); return }
+    setWorking(true)
+    try {
+      await api.post('/auth/2fa/email/activate', { code })
+      toast({ message: 'Email OTP activado correctamente', type: 'success' })
+      onEnabled()
+      cancel()
+    } catch (err) {
+      toast({ message: err.response?.data?.message ?? 'Código incorrecto', type: 'error' })
+    } finally { setWorking(false) }
+  }
+
+  const disable = async () => {
+    if (!password) { toast({ message: 'Ingresá tu contraseña', type: 'error' }); return }
+    setWorking(true)
+    try {
+      await api.post('/auth/2fa/email/disable', { contrasena: password })
+      toast({ message: 'Email OTP desactivado', type: 'success' })
+      onDisabled()
+      cancel()
+    } catch (err) {
+      toast({ message: err.response?.data?.message ?? 'Error al desactivar', type: 'error' })
+    } finally { setWorking(false) }
+  }
+
+  if (loading) return null
+
+  const E = { color: '#0ea5e9', bg: 'rgba(14,165,233,0.08)', border: 'rgba(14,165,233,0.25)' }
+
+  return (
+    <Block label="Código OTP por correo">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        {/* Status row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--hc-text)', fontFamily: F.body, margin: 0 }}>Email OTP</p>
+            <p style={{ fontSize: '12px', color: 'var(--hc-muted)', fontFamily: F.body }}>
+              Código de 6 dígitos enviado a tu correo al iniciar sesión.
+            </p>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+            <span style={{ fontSize: '11px', padding: '3px 9px', borderRadius: '6px',
+              background: enabled ? 'rgba(34,197,94,0.12)' : 'var(--hc-surface-2)',
+              color: enabled ? '#22c55e' : 'var(--hc-muted)',
+              border: `1px solid ${enabled ? 'rgba(34,197,94,0.28)' : 'var(--hc-border)'}` }}>
+              {enabled ? 'Activo' : 'Inactivo'}
+            </span>
+          </div>
+        </div>
+
+        {/* CTA buttons */}
+        {step === 'idle' && (
+          <div style={{ display: 'flex', gap: '10px' }}>
+            {!enabled ? (
+              <button onClick={sendOtp} disabled={working} className="cfg-btn cfg-btn-primary" style={{ background: E.color, boxShadow: `0 1px 12px ${E.border}` }}>
+                {working ? <Spinner size="xs" /> : <ShieldIcon style={{ width: '14px', height: '14px' }} />}
+                Activar Email OTP
+              </button>
+            ) : (
+              <button onClick={() => setStep('disable')} className="cfg-btn cfg-btn-danger">
+                Desactivar Email OTP
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Verify OTP step */}
+        {step === 'verify' && (
+          <div style={{ borderRadius: '12px', padding: '16px', background: E.bg, border: `1px solid ${E.border}`, display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--hc-text)', fontFamily: F.body, margin: 0 }}>
+              📧 Revisá tu correo e ingresá el código de 6 dígitos
+            </p>
+            <FormGroup label="Código de verificación">
+              <input type="text" inputMode="numeric" maxLength={6} value={code}
+                onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="000000"
+                className="cfg-input"
+                style={{ fontFamily: F.mono, letterSpacing: '0.3em', fontSize: '20px', textAlign: 'center' }} />
+            </FormGroup>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <button onClick={activate} disabled={working || code.length !== 6} className="cfg-btn cfg-btn-primary">
+                {working ? <Spinner size="xs" /> : <CheckIcon style={{ width: '14px', height: '14px' }} />}
+                Activar
+              </button>
+              <button onClick={sendOtp} disabled={cooldown > 0 || working} className="cfg-btn cfg-btn-ghost">
+                {cooldown > 0 ? `Reenviar (${cooldown}s)` : '↻ Reenviar código'}
+              </button>
+              <button onClick={cancel} className="cfg-btn cfg-btn-ghost">Cancelar</button>
+            </div>
+          </div>
+        )}
+
+        {/* Disable confirmation */}
+        {step === 'disable' && (
+          <div style={{ borderRadius: '12px', padding: '16px', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.18)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--hc-text)', fontFamily: F.body, margin: 0 }}>
+              Confirmá tu contraseña para desactivar Email OTP
+            </p>
+            <FormGroup label="Contraseña actual">
+              <StyledInput type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Tu contraseña" />
+            </FormGroup>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={disable} disabled={working || !password}
+                className="cfg-btn"
+                style={{ background: '#dc2626', color: '#fff', opacity: (working || !password) ? 0.4 : 1, cursor: (working || !password) ? 'not-allowed' : 'pointer' }}>
+                {working ? <Spinner size="xs" /> : null} Desactivar
+              </button>
+              <button onClick={cancel} className="cfg-btn cfg-btn-ghost">Cancelar</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </Block>
   )
 }
 

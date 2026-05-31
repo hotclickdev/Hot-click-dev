@@ -144,6 +144,7 @@ public class PaymentService {
         pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
         pedido.setUsuarioFinal(usuario);
         pedido.setBodega(bodega);
+        pedido.setEmpresa(bodega.getEmpresa());
         pedido.setEstado(Constants.ESTADO_ACTIVO);
         pedidoRepository.save(pedido);
 

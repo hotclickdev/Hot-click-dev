@@ -107,6 +107,22 @@ public class JwtUtil {
         }
     }
 
+    /** Token de vida corta (10 min) para la selección de empresa tras login con múltiples negocios. */
+    public String generateEmpresaSelectionToken(String correo, Long userId) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId);
+        claims.put("empresa_selection", true);
+        return createToken(claims, correo, 600_000L);
+    }
+
+    public boolean isEmpresaSelectionToken(String token) {
+        try {
+            return Boolean.TRUE.equals(extractAllClaims(token).get("empresa_selection"));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     public Long extractUserId(String token) {
         Object raw = extractAllClaims(token).get("userId");
         if (raw instanceof Long l)    return l;

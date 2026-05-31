@@ -60,12 +60,27 @@ public class Usuario extends BaseEntity {
     private Boolean twoFactorEnabled = false;
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    @Column(name = "two_factor_secret", length = 100)
+    @Column(name = "two_factor_secret", length = 200)
     private String twoFactorSecret;
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(name = "recovery_codes", columnDefinition = "TEXT")
     private String recoveryCodes;
+
+    /** Comma-separated active 2FA methods: "TOTP", "EMAIL_OTP", or "TOTP,EMAIL_OTP". */
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Column(name = "two_factor_methods", length = 50)
+    private String twoFactorMethods;
+
+    /** Last TOTP code used — stored to detect replay within the tolerance window. */
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Column(name = "totp_last_used_otp", length = 10)
+    private String totpLastUsedOtp;
+
+    /** Timestamp of the last TOTP code use — paired with totpLastUsedOtp. */
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Column(name = "totp_last_used_at")
+    private java.time.LocalDateTime totpLastUsedAt;
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
@@ -138,4 +153,54 @@ public class Usuario extends BaseEntity {
 
     public String getRecoveryCodes() { return recoveryCodes; }
     public void setRecoveryCodes(String recoveryCodes) { this.recoveryCodes = recoveryCodes; }
+
+    public String getTwoFactorMethods() { return twoFactorMethods; }
+    public void setTwoFactorMethods(String twoFactorMethods) { this.twoFactorMethods = twoFactorMethods; }
+
+    public String getTotpLastUsedOtp() { return totpLastUsedOtp; }
+    public void setTotpLastUsedOtp(String totpLastUsedOtp) { this.totpLastUsedOtp = totpLastUsedOtp; }
+
+    public java.time.LocalDateTime getTotpLastUsedAt() { return totpLastUsedAt; }
+    public void setTotpLastUsedAt(java.time.LocalDateTime totpLastUsedAt) { this.totpLastUsedAt = totpLastUsedAt; }
+
+    // ── 2FA method helpers ────────────────────────────────────────────────────
+
+    public boolean hasTotpEnabled() {
+        return Boolean.TRUE.equals(twoFactorEnabled)
+            && twoFactorMethods != null
+            && twoFactorMethods.contains(com.hotclick.utils.Constants.METODO_2FA_TOTP);
+    }
+
+    public boolean hasEmailOtpEnabled() {
+        return Boolean.TRUE.equals(twoFactorEnabled)
+            && twoFactorMethods != null
+            && twoFactorMethods.contains(com.hotclick.utils.Constants.METODO_2FA_EMAIL_OTP);
+    }
+
+    public java.util.List<String> getActiveMethods() {
+        if (!Boolean.TRUE.equals(twoFactorEnabled) || twoFactorMethods == null) return java.util.List.of();
+        return java.util.Arrays.stream(twoFactorMethods.split(","))
+            .map(String::trim).filter(s -> !s.isEmpty()).toList();
+    }
+
+    /** Adds a method to the set if not already present, sets twoFactorEnabled=true. */
+    public void addMethod(String method) {
+        if (twoFactorMethods == null || twoFactorMethods.isBlank()) {
+            twoFactorMethods = method;
+        } else if (!twoFactorMethods.contains(method)) {
+            twoFactorMethods = twoFactorMethods + "," + method;
+        }
+        twoFactorEnabled = true;
+    }
+
+    /** Removes a method. If no methods remain, sets twoFactorEnabled=false. */
+    public void removeMethod(String method) {
+        if (twoFactorMethods == null) return;
+        String updated = java.util.Arrays.stream(twoFactorMethods.split(","))
+            .map(String::trim)
+            .filter(m -> !m.equals(method))
+            .collect(java.util.stream.Collectors.joining(","));
+        twoFactorMethods = updated.isBlank() ? null : updated;
+        if (twoFactorMethods == null) twoFactorEnabled = false;
+    }
 }

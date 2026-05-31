@@ -62,6 +62,8 @@ public class PasswordResetService {
         }
 
         usuario.setContrasenaHash(passwordEncoder.encode(nuevaContrasena));
+        usuario.setBloqueadoHasta(null);
+        usuario.setIntentosFallidos(0);
         usuarioRepository.save(usuario);
         return true;
     }

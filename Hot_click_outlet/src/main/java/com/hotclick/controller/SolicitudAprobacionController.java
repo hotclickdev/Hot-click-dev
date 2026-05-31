@@ -5,6 +5,8 @@ import com.hotclick.model.Empresa;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.security.CompanyScope;
+import com.hotclick.service.NotificacionEmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,8 +21,10 @@ import java.util.Optional;
 @RequestMapping("/api/admin/solicitudes-aprobacion")
 public class SolicitudAprobacionController {
 
-    @Autowired private EmpresaRepository empresaRepository;
-    @Autowired private UsuarioRepository  usuarioRepository;
+    @Autowired private EmpresaRepository        empresaRepository;
+    @Autowired private UsuarioRepository        usuarioRepository;
+    @Autowired private NotificacionEmailService notificacionEmailService;
+    @Autowired private CompanyScope             companyScope;
 
     @GetMapping
     public ResponseDTO listar() {
@@ -41,22 +45,38 @@ public class SolicitudAprobacionController {
 
     @PutMapping("/{id}/aprobar")
     public ResponseEntity<ResponseDTO> aprobar(@PathVariable Long id) {
+        if (!companyScope.isAdminIT()) return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));
         Optional<Empresa> opt = empresaRepository.findById(id);
         if (opt.isEmpty()) return ResponseEntity.status(404).body(ResponseDTO.error("Empresa no encontrada"));
         Empresa e = opt.get();
         e.setEstadoEmpresa("ACTIVO");
         e.setFechaAprobacion(LocalDateTime.now());
         empresaRepository.save(e);
+        usuarioRepository.findByEmpresaIdOrderByIdDesc(e.getId()).stream()
+            .filter(u -> u.getRoles().stream().anyMatch(r -> "EMPRENDEDOR".equals(r.getNombreRol())))
+            .findFirst()
+            .ifPresent(u -> notificacionEmailService.enviarAprobacionNegocio(
+                u.getCorreo(), u.getNombre(),
+                e.getNombreComercial() != null ? e.getNombreComercial() : e.getNombreEmpresa()
+            ));
         return ResponseEntity.ok(ResponseDTO.success("Empresa aprobada", null));
     }
 
     @PutMapping("/{id}/rechazar")
     public ResponseEntity<ResponseDTO> rechazar(@PathVariable Long id) {
+        if (!companyScope.isAdminIT()) return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));
         Optional<Empresa> opt = empresaRepository.findById(id);
         if (opt.isEmpty()) return ResponseEntity.status(404).body(ResponseDTO.error("Empresa no encontrada"));
         Empresa e = opt.get();
         e.setEstadoEmpresa("RECHAZADO");
         empresaRepository.save(e);
+        usuarioRepository.findByEmpresaIdOrderByIdDesc(e.getId()).stream()
+            .filter(u -> u.getRoles().stream().anyMatch(r -> "EMPRENDEDOR".equals(r.getNombreRol())))
+            .findFirst()
+            .ifPresent(u -> notificacionEmailService.enviarRechazoNegocio(
+                u.getCorreo(), u.getNombre(),
+                e.getNombreComercial() != null ? e.getNombreComercial() : e.getNombreEmpresa()
+            ));
         return ResponseEntity.ok(ResponseDTO.success("Solicitud rechazada", null));
     }
 

@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import AdminLayout from '@/layouts/AdminLayout'
 import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import { useToast } from '@/components/ui/Toast'
@@ -55,7 +54,7 @@ export default function AdminTestimonios() {
   const pendienteCount = testimonios.filter(t => t.estado === 'PENDIENTE').length
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
 
         {/* Header */}
@@ -184,6 +183,6 @@ export default function AdminTestimonios() {
           </div>
         )}
       </div>
-    </AdminLayout>
+    </>
   )
 }

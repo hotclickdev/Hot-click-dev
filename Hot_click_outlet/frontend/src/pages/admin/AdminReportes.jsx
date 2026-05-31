@@ -1,6 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
+﻿import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import AdminLayout from '@/layouts/AdminLayout'
 import Spinner from '@/components/ui/Spinner'
 import Badge from '@/components/ui/Badge'
 import { ventaService } from '@/services/orderService'
@@ -94,7 +93,7 @@ export default function AdminReportes() {
   }
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
@@ -285,6 +284,6 @@ export default function AdminReportes() {
           </div>
         )}
       </div>
-    </AdminLayout>
+    </>
   )
 }

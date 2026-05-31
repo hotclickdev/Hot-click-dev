@@ -27,17 +27,18 @@ public class MarcaController {
 
     private static final Logger log = LoggerFactory.getLogger(MarcaController.class);
 
-    @Autowired private MarcaRepository marcaRepository;
-    @Autowired private UsuarioRepository usuarioRepository;
+    @Autowired private MarcaRepository        marcaRepository;
+    @Autowired private UsuarioRepository      usuarioRepository;
     @Autowired private SupabaseStorageService supabaseStorageService;
-    @Autowired private CompanyScope companyScope;
+    @Autowired private CompanyScope           companyScope;
+    @Autowired private com.hotclick.repository.EmpresaRepository empresaRepository;
 
-    /** Endpoint público — sin autenticación, usado por el catálogo y búsqueda */
+    /** Endpoint público — solo marcas de negocios aprobados y visibles */
     @Cacheable("marcas-publicas")
     @GetMapping("/publicas")
     public ResponseEntity<ResponseDTO> listarPublicas() {
         try {
-            var marcas = marcaRepository.findByEstado(Constants.ESTADO_ACTIVO);
+            var marcas = marcaRepository.findPublicasByEstado(Constants.ESTADO_ACTIVO);
             return ResponseEntity.ok(ResponseDTO.success("Marcas obtenidas", marcas));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(ResponseDTO.error("Error al obtener marcas: " + e.getMessage()));
@@ -69,7 +70,8 @@ public class MarcaController {
 
             var admin = usuarioRepository.findByCorreo(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-            var empresa = companyScope.getCurrentUser() != null ? companyScope.getCurrentUser().getEmpresa() : null;
+            var empresa = companyScope.getCurrentEmpresaId() != null
+                ? empresaRepository.findById(companyScope.getCurrentEmpresaId()).orElse(null) : null;
             Long empresaId = empresa != null ? empresa.getId() : null;
 
             boolean duplicado = empresaId != null
@@ -124,7 +126,8 @@ public class MarcaController {
             @AuthenticationPrincipal UserDetails userDetails) {
         var admin = usuarioRepository.findByCorreo(userDetails.getUsername())
             .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
-        var empresa = companyScope.getCurrentUser() != null ? companyScope.getCurrentUser().getEmpresa() : null;
+        var empresa = companyScope.getCurrentEmpresaId() != null
+                ? empresaRepository.findById(companyScope.getCurrentEmpresaId()).orElse(null) : null;
         Long empresaId = empresa != null ? empresa.getId() : null;
         int ok = 0; int duplicates = 0;
         for (Map<String, String> item : items) {

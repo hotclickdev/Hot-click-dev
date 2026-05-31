@@ -18,6 +18,10 @@ public class PayPalConfig {
     @Value("${paypal.webhook.id:}")
     private String webhookId;
 
+    /** true en sandbox/dev para ignorar verificación SSL si el JDK no tiene la CA */
+    @Value("${paypal.ssl.skip-verify:false}")
+    private boolean sslSkipVerify;
+
     @Value("${app.url}")
     private String appUrl;
 
@@ -25,6 +29,8 @@ public class PayPalConfig {
     public String getClientSecret() { return clientSecret; }
     public String getApiUrl()       { return apiUrl; }
     public String getWebhookId()    { return webhookId; }
+
+    public boolean isSslSkipVerify() { return sslSkipVerify; }
 
     public String getReturnUrl() {
         return appUrl.trim() + "/pago/exito";

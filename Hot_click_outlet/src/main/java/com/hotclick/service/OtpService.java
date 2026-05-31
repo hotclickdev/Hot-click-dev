@@ -107,6 +107,15 @@ public class OtpService {
         codigoOtpRepository.save(otp);
     }
 
+    /**
+     * Sends a 2FA login OTP.  Same mechanism as enviarOtp() but uses the
+     * 2FA_LOGIN type (5 min expiry) and a security-focused email template.
+     */
+    @Transactional
+    public void enviarOtp2Fa(Usuario usuario) {
+        enviarOtp(usuario, Constants.OTP_TIPO_2FA_LOGIN);
+    }
+
     private void enviarEmail(String destinatario, String nombre, String codigo, int expiracionSeg) {
         int minutos = expiracionSeg / 60;
         String html = """

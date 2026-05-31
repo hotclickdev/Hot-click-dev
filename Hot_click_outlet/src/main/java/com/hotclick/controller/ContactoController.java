@@ -27,6 +27,12 @@ public class ContactoController {
         if (nombre.isEmpty() || correo.isEmpty() || mensaje.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Campos requeridos incompletos"));
         }
+        if (nombre.length() > 120 || correo.length() > 254 || mensaje.length() > 3000) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Uno o más campos superan el límite de caracteres permitido"));
+        }
+        if (!correo.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Correo inválido"));
+        }
 
         try {
             String html = "<div style='font-family:sans-serif;max-width:560px'>"

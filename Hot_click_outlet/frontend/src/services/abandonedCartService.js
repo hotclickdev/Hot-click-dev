@@ -50,6 +50,8 @@ export const abandonedCartService = {
   },
 
   /** Deletes the record after the user restores or discards the cart. */
-  deleteAbandonedCart: (id) =>
-    api.delete(`/cart/abandoned/${id}`),
+  deleteAbandonedCart: (id) => {
+    const sessionId = getOrCreateSessionId()
+    return api.delete(`/cart/abandoned/${id}`, { params: { sessionId } })
+  },
 }

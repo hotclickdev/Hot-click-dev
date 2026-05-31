@@ -1,7 +1,6 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import AdminLayout from '@/layouts/AdminLayout'
 import { garantiaService } from '@/services/garantiaService'
 
 const ESTADOS = ['PENDIENTE', 'EN_REVISION', 'RESUELTA', 'RECHAZADA']
@@ -73,7 +72,7 @@ export default function AdminSolicitudesGarantia() {
   }
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
 
         {/* Header */}
@@ -363,6 +362,6 @@ export default function AdminSolicitudesGarantia() {
           </>
         )}
       </AnimatePresence>
-    </AdminLayout>
+    </>
   )
 }

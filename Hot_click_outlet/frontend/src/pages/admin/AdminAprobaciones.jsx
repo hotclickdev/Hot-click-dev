@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
-import AdminLayout from '@/layouts/AdminLayout'
+﻿import { useState, useEffect } from 'react'
 import api from '@/services/api'
+import { useToast } from '@/components/ui/Toast'
 
 const ESTADO_COLOR = {
   PENDIENTE_APROBACION: 'bg-yellow-500/15 text-yellow-400',
@@ -15,25 +15,32 @@ function fmtDate(d) {
 }
 
 export default function AdminAprobaciones() {
+  const toast = useToast()
   const [solicitudes, setSolicitudes] = useState([])
   const [stats, setStats]             = useState({})
   const [loading, setLoading]         = useState(true)
   const [saving, setSaving]           = useState(null)
-  const [toast, setToast]             = useState(null)
+  const [confirm, setConfirm]         = useState(null) // { id, action: 'aprobar' | 'rechazar', nombre }
 
   useEffect(() => { cargar() }, [])
 
   async function cargar() {
     try {
       setLoading(true)
-      const [{ data: sol }, { data: st }] = await Promise.all([
-        api.get('/admin/solicitudes-aprobacion'),
-        api.get('/admin/solicitudes-aprobacion/stats'),
-      ])
-      setSolicitudes(sol.data ?? [])
-      setStats(st.data ?? {})
+      // Interceptor unwraps ResponseDTO → data is already the array
+      const { data: sol } = await api.get('/admin/solicitudes-aprobacion')
+      const lista = Array.isArray(sol) ? sol : []
+      setSolicitudes(lista)
+      // Compute stats locally
+      const { data: todas } = await api.get('/admin/empresas')
+      const t = Array.isArray(todas) ? todas : []
+      setStats({
+        pendientes:  t.filter(e => e.estadoEmpresa === 'PENDIENTE_APROBACION').length,
+        activas:     t.filter(e => e.estadoEmpresa === 'ACTIVO').length,
+        suspendidas: t.filter(e => e.estadoEmpresa === 'SUSPENDIDO').length,
+      })
     } catch {
-      showToast('Error al cargar solicitudes', 'error')
+      toast({ message: 'Error al cargar solicitudes', type: 'error' })
     } finally {
       setLoading(false)
     }
@@ -43,10 +50,11 @@ export default function AdminAprobaciones() {
     setSaving(id + '_aprobar')
     try {
       await api.put(`/admin/solicitudes-aprobacion/${id}/aprobar`)
-      showToast('Empresa aprobada correctamente')
+      toast({ message: 'Negocio aprobado correctamente', type: 'success' })
+      setConfirm(null)
       cargar()
     } catch {
-      showToast('Error al aprobar', 'error')
+      toast({ message: 'Error al aprobar', type: 'error' })
     } finally {
       setSaving(null)
     }
@@ -56,37 +64,33 @@ export default function AdminAprobaciones() {
     setSaving(id + '_rechazar')
     try {
       await api.put(`/admin/solicitudes-aprobacion/${id}/rechazar`)
-      showToast('Solicitud rechazada')
+      toast({ message: 'Solicitud rechazada', type: 'success' })
+      setConfirm(null)
       cargar()
     } catch {
-      showToast('Error al rechazar', 'error')
+      toast({ message: 'Error al rechazar', type: 'error' })
     } finally {
       setSaving(null)
     }
   }
 
-  function showToast(msg, type = 'ok') {
-    setToast({ msg, type })
-    setTimeout(() => setToast(null), 3000)
-  }
-
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>Aprobaciones de empresas</h1>
+          <h1 className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>Solicitudes pendientes</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>
-            Revisá y aprobá las solicitudes de registro de nuevos emprendedores
+            Negocios nuevos esperando tu aprobación para activarse en la plataforma
           </p>
         </div>
 
         {/* KPIs */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: 'Pendientes',  value: stats.pendientes  ?? 0, color: 'text-yellow-400' },
-            { label: 'Activas',     value: stats.activas     ?? 0, color: 'text-green-400' },
-            { label: 'Suspendidas', value: stats.suspendidas ?? 0, color: 'text-red-400' },
+            { label: 'Por aprobar',  value: stats.pendientes  ?? 0, color: 'text-yellow-400' },
+            { label: 'Activos',      value: stats.activas     ?? 0, color: 'text-green-400' },
+            { label: 'Suspendidos',  value: stats.suspendidas ?? 0, color: 'text-red-400' },
           ].map(k => (
             <div key={k.label} className="rounded-xl p-4" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
               <div className={`text-2xl font-bold ${k.color}`}>{k.value}</div>
@@ -100,9 +104,11 @@ export default function AdminAprobaciones() {
           <div className="py-12 text-center text-sm" style={{ color: 'var(--hc-muted)' }}>Cargando solicitudes…</div>
         ) : solicitudes.length === 0 ? (
           <div className="py-12 text-center rounded-xl" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-            <div className="text-4xl mb-3">✅</div>
-            <p className="font-semibold" style={{ color: 'var(--hc-text)' }}>Todo al día</p>
-            <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>No hay solicitudes pendientes de aprobación.</p>
+            <div className="w-12 h-12 rounded-2xl mx-auto mb-3 flex items-center justify-center" style={{ backgroundColor: 'rgba(34,197,94,0.1)' }}>
+              <svg className="w-6 h-6" style={{ color: '#22c55e' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <p className="font-semibold" style={{ color: 'var(--hc-text)' }}>Sin pendientes</p>
+            <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>Todas las solicitudes están al día.</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -134,22 +140,52 @@ export default function AdminAprobaciones() {
                   </div>
 
                   <div className="flex flex-col gap-2 shrink-0">
-                    <button
-                      onClick={() => aprobar(sol.id)}
-                      disabled={saving === sol.id + '_aprobar'}
-                      className="px-4 py-2 rounded-xl text-sm font-medium disabled:opacity-50 transition-opacity hover:opacity-80"
-                      style={{ backgroundColor: '#22c55e', color: '#fff' }}
-                    >
-                      {saving === sol.id + '_aprobar' ? 'Aprobando…' : '✓ Aprobar'}
-                    </button>
-                    <button
-                      onClick={() => rechazar(sol.id)}
-                      disabled={saving === sol.id + '_rechazar'}
-                      className="px-4 py-2 rounded-xl text-sm font-medium disabled:opacity-50 transition-opacity hover:opacity-80"
-                      style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: '#ef4444' }}
-                    >
-                      {saving === sol.id + '_rechazar' ? 'Rechazando…' : '✕ Rechazar'}
-                    </button>
+                    {confirm?.id === sol.id ? (
+                      <div className="rounded-xl p-3 space-y-2 text-center"
+                        style={{ backgroundColor: 'var(--hc-surface-2)', border: `1px solid ${confirm.action === 'aprobar' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}` }}>
+                        <p className="text-xs font-semibold" style={{ color: 'var(--hc-text)' }}>
+                          {confirm.action === 'aprobar' ? '¿Confirmar aprobación?' : '¿Confirmar rechazo?'}
+                        </p>
+                        <p className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>{confirm.nombre}</p>
+                        <div className="flex gap-1.5">
+                          <button
+                            onClick={() => confirm.action === 'aprobar' ? aprobar(sol.id) : rechazar(sol.id)}
+                            disabled={saving !== null}
+                            className="flex-1 px-2 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50"
+                            style={{ backgroundColor: confirm.action === 'aprobar' ? '#22c55e' : '#ef4444', color: '#fff' }}
+                          >
+                            {saving !== null ? '…' : 'Sí, confirmar'}
+                          </button>
+                          <button
+                            onClick={() => setConfirm(null)}
+                            disabled={saving !== null}
+                            className="px-2 py-1.5 rounded-lg text-xs disabled:opacity-50"
+                            style={{ color: 'var(--hc-muted)', backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => setConfirm({ id: sol.id, action: 'aprobar', nombre: sol.nombreComercial || sol.nombreEmpresa })}
+                          disabled={saving !== null}
+                          className="px-4 py-2 rounded-xl text-sm font-medium disabled:opacity-50 transition-opacity hover:opacity-80"
+                          style={{ backgroundColor: '#22c55e', color: '#fff' }}
+                        >
+                          Aprobar
+                        </button>
+                        <button
+                          onClick={() => setConfirm({ id: sol.id, action: 'rechazar', nombre: sol.nombreComercial || sol.nombreEmpresa })}
+                          disabled={saving !== null}
+                          className="px-4 py-2 rounded-xl text-sm font-medium disabled:opacity-50 transition-opacity hover:opacity-80"
+                          style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: '#ef4444' }}
+                        >
+                          Rechazar
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -158,12 +194,7 @@ export default function AdminAprobaciones() {
         )}
       </div>
 
-      {toast && (
-        <div className={`fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl text-sm font-medium shadow-xl ${toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'}`}>
-          {toast.msg}
-        </div>
-      )}
-    </AdminLayout>
+    </>
   )
 }
 

@@ -132,7 +132,7 @@ export const productService = {
     api.patch(`/productos/${id}/carrusel`, { enCarrusel: valor, orden }),
 
   getCategories: () =>
-    api.get('/categorias'),
+    api.get('/categorias/publicas'),
 
   getImagenes: (productoId) =>
     api.get(`/productos/${productoId}/imagenes`),

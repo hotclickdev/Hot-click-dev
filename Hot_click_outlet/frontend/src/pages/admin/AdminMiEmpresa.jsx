@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
-import AdminLayout from '@/layouts/AdminLayout'
+﻿import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useBlocker } from 'react-router-dom'
 import api from '@/services/api'
 import useAuthStore from '@/store/authStore'
+import { useToast } from '@/components/ui/Toast'
 
 const PLAN_COLOR = {
   GRATUITO:   'bg-gray-500/15 text-gray-400',
@@ -24,13 +25,14 @@ function fmtDate(d) {
 const MAX_FOTOS = 10
 
 export default function AdminMiEmpresa() {
+  const toast = useToast()
   const userRole = useAuthStore(s => s.userRole)
   const [empresa, setEmpresa]   = useState(null)
   const [loading, setLoading]   = useState(true)
   const [saving, setSaving]       = useState(false)
   const [uploading, setUploading] = useState(false)
   const [dragOver, setDragOver]   = useState(false)
-  const [toast, setToast]         = useState(null)
+  const savedFormRef = useRef(null)
   const fileInputRef = useRef(null)
   const [form, setForm]         = useState({
     nombreComercial: '', descripcion: '', telefonoEmpresa: '',
@@ -51,12 +53,12 @@ export default function AdminMiEmpresa() {
       const { data } = await api.get('/empresa/perfil')
       // El interceptor de Axios ya hace unwrap de ResponseDTO → data ES la empresa directamente
       const e = data?.id ? data : (data?.data ?? data)
-      if (!e?.id) { showToast('No se encontró el negocio', 'error'); return }
+      if (!e?.id) { toast({ message: 'No se encontró el negocio', type: 'error' }); return }
       setEmpresa(e)
       const descRaw = e.descripcion ?? ''
       // Separar fotos de la descripción visible
       const descVisible = descRaw.replace(/\[FOTOS\].*?(\[\/FOTOS\]|$)/s, '').trim()
-      setForm({
+      const initialForm = {
         nombreComercial:  e.nombreComercial  ?? '',
         descripcion:      descVisible,
         telefonoEmpresa:  e.telefonoEmpresa  ?? '',
@@ -65,7 +67,9 @@ export default function AdminMiEmpresa() {
         colorPrimario:    e.colorPrimario    ?? '#FF4B12',
         colorSecundario:  e.colorSecundario  ?? '#1A1A2E',
         logoUrl:          e.logoUrl          ?? '',
-      })
+      }
+      setForm(initialForm)
+      savedFormRef.current = initialForm
       // Extraer fotos guardadas en descripcion como JSON
       try {
         const match = descRaw.match(/\[FOTOS\](.*?)(\[\/FOTOS\]|$)/s)
@@ -73,7 +77,7 @@ export default function AdminMiEmpresa() {
         else setFotos([])
       } catch { setFotos([]) }
     } catch {
-      showToast('Error al cargar perfil del negocio', 'error')
+      toast({ message: 'Error al cargar perfil del negocio', type: 'error' })
     } finally {
       setLoading(false)
     }
@@ -90,9 +94,9 @@ export default function AdminMiEmpresa() {
       })
       const url = data?.data ?? data
       setForm(s => ({ ...s, logoUrl: url }))
-      showToast('Logo subido correctamente')
+      toast({ message: 'Logo subido correctamente', type: 'success' })
     } catch (err) {
-      showToast(err?.response?.data?.message || 'Error al subir el logo', 'error')
+      toast({ message: err?.response?.data?.message || 'Error al subir el logo', type: 'error' })
     } finally {
       setUploading(false)
     }
@@ -108,6 +112,9 @@ export default function AdminMiEmpresa() {
   function validate() {
     const e = {}
     if (!form.nombreComercial.trim()) e.nombreComercial = 'El nombre comercial es requerido'
+    if (form.descripcion.includes('[FOTOS]') || form.descripcion.includes('[/FOTOS]')) {
+      e.descripcion = 'La descripción no puede contener el texto "[FOTOS]" — usá la sección Galería para subir fotos'
+    }
     return e
   }
 
@@ -131,10 +138,11 @@ export default function AdminMiEmpresa() {
         colorPrimario:   form.colorPrimario,
         colorSecundario: form.colorSecundario,
       })
-      showToast('Perfil del negocio actualizado')
+      savedFormRef.current = { ...form }
+      toast({ message: 'Perfil del negocio actualizado', type: 'success' })
       cargar()
     } catch {
-      showToast('Error al guardar cambios', 'error')
+      toast({ message: 'Error al guardar cambios', type: 'error' })
     } finally {
       setSaving(false)
     }
@@ -142,7 +150,7 @@ export default function AdminMiEmpresa() {
 
   const handleFotoFile = useCallback(async (file) => {
     if (!file) return
-    if (fotos.length >= MAX_FOTOS) { showToast(`Máximo ${MAX_FOTOS} fotos`, 'error'); return }
+    if (fotos.length >= MAX_FOTOS) { toast({ message: `Máximo ${MAX_FOTOS} fotos permitidas`, type: 'error' }); return }
     setUploadingFoto(true)
     try {
       const fd = new FormData()
@@ -165,44 +173,64 @@ export default function AdminMiEmpresa() {
         colorPrimario:   form.colorPrimario,
         colorSecundario: form.colorSecundario,
       })
-      showToast('Foto agregada y guardada')
+      toast({ message: 'Foto agregada y guardada', type: 'success' })
     } catch {
-      showToast('Error al subir la foto', 'error')
+      toast({ message: 'Error al subir la foto', type: 'error' })
     } finally {
       setUploadingFoto(false)
     }
   }, [fotos, form, empresa])
 
-  function showToast(msg, type = 'ok') {
-    setToast({ msg, type })
-    setTimeout(() => setToast(null), 3000)
-  }
+  const isDirty = useMemo(() => {
+    if (!savedFormRef.current) return false
+    const fields = ['nombreComercial','descripcion','telefonoEmpresa','correoEmpresa','numeroWhatsapp','colorPrimario','colorSecundario','logoUrl']
+    return fields.some(k => form[k] !== savedFormRef.current[k])
+  }, [form])
+
+  // Bloquear recarga de página con cambios sin guardar
+  useEffect(() => {
+    if (!isDirty) return
+    const handler = (e) => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [isDirty])
+
+  // Bloquear navegación in-app con cambios sin guardar
+  const blocker = useBlocker(isDirty && !saving)
 
   const canEdit = userRole === 'EMPRENDEDOR' || userRole === 'ADMIN_IT'
 
   if (loading) {
     return (
-      <AdminLayout>
+      <>
         <div className="py-20 text-center text-sm" style={{ color: 'var(--hc-muted)' }}>Cargando…</div>
-      </AdminLayout>
+      </>
     )
   }
 
   if (!empresa) {
     return (
-      <AdminLayout>
+      <>
         <div className="py-20 text-center text-sm" style={{ color: 'var(--hc-muted)' }}>No se encontró el negocio asociado a tu cuenta.</div>
-      </AdminLayout>
+      </>
     )
   }
 
   return (
-    <AdminLayout>
+    <>
       <div className="max-w-2xl space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>Mi negocio</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>Configura el perfil público de tu negocio en HOTCLICK</p>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>Mi negocio</h1>
+            {isDirty && (
+              <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                style={{ backgroundColor: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b' }}>
+                Cambios sin guardar
+              </span>
+            )}
+          </div>
+          <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>Completá el perfil que verán tus clientes en la plataforma</p>
         </div>
 
         {/* Estado y plan */}
@@ -233,6 +261,65 @@ export default function AdminMiEmpresa() {
           )}
         </div>
 
+        {/* ── Completitud del perfil ── */}
+        {canEdit && (() => {
+          const checks = [
+            { label: 'Logo',        done: !!form.logoUrl },
+            { label: 'Descripción', done: form.descripcion.trim().length > 10 },
+            { label: 'Teléfono',    done: !!form.telefonoEmpresa.trim() },
+            { label: 'Correo',      done: !!form.correoEmpresa.trim() },
+            { label: 'WhatsApp',    done: !!form.numeroWhatsapp.trim() },
+          ]
+          const done = checks.filter(c => c.done).length
+          const pct = Math.round((done / checks.length) * 100)
+          if (pct === 100) return null
+          return (
+            <div className="rounded-xl p-4" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold" style={{ color: 'var(--hc-text)' }}>
+                  Perfil {pct}% completado
+                </span>
+                <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>{done}/{checks.length}</span>
+              </div>
+              <div className="h-1.5 rounded-full overflow-hidden mb-3" style={{ backgroundColor: 'var(--hc-surface-2)' }}>
+                <div className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${pct}%`, backgroundColor: pct < 60 ? '#f59e0b' : 'var(--hc-accent)' }} />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {checks.map(c => (
+                  <span key={c.label} className="text-xs px-2 py-0.5 rounded-full font-medium"
+                    style={{
+                      backgroundColor: c.done ? 'rgba(34,197,94,0.1)' : 'var(--hc-surface-2)',
+                      color: c.done ? '#22c55e' : 'var(--hc-muted)',
+                      border: `1px solid ${c.done ? 'rgba(34,197,94,0.2)' : 'var(--hc-border)'}`,
+                    }}>
+                    {c.done ? '✓ ' : ''}{c.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* ── Visibilidad pública ── */}
+        {empresa.estadoEmpresa === 'ACTIVO' && (
+          <VisibilidadCard
+            visible={empresa.visibilidadPublica !== false}
+            onChange={async (val) => {
+              try {
+                const { data } = await api.put('/empresa/perfil/visibilidad', { visibilidadPublica: val })
+                const updated = data?.id ? data : (data?.data ?? data)
+                setEmpresa(e => ({ ...e, visibilidadPublica: val }))
+                toast({ message: val ? 'Negocio visible al público' : 'Negocio en modo invisible', type: 'success' })
+                // Refrescar el estado global del layout
+                if (updated) setEmpresa(e => ({ ...e, ...updated }))
+              } catch (err) {
+                toast({ message: err?.response?.data?.message ?? 'Error al cambiar visibilidad', type: 'error' })
+              }
+            }}
+          />
+        )}
+
         {/* Formulario editable */}
         <form onSubmit={guardar} className="space-y-5">
           <Section title="Información pública">
@@ -245,7 +332,7 @@ export default function AdminMiEmpresa() {
                 style={{ backgroundColor: 'var(--hc-surface-2)', border: `1px solid ${errors.nombreComercial ? '#ef4444' : 'var(--hc-border)'}`, color: 'var(--hc-text)' }}
               />
             </Field>
-            <Field label="Descripción">
+            <Field label="Descripción" error={errors.descripcion}>
               <textarea
                 value={form.descripcion}
                 onChange={e => setForm(s => ({ ...s, descripcion: e.target.value }))}
@@ -253,7 +340,7 @@ export default function AdminMiEmpresa() {
                 disabled={!canEdit}
                 placeholder="Describe brevemente tu negocio y lo que ofrecés…"
                 className="w-full px-3 py-2.5 rounded-xl text-sm outline-none resize-none disabled:opacity-60"
-                style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
+                style={{ backgroundColor: 'var(--hc-surface-2)', border: `1px solid ${errors.descripcion ? '#ef4444' : 'var(--hc-border)'}`, color: 'var(--hc-text)' }}
               />
             </Field>
           </Section>
@@ -281,7 +368,7 @@ export default function AdminMiEmpresa() {
                   style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
                 />
               </Field>
-              <Field label="WhatsApp (número sin guión)">
+              <Field label="WhatsApp" hint="Formato: 50688880000 (código país + número)">
                 <input
                   value={form.numeroWhatsapp}
                   onChange={e => setForm(s => ({ ...s, numeroWhatsapp: e.target.value }))}
@@ -443,8 +530,8 @@ export default function AdminMiEmpresa() {
                             telefonoEmpresa: form.telefonoEmpresa, correoEmpresa: form.correoEmpresa,
                             numeroWhatsapp: form.numeroWhatsapp, colorPrimario: form.colorPrimario, colorSecundario: form.colorSecundario,
                           })
-                          showToast('Foto eliminada')
-                        } catch { showToast('Error al eliminar foto', 'error') }
+                          toast({ message: 'Foto eliminada', type: 'success' })
+                        } catch { toast({ message: 'Error al eliminar foto', type: 'error' }) }
                       }}
                       className="absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                       style={{ backgroundColor: '#ef4444', color: '#fff' }}
@@ -494,12 +581,92 @@ export default function AdminMiEmpresa() {
         </form>
       </div>
 
-      {toast && (
-        <div className={`fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl text-sm font-medium shadow-xl ${toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'}`}>
-          {toast.msg}
+      {/* Modal: confirmar navegación con cambios sin guardar */}
+      {blocker.state === 'blocked' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
+          <div className="rounded-2xl p-6 max-w-sm w-full space-y-4"
+            style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
+            <div>
+              <p className="font-semibold text-base" style={{ color: 'var(--hc-text)' }}>Cambios sin guardar</p>
+              <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>
+                Tenés cambios sin guardar en el perfil de tu negocio. ¿Salir sin guardar?
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => blocker.proceed?.()}
+                className="flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-opacity hover:opacity-80"
+                style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}
+              >
+                Salir sin guardar
+              </button>
+              <button
+                onClick={() => blocker.reset?.()}
+                className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
+                style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
+              >
+                Volver a guardar
+              </button>
+            </div>
+          </div>
         </div>
       )}
-    </AdminLayout>
+    </>
+  )
+}
+
+function VisibilidadCard({ visible, onChange }) {
+  const [loading, setLoading] = useState(false)
+
+  const toggle = async () => {
+    setLoading(true)
+    try { await onChange(!visible) } finally { setLoading(false) }
+  }
+
+  return (
+    <div className="rounded-2xl p-5 flex items-center justify-between gap-4"
+      style={{ backgroundColor: 'var(--hc-surface)', border: `1px solid ${visible ? 'rgba(34,197,94,0.3)' : 'rgba(99,102,241,0.3)'}` }}>
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+          style={{ backgroundColor: visible ? 'rgba(34,197,94,0.1)' : 'rgba(99,102,241,0.1)' }}>
+          {visible
+            ? <svg className="w-5 h-5" style={{ color: '#22c55e' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              </svg>
+            : <svg className="w-5 h-5" style={{ color: '#818cf8' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+              </svg>
+          }
+        </div>
+        <div>
+          <p className="font-semibold text-sm" style={{ color: 'var(--hc-text)' }}>
+            Visibilidad pública
+          </p>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
+            {visible
+              ? 'Tu tienda y productos son visibles al público'
+              : 'Tu tienda está oculta — el público no puede ver tus productos'}
+          </p>
+        </div>
+      </div>
+
+      <button
+        onClick={toggle}
+        disabled={loading}
+        className="relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-60 shrink-0"
+        style={{ backgroundColor: visible ? '#22c55e' : '#6366f1' }}
+        role="switch"
+        aria-checked={visible}
+      >
+        {loading
+          ? <span className="absolute inset-0 flex items-center justify-center">
+              <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+            </span>
+          : <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${visible ? 'translate-x-6' : 'translate-x-1'}`} />
+        }
+      </button>
+    </div>
   )
 }
 
@@ -512,13 +679,14 @@ function Section({ title, children }) {
   )
 }
 
-function Field({ label, error, required, children }) {
+function Field({ label, error, required, hint, children }) {
   return (
     <div className="space-y-1">
       <label className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>
         {label}{required && <span className="text-red-400 ml-0.5">*</span>}
       </label>
       {children}
+      {hint && !error && <p className="text-[11px]" style={{ color: 'var(--hc-muted)', opacity: 0.7 }}>{hint}</p>}
       {error && <p className="text-xs text-red-400">{error}</p>}
     </div>
   )

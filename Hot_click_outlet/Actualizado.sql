@@ -1809,5 +1809,100 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_usuario_identificacion_no_eliminado
     WHERE estado <> 3;
 
 -- ============================================================
+-- V16: MEMBRESÍAS USUARIO-EMPRESA (MULTI-NEGOCIO)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS hot_click_miembro_empresa_tb (
+    id_miembro      BIGSERIAL PRIMARY KEY,
+    fk_id_usuario   BIGINT    NOT NULL REFERENCES hot_click_usuario_tb(id_usuario) ON DELETE CASCADE,
+    fk_id_empresa   BIGINT    NOT NULL REFERENCES hot_click_empresa_tb(id_empresa) ON DELETE CASCADE,
+    rol_en_empresa  VARCHAR(30) NOT NULL DEFAULT 'MIEMBRO',
+    estado          INTEGER   NOT NULL DEFAULT 1,
+    fecha_ingreso   TIMESTAMP NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_miembro_empresa UNIQUE (fk_id_usuario, fk_id_empresa)
+);
+
+CREATE INDEX IF NOT EXISTS idx_miembro_usuario ON hot_click_miembro_empresa_tb(fk_id_usuario);
+CREATE INDEX IF NOT EXISTS idx_miembro_empresa ON hot_click_miembro_empresa_tb(fk_id_empresa);
+
+-- Migrar membresías existentes
+INSERT INTO hot_click_miembro_empresa_tb (fk_id_usuario, fk_id_empresa, rol_en_empresa, estado, fecha_ingreso)
+SELECT u.id_usuario, u.fk_id_empresa, 'PROPIETARIO', COALESCE(u.fk_id_estado, 1), COALESCE(u.fecha_registro, NOW())
+FROM hot_click_usuario_tb u
+WHERE u.fk_id_empresa IS NOT NULL
+ON CONFLICT (fk_id_usuario, fk_id_empresa) DO NOTHING;
+
+-- ============================================================
+-- V17: VISIBILIDAD PÚBLICA DE EMPRESA
+-- ============================================================
+ALTER TABLE hot_click_empresa_tb
+    ADD COLUMN IF NOT EXISTS visibilidad_publica BOOLEAN NOT NULL DEFAULT TRUE;
+
+-- ============================================================
+-- V19: MULTI-METHOD 2FA (2026-05-30)
+-- TOTP + Email OTP support, replay protection, encrypted secrets
+-- ============================================================
+ALTER TABLE hot_click_usuario_tb
+    ADD COLUMN IF NOT EXISTS two_factor_methods  VARCHAR(50)  DEFAULT NULL,
+    ADD COLUMN IF NOT EXISTS totp_last_used_otp  VARCHAR(10)  DEFAULT NULL,
+    ADD COLUMN IF NOT EXISTS totp_last_used_at   TIMESTAMP    DEFAULT NULL;
+
+ALTER TABLE hot_click_usuario_tb
+    ALTER COLUMN two_factor_secret TYPE VARCHAR(200);
+
+UPDATE hot_click_usuario_tb
+SET    two_factor_methods = 'TOTP'
+WHERE  two_factor_enabled = true
+  AND  two_factor_methods IS NULL;
+
+INSERT INTO hot_click_tipo_otp_tb (nombre, tiempo_expiracion_seg, longitud_codigo, fk_id_estado)
+SELECT '2FA_LOGIN', 300, 6, 1
+WHERE  NOT EXISTS (
+    SELECT 1 FROM hot_click_tipo_otp_tb WHERE nombre = '2FA_LOGIN'
+);
+
+-- ============================================================
 -- FIN DEL SCRIPT
 -- ============================================================
+
+-- ============================================================
+-- V20: Security Operations — Audit Log + Alert tables
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS hot_click_security_audit_log_tb (
+    id          BIGSERIAL    PRIMARY KEY,
+    timestamp   TIMESTAMP    NOT NULL DEFAULT NOW(),
+    event_type  VARCHAR(50)  NOT NULL,
+    severity    VARCHAR(10)  NOT NULL,
+    user_id     BIGINT,
+    email       VARCHAR(150),
+    ip_address  VARCHAR(45),
+    user_agent  VARCHAR(300),
+    endpoint    VARCHAR(200),
+    metadata    TEXT,
+    CONSTRAINT chk_sal_severity CHECK (severity IN ('LOW','MEDIUM','HIGH','CRITICAL'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_sal_timestamp   ON hot_click_security_audit_log_tb (timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_sal_event_type  ON hot_click_security_audit_log_tb (event_type);
+CREATE INDEX IF NOT EXISTS idx_sal_severity    ON hot_click_security_audit_log_tb (severity);
+CREATE INDEX IF NOT EXISTS idx_sal_user_id     ON hot_click_security_audit_log_tb (user_id);
+CREATE INDEX IF NOT EXISTS idx_sal_ip_address  ON hot_click_security_audit_log_tb (ip_address);
+
+CREATE TABLE IF NOT EXISTS hot_click_security_alert_tb (
+    id          BIGSERIAL    PRIMARY KEY,
+    alert_type  VARCHAR(50)  NOT NULL,
+    severity    VARCHAR(10)  NOT NULL,
+    user_id     BIGINT,
+    ip_address  VARCHAR(45),
+    message     VARCHAR(500) NOT NULL,
+    details     TEXT,
+    resolved    BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMP    NOT NULL DEFAULT NOW(),
+    resolved_at TIMESTAMP,
+    CONSTRAINT chk_alert_severity CHECK (severity IN ('LOW','MEDIUM','HIGH','CRITICAL'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_alert_unresolved ON hot_click_security_alert_tb (resolved, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_alert_severity   ON hot_click_security_alert_tb (severity);
+CREATE INDEX IF NOT EXISTS idx_alert_type       ON hot_click_security_alert_tb (alert_type);

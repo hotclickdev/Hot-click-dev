@@ -22,5 +22,7 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
 
     List<Empresa> findByEstadoEmpresaOrderByFechaRegistroDesc(String estadoEmpresa);
 
+    List<Empresa> findByEstadoEmpresaOrderByFechaRegistroAsc(String estadoEmpresa);
+
     List<Empresa> findAllByOrderByFechaRegistroDesc();
 }

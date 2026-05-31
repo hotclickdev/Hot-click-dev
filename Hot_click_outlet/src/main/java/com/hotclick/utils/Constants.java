@@ -75,4 +75,14 @@ public class Constants {
     public static final String AUDITORIA_APROBAR_SINPE      = "APROBAR_SINPE";
     public static final String AUDITORIA_RECHAZAR_SINPE     = "RECHAZAR_SINPE";
     public static final String AUDITORIA_AUTO_APROBAR_SINPE = "AUTO_APROBAR_SINPE";
+
+    // 2FA — métodos disponibles
+    public static final String METODO_2FA_TOTP      = "TOTP";
+    public static final String METODO_2FA_EMAIL_OTP = "EMAIL_OTP";
+
+    // 2FA — OTP type para login por email
+    public static final String OTP_TIPO_2FA_LOGIN = "2FA_LOGIN";
+
+    // 2FA — ventana de replay protection TOTP (±1 periodo = 3 × 30s = 90s)
+    public static final long TOTP_REPLAY_WINDOW_SECONDS = 90L;
 }

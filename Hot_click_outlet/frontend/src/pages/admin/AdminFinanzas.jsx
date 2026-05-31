@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react'
+﻿import { useState, useEffect, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import AdminLayout from '@/layouts/AdminLayout'
 import Spinner from '@/components/ui/Spinner'
 import { orderService } from '@/services/orderService'
 import { formatPrice, formatDate } from '@/utils/format'
@@ -64,7 +64,7 @@ export default function AdminFinanzas() {
   const totalCobrado   = filtered.reduce((s, p) => s + (p.total ?? p.totalPedido ?? 0), 0)
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
@@ -144,8 +144,14 @@ export default function AdminFinanzas() {
               </h2>
 
               {filtered.length === 0 ? (
-                <div className="bg-[#111114] border border-white/8 rounded-2xl p-10 text-center text-[#8e8e9a]">
-                  {t('adminFinanzas.noData')}
+                <div className="bg-[#111114] border border-white/8 rounded-2xl p-10 text-center space-y-2">
+                  <p className="text-[#e8e8ed] font-medium">Sin ventas en este período</p>
+                  <p className="text-sm text-[#8e8e9a] max-w-sm mx-auto">
+                    Las ventas aparecen aquí cuando un pedido se marca como <strong className="text-[#4ade80]">Entregado</strong> o <strong className="text-[#a855f7]">Completado</strong>.
+                  </p>
+                  <Link to="/admin/pedidos" className="inline-block text-xs text-[#4f7cff] hover:underline mt-1">
+                    Ver pedidos pendientes →
+                  </Link>
                 </div>
               ) : (
                 <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
@@ -210,6 +216,6 @@ export default function AdminFinanzas() {
           </>
         )}
       </div>
-    </AdminLayout>
+    </>
   )
 }

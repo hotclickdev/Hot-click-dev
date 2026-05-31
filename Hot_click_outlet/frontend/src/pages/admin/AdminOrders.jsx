@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import AdminLayout from '@/layouts/AdminLayout'
 import Spinner from '@/components/ui/Spinner'
 import { orderService } from '@/services/orderService'
 import { adminService } from '@/services/orderService'
@@ -8,6 +7,9 @@ import { productService } from '@/services/productService'
 import { useToast } from '@/components/ui/Toast'
 import { formatDate, formatPrice } from '@/utils/format'
 import ImportExportBar from '@/components/admin/ImportExportBar'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import { RetryBanner } from '@/components/ui/RetryBanner'
+import { useStickyState } from '@/hooks/useStickyState'
 
 const FILTERS = ['Todos', 'PENDIENTE', 'PAGADO', 'EN_PREPARACION', 'LISTO_RETIRO', 'ENVIADO', 'ENTREGADO', 'COMPLETADO', 'CANCELADO']
 
@@ -509,12 +511,13 @@ function OrderCard({ order, onUpdate, onDelete }) {
   const [open, setOpen]             = useState(false)
   const [saving, setSaving]         = useState(false)
   const [notifying, setNotifying]   = useState(false)
-  const [pendingEstado, setPending] = useState(null)   // etapa seleccionada pero no guardada
+  const [pendingEstado, setPending] = useState(null)
   const [nota, setNota]             = useState('')
   const [guia, setGuia]             = useState(order.numeroGuia ?? '')
   const [costo, setCosto]           = useState('')
   const [showOver, setShowOver]     = useState(false)
   const [override, setOverride]     = useState('')
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   const estado   = order.estado ?? 'PENDIENTE'
   const esRetiro = order.metodoEnvio !== 'ENVIO_A_DOMICILIO'
@@ -562,7 +565,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
   }
 
   const doDelete = async () => {
-    if (!window.confirm(t('adminOrders.confirmDelete', { id: order.id }))) return
+    setConfirmDelete(false)
     setSaving(true)
     try {
       await orderService.delete(order.id)
@@ -846,7 +849,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
               )}
             </div>
             <button
-              onClick={doDelete}
+              onClick={() => setConfirmDelete(true)}
               disabled={saving}
               className="text-xs px-3 py-1.5 rounded-lg transition-all disabled:opacity-40 shrink-0"
               style={{ backgroundColor: 'rgba(248,113,113,0.10)', color: 'var(--hc-danger)', border: '1px solid rgba(248,113,113,0.25)' }}
@@ -856,23 +859,40 @@ function OrderCard({ order, onUpdate, onDelete }) {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={doDelete}
+        title="Eliminar pedido"
+        message={`¿Eliminar el pedido #${order.id}? Esta acción no se puede deshacer.`}
+      />
     </div>
   )
 }
+
+const ORD_PAGE_SIZE = 20
 
 export default function AdminOrders() {
   const { t } = useTranslation()
   const [orders, setOrders]         = useState([])
   const [loading, setLoading]       = useState(true)
-  const [filter, setFilter]         = useState('Todos')
+  const [loadError, setLoadError]   = useState(false)
+  const [filter, setFilter]         = useStickyState('hc-ord-filter', 'Todos')
+  const [sortDesc, setSortDesc]     = useState(true)
+  const [ordPage, setOrdPage]       = useState(0)
+  const changeFilter = (f) => { setFilter(f); setOrdPage(0) }
   const [showCreate, setShowCreate] = useState(false)
 
   const load = async () => {
     setLoading(true)
+    setLoadError(false)
     try {
       const { data } = await orderService.getAll()
       const raw = data?.data ?? data
       setOrders(Array.isArray(raw) ? raw : raw?.content ?? [])
+    } catch {
+      setLoadError(true)
     } finally { setLoading(false) }
   }
 
@@ -889,17 +909,27 @@ export default function AdminOrders() {
     else load()
   }
 
-  const filtered = filter === 'Todos'
-    ? orders
-    : orders.filter(o => o.estado === filter)
+  const filtered = (filter === 'Todos' ? orders : orders.filter(o => o.estado === filter))
+    .slice().sort((a, b) => {
+      const da = new Date(a.fechaCreacion ?? a.fechaPedido ?? 0)
+      const db = new Date(b.fechaCreacion ?? b.fechaPedido ?? 0)
+      return sortDesc ? db - da : da - db
+    })
+
+  const totalOrdPages = Math.ceil(filtered.length / ORD_PAGE_SIZE)
+  const paged = filtered.slice(ordPage * ORD_PAGE_SIZE, (ordPage + 1) * ORD_PAGE_SIZE)
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-5">
+        {loadError && !loading && (
+          <RetryBanner message="Error al cargar los pedidos. Verificá tu conexión." onRetry={load} />
+        )}
+
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold text-[#e8e8ed]">{t('adminOrders.title')}</h1>
-            <p className="text-sm text-[#8e8e9a] mt-0.5">{t('adminOrders.subtitle', { count: orders.length })}</p>
+            <p className="text-sm text-[#8e8e9a] mt-0.5">{filtered.length} pedidos{filter !== 'Todos' ? ` · ${filter}` : ''}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap shrink-0">
             <ImportExportBar
@@ -921,6 +951,20 @@ export default function AdminOrders() {
               sheetName="Pedidos"
             />
             <button
+              onClick={() => setSortDesc(v => !v)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all shrink-0"
+              style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}
+              title={sortDesc ? 'Ordenar: más antiguos primero' : 'Ordenar: más recientes primero'}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                {sortDesc
+                  ? <><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="9" y2="18"/></>
+                  : <><line x1="3" y1="6" x2="9" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>
+                }
+              </svg>
+              {sortDesc ? 'Recientes' : 'Antiguos'}
+            </button>
+            <button
               onClick={() => setShowCreate(true)}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0"
               style={{ backgroundColor: 'var(--hc-accent)', color: 'white' }}
@@ -935,7 +979,7 @@ export default function AdminOrders() {
           {FILTERS.map(f => (
             <button
               key={f}
-              onClick={() => setFilter(f)}
+              onClick={() => changeFilter(f)}
               className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
               style={{
                 backgroundColor: filter === f ? 'var(--hc-accent)' : 'color-mix(in srgb, var(--hc-text) 5%, transparent)',
@@ -951,13 +995,64 @@ export default function AdminOrders() {
         {loading ? (
           <div className="flex justify-center py-16"><Spinner size="lg" /></div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-12 text-[#8e8e9a] text-sm">{t('adminOrders.noOrders')}</div>
-        ) : (
-          <div className="space-y-2">
-            {filtered.map(order => (
-              <OrderCard key={order.id} order={order} onUpdate={handleUpdate} onDelete={handleDelete} />
-            ))}
+          <div className="text-center py-14">
+            {filter !== 'Todos' ? (
+              <div className="space-y-2">
+                <p className="text-[#8e8e9a] text-sm">Sin pedidos con estado <strong className="text-[#e8e8ed]">{filter}</strong></p>
+                <button onClick={() => changeFilter('Todos')} className="text-xs text-[#4f7cff] hover:underline">Ver todos los pedidos →</button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center" style={{ backgroundColor: 'rgba(79,124,255,0.08)', border: '1px solid rgba(79,124,255,0.15)' }}>
+                  <svg className="w-7 h-7" style={{ color: '#4f7cff' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+                </div>
+                <p className="font-semibold text-[#e8e8ed]">Sin pedidos todavía</p>
+                <p className="text-sm text-[#8e8e9a] max-w-xs mx-auto">Los pedidos de tus clientes aparecen aquí. También podés registrar uno manual.</p>
+                <button
+                  onClick={() => setShowCreate(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold mt-1 transition-opacity hover:opacity-80"
+                  style={{ backgroundColor: '#4f7cff', color: '#fff' }}
+                >
+                  + Registrar pedido manual
+                </button>
+              </div>
+            )}
           </div>
+        ) : (
+          <>
+            <div className="space-y-2">
+              {paged.map(order => (
+                <OrderCard key={order.id} order={order} onUpdate={handleUpdate} onDelete={handleDelete} />
+              ))}
+            </div>
+
+            {/* Paginación */}
+            {totalOrdPages > 1 && (
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+                  {filtered.length} pedidos · página {ordPage + 1} de {totalOrdPages}
+                </span>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => setOrdPage(p => Math.max(0, p - 1))}
+                    disabled={ordPage === 0}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity disabled:opacity-40"
+                    style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
+                  >
+                    ← Anterior
+                  </button>
+                  <button
+                    onClick={() => setOrdPage(p => Math.min(totalOrdPages - 1, p + 1))}
+                    disabled={ordPage >= totalOrdPages - 1}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity disabled:opacity-40"
+                    style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
+                  >
+                    Siguiente →
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
       {showCreate && (
@@ -966,6 +1061,6 @@ export default function AdminOrders() {
           onCreated={handleCreated}
         />
       )}
-    </AdminLayout>
+    </>
   )
 }

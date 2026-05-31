@@ -147,7 +147,8 @@ public class ProductoService {
     }
 
     public Page<Producto> listarPorMarca(Long marcaId, Pageable pageable) {
-        return productoRepository.findByMarcaIdAndEstadoAndStockActualGreaterThan(marcaId, Constants.ESTADO_ACTIVO, 0, pageable);
+        // Solo negocios aprobados y visibles
+        return productoRepository.findByMarcaPublico(marcaId, Constants.ESTADO_ACTIVO, pageable);
     }
 
     private static String trunc(String s, int max) {
@@ -189,19 +190,20 @@ public class ProductoService {
     }
 
     public Page<Producto> listarTodosActivos(Pageable pageable) {
-        return productoRepository.findByEstado(Constants.ESTADO_ACTIVO, pageable);
+        // Solo negocios aprobados visibles en catálogo público
+        return productoRepository.findByEstadoAndEmpresaAprobada(Constants.ESTADO_ACTIVO, pageable);
     }
 
     public Page<Producto> listarPorCategoria(Long categoriaId, Pageable pageable) {
-        return productoRepository.findByCategoriaIdAndEstado(categoriaId, Constants.ESTADO_ACTIVO, pageable);
+        return productoRepository.findByCategoriaPublico(categoriaId, Constants.ESTADO_ACTIVO, pageable);
     }
 
     public List<Producto> listarDestacados() {
-        return productoRepository.findByDestacadoTrueAndEstado(Constants.ESTADO_ACTIVO);
+        return productoRepository.findDestacadosPublicos(Constants.ESTADO_ACTIVO);
     }
 
     public List<Producto> listarCarrusel() {
-        return productoRepository.findByEnCarruselTrueAndEstadoOrderByOrdenCarruselAsc(Constants.ESTADO_ACTIVO);
+        return productoRepository.findCarruselPublico(Constants.ESTADO_ACTIVO);
     }
 
     @Transactional

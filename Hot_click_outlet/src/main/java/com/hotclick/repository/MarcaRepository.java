@@ -18,6 +18,14 @@ public interface MarcaRepository extends JpaRepository<Marca, Long> {
 
     List<Marca> findByEstado(Integer estado);
 
+    @Query(nativeQuery = true, value =
+        "SELECT m.* FROM hot_click_marca_tb m " +
+        "LEFT JOIN hot_click_empresa_tb e ON m.fk_id_empresa = e.id_empresa " +
+        "WHERE m.fk_id_estado = :estado " +
+        "AND (m.fk_id_empresa IS NULL " +
+        "     OR (e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE))")
+    List<Marca> findPublicasByEstado(@Param("estado") Integer estado);
+
     @Query("SELECT m FROM Marca m WHERE m.empresa.id = :empresaId AND m.estado = :estado")
     List<Marca> findByEmpresaIdAndEstado(@Param("empresaId") Long empresaId, @Param("estado") Integer estado);
 

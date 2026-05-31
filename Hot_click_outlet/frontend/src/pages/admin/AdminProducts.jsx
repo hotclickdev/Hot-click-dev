@@ -1,7 +1,11 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+﻿import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { Link } from 'react-router-dom'
+import { useDebounce } from '@/hooks/useDebounce'
+import { useStickyState } from '@/hooks/useStickyState'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import { RetryBanner } from '@/components/ui/RetryBanner'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import AdminLayout from '@/layouts/AdminLayout'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Modal from '@/components/ui/Modal'
@@ -80,17 +84,25 @@ export default function AdminProducts() {
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
-  const [search, setSearch] = useState('')
-  const [filterCat, setFilterCat] = useState('')
-  const [filterCond, setFilterCond] = useState('')
-  const [filterStock, setFilterStock] = useState('')
+  const [search, setSearch]         = useStickyState('hc-prod-search', '')
+  const [filterCat, setFilterCat]   = useStickyState('hc-prod-cat', '')
+  const [filterCond, setFilterCond] = useStickyState('hc-prod-cond', '')
+  const [filterStock, setFilterStock] = useStickyState('hc-prod-stock', '')
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [loadError, setLoadError] = useState(false)
+  const [showDiscardModal, setShowDiscardModal] = useState(false)
+  const editInitialFormRef = useRef(null)
+  const loadIdRef = useRef(0)
+  const debouncedSearch = useDebounce(search, 280)
   const [carruselOpen, setCarruselOpen] = useState(true)
   const [seoOpen, setSeoOpen] = useState(false)
   const [seoAutoTitle, setSeoAutoTitle] = useState(true)
   const [seoAutoDesc, setSeoAutoDesc] = useState(true)
 
   const load = async (page = prodPage) => {
+    const id = ++loadIdRef.current
     setLoading(true)
+    setLoadError(false)
     try {
       const [{ data: prods }, { data: cats }, { data: bods }, { data: marcsR }] = await Promise.all([
         productService.adminGetAll(page, PROD_PAGE_SIZE),
@@ -98,13 +110,18 @@ export default function AdminProducts() {
         warehouseService.getAll(),
         marcaService.getAll(),
       ])
+      if (id !== loadIdRef.current) return // stale — se disparó una carga más reciente
       const pageData = prods.content ?? prods ?? []
       setProducts(pageData)
       setTotalProds(prods.totalElements ?? pageData.length)
       setCategories(cats ?? [])
       setBodegas(Array.isArray(bods) ? bods : bods?.content ?? [])
       setMarcas(Array.isArray(marcsR) ? marcsR : [])
-    } finally { setLoading(false) }
+    } catch {
+      if (id === loadIdRef.current) setLoadError(true)
+    } finally {
+      if (id === loadIdRef.current) setLoading(false)
+    }
   }
 
   const [totalProds, setTotalProds] = useState(0)
@@ -113,6 +130,7 @@ export default function AdminProducts() {
 
   const openNew = () => {
     setEditing(null)
+    editInitialFormRef.current = null
     setSeoAutoTitle(true)
     setSeoAutoDesc(true)
     setSeoOpen(false)
@@ -149,8 +167,28 @@ export default function AdminProducts() {
     try {
       const { data: imgs } = await productService.getImagenes(p.id)
       const urls = (Array.isArray(imgs) ? imgs : []).map((i) => i.urlImagen ?? i)
-      if (urls.length > 0) setForm((prev) => ({ ...prev, imagenes: urls }))
-    } catch { /* silencioso — usa la imagen principal como fallback */ }
+      if (urls.length > 0) {
+        setForm((prev) => {
+          const updated = { ...prev, imagenes: urls }
+          editInitialFormRef.current = JSON.stringify(updated)
+          return updated
+        })
+      } else {
+        editInitialFormRef.current = JSON.stringify({
+          nombre: p.nombre ?? '', titulo: p.titulo ?? '', descripcion: p.descripcion ?? '',
+          precioCompra: p.precioCompra ?? '', precioVenta: p.precioVenta ?? p.precio ?? '',
+          stock: p.stock ?? '', condicion: p.condicion ?? 'NUEVO',
+          categoriaId: p.categoriaId ?? '', marcaId: p.marcaId ? String(p.marcaId) : '',
+          imagenUrl: p.imagenUrl ?? '', bodegaId: p.bodegaId ?? bodegas[0]?.id ?? '',
+          destacado: p.destacado ?? false, especificaciones: p.especificaciones ?? '',
+          comoUsar: p.comoUsar ?? '', imagenes: p.imagenUrl ? [p.imagenUrl] : [],
+          metaTitle: p.metaTitle ?? '', metaDescription: p.metaDescription ?? '',
+          metaKeywords: p.metaKeywords ?? '', videoUrl: p.videoUrl ?? '',
+        })
+      }
+    } catch {
+      editInitialFormRef.current = JSON.stringify(form)
+    }
   }
 
   // Carrusel: productos ordenados por ordenCarrusel
@@ -269,6 +307,7 @@ export default function AdminProducts() {
       if (productoId && form.imagenes.length > 0) {
         await productService.sincronizarImagenes(productoId, form.imagenes)
       }
+      editInitialFormRef.current = null
       setModalOpen(false)
       load()
     } catch (err) {
@@ -277,8 +316,14 @@ export default function AdminProducts() {
     } finally { setSaving(false) }
   }
 
-  const handleDelete = async (id, nombre) => {
-    if (!confirm(`¿Eliminar "${nombre}"?`)) return
+  const handleDelete = useCallback((id, nombre) => {
+    setDeleteTarget({ id, nombre })
+  }, [])
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    const { id } = deleteTarget
+    setDeleteTarget(null)
     try {
       await productService.delete(id)
       toast({ message: 'Producto eliminado', type: 'success' })
@@ -287,23 +332,36 @@ export default function AdminProducts() {
   }
 
   const filtered = useMemo(() => products.filter((p) => {
-    if (search && !p.nombre?.toLowerCase().includes(search.toLowerCase())) return false
+    if (debouncedSearch && !p.nombre?.toLowerCase().includes(debouncedSearch.toLowerCase())) return false
     if (filterCat && String(p.categoriaId) !== String(filterCat)) return false
     if (filterCond && p.condicion !== filterCond) return false
     if (filterStock === 'ok' && p.stock <= 3) return false
     if (filterStock === 'low' && (p.stock === 0 || p.stock > 3)) return false
     if (filterStock === 'out' && p.stock !== 0) return false
     return true
-  }), [products, search, filterCat, filterCond, filterStock])
+  }), [products, debouncedSearch, filterCat, filterCond, filterStock])
 
-  const hasFilters = filterCat || filterCond || filterStock
-  const clearFilters = () => { setFilterCat(''); setFilterCond(''); setFilterStock(''); setSearch('') }
+  const hasFilters = filterCat || filterCond || filterStock || !!search
+  const clearFilters = () => { setFilterCat(''); setFilterCond(''); setFilterStock(''); setSearch(''); setProdPage(0) }
   const set = (f) => (e) => setForm((prev) => ({ ...prev, [f]: e.target.value }))
   const setField = (f, v) => setForm((prev) => ({ ...prev, [f]: v }))
 
+  const isModalDirty = editing && editInitialFormRef.current
+    ? JSON.stringify(form) !== editInitialFormRef.current
+    : false
+
+  const handleModalClose = () => {
+    if (isModalDirty) { setShowDiscardModal(true); return }
+    setModalOpen(false)
+  }
+
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-5">
+        {loadError && !loading && (
+          <RetryBanner message="Error al cargar los productos. Verificá tu conexión." onRetry={() => load(prodPage)} />
+        )}
+
         {/* Header */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
@@ -359,8 +417,10 @@ export default function AdminProducts() {
             className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/3 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center text-lg" style={{ background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.3)' }}>
-                🎠
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.3)' }}>
+                <svg className="w-4 h-4" style={{ color: '#a855f7' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3"/><path d="M12 3v3m0 12v3M3 12h3m12 0h3m-2.636-6.364-2.122 2.122M8.758 15.242l-2.122 2.122m0-12.728 2.122 2.122m6.364 6.364 2.122 2.122"/>
+                </svg>
               </div>
               <div className="text-left">
                 <p className="text-sm font-semibold text-[#e8e8ed]">Carrusel del inicio</p>
@@ -419,7 +479,7 @@ export default function AdminProducts() {
                         <div className="flex-1 flex flex-col items-center justify-center gap-1 text-[#8e8e9a] py-4">
                           <span className="text-2xl opacity-30">+</span>
                           <span className="text-[10px]">Vacío</span>
-                          <span className="text-[9px] opacity-60">Usa 🎠 en la tabla</span>
+                          <span className="text-[9px] opacity-60">Usá el botón de carrusel en la tabla</span>
                         </div>
                       )}
                     </div>
@@ -427,7 +487,7 @@ export default function AdminProducts() {
                 })}
               </div>
               <p className="text-[10px] text-[#8e8e9a] mt-3">
-                Para agregar un producto al carrusel, presiona el botón <span className="text-purple-400">🎠</span> en la columna de la tabla. Máximo 5 productos.
+                Para agregar un producto al carrusel, presioná el botón de carrusel en la columna de la tabla. Máximo 5 productos.
               </p>
             </div>
           )}
@@ -443,7 +503,7 @@ export default function AdminProducts() {
               type="text"
               placeholder="Buscar producto..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setProdPage(0) }}
               className="w-full h-10 pl-10 pr-4 rounded-xl bg-[#111114] border border-white/10 text-[#e8e8ed] text-sm placeholder-[#8e8e9a] focus:outline-none focus:border-[#4f7cff]/60"
             />
           </div>
@@ -469,6 +529,15 @@ export default function AdminProducts() {
             ))}
           </div>
         </div>
+
+        {/* Aviso de scope cuando hay búsqueda activa y catálogo paginado */}
+        {debouncedSearch && totalProds > PROD_PAGE_SIZE && (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs"
+            style={{ backgroundColor: 'rgba(79,124,255,0.06)', border: '1px solid rgba(79,124,255,0.18)', color: '#7fa0ff' }}>
+            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Buscando en los {PROD_PAGE_SIZE} productos de la página actual. Para buscar en todo el catálogo, limpiá el texto y navegá por páginas.
+          </div>
+        )}
 
         <div className="flex gap-5">
           {/* Left: Filters panel — solo desktop */}
@@ -542,7 +611,7 @@ export default function AdminProducts() {
                 type="text"
                 placeholder="Buscar por nombre..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => { setSearch(e.target.value); setProdPage(0) }}
                 className="w-full h-10 pl-10 pr-4 rounded-xl bg-[#111114] border border-white/10 text-[#e8e8ed] text-sm placeholder-[#8e8e9a] focus:outline-none focus:border-[#4f7cff]/60 transition-colors"
               />
             </div>
@@ -555,7 +624,7 @@ export default function AdminProducts() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-white/8">
-                        {['★', '🎠', 'ID', t('admin.products.name'), t('admin.products.price'), t('admin.products.stock'), t('admin.products.category'), 'SEO', t('admin.products.actions')].map((h) => (
+                        {['★', 'Pos.', 'ID', t('admin.products.name'), t('admin.products.price'), t('admin.products.stock'), t('admin.products.category'), 'SEO', t('admin.products.actions')].map((h) => (
                           <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">{h}</th>
                         ))}
                       </tr>
@@ -590,7 +659,11 @@ export default function AdminProducts() {
                             >
                               {p.enCarrusel ? (
                                 <span className="text-[10px] font-bold">{p.ordenCarrusel}</span>
-                              ) : '🎠'}
+                              ) : (
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                                  <circle cx="12" cy="12" r="3"/><path d="M12 3v3m0 12v3M3 12h3m12 0h3m-2.636-6.364-2.122 2.122M8.758 15.242l-2.122 2.122m0-12.728 2.122 2.122m6.364 6.364 2.122 2.122"/>
+                                </svg>
+                              )}
                             </button>
                           </td>
                           <td className="px-4 py-3 text-[#8e8e9a] text-xs">#{p.id}</td>
@@ -635,7 +708,29 @@ export default function AdminProducts() {
                     </tbody>
                   </table>
                   {filtered.length === 0 && (
-                    <div className="text-center py-12 text-[#8e8e9a]">{search || hasFilters ? 'Sin resultados para los filtros' : 'No hay productos aún'}</div>
+                    <div className="text-center py-14">
+                      {search || hasFilters ? (
+                        <div className="space-y-2">
+                          <p className="text-[#8e8e9a] text-sm">Sin resultados para los filtros actuales</p>
+                          <button onClick={clearFilters} className="text-xs text-[#4f7cff] hover:underline">Limpiar filtros →</button>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center" style={{ backgroundColor: 'rgba(79,124,255,0.1)', border: '1px solid rgba(79,124,255,0.15)' }}>
+                            <svg className="w-7 h-7" style={{ color: '#4f7cff' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                          </div>
+                          <p className="font-semibold text-[#e8e8ed]">Sin productos publicados</p>
+                          <p className="text-sm text-[#8e8e9a] max-w-xs mx-auto">Tu catálogo está vacío. Agregá tu primer producto para comenzar a vender.</p>
+                          <button
+                            onClick={openNew}
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold mt-1 transition-opacity hover:opacity-80"
+                            style={{ backgroundColor: '#4f7cff', color: '#fff' }}
+                          >
+                            + Crear primer producto
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
                 {totalProds > PROD_PAGE_SIZE && (
@@ -666,7 +761,7 @@ export default function AdminProducts() {
       </div>
 
       {/* ── Modal crear / editar ── */}
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? t('admin.products.edit') : t('admin.products.new')} size="lg">
+      <Modal open={modalOpen} onClose={handleModalClose} title={editing ? t('admin.products.edit') : t('admin.products.new')} size="lg">
         <form onSubmit={handleSave} className="space-y-4">
 
           {/* Información básica */}
@@ -704,6 +799,17 @@ export default function AdminProducts() {
               </select>
             </div>
           </div>
+
+          {/* Alerta: sin categorías */}
+          {categories.length === 0 && (
+            <div className="flex items-start gap-3 px-4 py-3 rounded-xl text-sm" style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', color: '#f59e0b' }}>
+              <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+              <span>
+                <span className="font-semibold">Sin categorías creadas.</span> Necesitás crear al menos una antes de publicar un producto.{' '}
+                <Link to="/admin/categorias" className="underline font-medium" onClick={() => setModalOpen(false)}>Crear categoría →</Link>
+              </span>
+            </div>
+          )}
 
           {/* Categoría + Bodega */}
           <div className="grid grid-cols-2 gap-3">
@@ -908,11 +1014,29 @@ export default function AdminProducts() {
 
           <div className="flex gap-3 pt-2">
             <Button type="submit" loading={saving} className="flex-1">{editing ? t('admin.products.saved') : t('admin.products.new')}</Button>
-            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>{t('common.cancel')}</Button>
+            <Button type="button" variant="secondary" onClick={handleModalClose}>{t('common.cancel')}</Button>
           </div>
         </form>
       </Modal>
-    </AdminLayout>
+
+      <ConfirmModal
+        open={showDiscardModal}
+        onClose={() => setShowDiscardModal(false)}
+        onConfirm={() => { setShowDiscardModal(false); setModalOpen(false); editInitialFormRef.current = null }}
+        title="Cambios sin guardar"
+        message="Hay cambios sin guardar en este producto. ¿Salir sin guardar?"
+        confirmLabel="Descartar cambios"
+        danger={false}
+      />
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        title="Eliminar producto"
+        message={`¿Eliminar "${deleteTarget?.nombre}"? Esta acción no se puede deshacer.`}
+      />
+    </>
   )
 }
 

@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -81,6 +82,11 @@ public class GlobalExceptionHandler {
 
     // ── Autenticación ─────────────────────────────────────────────────────────
 
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ResponseDTO> handleAccessDenied(AccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseDTO.error("Acceso denegado"));
+    }
+
     @ExceptionHandler(SecurityException.class)
     public ResponseEntity<ResponseDTO> handleSecurity(SecurityException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseDTO.error(ex.getMessage()));
@@ -99,6 +105,15 @@ public class GlobalExceptionHandler {
         String msg = ex.getMessage() != null && ex.getMessage().toLowerCase().contains("size") ?
                 "La imagen no puede superar 10 MB" : "Error procesando el archivo";
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(ResponseDTO.error(msg));
+    }
+
+    // ── Recursos estáticos no encontrados ────────────────────────────────────
+
+    /** favicon.ico, assets inexistentes, etc. → 404 silencioso */
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ResponseEntity<ResponseDTO> handleNoResource(org.springframework.web.servlet.resource.NoResourceFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ResponseDTO.error("Recurso no encontrado"));
     }
 
     // ── Fallback ──────────────────────────────────────────────────────────────

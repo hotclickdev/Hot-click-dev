@@ -84,9 +84,13 @@ function EmprendimientoForm({ onVolver }) {
   const toast      = useToast()
   const loginStore = useAuthStore((s) => s.login)
 
-  const [step,    setStep]    = useState(0)
-  const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState('')
+  const [step,        setStep]        = useState(0)
+  const [loading,     setLoading]     = useState(false)
+  const [reenvioLoad, setReenvioLoad] = useState(false)
+  const [otpFalló,    setOtpFalló]    = useState(false)
+  const [error,       setError]       = useState('')
+  const [codigoVerif, setCodigoVerif] = useState('')
+  const [correoReg,   setCorreoReg]   = useState('')
   const [form, setForm] = useState({
     nombreEmpresa: '', correoEmpresa: '', telefonoEmpresa: '',
     nombreAdmin: '', correoAdmin: '', passwordAdmin: '', telefonoAdmin: '',
@@ -114,11 +118,44 @@ function EmprendimientoForm({ onVolver }) {
         passwordAdmin:   form.passwordAdmin,
         telefonoAdmin:   form.telefonoAdmin.trim() || undefined,
       })
-      if (data?.data) { loginStore(data.data); toast.success('¡Negocio creado! Bienvenido a tu panel.'); navigate('/admin') }
+      const authData = data?.data ?? data
+      if (authData?.accessToken) {
+        loginStore(authData)
+        setCorreoReg(form.correoAdmin.trim().toLowerCase())
+        setOtpFalló(authData.otpEnviado === false)
+        setStep(2)
+      }
     } catch (err) {
       const msg = err.response?.data?.message
       setError(typeof msg === 'string' && msg ? msg : 'Error al registrar. Intentá de nuevo.')
     } finally { setLoading(false) }
+  }
+
+  const handleVerificar = async (e) => {
+    e.preventDefault(); setError('')
+    if (!codigoVerif.trim()) { setError('Ingresá el código de verificación'); return }
+    setLoading(true)
+    try {
+      await authService.verificarCorreoNegocio(correoReg, codigoVerif.trim())
+      toast({ message: '¡Correo verificado! Bienvenido a tu panel.', type: 'success' })
+      navigate('/admin')
+    } catch (err) {
+      const msg = err.response?.data?.message
+      setError(typeof msg === 'string' && msg ? msg : 'Código incorrecto o expirado')
+    } finally { setLoading(false) }
+  }
+
+  const handleReenviar = async () => {
+    setReenvioLoad(true); setError('')
+    try {
+      await authService.reenviarCodigoNegocio()
+      setOtpFalló(false)
+      setCodigoVerif('')
+      toast({ message: 'Código reenviado a ' + correoReg, type: 'success' })
+    } catch (err) {
+      const msg = err.response?.data?.message
+      toast({ message: typeof msg === 'string' && msg ? msg : 'Error al reenviar el código', type: 'error' })
+    } finally { setReenvioLoad(false) }
   }
 
   return (
@@ -154,7 +191,7 @@ function EmprendimientoForm({ onVolver }) {
 
           {/* Progreso */}
           <div className="flex items-center gap-3 mb-6">
-            {['Tu negocio', 'Tu cuenta'].map((label, i) => (
+            {['Tu negocio', 'Tu cuenta', 'Verificar'].map((label, i) => (
               <div key={i} className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300"
                   style={i < step ? { background: 'var(--hc-success, #22c55e)', color: '#fff' }
@@ -163,7 +200,7 @@ function EmprendimientoForm({ onVolver }) {
                   {i < step ? <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><polyline points="20 6 9 17 4 12"/></svg> : i + 1}
                 </div>
                 <span className="text-xs font-medium" style={{ color: i === step ? 'var(--hc-text)' : 'var(--hc-muted)' }}>{label}</span>
-                {i < 1 && <div className="h-px w-8 mx-1 rounded transition-all duration-500" style={{ background: step > 0 ? '#f97316' : 'var(--hc-border)' }} />}
+                {i < 2 && <div className="h-px w-6 mx-1 rounded transition-all duration-500" style={{ background: step > i ? '#f97316' : 'var(--hc-border)' }} />}
               </div>
             ))}
           </div>
@@ -182,7 +219,7 @@ function EmprendimientoForm({ onVolver }) {
                 {error && <ErrMsg>{error}</ErrMsg>}
                 <button type="submit" className="hc-btn hc-btn-primary hc-btn-lg w-full"
                   style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', borderColor: '#f97316', boxShadow: '0 4px 20px rgba(249,115,22,0.3)' }}>
-                  Siguiente — Datos del administrador →
+                  Continuar →
                 </button>
               </motion.form>
             )}
@@ -206,7 +243,7 @@ function EmprendimientoForm({ onVolver }) {
                   <button type="submit" disabled={loading}
                     className="hc-btn hc-btn-primary hc-btn-lg flex-1 disabled:opacity-60"
                     style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', borderColor: '#f97316', boxShadow: '0 4px 20px rgba(249,115,22,0.3)' }}>
-                    {loading ? <span className="flex items-center gap-2"><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Creando…</span> : '¡Crear mi empresa! 🚀'}
+                    {loading ? <span className="flex items-center gap-2"><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Creando…</span> : 'Crear mi negocio →'}
                   </button>
                 </div>
                 <p className="text-center text-xs" style={{ color: 'var(--hc-muted)' }}>
@@ -215,16 +252,77 @@ function EmprendimientoForm({ onVolver }) {
                 </p>
               </motion.form>
             )}
+
+            {/* ── Paso 2: verificar correo ── */}
+            {step === 2 && (
+              <motion.form key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }}
+                onSubmit={handleVerificar} className="space-y-5">
+                <div className="text-center py-2">
+                  <div className="text-4xl mb-3">📧</div>
+                  <h3 className="font-bold text-base" style={{ color: 'var(--hc-text)' }}>Verificá tu correo</h3>
+                  <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>
+                    {otpFalló
+                      ? <>No se pudo enviar el código a <strong style={{ color: 'var(--hc-text)' }}>{correoReg}</strong>. Presioná "Reenviar código".</>
+                      : <>Enviamos un código de 6 dígitos a <strong style={{ color: 'var(--hc-text)' }}>{correoReg}</strong></>
+                    }
+                  </p>
+                </div>
+
+                {otpFalló ? (
+                  <div className="rounded-xl px-4 py-3 text-sm text-center"
+                    style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
+                    El código no pudo enviarse. Verificá que el correo sea correcto o intentá reenviar.
+                  </div>
+                ) : (
+                  <div>
+                    <label className="hc-input-label block mb-2" style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--hc-muted)' }}>
+                      Código de verificación
+                    </label>
+                    <input
+                      type="text" inputMode="numeric" pattern="[0-9]*" maxLength={6}
+                      placeholder="000000" autoFocus
+                      value={codigoVerif}
+                      onChange={e => setCodigoVerif(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      className="w-full text-center outline-none"
+                      style={{
+                        height: '68px', borderRadius: '14px', fontSize: '32px', fontWeight: 900,
+                        letterSpacing: '0.4em', background: 'var(--hc-surface-2)',
+                        border: '1.5px solid var(--hc-border)', color: 'var(--hc-text)',
+                      }}
+                    />
+                  </div>
+                )}
+
+                {error && <ErrMsg>{error}</ErrMsg>}
+
+                {!otpFalló && (
+                  <button type="submit" disabled={loading || codigoVerif.length !== 6}
+                    className="hc-btn hc-btn-primary hc-btn-lg w-full disabled:opacity-50"
+                    style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', borderColor: '#f97316', boxShadow: '0 4px 20px rgba(249,115,22,0.3)' }}>
+                    {loading ? 'Verificando…' : 'Verificar y entrar al panel →'}
+                  </button>
+                )}
+
+                <button type="button" onClick={handleReenviar} disabled={reenvioLoad}
+                  className="w-full text-center text-xs py-1.5 rounded-lg transition-opacity disabled:opacity-50"
+                  style={{ color: 'var(--hc-accent)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                  {reenvioLoad ? 'Enviando…' : '¿No llegó el código? Reenviar →'}
+                </button>
+              </motion.form>
+            )}
           </AnimatePresence>
         </div>
       </div>
 
-      {/* Volver */}
-      <button onClick={onVolver}
-        className="mt-5 w-full text-center text-sm py-2 rounded-xl transition-colors hover:opacity-70"
-        style={{ color: 'var(--hc-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
-        ← Registrarme como comprador
-      </button>
+      {/* Volver — oculto durante verificación para no perder el contexto */}
+      {step < 2 && (
+        <button onClick={onVolver}
+          className="mt-5 w-full text-center text-sm py-2 rounded-xl transition-colors hover:opacity-70"
+          style={{ color: 'var(--hc-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
+          ← Registrarme como comprador
+        </button>
+      )}
     </motion.div>
   )
 }
@@ -315,7 +413,10 @@ export default function RegisterPage() {
       await authService.sendVerification(form)
       toast({ message: t('register.resentSuccess'), type: 'success' })
       setCodigo('')
-    } catch { setError(t('register.minChars')) }
+    } catch (err) {
+      const msg = err?.response?.data?.message
+      setError(typeof msg === 'string' && msg ? msg : 'Error al reenviar el código. Intentá de nuevo.')
+    }
     finally { setLoading(false) }
   }
 

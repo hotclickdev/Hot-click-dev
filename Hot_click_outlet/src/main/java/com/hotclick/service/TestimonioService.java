@@ -7,6 +7,7 @@ import com.hotclick.repository.TestimonioRepository;
 import com.hotclick.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -53,6 +54,7 @@ public class TestimonioService {
     }
 
     /** Lista aprobados para el endpoint público (sin email ni datos sensibles). */
+    @Transactional(readOnly = true)
     public List<Map<String, Object>> listarAprobadosPublico() {
         return repo.findByEstadoOrderByFechaAprobacionDesc("APROBADO")
             .stream()
@@ -61,6 +63,7 @@ public class TestimonioService {
     }
 
     /** Lista todos para el admin. */
+    @Transactional(readOnly = true)
     public List<Map<String, Object>> listarTodosAdmin() {
         return repo.findAllByOrderByFechaCreacionDesc()
             .stream()
@@ -122,7 +125,7 @@ public class TestimonioService {
                 Map<String, Object> m = new LinkedHashMap<>();
                 m.put("productoId", p.getId());
                 m.put("nombre", p.getNombreProducto());
-                m.put("imagenUrl", p.getImagenUrl());
+                m.put("imagenUrl", p.getImagenPrincipalUrl());
                 m.put("pedidoId", pedido.getId());
                 m.put("yaReseno", yaReseno);
                 vistos.put(p.getId(), m);

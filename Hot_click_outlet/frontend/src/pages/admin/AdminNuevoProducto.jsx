@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+﻿import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import AdminLayout from '@/layouts/AdminLayout'
 import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import { useToast } from '@/components/ui/Toast'
@@ -509,7 +508,7 @@ export default function AdminNuevoProducto() {
   const set = (f) => (e) => setForm((p) => ({ ...p, [f]: e.target.value }))
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-5 max-w-2xl mx-auto xl:mx-0 xl:max-w-3xl">
         {/* Header */}
         <div className="flex items-center gap-3">
@@ -1077,6 +1076,6 @@ export default function AdminNuevoProducto() {
           </motion.div>
         )}
       </div>
-    </AdminLayout>
+    </>
   )
 }

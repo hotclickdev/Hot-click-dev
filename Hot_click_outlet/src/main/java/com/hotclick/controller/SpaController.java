@@ -27,18 +27,7 @@ public class SpaController {
         "/contacto",
         "/informacion",
         "/admin",
-        "/admin/productos",
-        "/admin/pedidos",
-        "/admin/usuarios",
-        "/admin/categorias",
-        "/admin/bodegas",
-        "/admin/ventas",
-        "/admin/finanzas",
-        "/admin/reportes",
-        "/admin/publicaciones",
-        "/admin/nuevo-producto",
-        "/admin/marcas",
-        "/admin/pagos"
+        "/admin/{*path}"
     })
     public String spa() {
         return "forward:/index.html";
