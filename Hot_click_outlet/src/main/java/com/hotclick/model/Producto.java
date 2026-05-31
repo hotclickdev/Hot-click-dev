@@ -183,6 +183,15 @@ public class Producto extends BaseEntity {
     @Column(name = "garantia_dias", columnDefinition = "INTEGER DEFAULT 0")
     private Integer garantiaDias = 0;
 
+    @Column(name = "en_oferta", nullable = false)
+    private Boolean enOferta = false;
+
+    @Column(name = "precio_oferta")
+    private Integer precioOferta;
+
+    @Column(name = "porcentaje_descuento")
+    private Integer porcentajeDescuento;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -347,4 +356,18 @@ public class Producto extends BaseEntity {
 
     public Integer getGarantiaDias() { return garantiaDias != null ? garantiaDias : 0; }
     public void setGarantiaDias(Integer garantiaDias) { this.garantiaDias = garantiaDias; }
+
+    public Boolean getEnOferta() { return enOferta != null ? enOferta : false; }
+    public void setEnOferta(Boolean enOferta) { this.enOferta = enOferta; }
+
+    public Integer getPrecioOferta() { return precioOferta; }
+    public void setPrecioOferta(Integer precioOferta) { this.precioOferta = precioOferta; }
+
+    public Integer getPorcentajeDescuento() { return porcentajeDescuento; }
+    public void setPorcentajeDescuento(Integer porcentajeDescuento) { this.porcentajeDescuento = porcentajeDescuento; }
+
+    /** Precio efectivo para el cliente: precioOferta si está en oferta, sino precioVenta */
+    public Integer getPrecioEfectivo() {
+        return Boolean.TRUE.equals(enOferta) && precioOferta != null ? precioOferta : precioVenta;
+    }
 }

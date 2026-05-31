@@ -269,4 +269,81 @@ public class ProductoController {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
     }
+
+    /** Aplicar/quitar oferta a un producto individual */
+    @PatchMapping("/{id}/oferta")
+    public ResponseEntity<ResponseDTO> aplicarOferta(@PathVariable Long id,
+                                                      @RequestBody Map<String, Object> body) {
+        try {
+            Producto p = productoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+            companyScope.assertCanAccessNullable(p.getEmpresaId());
+            boolean enOferta = Boolean.TRUE.equals(body.get("enOferta"));
+            p.setEnOferta(enOferta);
+            if (enOferta) {
+                Integer pct = body.get("porcentajeDescuento") != null
+                    ? ((Number) body.get("porcentajeDescuento")).intValue() : null;
+                Integer precio = body.get("precioOferta") != null
+                    ? ((Number) body.get("precioOferta")).intValue() : null;
+                if (pct != null && pct > 0) {
+                    p.setPorcentajeDescuento(pct);
+                    p.setPrecioOferta((int) Math.round(p.getPrecioVenta() * (1 - pct / 100.0)));
+                } else if (precio != null) {
+                    p.setPrecioOferta(precio);
+                    int diff = p.getPrecioVenta() - precio;
+                    p.setPorcentajeDescuento(diff > 0 ? (int) Math.round(diff * 100.0 / p.getPrecioVenta()) : 0);
+                }
+            } else {
+                p.setPrecioOferta(null);
+                p.setPorcentajeDescuento(null);
+            }
+            return ResponseEntity.ok(ResponseDTO.success("Oferta actualizada", productoRepository.save(p)));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        }
+    }
+
+    /** Aplicar oferta a todos los productos de una categoría */
+    @PostMapping("/oferta/categoria/{categoriaId}")
+    @Transactional
+    public ResponseEntity<ResponseDTO> aplicarOfertaCategoria(@PathVariable Long categoriaId,
+                                                               @RequestBody Map<String, Object> body) {
+        try {
+            Long empresaId = companyScope.getCurrentEmpresaId();
+            boolean enOferta = Boolean.TRUE.equals(body.get("enOferta"));
+            Integer pct = body.get("porcentajeDescuento") != null
+                ? ((Number) body.get("porcentajeDescuento")).intValue() : null;
+            List<Producto> productos = empresaId != null
+                ? productoRepository.findByCategoriaIdAndEmpresaId(categoriaId, empresaId)
+                : productoRepository.findByCategoriaId(categoriaId);
+            for (Producto p : productos) {
+                p.setEnOferta(enOferta);
+                if (enOferta && pct != null && pct > 0) {
+                    p.setPorcentajeDescuento(pct);
+                    p.setPrecioOferta((int) Math.round(p.getPrecioVenta() * (1 - pct / 100.0)));
+                } else if (!enOferta) {
+                    p.setPrecioOferta(null);
+                    p.setPorcentajeDescuento(null);
+                }
+            }
+            productoRepository.saveAll(productos);
+            return ResponseEntity.ok(ResponseDTO.success("Oferta aplicada a " + productos.size() + " productos", null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        }
+    }
+
+    /** Productos en oferta — público */
+    @GetMapping("/en-oferta")
+    public ResponseEntity<ResponseDTO> enOferta() {
+        try {
+            Long empresaId = companyScope.getCurrentEmpresaId();
+            List<Producto> lista = empresaId != null
+                ? productoRepository.findByEnOfertaTrueAndEmpresaIdAndVisibleCatalogoTrue(empresaId)
+                : productoRepository.findByEnOfertaTrueAndVisibleCatalogoTrue();
+            return ResponseEntity.ok(ResponseDTO.success("Ofertas", lista));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        }
+    }
 }

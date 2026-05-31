@@ -56,6 +56,11 @@ const AdminAprobaciones         = lazy(() => import('@/pages/admin/AdminAprobaci
 const AdminMiEmpresa            = lazy(() => import('@/pages/admin/AdminMiEmpresa'))
 const AdminSecurityCenter       = lazy(() => import('@/pages/admin/AdminSecurityCenter'))
 const EmpresaSelectionPage      = lazy(() => import('@/pages/EmpresaSelectionPage'))
+const BlogPage                  = lazy(() => import('@/pages/BlogPage'))
+const EmprendimientosPage       = lazy(() => import('@/pages/EmprendimientosPage'))
+const AdminOfertas              = lazy(() => import('@/pages/admin/AdminOfertas'))
+const AdminBlog                 = lazy(() => import('@/pages/admin/AdminBlog'))
+const AdminConvenios            = lazy(() => import('@/pages/admin/AdminConvenios'))
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -269,6 +274,9 @@ export default function App() {
               <Route path="/wishlist" element={<WishlistPage />} />
               <Route path="/recuperar-carrito/:id" element={<RecuperarCarritoPage />} />
               <Route path="/servicios" element={<ServiciosHotPage />} />
+              <Route path="/blog" element={<BlogPage />} />
+              <Route path="/blog/:slug" element={<BlogPage />} />
+              <Route path="/emprendimientos" element={<EmprendimientosPage />} />
               <Route path="/pago/exito"     element={<PaymentStatusPage />} />
               <Route path="/pago/cancelado" element={<PaymentStatusPage />} />
               <Route element={<AdminShell />}>
@@ -296,6 +304,9 @@ export default function App() {
                   <Route path="/admin/aprobaciones" element={<AdminAprobaciones />} />
                   <Route path="/admin/security" element={<AdminSecurityCenter />} />
                 </Route>
+                <Route path="/admin/ofertas"    element={<AdminOfertas />} />
+                <Route path="/admin/blog"       element={<AdminBlog />} />
+                <Route path="/admin/convenios"  element={<AdminConvenios />} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

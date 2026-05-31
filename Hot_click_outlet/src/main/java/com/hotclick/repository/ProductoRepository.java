@@ -169,4 +169,18 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     @Query("SELECT p.categoria.nombreCategoria, COUNT(p) FROM Producto p WHERE p.empresa.id = :empresaId AND p.estado = 1 GROUP BY p.categoria.nombreCategoria ORDER BY COUNT(p) DESC")
     List<Object[]> countPorCategoriaByEmpresaId(@Param("empresaId") Long empresaId);
+
+    // ── Ofertas ──────────────────────────────────────────────────────────────
+
+    @Query("SELECT p FROM Producto p WHERE p.categoria.id = :catId AND p.empresa.id = :empId AND p.estado = 1")
+    List<Producto> findByCategoriaIdAndEmpresaId(@Param("catId") Long catId, @Param("empId") Long empId);
+
+    @Query("SELECT p FROM Producto p WHERE p.categoria.id = :catId AND p.estado = 1")
+    List<Producto> findByCategoriaId(@Param("catId") Long catId);
+
+    @Query("SELECT p FROM Producto p WHERE p.enOferta = true AND p.visibleCatalogo = true AND p.empresa.id = :empId AND p.estado = 1")
+    List<Producto> findByEnOfertaTrueAndEmpresaIdAndVisibleCatalogoTrue(@Param("empId") Long empId);
+
+    @Query("SELECT p FROM Producto p LEFT JOIN p.empresa e WHERE p.enOferta = true AND p.visibleCatalogo = true AND p.estado = 1 AND (p.empresa IS NULL OR (e.estadoEmpresa = 'ACTIVO' AND e.visibilidadPublica = true))")
+    List<Producto> findByEnOfertaTrueAndVisibleCatalogoTrue();
 }
