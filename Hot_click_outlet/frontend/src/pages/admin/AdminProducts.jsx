@@ -899,34 +899,26 @@ export default function AdminProducts() {
               <p className="text-xs text-[#8e8e9a]">Pasos numerados. Ej: "1. Primer paso". Se muestra como lista ordenada al cliente.</p>
             </div>
 
-            {/* ── Video YouTube ── */}
+            {/* ── Video del producto ── */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-[#e8e8ed] flex items-center gap-2">
-                <span>Video YouTube</span>
-                {form.videoUrl && <span className="text-[10px] text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded-full">▶ con video</span>}
+                <span>Video del producto</span>
+                {form.videoUrl && (() => {
+                  const u = form.videoUrl
+                  if (/youtube|youtu\.be/.test(u)) return <span className="text-[10px] text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded-full">▶ YouTube</span>
+                  if (/tiktok/.test(u)) return <span className="text-[10px] text-white bg-white/10 px-1.5 py-0.5 rounded-full">▶ TikTok</span>
+                  if (/instagram/.test(u)) return <span className="text-[10px] text-pink-400 bg-pink-500/10 px-1.5 py-0.5 rounded-full">▶ Instagram</span>
+                  return <span className="text-[10px] text-[#8e8e9a] bg-white/5 px-1.5 py-0.5 rounded-full">▶ con video</span>
+                })()}
               </label>
-              <div className="flex gap-2">
-                <input
-                  type="url"
-                  value={form.videoUrl}
-                  onChange={(e) => setField('videoUrl', e.target.value)}
-                  placeholder="https://www.youtube.com/watch?v=..."
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm placeholder:text-[#8e8e9a]/40 focus:outline-none focus:border-[#4f7cff]/60 focus:ring-2 focus:ring-[#4f7cff]/10 transition-all"
-                />
-                <a
-                  href={`https://www.youtube.com/results?search_query=${encodeURIComponent((form.titulo || form.nombre || '').trim())}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Buscar en YouTube"
-                  className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors text-xs font-medium"
-                >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                  </svg>
-                  Buscar
-                </a>
-              </div>
-              <p className="text-xs text-[#8e8e9a]">Pega el link de YouTube del producto. Se mostrará como video embed en la página de detalle.</p>
+              <input
+                type="url"
+                value={form.videoUrl}
+                onChange={(e) => setField('videoUrl', e.target.value)}
+                placeholder="YouTube, TikTok o Instagram..."
+                className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm placeholder:text-[#8e8e9a]/40 focus:outline-none focus:border-[#4f7cff]/60 focus:ring-2 focus:ring-[#4f7cff]/10 transition-all"
+              />
+              <p className="text-xs text-[#8e8e9a]">Pega el link de YouTube, TikTok o Instagram. Se mostrará como video embed en la página de detalle.</p>
             </div>
           </div>
 

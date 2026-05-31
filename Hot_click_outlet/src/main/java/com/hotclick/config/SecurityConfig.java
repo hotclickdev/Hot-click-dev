@@ -202,7 +202,7 @@ public class SecurityConfig {
                         "font-src 'self' https://fonts.gstatic.com; " +
                         "img-src 'self' data: blob: " + supabaseUrl + " https://www.paypalobjects.com; " +
                         "connect-src 'self' " + supabaseUrl + " https://api-m.paypal.com https://api-m.sandbox.paypal.com; " +
-                        "frame-src https://www.paypal.com https://www.sandbox.paypal.com https://www.youtube.com https://www.youtube-nocookie.com; " +
+                        "frame-src https://www.paypal.com https://www.sandbox.paypal.com https://www.youtube.com https://www.youtube-nocookie.com https://www.tiktok.com https://www.instagram.com; " +
                         "object-src 'none'; " +
                         "base-uri 'self';"
                     );
