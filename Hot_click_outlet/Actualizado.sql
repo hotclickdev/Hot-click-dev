@@ -1906,3 +1906,17 @@ CREATE TABLE IF NOT EXISTS hot_click_security_alert_tb (
 CREATE INDEX IF NOT EXISTS idx_alert_unresolved ON hot_click_security_alert_tb (resolved, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_alert_severity   ON hot_click_security_alert_tb (severity);
 CREATE INDEX IF NOT EXISTS idx_alert_type       ON hot_click_security_alert_tb (alert_type);
+
+-- V21: tabla comprobantes SINPE
+CREATE TABLE IF NOT EXISTS hot_click_comprobante_sinpe_tb (
+    id_comprobante   BIGSERIAL PRIMARY KEY,
+    fk_id_pedido     BIGINT        NOT NULL REFERENCES hot_click_pedido_tb(id_pedido),
+    url_comprobante  VARCHAR(1000) NOT NULL,
+    nombre_remitente VARCHAR(150)  NOT NULL,
+    estado           VARCHAR(20)   NOT NULL DEFAULT 'PENDIENTE',
+    fecha_subida     TIMESTAMP     NOT NULL,
+    fecha_resolucion TIMESTAMP,
+    notas_admin      VARCHAR(500),
+    admin_id         BIGINT,
+    admin_email      VARCHAR(150)
+);
