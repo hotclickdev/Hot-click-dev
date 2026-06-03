@@ -107,6 +107,12 @@
             <version>1.17.2</version>
         </dependency>
 
+        <!-- Actuator — MeterRegistry para métricas (ExternalCallMetricsService) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- Clerk — verificación de JWTs OAuth (Google, Apple, Microsoft) via JWKS -->
         <dependency>
             <groupId>org.springframework.security</groupId>
