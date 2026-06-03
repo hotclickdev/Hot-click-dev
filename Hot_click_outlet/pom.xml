@@ -107,10 +107,10 @@
             <version>1.17.2</version>
         </dependency>
 
-        <!-- Actuator — MeterRegistry para métricas (ExternalCallMetricsService) -->
+        <!-- Micrometer — MeterRegistry para ExternalCallMetricsService (sin actuator para no romper filtros) -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
         </dependency>
 
         <!-- Clerk — verificación de JWTs OAuth (Google, Apple, Microsoft) via JWKS -->
