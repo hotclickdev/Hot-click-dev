@@ -107,12 +107,6 @@
             <version>1.17.2</version>
         </dependency>
 
-        <!-- Micrometer — MeterRegistry para ExternalCallMetricsService (sin actuator para no romper filtros) -->
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-core</artifactId>
-        </dependency>
-
         <!-- Clerk — verificación de JWTs OAuth (Google, Apple, Microsoft) via JWKS -->
         <dependency>
             <groupId>org.springframework.security</groupId>

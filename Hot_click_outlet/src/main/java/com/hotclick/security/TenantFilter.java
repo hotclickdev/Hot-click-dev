@@ -6,7 +6,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -19,7 +18,6 @@ import java.io.IOException;
  * Limpia el ThreadLocal en finally — obligatorio para evitar leaks
  * en el thread pool de Tomcat.
  */
-@Component
 public class TenantFilter extends OncePerRequestFilter {
 
     @Autowired

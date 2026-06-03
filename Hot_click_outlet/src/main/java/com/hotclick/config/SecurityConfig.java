@@ -1,5 +1,6 @@
 package com.hotclick.config;
 
+import com.hotclick.security.ApiKeyAuthFilter;
 import com.hotclick.security.JwtRequestFilter;
 import com.hotclick.security.RateLimitingFilter;
 import com.hotclick.security.TenantFilter;
@@ -32,18 +33,6 @@ import static org.springframework.http.HttpMethod.*;
 public class SecurityConfig {
 
     @Autowired
-    private JwtRequestFilter jwtRequestFilter;
-
-    @Autowired
-    private RateLimitingFilter rateLimitingFilter;
-
-    @Autowired
-    private TenantFilter tenantFilter;
-
-    @Autowired
-    private com.hotclick.security.ApiKeyAuthFilter apiKeyAuthFilter;
-
-    @Autowired
     private UserDetailsService userDetailsService;
 
     @Value("${cors.allowed.origins:http://localhost:3000,http://localhost:5173}")
@@ -51,6 +40,23 @@ public class SecurityConfig {
 
     @Value("${supabase.url:https://nkevwfcjhjaawtdqquns.supabase.co}")
     private String supabaseUrl;
+
+    // ── Filtros de seguridad como @Bean (sin @Component) ─────────────────────────
+    // Spring Security 6.3 requiere que los filtros usados en addFilterBefore no sean
+    // @Component auto-detectados por Tomcat. Se crean aquí para que Spring gestione
+    // su ciclo de vida e inyecte sus dependencias vía @Autowired.
+
+    @Bean
+    JwtRequestFilter jwtRequestFilter() { return new JwtRequestFilter(); }
+
+    @Bean
+    RateLimitingFilter rateLimitingFilter() { return new RateLimitingFilter(); }
+
+    @Bean
+    TenantFilter tenantFilter() { return new TenantFilter(); }
+
+    @Bean
+    ApiKeyAuthFilter apiKeyAuthFilter() { return new ApiKeyAuthFilter(); }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -75,7 +81,11 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+            JwtRequestFilter jwtRequestFilter,
+            RateLimitingFilter rateLimitingFilter,
+            TenantFilter tenantFilter,
+            ApiKeyAuthFilter apiKeyAuthFilter) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
