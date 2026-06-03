@@ -19,6 +19,7 @@ public class SpaController {
         "/registrar-negocio",
         "/sso-callback",
         "/sso-complete",
+        "/mode-select",
         "/registro",
         "/perfil",
         "/checkout",

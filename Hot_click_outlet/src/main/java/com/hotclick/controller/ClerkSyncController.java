@@ -70,6 +70,9 @@ public class ClerkSyncController {
         }
 
         String clerkUserId = clerkJwt.getSubject();
+        if (clerkUserId == null || clerkUserId.isBlank()) {
+            return ResponseEntity.status(401).body(ResponseDTO.error("Token de Clerk sin subject"));
+        }
         String email       = Optional.ofNullable(body.get("email")).orElse("").toLowerCase().trim();
         String nombre      = Optional.ofNullable(body.get("nombre")).orElse("");
         String apellido    = Optional.ofNullable(body.get("apellido")).orElse("");
