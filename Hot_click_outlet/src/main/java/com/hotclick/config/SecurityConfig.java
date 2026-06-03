@@ -25,6 +25,8 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
+import org.springframework.security.web.authentication.logout.LogoutFilter;
+import org.springframework.security.web.csrf.CsrfFilter;
 import static org.springframework.http.HttpMethod.*;
 
 @Configuration
@@ -264,12 +266,12 @@ public class SecurityConfig {
         http.exceptionHandling(ex -> ex
             .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
         );
-        http.addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class);
-        // ApiKeyAuthFilter corre antes del JWT para que las claves hck_... se autentiquen primero
-        http.addFilterBefore(apiKeyAuthFilter, JwtRequestFilter.class);
+        // Orden garantizado usando filtros estándar de Spring Security como referencia.
+        // RateLimiting(~500) → ApiKey(~600) → Jwt(~700) → UPAF(800, no-op) → Tenant(~900)
+        http.addFilterBefore(rateLimitingFilter, CsrfFilter.class);
+        http.addFilterBefore(apiKeyAuthFilter, LogoutFilter.class);
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
-        // TenantFilter corre después de JwtRequestFilter — el JWT ya está validado (o el API key ya puso el empresaId)
-        http.addFilterAfter(tenantFilter, JwtRequestFilter.class);
+        http.addFilterAfter(tenantFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 }
