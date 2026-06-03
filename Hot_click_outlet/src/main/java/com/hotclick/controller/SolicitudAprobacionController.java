@@ -52,7 +52,7 @@ public class SolicitudAprobacionController {
         e.setEstadoEmpresa("ACTIVO");
         e.setFechaAprobacion(LocalDateTime.now());
         empresaRepository.save(e);
-        usuarioRepository.findByEmpresaIdOrderByIdDesc(e.getId()).stream()
+        usuarioRepository.findByEmpresaIdConRoles(e.getId()).stream()
             .filter(u -> u.getRoles().stream().anyMatch(r -> "EMPRENDEDOR".equals(r.getNombreRol())))
             .findFirst()
             .ifPresent(u -> notificacionEmailService.enviarAprobacionNegocio(
@@ -70,7 +70,7 @@ public class SolicitudAprobacionController {
         Empresa e = opt.get();
         e.setEstadoEmpresa("RECHAZADO");
         empresaRepository.save(e);
-        usuarioRepository.findByEmpresaIdOrderByIdDesc(e.getId()).stream()
+        usuarioRepository.findByEmpresaIdConRoles(e.getId()).stream()
             .filter(u -> u.getRoles().stream().anyMatch(r -> "EMPRENDEDOR".equals(r.getNombreRol())))
             .findFirst()
             .ifPresent(u -> notificacionEmailService.enviarRechazoNegocio(
@@ -93,7 +93,7 @@ public class SolicitudAprobacionController {
         m.put("fechaRegistro",   e.getFechaRegistro());
 
         // Obtener el emprendedor admin de esta empresa
-        List<Usuario> miembros = usuarioRepository.findByEmpresaIdOrderByIdDesc(e.getId());
+        List<Usuario> miembros = usuarioRepository.findByEmpresaIdConRoles(e.getId());
         miembros.stream()
             .filter(u -> u.getRoles().stream().anyMatch(r -> "EMPRENDEDOR".equals(r.getNombreRol())))
             .findFirst()

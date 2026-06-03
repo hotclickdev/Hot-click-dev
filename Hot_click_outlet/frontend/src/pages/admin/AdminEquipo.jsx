@@ -276,6 +276,7 @@ export default function AdminEquipo() {
               </button>
             </div>
           ) : (
+            <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
             <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[560px]">
               <thead>
@@ -350,6 +351,7 @@ export default function AdminEquipo() {
                 ))}
               </tbody>
             </table>
+            </div>
             </div>
           )}
         </div>

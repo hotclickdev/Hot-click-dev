@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -63,15 +64,18 @@ public class UsuarioService {
         usuarioRepository.updateUltimoAcceso(id, LocalDateTime.now());
     }
 
-    @Transactional
     public void incrementarIntentosFallidos(Long id) {
-        usuarioRepository.incrementarIntentosFallidos(id);
-        Usuario usuario = usuarioRepository.findById(id).orElse(null);
-        if (usuario != null && usuario.getIntentosFallidos() >= 5) {
-            usuarioRepository.bloquearUsuario(id, LocalDateTime.now().plusMinutes(30));
-            try {
-                passwordResetService.enviarCodigo(usuario.getCorreo());
-            } catch (Exception ignored) { /* no interrumpe el flujo si falla el email */ }
+        // Operación atómica: incrementa + bloquea condicionalmente en un solo UPDATE.
+        // intentos == 5 (no >= 5) garantiza que solo un thread envía el email.
+        List<Object[]> result = usuarioRepository.incrementarYBloquear(id);
+        if (result.isEmpty()) return;
+        int intentos = ((Number) result.get(0)[0]).intValue();
+        if (intentos == 5) {
+            usuarioRepository.findById(id).ifPresent(u -> {
+                try {
+                    passwordResetService.enviarCodigo(u.getCorreo());
+                } catch (Exception ignored) { /* no interrumpe el flujo si falla el email */ }
+            });
         }
     }
 

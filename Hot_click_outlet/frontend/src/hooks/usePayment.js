@@ -24,7 +24,9 @@ export function usePayment() {
       const method = isGuest ? paymentService.guestCheckout : paymentService.checkout
       const { data } = await method(checkoutPayload)
       setPagoData(data)
-      if (!data.redirectUrl || data.proveedor === 'SINPE') {
+      if (data.proveedor === 'GIFT_CARD') {
+        setEstado('gift_card_paid')
+      } else if (!data.redirectUrl || data.proveedor === 'SINPE') {
         setEstado('sinpe_pendiente')
       } else {
         setEstado('redirecting')

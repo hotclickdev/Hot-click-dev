@@ -1,17 +1,20 @@
 package com.hotclick.dto;
 
+import java.util.List;
+
 public class AuthResponse {
 
-    private String accessToken;
-    private String refreshToken;
-    private String tipo = "Bearer";
-    private Long   id;
-    private String correo;
-    private String rol;
-    private String nombre;
-    private Long   empresaId;
-    private String empresaSlug;
-    private String empresaNombre;
+    private String       accessToken;
+    private String       refreshToken;
+    private String       tipo = "Bearer";
+    private Long         id;
+    private String       correo;
+    private String       rol;
+    private String       nombre;
+    private Long         empresaId;
+    private String       empresaSlug;
+    private String       empresaNombre;
+    private List<String> permisos;
 
     public AuthResponse() {}
 
@@ -45,4 +48,6 @@ public class AuthResponse {
     public void setEmpresaSlug(String empresaSlug)    { this.empresaSlug = empresaSlug; }
     public String getEmpresaNombre()                  { return empresaNombre; }
     public void setEmpresaNombre(String empresaNombre){ this.empresaNombre = empresaNombre; }
+    public List<String> getPermisos()                 { return permisos; }
+    public void setPermisos(List<String> permisos)    { this.permisos = permisos; }
 }

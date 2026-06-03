@@ -48,16 +48,19 @@ public class WebhookController {
         log.info("Webhook PayPal recibido — event={} ip={}",
             request.getHeader("PAYPAL-TRANSMISSION-ID"), ip);
 
+        // Verificar firma síncronamente (necesita HttpServletRequest activo)
         try {
-            payPalProvider.procesarWebhook(rawBody, request);
-            return ResponseEntity.ok(Map.of("status", "OK"));
+            payPalProvider.verificarFirmaWebhook(rawBody, request);
         } catch (SecurityException e) {
             log.error("Webhook PayPal rechazado: {}", e.getMessage());
-            // Respondemos 200 para evitar reintentos, pero logueamos el fallo
             return ResponseEntity.ok(Map.of("status", "ERROR", "message", "Signature invalid"));
         } catch (Exception e) {
-            log.error("Error procesando webhook PayPal: {}", e.getMessage(), e);
-            return ResponseEntity.ok(Map.of("status", "ERROR", "message", "Internal error"));
+            log.error("Error verificando firma PayPal: {}", e.getMessage());
+            return ResponseEntity.ok(Map.of("status", "ERROR", "message", "Verification failed"));
         }
+
+        // Despachar procesamiento async — responder 200 antes del timeout de 30s de PayPal
+        payPalProvider.procesarContenidoAsync(rawBody, ip);
+        return ResponseEntity.ok(Map.of("status", "OK"));
     }
 }

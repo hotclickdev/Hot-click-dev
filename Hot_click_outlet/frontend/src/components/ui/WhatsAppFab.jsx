@@ -1,24 +1,49 @@
 import { motion } from 'framer-motion'
 
 const WHATSAPP = '50689745370'
+const WA_URL   = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent('¡Hola! Quiero consultar sobre un producto 👋')}`
 
 export default function WhatsAppFab() {
   return (
-    <motion.a
-      href={`https://wa.me/${WHATSAPP}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label="Contactar por WhatsApp"
-      title="WhatsApp"
-      className="fixed bottom-44 md:bottom-24 right-6 z-50 w-12 h-12 rounded-2xl flex items-center justify-center
-        shadow-[0_4px_20px_rgba(37,211,102,0.4)] hover:shadow-[0_4px_28px_rgba(37,211,102,0.65)]"
-      style={{ backgroundColor: '#25D366' }}
-      whileHover={{ scale: 1.12 }}
-      whileTap={{ scale: 0.93 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 18 }}
-    >
-      <WhatsAppIcon />
-    </motion.a>
+    <div className="fixed bottom-44 md:bottom-24 right-6 z-50 flex flex-col items-center gap-2">
+
+      {/* Botón Conversar */}
+      <motion.a
+        href={WA_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Conversar por WhatsApp"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-white shadow-lg"
+        style={{ backgroundColor: '#25D366', boxShadow: '0 4px 16px rgba(37,211,102,0.45)' }}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        whileHover={{ scale: 1.06 }}
+        whileTap={{ scale: 0.94 }}
+      >
+        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-white shrink-0">
+          <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+        </svg>
+        Conversar
+      </motion.a>
+
+      {/* Ícono WhatsApp */}
+      <motion.a
+        href={WA_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="WhatsApp"
+        title="WhatsApp"
+        className="w-12 h-12 rounded-2xl flex items-center justify-center"
+        style={{ backgroundColor: '#25D366', boxShadow: '0 4px 20px rgba(37,211,102,0.4)' }}
+        whileHover={{ scale: 1.12, boxShadow: '0 4px 28px rgba(37,211,102,0.65)' }}
+        whileTap={{ scale: 0.93 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 18 }}
+      >
+        <WhatsAppIcon />
+      </motion.a>
+
+    </div>
   )
 }
 

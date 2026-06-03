@@ -1,0 +1,206 @@
+import { useState, useEffect } from 'react'
+import { compraService } from '@/services/compraService'
+import { useToast } from '@/components/ui/Toast'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
+
+const EMPTY = { nombre: '', contacto: '', telefono: '', correo: '', notas: '' }
+
+function Field({ label, value, onChange, type = 'text', placeholder = '' }) {
+  return (
+    <div>
+      <label className="block text-xs font-medium mb-1" style={{ color: 'var(--hc-muted)' }}>{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+        style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--hc-text)' }}
+      />
+    </div>
+  )
+}
+
+export default function AdminProveedores() {
+  const { showToast } = useToast()
+  const [proveedores, setProveedores] = useState([])
+  const [loading, setLoading]         = useState(true)
+  const [modalOpen, setModalOpen]     = useState(false)
+  const [editing, setEditing]         = useState(null)
+  const [form, setForm]               = useState(EMPTY)
+  const [saving, setSaving]           = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+
+  const load = () => {
+    setLoading(true)
+    compraService.listarProveedores()
+      .then(setProveedores)
+      .catch(() => showToast('Error al cargar proveedores', 'error'))
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const openNew  = () => { setEditing(null); setForm(EMPTY); setModalOpen(true) }
+  const openEdit = (p) => { setEditing(p); setForm({ nombre: p.nombre, contacto: p.contacto ?? '', telefono: p.telefono ?? '', correo: p.correo ?? '', notas: p.notas ?? '' }); setModalOpen(true) }
+
+  const set = (field) => (val) => setForm(f => ({ ...f, [field]: val }))
+
+  const handleSave = async () => {
+    if (!form.nombre.trim()) { showToast('El nombre es requerido', 'error'); return }
+    setSaving(true)
+    try {
+      if (editing) {
+        await compraService.actualizarProveedor(editing.id, form)
+        showToast('Proveedor actualizado', 'success')
+      } else {
+        await compraService.crearProveedor(form)
+        showToast('Proveedor creado', 'success')
+      }
+      setModalOpen(false)
+      load()
+    } catch {
+      showToast('Error al guardar proveedor', 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    try {
+      await compraService.eliminarProveedor(deleteTarget.id)
+      showToast('Proveedor eliminado', 'success')
+      setDeleteTarget(null)
+      load()
+    } catch {
+      showToast('Error al eliminar', 'error')
+    }
+  }
+
+  return (
+    <div className="p-6 space-y-5 max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>Proveedores</h1>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>{proveedores.length} proveedor{proveedores.length !== 1 ? 'es' : ''} activo{proveedores.length !== 1 ? 's' : ''}</p>
+        </div>
+        <button onClick={openNew}
+          className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
+          style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
+          + Nuevo proveedor
+        </button>
+      </div>
+
+      {/* Tabla */}
+      {loading ? (
+        <div className="flex justify-center py-16">
+          <div className="w-8 h-8 border-2 rounded-full animate-spin"
+            style={{ borderColor: 'var(--hc-accent)', borderTopColor: 'transparent' }}/>
+        </div>
+      ) : proveedores.length === 0 ? (
+        <div className="text-center py-16 rounded-2xl"
+          style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>No hay proveedores registrados</p>
+          <button onClick={openNew} className="mt-3 text-sm font-medium" style={{ color: 'var(--hc-accent)' }}>
+            + Agregar el primero
+          </button>
+        </div>
+      ) : (
+        <div className="rounded-2xl overflow-hidden border" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
+          <table className="w-full text-sm">
+            <thead>
+              <tr style={{ backgroundColor: 'rgba(255,255,255,0.03)' }}>
+                {['Proveedor', 'Contacto', 'Teléfono', 'Correo', 'Acciones'].map(h => (
+                  <th key={h} className="text-left px-4 py-3 text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {proveedores.map(p => (
+                <tr key={p.id} className="border-t transition-colors hover:bg-white/[0.02]"
+                  style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                  <td className="px-4 py-3">
+                    <p className="font-medium text-sm" style={{ color: 'var(--hc-text)' }}>{p.nombre}</p>
+                    {p.notas && <p className="text-[10px] mt-0.5 line-clamp-1" style={{ color: 'var(--hc-muted)' }}>{p.notas}</p>}
+                  </td>
+                  <td className="px-4 py-3 text-xs" style={{ color: 'var(--hc-muted)' }}>{p.contacto || '—'}</td>
+                  <td className="px-4 py-3 text-xs" style={{ color: 'var(--hc-muted)' }}>{p.telefono || '—'}</td>
+                  <td className="px-4 py-3 text-xs" style={{ color: 'var(--hc-muted)' }}>{p.correo || '—'}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-2">
+                      <button onClick={() => openEdit(p)}
+                        className="px-3 py-1 text-xs rounded-lg transition-colors hover:bg-white/10"
+                        style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: 'var(--hc-muted)' }}>
+                        Editar
+                      </button>
+                      <button onClick={() => setDeleteTarget(p)}
+                        className="px-3 py-1 text-xs rounded-lg transition-colors"
+                        style={{ backgroundColor: 'rgba(239,68,68,0.08)', color: '#f87171' }}>
+                        Eliminar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Modal crear/editar */}
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
+          <div className="w-full max-w-md rounded-2xl p-6 space-y-4"
+            style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold" style={{ color: 'var(--hc-text)' }}>
+                {editing ? 'Editar proveedor' : 'Nuevo proveedor'}
+              </h2>
+              <button onClick={() => setModalOpen(false)} className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
+                style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>✕</button>
+            </div>
+
+            <Field label="Nombre *"   value={form.nombre}   onChange={set('nombre')}   placeholder="Ej: Distribuidora ABC" />
+            <Field label="Contacto"   value={form.contacto} onChange={set('contacto')} placeholder="Nombre del contacto" />
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Teléfono" value={form.telefono} onChange={set('telefono')} placeholder="8888-8888" />
+              <Field label="Correo"   value={form.correo}   onChange={set('correo')}   type="email" placeholder="proveedor@mail.com" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--hc-muted)' }}>Notas</label>
+              <textarea value={form.notas} onChange={e => set('notas')(e.target.value)} rows={2}
+                placeholder="Condiciones de pago, observaciones…"
+                className="w-full px-3 py-2 rounded-xl text-sm outline-none resize-none"
+                style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--hc-text)' }}/>
+            </div>
+
+            <div className="flex gap-3 pt-1">
+              <button onClick={() => setModalOpen(false)} className="flex-1 py-2.5 rounded-xl text-sm font-medium"
+                style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>
+                Cancelar
+              </button>
+              <button onClick={handleSave} disabled={saving}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80 disabled:opacity-40"
+                style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
+                {saving ? 'Guardando…' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="Eliminar proveedor"
+        message={`¿Eliminar a "${deleteTarget?.nombre}"? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        variant="danger"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
+    </div>
+  )
+}

@@ -29,9 +29,10 @@ public class EmpresaController {
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
 
     @GetMapping
-    public ResponseDTO listar() {
-        List<Empresa> empresas = empresaRepository.findAll();
-        List<Map<String, Object>> result = empresas.stream().map(this::toMap).toList();
+    public ResponseDTO listar(@RequestParam(defaultValue = "0") int page,
+                               @RequestParam(defaultValue = "100") int size) {
+        var empresas = empresaRepository.findAll(PageRequest.of(page, Math.min(size, 200)));
+        List<Map<String, Object>> result = empresas.getContent().stream().map(this::toMap).toList();
         return ResponseDTO.success("Empresas", result);
     }
 

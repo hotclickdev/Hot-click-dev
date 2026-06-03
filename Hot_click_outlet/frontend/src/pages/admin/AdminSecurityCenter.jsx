@@ -364,8 +364,9 @@ export default function AdminSecurityCenter() {
 
             {evData && !evLoading && (
               <>
-                <div className="rounded-2xl overflow-hidden overflow-x-auto"
+                <div className="rounded-2xl overflow-hidden"
                   style={{ backgroundColor: 'var(--hc-card)', border: '1px solid var(--hc-border)' }}>
+                  <div className="overflow-x-auto">
                   <table className="w-full text-xs min-w-[700px]">
                     <thead>
                       <tr style={{ borderBottom: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
@@ -391,6 +392,7 @@ export default function AdminSecurityCenter() {
                       ))}
                     </tbody>
                   </table>
+                  </div>
                   {evData.content.length === 0 && (
                     <p className="px-5 py-8 text-sm text-center" style={{ color: 'var(--hc-muted)' }}>Sin eventos</p>
                   )}

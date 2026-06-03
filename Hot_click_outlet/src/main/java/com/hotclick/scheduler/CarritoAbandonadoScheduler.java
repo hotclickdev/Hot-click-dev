@@ -6,6 +6,7 @@ import com.hotclick.service.CarritoAbandonadoService;
 import com.hotclick.service.NotificacionEmailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -30,6 +31,7 @@ public class CarritoAbandonadoScheduler {
     private String appUrl;
 
     @Scheduled(cron = "${app.abandoned-cart.scheduler-cron:0 0 */6 * * *}")
+    @SchedulerLock(name = "carrito_abandonado", lockAtMostFor = "PT30M", lockAtLeastFor = "PT10M")
     public void procesarCarritosAbandonados() {
         List<CarritoAbandonado> pendientes = cartService.findPendientesAntiguos(hoursToWait);
         if (pendientes.isEmpty()) return;

@@ -14,11 +14,15 @@ import java.util.List;
 @Repository
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
-    @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.empresa WHERE u.correo = :correo")
+    /** Carga empresa + roles con JOIN FETCH (crítico para autenticación y CompanyScope con open-in-view=false). */
+    @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.empresa LEFT JOIN FETCH u.roles WHERE u.correo = :correo")
     Optional<Usuario> findByCorreo(@Param("correo") String correo);
 
     @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.empresa WHERE u.identificacion = :identificacion")
     Optional<Usuario> findByIdentificacion(@Param("identificacion") String identificacion);
+
+    @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.empresa LEFT JOIN FETCH u.roles WHERE u.clerkUserId = :clerkUserId")
+    Optional<Usuario> findByClerkUserId(@Param("clerkUserId") String clerkUserId);
 
     boolean existsByCorreo(String correo);
 
@@ -38,6 +42,21 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     @Query("UPDATE Usuario u SET u.intentosFallidos = u.intentosFallidos + 1 WHERE u.id = :id")
     void incrementarIntentosFallidos(@Param("id") Long id);
 
+    // Incrementa intentos + bloquea condicionalmente en una sola operación atómica.
+    // RETURNING evita el SELECT extra y elimina el race condition de emails duplicados.
+    @Modifying
+    @Transactional
+    @Query(value = """
+        UPDATE hot_click_usuario_tb
+        SET intentos_fallidos = intentos_fallidos + 1,
+            bloqueado_hasta   = CASE
+                WHEN intentos_fallidos + 1 >= 5 THEN NOW() + INTERVAL '30 minutes'
+                ELSE bloqueado_hasta END
+        WHERE id_usuario = :id
+        RETURNING intentos_fallidos
+        """, nativeQuery = true)
+    List<Object[]> incrementarYBloquear(@Param("id") Long id);
+
     @Modifying
     @Transactional
     @Query("UPDATE Usuario u SET u.intentosFallidos = 0 WHERE u.id = :id")
@@ -52,6 +71,10 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     List<Usuario> findAllByOrderByIdDesc();
 
+    /** Para listados admin — carga roles en JOIN para evitar N+1 con roles LAZY. */
+    @Query("SELECT DISTINCT u FROM Usuario u LEFT JOIN FETCH u.roles ORDER BY u.id DESC")
+    List<Usuario> findAllWithRolesOrderByIdDesc();
+
     @Query("SELECT COUNT(u) FROM Usuario u WHERE u.estado = 1")
     long countUsuariosActivos();
 
@@ -64,8 +87,40 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     @Query("SELECT u FROM Usuario u WHERE u.empresa.id = :empresaId ORDER BY u.id DESC")
     List<Usuario> findByEmpresaIdOrderByIdDesc(@Param("empresaId") Long empresaId);
 
+    /** F30 — Carga roles con JOIN FETCH para evitar N+1 en SolicitudAprobacionController. */
+    @Query("SELECT DISTINCT u FROM Usuario u LEFT JOIN FETCH u.roles WHERE u.empresa.id = :empresaId ORDER BY u.id DESC")
+    List<Usuario> findByEmpresaIdConRoles(@Param("empresaId") Long empresaId);
+
     @Query("SELECT COUNT(u) FROM Usuario u WHERE u.twoFactorEnabled = true AND u.estado = 1")
     long countWith2FAEnabled();
+
+    /** Clientes con rol USUARIO_FINAL — para CRM global (ADMIN_IT). */
+    @Query("SELECT DISTINCT u FROM Usuario u JOIN u.roles r " +
+           "WHERE r.nombreRol = 'USUARIO_FINAL' AND u.estado = 1 ORDER BY u.id DESC")
+    List<Usuario> findClientes();
+
+    /** F29 — Clientes que han comprado en una empresa específica (tenant-scoped CRM). */
+    @Query("SELECT DISTINCT u FROM Usuario u JOIN u.roles r " +
+           "WHERE r.nombreRol = 'USUARIO_FINAL' AND u.estado = 1 " +
+           "AND EXISTS (SELECT p FROM Pedido p WHERE p.usuarioFinal = u AND p.empresa.id = :empresaId) " +
+           "ORDER BY u.id DESC")
+    List<Usuario> findClientesByEmpresa(@Param("empresaId") Long empresaId);
+
+    @Query("SELECT DISTINCT u FROM Usuario u JOIN u.roles r " +
+           "WHERE r.nombreRol = 'USUARIO_FINAL' AND u.estado = 1 AND (" +
+           "LOWER(u.nombre) LIKE LOWER(CONCAT('%',:q,'%')) OR " +
+           "LOWER(u.correo) LIKE LOWER(CONCAT('%',:q,'%')) OR " +
+           "u.telefono LIKE CONCAT('%',:q,'%')) ORDER BY u.nombre ASC")
+    List<Usuario> buscarClientes(@Param("q") String q);
+
+    /** F29 — Búsqueda de clientes acotada a una empresa (tenant-scoped CRM). */
+    @Query("SELECT DISTINCT u FROM Usuario u JOIN u.roles r " +
+           "WHERE r.nombreRol = 'USUARIO_FINAL' AND u.estado = 1 " +
+           "AND EXISTS (SELECT p FROM Pedido p WHERE p.usuarioFinal = u AND p.empresa.id = :empresaId) " +
+           "AND (LOWER(u.nombre) LIKE LOWER(CONCAT('%',:q,'%')) " +
+           " OR LOWER(u.correo) LIKE LOWER(CONCAT('%',:q,'%')) " +
+           " OR u.telefono LIKE CONCAT('%',:q,'%')) ORDER BY u.nombre ASC")
+    List<Usuario> buscarClientesByEmpresa(@Param("q") String q, @Param("empresaId") Long empresaId);
 
     /** Updates TOTP replay-protection fields atomically after a successful TOTP verify. */
     @Modifying

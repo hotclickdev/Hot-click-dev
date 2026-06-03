@@ -39,6 +39,9 @@ public class WebhookEvent extends BaseEntity {
     @Column(name = "error_procesamiento")
     private String errorProcesamiento;
 
+    @Column(name = "intentos_reintento")
+    private Integer intentosReintento = 0;
+
     @Column(name = "ip_origen", length = 45)
     private String ipOrigen;
 
@@ -65,6 +68,9 @@ public class WebhookEvent extends BaseEntity {
 
     public String getErrorProcesamiento() { return errorProcesamiento; }
     public void setErrorProcesamiento(String errorProcesamiento) { this.errorProcesamiento = errorProcesamiento; }
+
+    public Integer getIntentosReintento() { return intentosReintento != null ? intentosReintento : 0; }
+    public void setIntentosReintento(Integer intentosReintento) { this.intentosReintento = intentosReintento; }
 
     public String getIpOrigen() { return ipOrigen; }
     public void setIpOrigen(String ipOrigen) { this.ipOrigen = ipOrigen; }

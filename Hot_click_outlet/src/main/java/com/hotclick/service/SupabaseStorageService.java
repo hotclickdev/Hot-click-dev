@@ -1,5 +1,9 @@
 package com.hotclick.service;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,6 +18,8 @@ import java.util.UUID;
 
 @Service
 public class SupabaseStorageService {
+
+    private static final Logger log = LoggerFactory.getLogger(SupabaseStorageService.class);
 
     @Value("${supabase.url}")
     private String supabaseUrl;
@@ -33,13 +39,54 @@ public class SupabaseStorageService {
         "avif", "image/avif"
     );
 
-    // HttpClient with system default SSL — never skip certificate validation
-    private final HttpClient httpClient = HttpClient.newHttpClient();
+    // F29: connectTimeout explicit — previously default (could hang indefinitely on Supabase timeouts)
+    private final HttpClient httpClient = HttpClient.newBuilder()
+        .connectTimeout(java.time.Duration.ofSeconds(10))
+        .build();
+
+    /**
+     * Sube un certificado PKCS#12 (.p12/.pfx) al bucket privado.
+     * Path: certificados/{empresaId}/{uuid}.p12
+     * NO devuelve URL pública — solo el path relativo para guardarlo en BD.
+     */
+    @CircuitBreaker(name = "supabase", fallbackMethod = "subirCertificadoFallback")
+    @Retry(name = "supabase")
+    public String subirCertificado(MultipartFile file, Long empresaId) throws IOException, InterruptedException {
+        if (file == null || file.isEmpty()) throw new IllegalArgumentException("El archivo está vacío");
+        if (file.getSize() > 5 * 1024 * 1024) throw new IllegalArgumentException("El certificado no puede superar 5 MB");
+
+        String original = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";
+        if (!original.endsWith(".p12") && !original.endsWith(".pfx"))
+            throw new IllegalArgumentException("Solo se permiten archivos .p12 o .pfx");
+
+        byte[] bytes = file.getBytes();
+        // PKCS#12 magic bytes: 30 82 (DER encoding of a SEQUENCE)
+        if (bytes.length < 2 || bytes[0] != 0x30)
+            throw new IllegalArgumentException("El archivo no es un certificado PKCS#12 válido");
+
+        String path = "certificados/" + empresaId + "/" + UUID.randomUUID() + ".p12";
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(supabaseUrl + "/storage/v1/object/" + BUCKET + "/" + path))
+                .header("Authorization", "Bearer " + serviceKey)
+                .header("apikey", serviceKey)
+                .header("Content-Type", "application/x-pkcs12")
+                .POST(HttpRequest.BodyPublishers.ofByteArray(bytes))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() < 200 || response.statusCode() >= 300)
+            throw new RuntimeException("Supabase Storage error " + response.statusCode());
+
+        return path; // solo el path, no URL pública
+    }
 
     public String subirImagen(MultipartFile file) throws IOException, InterruptedException {
         return subirImagen(file, "productos");
     }
 
+    @CircuitBreaker(name = "supabase", fallbackMethod = "subirImagenFallback")
+    @Retry(name = "supabase")
     public String subirImagen(MultipartFile file, String carpeta) throws IOException, InterruptedException {
         byte[] bytes = validarArchivo(file);
         String ext = obtenerExtension(file.getOriginalFilename());
@@ -116,5 +163,15 @@ public class SupabaseStorageService {
         String ext = filename.substring(filename.lastIndexOf('.') + 1).toLowerCase().trim();
         // Reject empty extensions (e.g. filename ending with a dot)
         return ext.isEmpty() ? "" : ext;
+    }
+
+    private String subirCertificadoFallback(MultipartFile file, Long empresaId, Throwable t) {
+        log.error("[supabase-circuit] OPEN subirCertificado empresa={}: {}", empresaId, t.getMessage());
+        throw new RuntimeException("Servicio de almacenamiento no disponible temporalmente");
+    }
+
+    private String subirImagenFallback(MultipartFile file, String carpeta, Throwable t) {
+        log.error("[supabase-circuit] OPEN subirImagen carpeta={}: {}", carpeta, t.getMessage());
+        throw new RuntimeException("Servicio de almacenamiento no disponible temporalmente");
     }
 }

@@ -322,6 +322,14 @@ html.reduce-motion *::after {
   outline-offset: 2px;
 }
 
+/* ── Sticky CTA bar (ProductDetail): sits above BottomNav on mobile ── */
+.hc-sticky-cta {
+  bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 768px) {
+  .hc-sticky-cta { bottom: 0; }
+}
+
 /* ── Modal close button hover ── */
 .hc-modal-close {
   color: var(--hc-muted);

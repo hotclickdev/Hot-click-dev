@@ -1,6 +1,7 @@
 package com.hotclick.config;
 
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.exception.PlanLimitException;
 import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.exception.TenantAccessDeniedException;
 import jakarta.validation.ConstraintViolationException;
@@ -34,6 +35,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(StockInsuficienteException.class)
     public ResponseEntity<ResponseDTO> handleStock(StockInsuficienteException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseDTO.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(PlanLimitException.class)
+    public ResponseEntity<ResponseDTO> handlePlanLimit(PlanLimitException ex) {
+        return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(ResponseDTO.error(ex.getMessage()));
     }
 
     // ── Validación de entrada ─────────────────────────────────────────────────

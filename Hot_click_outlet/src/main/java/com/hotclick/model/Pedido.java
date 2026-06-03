@@ -58,6 +58,9 @@ public class Pedido extends BaseEntity {
     @Column(name = "margen_ganancia_pedido", precision = 8, scale = 2)
     private BigDecimal margenGananciaPedido;
 
+    @Column(name = "origen", length = 20)
+    private String origen = "ONLINE";
+
     @Column(name = "estado_pedido", length = 20)
     private String estadoPedido = "PENDIENTE";
 
@@ -88,6 +91,26 @@ public class Pedido extends BaseEntity {
     @Column(name = "cupon_codigo", length = 20)
     private String cuponCodigo;
 
+    // ── Gift card (F17) ───────────────────────────────────────────────────────
+    @Column(name = "gift_card_codigo", length = 30)
+    private String giftCardCodigo;
+
+    @Column(name = "gift_card_monto")
+    private Integer giftCardMonto = 0;
+
+    // ── Self-checkout QR (F16) ────────────────────────────────────────────────
+    /** Nombre de la mesa que generó el pedido (desnormalizado) */
+    @Column(name = "mesa_nombre", length = 100)
+    private String mesaNombre;
+
+    /** Nombre ingresado por el cliente en el terminal de autoservicio */
+    @Column(name = "cliente_nombre", length = 100)
+    private String clienteNombre;
+
+    /** Teléfono opcional del cliente */
+    @Column(name = "cliente_tel", length = 30)
+    private String clienteTel;
+
     @Column(name = "fecha_envio")
     private LocalDateTime fechaEnvio;
 
@@ -96,11 +119,11 @@ public class Pedido extends BaseEntity {
     @JoinColumn(name = "fk_id_empresa")
     private Empresa empresa;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_id_usuario_final", nullable = false)
     private Usuario usuarioFinal;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_id_bodega", nullable = false)
     private Bodega bodega;
 
@@ -149,6 +172,9 @@ public class Pedido extends BaseEntity {
     public BigDecimal getMargenGananciaPedido() { return margenGananciaPedido; }
     public void setMargenGananciaPedido(BigDecimal margenGananciaPedido) { this.margenGananciaPedido = margenGananciaPedido; }
 
+    public String getOrigen() { return origen; }
+    public void setOrigen(String origen) { this.origen = origen; }
+
     public String getEstadoPedido() { return estadoPedido; }
     public void setEstadoPedido(String estadoPedido) { this.estadoPedido = estadoPedido; }
 
@@ -196,4 +222,16 @@ public class Pedido extends BaseEntity {
 
     public String getCuponCodigo() { return cuponCodigo; }
     public void setCuponCodigo(String cuponCodigo) { this.cuponCodigo = cuponCodigo; }
+
+    public String getGiftCardCodigo() { return giftCardCodigo; }
+    public void setGiftCardCodigo(String v) { this.giftCardCodigo = v; }
+    public Integer getGiftCardMonto() { return giftCardMonto; }
+    public void setGiftCardMonto(Integer v) { this.giftCardMonto = v; }
+
+    public String getMesaNombre() { return mesaNombre; }
+    public void setMesaNombre(String v) { this.mesaNombre = v; }
+    public String getClienteNombre() { return clienteNombre; }
+    public void setClienteNombre(String v) { this.clienteNombre = v; }
+    public String getClienteTel() { return clienteTel; }
+    public void setClienteTel(String v) { this.clienteTel = v; }
 }

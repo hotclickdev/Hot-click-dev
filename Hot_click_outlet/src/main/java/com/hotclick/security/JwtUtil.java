@@ -4,11 +4,13 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -19,6 +21,14 @@ public class JwtUtil {
     private String secretKey;
 
     private static final long EXPIRATION_TIME = 900000L; // 15 minutos
+
+    @PostConstruct
+    void validate() {
+        if (secretKey == null || secretKey.length() < 32) {
+            throw new IllegalStateException(
+                "JWT_SECRET debe tener al menos 32 caracteres (jwt.secret)");
+        }
+    }
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(secretKey.getBytes());
@@ -62,6 +72,24 @@ public class JwtUtil {
         claims.put("empresaId", empresaId);
         claims.put("empresaSlug", empresaSlug != null ? empresaSlug : "");
         return createToken(claims, username, EXPIRATION_TIME);
+    }
+
+    public String generateTokenFull(String username, Long userId, String rol,
+                                    Long empresaId, String empresaSlug, List<String> permisos) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId);
+        claims.put("rol", rol);
+        if (empresaId != null)   claims.put("empresaId", empresaId);
+        if (empresaSlug != null) claims.put("empresaSlug", empresaSlug);
+        if (permisos != null)    claims.put("permisos", permisos);
+        return createToken(claims, username, EXPIRATION_TIME);
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<String> extractPermisos(String token) {
+        Object raw = extractAllClaims(token).get("permisos");
+        if (raw instanceof List<?> list) return (List<String>) list;
+        return List.of();
     }
 
     public Long extractEmpresaId(String token) {

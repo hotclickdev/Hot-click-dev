@@ -11,7 +11,7 @@ function parseJwtClaims(token) {
   }
 }
 
-// AuthResponse: { accessToken, refreshToken, tipo, id, correo, rol, nombre, empresaId, empresaSlug }
+// AuthResponse: { accessToken, refreshToken, tipo, id, correo, rol, nombre, empresaId, empresaSlug, permisos }
 const useAuthStore = create(
   persist(
     (set, get) => ({
@@ -21,9 +21,11 @@ const useAuthStore = create(
       userEmail:    null,
       userRole:     null,
       userName:     null,
-      empresaId:     null,   // tenant del usuario autenticado
-      empresaSlug:   null,   // slug de la empresa (ej: "hot-store")
-      empresaNombre: null,   // nombre visible en sidebar
+      empresaId:     null,
+      empresaSlug:   null,
+      empresaNombre: null,
+      permissions:   [],    // permisos granulares: ['pos.usar', 'products.view', ...]
+      roles:         [],    // roles: ['CAJERO', 'EMPRENDEDOR', ...]
 
       isAuthenticated: () => !!get().token,
       isAdmin:         () => ['ADMIN_IT', 'ADMIN_CLIENTE', 'EMPRENDEDOR'].includes(get().userRole),
@@ -31,33 +33,39 @@ const useAuthStore = create(
       isEmprendedor:   () => get().userRole === 'EMPRENDEDOR',
       isAdminCliente:  () => get().userRole === 'ADMIN_CLIENTE',
       isUsuarioFinal:  () => get().userRole === 'USUARIO_FINAL',
+      hasPermission:   (perm) => get().permissions.includes(perm),
+      hasAnyRole:      (...rols) => rols.some(r => get().roles.includes(r)),
 
       login: (data) => {
-        // Leer empresaId/empresaSlug del response o del token directamente
-        const claims     = parseJwtClaims(data.accessToken)
+        const claims      = parseJwtClaims(data.accessToken)
         const empresaId   = data.empresaId   ?? claims.empresaId   ?? null
         const empresaSlug = data.empresaSlug ?? claims.empresaSlug ?? null
+        // Permisos: primero del response body, luego del JWT como fallback
+        const permissions = data.permisos ?? claims.permisos ?? []
+        const rol         = data.rol ?? claims.rol ?? null
 
         set({
           token:        data.accessToken,
           refreshToken: data.refreshToken ?? null,
           userId:       data.id,
           userEmail:    data.correo,
-          userRole:     data.rol,
+          userRole:     rol,
           userName:     data.nombre ?? data.correo?.split('@')[0],
-          empresaId:     empresaId   ? Number(empresaId) : null,
-          empresaSlug:   empresaSlug || null,
+          empresaId:    empresaId   ? Number(empresaId) : null,
+          empresaSlug:  empresaSlug || null,
           empresaNombre: data.empresaNombre ?? null,
+          permissions:  Array.isArray(permissions) ? permissions : [],
+          roles:        rol ? [rol] : [],
         })
       },
 
       updateAccessToken: (accessToken) => {
-        // Al refrescar el token también actualizamos los claims de empresa
         const claims = parseJwtClaims(accessToken)
         set({
-          token:       accessToken,
-          empresaId:   claims.empresaId   ? Number(claims.empresaId)   : get().empresaId,
-          empresaSlug: claims.empresaSlug ? claims.empresaSlug         : get().empresaSlug,
+          token:        accessToken,
+          empresaId:    claims.empresaId   ? Number(claims.empresaId)   : get().empresaId,
+          empresaSlug:  claims.empresaSlug ? claims.empresaSlug         : get().empresaSlug,
+          permissions:  Array.isArray(claims.permisos) ? claims.permisos : get().permissions,
         })
       },
 
@@ -70,9 +78,11 @@ const useAuthStore = create(
         userEmail:    null,
         userRole:     null,
         userName:     null,
-        empresaId:     null,
-        empresaSlug:   null,
+        empresaId:    null,
+        empresaSlug:  null,
         empresaNombre: null,
+        permissions:  [],
+        roles:        [],
       }),
     }),
     { name: 'hotclick-auth' }

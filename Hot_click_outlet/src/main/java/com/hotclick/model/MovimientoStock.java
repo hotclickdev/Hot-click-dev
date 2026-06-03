@@ -9,13 +9,18 @@ public class MovimientoStock {
 
     // Tipos de movimiento
     public static final String VENTA               = "VENTA";
+    public static final String VENTA_POS           = "VENTA_POS";
     public static final String RESERVA             = "RESERVA";
     public static final String LIBERACION_RESERVA  = "LIBERACION_RESERVA";
     public static final String AJUSTE_ENTRADA      = "AJUSTE_ENTRADA";
     public static final String AJUSTE_SALIDA       = "AJUSTE_SALIDA";
+    public static final String DEVOLUCION          = "DEVOLUCION";
+    public static final String TRANSFERENCIA       = "TRANSFERENCIA";
+    public static final String COMPRA              = "COMPRA";
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "movimiento_stock_seq")
+    @SequenceGenerator(name = "movimiento_stock_seq", sequenceName = "hot_click_movimiento_stock_seq", allocationSize = 50)
     @Column(name = "id_movimiento")
     private Long id;
 
@@ -54,6 +59,15 @@ public class MovimientoStock {
     @Column(name = "notas", length = 500)
     private String notas;
 
+    @Column(name = "tipo", length = 30)
+    private String tipo;
+
+    @Column(name = "referencia_id")
+    private Long referenciaId;
+
+    @Column(name = "referencia_tipo", length = 30)
+    private String referenciaTipo;
+
     // ── Getters / Setters ───────────────────────────────────────────────────────
 
     public Long getId() { return id; }
@@ -90,4 +104,13 @@ public class MovimientoStock {
 
     public String getNotas() { return notas; }
     public void setNotas(String notas) { this.notas = notas; }
+
+    public String getTipo() { return tipo; }
+    public void setTipo(String tipo) { this.tipo = tipo; }
+
+    public Long getReferenciaId() { return referenciaId; }
+    public void setReferenciaId(Long referenciaId) { this.referenciaId = referenciaId; }
+
+    public String getReferenciaTipo() { return referenciaTipo; }
+    public void setReferenciaTipo(String referenciaTipo) { this.referenciaTipo = referenciaTipo; }
 }

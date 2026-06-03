@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -73,7 +74,8 @@ public class PublicacionFacebookService {
     }
 
     // Corre cada N minutos para generar texto FB a productos nuevos sin entrada en cola
-    @Scheduled(fixedDelayString = "${app.publication.interval-minutes:30}000")
+    @Scheduled(fixedDelayString = "${app.publication.interval-ms:1800000}")
+    @SchedulerLock(name = "publicacion_facebook_scheduler", lockAtMostFor = "PT25M", lockAtLeastFor = "PT5M")
     @Transactional
     public void generarParaProductosNuevos() {
         if (!publicacionEnabled) return;

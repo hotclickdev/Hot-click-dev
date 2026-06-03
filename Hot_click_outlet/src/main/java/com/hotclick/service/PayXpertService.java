@@ -78,7 +78,7 @@ public class PayXpertService {
 
         // Crear Pedido PENDIENTE (sin reducir stock todavía)
         Pedido pedido = new Pedido();
-        pedido.setNumeroPedido("ORD-" + System.currentTimeMillis());
+        pedido.setNumeroPedido(Constants.generarNumeroPedido("ORD-"));
         pedido.setFechaPedido(LocalDateTime.now());
         pedido.setSubtotal(subtotal);
         pedido.setTotalPedido(total);
@@ -314,7 +314,7 @@ public class PayXpertService {
 
         pedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
         pedidoRepository.save(pedido);
-
+        if (pedido.getUsuarioFinal() != null) { pedido.getUsuarioFinal().getCorreo(); }
         notificacionEmailService.enviarConfirmacionPedido(pedido);
         log.info("Pedido {} confirmado como PAGADO", pedido.getNumeroPedido());
     }

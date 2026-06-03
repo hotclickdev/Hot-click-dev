@@ -24,7 +24,8 @@ public class Categoria extends BaseEntity {
     @Column(name = "orden_display")
     private Integer ordenDisplay = 0;
 
-    @ManyToOne
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_id_categoria_padre")
     private Categoria categoriaPadre;
 
@@ -54,6 +55,9 @@ public class Categoria extends BaseEntity {
 
     public Categoria getCategoriaPadre() { return categoriaPadre; }
     public void setCategoriaPadre(Categoria categoriaPadre) { this.categoriaPadre = categoriaPadre; }
+
+    public Long getPadreId() { return categoriaPadre != null ? categoriaPadre.getId() : null; }
+    public String getPadreNombre() { return categoriaPadre != null ? categoriaPadre.getNombreCategoria() : null; }
 
     @JsonIgnore
     public Usuario getAdminCliente() { return adminCliente; }

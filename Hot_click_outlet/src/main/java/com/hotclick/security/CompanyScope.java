@@ -34,7 +34,11 @@ public class CompanyScope {
      */
     public Long getCurrentEmpresaId() {
         Usuario user = getCurrentUser();
-        if (user == null) return null;
+        if (user == null) {
+            // API key auth: el principal es String (email empresa), no UserDetails.
+            // TenantFilter ya cargó el empresaId correcto en TenantContext.
+            return TenantContext.get();
+        }
         if (isAdminIT(user)) return null;
         // JWT claim tiene precedencia — soporta multi-negocio activo
         Long fromJwt = extractEmpresaIdFromJwt();

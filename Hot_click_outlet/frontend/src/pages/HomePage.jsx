@@ -238,7 +238,7 @@ function HeroCarousel({ slides }) {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.6 }}
-                className="absolute w-[420px] h-[420px] rounded-full blur-[100px] pointer-events-none"
+                className="absolute w-[200px] sm:w-[320px] md:w-[420px] h-[200px] sm:h-[320px] md:h-[420px] rounded-full blur-[60px] sm:blur-[80px] md:blur-[100px] pointer-events-none"
                 style={{ background: color.glow }}
               />
             </AnimatePresence>

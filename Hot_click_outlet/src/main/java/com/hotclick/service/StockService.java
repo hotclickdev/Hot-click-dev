@@ -94,6 +94,20 @@ public class StockService {
     public void descontarPorVenta(Producto producto, int cantidad,
                                   boolean liberarReservaPrevia,
                                   String referencia, String operadorCorreo) {
+        descontarPorVentaConTipo(producto, cantidad, liberarReservaPrevia,
+            MovimientoStock.VENTA, referencia, operadorCorreo);
+    }
+
+    @Transactional
+    public void descontarPorVentaPOS(Producto producto, int cantidad,
+                                      String referencia, String operadorCorreo) {
+        descontarPorVentaConTipo(producto, cantidad, false,
+            MovimientoStock.VENTA_POS, referencia, operadorCorreo);
+    }
+
+    private void descontarPorVentaConTipo(Producto producto, int cantidad,
+                                           boolean liberarReservaPrevia, String tipo,
+                                           String referencia, String operadorCorreo) {
         int actAntes  = producto.getStockActual();
         int actDespues = actAntes - cantidad;
         producto.setStockActual(actDespues);
@@ -116,13 +130,13 @@ public class StockService {
         }
         productoRepository.save(producto);
 
-        registrar(producto, MovimientoStock.VENTA, cantidad,
+        registrar(producto, tipo, cantidad,
             actAntes, actDespues,
             resAntes, resDespues,
             referencia, operadorCorreo);
 
-        log.info("Venta — producto id={} '{}': actual {} → {}, reservado {} → {}",
-            producto.getId(), producto.getNombreProducto(),
+        log.info("Venta ({}) — producto id={} '{}': actual {} → {}, reservado {} → {}",
+            tipo, producto.getId(), producto.getNombreProducto(),
             actAntes, actDespues, resAntes, resDespues);
     }
 
@@ -175,6 +189,7 @@ public class StockService {
         MovimientoStock m = new MovimientoStock();
         m.setProducto(producto);
         m.setTipoMovimiento(tipo);
+        m.setTipo(tipo);
         m.setCantidad(cantidad);
         m.setStockActualAntes(actAntes);
         m.setStockActualDespues(actDespues);
@@ -185,4 +200,5 @@ public class StockService {
         m.setFechaMovimiento(LocalDateTime.now());
         return m;
     }
+
 }

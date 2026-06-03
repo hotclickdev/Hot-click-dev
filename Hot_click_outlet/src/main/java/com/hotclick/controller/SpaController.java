@@ -16,6 +16,9 @@ public class SpaController {
         "/productos/{id}",
         "/carrito",
         "/login",
+        "/registrar-negocio",
+        "/sso-callback",
+        "/sso-complete",
         "/registro",
         "/perfil",
         "/checkout",
@@ -31,9 +34,23 @@ public class SpaController {
         "/blog/{slug}",
         "/emprendimientos",
         "/seleccionar-negocio",
+        "/mode-select",
+        "/admin/compras",
+        "/admin/compras/nueva",
+        "/admin/proveedores",
         "/recuperar-carrito/{id}",
         "/admin",
-        "/admin/{*path}"
+        "/admin/{*path}",
+        "/checkout/qr/{token}",
+        "/admin/gift-cards",
+        "/admin/branding",
+        "/admin/plugins",
+        "/admin/api-keys",
+        "/admin/inventario",
+        "/admin/copilot",
+        "/admin/forecast",
+        "/admin/executive",
+        "/admin/multipais"
     })
     public String spa() {
         return "forward:/index.html";

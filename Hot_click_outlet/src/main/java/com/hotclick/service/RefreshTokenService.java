@@ -4,6 +4,7 @@ import com.hotclick.model.RefreshToken;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.RefreshTokenRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,10 +45,12 @@ public class RefreshTokenService {
         });
     }
 
-    // Limpia tokens expirados a las 3am para mantener la tabla pequeña
-    @Scheduled(cron = "0 0 3 * * *")
+    // Limpia tokens expirados a las 3:15 AM — escalonado para no competir con BillingRenewal (3:00)
+    @Scheduled(cron = "0 15 3 * * *")
+    @SchedulerLock(name = "refresh_token_cleanup", lockAtMostFor = "PT10M", lockAtLeastFor = "PT5M")
     @Transactional
     public void limpiarExpirados() {
         repo.deleteExpired(LocalDateTime.now());
+        repo.deleteRevoked(LocalDateTime.now().minusHours(24));
     }
 }

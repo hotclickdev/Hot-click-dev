@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -16,28 +17,32 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Sliding-window rate limiter for sensitive endpoints.
- * Applied per client IP. Emits RATE_LIMIT_TRIGGERED security events.
+ * Rate limiter distribuido: estado compartido en PostgreSQL.
+ * Funciona correctamente en multi-pod (todos los pods ven el mismo contador).
  *
- * Limits (POST, per IP):
+ * Algoritmo: fixed-window counter con UPSERT atómico.
+ * La PRIMARY KEY de hot_click_rate_limit_tb garantiza atomicidad del check-and-increment.
+ * Limpieza nocturna: DataRetentionScheduler.limpiarRateLimitExpirados().
+ *
+ * Fail-open: si la BD falla, la request pasa (disponibilidad > rate limiting).
+ * Para endpoints críticos de auth esto es aceptable porque el account lockout
+ * (UsuarioService.incrementarIntentosFallidos) es una segunda capa de defensa.
+ *
+ * Límites (POST, per IP):
  *   /api/auth/login              → 10 / 60s
  *   /api/auth/forgot-password    →  5 / 60s
- *   /api/auth/2fa/verify         →  5 / 60s   (tighter — 6-digit codes)
- *   /api/auth/2fa/email/send     →  3 / 300s  (OTP send — 3 per 5 min)
+ *   /api/auth/2fa/verify         →  5 / 60s
+ *   /api/auth/2fa/email/send     →  3 / 300s
  *   /api/auth/verify-code        →  5 / 60s
  *   /api/auth/registro-empresa   →  5 / 60s
- *   /api/auth/register           →  5 / 3600s (registration — 5 per hour)
+ *   /api/auth/register           →  5 / 3600s
  *   /api/auth/send-verification  →  5 / 60s
  *   /api/auth/refresh            → 30 / 60s
- *   /api/auth/change-password    →  5 / 300s  (5 per 5 min)
+ *   /api/auth/change-password    →  5 / 300s
  *   /api/contacto                →  5 / 60s
+ *   /api/public/chat             → 10 / 60s
  */
 @Component
 public class RateLimitingFilter extends OncePerRequestFilter {
@@ -46,6 +51,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
     @Autowired
     private SecurityAuditService auditService;
+
+    @Autowired
+    private JdbcTemplate jdbc;
 
     private record Limit(int maxRequests, int windowSeconds) {}
 
@@ -60,24 +68,30 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         Map.entry("/api/auth/send-verification",  new Limit(5,    60)),
         Map.entry("/api/auth/refresh",            new Limit(30,   60)),
         Map.entry("/api/auth/change-password",    new Limit(5,   300)),
-        Map.entry("/api/contacto",                new Limit(5,    60))
+        Map.entry("/api/contacto",                new Limit(5,    60)),
+        Map.entry("/api/public/chat",             new Limit(10,   60))
     );
 
-    // key: "ip:path" → sliding window bucket
-    private final ConcurrentHashMap<String, SlidingWindow> buckets = new ConcurrentHashMap<>();
-
-    private final ScheduledExecutorService cleaner = Executors.newSingleThreadScheduledExecutor(r -> {
-        Thread t = new Thread(r, "rate-limit-cleaner");
-        t.setDaemon(true);
-        return t;
-    });
-
-    public RateLimitingFilter() {
-        cleaner.scheduleAtFixedRate(() -> {
-            long now = Instant.now().getEpochSecond();
-            buckets.entrySet().removeIf(e -> e.getValue().isExpired(now));
-        }, 5, 5, TimeUnit.MINUTES);
-    }
+    // UPSERT atómico: inserta un nuevo bucket o incrementa el existente dentro de la ventana.
+    // Si la ventana expiró (window_start + windowSeconds <= now) reinicia count a 1.
+    // RETURNING count devuelve el valor post-update para comparar con max.
+    private static final String UPSERT_SQL = """
+        INSERT INTO hot_click_rate_limit_tb (bucket_key, count, window_start, expires_at)
+        VALUES (?, 1, ?, ?)
+        ON CONFLICT (bucket_key) DO UPDATE SET
+          count        = CASE
+                           WHEN hot_click_rate_limit_tb.window_start + ? <= ?
+                           THEN 1
+                           ELSE hot_click_rate_limit_tb.count + 1
+                         END,
+          window_start = CASE
+                           WHEN hot_click_rate_limit_tb.window_start + ? <= ?
+                           THEN ?
+                           ELSE hot_click_rate_limit_tb.window_start
+                         END,
+          expires_at   = ?
+        RETURNING count
+        """;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
@@ -90,10 +104,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             String ip  = request.getRemoteAddr();
             String key = ip + ":" + path;
 
-            SlidingWindow window = buckets.computeIfAbsent(key,
-                k -> new SlidingWindow(limit.windowSeconds()));
-
-            if (!window.tryAcquire(limit.maxRequests())) {
+            if (!tryAcquireDb(key, limit.maxRequests(), limit.windowSeconds())) {
                 log.warn("[RATE-LIMIT] ip={} path={}", ip, path);
                 try {
                     auditService.logRateLimitTriggered(ip, path);
@@ -110,26 +121,21 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         chain.doFilter(request, response);
     }
 
-    // ── Sliding-window counter ───────────────────────────────────────────────
-
-    private static class SlidingWindow {
-        private final int windowSeconds;
-        private final AtomicInteger count = new AtomicInteger(0);
-        private volatile long windowStart = Instant.now().getEpochSecond();
-
-        SlidingWindow(int windowSeconds) { this.windowSeconds = windowSeconds; }
-
-        boolean tryAcquire(int max) {
-            long now = Instant.now().getEpochSecond();
-            if (now - windowStart >= windowSeconds) {
-                count.set(0);
-                windowStart = now;
-            }
-            return count.incrementAndGet() <= max;
-        }
-
-        boolean isExpired(long now) {
-            return now - windowStart > windowSeconds * 2L;
+    private boolean tryAcquireDb(String key, int max, int windowSeconds) {
+        long now     = Instant.now().getEpochSecond();
+        long expires = now + windowSeconds;
+        try {
+            Integer count = jdbc.queryForObject(UPSERT_SQL, Integer.class,
+                key, now, expires,           // INSERT: bucket_key, window_start, expires_at
+                (long) windowSeconds, now,   // CASE count:        window_start + window <= now
+                (long) windowSeconds, now,   // CASE window_start: window_start + window <= now
+                now,                         // new window_start when resetting
+                expires                      // new expires_at
+            );
+            return count != null && count <= max;
+        } catch (Exception e) {
+            log.warn("[RATE-LIMIT] DB unavailable, fail-open: {}", e.getMessage());
+            return true;
         }
     }
 }

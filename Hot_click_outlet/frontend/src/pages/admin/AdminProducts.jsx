@@ -12,9 +12,11 @@ import Modal from '@/components/ui/Modal'
 import Badge from '@/components/ui/Badge'
 import Spinner from '@/components/ui/Spinner'
 import { productService, denormalizeProduct, normalizeProduct } from '@/services/productService'
+import KardexDrawer from '@/components/pos/KardexDrawer'
 import { warehouseService } from '@/services/orderService'
 import { marcaService } from '@/services/marcaService'
 import ImportExportBar from '@/components/admin/ImportExportBar'
+import CategoriaSelect from '@/components/admin/CategoriaSelect'
 import MultiImagePicker from '@/components/ui/MultiImagePicker'
 import { useToast } from '@/components/ui/Toast'
 import { formatPrice, conditionLabel, conditionVariant } from '@/utils/format'
@@ -25,7 +27,7 @@ const EMPTY_FORM = {
   condicion: 'NUEVO', categoriaId: '', marcaId: '', imagenUrl: '', bodegaId: '', destacado: false,
   especificaciones: '', comoUsar: '', imagenes: [],
   metaTitle: '', metaDescription: '', metaKeywords: '',
-  videoUrl: '',
+  videoUrl: '', sku: '', barcode: '',
 }
 
 function toSlug(str) {
@@ -98,6 +100,7 @@ export default function AdminProducts() {
   const [seoOpen, setSeoOpen] = useState(false)
   const [seoAutoTitle, setSeoAutoTitle] = useState(true)
   const [seoAutoDesc, setSeoAutoDesc] = useState(true)
+  const [kardexProducto, setKardexProducto] = useState(null)
 
   const load = async (page = prodPage) => {
     const id = ++loadIdRef.current
@@ -331,9 +334,17 @@ export default function AdminProducts() {
     } catch { toast({ message: 'Error al eliminar', type: 'error' }) }
   }
 
+  // Todos los IDs descendientes de una categoría (inclusive)
+  const getDescIds = (rootId) => {
+    const ids = new Set([String(rootId)])
+    categories.filter((c) => String(c.padreId) === String(rootId))
+      .forEach((c) => getDescIds(c.id).forEach((id) => ids.add(id)))
+    return ids
+  }
+
   const filtered = useMemo(() => products.filter((p) => {
     if (debouncedSearch && !p.nombre?.toLowerCase().includes(debouncedSearch.toLowerCase())) return false
-    if (filterCat && String(p.categoriaId) !== String(filterCat)) return false
+    if (filterCat && !getDescIds(filterCat).has(String(p.categoriaId))) return false
     if (filterCond && p.condicion !== filterCond) return false
     if (filterStock === 'ok' && p.stock <= 3) return false
     if (filterStock === 'low' && (p.stock === 0 || p.stock > 3)) return false
@@ -519,7 +530,11 @@ export default function AdminProducts() {
               className="shrink-0 h-8 px-2.5 rounded-full bg-[#111114] border border-white/10 text-[#e8e8ed] text-xs focus:outline-none"
             >
               <option value="">Categoría</option>
-              {categories.map((c) => <option key={c.id} value={c.id}>{c.nombreCategoria ?? c.nombre}</option>)}
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.padreId ? `↳ ${c.nombreCategoria ?? c.nombre}` : (c.nombreCategoria ?? c.nombre)}
+                </option>
+              ))}
             </select>
             {[['', 'Condición'], ['NUEVO', 'Nuevo'], ['COMO_NUEVO', 'Como nuevo'], ['USADO', 'Usado']].map(([val, lbl]) => (
               <button key={val} onClick={() => setFilterCond(val)}
@@ -624,7 +639,7 @@ export default function AdminProducts() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-white/8">
-                        {['★', 'Pos.', 'ID', t('admin.products.name'), t('admin.products.price'), t('admin.products.stock'), t('admin.products.category'), 'SEO', t('admin.products.actions')].map((h) => (
+                        {['★', 'Pos.', 'ID', t('admin.products.name'), t('admin.products.price'), t('admin.products.stock'), 'SKU / Barcode', t('admin.products.category'), 'SEO', t('admin.products.actions')].map((h) => (
                           <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">{h}</th>
                         ))}
                       </tr>
@@ -692,6 +707,13 @@ export default function AdminProducts() {
                             <Badge variant={p.stock === 0 ? 'danger' : p.stock <= 3 ? 'warning' : 'success'}>{p.stock}</Badge>
                           </td>
                           <td className="px-4 py-3">
+                            <div className="space-y-0.5">
+                              {p.sku     && <p className="text-[10px] font-mono" style={{ color: 'var(--hc-muted)' }}>SKU: {p.sku}</p>}
+                              {p.barcode && <p className="text-[10px] font-mono" style={{ color: 'var(--hc-accent)', opacity: 0.8 }}>BC: {p.barcode}</p>}
+                              {!p.sku && !p.barcode && <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.2)' }}>—</span>}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
                             <Badge variant={conditionVariant(p.condicion)}>{conditionLabel(p.condicion)}</Badge>
                           </td>
                           <td className="px-4 py-3 text-center">
@@ -700,6 +722,7 @@ export default function AdminProducts() {
                           <td className="px-4 py-3">
                             <div className="flex gap-2">
                               <button onClick={() => openEdit(p)} className="px-3 py-1 text-xs rounded-lg bg-white/5 hover:bg-white/10 text-[#8e8e9a] hover:text-white transition-colors">{t('admin.products.edit')}</button>
+                              <button onClick={() => setKardexProducto(p)} className="px-3 py-1 text-xs rounded-lg bg-white/5 hover:bg-white/10 text-[#8e8e9a] hover:text-white transition-colors" title="Ver kardex">Kardex</button>
                               <button onClick={() => handleDelete(p.id, p.nombre)} className="px-3 py-1 text-xs rounded-lg bg-red-500/8 hover:bg-red-500/15 text-red-400 transition-colors">{t('admin.products.delete')}</button>
                             </div>
                           </td>
@@ -815,10 +838,12 @@ export default function AdminProducts() {
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-[#e8e8ed]">Categoría *</label>
-              <select value={form.categoriaId} onChange={set('categoriaId')} required className="h-11 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60">
-                <option value="">Selecciona categoría</option>
-                {categories.map((c) => <option key={c.id} value={c.id}>{c.nombreCategoria ?? c.nombre}</option>)}
-              </select>
+              <CategoriaSelect
+                categories={categories}
+                value={form.categoriaId}
+                onChange={(id) => setField('categoriaId', id)}
+                required
+              />
             </div>
             {bodegas.length > 0 && (
               <div className="flex flex-col gap-1.5">
@@ -1028,6 +1053,10 @@ export default function AdminProducts() {
         title="Eliminar producto"
         message={`¿Eliminar "${deleteTarget?.nombre}"? Esta acción no se puede deshacer.`}
       />
+
+      {kardexProducto && (
+        <KardexDrawer producto={kardexProducto} onClose={() => setKardexProducto(null)} />
+      )}
     </>
   )
 }

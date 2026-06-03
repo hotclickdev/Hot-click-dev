@@ -1,0 +1,1 @@
+import{t as e}from"./api-BJGlebFL.js";var t={getPublicas:()=>e.get(`/marcas/publicas`),getAll:()=>e.get(`/marcas`),create:t=>e.post(`/marcas`,t),update:(t,n)=>e.put(`/marcas/${t}`,n),delete:t=>e.delete(`/marcas/${t}`),importBulk:t=>e.post(`/marcas/bulk`,t),uploadLogo:t=>e.post(`/marcas/logo`,t,{headers:{"Content-Type":void 0}})};export{t};

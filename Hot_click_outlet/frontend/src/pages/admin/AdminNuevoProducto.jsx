@@ -25,7 +25,9 @@ const EMPTY_FORM = {
   especificaciones: '', comoUsar: '', marca: '', marcaId: '',
   precioVenta: '', precioCompra: '', stock: '1', talla: '', garantiaDias: '0',
   condicion: 'NUEVO', categoriaId: '', bodegaId: '', imagenUrl: '', imagenes: [],
+  sku: '', barcode: '',
   metaTitle: '', metaDescription: '', metaKeywords: '',
+  tags: '',
   seoByLang: {
     es: { title: '', description: '' },
     en: { title: '', description: '' },
@@ -234,6 +236,81 @@ function AnalisisProgress({ previews, currentIdx }) {
   )
 }
 
+// ── Tag selector ─────────────────────────────────────────────────────────────
+const TAG_GROUPS = [
+  {
+    label: '🏠 Ambiente',
+    tags: ['sala','cocina','dormitorio','baño','jardín','oficina','comedor','terraza','garaje','lavandería'],
+  },
+  {
+    label: '🪑 Tipo de producto',
+    tags: ['mueble','decoración','iluminación','textil','electrodoméstico','herramienta','arte','almacenamiento','colchón','espejo'],
+  },
+  {
+    label: '🎨 Estilo',
+    tags: ['moderno','rústico','minimalista','clásico','industrial','bohemio','escandinavo','tropical'],
+  },
+  {
+    label: '👥 Para quién',
+    tags: ['niños','mascotas','adultos','familia','pareja','soltero','oficina en casa'],
+  },
+]
+
+function TagSelector({ value, onChange }) {
+  const selected = new Set(
+    (value || '').split(',').map(t => t.trim().toLowerCase()).filter(Boolean)
+  )
+
+  function toggle(tag) {
+    const next = new Set(selected)
+    next.has(tag) ? next.delete(tag) : next.add(tag)
+    onChange([...next].join(','))
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-semibold" style={{ color: '#e8e8ed' }}>
+          Tags del chat 🛍️
+        </label>
+        {selected.size > 0 && (
+          <button type="button" onClick={() => onChange('')}
+            className="text-[10px] hover:underline" style={{ color: '#8e8e9a' }}>
+            Limpiar ({selected.size})
+          </button>
+        )}
+      </div>
+
+      {TAG_GROUPS.map(group => (
+        <div key={group.label} className="space-y-1.5">
+          <p className="text-[10px] font-medium" style={{ color: '#8e8e9a' }}>{group.label}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {group.tags.map(tag => {
+              const active = selected.has(tag)
+              return (
+                <button key={tag} type="button" onClick={() => toggle(tag)}
+                  className="px-2.5 py-1 rounded-full text-xs font-medium transition-all"
+                  style={{
+                    backgroundColor: active ? 'var(--hc-accent, #4f7cff)' : 'rgba(255,255,255,0.07)',
+                    color:           active ? '#fff' : '#8e8e9a',
+                    border:          active ? '1px solid transparent' : '1px solid rgba(255,255,255,0.12)',
+                  }}>
+                  {tag}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      ))}
+
+      <p className="text-[10px]" style={{ color: '#8e8e9a' }}>
+        Seleccioná los que mejor describen este producto. El chat los usa para recomendarlo.
+        {selected.size > 0 && <span className="ml-1 text-[#4f7cff]">({selected.size} seleccionados)</span>}
+      </p>
+    </div>
+  )
+}
+
 export default function AdminNuevoProducto() {
   const { t } = useTranslation()
   const toast = useToast()
@@ -253,6 +330,8 @@ export default function AdminNuevoProducto() {
   // Borrador
   const DRAFT_KEY = 'hotclick-draft-producto'
   const [tieneBorrador, setTieneBorrador] = useState(() => !!localStorage.getItem(DRAFT_KEY))
+  const [autoSaveLabel, setAutoSaveLabel] = useState('')
+  const draftTimerRef = useRef(null)
 
   // Formulario
   const [form, setForm] = useState(EMPTY_FORM)
@@ -311,6 +390,22 @@ export default function AdminNuevoProducto() {
     setTieneBorrador(false)
     setForm(EMPTY_FORM)
   }
+
+  // Auto-save con debounce 800ms — no persiste imágenes (objetos File no serializables)
+  useEffect(() => {
+    if (!form.nombre && !form.descripcion && !form.precioVenta) return
+    clearTimeout(draftTimerRef.current)
+    draftTimerRef.current = setTimeout(() => {
+      try {
+        const draft = { ...form, imagenes: [] }
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
+        setTieneBorrador(true)
+        setAutoSaveLabel('Guardado automáticamente')
+        setTimeout(() => setAutoSaveLabel(''), 2500)
+      } catch { /* incógnito o storage lleno — el formulario sigue funcionando */ }
+    }, 800)
+    return () => clearTimeout(draftTimerRef.current)
+  }, [form]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const nombre = form.nombre || ''
@@ -479,6 +574,7 @@ export default function AdminNuevoProducto() {
         metaTitle:          sl.es?.title        || form.metaTitle        || '',
         metaDescription:    sl.es?.description  || form.metaDescription  || '',
         metaKeywords:       form.metaKeywords    || '',
+        tags:               form.tags            || '',
         metaTitleEn:        sl.en?.title        || '',
         metaTitlePt:        sl.pt?.title        || '',
         metaTitleFr:        sl.fr?.title        || '',
@@ -498,6 +594,8 @@ export default function AdminNuevoProducto() {
         }
       }
 
+      try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignorar */ }
+      setTieneBorrador(false)
       toast({ message: 'Producto creado correctamente', type: 'success' })
       navigate('/admin/productos')
     } catch (err) {
@@ -737,6 +835,23 @@ export default function AdminNuevoProducto() {
                   <Label>Stock inicial</Label>
                   <input className={inp} type="number" value={form.stock} onChange={set('stock')}
                     placeholder="1" min="0" />
+                </div>
+              </div>
+
+              {/* Tags para el chat de descubrimiento */}
+              <TagSelector value={form.tags ?? ''} onChange={v => setForm(p => ({ ...p, tags: v }))} />
+
+              {/* SKU + Barcode */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>SKU <span className="text-[#8e8e9a] font-normal">(código interno)</span></Label>
+                  <input className={inp} type="text" value={form.sku ?? ''} onChange={set('sku')}
+                    placeholder="Ej: HC-001" />
+                </div>
+                <div>
+                  <Label>Barcode <span className="text-[#8e8e9a] font-normal">(EAN / UPC)</span></Label>
+                  <input className={inp} type="text" value={form.barcode ?? ''} onChange={set('barcode')}
+                    placeholder="Ej: 7501234567890" />
                 </div>
               </div>
 
@@ -1064,6 +1179,12 @@ export default function AdminNuevoProducto() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                   Borrador
                 </button>
+                {autoSaveLabel && (
+                  <span className="text-xs text-emerald-400/80 flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                    {autoSaveLabel}
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={() => navigate('/admin/productos')}

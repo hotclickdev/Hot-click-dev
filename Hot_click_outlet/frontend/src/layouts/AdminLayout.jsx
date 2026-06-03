@@ -1,10 +1,15 @@
-import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
+import { NavLink, Link, useNavigate, useLocation, useMatch } from 'react-router-dom'
+import { getAvailableModes, MODE_PREF_KEY } from '@/utils/modes'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect, useRef, useLayoutEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Helmet } from 'react-helmet-async'
 import useAuthStore from '@/store/authStore'
+import useTenantStore from '@/store/tenantStore'
 import { authService } from '@/services/authService'
+import GlobalSearch from '@/components/admin/GlobalSearch'
+import TrialBanner from '@/components/TrialBanner'
+import OfflineBanner from '@/components/OfflineBanner'
 
 // Devuelve los links del sidebar con secciones según el rol activo
 function buildSidebarLinks(t, userRole) {
@@ -17,9 +22,18 @@ function buildSidebarLinks(t, userRole) {
       { to: '/admin/marcas',       label: 'Marcas',                      icon: 'marca'    },
       { to: '/admin/bodegas',      label: t('admin.sidebar.bodegas'),    icon: 'building' },
       { to: '/admin/garantias',    label: 'Garantías',                   icon: 'shield'   },
+      { to: '/admin/compras',      label: 'Compras',                     icon: 'compra'   },
+      { to: '/admin/proveedores',  label: 'Proveedores',                 icon: 'proveedor'},
       { section: 'Ventas' },
       { to: '/admin/pedidos',      label: t('admin.sidebar.pedidos'),    icon: 'clipboard' },
       { to: '/admin/ventas',       label: t('admin.sidebar.nuevaVenta'), icon: 'plus'     },
+      { to: '/admin/pos',          label: 'Caja POS',                    icon: 'pos'      },
+      { to: '/admin/mesas',        label: 'Mesas / QR',                  icon: 'qr'       },
+      { to: '/admin/gift-cards',   label: 'Gift Cards',                  icon: 'gift'     },
+      { to: '/admin/inventario',   label: 'AI Inventario',               icon: 'ai'       },
+      { to: '/admin/copilot',      label: 'AI Copilot',                  icon: 'copilot'  },
+      { to: '/admin/forecast',     label: 'AI Forecast',                 icon: 'forecast' },
+      { to: '/admin/executive',    label: 'Executive BI',                icon: 'exec'     },
       { to: '/admin/finanzas',     label: t('admin.sidebar.finanzas'),   icon: 'chart'    },
       { to: '/admin/reportes',     label: t('admin.sidebar.reportes'),   icon: 'bar'      },
       { section: 'Marketing' },
@@ -31,11 +45,21 @@ function buildSidebarLinks(t, userRole) {
       { to: '/admin/servicios',     label: 'Servicios HOT',               icon: 'wrench'   },
       { to: '/admin/testimonios',   label: 'Testimonios',                 icon: 'star'     },
       { section: 'Sistema' },
+      { to: '/admin/branding',     label: 'Branding / White Label',      icon: 'brand'    },
+      { to: '/admin/multipais',    label: 'LATAM Multi-país',            icon: 'globe'    },
+      { to: '/admin/plugins',      label: 'Plugins / Integraciones',     icon: 'plugin'   },
+      { to: '/admin/api-keys',     label: 'API Keys',                    icon: 'key'      },
       { to: '/admin/pagos',        label: 'Pagos / Webhooks',            icon: 'card'     },
       { to: '/admin/usuarios',     label: t('admin.sidebar.usuarios'),   icon: 'users'    },
       { to: '/admin/empresas',     label: 'Empresas',                    icon: 'empresa'  },
       { to: '/admin/aprobaciones', label: 'Aprobaciones',                icon: 'check'    },
-      { to: '/admin/security',     label: 'Security Center',             icon: 'shield'   },
+      { to: '/admin/security',        label: 'Security Center',             icon: 'shield'   },
+      { to: '/admin/observabilidad',  label: 'Observabilidad',              icon: 'chart'    },
+      { to: '/admin/facturas',     label: 'Comprobantes Electrónicos',   icon: 'card'     },
+      { to: '/admin/config-fiscal', label: 'Config. Fiscal',            icon: 'config'   },
+      { to: '/admin/superadmin',   label: 'Feature Flags / SaaS',        icon: 'config'   },
+      { to: '/admin/ai-control',   label: 'Control IA',                  icon: 'ai'       },
+      { to: '/admin/billing/planes', label: 'Planes / Billing',          icon: 'card'     },
       { to: '/admin/configuracion', label: 'Configuración',              icon: 'config'   },
     ]
   }
@@ -49,9 +73,18 @@ function buildSidebarLinks(t, userRole) {
       { to: '/admin/marcas',         label: 'Marcas',                      icon: 'marca'    },
       { to: '/admin/bodegas',        label: t('admin.sidebar.bodegas'),    icon: 'building' },
       { to: '/admin/garantias',      label: 'Garantías',                   icon: 'shield'   },
+      { to: '/admin/compras',        label: 'Compras',                     icon: 'compra'   },
+      { to: '/admin/proveedores',    label: 'Proveedores',                 icon: 'proveedor'},
       { section: 'Ventas' },
       { to: '/admin/pedidos',        label: t('admin.sidebar.pedidos'),    icon: 'clipboard' },
       { to: '/admin/ventas',         label: t('admin.sidebar.nuevaVenta'), icon: 'plus'     },
+      { to: '/admin/pos',            label: 'Caja POS',                    icon: 'pos'      },
+      { to: '/admin/mesas',          label: 'Mesas / QR',                  icon: 'qr'       },
+      { to: '/admin/gift-cards',     label: 'Gift Cards',                  icon: 'gift'     },
+      { to: '/admin/inventario',     label: 'AI Inventario',               icon: 'ai'       },
+      { to: '/admin/copilot',        label: 'AI Copilot',                  icon: 'copilot'  },
+      { to: '/admin/forecast',       label: 'AI Forecast',                 icon: 'forecast' },
+      { to: '/admin/executive',      label: 'Executive BI',                icon: 'exec'     },
       { to: '/admin/finanzas',       label: t('admin.sidebar.finanzas'),   icon: 'chart'    },
       { to: '/admin/reportes',       label: t('admin.sidebar.reportes'),   icon: 'bar'      },
       { section: 'Marketing' },
@@ -61,9 +94,40 @@ function buildSidebarLinks(t, userRole) {
       { to: '/admin/blog',           label: 'Blog',                        icon: 'blog'     },
       { to: '/admin/convenios',      label: 'Emprendimientos',             icon: 'heart'    },
       { section: 'Mi negocio' },
-      { to: '/admin/mi-empresa',     label: 'Mi negocio',                  icon: 'empresa'  },
-      { to: '/admin/equipo',         label: 'Mi equipo',                   icon: 'users'    },
-      { to: '/admin/configuracion',  label: 'Configuración',               icon: 'config'   },
+      { to: '/admin/mi-empresa',        label: 'Mi negocio',          icon: 'empresa'  },
+      { to: '/admin/branding',          label: 'Branding / White Label', icon: 'brand'  },
+      { to: '/admin/multipais',         label: 'LATAM / Multi-país',   icon: 'globe'   },
+      { to: '/admin/plugins',           label: 'Plugins',              icon: 'plugin'  },
+      { to: '/admin/api-keys',          label: 'API Keys',             icon: 'key'     },
+      { to: '/admin/equipo',            label: 'Mi equipo',            icon: 'users'   },
+      { to: '/admin/billing/planes',    label: 'Mi suscripción',      icon: 'card'     },
+      { to: '/admin/offline/cola',      label: 'Cola offline',        icon: 'sync'     },
+      { to: '/admin/configuracion',     label: 'Configuración',       icon: 'config'   },
+    ]
+  }
+
+  if (userRole === 'CAJERO') {
+    return [
+      { section: 'POS' },
+      { to: '/admin/pos',           label: 'Caja registradora', icon: 'pos'       },
+      { to: '/admin/pos/caja',      label: 'Cuadre de caja',    icon: 'chart'     },
+      { to: '/admin/pos/historial', label: 'Historial ventas',  icon: 'clipboard' },
+    ]
+  }
+
+  if (userRole === 'GERENTE' || userRole === 'SUPERVISOR') {
+    return [
+      { to: '/admin', label: 'Inicio', icon: 'home', exact: true },
+      { section: 'POS' },
+      { to: '/admin/pos',           label: 'Caja registradora', icon: 'pos'       },
+      { to: '/admin/pos/caja',      label: 'Cuadre de caja',    icon: 'chart'     },
+      { to: '/admin/pos/historial', label: 'Historial ventas',  icon: 'clipboard' },
+      { section: 'Ventas' },
+      { to: '/admin/pedidos',       label: t('admin.sidebar.pedidos'),   icon: 'clipboard' },
+      { to: '/admin/finanzas',      label: t('admin.sidebar.finanzas'),  icon: 'chart'     },
+      { section: 'Catálogo' },
+      { to: '/admin/productos',     label: t('admin.sidebar.productos'), icon: 'box'       },
+      { to: '/admin/bodegas',       label: t('admin.sidebar.bodegas'),   icon: 'building'  },
     ]
   }
 
@@ -191,7 +255,33 @@ function NegocioSwitcher({ empresaNombre, empresaId }) {
 let _sidebarScrollTop = 0
 
 /* ── SidebarContent fuera de AdminLayout para que React no desmonte/remonte al navegar ── */
-function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, empresaId, userRole, handleLogout }) {
+function ModeSwitcherWrapper({ userRole }) {
+  const permissions = useAuthStore(s => s.permissions)
+  const navigate    = useNavigate()
+  const modes       = getAvailableModes(userRole, permissions)
+  const inPOSA      = useMatch('/admin/pos')
+  const inPOSB      = useMatch('/admin/pos/*')
+  if (modes.length <= 1) return null
+
+  const inPOS   = !!(inPOSA || inPOSB)
+  const altMode = inPOS
+    ? modes.find(m => m.id === 'admin')
+    : modes.find(m => m.id === 'pos')
+
+  if (!altMode) return null
+
+  return (
+    <button
+      onClick={() => { localStorage.setItem(MODE_PREF_KEY, altMode.id); navigate(altMode.path) }}
+      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors hover:bg-[var(--hc-surface-2)]"
+      style={{ color: 'var(--hc-accent)' }}>
+      <span className="text-xs">⇄</span>
+      {inPOS ? 'Panel admin' : 'Caja POS'}
+    </button>
+  )
+}
+
+function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, empresaId, userRole, handleLogout, onSearch }) {
   const navRef = useRef(null)
 
   useLayoutEffect(() => {
@@ -215,8 +305,22 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
         </div>
       </div>
 
+      {/* Buscador rápido */}
+      <div className="px-3 pt-3 pb-1">
+        <button onClick={onSearch}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs transition-colors hover:bg-white/[0.06]"
+          style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: 'var(--hc-muted)' }}>
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+          </svg>
+          <span className="flex-1 text-left">Buscar…</span>
+          <kbd className="px-1.5 py-0.5 rounded text-[9px] font-mono"
+            style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>⌘K</kbd>
+        </button>
+      </div>
+
       {/* Rol badge */}
-      <div className="px-4 pt-3 pb-1">
+      <div className="px-4 pt-2 pb-1">
         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${roleBadge.color}`}>
           {roleBadge.label}
         </span>
@@ -267,6 +371,7 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
 
       {/* User */}
       <div className="p-3 space-y-1 shrink-0" style={{ borderTop: '1px solid var(--hc-border)' }}>
+        <ModeSwitcherWrapper userRole={userRole} />
         <NavLink
           to="/"
           className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors hover:bg-[var(--hc-surface-2)]"
@@ -301,8 +406,27 @@ export default function AdminLayout({ children }) {
   const navigate = useNavigate()
   const location = useLocation()
   const { userName, userRole, empresaNombre, empresaId, logout } = useAuthStore()
+  const { loadTenantInfo, loadTenantUso, clear: clearTenant } = useTenantStore()
   const [drawerOpen,    setDrawerOpen]    = useState(false)
   const [empresaStatus, setEmpresaStatus] = useState(null) // { estadoEmpresa, visibilidadPublica }
+  const [searchOpen,    setSearchOpen]    = useState(false)
+
+  // Cargar info del tenant (plan, límites, features) al montar el panel admin
+  useEffect(() => {
+    if (!empresaId) return
+    loadTenantInfo()
+    loadTenantUso()
+    return () => clearTenant()
+  }, [empresaId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Atajo global Cmd+K / Ctrl+K
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setSearchOpen(s => !s) }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
 
   const sidebarLinks = buildSidebarLinks(t, userRole)
   const handleLogout = () => { logout(); navigate('/') }
@@ -326,7 +450,7 @@ export default function AdminLayout({ children }) {
     ADMIN_CLIENTE: { label: 'Admin',         color: 'bg-blue-500/20 text-blue-400' },
   }[userRole] ?? { label: userRole, color: 'bg-gray-500/20 text-gray-400' }
 
-  const sidebarProps = { sidebarLinks, roleBadge, t, userName, empresaNombre, empresaId, userRole, handleLogout }
+  const sidebarProps = { sidebarLinks, roleBadge, t, userName, empresaNombre, empresaId, userRole, handleLogout, onSearch: () => setSearchOpen(true) }
 
   return (
     <div className="hc-admin-content min-h-screen" style={{ backgroundColor: 'var(--hc-bg)' }}>
@@ -404,13 +528,15 @@ export default function AdminLayout({ children }) {
       </AnimatePresence>
 
       {/* ── Content ── */}
-      <div className="md:ml-60 h-screen overflow-hidden">
+      <div className="md:ml-60 h-screen overflow-hidden flex flex-col">
+        <OfflineBanner />
+        <TrialBanner />
         <motion.main
           key={location.pathname}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
-          className="h-full overflow-y-auto px-4 py-4 pt-[66px] md:pt-6 md:px-6 lg:px-8"
+          className="flex-1 overflow-y-auto px-4 py-4 pt-[66px] md:pt-6 md:px-6 lg:px-8"
         >
           {/* Banner: negocio pendiente de aprobación */}
           {empresaStatus?.estadoEmpresa === 'PENDIENTE_APROBACION' && (
@@ -444,6 +570,9 @@ export default function AdminLayout({ children }) {
           {children}
         </motion.main>
       </div>
+
+      {/* Buscador global Cmd+K */}
+      <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   )
 }
@@ -472,6 +601,22 @@ function SidebarIcon({ name }) {
     case 'empresa':   return <svg className={ic} {...s}><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     case 'check':     return <svg className={ic} {...s}><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
     case 'shield':    return <svg className={ic} {...s}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    case 'pos':       return <svg className={ic} {...s}><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M6 7h4M6 10h6M6 13h2"/></svg>
+    case 'compra':    return <svg className={ic} {...s}><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><polyline points="9 14 12 17 15 14"/><line x1="12" y1="10" x2="12" y2="17"/></svg>
+    case 'proveedor': return <svg className={ic} {...s}><circle cx="12" cy="7" r="4"/><path d="M5.5 21a8.38 8.38 0 0013 0M2 21h4M18 21h4"/></svg>
+    case 'wrench':    return <svg className={ic} {...s}><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+    case 'blog':      return <svg className={ic} {...s}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    case 'gift':      return <svg className={ic} {...s}><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>
+    case 'brand':     return <svg className={ic} {...s}><circle cx="12" cy="12" r="10"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/></svg>
+    case 'plugin':    return <svg className={ic} {...s}><path d="M20.24 12.24a6 6 0 00-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>
+    case 'key':       return <svg className={ic} {...s}><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+    case 'ai':        return <svg className={ic} {...s}><path d="M12 2a2 2 0 012 2v2a2 2 0 01-2 2 2 2 0 01-2-2V4a2 2 0 012-2z"/><path d="M12 18a2 2 0 012 2v-2a2 2 0 01-2-2 2 2 0 01-2 2v2a2 2 0 012-2z"/><path d="M4 12a2 2 0 012-2h2a2 2 0 012 2 2 2 0 01-2 2H6a2 2 0 01-2-2z"/><path d="M18 12a2 2 0 012-2h-2a2 2 0 01-2 2 2 2 0 012 2h2a2 2 0 01-2-2z"/></svg>
+    case 'copilot':   return <svg className={ic} {...s}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+    case 'forecast':  return <svg className={ic} {...s}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    case 'exec':      return <svg className={ic} {...s}><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+    case 'globe':     return <svg className={ic} {...s}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+    case 'qr':        return <svg className={ic} {...s}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="5" y="5" width="3" height="3"/><rect x="16" y="5" width="3" height="3"/><rect x="5" y="16" width="3" height="3"/><path d="M14 14h3v3h-3zM17 17h3v3h-3zM14 20h3"/></svg>
+    case 'sync':      return <svg className={ic} {...s}><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
     default:          return <svg className={ic} {...s}><circle cx="12" cy="12" r="3"/></svg>
   }
 }

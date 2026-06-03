@@ -11,6 +11,7 @@ import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -43,9 +45,12 @@ public class PaymentService {
     @Autowired private RolRepository               rolRepository;
     @Autowired private PagoRepository              pagoRepository;
     @Autowired private TransaccionPagoRepository   transaccionPagoRepository;
+    @Autowired private EmpresaRepository           empresaRepository;
     @Autowired private NotificacionEmailService    notificacionEmailService;
     @Autowired private PasswordEncoder             passwordEncoder;
     @Autowired private CuponService               cuponService;
+    @Autowired private GiftCardService            giftCardService;
+    @Autowired private WebhookDispatcherService   webhookDispatcher;
 
     // ================================================================
     // CHECKOUT — Valida stock (con lock), reserva, crea Pedido + sesión
@@ -81,6 +86,8 @@ public class PaymentService {
         // agoten el mismo item. Solo se descuenta stockActual al confirmar el pago.
         int subtotal   = 0;
         int costoTotal = 0;
+        // Cache de productos cargados con SELECT FOR UPDATE — evita N+1 en el snapshot posterior
+        Map<Long, Producto> productosMap = new java.util.HashMap<>();
         for (PaymentCheckoutRequest.ItemDTO item : req.getItems()) {
             // SELECT FOR UPDATE — previene race conditions al reservar
             Producto p = productoRepository.findByIdForUpdate(item.getProductoId())
@@ -99,6 +106,7 @@ public class PaymentService {
             // Reservar unidades — se libera en cancelación/fallo, se consume en confirmación
             p.setStockReservado(p.getStockReservado() + item.getCantidad());
             productoRepository.save(p);
+            productosMap.put(p.getId(), p);
 
             subtotal   += p.getPrecioVenta()  * item.getCantidad();
             costoTotal += p.getPrecioCompra() * item.getCantidad();
@@ -119,17 +127,31 @@ public class PaymentService {
         }
         int total = subtotal - descuento + costoEnvio;
 
+        // ── Validar gift card (sin canjear aún) ─────────────────────────
+        int    gcMonto  = 0;
+        String gcCodigo = req.getCodigoGiftCard() != null ? req.getCodigoGiftCard().trim().toUpperCase() : null;
+        if (gcCodigo != null && !gcCodigo.isBlank() && bodega.getEmpresa() != null) {
+            var gcOpt = giftCardService.validar(gcCodigo, bodega.getEmpresa().getId());
+            if (gcOpt.isPresent()) {
+                gcMonto = Math.min(total, gcOpt.get().getSaldoActual());
+            }
+        }
+        int totalConGC  = total - gcMonto;
+        boolean pagoGC  = gcMonto > 0 && totalConGC == 0;
+
         // ── Crear Pedido PENDIENTE ───────────────────────────────────────
         Pedido pedido = new Pedido();
-        pedido.setNumeroPedido("ORD-" + System.currentTimeMillis());
+        pedido.setNumeroPedido(Constants.generarNumeroPedido("ORD-"));
         pedido.setFechaPedido(LocalDateTime.now());
         pedido.setSubtotal(subtotal);
-        pedido.setTotalPedido(total);
+        pedido.setTotalPedido(totalConGC);
         pedido.setCostoEnvio(costoEnvio);
         pedido.setCostoTotalProductos(costoTotal);
         pedido.setUtilidadBruta(subtotal - costoTotal - descuento);
         pedido.setDescuentoTotal(descuento);
         pedido.setCuponCodigo(codigoCuponAplicado);
+        pedido.setGiftCardCodigo(gcMonto > 0 ? gcCodigo : null);
+        pedido.setGiftCardMonto(gcMonto);
         pedido.setMontoImpuesto(0);
         pedido.setAplicaImpuesto(false);
         if (subtotal > 0) {
@@ -148,9 +170,9 @@ public class PaymentService {
         pedido.setEstado(Constants.ESTADO_ACTIVO);
         pedidoRepository.save(pedido);
 
-        // Snapshot de precios al momento de compra
+        // Snapshot de precios al momento de compra — reutiliza productos ya cargados (no N+1)
         for (PaymentCheckoutRequest.ItemDTO item : req.getItems()) {
-            Producto p = productoRepository.findById(item.getProductoId()).orElseThrow();
+            Producto p = productosMap.get(item.getProductoId());
             PedidoItem pi = new PedidoItem();
             pi.setCantidad(item.getCantidad());
             pi.setPrecioUnitarioMomento(p.getPrecioVenta());
@@ -164,6 +186,25 @@ public class PaymentService {
             pedido.getItems().add(pi);
         }
         pedidoRepository.save(pedido);
+
+        // ── Gift card cubre el 100%: marcar PAGADO sin pasar por proveedor ──
+        if (pagoGC) {
+            for (PedidoItem item : pedido.getItems()) {
+                Producto p = productoRepository.findByIdForUpdate(item.getProducto().getId()).orElseThrow();
+                p.setStockActual(Math.max(0, p.getStockActual() - item.getCantidad()));
+                p.setStockReservado(Math.max(0, p.getStockReservado() - item.getCantidad()));
+                if (Boolean.TRUE.equals(p.getEsUnico())) { p.setVendido(true); p.setVisibleCatalogo(false); }
+                productoRepository.save(p);
+            }
+            pedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
+            pedido.setMetodoPago("GIFT_CARD");
+            pedidoRepository.save(pedido);
+            giftCardService.canjear(gcCodigo, pedido, gcMonto);
+            notificacionEmailService.enviarConfirmacionPedido(pedido);
+            log.info("Pedido {} pagado 100% con gift card {}", pedido.getNumeroPedido(), gcCodigo);
+            return new PaymentCheckoutResponse(pedido.getId(), pedido.getNumeroPedido(),
+                null, "PAGADO", 0, "GIFT_CARD");
+        }
 
         // ── Delegar sesión al proveedor ─────────────────────────────────
         PaymentSession session;
@@ -200,6 +241,13 @@ public class PaymentService {
 
         log.info("Checkout iniciado: provider={} pedido={} total={}",
             provider, pedido.getNumeroPedido(), total);
+
+        webhookDispatcher.dispatch(pedido.getEmpresaId(), "pedido.creado", Map.of(
+            "numeroPedido", pedido.getNumeroPedido(),
+            "total",        pedido.getTotalPedido(),
+            "metodoPago",   provider,
+            "metodoEnvio",  pedido.getMetodoEnvio()
+        ));
 
         return new PaymentCheckoutResponse(
             pedido.getId(), pedido.getNumeroPedido(),
@@ -253,7 +301,20 @@ public class PaymentService {
         if (pedido.getCuponCodigo() != null) {
             cuponService.marcarUsado(pedido.getCuponCodigo());
         }
+        if (pedido.getGiftCardCodigo() != null && pedido.getGiftCardMonto() != null && pedido.getGiftCardMonto() > 0) {
+            giftCardService.canjear(pedido.getGiftCardCodigo(), pedido, pedido.getGiftCardMonto());
+        }
+        // Inicializar proxy LAZY de usuarioFinal dentro de la TX para que el @Async
+        // thread no encuentre el proxy sin sesión → LazyInitializationException.
+        if (pedido.getUsuarioFinal() != null) {
+            pedido.getUsuarioFinal().getCorreo(); // touch dentro de la transacción
+        }
         notificacionEmailService.enviarConfirmacionPedido(pedido);
+        webhookDispatcher.dispatch(pedido.getEmpresaId(), "pedido.pagado", Map.of(
+            "numeroPedido", pedido.getNumeroPedido(),
+            "total",        pedido.getTotalPedido(),
+            "proveedor",    pago.getProveedor()
+        ));
         log.info("Pedido {} confirmado PAGADO via {}", pedido.getNumeroPedido(), pago.getProveedor());
     }
 
@@ -389,6 +450,7 @@ public class PaymentService {
         }
 
         liberarReservas(pedido);
+        if (pedido.getUsuarioFinal() != null) { pedido.getUsuarioFinal().getCorreo(); }
         notificacionEmailService.enviarPagoFallido(pedido, motivo);
         log.info("Pago {} marcado FALLIDO: {}", pago.getPedido().getNumeroPedido(), motivo);
     }
@@ -444,11 +506,21 @@ public class PaymentService {
     // LIMPIEZA PROGRAMADA — Cancela pedidos PENDIENTE expirados (TTL 30 min)
     // ================================================================
     @Scheduled(fixedRate = 5 * 60 * 1000) // cada 5 minutos
+    @SchedulerLock(name = "payment_expiration_cleanup", lockAtMostFor = "PT3M", lockAtLeastFor = "PT30S")
     @Transactional
     public void cancelarExpirados() {
         LocalDateTime corte = LocalDateTime.now().minusMinutes(30);
-        List<Pago> expirados = pagoRepository.findExpiradosPendientes(corte);
+        for (var empresa : empresaRepository.findByEstadoEmpresaOrderByFechaRegistroAsc("ACTIVO")) {
+            try {
+                cancelarExpiradosDeEmpresa(empresa.getId(), corte);
+            } catch (Exception e) {
+                log.error("[payment-cleanup] Error empresa={}: {}", empresa.getId(), e.getMessage());
+            }
+        }
+    }
 
+    private void cancelarExpiradosDeEmpresa(Long empresaId, LocalDateTime corte) {
+        List<Pago> expirados = pagoRepository.findExpiradosPendientesByEmpresa(corte, empresaId);
         List<Pago> pagosActualizados = new java.util.ArrayList<>();
         List<Pedido> pedidosActualizados = new java.util.ArrayList<>();
 
@@ -469,7 +541,7 @@ public class PaymentService {
         if (!pagosActualizados.isEmpty()) {
             pagoRepository.saveAll(pagosActualizados);
             pedidoRepository.saveAll(pedidosActualizados);
-            log.info("Cleanup TTL: {} pagos expirados cancelados", pagosActualizados.size());
+            log.info("Cleanup TTL empresa={}: {} pagos expirados cancelados", empresaId, pagosActualizados.size());
         }
     }
 

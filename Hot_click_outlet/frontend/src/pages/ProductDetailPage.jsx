@@ -958,7 +958,7 @@ function StickyCartBar({ product, quantity, onDecrease, onIncrease, onAdd, justA
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 80, opacity: 0 }}
       transition={{ type: 'spring', stiffness: 420, damping: 42 }}
-      className="fixed left-0 right-0 z-50 bottom-16 md:bottom-0 backdrop-blur-2xl"
+      className="fixed left-0 right-0 z-50 backdrop-blur-2xl hc-sticky-cta"
       style={{
         background: 'color-mix(in srgb, var(--hc-surface) 90%, transparent)',
         borderTop: '1px solid var(--hc-border)',

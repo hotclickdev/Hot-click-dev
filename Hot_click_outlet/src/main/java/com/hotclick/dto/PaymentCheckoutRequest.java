@@ -34,6 +34,9 @@ public class PaymentCheckoutRequest {
     /** Código de cupón de descuento (opcional). */
     private String codigoCupon;
 
+    /** Código de gift card (opcional). Solo para usuarios autenticados. */
+    private String codigoGiftCard;
+
     public Long getBodegaId() { return bodegaId; }
     public void setBodegaId(Long bodegaId) { this.bodegaId = bodegaId; }
 
@@ -57,6 +60,9 @@ public class PaymentCheckoutRequest {
 
     public String getCodigoCupon() { return codigoCupon; }
     public void setCodigoCupon(String codigoCupon) { this.codigoCupon = codigoCupon; }
+
+    public String getCodigoGiftCard() { return codigoGiftCard; }
+    public void setCodigoGiftCard(String codigoGiftCard) { this.codigoGiftCard = codigoGiftCard; }
 
     public static class ItemDTO {
 

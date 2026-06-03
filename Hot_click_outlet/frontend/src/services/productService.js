@@ -6,6 +6,8 @@ export function normalizeProduct(p) {
   return {
     ...p,
     nombre: p.nombreProducto ?? p.nombre ?? '',
+    barcode: p.barcode ?? null,
+    sku: p.sku ?? null,
     precio: p.precioVenta ?? p.precio ?? 0,
     precioCompra: p.precioCompra ?? 0,
     precioVenta: p.precioVenta ?? p.precio ?? 0,
@@ -28,6 +30,7 @@ export function normalizeProduct(p) {
     metaTitle: p.metaTitle ?? null,
     metaDescription: p.metaDescription ?? null,
     metaKeywords: p.metaKeywords ?? null,
+    tags: p.tags ?? '',
     metaTitleEn: p.metaTitleEn ?? null,
     metaTitlePt: p.metaTitlePt ?? null,
     metaTitleFr: p.metaTitleFr ?? null,
@@ -71,6 +74,9 @@ export function denormalizeProduct(form) {
     videoUrl: form.videoUrl || null,
     talla: form.talla || null,
     garantiaDias: Number(form.garantiaDias) || 0,
+    sku:     form.sku     || null,
+    barcode: form.barcode || null,
+    tags:    form.tags    || null,
   }
 }
 
@@ -130,6 +136,12 @@ export const productService = {
 
   toggleCarrusel: (id, valor, orden) =>
     api.patch(`/productos/${id}/carrusel`, { enCarrusel: valor, orden }),
+
+  buscar: (q) =>
+    api.get('/productos/buscar', { params: { q } }).then(r => (r.data?.data ?? r.data ?? []).map(normalizeProduct)),
+
+  kardex: (id) =>
+    api.get(`/productos/${id}/kardex`).then(r => r.data?.data ?? r.data ?? []),
 
   getCategories: () =>
     api.get('/categorias/publicas'),

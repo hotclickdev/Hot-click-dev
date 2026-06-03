@@ -926,12 +926,12 @@ export default function AdminOrders() {
           <RetryBanner message="Error al cargar los pedidos. Verificá tu conexión." onRetry={load} />
         )}
 
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-xl font-bold text-[#e8e8ed]">{t('adminOrders.title')}</h1>
             <p className="text-sm text-[#8e8e9a] mt-0.5">{filtered.length} pedidos{filter !== 'Todos' ? ` · ${filter}` : ''}</p>
           </div>
-          <div className="flex items-center gap-2 flex-wrap shrink-0">
+          <div className="flex items-center gap-2 flex-wrap">
             <ImportExportBar
               exportOnly
               data={orders.map((o) => ({
@@ -975,7 +975,7 @@ export default function AdminOrders() {
         </div>
 
         {/* Filtros */}
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
           {FILTERS.map(f => (
             <button
               key={f}

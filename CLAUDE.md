@@ -174,3 +174,50 @@ Un pedido aparece en finanzas automáticamente al marcarlo como ENTREGADO.
 - **Nunca cambiar `ddl-auto=none`**; todo cambio de esquema se aplica manualmente con `Actualizado.sql`.
 - El número de WhatsApp de HOTCLICK es `50689745370` (Andrés Zúñiga).
 - Soft delete en Marcas: `estado = 0` (INACTIVO) en vez de borrar el registro.
+
+## Constraints de infraestructura — PgBouncer transaction mode (CRÍTICO)
+
+Supabase usa PgBouncer en **transaction mode**. Esto significa que la conexión se devuelve al pool al finalizar cada transacción. Las siguientes funcionalidades de PostgreSQL **NO FUNCIONAN** y nunca deben usarse:
+
+| ❌ NO usar | Motivo |
+|-----------|--------|
+| `pg_advisory_lock()` / `pg_advisory_xact_lock()` | El lock se libera al devolver la conexión al pool |
+| `SET app.variable = ?` / `set_config(...)` | Las session variables se resetean entre transacciones |
+| `LISTEN` / `NOTIFY` | Requiere conexión persistente de sesión |
+| Row Level Security vía `set_config('app.tenant_id', ...)` | Mismo problema que SET |
+| Prepared statements persistentes entre requests | Se pierden al devolver la conexión |
+
+**Para locking distribuido → usar ShedLock** (ya instalado, tabla `shedlock` en V30).
+
+**Para consecutivos únicos** (ej: Hacienda CR) → usar `UPDATE tabla SET n = n + 1 RETURNING n` en transacción corta y separada, sin I/O externo dentro de ella.
+
+**Para tenant isolation → usar `CompanyScope.assertCanAccess()`** en cada endpoint que recibe un ID de recurso.
+
+## ShedLock — schedulers distribuidos
+
+Todos los `@Scheduled` **deben** tener `@SchedulerLock`. Sin esto, en multi-pod (Render con 2+ instancias) el job se ejecuta N veces simultáneamente.
+
+```java
+@Scheduled(cron = "0 0 3 * * *")
+@SchedulerLock(name = "nombre_unico_del_job", lockAtMostFor = "PT30M", lockAtLeastFor = "PT5M")
+public void miJob() { ... }
+```
+
+- `lockAtMostFor`: tiempo máximo que el lock se mantiene aunque el pod muera (evita lock eterno).
+- `lockAtLeastFor`: tiempo mínimo que el lock se mantiene (evita que otro pod tome el lock inmediatamente si el job termina rápido).
+- El `name` debe ser único en toda la aplicación.
+
+## Retención de datos
+
+`DataRetentionScheduler` corre a las 2:30 AM con ShedLock. Política actual:
+
+| Tabla | Retención |
+|-------|-----------|
+| `hot_click_auditoria_admin_tb` | 90 días |
+| `hot_click_carrito_abandonado_tb` (VENCIDO/EMAIL_ENVIADO) | 30 días |
+
+Al agregar nuevas tablas de alto volumen (webhook logs, AI messages, etc.) agregar la limpieza en `DataRetentionScheduler`.
+
+## Optimistic locking en Producto
+
+`Producto` tiene campo `@Version Integer version`. Hibernate lanza `OptimisticLockException` si dos threads modifican el mismo producto simultáneamente. `StockService` debe capturar esta excepción y reintentar (máx 3 veces) antes de lanzar `StockInsuficienteException`.

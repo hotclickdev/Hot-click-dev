@@ -107,6 +107,12 @@
             <version>1.17.2</version>
         </dependency>
 
+        <!-- Clerk — verificación de JWTs OAuth (Google, Apple, Microsoft) via JWKS -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-oauth2-jose</artifactId>
+        </dependency>
+
         <!-- Flyway — migraciones de esquema -->
         <dependency>
             <groupId>org.flywaydb</groupId>
@@ -121,6 +127,45 @@
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
+        </dependency>
+
+        <!-- ShedLock — distributed lock para @Scheduled en multi-pod (Render) -->
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-spring</artifactId>
+            <version>5.16.0</version>
+        </dependency>
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-provider-jdbc-template</artifactId>
+            <version>5.16.0</version>
+        </dependency>
+
+        <!-- Stripe Java SDK — Billing Engine (F14) -->
+        <dependency>
+            <groupId>com.stripe</groupId>
+            <artifactId>stripe-java</artifactId>
+            <version>26.5.1</version>
+        </dependency>
+
+        <!-- Micrometer — métricas de aplicación (F29 observabilidad)
+             Solo micrometer-core; sin actuator para mantener la decisión de seguridad.
+             Permite @Timed, MeterRegistry y contadores para llamadas a servicios externos. -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+        </dependency>
+
+        <!-- Resilience4j — circuit breaker / retry para clientes externos (F29 chaos)
+             Versión gestionada por Spring Boot 3.x BOM. -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-spring-boot3</artifactId>
+            <version>2.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
 
         <!-- H2 para pruebas -->

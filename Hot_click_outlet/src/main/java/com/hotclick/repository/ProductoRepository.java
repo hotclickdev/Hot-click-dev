@@ -21,7 +21,23 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @Query("SELECT p FROM Producto p WHERE p.id = :id")
     Optional<Producto> findByIdForUpdate(@Param("id") Long id);
 
+    /** F30 — Batch lock: carga todos los productos en un solo SELECT FOR UPDATE. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Producto p WHERE p.id IN :ids")
+    List<Producto> findAllByIdsForUpdate(@Param("ids") List<Long> ids);
+
     Optional<Producto> findBySku(String sku);
+
+    /** Retorna fk_id_empresa sin cargar el objeto Producto completo. Safe con LAZY empresa. */
+    @Query("SELECT p.empresa.id FROM Producto p WHERE p.id = :id")
+    Optional<Long> findEmpresaIdById(@Param("id") Long id);
+
+    Optional<Producto> findByBarcode(String barcode);
+
+    @Query("SELECT p FROM Producto p WHERE p.estado = 1 AND p.empresa.id = :empresaId " +
+           "AND (LOWER(p.nombreProducto) LIKE LOWER(CONCAT('%',:q,'%')) OR p.sku = :q OR p.barcode = :q)")
+    List<Producto> buscarPorTextoOCodigoEnEmpresa(
+            @Param("q") String q, @Param("empresaId") Long empresaId, Pageable pageable);
 
     Page<Producto> findByEstado(Integer estado, Pageable pageable);
 

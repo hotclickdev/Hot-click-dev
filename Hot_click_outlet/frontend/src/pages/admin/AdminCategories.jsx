@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -10,8 +10,88 @@ import { categoriaService } from '@/services/orderService'
 import ImportExportBar from '@/components/admin/ImportExportBar'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 
-const EMPTY = { nombreCategoria: '', descripcion: '' }
+const EMPTY = { nombreCategoria: '', descripcion: '', padreId: '' }
 
+// ── Árbol ────────────────────────────────────────────────────────────
+function buildTree(cats) {
+  const map = {}
+  cats.forEach((c) => { map[c.id] = { ...c, children: [] } })
+  const roots = []
+  cats.forEach((c) => {
+    if (c.padreId && map[c.padreId]) map[c.padreId].children.push(map[c.id])
+    else roots.push(map[c.id])
+  })
+  return roots
+}
+
+function CategoryRow({ node, depth, onEdit, onDelete }) {
+  const [open, setOpen] = useState(true)
+  const hasKids = node.children.length > 0
+
+  return (
+    <>
+      <div
+        className="flex items-center justify-between px-4 py-3 rounded-xl border border-white/8 hover:border-white/15 transition-colors"
+        style={{ marginLeft: depth * 24, backgroundColor: depth === 0 ? '#111114' : 'rgba(255,255,255,0.03)' }}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          {/* Toggle hijos */}
+          {hasKids ? (
+            <button
+              onClick={() => setOpen((p) => !p)}
+              className="w-5 h-5 flex items-center justify-center text-[#8e8e9a] hover:text-white shrink-0 text-xs"
+            >
+              {open ? '▾' : '▸'}
+            </button>
+          ) : (
+            <span className="w-5 shrink-0" />
+          )}
+
+          {depth > 0 && (
+            <span className="text-[#4f7cff]/50 text-xs shrink-0">↳</span>
+          )}
+
+          <div className="min-w-0">
+            <p className="font-medium text-[#e8e8ed] text-sm truncate">{node.nombreCategoria}</p>
+            {node.descripcion && (
+              <p className="text-xs text-[#8e8e9a] truncate">{node.descripcion}</p>
+            )}
+          </div>
+
+          {hasKids && (
+            <span className="ml-2 shrink-0 text-xs px-1.5 py-0.5 rounded-full text-[#8e8e9a]"
+              style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
+              {node.children.length}
+            </span>
+          )}
+        </div>
+
+        <div className="flex gap-1 shrink-0 ml-2">
+          <button
+            onClick={() => onEdit(node)}
+            className="p-1.5 text-[#8e8e9a] hover:text-white hover:bg-white/8 rounded-lg transition-colors text-sm"
+          >✎</button>
+          <button
+            onClick={() => onDelete(node)}
+            className="p-1.5 text-[#8e8e9a] hover:text-red-400 hover:bg-red-500/8 rounded-lg transition-colors text-sm"
+          >✕</button>
+        </div>
+      </div>
+
+      {open && hasKids && node.children.map((child) => (
+        <CategoryRow
+          key={child.id}
+          node={child}
+          depth={depth + 1}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
+      ))}
+    </>
+  )
+}
+
+// ── Componente principal ─────────────────────────────────────────────
 export default function AdminCategories() {
   const { t } = useTranslation()
   const toast = useToast()
@@ -21,7 +101,7 @@ export default function AdminCategories() {
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(EMPTY)
   const [saving, setSaving] = useState(false)
-  const [deleteTarget, setDeleteTarget] = useState(null) // { id, nombre }
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
   const load = () => {
     setLoading(true)
@@ -32,10 +112,29 @@ export default function AdminCategories() {
 
   useEffect(() => { load() }, [])
 
+  const tree = useMemo(() => buildTree(cats), [cats])
+
+  // Opciones de padre: todas menos la categoría que se está editando y sus descendientes
+  const padreOptions = useMemo(() => {
+    if (!editing) return cats
+    const descIds = new Set()
+    function collectDesc(id) {
+      descIds.add(String(id))
+      cats.filter((c) => String(c.padreId) === String(id))
+        .forEach((c) => collectDesc(c.id))
+    }
+    collectDesc(editing.id)
+    return cats.filter((c) => !descIds.has(String(c.id)))
+  }, [cats, editing])
+
   const openNew = () => { setEditing(null); setForm(EMPTY); setModalOpen(true) }
   const openEdit = (c) => {
     setEditing(c)
-    setForm({ nombreCategoria: c.nombreCategoria ?? '', descripcion: c.descripcion ?? '' })
+    setForm({
+      nombreCategoria: c.nombreCategoria ?? '',
+      descripcion:     c.descripcion ?? '',
+      padreId:         c.padreId ? String(c.padreId) : '',
+    })
     setModalOpen(true)
   }
 
@@ -43,11 +142,12 @@ export default function AdminCategories() {
     e.preventDefault()
     setSaving(true)
     try {
+      const payload = { ...form }
       if (editing) {
-        await api.put(`/categorias/${editing.id}`, form)
+        await api.put(`/categorias/${editing.id}`, payload)
         toast({ message: 'Categoría actualizada', type: 'success' })
       } else {
-        await api.post('/categorias', form)
+        await api.post('/categorias', payload)
         toast({ message: 'Categoría creada', type: 'success' })
       }
       setModalOpen(false)
@@ -57,7 +157,7 @@ export default function AdminCategories() {
     } finally { setSaving(false) }
   }
 
-  const handleDelete = (id, nombre) => setDeleteTarget({ id, nombre })
+  const handleDelete = (node) => setDeleteTarget({ id: node.id, nombre: node.nombreCategoria })
 
   const confirmDelete = async () => {
     if (!deleteTarget) return
@@ -66,11 +166,18 @@ export default function AdminCategories() {
     try {
       await api.delete(`/categorias/${id}`)
       toast({ message: 'Categoría eliminada', type: 'success' })
-      setCats((p) => p.filter((c) => c.id !== id))
+      load()
     } catch { toast({ message: 'Error al eliminar', type: 'error' }) }
   }
 
   const set = (f) => (e) => setForm((p) => ({ ...p, [f]: e.target.value }))
+
+  // Padre display label para opciones (indent)
+  function padreLabel(c) {
+    if (!c.padreId) return c.nombreCategoria
+    const padre = cats.find((x) => String(x.id) === String(c.padreId))
+    return `↳ ${c.nombreCategoria}${padre ? ` (en ${padre.nombreCategoria})` : ''}`
+  }
 
   return (
     <>
@@ -78,16 +185,29 @@ export default function AdminCategories() {
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.categories.title')}</h1>
-            <p className="text-sm text-[#8e8e9a] mt-1">{cats.length} {t('admin.categories.title').toLowerCase()}</p>
+            <p className="text-sm text-[#8e8e9a] mt-1">
+              {cats.filter((c) => !c.padreId).length} categorías •{' '}
+              {cats.filter((c) => c.padreId).length} subcategorías
+            </p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             <ImportExportBar
-              data={cats.map((c) => ({ id: c.id, nombreCategoria: c.nombreCategoria, descripcion: c.descripcion ?? '' }))}
-              columns={['id', 'nombreCategoria', 'descripcion']}
+              data={cats.map((c) => ({
+                id: c.id,
+                nombreCategoria: c.nombreCategoria,
+                descripcion: c.descripcion ?? '',
+                padreId: c.padreId ?? '',
+                padreNombre: c.padreNombre ?? '',
+              }))}
+              columns={['id', 'nombreCategoria', 'descripcion', 'padreId', 'padreNombre']}
               filename="categorias"
               sheetName="Categorías"
-              importColumns={['nombreCategoria', 'descripcion']}
-              mapImportRow={(row) => ({ nombreCategoria: row.nombreCategoria ?? '', descripcion: row.descripcion ?? '' })}
+              importColumns={['nombreCategoria', 'descripcion', 'padreId']}
+              mapImportRow={(row) => ({
+                nombreCategoria: row.nombreCategoria ?? '',
+                descripcion:     row.descripcion ?? '',
+                padreId:         row.padreId ?? '',
+              })}
               onImport={async (rows) => {
                 await categoriaService.importBulk(rows)
                 load()
@@ -99,47 +219,74 @@ export default function AdminCategories() {
 
         {loading ? (
           <div className="flex justify-center py-16"><Spinner size="lg" /></div>
+        ) : cats.length === 0 ? (
+          <div className="text-center py-14 space-y-3">
+            <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center"
+              style={{ backgroundColor: 'rgba(79,124,255,0.08)', border: '1px solid rgba(79,124,255,0.15)' }}>
+              <svg className="w-7 h-7" style={{ color: '#4f7cff' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+                <line x1="7" y1="7" x2="7.01" y2="7"/>
+              </svg>
+            </div>
+            <p className="font-semibold text-[#e8e8ed]">Sin categorías todavía</p>
+            <p className="text-sm text-[#8e8e9a] max-w-xs mx-auto">
+              Las categorías organizan tu catálogo. Los productos las necesitan para publicarse.
+            </p>
+            <button
+              onClick={openNew}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold mt-1 transition-opacity hover:opacity-80"
+              style={{ backgroundColor: '#4f7cff', color: '#fff' }}
+            >+ Crear primera categoría</button>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {cats.map((c) => (
-              <div key={c.id} className="bg-[#111114] border border-white/8 rounded-2xl p-5">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-semibold text-[#e8e8ed]">{c.nombreCategoria}</h3>
-                  <div className="flex gap-1 shrink-0">
-                    <button onClick={() => openEdit(c)} className="p-1.5 text-[#8e8e9a] hover:text-white hover:bg-white/8 rounded-lg transition-colors text-sm">✎</button>
-                    <button onClick={() => handleDelete(c.id, c.nombreCategoria)} className="p-1.5 text-[#8e8e9a] hover:text-red-400 hover:bg-red-500/8 rounded-lg transition-colors text-sm">✕</button>
-                  </div>
-                </div>
-                {c.descripcion && <p className="text-xs text-[#8e8e9a]">{c.descripcion}</p>}
-              </div>
+          <div className="space-y-1.5">
+            {tree.map((node) => (
+              <CategoryRow
+                key={node.id}
+                node={node}
+                depth={0}
+                onEdit={openEdit}
+                onDelete={handleDelete}
+              />
             ))}
-            {cats.length === 0 && (
-              <div className="col-span-full text-center py-14 space-y-3">
-                <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center" style={{ backgroundColor: 'rgba(79,124,255,0.08)', border: '1px solid rgba(79,124,255,0.15)' }}>
-                  <svg className="w-7 h-7" style={{ color: '#4f7cff' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-                </div>
-                <p className="font-semibold text-[#e8e8ed]">Sin categorías todavía</p>
-                <p className="text-sm text-[#8e8e9a] max-w-xs mx-auto">Las categorías organizan tu catálogo. Los productos las necesitan para publicarse.</p>
-                <button
-                  onClick={openNew}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold mt-1 transition-opacity hover:opacity-80"
-                  style={{ backgroundColor: '#4f7cff', color: '#fff' }}
-                >
-                  + Crear primera categoría
-                </button>
-              </div>
-            )}
           </div>
         )}
       </div>
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? t('admin.categories.edit') : t('admin.categories.new')}>
+      {/* Modal crear/editar */}
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editing ? t('admin.categories.edit') : t('admin.categories.new')}
+      >
         <form onSubmit={handleSave} className="space-y-4">
           <Input label="Nombre *" value={form.nombreCategoria} onChange={set('nombreCategoria')} required />
           <Input label="Descripción" value={form.descripcion} onChange={set('descripcion')} />
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-[#e8e8ed]">Categoría padre (opcional)</label>
+            <select
+              value={form.padreId}
+              onChange={set('padreId')}
+              className="h-11 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60"
+            >
+              <option value="">Sin padre — categoría raíz</option>
+              {padreOptions.map((c) => (
+                <option key={c.id} value={c.id}>{padreLabel(c)}</option>
+              ))}
+            </select>
+            <p className="text-xs text-[#8e8e9a]">
+              Si seleccionás una categoría padre, esta pasa a ser subcategoría de ella.
+            </p>
+          </div>
+
           <div className="flex gap-3 pt-1">
-            <Button type="submit" loading={saving} className="flex-1">{editing ? t('common.save') : t('admin.categories.new')}</Button>
-            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>{t('common.cancel')}</Button>
+            <Button type="submit" loading={saving} className="flex-1">
+              {editing ? t('common.save') : t('admin.categories.new')}
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>
+              {t('common.cancel')}
+            </Button>
           </div>
         </form>
       </Modal>
@@ -149,7 +296,7 @@ export default function AdminCategories() {
         onClose={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
         title="Eliminar categoría"
-        message={`¿Eliminar "${deleteTarget?.nombre}"? Los productos con esta categoría quedarán sin asignar.`}
+        message={`¿Eliminar "${deleteTarget?.nombre}"? Las subcategorías y productos con esta categoría quedarán sin padre.`}
       />
     </>
   )

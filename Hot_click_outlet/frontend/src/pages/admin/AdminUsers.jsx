@@ -7,6 +7,8 @@ import Spinner from '@/components/ui/Spinner'
 import { adminService } from '@/services/orderService'
 import { useToast } from '@/components/ui/Toast'
 import ImportExportBar from '@/components/admin/ImportExportBar'
+import { crmService } from '@/services/crmService'
+import ClienteDetailModal from '@/components/admin/ClienteDetailModal'
 
 const ESTADO_NUM = { 1: 'ACTIVO', 2: 'INACTIVO', 3: 'ELIMINADO', 4: 'SUSPENDIDO', 5: 'PENDIENTE' }
 const ESTADO_INT = { ACTIVO: 1, INACTIVO: 2 }
@@ -46,6 +48,12 @@ export default function AdminUsers() {
   const [editEstado, setEditEstado] = useState('')
   const [saving, setSaving] = useState(false)
 
+  // CRM
+  const [clientes, setClientes]           = useState([])
+  const [crmLoading, setCrmLoading]       = useState(false)
+  const [crmSearch, setCrmSearch]         = useState('')
+  const [selectedCliente, setSelectedCliente] = useState(null)
+
   // Confirm modals
   const [deleteUser, setDeleteUser]     = useState(null)
   const [blockUser, setBlockUser]       = useState(null)
@@ -66,6 +74,16 @@ export default function AdminUsers() {
   }
 
   useEffect(() => { load() }, [])
+
+  useEffect(() => {
+    if (tab === 'crm' && clientes.length === 0) {
+      setCrmLoading(true)
+      crmService.listarClientes()
+        .then(setClientes)
+        .catch(() => {})
+        .finally(() => setCrmLoading(false))
+    }
+  }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Usuarios activos/inactivos/suspendidos (excluye eliminados y pendientes — pendientes van en su propia tab)
   const activeUsers   = users.filter((u) => getEstadoStr(u) !== 'ELIMINADO' && getEstadoStr(u) !== 'PENDIENTE')
@@ -181,6 +199,7 @@ export default function AdminUsers() {
     ['all',     `Activos (${activeUsers.length})`],
     ['pending', `Pendientes (${pending.length})`],
     ['deleted', `Eliminados (${deletedUsers.length})`],
+    ['crm',     `CRM Clientes (${clientes.length})`],
   ]
 
   return (
@@ -248,9 +267,76 @@ export default function AdminUsers() {
           </div>
         )}
 
-        {loading ? (
+        {/* ── Tab CRM ── */}
+        {tab === 'crm' && (
+          crmLoading ? (
+            <div className="flex justify-center py-16"><Spinner size="lg" /></div>
+          ) : (
+            <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
+              {/* Buscador CRM */}
+              <div className="p-4 border-b border-white/8">
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre, correo o teléfono…"
+                  value={crmSearch}
+                  onChange={e => setCrmSearch(e.target.value)}
+                  className="w-full h-9 pl-4 pr-4 rounded-xl bg-[#0a0a0d] border border-white/10 text-[#e8e8ed] text-xs placeholder-[#8e8e9a] focus:outline-none focus:border-[#4f7cff]/60"
+                />
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-white/8">
+                      {['Cliente','Segmento','Pedidos','Total','Puntos','Acciones'].map(h => (
+                        <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {clientes
+                      .filter(c => !crmSearch || [c.nombre, c.correo, c.telefono].some(f => f?.toLowerCase().includes(crmSearch.toLowerCase())))
+                      .map(c => {
+                        const seg = c.segmento ?? 'NUEVO'
+                        const segColor = { NUEVO: '#60a5fa', FRECUENTE: '#34d399', VIP: '#fbbf24', INACTIVO: '#8e8e9a' }[seg] ?? '#8e8e9a'
+                        return (
+                          <tr key={c.id} className="hover:bg-white/3 transition-colors cursor-pointer" onClick={() => setSelectedCliente(c.id)}>
+                            <td className="px-4 py-3">
+                              <p className="font-medium text-[#e8e8ed]">{c.nombre} {c.apellidoPaterno}</p>
+                              <p className="text-xs text-[#8e8e9a]">{c.correo}</p>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                                style={{ backgroundColor: `${segColor}18`, color: segColor }}>{seg}</span>
+                            </td>
+                            <td className="px-4 py-3 text-xs text-[#8e8e9a]">{c.numPedidosHist ?? 0}</td>
+                            <td className="px-4 py-3 text-xs font-medium text-[#4f7cff]">
+                              ₡{new Intl.NumberFormat('es-CR').format(c.totalComprasHist ?? 0)}
+                            </td>
+                            <td className="px-4 py-3 text-xs font-medium" style={{ color: '#fbbf24' }}>
+                              {c.puntosFidelidad ?? 0} pts
+                            </td>
+                            <td className="px-4 py-3">
+                              <button onClick={e => { e.stopPropagation(); setSelectedCliente(c.id) }}
+                                className="px-3 py-1 text-xs rounded-lg bg-white/5 hover:bg-white/10 text-[#8e8e9a] hover:text-white transition-colors">
+                                Ver ficha
+                              </button>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                  </tbody>
+                </table>
+                {clientes.length === 0 && !crmLoading && (
+                  <div className="text-center py-12 text-[#8e8e9a] text-sm">No hay clientes registrados</div>
+                )}
+              </div>
+            </div>
+          )
+        )}
+
+        {tab !== 'crm' && loading ? (
           <div className="flex justify-center py-16"><Spinner size="lg" /></div>
-        ) : (
+        ) : tab !== 'crm' && (
           <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[800px]">
@@ -568,6 +654,13 @@ export default function AdminUsers() {
           </div>
         )}
       </Modal>
+
+      {selectedCliente && (
+        <ClienteDetailModal
+          clienteId={selectedCliente}
+          onClose={() => setSelectedCliente(null)}
+        />
+      )}
     </>
   )
 }

@@ -29,7 +29,7 @@ public class UsuarioController {
 
     @GetMapping
     public ResponseDTO listarUsuarios() {
-        List<Usuario> usuarios = usuarioRepository.findAll();
+        List<Usuario> usuarios = usuarioRepository.findAllWithRolesOrderByIdDesc();
         return ResponseDTO.success("Usuarios encontrados", usuarios);
     }
 

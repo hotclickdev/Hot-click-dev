@@ -10,6 +10,8 @@ import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,14 +29,26 @@ public class ProductoService {
     @Autowired private BodegaRepository bodegaRepository;
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private MarcaRepository marcaRepository;
+    @Autowired private CacheManager cacheManager;
 
-    @CacheEvict(value = "dashboard-metricas", allEntries = true)
+    @SuppressWarnings("null")
+    private void evictDashboard(Long empresaId) {
+        Cache c = cacheManager.getCache("dashboard-metricas");
+        if (c == null) return;
+        if (empresaId != null) {
+            c.evict(empresaId.toString());
+        } else {
+            c.evict("global");
+        }
+    }
+
     @Transactional
     public Producto crearProducto(ProductoRequestDTO dto, String adminCorreo) {
         return crearProducto(dto, adminCorreo, null);
     }
 
-    @CacheEvict(value = "dashboard-metricas", allEntries = true)
+    @CacheEvict(value = "dashboard-metricas",
+        key = "#empresa != null ? #empresa.id.toString() : 'global'")
     @Transactional
     public Producto crearProducto(ProductoRequestDTO dto, String adminCorreo, Empresa empresa) {
         if (dto.getCategoriaId() == null)
@@ -58,21 +72,37 @@ public class ProductoService {
         return productoRepository.save(p);
     }
 
-    @CacheEvict(value = "dashboard-metricas", allEntries = true)
-    @Transactional
     public Producto actualizarProducto(Long id, ProductoRequestDTO dto, String adminCorreo) {
-        Producto p = productoRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
-        mapDtoToProducto(dto, p);
-        if (dto.getCategoriaId() != null) {
-            p.setCategoria(categoriaRepository.findById(dto.getCategoriaId())
-                .orElseThrow(() -> new RuntimeException("Categoría no encontrada")));
+        // Leer empresaId una sola vez antes del loop: evita LazyInitializationException
+        // al acceder a p.getEmpresa() fuera de transacción (open-in-view=false, empresa=LAZY).
+        Long empresaId = productoRepository.findEmpresaIdById(id).orElse(null);
+        int intentos = 0;
+        while (true) {
+            try {
+                Producto p = productoRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                mapDtoToProducto(dto, p);
+                if (dto.getCategoriaId() != null) {
+                    p.setCategoria(categoriaRepository.findById(dto.getCategoriaId())
+                        .orElseThrow(() -> new RuntimeException("Categoría no encontrada")));
+                }
+                if (dto.getBodegaId() != null) {
+                    p.setBodega(bodegaRepository.findById(dto.getBodegaId())
+                        .orElseThrow(() -> new RuntimeException("Bodega no encontrada")));
+                }
+                Producto saved = productoRepository.save(p);
+                evictDashboard(empresaId);
+                return saved;
+            } catch (org.springframework.orm.ObjectOptimisticLockingFailureException e) {
+                if (++intentos >= 3) {
+                    throw new RuntimeException("Conflicto de concurrencia al actualizar producto. Intentá de nuevo.");
+                }
+                try { Thread.sleep(50L * intentos); } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(ie);
+                }
+            }
         }
-        if (dto.getBodegaId() != null) {
-            p.setBodega(bodegaRepository.findById(dto.getBodegaId())
-                .orElseThrow(() -> new RuntimeException("Bodega no encontrada")));
-        }
-        return productoRepository.save(p);
     }
 
     private void mapDtoToProducto(ProductoRequestDTO dto, Producto p) {
@@ -103,6 +133,7 @@ public class ProductoService {
         if (dto.getMetaDescriptionFr()  != null) p.setMetaDescriptionFr(trunc(dto.getMetaDescriptionFr(), 160));
         if (dto.getVideoUrl()           != null) p.setVideoUrl(trunc(dto.getVideoUrl(), 500));
         if (dto.getTalla()              != null) p.setTalla(trunc(dto.getTalla(), 20));
+        if (dto.getTags()               != null) p.setTags(dto.getTags().toLowerCase().trim());
         Long mid = dto.getMarcaId();
         if (mid != null) {
             p.setMarca(marcaRepository.findById(mid)

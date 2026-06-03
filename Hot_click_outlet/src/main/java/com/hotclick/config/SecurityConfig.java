@@ -2,6 +2,7 @@ package com.hotclick.config;
 
 import com.hotclick.security.JwtRequestFilter;
 import com.hotclick.security.RateLimitingFilter;
+import com.hotclick.security.TenantFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -35,6 +36,12 @@ public class SecurityConfig {
 
     @Autowired
     private RateLimitingFilter rateLimitingFilter;
+
+    @Autowired
+    private TenantFilter tenantFilter;
+
+    @Autowired
+    private com.hotclick.security.ApiKeyAuthFilter apiKeyAuthFilter;
 
     @Autowired
     private UserDetailsService userDetailsService;
@@ -89,6 +96,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/health").permitAll()
                 .requestMatchers(POST, "/api/webhooks/payxpert").permitAll()
                 .requestMatchers(POST, "/api/webhooks/paypal").permitAll()
+                .requestMatchers(POST, "/api/webhooks/stripe").permitAll()
+                // Self-checkout QR — completamente público (sin JWT)
+                .requestMatchers(GET,  "/api/qr/**").permitAll()
+                .requestMatchers(POST, "/api/qr/*/pedido").permitAll()
                 // Compra sin registro (invitados)
                 .requestMatchers(POST, "/api/payments/guest-checkout").permitAll()
                 .requestMatchers(POST, "/api/payments/guest/paypal/capture").permitAll()
@@ -101,13 +112,35 @@ public class SecurityConfig {
                 .requestMatchers(GET, "/api/productos/marca/*").permitAll()
                 .requestMatchers(GET, "/api/productos/*/recomendaciones").permitAll()
                 .requestMatchers(GET, "/api/productos/*").permitAll()
-                // Gestión de productos — solo roles de empresa
-                .requestMatchers(POST,   "/api/productos").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
-                .requestMatchers(PUT,    "/api/productos/*").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
-                .requestMatchers(DELETE, "/api/productos/*").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
-                .requestMatchers(POST,   "/api/productos/**").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
+                // Gestión de productos — roles de empresa + API keys con scope write:productos
+                .requestMatchers(POST,   "/api/productos").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
+                .requestMatchers(PUT,    "/api/productos/*").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
+                .requestMatchers(DELETE, "/api/productos/*").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
+                .requestMatchers(POST,   "/api/productos/**").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
                 .requestMatchers(GET, "/api/categorias").permitAll()
                 .requestMatchers(GET, "/api/marcas/publicas").permitAll()
+                .requestMatchers(GET, "/api/planes").permitAll()
+                .requestMatchers(GET, "/api/billing/planes").permitAll()
+                .requestMatchers("/api/billing/**").authenticated()
+                // Gift cards — validación pública en checkout; admin CRUD protegido por @PreAuthorize
+                .requestMatchers(GET, "/api/gift-cards/validar").authenticated()
+                .requestMatchers("/api/admin/gift-cards/**").authenticated()
+                // White label branding y chat público — sin auth
+                .requestMatchers(GET,  "/api/public/branding").permitAll()
+                .requestMatchers(POST, "/api/public/chat").permitAll()
+                .requestMatchers("/api/admin/branding").authenticated()
+                // Marketplace de plugins y API keys
+                .requestMatchers("/api/admin/plugins/**").authenticated()
+                .requestMatchers("/api/admin/api-keys/**").authenticated()
+                // LATAM multi-país
+                .requestMatchers(GET, "/api/admin/multipais/paises").permitAll()
+                .requestMatchers("/api/admin/multipais/**").authenticated()
+                // Executive dashboard + forecast
+                .requestMatchers("/api/admin/executive/**").authenticated()
+                .requestMatchers("/api/admin/forecast/**").authenticated()
+                .requestMatchers("/api/admin/inventario/**").authenticated()
+                .requestMatchers("/api/admin/ai/**").authenticated()
+                .requestMatchers("/api/tenant/**").authenticated()
                 .requestMatchers(GET, "/api/ruleta/premios").permitAll()
                 .requestMatchers(POST, "/api/contacto").permitAll()
                 // Servicios HOT — fotos y solicitudes son públicas; gestión requiere ADMIN_IT
@@ -139,6 +172,8 @@ public class SecurityConfig {
                 .requestMatchers(GET,  "/api/empresa/perfil").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
                 .requestMatchers(PUT,  "/api/empresa/perfil").hasAnyRole("EMPRENDEDOR", "ADMIN_IT")
                 .requestMatchers(PUT,  "/api/empresa/perfil/visibilidad").hasAnyRole("EMPRENDEDOR", "ADMIN_IT")
+                .requestMatchers(PUT,  "/api/empresa/perfil/fiscal").hasAnyRole("EMPRENDEDOR", "ADMIN_IT")
+                .requestMatchers(POST, "/api/empresa/perfil/cert-p12").hasAnyRole("EMPRENDEDOR", "ADMIN_IT")
                 .requestMatchers(POST, "/api/empresa/perfil/logo").hasAnyRole("EMPRENDEDOR", "ADMIN_IT")
                 // Gestión de equipo — accesible para EMPRENDEDOR y ADMIN_CLIENTE de la misma empresa
                 .requestMatchers(GET,    "/api/empresa/equipo").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
@@ -147,6 +182,8 @@ public class SecurityConfig {
                 .requestMatchers(DELETE, "/api/empresa/equipo/*").hasRole("EMPRENDEDOR")
                 // Security Center — ADMIN_IT only
                 .requestMatchers("/api/security/**").hasRole("ADMIN_IT")
+                // Observabilidad — ADMIN_IT only
+                .requestMatchers("/api/admin/observabilidad/**").hasRole("ADMIN_IT")
                 // Admin-only routes — ADMIN_IT only (superadmin exclusivos)
                 .requestMatchers("/api/admin/empresas/**").hasRole("ADMIN_IT")
                 .requestMatchers("/api/auth/seleccionar-empresa").permitAll()
@@ -156,14 +193,15 @@ public class SecurityConfig {
                 // Dashboard y KPIs — ADMIN_IT, EMPRENDEDOR y ADMIN_CLIENTE
                 .requestMatchers("/api/admin/**").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
                 // Pedidos admin — ADMIN_IT, EMPRENDEDOR y ADMIN_CLIENTE
-                .requestMatchers(GET,    "/api/pedidos").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
-                .requestMatchers(GET,    "/api/pedidos/pendientes").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
-                .requestMatchers(POST,   "/api/pedidos/manual").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
-                .requestMatchers(PUT,    "/api/pedidos/*/estado").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
-                .requestMatchers(PUT,    "/api/pedidos/*/guia").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
-                .requestMatchers(PUT,    "/api/pedidos/*/envio").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
-                .requestMatchers(DELETE, "/api/pedidos/*").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
-                .requestMatchers(POST,   "/api/pedidos/*/notificar").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
+                // Pedidos — roles de empresa + API keys con scope read:pedidos o write:pedidos
+                .requestMatchers(GET,    "/api/pedidos").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
+                .requestMatchers(GET,    "/api/pedidos/pendientes").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
+                .requestMatchers(POST,   "/api/pedidos/manual").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
+                .requestMatchers(PUT,    "/api/pedidos/*/estado").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
+                .requestMatchers(PUT,    "/api/pedidos/*/guia").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
+                .requestMatchers(PUT,    "/api/pedidos/*/envio").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
+                .requestMatchers(DELETE, "/api/pedidos/*").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
+                .requestMatchers(POST,   "/api/pedidos/*/notificar").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
                 // Lista de usuarios — solo admin (perfil propio y actualización siguen autenticados)
                 .requestMatchers(GET, "/api/usuarios").hasRole("ADMIN_IT")
                 // Todas las demás rutas /api/** requieren autenticación
@@ -180,7 +218,11 @@ public class SecurityConfig {
                     "/servicios", "/servicios/**",
                     "/admin/empresas", "/admin/empresas/**",
                     "/admin/equipo", "/admin/aprobaciones",
-                    "/admin/mi-empresa", "/admin/security").permitAll()
+                    "/admin/mi-empresa", "/admin/security",
+                    "/admin/billing", "/admin/billing/**",
+                    "/admin/offline", "/admin/offline/**",
+                    "/admin/gift-cards", "/admin/gift-cards/**",
+                    "/checkout/qr", "/checkout/qr/**").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -197,7 +239,7 @@ public class SecurityConfig {
                     res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
                     res.setHeader("Content-Security-Policy",
                         "default-src 'self'; " +
-                        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.paypal.com https://www.sandbox.paypal.com; " +
+                        "script-src 'self' 'unsafe-inline' https://www.paypal.com https://www.sandbox.paypal.com; " +
                         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
                         "font-src 'self' https://fonts.gstatic.com; " +
                         "img-src 'self' data: blob: " + supabaseUrl + " https://www.paypalobjects.com; " +
@@ -213,7 +255,11 @@ public class SecurityConfig {
             .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
         );
         http.addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class);
+        // ApiKeyAuthFilter corre antes del JWT para que las claves hck_... se autentiquen primero
+        http.addFilterBefore(apiKeyAuthFilter, JwtRequestFilter.class);
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+        // TenantFilter corre después de JwtRequestFilter — el JWT ya está validado (o el API key ya puso el empresaId)
+        http.addFilterAfter(tenantFilter, JwtRequestFilter.class);
         return http.build();
     }
 }

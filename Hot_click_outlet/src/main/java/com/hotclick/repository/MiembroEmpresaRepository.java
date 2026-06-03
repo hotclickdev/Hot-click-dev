@@ -1,6 +1,7 @@
 package com.hotclick.repository;
 
 import com.hotclick.model.MiembroEmpresa;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,8 +12,12 @@ import java.util.Optional;
 @Repository
 public interface MiembroEmpresaRepository extends JpaRepository<MiembroEmpresa, Long> {
 
+    /** Fetch join empresa para evitar N+1 cuando se itera los negocios del usuario. */
+    @EntityGraph(attributePaths = {"empresa"})
     List<MiembroEmpresa> findByUsuarioIdAndEstado(Long usuarioId, Integer estado);
 
+    /** Fetch join usuario para evitar N+1 cuando se lista el equipo de una empresa. */
+    @EntityGraph(attributePaths = {"usuario"})
     List<MiembroEmpresa> findByEmpresaIdAndEstado(Long empresaId, Integer estado);
 
     Optional<MiembroEmpresa> findByUsuarioIdAndEmpresaId(Long usuarioId, Long empresaId);

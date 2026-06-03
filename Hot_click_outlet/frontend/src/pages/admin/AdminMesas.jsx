@@ -1,0 +1,236 @@
+import { useState, useEffect, useRef } from 'react'
+import QRCode from 'react-qr-code'
+import api from '@/services/api'
+
+const TIPOS = ['MESA', 'KIOSK', 'ESTANTE', 'MOSTRADOR', 'ZONA']
+
+const APP_URL = window.location.origin
+
+function qrUrl(token) {
+  return `${APP_URL}/checkout/qr/${token}`
+}
+
+function QrModal({ mesa, onClose }) {
+  const url = qrUrl(mesa.qrToken)
+  const svgRef = useRef(null)
+
+  function imprimir() {
+    const svgEl = svgRef.current?.querySelector('svg')
+    if (!svgEl) return
+    const svgData = new XMLSerializer().serializeToString(svgEl)
+    const blob = new Blob([svgData], { type: 'image/svg+xml' })
+    const url2 = URL.createObjectURL(blob)
+    const win = window.open('', '_blank')
+    win.document.write(`
+      <html><head><title>QR ${mesa.nombre}</title>
+      <style>body{margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;background:#fff}
+      h2{margin-bottom:16px;font-size:20px}p{margin-top:12px;font-size:12px;color:#666;word-break:break-all;max-width:300px;text-align:center}
+      </style></head><body>
+      <h2>${mesa.nombre}</h2>
+      <img src="${url2}" width="300" height="300"/>
+      <p>${url}</p>
+      <script>window.onload=()=>window.print()</script>
+      </body></html>
+    `)
+    win.document.close()
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+      onClick={onClose}>
+      <div className="rounded-2xl p-6 max-w-sm w-full flex flex-col items-center gap-4"
+        style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
+        onClick={e => e.stopPropagation()}>
+        <h3 className="text-lg font-bold" style={{ color: 'var(--hc-text)' }}>{mesa.nombre}</h3>
+        <div ref={svgRef} className="p-4 rounded-xl bg-white">
+          <QRCode value={url} size={220} />
+        </div>
+        <p className="text-xs text-center break-all" style={{ color: 'var(--hc-muted)' }}>{url}</p>
+        <div className="flex gap-3 w-full">
+          <button onClick={imprimir}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
+            style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
+            Imprimir / Descargar
+          </button>
+          <button onClick={onClose}
+            className="px-4 py-2.5 rounded-xl text-sm transition-opacity hover:opacity-70"
+            style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function AdminMesas() {
+  const [mesas, setMesas]           = useState([])
+  const [cargando, setCargando]     = useState(true)
+  const [qrMesa, setQrMesa]         = useState(null)
+  const [form, setForm]             = useState({ nombre: '', descripcion: '', tipo: 'MESA' })
+  const [creando, setCreando]       = useState(false)
+  const [error, setError]           = useState(null)
+  const [mostrarForm, setMostrarForm] = useState(false)
+
+  async function cargar() {
+    setCargando(true)
+    try {
+      const { data } = await api.get('/admin/mesas')
+      setMesas(Array.isArray(data) ? data : [])
+    } catch { setError('No se pudieron cargar las mesas') }
+    finally { setCargando(false) }
+  }
+
+  useEffect(() => { cargar() }, [])
+
+  async function crear(e) {
+    e.preventDefault()
+    setCreando(true); setError(null)
+    try {
+      await api.post('/admin/mesas', form)
+      setForm({ nombre: '', descripcion: '', tipo: 'MESA' })
+      setMostrarForm(false)
+      await cargar()
+    } catch (err) {
+      setError(err.response?.data?.error ?? 'Error al crear la mesa')
+    } finally { setCreando(false) }
+  }
+
+  async function toggleActivo(mesa) {
+    try {
+      await api.put(`/admin/mesas/${mesa.id}`, { activo: !mesa.activo })
+      await cargar()
+    } catch { setError('Error al actualizar') }
+  }
+
+  async function regenerarToken(mesa) {
+    if (!confirm('¿Regenerar el QR? El QR anterior dejará de funcionar.')) return
+    try {
+      await api.post(`/admin/mesas/${mesa.id}/regenerar-token`)
+      await cargar()
+    } catch { setError('Error al regenerar') }
+  }
+
+  const TIPO_ICON = { MESA: '🪑', KIOSK: '🖥️', ESTANTE: '🗄️', MOSTRADOR: '🏪', ZONA: '📍' }
+
+  return (
+    <div className="p-6 max-w-4xl mx-auto space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--hc-text)' }}>Mesas / QR Autoservicio</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>
+            Genera códigos QR para que los clientes realicen pedidos desde su teléfono
+          </p>
+        </div>
+        <button onClick={() => setMostrarForm(v => !v)}
+          className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
+          style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
+          + Nueva mesa
+        </button>
+      </div>
+
+      {error && (
+        <div className="p-3 rounded-xl text-sm" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#f87171' }}>
+          {error}
+        </div>
+      )}
+
+      {mostrarForm && (
+        <form onSubmit={crear} className="rounded-2xl p-5 space-y-4"
+          style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+          <p className="font-semibold text-sm" style={{ color: 'var(--hc-text)' }}>Nueva mesa</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <input required placeholder="Nombre (ej: Mesa 1)"
+              value={form.nombre} onChange={e => setForm(p => ({ ...p, nombre: e.target.value }))}
+              className="px-3 py-2 rounded-xl text-sm outline-none"
+              style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }} />
+            <input placeholder="Descripción (opcional)"
+              value={form.descripcion} onChange={e => setForm(p => ({ ...p, descripcion: e.target.value }))}
+              className="px-3 py-2 rounded-xl text-sm outline-none"
+              style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }} />
+            <select value={form.tipo} onChange={e => setForm(p => ({ ...p, tipo: e.target.value }))}
+              className="px-3 py-2 rounded-xl text-sm outline-none"
+              style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}>
+              {TIPOS.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+          <div className="flex gap-3">
+            <button type="submit" disabled={creando}
+              className="px-5 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 transition-opacity hover:opacity-80"
+              style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
+              {creando ? 'Creando…' : 'Crear'}
+            </button>
+            <button type="button" onClick={() => setMostrarForm(false)}
+              className="px-4 py-2 rounded-xl text-sm" style={{ color: 'var(--hc-muted)' }}>
+              Cancelar
+            </button>
+          </div>
+        </form>
+      )}
+
+      {cargando ? (
+        <div className="flex justify-center py-12">
+          <div className="w-8 h-8 border-2 rounded-full animate-spin"
+            style={{ borderColor: 'var(--hc-border)', borderTopColor: 'var(--hc-accent)' }} />
+        </div>
+      ) : mesas.length === 0 ? (
+        <div className="text-center py-16" style={{ color: 'var(--hc-muted)' }}>
+          <div className="text-4xl mb-3">🪑</div>
+          <p className="font-medium">No hay mesas configuradas</p>
+          <p className="text-sm mt-1">Crea una mesa para generar su código QR</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {mesas.map(m => (
+            <div key={m.id} className="rounded-2xl p-4 space-y-3 relative"
+              style={{
+                backgroundColor: 'var(--hc-surface)',
+                border: `1px solid ${m.activo ? 'var(--hc-border)' : 'rgba(156,163,175,0.2)'}`,
+                opacity: m.activo ? 1 : 0.6,
+              }}>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-semibold text-sm" style={{ color: 'var(--hc-text)' }}>
+                    {TIPO_ICON[m.tipo] ?? '📍'} {m.nombre}
+                  </p>
+                  {m.descripcion && (
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>{m.descripcion}</p>
+                  )}
+                </div>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${m.activo ? 'text-green-400 bg-green-400/10' : 'text-gray-400 bg-gray-400/10'}`}>
+                  {m.activo ? 'Activo' : 'Inactivo'}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-center p-3 rounded-xl bg-white">
+                <QRCode value={qrUrl(m.qrToken)} size={120} />
+              </div>
+
+              <div className="flex gap-2 flex-wrap">
+                <button onClick={() => setQrMesa(m)}
+                  className="flex-1 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80"
+                  style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
+                  Ver QR completo
+                </button>
+                <button onClick={() => toggleActivo(m)}
+                  className="px-3 py-1.5 rounded-lg text-xs transition-opacity hover:opacity-80"
+                  style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
+                  {m.activo ? 'Desactivar' : 'Activar'}
+                </button>
+                <button onClick={() => regenerarToken(m)}
+                  className="px-3 py-1.5 rounded-lg text-xs transition-opacity hover:opacity-80"
+                  style={{ border: '1px solid rgba(239,68,68,0.3)', color: '#f87171' }}
+                  title="Genera un nuevo QR — el anterior deja de funcionar">
+                  ↺ Nuevo QR
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {qrMesa && <QrModal mesa={qrMesa} onClose={() => setQrMesa(null)} />}
+    </div>
+  )
+}

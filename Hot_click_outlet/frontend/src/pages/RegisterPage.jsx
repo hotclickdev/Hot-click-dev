@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import SocialLoginButtons from '@/components/auth/SocialLoginButtons'
+
+const CLERK_ENABLED = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 import { useTranslation } from 'react-i18next'
 import PhoneField from '@/components/ui/PhoneField'
 import Input from '@/components/ui/Input'
@@ -633,12 +636,8 @@ export default function RegisterPage() {
                           {loading ? 'Enviando código…' : <>{t('register.sendCode')} <span className="group-hover:translate-x-1 transition-transform">→</span></>}
                         </button>
                       </form>
-                      <div className="flex items-center gap-3 my-4">
-                        <div className="flex-1 h-px" style={{ background: 'var(--hc-border)' }} />
-                        <span className="text-xs uppercase tracking-widest" style={{ color: 'var(--hc-muted)' }}>o</span>
-                        <div className="flex-1 h-px" style={{ background: 'var(--hc-border)' }} />
-                      </div>
-                      <p className="text-center text-sm" style={{ color: 'var(--hc-muted)' }}>
+                      {CLERK_ENABLED && <SocialLoginButtons />}
+                      <p className="text-center text-sm mt-4" style={{ color: 'var(--hc-muted)' }}>
                         {t('register.alreadyAccount')}{' '}
                         <Link to="/login" className="font-semibold" style={{ color: BUYER.color }}>{t('register.login')}</Link>
                       </p>

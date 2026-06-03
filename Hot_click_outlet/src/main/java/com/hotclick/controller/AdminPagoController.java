@@ -5,6 +5,7 @@ import com.hotclick.dto.ResponseDTO;
 import com.hotclick.dto.WebhookEventResumenDTO;
 import com.hotclick.repository.PagoRepository;
 import com.hotclick.repository.WebhookEventRepository;
+import com.hotclick.security.CompanyScope;
 import com.hotclick.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -23,6 +24,7 @@ public class AdminPagoController {
     @Autowired private PagoRepository         pagoRepository;
     @Autowired private WebhookEventRepository webhookEventRepository;
     @Autowired private PaymentService         paymentService;
+    @Autowired private CompanyScope           companyScope;
 
     /**
      * Lista pagos con filtros opcionales de proveedor y estadoPago.
@@ -35,9 +37,10 @@ public class AdminPagoController {
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "20") int size) {
 
+        Long empresaId = companyScope.getCurrentEmpresaId();
         Pageable pageable = PageRequest.of(page, Math.min(size, 100));
         Page<?> resultado = pagoRepository
-            .buscarPagos(proveedor, estadoPago, pageable)
+            .buscarPagosByEmpresa(proveedor, estadoPago, empresaId, pageable)
             .map(PagoResumenDTO::from);
 
         return ResponseEntity.ok(ResponseDTO.success("Pagos", Map.of(
@@ -77,13 +80,18 @@ public class AdminPagoController {
      */
     @GetMapping("/pagos/kpis")
     public ResponseEntity<ResponseDTO> kpis() {
-        long total      = pagoRepository.count();
-        long capturados = pagoRepository.countByEstadoPago("CAPTURADO");
-        long pendientes = pagoRepository.countByEstadoPago("PENDIENTE");
-        long fallidos   = pagoRepository.countByEstadoPago("FALLIDO");
-        long paypal     = pagoRepository.countByProveedor("PAYPAL");
-        long payxpert   = pagoRepository.countByProveedor("PAYXPERT");
-        long sinpe      = pagoRepository.countByProveedor("SINPE");
+        Long empresaId  = companyScope.getCurrentEmpresaId();
+        long total      = empresaId == null ? pagoRepository.count()
+                            : pagoRepository.countByEstadoPagoAndEmpresa("CAPTURADO", empresaId)
+                            + pagoRepository.countByEstadoPagoAndEmpresa("PENDIENTE", empresaId)
+                            + pagoRepository.countByEstadoPagoAndEmpresa("FALLIDO",   empresaId)
+                            + pagoRepository.countByEstadoPagoAndEmpresa("CANCELADO", empresaId);
+        long capturados = pagoRepository.countByEstadoPagoAndEmpresa("CAPTURADO", empresaId);
+        long pendientes = pagoRepository.countByEstadoPagoAndEmpresa("PENDIENTE", empresaId);
+        long fallidos   = pagoRepository.countByEstadoPagoAndEmpresa("FALLIDO",   empresaId);
+        long paypal     = pagoRepository.countByProveedorAndEmpresa("PAYPAL",   empresaId);
+        long payxpert   = pagoRepository.countByProveedorAndEmpresa("PAYXPERT", empresaId);
+        long sinpe      = pagoRepository.countByProveedorAndEmpresa("SINPE",    empresaId);
         long webhooksErr= webhookEventRepository.countByProcesado(false);
 
         double tasaExito = total > 0 ? Math.round((double) capturados / total * 1000.0) / 10.0 : 0.0;

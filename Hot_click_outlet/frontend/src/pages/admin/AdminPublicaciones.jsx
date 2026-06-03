@@ -24,7 +24,7 @@ function PriceBar({ fuente, precioCrc, precioUsd, max }) {
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-xs">
-        <span className="text-[#8e8e9a] truncate max-w-[140px]">{fuente}</span>
+        <span className="text-[#8e8e9a] truncate max-w-[120px] sm:max-w-[200px]">{fuente}</span>
         <span className="text-[#e8e8ed] font-medium ml-2 shrink-0">
           {fmtCrc(precioCrc)}
           {precioUsd ? <span className="text-[#8e8e9a] ml-1">(${precioUsd})</span> : null}

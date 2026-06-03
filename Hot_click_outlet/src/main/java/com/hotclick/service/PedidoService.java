@@ -43,10 +43,11 @@ public class PedidoService {
     @Autowired private ProductoRepository productoRepository;
     @Autowired private ObjectMapper objectMapper;
 
-    @CacheEvict(value = "dashboard-metricas", allEntries = true)
+    @CacheEvict(value = "dashboard-metricas",
+        key = "#pedido.empresa != null ? #pedido.empresa.id.toString() : 'global'")
     @Transactional
     public Pedido crearPedido(Pedido pedido) {
-        pedido.setNumeroPedido("ORD-" + System.currentTimeMillis());
+        pedido.setNumeroPedido(Constants.generarNumeroPedido("ORD-"));
         pedido.setFechaPedido(LocalDateTime.now());
         if (pedido.getEstadoPedido() == null) {
             pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
@@ -55,7 +56,7 @@ public class PedidoService {
         return pedidoRepository.save(pedido);
     }
 
-    @CacheEvict(value = "dashboard-metricas", allEntries = true)
+    @CacheEvict(value = "dashboard-metricas", key = "#empresa.id.toString()")
     @Transactional
     public Pedido crearPedidoManual(ManualPedidoDTO dto, com.hotclick.model.Empresa empresa) {
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
@@ -66,7 +67,7 @@ public class PedidoService {
             .orElseThrow(() -> new RuntimeException("Bodega no encontrada"));
 
         Pedido pedido = new Pedido();
-        pedido.setNumeroPedido("ORD-" + System.currentTimeMillis());
+        pedido.setNumeroPedido(Constants.generarNumeroPedido("ORD-"));
         pedido.setFechaPedido(LocalDateTime.now());
         pedido.setUsuarioFinal(usuario);
         pedido.setBodega(bodega);
@@ -84,9 +85,15 @@ public class PedidoService {
         int costoTotalProductos = 0;
         List<PedidoItem> items = new ArrayList<>();
 
+        // Batch-load todos los productos del pedido en una sola query — evita N+1
+        List<Long> productoIds = dto.getItems().stream()
+            .map(ManualPedidoDTO.ItemDTO::getProductoId).toList();
+        Map<Long, Producto> productoMap = productoRepository.findAllById(productoIds).stream()
+            .collect(java.util.stream.Collectors.toMap(Producto::getId, p -> p));
+
         for (ManualPedidoDTO.ItemDTO itemDto : dto.getItems()) {
-            Producto producto = productoRepository.findById(itemDto.getProductoId())
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + itemDto.getProductoId()));
+            Producto producto = productoMap.get(itemDto.getProductoId());
+            if (producto == null) throw new RuntimeException("Producto no encontrado: " + itemDto.getProductoId());
 
             int precio   = itemDto.getPrecioUnitario() != null ? itemDto.getPrecioUnitario() : producto.getPrecioVenta();
             int costo    = producto.getPrecioCompra();
@@ -130,7 +137,9 @@ public class PedidoService {
             appendNotificacion(pedido, nuevoEstado, nota);
         }
         pedido = pedidoRepository.save(pedido);
-        pedido.getItems().size(); // force-initialize within session
+        pedido.getItems().size(); // force-initialize items within session
+        // Inicializar proxy LAZY de usuarioFinal para que el @Async email no falle
+        if (pedido.getUsuarioFinal() != null) { pedido.getUsuarioFinal().getCorreo(); }
         if (nota != null && !nota.isBlank()) {
             notificacionEmailService.enviarSeguimientoEstado(pedido, nota);
         }
@@ -165,18 +174,18 @@ public class PedidoService {
 
     @Transactional(readOnly = true)
     public Page<Pedido> listarPorUsuario(Long usuarioId, Pageable pageable) {
-        Page<Pedido> page = pedidoRepository.findByUsuarioFinalIdOrderByFechaPedidoDesc(usuarioId, pageable);
-        page.getContent().forEach(p -> p.getItems().size());
-        return page;
+        // Usa fetch join en la query de count/sort paginada — la carga de items ocurre en una sola query adicional
+        return pedidoRepository.findByUsuarioFinalIdOrderByFechaPedidoDesc(usuarioId, pageable);
     }
 
     @Transactional(readOnly = true)
     public List<Pedido> listarPendientes(Long empresaId) {
-        List<Pedido> list = empresaId != null
-            ? pedidoRepository.findByEmpresaIdAndEstadoPedidoAndEstado(empresaId, Constants.PEDIDO_PENDIENTE, Constants.ESTADO_ACTIVO)
-            : pedidoRepository.findByEstadoPedidoAndEstado(Constants.PEDIDO_PENDIENTE, Constants.ESTADO_ACTIVO);
-        list.forEach(p -> p.getItems().size());
-        return list;
+        if (empresaId != null) {
+            // JOIN FETCH items en una sola query — elimina N+1 del .size() anterior
+            return pedidoRepository.findByEmpresaIdAndEstadoPedidoWithItems(
+                empresaId, Constants.PEDIDO_PENDIENTE, Constants.ESTADO_ACTIVO);
+        }
+        return pedidoRepository.findByEstadoPedidoAndEstado(Constants.PEDIDO_PENDIENTE, Constants.ESTADO_ACTIVO);
     }
 
     @Transactional
@@ -189,6 +198,7 @@ public class PedidoService {
         pedido.setEstadoPedido(Constants.PEDIDO_ENVIADO);
         pedido = pedidoRepository.save(pedido);
         pedido.getItems().size();
+        if (pedido.getUsuarioFinal() != null) { pedido.getUsuarioFinal().getCorreo(); }
         notificacionEmailService.enviarNotificacionGuia(pedido);
         return pedido;
     }
@@ -204,6 +214,7 @@ public class PedidoService {
         pedido.setEstadoPedido(Constants.PEDIDO_ENVIADO);
         pedido = pedidoRepository.save(pedido);
         pedido.getItems().size();
+        if (pedido.getUsuarioFinal() != null) { pedido.getUsuarioFinal().getCorreo(); }
         notificacionEmailService.enviarNotificacionGuia(pedido);
         return pedido;
     }

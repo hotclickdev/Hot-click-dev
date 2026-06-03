@@ -44,6 +44,10 @@ public class Usuario extends BaseEntity {
     @Column(name = "foto_perfil_url", length = 500)
     private String fotoPerfilUrl;
 
+    /** Clerk user ID for social OAuth login (Google, Apple, Microsoft, etc.) */
+    @Column(name = "clerk_user_id", length = 50)
+    private String clerkUserId;
+
     @Column(name = "fecha_registro")
     private LocalDateTime fechaRegistro;
 
@@ -87,7 +91,29 @@ public class Usuario extends BaseEntity {
     @JoinColumn(name = "fk_id_empresa")
     private Empresa empresa;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    // ── CRM / Fidelidad ───────────────────────────────────────────────────────
+    @Column(name = "puntos_fidelidad", nullable = false)
+    private Integer puntosFidelidad = 0;
+
+    @Column(name = "limite_credito", nullable = false)
+    private Integer limiteCredito = 0;
+
+    @Column(name = "saldo_credito", nullable = false)
+    private Integer saldoCredito = 0;
+
+    @Column(name = "segmento", length = 30)
+    private String segmento;
+
+    @Column(name = "notas_internas", columnDefinition = "TEXT")
+    private String notasInternas;
+
+    @Column(name = "total_compras_hist", nullable = false)
+    private Integer totalComprasHist = 0;
+
+    @Column(name = "num_pedidos_hist", nullable = false)
+    private Integer numPedidosHist = 0;
+
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "hot_click_usuario_rol_tb",
         joinColumns = @JoinColumn(name = "fk_id_usuario"),
@@ -125,6 +151,9 @@ public class Usuario extends BaseEntity {
     public String getFotoPerfilUrl() { return fotoPerfilUrl; }
     public void setFotoPerfilUrl(String fotoPerfilUrl) { this.fotoPerfilUrl = fotoPerfilUrl; }
 
+    public String getClerkUserId() { return clerkUserId; }
+    public void setClerkUserId(String clerkUserId) { this.clerkUserId = clerkUserId; }
+
     public LocalDateTime getFechaRegistro() { return fechaRegistro; }
     public void setFechaRegistro(LocalDateTime fechaRegistro) { this.fechaRegistro = fechaRegistro; }
 
@@ -141,6 +170,27 @@ public class Usuario extends BaseEntity {
     public void setEmpresa(Empresa empresa) { this.empresa = empresa; }
 
     public Long getEmpresaId() { return empresa != null ? empresa.getId() : null; }
+
+    public Integer getPuntosFidelidad() { return puntosFidelidad; }
+    public void setPuntosFidelidad(Integer p) { this.puntosFidelidad = p; }
+
+    public Integer getLimiteCredito() { return limiteCredito; }
+    public void setLimiteCredito(Integer l) { this.limiteCredito = l; }
+
+    public Integer getSaldoCredito() { return saldoCredito; }
+    public void setSaldoCredito(Integer s) { this.saldoCredito = s; }
+
+    public String getSegmento() { return segmento; }
+    public void setSegmento(String segmento) { this.segmento = segmento; }
+
+    public String getNotasInternas() { return notasInternas; }
+    public void setNotasInternas(String n) { this.notasInternas = n; }
+
+    public Integer getTotalComprasHist() { return totalComprasHist; }
+    public void setTotalComprasHist(Integer t) { this.totalComprasHist = t; }
+
+    public Integer getNumPedidosHist() { return numPedidosHist; }
+    public void setNumPedidosHist(Integer n) { this.numPedidosHist = n; }
 
     public List<Rol> getRoles() { return roles; }
     public void setRoles(List<Rol> roles) { this.roles = roles; }

@@ -1,5 +1,6 @@
 package com.hotclick.service;
 
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,6 +41,16 @@ public class TotpSecretEncryptionService {
 
     @Value("${totp.encryption.key:}")
     private String encryptionKeyHex;
+
+    @PostConstruct
+    void validate() {
+        String profile = System.getProperty("spring.profiles.active", "");
+        if (!profile.contains("dev") && !profile.contains("test")
+                && (encryptionKeyHex == null || encryptionKeyHex.isBlank())) {
+            throw new IllegalStateException(
+                "TOTP_ENCRYPTION_KEY debe configurarse en producción (totp.encryption.key)");
+        }
+    }
 
     // ── Public API ────────────────────────────────────────────────────────────
 

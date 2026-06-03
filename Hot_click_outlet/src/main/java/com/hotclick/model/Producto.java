@@ -67,6 +67,9 @@ public class Producto extends BaseEntity {
     @Column(name = "sku", length = 50)
     private String sku;
 
+    @Column(name = "barcode", length = 50)
+    private String barcode;
+
     @Column(name = "marca", length = 100)
     private String marcaTexto;
 
@@ -121,6 +124,21 @@ public class Producto extends BaseEntity {
 
     @Column(name = "tiempo_reorden_dias")
     private Integer tiempoReordenDias = 7;
+
+    // ── Product discovery chat (F26) ─────────────────────────────────────────
+    /** Comma-separated keywords for public chat product search. e.g. "sala,living,decoracion" */
+    @Column(name = "tags", columnDefinition = "text")
+    private String tags = "";
+
+    // ── AI Smart Inventory (F21) ─────────────────────────────────────────────
+    @Column(name = "clasificacion_abc", length = 1)
+    private String clasificacionAbc;
+
+    @Column(name = "demanda_diaria_avg", precision = 10, scale = 2)
+    private java.math.BigDecimal demandaDiariaAvg = java.math.BigDecimal.ZERO;
+
+    @Column(name = "fecha_ultima_venta")
+    private LocalDateTime fechaUltimaVenta;
 
     @Column(name = "imagen_principal_url", length = 500)
     private String imagenPrincipalUrl;
@@ -192,6 +210,25 @@ public class Producto extends BaseEntity {
     @Column(name = "porcentaje_descuento")
     private Integer porcentajeDescuento;
 
+    // ── IVA Hacienda CR (F12) ────────────────────────────────────────────────
+    /** Porcentaje de IVA: 13.00 (general), 4.00, 2.00, 0.00 (exento) */
+    @Column(name = "porcentaje_iva", columnDefinition = "NUMERIC(5,2) DEFAULT 13.00")
+    private java.math.BigDecimal porcentajeIva = new java.math.BigDecimal("13.00");
+
+    /** Código de tarifa Hacienda: '08'=13%, '04'=4%, '02'=2%, '01'=exento */
+    @Column(name = "codigo_tarifa_iva", length = 2, columnDefinition = "VARCHAR(2) DEFAULT '08'")
+    private String codigoTarifaIva = "08";
+
+    /**
+     * Optimistic locking — previene race condition cuando dos cajeros venden
+     * el mismo producto simultáneamente. Hibernate lanza OptimisticLockException
+     * si otro thread modificó el registro entre el SELECT y el UPDATE.
+     * StockService debe reintentar ante OptimisticLockException (máx 3 veces).
+     */
+    @Version
+    @Column(name = "version", nullable = false)
+    private Integer version = 0;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -248,6 +285,9 @@ public class Producto extends BaseEntity {
     public String getSku() { return sku; }
     public void setSku(String sku) { this.sku = sku; }
 
+    public String getBarcode() { return barcode; }
+    public void setBarcode(String barcode) { this.barcode = barcode; }
+
     public String getMarcaTexto() { return marcaTexto; }
     public void setMarcaTexto(String marcaTexto) { this.marcaTexto = marcaTexto; }
 
@@ -296,6 +336,18 @@ public class Producto extends BaseEntity {
 
     public Integer getTiempoReordenDias() { return tiempoReordenDias; }
     public void setTiempoReordenDias(Integer tiempoReordenDias) { this.tiempoReordenDias = tiempoReordenDias; }
+
+    public String getTags() { return tags != null ? tags : ""; }
+    public void setTags(String tags) { this.tags = tags; }
+
+    public String getClasificacionAbc() { return clasificacionAbc; }
+    public void setClasificacionAbc(String v) { this.clasificacionAbc = v; }
+
+    public java.math.BigDecimal getDemandaDiariaAvg() { return demandaDiariaAvg; }
+    public void setDemandaDiariaAvg(java.math.BigDecimal v) { this.demandaDiariaAvg = v; }
+
+    public LocalDateTime getFechaUltimaVenta() { return fechaUltimaVenta; }
+    public void setFechaUltimaVenta(LocalDateTime v) { this.fechaUltimaVenta = v; }
 
     public String getImagenPrincipalUrl() { return imagenPrincipalUrl; }
     public void setImagenPrincipalUrl(String imagenPrincipalUrl) { this.imagenPrincipalUrl = imagenPrincipalUrl; }
@@ -365,6 +417,15 @@ public class Producto extends BaseEntity {
 
     public Integer getPorcentajeDescuento() { return porcentajeDescuento; }
     public void setPorcentajeDescuento(Integer porcentajeDescuento) { this.porcentajeDescuento = porcentajeDescuento; }
+
+    public Integer getVersion() { return version; }
+    public void setVersion(Integer version) { this.version = version; }
+
+    public java.math.BigDecimal getPorcentajeIva() { return porcentajeIva != null ? porcentajeIva : new java.math.BigDecimal("13.00"); }
+    public void setPorcentajeIva(java.math.BigDecimal v) { this.porcentajeIva = v; }
+
+    public String getCodigoTarifaIva() { return codigoTarifaIva != null ? codigoTarifaIva : "08"; }
+    public void setCodigoTarifaIva(String v) { this.codigoTarifaIva = v; }
 
     /** Precio efectivo para el cliente: precioOferta si está en oferta, sino precioVenta */
     public Integer getPrecioEfectivo() {

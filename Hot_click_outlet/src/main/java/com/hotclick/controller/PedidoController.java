@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
@@ -29,6 +30,7 @@ public class PedidoController {
     @Autowired private com.hotclick.repository.EmpresaRepository empresaRepository;
 
     @PostMapping("/manual")
+    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE') or hasAuthority('SCOPE_write:pedidos')")
     public ResponseEntity<ResponseDTO> crearPedidoManual(@Valid @RequestBody ManualPedidoDTO dto) {
         try {
             com.hotclick.model.Empresa empresa = companyScope.getCurrentEmpresaId() != null
@@ -55,9 +57,21 @@ public class PedidoController {
     public ResponseEntity<ResponseDTO> obtenerPedido(@PathVariable Long id, HttpServletRequest request) {
         try {
             Pedido pedido = pedidoService.buscarPorId(id);
-            Long userId = extractUserId(request);
-            if (!isAdmin() && !userId.equals(pedido.getUsuarioFinal().getId())) {
-                return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));
+            if (!isAdmin()) {
+                Long empresaId = companyScope.getCurrentEmpresaId();
+                if (empresaId != null) {
+                    // EMPRENDEDOR / ADMIN_CLIENTE — debe ser dueño del pedido
+                    Long pedidoEmpresaId = pedido.getEmpresa() != null ? pedido.getEmpresa().getId() : null;
+                    if (!empresaId.equals(pedidoEmpresaId)) {
+                        return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));
+                    }
+                } else {
+                    // USUARIO_FINAL — debe ser el cliente del pedido
+                    Long userId = extractUserId(request);
+                    if (pedido.getUsuarioFinal() == null || !userId.equals(pedido.getUsuarioFinal().getId())) {
+                        return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));
+                    }
+                }
             }
             return ResponseEntity.ok(ResponseDTO.success("Pedido encontrado", pedido));
         } catch (SecurityException e) {
@@ -142,6 +156,7 @@ public class PedidoController {
     }
 
     @GetMapping("/pendientes")
+    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE') or hasAuthority('SCOPE_read:pedidos')")
     public ResponseEntity<ResponseDTO> listarPendientes() {
         Long empresaId = companyScope.getCurrentEmpresaId();
         return ResponseEntity.ok(ResponseDTO.success("Pedidos pendientes",
@@ -149,6 +164,7 @@ public class PedidoController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE') or hasAuthority('SCOPE_read:pedidos')")
     public ResponseEntity<ResponseDTO> listarTodos() {
         try {
             Long empresaId = companyScope.getCurrentEmpresaId();

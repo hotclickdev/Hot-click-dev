@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { getAvailableModes, MODE_PREF_KEY } from '@/utils/modes'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import Modal from '@/components/ui/Modal'
@@ -9,6 +10,9 @@ import useAuthStore from '@/store/authStore'
 import useCartStore from '@/store/cartStore'
 import { useToast } from '@/components/ui/Toast'
 import { abandonedCartService } from '@/services/abandonedCartService'
+import SocialLoginButtons from '@/components/auth/SocialLoginButtons'
+
+const CLERK_ENABLED = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 
 /* accent del sitio — usa la variable CSS para respetar light/dark mode */
 const A = {
@@ -37,7 +41,7 @@ export default function LoginPage() {
   const [useRecovery,       setUseRecovery]       = useState(false)
   const [recoveryInput,     setRecoveryInput]     = useState('')
   const [showForgot,        setShowForgot]        = useState(false)
-  const [showAdminModal,    setShowAdminModal]    = useState(false)
+  const [showAdminModal]    = useState(false)
   const [showCartRecovery,  setShowCartRecovery]  = useState(false)
   const [recoveryCart,      setRecoveryCart]      = useState(null)
   const [recoveryDest,      setRecoveryDest]      = useState('/')
@@ -176,11 +180,12 @@ export default function LoginPage() {
 
   const handleLoginSuccess = async (data) => {
     login(data)
-    const isAdmin = ['ADMIN_IT', 'ADMIN_CLIENTE', 'EMPRENDEDOR'].includes(data.rol)
-    toast({ message: isAdmin ? t('login.welcomeAdmin') : t('login.welcome'), type: 'success' })
-    if (isAdmin) {
-      setShowAdminModal(true)
-    } else {
+    const modes = getAvailableModes(data.rol, data.permisos ?? [])
+    const isInternal = data.rol !== 'USUARIO_FINAL'
+    toast({ message: isInternal ? t('login.welcomeAdmin') : t('login.welcome'), type: 'success' })
+
+    // Usuario final: flujo habitual con recuperación de carrito
+    if (!isInternal) {
       const dest = from === '/login' ? '/' : from
       try {
         const { data: res } = await abandonedCartService.getAbandonedCartBySession()
@@ -190,7 +195,24 @@ export default function LoginPage() {
         }
       } catch { /* no cart */ }
       navigate(dest, { replace: true })
+      return
     }
+
+    // Un solo modo disponible → redirigir directo
+    if (modes.length === 1) {
+      navigate(modes[0].path, { replace: true })
+      return
+    }
+
+    // Múltiples modos: si hay preferencia guardada usar directamente
+    const savedPref = localStorage.getItem(MODE_PREF_KEY)
+    if (savedPref) {
+      const saved = modes.find(m => m.id === savedPref)
+      if (saved) { navigate(saved.path, { replace: true }); return }
+    }
+
+    // Mostrar selector de modo
+    navigate('/mode-select', { replace: true })
   }
 
   const handleRestoreCart = async () => {
@@ -350,6 +372,8 @@ export default function LoginPage() {
                         ) : <>Iniciar sesión <span className="group-hover:translate-x-1 transition-transform">→</span></>}
                       </button>
                     </form>
+
+                    {CLERK_ENABLED && <SocialLoginButtons />}
 
                     <p className="text-center text-sm mt-4" style={{ color: 'var(--hc-muted)' }}>
                       ¿No tenés cuenta?{' '}

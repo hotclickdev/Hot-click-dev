@@ -123,4 +123,8 @@ public class ProductoRequestDTO {
     private String talla;
     public String getTalla() { return talla; }
     public void setTalla(String talla) { this.talla = talla; }
+
+    private String tags;
+    public String getTags() { return tags; }
+    public void setTags(String tags) { this.tags = tags; }
 }

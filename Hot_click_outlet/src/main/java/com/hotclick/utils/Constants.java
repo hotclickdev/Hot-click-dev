@@ -2,6 +2,18 @@ package com.hotclick.utils;
 
 public class Constants {
 
+    /**
+     * Genera un número de pedido único con el prefijo dado.
+     * Usa UUID aleatorio (12 hex chars = 48 bits) para evitar colisiones
+     * bajo carga concurrente. System.currentTimeMillis() colisionaba cuando
+     * dos requests llegaban en el mismo milisegundo → ConstraintViolationException.
+     */
+    public static String generarNumeroPedido(String prefijo) {
+        return prefijo + java.util.UUID.randomUUID().toString()
+                .replace("-", "").substring(0, 12).toUpperCase();
+    }
+
+
     // Estados
     public static final int ESTADO_ACTIVO     = 1;
     public static final int ESTADO_INACTIVO   = 2;

@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -40,6 +41,7 @@ public class SinpeService {
     @Autowired private PagoRepository                pagoRepository;
     @Autowired private ComprobanteSinpeRepository    comprobanteRepository;
     @Autowired private AuditoriaAdminRepository      auditoriaRepository;
+    @Autowired private EmpresaRepository             empresaRepository;
     @Autowired private SupabaseStorageService         storageService;
     @Autowired private NotificacionEmailService       notificacionEmailService;
     @Autowired private CuponService                  cuponService;
@@ -105,7 +107,7 @@ public class SinpeService {
         int total = subtotal - descuento + costoEnvio;
 
         Pedido pedido = new Pedido();
-        pedido.setNumeroPedido("ORD-" + System.currentTimeMillis());
+        pedido.setNumeroPedido(Constants.generarNumeroPedido("ORD-"));
         pedido.setFechaPedido(LocalDateTime.now());
         pedido.setSubtotal(subtotal);
         pedido.setTotalPedido(total);
@@ -287,6 +289,7 @@ public class SinpeService {
         pedidoRepository.save(pedido);
 
         paymentService.liberarReservas(pedido);
+        if (pedido.getUsuarioFinal() != null) { pedido.getUsuarioFinal().getCorreo(); }
         notificacionEmailService.enviarPagoFallido(pedido,
             "Comprobante SINPE rechazado" + (motivo != null ? ": " + motivo : ""));
 
@@ -301,10 +304,21 @@ public class SinpeService {
     // AUTO-APROBACIÓN — comprobantes PENDIENTE con más de 3 días
     // ================================================================
     @Scheduled(cron = "0 0 1 * * *") // 1:00 AM diario
+    @SchedulerLock(name = "sinpe_auto_approval", lockAtMostFor = "PT30M", lockAtLeastFor = "PT10M")
     @Transactional
     public void autoAprobarExpirados() {
         LocalDateTime corte = LocalDateTime.now().minusDays(3);
-        List<ComprobanteSinpe> expirados = comprobanteRepository.findPendientesExpirados(corte);
+        for (var empresa : empresaRepository.findByEstadoEmpresaOrderByFechaRegistroAsc("ACTIVO")) {
+            try {
+                autoAprobarExpiradosDeEmpresa(empresa.getId(), corte);
+            } catch (Exception e) {
+                log.error("[sinpe-auto-aprobacion] Error empresa={}: {}", empresa.getId(), e.getMessage());
+            }
+        }
+    }
+
+    private void autoAprobarExpiradosDeEmpresa(Long empresaId, LocalDateTime corte) {
+        List<ComprobanteSinpe> expirados = comprobanteRepository.findPendientesExpiradosByEmpresa(corte, empresaId);
 
         for (ComprobanteSinpe comprobante : expirados) {
             try {
@@ -335,7 +349,7 @@ public class SinpeService {
             }
         }
         if (!expirados.isEmpty()) {
-            log.info("Auto-aprobación SINPE: {} comprobantes procesados", expirados.size());
+            log.info("Auto-aprobación SINPE empresa={}: {} comprobantes procesados", empresaId, expirados.size());
         }
     }
 

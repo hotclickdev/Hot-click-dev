@@ -22,4 +22,8 @@ public interface ComprobanteSinpeRepository extends JpaRepository<ComprobanteSin
 
     @Query("SELECT c FROM ComprobanteSinpe c WHERE c.estado = 'PENDIENTE' AND c.fechaSubida < :corte")
     List<ComprobanteSinpe> findPendientesExpirados(@Param("corte") LocalDateTime corte);
+
+    /** Scheduler-safe: filtra por empresa para aislamiento en multi-tenant. */
+    @Query("SELECT c FROM ComprobanteSinpe c WHERE c.estado = 'PENDIENTE' AND c.fechaSubida < :corte AND c.pedido.empresa.id = :empresaId")
+    List<ComprobanteSinpe> findPendientesExpiradosByEmpresa(@Param("corte") LocalDateTime corte, @Param("empresaId") Long empresaId);
 }

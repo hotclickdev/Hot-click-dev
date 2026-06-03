@@ -67,6 +67,11 @@ public class CategoriaController {
                 usuarioRepository.findByCorreo(ud.getUsername())
                     .orElseThrow(() -> new RuntimeException("Admin no encontrado"))
             );
+            String padreIdStr = body.get("padreId");
+            if (padreIdStr != null && !padreIdStr.isBlank()) {
+                categoriaRepository.findById(Long.parseLong(padreIdStr))
+                    .ifPresent(cat::setCategoriaPadre);
+            }
             return ResponseEntity.ok(ResponseDTO.success("Categoría creada", categoriaRepository.save(cat)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
@@ -112,6 +117,20 @@ public class CategoriaController {
                 cat.setNombreCategoria(body.get("nombreCategoria").trim());
             if (body.get("descripcion") != null)
                 cat.setDescripcion(body.get("descripcion"));
+            if (body.containsKey("padreId")) {
+                String padreIdStr = body.get("padreId");
+                if (padreIdStr == null || padreIdStr.isBlank()) {
+                    cat.setCategoriaPadre(null);
+                } else {
+                    Categoria padre = categoriaRepository.findById(Long.parseLong(padreIdStr))
+                        .orElseThrow(() -> new RuntimeException("Categoría padre no encontrada"));
+                    // Tenant isolation: padre y hijo deben pertenecer a la misma empresa
+                    if (padre.getEmpresaId() != null && !padre.getEmpresaId().equals(cat.getEmpresaId())) {
+                        throw new SecurityException("La categoría padre pertenece a otra empresa");
+                    }
+                    cat.setCategoriaPadre(padre);
+                }
+            }
             return ResponseEntity.ok(ResponseDTO.success("Categoría actualizada", categoriaRepository.save(cat)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));

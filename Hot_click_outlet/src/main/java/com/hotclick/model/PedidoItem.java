@@ -8,7 +8,8 @@ import jakarta.persistence.*;
 public class PedidoItem extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "pedido_item_seq")
+    @SequenceGenerator(name = "pedido_item_seq", sequenceName = "hot_click_pedido_item_seq", allocationSize = 50)
     @Column(name = "id_pedido_item")
     private Long id;
 

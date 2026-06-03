@@ -36,7 +36,7 @@ public class DashboardService {
             dto.setTotalPedidos(pedidoRepository.countTotalPedidosByEmpresaId(empresaId));
             dto.setTotalVentas(pedidoRepository.sumTotalVentasByEmpresaId(empresaId));
             dto.setPedidosPendientes(
-                pedidoRepository.findByEmpresaIdAndEstadoPedidoAndEstado(empresaId, "PENDIENTE", 1).size()
+                (int) pedidoRepository.countByEmpresaIdAndEstadoPedidoAndEstado(empresaId, "PENDIENTE", 1)
             );
             dto.setUsuariosPendientes(0);
             dto.setStockBajo((int) productoRepository.countProductosConStockBajoByEmpresaId(empresaId));

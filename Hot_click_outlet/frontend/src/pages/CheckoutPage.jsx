@@ -153,16 +153,41 @@ export default function CheckoutPage() {
   const [cuponDescuento, setCuponDescuento] = useState(0)   // porcentaje aplicado
   const [cuponCodigo,   setCuponCodigo]   = useState(null)  // código validado
 
+  // Gift card
+  const [gcInput,     setGcInput]     = useState('')
+  const [gcEstado,    setGcEstado]    = useState('idle') // idle | loading | valid | invalid
+  const [gcSaldo,     setGcSaldo]     = useState(0)      // saldo disponible
+  const [gcCodigo,    setGcCodigo]    = useState(null)   // código validado
+
   function validateGuestEmail(v) {
     if (!v.trim()) return t('checkout.guestEmailRequired')
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())) return t('checkout.guestEmailInvalid')
     return ''
   }
 
-  const costoEnvio   = metodoEnvio === 'ENVIO_A_DOMICILIO' ? 2000 : 0
-  const subtotalCart = total()
+  const costoEnvio     = metodoEnvio === 'ENVIO_A_DOMICILIO' ? 2000 : 0
+  const subtotalCart   = total()
   const descuentoMonto = cuponDescuento > 0 ? Math.round(subtotalCart * cuponDescuento / 100) : 0
-  const totalFinal   = subtotalCart - descuentoMonto + costoEnvio
+  const baseConCupon   = subtotalCart - descuentoMonto + costoEnvio
+  const gcAplicado     = gcSaldo > 0 ? Math.min(gcSaldo, baseConCupon) : 0
+  const totalFinal     = baseConCupon - gcAplicado
+
+  const validarGiftCard = useCallback(async () => {
+    if (!gcInput.trim() || !token) return
+    setGcEstado('loading')
+    try {
+      const { data } = await import('@/services/api').then(m => m.default.get(`/gift-cards/validar?codigo=${encodeURIComponent(gcInput.trim().toUpperCase())}`))
+      if (data?.valida) {
+        setGcSaldo(data.saldoActual ?? 0)
+        setGcCodigo(data.codigo ?? gcInput.trim().toUpperCase())
+        setGcEstado('valid')
+      } else {
+        setGcSaldo(0); setGcCodigo(null); setGcEstado('invalid')
+      }
+    } catch {
+      setGcSaldo(0); setGcCodigo(null); setGcEstado('invalid')
+    }
+  }, [gcInput, token])
 
   const validarCupon = useCallback(async () => {
     if (!cuponInput.trim()) return
@@ -222,7 +247,8 @@ export default function CheckoutPage() {
       notas:       notasFull || null,
       provider:    metodoPago,
       items: items.map((i) => ({ productoId: i.id, cantidad: i.cantidad })),
-      codigoCupon: cuponCodigo || null,
+      codigoCupon:    cuponCodigo || null,
+      codigoGiftCard: gcCodigo   || null,
       ...(token ? {} : { guestEmail: guestEmail.trim(), guestPhone: guestPhone || null }),
     }, !token)
   }
@@ -375,6 +401,33 @@ export default function CheckoutPage() {
               </p>
             </div>
           </motion.div>
+        </div>
+      </MainLayout>
+    )
+  }
+
+  if (estado === 'gift_card_paid') {
+    return (
+      <MainLayout>
+        <div className="max-w-lg mx-auto px-4 py-20 flex flex-col items-center gap-6 text-center">
+          <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)' }}>
+            <svg className="w-10 h-10 text-green-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-2xl font-bold" style={{ color: 'var(--hc-text)' }}>¡Pedido confirmado!</p>
+            <p className="text-sm mt-2" style={{ color: 'var(--hc-muted)' }}>Tu pedido fue pagado en su totalidad con la gift card.</p>
+          </div>
+          {pagoData?.numeroPedido && (
+            <div className="rounded-2xl p-5 w-full" style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+              <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Número de pedido</p>
+              <p className="text-xl font-bold mt-1 text-[#4f7cff]">{pagoData.numeroPedido}</p>
+            </div>
+          )}
+          <a href="/mis-pedidos" className="px-6 py-3 rounded-xl font-semibold text-sm bg-[#4f7cff] text-white hover:bg-[#3d6ee0] transition-colors">
+            Ver mis pedidos
+          </a>
         </div>
       </MainLayout>
     )
@@ -751,6 +804,54 @@ export default function CheckoutPage() {
                 ))}
               </div>
 
+              {/* Gift card — solo para usuarios autenticados */}
+              {token && (
+                <div className="pt-2">
+                  <p className="text-xs font-medium mb-1.5" style={{ color: 'var(--hc-muted)' }}>¿Tenés una gift card?</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={gcInput}
+                      onChange={(e) => { setGcInput(e.target.value.toUpperCase()); setGcEstado('idle'); setGcSaldo(0); setGcCodigo(null) }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); validarGiftCard() } }}
+                      placeholder="GC-XXXX-XXXX-XXXX"
+                      maxLength={30}
+                      className="flex-1 px-3 py-2 rounded-xl text-xs outline-none transition-all"
+                      style={{
+                        background: 'var(--hc-bg)',
+                        border: `1.5px solid ${gcEstado === 'valid' ? '#10b981' : gcEstado === 'invalid' ? '#f87171' : 'var(--hc-border)'}`,
+                        color: 'var(--hc-text)',
+                        letterSpacing: '0.04em',
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={validarGiftCard}
+                      disabled={gcEstado === 'loading' || !gcInput.trim()}
+                      className="shrink-0 px-3 py-2 rounded-xl text-xs font-semibold transition-all disabled:opacity-40"
+                      style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.25)' }}
+                    >
+                      {gcEstado === 'loading' ? '...' : 'Aplicar'}
+                    </button>
+                  </div>
+                  <AnimatePresence mode="wait">
+                    {gcEstado === 'valid' && (
+                      <motion.p key="gc-ok" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                        className="text-xs text-emerald-400 mt-1 flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        Gift card válida · saldo ₡{new Intl.NumberFormat('es-CR').format(gcSaldo)}
+                      </motion.p>
+                    )}
+                    {gcEstado === 'invalid' && (
+                      <motion.p key="gc-err" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                        className="text-xs text-red-400 mt-1">
+                        Código inválido, vencido o sin saldo
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+
               {/* Campo de cupón */}
               <div className="pt-2">
                 <p className="text-xs font-medium mb-1.5" style={{ color: 'var(--hc-muted)' }}>¿Tenés un cupón?</p>
@@ -806,6 +907,12 @@ export default function CheckoutPage() {
                   <div className="flex justify-between text-emerald-400">
                     <span>Descuento ({cuponDescuento}%)</span>
                     <span>-{formatPrice(descuentoMonto)}</span>
+                  </div>
+                )}
+                {gcAplicado > 0 && (
+                  <div className="flex justify-between text-emerald-400">
+                    <span>Gift card ({gcCodigo})</span>
+                    <span>-{formatPrice(gcAplicado)}</span>
                   </div>
                 )}
                 <div className="flex justify-between" style={{ color: 'var(--hc-muted)' }}>

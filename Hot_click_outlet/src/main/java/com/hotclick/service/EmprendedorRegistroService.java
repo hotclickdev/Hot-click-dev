@@ -134,6 +134,73 @@ public class EmprendedorRegistroService {
         return saved;
     }
 
+    /**
+     * Upgrades an existing USUARIO_FINAL to EMPRENDEDOR by creating their empresa.
+     * Used when a user authenticated via social login (Clerk) wants to register a business.
+     */
+    @Transactional
+    public Usuario upgradeExistingUser(Usuario usuario, String nombreEmpresa,
+                                        String nombreComercial, String telefonoEmpresa,
+                                        String correoEmpresa) {
+        if (usuario.getEmpresa() != null) {
+            throw new IllegalArgumentException("Este usuario ya tiene un negocio registrado");
+        }
+
+        String nombre = sanitizar(nombreEmpresa);
+        if (nombre == null || nombre.isBlank()) {
+            throw new IllegalArgumentException("El nombre del negocio es requerido");
+        }
+
+        String slug     = uniqueSlug(slugify(nombre));
+        String correoEmp = (correoEmpresa != null && !correoEmpresa.isBlank())
+            ? correoEmpresa.trim().toLowerCase()
+            : usuario.getCorreo();
+
+        // 1. Crear empresa
+        Empresa empresa = new Empresa();
+        empresa.setNombreEmpresa(nombre);
+        empresa.setNombreComercial(
+            (nombreComercial != null && !nombreComercial.isBlank())
+                ? sanitizar(nombreComercial.trim()) : nombre);
+        empresa.setSlug(slug);
+        empresa.setCorreoEmpresa(correoEmp);
+        empresa.setTelefonoEmpresa(telefonoEmpresa);
+        empresa.setPlanSaas("GRATUITO");
+        empresa.setEstadoEmpresa("PENDIENTE_APROBACION");
+        empresa.setVisibilidadPublica(false);
+        empresa.setFechaRegistro(LocalDateTime.now());
+        empresa.setEstado(Constants.ESTADO_ACTIVO);
+        empresa = empresaRepository.save(empresa);
+
+        // 2. Cambiar rol a EMPRENDEDOR
+        var rolEmprendedor = rolRepository.findByNombreRol(Constants.ROL_EMPRENDEDOR)
+            .orElseThrow(() -> new RuntimeException("Rol EMPRENDEDOR no configurado"));
+        usuario.getRoles().removeIf(r -> "USUARIO_FINAL".equals(r.getNombreRol()));
+        if (usuario.getRoles().stream().noneMatch(r -> Constants.ROL_EMPRENDEDOR.equals(r.getNombreRol()))) {
+            usuario.getRoles().add(rolEmprendedor);
+        }
+        usuario.setEmpresa(empresa);
+        Usuario saved = usuarioRepository.save(usuario);
+
+        // 3. Registrar membresía
+        MiembroEmpresa miembro = new MiembroEmpresa(saved, empresa, "PROPIETARIO");
+        miembroEmpresaRepository.save(miembro);
+
+        // Recargar para evitar LazyInitializationException
+        saved = usuarioRepository.findById(saved.getId()).orElse(saved);
+        if (saved.getEmpresa() != null) {
+            saved.getEmpresa().getId();
+            saved.getEmpresa().getSlug();
+            saved.getEmpresa().getNombreEmpresa();
+        }
+
+        notificacionEmailService.enviarBienvenidaEmprendedor(
+            saved.getCorreo(), saved.getNombre(),
+            empresa.getNombreComercial());
+
+        return saved;
+    }
+
     private String slugify(String text) {
         String normalized = Normalizer.normalize(text.toLowerCase().trim(), Normalizer.Form.NFD);
         return normalized.replaceAll("[^\\p{ASCII}]", "")

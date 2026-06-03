@@ -62,9 +62,9 @@ public class VentaController {
     @GetMapping("/clientes")
     public ResponseEntity<ResponseDTO> buscarClientes(@RequestParam(required = false) String q) {
         Long empresaId = companyScope.getCurrentEmpresaId();
-        List<Usuario> todos = usuarioRepository.findAll().stream()
-            .filter(u -> empresaId == null || empresaId.equals(u.getEmpresaId()))
-            .collect(Collectors.toList());
+        List<Usuario> todos = empresaId != null
+            ? usuarioRepository.findByEmpresaIdOrderByIdDesc(empresaId)
+            : usuarioRepository.findAllByOrderByIdDesc();
         if (q != null && !q.isBlank()) {
             String lower = q.toLowerCase();
             todos = todos.stream().filter(u ->

@@ -15,6 +15,11 @@ import { productService, normalizeProduct } from '@/services/productService'
 import { useAbandonedCart } from '@/hooks/useAbandonedCart'
 import i18n from './i18n'
 import AdminLayout from '@/layouts/AdminLayout'
+import { useBranding } from '@/hooks/useBranding'
+
+const CLERK_ENABLED = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+const SSOCallback = CLERK_ENABLED ? lazy(() => import('@/pages/SSOCallback')) : null
+const SSOComplete = CLERK_ENABLED ? lazy(() => import('@/pages/SSOComplete')) : null
 
 const HomePage = lazy(() => import('@/pages/HomePage'))
 const ProductsPage = lazy(() => import('@/pages/ProductsPage'))
@@ -55,12 +60,39 @@ const AdminEquipo               = lazy(() => import('@/pages/admin/AdminEquipo')
 const AdminAprobaciones         = lazy(() => import('@/pages/admin/AdminAprobaciones'))
 const AdminMiEmpresa            = lazy(() => import('@/pages/admin/AdminMiEmpresa'))
 const AdminSecurityCenter       = lazy(() => import('@/pages/admin/AdminSecurityCenter'))
+const AdminSuperAdmin           = lazy(() => import('@/pages/admin/AdminSuperAdmin'))
+const AdminObservabilidad       = lazy(() => import('@/pages/admin/AdminObservabilidad'))
+const AdminAiControl            = lazy(() => import('@/pages/admin/AdminAiControl'))
+const AdminFacturas             = lazy(() => import('@/pages/admin/AdminFacturas'))
+const AdminConfigFiscal         = lazy(() => import('@/pages/admin/AdminConfigFiscal'))
 const EmpresaSelectionPage      = lazy(() => import('@/pages/EmpresaSelectionPage'))
 const BlogPage                  = lazy(() => import('@/pages/BlogPage'))
 const EmprendimientosPage       = lazy(() => import('@/pages/EmprendimientosPage'))
 const AdminOfertas              = lazy(() => import('@/pages/admin/AdminOfertas'))
 const AdminBlog                 = lazy(() => import('@/pages/admin/AdminBlog'))
 const AdminConvenios            = lazy(() => import('@/pages/admin/AdminConvenios'))
+const AdminPOS                  = lazy(() => import('@/pages/admin/pos/AdminPOS'))
+const AdminPOSCaja              = lazy(() => import('@/pages/admin/pos/AdminPOSCaja'))
+const AdminPOSHistorial         = lazy(() => import('@/pages/admin/pos/AdminPOSHistorial'))
+const ModeSelector              = lazy(() => import('@/pages/auth/ModeSelector'))
+const AdminCompras              = lazy(() => import('@/pages/admin/AdminCompras'))
+const AdminNuevaCompra          = lazy(() => import('@/pages/admin/AdminNuevaCompra'))
+const AdminProveedores          = lazy(() => import('@/pages/admin/AdminProveedores'))
+const AdminPlanes               = lazy(() => import('@/pages/admin/AdminPlanes'))
+const AdminSuscripcion          = lazy(() => import('@/pages/admin/AdminSuscripcion'))
+const AdminOfflineCola          = lazy(() => import('@/pages/admin/AdminOfflineCola'))
+const AdminMesas                = lazy(() => import('@/pages/admin/AdminMesas'))
+const AdminGiftCards            = lazy(() => import('@/pages/admin/AdminGiftCards'))
+const AdminBranding             = lazy(() => import('@/pages/admin/AdminBranding'))
+const AdminPlugins              = lazy(() => import('@/pages/admin/AdminPlugins'))
+const AdminApiKeys              = lazy(() => import('@/pages/admin/AdminApiKeys'))
+const AdminInventario           = lazy(() => import('@/pages/admin/AdminInventario'))
+const AdminCopilot              = lazy(() => import('@/pages/admin/AdminCopilot'))
+const AdminForecast             = lazy(() => import('@/pages/admin/AdminForecast'))
+const AdminExecutive            = lazy(() => import('@/pages/admin/AdminExecutive'))
+const AdminMultipais            = lazy(() => import('@/pages/admin/AdminMultipais'))
+const SelfCheckoutPage          = lazy(() => import('@/pages/SelfCheckoutPage'))
+const RegistrarNegocioPage      = lazy(() => import('@/pages/RegistrarNegocioPage'))
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -130,11 +162,14 @@ function ITOnlyGuard() {
   return <Outlet />
 }
 
+const POS_ROLES = ['CAJERO', 'GERENTE', 'SUPERVISOR']
+
 function AdminShell() {
   const { token, userRole } = useAuthStore()
   if (!isTokenAlive(token)) return <Navigate to="/login" replace />
   const isAdmin = ['ADMIN_IT', 'ADMIN_CLIENTE', 'EMPRENDEDOR'].includes(userRole)
-  if (!isAdmin) return <Navigate to="/" replace />
+  const isPOS   = POS_ROLES.includes(userRole)
+  if (!isAdmin && !isPOS) return <Navigate to="/" replace />
   return (
     <AdminErrorBoundary>
       <AdminLayout>
@@ -248,11 +283,17 @@ function SocialProofController() {
   return <SocialProofToast notification={notification} />
 }
 
+function BrandingInit() {
+  useBranding()
+  return null
+}
+
 export default function App() {
   return (
     <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
+        <BrandingInit />
         <HtmlClassManager />
         <BrowserRouter>
           <ScrollToTop />
@@ -263,6 +304,10 @@ export default function App() {
               <Route path="/productos/:id" element={<ProductDetailPage />} />
               <Route path="/carrito" element={<CartPage />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/registrar-negocio" element={<ProtectedRoute><RegistrarNegocioPage /></ProtectedRoute>} />
+              {CLERK_ENABLED && <Route path="/sso-callback" element={<SSOCallback />} />}
+              {CLERK_ENABLED && <Route path="/sso-complete" element={<SSOComplete />} />}
+              <Route path="/mode-select" element={<ModeSelector />} />
               <Route path="/seleccionar-negocio" element={<EmpresaSelectionPage />} />
               <Route path="/registro" element={<RegisterPage />} />
               <Route path="/nosotros" element={<NosotrosPage />} />
@@ -302,12 +347,38 @@ export default function App() {
                   <Route path="/admin/testimonios" element={<AdminTestimonios />} />
                   <Route path="/admin/empresas" element={<AdminEmpresas />} />
                   <Route path="/admin/aprobaciones" element={<AdminAprobaciones />} />
-                  <Route path="/admin/security" element={<AdminSecurityCenter />} />
+                  <Route path="/admin/security"    element={<AdminSecurityCenter />} />
+                  <Route path="/admin/superadmin"      element={<AdminSuperAdmin />} />
+                  <Route path="/admin/observabilidad" element={<AdminObservabilidad />} />
+                  <Route path="/admin/ai-control"   element={<AdminAiControl />} />
+                  <Route path="/admin/facturas"     element={<AdminFacturas />} />
+                  <Route path="/admin/config-fiscal" element={<AdminConfigFiscal />} />
+                  <Route path="/admin/billing/planes"      element={<AdminPlanes />} />
+                  <Route path="/admin/billing/suscripcion" element={<AdminSuscripcion />} />
+                  <Route path="/admin/offline/cola"        element={<AdminOfflineCola />} />
+                  <Route path="/admin/mesas"               element={<AdminMesas />} />
+                  <Route path="/admin/gift-cards"          element={<AdminGiftCards />} />
+                  <Route path="/admin/branding"            element={<AdminBranding />} />
+                  <Route path="/admin/plugins"             element={<AdminPlugins />} />
+                  <Route path="/admin/api-keys"            element={<AdminApiKeys />} />
+                  <Route path="/admin/inventario"          element={<AdminInventario />} />
+                  <Route path="/admin/copilot"             element={<AdminCopilot />} />
+                  <Route path="/admin/forecast"            element={<AdminForecast />} />
+                  <Route path="/admin/executive"           element={<AdminExecutive />} />
+                  <Route path="/admin/multipais"           element={<AdminMultipais />} />
                 </Route>
-                <Route path="/admin/ofertas"    element={<AdminOfertas />} />
-                <Route path="/admin/blog"       element={<AdminBlog />} />
-                <Route path="/admin/convenios"  element={<AdminConvenios />} />
+                <Route path="/admin/ofertas"       element={<AdminOfertas />} />
+                <Route path="/admin/blog"          element={<AdminBlog />} />
+                <Route path="/admin/convenios"     element={<AdminConvenios />} />
+                <Route path="/admin/pos"           element={<AdminPOS />} />
+                <Route path="/admin/pos/caja"      element={<AdminPOSCaja />} />
+                <Route path="/admin/pos/historial" element={<AdminPOSHistorial />} />
+                <Route path="/admin/compras"        element={<AdminCompras />} />
+                <Route path="/admin/compras/nueva"  element={<AdminNuevaCompra />} />
+                <Route path="/admin/proveedores"    element={<AdminProveedores />} />
               </Route>
+              {/* Self-checkout QR — público, sin layout de admin */}
+              <Route path="/checkout/qr/:token" element={<SelfCheckoutPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>

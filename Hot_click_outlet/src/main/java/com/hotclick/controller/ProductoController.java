@@ -14,7 +14,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -34,6 +35,7 @@ public class ProductoController {
     @Autowired private ProductoRepository productoRepository;
     @Autowired private CompanyScope       companyScope;
     @Autowired private com.hotclick.repository.EmpresaRepository empresaRepository;
+    @Autowired private com.hotclick.service.StockService stockService;
 
     private static final int MAX_PAGE_SIZE = 100;
 
@@ -61,6 +63,35 @@ public class ProductoController {
             ? productoRepository.findByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO, pageable)
             : productoService.listarTodosActivos(pageable);
         return ResponseEntity.ok(ResponseDTO.success("Productos obtenidos", productos));
+    }
+
+    /** Búsqueda POS: por nombre, SKU o barcode dentro de la empresa. */
+    @GetMapping("/buscar")
+    public ResponseEntity<ResponseDTO> buscar(@RequestParam String q) {
+        Long empresaId = companyScope.getCurrentEmpresaId();
+        if (empresaId == null) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error("Empresa requerida en el contexto"));
+        }
+        if (q == null || q.isBlank()) {
+            return ResponseEntity.ok(ResponseDTO.success("OK", List.of()));
+        }
+        var pageable = PageRequest.of(0, 30);
+        var resultados = productoRepository.buscarPorTextoOCodigoEnEmpresa(q.trim(), empresaId, pageable);
+        return ResponseEntity.ok(ResponseDTO.success("OK", resultados));
+    }
+
+    /** Kardex: historial de movimientos de stock de un producto. */
+    @GetMapping("/{id}/kardex")
+    public ResponseEntity<ResponseDTO> kardex(@PathVariable Long id) {
+        try {
+            var producto = productoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+            companyScope.assertCanAccessNullable(producto.getEmpresaId());
+            var movimientos = stockService.historialPorProducto(id);
+            return ResponseEntity.ok(ResponseDTO.success("OK", movimientos));
+        } catch (Exception e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
+        }
     }
 
     @GetMapping("/destacados")
@@ -133,20 +164,29 @@ public class ProductoController {
     @GetMapping("/{id}")
     public ResponseEntity<ResponseDTO> obtenerProducto(@PathVariable Long id) {
         try {
-            return ResponseEntity.ok(ResponseDTO.success("Producto encontrado", productoService.buscarPorId(id)));
+            Producto producto = productoService.buscarPorId(id);
+            // Tenant check: EMPRENDEDOR/ADMIN_CLIENTE solo ven sus propios productos en el panel admin.
+            // Acceso público (cliente final, anónimo) pasa sin restricción.
+            Long empresaId = companyScope.getCurrentEmpresaId();
+            if (empresaId != null) {
+                companyScope.assertCanAccessNullable(
+                    producto.getEmpresa() != null ? producto.getEmpresa().getId() : null);
+            }
+            return ResponseEntity.ok(ResponseDTO.success("Producto encontrado", producto));
+        } catch (com.hotclick.exception.TenantAccessDeniedException e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));
         } catch (Exception e) {
             return ResponseEntity.status(404).body(ResponseDTO.error(e.getMessage()));
         }
     }
 
     @PostMapping
-    public ResponseEntity<ResponseDTO> crearProducto(
-            @RequestBody ProductoRequestDTO dto,
-            @AuthenticationPrincipal UserDetails userDetails) {
+    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE') or hasAuthority('SCOPE_write:productos')")
+    public ResponseEntity<ResponseDTO> crearProducto(@RequestBody ProductoRequestDTO dto) {
         try {
             Empresa empresa = companyScope.getCurrentEmpresaId() != null
                 ? empresaRepository.findById(companyScope.getCurrentEmpresaId()).orElse(null) : null;
-            var producto = productoService.crearProducto(dto, userDetails.getUsername(), empresa);
+            var producto = productoService.crearProducto(dto, currentUserName(), empresa);
             return ResponseEntity.ok(ResponseDTO.success("Producto creado", producto));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(mensajeAmigable(e)));
@@ -154,19 +194,28 @@ public class ProductoController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE') or hasAuthority('SCOPE_write:productos')")
     public ResponseEntity<ResponseDTO> actualizarProducto(
             @PathVariable Long id,
-            @RequestBody ProductoRequestDTO dto,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @RequestBody ProductoRequestDTO dto) {
         try {
             var existente = productoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
             companyScope.assertCanAccessNullable(existente.getEmpresaId());
-            var producto = productoService.actualizarProducto(id, dto, userDetails.getUsername());
+            var producto = productoService.actualizarProducto(id, dto, currentUserName());
             return ResponseEntity.ok(ResponseDTO.success("Producto actualizado", producto));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(mensajeAmigable(e)));
         }
+    }
+
+    /** Extrae el nombre del principal autenticado. Funciona con JWT (UserDetails) y API key (String). */
+    private static String currentUserName() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) return "sistema";
+        Object principal = auth.getPrincipal();
+        if (principal instanceof UserDetails ud) return ud.getUsername();
+        return principal != null ? principal.toString() : "sistema";
     }
 
     private static String mensajeAmigable(Exception e) {
@@ -220,18 +269,17 @@ public class ProductoController {
     }
 
     @PostMapping("/bulk")
-    public ResponseEntity<ResponseDTO> importarBulk(
-            @RequestBody List<ProductoRequestDTO> dtos,
-            @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<ResponseDTO> importarBulk(@RequestBody List<ProductoRequestDTO> dtos) {
         if (dtos == null || dtos.size() > 200)
             return ResponseEntity.badRequest().body(ResponseDTO.error("El bulk acepta entre 1 y 200 productos por lote"));
         Empresa empresa = companyScope.getCurrentEmpresaId() != null
                 ? empresaRepository.findById(companyScope.getCurrentEmpresaId()).orElse(null) : null;
+        String adminCorreo = currentUserName();
         int ok = 0; int errors = 0;
         StringBuilder errMsg = new StringBuilder();
         for (int i = 0; i < dtos.size(); i++) {
             try {
-                productoService.crearProducto(dtos.get(i), userDetails.getUsername(), empresa);
+                productoService.crearProducto(dtos.get(i), adminCorreo, empresa);
                 ok++;
             } catch (Exception e) {
                 errors++;
@@ -258,6 +306,7 @@ public class ProductoController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE') or hasAuthority('SCOPE_write:productos')")
     public ResponseEntity<ResponseDTO> eliminarProducto(@PathVariable Long id) {
         try {
             var existente = productoRepository.findById(id)

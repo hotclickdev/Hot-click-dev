@@ -209,47 +209,103 @@ public class PayPalPaymentProvider implements PaymentProvider {
     // ================================================================
     // Webhook PayPal — PAYMENT.CAPTURE.COMPLETED (respaldo al capture directo)
     // ================================================================
-    @Transactional
-    public void procesarWebhook(String rawBody, HttpServletRequest request) throws Exception {
-        // Verificar firma con la API de PayPal
+    /**
+     * Verifica la firma del webhook de PayPal.
+     * Debe llamarse síncronamente desde el controller (necesita HttpServletRequest activo).
+     * Lanza SecurityException si la firma es inválida.
+     */
+    public void verificarFirmaWebhook(String rawBody, HttpServletRequest request) {
         String verifyStatus = verificarFirma(rawBody, request);
         if (!"SUCCESS".equals(verifyStatus)) {
             throw new SecurityException("Firma de webhook PayPal inválida: " + verifyStatus);
         }
+    }
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> event = objectMapper.readValue(rawBody, Map.class);
-        String eventType = (String) event.get("event_type");
-        String eventId   = (String) event.get("id");
+    /**
+     * Procesa el contenido del webhook de forma asíncrona.
+     * El controller llama a verificarFirmaWebhook() síncronamente primero,
+     * luego a este método para responder 200 a PayPal antes del timeout de 30s.
+     */
+    @org.springframework.scheduling.annotation.Async("taskExecutor")
+    @Transactional
+    public void procesarContenidoAsync(String rawBody, String ipOrigen) {
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> event = objectMapper.readValue(rawBody, Map.class);
+            String eventType = (String) event.get("event_type");
+            String eventId   = (String) event.get("id");
 
-        if (eventId == null || eventType == null) return;
+            if (eventId == null || eventType == null) return;
 
-        // Idempotencia por eventId
-        if (webhookEventRepository.existsByMerchantTokenAndEventoTipo(eventId, eventType)) {
-            log.info("Webhook PayPal duplicado ignorado: eventId={}", eventId);
-            return;
+            // Idempotencia por eventId
+            if (webhookEventRepository.existsByMerchantTokenAndEventoTipo(eventId, eventType)) {
+                log.info("Webhook PayPal duplicado ignorado: eventId={}", eventId);
+                return;
+            }
+
+            WebhookEvent evento = new WebhookEvent();
+            evento.setMerchantToken(eventId);
+            evento.setEventoTipo(eventType);
+            evento.setPayloadRaw(rawBody);
+            evento.setIpOrigen(ipOrigen);
+            evento.setFechaRecepcion(LocalDateTime.now());
+            evento.setEstado(Constants.ESTADO_ACTIVO);
+            webhookEventRepository.save(evento);
+
+            if ("PAYMENT.CAPTURE.COMPLETED".equals(eventType)) {
+                procesarCapturaCompletada(event, evento);
+            } else if ("PAYMENT.CAPTURE.DENIED".equals(eventType)) {
+                procesarCapturaDenegada(event, evento);
+            }
+
+            evento.setProcesado(true);
+            evento.setProcesadoEn(LocalDateTime.now());
+            webhookEventRepository.save(evento);
+
+            log.info("Webhook PayPal procesado: type={} eventId={}", eventType, eventId);
+        } catch (Exception e) {
+            log.error("Error procesando webhook PayPal async: {}", e.getMessage(), e);
         }
+    }
 
-        WebhookEvent evento = new WebhookEvent();
-        evento.setMerchantToken(eventId);
-        evento.setEventoTipo(eventType);
-        evento.setPayloadRaw(rawBody);
-        evento.setIpOrigen(getIp(request));
-        evento.setFechaRecepcion(LocalDateTime.now());
-        evento.setEstado(Constants.ESTADO_ACTIVO);
-        webhookEventRepository.save(evento);
+    /** @deprecated Use verificarFirmaWebhook + procesarContenidoAsync en el controller. */
+    @Transactional
+    public void procesarWebhook(String rawBody, HttpServletRequest request) throws Exception {
+        verificarFirmaWebhook(rawBody, request);
+        procesarContenidoAsync(rawBody, getIp(request));
+    }
 
-        if ("PAYMENT.CAPTURE.COMPLETED".equals(eventType)) {
-            procesarCapturaCompletada(event, evento);
-        } else if ("PAYMENT.CAPTURE.DENIED".equals(eventType)) {
-            procesarCapturaDenegada(event, evento);
+    /**
+     * Reintenta el procesamiento de un WebhookEvent que quedó sin procesar.
+     * Bypass del chequeo de idempotencia (el registro ya existe en BD).
+     * Llamado por WebhookRetryScheduler para eventos con >5 min sin procesar.
+     */
+    @Transactional
+    public void reintentarProcesamiento(WebhookEvent evento) {
+        evento.setIntentosReintento(evento.getIntentosReintento() + 1);
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> event = objectMapper.readValue(evento.getPayloadRaw(), Map.class);
+            String eventType = (String) event.get("event_type");
+
+            if ("PAYMENT.CAPTURE.COMPLETED".equals(eventType)) {
+                procesarCapturaCompletada(event, evento);
+            } else if ("PAYMENT.CAPTURE.DENIED".equals(eventType)) {
+                procesarCapturaDenegada(event, evento);
+            }
+
+            evento.setProcesado(true);
+            evento.setProcesadoEn(LocalDateTime.now());
+            evento.setErrorProcesamiento(null);
+            webhookEventRepository.save(evento);
+            log.info("[webhook-retry] Reintento exitoso eventId={} type={} intentos={}",
+                evento.getMerchantToken(), eventType, evento.getIntentosReintento());
+        } catch (Exception e) {
+            evento.setErrorProcesamiento(e.getMessage());
+            webhookEventRepository.save(evento);
+            log.error("[webhook-retry] Fallo en reintento eventId={} intentos={}: {}",
+                evento.getMerchantToken(), evento.getIntentosReintento(), e.getMessage());
         }
-
-        evento.setProcesado(true);
-        evento.setProcesadoEn(LocalDateTime.now());
-        webhookEventRepository.save(evento);
-
-        log.info("Webhook PayPal procesado: type={} eventId={}", eventType, eventId);
     }
 
     // ================================================================
