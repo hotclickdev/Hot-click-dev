@@ -26,7 +26,7 @@ public class Carrito extends BaseEntity {
     @Column(name = "estado_carrito", length = 20)
     private String estadoCarrito = "ACTIVO";
 
-    @ManyToOne
+    @ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)
     @JoinColumn(name = "fk_id_usuario_final", nullable = false)
     private Usuario usuarioFinal;
 

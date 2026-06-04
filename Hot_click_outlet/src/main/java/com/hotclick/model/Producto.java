@@ -104,7 +104,7 @@ public class Producto extends BaseEntity {
     private Marca marca;
 
     @JsonIgnore
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_id_admin_cliente", nullable = false)
     private Usuario adminCliente;
 
