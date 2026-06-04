@@ -45,6 +45,7 @@ public class Bodega extends BaseEntity {
     @Column(name = "encargado_nombre", length = 100)
     private String encargadoNombre;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_id_admin_cliente", nullable = false)
     private Usuario adminCliente;
