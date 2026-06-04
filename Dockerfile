@@ -5,7 +5,7 @@ WORKDIR /build
 COPY Hot_click_outlet/pom.xml .
 RUN mvn dependency:go-offline -q
 COPY Hot_click_outlet/src ./src
-RUN mvn clean package -DskipTests -q
+RUN mvn clean package -Dmaven.test.skip=true -q
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
