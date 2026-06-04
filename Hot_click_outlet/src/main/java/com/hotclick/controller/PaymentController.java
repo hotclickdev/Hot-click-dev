@@ -20,7 +20,7 @@ public class PaymentController {
 
     /**
      * Crea un pedido PENDIENTE y una sesión de pago con el proveedor elegido
-     * (PAYXPERT o PAYPAL). Devuelve la redirectUrl al proveedor externo.
+     * (STRIPE, PAYPAL o SINPE). Devuelve la redirectUrl al proveedor externo.
      */
     @PostMapping("/checkout")
     public ResponseEntity<ResponseDTO> checkout(@Valid @RequestBody PaymentCheckoutRequest request) {
@@ -51,7 +51,7 @@ public class PaymentController {
 
     /**
      * Cancela un pedido PENDIENTE y libera el stock reservado.
-     * Llamado por el frontend cuando el usuario regresa de la URL de cancelación de PayXpert/PayPal.
+     * Llamado por el frontend cuando el usuario regresa de la URL de cancelación del proveedor.
      */
     @PostMapping("/cancel/{numeroPedido}")
     public ResponseEntity<ResponseDTO> cancelarPedido(@PathVariable String numeroPedido) {

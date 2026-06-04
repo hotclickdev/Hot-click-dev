@@ -8,8 +8,6 @@ import { formatPrice } from '@/utils/format'
 import useCartStore from '@/store/cartStore'
 import useAuthStore from '@/store/authStore'
 
-const DELAY_PAYXPERT_MS = 2500
-
 export default function PaymentStatusPage() {
   const [params]      = useSearchParams()
   const { pathname }  = useLocation()
@@ -45,12 +43,11 @@ export default function PaymentStatusPage() {
     }
 
     if (provider === 'paypal' && paypalToken) {
-      // URL de retorno PayPal con aprobación — capturar el pago
+      // URL de retorno PayPal con aprobación — capturar el pago directamente
       capturarPayPal(paypalToken, numeroPedido)
     } else {
-      // PayXpert — esperar un poco para dar tiempo al webhook, luego hacer polling
-      const timer = setTimeout(() => iniciarPolling(numeroPedido), DELAY_PAYXPERT_MS)
-      return () => clearTimeout(timer)
+      // Stripe (y otros) — el webhook confirma el pago; iniciamos polling
+      iniciarPolling(numeroPedido)
     }
   }, [numeroPedido])
 
@@ -59,11 +56,9 @@ export default function PaymentStatusPage() {
   // ── Pantalla de carga ──────────────────────────────────────────────
   if (isBusy) {
     const msg = estado === 'capturing'
-      ? 'Confirmando tu pago con PayPal…'
+      ? 'Confirmando tu pago…'
       : 'Verificando tu pago…'
-    const sub = estado === 'capturing'
-      ? 'Esto puede tardar unos segundos'
-      : 'Consultando con la pasarela de pago…'
+    const sub = 'Esto puede tardar unos segundos'
     return (
       <MainLayout>
         <div className="max-w-lg mx-auto px-4 py-32 text-center flex flex-col items-center gap-6">

@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.payment.StripePaymentProvider;
 import com.hotclick.service.SuscripcionService;
 import com.hotclick.service.StripeService;
 import com.stripe.exception.SignatureVerificationException;
@@ -7,14 +8,13 @@ import com.stripe.model.Event;
 import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.Invoice;
 import com.stripe.model.Subscription;
+import com.stripe.model.checkout.Session;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -36,11 +36,14 @@ public class BillingWebhookController {
 
     private final StripeService stripeService;
     private final SuscripcionService suscripcionService;
+    private final StripePaymentProvider stripePaymentProvider;
 
     public BillingWebhookController(StripeService stripeService,
-                                     SuscripcionService suscripcionService) {
-        this.stripeService      = stripeService;
-        this.suscripcionService = suscripcionService;
+                                     SuscripcionService suscripcionService,
+                                     StripePaymentProvider stripePaymentProvider) {
+        this.stripeService          = stripeService;
+        this.suscripcionService     = suscripcionService;
+        this.stripePaymentProvider  = stripePaymentProvider;
     }
 
     @PostMapping("/stripe")
@@ -89,6 +92,13 @@ public class BillingWebhookController {
         EventDataObjectDeserializer deserializer = event.getDataObjectDeserializer();
 
         switch (event.getType()) {
+            case "checkout.session.completed" -> {
+                deserializer.getObject().ifPresent(obj -> {
+                    String ip = "webhook";
+                    stripePaymentProvider.procesarCheckoutCompletado(
+                        (Session) obj, event.toJson(), ip);
+                });
+            }
             case "invoice.payment_succeeded" -> {
                 deserializer.getObject().ifPresent(obj -> {
                     Invoice invoice = (Invoice) obj;

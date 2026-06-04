@@ -48,7 +48,7 @@ public class Constants {
     public static final String CARRITO_ABANDONADO = "ABANDONADO";
     public static final String CARRITO_CONVERTIDO = "CONVERTIDO";
 
-    // Estados de pago PayXpert
+    // Estados de pago
     public static final String PAGO_PENDIENTE    = "PENDIENTE";
     public static final String PAGO_CAPTURADO    = "CAPTURADO";
     public static final String PAGO_FALLIDO      = "FALLIDO";
@@ -64,15 +64,10 @@ public class Constants {
     public static final String ENVIO_DOMICILIO = "ENVIO_A_DOMICILIO";
     public static final String ENVIO_RETIRO    = "RETIRO_EN_TIENDA";
 
-    // PayXpert error code exitoso
-    public static final String PAYXPERT_OK       = "000";
-    public static final String METODO_PAYXPERT   = "PAYXPERT";
-
     // Proveedores de pago
-    public static final String PROVEEDOR_PAYXPERT = "PAYXPERT";
-    public static final String PROVEEDOR_PAYPAL   = "PAYPAL";
-    public static final String PROVEEDOR_STRIPE   = "STRIPE";   // futuro
-    public static final String PROVEEDOR_SINPE    = "SINPE";
+    public static final String PROVEEDOR_STRIPE = "STRIPE";
+    public static final String PROVEEDOR_PAYPAL = "PAYPAL";
+    public static final String PROVEEDOR_SINPE  = "SINPE";
 
     // Estados de pedido SINPE
     public static final String PEDIDO_PENDIENTE_COMPROBANTE = "PENDIENTE_COMPROBANTE";

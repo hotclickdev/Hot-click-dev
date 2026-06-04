@@ -29,7 +29,7 @@ public class Categoria extends BaseEntity {
     @JoinColumn(name = "fk_id_categoria_padre")
     private Categoria categoriaPadre;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_id_admin_cliente", nullable = false)
     private Usuario adminCliente;
 

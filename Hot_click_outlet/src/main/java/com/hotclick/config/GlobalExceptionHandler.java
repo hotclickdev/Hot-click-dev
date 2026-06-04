@@ -128,7 +128,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ResponseDTO> handleGeneral(Exception ex) {
         log.error("Unhandled exception [{}]: {}", ex.getClass().getSimpleName(), ex.getMessage(), ex);
+        // TODO: revert after debugging — remove exception details before final deploy
+        String detail = ex.getClass().getSimpleName() + ": " + (ex.getMessage() != null ? ex.getMessage().substring(0, Math.min(300, ex.getMessage().length())) : "null");
         return ResponseEntity.internalServerError()
-                .body(ResponseDTO.error("Error interno del servidor"));
+                .body(ResponseDTO.error("Error interno: " + detail));
     }
 }

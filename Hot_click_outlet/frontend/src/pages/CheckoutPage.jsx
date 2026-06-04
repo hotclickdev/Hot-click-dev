@@ -91,9 +91,15 @@ export default function CheckoutPage() {
   const { estado, pagoData, error, intentos, maxIntentos, iniciarPago } = usePayment()
   const { t } = useTranslation()
 
-  // TODO[PAYXPERT-REACTIVAR]: agregar de vuelta la opción PAYXPERT aquí.
-  // Ver archive/payxpert/REACTIVACION.md
   const METODOS_PAGO = [
+    {
+      id: 'STRIPE',
+      label: 'Tarjeta / Stripe',
+      descripcion: t('checkout.stripeDesc'),
+      badge: t('checkout.stripeBadge'),
+      badgeColor: 'bg-violet-500/20 text-violet-400 border-violet-500/30',
+      icon: StripeIcon,
+    },
     {
       id: 'PAYPAL',
       label: 'PayPal',
@@ -125,7 +131,7 @@ export default function CheckoutPage() {
   }
 
   const [metodoEnvio,  setMetodoEnvio]  = useState('RETIRO_EN_TIENDA')
-  const [metodoPago,   setMetodoPago]   = useState('PAYPAL')
+  const [metodoPago,   setMetodoPago]   = useState('STRIPE')
   const [notas,        setNotas]        = useState('')
 
   // SINPE state
@@ -702,6 +708,14 @@ export default function CheckoutPage() {
                 })}
               </div>
 
+              {metodoPago === 'STRIPE' && (
+                <div className="p-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--hc-surface) 50%, transparent)', border: '1px solid var(--hc-border)' }}>
+                  <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
+                    {t('checkout.stripeNote')}
+                  </p>
+                </div>
+              )}
+
               {metodoPago === 'PAYPAL' && (
                 <div className="p-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--hc-surface) 50%, transparent)', border: '1px solid var(--hc-border)' }}>
                   <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
@@ -961,7 +975,9 @@ export default function CheckoutPage() {
                 {metodoPago === 'SINPE' ? <SinpeIcon selected /> : <LockIcon />}
                 {metodoPago === 'SINPE'
                   ? `Confirmar SINPE · ${formatPrice(totalFinal)}`
-                  : `${metodoPago === 'PAYPAL' ? t('checkout.payWithPaypal') : t('checkout.payNow')} · ${formatPrice(totalFinal)}`
+                  : metodoPago === 'PAYPAL'
+                    ? `${t('checkout.payWithPaypal')} · ${formatPrice(totalFinal)}`
+                    : `${t('checkout.payWithStripe')} · ${formatPrice(totalFinal)}`
                 }
               </button>
 
@@ -977,6 +993,14 @@ export default function CheckoutPage() {
 }
 
 // ── Íconos ──────────────────────────────────────────────────────────────────
+
+function StripeIcon({ selected }) {
+  return (
+    <svg viewBox="0 0 32 16" className={`w-8 h-5 ${selected ? 'opacity-100' : 'opacity-60'}`} fill="none">
+      <text x="0" y="13" fontSize="11" fontWeight="800" fontFamily="sans-serif" fill="#6772e5">stripe</text>
+    </svg>
+  )
+}
 
 function PayPalIcon({ selected }) {
   return (

@@ -106,7 +106,6 @@ public class SecurityConfig {
                 .requestMatchers(POST, "/api/auth/reenviar-codigo-negocio").authenticated()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/health").permitAll()
-                .requestMatchers(POST, "/api/webhooks/payxpert").permitAll()
                 .requestMatchers(POST, "/api/webhooks/paypal").permitAll()
                 .requestMatchers(POST, "/api/webhooks/stripe").permitAll()
                 // Self-checkout QR — completamente público (sin JWT)
@@ -251,12 +250,12 @@ public class SecurityConfig {
                     res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
                     res.setHeader("Content-Security-Policy",
                         "default-src 'self'; " +
-                        "script-src 'self' 'unsafe-inline' https://www.paypal.com https://www.sandbox.paypal.com; " +
+                        "script-src 'self' 'unsafe-inline' https://www.paypal.com https://www.sandbox.paypal.com https://js.stripe.com; " +
                         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
                         "font-src 'self' https://fonts.gstatic.com; " +
                         "img-src 'self' data: blob: " + supabaseUrl + " https://www.paypalobjects.com; " +
-                        "connect-src 'self' " + supabaseUrl + " https://api-m.paypal.com https://api-m.sandbox.paypal.com; " +
-                        "frame-src https://www.paypal.com https://www.sandbox.paypal.com https://www.youtube.com https://www.youtube-nocookie.com https://www.tiktok.com https://www.instagram.com; " +
+                        "connect-src 'self' " + supabaseUrl + " https://api-m.paypal.com https://api-m.sandbox.paypal.com https://api.stripe.com; " +
+                        "frame-src https://www.paypal.com https://www.sandbox.paypal.com https://js.stripe.com https://hooks.stripe.com https://www.youtube.com https://www.youtube-nocookie.com https://www.tiktok.com https://www.instagram.com; " +
                         "object-src 'none'; " +
                         "base-uri 'self';"
                     );

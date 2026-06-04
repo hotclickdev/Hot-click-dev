@@ -23,8 +23,7 @@ public class PaymentProviderFactory {
     }
 
     public PaymentProvider get(String nombre) {
-        // TODO[PAYXPERT-REACTIVAR]: restaurar "PAYXPERT" como default al reactivar
-        String key = (nombre != null) ? nombre.toUpperCase() : "PAYPAL";
+        String key = (nombre != null) ? nombre.toUpperCase() : "STRIPE";
         PaymentProvider provider = registry.get(key);
         if (provider == null) {
             throw new IllegalArgumentException("Proveedor de pago no soportado: " + nombre

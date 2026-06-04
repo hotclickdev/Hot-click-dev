@@ -9,7 +9,7 @@ import com.hotclick.model.Usuario;
  */
 public interface PaymentProvider {
 
-    /** Identificador único del proveedor (ej. "PAYXPERT", "PAYPAL"). */
+    /** Identificador único del proveedor (ej. "STRIPE", "PAYPAL", "SINPE"). */
     String getNombre();
 
     /**

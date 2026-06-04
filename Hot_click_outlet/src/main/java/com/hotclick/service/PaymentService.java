@@ -61,8 +61,7 @@ public class PaymentService {
             throw new IllegalArgumentException("El carrito no tiene productos");
         }
 
-        // TODO[PAYXPERT-REACTIVAR]: restaurar "PAYXPERT" como default al reactivar
-        String provider = req.getProvider() != null ? req.getProvider().toUpperCase() : "PAYPAL";
+        String provider = req.getProvider() != null ? req.getProvider().toUpperCase() : "STRIPE";
         if (!providerFactory.soporta(provider)) {
             throw new IllegalArgumentException("Proveedor de pago no soportado: " + provider);
         }

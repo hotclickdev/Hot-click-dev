@@ -89,9 +89,9 @@ public class AdminPagoController {
         long capturados = pagoRepository.countByEstadoPagoAndEmpresa("CAPTURADO", empresaId);
         long pendientes = pagoRepository.countByEstadoPagoAndEmpresa("PENDIENTE", empresaId);
         long fallidos   = pagoRepository.countByEstadoPagoAndEmpresa("FALLIDO",   empresaId);
-        long paypal     = pagoRepository.countByProveedorAndEmpresa("PAYPAL",   empresaId);
-        long payxpert   = pagoRepository.countByProveedorAndEmpresa("PAYXPERT", empresaId);
-        long sinpe      = pagoRepository.countByProveedorAndEmpresa("SINPE",    empresaId);
+        long stripe     = pagoRepository.countByProveedorAndEmpresa("STRIPE",  empresaId);
+        long paypal     = pagoRepository.countByProveedorAndEmpresa("PAYPAL",  empresaId);
+        long sinpe      = pagoRepository.countByProveedorAndEmpresa("SINPE",   empresaId);
         long webhooksErr= webhookEventRepository.countByProcesado(false);
 
         double tasaExito = total > 0 ? Math.round((double) capturados / total * 1000.0) / 10.0 : 0.0;
@@ -101,8 +101,8 @@ public class AdminPagoController {
             "capturados",  capturados,
             "pendientes",  pendientes,
             "fallidos",    fallidos,
+            "stripe",      stripe,
             "paypal",      paypal,
-            "payxpert",    payxpert,
             "sinpe",       sinpe,
             "tasaExito",   tasaExito,
             "webhooksErr", webhooksErr

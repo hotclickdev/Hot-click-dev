@@ -1,6 +1,5 @@
 package com.hotclick.controller;
 
-import com.hotclick.dto.PaymentWebhookDTO;
 import com.hotclick.payment.PayPalPaymentProvider;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -18,18 +17,6 @@ public class WebhookController {
     private static final Logger log = LoggerFactory.getLogger(WebhookController.class);
 
     @Autowired private PayPalPaymentProvider payPalProvider;
-
-    // TODO[PAYXPERT-REACTIVAR]: Para reactivar PayXpert, restaurar el handler completo
-    // desde archive/payxpert/REACTIVACION.md y quitar este bloque de 410.
-    @PostMapping("/payxpert")
-    public ResponseEntity<Map<String, String>> recibirWebhookPayXpert(
-            @RequestBody(required = false) PaymentWebhookDTO dto,
-            HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isBlank()) ip = request.getRemoteAddr();
-        log.warn("Webhook PayXpert recibido pero proveedor está ARCHIVADO — ip={}", ip);
-        return ResponseEntity.status(410).body(Map.of("status", "GONE", "message", "PayXpert archived"));
-    }
 
     /**
      * Callback de PayPal para eventos de pago (PAYMENT.CAPTURE.COMPLETED, etc.).

@@ -1522,7 +1522,7 @@ function SeccionSistema({ toast }) {
             { labelKey: 'adminConfig.sysFrontend', value: 'React + Vite',    color: '#a78bfa' },
             { labelKey: 'adminConfig.sysDB',       value: 'Supabase (PG)',   color: '#34d399' },
             { labelKey: 'adminConfig.sysDeploy',   value: 'Render',          color: '#fb923c' },
-            { labelKey: 'adminConfig.sysPayments', value: 'PayXpert/PayPal', color: '#f472b6' },
+            { labelKey: 'adminConfig.sysPayments', value: 'Stripe/PayPal', color: '#f472b6' },
             { labelKey: 'adminConfig.sysStorage',  value: 'Supabase S3',     color: '#60a5fa' },
           ].map(({ labelKey, value, color }) => (
             <div key={labelKey} style={{ padding: '12px', borderRadius: '10px', background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
@@ -1605,7 +1605,7 @@ function SeccionSistema({ toast }) {
             { label: 'Base de datos',     descKey: 'adminConfig.sysSupabaseDesc', color: '#3ecf8e', icon: DBIcon },
             { label: 'Servidor',          descKey: 'adminConfig.sysRenderDesc',   color: '#46e3b7', icon: ServerIcon },
             { label: 'Correo electrónico',descKey: 'adminConfig.sysSendGridDesc', color: '#1a82e2', icon: MailIcon },
-            { label: 'Pasarela de pagos', descKey: 'adminConfig.sysPayXpertDesc', color: '#a78bfa', icon: CardIcon },
+            { label: 'Pasarela de pagos', descKey: 'adminConfig.sysStripeDesc', color: '#a78bfa', icon: CardIcon },
           ].map(({ label, descKey, color, icon: Icon }) => (
             <div key={label}
               style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', borderRadius: '10px', background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', cursor: 'pointer', transition: 'border-color .2s' }}

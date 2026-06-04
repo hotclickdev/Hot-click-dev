@@ -31,7 +31,7 @@ public class Pago extends BaseEntity {
     private String metodoPagoTipo;
 
     @Column(name = "proveedor", length = 20, nullable = false)
-    private String proveedor = "PAYXPERT";
+    private String proveedor = "STRIPE";
 
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
