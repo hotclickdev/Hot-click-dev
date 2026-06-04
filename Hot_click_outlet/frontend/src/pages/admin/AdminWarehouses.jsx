@@ -121,11 +121,26 @@ export default function AdminWarehouses() {
             {warehouses.map((w) => (
               <div key={w.id} className="bg-[#111114] border border-white/8 rounded-2xl p-5 space-y-3">
                 <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold text-[#e8e8ed]">{w.nombreBodega}</h3>
-                    <Badge variant="success" className="mt-1">{w.estado ?? 'ACTIVO'}</Badge>
+                  <div className="flex items-center gap-3 min-w-0">
+                    {/* Logo negocio */}
+                    {w.empresaLogoUrl ? (
+                      <img src={w.empresaLogoUrl} alt={w.empresaNombre ?? 'Negocio'}
+                        className="w-10 h-10 rounded-xl object-contain p-1 shrink-0"
+                        style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }} />
+                    ) : (
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-sm font-bold"
+                        style={{ backgroundColor: 'rgba(79,124,255,0.1)', color: '#4f7cff', border: '1px solid rgba(79,124,255,0.2)' }}>
+                        {(w.nombreBodega ?? 'B').charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-[#e8e8ed] truncate">{w.nombreBodega}</h3>
+                      {w.empresaNombre && (
+                        <p className="text-xs text-[#8e8e9a] truncate">{w.empresaNombre}</p>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex gap-1 shrink-0">
+                  <div className="flex gap-1 shrink-0 ml-2">
                     <button onClick={() => openEdit(w)} className="p-1.5 text-[#8e8e9a] hover:text-white hover:bg-white/8 rounded-lg transition-colors text-sm">✎</button>
                     <button onClick={() => handleDelete(w.id, w.nombreBodega)} className="p-1.5 text-[#8e8e9a] hover:text-red-400 hover:bg-red-500/8 rounded-lg transition-colors text-sm">✕</button>
                   </div>

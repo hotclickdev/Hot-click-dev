@@ -110,7 +110,28 @@ export default function AdminExecutive() {
     } catch {}
   }
 
-  function imprimir() { window.print() }
+  function imprimir() {
+    const style = document.createElement('style')
+    style.id = '__executive-print-style'
+    style.textContent = `
+      @media print {
+        body > * { display: none !important; }
+        #root > * { display: none !important; }
+        #root > div > aside,
+        #root > div > nav,
+        [data-sidebar],
+        nav { display: none !important; }
+        .executive-print-content { display: block !important; }
+      }
+    `
+    document.head.appendChild(style)
+    printRef.current?.classList.add('executive-print-content')
+    window.print()
+    setTimeout(() => {
+      document.getElementById('__executive-print-style')?.remove()
+      printRef.current?.classList.remove('executive-print-content')
+    }, 1000)
+  }
 
   if (cargando) return (
     <div className="flex justify-center py-20">

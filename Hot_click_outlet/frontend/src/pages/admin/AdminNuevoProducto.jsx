@@ -633,6 +633,18 @@ export default function AdminNuevoProducto() {
           </div>
         </div>
 
+        {/* Nota IA */}
+        {paso === 1 && (
+          <div className="flex items-start gap-3 px-4 py-3 rounded-xl text-sm"
+            style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.2)' }}>
+            <span className="text-amber-400 text-base shrink-0 mt-0.5">⚡</span>
+            <span style={{ color: '#fde68a' }}>
+              <strong>Subí fotos del producto</strong> y la IA detectará nombre, precio, categoría y descripción automáticamente.
+              {' '}<span style={{ opacity: 0.75 }}>El análisis puede fallar si la imagen es borrosa o el producto no es reconocible — en ese caso completá el formulario manualmente.</span>
+            </span>
+          </div>
+        )}
+
         {/* Aviso borrador guardado */}
         {tieneBorrador && paso === 1 && (
           <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm"

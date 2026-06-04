@@ -6,6 +6,44 @@ import api from '@/services/api'
 
 const fmt = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
 
+// Secciones del admin con sinónimos — permite buscar por nombre cotidiano
+const SECCIONES = [
+  { label: 'Usuarios / Clientes',   path: '/admin/usuarios',      icon: '👥', keys: ['usuarios','clientes','cliente','usuario','personas','compradores','comprador','gente'] },
+  { label: 'Productos',             path: '/admin/productos',      icon: '📦', keys: ['productos','producto','items','articulos','artículos','catalogo','catálogo','inventario'] },
+  { label: 'Pedidos',               path: '/admin/pedidos',        icon: '🛍', keys: ['pedidos','pedido','ordenes','orden','ventas','venta','compras del cliente'] },
+  { label: 'Marcas',                path: '/admin/marcas',         icon: '🏷', keys: ['marcas','marca','brand','brands','fabricante'] },
+  { label: 'Categorías',            path: '/admin/categorias',     icon: '📂', keys: ['categorias','categoria','categorías','departamentos','secciones','tipos'] },
+  { label: 'Bodegas / Almacenes',   path: '/admin/bodegas',        icon: '🏭', keys: ['bodegas','bodega','almacen','almacén','almacenes','depósito','deposito','stock','inventario'] },
+  { label: 'Finanzas',              path: '/admin/finanzas',       icon: '💰', keys: ['finanzas','finanza','dinero','caja','ingresos','egresos','contabilidad','ganancias'] },
+  { label: 'Reportes',              path: '/admin/reportes',       icon: '📊', keys: ['reportes','reporte','informe','informes','estadisticas','estadísticas','analitica'] },
+  { label: 'Proveedores',           path: '/admin/proveedores',    icon: '🚚', keys: ['proveedores','proveedor','suppliers','suministros','compras'] },
+  { label: 'Compras a Proveedor',   path: '/admin/compras',        icon: '🛒', keys: ['compras','compra','ordenes de compra','orden de compra','reabastecimiento'] },
+  { label: 'Caja POS',              path: '/admin/pos',            icon: '🏪', keys: ['caja','pos','punto de venta','venta directa','tienda fisica','cobros'] },
+  { label: 'Mesas / QR',            path: '/admin/mesas',          icon: '🪑', keys: ['mesas','mesa','qr','restaurante','salon','comensales'] },
+  { label: 'Ofertas / Promociones', path: '/admin/ofertas',        icon: '🏷', keys: ['ofertas','oferta','descuentos','descuento','promociones','promocion','promo'] },
+  { label: 'Blog / Publicaciones',  path: '/admin/blog',           icon: '📝', keys: ['blog','articulos','publicaciones','publicacion','noticias','contenido'] },
+  { label: 'Publicaciones Auto IA', path: '/admin/publicaciones',  icon: '🤖', keys: ['publicaciones','ia','automatico','generar producto','crear producto','ai','inteligencia'] },
+  { label: 'Emprendimientos',       path: '/emprendimientos',      icon: '🏢', keys: ['emprendimientos','emprendimiento','negocios','negocio','pymes','pyme','empresas'] },
+  { label: 'Equipo',                path: '/admin/equipo',         icon: '👤', keys: ['equipo','empleados','empleado','staff','trabajadores','colaboradores','miembros'] },
+  { label: 'Gift Cards',            path: '/admin/gift-cards',     icon: '🎁', keys: ['gift cards','tarjetas regalo','regalos','regalo','vouchers','voucher','cupon','cupón'] },
+  { label: 'API Keys',              path: '/admin/api-keys',       icon: '🔑', keys: ['api','api keys','integraciones','llaves','keys','acceso externo'] },
+  { label: 'Configuración',         path: '/admin/configuracion',  icon: '⚙', keys: ['configuracion','configuración','ajustes','settings','config','preferencias'] },
+  { label: 'Seguridad',             path: '/admin/seguridad',      icon: '🔒', keys: ['seguridad','security','accesos','permisos','auditoria','logs'] },
+  { label: 'Mi Empresa',            path: '/admin/mi-empresa',     icon: '🏠', keys: ['mi empresa','empresa','datos empresa','perfil negocio','negocio','branding'] },
+  { label: 'Facturación Electrónica', path: '/admin/facturacion', icon: '🧾', keys: ['facturacion','facturas','hacienda','comprobantes','electronicos','fiscal'] },
+  { label: 'Plan / Suscripción',    path: '/admin/suscripcion',    icon: '💳', keys: ['plan','suscripcion','suscripción','billing','pago mensual','upgrade'] },
+  { label: 'Observabilidad',        path: '/admin/observabilidad', icon: '📡', keys: ['observabilidad','metricas','métricas','monitoreo','logs','plataforma'] },
+  { label: 'Dashboard',             path: '/admin',                icon: '🏠', keys: ['dashboard','inicio','home','panel','resumen','kpi'] },
+]
+
+function buscarSecciones(q) {
+  const term = q.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  return SECCIONES.filter(s =>
+    s.label.toLowerCase().includes(term) ||
+    s.keys.some(k => k.includes(term) || term.includes(k.split(' ')[0]))
+  ).slice(0, 5)
+}
+
 function ResultGroup({ title, items, onSelect }) {
   if (!items.length) return null
   return (

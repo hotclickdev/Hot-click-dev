@@ -28,9 +28,25 @@ public class BodegaController {
     public ResponseEntity<ResponseDTO> listar() {
         Long empresaId = companyScope.getCurrentEmpresaId();
         var bodegas = empresaId != null
-            ? bodegaRepository.findByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO)
+            ? bodegaRepository.findByEmpresaIdOrNoEmpresaAndEstado(empresaId, Constants.ESTADO_ACTIVO)
             : bodegaRepository.findByEstado(Constants.ESTADO_ACTIVO);
-        return ResponseEntity.ok(ResponseDTO.success("Bodegas", bodegas));
+        var dtos = bodegas.stream().map(b -> {
+            var m = new java.util.LinkedHashMap<String, Object>();
+            m.put("id", b.getId());
+            m.put("nombreBodega", b.getNombreBodega());
+            m.put("direccionExacta", b.getDireccionExacta());
+            m.put("telefono", b.getTelefono());
+            m.put("correoContacto", b.getCorreoContacto());
+            m.put("encargadoNombre", b.getEncargadoNombre());
+            m.put("estado", b.getEstado());
+            if (b.getEmpresa() != null) {
+                m.put("empresaId", b.getEmpresa().getId());
+                m.put("empresaNombre", b.getEmpresa().getNombreEmpresa());
+                m.put("empresaLogoUrl", b.getEmpresa().getLogoUrl());
+            }
+            return m;
+        }).toList();
+        return ResponseEntity.ok(ResponseDTO.success("Bodegas", dtos));
     }
 
     @PostMapping

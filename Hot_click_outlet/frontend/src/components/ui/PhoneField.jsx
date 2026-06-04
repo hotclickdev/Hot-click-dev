@@ -118,6 +118,21 @@ const ORDERED_ISO2 = [
 const iso2Map = Object.fromEntries(defaultCountries.map(c => [parseCountry(c).iso2, c]))
 const COUNTRIES = ORDERED_ISO2.map(iso2 => iso2Map[iso2]).filter(Boolean)
 
+function emojiFlag(iso2) {
+  if (!iso2) return '🌐'
+  return String.fromCodePoint(
+    ...iso2.toUpperCase().split('').map(c => 0x1F1A5 + c.charCodeAt(0))
+  )
+}
+
+function FlagEmoji({ iso2 }) {
+  return (
+    <span style={{ fontSize: 18, lineHeight: 1, userSelect: 'none' }}>
+      {emojiFlag(iso2)}
+    </span>
+  )
+}
+
 export default function PhoneField({
   label,
   value,
@@ -144,6 +159,7 @@ export default function PhoneField({
         countries={COUNTRIES}
         value={value}
         onChange={onChange}
+        FlagComponent={FlagEmoji}
         inputStyle={{
           backgroundColor: 'var(--hc-surface-2)',
           border: `1.5px solid ${error ? '#ef4444' : 'var(--hc-border)'}`,

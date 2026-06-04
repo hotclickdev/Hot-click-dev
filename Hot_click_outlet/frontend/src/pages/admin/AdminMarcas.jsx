@@ -131,72 +131,69 @@ export default function AdminMarcas() {
           </div>
         </div>
 
-        {/* Table */}
+        {/* Grid de tarjetas */}
         {loading ? (
           <div className="flex justify-center py-16"><Spinner size="lg" /></div>
+        ) : marcas.length === 0 ? (
+          <div className="text-center py-14 space-y-3">
+            <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center"
+              style={{ backgroundColor: 'rgba(79,124,255,0.08)', border: '1px solid rgba(79,124,255,0.15)' }}>
+              <svg className="w-7 h-7" style={{ color: '#4f7cff' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+                <line x1="7" y1="7" x2="7.01" y2="7"/>
+              </svg>
+            </div>
+            <p className="font-semibold text-[#e8e8ed]">Sin marcas registradas</p>
+            <p className="text-sm text-[#8e8e9a] max-w-xs mx-auto">Las marcas aparecen en el catálogo y en cada producto.</p>
+            <button onClick={openNew}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold mt-1 transition-opacity hover:opacity-80"
+              style={{ backgroundColor: '#4f7cff', color: '#fff' }}>
+              + Crear primera marca
+            </button>
+          </div>
         ) : (
-          <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-white/8">
-                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-[#8e8e9a] w-16">ID</th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-[#8e8e9a] w-20">Logo</th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-[#8e8e9a]">Nombre</th>
-                  <th className="px-5 py-3.5 text-right text-[11px] font-semibold uppercase tracking-wider text-[#8e8e9a] w-28">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {marcas.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="px-5 py-14 text-center">
-                      <p className="font-semibold text-[#e8e8ed] mb-1">Sin marcas registradas</p>
-                      <p className="text-sm text-[#8e8e9a] mb-3">Las marcas aparecen en el catálogo y en cada producto.</p>
-                      <button onClick={openNew} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80" style={{ backgroundColor: '#4f7cff', color: '#fff' }}>
-                        + Crear primera marca
-                      </button>
-                    </td>
-                  </tr>
-                )}
-                {marcas.map((m) => (
-                  <tr key={m.id} className="hover:bg-white/3 transition-colors">
-                    <td className="px-5 py-4 text-[#8e8e9a] font-mono text-xs">{m.id}</td>
-                    <td className="px-5 py-4">
-                      <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
-                        {m.logoUrl && !imgError[m.id] ? (
-                          <img
-                            src={m.logoUrl}
-                            alt={m.nombreMarca}
-                            className="w-full h-full object-contain p-1"
-                            onError={() => setImgError((p) => ({ ...p, [m.id]: true }))}
-                          />
-                        ) : (
-                          <svg className="w-4 h-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 font-semibold text-[#e8e8ed]">{m.nombreMarca}</td>
-                    <td className="px-5 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => openEdit(m)}
-                          className="p-2 rounded-xl text-[#8e8e9a] hover:text-white hover:bg-white/8 transition-colors"
-                          title="Editar"
-                        >
-                          <EditIcon />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(m.id, m.nombreMarca)}
-                          className="p-2 rounded-xl text-[#8e8e9a] hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                          title="Eliminar"
-                        >
-                          <TrashIcon />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+            {marcas.map((m) => (
+              <div key={m.id}
+                className="group rounded-2xl p-4 flex flex-col items-center gap-3 transition-colors"
+                style={{ backgroundColor: '#111114', border: '1px solid rgba(255,255,255,0.07)' }}>
+                {/* Logo */}
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden shrink-0"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  {m.logoUrl && !imgError[m.id] ? (
+                    <img
+                      src={m.logoUrl}
+                      alt={m.nombreMarca}
+                      className="w-full h-full object-contain p-2"
+                      onError={() => setImgError((p) => ({ ...p, [m.id]: true }))}
+                    />
+                  ) : (
+                    <span className="text-2xl font-bold" style={{ color: '#4f7cff' }}>
+                      {m.nombreMarca.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                {/* Nombre */}
+                <p className="text-sm font-semibold text-center text-[#e8e8ed] truncate w-full text-center leading-tight">
+                  {m.nombreMarca}
+                </p>
+                {/* Acciones */}
+                <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => openEdit(m)}
+                    className="p-1.5 rounded-lg text-[#8e8e9a] hover:text-white hover:bg-white/8 transition-colors"
+                    title="Editar">
+                    <EditIcon />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(m.id, m.nombreMarca)}
+                    className="p-1.5 rounded-lg text-[#8e8e9a] hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                    title="Eliminar">
+                    <TrashIcon />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

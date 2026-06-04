@@ -24,70 +24,78 @@ function buildTree(cats) {
   return roots
 }
 
-function CategoryRow({ node, depth, onEdit, onDelete }) {
+function CategoryCard({ node, onEdit, onDelete, onAddSub }) {
   const [open, setOpen] = useState(true)
-  const hasKids = node.children.length > 0
+  const hasSubs = node.children.length > 0
 
   return (
-    <>
-      <div
-        className="flex items-center justify-between px-4 py-3 rounded-xl border border-white/8 hover:border-white/15 transition-colors"
-        style={{ marginLeft: depth * 24, backgroundColor: depth === 0 ? '#111114' : 'rgba(255,255,255,0.03)' }}
-      >
+    <div className="rounded-2xl overflow-hidden"
+      style={{ border: '1px solid rgba(79,124,255,0.2)', backgroundColor: '#0e0e12' }}>
+      {/* Encabezado grupo */}
+      <div className="flex items-center justify-between px-4 py-3.5"
+        style={{ backgroundColor: 'rgba(79,124,255,0.07)', borderBottom: hasSubs && open ? '1px solid rgba(79,124,255,0.12)' : 'none' }}>
         <div className="flex items-center gap-2 min-w-0">
-          {/* Toggle hijos */}
-          {hasKids ? (
-            <button
-              onClick={() => setOpen((p) => !p)}
-              className="w-5 h-5 flex items-center justify-center text-[#8e8e9a] hover:text-white shrink-0 text-xs"
-            >
-              {open ? '▾' : '▸'}
-            </button>
-          ) : (
-            <span className="w-5 shrink-0" />
-          )}
-
-          {depth > 0 && (
-            <span className="text-[#4f7cff]/50 text-xs shrink-0">↳</span>
-          )}
-
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-lg font-bold"
+            style={{ backgroundColor: 'rgba(79,124,255,0.15)', color: '#4f7cff' }}>
+            {node.nombreCategoria.charAt(0).toUpperCase()}
+          </div>
           <div className="min-w-0">
-            <p className="font-medium text-[#e8e8ed] text-sm truncate">{node.nombreCategoria}</p>
+            <p className="font-semibold text-[#e8e8ed] text-sm truncate">{node.nombreCategoria}</p>
             {node.descripcion && (
               <p className="text-xs text-[#8e8e9a] truncate">{node.descripcion}</p>
             )}
           </div>
-
-          {hasKids && (
-            <span className="ml-2 shrink-0 text-xs px-1.5 py-0.5 rounded-full text-[#8e8e9a]"
-              style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
-              {node.children.length}
+          {hasSubs && (
+            <span className="ml-1 shrink-0 text-xs px-2 py-0.5 rounded-full font-medium"
+              style={{ backgroundColor: 'rgba(79,124,255,0.15)', color: '#7aa3ff' }}>
+              {node.children.length} sub
             </span>
           )}
         </div>
-
-        <div className="flex gap-1 shrink-0 ml-2">
-          <button
-            onClick={() => onEdit(node)}
-            className="p-1.5 text-[#8e8e9a] hover:text-white hover:bg-white/8 rounded-lg transition-colors text-sm"
-          >✎</button>
-          <button
-            onClick={() => onDelete(node)}
-            className="p-1.5 text-[#8e8e9a] hover:text-red-400 hover:bg-red-500/8 rounded-lg transition-colors text-sm"
-          >✕</button>
+        <div className="flex items-center gap-1 shrink-0 ml-2">
+          <button onClick={() => onAddSub(node)}
+            className="px-2 py-1 rounded-lg text-xs font-medium transition-colors"
+            style={{ backgroundColor: 'rgba(79,124,255,0.12)', color: '#7aa3ff' }}
+            title="Agregar subcategoría">
+            + sub
+          </button>
+          <button onClick={() => onEdit(node)}
+            className="p-1.5 text-[#8e8e9a] hover:text-white hover:bg-white/8 rounded-lg transition-colors text-sm">✎</button>
+          <button onClick={() => onDelete(node)}
+            className="p-1.5 text-[#8e8e9a] hover:text-red-400 hover:bg-red-500/8 rounded-lg transition-colors text-sm">✕</button>
+          {hasSubs && (
+            <button onClick={() => setOpen(p => !p)}
+              className="p-1.5 text-[#8e8e9a] hover:text-white rounded-lg transition-colors text-xs">
+              {open ? '▾' : '▸'}
+            </button>
+          )}
         </div>
       </div>
 
-      {open && hasKids && node.children.map((child) => (
-        <CategoryRow
-          key={child.id}
-          node={child}
-          depth={depth + 1}
-          onEdit={onEdit}
-          onDelete={onDelete}
-        />
-      ))}
-    </>
+      {/* Subcategorías en grid */}
+      {hasSubs && open && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 p-3">
+          {node.children.map(sub => (
+            <div key={sub.id}
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl group"
+              style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-[#e8e8ed] truncate">{sub.nombreCategoria}</p>
+                {sub.descripcion && (
+                  <p className="text-[11px] text-[#8e8e9a] truncate">{sub.descripcion}</p>
+                )}
+              </div>
+              <div className="flex gap-0.5 shrink-0 ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => onEdit(sub)}
+                  className="p-1 text-[#8e8e9a] hover:text-white rounded text-xs">✎</button>
+                <button onClick={() => onDelete(sub)}
+                  className="p-1 text-[#8e8e9a] hover:text-red-400 rounded text-xs">✕</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -127,7 +135,11 @@ export default function AdminCategories() {
     return cats.filter((c) => !descIds.has(String(c.id)))
   }, [cats, editing])
 
-  const openNew = () => { setEditing(null); setForm(EMPTY); setModalOpen(true) }
+  const openNew = (presetPadreId = '') => {
+    setEditing(null)
+    setForm({ ...EMPTY, padreId: presetPadreId ? String(presetPadreId) : '' })
+    setModalOpen(true)
+  }
   const openEdit = (c) => {
     setEditing(c)
     setForm({
@@ -186,7 +198,7 @@ export default function AdminCategories() {
           <div>
             <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.categories.title')}</h1>
             <p className="text-sm text-[#8e8e9a] mt-1">
-              {cats.filter((c) => !c.padreId).length} categorías •{' '}
+              {cats.filter((c) => !c.padreId).length} grupos •{' '}
               {cats.filter((c) => c.padreId).length} subcategorías
             </p>
           </div>
@@ -213,7 +225,7 @@ export default function AdminCategories() {
                 load()
               }}
             />
-            <Button onClick={openNew}>+ {t('admin.categories.new')}</Button>
+            <Button onClick={() => openNew()}>+ Nuevo grupo</Button>
           </div>
         </div>
 
@@ -239,14 +251,14 @@ export default function AdminCategories() {
             >+ Crear primera categoría</button>
           </div>
         ) : (
-          <div className="space-y-1.5">
+          <div className="space-y-3">
             {tree.map((node) => (
-              <CategoryRow
+              <CategoryCard
                 key={node.id}
                 node={node}
-                depth={0}
                 onEdit={openEdit}
                 onDelete={handleDelete}
+                onAddSub={(parent) => openNew(parent.id)}
               />
             ))}
           </div>
@@ -264,25 +276,25 @@ export default function AdminCategories() {
           <Input label="Descripción" value={form.descripcion} onChange={set('descripcion')} />
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-[#e8e8ed]">Categoría padre (opcional)</label>
+            <label className="text-sm font-medium text-[#e8e8ed]">Grupo al que pertenece (opcional)</label>
             <select
               value={form.padreId}
               onChange={set('padreId')}
               className="h-11 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60"
             >
-              <option value="">Sin padre — categoría raíz</option>
+              <option value="">Ninguno — categoría principal</option>
               {padreOptions.map((c) => (
                 <option key={c.id} value={c.id}>{padreLabel(c)}</option>
               ))}
             </select>
             <p className="text-xs text-[#8e8e9a]">
-              Si seleccionás una categoría padre, esta pasa a ser subcategoría de ella.
+              Si elegís un grupo, esta pasa a ser subcategoría dentro de él.
             </p>
           </div>
 
           <div className="flex gap-3 pt-1">
             <Button type="submit" loading={saving} className="flex-1">
-              {editing ? t('common.save') : t('admin.categories.new')}
+              {editing ? 'Guardar cambios' : form.padreId ? 'Crear subcategoría' : 'Crear grupo'}
             </Button>
             <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>
               {t('common.cancel')}
