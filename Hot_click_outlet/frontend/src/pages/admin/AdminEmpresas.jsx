@@ -81,7 +81,7 @@ export default function AdminEmpresas() {
   const [empresas, setEmpresas]   = useState([])
   const [loading, setLoading]     = useState(true)
   const [search, setSearch]       = useState('')
-  const [filtroEstado, setFiltroEstado] = useState('ALL')
+  const [filtroEstado, setFiltroEstado] = useState('ACTIVO')
   const [filtroPlan, setFiltroPlan]     = useState('ALL')
   const [page, setPage]           = useState(0)
   const [selected, setSelected]   = useState(null)  // empresa en drawer

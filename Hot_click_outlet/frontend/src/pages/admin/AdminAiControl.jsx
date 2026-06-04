@@ -34,22 +34,25 @@ function PctBar({ pct, limite }) {
 }
 
 export default function AdminAiControl() {
+  const now = new Date()
   const [data, setData]         = useState(null)
   const [cargando, setCargando] = useState(true)
   const [tab, setTab]           = useState('control')
   const [toggling, setToggling] = useState(null)
   const [error, setError]       = useState(null)
+  const [periodoAnio, setPeriodoAnio] = useState(now.getFullYear())
+  const [periodoMes,  setPeriodoMes]  = useState(now.getMonth() + 1)
 
-  async function cargar() {
+  async function cargar(anio, mes) {
     setCargando(true); setError(null)
     try {
-      const { data: d } = await api.get('/security/ai/dashboard')
+      const { data: d } = await api.get('/security/ai/dashboard', { params: { anio, mes } })
       setData(d)
     } catch { setError('No se pudo cargar el panel de control de IA') }
     finally { setCargando(false) }
   }
 
-  useEffect(() => { cargar() }, [])
+  useEffect(() => { cargar(periodoAnio, periodoMes) }, [periodoAnio, periodoMes])
 
   async function toggleFlag(empresaId, flag, activo) {
     const key = `${empresaId}-${flag}`
@@ -95,11 +98,28 @@ export default function AdminAiControl() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--hc-text)' }}>Control de IA</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>
-          Gestión de features de IA por cuenta · Consumo del mes {mes}
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--hc-text)' }}>Control de IA</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>
+            Gestión de features de IA por cuenta · Consumo del período
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <select value={periodoMes} onChange={e => setPeriodoMes(Number(e.target.value))}
+            className="px-3 py-1.5 rounded-lg text-sm outline-none"
+            style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}>
+            {['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+              .map((m, i) => <option key={i+1} value={i+1}>{m}</option>)}
+          </select>
+          <select value={periodoAnio} onChange={e => setPeriodoAnio(Number(e.target.value))}
+            className="px-3 py-1.5 rounded-lg text-sm outline-none"
+            style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}>
+            {[now.getFullYear(), now.getFullYear()-1, now.getFullYear()-2].map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {error && (

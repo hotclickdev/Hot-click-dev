@@ -4,10 +4,11 @@ import { crmService } from '@/services/crmService'
 const fmt = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
 
 const METODOS = [
-  { id: 'EFECTIVO',      label: 'Efectivo',      icon: '💵' },
-  { id: 'SINPE',        label: 'SINPE',          icon: '📱' },
-  { id: 'TARJETA',      label: 'Tarjeta',        icon: '💳' },
-  { id: 'TRANSFERENCIA',label: 'Transferencia',  icon: '🏦' },
+  { id: 'EFECTIVO',      label: 'Efectivo',              icon: '💵', desc: 'Calcula vuelto' },
+  { id: 'TARJETA',      label: 'Tarjeta (manual)',       icon: '💳', desc: 'Sin datafono' },
+  { id: 'SINPE',        label: 'SINPE',                  icon: '📱', desc: 'Transferencia móvil' },
+  { id: 'TRANSFERENCIA',label: 'Transferencia',          icon: '🏦', desc: 'Banco' },
+  { id: 'DATAFONO',     label: 'Datafono integrado',     icon: '🔌', desc: 'Próximamente', disabled: true },
 ]
 
 const SEG_COLOR = { NUEVO: '#60a5fa', FRECUENTE: '#34d399', VIP: '#fbbf24', INACTIVO: '#8e8e9a' }
@@ -92,14 +93,19 @@ export default function POSPaymentPanel({ total, onConfirm, onClose, loading }) 
           <p className="text-xs font-medium mb-2" style={{ color: 'var(--hc-muted)' }}>Método de pago</p>
           <div className="grid grid-cols-2 gap-2">
             {METODOS.map(m => (
-              <button key={m.id} onClick={() => setMetodoPago(m.id)}
-                className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+              <button key={m.id} onClick={() => !m.disabled && setMetodoPago(m.id)}
+                disabled={m.disabled}
+                title={m.disabled ? 'Próximamente' : m.desc}
+                className="flex flex-col items-start px-3 py-2.5 rounded-xl text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{
                   backgroundColor: metodoPago === m.id ? 'var(--hc-accent)' : 'rgba(255,255,255,0.05)',
                   color: metodoPago === m.id ? '#fff' : 'var(--hc-muted)',
-                  border: `1px solid ${metodoPago === m.id ? 'var(--hc-accent)' : 'rgba(255,255,255,0.08)'}`,
+                  border: `1px solid ${metodoPago === m.id ? 'var(--hc-accent)' : m.disabled ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.08)'}`,
                 }}>
-                <span>{m.icon}</span><span>{m.label}</span>
+                <span className="flex items-center gap-1.5">{m.icon} {m.label}</span>
+                {m.desc && (
+                  <span className="text-[10px] mt-0.5 opacity-60">{m.desc}</span>
+                )}
               </button>
             ))}
           </div>

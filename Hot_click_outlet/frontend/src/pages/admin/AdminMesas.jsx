@@ -211,15 +211,22 @@ export default function AdminMesas() {
                 <button onClick={() => setQrMesa(m)}
                   className="flex-1 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80"
                   style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-                  Ver QR completo
+                  Ver QR
                 </button>
+                <a href="/productos" target="_blank" rel="noopener noreferrer"
+                  className="flex-1 py-1.5 rounded-lg text-xs font-semibold text-center transition-opacity hover:opacity-80"
+                  style={{ backgroundColor: 'rgba(52,211,153,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.25)' }}>
+                  📋 Menú digital
+                </a>
+              </div>
+              <div className="flex gap-2">
                 <button onClick={() => toggleActivo(m)}
-                  className="px-3 py-1.5 rounded-lg text-xs transition-opacity hover:opacity-80"
+                  className="flex-1 py-1.5 rounded-lg text-xs transition-opacity hover:opacity-80"
                   style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
                   {m.activo ? 'Desactivar' : 'Activar'}
                 </button>
                 <button onClick={() => regenerarToken(m)}
-                  className="px-3 py-1.5 rounded-lg text-xs transition-opacity hover:opacity-80"
+                  className="flex-1 py-1.5 rounded-lg text-xs transition-opacity hover:opacity-80"
                   style={{ border: '1px solid rgba(239,68,68,0.3)', color: '#f87171' }}
                   title="Genera un nuevo QR — el anterior deja de funcionar">
                   ↺ Nuevo QR

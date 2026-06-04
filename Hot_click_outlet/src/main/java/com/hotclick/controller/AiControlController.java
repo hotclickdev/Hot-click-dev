@@ -26,8 +26,12 @@ public class AiControlController {
     private static final double PRECIO_OUTPUT_POR_TOKEN = 0.000004;   // $4.00 / M
 
     @GetMapping("/dashboard")
-    public ResponseEntity<?> dashboard() {
-        // Usage per empresa for current month
+    public ResponseEntity<?> dashboard(
+            @RequestParam(required = false) Integer anio,
+            @RequestParam(required = false) Integer mes) {
+        int targetAnio = (anio != null) ? anio : java.time.LocalDate.now().getYear();
+        int targetMes  = (mes  != null) ? mes  : java.time.LocalDate.now().getMonthValue();
+
         String sql = """
             SELECT
               e.id_empresa,
@@ -40,13 +44,13 @@ public class AiControlController {
             FROM hot_click_empresa_tb e
             LEFT JOIN hot_click_ai_uso_tb u
                    ON u.fk_id_empresa = e.id_empresa
-                  AND u.anio = EXTRACT(YEAR  FROM NOW())
-                  AND u.mes  = EXTRACT(MONTH FROM NOW())
+                  AND u.anio = ?
+                  AND u.mes  = ?
             WHERE e.estado_empresa = 'ACTIVO'
             ORDER BY COALESCE(u.llamadas, 0) DESC, e.nombre_empresa
             """;
 
-        List<Map<String, Object>> rows = jdbc.queryForList(sql);
+        List<Map<String, Object>> rows = jdbc.queryForList(sql, targetAnio, targetMes);
 
         // Plan limits (same as AiQuotaService)
         Map<String, Integer> limites = Map.of("GRATUITO", 0, "PRO", 50, "ENTERPRISE", 500);

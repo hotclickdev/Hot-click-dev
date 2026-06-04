@@ -30,7 +30,7 @@ export default function AdminAprobaciones() {
       // Interceptor unwraps ResponseDTO → data is already the array
       const { data: sol } = await api.get('/admin/solicitudes-aprobacion')
       const lista = Array.isArray(sol) ? sol : []
-      setSolicitudes(lista)
+      setSolicitudes(lista.filter(e => e.estadoEmpresa === 'PENDIENTE_APROBACION'))
       // Compute stats locally
       const { data: todas } = await api.get('/admin/empresas')
       const t = Array.isArray(todas) ? todas : []
