@@ -219,6 +219,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/**").authenticated()
                 // Rutas del SPA React (frontend)
                 .requestMatchers("/error", "/error/**").permitAll()
+                .requestMatchers("/sw.js", "/manifest.webmanifest", "/workbox-*.js",
+                    "/registerSW.js", "/vite.svg", "/robots.txt").permitAll()
                 .requestMatchers("/", "/*.html", "/*.ico", "/*.jpg", "/*.jpeg", "/*.png",
                     "/*.svg", "/*.webp", "/favicon.ico", "/pages/**", "/css/**", "/js/**",
                     "/images/**", "/assets/**", "/admin/**",
@@ -250,7 +252,7 @@ public class SecurityConfig {
                     res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
                     res.setHeader("Content-Security-Policy",
                         "default-src 'self'; " +
-                        "script-src 'self' 'unsafe-inline' https://www.paypal.com https://www.sandbox.paypal.com https://js.stripe.com; " +
+                        "script-src 'self' 'unsafe-inline' https://www.paypal.com https://www.sandbox.paypal.com https://js.stripe.com https://*.clerk.accounts.dev https://clerk.browser.js; " +
                         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
                         "font-src 'self' https://fonts.gstatic.com; " +
                         "img-src 'self' data: blob: " + supabaseUrl + " https://www.paypalobjects.com; " +
