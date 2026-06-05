@@ -118,6 +118,7 @@ public class SecurityConfig {
                 .requestMatchers(GET,  "/api/payments/status/*").permitAll()
                 // Catálogo público - solo GETs específicos
                 .requestMatchers(GET, "/api/productos/admin/todos").authenticated()
+                .requestMatchers(GET, "/api/productos/pos/**").authenticated()
                 .requestMatchers(GET, "/api/productos").permitAll()
                 .requestMatchers(GET, "/api/productos/destacados").permitAll()
                 .requestMatchers(GET, "/api/productos/marca/*").permitAll()

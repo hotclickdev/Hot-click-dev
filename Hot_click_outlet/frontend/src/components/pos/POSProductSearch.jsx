@@ -1,57 +1,92 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { productService } from '@/services/productService'
+import api from '@/services/api'
 
 const fmt = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
 
+// Paleta de colores para las tarjetas de categoría
+const CAT_COLORS = [
+  { bg: 'rgba(79,124,255,0.15)',  border: 'rgba(79,124,255,0.35)',  text: '#7aa3ff' },
+  { bg: 'rgba(52,211,153,0.15)', border: 'rgba(52,211,153,0.35)', text: '#34d399' },
+  { bg: 'rgba(251,191,36,0.15)', border: 'rgba(251,191,36,0.35)', text: '#fbbf24' },
+  { bg: 'rgba(239,68,68,0.15)',  border: 'rgba(239,68,68,0.35)',  text: '#f87171' },
+  { bg: 'rgba(168,85,247,0.15)', border: 'rgba(168,85,247,0.35)', text: '#a855f7' },
+  { bg: 'rgba(251,146,60,0.15)', border: 'rgba(251,146,60,0.35)', text: '#fb923c' },
+  { bg: 'rgba(20,184,166,0.15)', border: 'rgba(20,184,166,0.35)', text: '#14b8a6' },
+  { bg: 'rgba(236,72,153,0.15)', border: 'rgba(236,72,153,0.35)', text: '#ec4899' },
+]
+
+function CatColor(idx) { return CAT_COLORS[idx % CAT_COLORS.length] }
+
 export default function POSProductSearch({ onAdd }) {
-  const [query, setQuery]     = useState('')
-  const [results, setResults] = useState([])
-  const [loading, setLoading] = useState(false)
-  const timerRef   = useRef(null)
+  const [categorias, setCategorias]     = useState([])
+  const [catSel, setCatSel]             = useState(null)   // { id, nombreCategoria }
+  const [productos, setProductos]       = useState([])
+  const [loadingCat, setLoadingCat]     = useState(false)
+  const [loadingProd, setLoadingProd]   = useState(false)
+  const [query, setQuery]               = useState('')
+  const [searchResults, setSearchResults] = useState([])
+  const [searchLoading, setSearchLoading] = useState(false)
   const inputRef   = useRef(null)
-  // Scanner: detecta entrada rápida de lector de barras (≥4 chars en <200ms)
+  const timerRef   = useRef(null)
   const scanBuffer = useRef('')
   const scanTimer  = useRef(null)
 
+  // Cargar categorías con productos en la empresa
   useEffect(() => {
-    inputRef.current?.focus()
+    setLoadingCat(true)
+    api.get('/categorias')
+      .then(({ data }) => {
+        const cats = Array.isArray(data) ? data : (data?.data ?? [])
+        setCategorias(cats)
+      })
+      .catch(() => {})
+      .finally(() => setLoadingCat(false))
+  }, [])
+
+  const cargarPorCategoria = useCallback((cat) => {
+    setCatSel(cat)
+    setQuery('')
+    setSearchResults([])
+    setLoadingProd(true)
+    api.get(`/productos/pos/categoria/${cat.id}`)
+      .then(({ data }) => {
+        const list = data?.data ?? []
+        setProductos(Array.isArray(list) ? list : [])
+      })
+      .catch(() => setProductos([]))
+      .finally(() => setLoadingProd(false))
   }, [])
 
   const buscar = useCallback((q) => {
-    if (!q || q.trim().length < 2) { setResults([]); return }
-    setLoading(true)
+    if (!q || q.trim().length < 2) { setSearchResults([]); return }
+    setSearchLoading(true)
     productService.buscar(q.trim())
-      .then(setResults)
-      .catch(() => setResults([]))
-      .finally(() => setLoading(false))
+      .then(setSearchResults)
+      .catch(() => setSearchResults([]))
+      .finally(() => setSearchLoading(false))
   }, [])
 
   const handleChange = (e) => {
     const v = e.target.value
     setQuery(v)
+    if (v) setCatSel(null)
     clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => buscar(v), 200)
   }
 
   const handleKeyDown = (e) => {
-    // Enter con 1 resultado → agregar directo
     if (e.key === 'Enter') {
-      if (results.length === 1) {
-        handleAdd(results[0])
-      }
+      const lista = query ? searchResults : productos
+      if (lista.length === 1) handleAdd(lista[0])
       return
     }
-
-    // Scanner mode: caracteres llegan muy rápido (lector de barras)
     clearTimeout(scanTimer.current)
     scanBuffer.current += e.key.length === 1 ? e.key : ''
     scanTimer.current = setTimeout(() => {
       const code = scanBuffer.current.trim()
       scanBuffer.current = ''
-      if (code.length >= 4) {
-        // Buscar exacto por barcode/SKU primero, luego texto
-        buscar(code)
-      }
+      if (code.length >= 4) buscar(code)
     }, 80)
   }
 
@@ -59,14 +94,13 @@ export default function POSProductSearch({ onAdd }) {
     const stock = producto.stockActual ?? producto.stock ?? 0
     if (stock <= 0) return
     onAdd(producto)
-    setQuery('')
-    setResults([])
-    inputRef.current?.focus()
   }
+
+  const displayList = query ? searchResults : productos
 
   return (
     <div className="flex flex-col gap-3 h-full">
-      {/* Input búsqueda */}
+      {/* Búsqueda */}
       <div className="relative">
         <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--hc-muted)' }}
           fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -78,81 +112,159 @@ export default function POSProductSearch({ onAdd }) {
           value={query}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          placeholder="Nombre, SKU o escanea barcode…  (F2)"
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm outline-none transition-all"
+          placeholder="Buscar o escanear barcode… (F2)"
+          className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm outline-none"
           style={{
             backgroundColor: 'var(--hc-surface)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            border: `1px solid ${query ? 'rgba(79,124,255,0.4)' : 'rgba(255,255,255,0.08)'}`,
             color: 'var(--hc-text)',
           }}
         />
-        {loading && (
+        {(searchLoading || loadingProd) && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 rounded-full animate-spin"
             style={{ borderColor: 'var(--hc-accent)', borderTopColor: 'transparent' }}/>
         )}
       </div>
 
-      {/* Grid resultados */}
-      {results.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 overflow-y-auto flex-1">
-          {results.map(p => {
-            const stock   = p.stockActual ?? p.stock ?? 0
-            const agotado = stock <= 0
-            const bajo    = !agotado && stock <= (p.stockMinimo ?? 5)
-            return (
-              <button
-                key={p.id ?? p.idProducto}
-                onClick={() => handleAdd(p)}
-                disabled={agotado}
-                className="flex flex-col rounded-xl p-3 text-left transition-all hover:scale-[1.02] disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{
-                  backgroundColor: 'var(--hc-surface)',
-                  border: `1px solid ${agotado ? 'rgba(239,68,68,0.3)' : bajo ? 'rgba(251,191,36,0.3)' : 'rgba(255,255,255,0.06)'}`,
-                }}
-              >
-                {p.imagenPrincipalUrl && (
-                  <img src={p.imagenPrincipalUrl} alt={p.nombreProducto}
-                    className="w-full h-20 object-cover rounded-lg mb-2" />
-                )}
-                <p className="text-xs font-medium line-clamp-2" style={{ color: 'var(--hc-text)' }}>
-                  {p.nombreProducto ?? p.nombre}
-                </p>
-                {(p.sku || p.barcode) && (
-                  <p className="text-[10px] mt-0.5 font-mono" style={{ color: 'var(--hc-muted)' }}>
-                    {p.sku ?? p.barcode}
-                  </p>
-                )}
-                <p className="text-sm font-bold mt-1" style={{ color: 'var(--hc-accent)' }}>
-                  ₡{fmt(p.precioEfectivo ?? p.precioVenta ?? p.precio)}
-                </p>
-                <p className={`text-[10px] mt-0.5 font-medium ${agotado ? 'text-red-400' : bajo ? 'text-yellow-400' : ''}`}
-                  style={!agotado && !bajo ? { color: 'var(--hc-muted)' } : {}}>
-                  {agotado ? 'Agotado' : `Stock: ${stock}`}
-                </p>
-              </button>
-            )
-          })}
-        </div>
-      )}
-
-      {results.length === 0 && query && !loading && (
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>Sin resultados para "{query}"</p>
-        </div>
-      )}
-
-      {results.length === 0 && !query && (
-        <div className="flex-1 flex items-center justify-center opacity-30">
-          <div className="text-center space-y-2">
-            <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" strokeWidth={1}
-              viewBox="0 0 24 24" style={{ color: 'var(--hc-muted)' }}>
-              <rect x="2" y="3" width="20" height="14" rx="2"/>
-              <path d="M8 21h8M12 17v4"/><path d="M6 7h4M6 10h6M6 13h2"/>
-            </svg>
-            <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>Buscá o escaneá un producto</p>
-          </div>
+      {/* Vista: categorías o productos */}
+      {!query ? (
+        /* ── Categorías ─────────────────────────────────── */
+        <>
+          {!catSel ? (
+            <div className="flex-1 overflow-y-auto">
+              {loadingCat ? (
+                <div className="flex justify-center py-8">
+                  <div className="w-6 h-6 border-2 rounded-full animate-spin"
+                    style={{ borderColor: 'var(--hc-accent)', borderTopColor: 'transparent' }}/>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  {categorias.map((cat, i) => {
+                    const c = CatColor(i)
+                    return (
+                      <button key={cat.id}
+                        onClick={() => cargarPorCategoria(cat)}
+                        className="flex flex-col items-center justify-center gap-1.5 p-4 rounded-2xl text-center transition-all hover:scale-[1.03] active:scale-[0.97]"
+                        style={{ backgroundColor: c.bg, border: `1.5px solid ${c.border}`, minHeight: 80 }}>
+                        <span className="text-2xl">
+                          {categoryEmoji(cat.nombreCategoria)}
+                        </span>
+                        <span className="text-xs font-semibold leading-tight" style={{ color: c.text }}>
+                          {cat.nombreCategoria}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          ) : (
+            /* ── Productos de la categoría ──────────────── */
+            <>
+              <div className="flex items-center gap-2">
+                <button onClick={() => { setCatSel(null); setProductos([]) }}
+                  className="p-1.5 rounded-lg hover:bg-white/8 transition-colors"
+                  style={{ color: 'var(--hc-muted)' }}>
+                  ← Volver
+                </button>
+                <span className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
+                  {catSel.nombreCategoria}
+                </span>
+                <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+                  ({productos.length} productos)
+                </span>
+              </div>
+              <div className="flex-1 overflow-y-auto">
+                <ProductGrid items={productos} onAdd={handleAdd} />
+              </div>
+            </>
+          )}
+        </>
+      ) : (
+        /* ── Resultados de búsqueda ──────────────────────── */
+        <div className="flex-1 overflow-y-auto">
+          {searchResults.length === 0 && !searchLoading ? (
+            <div className="flex items-center justify-center h-32">
+              <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>Sin resultados para "{query}"</p>
+            </div>
+          ) : (
+            <ProductGrid items={searchResults} onAdd={handleAdd} />
+          )}
         </div>
       )}
     </div>
   )
+}
+
+function ProductGrid({ items, onAdd }) {
+  if (!items.length) {
+    return (
+      <div className="flex flex-col items-center justify-center h-32 gap-2 opacity-40">
+        <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>Sin productos en esta categoría</p>
+      </div>
+    )
+  }
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+      {items.map(p => {
+        const stock   = p.stockActual ?? p.stock ?? 0
+        const agotado = stock <= 0
+        const bajo    = !agotado && stock <= (p.stockMinimo ?? 5)
+        return (
+          <button key={p.id ?? p.idProducto}
+            onClick={() => !agotado && onAdd(p)}
+            disabled={agotado}
+            className="flex flex-col rounded-2xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{
+              backgroundColor: 'var(--hc-surface)',
+              border: `1.5px solid ${agotado ? 'rgba(239,68,68,0.2)' : bajo ? 'rgba(251,191,36,0.25)' : 'rgba(255,255,255,0.07)'}`,
+            }}>
+            {/* Imagen */}
+            <div className="w-full aspect-square overflow-hidden"
+              style={{ backgroundColor: 'rgba(255,255,255,0.04)' }}>
+              {p.imagenPrincipalUrl ? (
+                <img src={p.imagenPrincipalUrl} alt={p.nombreProducto}
+                  className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-3xl opacity-30">
+                  📦
+                </div>
+              )}
+            </div>
+            {/* Info */}
+            <div className="p-2 flex flex-col gap-0.5">
+              <p className="text-xs font-medium line-clamp-2 leading-tight"
+                style={{ color: 'var(--hc-text)' }}>
+                {p.nombreProducto ?? p.nombre}
+              </p>
+              <p className="text-sm font-bold" style={{ color: 'var(--hc-accent)' }}>
+                ₡{fmt(p.precioEfectivo ?? p.precioVenta ?? p.precio)}
+              </p>
+              <p className={`text-[10px] font-medium ${agotado ? 'text-red-400' : bajo ? 'text-yellow-400' : ''}`}
+                style={!agotado && !bajo ? { color: 'var(--hc-muted)' } : {}}>
+                {agotado ? 'Agotado' : `Stock: ${stock}`}
+              </p>
+            </div>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function categoryEmoji(nombre) {
+  const n = (nombre ?? '').toLowerCase()
+  if (n.includes('ropa') || n.includes('tela') || n.includes('camis')) return '👕'
+  if (n.includes('electro') || n.includes('celul') || n.includes('tecnol')) return '📱'
+  if (n.includes('juguete') || n.includes('niño')) return '🧸'
+  if (n.includes('deport') || n.includes('sport')) return '⚽'
+  if (n.includes('comida') || n.includes('aliment') || n.includes('bebida')) return '🍔'
+  if (n.includes('mueble') || n.includes('hogar') || n.includes('casa')) return '🛋️'
+  if (n.includes('herram') || n.includes('tool')) return '🔧'
+  if (n.includes('cosmetic') || n.includes('belleza') || n.includes('perfum')) return '💄'
+  if (n.includes('libro') || n.includes('escolar') || n.includes('papeler')) return '📚'
+  if (n.includes('auto') || n.includes('moto') || n.includes('vehic')) return '🚗'
+  if (n.includes('mascota') || n.includes('pet')) return '🐾'
+  if (n.includes('joya') || n.includes('acceso')) return '💍'
+  return '📦'
 }

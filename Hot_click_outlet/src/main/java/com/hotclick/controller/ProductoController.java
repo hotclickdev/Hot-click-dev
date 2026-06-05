@@ -65,6 +65,17 @@ public class ProductoController {
         return ResponseEntity.ok(ResponseDTO.success("Productos obtenidos", productos));
     }
 
+    /** POS: productos por categoría dentro de la empresa. */
+    @GetMapping("/pos/categoria/{catId}")
+    public ResponseEntity<ResponseDTO> porCategoriaPOS(@PathVariable Long catId) {
+        Long empresaId = companyScope.getCurrentEmpresaId();
+        if (empresaId == null) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error("Empresa requerida en el contexto"));
+        }
+        var productos = productoRepository.findByCategoriaIdAndEmpresaId(catId, empresaId);
+        return ResponseEntity.ok(ResponseDTO.success("OK", productos));
+    }
+
     /** Búsqueda POS: por nombre, SKU o barcode dentro de la empresa. */
     @GetMapping("/buscar")
     public ResponseEntity<ResponseDTO> buscar(@RequestParam String q) {
