@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -11,18 +11,40 @@ import useUiStore from '@/store/uiStore'
 import { productService, normalizeProduct } from '@/services/productService'
 import { formatPrice } from '@/utils/format'
 import { useToast } from '@/components/ui/Toast'
+import { abandonedCartService } from '@/services/abandonedCartService'
 
 const WHATSAPP = '50689745370'
+const EMAIL_PROMPT_DELAY_MS = 45_000  // 45 segundos
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart, total, toWhatsAppMessage, addItem } = useCartStore()
-  const { token } = useAuthStore()
+  const { token, user } = useAuthStore()
   const { setAuthPromptOpen } = useUiStore()
   const navigate  = useNavigate()
   const toast     = useToast()
   const { t } = useTranslation()
   const [crossSell, setCrossSell] = useState([])
   const [crossAdded, setCrossAdded] = useState(new Set())
+  const [emailPrompt, setEmailPrompt] = useState(false)
+  const [capturedEmail, setCapturedEmail] = useState('')
+  const [emailSaved, setEmailSaved] = useState(false)
+  const promptTimerRef = useRef(null)
+
+  // Mostrar prompt de email a usuarios anónimos después de 45 s
+  useEffect(() => {
+    const alreadyCaptured = localStorage.getItem('hc-cart-email')
+    if (token || user || alreadyCaptured || items.length === 0) return
+    promptTimerRef.current = setTimeout(() => setEmailPrompt(true), EMAIL_PROMPT_DELAY_MS)
+    return () => clearTimeout(promptTimerRef.current)
+  }, [token, user, items.length])
+
+  const handleEmailSave = () => {
+    if (!capturedEmail.includes('@')) return
+    localStorage.setItem('hc-cart-email', capturedEmail)
+    abandonedCartService.saveAbandonedCart(items, capturedEmail).catch(() => {})
+    setEmailSaved(true)
+    setTimeout(() => setEmailPrompt(false), 1800)
+  }
 
   useEffect(() => {
     const cartIds = new Set(items.map((i) => i.id))
@@ -82,12 +104,13 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <MainLayout>
-        <div className="max-w-2xl mx-auto px-4 py-20 text-center">
+        <div className="max-w-3xl mx-auto px-4 py-16">
+          {/* Estado vacío */}
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col items-center gap-5"
+            className="flex flex-col items-center gap-5 text-center"
           >
             <div className="relative w-28 h-28 flex items-center justify-center">
               <div className="absolute inset-0 rounded-3xl" style={{ background: 'color-mix(in srgb, var(--hc-accent) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 16%, transparent)' }} />
@@ -117,6 +140,72 @@ export default function CartPage() {
               </Link>
             </div>
           </motion.div>
+
+          {/* Sugerencias de compra */}
+          {crossSell.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-14"
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div className="h-px flex-1" style={{ background: 'var(--hc-border)' }} />
+                <h2 className="text-sm font-semibold uppercase tracking-widest" style={{ color: 'var(--hc-muted)' }}>
+                  Te puede interesar
+                </h2>
+                <div className="h-px flex-1" style={{ background: 'var(--hc-border)' }} />
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {crossSell.map((product, i) => (
+                  <motion.div
+                    key={product.id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 + i * 0.08 }}
+                    className="group rounded-2xl overflow-hidden"
+                    style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
+                  >
+                    <div
+                      className="h-28 bg-[#1a1a1f] flex items-center justify-center overflow-hidden cursor-pointer"
+                      onClick={() => navigate(`/productos/${product.id}`)}
+                    >
+                      {product.imagenUrl ? (
+                        <img
+                          src={product.imagenUrl}
+                          alt={product.nombre}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <span className="text-3xl opacity-20">📦</span>
+                      )}
+                    </div>
+                    <div className="p-3">
+                      <p
+                        className="text-xs font-medium line-clamp-2 mb-1.5 cursor-pointer"
+                        style={{ color: 'var(--hc-text)' }}
+                        onClick={() => navigate(`/productos/${product.id}`)}
+                      >
+                        {product.nombre}
+                      </p>
+                      <p className="text-sm font-bold text-[#4f7cff] mb-2">{formatPrice(product.precio)}</p>
+                      <button
+                        onClick={() => handleCrossAdd(product)}
+                        className={`w-full h-7 rounded-lg text-xs font-medium transition-all duration-200 ${
+                          crossAdded.has(product.id)
+                            ? 'bg-emerald-500 text-white'
+                            : 'bg-[#4f7cff] hover:bg-[#3d6ee0] text-white'
+                        }`}
+                      >
+                        {crossAdded.has(product.id) ? '✓ Añadido' : '+ Agregar'}
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
         </div>
       </MainLayout>
     )
@@ -331,6 +420,78 @@ export default function CartPage() {
           </div>
         )}
       </div>
+
+      {/* ── Email capture para carrito abandonado (usuarios anónimos) ── */}
+      <AnimatePresence>
+        {emailPrompt && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 280, damping: 28 }}
+            className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4"
+          >
+            <div
+              className="rounded-2xl px-5 py-4 shadow-2xl"
+              style={{
+                background: 'var(--hc-surface)',
+                border: '1px solid var(--hc-border)',
+                backdropFilter: 'blur(20px)',
+                boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
+              }}
+            >
+              <button
+                onClick={() => setEmailPrompt(false)}
+                className="absolute top-3 right-3 w-6 h-6 flex items-center justify-center rounded-lg text-[#8e8e9a] hover:text-white transition-colors hover:bg-white/8"
+              >
+                ✕
+              </button>
+              {emailSaved ? (
+                <div className="flex items-center gap-3 py-1">
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+                    <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[#e8e8ed]">¡Listo!</p>
+                    <p className="text-xs text-[#8e8e9a]">Te avisamos si tu carrito sigue aquí.</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm font-semibold text-[#e8e8ed] mb-1">¿Te vas? Guarda tu carrito</p>
+                  <p className="text-xs text-[#8e8e9a] mb-3">
+                    Déjanos tu email y te enviamos un link para continuar cuando quieras.
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      type="email"
+                      value={capturedEmail}
+                      onChange={(e) => setCapturedEmail(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleEmailSave()}
+                      placeholder="tu@email.com"
+                      className="flex-1 h-9 px-3 rounded-xl text-sm outline-none transition-all"
+                      style={{
+                        background: 'var(--hc-bg)',
+                        border: '1px solid var(--hc-border)',
+                        color: 'var(--hc-text)',
+                      }}
+                    />
+                    <button
+                      onClick={handleEmailSave}
+                      className="px-4 h-9 rounded-xl text-xs font-semibold text-white transition-all hover:opacity-90 active:scale-95 shrink-0"
+                      style={{ background: 'var(--hc-accent)' }}
+                    >
+                      Guardar
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </MainLayout>
   )
 }

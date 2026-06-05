@@ -3,16 +3,30 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import useWishlistStore from '@/store/wishlistStore'
+import useCartStore from '@/store/cartStore'
+import { useToast } from '@/components/ui/Toast'
 import { formatPrice, conditionLabel, conditionVariant } from '@/utils/format'
 import OptimizedImage from '@/components/ui/OptimizedImage'
 
 function ProductCard({ product, priority = false, index = 0 }) {
   const navigate = useNavigate()
   const { toggle: toggleWishlist, isLiked } = useWishlistStore()
+  const addItem = useCartStore((s) => s.addItem)
+  const toast = useToast()
   const { t } = useTranslation()
   const [imgError, setImgError] = useState(false)
+  const [added, setAdded] = useState(false)
 
   const liked = isLiked(product.id)
+
+  const handleAddToCart = (e) => {
+    e.stopPropagation()
+    if (product.stock === 0) return
+    addItem(product)
+    setAdded(true)
+    toast({ message: `${product.nombre} agregado al carrito`, type: 'success' })
+    setTimeout(() => setAdded(false), 1500)
+  }
 
   return (
     <motion.div
@@ -142,19 +156,47 @@ function ProductCard({ product, priority = false, index = 0 }) {
           </div>
         </div>
 
+        {/* Botón agregar al carrito */}
+        <motion.button
+          whileTap={{ scale: 0.94 }}
+          onClick={handleAddToCart}
+          disabled={product.stock === 0}
+          className="w-full flex items-center justify-center gap-2 h-9 rounded-xl text-sm font-semibold transition-all duration-200 mt-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
+          style={{
+            background: added
+              ? 'color-mix(in srgb, #10b981 15%, transparent)'
+              : 'color-mix(in srgb, var(--hc-accent) 10%, transparent)',
+            color: added ? '#10b981' : 'var(--hc-accent)',
+            border: `1.5px solid ${added
+              ? 'color-mix(in srgb, #10b981 30%, transparent)'
+              : 'color-mix(in srgb, var(--hc-accent) 25%, transparent)'}`,
+          }}
+        >
+          {added ? (
+            <>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              Agregado
+            </>
+          ) : (
+            <>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              Agregar al carrito
+            </>
+          )}
+        </motion.button>
+
       </div>
     </motion.div>
   )
 }
 
-export default memo(ProductCard, (prev, next) =>
-  prev.product.id     === next.product.id     &&
-  prev.product.stock  === next.product.stock  &&
-  prev.product.precio === next.product.precio &&
-  prev.product.nombre === next.product.nombre &&
-  prev.priority       === next.priority       &&
-  prev.index          === next.index
-)
+// No usar memo aquí: el wishlistStore es externo y el componente
+// ya usa selectores de Zustand que generan su propio re-render.
+export default ProductCard
 
 function HeartCardIcon({ filled }) {
   return filled ? (

@@ -1,14 +1,35 @@
 // Adapter-pattern analytics layer.
 // Add adapters (GA4, Mixpanel, etc.) via addAdapter().
-// Console adapter active in dev by default.
+// Analytics adapters only run when the user has accepted analytics cookies.
+// Console adapter active in dev by default (ignores consent check in dev).
 
 const _adapters = []
+let _analyticsEnabled = false
+
+const CONSENT_KEY = 'hotclick-cookie-consent'
+
+function loadConsentFromStorage() {
+  try {
+    const raw = localStorage.getItem(CONSENT_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      _analyticsEnabled = !!parsed.analytics
+    }
+  } catch (_) {}
+}
+
+loadConsentFromStorage()
+
+export function setAnalyticsConsent(enabled) {
+  _analyticsEnabled = enabled
+}
 
 export function addAdapter(fn) {
   _adapters.push(fn)
 }
 
 function track(event, payload = {}) {
+  if (!_analyticsEnabled && !import.meta.env.DEV) return
   const data = { ...payload, timestamp: Date.now() }
   _adapters.forEach((fn) => {
     try { fn(event, data) } catch (_) {}

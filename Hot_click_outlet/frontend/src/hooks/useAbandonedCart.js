@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import useCartStore from '@/store/cartStore'
+import useAuthStore from '@/store/authStore'
 import {
   abandonedCartService,
   markAbandonedSent,
@@ -19,12 +20,15 @@ const STALE_THRESHOLD_MS = 60 * 60 * 1000  // 1 hour without changes
 export function useAbandonedCart() {
   const items         = useCartStore((s) => s.items)
   const cartUpdatedAt = useCartStore((s) => s.cartUpdatedAt)
+  const userEmail     = useAuthStore((s) => s.user?.email ?? null)
 
   // Keep refs in sync so the interval closure always reads latest values
   const itemsRef         = useRef(items)
   const cartUpdatedAtRef = useRef(cartUpdatedAt)
+  const emailRef         = useRef(userEmail)
   useEffect(() => { itemsRef.current = items },         [items])
   useEffect(() => { cartUpdatedAtRef.current = cartUpdatedAt }, [cartUpdatedAt])
+  useEffect(() => { emailRef.current = userEmail },     [userEmail])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -38,8 +42,11 @@ export function useAbandonedCart() {
 
       if (wasAlreadySent(updatedAt)) return
 
+      // Pass email from logged-in user so backend can send the recovery email
+      const email = emailRef.current
+
       abandonedCartService
-        .saveAbandonedCart(currentItems)
+        .saveAbandonedCart(currentItems, email)
         .then(() => markAbandonedSent(updatedAt))
         .catch(() => { /* silently ignore — non-critical */ })
     }, CHECK_INTERVAL_MS)

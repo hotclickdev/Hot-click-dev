@@ -13,9 +13,13 @@ import SocialProofToast from '@/components/ui/SocialProofToast'
 import { useSocialProof } from '@/hooks/useSocialProof'
 import { productService, normalizeProduct } from '@/services/productService'
 import { useAbandonedCart } from '@/hooks/useAbandonedCart'
+import { useWishlistAlert } from '@/hooks/useWishlistAlert'
 import i18n from './i18n'
 import AdminLayout from '@/layouts/AdminLayout'
 import { useBranding } from '@/hooks/useBranding'
+import CookieBanner from '@/components/ui/CookieBanner'
+import { setAnalyticsConsent } from '@/utils/analytics'
+import { initGA4, trackPageView } from '@/utils/ga4'
 
 const CLERK_ENABLED = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 const SSOCallback = CLERK_ENABLED ? lazy(() => import('@/pages/SSOCallback')) : null
@@ -84,6 +88,7 @@ const AdminOfflineCola          = lazy(() => import('@/pages/admin/AdminOfflineC
 const AdminMesas                = lazy(() => import('@/pages/admin/AdminMesas'))
 const AdminGiftCards            = lazy(() => import('@/pages/admin/AdminGiftCards'))
 const AdminBranding             = lazy(() => import('@/pages/admin/AdminBranding'))
+const AdminHomepage             = lazy(() => import('@/pages/admin/AdminHomepage'))
 const AdminPlugins              = lazy(() => import('@/pages/admin/AdminPlugins'))
 const AdminApiKeys              = lazy(() => import('@/pages/admin/AdminApiKeys'))
 const AdminInventario           = lazy(() => import('@/pages/admin/AdminInventario'))
@@ -239,7 +244,10 @@ const WAB_HIDDEN_PATHS = ['/login', '/registro', '/carrito']
 
 function ScrollToTop() {
   const { pathname } = useLocation()
-  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  useEffect(() => {
+    window.scrollTo(0, 0)
+    trackPageView(pathname)
+  }, [pathname])
   return null
 }
 
@@ -254,6 +262,11 @@ function ConditionalWhatsAppFab() {
 // The hook itself bails out if the cart is empty or was recently sent.
 function AbandonedCartWatcher() {
   useAbandonedCart()
+  return null
+}
+
+function WishlistAlertWatcher() {
+  useWishlistAlert()
   return null
 }
 
@@ -288,12 +301,18 @@ function BrandingInit() {
   return null
 }
 
+function AnalyticsInit() {
+  useEffect(() => { initGA4() }, [])
+  return null
+}
+
 export default function App() {
   return (
     <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <BrandingInit />
+        <AnalyticsInit />
         <HtmlClassManager />
         <BrowserRouter>
           <ScrollToTop />
@@ -359,6 +378,7 @@ export default function App() {
                   <Route path="/admin/mesas"               element={<AdminMesas />} />
                   <Route path="/admin/gift-cards"          element={<AdminGiftCards />} />
                   <Route path="/admin/branding"            element={<AdminBranding />} />
+                <Route path="/admin/homepage"           element={<AdminHomepage />} />
                   <Route path="/admin/plugins"             element={<AdminPlugins />} />
                   <Route path="/admin/api-keys"            element={<AdminApiKeys />} />
                   <Route path="/admin/inventario"          element={<AdminInventario />} />
@@ -387,6 +407,8 @@ export default function App() {
           <AuthPromptModal />
           <SocialProofController />
           <AbandonedCartWatcher />
+          <WishlistAlertWatcher />
+          <CookieBanner onConsent={(c) => { setAnalyticsConsent(c.analytics); if (c.analytics) initGA4() }} />
         </BrowserRouter>
       </ToastProvider>
     </QueryClientProvider>
