@@ -131,18 +131,35 @@ function buildSidebarLinks(t, userRole) {
     ]
   }
 
-  // ADMIN_CLIENTE: subconjunto básico
+  // ADMIN_CLIENTE
   return [
-    { to: '/admin',            label: t('admin.sidebar.general'),    icon: 'home', exact: true },
-    { section: 'Catálogo' },
-    { to: '/admin/productos',  label: t('admin.sidebar.productos'),  icon: 'box'      },
-    { to: '/admin/bodegas',    label: t('admin.sidebar.bodegas'),    icon: 'building' },
+    { to: '/admin',              label: 'Inicio',                        icon: 'home', exact: true },
+    { section: 'Punto de venta' },
+    { to: '/admin/pos',          label: 'Caja registradora',             icon: 'pos'       },
+    { to: '/admin/pos/caja',     label: 'Cuadre de caja',                icon: 'chart'     },
+    { to: '/admin/pos/historial', label: 'Historial ventas',             icon: 'clipboard' },
+    { to: '/admin/mesas',        label: 'Mesas / QR',                    icon: 'qr'        },
+    { section: 'Catálogo e inventario' },
+    { to: '/admin/productos',    label: t('admin.sidebar.productos'),    icon: 'box'       },
+    { to: '/admin/nuevo-producto', label: 'Generar producto rápido',     icon: 'camera'    },
+    { to: '/admin/categorias',   label: t('admin.sidebar.categorias'),   icon: 'tag'       },
+    { to: '/admin/marcas',       label: 'Marcas',                        icon: 'marca'     },
+    { to: '/admin/bodegas',      label: t('admin.sidebar.bodegas'),      icon: 'building'  },
+    { to: '/admin/inventario',   label: 'Inventario IA',                 icon: 'ai'        },
+    { to: '/admin/compras',      label: 'Compras',                       icon: 'compra'    },
+    { to: '/admin/proveedores',  label: 'Proveedores',                   icon: 'proveedor' },
     { section: 'Ventas' },
-    { to: '/admin/pedidos',    label: t('admin.sidebar.pedidos'),    icon: 'clipboard' },
-    { to: '/admin/finanzas',   label: t('admin.sidebar.finanzas'),   icon: 'chart'    },
+    { to: '/admin/pedidos',      label: t('admin.sidebar.pedidos'),      icon: 'clipboard' },
+    { to: '/admin/ventas',       label: 'Nueva venta',                   icon: 'plus'      },
+    { to: '/admin/finanzas',     label: t('admin.sidebar.finanzas'),     icon: 'chart'     },
+    { to: '/admin/reportes',     label: t('admin.sidebar.reportes'),     icon: 'bar'       },
+    { section: 'Marketing' },
+    { to: '/admin/ofertas',      label: 'Ofertas',                       icon: 'tag'       },
+    { to: '/admin/publicaciones', label: 'Publicaciones',                icon: 'share'     },
+    { to: '/admin/blog',         label: 'Blog',                          icon: 'blog'      },
     { section: 'Mi negocio' },
-    { to: '/admin/mi-empresa',    label: 'Mi negocio',               icon: 'empresa'  },
-    { to: '/admin/configuracion', label: 'Configuración',            icon: 'config'   },
+    { to: '/admin/mi-empresa',   label: 'Mi negocio',                    icon: 'empresa'   },
+    { to: '/admin/configuracion', label: 'Configuración',                icon: 'config'    },
   ]
 }
 
@@ -374,10 +391,14 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
         <ModeSwitcherWrapper userRole={userRole} />
         <NavLink
           to="/"
-          className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors hover:bg-[var(--hc-surface-2)]"
-          style={{ color: 'var(--hc-muted)' }}
+          className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors"
+          style={{ color: '#34d399', backgroundColor: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)' }}
         >
-          {t('admin.sidebar.irTienda')}
+          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          Ver tienda como cliente
         </NavLink>
         <button
           onClick={handleLogout}
