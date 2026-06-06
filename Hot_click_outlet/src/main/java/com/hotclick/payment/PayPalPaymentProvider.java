@@ -185,7 +185,7 @@ public class PayPalPaymentProvider implements PaymentProvider {
 
         // Registrar transacción
         TransaccionPago txn = new TransaccionPago();
-        txn.setPayxpertTxnId(captureId); // reusando campo como "external txn id"
+        txn.setTxnId(captureId);
         txn.setErrorCode("000");
         txn.setTipoOperacion("COBRO_PAYPAL");
         txn.setMontoOperacion(pago.getMonto());
@@ -354,7 +354,7 @@ public class PayPalPaymentProvider implements PaymentProvider {
             // Captura llegó por webhook (el usuario no volvió a nuestra página)
             String captureId = (String) resource.get("id");
             TransaccionPago txn = new TransaccionPago();
-            txn.setPayxpertTxnId(captureId);
+            txn.setTxnId(captureId);
             txn.setErrorCode("000");
             txn.setTipoOperacion("COBRO_PAYPAL_WEBHOOK");
             txn.setMontoOperacion(pago.getMonto());
