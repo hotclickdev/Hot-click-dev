@@ -133,6 +133,13 @@ export default function AppTour() {
     if (listRef.current) listRef.current.scrollTop = 0
   }, [step])
 
+  // Permite reiniciar el tour desde cualquier parte via window.dispatchEvent(new Event('hc-open-tour'))
+  useEffect(() => {
+    const handler = () => { setStep(0); setShow(true) }
+    window.addEventListener('hc-open-tour', handler)
+    return () => window.removeEventListener('hc-open-tour', handler)
+  }, [setShow])
+
   const dismiss = () => {
     localStorage.setItem(TOUR_KEY, '1')
     setShow(false)

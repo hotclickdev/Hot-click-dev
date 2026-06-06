@@ -188,9 +188,21 @@ export default function AdminDashboard() {
   return (
     <>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.dashboard.title')}</h1>
-          <p className="text-sm text-[#8e8e9a] mt-1">{t('admin.dashboard.welcome')}</p>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.dashboard.title')}</h1>
+            <p className="text-sm text-[#8e8e9a] mt-1">{t('admin.dashboard.welcome')}</p>
+          </div>
+          <button
+            onClick={() => {
+              localStorage.removeItem('hc-admin-tour-v2-done')
+              window.dispatchEvent(new Event('hc-open-tour'))
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all hover:opacity-80 shrink-0"
+            style={{ backgroundColor: 'rgba(120,64,224,0.1)', border: '1px solid rgba(120,64,224,0.25)', color: '#a78bfa' }}
+          >
+            🎯 Ver tutorial
+          </button>
         </div>
 
         {/* Banner: Primeros pasos — solo para negocios nuevos sin productos */}

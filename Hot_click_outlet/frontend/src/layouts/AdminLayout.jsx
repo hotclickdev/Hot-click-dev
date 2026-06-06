@@ -494,7 +494,20 @@ export default function AdminLayout({ children }) {
         className="md:hidden fixed top-0 left-0 right-0 z-30 h-14 backdrop-blur-xl flex items-center justify-between px-4"
         style={{ backgroundColor: 'var(--hc-surface)', borderBottom: '1px solid var(--hc-border)' }}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          {/* Botón atrás — visible en sub-páginas, oculto en el dashboard raíz */}
+          {location.pathname !== '/admin' && (
+            <button
+              onClick={() => navigate(-1)}
+              className="p-1.5 rounded-lg hover:bg-[var(--hc-surface-2)] transition-colors mr-0.5"
+              style={{ color: 'var(--hc-text)' }}
+              aria-label="Atrás"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 12H5M12 5l-7 7 7 7"/>
+              </svg>
+            </button>
+          )}
           <div className="w-7 h-7 rounded-lg hc-logo-badge flex items-center justify-center shrink-0">
             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
               <path d="M13 2L3 14h8l-2 8 12-12h-8z"/>
