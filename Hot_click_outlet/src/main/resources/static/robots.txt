@@ -8,4 +8,4 @@ Disallow: /checkout
 Disallow: /api/
 Disallow: /recuperar-carrito/
 
-Sitemap: https://hotclick.com/sitemap.xml
+Sitemap: https://hot-click-dev-production.up.railway.app/sitemap.xml

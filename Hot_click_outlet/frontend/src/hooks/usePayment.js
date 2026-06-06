@@ -20,6 +20,7 @@ export function usePayment() {
     sessionStorage.setItem(GUEST_KEY, isGuest ? '1' : '0')
     setEstado('loading')
     setError(null)
+    setIntentos((i) => i + 1)
     try {
       const method = isGuest ? paymentService.guestCheckout : paymentService.checkout
       const { data } = await method(checkoutPayload)
@@ -154,7 +155,6 @@ export function usePayment() {
         setError('Máximo de intentos alcanzado. Contacta soporte en hotclick.cr@gmail.com')
         return
       }
-      setIntentos((i) => i + 1)
       await iniciarPago(checkoutPayload)
     },
     [intentos, iniciarPago]

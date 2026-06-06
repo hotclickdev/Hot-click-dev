@@ -3,7 +3,6 @@ package com.hotclick.integration;
 import com.hotclick.model.Rol;
 import com.hotclick.model.Usuario;
 import com.hotclick.payment.PayPalPaymentProvider;
-import com.hotclick.payment.PayXpertPaymentProvider;
 import com.hotclick.repository.RefreshTokenRepository;
 import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
@@ -46,7 +45,6 @@ public abstract class BaseIntegrationTest {
     @MockitoBean protected ResendEmailService       resendEmailService;
     @MockitoBean protected NotificacionEmailService notificacionEmailService;
     @MockitoBean protected SupabaseStorageService   supabaseStorageService;
-    @MockitoBean protected PayXpertPaymentProvider  payXpertProvider;
     @MockitoBean protected PayPalPaymentProvider    payPalProvider;
     @MockitoBean protected BccrService              bccrService;
     @MockitoBean protected GeminiService            geminiService;

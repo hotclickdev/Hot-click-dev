@@ -4,6 +4,7 @@ import com.hotclick.model.*;
 import com.hotclick.repository.*;
 import com.hotclick.service.BccrService;
 import com.hotclick.service.PaymentService;
+import com.hotclick.service.StripeService;
 import com.hotclick.utils.Constants;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
@@ -25,11 +26,10 @@ public class StripePaymentProvider implements PaymentProvider {
     @Value("${app.url:http://localhost:3000}")
     private String appUrl;
 
+    @Autowired private StripeService             stripeService;
     @Autowired private BccrService               bccrService;
     @Autowired private PagoRepository            pagoRepository;
-    @Autowired private TransaccionPagoRepository transaccionPagoRepository;
     @Autowired private WebhookEventRepository    webhookEventRepository;
-    @Autowired private PaymentLogRepository      paymentLogRepository;
 
     @Lazy
     @Autowired private PaymentService paymentService;
@@ -45,9 +45,17 @@ public class StripePaymentProvider implements PaymentProvider {
      */
     @Override
     public PaymentSession crearSesion(Pedido pedido, Usuario usuario) throws Exception {
+        if (stripeService.isMockMode()) {
+            throw new IllegalStateException(
+                "Stripe no está configurado. " +
+                "Añade STRIPE_SECRET_KEY (sk_test_...) al entorno para procesar pagos con tarjeta.");
+        }
+
         int tc = bccrService.getTipoCambioVenta();
         long amountCents = (long) Math.ceil((double) pedido.getTotalPedido() / tc * 100.0);
 
+        // Expiry set to 35 min — Stripe minimum is 30 min; the buffer avoids boundary
+        // failures caused by network latency between calculation and Stripe receiving the request.
         SessionCreateParams params = SessionCreateParams.builder()
             .setMode(SessionCreateParams.Mode.PAYMENT)
             .setCustomerEmail(usuario.getCorreo())
@@ -66,7 +74,7 @@ public class StripePaymentProvider implements PaymentProvider {
                 .build())
             .putMetadata("pedidoId",      String.valueOf(pedido.getId()))
             .putMetadata("numeroPedido",  pedido.getNumeroPedido())
-            .setExpiresAt(System.currentTimeMillis() / 1000 + 30 * 60L)
+            .setExpiresAt(System.currentTimeMillis() / 1000 + 35 * 60L)
             .build();
 
         Session session = Session.create(params);

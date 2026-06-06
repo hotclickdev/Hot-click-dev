@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import Input from '@/components/ui/Input'
 import useAuthStore from '@/store/authStore'
 import { useToast } from '@/components/ui/Toast'
-import api from '@/services/api'
+import api, { registrarConsentimiento } from '@/services/api'
 
 const A = { color: '#f97316', ring: 'rgba(249,115,22,0.32)', bg: 'rgba(249,115,22,0.08)' }
 
@@ -20,15 +20,18 @@ export default function RegistrarNegocioPage() {
     telefonoEmpresa: '',
     correoEmpresa:   userEmail || '',
   })
-  const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState('')
+  const [loading,        setLoading]        = useState(false)
+  const [error,          setError]          = useState('')
+  const [aceptaAcuerdo,  setAceptaAcuerdo]  = useState(false)
 
   const set = (field) => (e) => setForm((p) => ({ ...p, [field]: e.target.value }))
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (!aceptaAcuerdo) { setError('Debés aceptar el Acuerdo de Vendedores para continuar'); return }
     if (!form.nombreEmpresa.trim()) { setError('El nombre del negocio es requerido'); return }
     setError(''); setLoading(true)
+    registrarConsentimiento('VENDEDOR')
     try {
       const { data } = await api.post('/auth/upgrade-emprendedor', form)
       login(data)
@@ -128,6 +131,21 @@ export default function RegistrarNegocioPage() {
                     placeholder="negocio@ejemplo.com"
                   />
 
+                  {/* Acuerdo de Vendedores — Ley 8968, Encargado de Tratamiento */}
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '0.75rem', borderRadius: 10, border: `1px solid ${aceptaAcuerdo ? A.color : 'var(--hc-border)'}`, background: aceptaAcuerdo ? `${A.bg}` : 'transparent', transition: 'all 0.15s' }}>
+                    <input
+                      type="checkbox"
+                      checked={aceptaAcuerdo}
+                      onChange={e => setAceptaAcuerdo(e.target.checked)}
+                      style={{ marginTop: 2, accentColor: A.color, width: 15, height: 15, flexShrink: 0 }}
+                    />
+                    <span style={{ fontSize: 12, color: 'var(--hc-muted)', lineHeight: 1.6 }}>
+                      He leído y acepto el{' '}
+                      <Link to="/acuerdo-vendedores" target="_blank" style={{ color: A.color, textDecoration: 'none' }}>Acuerdo de Vendedores</Link>
+                      , reconozco mi rol como <strong style={{ color: 'var(--hc-text)' }}>Encargado de Tratamiento</strong> de datos de clientes conforme a la Ley N.° 8968 y acepto las obligaciones de confidencialidad e indemnidad estipuladas.
+                    </span>
+                  </label>
+
                   {error && (
                     <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
                       className="px-3 py-2.5 rounded-xl text-sm"
@@ -136,7 +154,7 @@ export default function RegistrarNegocioPage() {
                     </motion.div>
                   )}
 
-                  <button type="submit" disabled={loading}
+                  <button type="submit" disabled={loading || !aceptaAcuerdo}
                     className="inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl font-bold text-sm text-white w-full transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-60"
                     style={{ background: A.color, boxShadow: `0 0 32px ${A.ring}` }}>
                     {loading ? (

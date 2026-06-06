@@ -5,27 +5,7 @@ const WA_URL   = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent('¡Hola! Q
 
 export default function WhatsAppFab() {
   return (
-    <div className="fixed bottom-44 md:bottom-24 right-6 z-50 flex flex-col items-center gap-2">
-
-      {/* Botón Conversar */}
-      <motion.a
-        href={WA_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Conversar por WhatsApp"
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-white shadow-lg"
-        style={{ backgroundColor: '#25D366', boxShadow: '0 4px 16px rgba(37,211,102,0.45)' }}
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        whileHover={{ scale: 1.06 }}
-        whileTap={{ scale: 0.94 }}
-      >
-        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-white shrink-0">
-          <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
-        </svg>
-        Conversar
-      </motion.a>
+    <div className="fixed bottom-[10.5rem] sm:bottom-24 right-4 sm:right-6 z-50 flex flex-col items-center">
 
       {/* Ícono WhatsApp */}
       <motion.a

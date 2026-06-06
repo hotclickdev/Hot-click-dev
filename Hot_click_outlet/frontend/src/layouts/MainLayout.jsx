@@ -5,13 +5,14 @@ import SearchPanel from '@/components/ui/SearchPanel'
 import MiniCartDrawer from '@/components/ui/MiniCartDrawer'
 import ExitIntentModal from '@/components/ui/ExitIntentModal'
 import PromoWelcomePopup from '@/components/ui/PromoWelcomePopup'
-import ChatWidget from '@/components/ui/ChatWidget'
+import ReturnVisitorBanner from '@/components/ui/ReturnVisitorBanner'
 import { motion } from 'framer-motion'
 
 export default function MainLayout({ children }) {
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: 'var(--hc-bg)' }}>
+    <div className="flex flex-col min-h-screen overflow-x-hidden" style={{ backgroundColor: 'var(--hc-bg)' }}>
       <Navbar />
+      <ReturnVisitorBanner />
       <motion.main
         initial={{ opacity: 0, y: 12, scale: 0.995 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -26,7 +27,6 @@ export default function MainLayout({ children }) {
       <MiniCartDrawer />
       <ExitIntentModal />
       <PromoWelcomePopup />
-      <ChatWidget />
     </div>
   )
 }

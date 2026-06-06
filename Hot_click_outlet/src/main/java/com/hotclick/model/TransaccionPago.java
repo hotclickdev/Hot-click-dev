@@ -15,7 +15,7 @@ public class TransaccionPago extends BaseEntity {
     private Long id;
 
     @Column(name = "payxpert_txn_id", length = 200)
-    private String payxpertTxnId;
+    private String txnId;
 
     @Column(name = "error_code", nullable = false, length = 10)
     private String errorCode;
@@ -49,8 +49,8 @@ public class TransaccionPago extends BaseEntity {
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
-    public String getPayxpertTxnId() { return payxpertTxnId; }
-    public void setPayxpertTxnId(String payxpertTxnId) { this.payxpertTxnId = payxpertTxnId; }
+    public String getTxnId() { return txnId; }
+    public void setTxnId(String txnId) { this.txnId = txnId; }
 
     public String getErrorCode() { return errorCode; }
     public void setErrorCode(String errorCode) { this.errorCode = errorCode; }

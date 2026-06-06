@@ -3,9 +3,12 @@ package com.hotclick.controller;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.Usuario;
+import com.hotclick.model.WaMensajeLog;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.repository.WaMensajeLogRepository;
 import com.hotclick.security.CompanyScope;
+import com.hotclick.service.WhatsAppService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
@@ -20,9 +23,11 @@ import java.util.*;
 @RequestMapping("/api/crm/clientes")
 public class CrmController {
 
-    @Autowired private UsuarioRepository usuarioRepository;
-    @Autowired private PedidoRepository  pedidoRepository;
-    @Autowired private CompanyScope      companyScope;
+    @Autowired private UsuarioRepository    usuarioRepository;
+    @Autowired private PedidoRepository    pedidoRepository;
+    @Autowired private WaMensajeLogRepository waLogRepository;
+    @Autowired private CompanyScope         companyScope;
+    @Autowired private WhatsAppService      whatsAppService;
 
     /** Lista clientes (USUARIO_FINAL) que han comprado en esta empresa. ADMIN_IT ve todos. */
     @GetMapping
@@ -123,6 +128,51 @@ public class CrmController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
+    }
+
+    // ── WhatsApp ──────────────────────────────────────────────────────────────
+
+    /**
+     * Envía un mensaje de WA personalizado al cliente desde el CRM.
+     * Body: { "escenario": "CONFIRMACION_PEDIDO"|"REACTIVACION"|..., "ctx": {...} }
+     */
+    @PostMapping("/{id}/wa")
+    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE')")
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> enviarWhatsApp(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body) {
+        try {
+            Usuario u = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+            Long empresaId = companyScope.getCurrentEmpresaId();
+            if (empresaId != null && !pedidoRepository.existsByUsuarioFinalIdAndEmpresaId(id, empresaId))
+                return ResponseEntity.status(403).body(ResponseDTO.error("Cliente no pertenece a esta empresa"));
+
+            String escenario = (String) body.getOrDefault("escenario", "REACTIVACION");
+            @SuppressWarnings("unchecked")
+            Map<String, String> ctxExtra = (Map<String, String>) body.getOrDefault("ctx", Map.of());
+
+            String textoEnviado = whatsAppService.enviarDesdecrm(u, empresaId, escenario, ctxExtra);
+            return ResponseEntity.ok(ResponseDTO.success("Mensaje enviado",
+                Map.of("texto", textoEnviado, "telefono", u.getTelefono() != null ? u.getTelefono() : "")));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        }
+    }
+
+    /** Historial de mensajes WA enviados a un cliente — para el timeline del CRM. */
+    @GetMapping("/{id}/wa/historial")
+    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE','SOPORTE')")
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> historialWa(@PathVariable Long id) {
+        Long empresaId = companyScope.getCurrentEmpresaId();
+        if (empresaId != null && !pedidoRepository.existsByUsuarioFinalIdAndEmpresaId(id, empresaId))
+            return ResponseEntity.status(403).body(ResponseDTO.error("Cliente no pertenece a esta empresa"));
+
+        var historial = waLogRepository.findByUsuarioIdOrderByFechaEnvioDesc(
+            id, PageRequest.of(0, 20));
+        return ResponseEntity.ok(ResponseDTO.success("OK", historial));
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

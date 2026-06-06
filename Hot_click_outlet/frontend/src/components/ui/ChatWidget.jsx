@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useBranding } from '@/hooks/useBranding'
+import useChatStore from '@/store/chatStore'
 
 const fmt = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
 
@@ -101,12 +102,35 @@ function ChatWidgetInner({ slug }) {
   const [offset, setOffset]     = useState(0)
   const [lastQuery, setLastQuery] = useState('')
   const [dot, setDot]           = useState(false)
-  const bottomRef = useRef(null)
-  const inputRef  = useRef(null)
+  const bottomRef  = useRef(null)
+  const inputRef   = useRef(null)
+  const pendingRef = useRef(null)
 
-  // Initial greeting after 3 seconds
+  const storeOpen     = useChatStore((s) => s.isOpen)
+  const storePending  = useChatStore((s) => s.pendingMessage)
+  const storeClear    = useChatStore((s) => s.clearPending)
+  const storeClose    = useChatStore((s) => s.close)
+
+  // Sync store → local open state + capture pending message
+  useEffect(() => {
+    if (!storeOpen) return
+    if (storePending) {
+      pendingRef.current = storePending
+      storeClear()
+    }
+    setAbierto(true)
+    storeClose()
+  }, [storeOpen, storePending, storeClear, storeClose])
+
+  // Initial greeting — or send pending message if opened from HomeChatBar
   useEffect(() => {
     if (!abierto || mensajes.length > 0) return
+    if (pendingRef.current) {
+      const msg = pendingRef.current
+      pendingRef.current = null
+      const t = setTimeout(() => enviar(msg), 150)
+      return () => clearTimeout(t)
+    }
     const t = setTimeout(() => {
       setMensajes([{
         rol: 'bot',
@@ -114,6 +138,7 @@ function ChatWidgetInner({ slug }) {
       }])
     }, 300)
     return () => clearTimeout(t)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [abierto])
 
   // Dot notification after 10s on page
@@ -250,7 +275,7 @@ function ChatWidgetInner({ slug }) {
       {/* Toggle button */}
       <button
         onClick={() => { setAbierto(v => !v); setDot(false) }}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-2xl
+        className="fixed bottom-[4.75rem] right-4 sm:bottom-6 sm:right-6 z-50 w-14 h-14 rounded-full shadow-2xl
                    flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
         style={{ backgroundColor: accent, color: '#fff' }}
         aria-label="Chat de ayuda"
@@ -275,7 +300,7 @@ function ChatWidgetInner({ slug }) {
 
       {/* Chat panel */}
       {abierto && (
-        <div className="fixed bottom-24 right-6 z-50 w-80 sm:w-96 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+        <div className="fixed bottom-[9rem] left-3 right-3 sm:bottom-24 sm:left-auto sm:right-6 sm:w-96 z-50 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
           style={{ maxHeight: '70vh', backgroundColor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.12)' }}>
 
           {/* Header */}

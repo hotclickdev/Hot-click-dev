@@ -35,6 +35,12 @@ const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
 const NosotrosPage = lazy(() => import('@/pages/NosotrosPage'))
 const ContactoPage = lazy(() => import('@/pages/ContactoPage'))
 const InformacionPage = lazy(() => import('@/pages/InformacionPage'))
+const PrivacidadPage    = lazy(() => import('@/pages/PrivacidadPage'))
+const TerminosPage      = lazy(() => import('@/pages/TerminosPage'))
+const DevolucionesPage  = lazy(() => import('@/pages/DevolucionesPage'))
+const EnviosPage              = lazy(() => import('@/pages/EnviosPage'))
+const AcuerdoVendedoresPage   = lazy(() => import('@/pages/AcuerdoVendedoresPage'))
+const CookiesPage             = lazy(() => import('@/pages/CookiesPage'))
 
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'))
 const AdminProducts = lazy(() => import('@/pages/admin/AdminProducts'))
@@ -332,6 +338,12 @@ export default function App() {
               <Route path="/nosotros" element={<NosotrosPage />} />
               <Route path="/contacto" element={<ContactoPage />} />
               <Route path="/informacion" element={<InformacionPage />} />
+              <Route path="/privacidad"   element={<PrivacidadPage />} />
+              <Route path="/terminos"    element={<TerminosPage />} />
+              <Route path="/devoluciones" element={<DevolucionesPage />} />
+              <Route path="/envios"              element={<EnviosPage />} />
+              <Route path="/acuerdo-vendedores" element={<AcuerdoVendedoresPage />} />
+              <Route path="/cookies"            element={<CookiesPage />} />
               <Route path="/perfil"      element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
               <Route path="/mis-pedidos" element={<ProtectedRoute><MisPedidosPage /></ProtectedRoute>} />
               <Route path="/checkout" element={<CheckoutPage />} />

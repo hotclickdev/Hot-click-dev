@@ -29,6 +29,16 @@
       "name": "anthropic.model",
       "type": "java.lang.String",
       "description": "Claude model ID a usar en el copilot. Default: claude-haiku-4-5-20251001."
+    },
+    {
+      "name": "whatsapp.phone-id",
+      "type": "java.lang.String",
+      "description": "Meta WhatsApp Cloud API — Phone Number ID. Vacío = modo SIMULADO (sin envío real)."
+    },
+    {
+      "name": "whatsapp.token",
+      "type": "java.lang.String",
+      "description": "Meta WhatsApp Cloud API — Access Token permanente. Vacío = modo SIMULADO."
     }
   ]
 }

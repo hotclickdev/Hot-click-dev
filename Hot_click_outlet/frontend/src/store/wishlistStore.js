@@ -32,6 +32,10 @@ const useWishlistStore = create(
       count: () => get().items.length,
 
       remove: (id) => set({ items: get().items.filter((i) => i.id !== id) }),
+
+      updatePrice: (id, newPrice) => set({
+        items: get().items.map((i) => i.id === id ? { ...i, precio: newPrice } : i)
+      }),
     }),
     { name: 'hotclick-wishlist' }
   )

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons'
+import { registrarConsentimiento } from '@/services/api'
 
 const CLERK_ENABLED = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 import { useTranslation } from 'react-i18next'
@@ -94,6 +95,7 @@ function EmprendimientoForm({ onVolver }) {
   const [error,       setError]       = useState('')
   const [codigoVerif, setCodigoVerif] = useState('')
   const [correoReg,   setCorreoReg]   = useState('')
+  const [aceptaTerminos, setAceptaTerminos] = useState(false)
   const [form, setForm] = useState({
     nombreEmpresa: '', correoEmpresa: '', telefonoEmpresa: '',
     nombreAdmin: '', correoAdmin: '', passwordAdmin: '', telefonoAdmin: '',
@@ -111,6 +113,7 @@ function EmprendimientoForm({ onVolver }) {
     if (!form.correoAdmin.trim()) { setError('El correo es requerido'); return }
     if (form.passwordAdmin.length < 6) { setError('La contraseña debe tener al menos 6 caracteres'); return }
     setLoading(true)
+    registrarConsentimiento('REGISTRO')
     try {
       const { data } = await authService.registroEmpresa({
         nombreEmpresa:   form.nombreEmpresa.trim(),
@@ -241,18 +244,32 @@ function EmprendimientoForm({ onVolver }) {
                 <Input label="Contraseña *" type="password" placeholder="Mínimo 6 caracteres" value={form.passwordAdmin} onChange={set('passwordAdmin')} required minLength={6} />
                 <Input label="Teléfono personal" type="tel" placeholder="+506 8888-8888" value={form.telefonoAdmin} onChange={set('telefonoAdmin')} />
                 {error && <ErrMsg>{error}</ErrMsg>}
+
+                {/* Consentimiento informado — Ley 8968 */}
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '0.75rem', borderRadius: 10, border: `1px solid ${aceptaTerminos ? 'var(--hc-accent)' : 'var(--hc-border)'}`, background: aceptaTerminos ? 'color-mix(in srgb, var(--hc-accent) 5%, transparent)' : 'var(--hc-surface-2)', transition: 'all 0.15s' }}>
+                  <input
+                    type="checkbox"
+                    checked={aceptaTerminos}
+                    onChange={e => setAceptaTerminos(e.target.checked)}
+                    style={{ marginTop: 2, flexShrink: 0, accentColor: 'var(--hc-accent)', width: 16, height: 16, cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: 12, color: 'var(--hc-muted)', lineHeight: 1.6 }}>
+                    Al marcar esta casilla, manifiesto de forma libre, expresa, voluntaria e inequívoca que he leído y acepto la{' '}
+                    <Link to="/privacidad" style={{ color: 'var(--hc-accent)', textDecoration: 'underline' }} target="_blank">Política de Privacidad</Link>{' '}
+                    y los{' '}
+                    <Link to="/terminos" style={{ color: 'var(--hc-accent)', textDecoration: 'underline' }} target="_blank">Términos y Condiciones</Link>{' '}
+                    de HotClick. Autorizo el tratamiento de mis datos personales y su transferencia al comercio vendedor para coordinar la entrega. Conozco mis derechos ARCO en <a href="mailto:hotclick.cr@gmail.com" style={{ color: 'var(--hc-accent)' }}>hotclick.cr@gmail.com</a>.
+                  </span>
+                </label>
+
                 <div className="flex gap-2.5">
                   <button type="button" onClick={() => { setStep(0); setError('') }} className="hc-btn hc-btn-outline px-4">← Atrás</button>
-                  <button type="submit" disabled={loading}
+                  <button type="submit" disabled={loading || !aceptaTerminos}
                     className="hc-btn hc-btn-primary hc-btn-lg flex-1 disabled:opacity-60"
                     style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', borderColor: '#f97316', boxShadow: '0 4px 20px rgba(249,115,22,0.3)' }}>
                     {loading ? <span className="flex items-center gap-2"><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Creando…</span> : 'Crear mi negocio →'}
                   </button>
                 </div>
-                <p className="text-center text-xs" style={{ color: 'var(--hc-muted)' }}>
-                  Al registrarte aceptás los{' '}
-                  <Link to="/informacion" className="underline hover:opacity-80" style={{ color: BUYER.color }}>términos y condiciones</Link>
-                </p>
               </motion.form>
             )}
 

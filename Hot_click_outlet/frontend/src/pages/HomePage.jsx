@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
@@ -15,6 +15,7 @@ import { formatPrice } from '@/utils/format'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
 import ProductCard from '@/components/ui/ProductCard'
 import { getOptimizedUrl } from '@/utils/imageUtils'
+import HeroRotator from '@/components/ui/HeroRotator'
 
 const stagger = {
   container: { hidden: {}, show: { transition: { staggerChildren: 0.08 } } },
@@ -438,11 +439,108 @@ function ConveniosMarquee() {
   )
 }
 
+// ─── Sección "Explorar por categoría" estilo Amazon ──────────────────────────
+function CategoryBrowse({ products, categories }) {
+  // Agrupar productos por categoría y tomar las 8 categorías con más productos
+  const catGroups = useMemo(() => {
+    const map = {}
+    products.forEach(p => {
+      const catId = String(p.categoriaId ?? '')
+      if (!catId) return
+      if (!map[catId]) map[catId] = { products: [], catId }
+      map[catId].products.push(p)
+    })
+    // Enriquecer con nombre de categoría
+    return Object.values(map)
+      .map(g => {
+        const cat = categories.find(c => String(c.id ?? c.idCategoria) === g.catId)
+        return { ...g, nombre: cat?.nombreCategoria ?? cat?.nombre ?? 'Sin nombre' }
+      })
+      .filter(g => g.products.length >= 1)
+      .sort((a, b) => b.products.length - a.products.length)
+      .slice(0, 8)
+  }, [products, categories])
+
+  if (catGroups.length === 0) return null
+
+  return (
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="text-lg sm:text-xl font-bold" style={{ color: 'var(--hc-text)' }}>
+          Explorá por categoría
+        </h2>
+        <Link to="/productos" className="text-xs font-semibold hover:opacity-70 transition-opacity"
+          style={{ color: 'var(--hc-accent)' }}>
+          Ver catálogo completo →
+        </Link>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+        {catGroups.map((group, gi) => (
+          <motion.div
+            key={group.catId}
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.35, delay: gi * 0.06 }}
+          >
+            <Link
+              to={`/productos?cat=${group.catId}`}
+              className="block rounded-2xl overflow-hidden transition-all hover:shadow-lg group"
+              style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
+            >
+              {/* Título */}
+              <div className="px-4 pt-4 pb-2">
+                <h3 className="text-sm font-bold line-clamp-1 group-hover:opacity-70 transition-opacity"
+                  style={{ color: 'var(--hc-text)' }}>
+                  {group.nombre}
+                </h3>
+              </div>
+
+              {/* Grid 2×2 de imágenes de productos */}
+              <div className="grid grid-cols-2 gap-px p-2 pt-1">
+                {Array.from({ length: 4 }).map((_, i) => {
+                  const prod = group.products[i]
+                  return (
+                    <div key={i} className="aspect-square overflow-hidden rounded-xl"
+                      style={{ background: 'color-mix(in srgb, var(--hc-text) 4%, transparent)' }}>
+                      {prod?.imagenUrl ? (
+                        <img
+                          src={prod.imagenUrl}
+                          alt={prod.nombre ?? ''}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-2xl opacity-20">
+                          📦
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Footer */}
+              <div className="px-4 py-3">
+                <span className="text-xs font-semibold transition-opacity group-hover:opacity-60"
+                  style={{ color: 'var(--hc-accent)' }}>
+                  Ver {group.products.length} producto{group.products.length !== 1 ? 's' : ''} →
+                </span>
+              </div>
+            </Link>
+          </motion.div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 // ─── Página principal ─────────────────────────────────────────────────────────
 export default function HomePage() {
-  const [carouselSlides, setCarouselSlides] = useState(PLACEHOLDER_SLIDES)
   const [destacados, setDestacados] = useState([])
   const [marcas, setMarcas] = useState([])
+  const [categorias, setCategorias] = useState([])
+  const [productsMuestra, setProductsMuestra] = useState([])
   const addItem = useCartStore((s) => s.addItem)
   const toast = useToast()
   const navigate = useNavigate()
@@ -451,21 +549,26 @@ export default function HomePage() {
   const recentlyViewed = useRecentlyViewedStore((s) => s.items)
 
   useEffect(() => {
-    productService.getCarrusel()
-      .then(({ data }) => {
-        const items = Array.isArray(data) ? data : []
-        if (items.length >= 1) {
-          const padded = [...items]
-          while (padded.length < 5) padded.push({ ...PLACEHOLDER_SLIDES[padded.length], id: `ph-${padded.length}` })
-          setCarouselSlides(padded.slice(0, 5))
-        }
-      })
-      .catch(() => {})
     productService.getDestacados()
       .then(({ data }) => setDestacados(Array.isArray(data) ? data.slice(0, 8) : []))
       .catch(() => {})
     marcaService.getPublicas()
       .then(({ data }) => setMarcas(Array.isArray(data) ? data : []))
+      .catch(() => {})
+    productService.getCategories()
+      .then(({ data }) => setCategorias(Array.isArray(data) ? data : []))
+      .catch(() => {})
+    // Muestra amplia para el grid por categorías
+    productService.getAll(0, 60)
+      .then(({ data }) => {
+        const content = data.content ?? data ?? []
+        setProductsMuestra(Array.isArray(content) ? content.map(p => ({
+          id: p.id ?? p.idProducto,
+          categoriaId: p.categoriaId ?? p.idCategoria ?? p.categoria?.id,
+          imagenUrl: p.imagenPrincipalUrl ?? p.imagenUrl ?? p.imagen,
+          nombre: p.nombreProducto ?? p.nombre ?? p.titulo,
+        })) : [])
+      })
       .catch(() => {})
   }, [])
 
@@ -489,74 +592,8 @@ export default function HomePage() {
           ]))}
         </script>
       </Helmet>
-      {/* ── Hero Carousel ── */}
-      <HeroCarousel slides={carouselSlides} />
-
-      {/* Visto recientemente */}
-      {recentlyViewed.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
-          <div className="flex items-center gap-2 mb-3 sm:mb-5">
-            <span className="w-1 h-4 rounded-full bg-[#4f7cff]" />
-            <h2 className="text-sm font-semibold tracking-wide uppercase text-[#8e8e9a]">{t('home.recentlyViewed')}</h2>
-          </div>
-          <div role="list" className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide">
-            {recentlyViewed.map((p) => (
-              <motion.article
-                key={p.id}
-                role="listitem"
-                whileHover={{ y: -4, scale: 1.02 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="shrink-0 relative w-44 rounded-2xl overflow-visible"
-                style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
-              >
-                {/* imagen desbordante — parte del enlace de navegación */}
-                <Link
-                  to={`/productos/${p.id}`}
-                  aria-hidden="true"
-                  tabIndex={-1}
-                  className="absolute -top-4 -left-3 w-20 h-20 drop-shadow-xl"
-                >
-                  {p.imagenUrl ? (
-                    <img src={getOptimizedUrl(p.imagenUrl, { width: 80, quality: 75 })} alt="" className="w-full h-full object-contain" loading="lazy" decoding="async" width={80} height={80} />
-                  ) : (
-                    <span aria-hidden="true" className="flex items-center justify-center w-full h-full text-3xl">📦</span>
-                  )}
-                </Link>
-
-                {/* enlace principal con nombre y precio */}
-                <Link
-                  to={`/productos/${p.id}`}
-                  className="block pl-16 pr-3 pt-3 pb-1 rounded-t-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--hc-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--hc-surface)]"
-                  aria-label={`Ver ${p.nombre}, ${formatPrice(p.precio)}`}
-                >
-                  <p className="text-xs font-medium truncate max-w-[90px] leading-tight" style={{ color: 'var(--hc-muted)' }}>
-                    {p.nombre}
-                  </p>
-                  <p className="text-sm font-bold mt-0.5" style={{ color: 'var(--hc-text)' }} aria-hidden="true">
-                    {formatPrice(p.precio)}
-                  </p>
-                </Link>
-
-                {/* botón añadir al carrito */}
-                <div className="flex justify-end px-3 pb-3 pt-1">
-                  <motion.button
-                    whileTap={{ scale: 0.88 }}
-                    aria-label={`Añadir ${p.nombre} al carrito`}
-                    onClick={() => {
-                      addItem(p)
-                      toast({ message: t('product.added', { name: p.nombre }), type: 'success' })
-                    }}
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-white text-base font-bold shadow-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                    style={{ background: 'var(--hc-accent)', boxShadow: '0 4px 12px color-mix(in srgb, var(--hc-accent) 30%, transparent)' }}
-                  >
-                    <span aria-hidden="true">+</span>
-                  </motion.button>
-                </div>
-              </motion.article>
-            ))}
-          </div>
-        </section>
-      )}
+      {/* ── Hero Rotador: Chat → Productos → Emprendimientos ── */}
+      <HeroRotator destacados={destacados.slice(0, 3)} />
 
       {/* Productos destacados */}
       {destacados.length > 0 && (
@@ -576,15 +613,73 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* Emprendimientos con convenio — marquee */}
-      <ConveniosMarquee />
+      {/* Explorar por categoría — estilo Amazon */}
+      <CategoryBrowse products={productsMuestra} categories={categorias} />
 
-      {/* Marcas */}
-      {marcas.length > 0 && (
+      {/* Visto recientemente */}
+      {recentlyViewed.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
           <div className="flex items-center gap-2 mb-3 sm:mb-5">
             <span className="w-1 h-4 rounded-full bg-[#4f7cff]" />
-            <h2 className="text-sm font-semibold tracking-wide uppercase text-[#8e8e9a]">{t('home.brands')}</h2>
+            <h2 className="text-sm font-semibold tracking-wide uppercase text-[#8e8e9a]">{t('home.recentlyViewed')}</h2>
+          </div>
+          <div role="list" className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide">
+            {recentlyViewed.map((p) => (
+              <motion.article
+                key={p.id}
+                role="listitem"
+                whileHover={{ y: -4, scale: 1.02 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                className="shrink-0 relative w-44 rounded-2xl overflow-visible"
+                style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
+              >
+                <Link
+                  to={`/productos/${p.id}`}
+                  aria-hidden="true"
+                  tabIndex={-1}
+                  className="absolute -top-4 -left-3 w-20 h-20 drop-shadow-xl"
+                >
+                  {p.imagenUrl ? (
+                    <img src={getOptimizedUrl(p.imagenUrl, { width: 80, quality: 75 })} alt="" className="w-full h-full object-contain" loading="lazy" decoding="async" width={80} height={80} />
+                  ) : (
+                    <span aria-hidden="true" className="flex items-center justify-center w-full h-full text-3xl">📦</span>
+                  )}
+                </Link>
+                <Link
+                  to={`/productos/${p.id}`}
+                  className="block pl-16 pr-3 pt-3 pb-1 rounded-t-2xl"
+                  aria-label={`Ver ${p.nombre}, ${formatPrice(p.precio)}`}
+                >
+                  <p className="text-xs font-medium truncate max-w-[90px] leading-tight" style={{ color: 'var(--hc-muted)' }}>{p.nombre}</p>
+                  <p className="text-sm font-bold mt-0.5" style={{ color: 'var(--hc-text)' }}>{formatPrice(p.precio)}</p>
+                </Link>
+                <div className="flex justify-end px-3 pb-3 pt-1">
+                  <motion.button
+                    whileTap={{ scale: 0.88 }}
+                    aria-label={`Añadir ${p.nombre} al carrito`}
+                    onClick={() => { addItem(p); toast({ message: t('product.added', { name: p.nombre }), type: 'success' }) }}
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-white text-base font-bold shadow-lg"
+                    style={{ background: 'var(--hc-accent)' }}
+                  >+</motion.button>
+                </div>
+              </motion.article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Emprendimientos con convenio — marquee */}
+      <ConveniosMarquee />
+
+      {/* Marcas — clicables, llevan al catálogo filtrado */}
+      {marcas.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+          <div className="flex items-center justify-between mb-3 sm:mb-5">
+            <div className="flex items-center gap-2">
+              <span className="w-1 h-4 rounded-full bg-[#4f7cff]" />
+              <h2 className="text-sm font-semibold tracking-wide uppercase text-[#8e8e9a]">{t('home.brands')}</h2>
+            </div>
+            <Link to="/productos" className="text-xs text-[#4f7cff] hover:underline">Ver todas</Link>
           </div>
           <div className="flex flex-wrap gap-3 sm:gap-4 justify-center">
             {marcas.map((m) => (
@@ -594,24 +689,31 @@ export default function HomePage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.35 }}
-                className="flex flex-col items-center gap-2 px-5 py-4 rounded-2xl bg-[#111114] border border-white/8 hover:border-white/20 transition-colors min-w-[90px]"
+                whileHover={{ y: -3 }}
               >
-                <div className="w-14 h-14 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
-                  {m.logoUrl ? (
-                    <img
-                      src={getOptimizedUrl(m.logoUrl, { width: 56, quality: 80 })}
-                      alt={m.nombreMarca}
-                      className="w-full h-full object-contain p-1.5"
-                      loading="lazy"
-                      decoding="async"
-                      width={56}
-                      height={56}
-                    />
-                  ) : (
-                    <span className="text-2xl opacity-30">🏷</span>
-                  )}
-                </div>
-                <span className="text-xs font-semibold text-[#e8e8ed] text-center leading-tight">{m.nombreMarca}</span>
+                <Link
+                  to={`/productos?marcas=${m.id}`}
+                  className="flex flex-col items-center gap-2 px-5 py-4 rounded-2xl border transition-all group"
+                  style={{ background: 'var(--hc-surface)', borderColor: 'var(--hc-border)', minWidth: '90px' }}
+                >
+                  <div className="w-14 h-14 rounded-xl border flex items-center justify-center overflow-hidden transition-colors"
+                    style={{ background: 'color-mix(in srgb, var(--hc-text) 4%, transparent)', borderColor: 'var(--hc-border)' }}>
+                    {m.logoUrl ? (
+                      <img
+                        src={getOptimizedUrl(m.logoUrl, { width: 56, quality: 80 })}
+                        alt={m.nombreMarca}
+                        className="w-full h-full object-contain p-1.5"
+                        loading="lazy" decoding="async" width={56} height={56}
+                      />
+                    ) : (
+                      <span className="text-2xl" style={{ opacity: 0.4 }}>🏷</span>
+                    )}
+                  </div>
+                  <span className="text-xs font-semibold text-center leading-tight group-hover:opacity-70 transition-opacity"
+                    style={{ color: 'var(--hc-text)' }}>
+                    {m.nombreMarca}
+                  </span>
+                </Link>
               </motion.div>
             ))}
           </div>
@@ -697,50 +799,146 @@ export default function HomePage() {
       {/* Servicios Hot promo */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-10">
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 28 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          className="relative rounded-3xl overflow-hidden p-5 sm:p-12"
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+          className="relative rounded-3xl overflow-hidden"
           style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
         >
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-0 right-0 w-80 h-80 opacity-10"
-              style={{ background: 'radial-gradient(circle, #f59e0b, transparent 70%)' }} />
-            <div className="absolute bottom-0 left-0 w-64 h-64 opacity-8"
-              style={{ background: 'radial-gradient(circle, var(--hc-accent), transparent 70%)' }} />
+          {/* Background layer */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <div className="absolute inset-0 opacity-[0.035]" style={{
+              backgroundImage: `repeating-linear-gradient(-45deg, var(--hc-text) 0px, var(--hc-text) 1px, transparent 1px, transparent 14px)`,
+            }} />
+            <div className="absolute -top-24 -right-24 w-[420px] h-[420px] rounded-full"
+              style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.22), transparent 65%)', filter: 'blur(48px)' }} />
+            <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full"
+              style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--hc-accent) 25%, transparent), transparent 65%)', filter: 'blur(40px)' }} />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[200px]"
+              style={{ background: 'radial-gradient(ellipse, color-mix(in srgb, var(--hc-accent) 4%, transparent), transparent 70%)' }} />
           </div>
-          <div className="relative flex flex-col sm:flex-row items-center gap-4 sm:gap-8">
-            <div className="flex-1 text-center sm:text-left">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-3"
-                style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
-                {t('serviciosPage.newService')}
+
+          <div className="relative p-6 sm:p-10 lg:p-14">
+            <div className="flex flex-col lg:flex-row gap-10 lg:gap-20 items-center">
+
+              {/* ── Left: copy + CTA ── */}
+              <div className="flex-1 max-w-md text-center lg:text-left">
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.08 }}
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold mb-5"
+                  style={{ backgroundColor: 'rgba(245,158,11,0.11)', border: '1px solid rgba(245,158,11,0.28)', color: '#b45309' }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#f59e0b' }} />
+                  {t('serviciosPage.newService')}
+                </motion.div>
+
+                <motion.h2
+                  initial={{ opacity: 0, y: 14 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.14 }}
+                  className="font-black leading-[1.04] tracking-tight mb-4"
+                  style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)', color: 'var(--hc-text)' }}
+                >
+                  {t('serviciosPage.title')}
+                </motion.h2>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.20 }}
+                >
+                  <p className="text-base leading-relaxed mb-1.5" style={{ color: 'var(--hc-muted)' }}>
+                    {t('home.servicesNotFound')}{' '}
+                    <strong style={{ color: 'var(--hc-text)', fontWeight: 700 }}>{t('home.servicesSend')}</strong>
+                  </p>
+                  <p className="text-sm leading-relaxed mb-8" style={{ color: 'var(--hc-muted)' }}>
+                    {t('home.servicesSearch')}
+                  </p>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.27 }}
+                  className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start"
+                >
+                  <Link to="/servicios" className="hc-btn hc-btn-primary hc-btn-lg inline-flex items-center gap-2 group">
+                    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    {t('home.servicesRequest')}
+                    <span className="inline-block group-hover:translate-x-1 transition-transform duration-200">→</span>
+                  </Link>
+                </motion.div>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-black mb-3 leading-tight"
-                style={{ fontFamily: "'Barlow', sans-serif", color: 'var(--hc-text)' }}>
-                {t('serviciosPage.title')}
-              </h2>
-              <p className="mb-2" style={{ color: 'var(--hc-muted)' }}>
-                {t('home.servicesNotFound')} <strong style={{ color: 'var(--hc-text)' }}>{t('home.servicesSend')}</strong>
-              </p>
-              <p className="text-sm mb-6" style={{ color: 'var(--hc-muted)' }}>
-                {t('home.servicesSearch')}
-              </p>
-              <Link to="/servicios" className="hc-btn hc-btn-primary inline-flex items-center gap-2">
-                {t('home.servicesRequest')}
-              </Link>
-            </div>
-            <div className="grid grid-cols-3 gap-3 shrink-0">
-              {[
-                { icon: '📸', label: t('home.servicesStep1') },
-                { icon: '🔍', label: t('home.servicesStep2') },
-                { icon: '🤝', label: t('home.servicesStep3') },
-              ].map(s => (
-                <div key={s.label} className="flex flex-col items-center gap-1.5 p-3 rounded-2xl text-center w-24"
-                  style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
-                  <span className="text-2xl">{s.icon}</span>
-                  <span className="text-xs font-medium leading-tight" style={{ color: 'var(--hc-muted)' }}>{s.label}</span>
+
+              {/* ── Right: vertical step list ── */}
+              <div className="w-full lg:w-auto lg:shrink-0 relative">
+                {/* Connecting line */}
+                <div className="absolute left-[1.875rem] top-10 bottom-10 w-px hidden sm:block"
+                  style={{ background: 'linear-gradient(to bottom, rgba(245,158,11,0.5), color-mix(in srgb, var(--hc-accent) 60%, transparent), rgba(16,185,129,0.4))' }} />
+
+                <div className="flex flex-col gap-3 sm:gap-4">
+                  {([
+                    {
+                      n: '01', icon: '📷',
+                      label: t('home.servicesStep1'),
+                      desc: 'Mandanos la foto del producto por WhatsApp',
+                      accent: '#f59e0b',
+                      accentBg: 'rgba(245,158,11,0.10)',
+                      accentBorder: 'rgba(245,158,11,0.25)',
+                    },
+                    {
+                      n: '02', icon: '🔍',
+                      label: t('home.servicesStep2'),
+                      desc: 'Consultamos todos nuestros proveedores',
+                      accent: 'var(--hc-accent)',
+                      accentBg: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)',
+                      accentBorder: 'color-mix(in srgb, var(--hc-accent) 28%, transparent)',
+                    },
+                    {
+                      n: '03', icon: '💬',
+                      label: t('home.servicesStep3'),
+                      desc: 'Precio y disponibilidad en minutos',
+                      accent: '#10b981',
+                      accentBg: 'rgba(16,185,129,0.09)',
+                      accentBorder: 'rgba(16,185,129,0.24)',
+                    },
+                  ]).map((s, i) => (
+                    <motion.div
+                      key={s.n}
+                      initial={{ opacity: 0, x: 28 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.18 + i * 0.10, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                      whileHover={{ y: -3, transition: { duration: 0.2 } }}
+                      className="flex items-center gap-4 p-4 rounded-2xl relative z-10"
+                      style={{
+                        background: 'var(--hc-surface-2)',
+                        border: '1px solid var(--hc-border)',
+                        minWidth: 'clamp(240px, 40vw, 300px)',
+                        cursor: 'default',
+                      }}
+                    >
+                      <div className="w-[3.75rem] h-[3.75rem] rounded-xl flex flex-col items-center justify-center shrink-0 gap-0.5"
+                        style={{ background: s.accentBg, border: `1px solid ${s.accentBorder}` }}>
+                        <span className="text-xl leading-none">{s.icon}</span>
+                        <span className="text-[9px] font-black tracking-widest" style={{ color: s.accent }}>{s.n}</span>
+                      </div>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-sm font-bold leading-snug" style={{ color: 'var(--hc-text)' }}>{s.label}</span>
+                        <span className="text-xs leading-snug" style={{ color: 'var(--hc-muted)' }}>{s.desc}</span>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
-              ))}
+              </div>
+
             </div>
           </div>
         </motion.div>

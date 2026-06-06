@@ -47,13 +47,11 @@ public class StripeService {
 
     @PostConstruct
     public void init() {
-        if (secretKey == null || secretKey.isBlank() || secretKey.startsWith("sk_test_")) {
-            if (secretKey == null || secretKey.isBlank()) {
-                mockMode = true;
-                log.warn("[stripe] STRIPE_SECRET_KEY no configurado — modo MOCK activo. " +
-                         "Configura STRIPE_SECRET_KEY en Render para activar pagos reales.");
-                return;
-            }
+        if (secretKey == null || secretKey.isBlank()) {
+            mockMode = true;
+            log.warn("[stripe] STRIPE_SECRET_KEY no configurado — modo MOCK activo. " +
+                     "Suscripciones usan datos ficticios; pagos de productos lanzarán error.");
+            return;
         }
         Stripe.apiKey = secretKey;
         log.info("[stripe] SDK inicializado (live={})", !secretKey.startsWith("sk_test_"));

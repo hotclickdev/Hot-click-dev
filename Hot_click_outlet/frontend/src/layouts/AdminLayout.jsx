@@ -45,6 +45,7 @@ function buildSidebarLinks(t, userRole) {
       { to: '/admin/servicios',     label: 'Servicios HOT',               icon: 'wrench'   },
       { to: '/admin/testimonios',   label: 'Testimonios',                 icon: 'star'     },
       { section: 'Sistema' },
+      { to: '/admin/homepage',     label: 'Homepage / Carousel',         icon: 'home'     },
       { to: '/admin/branding',     label: 'Branding / White Label',      icon: 'brand'    },
       { to: '/admin/multipais',    label: 'LATAM Multi-país',            icon: 'globe'    },
       { to: '/admin/plugins',      label: 'Plugins / Integraciones',     icon: 'plugin'   },

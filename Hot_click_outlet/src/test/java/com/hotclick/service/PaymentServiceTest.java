@@ -50,7 +50,7 @@ class PaymentServiceTest {
     private Producto testProducto;
 
     private static final String CORREO  = "buyer@hotclick.cr";
-    private static final String REDIRECT = "https://pay.payxpert.com/checkout/TXN-123";
+    private static final String REDIRECT = "https://checkout.stripe.com/pay/TXN-123";
 
     @BeforeEach
     void setUp() throws Exception {
@@ -73,8 +73,8 @@ class PaymentServiceTest {
         testProducto.setVendido(false);
         testProducto.setEstado(Constants.ESTADO_ACTIVO);
 
-        when(providerFactory.soporta("PAYXPERT")).thenReturn(true);
-        when(providerFactory.get("PAYXPERT")).thenReturn(mockProvider);
+        when(providerFactory.soporta("STRIPE")).thenReturn(true);
+        when(providerFactory.get("STRIPE")).thenReturn(mockProvider);
         when(mockProvider.crearSesion(any(), any()))
             .thenReturn(new PaymentSession("TXN-123", REDIRECT));
     }
@@ -175,7 +175,7 @@ class PaymentServiceTest {
     void checkout_providerFails_releasesStock() throws Exception {
         setupCheckoutMocks();
         when(mockProvider.crearSesion(any(), any()))
-            .thenThrow(new RuntimeException("PayXpert timeout"));
+            .thenThrow(new RuntimeException("Stripe timeout"));
 
         assertThatThrownBy(() -> service.checkout(buildRequest(1), CORREO))
             .isInstanceOf(RuntimeException.class);
@@ -403,7 +403,7 @@ class PaymentServiceTest {
         PaymentCheckoutRequest req = new PaymentCheckoutRequest();
         req.setBodegaId(1L);
         req.setMetodoEnvio(Constants.ENVIO_RETIRO);
-        req.setProvider(Constants.PROVEEDOR_PAYXPERT);
+        req.setProvider("STRIPE");
 
         PaymentCheckoutRequest.ItemDTO item = new PaymentCheckoutRequest.ItemDTO();
         item.setProductoId(10L);
@@ -439,7 +439,7 @@ class PaymentServiceTest {
         pago.setMerchantToken("TOKEN-001");
         pago.setMonto(25000);
         pago.setEstadoPago(estadoPago);
-        pago.setProveedor(Constants.PROVEEDOR_PAYXPERT);
+        pago.setProveedor("STRIPE");
         pago.setFechaCreacion(LocalDateTime.now());
         pago.setFechaExpiracion(LocalDateTime.now().plusMinutes(30));
         pago.setPedido(pedido);

@@ -1,14 +1,14 @@
-# HOTCLICK Outlet — Documentación Técnica
+# HOTCLICK — Documentación Técnica
 
-> Versión: 2.4 | Fecha: 2026-05-15 | Stack: React 19 + Vite + pnpm · Spring Boot 3.4.4 + Java 21
+> Versión: 3.0 | Fecha: 2026-06-05 | Stack: React + Vite + pnpm · Spring Boot 3.4.4 + Java 24
 
 ---
 
 ## 1. Resumen Ejecutivo
 
-**HOTCLICK Outlet** es una plataforma e-commerce B2C para el mercado costarricense. Los usuarios exploran el catálogo, agregan al carrito y realizan pedidos. Los administradores gestionan inventario, bodegas, usuarios y ventas desde un panel React dedicado.
+**HOTCLICK** es una plataforma SaaS multi-tenant de e-commerce para el mercado costarricense. Conecta compradores con emprendedores locales a través de un marketplace con POS, CRM, analytics, WhatsApp API y cumplimiento legal completo (Ley N.° 8968).
 
-**Stack**: Spring Boot 3.4.4 + Java 21 (backend API) + React 19 + Vite (frontend SPA) + Supabase PostgreSQL.
+**Stack**: Spring Boot 3.4.4 + Java 24 (backend API) + React + Vite (frontend SPA) + Supabase PostgreSQL + Flyway (56 migraciones).
 
 ---
 
@@ -39,42 +39,50 @@
 ### Base de Datos
 
 - PostgreSQL en Supabase, Transaction Pooler puerto **6543**
-- ~30 tablas con prefijo `hot_click_*_tb`
-- Schema definido en `Hot_click_outlet/Actualizado.sql`
-- HikariCP con pool limitado al plan gratuito de Supabase
+- ~60 tablas con prefijo `hot_click_*_tb`
+- Schema gestionado exclusivamente con Flyway (V1–V56) — `ddl-auto=none`
+- `Actualizado.sql` refleja el schema completo para referencia y staging
+- HikariCP con pool limitado al plan de Supabase
+- **Constraint crítico:** PgBouncer en transaction mode — prohibido `pg_advisory_lock`, `SET session`, `LISTEN/NOTIFY`
 
 ### Integraciones Externas
 
 | Servicio | Propósito |
-|---|---|
-| Supabase PostgreSQL | Base de datos principal |
-| Supabase Storage | Imágenes de productos (bucket `HOT_CLICK`) — upload vía backend `/api/productos/imagen` |
-| Gmail SMTP | Verificación de email, reset de contraseña |
-| Google Authenticator | 2FA TOTP (RFC 6238) |
-| PayXpert | Pasarela de pago (pendiente activación) |
+| --- | --- |
+| Supabase PostgreSQL | Base de datos principal (PgBouncer transaction mode, puerto 6543) |
+| Supabase Storage | Imágenes de productos y logos (bucket `HOT_CLICK`) |
+| SendGrid | Email transaccional — confirmaciones, guías, seguimiento de pedidos |
+| Stripe | Pagos con tarjeta — webhook para confirmar pedidos |
+| PayXpert | Pasarela alternativa — webhook integrado |
+| Clerk | OAuth social login: Google, Microsoft, Apple, GitHub |
+| Google Analytics 4 | Analítica con consentimiento previo (CookieBanner) |
+| Meta Cloud API | Mensajería WhatsApp — plantillas y logs (`WaMensajeLog`) |
+| Google Authenticator | 2FA TOTP (RFC 6238, AES-256-GCM en DB) |
 
 ---
 
 ## 3. Tecnologías
 
 | Categoría | Tecnología | Versión |
-|---|---|---|
-| Lenguaje backend | Java | 21 |
+| --- | --- | --- |
+| Lenguaje backend | Java | 24 |
 | Framework backend | Spring Boot | 3.4.4 |
-| Seguridad | Spring Security + JJWT | 0.11.5 |
+| Seguridad | Spring Security + JJWT | — |
+| Migraciones DB | Flyway | V1–V56 |
+| Jobs distribuidos | ShedLock | — |
 | 2FA | dev.samstevens.totp | 1.7.1 |
 | ORM | Spring Data JPA / Hibernate | (incluido en Boot) |
 | Base de datos | PostgreSQL (Supabase) | 15 |
 | Build backend | Maven local (`maven/bin/`) | — |
-| Frontend | React | 19 |
+| Frontend | React | 18 |
 | Bundler | Vite | 8.x |
 | Gestor de paquetes | pnpm | 11.1.2 |
 | Estado global | Zustand | — |
 | HTTP client | Axios | — |
 | Query cache | TanStack Query | — |
 | Animaciones | Framer Motion | — |
+| OAuth | Clerk | v6 |
 | Contenerización | Docker + docker-compose | — |
-| Deploy | Render.com | — |
 
 ---
 
@@ -248,22 +256,32 @@ Hot_click_outlet/
 ### Roles
 
 | Rol | Acceso |
-|---|---|
-| `ADMIN_IT` | Panel admin completo incluyendo gestión de usuarios |
-| `ADMIN_CLIENTE` | Panel admin sin gestión de usuarios |
+| --- | --- |
+| `ADMIN_IT` | Panel admin completo — usuarios, seguridad, superadmin |
+| `ADMIN_CLIENTE` | Panel admin sin gestión de usuarios ni seguridad |
+| `EMPRENDEDOR` | Panel de emprendedor — productos, pedidos, finanzas propias |
+| `CAJERO` | Solo POS |
+| `GERENTE` | POS + historial |
+| `SUPERVISOR` | POS + configuración de turno |
 | `USUARIO_FINAL` | Tienda pública, carrito, pedidos propios |
 
-### Variables de entorno (Render / producción)
+### Variables de entorno (producción)
 
 | Variable | Propósito |
-|---|---|
-| `SPRING_DATASOURCE_URL` | URL JDBC Supabase con Transaction Pooler |
+| --- | --- |
+| `SPRING_DATASOURCE_URL` | URL JDBC Supabase con Transaction Pooler (puerto 6543) |
 | `SPRING_DATASOURCE_PASSWORD` | Contraseña PostgreSQL |
 | `SUPABASE_URL` | URL del proyecto Supabase |
 | `SUPABASE_KEY` | Service Role Key de Supabase Storage |
-| `MAIL_USERNAME` | Cuenta Gmail SMTP |
-| `MAIL_PASSWORD` | App Password Gmail |
 | `JWT_SECRET` | Clave secreta para firmar tokens JWT |
+| `RESEND_API_KEY` | SendGrid (email transaccional) |
+| `STRIPE_SECRET_KEY` | Stripe — pagos con tarjeta |
+| `STRIPE_WEBHOOK_SECRET` | Stripe — verificación de webhook |
+| `PAYXPERT_API_KEY` | PayXpert — pasarela alternativa |
+| `CLERK_SECRET_KEY` | Clerk — OAuth social login backend |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk — OAuth social login frontend |
+| `WHATSAPP_TOKEN` | Meta Cloud API — mensajería WhatsApp |
+| `WHATSAPP_PHONE_NUMBER_ID` | Meta Cloud API — ID del número |
 
 ---
 
@@ -277,15 +295,37 @@ Hot_click_outlet/
 
 ---
 
-## 9. Problemas Conocidos / Deuda Técnica
+## 9. Cumplimiento Legal (Ley N.° 8968)
+
+Ver reporte completo en [docs/COMPLIANCE.md](docs/COMPLIANCE.md) y los 8 documentos legales en [docs/legal/](docs/legal/).
+
+### Mecanismo de consentimiento
+
+| Flujo | Tipo | Archivo |
+| --- | --- | --- |
+| Registro de usuario | `REGISTRO` | `RegisterPage.jsx` |
+| Proceso de pago | `CHECKOUT` | `CheckoutPage.jsx` |
+| Registro de negocio | `VENDEDOR` | `RegistrarNegocioPage.jsx` |
+
+Cada aceptación graba `usuario_id`, `ip_address`, `user_agent` y `fecha_consentimiento` en `hot_click_consentimiento_log_tb` (V56).
+
+### Endpoint
+
+```http
+POST /api/consentimiento   → público (invitados graban usuario_id = NULL)
+```
+
+---
+
+## 10. Problemas Conocidos / Deuda Técnica
 
 | Problema | Severidad | Notas |
-|---|---|---|
+| --- | --- | --- |
 | JWT en `localStorage` | Baja | Vulnerable a XSS; alternativa es `httpOnly` cookie |
-| Sin rate limiting en `/api/auth/**` | Media | Solo tiene bloqueo de cuenta por intentos fallidos |
+| Rate limiting en memoria (no distribuido) | Media | Se resetea al reiniciar; usar ShedLock para distributed lock |
 | Carga EAGER de roles en Usuario | Baja | `ManyToMany(fetch=EAGER)` puede causar N+1 en listados masivos |
-| Sin tests de integración | Media | Directorio `test/` existe pero vacío |
-| `ddl-auto=none` requiere gestión manual de migraciones | Media | Considerar Flyway para auditoría |
+| Swagger accesible en producción | Media | Verificar y proteger o deshabilitar |
+| Dependencias sin audit automatizado | Media | Considerar OWASP dependency-check en CI/CD |
 
 ---
 

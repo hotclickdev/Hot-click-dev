@@ -108,6 +108,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/health").permitAll()
                 .requestMatchers(POST, "/api/webhooks/paypal").permitAll()
                 .requestMatchers(POST, "/api/webhooks/stripe").permitAll()
+                // Bitácora de consentimiento — público (también lo usan invitados en checkout)
+                .requestMatchers(POST, "/api/consentimiento").permitAll()
                 // Self-checkout QR — completamente público (sin JWT)
                 .requestMatchers(GET,  "/api/qr/**").permitAll()
                 .requestMatchers(POST, "/api/qr/*/pedido").permitAll()
@@ -130,6 +132,8 @@ public class SecurityConfig {
                 .requestMatchers(DELETE, "/api/productos/*").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
                 .requestMatchers(POST,   "/api/productos/**").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
                 .requestMatchers(GET, "/api/categorias").permitAll()
+                .requestMatchers(GET, "/api/categorias/**").permitAll()
+                .requestMatchers(GET, "/api/convenios/publicos").permitAll()
                 .requestMatchers(GET, "/api/marcas/publicas").permitAll()
                 .requestMatchers(GET, "/api/planes").permitAll()
                 .requestMatchers(GET, "/api/billing/planes").permitAll()
@@ -256,8 +260,8 @@ public class SecurityConfig {
                         "script-src 'self' 'unsafe-inline' https://www.paypal.com https://www.sandbox.paypal.com https://js.stripe.com https://*.clerk.accounts.dev https://clerk.browser.js; " +
                         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
                         "font-src 'self' https://fonts.gstatic.com; " +
-                        "img-src 'self' data: blob: " + supabaseUrl + " https://www.paypalobjects.com; " +
-                        "connect-src 'self' " + supabaseUrl + " https://api-m.paypal.com https://api-m.sandbox.paypal.com https://api.stripe.com; " +
+                        "img-src 'self' data: blob: " + supabaseUrl + " https://www.paypalobjects.com https://*.googleusercontent.com https://img.clerk.com https://avatars.githubusercontent.com; " +
+                        "connect-src 'self' " + supabaseUrl + " https://*.clerk.accounts.dev https://api.clerk.com https://clerk.hot-spider-31.lcl.dev https://api-m.paypal.com https://api-m.sandbox.paypal.com https://api.stripe.com; " +
                         "frame-src https://www.paypal.com https://www.sandbox.paypal.com https://js.stripe.com https://hooks.stripe.com https://www.youtube.com https://www.youtube-nocookie.com https://www.tiktok.com https://www.instagram.com; " +
                         "object-src 'none'; " +
                         "base-uri 'self';"

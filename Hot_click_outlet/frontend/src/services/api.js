@@ -66,4 +66,8 @@ api.interceptors.response.use(
   }
 )
 
+export function registrarConsentimiento(tipo) {
+  return api.post('/consentimiento', { tipo }).catch(() => {})
+}
+
 export default api

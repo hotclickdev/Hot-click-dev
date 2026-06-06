@@ -2641,3 +2641,19 @@ ALTER TABLE hot_click_usuario_tb
 CREATE UNIQUE INDEX IF NOT EXISTS uq_usuario_clerk_id
     ON hot_click_usuario_tb(clerk_user_id)
     WHERE clerk_user_id IS NOT NULL;
+
+-- V56: Bitácora de consentimiento informado (Ley N.° 8968)
+CREATE TABLE IF NOT EXISTS hot_click_consentimiento_log_tb (
+    id                   BIGSERIAL PRIMARY KEY,
+    usuario_id           BIGINT,
+    tipo                 VARCHAR(30)  NOT NULL,
+    version_doc          VARCHAR(20)  NOT NULL DEFAULT '2025-06-05',
+    ip_address           VARCHAR(50),
+    user_agent           VARCHAR(500),
+    aceptado             BOOLEAN      NOT NULL DEFAULT TRUE,
+    fecha_consentimiento TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_consentimiento_usuario
+    ON hot_click_consentimiento_log_tb (usuario_id);
+CREATE INDEX IF NOT EXISTS idx_consentimiento_tipo_fecha
+    ON hot_click_consentimiento_log_tb (tipo, fecha_consentimiento);

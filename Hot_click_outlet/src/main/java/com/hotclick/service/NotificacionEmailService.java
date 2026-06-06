@@ -20,37 +20,48 @@ public class NotificacionEmailService {
     private static final NumberFormat CRC = NumberFormat.getInstance(Locale.forLanguageTag("es-CR"));
 
     @Autowired private ResendEmailService resendEmailService;
+    @Autowired private WhatsAppService    whatsAppService;
 
     @Async
     public void enviarConfirmacionPedido(Pedido pedido) {
         Usuario cliente = pedido.getUsuarioFinal();
-        if (cliente == null || cliente.getCorreo() == null) return;
-        try {
-            resendEmailService.send(
-                cliente.getCorreo(),
-                "Pedido confirmado — " + pedido.getNumeroPedido(),
-                buildHtml(pedido, cliente)
-            );
-            log.info("Email confirmación enviado a {} para pedido {}", cliente.getCorreo(), pedido.getNumeroPedido());
-        } catch (Exception e) {
-            log.error("No se pudo enviar email de confirmación para pedido {}: {}", pedido.getNumeroPedido(), e.getMessage());
+        if (cliente == null) return;
+        // Email
+        if (cliente.getCorreo() != null) {
+            try {
+                resendEmailService.send(
+                    cliente.getCorreo(),
+                    "Pedido confirmado — " + pedido.getNumeroPedido(),
+                    buildHtml(pedido, cliente)
+                );
+                log.info("Email confirmación enviado a {} para pedido {}", cliente.getCorreo(), pedido.getNumeroPedido());
+            } catch (Exception e) {
+                log.error("No se pudo enviar email de confirmación para pedido {}: {}", pedido.getNumeroPedido(), e.getMessage());
+            }
         }
+        // WhatsApp — en paralelo, falla silenciosamente
+        whatsAppService.enviarConfirmacionPedido(pedido);
     }
 
     @Async
     public void enviarNotificacionGuia(Pedido pedido) {
         Usuario cliente = pedido.getUsuarioFinal();
-        if (cliente == null || cliente.getCorreo() == null) return;
-        try {
-            resendEmailService.send(
-                cliente.getCorreo(),
-                "Tu pedido fue enviado — " + pedido.getNumeroPedido(),
-                buildGuiaHtml(pedido, cliente)
-            );
-            log.info("Email guía enviado a {} para pedido {}", cliente.getCorreo(), pedido.getNumeroPedido());
-        } catch (Exception e) {
-            log.error("No se pudo enviar email de guía para pedido {}: {}", pedido.getNumeroPedido(), e.getMessage());
+        if (cliente == null) return;
+        // Email
+        if (cliente.getCorreo() != null) {
+            try {
+                resendEmailService.send(
+                    cliente.getCorreo(),
+                    "Tu pedido fue enviado — " + pedido.getNumeroPedido(),
+                    buildGuiaHtml(pedido, cliente)
+                );
+                log.info("Email guía enviado a {} para pedido {}", cliente.getCorreo(), pedido.getNumeroPedido());
+            } catch (Exception e) {
+                log.error("No se pudo enviar email de guía para pedido {}: {}", pedido.getNumeroPedido(), e.getMessage());
+            }
         }
+        // WhatsApp
+        whatsAppService.enviarGuiaAsignada(pedido);
     }
 
     @Async

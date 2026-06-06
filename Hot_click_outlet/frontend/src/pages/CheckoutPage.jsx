@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
+import { registrarConsentimiento } from '@/services/api'
 import CheckoutStepper from '@/components/ui/CheckoutStepper'
 import useCartStore from '@/store/cartStore'
 import useAuthStore from '@/store/authStore'
@@ -101,14 +102,6 @@ export default function CheckoutPage() {
       icon: StripeIcon,
     },
     {
-      id: 'PAYPAL',
-      label: 'PayPal',
-      descripcion: t('checkout.paypalDesc'),
-      badge: t('checkout.paypalBadge'),
-      badgeColor: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-      icon: PayPalIcon,
-    },
-    {
       id: 'SINPE',
       label: 'SINPE Móvil',
       descripcion: 'Transferencia directa · Se verifica en minutos',
@@ -164,6 +157,7 @@ export default function CheckoutPage() {
   const [gcEstado,    setGcEstado]    = useState('idle') // idle | loading | valid | invalid
   const [gcSaldo,     setGcSaldo]     = useState(0)      // saldo disponible
   const [gcCodigo,    setGcCodigo]    = useState(null)   // código validado
+  const [aceptaDatos, setAceptaDatos] = useState(false)
 
   function validateGuestEmail(v) {
     if (!v.trim()) return t('checkout.guestEmailRequired')
@@ -229,6 +223,7 @@ export default function CheckoutPage() {
   }, [metodoEnvio, telefono, direccion, token])
 
   const handlePagar = () => {
+    if (!aceptaDatos) return
     if (!validateDomicilio()) return
 
     // Validar email de invitado si no hay sesión
@@ -238,6 +233,7 @@ export default function CheckoutPage() {
       setGuestEmailDirty(true)
       if (eErr) return
     }
+    registrarConsentimiento('CHECKOUT')
 
     const phoneEfectivo = !token ? guestPhone : telefono
     const notasFull = [
@@ -716,13 +712,6 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {metodoPago === 'PAYPAL' && (
-                <div className="p-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--hc-surface) 50%, transparent)', border: '1px solid var(--hc-border)' }}>
-                  <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-                    {t('checkout.paypalNote')}
-                  </p>
-                </div>
-              )}
 
               <AnimatePresence>
                 {metodoPago === 'SINPE' && (
@@ -942,11 +931,6 @@ export default function CheckoutPage() {
                 <span className="text-lg text-[#4f7cff]">{formatPrice(totalFinal)}</span>
               </div>
 
-              {metodoPago === 'PAYPAL' && (
-                <p className="text-[10px] leading-relaxed rounded-lg p-2.5 bg-blue-500/8 border border-blue-500/20" style={{ color: 'var(--hc-muted)' }}>
-                  {t('checkout.paypalNote2')}
-                </p>
-              )}
               {metodoPago === 'SINPE' && (
                 <div className="text-[10px] leading-relaxed rounded-lg p-2.5 space-y-0.5" style={{ background: 'color-mix(in srgb, #10b981 8%, transparent)', border: '1px solid color-mix(in srgb, #10b981 20%, transparent)', color: 'var(--hc-muted)' }}>
                   <p>📱 SINPE: <strong className="text-emerald-400">{SINPE_NUMERO}</strong></p>
@@ -962,9 +946,25 @@ export default function CheckoutPage() {
                 <span>{t('checkout.trustReturns')}</span>
               </div>
 
+              {/* Consentimiento de datos — Ley 8968 */}
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '0.75rem', borderRadius: 10, border: `1px solid ${aceptaDatos ? 'var(--hc-accent)' : 'var(--hc-border)'}`, background: aceptaDatos ? 'color-mix(in srgb, var(--hc-accent) 5%, transparent)' : 'transparent', transition: 'all 0.15s' }}>
+                <input
+                  type="checkbox"
+                  checked={aceptaDatos}
+                  onChange={e => setAceptaDatos(e.target.checked)}
+                  style={{ marginTop: 2, accentColor: 'var(--hc-accent)', width: 15, height: 15, flexShrink: 0 }}
+                />
+                <span style={{ fontSize: 11.5, color: 'var(--hc-muted)', lineHeight: 1.6 }}>
+                  Autorizo el tratamiento de mis datos y su transferencia al vendedor con el único fin de coordinar la entrega del pedido, conforme a la{' '}
+                  <Link to="/privacidad" target="_blank" style={{ color: 'var(--hc-accent)', textDecoration: 'none' }}>Política de Privacidad</Link>
+                  {' '}y la{' '}
+                  <Link to="/cookies" target="_blank" style={{ color: 'var(--hc-accent)', textDecoration: 'none' }}>Política de Cookies</Link>.
+                </span>
+              </label>
+
               <button
                 onClick={handlePagar}
-                disabled={estado === 'loading' || estado === 'redirecting' || intentos >= maxIntentos}
+                disabled={!aceptaDatos || estado === 'loading' || estado === 'redirecting' || intentos >= maxIntentos}
                 className={`w-full py-3.5 rounded-xl font-semibold text-sm transition-all
                            disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2
                            ${metodoPago === 'SINPE'
@@ -975,9 +975,7 @@ export default function CheckoutPage() {
                 {metodoPago === 'SINPE' ? <SinpeIcon selected /> : <LockIcon />}
                 {metodoPago === 'SINPE'
                   ? `Confirmar SINPE · ${formatPrice(totalFinal)}`
-                  : metodoPago === 'PAYPAL'
-                    ? `${t('checkout.payWithPaypal')} · ${formatPrice(totalFinal)}`
-                    : `${t('checkout.payWithStripe')} · ${formatPrice(totalFinal)}`
+                  : `${t('checkout.payWithStripe')} · ${formatPrice(totalFinal)}`
                 }
               </button>
 
@@ -1002,14 +1000,6 @@ function StripeIcon({ selected }) {
   )
 }
 
-function PayPalIcon({ selected }) {
-  return (
-    <svg viewBox="0 0 24 16" className={`w-8 h-5 ${selected ? 'opacity-100' : 'opacity-60'}`} fill="none">
-      <text x="0" y="13" fontSize="10" fontWeight="800" fontFamily="sans-serif" fill="#003087">Pay</text>
-      <text x="9" y="13" fontSize="10" fontWeight="800" fontFamily="sans-serif" fill="#009cde">Pal</text>
-    </svg>
-  )
-}
 
 function CardIcon({ selected }) {
   return (

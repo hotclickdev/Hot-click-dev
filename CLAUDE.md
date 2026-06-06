@@ -101,8 +101,8 @@ Proyecto Spring Boot 3.4.4 con Java 24. El código vive bajo `Hot_click_outlet/`
 | PUT | `/api/pedidos/{id}/guia` | Asignar guía de envío → notifica por email |
 | PUT | `/api/pedidos/{id}/envio` | Procesar envío con guía y costo |
 | POST | `/api/pedidos/{id}/notificar` | Enviar email de seguimiento al cliente |
-| POST | `/api/payment/checkout` | Iniciar pago PayXpert |
-| POST | `/api/webhooks/payxpert` | Webhook de pagos |
+| POST | `/api/payment/checkout` | Iniciar pago Stripe |
+| POST | `/api/webhooks/stripe` | Webhook de pagos |
 | GET | `/api/admin/dashboard/**` | KPIs para panel admin |
 
 ## Frontend — páginas y rutas

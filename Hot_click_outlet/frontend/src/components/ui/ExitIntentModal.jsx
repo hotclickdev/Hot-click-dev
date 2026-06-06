@@ -1,191 +1,139 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
 import useCartStore from '@/store/cartStore'
+import useWishlistStore from '@/store/wishlistStore'
 import { formatPrice } from '@/utils/format'
 
 const SESSION_KEY = 'hc-exit-intent-shown'
-
-// Show after this many ms if user already had items when they entered
-const ENTRY_DELAY_MS = 12_000   // 12 s
-// Show after this many ms of browsing (cart may have been filled after load)
-const BROWSE_DELAY_MS = 150_000 // 2.5 min
+const DELAY_BEFORE_ARMED_MS = 5000
 
 export default function ExitIntentModal() {
-  const { t } = useTranslation()
-  const [visible, setVisible] = useState(false)
-  const items = useCartStore((s) => s.items)
-  const total = useCartStore((s) => s.total)
+  const [open, setOpen] = useState(false)
+  const armed = useRef(false)
+  const cartItems = useCartStore((s) => s.items)
+  const cartTotal = useCartStore((s) => s.total)
+  const wishItems = useWishlistStore((s) => s.items)
 
-  const dismiss = useCallback(() => {
-    setVisible(false)
-    sessionStorage.setItem(SESSION_KEY, '1')
-  }, [])
-
-  const show = useCallback(() => {
-    if (sessionStorage.getItem(SESSION_KEY)) return
-    setVisible(true)
-  }, [])
-
-  // Timer: show 12 s after entry if cart already had items (returning visitor)
-  useEffect(() => {
-    if (items.length === 0) return
-    if (sessionStorage.getItem(SESSION_KEY)) return
-    const t = setTimeout(show, ENTRY_DELAY_MS)
-    return () => clearTimeout(t)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // intentionally run only on mount
-
-  // Timer: show after 2.5 min regardless of when items were added
   useEffect(() => {
     if (sessionStorage.getItem(SESSION_KEY)) return
-    const t = setTimeout(() => {
-      if (useCartStore.getState().items.length > 0) show()
-    }, BROWSE_DELAY_MS)
-    return () => clearTimeout(t)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    if (!cartItems.length && !wishItems.length) return
 
-  // Desktop-only: detect mouse leaving viewport through the top
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    if (items.length === 0) return
-    if (sessionStorage.getItem(SESSION_KEY)) return
-    if (window.innerWidth < 768) return
+    const armTimer = setTimeout(() => { armed.current = true }, DELAY_BEFORE_ARMED_MS)
 
-    const handler = (e) => {
-      if (e.clientY <= 2) show()
+    const trigger = () => {
+      if (!armed.current || sessionStorage.getItem(SESSION_KEY)) return
+      sessionStorage.setItem(SESSION_KEY, '1')
+      setOpen(true)
     }
-    document.addEventListener('mouseleave', handler)
-    return () => document.removeEventListener('mouseleave', handler)
-  }, [items.length, show])
 
-  useEffect(() => {
-    if (!visible) return
-    const handler = (e) => { if (e.key === 'Escape') dismiss() }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [visible, dismiss])
+    // Desktop: cursor exits from top of viewport
+    const onMouseLeave = (e) => { if (e.clientY <= 10) trigger() }
 
-  if (items.length === 0) return null
+    // Mobile: 3 min idle
+    let idleTimer
+    const resetIdle = () => {
+      clearTimeout(idleTimer)
+      idleTimer = setTimeout(trigger, 3 * 60 * 1000)
+    }
+    const touchEvents = ['touchstart', 'touchend']
+    touchEvents.forEach((ev) => document.addEventListener(ev, resetIdle, { passive: true }))
+    resetIdle()
+
+    document.addEventListener('mouseleave', onMouseLeave)
+    return () => {
+      clearTimeout(armTimer)
+      clearTimeout(idleTimer)
+      document.removeEventListener('mouseleave', onMouseLeave)
+      touchEvents.forEach((ev) => document.removeEventListener(ev, resetIdle))
+    }
+  }, [cartItems.length, wishItems.length])
+
+  const hasCart  = cartItems.length > 0
+  const preview  = hasCart ? cartItems : wishItems
+  const total    = hasCart ? cartTotal() : null
 
   return (
     <AnimatePresence>
-      {visible && (
+      {open && (
         <>
           <motion.div
-            key="exit-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[70] bg-black/55 backdrop-blur-sm"
-            onClick={dismiss}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9990] bg-black/60 backdrop-blur-sm"
+            onClick={() => setOpen(false)}
           />
-
           <motion.div
-            key="exit-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="exit-title"
-            initial={{ opacity: 0, scale: 0.9, y: -20 }}
+            initial={{ opacity: 0, scale: 0.93, y: 24 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92, y: -12 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 36 }}
-            className="fixed z-[71] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-sm"
+            exit={{ opacity: 0, scale: 0.93, y: 24 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+            className="fixed inset-0 z-[9991] flex items-center justify-center p-4 pointer-events-none"
           >
             <div
-              className="rounded-3xl p-6 relative"
-              style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)', boxShadow: '0 32px 80px rgba(0,0,0,0.6)' }}
+              className="pointer-events-auto w-full max-w-sm rounded-3xl overflow-hidden"
+              style={{
+                background: 'var(--hc-surface)',
+                border: '1px solid var(--hc-border)',
+                boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
+              }}
             >
-              <button
-                onClick={dismiss}
-                className="absolute top-4 right-4 p-1.5 rounded-lg transition-colors hover:bg-white/8"
-                style={{ color: 'var(--hc-muted)' }}
-                aria-label="Cerrar"
+              {/* Header */}
+              <div
+                className="relative px-6 pt-6 pb-4 text-center"
+                style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--hc-accent) 12%, transparent), color-mix(in srgb, #ec4899 8%, transparent))' }}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-
-              {/* Icon */}
-              <div className="flex justify-center mb-4">
-                <div
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                  style={{ background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 20%, transparent)' }}
-                >
-                  <svg className="w-7 h-7 text-[#4f7cff]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                    <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M1 1h4l2.68 13.39a2 2 0 001.95 1.61h9.72a2 2 0 001.95-1.61L23 6H6" />
-                  </svg>
-                </div>
-              </div>
-
-              {/* Copy */}
-              <div className="text-center mb-4">
-                <h3 id="exit-title" className="font-bold text-base mb-1.5" style={{ color: 'var(--hc-text)' }}>
-                  {t('exitIntent.title')}
-                </h3>
-                <p className="text-sm leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-                  {t('exitIntent.cartHas')}{' '}
-                  <strong style={{ color: 'var(--hc-text)' }}>
-                    {items.length} {t('exitIntent.item', { count: items.length })}
-                  </strong>.
+                <button
+                  onClick={() => setOpen(false)}
+                  className="absolute top-4 right-4 w-7 h-7 rounded-xl flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/10 transition-all"
+                >✕</button>
+                <div className="text-3xl mb-2">{hasCart ? '🛒' : '❤️'}</div>
+                <h2 className="text-lg font-bold" style={{ color: 'var(--hc-text)' }}>
+                  {hasCart ? '¡Espera! Tu carrito te necesita' : '¡Tus favoritos te esperan!'}
+                </h2>
+                <p className="text-xs mt-1" style={{ color: 'var(--hc-muted)' }}>
+                  {hasCart
+                    ? `${cartItems.length} producto${cartItems.length > 1 ? 's' : ''} · ${formatPrice(total)}`
+                    : `${wishItems.length} producto${wishItems.length > 1 ? 's' : ''} guardados`}
                 </p>
               </div>
 
-              {/* Mini items preview */}
-              <div className="space-y-2 mb-4">
-                {items.slice(0, 3).map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
-                    style={{ background: 'color-mix(in srgb, var(--hc-surface-2, #1a1a1f) 80%, transparent)', border: '1px solid var(--hc-border)' }}
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-[#1a1a1f] overflow-hidden shrink-0">
-                      {item.imagenUrl && (
-                        <img src={item.imagenUrl} alt={item.nombre} className="w-full h-full object-cover" loading="lazy" />
-                      )}
+              {/* Productos */}
+              <div className="px-5 py-4 space-y-2.5">
+                {preview.slice(0, 3).map((item) => (
+                  <div key={item.id} className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 flex items-center justify-center" style={{ background: 'var(--hc-bg)' }}>
+                      {item.imagenUrl
+                        ? <img src={item.imagenUrl} alt={item.nombre} className="w-full h-full object-cover" />
+                        : <span className="text-lg opacity-30">📦</span>}
                     </div>
-                    <p className="flex-1 text-xs truncate" style={{ color: 'var(--hc-text)' }}>{item.nombre}</p>
-                    <span className="text-xs font-semibold text-[#4f7cff] shrink-0">
-                      {formatPrice(item.precio * item.cantidad)}
-                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium truncate" style={{ color: 'var(--hc-text)' }}>{item.nombre}</p>
+                      <p className="text-xs font-bold text-[#4f7cff]">{formatPrice(item.precio)}</p>
+                    </div>
+                    {hasCart && <span className="text-[10px] shrink-0" style={{ color: 'var(--hc-muted)' }}>×{item.cantidad}</span>}
                   </div>
                 ))}
-                {items.length > 3 && (
-                  <p className="text-center text-xs" style={{ color: 'var(--hc-muted)' }}>
-                    {t('exitIntent.more', { count: items.length - 3 })}
-                  </p>
+                {preview.length > 3 && (
+                  <p className="text-xs text-center" style={{ color: 'var(--hc-muted)' }}>+ {preview.length - 3} más</p>
                 )}
               </div>
 
-              {/* Total */}
-              <div
-                className="flex justify-between items-center py-3 mb-4 border-t border-b"
-                style={{ borderColor: 'var(--hc-border)' }}
-              >
-                <span className="text-sm font-medium" style={{ color: 'var(--hc-muted)' }}>{t('exitIntent.total')}</span>
-                <span className="font-bold text-lg" style={{ color: 'var(--hc-text)' }}>{formatPrice(total())}</span>
-              </div>
-
               {/* CTAs */}
-              <div className="flex flex-col gap-2">
+              <div className="px-5 pb-5 flex flex-col gap-2">
                 <Link
-                  to="/checkout"
-                  onClick={dismiss}
-                  className="block w-full text-center py-3 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-semibold text-sm transition-all shadow-[0_0_20px_rgba(79,124,255,0.3)] hover:shadow-[0_0_32px_rgba(79,124,255,0.45)]"
+                  to={hasCart ? '/carrito' : '/wishlist'}
+                  onClick={() => setOpen(false)}
+                  className="w-full h-10 rounded-xl flex items-center justify-center text-sm font-semibold text-white transition-all hover:opacity-90"
+                  style={{ background: 'var(--hc-accent)', boxShadow: '0 0 20px color-mix(in srgb, var(--hc-accent) 35%, transparent)' }}
                 >
-                  {t('exitIntent.checkout')}
+                  {hasCart ? 'Completar compra' : 'Ver mis favoritos'}
                 </Link>
                 <button
-                  onClick={dismiss}
-                  className="w-full py-2.5 rounded-xl text-sm transition-colors hover:bg-white/5"
+                  onClick={() => setOpen(false)}
+                  className="w-full h-9 rounded-xl text-xs font-medium transition-all hover:bg-white/5"
                   style={{ color: 'var(--hc-muted)' }}
                 >
-                  {t('exitIntent.continue')}
+                  Seguir explorando
                 </button>
               </div>
             </div>

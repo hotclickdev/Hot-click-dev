@@ -115,6 +115,7 @@ html.reduce-motion *::after {
   html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
   }
 
   body {
@@ -125,6 +126,7 @@ html.reduce-motion *::after {
     -moz-osx-font-smoothing: grayscale;
     line-height: 1.5;
     transition: background-color 0.25s ease, color 0.2s ease;
+    overflow-x: hidden;
   }
 
   #root {
@@ -658,7 +660,7 @@ html.dark .hc-logo-text {
 
 /* — Mobile menu — */
 :root .hc-mobile-menu {
-  background-color: rgba(250, 248, 245, 0.97) !important;
+  background-color: var(--hc-bg) !important;
 }
 
 /* — Bottom nav — */
@@ -727,7 +729,7 @@ html.dark header,
 html.dark aside,
 html.dark footer { background-color: unset !important; border-color: unset !important; }
 html.dark .hc-navbar-scrolled { background-color: rgba(6,6,22,0.95) !important; }
-html.dark .hc-mobile-menu     { background-color: rgba(6,6,22,0.98) !important; }
+html.dark .hc-mobile-menu     { background-color: var(--hc-bg) !important; }
 html.dark .hc-bottom-nav      { background-color: rgba(6,6,22,0.97) !important; border-top-color: rgba(128,80,255,0.16) !important; }
 html.dark input:not([type="checkbox"]):not([type="radio"]),
 html.dark textarea,
