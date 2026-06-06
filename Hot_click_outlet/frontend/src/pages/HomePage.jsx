@@ -592,6 +592,7 @@ export default function HomePage() {
           ]))}
         </script>
       </Helmet>
+      <h1 className="sr-only">HOTCLICK — Marketplace de emprendedores en Costa Rica</h1>
       {/* ── Hero Rotador: Chat → Productos → Emprendimientos ── */}
       <HeroRotator destacados={destacados.slice(0, 3)} />
 

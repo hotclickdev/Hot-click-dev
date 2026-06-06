@@ -3,14 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://nkevwfcjhjaawtdqquns.supabase.co" crossorigin />
     <link rel="dns-prefetch" href="https://nkevwfcjhjaawtdqquns.supabase.co" />
-    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@900&family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Barlow:wght@900&family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Barlow:wght@900&family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" /></noscript>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>HOTCLICK — Marketplace de emprendedores en Costa Rica</title>
-    <meta name="description" content="HOTCLICK es el marketplace de emprendedores costarricenses. Encontrá miles de productos únicos con envío a todo Costa Rica, pagos seguros y soporte local." />
+    <meta name="description" content="Marketplace de emprendedores costarricenses. Productos únicos con envío a todo Costa Rica, pagos seguros y soporte local." />
     <meta name="keywords" content="tienda en línea Costa Rica, marketplace Costa Rica, compras online CR, emprendedores costarricenses, envío Costa Rica" />
     <meta name="robots" content="index, follow" />
     <meta name="author" content="HOTCLICK" />
@@ -48,7 +50,12 @@
         "areaServed": "CR",
         "availableLanguage": "Spanish"
       },
-      "sameAs": [],
+      "sameAs": [
+        "https://www.instagram.com/hotclickcr",
+        "https://www.facebook.com/hotclickcr",
+        "https://www.tiktok.com/@hotclickcr",
+        "https://wa.me/50689745370"
+      ],
       "address": {
         "@type": "PostalAddress",
         "addressCountry": "CR",
@@ -76,6 +83,48 @@
     </script>
   </head>
   <body>
+    <noscript>
+      <main style="max-width:900px;margin:0 auto;padding:24px;font-family:sans-serif;color:#111">
+        <h1>HOTCLICK — Marketplace de emprendedores en Costa Rica</h1>
+        <p>HOTCLICK es el marketplace de emprendedores costarricenses donde encontrás miles de productos únicos: tecnología, ropa, accesorios, calzado y más, con envío a todo Costa Rica, pagos seguros y soporte local.</p>
+
+        <h2>Productos destacados</h2>
+        <p>Explorá nuestro catálogo con productos de tecnología, moda, accesorios y artículos del hogar de emprendedores costarricenses a precios accesibles.</p>
+        <a href="/productos">Ver todos los productos del catálogo</a>
+
+        <h2>Categorías populares</h2>
+        <ul>
+          <li><a href="/productos?categoria=tecnologia">Tecnología y electrónica</a></li>
+          <li><a href="/productos?categoria=ropa">Ropa y moda</a></li>
+          <li><a href="/productos?categoria=accesorios">Accesorios y joyería</a></li>
+          <li><a href="/productos?categoria=hogar">Artículos para el hogar</a></li>
+          <li><a href="/productos">Ver todas las categorías de productos</a></li>
+        </ul>
+
+        <h2>Cómo comprar en HOTCLICK</h2>
+        <ol>
+          <li>Buscá el producto que necesitás en el catálogo</li>
+          <li>Agregalo al carrito de compras</li>
+          <li>Realizá el pago de forma segura con tarjeta o SINPE</li>
+          <li>Recibí tu pedido con envío a todo Costa Rica</li>
+        </ol>
+
+        <h2>Sobre HOTCLICK</h2>
+        <p>Somos el marketplace costarricense que apoya a los emprendedores locales. Conectamos vendedores y compradores de todo el país con pagos seguros, envío express disponible y atención por WhatsApp.</p>
+        <a href="/nosotros">Conocé más sobre HOTCLICK</a>
+
+        <h2>Información y soporte</h2>
+        <ul>
+          <li><a href="/nosotros">Sobre nosotros</a></li>
+          <li><a href="/contacto">Contacto y soporte</a></li>
+          <li><a href="/envios">Política de envíos a Costa Rica</a></li>
+          <li><a href="/devoluciones">Política de devoluciones</a></li>
+          <li><a href="/registro">Crear cuenta nueva</a></li>
+          <li><a href="/login">Iniciar sesión en tu cuenta</a></li>
+          <li><a href="/registro-empresa">Vendé tu emprendimiento en HOTCLICK</a></li>
+        </ul>
+      </main>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
