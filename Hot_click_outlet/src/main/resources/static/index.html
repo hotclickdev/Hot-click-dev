@@ -4,84 +4,166 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
+
+    <!-- Preconnects críticos -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://nkevwfcjhjaawtdqquns.supabase.co" crossorigin />
     <link rel="dns-prefetch" href="https://nkevwfcjhjaawtdqquns.supabase.co" />
+
+    <!-- Fuentes no bloqueantes -->
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Barlow:wght@900&family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
     <noscript><link href="https://fonts.googleapis.com/css2?family=Barlow:wght@900&family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" /></noscript>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- HC_SEO_BLOCK_START -->
     <title>HOTCLICK — Marketplace de emprendedores en Costa Rica</title>
     <meta name="description" content="Marketplace de emprendedores costarricenses. Productos únicos con envío a todo Costa Rica, pagos seguros y soporte local." />
-    <meta name="keywords" content="tienda en línea Costa Rica, marketplace Costa Rica, compras online CR, emprendedores costarricenses, envío Costa Rica" />
-    <meta name="robots" content="index, follow" />
-    <meta name="author" content="HOTCLICK" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
     <link rel="canonical" href="https://hot-click-dev-production.up.railway.app/" />
-
-    <!-- Open Graph -->
     <meta property="og:title" content="HOTCLICK — Marketplace de emprendedores en Costa Rica" />
     <meta property="og:description" content="Encontrá miles de productos únicos de emprendedores costarricenses. Envío a todo Costa Rica, pagos seguros." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://hot-click-dev-production.up.railway.app/" />
     <meta property="og:image" content="https://hot-click-dev-production.up.railway.app/og-image.png" />
+    <meta property="og:image:alt" content="HOTCLICK — Marketplace de emprendedores costarricenses" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:locale" content="es_CR" />
+    <meta property="og:locale:alternate" content="en_US" />
     <meta property="og:site_name" content="HOTCLICK" />
-
-    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@hotclickcr" />
     <meta name="twitter:title" content="HOTCLICK — Marketplace de emprendedores en Costa Rica" />
     <meta name="twitter:description" content="Encontrá miles de productos únicos de emprendedores costarricenses. Envío a todo Costa Rica." />
     <meta name="twitter:image" content="https://hot-click-dev-production.up.railway.app/og-image.png" />
+    <meta name="twitter:image:alt" content="HOTCLICK Marketplace Costa Rica" />
+    <!-- HC_SEO_BLOCK_END -->
+    <meta name="keywords" content="tienda en línea Costa Rica, marketplace Costa Rica, compras online CR, emprendedores costarricenses, envío Costa Rica, tecnología CR, ropa Costa Rica" />
+    <meta name="author" content="HOTCLICK" />
+    <meta name="theme-color" content="#ff4b12" />
 
-    <!-- Structured Data: Organization -->
+    <!-- Structured Data: OnlineStore + Organization -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "Organization",
+      "@type": ["Organization", "OnlineStore"],
       "name": "HOTCLICK",
+      "alternateName": "HOTCLICK Marketplace Costa Rica",
+      "description": "Marketplace de emprendedores costarricenses. Productos únicos con envío a todo Costa Rica.",
       "url": "https://hot-click-dev-production.up.railway.app/",
-      "logo": "https://hot-click-dev-production.up.railway.app/favicon.svg",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://hot-click-dev-production.up.railway.app/favicon.svg",
+        "width": 512,
+        "height": 512
+      },
+      "image": "https://hot-click-dev-production.up.railway.app/og-image.png",
+      "foundingDate": "2024",
+      "priceRange": "₡₡",
+      "currenciesAccepted": "CRC",
+      "paymentAccepted": "SINPE Móvil, Visa, Mastercard",
+      "knowsLanguage": "es-CR",
+      "areaServed": {
+        "@type": "Country",
+        "name": "Costa Rica",
+        "sameAs": "https://www.wikidata.org/wiki/Q800"
+      },
       "contactPoint": {
         "@type": "ContactPoint",
         "telephone": "+506-8974-5370",
         "contactType": "customer service",
-        "areaServed": "CR",
-        "availableLanguage": "Spanish"
+        "availableLanguage": "Spanish",
+        "hoursAvailable": {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+          "opens": "08:00",
+          "closes": "19:00"
+        }
+      },
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "CR",
+        "addressRegion": "San José"
       },
       "sameAs": [
         "https://www.instagram.com/hotclickcr",
         "https://www.facebook.com/hotclickcr",
         "https://www.tiktok.com/@hotclickcr",
         "https://wa.me/50689745370"
-      ],
-      "address": {
-        "@type": "PostalAddress",
-        "addressCountry": "CR",
-        "addressRegion": "San José"
-      }
+      ]
     }
     </script>
 
-    <!-- Structured Data: WebSite with SearchAction -->
+    <!-- Structured Data: WebSite con búsqueda -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
       "name": "HOTCLICK",
       "url": "https://hot-click-dev-production.up.railway.app/",
+      "inLanguage": "es-CR",
       "potentialAction": {
         "@type": "SearchAction",
         "target": {
           "@type": "EntryPoint",
-          "urlTemplate": "https://hot-click-dev-production.up.railway.app/productos?q={search_term_string}"
+          "urlTemplate": "https://hot-click-dev-production.up.railway.app/productos?search={search_term_string}"
         },
         "query-input": "required name=search_term_string"
       }
     }
     </script>
-    <script type="module" crossorigin src="/assets/index-CJJbmFIF.js"></script>
+
+    <!-- Structured Data: FAQPage — rich snippets en Google -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "¿Qué es HOTCLICK?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "HOTCLICK es el marketplace de emprendedores costarricenses donde podés comprar miles de productos únicos: tecnología, ropa, accesorios, artículos del hogar y más, con envío a todo Costa Rica."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Cómo hago un pedido en HOTCLICK?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Buscá el producto, agregalo al carrito, completá el checkout con tus datos de envío y pagá con SINPE Móvil, Visa o Mastercard. Recibirás confirmación por email."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Cuánto tarda el envío en Costa Rica?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "El envío a todo Costa Rica tarda entre 1 y 5 días hábiles. Ofrecemos envío express y entrega a domicilio en las principales ciudades."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Qué métodos de pago aceptan?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Aceptamos SINPE Móvil, tarjetas Visa y Mastercard. Todos los pagos son procesados de forma segura."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Puedo vender mis productos en HOTCLICK?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sí, podés registrar tu emprendimiento gratis. Sin comisiones el primer mes y tu tienda activa en 24 horas."
+          }
+        }
+      ]
+    }
+    </script>
+    <script type="module" crossorigin src="/assets/index-CPteDCdT.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/rolldown-runtime-BYbx6iT9.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-misc-C98s7Zbb.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-react-BljZalk0.js">
@@ -91,48 +173,69 @@
     <link rel="modulepreload" crossorigin href="/assets/api-QlZ5LI0t.js">
     <link rel="modulepreload" crossorigin href="/assets/abandonedCartService-B6QHpDeg.js">
     <link rel="modulepreload" crossorigin href="/assets/cartStore-b9DeVAcg.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-FDl5Eu16.css">
+    <link rel="stylesheet" crossorigin href="/assets/index-CXFf1Zdb.css">
   <link rel="manifest" href="/manifest.webmanifest"></head>
   <body>
     <noscript>
-      <main style="max-width:900px;margin:0 auto;padding:24px;font-family:sans-serif;color:#111">
+      <main style="max-width:900px;margin:0 auto;padding:24px;font-family:sans-serif;color:#111;line-height:1.6">
         <h1>HOTCLICK — Marketplace de emprendedores en Costa Rica</h1>
-        <p>HOTCLICK es el marketplace de emprendedores costarricenses donde encontrás miles de productos únicos: tecnología, ropa, accesorios, calzado y más, con envío a todo Costa Rica, pagos seguros y soporte local.</p>
+        <p>HOTCLICK es el marketplace costarricense donde encontrás miles de productos únicos de emprendedores locales: tecnología, ropa, calzado, accesorios, artículos del hogar y mucho más. Envío a todo Costa Rica, pagos seguros con SINPE Móvil, Visa y Mastercard, y soporte local por WhatsApp.</p>
 
         <h2>Productos destacados</h2>
-        <p>Explorá nuestro catálogo con productos de tecnología, moda, accesorios y artículos del hogar de emprendedores costarricenses a precios accesibles.</p>
+        <p>Explorá nuestro catálogo con productos de tecnología, moda, accesorios y artículos del hogar de emprendedores costarricenses a los mejores precios. Actualizamos el inventario todos los días con nuevas ofertas.</p>
         <a href="/productos">Ver todos los productos del catálogo</a>
 
         <h2>Categorías populares</h2>
         <ul>
-          <li><a href="/productos?categoria=tecnologia">Tecnología y electrónica</a></li>
-          <li><a href="/productos?categoria=ropa">Ropa y moda</a></li>
-          <li><a href="/productos?categoria=accesorios">Accesorios y joyería</a></li>
-          <li><a href="/productos?categoria=hogar">Artículos para el hogar</a></li>
+          <li><a href="/productos?categoria=tecnologia">Tecnología y electrónica en Costa Rica</a></li>
+          <li><a href="/productos?categoria=ropa">Ropa y moda para hombre y mujer</a></li>
+          <li><a href="/productos?categoria=accesorios">Accesorios y joyería artesanal</a></li>
+          <li><a href="/productos?categoria=hogar">Artículos y decoración para el hogar</a></li>
+          <li><a href="/productos?categoria=calzado">Calzado para toda la familia</a></li>
           <li><a href="/productos">Ver todas las categorías de productos</a></li>
         </ul>
 
         <h2>Cómo comprar en HOTCLICK</h2>
+        <p>Comprar en HOTCLICK es rápido, fácil y seguro:</p>
         <ol>
-          <li>Buscá el producto que necesitás en el catálogo</li>
+          <li>Buscá el producto que necesitás en nuestro catálogo</li>
           <li>Agregalo al carrito de compras</li>
-          <li>Realizá el pago de forma segura con tarjeta o SINPE</li>
-          <li>Recibí tu pedido con envío a todo Costa Rica</li>
+          <li>Completá tus datos de envío</li>
+          <li>Pagá de forma segura con SINPE Móvil, Visa o Mastercard</li>
+          <li>Recibí tu pedido con envío a todo Costa Rica en 1 a 5 días hábiles</li>
         </ol>
+        <a href="/productos">Empezar a comprar ahora</a>
+
+        <h2>Preguntas frecuentes</h2>
+        <h3>¿Qué métodos de pago aceptan?</h3>
+        <p>Aceptamos SINPE Móvil, tarjetas Visa y Mastercard con encriptación SSL para máxima seguridad.</p>
+        <h3>¿Hacen envíos a todo Costa Rica?</h3>
+        <p>Sí, enviamos a todas las provincias de Costa Rica: San José, Alajuela, Heredia, Cartago, Puntarenas, Limón y Guanacaste. El tiempo de entrega es de 1 a 5 días hábiles según la zona.</p>
+        <h3>¿Puedo devolver un producto?</h3>
+        <p>Sí, tenemos política de devoluciones. Si el producto llegó dañado o no coincide con la descripción, contáctanos dentro de los 7 días de recibido.</p>
+        <a href="/devoluciones">Ver política de devoluciones completa</a>
+
+        <h2>Vendé en HOTCLICK</h2>
+        <p>¿Tenés un emprendimiento en Costa Rica? Registrá tu tienda gratis en HOTCLICK. Sin comisiones el primer mes, tienda activa en 24 horas y acceso a miles de compradores en todo el país.</p>
+        <a href="/registro-empresa">Registrar mi emprendimiento en HOTCLICK</a>
 
         <h2>Sobre HOTCLICK</h2>
-        <p>Somos el marketplace costarricense que apoya a los emprendedores locales. Conectamos vendedores y compradores de todo el país con pagos seguros, envío express disponible y atención por WhatsApp.</p>
+        <p>HOTCLICK es el marketplace que conecta emprendedores costarricenses con compradores de todo el país. Somos una plataforma 100% costarricense que apoya el comercio local con tecnología moderna, pagos seguros y envío confiable.</p>
         <a href="/nosotros">Conocé más sobre HOTCLICK</a>
 
         <h2>Información y soporte</h2>
         <ul>
-          <li><a href="/nosotros">Sobre nosotros</a></li>
-          <li><a href="/contacto">Contacto y soporte</a></li>
+          <li><a href="/nosotros">Sobre nosotros y nuestra misión</a></li>
+          <li><a href="/contacto">Contacto y soporte al cliente</a></li>
           <li><a href="/envios">Política de envíos a Costa Rica</a></li>
-          <li><a href="/devoluciones">Política de devoluciones</a></li>
-          <li><a href="/registro">Crear cuenta nueva</a></li>
-          <li><a href="/login">Iniciar sesión en tu cuenta</a></li>
-          <li><a href="/registro-empresa">Vendé tu emprendimiento en HOTCLICK</a></li>
+          <li><a href="/devoluciones">Política de devoluciones y garantías</a></li>
+          <li><a href="/servicios">Servicios HOTCLICK para emprendedores</a></li>
+          <li><a href="/blog">Blog de HOTCLICK — tips de compras y emprendimiento</a></li>
+          <li><a href="/registro">Crear cuenta gratis en HOTCLICK</a></li>
+          <li><a href="/login">Iniciar sesión en tu cuenta HOTCLICK</a></li>
+          <li><a href="/registro-empresa">Vender mis productos en HOTCLICK</a></li>
+          <li><a href="/privacidad">Política de privacidad</a></li>
+          <li><a href="/terminos">Términos y condiciones de uso</a></li>
         </ul>
       </main>
     </noscript>

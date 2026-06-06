@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async'
 
-const SITE_NAME = 'HOTCLICK Outlet'
+const SITE_NAME = 'HOTCLICK'
 const DEFAULT_IMAGE = '/assets/og-default.png'
 
 export default function Seo({ title, description, image, url, type = 'website' }) {

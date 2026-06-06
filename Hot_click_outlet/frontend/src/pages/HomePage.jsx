@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import { Helmet } from 'react-helmet-async'
 import Seo from '@/components/seo/Seo'
-import { generateWebsiteJsonLd, generateOrganizationJsonLd } from '@/utils/jsonLd'
+import { generateWebsiteJsonLd, generateOrganizationJsonLd, generateFAQJsonLd, generateItemListJsonLd } from '@/utils/jsonLd'
 import { productService, normalizeProduct } from '@/services/productService'
 import { marcaService } from '@/services/marcaService'
 import useCartStore from '@/store/cartStore'
@@ -575,8 +575,8 @@ export default function HomePage() {
   return (
     <MainLayout>
       <Seo
-        title="HOTCLICK Outlet | Ropa, Zapatos y Accesorios de Marca"
-        description="Las mejores marcas a precios de outlet en Costa Rica. Envíos a todo el país."
+        title="HOTCLICK — Marketplace de emprendedores en Costa Rica"
+        description="Marketplace de emprendedores costarricenses. Productos únicos con envío a todo Costa Rica, pagos seguros y soporte local."
         type="website"
       />
       <Helmet>
@@ -591,6 +591,14 @@ export default function HomePage() {
             'https://www.tiktok.com/@hotclickcr',
           ]))}
         </script>
+        <script type="application/ld+json">
+          {JSON.stringify(generateFAQJsonLd())}
+        </script>
+        {destacados.length > 0 && (
+          <script type="application/ld+json">
+            {JSON.stringify(generateItemListJsonLd(destacados, window.location.origin))}
+          </script>
+        )}
       </Helmet>
       <h1 className="sr-only">HOTCLICK — Marketplace de emprendedores en Costa Rica</h1>
       {/* ── Hero Rotador: Chat → Productos → Emprendimientos ── */}
@@ -973,6 +981,29 @@ export default function HomePage() {
           </div>
         </motion.div>
       </section>
+      {/* Sección SEO — contenido indexable para Google (visible en pantallas pequeñas como texto de apoyo) */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8 border-t" style={{ borderColor: 'var(--hc-border)' }} aria-label="Sobre HOTCLICK">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center sm:text-left">
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--hc-accent)' }}>Marketplace costarricense</h2>
+            <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
+              HOTCLICK conecta emprendedores y compradores de todo Costa Rica. Encontrá tecnología, ropa, accesorios, artículos del hogar y más, con envío a todo el país.
+            </p>
+          </div>
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--hc-accent)' }}>Pagos seguros</h2>
+            <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
+              Pagá con SINPE Móvil, Visa o Mastercard. Todos los pagos se procesan con encriptación SSL. Compra con total confianza.
+            </p>
+          </div>
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--hc-accent)' }}>Envío a todo Costa Rica</h2>
+            <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
+              Enviamos a San José, Alajuela, Heredia, Cartago, Puntarenas, Limón y Guanacaste en 1–5 días hábiles. Envío express disponible.
+            </p>
+          </div>
+        </div>
+      </section>
     </MainLayout>
   )
 }
@@ -1031,7 +1062,7 @@ function TestimonialsCarousel() {
           </button>
           <div className="flex gap-1.5">
             {TESTIMONIALS.map((_, i) => (
-              <button key={i} onClick={() => setIdx(i)} className={`w-2.5 h-2.5 rounded-full transition-all ${i === idx ? 'bg-[#4f7cff] w-4' : 'bg-white/20'}`} />
+              <button key={i} onClick={() => setIdx(i)} aria-label={`Ver testimonio ${i + 1}`} className={`w-2.5 h-2.5 rounded-full transition-all ${i === idx ? 'bg-[#4f7cff] w-4' : 'bg-white/20'}`} />
             ))}
           </div>
           <button onClick={next} aria-label={t('common.next')} className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/10 transition-colors">

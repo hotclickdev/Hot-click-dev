@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import { Helmet } from 'react-helmet-async'
 import Seo from '@/components/seo/Seo'
-import { generateProductJsonLd } from '@/utils/jsonLd'
+import { generateProductJsonLd, generateBreadcrumbJsonLd } from '@/utils/jsonLd'
 import Badge from '@/components/ui/Badge'
 import Spinner from '@/components/ui/Spinner'
 import { productService, normalizeProduct } from '@/services/productService'
@@ -190,30 +190,46 @@ export default function ProductDetailPage() {
         <script type="application/ld+json">
           {JSON.stringify(generateProductJsonLd(product, window.location.origin))}
         </script>
+        <script type="application/ld+json">
+          {JSON.stringify(generateBreadcrumbJsonLd([
+            { name: 'HOTCLICK', url: window.location.origin + '/' },
+            { name: 'Productos', url: window.location.origin + '/productos' },
+            ...(product.marcaNombre ? [{ name: product.marcaNombre, url: `${window.location.origin}/productos?marcaId=${product.marcaId}` }] : []),
+            { name: product.titulo || product.nombre, url: window.location.href },
+          ]))}
+        </script>
       </Helmet>
       <div className={`max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-8 transition-[padding] duration-300 ${showSticky ? 'pb-28 sm:pb-24' : ''}`}>
 
-        {/* Breadcrumb: Productos / [Marca] / Producto */}
-        <nav className="flex items-center gap-2 text-sm text-[#8e8e9a] mb-3 sm:mb-6 flex-wrap">
-          <button onClick={() => navigate('/productos')} className="hover:text-white transition-colors">
-            {t('product.productsNav')}
-          </button>
-          {product.marcaNombre && product.marcaId && (
-            <>
-              <span>/</span>
-              <button
-                onClick={() => navigate(`/productos?marcaId=${product.marcaId}&marcaNombre=${encodeURIComponent(product.marcaNombre)}`)}
-                className="hover:text-white transition-colors flex items-center gap-1"
-              >
-                {product.marcaLogoUrl && (
-                  <img src={getOptimizedUrl(product.marcaLogoUrl, { width: 28 })} alt="" className="w-3.5 h-3.5 object-contain rounded-sm" onError={(e) => { e.target.style.display = 'none' }} />
-                )}
-                {product.marcaNombre}
-              </button>
-            </>
-          )}
-          <span>/</span>
-          <span className="text-[#e8e8ed] truncate max-w-xs">{product.titulo || product.nombre}</span>
+        {/* Breadcrumb: Productos / [Marca] / Producto — semántico para SEO */}
+        <nav aria-label="Ruta de navegación" className="flex items-center gap-2 text-sm text-[#8e8e9a] mb-3 sm:mb-6 flex-wrap">
+          <ol className="flex items-center gap-2 flex-wrap list-none p-0 m-0">
+            <li>
+              <a href="/productos" onClick={(e) => { e.preventDefault(); navigate('/productos') }}
+                className="hover:text-white transition-colors">
+                {t('product.productsNav')}
+              </a>
+            </li>
+            {product.marcaNombre && product.marcaId && (
+              <li className="flex items-center gap-2">
+                <span aria-hidden="true">/</span>
+                <a href={`/productos?marcaId=${product.marcaId}&marcaNombre=${encodeURIComponent(product.marcaNombre)}`}
+                  onClick={(e) => { e.preventDefault(); navigate(`/productos?marcaId=${product.marcaId}&marcaNombre=${encodeURIComponent(product.marcaNombre)}`) }}
+                  className="hover:text-white transition-colors flex items-center gap-1">
+                  {product.marcaLogoUrl && (
+                    <img src={getOptimizedUrl(product.marcaLogoUrl, { width: 28 })} alt="" className="w-3.5 h-3.5 object-contain rounded-sm" onError={(e) => { e.target.style.display = 'none' }} />
+                  )}
+                  {product.marcaNombre}
+                </a>
+              </li>
+            )}
+            <li className="flex items-center gap-2">
+              <span aria-hidden="true">/</span>
+              <span className="text-[#e8e8ed] truncate max-w-xs" aria-current="page">
+                {product.titulo || product.nombre}
+              </span>
+            </li>
+          </ol>
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-10">
@@ -239,7 +255,7 @@ export default function ProductDetailPage() {
                   {galeria[activeImg] ? (
                     <OptimizedImage
                       src={galeria[activeImg]}
-                      alt={product.nombre}
+                      alt={`${product.titulo || product.nombre}${product.marcaNombre ? ' — ' + product.marcaNombre : ''} | Disponible en Costa Rica`}
                       width={800}
                       height={800}
                       className="w-full h-full object-cover"

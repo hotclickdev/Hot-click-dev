@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
 import { productService, normalizeProduct } from '@/services/productService'
 import { marcaService } from '@/services/marcaService'
@@ -11,6 +12,7 @@ import ProductCard from '@/components/ui/ProductCard'
 import useLazyLoad from '@/hooks/useLazyLoad'
 import { formatPrice } from '@/utils/format'
 import useCartStore from '@/store/cartStore'
+import { generateItemListJsonLd } from '@/utils/jsonLd'
 
 const PAGE_SIZE = 24
 
@@ -860,8 +862,52 @@ export default function ProductsPage() {
       ?? categories.find(c => String(c.id) === String(category))?.nombre)
     : null
 
+  // SEO helpers
+  const activeMarcaName = marcasFilter.size === 1
+    ? marcas.find(m => String(m.id) === [...marcasFilter][0])?.nombreMarca
+    : null
+
+  const seoTitle = (() => {
+    if (viewMode === 'ofertas') return 'Ofertas HOT — Mejores precios del día | HOTCLICK'
+    if (viewMode === 'emprendimientos') return 'Emprendimientos Costarricenses — Negocios locales CR | HOTCLICK'
+    if (activeCatName) return `${activeCatName} en Costa Rica — Compra online | HOTCLICK`
+    if (activeMarcaName) return `${activeMarcaName} en Costa Rica — Productos originales | HOTCLICK`
+    return 'Catálogo de productos — Compra online en Costa Rica | HOTCLICK'
+  })()
+
+  const seoDesc = (() => {
+    if (viewMode === 'ofertas') return `${filtered.length > 0 ? filtered.length + ' productos con ' : ''}Ofertas y descuentos especiales de emprendedores costarricenses. Precios directos, envío a todo Costa Rica.`
+    if (viewMode === 'emprendimientos') return 'Apoyá el comercio local. Descubrí emprendimientos costarricenses y comprá productos únicos con envío a todo el país.'
+    if (activeCatName) return `Explorá los mejores productos de ${activeCatName} de emprendedores en Costa Rica. Envío a todo el país, precios directos y pagos seguros.`
+    if (activeMarcaName) return `Todos los productos de ${activeMarcaName} disponibles en HOTCLICK Costa Rica. Entrega a domicilio, pagos con SINPE Móvil y tarjeta.`
+    return `Explorá más de ${products.length > 0 ? products.length + ' ' : ''}productos únicos de emprendedores costarricenses. Tecnología, ropa, accesorios y más con envío a todo Costa Rica.`
+  })()
+
+  const canonicalUrl = 'https://hot-click-dev-production.up.railway.app/productos'
+  const shouldNoIndex = hasFilters && (marcasFilter.size > 1 || (marcasFilter.size > 0 && !!category))
+
   return (
     <MainLayout>
+      <Helmet>
+        <title>{seoTitle}</title>
+        <meta name="description" content={seoDesc} />
+        <link rel="canonical" href={canonicalUrl} />
+        {shouldNoIndex && <meta name="robots" content="noindex, follow" />}
+        <meta property="og:title" content={seoTitle} />
+        <meta property="og:description" content={seoDesc} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:image" content="https://hot-click-dev-production.up.railway.app/og-image.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={seoTitle} />
+        <meta name="twitter:description" content={seoDesc} />
+        {products.length > 0 && viewMode === 'all' && (
+          <script type="application/ld+json">
+            {JSON.stringify(generateItemListJsonLd(products.slice(0, 12), 'https://hot-click-dev-production.up.railway.app'))}
+          </script>
+        )}
+      </Helmet>
+
       {/* ── Tabs de vista ── */}
       <div style={{ borderBottom: '1px solid var(--hc-border)', background: 'var(--hc-surface)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-2 overflow-x-auto scrollbar-hide py-3">

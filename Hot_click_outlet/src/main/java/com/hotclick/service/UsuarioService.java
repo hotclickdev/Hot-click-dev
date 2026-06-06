@@ -26,6 +26,9 @@ public class UsuarioService {
     @Autowired
     private PasswordResetService passwordResetService;
 
+    @Autowired
+    private N8nWebhookService n8nWebhookService;
+
     @Transactional
     public Usuario registrarUsuario(Usuario usuario) {
         if (usuarioRepository.existsByCorreoAndEstadoNot(usuario.getCorreo(), Constants.ESTADO_ELIMINADO)) {
@@ -40,7 +43,9 @@ public class UsuarioService {
         }
         usuario.setEstado(Constants.ESTADO_ACTIVO);
         usuario.setIntentosFallidos(0);
-        return usuarioRepository.save(usuario);
+        Usuario saved = usuarioRepository.save(usuario);
+        n8nWebhookService.notificarUsuarioRegistrado(saved.getNombre(), saved.getCorreo(), saved.getTelefono());
+        return saved;
     }
 
     public Optional<Usuario> buscarPorCorreo(String correo) {

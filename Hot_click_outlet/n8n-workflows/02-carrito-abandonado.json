@@ -1,0 +1,102 @@
+{
+  "name": "HOTCLICK - 02 Carrito Abandonado",
+  "nodes": [
+    {
+      "id": "node-webhook",
+      "name": "Webhook Carrito",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "parameters": {
+        "path": "carrito-abandonado",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "node-format",
+      "name": "Formatear Datos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "parameters": {
+        "jsCode": "const d = $input.first().json.body ?? $input.first().json;\n\nconst items = Array.isArray(d.items)\n  ? d.items.map(i => `• ${i.nombre ?? 'Producto'} x${i.cantidad} — ₡${new Intl.NumberFormat('es-CR').format(i.precio ?? 0)}`).join('\\n')\n  : '(sin detalle)';\n\nconst appUrl = $env.APP_URL ?? 'https://hotclick.cr';\nconst carritoUrl = `${appUrl}/carrito`;\n\nconst emailHtml = `\n<h2>🛒 ¡Dejaste algo en tu carrito!</h2>\n<p>Hola${d.email ? '' : ''},</p>\n<p>Notamos que tenés productos esperándote:</p>\n<ul>\n  ${Array.isArray(d.items) ? d.items.map(i => `<li>${i.nombre ?? 'Producto'} x${i.cantidad}</li>`).join('') : ''}\n</ul>\n<p><a href=\"${carritoUrl}\" style=\"background:#e63946;color:white;padding:12px 24px;text-decoration:none;border-radius:6px;\">Completar mi compra</a></p>\n<p style=\"color:#888;font-size:12px;\">Si ya compraste, ignorá este mensaje.</p>\n`;\n\nreturn [{ json: { ...d, items, emailHtml, carritoUrl, tieneEmail: !!(d.email && d.email.length > 0) } }];"
+      }
+    },
+    {
+      "id": "node-if-email",
+      "name": "Tiene Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond1",
+              "leftValue": "={{ $json.tieneEmail }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "node-gmail-cliente",
+      "name": "Email al Cliente",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [900, 200],
+      "parameters": {
+        "operation": "send",
+        "toList": "={{ $json.email }}",
+        "subject": "🛒 Tu carrito te espera en HOTCLICK",
+        "emailType": "html",
+        "message": "={{ $json.emailHtml }}"
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "Gmail HOTCLICK"
+        }
+      }
+    },
+    {
+      "id": "node-telegram-admin",
+      "name": "Telegram Admin (sin email)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [900, 420],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_ADMIN_CHAT_ID }}",
+        "text": "=🛒 *Carrito abandonado* (sin email)\nSesión: {{ $json.sessionId }}\nProductos:\n{{ $json.items }}",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram Bot HOTCLICK"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Carrito": {
+      "main": [[{ "node": "Formatear Datos", "type": "main", "index": 0 }]]
+    },
+    "Formatear Datos": {
+      "main": [[{ "node": "Tiene Email?", "type": "main", "index": 0 }]]
+    },
+    "Tiene Email?": {
+      "main": [
+        [{ "node": "Email al Cliente", "type": "main", "index": 0 }],
+        [{ "node": "Telegram Admin (sin email)", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

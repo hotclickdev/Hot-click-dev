@@ -47,6 +47,7 @@ public class PaymentService {
     @Autowired private TransaccionPagoRepository   transaccionPagoRepository;
     @Autowired private EmpresaRepository           empresaRepository;
     @Autowired private NotificacionEmailService    notificacionEmailService;
+    @Autowired private N8nWebhookService           n8nWebhookService;
     @Autowired private PasswordEncoder             passwordEncoder;
     @Autowired private CuponService               cuponService;
     @Autowired private GiftCardService            giftCardService;
@@ -200,6 +201,7 @@ public class PaymentService {
             pedidoRepository.save(pedido);
             giftCardService.canjear(gcCodigo, pedido, gcMonto);
             notificacionEmailService.enviarConfirmacionPedido(pedido);
+            n8nWebhookService.notificarPedidoNuevo(pedido);
             log.info("Pedido {} pagado 100% con gift card {}", pedido.getNumeroPedido(), gcCodigo);
             return new PaymentCheckoutResponse(pedido.getId(), pedido.getNumeroPedido(),
                 null, "PAGADO", 0, "GIFT_CARD");
@@ -309,6 +311,7 @@ public class PaymentService {
             pedido.getUsuarioFinal().getCorreo(); // touch dentro de la transacción
         }
         notificacionEmailService.enviarConfirmacionPedido(pedido);
+        n8nWebhookService.notificarPedidoNuevo(pedido);
         webhookDispatcher.dispatch(pedido.getEmpresaId(), "pedido.pagado", Map.of(
             "numeroPedido", pedido.getNumeroPedido(),
             "total",        pedido.getTotalPedido(),

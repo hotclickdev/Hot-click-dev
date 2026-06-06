@@ -468,8 +468,8 @@ function ProductsPhase({ productos, accent }) {
         <Link to="/productos"
           className="text-sm font-semibold flex items-center gap-1 hover:opacity-70 transition-opacity shrink-0"
           style={{ color: accent }}>
-          Ver todos
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          Ver todos los productos
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
           </svg>
         </Link>

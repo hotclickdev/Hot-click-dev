@@ -38,6 +38,7 @@ public class PedidoService {
 
     @Autowired private PedidoRepository pedidoRepository;
     @Autowired private NotificacionEmailService notificacionEmailService;
+    @Autowired private N8nWebhookService n8nWebhookService;
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private BodegaRepository bodegaRepository;
     @Autowired private ProductoRepository productoRepository;
@@ -125,6 +126,9 @@ public class PedidoService {
 
         Pedido saved = pedidoRepository.save(pedido);
         saved.getItems().size();
+        if (Constants.PEDIDO_PAGADO.equals(saved.getEstadoPedido())) {
+            n8nWebhookService.notificarPedidoNuevo(saved);
+        }
         return saved;
     }
 
@@ -142,6 +146,9 @@ public class PedidoService {
         if (pedido.getUsuarioFinal() != null) { pedido.getUsuarioFinal().getCorreo(); }
         if (nota != null && !nota.isBlank()) {
             notificacionEmailService.enviarSeguimientoEstado(pedido, nota);
+        }
+        if (Constants.PEDIDO_ENTREGADO.equals(nuevoEstado)) {
+            n8nWebhookService.notificarPedidoEntregado(pedido);
         }
         return pedido;
     }

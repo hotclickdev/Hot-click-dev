@@ -3,6 +3,7 @@ package com.hotclick.scheduler;
 import com.hotclick.dto.CarritoAbandonadoRequestDTO;
 import com.hotclick.model.CarritoAbandonado;
 import com.hotclick.service.CarritoAbandonadoService;
+import com.hotclick.service.N8nWebhookService;
 import com.hotclick.service.NotificacionEmailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +24,7 @@ public class CarritoAbandonadoScheduler {
 
     @Autowired private CarritoAbandonadoService cartService;
     @Autowired private NotificacionEmailService emailService;
+    @Autowired private N8nWebhookService n8nWebhookService;
 
     @Value("${app.abandoned-cart.hours-to-wait:1}")
     private int hoursToWait;
@@ -40,10 +42,18 @@ public class CarritoAbandonadoScheduler {
 
         for (CarritoAbandonado carrito : pendientes) {
             try {
+                List<CarritoAbandonadoRequestDTO.CartItemDTO> itemsDtos =
+                    cartService.deserializarItems(carrito.getItems());
+                List<java.util.Map<String, Object>> itemsPayload = itemsDtos.stream()
+                    .map(i -> java.util.Map.<String, Object>of(
+                        "nombre", i.getNombre() != null ? i.getNombre() : "",
+                        "cantidad", i.getCantidad(),
+                        "precio", i.getPrecio()))
+                    .collect(java.util.stream.Collectors.toList());
+                n8nWebhookService.notificarCarritoAbandonado(carrito, itemsPayload);
+
                 if (carrito.getEmail() != null && !carrito.getEmail().isBlank()) {
-                    List<CarritoAbandonadoRequestDTO.CartItemDTO> items =
-                        cartService.deserializarItems(carrito.getItems());
-                    emailService.enviarRecuperacionCarrito(carrito.getEmail(), carrito.getId(), items, appUrl);
+                    emailService.enviarRecuperacionCarrito(carrito.getEmail(), carrito.getId(), itemsDtos, appUrl);
                     cartService.marcarEmailEnviado(carrito.getId());
                     log.info("Email de recuperación enviado a {} (carrito {})",
                         carrito.getEmail(), carrito.getId());

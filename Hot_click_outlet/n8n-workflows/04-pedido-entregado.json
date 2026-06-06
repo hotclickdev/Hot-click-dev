@@ -1,0 +1,84 @@
+{
+  "name": "HOTCLICK - 04 Pedido Entregado (Follow-up 7 días)",
+  "nodes": [
+    {
+      "id": "node-webhook",
+      "name": "Webhook Entregado",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "parameters": {
+        "path": "pedido-entregado",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "node-if-email",
+      "name": "Tiene Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond1",
+              "leftValue": "={{ $json.body.clienteCorreo ?? $json.clienteCorreo ?? '' }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEquals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "node-wait",
+      "name": "Esperar 7 días",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [680, 200],
+      "parameters": {
+        "amount": 7,
+        "unit": "days"
+      }
+    },
+    {
+      "id": "node-gmail",
+      "name": "Email Follow-up",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [900, 200],
+      "parameters": {
+        "operation": "send",
+        "toList": "={{ $('Webhook Entregado').item.json.body.clienteCorreo ?? $('Webhook Entregado').item.json.clienteCorreo }}",
+        "subject": "=¿Cómo te fue con tu pedido {{ $('Webhook Entregado').item.json.body.numeroPedido ?? $('Webhook Entregado').item.json.numeroPedido }}?",
+        "emailType": "html",
+        "message": "=<h2>Hola {{ $('Webhook Entregado').item.json.body.clienteNombre ?? $('Webhook Entregado').item.json.clienteNombre ?? '' }} 👋</h2>\n<p>¿Cómo te fue con tu compra en HOTCLICK?</p>\n<p>Esperamos que estés disfrutando tu pedido. Si tenés alguna duda o querés hacer otra compra, estamos para ayudarte.</p>\n<p><a href=\"{{ $env.APP_URL ?? 'https://hotclick.cr' }}/productos\" style=\"background:#e63946;color:white;padding:12px 24px;text-decoration:none;border-radius:6px;\">Ver novedades</a></p>\n<p style=\"color:#888;font-size:12px;\">HOTCLICK · Costa Rica · <a href=\"https://wa.me/50689745370\">WhatsApp</a></p>"
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "Gmail HOTCLICK"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Entregado": {
+      "main": [[{ "node": "Tiene Email?", "type": "main", "index": 0 }]]
+    },
+    "Tiene Email?": {
+      "main": [
+        [{ "node": "Esperar 7 días", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Esperar 7 días": {
+      "main": [[{ "node": "Email Follow-up", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

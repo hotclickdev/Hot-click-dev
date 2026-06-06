@@ -80,19 +80,46 @@ public class ProductoFeedController {
         List<Categoria> categorias = categoriaRepository.findByEstado(Constants.ESTADO_ACTIVO);
         String hoy = LocalDate.now().toString();
 
-        StringBuilder xml = new StringBuilder(1024 + (productos.size() + categorias.size()) * 150);
+        StringBuilder xml = new StringBuilder(2048 + (productos.size() + categorias.size()) * 200);
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        xml.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
+        xml.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"\n");
+        xml.append("        xmlns:image=\"http://www.google.com/schemas/sitemap-image/1.1\">\n");
 
-        sitemapUrl(xml, appUrl + "/",          "1.0", "daily",  hoy);
-        sitemapUrl(xml, appUrl + "/productos", "0.9", "daily",  hoy);
+        // Páginas principales
+        sitemapUrl(xml, appUrl + "/",              "1.0", "daily",   hoy);
+        sitemapUrl(xml, appUrl + "/productos",     "0.9", "daily",   hoy);
+        sitemapUrl(xml, appUrl + "/emprendimientos", "0.7", "weekly", hoy);
+        sitemapUrl(xml, appUrl + "/nosotros",      "0.5", "monthly", hoy);
+        sitemapUrl(xml, appUrl + "/contacto",      "0.5", "monthly", hoy);
+        sitemapUrl(xml, appUrl + "/servicios",     "0.5", "monthly", hoy);
+        sitemapUrl(xml, appUrl + "/blog",          "0.6", "weekly",  hoy);
 
+        // Páginas de categoría
         for (Categoria c : categorias) {
-            sitemapUrl(xml, appUrl + "/productos?categoria=" + c.getId(), "0.7", "weekly", hoy);
+            sitemapUrl(xml, appUrl + "/productos?cat=" + c.getId(), "0.7", "weekly", hoy);
         }
 
+        // Páginas de producto individuales — con imagen para Google Images
         for (Producto p : productos) {
-            sitemapUrl(xml, appUrl + "/productos/" + p.getId(), "0.8", "weekly", hoy);
+            String lastmod = p.getFechaUltimaVenta() != null
+                ? p.getFechaUltimaVenta().toLocalDate().toString()
+                : (p.getFechaCreacion() != null ? p.getFechaCreacion().toLocalDate().toString() : hoy);
+            String imagen = p.getImagenPrincipalUrl() != null ? p.getImagenPrincipalUrl() : "";
+            String nombre = (p.getTituloProducto() != null && !p.getTituloProducto().isBlank())
+                ? p.getTituloProducto() : p.getNombreProducto();
+
+            xml.append("  <url>\n");
+            xml.append("    <loc>").append(xe(appUrl + "/productos/" + p.getId())).append("</loc>\n");
+            xml.append("    <lastmod>").append(lastmod).append("</lastmod>\n");
+            xml.append("    <changefreq>weekly</changefreq>\n");
+            xml.append("    <priority>0.8</priority>\n");
+            if (!imagen.isBlank()) {
+                xml.append("    <image:image>\n");
+                xml.append("      <image:loc>").append(xe(imagen)).append("</image:loc>\n");
+                xml.append("      <image:title>").append(xe(nombre)).append("</image:title>\n");
+                xml.append("    </image:image>\n");
+            }
+            xml.append("  </url>\n");
         }
 
         xml.append("</urlset>");

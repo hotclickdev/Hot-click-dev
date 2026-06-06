@@ -1,11 +1,26 @@
 User-agent: *
 Allow: /
+Allow: /productos
+Allow: /productos/
+Allow: /nosotros
+Allow: /contacto
+Allow: /servicios
+Allow: /blog
+Allow: /emprendimientos
 
 Disallow: /admin/
-Disallow: /perfil/
+Disallow: /perfil
 Disallow: /carrito
 Disallow: /checkout
+Disallow: /mis-pedidos
+Disallow: /wishlist
 Disallow: /api/
 Disallow: /recuperar-carrito/
+Disallow: /pago/
+Disallow: /seleccionar-negocio
+Disallow: /registrar-negocio
+Disallow: /sso-callback
+Disallow: /sso-complete
+Disallow: /mode-select
 
 Sitemap: https://hot-click-dev-production.up.railway.app/sitemap.xml

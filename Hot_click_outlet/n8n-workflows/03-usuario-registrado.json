@@ -1,0 +1,43 @@
+{
+  "name": "HOTCLICK - 03 Usuario Registrado (Alerta Admin)",
+  "nodes": [
+    {
+      "id": "node-webhook",
+      "name": "Webhook Usuario",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "parameters": {
+        "path": "usuario-registrado",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "node-telegram",
+      "name": "Telegram Admin",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [460, 300],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_ADMIN_CHAT_ID }}",
+        "text": "=👤 *Nuevo cliente registrado*\n\nNombre: {{ $json.body.nombre ?? $json.nombre }}\nEmail: {{ $json.body.correo ?? $json.correo }}\nTeléfono: {{ $json.body.telefono ?? $json.telefono ?? '-' }}\n\n💡 _Considerá escribirle para dar la bienvenida._",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram Bot HOTCLICK"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Usuario": {
+      "main": [[{ "node": "Telegram Admin", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

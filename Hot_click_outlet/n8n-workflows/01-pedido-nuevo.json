@@ -1,0 +1,82 @@
+{
+  "name": "HOTCLICK - 01 Pedido Nuevo (Alerta Admin)",
+  "nodes": [
+    {
+      "id": "node-webhook",
+      "name": "Webhook Pedido Nuevo",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "parameters": {
+        "path": "pedido-nuevo",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "node-format",
+      "name": "Formatear Mensaje",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "parameters": {
+        "jsCode": "const d = $input.first().json.body ?? $input.first().json;\n\nconst productos = Array.isArray(d.productos) ? d.productos.join(', ') : '-';\nconst total = new Intl.NumberFormat('es-CR').format(d.total ?? 0);\n\nconst telegram = [\n  `💰 *NUEVO PEDIDO PAGADO*`,\n  `📦 Pedido: ${d.numeroPedido}`,\n  `👤 Cliente: ${d.clienteNombre ?? 'Invitado'}`,\n  `📞 Tel: ${d.clienteTelefono ?? '-'}`,\n  `✉️ Email: ${d.clienteCorreo ?? '-'}`,\n  `🛒 Productos: ${productos}`,\n  `💵 Total: ₡${total}`,\n  `💳 Pago: ${d.metodoPago}`,\n].join('\\n');\n\nconst email = `\n<h2>💰 Nuevo pedido pagado</h2>\n<table>\n  <tr><td><b>Pedido</b></td><td>${d.numeroPedido}</td></tr>\n  <tr><td><b>Cliente</b></td><td>${d.clienteNombre ?? 'Invitado'}</td></tr>\n  <tr><td><b>Teléfono</b></td><td>${d.clienteTelefono ?? '-'}</td></tr>\n  <tr><td><b>Email</b></td><td>${d.clienteCorreo ?? '-'}</td></tr>\n  <tr><td><b>Productos</b></td><td>${productos}</td></tr>\n  <tr><td><b>Total</b></td><td>₡${total}</td></tr>\n  <tr><td><b>Método de pago</b></td><td>${d.metodoPago}</td></tr>\n</table>\n`;\n\nreturn [{ json: { telegram, email, ...d } }];"
+      }
+    },
+    {
+      "id": "node-telegram",
+      "name": "Telegram Admin",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [680, 200],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_ADMIN_CHAT_ID }}",
+        "text": "={{ $json.telegram }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram Bot HOTCLICK"
+        }
+      }
+    },
+    {
+      "id": "node-gmail",
+      "name": "Gmail Admin",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [680, 400],
+      "parameters": {
+        "operation": "send",
+        "toList": "hotclick.cr@gmail.com",
+        "subject": "=💰 Pedido {{ $json.numeroPedido }} — ₡{{ $json.total }}",
+        "emailType": "html",
+        "message": "={{ $json.email }}"
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "Gmail HOTCLICK"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Pedido Nuevo": {
+      "main": [[{ "node": "Formatear Mensaje", "type": "main", "index": 0 }]]
+    },
+    "Formatear Mensaje": {
+      "main": [
+        [
+          { "node": "Telegram Admin", "type": "main", "index": 0 },
+          { "node": "Gmail Admin", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}
