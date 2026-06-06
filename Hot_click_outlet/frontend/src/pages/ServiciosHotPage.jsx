@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import { Helmet } from 'react-helmet-async'
 import PhoneField from '@/components/ui/PhoneField'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
@@ -10,6 +11,52 @@ import { servicioService } from '@/services/servicioService'
 import { garantiaService } from '@/services/garantiaService'
 import { testimonioService } from '@/services/testimonioService'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+
+const SITE_URL = 'https://hotclick.lat'
+
+const serviciosJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Servicios HOTCLICK',
+  description: 'Servicios disponibles para clientes de HOTCLICK Marketplace Costa Rica.',
+  url: `${SITE_URL}/servicios`,
+  numberOfItems: 2,
+  itemListElement: [
+    {
+      '@type': 'ListItem',
+      position: 1,
+      item: {
+        '@type': 'Service',
+        name: 'Búsqueda de producto',
+        description: 'Te ayudamos a encontrar cualquier producto que no esté en nuestro catálogo. Enviá tu solicitud y nuestro equipo lo busca por vos en Costa Rica.',
+        provider: { '@type': 'Organization', name: 'HOTCLICK', url: SITE_URL },
+        areaServed: { '@type': 'Country', name: 'Costa Rica' },
+        availableChannel: {
+          '@type': 'ServiceChannel',
+          serviceUrl: `${SITE_URL}/servicios`,
+          servicePhone: '+506-8974-5370',
+        },
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'CRC', availability: 'https://schema.org/InStock' },
+      },
+    },
+    {
+      '@type': 'ListItem',
+      position: 2,
+      item: {
+        '@type': 'Service',
+        name: 'Garantía de producto',
+        description: 'Todos los productos de HOTCLICK incluyen garantía. Reportá un problema con tu compra desde esta sección y te gestionamos la solución.',
+        provider: { '@type': 'Organization', name: 'HOTCLICK', url: SITE_URL },
+        areaServed: { '@type': 'Country', name: 'Costa Rica' },
+        availableChannel: {
+          '@type': 'ServiceChannel',
+          serviceUrl: `${SITE_URL}/servicios`,
+        },
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'CRC', availability: 'https://schema.org/InStock' },
+      },
+    },
+  ],
+}
 
 /* ─── Status badge solicitudes ───────────────────────────── */
 const ESTADO_STYLES = {
@@ -463,6 +510,22 @@ export default function ServiciosHotPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--hc-bg)' }}>
+      <Helmet>
+        <title>Servicios HOTCLICK — Búsqueda de productos y garantías en Costa Rica</title>
+        <meta name="description" content="Solicitá búsqueda de cualquier producto o gestioná la garantía de tu compra. Servicios gratuitos para clientes de HOTCLICK en Costa Rica." />
+        <link rel="canonical" href={`${SITE_URL}/servicios`} />
+        <link rel="alternate" hreflang="es-CR" href={`${SITE_URL}/servicios`} />
+        <link rel="alternate" hreflang="es"    href={`${SITE_URL}/servicios`} />
+        <link rel="alternate" hreflang="x-default" href={`${SITE_URL}/`} />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Servicios HOTCLICK — Búsqueda y garantías en Costa Rica" />
+        <meta property="og:description" content="Te buscamos el producto que necesitás y gestionamos garantías. Gratis para todos los clientes de HOTCLICK." />
+        <meta property="og:url" content={`${SITE_URL}/servicios`} />
+        <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
+        <meta property="og:locale" content="es_CR" />
+        <meta property="og:site_name" content="HOTCLICK" />
+        <script type="application/ld+json">{JSON.stringify(serviciosJsonLd)}</script>
+      </Helmet>
       <Navbar />
 
       {/* ── HERO ─────────────────────────────────────── */}

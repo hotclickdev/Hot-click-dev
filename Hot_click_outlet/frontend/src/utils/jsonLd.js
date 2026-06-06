@@ -1,5 +1,5 @@
 const SITE_NAME = 'HOTCLICK'
-const SITE_URL = 'https://hot-click-dev-production.up.railway.app'
+const SITE_URL = 'https://hotclick.lat'
 
 /**
  * Schema.org Product — enables price, availability and rich snippets in Google.
@@ -15,6 +15,8 @@ export function generateProductJsonLd(producto, urlBase) {
   const validUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
     .toISOString()
     .split('T')[0]
+
+  const costoEnvio = producto.costoEnvioEstimado ?? producto.costo_envio_estimado ?? 0
 
   const ld = {
     '@context': 'https://schema.org',
@@ -34,22 +36,54 @@ export function generateProductJsonLd(producto, urlBase) {
         ? 'https://schema.org/InStock'
         : 'https://schema.org/OutOfStock',
       url: `${urlBase}/productos/${producto.id}`,
+      shippingDetails: {
+        '@type': 'OfferShippingDetails',
+        shippingRate: {
+          '@type': 'MonetaryAmount',
+          value: costoEnvio,
+          currency: 'CRC',
+        },
+        shippingDestination: {
+          '@type': 'DefinedRegion',
+          addressCountry: 'CR',
+        },
+        deliveryTime: {
+          '@type': 'ShippingDeliveryTime',
+          handlingTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 1, unitCode: 'DAY' },
+          transitTime: { '@type': 'QuantitativeValue', minValue: 1, maxValue: 5, unitCode: 'DAY' },
+        },
+      },
+      hasMerchantReturnPolicy: {
+        '@type': 'MerchantReturnPolicy',
+        applicableCountry: 'CR',
+        returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+        merchantReturnDays: 7,
+        returnMethod: 'https://schema.org/ReturnByMail',
+        returnFees: 'https://schema.org/FreeReturn',
+      },
     },
   }
 
-  /*
-   * When product ratings are implemented, add AggregateRating here:
-   *
-   * if (producto.ratingPromedio && producto.totalResenas > 0) {
-   *   ld.aggregateRating = {
-   *     '@type': 'AggregateRating',
-   *     ratingValue: producto.ratingPromedio,
-   *     reviewCount: producto.totalResenas,
-   *     bestRating: 5,
-   *     worstRating: 1,
-   *   }
-   * }
-   */
+  if (producto.ratingPromedio && producto.totalResenas > 0) {
+    ld.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: producto.ratingPromedio,
+      reviewCount: producto.totalResenas,
+      bestRating: 5,
+      worstRating: 1,
+    }
+  }
+
+  if (producto.videoUrl) {
+    ld.video = {
+      '@type': 'VideoObject',
+      name: `${producto.nombre} — Video`,
+      description: `Demostración de ${producto.nombre} disponible en HOTCLICK Costa Rica`,
+      contentUrl: producto.videoUrl,
+      thumbnailUrl: image,
+      uploadDate: new Date().toISOString().split('T')[0],
+    }
+  }
 
   return ld
 }

@@ -30,9 +30,9 @@ function ProductCard({ product, priority = false, index = 0 }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: priority ? 1 : 0, y: priority ? 0 : 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay: Math.min(index * 0.05, 0.32) }}
+      transition={{ duration: 0.35, delay: priority ? 0 : Math.min(index * 0.05, 0.32) }}
       whileHover={{ y: -6, transition: { duration: 0.2, ease: 'easeOut' } }}
       className="group hc-card hc-card-glow rounded-2xl overflow-hidden cursor-pointer"
       onClick={() => navigate(`/productos/${product.id}`, { state: { product } })}

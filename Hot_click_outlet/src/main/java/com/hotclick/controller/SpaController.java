@@ -1,6 +1,8 @@
 package com.hotclick.controller;
 
+import com.hotclick.model.BlogEntrada;
 import com.hotclick.model.Producto;
+import com.hotclick.repository.BlogEntradaRepository;
 import com.hotclick.repository.ProductoRepository;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +31,10 @@ public class SpaController {
     @Autowired
     private ProductoRepository productoRepository;
 
-    @Value("${app.url:https://hot-click-dev-production.up.railway.app}")
+    @Autowired
+    private BlogEntradaRepository blogEntradaRepository;
+
+    @Value("${app.url:https://hotclick.lat}")
     private String appUrl;
 
     @Value("classpath:/static/index.html")
@@ -62,6 +67,21 @@ public class SpaController {
         }
     }
 
+    /** Blog post detail — injects article-specific meta tags for crawlers. */
+    @GetMapping(value = "/blog/{slug}", produces = MediaType.TEXT_HTML_VALUE)
+    @ResponseBody
+    public ResponseEntity<String> blogPostPage(@PathVariable String slug) {
+        var opt = blogEntradaRepository.findBySlug(slug);
+        if (opt.isEmpty()) return serveSpa();
+        BlogEntrada e = opt.get();
+        if (!Boolean.TRUE.equals(e.getPublicado()) || e.getEstado() == null || e.getEstado() != 1) {
+            return serveSpa();
+        }
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
+            .body(injectBlogMeta(indexHtmlContent, e));
+    }
+
     @GetMapping(value = {
         "/",
         "/productos",
@@ -83,7 +103,6 @@ public class SpaController {
         "/informacion",
         "/servicios",
         "/blog",
-        "/blog/{slug}",
         "/emprendimientos",
         "/seleccionar-negocio",
         "/admin/compras",
@@ -173,6 +192,43 @@ public class SpaController {
         String precio = NumberFormat.getInstance(Locale.forLanguageTag("es-CR"))
             .format(p.getPrecioVenta());
         return base + " – ₡" + precio + " | Envío a todo Costa Rica.";
+    }
+
+    private String injectBlogMeta(String html, BlogEntrada e) {
+        String title = xe(e.getTitulo()) + " | Blog HOTCLICK";
+        String desc  = e.getResumen() != null && !e.getResumen().isBlank()
+            ? e.getResumen()
+            : e.getTitulo();
+        if (desc.length() > 155) desc = desc.substring(0, 152) + "...";
+
+        String imagen = e.getImagenUrl() != null && !e.getImagenUrl().isBlank()
+            ? e.getImagenUrl() : appUrl + "/og-image.png";
+        String url = appUrl + "/blog/" + (e.getSlug() != null ? e.getSlug() : e.getId());
+
+        String seoBlock = SEO_START + "\n" +
+            "    <title>" + xe(title) + "</title>\n" +
+            "    <meta name=\"description\" content=\"" + xa(desc) + "\" />\n" +
+            "    <meta name=\"robots\" content=\"index, follow\" />\n" +
+            "    <link rel=\"canonical\" href=\"" + xa(url) + "\" />\n" +
+            "    <meta property=\"og:title\" content=\"" + xa(title) + "\" />\n" +
+            "    <meta property=\"og:description\" content=\"" + xa(desc) + "\" />\n" +
+            "    <meta property=\"og:type\" content=\"article\" />\n" +
+            "    <meta property=\"og:url\" content=\"" + xa(url) + "\" />\n" +
+            "    <meta property=\"og:image\" content=\"" + xa(imagen) + "\" />\n" +
+            "    <meta property=\"og:image:alt\" content=\"" + xa(e.getTitulo()) + "\" />\n" +
+            "    <meta property=\"og:locale\" content=\"es_CR\" />\n" +
+            "    <meta property=\"og:site_name\" content=\"HOTCLICK\" />\n" +
+            "    <meta name=\"twitter:card\" content=\"summary_large_image\" />\n" +
+            "    <meta name=\"twitter:site\" content=\"@hotclickcr\" />\n" +
+            "    <meta name=\"twitter:title\" content=\"" + xa(title) + "\" />\n" +
+            "    <meta name=\"twitter:description\" content=\"" + xa(desc) + "\" />\n" +
+            "    <meta name=\"twitter:image\" content=\"" + xa(imagen) + "\" />\n" +
+            "    " + SEO_END;
+
+        int start = html.indexOf(SEO_START);
+        int end   = html.indexOf(SEO_END);
+        if (start == -1 || end == -1) return html;
+        return html.substring(0, start) + seoBlock + html.substring(end + SEO_END.length());
     }
 
     /** Escapes XML element content. */

@@ -1,7 +1,9 @@
 package com.hotclick.controller;
 
+import com.hotclick.model.BlogEntrada;
 import com.hotclick.model.Categoria;
 import com.hotclick.model.Producto;
+import com.hotclick.repository.BlogEntradaRepository;
 import com.hotclick.repository.CategoriaRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.utils.Constants;
@@ -19,10 +21,11 @@ import java.util.List;
 @RestController
 public class ProductoFeedController {
 
-    @Autowired private ProductoRepository productoRepository;
-    @Autowired private CategoriaRepository categoriaRepository;
+    @Autowired private ProductoRepository    productoRepository;
+    @Autowired private CategoriaRepository   categoriaRepository;
+    @Autowired private BlogEntradaRepository blogEntradaRepository;
 
-    @Value("${app.url:https://hotclick.com}")
+    @Value("${app.url:https://hotclick.lat}")
     private String appUrl;
 
     // ─── Google Merchant Center Feed ─────────────────────────────────────────
@@ -76,8 +79,9 @@ public class ProductoFeedController {
 
     @GetMapping(value = "/sitemap.xml", produces = MediaType.APPLICATION_XML_VALUE)
     public ResponseEntity<String> sitemap() {
-        List<Producto> productos = productoRepository.findActivosVisibles();
-        List<Categoria> categorias = categoriaRepository.findByEstado(Constants.ESTADO_ACTIVO);
+        List<Producto>    productos  = productoRepository.findActivosVisibles();
+        List<Categoria>   categorias = categoriaRepository.findByEstado(Constants.ESTADO_ACTIVO);
+        List<BlogEntrada> articulos  = blogEntradaRepository.findByPublicadoTrueAndEstadoOrderByFechaPublicacionDesc(1);
         String hoy = LocalDate.now().toString();
 
         StringBuilder xml = new StringBuilder(2048 + (productos.size() + categorias.size()) * 200);
@@ -120,6 +124,15 @@ public class ProductoFeedController {
                 xml.append("    </image:image>\n");
             }
             xml.append("  </url>\n");
+        }
+
+        // Artículos del blog — con fecha de publicación real como lastmod
+        for (BlogEntrada a : articulos) {
+            String lastmod = a.getFechaPublicacion() != null
+                ? a.getFechaPublicacion().toLocalDate().toString() : hoy;
+            String slug = a.getSlug() != null && !a.getSlug().isBlank()
+                ? a.getSlug() : String.valueOf(a.getId());
+            sitemapUrl(xml, appUrl + "/blog/" + slug, "0.7", "monthly", lastmod);
         }
 
         xml.append("</urlset>");

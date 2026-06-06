@@ -2,7 +2,7 @@
 
 Plataforma SaaS de e-commerce B2C para el mercado costarricense con modelo híbrido: HotClick vende directamente productos de outlets y liquidación, y además opera un marketplace donde emprendedores y negocios publican sus productos con su propia marca. Incluye POS, CRM, analítica y cumplimiento legal completo (Ley N.° 8968).
 
-**URL producción:** <https://hot-click-dev-production.up.railway.app/>
+**URL producción:** <https://hotclick.lat/>
 
 ---
 

@@ -23,4 +23,4 @@ Disallow: /sso-callback
 Disallow: /sso-complete
 Disallow: /mode-select
 
-Sitemap: https://hot-click-dev-production.up.railway.app/sitemap.xml
+Sitemap: https://hotclick.lat/sitemap.xml

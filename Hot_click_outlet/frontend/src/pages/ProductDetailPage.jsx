@@ -184,6 +184,7 @@ export default function ProductDetailPage() {
         title={seoTitle}
         description={seoDescription}
         image={product.imagenUrl}
+        url={`https://hotclick.lat/productos/${product.id}`}
         type="product"
       />
       <Helmet>

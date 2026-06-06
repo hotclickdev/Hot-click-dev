@@ -1,7 +1,7 @@
 # Informe de Cumplimiento Legal y SEO — HOTCLICK
 
 **Fecha:** 5 de junio de 2025
-**Dominio producción:** <https://hot-click-dev-production.up.railway.app/>
+**Dominio producción:** <https://hotclick.lat/>
 
 ---
 

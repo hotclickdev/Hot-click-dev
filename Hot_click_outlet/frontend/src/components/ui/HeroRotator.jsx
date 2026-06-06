@@ -341,10 +341,10 @@ function ChatPhase({ accent, onPause, onResume, destacados }) {
   return (
     <motion.div
       key="chat"
-      initial={{ opacity: 0, y: 28 }}
+      initial={{ opacity: 1, y: 28 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
       className="flex flex-col items-center text-center w-full"
     >
       {/* Contenido central */}
@@ -449,10 +449,10 @@ function ProductsPhase({ productos, accent }) {
   return (
     <motion.div
       key="products"
-      initial={{ opacity: 0, y: 28 }}
+      initial={{ opacity: 1, y: 28 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
       className="w-full max-w-5xl mx-auto px-4"
     >
       {/* Header */}
@@ -502,9 +502,10 @@ function ProductsPhase({ productos, accent }) {
               className="rounded-2xl overflow-hidden cursor-pointer group transition-all"
               style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
             >
-              <div className="aspect-[4/3] overflow-hidden" style={{ background: 'var(--hc-border)' }}>
+              <div className="overflow-hidden" style={{ background: 'var(--hc-border)', aspectRatio: '4/3' }}>
                 {p.imagenUrl ? (
                   <img src={p.imagenUrl} alt={p.nombre}
+                    width="400" height="300"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy" />
                 ) : (
@@ -532,10 +533,10 @@ function BusinessesPhase({ convenios, accent }) {
   return (
     <motion.div
       key="businesses"
-      initial={{ opacity: 0, y: 28 }}
+      initial={{ opacity: 1, y: 28 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
       className="w-full max-w-4xl mx-auto px-4"
     >
       {/* Header */}

@@ -77,6 +77,7 @@ const AdminFacturas             = lazy(() => import('@/pages/admin/AdminFacturas
 const AdminConfigFiscal         = lazy(() => import('@/pages/admin/AdminConfigFiscal'))
 const EmpresaSelectionPage      = lazy(() => import('@/pages/EmpresaSelectionPage'))
 const BlogPage                  = lazy(() => import('@/pages/BlogPage'))
+const BlogPostPage               = lazy(() => import('@/pages/BlogPostPage'))
 const EmprendimientosPage       = lazy(() => import('@/pages/EmprendimientosPage'))
 const AdminOfertas              = lazy(() => import('@/pages/admin/AdminOfertas'))
 const AdminBlog                 = lazy(() => import('@/pages/admin/AdminBlog'))
@@ -351,7 +352,7 @@ export default function App() {
               <Route path="/recuperar-carrito/:id" element={<RecuperarCarritoPage />} />
               <Route path="/servicios" element={<ServiciosHotPage />} />
               <Route path="/blog" element={<BlogPage />} />
-              <Route path="/blog/:slug" element={<BlogPage />} />
+              <Route path="/blog/:slug" element={<BlogPostPage />} />
               <Route path="/emprendimientos" element={<EmprendimientosPage />} />
               <Route path="/pago/exito"     element={<PaymentStatusPage />} />
               <Route path="/pago/cancelado" element={<PaymentStatusPage />} />

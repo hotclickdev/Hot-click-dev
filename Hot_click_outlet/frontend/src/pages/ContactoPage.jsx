@@ -1,12 +1,50 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { useToast } from '@/components/ui/Toast'
 
 const WHATSAPP = '50689745370'
+const SITE_URL = 'https://hotclick.lat'
+
+const contactPageJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ContactPage',
+  name: 'Contacto HOTCLICK — Soporte al cliente en Costa Rica',
+  description: 'Contactá al equipo de HOTCLICK por WhatsApp, email o formulario. Atención en horario extendido de lunes a sábado.',
+  url: `${SITE_URL}/contacto`,
+  inLanguage: 'es-CR',
+  mainEntity: {
+    '@type': 'Organization',
+    name: 'HOTCLICK',
+    url: SITE_URL,
+    telephone: '+506-8974-5370',
+    contactPoint: [
+      {
+        '@type': 'ContactPoint',
+        telephone: '+506-8974-5370',
+        contactType: 'customer service',
+        contactOption: 'TollFree',
+        availableLanguage: 'Spanish',
+        hoursAvailable: {
+          '@type': 'OpeningHoursSpecification',
+          dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+          opens: '08:00',
+          closes: '19:00',
+        },
+      },
+      {
+        '@type': 'ContactPoint',
+        url: `https://wa.me/${WHATSAPP}`,
+        contactType: 'customer support',
+        availableLanguage: 'Spanish',
+      },
+    ],
+  },
+}
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 24 },
@@ -44,6 +82,22 @@ export default function ContactoPage() {
 
   return (
     <MainLayout>
+      <Helmet>
+        <title>Contacto — HOTCLICK Marketplace Costa Rica</title>
+        <meta name="description" content="Contactá al equipo de HOTCLICK por WhatsApp al +506 8974-5370, por email o formulario. Atención de lunes a sábado 8 a.m.–7 p.m." />
+        <link rel="canonical" href={`${SITE_URL}/contacto`} />
+        <link rel="alternate" hreflang="es-CR" href={`${SITE_URL}/contacto`} />
+        <link rel="alternate" hreflang="es"    href={`${SITE_URL}/contacto`} />
+        <link rel="alternate" hreflang="x-default" href={`${SITE_URL}/`} />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Contacto HOTCLICK — Soporte al cliente en Costa Rica" />
+        <meta property="og:description" content="Escribinos por WhatsApp, email o formulario. Te respondemos el mismo día." />
+        <meta property="og:url" content={`${SITE_URL}/contacto`} />
+        <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
+        <meta property="og:locale" content="es_CR" />
+        <meta property="og:site_name" content="HOTCLICK" />
+        <script type="application/ld+json">{JSON.stringify(contactPageJsonLd)}</script>
+      </Helmet>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16">
 
         {/* Header */}

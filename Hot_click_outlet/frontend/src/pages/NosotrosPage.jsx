@@ -1,7 +1,34 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
+
+const SITE_URL = 'https://hotclick.lat'
+
+const aboutPageJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'AboutPage',
+  name: 'Sobre HOTCLICK — Marketplace de emprendedores costarricenses',
+  description: 'Conocé la historia, misión y valores de HOTCLICK, el marketplace que conecta emprendedores costarricenses con compradores de todo el país.',
+  url: `${SITE_URL}/nosotros`,
+  inLanguage: 'es-CR',
+  isPartOf: { '@type': 'WebSite', name: 'HOTCLICK', url: SITE_URL },
+  author: { '@type': 'Organization', name: 'HOTCLICK', url: SITE_URL },
+  about: {
+    '@type': 'Organization',
+    name: 'HOTCLICK',
+    description: 'Marketplace 100% costarricense que apoya el comercio local con tecnología moderna, pagos seguros y envío confiable a todo Costa Rica.',
+    foundingDate: '2024',
+    url: SITE_URL,
+    areaServed: { '@type': 'Country', name: 'Costa Rica' },
+    sameAs: [
+      'https://www.instagram.com/hotclickcr',
+      'https://www.facebook.com/hotclickcr',
+      'https://www.tiktok.com/@hotclickcr',
+    ],
+  },
+}
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 24 },
@@ -21,6 +48,22 @@ export default function NosotrosPage() {
 
   return (
     <MainLayout>
+      <Helmet>
+        <title>Sobre nosotros — HOTCLICK Marketplace Costa Rica</title>
+        <meta name="description" content="Conocé la historia y misión de HOTCLICK, el marketplace 100% costarricense que conecta emprendedores con compradores de todo el país." />
+        <link rel="canonical" href={`${SITE_URL}/nosotros`} />
+        <link rel="alternate" hreflang="es-CR" href={`${SITE_URL}/nosotros`} />
+        <link rel="alternate" hreflang="es"    href={`${SITE_URL}/nosotros`} />
+        <link rel="alternate" hreflang="x-default" href={`${SITE_URL}/`} />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Sobre nosotros — HOTCLICK Marketplace Costa Rica" />
+        <meta property="og:description" content="Conocé la historia y misión de HOTCLICK, el marketplace 100% costarricense." />
+        <meta property="og:url" content={`${SITE_URL}/nosotros`} />
+        <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
+        <meta property="og:locale" content="es_CR" />
+        <meta property="og:site_name" content="HOTCLICK" />
+        <script type="application/ld+json">{JSON.stringify(aboutPageJsonLd)}</script>
+      </Helmet>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16 space-y-16">
 
         {/* Hero */}

@@ -883,7 +883,7 @@ export default function ProductsPage() {
     return `Explorá más de ${products.length > 0 ? products.length + ' ' : ''}productos únicos de emprendedores costarricenses. Tecnología, ropa, accesorios y más con envío a todo Costa Rica.`
   })()
 
-  const canonicalUrl = 'https://hot-click-dev-production.up.railway.app/productos'
+  const canonicalUrl = 'https://hotclick.lat/productos'
   const shouldNoIndex = hasFilters && (marcasFilter.size > 1 || (marcasFilter.size > 0 && !!category))
 
   return (
@@ -892,18 +892,21 @@ export default function ProductsPage() {
         <title>{seoTitle}</title>
         <meta name="description" content={seoDesc} />
         <link rel="canonical" href={canonicalUrl} />
+        <link rel="alternate" hreflang="es-CR" href={canonicalUrl} />
+        <link rel="alternate" hreflang="es"    href={canonicalUrl} />
+        <link rel="alternate" hreflang="x-default" href="https://hotclick.lat/" />
         {shouldNoIndex && <meta name="robots" content="noindex, follow" />}
         <meta property="og:title" content={seoTitle} />
         <meta property="og:description" content={seoDesc} />
         <meta property="og:type" content="website" />
         <meta property="og:url" content={canonicalUrl} />
-        <meta property="og:image" content="https://hot-click-dev-production.up.railway.app/og-image.png" />
+        <meta property="og:image" content="https://hotclick.lat/og-image.png" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={seoTitle} />
         <meta name="twitter:description" content={seoDesc} />
         {products.length > 0 && viewMode === 'all' && (
           <script type="application/ld+json">
-            {JSON.stringify(generateItemListJsonLd(products.slice(0, 12), 'https://hot-click-dev-production.up.railway.app'))}
+            {JSON.stringify(generateItemListJsonLd(products.slice(0, 12), 'https://hotclick.lat'))}
           </script>
         )}
       </Helmet>
