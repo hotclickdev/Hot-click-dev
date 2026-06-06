@@ -257,11 +257,13 @@ public class SecurityConfig {
                     res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
                     res.setHeader("Content-Security-Policy",
                         "default-src 'self'; " +
-                        "script-src 'self' 'unsafe-inline' https://www.paypal.com https://www.sandbox.paypal.com https://js.stripe.com https://*.clerk.accounts.dev https://clerk.browser.js; " +
+                        "script-src 'self' 'unsafe-inline' https://www.paypal.com https://www.sandbox.paypal.com https://js.stripe.com https://*.clerk.accounts.dev https://www.googletagmanager.com https://www.google-analytics.com; " +
+                        "script-src-elem 'self' 'unsafe-inline' https://www.paypal.com https://www.sandbox.paypal.com https://js.stripe.com https://*.clerk.accounts.dev https://www.googletagmanager.com https://www.google-analytics.com; " +
+                        "worker-src blob: 'self'; " +
                         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
                         "font-src 'self' https://fonts.gstatic.com; " +
                         "img-src 'self' data: blob: " + supabaseUrl + " https://www.paypalobjects.com https://*.googleusercontent.com https://img.clerk.com https://avatars.githubusercontent.com; " +
-                        "connect-src 'self' " + supabaseUrl + " https://*.clerk.accounts.dev https://api.clerk.com https://clerk.hot-spider-31.lcl.dev https://api-m.paypal.com https://api-m.sandbox.paypal.com https://api.stripe.com; " +
+                        "connect-src 'self' " + supabaseUrl + " https://*.clerk.accounts.dev https://api.clerk.com https://clerk.hot-spider-31.lcl.dev https://api-m.paypal.com https://api-m.sandbox.paypal.com https://api.stripe.com https://hooks.stripe.com https://www.google-analytics.com https://region1.google-analytics.com; " +
                         "frame-src https://www.paypal.com https://www.sandbox.paypal.com https://js.stripe.com https://hooks.stripe.com https://www.youtube.com https://www.youtube-nocookie.com https://www.tiktok.com https://www.instagram.com; " +
                         "object-src 'none'; " +
                         "base-uri 'self';"
