@@ -81,12 +81,57 @@ Si una variable queda vacía, ese webhook simplemente no se dispara — no rompe
 
 ## Resumen de workflows
 
-| Archivo | Trigger | Acción |
-|---------|---------|--------|
-| `01-pedido-nuevo.json` | Pago confirmado (Stripe/SINPE/GiftCard/Manual) | Telegram + Gmail al admin |
-| `02-carrito-abandonado.json` | Carrito sin comprar por 1+ hora | Email al cliente (si tiene email) / Telegram admin (si no tiene email) |
-| `03-usuario-registrado.json` | Nuevo usuario registrado | Telegram al admin para seguimiento personal |
-| `04-pedido-entregado.json` | Pedido marcado como ENTREGADO | Espera 7 días → email de follow-up al cliente |
+| Archivo | Activo | Trigger | Acción |
+|---------|--------|---------|--------|
+| `01-pedido-nuevo.json` | ✅ | Pago confirmado | Telegram + Gmail al admin |
+| `02-carrito-abandonado.json` | ✅ | Carrito sin comprar 1+ hora | Email al cliente / Telegram admin |
+| `03-usuario-registrado.json` | ❌ INACTIVO | Nuevo usuario | — (guardado para cuando escale) |
+| `04-pedido-entregado.json` | ✅ | Pedido ENTREGADO | Espera 7 días → email follow-up |
+| `05-messenger-bot.json` | ✅ | Mensaje en Messenger/Marketplace | Bot IA responde como Andrés |
+| `06-seguimiento-sin-respuesta.json` | ✅ | Cada 6 horas | Telegram si cliente lleva +1 día sin responder |
+
+**Total activos: 5 — exacto para plan Free.**
+
+---
+
+## Configurar el Bot de Messenger (workflow 05)
+
+### Paso A — Crear Facebook App (30 min, solo una vez)
+
+1. Ir a [developers.facebook.com](https://developers.facebook.com) → **Create App → Business**
+2. Agregar producto **Messenger** dentro del App
+3. En **Webhooks** → conectar tu Página de Facebook HOTCLICK
+4. Generar **Page Access Token** → copiarlo
+5. En **Webhook URL** poner: `https://<tu-instancia>.app.n8n.cloud/webhook/messenger`
+6. En **Verify Token** poner: `hotclick2026`
+7. Suscribirse al evento: `messages`
+
+### Paso B — Verificación del webhook (temporal)
+
+Facebook hace una llamada GET para verificar. En n8n:
+1. Crear workflow temporal con Webhook GET en path `messenger`
+2. Agregar nodo **Respond to Webhook** que devuelva `{{ $json.query['hub.challenge'] }}`
+3. Activarlo, completar la verificación en Facebook, luego desactivarlo y borrarlo
+
+### Paso C — Variables de entorno adicionales
+
+Agregar en Railway (además de las del Paso 5 anterior):
+
+```
+FB_PAGE_ACCESS_TOKEN=el_token_generado_en_paso_A
+ANTHROPIC_API_KEY=tu_api_key_de_anthropic
+GOOGLE_SHEET_ID=el_id_de_tu_google_sheet
+```
+
+El ID del Google Sheet está en la URL:
+`https://docs.google.com/spreadsheets/d/`**ESTE_ES_EL_ID**`/edit`
+
+### Paso D — Crear el Google Sheet
+
+Crear una hoja llamada **Conversaciones** con estas columnas exactas:
+```
+sender_id | mensaje | ultimo_emisor | ultima_actualizacion | estado
+```
 
 ---
 
@@ -96,8 +141,9 @@ Si una variable queda vacía, ese webhook simplemente no se dispara — no rompe
 |----------|--------------------:|----------------:|
 | Pedido nuevo | ~30 ventas/mes | 30 |
 | Carrito abandonado | ~50 carritos/mes | 50 |
-| Usuario registrado | ~20 registros/mes | 20 |
 | Pedido entregado | ~25 entregados/mes | 25 |
-| **Total** | | **~125** |
+| Messenger bot | ~200 mensajes/mes | 200 |
+| Seguimiento 24h | 4 veces/día | 120 |
+| **Total** | | **~425** |
 
-Usás ~5% del plan Free. Sobra margen para crecer 20x antes de pagar.
+Usás ~17% del plan Free. Sobra margen para crecer 5x antes de pagar.

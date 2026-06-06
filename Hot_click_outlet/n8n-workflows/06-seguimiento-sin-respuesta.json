@@ -1,0 +1,97 @@
+{
+  "name": "HOTCLICK - 06 Seguimiento Sin Respuesta (+1 día)",
+  "nodes": [
+    {
+      "id": "schedule",
+      "name": "Revisar cada 6 horas",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300],
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "hours", "hoursInterval": 6 }]
+        }
+      }
+    },
+    {
+      "id": "leer-sheets",
+      "name": "Leer Conversaciones",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [460, 300],
+      "parameters": {
+        "operation": "readRows",
+        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEET_ID }}", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "Conversaciones", "mode": "name" },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": { "name": "Google Sheets HOTCLICK" }
+      }
+    },
+    {
+      "id": "filtrar-sin-respuesta",
+      "name": "Filtrar sin respuesta +24h",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300],
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nconst ahora = new Date();\nconst hace24h = new Date(ahora.getTime() - 24 * 60 * 60 * 1000);\n\nconst pendientes = rows.filter(row => {\n  const d = row.json;\n  if (d.ultimo_emisor !== 'CLIENTE') return false;\n  if (d.estado === 'VENDIDO') return false;\n  const ultima = new Date(d.ultima_actualizacion);\n  return ultima < hace24h;\n});\n\nif (pendientes.length === 0) return [];\nreturn pendientes;"
+      }
+    },
+    {
+      "id": "if-hay-pendientes",
+      "name": "Hay conversaciones pendientes?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, 300],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": { "type": "number", "operation": "gt" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "telegram-sin-respuesta",
+      "name": "Telegram - Sin respuesta",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1120, 200],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_ADMIN_CHAT_ID }}",
+        "text": "=⏰ *Llevan +1 día sin responder*\n\n👤 Sender: {{ $json.sender_id }}\n💬 Último mensaje: \"{{ $json.mensaje }}\"\n🕐 Desde: {{ $json.ultima_actualizacion }}\n\n→ Dales seguimiento en Messenger",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "credentials": { "telegramApi": { "name": "Telegram Bot HOTCLICK" } }
+    }
+  ],
+  "connections": {
+    "Revisar cada 6 horas": {
+      "main": [[{ "node": "Leer Conversaciones", "type": "main", "index": 0 }]]
+    },
+    "Leer Conversaciones": {
+      "main": [[{ "node": "Filtrar sin respuesta +24h", "type": "main", "index": 0 }]]
+    },
+    "Filtrar sin respuesta +24h": {
+      "main": [[{ "node": "Hay conversaciones pendientes?", "type": "main", "index": 0 }]]
+    },
+    "Hay conversaciones pendientes?": {
+      "main": [
+        [{ "node": "Telegram - Sin respuesta", "type": "main", "index": 0 }],
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

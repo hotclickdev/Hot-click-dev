@@ -1,0 +1,310 @@
+{
+  "name": "HOTCLICK - 05 Messenger Bot (Marketplace)",
+  "nodes": [
+    {
+      "id": "webhook-msg",
+      "name": "Recibir Mensaje Facebook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "parameters": {
+        "path": "messenger",
+        "httpMethod": "POST",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "extract-msg",
+      "name": "Extraer Datos del Mensaje",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body;\nconst entry = body?.entry?.[0];\nconst messaging = entry?.messaging?.[0];\n\nif (!messaging?.message?.text) {\n  return [{ json: { skip: true } }];\n}\n\nconst senderId = messaging.sender.id;\nconst messageText = messaging.message.text;\nconst waitSeconds = Math.floor(Math.random() * (300 - 180 + 1)) + 180;\n\nreturn [{\n  json: {\n    senderId,\n    messageText,\n    waitSeconds,\n    skip: false,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      }
+    },
+    {
+      "id": "if-skip",
+      "name": "Es mensaje de texto?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": false,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "log-sheets",
+      "name": "Registrar en Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [900, 200],
+      "parameters": {
+        "operation": "append",
+        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEET_ID }}", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "Conversaciones", "mode": "name" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "sender_id": "={{ $json.senderId }}",
+            "mensaje": "={{ $json.messageText }}",
+            "ultimo_emisor": "CLIENTE",
+            "ultima_actualizacion": "={{ $json.timestamp }}",
+            "estado": "ACTIVA"
+          }
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": { "name": "Google Sheets HOTCLICK" }
+      }
+    },
+    {
+      "id": "typing-on",
+      "name": "Mostrar Escribiendo...",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 380],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v18.0/me/messages?access_token={{ $env.FB_PAGE_ACCESS_TOKEN }}",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={\n  \"recipient\": {\"id\": \"{{ $('Extraer Datos del Mensaje').item.json.senderId }}\"},\n  \"sender_action\": \"typing_on\"\n}"
+      }
+    },
+    {
+      "id": "wait-random",
+      "name": "Esperar 3-5 minutos",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1120, 380],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": "={{ $('Extraer Datos del Mensaje').item.json.waitSeconds }}",
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "buscar-producto",
+      "name": "Buscar Producto en HOTCLICK",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 380],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.APP_URL ?? 'https://hotclick.cr' }}/api/productos?page=0&size=3&search={{ encodeURIComponent($('Extraer Datos del Mensaje').item.json.messageText.substring(0, 50)) }}"
+      }
+    },
+    {
+      "id": "llamar-claude",
+      "name": "Llamar a Claude (IA)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1560, 380],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={\n  \"model\": \"claude-haiku-4-5-20251001\",\n  \"max_tokens\": 150,\n  \"system\": \"Sos Andrés, estudiante universitario costarricense que vende productos para costear sus estudios.\\n\\nINFORMACIÓN DISPONIBLE DEL PRODUCTO:\\n{{ JSON.stringify($('Buscar Producto en HOTCLICK').item.json?.content?.[0] ?? {}) }}\\n\\nUBICACIÓN: Santa Ana, Expocerámica (por los outlets de zapatos)\\nENVÍOS: Sí, se coordina\\nCONDICIÓN: Como nuevo salvo que se indique lo contrario\\n\\nREGLA MÁS IMPORTANTE: Respondé UNA sola cosa a la vez. Si preguntan varias cosas, respondé solo la más importante y dejá fluir la conversación.\\n\\nESTILO: sin mayúsculas al inicio está bien, mensajes cortos (máximo 2 líneas), natural, sin formalidades. Las palabras escritas correctamente para que se entiendan.\\n\\nSi preguntan quién sos: 'soy Andrés, estudiante, vendo cositas para la u jaja'\\nSi preguntan si sos bot: primero respondé 'por qué preguntas?' — si insisten: 'no lo soy'\\n\\nSi NO podés responder algo con certeza → respondé ÚNICAMENTE: NO_RESPONDER\\nSi el cliente confirma que quiere comprar o coordinar → respondé normal pero al FINAL de tu respuesta agregá exactamente: #VENTA_CONFIRMADA\\n\\nNUNCA uses: 'con gusto', 'estimado', 'a sus órdenes', ni lenguaje de empresa.\\nNUNCA des toda la info junta sin que la pidan.\\nNUNCA inventes datos del producto.\",\n  \"messages\": [{\"role\": \"user\", \"content\": \"{{ $('Extraer Datos del Mensaje').item.json.messageText }}\"}]\n}"
+      }
+    },
+    {
+      "id": "parsear-respuesta",
+      "name": "Analizar Respuesta de Claude",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 380],
+      "parameters": {
+        "jsCode": "const claudeResponse = $input.first().json;\nconst text = claudeResponse.content?.[0]?.text ?? '';\n\nconst noResponder = text.trim() === 'NO_RESPONDER';\nconst ventaConfirmada = text.includes('#VENTA_CONFIRMADA');\nconst respuestaLimpia = text.replace('#VENTA_CONFIRMADA', '').trim();\n\nconst senderId = $('Extraer Datos del Mensaje').item.json.senderId;\nconst messageText = $('Extraer Datos del Mensaje').item.json.messageText;\n\nreturn [{\n  json: {\n    noResponder,\n    ventaConfirmada,\n    respuestaLimpia,\n    senderId,\n    mensajeOriginal: messageText,\n    tipoRespuesta: noResponder ? 'NO_RESPONDER' : (ventaConfirmada ? 'VENTA' : 'NORMAL')\n  }\n}];"
+      }
+    },
+    {
+      "id": "switch-tipo",
+      "name": "Qué tipo de respuesta?",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [2000, 380],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "conditions": [{ "leftValue": "={{ $json.tipoRespuesta }}", "rightValue": "NO_RESPONDER", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "no_responder"
+            },
+            {
+              "conditions": {
+                "conditions": [{ "leftValue": "={{ $json.tipoRespuesta }}", "rightValue": "VENTA", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "venta"
+            },
+            {
+              "conditions": {
+                "conditions": [{ "leftValue": "={{ $json.tipoRespuesta }}", "rightValue": "NORMAL", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "normal"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "telegram-no-responder",
+      "name": "Telegram - No supe responder",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [2220, 200],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_ADMIN_CHAT_ID }}",
+        "text": "=⚠️ *No supe qué responder*\n\n👤 Sender: {{ $json.senderId }}\n💬 Pregunta: \"{{ $json.mensajeOriginal }}\"\n\n→ Respondé vos manualmente en Messenger",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "credentials": { "telegramApi": { "name": "Telegram Bot HOTCLICK" } }
+    },
+    {
+      "id": "enviar-respuesta-venta",
+      "name": "Enviar Respuesta (Venta)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2220, 380],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v18.0/me/messages?access_token={{ $env.FB_PAGE_ACCESS_TOKEN }}",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={\n  \"recipient\": {\"id\": \"{{ $json.senderId }}\"},\n  \"message\": {\"text\": \"{{ $json.respuestaLimpia }}\"}\n}"
+      }
+    },
+    {
+      "id": "telegram-venta",
+      "name": "Telegram - Cliente interesado!",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [2440, 380],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_ADMIN_CHAT_ID }}",
+        "text": "=✅ *Cliente quiere comprar!*\n\n👤 Sender ID: {{ $json.senderId }}\n💬 Su mensaje: \"{{ $json.mensajeOriginal }}\"\n\n→ Coordiná la entrega en Messenger",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "credentials": { "telegramApi": { "name": "Telegram Bot HOTCLICK" } }
+    },
+    {
+      "id": "enviar-respuesta-normal",
+      "name": "Enviar Respuesta (Normal)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2220, 560],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v18.0/me/messages?access_token={{ $env.FB_PAGE_ACCESS_TOKEN }}",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={\n  \"recipient\": {\"id\": \"{{ $json.senderId }}\"},\n  \"message\": {\"text\": \"{{ $json.respuestaLimpia }}\"}\n}"
+      }
+    },
+    {
+      "id": "update-sheets-normal",
+      "name": "Actualizar Sheets (respondido)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [2440, 560],
+      "parameters": {
+        "operation": "append",
+        "documentId": { "__rl": true, "value": "={{ $env.GOOGLE_SHEET_ID }}", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "Conversaciones", "mode": "name" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "sender_id": "={{ $('Extraer Datos del Mensaje').item.json.senderId }}",
+            "mensaje": "={{ $('Extraer Datos del Mensaje').item.json.messageText }}",
+            "ultimo_emisor": "ANDRES",
+            "ultima_actualizacion": "={{ new Date().toISOString() }}",
+            "estado": "={{ $('Analizar Respuesta de Claude').item.json.ventaConfirmada ? 'INTERESADO' : 'ACTIVA' }}"
+          }
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": { "name": "Google Sheets HOTCLICK" }
+      }
+    }
+  ],
+  "connections": {
+    "Recibir Mensaje Facebook": {
+      "main": [[{ "node": "Extraer Datos del Mensaje", "type": "main", "index": 0 }]]
+    },
+    "Extraer Datos del Mensaje": {
+      "main": [[{ "node": "Es mensaje de texto?", "type": "main", "index": 0 }]]
+    },
+    "Es mensaje de texto?": {
+      "main": [
+        [
+          { "node": "Registrar en Google Sheets", "type": "main", "index": 0 },
+          { "node": "Mostrar Escribiendo...", "type": "main", "index": 0 }
+        ],
+        []
+      ]
+    },
+    "Mostrar Escribiendo...": {
+      "main": [[{ "node": "Esperar 3-5 minutos", "type": "main", "index": 0 }]]
+    },
+    "Esperar 3-5 minutos": {
+      "main": [[{ "node": "Buscar Producto en HOTCLICK", "type": "main", "index": 0 }]]
+    },
+    "Buscar Producto en HOTCLICK": {
+      "main": [[{ "node": "Llamar a Claude (IA)", "type": "main", "index": 0 }]]
+    },
+    "Llamar a Claude (IA)": {
+      "main": [[{ "node": "Analizar Respuesta de Claude", "type": "main", "index": 0 }]]
+    },
+    "Analizar Respuesta de Claude": {
+      "main": [[{ "node": "Qué tipo de respuesta?", "type": "main", "index": 0 }]]
+    },
+    "Qué tipo de respuesta?": {
+      "main": [
+        [{ "node": "Telegram - No supe responder", "type": "main", "index": 0 }],
+        [{ "node": "Enviar Respuesta (Venta)", "type": "main", "index": 0 }],
+        [{ "node": "Enviar Respuesta (Normal)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Enviar Respuesta (Venta)": {
+      "main": [[{ "node": "Telegram - Cliente interesado!", "type": "main", "index": 0 }]]
+    },
+    "Enviar Respuesta (Normal)": {
+      "main": [[{ "node": "Actualizar Sheets (respondido)", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}
