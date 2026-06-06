@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import useWishlistStore from '@/store/wishlistStore'
 import { productService, normalizeProduct } from '@/services/productService'
 import { useToast } from '@/components/ui/Toast'
@@ -8,13 +8,16 @@ import { formatPrice } from '@/utils/format'
 const LOW_STOCK = 3
 const CHECK_KEY = 'hc-wishlist-alert-ts'
 const INTERVAL_MS = 4 * 60 * 60 * 1000  // re-check every 4 h
+const BLOCKED_PATHS = ['/checkout', '/pago/', '/carrito', '/login', '/registro']
 
 export function useWishlistAlert() {
   const items = useWishlistStore((s) => s.items)
   const updatePrice = useWishlistStore((s) => s.updatePrice)
   const toast = useToast()
+  const { pathname } = useLocation()
 
   useEffect(() => {
+    if (BLOCKED_PATHS.some(p => pathname.startsWith(p))) return
     if (!items.length) return
 
     const lastCheck = Number(localStorage.getItem(CHECK_KEY) ?? 0)

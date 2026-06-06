@@ -1,21 +1,24 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import useCartStore from '@/store/cartStore'
 import useWishlistStore from '@/store/wishlistStore'
 import { formatPrice } from '@/utils/format'
 
 const SESSION_KEY = 'hc-exit-intent-shown'
 const DELAY_BEFORE_ARMED_MS = 5000
+const BLOCKED_PATHS = ['/checkout', '/pago/exito', '/pago/cancelado', '/carrito']
 
 export default function ExitIntentModal() {
   const [open, setOpen] = useState(false)
   const armed = useRef(false)
+  const { pathname } = useLocation()
   const cartItems = useCartStore((s) => s.items)
   const cartTotal = useCartStore((s) => s.total)
   const wishItems = useWishlistStore((s) => s.items)
 
   useEffect(() => {
+    if (BLOCKED_PATHS.some(p => pathname.startsWith(p))) return
     if (sessionStorage.getItem(SESSION_KEY)) return
     if (!cartItems.length && !wishItems.length) return
 
