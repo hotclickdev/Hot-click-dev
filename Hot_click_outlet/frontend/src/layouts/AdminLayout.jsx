@@ -303,6 +303,21 @@ function ModeSwitcherWrapper({ userRole }) {
 function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, empresaId, userRole, handleLogout, onSearch }) {
   const navRef = useRef(null)
 
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('hc-sidebar-collapsed') || '[]')) }
+    catch { return new Set() }
+  })
+
+  const toggleSection = (section) => {
+    setCollapsed(prev => {
+      const next = new Set(prev)
+      if (next.has(section)) next.delete(section)
+      else next.add(section)
+      try { localStorage.setItem('hc-sidebar-collapsed', JSON.stringify([...next])) } catch {}
+      return next
+    })
+  }
+
   useLayoutEffect(() => {
     if (navRef.current) navRef.current.scrollTop = _sidebarScrollTop
   }, [])
@@ -352,40 +367,60 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
 
       {/* Nav */}
       <nav ref={navRef} onScroll={e => { _sidebarScrollTop = e.currentTarget.scrollTop }} className="flex-1 px-3 py-2 overflow-y-auto">
-        {sidebarLinks.map((link, i) => {
-          if (link.divider) return (
-            <div key={`div-${i}`} className="my-2" style={{ borderTop: '1px solid var(--hc-border)' }} />
-          )
-          if (link.section) return (
-            <div key={`sec-${i}`} className="px-3 pt-4 pb-1">
-              <span className="text-[9px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--hc-muted)', opacity: 0.6 }}>
-                {link.section}
-              </span>
-            </div>
-          )
-          return (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              end={link.exact}
-              className={({ isActive }) => `
-                flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-150 mb-0.5
-                ${isActive
-                  ? 'bg-[#4f7cff]/15 border border-[#4f7cff]/20'
-                  : 'hover:bg-[var(--hc-surface-2)] border border-transparent'
-                }
-              `}
-              style={({ isActive }) => ({
-                color: isActive ? '#fff' : 'var(--hc-muted)',
-              })}
-            >
-              <span className="w-4 h-4 flex items-center justify-center shrink-0">
-                <SidebarIcon name={link.icon} />
-              </span>
-              {link.label}
-            </NavLink>
-          )
-        })}
+        {(() => {
+          let currentSection = null
+          return sidebarLinks.map((link, i) => {
+            if (link.divider) return (
+              <div key={`div-${i}`} className="my-2" style={{ borderTop: '1px solid var(--hc-border)' }} />
+            )
+            if (link.section) {
+              currentSection = link.section
+              const isOpen = !collapsed.has(link.section)
+              return (
+                <button
+                  key={`sec-${i}`}
+                  onClick={() => toggleSection(link.section)}
+                  className="w-full flex items-center justify-between px-3 pt-4 pb-1.5 hover:opacity-80 transition-opacity"
+                >
+                  <span className="text-[9px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--hc-muted)', opacity: 0.6 }}>
+                    {link.section}
+                  </span>
+                  <svg
+                    className="w-3 h-3 shrink-0 transition-transform duration-200"
+                    style={{ color: 'var(--hc-muted)', opacity: 0.5, transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)' }}
+                    fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"
+                    strokeLinecap="round" strokeLinejoin="round"
+                  >
+                    <path d="M6 9l6 6 6-6"/>
+                  </svg>
+                </button>
+              )
+            }
+            if (currentSection && collapsed.has(currentSection)) return null
+            return (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                end={link.exact}
+                className={({ isActive }) => `
+                  flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-150 mb-0.5
+                  ${isActive
+                    ? 'bg-[#4f7cff]/15 border border-[#4f7cff]/20'
+                    : 'hover:bg-[var(--hc-surface-2)] border border-transparent'
+                  }
+                `}
+                style={({ isActive }) => ({
+                  color: isActive ? '#fff' : 'var(--hc-muted)',
+                })}
+              >
+                <span className="w-4 h-4 flex items-center justify-center shrink-0">
+                  <SidebarIcon name={link.icon} />
+                </span>
+                {link.label}
+              </NavLink>
+            )
+          })
+        })()}
       </nav>
 
       {/* User */}

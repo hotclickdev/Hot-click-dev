@@ -2,13 +2,6 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 
-const fadeUp = (i = 0) => ({
-  initial: { opacity: 0, y: 18 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true },
-  transition: { duration: 0.5, delay: 0.06 * i, ease: [0.16, 1, 0.3, 1] },
-})
-
 function FooterLink({ to, children, highlight }) {
   return (
     <li>
@@ -84,7 +77,7 @@ export default function Footer() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6">
 
             {/* ── Brand ── */}
-            <motion.div {...fadeUp(0)} className="sm:col-span-2 lg:col-span-1">
+            <div className="sm:col-span-2 lg:col-span-1">
               <Link to="/" className="inline-flex items-center gap-2 group mb-4" style={{ textDecoration: 'none' }}>
                 <div className="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center hc-logo-badge transition-transform duration-200 group-hover:scale-105">
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="white">
@@ -142,10 +135,10 @@ export default function Footer() {
                   </div>
                 ))}
               </div>
-            </motion.div>
+            </div>
 
             {/* ── Tienda ── */}
-            <motion.div {...fadeUp(1)}>
+            <div>
               <h3 className="text-[11px] font-bold tracking-[0.12em] uppercase mb-4" style={{ color: 'var(--hc-accent)' }}>
                 {t('footer.tienda')}
               </h3>
@@ -156,10 +149,10 @@ export default function Footer() {
                 <FooterLink to="/mis-pedidos">Mis pedidos</FooterLink>
                 <FooterLink to="/servicios">Servicios HOT</FooterLink>
               </ul>
-            </motion.div>
+            </div>
 
             {/* ── Empresa ── */}
-            <motion.div {...fadeUp(2)}>
+            <div>
               <h3 className="text-[11px] font-bold tracking-[0.12em] uppercase mb-4" style={{ color: 'var(--hc-accent)' }}>
                 {t('footer.empresa')}
               </h3>
@@ -170,10 +163,10 @@ export default function Footer() {
                 <FooterLink to="/emprendimientos">Emprendimientos</FooterLink>
                 <FooterLink to="/blog">Blog</FooterLink>
               </ul>
-            </motion.div>
+            </div>
 
             {/* ── Cuenta + Legal ── */}
-            <motion.div {...fadeUp(3)}>
+            <div>
               <h3 className="text-[11px] font-bold tracking-[0.12em] uppercase mb-4" style={{ color: 'var(--hc-accent)' }}>
                 {t('footer.cuenta')}
               </h3>
@@ -219,7 +212,7 @@ export default function Footer() {
                 </a>
                 <p className="text-[11px]" style={{ color: 'var(--hc-muted)' }}>Lun–Sáb, 8am–7pm</p>
               </div>
-            </motion.div>
+            </div>
           </div>
 
           {/* ── Bottom bar ── */}
