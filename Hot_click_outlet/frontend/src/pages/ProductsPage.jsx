@@ -50,6 +50,7 @@ function Dropdown({ trigger, children, align = 'left', width = 320 }) {
               border: '1px solid var(--hc-border)',
               zIndex: 60,
               width,
+              maxWidth: 'calc(100vw - 1.5rem)',
               [align === 'right' ? 'right' : 'left']: 0,
             }}
           >

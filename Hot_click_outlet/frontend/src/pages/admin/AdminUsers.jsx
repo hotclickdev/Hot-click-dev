@@ -284,7 +284,7 @@ export default function AdminUsers() {
                 />
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full min-w-[700px] text-sm">
                   <thead>
                     <tr className="border-b border-white/8">
                       {['Cliente','Segmento','Pedidos','Total','Puntos','Acciones'].map(h => (

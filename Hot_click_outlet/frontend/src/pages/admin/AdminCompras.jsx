@@ -251,7 +251,8 @@ export default function AdminCompras() {
               {/* Detalle expandible */}
               {expanded === orden.id && (
                 <div className="border-t px-4 pb-4 pt-3" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
-                  <table className="w-full text-xs">
+                  <div className="overflow-x-auto">
+                  <table className="w-full min-w-[480px] text-xs">
                     <thead>
                       <tr style={{ color: 'var(--hc-muted)' }}>
                         {['Producto','Ordenado','Recibido','P. Unitario','Subtotal'].map(h => (
@@ -277,6 +278,7 @@ export default function AdminCompras() {
                       ))}
                     </tbody>
                   </table>
+                  </div>
                   {orden.notas && (
                     <p className="mt-3 text-xs" style={{ color: 'var(--hc-muted)' }}>Notas: {orden.notas}</p>
                   )}

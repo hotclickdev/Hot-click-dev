@@ -10,6 +10,7 @@ import { authService } from '@/services/authService'
 import GlobalSearch from '@/components/admin/GlobalSearch'
 import TrialBanner from '@/components/TrialBanner'
 import OfflineBanner from '@/components/OfflineBanner'
+import AppTour from '@/components/ui/AppTour'
 
 // Devuelve los links del sidebar con secciones según el rol activo
 function buildSidebarLinks(t, userRole) {
@@ -550,7 +551,7 @@ export default function AdminLayout({ children }) {
       </AnimatePresence>
 
       {/* ── Content ── */}
-      <div className="md:ml-60 h-screen overflow-hidden flex flex-col">
+      <div className="md:ml-60 h-screen overflow-hidden flex flex-col pt-14 md:pt-0">
         <OfflineBanner />
         <TrialBanner />
         <motion.main
@@ -558,7 +559,7 @@ export default function AdminLayout({ children }) {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
-          className="flex-1 overflow-y-auto px-4 py-4 pt-[66px] md:pt-6 md:px-6 lg:px-8"
+          className="flex-1 overflow-y-auto px-4 py-4 md:pt-6 md:px-6 lg:px-8"
         >
           {/* Banner: negocio pendiente de aprobación */}
           {empresaStatus?.estadoEmpresa === 'PENDIENTE_APROBACION' && (
@@ -595,6 +596,9 @@ export default function AdminLayout({ children }) {
 
       {/* Buscador global Cmd+K */}
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
+
+      {/* Tour guiado para admins — solo se muestra la primera vez */}
+      <AppTour />
     </div>
   )
 }

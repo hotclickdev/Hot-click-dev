@@ -31,7 +31,7 @@ function DenominacionRow({ item, qty, onChange, tipo }) {
         style={{ backgroundColor: item.bg, color: item.color, border: `1px solid ${item.color}40` }}>
         {item.label}
       </div>
-      <span className="text-[11px] text-[#8e8e9a] w-14 shrink-0">{item.texto}</span>
+      <span className="hidden sm:inline text-[11px] text-[#8e8e9a] w-14 shrink-0">{item.texto}</span>
       <div className="flex items-center gap-1 shrink-0">
         <button onClick={() => onChange(Math.max(0, (parseInt(qty) || 0) - 1))}
           className="w-6 h-6 rounded font-bold text-sm flex items-center justify-center"
@@ -150,7 +150,7 @@ export default function AdminPOSCaja() {
   }
 
   return (
-    <div className="max-w-xl mx-auto p-6 space-y-6">
+    <div className="max-w-xl mx-auto px-3 sm:px-6 py-4 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>Cuadre de caja</h1>
         <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${turno ? 'text-green-400' : 'text-yellow-400'}`}
@@ -160,7 +160,7 @@ export default function AdminPOSCaja() {
       </div>
 
       {!turno && (
-        <div className="rounded-2xl p-6 space-y-5"
+        <div className="rounded-2xl p-4 sm:p-6 space-y-5"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid rgba(255,255,255,0.07)' }}>
           <h2 className="font-semibold" style={{ color: 'var(--hc-text)' }}>Abrir turno — contá el efectivo inicial</h2>
           <ConteoEfectivo label="Efectivo en caja al inicio" onTotal={setMontoInicial} />

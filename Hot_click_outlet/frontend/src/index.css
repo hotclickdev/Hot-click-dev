@@ -1031,3 +1031,66 @@ html:not(.dark) .hc-product-img {
   font-size: 1.25rem;
 }
 
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE MOBILE — mejoras específicas
+   ═══════════════════════════════════════════════════════ */
+
+/* Admin: filtros de fecha se apilan en pantallas muy pequeñas */
+@media (max-width: 480px) {
+  .hc-filter-row {
+    flex-direction: column;
+  }
+  .hc-filter-row input[type="date"] {
+    width: 100%;
+  }
+}
+
+/* Admin: KPI cards no se comprimen demasiado */
+.hc-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+/* Tabla admin — contenedor con scroll horizontal visible */
+.hc-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.hc-table-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+.hc-table-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.hc-table-scroll::-webkit-scrollbar-thumb {
+  background: var(--hc-scrollbar);
+  border-radius: 4px;
+}
+
+/* Admin: tabs de vista en móvil — texto más corto */
+@media (max-width: 480px) {
+  .hc-admin-tab-label {
+    display: none;
+  }
+}
+
+/* Safe-area bottom para modales en iOS */
+.hc-modal-safe-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* Prevenir zoom en inputs iOS */
+@media (max-width: 767px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="search"],
+  input[type="date"],
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+}
+

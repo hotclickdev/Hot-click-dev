@@ -282,7 +282,7 @@ export default function AdminReportes() {
             {loading ? <div className="flex justify-center py-16"><Spinner size="lg"/></div> : (
               <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full min-w-[700px] text-sm">
                     <thead>
                       <tr className="border-b border-white/8">
                         {['#','Cliente','Productos','Envío','Total','Método','Fecha','Estado'].map(h => (
@@ -350,7 +350,7 @@ export default function AdminReportes() {
                 </div>
                 <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full min-w-[600px] text-sm">
                       <thead>
                         <tr className="border-b border-white/8">
                           {['#','Producto','Unidades','Ingreso','Utilidad','Margen'].map(h => (
@@ -399,7 +399,7 @@ export default function AdminReportes() {
               ) : (
                 <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full min-w-[560px] text-sm">
                       <thead>
                         <tr className="border-b border-white/8">
                           {['Ticket','Fecha','Cliente','Ítems','Método','Total'].map(h => (
@@ -448,7 +448,7 @@ export default function AdminReportes() {
               ) : (
                 <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full min-w-[560px] text-sm">
                       <thead>
                         <tr className="border-b border-white/8">
                           {['Producto','SKU','Stock actual','Stock mínimo','Diferencia','Estado'].map(h => (

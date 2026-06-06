@@ -113,7 +113,8 @@ export default function AdminPOSHistorial() {
         </div>
       ) : (
         <div className="rounded-2xl overflow-hidden border" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[480px] text-sm">
             <thead>
               <tr style={{ backgroundColor: 'rgba(255,255,255,0.03)' }}>
                 {['Hora','Cliente','Ítems','Método','Total'].map(h => (
@@ -179,6 +180,7 @@ export default function AdminPOSHistorial() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

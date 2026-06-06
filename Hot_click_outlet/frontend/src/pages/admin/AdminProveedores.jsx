@@ -109,7 +109,8 @@ export default function AdminProveedores() {
         </div>
       ) : (
         <div className="rounded-2xl overflow-hidden border" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[600px] text-sm">
             <thead>
               <tr style={{ backgroundColor: 'rgba(255,255,255,0.03)' }}>
                 {['Proveedor', 'Contacto', 'Teléfono', 'Correo', 'Acciones'].map(h => (
@@ -146,6 +147,7 @@ export default function AdminProveedores() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 

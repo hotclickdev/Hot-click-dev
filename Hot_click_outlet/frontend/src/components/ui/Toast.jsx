@@ -59,5 +59,9 @@ export function ToastProvider({ children }) {
 export function useToast() {
   const ctx = useContext(ToastContext)
   if (!ctx) throw new Error('useToast must be used inside ToastProvider')
-  return ctx
+  // Support both call styles:
+  //   const toast = useToast() → toast({ message, type })
+  //   const { showToast } = useToast() → showToast(message, type)
+  const showToast = (message, type = 'info') => ctx({ message, type })
+  return Object.assign(ctx, { showToast })
 }

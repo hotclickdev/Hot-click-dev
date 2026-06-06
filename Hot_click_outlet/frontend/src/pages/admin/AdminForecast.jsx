@@ -202,7 +202,8 @@ export default function AdminForecast() {
               <div className="px-4 py-3" style={{ backgroundColor: 'var(--hc-surface)', borderBottom: '1px solid var(--hc-border)' }}>
                 <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>Detalle del pronóstico</p>
               </div>
-              <table className="w-full text-sm">
+              <div className="overflow-x-auto">
+              <table className="w-full min-w-[480px] text-sm">
                 <thead>
                   <tr style={{ backgroundColor: 'var(--hc-surface)', borderBottom: '1px solid var(--hc-border)' }}>
                     {['Semana', 'Unidades estimadas', 'Ingresos estimados', 'Confianza'].map(h => (
@@ -232,6 +233,7 @@ export default function AdminForecast() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
 

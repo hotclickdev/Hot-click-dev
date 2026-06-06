@@ -251,7 +251,7 @@ export default function AdminEmpresas() {
         {/* Tabla */}
         <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[700px] text-sm">
               <thead>
                 <tr style={{ backgroundColor: 'var(--hc-surface-2)', borderBottom: '1px solid var(--hc-border)' }}>
                   {['Empresa', 'Slug', 'Plan', 'Estado', 'Visible', 'Registro', 'Acciones'].map(h => (

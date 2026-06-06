@@ -165,7 +165,7 @@ export default function AdminSuperAdmin() {
               <h2 className="font-semibold text-gray-800 dark:text-gray-200">Registro global de flags</h2>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[400px] text-sm">
                 <thead className="bg-gray-50 text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-400">
                   <tr>
                     <th className="px-4 py-2 text-left">Nombre</th>

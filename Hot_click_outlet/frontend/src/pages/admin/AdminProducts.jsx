@@ -636,7 +636,7 @@ export default function AdminProducts() {
             ) : (
               <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full min-w-[900px] text-sm">
                     <thead>
                       <tr className="border-b border-white/8">
                         {['★', 'Pos.', 'ID', t('admin.products.name'), t('admin.products.price'), t('admin.products.stock'), 'SKU / Barcode', t('admin.products.category'), 'SEO', t('admin.products.actions')].map((h) => (

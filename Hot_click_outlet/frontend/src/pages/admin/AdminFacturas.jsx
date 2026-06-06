@@ -80,7 +80,7 @@ export default function AdminFacturas() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[580px] text-sm">
               <thead className="border-b border-gray-100 bg-gray-50 text-xs text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
                 <tr>
                   <th className="px-4 py-3 text-left">Fecha</th>

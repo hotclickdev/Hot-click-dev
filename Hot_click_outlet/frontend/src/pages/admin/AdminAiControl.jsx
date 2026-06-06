@@ -233,7 +233,8 @@ export default function AdminAiControl() {
 
           {/* Tabla por empresa */}
           <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[480px] text-sm">
               <thead>
                 <tr style={{ backgroundColor: 'var(--hc-surface)', borderBottom: '1px solid var(--hc-border)' }}>
                   {['Cuenta', 'Plan', 'Chat público', 'Copilot admin'].map(h => (
@@ -282,6 +283,7 @@ export default function AdminAiControl() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       )}
@@ -289,7 +291,8 @@ export default function AdminAiControl() {
       {/* ── Tab Consumo ── */}
       {tab === 'consumo' && (
         <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr style={{ backgroundColor: 'var(--hc-surface)', borderBottom: '1px solid var(--hc-border)' }}>
                 {['Cuenta','Plan','Llamadas','Uso vs límite','Tokens entrada','Tokens salida','Costo USD'].map(h => (
@@ -345,6 +348,7 @@ export default function AdminAiControl() {
               </tr>
             </tbody>
           </table>
+          </div>
         </div>
       )}
 

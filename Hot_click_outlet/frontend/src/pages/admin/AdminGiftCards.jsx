@@ -135,7 +135,8 @@ export default function AdminGiftCards() {
         </div>
       ) : (
         <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[680px] text-sm">
             <thead>
               <tr style={{ backgroundColor: 'var(--hc-surface)', borderBottom: '1px solid var(--hc-border)' }}>
                 {['Código', 'Saldo inicial', 'Saldo actual', 'Estado', 'Vencimiento', 'Creada', ''].map(h => (
@@ -179,6 +180,7 @@ export default function AdminGiftCards() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

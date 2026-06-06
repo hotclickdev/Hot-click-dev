@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Spinner from '@/components/ui/Spinner'
@@ -118,6 +118,177 @@ function GastoModal({ editing, onClose, onSaved }) {
   )
 }
 
+/* ── Modal de detalle de venta ──────────────────────────── */
+function SaleDetailModal({ pedidoId, onClose }) {
+  const [data,    setData]    = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState(false)
+
+  useEffect(() => {
+    setLoading(true)
+    setError(false)
+    orderService.getById(pedidoId)
+      .then(r => { setData(r.data?.data ?? r.data) })
+      .catch(() => setError(true))
+      .finally(() => setLoading(false))
+  }, [pedidoId])
+
+  const inp = 'w-full rounded-xl text-sm outline-none'
+  const subtotal = data
+    ? (data.subtotal ?? ((data.total ?? data.totalPedido ?? 0) - (data.costoEnvio ?? 0)))
+    : 0
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
+      <div className="w-full max-w-lg rounded-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid rgba(255,255,255,0.08)' }}>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 shrink-0"
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+          <div>
+            <h2 className="font-bold text-[#e8e8ed]">
+              Pedido #{data?.numeroPedido ?? data?.id ?? pedidoId}
+            </h2>
+            {data?.fechaCreacion && (
+              <p className="text-xs text-[#8e8e9a] mt-0.5">{formatDate(data.fechaCreacion)}</p>
+            )}
+          </div>
+          <button onClick={onClose}
+            className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
+            style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>
+            ✕
+          </button>
+        </div>
+
+        {/* Body scrollable */}
+        <div className="overflow-y-auto flex-1 p-5 space-y-4">
+          {loading && (
+            <div className="flex justify-center py-10"><Spinner size="lg"/></div>
+          )}
+          {error && (
+            <p className="text-center text-[#f87171] py-8 text-sm">Error al cargar el pedido.</p>
+          )}
+          {!loading && !error && data && (
+            <>
+              {/* Cliente */}
+              <div className="rounded-xl p-3 space-y-1"
+                style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#8e8e9a]">Cliente</p>
+                <p className="font-medium text-[#e8e8ed] text-sm">
+                  {data.usuarioFinal?.nombre ?? data.nombreCliente ?? '—'}
+                </p>
+                {data.telefono && <p className="text-xs text-[#8e8e9a]">{data.telefono}</p>}
+                {data.direccionEntrega && <p className="text-xs text-[#8e8e9a]">{data.direccionEntrega}</p>}
+              </div>
+
+              {/* Productos */}
+              {(data.items ?? []).length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#8e8e9a] mb-2">
+                    Productos ({(data.items ?? []).length})
+                  </p>
+                  <div className="space-y-2">
+                    {(data.items ?? []).map((item, i) => {
+                      const precio = item.precioUnitario ?? item.precio ?? 0
+                      const subtotalItem = precio * (item.cantidad ?? 1)
+                      return (
+                        <div key={i} className="flex items-center gap-3 rounded-xl p-3"
+                          style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                          {item.imagenUrl && (
+                            <img src={item.imagenUrl} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0"/>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-[#e8e8ed] truncate">
+                              {item.nombreProducto ?? item.nombre ?? 'Producto'}
+                            </p>
+                            <p className="text-xs text-[#8e8e9a]">
+                              {item.cantidad} × {formatPrice(precio)}
+                            </p>
+                          </div>
+                          <p className="text-sm font-bold text-[#4ade80] shrink-0">{formatPrice(subtotalItem)}</p>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Desglose financiero */}
+              <div className="rounded-xl p-3 space-y-2"
+                style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#8e8e9a]">Resumen</p>
+                <div className="space-y-1.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-[#8e8e9a]">Subtotal productos</span>
+                    <span className="text-[#4ade80] font-semibold">{formatPrice(subtotal)}</span>
+                  </div>
+                  {(data.costoEnvio ?? 0) > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-[#8e8e9a]">Costo de envío</span>
+                      <span className="text-amber-400 font-semibold">{formatPrice(data.costoEnvio)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between pt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                    <span className="font-bold text-[#e8e8ed]">Total cobrado</span>
+                    <span className="font-bold text-[#4f7cff]">{formatPrice(data.total ?? data.totalPedido ?? 0)}</span>
+                  </div>
+                </div>
+                <div className="flex gap-3 pt-1 text-xs text-[#8e8e9a]">
+                  {data.metodoPago && <span>Pago: <span className="text-[#e8e8ed]">{data.metodoPago}</span></span>}
+                  {data.metodoEnvio && <span>Envío: <span className="text-[#e8e8ed]">{data.metodoEnvio}</span></span>}
+                  {data.origen && <span>Canal: <span className="text-[#e8e8ed]">{data.origen}</span></span>}
+                </div>
+              </div>
+
+              {/* Guía de envío */}
+              {data.numeroGuia && (
+                <div className="rounded-xl p-3"
+                  style={{ backgroundColor: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.2)' }}>
+                  <p className="text-xs font-semibold text-[#60a5fa] mb-0.5">Guía de envío</p>
+                  <p className="text-sm text-[#e8e8ed]">{data.numeroGuia}</p>
+                  {data.urlTracking && (
+                    <a href={data.urlTracking} target="_blank" rel="noopener noreferrer"
+                      className="text-xs text-[#60a5fa] underline mt-1 block">
+                      Rastrear →
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {/* Notas */}
+              {data.notas && (
+                <div className="rounded-xl p-3"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#8e8e9a] mb-1">Notas</p>
+                  <p className="text-sm text-[#8e8e9a]">{data.notas}</p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-3 shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+          <div className="flex gap-2">
+            <Link to={`/admin/pedidos`}
+              className="flex-1 py-2 rounded-xl text-xs font-semibold text-center transition-opacity hover:opacity-80"
+              style={{ backgroundColor: 'rgba(79,124,255,0.12)', color: '#4f7cff', border: '1px solid rgba(79,124,255,0.25)' }}>
+              Ver en pedidos
+            </Link>
+            <button onClick={onClose}
+              className="flex-1 py-2 rounded-xl text-xs font-medium"
+              style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ── Barra de progreso simple ───────────────────────────── */
 function ProgressBar({ value, total, color }) {
   const pct = total > 0 ? Math.min(100, (value / total) * 100) : 0
@@ -147,6 +318,9 @@ export default function AdminFinanzas() {
   const [loadingG, setLoadingG]     = useState(false)
   const [gastoModal, setGastoModal] = useState(null) // null | {} | gasto obj
   const [deleteGasto, setDeleteGasto] = useState(null)
+
+  // Detalle de venta
+  const [saleDetail, setSaleDetail] = useState(null) // pedidoId | null
 
   const applyQuick = (days) => {
     setQuick(days)
@@ -326,7 +500,7 @@ export default function AdminFinanzas() {
                     <table className="w-full text-sm min-w-[700px]">
                       <thead>
                         <tr className="border-b border-white/8">
-                          {['#','Cliente','Fecha','Origen','Método','Productos','Envío','Total'].map(h => (
+                          {['#','Cliente','Fecha','Origen','Método','Productos','Envío','Total',''].map(h => (
                             <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-[#8e8e9a]">{h}</th>
                           ))}
                         </tr>
@@ -337,7 +511,10 @@ export default function AdminFinanzas() {
                           const productos = p.subtotal ?? ((p.total ?? p.totalPedido ?? 0) - envio)
                           const cliente   = p.usuarioFinal?.nombre ?? p.nombreCliente ?? '—'
                           return (
-                            <tr key={p.id} className="hover:bg-white/3 transition-colors">
+                            <tr key={p.id}
+                              className="hover:bg-white/5 transition-colors cursor-pointer"
+                              title="Ver detalle de venta"
+                              onClick={() => setSaleDetail(p.id)}>
                               <td className="px-4 py-3 font-mono text-xs text-[#8e8e9a]">#{p.id}</td>
                               <td className="px-4 py-3 text-[#e8e8ed] truncate max-w-[120px]">{cliente}</td>
                               <td className="px-4 py-3 text-xs text-[#8e8e9a]">
@@ -360,6 +537,9 @@ export default function AdminFinanzas() {
                               <td className="px-4 py-3 font-bold text-[#4f7cff]">
                                 {formatPrice(p.total ?? p.totalPedido ?? 0)}
                               </td>
+                              <td className="px-4 py-3">
+                                <span className="text-[10px] text-[#8e8e9a]/60 hover:text-[#4f7cff] transition-colors whitespace-nowrap">Ver →</span>
+                              </td>
                             </tr>
                           )
                         })}
@@ -372,6 +552,7 @@ export default function AdminFinanzas() {
                           <td className="px-4 py-3 font-bold text-[#4ade80]">{formatPrice(totalProductos)}</td>
                           <td className="px-4 py-3 font-bold text-amber-400">{formatPrice(totalEnvio)}</td>
                           <td className="px-4 py-3 font-bold text-[#4f7cff]">{formatPrice(totalIngresos)}</td>
+                          <td/>
                         </tr>
                       </tfoot>
                     </table>
@@ -407,7 +588,7 @@ export default function AdminFinanzas() {
               ) : (
                 <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm min-w-[560px]">
                       <thead>
                         <tr className="border-b border-white/8">
                           {['Fecha','Concepto','Categoría','Monto','Acciones'].map(h => (
@@ -564,6 +745,14 @@ export default function AdminFinanzas() {
           )
         )}
       </div>
+
+      {/* Modal detalle de venta */}
+      {saleDetail && (
+        <SaleDetailModal
+          pedidoId={saleDetail}
+          onClose={() => setSaleDetail(null)}
+        />
+      )}
 
       {/* Modal gasto */}
       {gastoModal && (

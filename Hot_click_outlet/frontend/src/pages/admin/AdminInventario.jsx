@@ -33,7 +33,8 @@ function ProductTable({ title, rows, emptyMsg, cols }) {
           {emptyMsg}
         </div>
       ) : (
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[500px] text-sm">
           <thead>
             <tr style={{ backgroundColor: 'var(--hc-surface)', borderBottom: '1px solid var(--hc-border)' }}>
               {cols.map(c => (
@@ -53,6 +54,7 @@ function ProductTable({ title, rows, emptyMsg, cols }) {
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   )
