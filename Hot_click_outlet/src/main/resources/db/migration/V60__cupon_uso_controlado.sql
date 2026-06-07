@@ -11,5 +11,9 @@ SET usos_actuales = max_usos
 WHERE usado = true;
 
 -- Restricción: usos_actuales no puede exceder max_usos
-ALTER TABLE hot_click_cupon_tb
-  ADD CONSTRAINT chk_cupon_usos CHECK (usos_actuales <= max_usos);
+-- DO/EXCEPTION hace la operación idempotente (PostgreSQL no tiene ADD CONSTRAINT IF NOT EXISTS)
+DO $$ BEGIN
+  ALTER TABLE hot_click_cupon_tb
+    ADD CONSTRAINT chk_cupon_usos CHECK (usos_actuales <= max_usos);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
