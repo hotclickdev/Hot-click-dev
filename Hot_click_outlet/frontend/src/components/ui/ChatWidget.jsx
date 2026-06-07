@@ -154,13 +154,14 @@ function Burbuja({ msg }) {
 export default function ChatWidget({ slug }) {
   const branding = useBranding(slug)
 
-  // Si el flag chat_publico está desactivado para esta empresa, no renderizar nada
-  if (branding !== null && branding?.chatActivo === false) return null
+  // Cuando chatActivo es false el botón flotante se oculta, pero el componente
+  // sigue montado para responder al HomeChatBar vía chatStore.
+  const showToggle = branding === null || branding?.chatActivo !== false
 
-  return <ChatWidgetInner slug={slug} />
+  return <ChatWidgetInner slug={slug} showToggle={showToggle} />
 }
 
-function ChatWidgetInner({ slug }) {
+function ChatWidgetInner({ slug, showToggle = true }) {
   const [abierto, setAbierto]   = useState(false)
   const [mensajes, setMensajes] = useState([])
   const [input, setInput]       = useState('')
@@ -342,12 +343,12 @@ function ChatWidgetInner({ slug }) {
 
   return (
     <>
-      {/* Toggle button */}
+      {/* Toggle button — oculto cuando showToggle=false (admin desactivó el FAB) */}
       <button
         onClick={() => { setAbierto(v => !v); setDot(false) }}
         className="fixed bottom-[4.75rem] right-4 sm:bottom-6 sm:right-6 z-50 w-14 h-14 rounded-full shadow-2xl
                    flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
-        style={{ backgroundColor: accent, color: '#fff' }}
+        style={{ backgroundColor: accent, color: '#fff', display: showToggle ? 'flex' : 'none' }}
         aria-label="Chat de ayuda"
       >
         {abierto ? (
@@ -382,7 +383,12 @@ function ChatWidgetInner({ slug }) {
               <p className="text-sm font-bold text-white leading-none">Asistente de compras</p>
               <p className="text-[10px] text-white/70 mt-0.5">Te ayudo a encontrar lo que buscás</p>
             </div>
-            <div className="w-2 h-2 rounded-full bg-white/60 animate-pulse" />
+            <button onClick={() => setAbierto(false)} aria-label="Cerrar chat"
+              className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
 
           {/* Messages */}
