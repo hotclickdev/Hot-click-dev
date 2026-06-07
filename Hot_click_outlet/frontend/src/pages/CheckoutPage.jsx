@@ -95,11 +95,11 @@ export default function CheckoutPage() {
   const METODOS_PAGO = [
     {
       id: 'STRIPE',
-      label: 'Tarjeta / Stripe',
+      label: 'Tarjeta de crédito / débito',
       descripcion: t('checkout.stripeDesc'),
       badge: t('checkout.stripeBadge'),
       badgeColor: 'bg-violet-500/20 text-violet-400 border-violet-500/30',
-      icon: StripeIcon,
+      icon: CardIcon,
     },
     {
       id: 'SINPE',

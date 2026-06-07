@@ -23,9 +23,9 @@ public interface FeatureFlagRepository extends JpaRepository<FeatureFlag, Long> 
     @Query(nativeQuery = true, value = """
         SELECT f.nombre
         FROM hot_click_feature_flag_tb f
-        JOIN hot_click_empresa_feature_tb ef ON ef.fk_id_flag = f.id_flag
-        WHERE ef.fk_id_empresa = :empresaId
-          AND ef.activo = true
+        LEFT JOIN hot_click_empresa_feature_tb ef
+            ON ef.fk_id_flag = f.id_flag AND ef.fk_id_empresa = :empresaId
+        WHERE COALESCE(ef.activo, f.activo_defecto) = true
           AND (ef.fecha_exp IS NULL OR ef.fecha_exp > NOW())
         """)
     List<String> findNombresActivosParaEmpresa(@Param("empresaId") Long empresaId);

@@ -4,7 +4,7 @@ import api from '@/services/api'
 import ImportExportBar from '@/components/admin/ImportExportBar'
 import { paymentService } from '@/services/paymentService'
 
-const PROVEEDORES  = ['', 'STRIPE', 'PAYPAL', 'SINPE']
+const PROVEEDORES  = ['', 'STRIPE', 'SINPE']
 const ESTADOS_PAGO = ['', 'CAPTURADO', 'PENDIENTE', 'FALLIDO', 'CANCELADO']
 
 const BADGE = {
@@ -150,7 +150,6 @@ export default function AdminPagos() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
             <KpiCard label="Capturados"  value={kpis.capturados} color="text-green-400" />
             <KpiCard label="Fallidos"    value={kpis.fallidos}   color="text-red-400" />
-            <KpiCard label="PayPal"      value={kpis.paypal} />
             <KpiCard label="SINPE"       value={kpis.sinpe}  color="text-emerald-400" />
           </div>
         )}
@@ -211,11 +210,9 @@ export default function AdminPagos() {
                           <td className="px-4 py-3 font-mono text-[#e8e8ed] text-xs">{p.numeroPedido}</td>
                           <td className="px-4 py-3">
                             <span className={`px-2 py-0.5 rounded-full border text-[10px] font-semibold ${
-                              p.proveedor === 'PAYPAL'
-                                ? 'bg-blue-500/15 text-blue-400 border-blue-500/30'
-                                : p.proveedor === 'SINPE'
-                                  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                                  : 'bg-purple-500/15 text-purple-400 border-purple-500/30'
+                              p.proveedor === 'SINPE'
+                                ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                                : 'bg-purple-500/15 text-purple-400 border-purple-500/30'
                             }`}>{p.proveedor}</span>
                           </td>
                           <td className="px-4 py-3">

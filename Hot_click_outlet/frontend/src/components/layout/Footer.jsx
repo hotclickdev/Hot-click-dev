@@ -271,17 +271,35 @@ export default function Footer() {
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 order-2">
-              {['VISA', 'MC', 'SINPE', 'PayPal'].map((m) => (
-                <div key={m} className="px-2 py-1 rounded-md text-[10px] font-bold tracking-wide"
-                  style={{
-                    background: 'var(--hc-surface-2)',
-                    border: '1px solid var(--hc-border)',
-                    color: 'var(--hc-text-2)',
-                  }}>
-                  {m}
-                </div>
-              ))}
+            <div className="flex items-center gap-2 order-2">
+              {/* VISA */}
+              <div className="flex items-center justify-center px-2.5 py-1.5 rounded-lg"
+                style={{ background: '#1a1f71', border: '1px solid rgba(255,255,255,0.12)', minWidth: 44 }}>
+                <svg viewBox="0 0 50 16" width="36" height="12" fill="none">
+                  <text x="0" y="13" fontSize="14" fontWeight="900" fontFamily="'Arial Black', sans-serif" fill="white" letterSpacing="-0.5">VISA</text>
+                </svg>
+              </div>
+
+              {/* Mastercard */}
+              <div className="flex items-center justify-center px-2 py-1.5 rounded-lg"
+                style={{ background: '#252525', border: '1px solid rgba(255,255,255,0.12)', minWidth: 44 }}>
+                <svg viewBox="0 0 38 24" width="38" height="20" fill="none">
+                  <circle cx="14" cy="12" r="10" fill="#EB001B" />
+                  <circle cx="24" cy="12" r="10" fill="#F79E1B" />
+                  <path d="M19 4.8a10 10 0 0 1 0 14.4A10 10 0 0 1 19 4.8z" fill="#FF5F00" />
+                </svg>
+              </div>
+
+              {/* SINPE Móvil */}
+              <div className="flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg"
+                style={{ background: '#003d1f', border: '1px solid rgba(52,211,153,0.3)', minWidth: 52 }}>
+                <svg viewBox="0 0 10 14" width="8" height="11" fill="none">
+                  <rect x="1" y="0" width="8" height="14" rx="1.5" stroke="#34d399" strokeWidth="1.2" />
+                  <rect x="3" y="2" width="4" height="1" rx="0.5" fill="#34d399" />
+                  <circle cx="5" cy="11" r="1" fill="#34d399" />
+                </svg>
+                <span style={{ fontSize: 9, fontWeight: 800, color: '#34d399', letterSpacing: '0.03em', fontFamily: 'sans-serif' }}>SINPE</span>
+              </div>
             </div>
 
             <p className="text-xs flex items-center gap-1.5 order-1 sm:order-3" style={{ color: 'var(--hc-muted)' }}>
