@@ -214,8 +214,24 @@ public class PublicChatService {
             }
         }
 
-        // Fallback: ILIKE on name + tags
-        String like = "%" + raw.trim().toLowerCase() + "%";
+        // Fallback: ILIKE usando todos los términos del tsQuery (incluye sinónimos)
+        List<String> terms = tsQuery.isBlank()
+            ? List.of(raw.trim().toLowerCase())
+            : Arrays.stream(tsQuery.split("\\s*\\|\\s*"))
+                    .map(String::trim).filter(s -> !s.isBlank()).toList();
+
+        List<Object> params = new ArrayList<>();
+        params.add(empresaId);
+        StringBuilder conditions = new StringBuilder();
+        for (int i = 0; i < terms.size(); i++) {
+            String like = "%" + terms.get(i).toLowerCase() + "%";
+            if (i > 0) conditions.append(" OR ");
+            conditions.append("(LOWER(nombre_producto) LIKE ? OR LOWER(tags) LIKE ? OR LOWER(descripcion_corta) LIKE ?)");
+            params.add(like); params.add(like); params.add(like);
+        }
+        params.add(PAGE + 1);
+        params.add(offset);
+
         String sql = """
             SELECT id_producto, nombre_producto, descripcion_corta,
                    precio_venta, imagen_principal_url
@@ -225,11 +241,12 @@ public class PublicChatService {
               AND visible_catalogo = TRUE
               AND vendido = FALSE
               AND stock_actual > 0
-              AND (LOWER(nombre_producto) LIKE ? OR LOWER(tags) LIKE ? OR LOWER(descripcion_corta) LIKE ?)
+              AND (""" + conditions + """
+            )
             ORDER BY precio_venta ASC
             LIMIT ? OFFSET ?
             """;
-        return jdbc.queryForList(sql, empresaId, like, like, like, PAGE + 1, offset);
+        return jdbc.queryForList(sql, params.toArray());
     }
 
     // ── Keyword extraction → tsvector query ──────────────────────────────────
@@ -256,18 +273,32 @@ public class PublicChatService {
     }
 
     private List<String> expandSynonyms(List<String> terms) {
-        Map<String, List<String>> syn = Map.of(
-            "sala",      List.of("living","sofa","sala"),
-            "living",    List.of("sala","sofa"),
-            "cocina",    List.of("kitchen","cocina","comedor"),
-            "comedor",   List.of("cocina","mesa","sillas","comedor"),
-            "dormitorio",List.of("cama","cuarto","habitacion","dormitorio"),
-            "cuarto",    List.of("dormitorio","cama","cuarto"),
-            "bano",      List.of("bano","ducha","sanitario"),
-            "jardin",    List.of("exterior","patio","terraza","jardin"),
-            "oficina",   List.of("escritorio","silla","oficina"),
-            "decoracion",List.of("adorno","cuadro","lampara","decoracion")
-        );
+        Map<String, List<String>> syn = new HashMap<>(Map.ofEntries(
+            Map.entry("sala",       List.of("living","sofa","sala")),
+            Map.entry("living",     List.of("sala","sofa")),
+            Map.entry("cocina",     List.of("kitchen","cocina","comedor")),
+            Map.entry("comedor",    List.of("cocina","mesa","sillas","comedor")),
+            Map.entry("dormitorio", List.of("cama","cuarto","habitacion","dormitorio")),
+            Map.entry("cuarto",     List.of("dormitorio","cama","cuarto")),
+            Map.entry("bano",       List.of("bano","ducha","sanitario")),
+            Map.entry("jardin",     List.of("exterior","patio","terraza","jardin")),
+            Map.entry("oficina",    List.of("escritorio","silla","oficina")),
+            Map.entry("decoracion", List.of("adorno","cuadro","lampara","decoracion")),
+            // Calzado — términos en español e inglés
+            Map.entry("zapatos",    List.of("shoe","shoes","zapatilla","tenis","calzado","footwear","sneaker","boot")),
+            Map.entry("zapatilla",  List.of("zapatos","shoe","tenis","sneaker","calzado")),
+            Map.entry("tenis",      List.of("zapatos","shoe","zapatilla","sneaker","running")),
+            Map.entry("calzado",    List.of("zapatos","shoe","zapatilla","tenis","footwear")),
+            Map.entry("shoe",       List.of("zapatos","zapatilla","tenis","calzado","sneaker")),
+            Map.entry("sneaker",    List.of("zapatos","tenis","zapatilla","shoe","running")),
+            // Ropa / accesorios
+            Map.entry("ropa",       List.of("camisa","pantalon","vestido","falda","ropa","clothing","outfit")),
+            Map.entry("bolso",      List.of("cartera","mochila","bag","bolso","handbag")),
+            Map.entry("mochila",    List.of("bolso","bag","backpack","mochila")),
+            // Tecnología
+            Map.entry("auricular",  List.of("audifonos","earphone","headphone","auricular")),
+            Map.entry("audifonos",  List.of("auricular","headphone","earphone","audifonos"))
+        ));
         List<String> extra = new ArrayList<>();
         for (String t : terms) {
             if (syn.containsKey(t)) extra.addAll(syn.get(t));

@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
 import { useBranding } from '@/hooks/useBranding'
 import useChatStore from '@/store/chatStore'
 
@@ -36,7 +35,8 @@ function TypingDots({ color = 'currentColor' }) {
 
 function ProductoCard({ p, delay = 0 }) {
   return (
-    <Link to={`/productos/${p.id_producto}`}
+    <a href={`/productos/${p.id_producto}`}
+      target="_blank" rel="noopener noreferrer"
       className="flex items-center gap-2.5 rounded-xl p-2 hover:opacity-90 transition-opacity"
       style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
         animation: 'hc-fade-up 0.28s ease both', animationDelay: `${delay}ms` }}>
@@ -63,7 +63,7 @@ function ProductoCard({ p, delay = 0 }) {
       <svg className="w-4 h-4 shrink-0 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
       </svg>
-    </Link>
+    </a>
   )
 }
 
@@ -123,17 +123,18 @@ function Burbuja({ msg }) {
 }
 
 // ── Main widget ───────────────────────────────────────────────────────────────
+// El chat solo se abre desde el HomeChatBar (barra de inicio). No hay botón flotante.
 export default function ChatWidget({ slug }) {
   const branding = useBranding(slug)
-  const showToggle = branding === null || branding?.chatActivo !== false
-  return <ChatWidgetInner slug={slug} showToggle={showToggle} />
+  // Si el flag está explícitamente desactivado, no renderizar nada
+  if (branding !== null && branding?.chatActivo === false) return null
+  return <ChatWidgetInner slug={slug} />
 }
 
-function ChatWidgetInner({ slug, showToggle = true }) {
+function ChatWidgetInner({ slug }) {
   const [abierto, setAbierto] = useState(false)
   const [input, setInput]     = useState('')
   const [cargando, setCargando] = useState(false)
-  const [dot, setDot]         = useState(false)
   const bottomRef  = useRef(null)
   const inputRef   = useRef(null)
   const pendingRef = useRef(null)
@@ -184,12 +185,6 @@ function ChatWidgetInner({ slug, showToggle = true }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [abierto, storeOpen])
 
-  // Dot notification tras 10s en la página
-  useEffect(() => {
-    const t = setTimeout(() => setDot(true), 10000)
-    return () => clearTimeout(t)
-  }, [])
-
   // Scroll al último mensaje
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -211,7 +206,6 @@ function ChatWidgetInner({ slug, showToggle = true }) {
 
     setInput('')
     setCargando(true)
-    setDot(false)
 
     if (!mensajeTexto) {
       storeSetMensajes(prev => [...prev, { rol: 'user', texto: msg }])
@@ -321,33 +315,7 @@ function ChatWidgetInner({ slug, showToggle = true }) {
 
   return (
     <>
-      {/* Botón flotante — solo visible si showToggle=true */}
-      {showToggle && (
-        <button
-          onClick={() => { setAbierto(v => !v); setDot(false) }}
-          className="fixed bottom-[4.75rem] right-4 sm:bottom-6 sm:right-6 z-40 w-14 h-14 rounded-full shadow-2xl
-                     flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
-          style={{ backgroundColor: accent, color: '#fff' }}
-          aria-label="Abrir asistente de compras"
-        >
-          {abierto ? (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          ) : (
-            <>
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round"
-                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-              </svg>
-              {dot && (
-                <span className="absolute top-1 right-1 w-3 h-3 rounded-full bg-white border-2 animate-pulse"
-                  style={{ borderColor: accent }} />
-              )}
-            </>
-          )}
-        </button>
-      )}
+      {/* El chat se abre exclusivamente desde HomeChatBar — no hay botón flotante */}
 
       {/* Modal centrado */}
       {abierto && (
