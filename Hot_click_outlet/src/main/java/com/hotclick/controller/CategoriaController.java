@@ -7,6 +7,7 @@ import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.utils.Constants;
+import com.hotclick.utils.InputSanitizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -28,6 +29,7 @@ public class CategoriaController {
     @Autowired private EmpresaRepository   empresaRepository;
     @Autowired private UsuarioRepository   usuarioRepository;
     @Autowired private CompanyScope        companyScope;
+    @Autowired private InputSanitizer      sanitizer;
 
     // Sin @Cacheable: el resultado varía según el usuario autenticado (empresa) vs público.
     // Cachear con clave única causaría que un usuario contamine el caché del otro.
@@ -59,8 +61,8 @@ public class CategoriaController {
             var empresa = companyScope.getCurrentEmpresaId() != null
                 ? empresaRepository.findById(companyScope.getCurrentEmpresaId()).orElse(null) : null;
             Categoria cat = new Categoria();
-            cat.setNombreCategoria(body.get("nombreCategoria").trim());
-            cat.setDescripcion(body.getOrDefault("descripcion", ""));
+            cat.setNombreCategoria(sanitizer.cleanWithLimit(body.get("nombreCategoria"), 150));
+            cat.setDescripcion(sanitizer.cleanWithLimit(body.getOrDefault("descripcion", ""), 500));
             cat.setEstado(Constants.ESTADO_ACTIVO);
             cat.setEmpresa(empresa);
             cat.setAdminCliente(
@@ -93,8 +95,8 @@ public class CategoriaController {
             String nombre = item.get("nombreCategoria");
             if (nombre == null || nombre.isBlank()) continue;
             Categoria cat = new Categoria();
-            cat.setNombreCategoria(nombre.trim());
-            cat.setDescripcion(item.getOrDefault("descripcion", ""));
+            cat.setNombreCategoria(sanitizer.cleanWithLimit(nombre, 150));
+            cat.setDescripcion(sanitizer.cleanWithLimit(item.getOrDefault("descripcion", ""), 500));
             cat.setEstado(Constants.ESTADO_ACTIVO);
             cat.setEmpresa(empresa);
             cat.setAdminCliente(admin);
@@ -114,9 +116,9 @@ public class CategoriaController {
                 .orElseThrow(() -> new RuntimeException("Categoría no encontrada"));
             companyScope.assertCanAccessNullable(cat.getEmpresaId());
             if (body.get("nombreCategoria") != null && !body.get("nombreCategoria").isBlank())
-                cat.setNombreCategoria(body.get("nombreCategoria").trim());
+                cat.setNombreCategoria(sanitizer.cleanWithLimit(body.get("nombreCategoria"), 150));
             if (body.get("descripcion") != null)
-                cat.setDescripcion(body.get("descripcion"));
+                cat.setDescripcion(sanitizer.cleanWithLimit(body.get("descripcion"), 500));
             if (body.containsKey("padreId")) {
                 String padreIdStr = body.get("padreId");
                 if (padreIdStr == null || padreIdStr.isBlank()) {

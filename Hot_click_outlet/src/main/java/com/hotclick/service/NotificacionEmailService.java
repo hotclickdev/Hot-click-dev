@@ -483,7 +483,7 @@ public class NotificacionEmailService {
             + "<p style='margin:0 0 20px;color:#6e6e82;font-size:14px;line-height:1.6'>El stock fue liberado y puedes volver a intentarlo. Si el problema persiste, contáctanos por WhatsApp.</p>"
 
             + "<div style='text-align:center;padding:8px 0'>"
-            + "<a href='https://hotclick.onrender.com/checkout' style='display:inline-block;background:#4f7cff;color:#fff;text-decoration:none;padding:13px 32px;border-radius:10px;font-size:15px;font-weight:700'>Intentar de nuevo →</a>"
+            + "<a href='https://hotclick.lat/checkout' style='display:inline-block;background:#4f7cff;color:#fff;text-decoration:none;padding:13px 32px;border-radius:10px;font-size:15px;font-weight:700'>Intentar de nuevo →</a>"
             + "</div>"
             + "</div>"
 
@@ -502,17 +502,17 @@ public class NotificacionEmailService {
         try {
             String html = "<div style='font-family:sans-serif;max-width:480px;margin:0 auto;background:#0d0d14;color:#e8e8ed;padding:32px;border-radius:16px'>" +
                 "<h2 style='color:#4f7cff;margin-bottom:8px'>¡Tu código de descuento!</h2>" +
-                "<p style='color:#8e8e9a;margin-bottom:24px'>Gracias por unirte a HOTCLICK. Usá este código para obtener un <strong style='color:#e8e8ed'>17% de descuento</strong> en tu primera compra en línea:</p>" +
+                "<p style='color:#8e8e9a;margin-bottom:24px'>Gracias por unirte a HOTCLICK. Usá este código para obtener un <strong style='color:#e8e8ed'>13% de descuento</strong> en tu primera compra en línea:</p>" +
                 "<div style='background:#1a1a2e;border:2px dashed #4f7cff;border-radius:12px;padding:20px;text-align:center;margin-bottom:24px'>" +
                 "<span style='font-size:28px;font-weight:900;letter-spacing:4px;color:#4f7cff'>" + esc(codigo) + "</span>" +
                 "</div>" +
                 "<p style='color:#8e8e9a;font-size:13px'>• Válido para una sola compra<br>• Una vez por persona<br>• Ingresalo en el campo \"¿Tenés un cupón?\" al hacer checkout</p>" +
                 "<div style='margin-top:28px;padding-top:20px;border-top:1px solid #1a1a2e;text-align:center'>" +
-                "<a href='https://hotclick.cr/productos' style='background:#4f7cff;color:#fff;padding:12px 28px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px'>Ver productos →</a>" +
+                "<a href='https://hotclick.lat/productos' style='background:#4f7cff;color:#fff;padding:12px 28px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px'>Ver productos →</a>" +
                 "</div>" +
                 "<p style='color:#5e5e6e;font-size:11px;text-align:center;margin-top:20px'>HOTCLICK Outlet · Costa Rica</p>" +
                 "</div>";
-            resendEmailService.send(email, "Tu cupón de 17% OFF — HOTCLICK", html);
+            resendEmailService.send(email, "Tu cupón de 13% OFF — HOTCLICK", html);
             log.info("Email cupón bienvenida enviado a {}", email);
         } catch (Exception e) {
             log.error("No se pudo enviar email de cupón a {}: {}", email, e.getMessage());
@@ -538,9 +538,9 @@ public class NotificacionEmailService {
                 + "</ul>"
                 + "</div>"
                 + "<div style='text-align:center;margin-top:24px'>"
-                + "<a href='https://hotclick.cr/admin' style='background:linear-gradient(135deg,#ff4b12,#ff7b00);color:#fff;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px'>Ir a mi panel →</a>"
+                + "<a href='https://hotclick.lat/admin' style='background:linear-gradient(135deg,#ff4b12,#ff7b00);color:#fff;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px'>Ir a mi panel →</a>"
                 + "</div>"
-                + "<p style='color:#5e5e6e;font-size:11px;text-align:center;margin-top:24px'>HOTCLICK Outlet · Costa Rica · <a href='https://hotclick.cr' style='color:#5e5e6e'>hotclick.cr</a></p>"
+                + "<p style='color:#5e5e6e;font-size:11px;text-align:center;margin-top:24px'>HOTCLICK Outlet · Costa Rica · <a href='https://hotclick.lat' style='color:#5e5e6e'>hotclick.lat</a></p>"
                 + "</div>";
             resendEmailService.send(correo, "¡Bienvenido a HOTCLICK! Tu tienda está lista — " + esc(nombreEmpresa), html);
             log.info("Email bienvenida emprendedor enviado a {}", correo);
@@ -562,7 +562,7 @@ public class NotificacionEmailService {
                 + "<p style='margin:0 0 10px;font-weight:700;color:#22c55e'>Tu tienda ya está en línea</p>"
                 + "<p style='margin:0;color:#8e8e9a;line-height:1.7'>Podés activar la visibilidad, agregar más productos y configurar tu perfil desde el panel de administración.</p>"
                 + "</div>"
-                + "<div style='text-align:center'><a href='https://hotclick.cr/admin' style='background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px'>Ver mi panel →</a></div>"
+                + "<div style='text-align:center'><a href='https://hotclick.lat/admin' style='background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px'>Ver mi panel →</a></div>"
                 + "<p style='color:#5e5e6e;font-size:11px;text-align:center;margin-top:24px'>HOTCLICK Outlet · Costa Rica</p></div>";
             resendEmailService.send(correo, "¡Tu negocio " + esc(nombreEmpresa) + " fue aprobado en HOTCLICK!", html);
             log.info("Email aprobación enviado a {}", correo);
@@ -635,9 +635,9 @@ public class NotificacionEmailService {
                 + "</div>"
                 + credencialesBlock
                 + "<div style='text-align:center;margin-top:24px'>"
-                + "<a href='https://hotclick.cr/login' style='background:linear-gradient(135deg,#4f7cff,#7fa0ff);color:#fff;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px'>Ingresar al panel →</a>"
+                + "<a href='https://hotclick.lat/login' style='background:linear-gradient(135deg,#4f7cff,#7fa0ff);color:#fff;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px'>Ingresar al panel →</a>"
                 + "</div>"
-                + "<p style='color:#5e5e6e;font-size:11px;text-align:center;margin-top:24px'>HOTCLICK Outlet · Costa Rica · <a href='https://hotclick.cr' style='color:#5e5e6e'>hotclick.cr</a></p>"
+                + "<p style='color:#5e5e6e;font-size:11px;text-align:center;margin-top:24px'>HOTCLICK Outlet · Costa Rica · <a href='https://hotclick.lat' style='color:#5e5e6e'>hotclick.lat</a></p>"
                 + "</div>";
 
             resendEmailService.send(correo,

@@ -3,6 +3,7 @@ package com.hotclick.controller;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.BlogEntrada;
 import com.hotclick.repository.BlogEntradaRepository;
+import com.hotclick.utils.InputSanitizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 public class BlogController {
 
     @Autowired private BlogEntradaRepository repo;
+    @Autowired private InputSanitizer sanitizer;
 
     /** Público — solo publicados */
     @GetMapping("/publico")
@@ -44,6 +46,7 @@ public class BlogController {
 
     @PostMapping
     public ResponseEntity<ResponseDTO> crear(@RequestBody BlogEntrada entrada) {
+        sanitizarEntrada(entrada);
         entrada.setFechaCreacion(LocalDateTime.now());
         entrada.setEstado(1);
         if (entrada.getSlug() == null || entrada.getSlug().isBlank()) {
@@ -57,10 +60,11 @@ public class BlogController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ResponseDTO> actualizar(@PathVariable Long id, @RequestBody BlogEntrada datos) {
+        sanitizarEntrada(datos);
         BlogEntrada e = repo.findById(id).orElseThrow(() -> new RuntimeException("No encontrado"));
         e.setTitulo(datos.getTitulo());
         if (datos.getSlug() != null && !datos.getSlug().isBlank()) {
-            e.setSlug(datos.getSlug());
+            e.setSlug(sanitizer.cleanSlug(datos.getSlug()));
         }
         e.setResumen(datos.getResumen());
         e.setContenido(datos.getContenido());
@@ -71,6 +75,14 @@ public class BlogController {
             e.setFechaPublicacion(LocalDateTime.now());
         }
         return ResponseEntity.ok(ResponseDTO.success("Actualizado", repo.save(e)));
+    }
+
+    private void sanitizarEntrada(BlogEntrada e) {
+        if (e.getTitulo()    != null) e.setTitulo(sanitizer.cleanWithLimit(e.getTitulo(), 200));
+        if (e.getResumen()   != null) e.setResumen(sanitizer.cleanWithLimit(e.getResumen(), 400));
+        if (e.getContenido() != null) e.setContenido(sanitizer.cleanRichText(e.getContenido()));
+        if (e.getImagenUrl() != null) e.setImagenUrl(sanitizer.cleanWithLimit(e.getImagenUrl(), 500));
+        if (e.getSlug()      != null) e.setSlug(sanitizer.cleanSlug(e.getSlug()));
     }
 
     @DeleteMapping("/{id}")

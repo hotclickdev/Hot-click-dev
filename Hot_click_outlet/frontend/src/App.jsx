@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { HelmetProvider } from 'react-helmet-async'
 import { ToastProvider } from '@/components/ui/Toast'
 import { PageLoader } from '@/components/ui/Spinner'
+import PageProgressBar from '@/components/ui/PageProgressBar'
 import useAuthStore from '@/store/authStore'
 import useUiStore from '@/store/uiStore'
 import AccessibilityPanel from '@/components/ui/AccessibilityPanel'
@@ -20,10 +21,13 @@ import { useBranding } from '@/hooks/useBranding'
 import CookieBanner from '@/components/ui/CookieBanner'
 import { setAnalyticsConsent } from '@/utils/analytics'
 import { initGA4, trackPageView } from '@/utils/ga4'
+import ChatWidget from '@/components/ui/ChatWidget'
 
 const CLERK_ENABLED = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
-const SSOCallback = CLERK_ENABLED ? lazy(() => import('@/pages/SSOCallback')) : null
-const SSOComplete = CLERK_ENABLED ? lazy(() => import('@/pages/SSOComplete')) : null
+// ClerkShell se carga sólo al navegar a rutas de auth — saca @clerk/react del bundle inicial
+const ClerkShell    = CLERK_ENABLED ? lazy(() => import('@/components/auth/ClerkShell')) : null
+const SSOCallback   = CLERK_ENABLED ? lazy(() => import('@/pages/SSOCallback')) : null
+const SSOComplete   = CLERK_ENABLED ? lazy(() => import('@/pages/SSOComplete')) : null
 
 const HomePage = lazy(() => import('@/pages/HomePage'))
 const ProductsPage = lazy(() => import('@/pages/ProductsPage'))
@@ -94,6 +98,7 @@ const AdminSuscripcion          = lazy(() => import('@/pages/admin/AdminSuscripc
 const AdminOfflineCola          = lazy(() => import('@/pages/admin/AdminOfflineCola'))
 const AdminMesas                = lazy(() => import('@/pages/admin/AdminMesas'))
 const AdminGiftCards            = lazy(() => import('@/pages/admin/AdminGiftCards'))
+const AdminCupones              = lazy(() => import('@/pages/admin/AdminCupones'))
 const AdminBranding             = lazy(() => import('@/pages/admin/AdminBranding'))
 const AdminHomepage             = lazy(() => import('@/pages/admin/AdminHomepage'))
 const AdminPlugins              = lazy(() => import('@/pages/admin/AdminPlugins'))
@@ -258,6 +263,17 @@ function ScrollToTop() {
   return null
 }
 
+// Envuelve las Routes para aplicar fade-in en cada cambio de ruta
+function PageFade({ children }) {
+  const { pathname } = useLocation()
+  return (
+    <div key={pathname} style={{ animation: 'pagefade 0.18s ease both' }}>
+      <style>{`@keyframes pagefade { from { opacity:0; transform:translateY(5px) } to { opacity:1; transform:none } }`}</style>
+      {children}
+    </div>
+  )
+}
+
 function ConditionalWhatsAppFab() {
   const { pathname } = useLocation()
   if (WAB_HIDDEN_PATHS.includes(pathname)) return null
@@ -322,20 +338,32 @@ export default function App() {
         <AnalyticsInit />
         <HtmlClassManager />
         <BrowserRouter>
+          <PageProgressBar />
           <ScrollToTop />
           <Suspense fallback={<PageLoader />}>
+            <PageFade>
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/productos" element={<ProductsPage />} />
               <Route path="/productos/:id" element={<ProductDetailPage />} />
               <Route path="/carrito" element={<CartPage />} />
-              <Route path="/login" element={<LoginPage />} />
+              {/* Rutas de auth: ClerkShell se lazy-carga aquí, no en el bundle inicial */}
+              {CLERK_ENABLED ? (
+                <Route element={<ClerkShell />}>
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/registro" element={<RegisterPage />} />
+                  <Route path="/sso-callback" element={<SSOCallback />} />
+                  <Route path="/sso-complete" element={<SSOComplete />} />
+                </Route>
+              ) : (
+                <>
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/registro" element={<RegisterPage />} />
+                </>
+              )}
               <Route path="/registrar-negocio" element={<ProtectedRoute><RegistrarNegocioPage /></ProtectedRoute>} />
-              {CLERK_ENABLED && <Route path="/sso-callback" element={<SSOCallback />} />}
-              {CLERK_ENABLED && <Route path="/sso-complete" element={<SSOComplete />} />}
               <Route path="/mode-select" element={<ModeSelector />} />
               <Route path="/seleccionar-negocio" element={<EmpresaSelectionPage />} />
-              <Route path="/registro" element={<RegisterPage />} />
               <Route path="/nosotros" element={<NosotrosPage />} />
               <Route path="/contacto" element={<ContactoPage />} />
               <Route path="/informacion" element={<InformacionPage />} />
@@ -390,6 +418,7 @@ export default function App() {
                   <Route path="/admin/offline/cola"        element={<AdminOfflineCola />} />
                   <Route path="/admin/mesas"               element={<AdminMesas />} />
                   <Route path="/admin/gift-cards"          element={<AdminGiftCards />} />
+                  <Route path="/admin/cupones"             element={<AdminCupones />} />
                   <Route path="/admin/branding"            element={<AdminBranding />} />
                 <Route path="/admin/homepage"           element={<AdminHomepage />} />
                   <Route path="/admin/plugins"             element={<AdminPlugins />} />
@@ -414,8 +443,10 @@ export default function App() {
               <Route path="/checkout/qr/:token" element={<SelfCheckoutPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+          </PageFade>
           </Suspense>
           <ConditionalWhatsAppFab />
+          <ChatWidget />
           <AccessibilityPanel />
           <AuthPromptModal />
           <SocialProofController />

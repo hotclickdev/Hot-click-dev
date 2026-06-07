@@ -9,6 +9,7 @@ import com.hotclick.repository.MiembroEmpresaRepository;
 import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.utils.Constants;
+import com.hotclick.utils.InputSanitizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,32 +28,22 @@ public class EmprendedorRegistroService {
     @Autowired private PasswordEncoder          passwordEncoder;
     @Autowired private NotificacionEmailService notificacionEmailService;
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
-
-    /** Elimina tags HTML, scripts y caracteres peligrosos de un string */
-    private static String sanitizar(String s) {
-        if (s == null) return null;
-        return s.trim()
-                .replaceAll("<[^>]*>", "")           // elimina tags HTML/script
-                .replaceAll("[;\\-\\-]", "")          // elimina ; y -- (SQL injection)
-                .replaceAll("['\"]", "")              // elimina comillas
-                .replaceAll("(?i)(select|insert|update|delete|drop|create|alter|exec|union|script)", "")
-                .trim();
-    }
+    @Autowired private InputSanitizer           sanitizer;
 
     @Transactional
     public Usuario registrar(RegistroEmpresaDTO dto) {
-        // Sanitizar entradas para prevenir XSS y SQL injection
-        if (dto.getNombreEmpresa() != null) dto.setNombreEmpresa(sanitizar(dto.getNombreEmpresa()));
-        if (dto.getNombreComercial() != null) dto.setNombreComercial(sanitizar(dto.getNombreComercial()));
-        if (dto.getNombreAdmin() != null) dto.setNombreAdmin(sanitizar(dto.getNombreAdmin()));
+        // Sanitizar entradas con jsoup para prevenir XSS
+        if (dto.getNombreEmpresa()   != null) dto.setNombreEmpresa(sanitizer.cleanWithLimit(dto.getNombreEmpresa(), 150));
+        if (dto.getNombreComercial() != null) dto.setNombreComercial(sanitizer.cleanWithLimit(dto.getNombreComercial(), 150));
+        if (dto.getNombreAdmin()     != null) dto.setNombreAdmin(sanitizer.cleanWithLimit(dto.getNombreAdmin(), 100));
 
         // Validaciones básicas
         if (dto.getNombreEmpresa() == null || dto.getNombreEmpresa().isBlank())
             throw new IllegalArgumentException("El nombre de la empresa es requerido");
         if (dto.getCorreoAdmin() == null || dto.getCorreoAdmin().isBlank())
             throw new IllegalArgumentException("El correo del administrador es requerido");
-        if (dto.getPasswordAdmin() == null || dto.getPasswordAdmin().length() < 6)
-            throw new IllegalArgumentException("La contraseña debe tener al menos 6 caracteres");
+        if (dto.getPasswordAdmin() == null || dto.getPasswordAdmin().length() < 8)
+            throw new IllegalArgumentException("La contraseña debe tener al menos 8 caracteres");
 
         // Correo del admin ya registrado
         if (usuarioRepository.existsByCorreo(dto.getCorreoAdmin().trim().toLowerCase()))
@@ -146,7 +137,7 @@ public class EmprendedorRegistroService {
             throw new IllegalArgumentException("Este usuario ya tiene un negocio registrado");
         }
 
-        String nombre = sanitizar(nombreEmpresa);
+        String nombre = sanitizer.cleanWithLimit(nombreEmpresa, 150);
         if (nombre == null || nombre.isBlank()) {
             throw new IllegalArgumentException("El nombre del negocio es requerido");
         }
@@ -161,7 +152,7 @@ public class EmprendedorRegistroService {
         empresa.setNombreEmpresa(nombre);
         empresa.setNombreComercial(
             (nombreComercial != null && !nombreComercial.isBlank())
-                ? sanitizar(nombreComercial.trim()) : nombre);
+                ? sanitizer.cleanWithLimit(nombreComercial.trim(), 150) : nombre);
         empresa.setSlug(slug);
         empresa.setCorreoEmpresa(correoEmp);
         empresa.setTelefonoEmpresa(telefonoEmpresa);

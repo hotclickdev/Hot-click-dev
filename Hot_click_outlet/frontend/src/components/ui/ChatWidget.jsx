@@ -5,12 +5,51 @@ import useChatStore from '@/store/chatStore'
 
 const fmt = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
 
+// Keyframes inyectados una sola vez en el DOM
+const CHAT_CSS = `
+  @keyframes hc-msg-bot   { from { opacity:0; transform:translateX(-10px) translateY(4px) } to { opacity:1; transform:none } }
+  @keyframes hc-msg-user  { from { opacity:0; transform:translateX(10px)  translateY(4px) } to { opacity:1; transform:none } }
+  @keyframes hc-fade-up   { from { opacity:0; transform:translateY(7px)  } to { opacity:1; transform:none } }
+  @keyframes hc-panel-in  { from { opacity:0; transform:translateY(14px) scale(0.97) } to { opacity:1; transform:none } }
+  @keyframes hc-dot       { 0%,60%,100% { transform:translateY(0);   opacity:0.3 }
+                             30%         { transform:translateY(-5px); opacity:1   } }
+`
+if (typeof document !== 'undefined' && !document.getElementById('hc-chat-css')) {
+  const s = document.createElement('style')
+  s.id = 'hc-chat-css'
+  s.textContent = CHAT_CSS
+  document.head.appendChild(s)
+}
+
+// ── Dots de escritura ─────────────────────────────────────────────────────────
+function TypingDots({ color = 'currentColor' }) {
+  return (
+    <span className="inline-flex items-center gap-[3px] px-0.5 align-middle">
+      {[0, 1, 2].map(i => (
+        <span key={i} style={{
+          display: 'inline-block',
+          width: 5, height: 5,
+          borderRadius: '50%',
+          backgroundColor: color,
+          animation: 'hc-dot 1.1s ease-in-out infinite',
+          animationDelay: `${i * 0.18}s`,
+        }} />
+      ))}
+    </span>
+  )
+}
+
 // ── Mini product card inside the chat ────────────────────────────────────────
-function ProductoCard({ p }) {
+function ProductoCard({ p, delay = 0 }) {
   return (
     <Link to={`/productos/${p.id_producto}`}
       className="flex items-center gap-2.5 rounded-xl p-2 hover:opacity-90 transition-opacity"
-      style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+      style={{
+        backgroundColor: 'rgba(255,255,255,0.06)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        animation: 'hc-fade-up 0.28s ease both',
+        animationDelay: `${delay}ms`,
+      }}>
       {p.imagen_principal_url ? (
         <img src={p.imagen_principal_url} alt={p.nombre_producto}
           className="w-10 h-10 rounded-lg object-cover shrink-0" />
@@ -41,8 +80,13 @@ function ProductoCard({ p }) {
 // ── Message bubble ────────────────────────────────────────────────────────────
 function Burbuja({ msg }) {
   const isUser = msg.rol === 'user'
+  const waiting = !isUser && msg.streaming && !msg.texto
+
   return (
-    <div className={`flex gap-2 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+    <div
+      className={`flex gap-2 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
+      style={{ animation: `${isUser ? 'hc-msg-user' : 'hc-msg-bot'} 0.28s ease both` }}
+    >
       {!isUser && (
         <div className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-sm"
           style={{ backgroundColor: 'var(--hc-accent, #ff4b12)' }}>
@@ -50,30 +94,52 @@ function Burbuja({ msg }) {
         </div>
       )}
       <div className="max-w-[85%] space-y-2">
-        {msg.texto && (
-          <div className={`px-3 py-2 rounded-2xl text-xs leading-relaxed ${isUser ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}
+
+        {/* Bubble — siempre visible para el bot mientras streaming, aunque texto esté vacío */}
+        {(msg.texto || waiting) && (
+          <div
+            className={`px-3 py-2 rounded-2xl text-xs leading-relaxed ${isUser ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}
             style={isUser
               ? { backgroundColor: 'var(--hc-accent, #ff4b12)', color: '#fff' }
-              : { backgroundColor: 'rgba(255,255,255,0.1)', color: '#e8e8ed' }}>
-            {msg.texto}
-            {msg.streaming && (
-              <span className="inline-block w-1 h-3 ml-0.5 rounded-sm animate-pulse"
-                style={{ backgroundColor: 'currentColor', opacity: 0.7 }} />
-            )}
+              : { backgroundColor: 'rgba(255,255,255,0.1)', color: '#e8e8ed' }}
+          >
+            {waiting
+              ? <TypingDots color="rgba(255,255,255,0.65)" />
+              : <>
+                  {msg.texto}
+                  {msg.streaming && (
+                    <span
+                      className="inline-block w-[2px] h-[11px] ml-0.5 rounded-sm"
+                      style={{ backgroundColor: 'currentColor', opacity: 0.7,
+                        animation: 'hc-dot 0.8s ease-in-out infinite' }} />
+                  )}
+                </>
+            }
           </div>
         )}
+
+        {/* Productos con entrada escalonada */}
         {msg.productos?.length > 0 && (
           <div className="space-y-1.5">
-            {msg.productos.map((p, i) => <ProductoCard key={i} p={p} />)}
+            {msg.productos.map((p, i) => (
+              <ProductoCard key={i} p={p} delay={i * 75} />
+            ))}
           </div>
         )}
+
+        {/* Botones de acción con fade-up */}
         {msg.acciones && (
-          <div className="flex flex-wrap gap-1.5 mt-1">
+          <div
+            className="flex flex-wrap gap-1.5 mt-1"
+            style={{ animation: 'hc-fade-up 0.3s ease both', animationDelay: '60ms' }}
+          >
             {msg.acciones.map((a, i) => (
               <button key={i} onClick={a.onClick}
                 className="text-[10px] px-2.5 py-1 rounded-full transition-opacity hover:opacity-80"
                 style={{ backgroundColor: 'rgba(255,255,255,0.12)', color: '#e8e8ed',
-                  border: '1px solid rgba(255,255,255,0.15)' }}>
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  animation: 'hc-fade-up 0.25s ease both',
+                  animationDelay: `${60 + i * 50}ms` }}>
                 {a.label}
               </button>
             ))}
@@ -122,24 +188,29 @@ function ChatWidgetInner({ slug }) {
     storeClose()
   }, [storeOpen, storePending, storeClear, storeClose])
 
-  // Initial greeting — or send pending message if opened from HomeChatBar
+  // Send pending message whenever abierto becomes true OR a new pending arrives while already open
   useEffect(() => {
-    if (!abierto || mensajes.length > 0) return
-    if (pendingRef.current) {
-      const msg = pendingRef.current
-      pendingRef.current = null
-      const t = setTimeout(() => enviar(msg), 150)
-      return () => clearTimeout(t)
+    if (!abierto) return
+    if (!pendingRef.current) {
+      // Show greeting only on first open with no messages
+      if (mensajes.length === 0) {
+        const t = setTimeout(() => {
+          setMensajes([{
+            rol: 'bot',
+            texto: '¡Hola! 👋 ¿Qué estás buscando hoy? Decime para qué ambiente o qué necesitás y te ayudo a encontrar opciones. Por ejemplo: sala, cocina, jardín...',
+          }])
+        }, 300)
+        return () => clearTimeout(t)
+      }
+      return
     }
-    const t = setTimeout(() => {
-      setMensajes([{
-        rol: 'bot',
-        texto: '¡Hola! 👋 ¿Qué estás buscando hoy? Decime para qué ambiente o qué necesitás y te ayudo a encontrar opciones. Por ejemplo: sala, cocina, jardín...',
-      }])
-    }, 300)
+    const msg = pendingRef.current
+    pendingRef.current = null
+    setMensajes(prev => [...prev, { rol: 'user', texto: msg }])
+    const t = setTimeout(() => enviar(msg), 80)
     return () => clearTimeout(t)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [abierto])
+  }, [abierto, storeOpen])
 
   // Dot notification after 10s on page
   useEffect(() => {
@@ -168,8 +239,6 @@ function ChatWidgetInner({ slug }) {
       catch { return '' }
     })()
 
-    // Optimistic bot message for streaming
-    const botIdx = mensajes.length + (mensajeTexto ? 0 : 1)
     setMensajes(prev => [...prev, { rol: 'bot', texto: '', streaming: true, productos: [] }])
 
     try {
@@ -195,29 +264,30 @@ function ChatWidgetInner({ slug }) {
         buffer = lines.pop() ?? ''
 
         for (const line of lines) {
-          if (line.startsWith('event: ')) continue
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6))
-              if (data.productos !== undefined) {
-                productos = data.productos
-                hasMore   = data.hasMore
-                setMensajes(prev => {
-                  const next = [...prev]
-                  next[next.length - 1] = { ...next[next.length - 1], productos }
-                  return next
-                })
-              }
-              if (data.text) {
-                accText += data.text
-                setMensajes(prev => {
-                  const next = [...prev]
-                  next[next.length - 1] = { ...next[next.length - 1], texto: accText, streaming: true }
-                  return next
-                })
-              }
-            } catch {}
-          }
+          if (line.startsWith('event:')) continue
+          // Spring Boot sends "data:{...}" (no space); browsers send "data: {...}"
+          if (!line.startsWith('data:')) continue
+          try {
+            const raw = line.startsWith('data: ') ? line.slice(6) : line.slice(5)
+            const data = JSON.parse(raw)
+            if (data.productos !== undefined) {
+              productos = data.productos
+              hasMore   = data.hasMore
+              setMensajes(prev => {
+                const next = [...prev]
+                next[next.length - 1] = { ...next[next.length - 1], productos }
+                return next
+              })
+            }
+            if (data.text) {
+              accText += data.text
+              setMensajes(prev => {
+                const next = [...prev]
+                next[next.length - 1] = { ...next[next.length - 1], texto: accText, streaming: true }
+                return next
+              })
+            }
+          } catch {}
         }
       }
 
@@ -301,7 +371,8 @@ function ChatWidgetInner({ slug }) {
       {/* Chat panel */}
       {abierto && (
         <div className="fixed bottom-[9rem] left-3 right-3 sm:bottom-24 sm:left-auto sm:right-6 sm:w-96 z-50 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
-          style={{ maxHeight: '70vh', backgroundColor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.12)' }}>
+          style={{ maxHeight: '70vh', backgroundColor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.12)',
+            animation: 'hc-panel-in 0.32s cubic-bezier(0.16,1,0.3,1) both' }}>
 
           {/* Header */}
           <div className="px-4 py-3 flex items-center gap-2.5 shrink-0"
@@ -317,21 +388,6 @@ function ChatWidgetInner({ slug }) {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
             {mensajes.map((m, i) => <Burbuja key={i} msg={m} />)}
-            {cargando && mensajes[mensajes.length - 1]?.streaming === false && (
-              <div className="flex gap-2">
-                <div className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center"
-                  style={{ backgroundColor: accent }}>🛍️</div>
-                <div className="px-3 py-2 rounded-2xl rounded-tl-sm"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
-                  <div className="flex gap-1 items-center h-4">
-                    {[0,1,2].map(i => (
-                      <span key={i} className="w-1.5 h-1.5 rounded-full animate-bounce"
-                        style={{ backgroundColor: accent, animationDelay: `${i * 0.15}s` }} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
             <div ref={bottomRef} />
           </div>
 
@@ -364,6 +420,7 @@ function ChatWidgetInner({ slug }) {
                   border: '1px solid rgba(255,255,255,0.12)' }}
               />
               <button onClick={() => enviar()} disabled={cargando || !input.trim()}
+                aria-label="Enviar mensaje"
                 className="w-9 h-9 rounded-xl flex items-center justify-center disabled:opacity-40 hover:opacity-80"
                 style={{ backgroundColor: accent, color: '#fff' }}>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">

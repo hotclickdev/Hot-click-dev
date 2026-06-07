@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -33,6 +34,7 @@ public class TestimonioController {
 
     /** Admin — devuelve todos */
     @GetMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN_IT')")
     public ResponseEntity<ResponseDTO> listarAdmin() {
         return ResponseEntity.ok(ResponseDTO.success("Testimonios", testimonioService.listarTodosAdmin()));
     }
@@ -92,14 +94,24 @@ public class TestimonioController {
 
             String imagenUrl = (String) body.get("imagenUrl");
 
-            var t = testimonioService.crear(userDetails.getUsername(), comentario, imagenUrl, productoId);
+            Object calObj = body.get("calificacion");
+            Integer calificacion = calObj instanceof Number n ? n.intValue() : null;
+
+            var t = testimonioService.crear(userDetails.getUsername(), comentario, imagenUrl, productoId, calificacion);
             return ResponseEntity.ok(ResponseDTO.success("Testimonio enviado, pendiente de aprobación", t));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
     }
 
+    /** Público — devuelve promedio y conteo de calificaciones aprobadas para un producto */
+    @GetMapping("/producto/{id}/rating")
+    public ResponseEntity<ResponseDTO> ratingProducto(@PathVariable Long id) {
+        return ResponseEntity.ok(ResponseDTO.success("Rating", testimonioService.getRatingStats(id)));
+    }
+
     @PutMapping("/{id}/aprobar")
+    @PreAuthorize("hasRole('ADMIN_IT')")
     public ResponseEntity<ResponseDTO> aprobar(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(ResponseDTO.success("Aprobado", testimonioService.aprobar(id)));
@@ -109,6 +121,7 @@ public class TestimonioController {
     }
 
     @PutMapping("/{id}/rechazar")
+    @PreAuthorize("hasRole('ADMIN_IT')")
     public ResponseEntity<ResponseDTO> rechazar(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(ResponseDTO.success("Rechazado", testimonioService.rechazar(id)));

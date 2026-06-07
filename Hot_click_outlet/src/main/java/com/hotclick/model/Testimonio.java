@@ -26,6 +26,9 @@ public class Testimonio {
     @Column(name = "imagen_url", length = 500)
     private String imagenUrl;
 
+    @Column(name = "calificacion")
+    private Integer calificacion;
+
     @Column(name = "estado", nullable = false, length = 20)
     private String estado = "PENDIENTE";
 
@@ -48,6 +51,9 @@ public class Testimonio {
 
     public String getImagenUrl() { return imagenUrl; }
     public void setImagenUrl(String imagenUrl) { this.imagenUrl = imagenUrl; }
+
+    public Integer getCalificacion() { return calificacion; }
+    public void setCalificacion(Integer calificacion) { this.calificacion = calificacion; }
 
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }

@@ -181,6 +181,7 @@ export default function HomeChatBar() {
               whileTap={{ scale: 0.9 }}
               onClick={() => submit()}
               disabled={!input.trim()}
+              aria-label="Enviar consulta"
               className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-150"
               style={{
                 backgroundColor: input.trim() ? 'var(--hc-accent, #ff4b12)' : 'transparent',

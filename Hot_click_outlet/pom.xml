@@ -168,6 +168,13 @@
             <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
 
+        <!-- Thumbnailator — resize de imágenes en ImageProxyController -->
+        <dependency>
+            <groupId>net.coobird</groupId>
+            <artifactId>thumbnailator</artifactId>
+            <version>0.4.20</version>
+        </dependency>
+
         <!-- H2 para pruebas -->
         <dependency>
             <groupId>com.h2database</groupId>

@@ -7,6 +7,7 @@ import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.service.SupabaseStorageService;
 import com.hotclick.utils.Constants;
+import com.hotclick.utils.InputSanitizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,7 @@ public class MarcaController {
     @Autowired private SupabaseStorageService supabaseStorageService;
     @Autowired private CompanyScope           companyScope;
     @Autowired private com.hotclick.repository.EmpresaRepository empresaRepository;
+    @Autowired private InputSanitizer         sanitizer;
 
     /** Endpoint público — solo marcas de negocios aprobados y visibles */
     @Cacheable("marcas-publicas")
@@ -81,8 +83,8 @@ public class MarcaController {
                 return ResponseEntity.badRequest().body(ResponseDTO.error("Ya existe una marca activa con ese nombre"));
 
             Marca m = new Marca();
-            m.setNombreMarca(nombre.trim());
-            m.setLogoUrl(body.get("logoUrl"));
+            m.setNombreMarca(sanitizer.cleanWithLimit(nombre, 150));
+            m.setLogoUrl(body.get("logoUrl") != null ? sanitizer.cleanWithLimit(body.get("logoUrl"), 500) : null);
             m.setAdminCliente(admin);
             m.setEmpresa(empresa);
             m.setEstado(Constants.ESTADO_ACTIVO);
@@ -102,7 +104,7 @@ public class MarcaController {
                 .orElseThrow(() -> new RuntimeException("Marca no encontrada"));
             companyScope.assertCanAccessNullable(m.getEmpresaId());
             if (body.containsKey("nombreMarca") && !body.get("nombreMarca").isBlank()) {
-                String nuevoNombre = body.get("nombreMarca").trim();
+                String nuevoNombre = sanitizer.cleanWithLimit(body.get("nombreMarca"), 150);
                 Long empresaId = m.getEmpresaId();
                 boolean duplicado = empresaId != null
                     ? marcaRepository.existsByNombreMarcaAndEmpresaIdAndEstadoAndIdNot(nuevoNombre, empresaId, Constants.ESTADO_ACTIVO, id)
@@ -112,7 +114,7 @@ public class MarcaController {
                 m.setNombreMarca(nuevoNombre);
             }
             if (body.containsKey("logoUrl"))
-                m.setLogoUrl(body.get("logoUrl"));
+                m.setLogoUrl(body.get("logoUrl") != null ? sanitizer.cleanWithLimit(body.get("logoUrl"), 500) : null);
             return ResponseEntity.ok(ResponseDTO.success("Marca actualizada", marcaRepository.save(m)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
@@ -138,8 +140,8 @@ public class MarcaController {
                 : marcaRepository.existsByNombreMarcaAndEstado(nombre.trim(), Constants.ESTADO_ACTIVO);
             if (dup) { duplicates++; continue; }
             Marca m = new Marca();
-            m.setNombreMarca(nombre.trim());
-            m.setLogoUrl(item.get("logoUrl"));
+            m.setNombreMarca(sanitizer.cleanWithLimit(nombre, 150));
+            m.setLogoUrl(item.get("logoUrl") != null ? sanitizer.cleanWithLimit(item.get("logoUrl"), 500) : null);
             m.setAdminCliente(admin);
             m.setEmpresa(empresa);
             m.setEstado(Constants.ESTADO_ACTIVO);

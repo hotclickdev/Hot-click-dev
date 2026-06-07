@@ -102,7 +102,7 @@ export default function PromoWelcomePopup() {
                   style={{ background: '#8c5cf6', bottom: '-10px', right: '-10px' }} />
 
                 <div className="relative text-center">
-                  <div className="text-3xl font-black text-white tracking-tight">17% OFF</div>
+                  <div className="text-3xl font-black text-white tracking-tight">13% OFF</div>
                   <div className="text-xs font-semibold text-[#4f7cff] tracking-widest uppercase mt-0.5">{t('promo.firstPurchase')}</div>
                 </div>
 

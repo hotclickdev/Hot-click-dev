@@ -29,7 +29,7 @@ public class CarritoAbandonadoScheduler {
     @Value("${app.abandoned-cart.hours-to-wait:1}")
     private int hoursToWait;
 
-    @Value("${app.url:https://hotclick.com}")
+    @Value("${app.url:https://hotclick.lat}")
     private String appUrl;
 
     @Scheduled(cron = "${app.abandoned-cart.scheduler-cron:0 0 */6 * * *}")

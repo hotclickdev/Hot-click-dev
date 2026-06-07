@@ -4,6 +4,7 @@ import com.hotclick.model.BlogEntrada;
 import com.hotclick.model.Producto;
 import com.hotclick.repository.BlogEntradaRepository;
 import com.hotclick.repository.ProductoRepository;
+import com.hotclick.repository.TestimonioRepository;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +20,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.NumberFormat;
 import java.util.Locale;
+import java.util.Optional;
 
 /**
  * Forwards SPA routes to index.html so React Router handles client-side navigation.
@@ -33,6 +35,9 @@ public class SpaController {
 
     @Autowired
     private BlogEntradaRepository blogEntradaRepository;
+
+    @Autowired
+    private TestimonioRepository testimonioRepository;
 
     @Value("${app.url:https://hotclick.lat}")
     private String appUrl;
@@ -150,6 +155,22 @@ public class SpaController {
 
         String url = appUrl + "/productos/" + p.getId();
 
+        long   ratingCount = Optional.ofNullable(testimonioRepository.countAprobadosConCalificacion(p.getId())).orElse(0L);
+        Double ratingAvg   = ratingCount > 0 ? testimonioRepository.avgCalificacion(p.getId()) : null;
+
+        String aggregateRatingJson = "";
+        if (ratingAvg != null && ratingCount > 0) {
+            double rounded = Math.round(ratingAvg * 10.0) / 10.0;
+            aggregateRatingJson = "\n    <script type=\"application/ld+json\">\n" +
+                "    {\"@context\":\"https://schema.org\",\"@type\":\"Product\"," +
+                "\"name\":\"" + escJson(nombre) + "\"," +
+                "\"aggregateRating\":{\"@type\":\"AggregateRating\"," +
+                "\"ratingValue\":\"" + rounded + "\"," +
+                "\"reviewCount\":\"" + ratingCount + "\"," +
+                "\"bestRating\":\"5\",\"worstRating\":\"1\"}}" +
+                "\n    </script>";
+        }
+
         String seoBlock = SEO_START + "\n" +
             "    <title>" + xe(metaTitle) + "</title>\n" +
             "    <meta name=\"description\" content=\"" + xa(metaDesc) + "\" />\n" +
@@ -167,7 +188,8 @@ public class SpaController {
             "    <meta name=\"twitter:site\" content=\"@hotclickcr\" />\n" +
             "    <meta name=\"twitter:title\" content=\"" + xa(metaTitle) + "\" />\n" +
             "    <meta name=\"twitter:description\" content=\"" + xa(metaDesc) + "\" />\n" +
-            "    <meta name=\"twitter:image\" content=\"" + xa(imagen) + "\" />\n" +
+            "    <meta name=\"twitter:image\" content=\"" + xa(imagen) + "\" />" +
+            aggregateRatingJson + "\n" +
             "    " + SEO_END;
 
         int start = html.indexOf(SEO_START);
@@ -229,6 +251,12 @@ public class SpaController {
         int end   = html.indexOf(SEO_END);
         if (start == -1 || end == -1) return html;
         return html.substring(0, start) + seoBlock + html.substring(end + SEO_END.length());
+    }
+
+    /** Escapes double quotes and backslashes for JSON string values. */
+    private static String escJson(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     /** Escapes XML element content. */

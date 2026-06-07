@@ -1,49 +1,48 @@
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-
-// Deterministic mock stats — same product always shows same numbers
-function getMockStats(id) {
-  const n = typeof id === 'string'
-    ? id.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
-    : Number(id) || 1
-  const stars  = parseFloat(Math.min(5, 3.9 + ((n % 11) / 10)).toFixed(1))
-  const count  = 14  + (n % 312)  // 14 – 325 reviews
-  const bought = 28  + (n % 580)  // 28 – 607 purchases
-  return { stars, count, bought }
-}
+import { testimonioService } from '@/services/testimonioService'
 
 export default function SocialProof({ productId }) {
   const { t } = useTranslation()
-  const { stars, count, bought } = getMockStats(productId)
-  const fullStars = Math.floor(stars)
-  const hasHalf  = stars % 1 >= 0.3
+  const [rating, setRating] = useState(null) // { ratingValue, reviewCount }
+
+  useEffect(() => {
+    if (!productId) return
+    testimonioService.getRating(productId)
+      .then(({ data }) => {
+        const d = data?.data
+        if (d && d.reviewCount > 0) setRating(d)
+      })
+      .catch(() => {})
+  }, [productId])
 
   return (
     <div className="space-y-3">
-      {/* Stars row */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-        <div className="flex items-center gap-0.5" aria-label={t('socialProof.ratingLabel', { stars })}>
-          {[1, 2, 3, 4, 5].map((s) => (
-            <StarIcon
-              key={s}
-              filled={s <= fullStars}
-              half={!s <= fullStars && s === fullStars + 1 && hasHalf}
-            />
-          ))}
+      {rating && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          <div
+            className="flex items-center gap-0.5"
+            aria-label={t('socialProof.ratingLabel', { stars: rating.ratingValue })}
+          >
+            {[1, 2, 3, 4, 5].map((s) => (
+              <StarIcon
+                key={s}
+                filled={s <= Math.floor(rating.ratingValue)}
+                half={s === Math.ceil(rating.ratingValue) && rating.ratingValue % 1 >= 0.3}
+              />
+            ))}
+          </div>
+          <span className="font-bold text-sm" style={{ color: 'var(--hc-text)' }}>
+            {rating.ratingValue}
+          </span>
+          <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+            ({rating.reviewCount.toLocaleString('es-CR')} {t('socialProof.reviews')})
+          </span>
         </div>
-        <span className="font-bold text-sm" style={{ color: 'var(--hc-text)' }}>{stars}</span>
-        <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-          ({count.toLocaleString('es-CR')} {t('socialProof.reviews')})
-        </span>
-        <span className="flex items-center gap-1 text-xs text-emerald-400">
-          <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-          </svg>
-          {bought.toLocaleString('es-CR')} {t('socialProof.purchases')}
-        </span>
-      </div>
+      )}
 
-      {/* Trust badges */}
+      {/* Trust badges — siempre visibles */}
       <div className="flex flex-wrap gap-2">
         {TRUST_BADGES.map((b) => (
           <motion.span

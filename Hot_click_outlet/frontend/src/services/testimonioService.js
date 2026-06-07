@@ -8,6 +8,7 @@ export const testimonioService = {
   subirImagen:      (fd) => api.post('/testimonios/imagen', fd, {
     headers: { 'Content-Type': undefined },  // deja que el browser ponga el boundary multipart
   }),
+  getRating:        (productoId) => api.get(`/testimonios/producto/${productoId}/rating`),
   crear:    (data) => api.post('/testimonios', data),
   aprobar:  (id)   => api.put(`/testimonios/${id}/aprobar`),
   rechazar: (id)   => api.put(`/testimonios/${id}/rechazar`),

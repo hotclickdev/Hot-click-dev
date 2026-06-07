@@ -422,6 +422,7 @@ function ChatPhase({ accent, onPause, onResume, destacados }) {
             whileTap={{ scale: 0.88 }}
             onClick={() => submit()}
             disabled={!input.trim()}
+            aria-label="Enviar consulta"
             className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-150"
             style={{
               backgroundColor: input.trim() ? accent : 'transparent',

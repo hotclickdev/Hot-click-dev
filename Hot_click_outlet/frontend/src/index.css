@@ -3,6 +3,20 @@
 /* Class-based dark mode variant for Tailwind v4 */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * Fallback font con métricas ajustadas a Inter para evitar CLS por font-swap.
+ * Valores calculados para que Arial tenga las mismas dimensiones visuales que Inter.
+ * Fuente: https://screenspan.net/fallback
+ */
+@font-face {
+  font-family: 'Inter-fallback';
+  src: local('Arial'), local('Helvetica Neue'), local('Helvetica');
+  ascent-override: 90.49%;
+  descent-override: 22.56%;
+  line-gap-override: 0%;
+  size-adjust: 107.06%;
+}
+
 @theme {
   --color-hc-bg: #0a0a0b;
   --color-hc-surface: #111114;
@@ -16,7 +30,7 @@
   --color-hc-danger: #f87171;
   --color-hc-warning: #fbbf24;
 
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Inter', 'Inter-fallback', system-ui, -apple-system, sans-serif;
 
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -303,12 +317,28 @@ html.reduce-motion *::after {
   border: 1px solid transparent;
   position: relative;
   overflow: hidden;
+  /* Solo transform y opacity son compositable por GPU; color/box-shadow/border-color no lo son.
+     El glow hover se maneja con ::after + opacity para evitar non-composited animations. */
   transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease,
-              transform 0.15s ease, box-shadow 0.2s ease;
+              transform 0.15s ease;
   white-space: nowrap;
   text-decoration: none;
   user-select: none;
+  will-change: transform;
 }
+/* Glow hover via pseudo-elemento con opacity (compositable) */
+.hc-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+.hc-btn:hover::after { opacity: 1; }
+/* Shimmer de entrada */
 .hc-btn::before {
   content: '';
   position: absolute;
@@ -348,17 +378,21 @@ html.reduce-motion *::after {
   border-color: var(--hc-accent);
   box-shadow: 0 2px 12px color-mix(in srgb, var(--hc-accent) 28%, transparent);
 }
-.hc-btn-primary:hover {
-  background: var(--hc-accent-hover);
-  border-color: var(--hc-accent-hover);
-  transform: translateY(-2px);
+.hc-btn-primary::after {
+  background: color-mix(in srgb, var(--hc-accent-hover) 100%, transparent);
   box-shadow: 0 6px 28px color-mix(in srgb, var(--hc-accent) 42%, transparent);
+}
+.hc-btn-primary:hover {
+  transform: translateY(-2px);
 }
 
 .hc-btn-ghost {
   background: color-mix(in srgb, var(--hc-accent) 10%, transparent);
   color: var(--hc-accent);
   border-color: color-mix(in srgb, var(--hc-accent) 28%, transparent);
+}
+.hc-btn-ghost::after {
+  background: var(--hc-accent);
 }
 .hc-btn-ghost:hover {
   background: var(--hc-accent);

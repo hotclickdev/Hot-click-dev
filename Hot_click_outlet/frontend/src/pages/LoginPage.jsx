@@ -326,9 +326,11 @@ export default function LoginPage() {
                   <div className="p-6 sm:p-7">
                     <form onSubmit={handleLogin} className="flex flex-col gap-4">
                       <Input label="Correo electrónico" type="email" value={correo}
-                        onChange={e => setCorreo(e.target.value)} placeholder="tu@email.com" required autoFocus />
+                        onChange={e => setCorreo(e.target.value)} placeholder="tu@email.com"
+                        required autoFocus maxLength={150} />
                       <Input label="Contraseña" type="password" value={contrasena}
-                        onChange={e => setContrasena(e.target.value)} placeholder="••••••••" required />
+                        onChange={e => setContrasena(e.target.value)} placeholder="••••••••"
+                        required maxLength={128} />
 
                       <div className="flex justify-end -mt-1">
                         <button type="button" onClick={() => setShowForgot(true)}

@@ -9,6 +9,7 @@ import com.hotclick.security.JwtUtil;
 import com.hotclick.service.NotificacionEmailService;
 import com.hotclick.service.PedidoService;
 import com.hotclick.utils.Constants;
+import com.hotclick.utils.InputSanitizer;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -28,6 +29,7 @@ public class PedidoController {
     @Autowired private JwtUtil                   jwtUtil;
     @Autowired private CompanyScope              companyScope;
     @Autowired private com.hotclick.repository.EmpresaRepository empresaRepository;
+    @Autowired private InputSanitizer            sanitizer;
 
     @PostMapping("/manual")
     @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE') or hasAuthority('SCOPE_write:pedidos')")
@@ -103,7 +105,7 @@ public class PedidoController {
             String estado = body.get("estado");
             if (estado == null || estado.isBlank())
                 return ResponseEntity.badRequest().body(ResponseDTO.error("Estado requerido"));
-            String nota = body.get("nota");
+            String nota = sanitizer.cleanWithLimit(body.get("nota"), 500);
             Pedido existente = pedidoService.buscarPorId(id);
             companyScope.assertCanAccessNullable(existente.getEmpresaId());
             Pedido pedido = pedidoService.cambiarEstado(id, estado, nota);
@@ -120,12 +122,12 @@ public class PedidoController {
             @PathVariable Long id,
             @RequestBody Map<String, String> body) {
         try {
-            String guia = body.get("numeroGuia");
+            String guia = sanitizer.cleanWithLimit(body.get("numeroGuia"), 100);
             if (guia == null || guia.isBlank())
                 return ResponseEntity.badRequest().body(ResponseDTO.error("Número de guía requerido"));
             Pedido existente = pedidoService.buscarPorId(id);
             companyScope.assertCanAccessNullable(existente.getEmpresaId());
-            Pedido pedido = pedidoService.asignarGuia(id, guia.trim());
+            Pedido pedido = pedidoService.asignarGuia(id, guia);
             return ResponseEntity.ok(ResponseDTO.success("Guía asignada y cliente notificado", pedido));
         } catch (com.hotclick.exception.TenantAccessDeniedException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
@@ -139,14 +141,14 @@ public class PedidoController {
             @PathVariable Long id,
             @RequestBody Map<String, Object> body) {
         try {
-            String guia = (String) body.get("guia");
+            String guia = sanitizer.cleanWithLimit((String) body.get("guia"), 100);
             if (guia == null || guia.isBlank())
                 return ResponseEntity.badRequest().body(ResponseDTO.error("Número de guía requerido"));
             Integer costoEnvio = body.get("costoEnvio") != null
                 ? ((Number) body.get("costoEnvio")).intValue() : null;
             Pedido existente = pedidoService.buscarPorId(id);
             companyScope.assertCanAccessNullable(existente.getEmpresaId());
-            Pedido pedido = pedidoService.procesarEnvio(id, guia.trim(), costoEnvio);
+            Pedido pedido = pedidoService.procesarEnvio(id, guia, costoEnvio);
             return ResponseEntity.ok(ResponseDTO.success("Envío procesado y cliente notificado", pedido));
         } catch (com.hotclick.exception.TenantAccessDeniedException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));

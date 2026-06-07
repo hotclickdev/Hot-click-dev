@@ -271,9 +271,42 @@ function GarantiaCard({ g, onReportado }) {
   )
 }
 
+const RATING_LABELS = { 1: 'Muy malo', 2: 'Malo', 3: 'Regular', 4: 'Bueno', 5: 'Excelente' }
+
+function StarPicker({ value, onChange }) {
+  const [hovered, setHovered] = useState(0)
+  const active = hovered || value
+  const STAR_PATH = 'M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z'
+  return (
+    <div className="flex gap-1.5">
+      {[1, 2, 3, 4, 5].map(s => (
+        <button
+          key={s}
+          type="button"
+          onClick={() => onChange(s)}
+          onMouseEnter={() => setHovered(s)}
+          onMouseLeave={() => setHovered(0)}
+          className="transition-transform hover:scale-110 active:scale-95 focus:outline-none"
+          aria-label={`${s} estrella${s !== 1 ? 's' : ''}`}
+        >
+          <svg className={`w-8 h-8 transition-colors duration-100 ${s <= active ? 'text-amber-400' : ''}`}
+            viewBox="0 0 20 20"
+            fill={s <= active ? 'currentColor' : 'none'}
+            stroke="currentColor"
+            strokeWidth={s <= active ? 0 : 1.5}
+            style={{ color: s <= active ? '#fbbf24' : 'var(--hc-border)' }}>
+            <path d={STAR_PATH} />
+          </svg>
+        </button>
+      ))}
+    </div>
+  )
+}
+
 /* ─── TestimonioCard — un producto con form inline ──────── */
 function TestimonioCard({ p, onEnviado }) {
   const [abierto, setAbierto] = useState(false)
+  const [calificacion, setCalificacion] = useState(0)
   const [comentario, setComentario] = useState('')
   const [imagenUrl, setImagenUrl] = useState('')
   const [uploading, setUploading] = useState(false)
@@ -296,10 +329,11 @@ function TestimonioCard({ p, onEnviado }) {
   }
 
   const handleEnviar = async () => {
+    if (!calificacion) { setErr('Seleccioná una calificación de 1 a 5 estrellas.'); return }
     if (!comentario.trim()) { setErr('Escribí tu comentario antes de enviar.'); return }
     setEnviando(true); setErr('')
     try {
-      await testimonioService.crear({ productoId: p.productoId, comentario: comentario.trim(), imagenUrl: imagenUrl || undefined })
+      await testimonioService.crear({ productoId: p.productoId, comentario: comentario.trim(), imagenUrl: imagenUrl || undefined, calificacion })
       setEnviado(true)
       onEnviado?.()
     } catch (e) {
@@ -357,7 +391,23 @@ function TestimonioCard({ p, onEnviado }) {
             className="overflow-hidden">
             <div className="px-4 pb-4 space-y-3"
               style={{ borderTop: '1px solid var(--hc-border)' }}>
+
+              {/* Selector de estrellas */}
               <div className="pt-3">
+                <p className="text-xs font-semibold mb-2" style={{ color: 'var(--hc-muted)' }}>
+                  Calificación <span style={{ color: '#7c3aed' }}>*</span>
+                </p>
+                <div className="flex items-center gap-3">
+                  <StarPicker value={calificacion} onChange={setCalificacion} />
+                  {calificacion > 0 && (
+                    <span className="text-sm font-bold" style={{ color: '#fbbf24' }}>
+                      {RATING_LABELS[calificacion]}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div>
                 <textarea rows={3} placeholder="¿Qué te pareció el producto? Tu experiencia ayuda a otros compradores…"
                   value={comentario} onChange={e => setComentario(e.target.value)}
                   maxLength={500}
@@ -365,6 +415,7 @@ function TestimonioCard({ p, onEnviado }) {
                   style={{ padding: '10px 14px', backgroundColor: 'var(--hc-surface-2)', border: '1.5px solid var(--hc-border)', color: 'var(--hc-text)', outline: 'none' }} />
                 <p className="text-right text-xs mt-1" style={{ color: 'var(--hc-muted)' }}>{comentario.length}/500</p>
               </div>
+
 
               {/* Foto opcional */}
               <div className="flex items-center gap-3">

@@ -2657,3 +2657,87 @@ CREATE INDEX IF NOT EXISTS idx_consentimiento_usuario
     ON hot_click_consentimiento_log_tb (usuario_id);
 CREATE INDEX IF NOT EXISTS idx_consentimiento_tipo_fecha
     ON hot_click_consentimiento_log_tb (tipo, fecha_consentimiento);
+
+-- V57: Agrega campo calificacion (1-5 estrellas) a testimonios
+ALTER TABLE hot_click_testimonio_tb
+  ADD COLUMN IF NOT EXISTS calificacion INTEGER,
+  ADD CONSTRAINT IF NOT EXISTS chk_testimonio_calificacion CHECK (calificacion BETWEEN 1 AND 5);
+
+-- ============================================================
+-- V58: Row Level Security en tablas con datos sensibles
+--
+-- ESTRATEGIA:
+--   • Spring Boot se conecta como service_role → bypass RLS automático.
+--   • anon / authenticated (Supabase SDK, dashboard, SQL editor con
+--     clave pública) quedan BLOQUEADOS al activar RLS sin políticas
+--     permisivas para esos roles.
+--   • PgBouncer transaction mode: NO se usa set_config(). Las políticas
+--     se basan únicamente en el rol PostgreSQL activo (current_user).
+-- ============================================================
+
+ALTER TABLE hot_click_usuario_tb            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hot_click_pedido_tb             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hot_click_comprobante_sinpe_tb  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hot_click_security_audit_log_tb ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hot_click_security_alert_tb     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hot_click_auditoria_admin_tb    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hot_click_refresh_token_tb      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hot_click_api_key_tb            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hot_click_billing_subscription_tb ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hot_click_ai_copilot_history_tb ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY rls_usuario_service_only
+    ON hot_click_usuario_tb
+    USING (current_user = 'postgres' OR pg_has_role(current_user, 'service_role', 'MEMBER'));
+
+CREATE POLICY rls_pedido_service_only
+    ON hot_click_pedido_tb
+    USING (current_user = 'postgres' OR pg_has_role(current_user, 'service_role', 'MEMBER'));
+
+CREATE POLICY rls_comprobante_service_only
+    ON hot_click_comprobante_sinpe_tb
+    USING (current_user = 'postgres' OR pg_has_role(current_user, 'service_role', 'MEMBER'));
+
+CREATE POLICY rls_sec_audit_service_only
+    ON hot_click_security_audit_log_tb
+    USING (current_user = 'postgres' OR pg_has_role(current_user, 'service_role', 'MEMBER'));
+
+CREATE POLICY rls_sec_alert_service_only
+    ON hot_click_security_alert_tb
+    USING (current_user = 'postgres' OR pg_has_role(current_user, 'service_role', 'MEMBER'));
+
+CREATE POLICY rls_auditoria_service_only
+    ON hot_click_auditoria_admin_tb
+    USING (current_user = 'postgres' OR pg_has_role(current_user, 'service_role', 'MEMBER'));
+
+CREATE POLICY rls_refresh_token_service_only
+    ON hot_click_refresh_token_tb
+    USING (current_user = 'postgres' OR pg_has_role(current_user, 'service_role', 'MEMBER'));
+
+CREATE POLICY rls_api_key_service_only
+    ON hot_click_api_key_tb
+    USING (current_user = 'postgres' OR pg_has_role(current_user, 'service_role', 'MEMBER'));
+
+CREATE POLICY rls_billing_service_only
+    ON hot_click_billing_subscription_tb
+    USING (current_user = 'postgres' OR pg_has_role(current_user, 'service_role', 'MEMBER'));
+
+CREATE POLICY rls_ai_history_service_only
+    ON hot_click_ai_copilot_history_tb
+    USING (current_user = 'postgres' OR pg_has_role(current_user, 'service_role', 'MEMBER'));
+
+-- V59: Ajusta DEFAULT descuento_porcentaje de 17 a 13 en cupones
+ALTER TABLE hot_click_cupon_tb
+  ALTER COLUMN descuento_porcentaje SET DEFAULT 13;
+
+-- ============================================================
+-- V60: Control de uso en cupones — max_usos + usos_actuales
+-- ============================================================
+ALTER TABLE hot_click_cupon_tb
+  ADD COLUMN IF NOT EXISTS max_usos      INTEGER NOT NULL DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS usos_actuales INTEGER NOT NULL DEFAULT 0;
+
+UPDATE hot_click_cupon_tb SET usos_actuales = max_usos WHERE usado = true;
+
+ALTER TABLE hot_click_cupon_tb
+  ADD CONSTRAINT chk_cupon_usos CHECK (usos_actuales <= max_usos);

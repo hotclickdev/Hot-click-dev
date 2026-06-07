@@ -43,7 +43,8 @@ import java.util.*;
 public class AiCopilotService {
 
     private static final Logger log = LoggerFactory.getLogger(AiCopilotService.class);
-    private static final int    HISTORY_TURNS = 8; // last N messages sent as context
+    private static final int    HISTORY_TURNS      = 8;      // last N messages sent as context — bounds input tokens
+    private static final int    MAX_RESPONSE_CHARS = 8_000;  // hard cap — stops runaway stream output loops
     private static final HttpClient HTTP = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(15))
         .build();
@@ -163,6 +164,8 @@ public class AiCopilotService {
                         if ("content_block_delta".equals(type)) {
                             String text = node.path("delta").path("text").asText();
                             if (!text.isEmpty()) {
+                                // Hard cap: kill stream if response grows unreasonably large (loop guard)
+                                if (fullText.length() >= MAX_RESPONSE_CHARS) return;
                                 fullText.append(text);
                                 emitter.send(SseEmitter.event().name("delta")
                                     .data(objectMapper.writeValueAsString(Map.of("text", text))));
@@ -264,7 +267,10 @@ public class AiCopilotService {
     private List<Map<String, Object>> buildMessages(Long empresaId, String userMessage) {
         List<Map<String, Object>> history = aiMensajeRepository
             .findByEmpresaIdOrderByFechaCreacionAsc(empresaId, PageRequest.of(0, HISTORY_TURNS))
-            .stream().map(m -> Map.<String, Object>of("role", m.getRol(), "content", m.getContenido()))
+            .stream().map(m -> {
+                String content = m.getContenido();
+                return Map.<String, Object>of("role", m.getRol(), "content", content != null ? content : "");
+            })
             .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
 
         history.add(Map.of("role", "user", "content", userMessage));
@@ -279,6 +285,9 @@ public class AiCopilotService {
             body.put("stream",     true);
             body.put("system",     systemPrompt);
             body.put("messages",   messages);
+            // Stop sequences prevent prompt injection: if a reply tries to impersonate
+            // "Human:" or "User:", Claude stops immediately instead of continuing the loop.
+            body.put("stop_sequences", List.of("\n\nHuman:", "\n\nUser:", "Human:", "User:"));
             return objectMapper.writeValueAsString(body);
         } catch (Exception e) {
             throw new RuntimeException("Error building AI request", e);

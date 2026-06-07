@@ -39,6 +39,7 @@ function buildSidebarLinks(t, userRole) {
       { to: '/admin/reportes',     label: t('admin.sidebar.reportes'),   icon: 'bar'      },
       { section: 'Marketing' },
       { to: '/admin/ofertas',       label: 'Ofertas',                     icon: 'tag'      },
+      { to: '/admin/cupones',       label: 'Descuentos',                  icon: 'coupon'   },
       { to: '/admin/nuevo-producto', label: t('admin.sidebar.crearIA'),  icon: 'camera'   },
       { to: '/admin/publicaciones',  label: t('admin.sidebar.publicarFB'), icon: 'share'  },
       { to: '/admin/blog',          label: 'Blog',                        icon: 'blog'     },
@@ -91,6 +92,7 @@ function buildSidebarLinks(t, userRole) {
       { to: '/admin/reportes',       label: t('admin.sidebar.reportes'),   icon: 'bar'      },
       { section: 'Marketing' },
       { to: '/admin/ofertas',        label: 'Ofertas',                     icon: 'tag'      },
+      { to: '/admin/cupones',        label: 'Descuentos',                  icon: 'coupon'   },
       { to: '/admin/nuevo-producto', label: t('admin.sidebar.crearIA'),    icon: 'camera'   },
       { to: '/admin/publicaciones',  label: t('admin.sidebar.publicarFB'), icon: 'share'    },
       { to: '/admin/blog',           label: 'Blog',                        icon: 'blog'     },
@@ -681,6 +683,7 @@ function SidebarIcon({ name }) {
     case 'wrench':    return <svg className={ic} {...s}><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
     case 'blog':      return <svg className={ic} {...s}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
     case 'gift':      return <svg className={ic} {...s}><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>
+    case 'coupon':    return <svg className={ic} {...s}><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 12h4M18 12h4" strokeDasharray="2 2"/><circle cx="12" cy="12" r="3"/></svg>
     case 'brand':     return <svg className={ic} {...s}><circle cx="12" cy="12" r="10"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/></svg>
     case 'plugin':    return <svg className={ic} {...s}><path d="M20.24 12.24a6 6 0 00-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>
     case 'key':       return <svg className={ic} {...s}><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>

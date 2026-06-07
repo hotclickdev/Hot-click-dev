@@ -103,7 +103,7 @@
       "position": [1340, 380],
       "parameters": {
         "method": "GET",
-        "url": "={{ $env.APP_URL ?? 'https://hotclick.cr' }}/api/productos?page=0&size=3&search={{ encodeURIComponent($('Extraer Datos del Mensaje').item.json.messageText.substring(0, 50)) }}"
+        "url": "={{ $env.APP_URL ?? 'https://hotclick.lat' }}/api/productos?page=0&size=3&search={{ encodeURIComponent($('Extraer Datos del Mensaje').item.json.messageText.substring(0, 50)) }}"
       }
     },
     {

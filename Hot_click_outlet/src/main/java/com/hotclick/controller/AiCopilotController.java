@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.security.RateLimiter;
 import com.hotclick.security.TenantContext;
 import com.hotclick.service.AiCopilotService;
 import com.hotclick.service.AiQuotaService;
@@ -19,28 +20,45 @@ import java.util.concurrent.Executor;
 @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN_IT','ADMIN_CLIENTE')")
 public class AiCopilotController {
 
+    // Per-empresa burst limit: 10 calls per 5 minutes.
+    // Prevents a single tenant from flooding the AI even within monthly quota.
+    private static final int  BURST_MAX     = 10;
+    private static final int  BURST_WINDOW  = 300; // 5 min
+    private static final int  MAX_MSG_CHARS = 2_000;
+
     @Autowired private AiCopilotService aiCopilotService;
     @Autowired private AiQuotaService   aiQuotaService;
+    @Autowired private RateLimiter      rateLimiter;
     @Autowired @Qualifier("sseExecutor") private Executor sseExecutor;
 
     /** SSE streaming chat endpoint. */
     @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter chat(@RequestBody Map<String, String> body) {
         String message = body.getOrDefault("message", "").trim();
+        SseEmitter emitter = new SseEmitter(120_000L);
+
         if (message.isBlank()) {
-            SseEmitter emitter = new SseEmitter(0L);
-            try {
-                emitter.send(SseEmitter.event().name("error").data("{\"error\":\"Mensaje vacío\"}"));
-                emitter.complete();
-            } catch (Exception ignored) {}
-            return emitter;
+            return errorEmitter(emitter, "Mensaje vacío");
         }
 
-        SseEmitter emitter = new SseEmitter(120_000L); // 2 min timeout
+        // Truncate oversized messages rather than reject — preserves UX,
+        // prevents token bombs from malformed or automated clients.
+        if (message.length() > MAX_MSG_CHARS) {
+            message = message.substring(0, MAX_MSG_CHARS);
+        }
+
         Long empresaId = TenantContext.get();
-        emitter.onCompletion(() -> emitter.complete());
-        emitter.onTimeout(() -> emitter.complete());
-        sseExecutor.execute(() -> aiCopilotService.chatStream(empresaId, message, emitter));
+
+        // Per-empresa burst guard (independent of monthly quota)
+        String burstKey = "empresa:" + empresaId + ":ai:burst";
+        if (!rateLimiter.tryAcquire(burstKey, BURST_MAX, BURST_WINDOW)) {
+            return errorEmitter(emitter, "Demasiadas consultas al AI en poco tiempo. Esperá un momento.");
+        }
+
+        final String finalMessage = message;
+        emitter.onCompletion(emitter::complete);
+        emitter.onTimeout(emitter::complete);
+        sseExecutor.execute(() -> aiCopilotService.chatStream(empresaId, finalMessage, emitter));
         return emitter;
     }
 
@@ -62,5 +80,14 @@ public class AiCopilotController {
     public ResponseEntity<?> limpiar() {
         aiCopilotService.limpiarHistorial(TenantContext.get());
         return ResponseEntity.ok(Map.of("ok", true));
+    }
+
+    private SseEmitter errorEmitter(SseEmitter emitter, String msg) {
+        try {
+            emitter.send(SseEmitter.event().name("error")
+                .data("{\"error\":\"" + msg + "\"}"));
+            emitter.complete();
+        } catch (Exception ignored) {}
+        return emitter;
     }
 }

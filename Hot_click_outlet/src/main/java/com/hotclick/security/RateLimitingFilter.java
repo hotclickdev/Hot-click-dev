@@ -9,27 +9,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.lang.NonNull;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 /**
- * Rate limiter distribuido: estado compartido en PostgreSQL.
- * Funciona correctamente en multi-pod (todos los pods ven el mismo contador).
+ * Distributed IP-level rate limiter (fixed-window, per POST).
+ * State is stored in hot_click_rate_limit_tb — safe for multi-pod.
  *
- * Algoritmo: fixed-window counter con UPSERT atómico.
- * La PRIMARY KEY de hot_click_rate_limit_tb garantiza atomicidad del check-and-increment.
- * Limpieza nocturna: DataRetentionScheduler.limpiarRateLimitExpirados().
+ * Fail-open: if DB fails the request passes. Auth endpoints have account
+ * lockout as a second layer (UsuarioService.incrementarIntentosFallidos).
  *
- * Fail-open: si la BD falla, la request pasa (disponibilidad > rate limiting).
- * Para endpoints críticos de auth esto es aceptable porque el account lockout
- * (UsuarioService.incrementarIntentosFallidos) es una segunda capa de defensa.
- *
- * Límites (POST, per IP):
+ * Limits (POST, per IP):
+ *   Auth
+ *   ────────────────────────────────────────────
  *   /api/auth/login              → 10 / 60s
  *   /api/auth/forgot-password    →  5 / 60s
  *   /api/auth/2fa/verify         →  5 / 60s
@@ -40,22 +36,31 @@ import java.util.Map;
  *   /api/auth/send-verification  →  5 / 60s
  *   /api/auth/refresh            → 30 / 60s
  *   /api/auth/change-password    →  5 / 300s
+ *
+ *   General
+ *   ────────────────────────────────────────────
  *   /api/contacto                →  5 / 60s
+ *   /api/pedidos                 → 15 / 60s
+ *   /api/payment/checkout        →  3 / 60s
+ *
+ *   AI (IP-level; per-empresa burst in AiCopilotController)
+ *   ────────────────────────────────────────────
  *   /api/public/chat             → 10 / 60s
+ *   /api/admin/ai/chat           →  5 / 60s
  */
 public class RateLimitingFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(RateLimitingFilter.class);
 
-    @Autowired
-    private SecurityAuditService auditService;
-
-    @Autowired
-    private JdbcTemplate jdbc;
+    @Autowired private SecurityAuditService auditService;
+    @Autowired private RateLimiter          rateLimiter;
 
     private record Limit(int maxRequests, int windowSeconds) {}
+    private record PrefixLimit(String prefix, int maxRequests, int windowSeconds) {}
 
+    // Exact-path limits (POST only)
     private static final Map<String, Limit> LIMITS = Map.ofEntries(
+        // Auth
         Map.entry("/api/auth/login",              new Limit(10,   60)),
         Map.entry("/api/auth/forgot-password",    new Limit(5,    60)),
         Map.entry("/api/auth/2fa/verify",         new Limit(5,    60)),
@@ -66,74 +71,58 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         Map.entry("/api/auth/send-verification",  new Limit(5,    60)),
         Map.entry("/api/auth/refresh",            new Limit(30,   60)),
         Map.entry("/api/auth/change-password",    new Limit(5,   300)),
+        // General
         Map.entry("/api/contacto",                new Limit(5,    60)),
-        Map.entry("/api/public/chat",             new Limit(10,   60))
+        Map.entry("/api/pedidos",                 new Limit(15,   60)),
+        Map.entry("/api/payment/checkout",        new Limit(3,    60)),
+        // AI — IP level (per-empresa burst handled in controller)
+        Map.entry("/api/public/chat",             new Limit(10,   60)),
+        Map.entry("/api/admin/ai/chat",           new Limit(5,    60))
     );
 
-    // UPSERT atómico: inserta un nuevo bucket o incrementa el existente dentro de la ventana.
-    // Si la ventana expiró (window_start + windowSeconds <= now) reinicia count a 1.
-    // RETURNING count devuelve el valor post-update para comparar con max.
-    private static final String UPSERT_SQL = """
-        INSERT INTO hot_click_rate_limit_tb (bucket_key, count, window_start, expires_at)
-        VALUES (?, 1, ?, ?)
-        ON CONFLICT (bucket_key) DO UPDATE SET
-          count        = CASE
-                           WHEN hot_click_rate_limit_tb.window_start + ? <= ?
-                           THEN 1
-                           ELSE hot_click_rate_limit_tb.count + 1
-                         END,
-          window_start = CASE
-                           WHEN hot_click_rate_limit_tb.window_start + ? <= ?
-                           THEN ?
-                           ELSE hot_click_rate_limit_tb.window_start
-                         END,
-          expires_at   = ?
-        RETURNING count
-        """;
+    // Prefix-based limits for paths with variables (e.g. /api/pedidos/123/notificar).
+    // Matched in order — first prefix wins. Keep this list short.
+    private static final List<PrefixLimit> PREFIX_LIMITS = List.of(
+        // Prevent admins from accidentally spamming customers with email notifications.
+        new PrefixLimit("/api/pedidos/", 5, 60)   // 5 notificar calls/min per IP
+    );
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain chain) throws ServletException, IOException {
-        String path = request.getServletPath();
-        Limit limit = LIMITS.get(path);
+        String path   = request.getServletPath();
+        String method = request.getMethod();
 
-        if (limit != null && "POST".equalsIgnoreCase(request.getMethod())) {
-            String ip  = request.getRemoteAddr();
-            String key = ip + ":" + path;
+        if ("POST".equalsIgnoreCase(method)) {
+            String ip    = request.getRemoteAddr();
+            Limit  limit = LIMITS.get(path);
 
-            if (!tryAcquireDb(key, limit.maxRequests(), limit.windowSeconds())) {
-                log.warn("[RATE-LIMIT] ip={} path={}", ip, path);
-                try {
-                    auditService.logRateLimitTriggered(ip, path);
-                } catch (Exception ignored) {}
+            // Exact-path check
+            if (limit == null) {
+                // Prefix check — only for POST paths with ID segments (e.g. /notificar)
+                for (PrefixLimit pl : PREFIX_LIMITS) {
+                    if (path.startsWith(pl.prefix()) && path.endsWith("/notificar")) {
+                        limit = new Limit(pl.maxRequests(), pl.windowSeconds());
+                        break;
+                    }
+                }
+            }
 
-                response.setStatus(429);
-                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                response.getWriter().write(
-                    "{\"success\":false,\"message\":\"Demasiados intentos. Esperá un momento antes de volver a intentar.\"}");
-                return;
+            if (limit != null) {
+                String key = "ip:" + ip + ":" + path;
+                if (!rateLimiter.tryAcquire(key, limit.maxRequests(), limit.windowSeconds())) {
+                    log.warn("[RATE-LIMIT] ip={} path={}", ip, path);
+                    try { auditService.logRateLimitTriggered(ip, path); } catch (Exception ignored) {}
+                    response.setStatus(429);
+                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                    response.getWriter().write(
+                        "{\"success\":false,\"message\":\"Demasiados intentos. Esperá un momento antes de volver a intentar.\"}");
+                    return;
+                }
             }
         }
 
         chain.doFilter(request, response);
-    }
-
-    private boolean tryAcquireDb(String key, int max, int windowSeconds) {
-        long now     = Instant.now().getEpochSecond();
-        long expires = now + windowSeconds;
-        try {
-            Integer count = jdbc.queryForObject(UPSERT_SQL, Integer.class,
-                key, now, expires,           // INSERT: bucket_key, window_start, expires_at
-                (long) windowSeconds, now,   // CASE count:        window_start + window <= now
-                (long) windowSeconds, now,   // CASE window_start: window_start + window <= now
-                now,                         // new window_start when resetting
-                expires                      // new expires_at
-            );
-            return count != null && count <= max;
-        } catch (Exception e) {
-            log.warn("[RATE-LIMIT] DB unavailable, fail-open: {}", e.getMessage());
-            return true;
-        }
     }
 }

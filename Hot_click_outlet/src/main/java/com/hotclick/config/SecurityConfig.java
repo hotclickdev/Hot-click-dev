@@ -1,6 +1,7 @@
 package com.hotclick.config;
 
 import com.hotclick.security.ApiKeyAuthFilter;
+import com.hotclick.security.InternalSecretFilter;
 import com.hotclick.security.JwtRequestFilter;
 import com.hotclick.security.RateLimitingFilter;
 import com.hotclick.security.TenantFilter;
@@ -61,6 +62,9 @@ public class SecurityConfig {
     ApiKeyAuthFilter apiKeyAuthFilter() { return new ApiKeyAuthFilter(); }
 
     @Bean
+    InternalSecretFilter internalSecretFilter() { return new InternalSecretFilter(); }
+
+    @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
@@ -87,7 +91,8 @@ public class SecurityConfig {
             JwtRequestFilter jwtRequestFilter,
             RateLimitingFilter rateLimitingFilter,
             TenantFilter tenantFilter,
-            ApiKeyAuthFilter apiKeyAuthFilter) throws Exception {
+            ApiKeyAuthFilter apiKeyAuthFilter,
+            InternalSecretFilter internalSecretFilter) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
@@ -275,7 +280,8 @@ public class SecurityConfig {
             .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
         );
         // Orden garantizado usando filtros estándar de Spring Security como referencia.
-        // RateLimiting(~500) → ApiKey(~600) → Jwt(~700) → UPAF(800, no-op) → Tenant(~900)
+        // Internal(~400) → RateLimiting(~500) → ApiKey(~600) → Jwt(~700) → UPAF(800, no-op) → Tenant(~900)
+        http.addFilterBefore(internalSecretFilter, CsrfFilter.class);
         http.addFilterBefore(rateLimitingFilter, CsrfFilter.class);
         http.addFilterBefore(apiKeyAuthFilter, LogoutFilter.class);
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);

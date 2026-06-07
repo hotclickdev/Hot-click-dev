@@ -2,6 +2,7 @@ package com.hotclick.controller;
 
 import com.hotclick.dto.AuthResponse;
 import com.hotclick.dto.JwtRequest;
+import com.hotclick.dto.RegisterRequest;
 import com.hotclick.dto.RegistroEmpresaDTO;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.dto.UpgradeEmprendedorDTO;
@@ -25,6 +26,7 @@ import com.hotclick.service.TwoFactorService;
 import com.hotclick.service.UsuarioService;
 import com.hotclick.utils.Constants;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,9 +70,13 @@ public class AuthController {
     // ── Registro ──────────────────────────────────────────────────────────────
 
     @PostMapping("/register")
-    public ResponseEntity<ResponseDTO> register(@RequestBody Usuario usuario) {
+    public ResponseEntity<ResponseDTO> register(@Valid @RequestBody RegisterRequest req) {
         try {
-            usuario.setContrasenaHash(passwordEncoder.encode(usuario.getContrasenaHash()));
+            Usuario usuario = new Usuario();
+            usuario.setNombre(req.getNombre().trim());
+            usuario.setCorreo(req.getCorreo().trim().toLowerCase());
+            usuario.setContrasenaHash(passwordEncoder.encode(req.getContrasena()));
+            if (req.getTelefono() != null) usuario.setTelefono(req.getTelefono().trim());
             Usuario nuevo = usuarioService.registrarSolicitud(usuario);
             return ResponseEntity.ok(ResponseDTO.success(
                 "Solicitud enviada. Un administrador revisará y activará tu cuenta pronto.", nuevo));
@@ -360,7 +366,7 @@ public class AuthController {
     // ── Login ─────────────────────────────────────────────────────────────────
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody JwtRequest request, HttpServletRequest httpRequest) {
+    public ResponseEntity<?> login(@Valid @RequestBody JwtRequest request, HttpServletRequest httpRequest) {
         Optional<Usuario> usuarioOpt = usuarioService.buscarPorCorreo(request.getCorreo());
         if (usuarioOpt.isEmpty()) {
             // Anti-enumeration: same response as wrong password

@@ -111,7 +111,7 @@ function EmprendimientoForm({ onVolver }) {
   const handleSubmit = async (e) => {
     e.preventDefault(); setError('')
     if (!form.correoAdmin.trim()) { setError('El correo es requerido'); return }
-    if (form.passwordAdmin.length < 6) { setError('La contraseña debe tener al menos 6 caracteres'); return }
+    if (form.passwordAdmin.length < 8) { setError('La contraseña debe tener al menos 8 caracteres'); return }
     setLoading(true)
     registrarConsentimiento('REGISTRO')
     try {
@@ -217,11 +217,11 @@ function EmprendimientoForm({ onVolver }) {
                 exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }}
                 onSubmit={handleNext} className="space-y-4">
                 <Input label="Nombre del negocio *" placeholder="Ej: Mi Tienda Tica"
-                  value={form.nombreEmpresa} onChange={set('nombreEmpresa')} autoFocus required />
+                  value={form.nombreEmpresa} onChange={set('nombreEmpresa')} autoFocus required maxLength={150} />
                 <Input label="Correo del negocio" type="email" placeholder="contacto@minegocio.com"
-                  value={form.correoEmpresa} onChange={set('correoEmpresa')} hint="Opcional" />
+                  value={form.correoEmpresa} onChange={set('correoEmpresa')} hint="Opcional" maxLength={150} />
                 <Input label="Teléfono del negocio" type="tel" placeholder="+506 8888-8888"
-                  value={form.telefonoEmpresa} onChange={set('telefonoEmpresa')} />
+                  value={form.telefonoEmpresa} onChange={set('telefonoEmpresa')} maxLength={20} />
                 {error && <ErrMsg>{error}</ErrMsg>}
                 <button type="submit" className="hc-btn hc-btn-primary hc-btn-lg w-full"
                   style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', borderColor: '#f97316', boxShadow: '0 4px 20px rgba(249,115,22,0.3)' }}>
@@ -239,10 +239,10 @@ function EmprendimientoForm({ onVolver }) {
                     Negocio: <strong style={{ color: 'var(--hc-text)' }}>{form.nombreEmpresa}</strong>
                   </span>
                 </div>
-                <Input label="Tu nombre completo" placeholder="Ana García" value={form.nombreAdmin} onChange={set('nombreAdmin')} autoFocus />
-                <Input label="Tu correo *" type="email" placeholder="ana@miempresa.com" value={form.correoAdmin} onChange={set('correoAdmin')} required />
-                <Input label="Contraseña *" type="password" placeholder="Mínimo 6 caracteres" value={form.passwordAdmin} onChange={set('passwordAdmin')} required minLength={6} />
-                <Input label="Teléfono personal" type="tel" placeholder="+506 8888-8888" value={form.telefonoAdmin} onChange={set('telefonoAdmin')} />
+                <Input label="Tu nombre completo" placeholder="Ana García" value={form.nombreAdmin} onChange={set('nombreAdmin')} autoFocus maxLength={100} />
+                <Input label="Tu correo *" type="email" placeholder="ana@miempresa.com" value={form.correoAdmin} onChange={set('correoAdmin')} required maxLength={150} />
+                <Input label="Contraseña *" type="password" placeholder="Mínimo 8 caracteres" value={form.passwordAdmin} onChange={set('passwordAdmin')} required minLength={8} maxLength={128} />
+                <Input label="Teléfono personal" type="tel" placeholder="+506 8888-8888" value={form.telefonoAdmin} onChange={set('telefonoAdmin')} maxLength={20} />
                 {error && <ErrMsg>{error}</ErrMsg>}
 
                 {/* Consentimiento informado — Ley 8968 */}
@@ -625,21 +625,21 @@ export default function RegisterPage() {
                     <div className="p-5 sm:p-7">
                       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                         <div className="grid grid-cols-2 gap-3">
-                          <Input label={`${t('register.name')} *`} value={form.nombre} onChange={set('nombre')} required placeholder="Juan" />
-                          <Input label={`${t('register.lastName')} *`} value={form.apellidoPaterno} onChange={set('apellidoPaterno')} required placeholder="Pérez" />
+                          <Input label={`${t('register.name')} *`} value={form.nombre} onChange={set('nombre')} required placeholder="Juan" maxLength={100} />
+                          <Input label={`${t('register.lastName')} *`} value={form.apellidoPaterno} onChange={set('apellidoPaterno')} required placeholder="Pérez" maxLength={100} />
                         </div>
-                        <Input label={t('register.motherLastName')} value={form.apellidoMaterno} onChange={set('apellidoMaterno')} placeholder={t('common.optional')} />
-                        <Input label={`${t('register.email')} *`} type="email" value={form.correo} onChange={set('correo')} required placeholder="tu@email.com" />
+                        <Input label={t('register.motherLastName')} value={form.apellidoMaterno} onChange={set('apellidoMaterno')} placeholder={t('common.optional')} maxLength={100} />
+                        <Input label={`${t('register.email')} *`} type="email" value={form.correo} onChange={set('correo')} required placeholder="tu@email.com" maxLength={150} />
                         <div className="grid grid-cols-2 gap-3">
                           <div className="flex flex-col gap-1.5">
                             <label className="hc-input-label">{t('register.phone')}</label>
                             <PhoneField value={form.telefono} onChange={(val) => setForm(f => ({ ...f, telefono: val }))} required />
                           </div>
-                          <Input label={`${t('register.identification')} *`} value={form.identificacion} onChange={set('identificacion')} required placeholder="1-2345-6789" />
+                          <Input label={`${t('register.identification')} *`} value={form.identificacion} onChange={set('identificacion')} required placeholder="1-2345-6789" maxLength={20} />
                         </div>
                         <Input label={`${t('register.password')} *`} type="password"
                           value={form.contrasenaHash} onChange={set('contrasenaHash')}
-                          required minLength={6} placeholder={t('register.minChars')} hint={t('register.minChars')} />
+                          required minLength={8} maxLength={128} placeholder="Mínimo 8 caracteres" hint="Mínimo 8 caracteres" />
                         {error && (
                           <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
                             className="text-sm rounded-xl px-3 py-2.5"

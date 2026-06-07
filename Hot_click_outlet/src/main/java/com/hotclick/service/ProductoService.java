@@ -9,6 +9,7 @@ import com.hotclick.repository.MarcaRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.utils.Constants;
+import com.hotclick.utils.InputSanitizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -30,6 +31,7 @@ public class ProductoService {
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private MarcaRepository marcaRepository;
     @Autowired private CacheManager cacheManager;
+    @Autowired private InputSanitizer sanitizer;
 
     @SuppressWarnings("null")
     private void evictDashboard(Long empresaId) {
@@ -106,12 +108,12 @@ public class ProductoService {
     }
 
     private void mapDtoToProducto(ProductoRequestDTO dto, Producto p) {
-        if (dto.getNombreProducto()     != null) p.setNombreProducto(trunc(dto.getNombreProducto(), 200));
-        if (dto.getDescripcionCorta()   != null) p.setDescripcionCorta(trunc(dto.getDescripcionCorta(), 255));
-        if (dto.getTituloProducto()     != null) p.setTituloProducto(trunc(dto.getTituloProducto(), 255));
-        if (dto.getMarcaTexto()         != null) p.setMarcaTexto(trunc(dto.getMarcaTexto(), 100));
-        if (dto.getLinkAmazon()         != null) p.setLinkAmazon(trunc(dto.getLinkAmazon(), 500));
-        if (dto.getImagenPrincipalUrl() != null) p.setImagenPrincipalUrl(trunc(dto.getImagenPrincipalUrl(), 500));
+        if (dto.getNombreProducto()     != null) p.setNombreProducto(sanitizer.cleanWithLimit(dto.getNombreProducto(), 200));
+        if (dto.getDescripcionCorta()   != null) p.setDescripcionCorta(sanitizer.cleanWithLimit(dto.getDescripcionCorta(), 255));
+        if (dto.getTituloProducto()     != null) p.setTituloProducto(sanitizer.cleanWithLimit(dto.getTituloProducto(), 255));
+        if (dto.getMarcaTexto()         != null) p.setMarcaTexto(sanitizer.cleanWithLimit(dto.getMarcaTexto(), 100));
+        if (dto.getLinkAmazon()         != null) p.setLinkAmazon(sanitizer.cleanWithLimit(dto.getLinkAmazon(), 500));
+        if (dto.getImagenPrincipalUrl() != null) p.setImagenPrincipalUrl(sanitizer.cleanWithLimit(dto.getImagenPrincipalUrl(), 500));
         if (dto.getCondicion()          != null) p.setCondicion(dto.getCondicion());
         if (dto.getPrecioCompra()       != null) p.setPrecioCompra(dto.getPrecioCompra());
         if (dto.getPrecioVenta()        != null) p.setPrecioVenta(dto.getPrecioVenta());
@@ -119,21 +121,22 @@ public class ProductoService {
         if (dto.getStockMinimo()        != null) p.setStockMinimo(dto.getStockMinimo());
         if (dto.getVisibleCatalogo()    != null) p.setVisibleCatalogo(dto.getVisibleCatalogo());
         if (dto.getDestacado()          != null) p.setDestacado(dto.getDestacado());
-        if (dto.getEspecificaciones()   != null) p.setEspecificaciones(trunc(dto.getEspecificaciones(), 5000));
-        if (dto.getComoUsar()           != null) p.setComoUsar(trunc(dto.getComoUsar(), 5000));
-        if (dto.getDescripcionLarga()   != null) p.setDescripcionLarga(trunc(dto.getDescripcionLarga(), 5000));
-        if (dto.getMetaTitle()          != null) p.setMetaTitle(trunc(dto.getMetaTitle(), 70));
-        if (dto.getMetaDescription()    != null) p.setMetaDescription(trunc(dto.getMetaDescription(), 160));
-        if (dto.getMetaKeywords()       != null) p.setMetaKeywords(trunc(dto.getMetaKeywords(), 255));
-        if (dto.getMetaTitleEn()        != null) p.setMetaTitleEn(trunc(dto.getMetaTitleEn(), 70));
-        if (dto.getMetaTitlePt()        != null) p.setMetaTitlePt(trunc(dto.getMetaTitlePt(), 70));
-        if (dto.getMetaTitleFr()        != null) p.setMetaTitleFr(trunc(dto.getMetaTitleFr(), 70));
-        if (dto.getMetaDescriptionEn()  != null) p.setMetaDescriptionEn(trunc(dto.getMetaDescriptionEn(), 160));
-        if (dto.getMetaDescriptionPt()  != null) p.setMetaDescriptionPt(trunc(dto.getMetaDescriptionPt(), 160));
-        if (dto.getMetaDescriptionFr()  != null) p.setMetaDescriptionFr(trunc(dto.getMetaDescriptionFr(), 160));
-        if (dto.getVideoUrl()           != null) p.setVideoUrl(trunc(dto.getVideoUrl(), 500));
-        if (dto.getTalla()              != null) p.setTalla(trunc(dto.getTalla(), 20));
-        if (dto.getTags()               != null) p.setTags(dto.getTags().toLowerCase().trim());
+        // Rich text: permite negrita/lista pero bloquea scripts
+        if (dto.getEspecificaciones()   != null) p.setEspecificaciones(sanitizer.cleanRichText(dto.getEspecificaciones()));
+        if (dto.getComoUsar()           != null) p.setComoUsar(sanitizer.cleanRichText(dto.getComoUsar()));
+        if (dto.getDescripcionLarga()   != null) p.setDescripcionLarga(sanitizer.cleanRichText(dto.getDescripcionLarga()));
+        if (dto.getMetaTitle()          != null) p.setMetaTitle(sanitizer.cleanWithLimit(dto.getMetaTitle(), 70));
+        if (dto.getMetaDescription()    != null) p.setMetaDescription(sanitizer.cleanWithLimit(dto.getMetaDescription(), 160));
+        if (dto.getMetaKeywords()       != null) p.setMetaKeywords(sanitizer.cleanWithLimit(dto.getMetaKeywords(), 255));
+        if (dto.getMetaTitleEn()        != null) p.setMetaTitleEn(sanitizer.cleanWithLimit(dto.getMetaTitleEn(), 70));
+        if (dto.getMetaTitlePt()        != null) p.setMetaTitlePt(sanitizer.cleanWithLimit(dto.getMetaTitlePt(), 70));
+        if (dto.getMetaTitleFr()        != null) p.setMetaTitleFr(sanitizer.cleanWithLimit(dto.getMetaTitleFr(), 70));
+        if (dto.getMetaDescriptionEn()  != null) p.setMetaDescriptionEn(sanitizer.cleanWithLimit(dto.getMetaDescriptionEn(), 160));
+        if (dto.getMetaDescriptionPt()  != null) p.setMetaDescriptionPt(sanitizer.cleanWithLimit(dto.getMetaDescriptionPt(), 160));
+        if (dto.getMetaDescriptionFr()  != null) p.setMetaDescriptionFr(sanitizer.cleanWithLimit(dto.getMetaDescriptionFr(), 160));
+        if (dto.getVideoUrl()           != null) p.setVideoUrl(sanitizer.cleanWithLimit(dto.getVideoUrl(), 500));
+        if (dto.getTalla()              != null) p.setTalla(sanitizer.cleanWithLimit(dto.getTalla(), 20));
+        if (dto.getTags()               != null) p.setTags(sanitizer.cleanWithLimit(dto.getTags().toLowerCase(), 500));
         Long mid = dto.getMarcaId();
         if (mid != null) {
             p.setMarca(marcaRepository.findById(mid)
@@ -182,9 +185,6 @@ public class ProductoService {
         return productoRepository.findByMarcaPublico(marcaId, Constants.ESTADO_ACTIVO, pageable);
     }
 
-    private static String trunc(String s, int max) {
-        return s != null && s.length() > max ? s.substring(0, max) : s;
-    }
 
     @Transactional
     public void eliminarProducto(Long id) {

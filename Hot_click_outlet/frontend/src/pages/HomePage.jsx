@@ -119,6 +119,7 @@ function HeroCarousel({ slides }) {
         <AnimatePresence mode="wait">
           <motion.span
             key={`wm-${current}`}
+            aria-hidden="true"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
@@ -680,60 +681,62 @@ export default function HomePage() {
       {/* Emprendimientos con convenio — marquee */}
       <ConveniosMarquee />
 
-      {/* Marcas — clicables, llevan al catálogo filtrado */}
-      {marcas.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
-          <div className="flex items-center justify-between mb-3 sm:mb-5">
-            <div className="flex items-center gap-2">
-              <span className="w-1 h-4 rounded-full bg-[#4f7cff]" />
-              <h2 className="text-sm font-semibold tracking-wide uppercase text-[#8e8e9a]">{t('home.brands')}</h2>
+      {/* Marcas — sección siempre renderizada para evitar CLS al cargar */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8" style={{ minHeight: '130px' }}>
+        {marcas.length > 0 && (
+          <>
+            <div className="flex items-center justify-between mb-3 sm:mb-5">
+              <div className="flex items-center gap-2">
+                <span className="w-1 h-4 rounded-full bg-[#4f7cff]" />
+                <h2 className="text-sm font-semibold tracking-wide uppercase text-[#8e8e9a]">{t('home.brands')}</h2>
+              </div>
+              <Link to="/productos" className="text-xs text-[#4f7cff] hover:underline">Ver todas</Link>
             </div>
-            <Link to="/productos" className="text-xs text-[#4f7cff] hover:underline">Ver todas</Link>
-          </div>
-          <div className="flex flex-wrap gap-3 sm:gap-4 justify-center">
-            {marcas.map((m) => (
-              <motion.div
-                key={m.id}
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.35 }}
-                whileHover={{ y: -3 }}
-              >
-                <Link
-                  to={`/productos?marcas=${m.id}`}
-                  className="flex flex-col items-center gap-2 px-5 py-4 rounded-2xl border transition-all group"
-                  style={{ background: 'var(--hc-surface)', borderColor: 'var(--hc-border)', minWidth: '90px' }}
+            <div className="flex flex-wrap gap-3 sm:gap-4 justify-center">
+              {marcas.map((m) => (
+                <motion.div
+                  key={m.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.35 }}
+                  whileHover={{ y: -3 }}
                 >
-                  <div className="w-14 h-14 rounded-xl border flex items-center justify-center overflow-hidden transition-colors"
-                    style={{ background: 'color-mix(in srgb, var(--hc-text) 4%, transparent)', borderColor: 'var(--hc-border)' }}>
-                    {m.logoUrl ? (
-                      <img
-                        src={getOptimizedUrl(m.logoUrl, { width: 56, quality: 80 })}
-                        alt={m.nombreMarca}
-                        className="w-full h-full object-contain p-1.5"
-                        loading="lazy" decoding="async" width={56} height={56}
-                      />
-                    ) : (
-                      <span className="text-2xl" style={{ opacity: 0.4 }}>🏷</span>
-                    )}
-                  </div>
-                  <span className="text-xs font-semibold text-center leading-tight group-hover:opacity-70 transition-opacity"
-                    style={{ color: 'var(--hc-text)' }}>
-                    {m.nombreMarca}
-                  </span>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-      )}
+                  <Link
+                    to={`/productos?marcas=${m.id}`}
+                    className="flex flex-col items-center gap-2 px-5 py-4 rounded-2xl border transition-all group"
+                    style={{ background: 'var(--hc-surface)', borderColor: 'var(--hc-border)', minWidth: '90px' }}
+                  >
+                    <div className="w-14 h-14 rounded-xl border flex items-center justify-center overflow-hidden transition-colors"
+                      style={{ background: 'color-mix(in srgb, var(--hc-text) 4%, transparent)', borderColor: 'var(--hc-border)' }}>
+                      {m.logoUrl ? (
+                        <img
+                          src={getOptimizedUrl(m.logoUrl, { width: 56, quality: 80 })}
+                          alt={m.nombreMarca}
+                          className="w-full h-full object-contain p-1.5"
+                          loading="lazy" decoding="async" width={56} height={56}
+                        />
+                      ) : (
+                        <span className="text-2xl" style={{ opacity: 0.4 }}>🏷</span>
+                      )}
+                    </div>
+                    <span className="text-xs font-semibold text-center leading-tight group-hover:opacity-70 transition-opacity"
+                      style={{ color: 'var(--hc-text)' }}>
+                      {m.nombreMarca}
+                    </span>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          </>
+        )}
+      </section>
 
       {/* How to buy section */}
       <section id="como-comprar" className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
           className="text-center mb-5 sm:mb-8"
@@ -756,10 +759,10 @@ export default function HomePage() {
             ].map(({ step, icon, title, desc, color, glow, border }, i) => (
               <motion.div
                 key={step}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.1 }}
+                transition={{ duration: 0.4, delay: i * 0.08 }}
                 className="hc-step-card relative flex flex-col items-center text-center p-4 sm:p-6 rounded-2xl bg-[#111114] border border-white/8"
               >
                 <div className={`hc-step-icon w-11 h-11 sm:w-14 sm:h-14 rounded-2xl ${glow} border ${border} flex items-center justify-center mb-3 sm:mb-4 ${color}`}>
@@ -1062,7 +1065,9 @@ function TestimonialsCarousel() {
           </button>
           <div className="flex gap-1.5">
             {TESTIMONIALS.map((_, i) => (
-              <button key={i} onClick={() => setIdx(i)} aria-label={`Ver testimonio ${i + 1}`} className={`w-2.5 h-2.5 rounded-full transition-all ${i === idx ? 'bg-[#4f7cff] w-4' : 'bg-white/20'}`} />
+              <button key={i} onClick={() => setIdx(i)} aria-label={`Ver testimonio ${i + 1}`} className="p-2.5 flex items-center justify-center" style={{ background: 'transparent', border: 'none' }}>
+                <span className={`block rounded-full transition-all ${i === idx ? 'bg-[#4f7cff] w-4 h-2.5' : 'bg-white/20 w-2.5 h-2.5'}`} />
+              </button>
             ))}
           </div>
           <button onClick={next} aria-label={t('common.next')} className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/10 transition-colors">

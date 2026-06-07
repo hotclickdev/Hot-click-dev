@@ -4,6 +4,7 @@ import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.service.UsuarioService;
+import com.hotclick.utils.InputSanitizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,14 +19,10 @@ import java.util.Optional;
 @RequestMapping("/api/usuarios")
 public class UsuarioController {
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
-
-    @Autowired
-    private UsuarioService usuarioService;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    @Autowired private UsuarioRepository usuarioRepository;
+    @Autowired private UsuarioService    usuarioService;
+    @Autowired private PasswordEncoder   passwordEncoder;
+    @Autowired private InputSanitizer    sanitizer;
 
     @GetMapping
     public ResponseDTO listarUsuarios() {
@@ -50,11 +47,11 @@ public class UsuarioController {
         }
         Usuario usuario = opt.get();
 
-        if (datos.containsKey("nombre"))          usuario.setNombre(datos.get("nombre"));
-        if (datos.containsKey("apellidoPaterno")) usuario.setApellidoPaterno(datos.get("apellidoPaterno"));
-        if (datos.containsKey("apellidoMaterno")) usuario.setApellidoMaterno(datos.get("apellidoMaterno"));
-        if (datos.containsKey("telefono"))        usuario.setTelefono(datos.get("telefono"));
-        if (datos.containsKey("telefonoAlterno")) usuario.setTelefonoAlterno(datos.get("telefonoAlterno"));
+        if (datos.containsKey("nombre"))          usuario.setNombre(sanitizer.cleanWithLimit(datos.get("nombre"), 100));
+        if (datos.containsKey("apellidoPaterno")) usuario.setApellidoPaterno(sanitizer.cleanWithLimit(datos.get("apellidoPaterno"), 100));
+        if (datos.containsKey("apellidoMaterno")) usuario.setApellidoMaterno(sanitizer.cleanWithLimit(datos.get("apellidoMaterno"), 100));
+        if (datos.containsKey("telefono"))        usuario.setTelefono(sanitizer.cleanWithLimit(datos.get("telefono"), 20));
+        if (datos.containsKey("telefonoAlterno")) usuario.setTelefonoAlterno(sanitizer.cleanWithLimit(datos.get("telefonoAlterno"), 20));
 
         if (datos.containsKey("nuevaContrasena") && !datos.get("nuevaContrasena").isBlank()) {
             String actual = datos.getOrDefault("contrasenaActual", "");

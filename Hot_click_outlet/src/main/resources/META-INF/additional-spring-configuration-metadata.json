@@ -39,6 +39,11 @@
       "name": "whatsapp.token",
       "type": "java.lang.String",
       "description": "Meta WhatsApp Cloud API — Access Token permanente. Vacío = modo SIMULADO."
+    },
+    {
+      "name": "internal.secret",
+      "type": "java.lang.String",
+      "description": "Secret requerido en header X-Internal-Secret para endpoints server-only (reset-datos, etc.). Configurar como variable de entorno INTERNAL_SECRET. Si está vacío, los endpoints protegidos quedan bloqueados."
     }
   ]
 }

@@ -13,7 +13,7 @@ import java.util.Optional;
 @Service
 public class CuponService {
 
-    private static final String CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    private static final String CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ";
     private static final SecureRandom RNG = new SecureRandom();
 
     @Autowired private CuponRepository cuponRepository;
@@ -31,7 +31,7 @@ public class CuponService {
         Cupon cupon = new Cupon();
         cupon.setCodigo(codigo);
         cupon.setEmail(emailLower);
-        cupon.setDescuentoPorcentaje(17);
+        cupon.setDescuentoPorcentaje(13);
         cupon.setUsado(false);
         cupon.setFechaCreacion(LocalDateTime.now());
         cuponRepository.save(cupon);
@@ -43,24 +43,33 @@ public class CuponService {
 
     public Optional<Cupon> validarCodigo(String codigo) {
         return cuponRepository.findByCodigo(codigo.trim().toUpperCase())
-                .filter(c -> !Boolean.TRUE.equals(c.getUsado()));
+                .filter(c -> !Boolean.TRUE.equals(c.getUsado())
+                          && c.getUsosActuales() < c.getMaxUsos());
     }
 
+    /**
+     * Registra un uso del cupón de forma atómica.
+     * Retorna false si el cupón ya alcanzó su límite (bloqueado).
+     * El UPDATE en BD previene que dos requests simultáneos pasen el límite.
+     */
     @Transactional
-    public void marcarUsado(String codigo) {
-        cuponRepository.findByCodigo(codigo.trim().toUpperCase()).ifPresent(c -> {
-            c.setUsado(true);
-            c.setFechaUso(LocalDateTime.now());
-            cuponRepository.save(c);
-        });
+    public boolean marcarUsado(String codigo) {
+        String codigoUpper = codigo.trim().toUpperCase();
+        int actualizados = cuponRepository.incrementarUsoSiDisponible(codigoUpper, LocalDateTime.now());
+        if (actualizados == 0) {
+            return false; // Ya estaba en el límite
+        }
+        // Si después del incremento alcanzó el tope, marcar como bloqueado
+        cuponRepository.bloquearSiAlcanzaLimite(codigoUpper);
+        return true;
     }
 
     private String generarCodigo() {
         String codigo;
         int intentos = 0;
         do {
-            StringBuilder sb = new StringBuilder("HOT17-");
-            for (int i = 0; i < 6; i++) {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < 10; i++) {
                 sb.append(CHARS.charAt(RNG.nextInt(CHARS.length())));
             }
             codigo = sb.toString();

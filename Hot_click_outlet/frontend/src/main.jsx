@@ -4,7 +4,6 @@ import './index.css'
 import './i18n'
 import App from './App.jsx'
 import { registerSW } from 'virtual:pwa-register'
-import { ClerkProvider } from '@clerk/react'
 
 const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 
@@ -31,9 +30,9 @@ if ('serviceWorker' in navigator) {
   })
 }
 
-const AppRoot = CLERK_KEY
-  ? <ClerkProvider publishableKey={CLERK_KEY}><App /></ClerkProvider>
-  : <App />
+// ClerkProvider se carga sólo cuando el usuario navega a rutas de auth
+// (ver ClerkShell.jsx en App.jsx), no en el bundle inicial.
+const AppRoot = <App />
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>{AppRoot}</StrictMode>,

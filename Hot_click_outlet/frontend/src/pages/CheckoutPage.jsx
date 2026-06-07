@@ -151,6 +151,7 @@ export default function CheckoutPage() {
   const [cuponEstado,   setCuponEstado]   = useState('idle') // idle | loading | valid | invalid
   const [cuponDescuento, setCuponDescuento] = useState(0)   // porcentaje aplicado
   const [cuponCodigo,   setCuponCodigo]   = useState(null)  // código validado
+  const [cuponError,    setCuponError]    = useState('')    // mensaje de error del servidor
 
   // Gift card
   const [gcInput,     setGcInput]     = useState('')
@@ -192,6 +193,7 @@ export default function CheckoutPage() {
   const validarCupon = useCallback(async () => {
     if (!cuponInput.trim()) return
     setCuponEstado('loading')
+    setCuponError('')
     try {
       const { data } = await import('@/services/api').then(m => m.default.get(`/cupones/validar?codigo=${encodeURIComponent(cuponInput.trim())}`))
       const pct = data?.data?.descuento ?? data?.descuento ?? 0
@@ -199,9 +201,11 @@ export default function CheckoutPage() {
       setCuponDescuento(pct)
       setCuponCodigo(cod)
       setCuponEstado('valid')
-    } catch {
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.response?.data?.error || 'Código inválido o no disponible'
       setCuponDescuento(0)
       setCuponCodigo(null)
+      setCuponError(msg)
       setCuponEstado('invalid')
     }
   }, [cuponInput])
@@ -862,9 +866,9 @@ export default function CheckoutPage() {
                   <input
                     type="text"
                     value={cuponInput}
-                    onChange={(e) => { setCuponInput(e.target.value.toUpperCase()); setCuponEstado('idle'); setCuponDescuento(0); setCuponCodigo(null) }}
+                    onChange={(e) => { setCuponInput(e.target.value.toUpperCase()); setCuponEstado('idle'); setCuponDescuento(0); setCuponCodigo(null); setCuponError('') }}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); validarCupon() } }}
-                    placeholder="HOT17-XXXXXX"
+                    placeholder="Ej: ABCDEFGHIJ"
                     maxLength={20}
                     className="flex-1 px-3 py-2 rounded-xl text-xs outline-none transition-all"
                     style={{
@@ -895,7 +899,7 @@ export default function CheckoutPage() {
                   {cuponEstado === 'invalid' && (
                     <motion.p key="err" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                       className="text-xs text-red-400 mt-1">
-                      Código inválido o ya utilizado
+                      {cuponError || 'Código inválido o no disponible'}
                     </motion.p>
                   )}
                 </AnimatePresence>

@@ -5,6 +5,7 @@ import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.TestimonioRepository;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.utils.InputSanitizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,13 +23,14 @@ public class TestimonioService {
     @Autowired private UsuarioRepository usuarioRepo;
     @Autowired private ProductoRepository productoRepo;
     @Autowired private PedidoRepository pedidoRepo;
+    @Autowired private InputSanitizer sanitizer;
 
     /**
      * Crea un testimonio. Valida:
      * 1. El usuario compró el producto (estado de pedido válido).
      * 2. Aún no tiene un testimonio para ese producto.
      */
-    public Testimonio crear(String correo, String comentario, String imagenUrl, Long productoId) {
+    public Testimonio crear(String correo, String comentario, String imagenUrl, Long productoId, Integer calificacion) {
         var usuario = usuarioRepo.findByCorreo(correo)
             .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
@@ -45,11 +47,15 @@ public class TestimonioService {
         if (repo.existsByUsuarioIdAndProductoId(usuario.getId(), productoId))
             throw new RuntimeException("Ya enviaste un testimonio para este producto");
 
+        if (calificacion != null && (calificacion < 1 || calificacion > 5))
+            throw new RuntimeException("La calificación debe ser entre 1 y 5 estrellas");
+
         Testimonio t = new Testimonio();
         t.setUsuario(usuario);
         t.setProducto(producto);
-        t.setComentario(comentario.trim());
-        t.setImagenUrl(imagenUrl);
+        t.setComentario(sanitizer.cleanWithLimit(comentario, 1000));
+        t.setImagenUrl(imagenUrl != null ? sanitizer.cleanWithLimit(imagenUrl, 1000) : null);
+        t.setCalificacion(calificacion);
         return repo.save(t);
     }
 
@@ -136,6 +142,15 @@ public class TestimonioService {
 
     // ── Proyecciones ─────────────────────────────────────────────────────────
 
+    public Map<String, Object> getRatingStats(Long productoId) {
+        Double avg   = repo.avgCalificacion(productoId);
+        Long   count = repo.countAprobadosConCalificacion(productoId);
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("reviewCount", count == null ? 0 : count);
+        m.put("ratingValue",  avg  == null ? null : Math.round(avg * 10.0) / 10.0);
+        return m;
+    }
+
     private Map<String, Object> toPublicMap(Testimonio t) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", t.getId());
@@ -143,6 +158,7 @@ public class TestimonioService {
         m.put("productoNombre", t.getProducto() != null ? t.getProducto().getNombreProducto() : null);
         m.put("comentario", t.getComentario());
         m.put("imagenUrl", t.getImagenUrl());
+        m.put("calificacion", t.getCalificacion());
         m.put("fechaAprobacion", t.getFechaAprobacion());
         return m;
     }
@@ -156,6 +172,7 @@ public class TestimonioService {
         m.put("productoNombre", t.getProducto() != null ? t.getProducto().getNombreProducto() : null);
         m.put("comentario", t.getComentario());
         m.put("imagenUrl", t.getImagenUrl());
+        m.put("calificacion", t.getCalificacion());
         m.put("estado", t.getEstado());
         m.put("fechaCreacion", t.getFechaCreacion());
         m.put("fechaAprobacion", t.getFechaAprobacion());

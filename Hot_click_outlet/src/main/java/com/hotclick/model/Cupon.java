@@ -19,7 +19,13 @@ public class Cupon {
     private String email;
 
     @Column(name = "descuento_porcentaje", nullable = false)
-    private Integer descuentoPorcentaje = 17;
+    private Integer descuentoPorcentaje = 13;
+
+    @Column(name = "max_usos", nullable = false)
+    private Integer maxUsos = 1;
+
+    @Column(name = "usos_actuales", nullable = false)
+    private Integer usosActuales = 0;
 
     @Column(name = "usado", nullable = false)
     private Boolean usado = false;
@@ -41,6 +47,12 @@ public class Cupon {
 
     public Integer getDescuentoPorcentaje() { return descuentoPorcentaje; }
     public void setDescuentoPorcentaje(Integer descuentoPorcentaje) { this.descuentoPorcentaje = descuentoPorcentaje; }
+
+    public Integer getMaxUsos() { return maxUsos; }
+    public void setMaxUsos(Integer maxUsos) { this.maxUsos = maxUsos; }
+
+    public Integer getUsosActuales() { return usosActuales; }
+    public void setUsosActuales(Integer usosActuales) { this.usosActuales = usosActuales; }
 
     public Boolean getUsado() { return usado; }
     public void setUsado(Boolean usado) { this.usado = usado; }
