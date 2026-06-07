@@ -1,7 +1,33 @@
 import { Link } from 'react-router-dom'
+import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
 
+const SITE_URL = 'https://hotclick.lat'
 const LAST_UPDATED = '5 de junio de 2025'
+
+const shippingJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'Política de envíos HOTCLICK — Costa Rica',
+  description: 'Información completa sobre envíos a todo Costa Rica: tiempos de entrega, couriers, costos y zonas de cobertura.',
+  url: `${SITE_URL}/envios`,
+  inLanguage: 'es-CR',
+  isPartOf: { '@type': 'WebSite', name: 'HOTCLICK', url: SITE_URL },
+  about: {
+    '@type': 'OfferShippingDetails',
+    shippingDestination: {
+      '@type': 'DefinedRegion',
+      addressCountry: 'CR',
+      name: 'Costa Rica',
+    },
+    deliveryTime: {
+      '@type': 'ShippingDeliveryTime',
+      handlingTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 1, unitCode: 'DAY' },
+      transitTime: { '@type': 'QuantitativeValue', minValue: 1, maxValue: 5, unitCode: 'DAY' },
+    },
+    doesNotShip: false,
+  },
+}
 
 const sections = [
   {
@@ -121,6 +147,22 @@ const sections = [
 export default function EnviosPage() {
   return (
     <MainLayout>
+      <Helmet>
+        <title>Envíos a todo Costa Rica — HOTCLICK Marketplace</title>
+        <meta name="description" content="Enviamos a todas las provincias de Costa Rica en 1 a 5 días hábiles. Conocé los métodos de envío, couriers disponibles y zonas de cobertura de HOTCLICK." />
+        <link rel="canonical" href={`${SITE_URL}/envios`} />
+        <link rel="alternate" hreflang="es-CR" href={`${SITE_URL}/envios`} />
+        <link rel="alternate" hreflang="es" href={`${SITE_URL}/envios`} />
+        <link rel="alternate" hreflang="x-default" href={`${SITE_URL}/`} />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Envíos a todo Costa Rica — HOTCLICK" />
+        <meta property="og:description" content="Entrega en 1 a 5 días hábiles a San José, Alajuela, Heredia, Cartago, Puntarenas, Limón y Guanacaste." />
+        <meta property="og:url" content={`${SITE_URL}/envios`} />
+        <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
+        <meta property="og:locale" content="es_CR" />
+        <meta property="og:site_name" content="HOTCLICK" />
+        <script type="application/ld+json">{JSON.stringify(shippingJsonLd)}</script>
+      </Helmet>
       <div style={{ background: 'var(--hc-bg)', minHeight: '100vh', paddingBottom: '4rem' }}>
 
         {/* Hero */}

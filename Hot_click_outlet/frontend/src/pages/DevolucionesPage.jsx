@@ -1,7 +1,25 @@
 import { Link } from 'react-router-dom'
+import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
 
+const SITE_URL = 'https://hotclick.lat'
 const LAST_UPDATED = '5 de junio de 2025'
+
+const returnPolicyJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'MerchantReturnPolicy',
+  name: 'Política de devoluciones HOTCLICK',
+  description: 'Tenés 7 días hábiles desde la recepción para solicitar cambio o devolución de cualquier producto comprado en HOTCLICK.',
+  url: `${SITE_URL}/devoluciones`,
+  inLanguage: 'es-CR',
+  applicableCountry: 'CR',
+  returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+  merchantReturnDays: 7,
+  returnMethod: 'https://schema.org/ReturnByMail',
+  returnFees: 'https://schema.org/FreeReturn',
+  merchantReturnLink: `${SITE_URL}/devoluciones`,
+  refundType: 'https://schema.org/FullRefund',
+}
 
 const sections = [
   {
@@ -116,6 +134,22 @@ const sections = [
 export default function DevolucionesPage() {
   return (
     <MainLayout>
+      <Helmet>
+        <title>Política de devoluciones — HOTCLICK Costa Rica</title>
+        <meta name="description" content="Tenés 7 días hábiles para devolver cualquier producto. Conocé el proceso de devolución y cambio de HOTCLICK Marketplace Costa Rica." />
+        <link rel="canonical" href={`${SITE_URL}/devoluciones`} />
+        <link rel="alternate" hreflang="es-CR" href={`${SITE_URL}/devoluciones`} />
+        <link rel="alternate" hreflang="es" href={`${SITE_URL}/devoluciones`} />
+        <link rel="alternate" hreflang="x-default" href={`${SITE_URL}/`} />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Política de devoluciones — HOTCLICK Costa Rica" />
+        <meta property="og:description" content="7 días hábiles para cambios y devoluciones. Sin costo para el comprador." />
+        <meta property="og:url" content={`${SITE_URL}/devoluciones`} />
+        <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
+        <meta property="og:locale" content="es_CR" />
+        <meta property="og:site_name" content="HOTCLICK" />
+        <script type="application/ld+json">{JSON.stringify(returnPolicyJsonLd)}</script>
+      </Helmet>
       <div style={{ background: 'var(--hc-bg)', minHeight: '100vh', paddingBottom: '4rem' }}>
 
         {/* Hero */}

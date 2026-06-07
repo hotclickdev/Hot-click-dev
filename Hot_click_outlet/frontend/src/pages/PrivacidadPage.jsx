@@ -1,7 +1,21 @@
 import { Link } from 'react-router-dom'
+import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
 
+const SITE_URL = 'https://hotclick.lat'
 const LAST_UPDATED = '5 de junio de 2025'
+
+const privacyJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'Política de Privacidad — HOTCLICK',
+  description: 'Política de privacidad y protección de datos personales de HOTCLICK conforme a la Ley N.° 8968 de Costa Rica.',
+  url: `${SITE_URL}/privacidad`,
+  inLanguage: 'es-CR',
+  isPartOf: { '@type': 'WebSite', name: 'HOTCLICK', url: SITE_URL },
+  about: { '@type': 'Thing', name: 'Protección de datos personales — Ley 8968 Costa Rica' },
+  dateModified: '2025-06-05',
+}
 
 const secciones = [
   {
@@ -99,6 +113,21 @@ const secciones = [
 export default function PrivacidadPage() {
   return (
     <MainLayout>
+      <Helmet>
+        <title>Política de Privacidad — HOTCLICK Costa Rica</title>
+        <meta name="description" content="Política de privacidad de HOTCLICK. Protección de datos personales conforme a la Ley N.° 8968 de Costa Rica. Conocé cómo usamos tu información." />
+        <link rel="canonical" href={`${SITE_URL}/privacidad`} />
+        <link rel="alternate" hreflang="es-CR" href={`${SITE_URL}/privacidad`} />
+        <link rel="alternate" hreflang="es" href={`${SITE_URL}/privacidad`} />
+        <link rel="alternate" hreflang="x-default" href={`${SITE_URL}/`} />
+        <meta name="robots" content="noindex, follow" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Política de Privacidad — HOTCLICK" />
+        <meta property="og:url" content={`${SITE_URL}/privacidad`} />
+        <meta property="og:locale" content="es_CR" />
+        <meta property="og:site_name" content="HOTCLICK" />
+        <script type="application/ld+json">{JSON.stringify(privacyJsonLd)}</script>
+      </Helmet>
       <div style={{ background: 'var(--hc-bg)', minHeight: '100vh', paddingBottom: '4rem' }}>
 
         {/* Hero */}

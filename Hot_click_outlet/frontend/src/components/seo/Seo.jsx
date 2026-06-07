@@ -4,16 +4,19 @@ const SITE_NAME = 'HOTCLICK'
 const SITE_URL = 'https://hotclick.lat'
 const DEFAULT_IMAGE = '/assets/og-default.png'
 
-export default function Seo({ title, description, image, url, type = 'website' }) {
+export default function Seo({ title, description, image, url, type = 'website', noindex = false }) {
   const fullImage = image || DEFAULT_IMAGE
   const fullUrl = url || (typeof window !== 'undefined' ? window.location.href : '')
   const canonical = url || fullUrl
+  const isAbsolute = fullImage.startsWith('http')
+  const secureImage = isAbsolute ? fullImage : `${SITE_URL}${fullImage}`
 
   return (
     <Helmet>
       <title>{title}</title>
       <meta name="description" content={description} />
       <link rel="canonical" href={canonical} />
+      {noindex && <meta name="robots" content="noindex, follow" />}
 
       <link rel="alternate" hreflang="es-CR" href={canonical} />
       <link rel="alternate" hreflang="es"    href={canonical} />
@@ -22,7 +25,11 @@ export default function Seo({ title, description, image, url, type = 'website' }
       <meta property="og:site_name" content={SITE_NAME} />
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
-      <meta property="og:image" content={fullImage} />
+      <meta property="og:image" content={secureImage} />
+      <meta property="og:image:secure_url" content={secureImage} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:image:alt" content={title} />
       <meta property="og:type" content={type} />
       <meta property="og:url" content={fullUrl} />
       <meta property="og:locale" content="es_CR" />
@@ -31,7 +38,8 @@ export default function Seo({ title, description, image, url, type = 'website' }
       <meta name="twitter:site" content="@hotclickcr" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={fullImage} />
+      <meta name="twitter:image" content={secureImage} />
+      <meta name="twitter:image:alt" content={title} />
     </Helmet>
   )
 }
