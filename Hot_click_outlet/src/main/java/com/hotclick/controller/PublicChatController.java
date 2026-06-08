@@ -11,7 +11,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.concurrent.Executor;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Public product discovery chat — no JWT required.
@@ -78,11 +80,22 @@ public class PublicChatController {
             return errorEmitter(emitter, "Límite diario del chat alcanzado. Volvé mañana.");
         }
 
+        // Lee historial de conversación y lo valida/limita
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> rawHistory = body.containsKey("history")
+            ? (List<Map<String, Object>>) body.get("history")
+            : List.of();
+        List<Map<String, Object>> history = rawHistory.stream()
+            .filter(m -> m instanceof Map && m.containsKey("rol") && m.containsKey("texto"))
+            .limit(12)
+            .collect(Collectors.toList());
+
         final Long eid = empresaId;
         final String finalMessage = message;
+        final List<Map<String, Object>> finalHistory = history;
         emitter.onCompletion(emitter::complete);
         emitter.onTimeout(emitter::complete);
-        sseExecutor.execute(() -> chatService.chat(eid, finalMessage, offset, emitter));
+        sseExecutor.execute(() -> chatService.chat(eid, finalMessage, offset, finalHistory, emitter));
         return emitter;
     }
 

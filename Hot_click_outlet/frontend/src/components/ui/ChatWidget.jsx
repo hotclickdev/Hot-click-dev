@@ -207,6 +207,15 @@ function ChatWidgetInner({ slug }) {
     setInput('')
     setCargando(true)
 
+    // Capturar historial ANTES de agregar el mensaje actual
+    // Si el mensaje actual ya está al final del store (caso pending), lo excluimos
+    const allCompleted = storeMensajes.filter(m => m.texto && !m.streaming)
+    const lastMsg = allCompleted[allCompleted.length - 1]
+    const historyBase = (lastMsg?.rol === 'user' && lastMsg?.texto === msg)
+      ? allCompleted.slice(0, -1)
+      : allCompleted
+    const history = historyBase.slice(-12).map(m => ({ rol: m.rol, texto: m.texto }))
+
     if (!mensajeTexto) {
       storeSetMensajes(prev => [...prev, { rol: 'user', texto: msg }])
     }
@@ -226,7 +235,7 @@ function ChatWidgetInner({ slug }) {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ message: msg, offset: currentOffset }),
+        body: JSON.stringify({ message: msg, offset: currentOffset, history }),
       })
 
       const reader  = response.body.getReader()
