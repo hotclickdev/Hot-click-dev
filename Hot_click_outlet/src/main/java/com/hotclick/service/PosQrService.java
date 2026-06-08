@@ -253,12 +253,11 @@ public class PosQrService {
 
             Empresa empresa  = sesion.getEmpresa();
             Long empresaId   = empresa.getId();
-            Long usuarioId   = sesion.getUsuario().getId();
             String correo    = sesion.getUsuario().getCorreo();
 
             Usuario cliente  = usuarioRepo.findById(999L)
                 .orElseThrow(() -> new RuntimeException("Usuario mostrador no encontrado"));
-            Bodega bodega    = bodegaRepo.findByEmpresaId(empresaId).stream().findFirst()
+            Bodega bodega    = bodegaRepo.findByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO).stream().findFirst()
                 .orElseThrow(() -> new RuntimeException("No hay bodega configurada"));
 
             Pedido pedido = new Pedido();
