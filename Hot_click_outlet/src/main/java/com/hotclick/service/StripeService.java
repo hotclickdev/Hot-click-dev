@@ -198,4 +198,61 @@ public class StripeService {
         }
         return com.stripe.net.Webhook.constructEvent(payload, sigHeader, webhookSecret);
     }
+
+    /**
+     * Crea una sesión de Stripe Checkout en modo PAYMENT (pago único) para el POS QR.
+     * Retorna la URL de checkout a la que redirigir al cliente.
+     */
+    public String crearCheckoutPOS(Integer totalColones, List<Map<String, Object>> items,
+                                   String successUrl, String cancelUrl,
+                                   Long empresaId, String posQrToken) throws StripeException {
+        if (mockMode) {
+            return successUrl;
+        }
+
+        // Convertir colones a USD centavos (aproximación; idealmente usar la moneda nativa)
+        // Stripe acepta CRC, así que usamos CRC directamente en centavos (enteros)
+        long amountCentimos = totalColones * 100L; // CRC no tiene centavos pero Stripe lo requiere en centimillones
+
+        // Construir línea de descripción con productos
+        String descripcion = items.stream()
+            .map(i -> i.getOrDefault("nombre", "Producto") + " x" + i.getOrDefault("cantidad", 1))
+            .reduce((a, b) -> a + ", " + b)
+            .orElse("Compra POS");
+
+        SessionCreateParams params = SessionCreateParams.builder()
+            .setMode(SessionCreateParams.Mode.PAYMENT)
+            .setSuccessUrl(successUrl + "&session_id={CHECKOUT_SESSION_ID}")
+            .setCancelUrl(cancelUrl)
+            .addLineItem(
+                SessionCreateParams.LineItem.builder()
+                    .setQuantity(1L)
+                    .setPriceData(
+                        SessionCreateParams.LineItem.PriceData.builder()
+                            .setCurrency("crc")
+                            .setUnitAmount(amountCentimos)
+                            .setProductData(
+                                SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                                    .setName("HOTCLICK — " + descripcion.substring(0, Math.min(descripcion.length(), 100)))
+                                    .build())
+                            .build())
+                    .build())
+            .putMetadata("empresa_id",   String.valueOf(empresaId))
+            .putMetadata("pos_qr_token", posQrToken)
+            .putMetadata("origen",       "POS")
+            .build();
+
+        Session session = Session.create(params);
+        log.info("[stripe-pos] Checkout session {} creada para empresa={} token={}", session.getId(), empresaId, posQrToken);
+        return session.getUrl();
+    }
+
+    /**
+     * Verifica si una sesión de Stripe Checkout ya fue pagada.
+     */
+    public boolean checkoutSessionPagada(String sessionId) throws StripeException {
+        if (mockMode || sessionId == null || sessionId.startsWith("cs_mock")) return false;
+        Session session = Session.retrieve(sessionId);
+        return "paid".equals(session.getPaymentStatus());
+    }
 }

@@ -96,8 +96,9 @@ const AdminProveedores          = lazy(() => import('@/pages/admin/AdminProveedo
 const AdminPlanes               = lazy(() => import('@/pages/admin/AdminPlanes'))
 const AdminSuscripcion          = lazy(() => import('@/pages/admin/AdminSuscripcion'))
 const AdminOfflineCola          = lazy(() => import('@/pages/admin/AdminOfflineCola'))
-const AdminMesas                = lazy(() => import('@/pages/admin/AdminMesas'))
+// const AdminMesas                = lazy(() => import('@/pages/admin/AdminMesas'))  // futuro
 const AdminGiftCards            = lazy(() => import('@/pages/admin/AdminGiftCards'))
+const AdminAsignarProducto      = lazy(() => import('@/pages/admin/AdminAsignarProducto'))
 const AdminCupones              = lazy(() => import('@/pages/admin/AdminCupones'))
 const AdminBranding             = lazy(() => import('@/pages/admin/AdminBranding'))
 const AdminHomepage             = lazy(() => import('@/pages/admin/AdminHomepage'))
@@ -108,7 +109,8 @@ const AdminCopilot              = lazy(() => import('@/pages/admin/AdminCopilot'
 const AdminForecast             = lazy(() => import('@/pages/admin/AdminForecast'))
 const AdminExecutive            = lazy(() => import('@/pages/admin/AdminExecutive'))
 const AdminMultipais            = lazy(() => import('@/pages/admin/AdminMultipais'))
-const SelfCheckoutPage          = lazy(() => import('@/pages/SelfCheckoutPage'))
+// const SelfCheckoutPage          = lazy(() => import('@/pages/SelfCheckoutPage'))  // futuro (QR mesas)
+const POSPagoPage               = lazy(() => import('@/pages/pos/POSPagoPage'))
 const RegistrarNegocioPage      = lazy(() => import('@/pages/RegistrarNegocioPage'))
 
 const queryClient = new QueryClient({
@@ -268,7 +270,7 @@ function PageFade({ children }) {
   const { pathname } = useLocation()
   return (
     <div key={pathname} style={{ animation: 'pagefade 0.18s ease both' }}>
-      <style>{`@keyframes pagefade { from { opacity:0; transform:translateY(5px) } to { opacity:1; transform:none } }`}</style>
+      <style>{`@keyframes pagefade { from { opacity:0 } to { opacity:1 } }`}</style>
       {children}
     </div>
   )
@@ -416,7 +418,7 @@ export default function App() {
                   <Route path="/admin/billing/planes"      element={<AdminPlanes />} />
                   <Route path="/admin/billing/suscripcion" element={<AdminSuscripcion />} />
                   <Route path="/admin/offline/cola"        element={<AdminOfflineCola />} />
-                  <Route path="/admin/mesas"               element={<AdminMesas />} />
+                  {/* <Route path="/admin/mesas"               element={<AdminMesas />} /> */}{/* futuro */}
                   <Route path="/admin/gift-cards"          element={<AdminGiftCards />} />
                   <Route path="/admin/cupones"             element={<AdminCupones />} />
                   <Route path="/admin/branding"            element={<AdminBranding />} />
@@ -429,6 +431,7 @@ export default function App() {
                   <Route path="/admin/executive"           element={<AdminExecutive />} />
                   <Route path="/admin/multipais"           element={<AdminMultipais />} />
                 </Route>
+                <Route path="/admin/asignar-compra" element={<AdminAsignarProducto />} />
                 <Route path="/admin/ofertas"       element={<AdminOfertas />} />
                 <Route path="/admin/blog"          element={<AdminBlog />} />
                 <Route path="/admin/convenios"     element={<AdminConvenios />} />
@@ -439,8 +442,11 @@ export default function App() {
                 <Route path="/admin/compras/nueva"  element={<AdminNuevaCompra />} />
                 <Route path="/admin/proveedores"    element={<AdminProveedores />} />
               </Route>
-              {/* Self-checkout QR — público, sin layout de admin */}
+              {/* Self-checkout QR — futuro (comentado)
               <Route path="/checkout/qr/:token" element={<SelfCheckoutPage />} />
+              */}
+              {/* POS QR pago — página pública para el cliente */}
+              <Route path="/pos/pago/:token" element={<POSPagoPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </PageFade>

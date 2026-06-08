@@ -26,10 +26,11 @@ function buildSidebarLinks(t, userRole) {
       { to: '/admin/compras',      label: 'Compras',                     icon: 'compra'   },
       { to: '/admin/proveedores',  label: 'Proveedores',                 icon: 'proveedor'},
       { section: 'Ventas' },
-      { to: '/admin/pedidos',      label: t('admin.sidebar.pedidos'),    icon: 'clipboard' },
-      { to: '/admin/ventas',       label: t('admin.sidebar.nuevaVenta'), icon: 'plus'     },
-      { to: '/admin/pos',          label: 'Caja POS',                    icon: 'pos'      },
-      { to: '/admin/mesas',        label: 'Mesas / QR',                  icon: 'qr'       },
+      { to: '/admin/pedidos',        label: t('admin.sidebar.pedidos'),    icon: 'clipboard' },
+      { to: '/admin/ventas',         label: t('admin.sidebar.nuevaVenta'), icon: 'plus'     },
+      { to: '/admin/asignar-compra', label: 'Registrar compra externa',   icon: 'assign'   },
+      { to: '/admin/pos',            label: 'Caja POS',                    icon: 'pos'      },
+      // { to: '/admin/mesas',        label: 'Mesas / QR',                  icon: 'qr'       },  // futuro
       { to: '/admin/gift-cards',   label: 'Gift Cards',                  icon: 'gift'     },
       { to: '/admin/inventario',   label: 'AI Inventario',               icon: 'ai'       },
       { to: '/admin/copilot',      label: 'AI Copilot',                  icon: 'copilot'  },
@@ -81,8 +82,9 @@ function buildSidebarLinks(t, userRole) {
       { section: 'Ventas' },
       { to: '/admin/pedidos',        label: t('admin.sidebar.pedidos'),    icon: 'clipboard' },
       { to: '/admin/ventas',         label: t('admin.sidebar.nuevaVenta'), icon: 'plus'     },
+      { to: '/admin/asignar-compra', label: 'Registrar compra externa',   icon: 'assign'   },
       { to: '/admin/pos',            label: 'Caja POS',                    icon: 'pos'      },
-      { to: '/admin/mesas',          label: 'Mesas / QR',                  icon: 'qr'       },
+      // { to: '/admin/mesas',          label: 'Mesas / QR',                  icon: 'qr'       },  // futuro
       { to: '/admin/gift-cards',     label: 'Gift Cards',                  icon: 'gift'     },
       { to: '/admin/inventario',     label: 'AI Inventario',               icon: 'ai'       },
       { to: '/admin/copilot',        label: 'AI Copilot',                  icon: 'copilot'  },
@@ -142,7 +144,7 @@ function buildSidebarLinks(t, userRole) {
     { to: '/admin/pos',          label: 'Caja registradora',             icon: 'pos'       },
     { to: '/admin/pos/caja',     label: 'Cuadre de caja',                icon: 'chart'     },
     { to: '/admin/pos/historial', label: 'Historial ventas',             icon: 'clipboard' },
-    { to: '/admin/mesas',        label: 'Mesas / QR',                    icon: 'qr'        },
+    // { to: '/admin/mesas',        label: 'Mesas / QR',                    icon: 'qr'        },  // futuro
     { section: 'Catálogo e inventario' },
     { to: '/admin/productos',    label: t('admin.sidebar.productos'),    icon: 'box'       },
     { to: '/admin/nuevo-producto', label: 'Generar producto rápido',     icon: 'camera'    },
@@ -153,9 +155,10 @@ function buildSidebarLinks(t, userRole) {
     { to: '/admin/compras',      label: 'Compras',                       icon: 'compra'    },
     { to: '/admin/proveedores',  label: 'Proveedores',                   icon: 'proveedor' },
     { section: 'Ventas' },
-    { to: '/admin/pedidos',      label: t('admin.sidebar.pedidos'),      icon: 'clipboard' },
-    { to: '/admin/ventas',       label: 'Nueva venta',                   icon: 'plus'      },
-    { to: '/admin/finanzas',     label: t('admin.sidebar.finanzas'),     icon: 'chart'     },
+    { to: '/admin/pedidos',        label: t('admin.sidebar.pedidos'),      icon: 'clipboard' },
+    { to: '/admin/ventas',         label: 'Nueva venta',                   icon: 'plus'      },
+    { to: '/admin/asignar-compra', label: 'Registrar compra externa',     icon: 'assign'    },
+    { to: '/admin/finanzas',       label: t('admin.sidebar.finanzas'),     icon: 'chart'     },
     { to: '/admin/reportes',     label: t('admin.sidebar.reportes'),     icon: 'bar'       },
     { section: 'Marketing' },
     { to: '/admin/ofertas',      label: 'Ofertas',                       icon: 'tag'       },
@@ -302,6 +305,21 @@ function ModeSwitcherWrapper({ userRole }) {
   )
 }
 
+const SECTION_COLORS = {
+  'Catálogo':            '#6366f1',
+  'Catálogo e inventario': '#6366f1',
+  'Ventas':              '#10b981',
+  'POS':                 '#10b981',
+  'Punto de venta':      '#10b981',
+  'Marketing':           '#f59e0b',
+  'Sistema':             '#8b5cf6',
+  'Mi negocio':          '#8b5cf6',
+}
+
+function getSectionColor(section) {
+  return SECTION_COLORS[section] || '#4f7cff'
+}
+
 function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, empresaId, userRole, handleLogout, onSearch }) {
   const navRef = useRef(null)
 
@@ -324,6 +342,19 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
     if (navRef.current) navRef.current.scrollTop = _sidebarScrollTop
   }, [])
 
+  // Agrupar links por sección para poder usar AnimatePresence en cada grupo
+  const groups = []
+  let current = { section: null, items: [] }
+  for (const link of sidebarLinks) {
+    if (link.section) {
+      groups.push({ ...current })
+      current = { section: link.section, items: [] }
+    } else {
+      current.items.push(link)
+    }
+  }
+  groups.push(current)
+
   return (
     <>
       {/* Logo */}
@@ -343,16 +374,19 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
 
       {/* Buscador rápido */}
       <div className="px-3 pt-3 pb-1">
-        <button onClick={onSearch}
+        <motion.button
+          onClick={onSearch}
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.98 }}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs transition-colors hover:bg-white/[0.06]"
-          style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: 'var(--hc-muted)' }}>
+          style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: 'var(--hc-muted)' }}
+        >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
           </svg>
           <span className="flex-1 text-left">Buscar…</span>
-          <kbd className="px-1.5 py-0.5 rounded text-[9px] font-mono"
-            style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>⌘K</kbd>
-        </button>
+          <kbd className="px-1.5 py-0.5 rounded text-[9px] font-mono" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>⌘K</kbd>
+        </motion.button>
       </div>
 
       {/* Rol badge */}
@@ -368,61 +402,137 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
       )}
 
       {/* Nav */}
-      <nav ref={navRef} onScroll={e => { _sidebarScrollTop = e.currentTarget.scrollTop }} className="flex-1 px-3 py-2 overflow-y-auto">
-        {(() => {
-          let currentSection = null
-          return sidebarLinks.map((link, i) => {
-            if (link.divider) return (
-              <div key={`div-${i}`} className="my-2" style={{ borderTop: '1px solid var(--hc-border)' }} />
-            )
-            if (link.section) {
-              currentSection = link.section
-              const isOpen = !collapsed.has(link.section)
-              return (
+      <nav
+        ref={navRef}
+        onScroll={e => { _sidebarScrollTop = e.currentTarget.scrollTop }}
+        className="flex-1 px-3 py-2 overflow-y-auto"
+      >
+        {groups.map((group, gi) => {
+          const isOpen = !group.section || !collapsed.has(group.section)
+          const color  = group.section ? getSectionColor(group.section) : null
+
+          return (
+            <div key={group.section || `g-${gi}`}>
+              {/* Cabecera de sección */}
+              {group.section && (
                 <button
-                  key={`sec-${i}`}
-                  onClick={() => toggleSection(link.section)}
-                  className="w-full flex items-center justify-between px-3 pt-4 pb-1.5 hover:opacity-80 transition-opacity"
+                  onClick={() => toggleSection(group.section)}
+                  className="w-full flex items-center justify-between px-2 pt-5 pb-2 group/sec"
                 >
-                  <span className="text-[9px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--hc-muted)', opacity: 0.6 }}>
-                    {link.section}
-                  </span>
-                  <svg
-                    className="w-3 h-3 shrink-0 transition-transform duration-200"
-                    style={{ color: 'var(--hc-muted)', opacity: 0.5, transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)' }}
+                  <div className="flex items-center gap-2">
+                    <motion.div
+                      animate={{ opacity: isOpen ? 1 : 0.4, scaleY: isOpen ? 1 : 0.6 }}
+                      transition={{ duration: 0.2 }}
+                      className="w-0.5 h-3 rounded-full shrink-0"
+                      style={{ backgroundColor: color }}
+                    />
+                    <span
+                      className="text-[9px] font-bold uppercase tracking-[0.13em] transition-colors duration-150 group-hover/sec:text-white/60"
+                      style={{ color: isOpen ? 'rgba(255,255,255,0.38)' : 'rgba(255,255,255,0.22)' }}
+                    >
+                      {group.section}
+                    </span>
+                  </div>
+                  <motion.svg
+                    animate={{ rotate: isOpen ? 0 : -90 }}
+                    transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                    className="w-3 h-3 shrink-0"
+                    style={{ color: 'rgba(255,255,255,0.22)' }}
                     fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"
                     strokeLinecap="round" strokeLinejoin="round"
                   >
                     <path d="M6 9l6 6 6-6"/>
-                  </svg>
+                  </motion.svg>
                 </button>
-              )
-            }
-            if (currentSection && collapsed.has(currentSection)) return null
-            return (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                end={link.exact}
-                className={({ isActive }) => `
-                  flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-150 mb-0.5
-                  ${isActive
-                    ? 'bg-[#4f7cff]/15 border border-[#4f7cff]/20'
-                    : 'hover:bg-[var(--hc-surface-2)] border border-transparent'
-                  }
-                `}
-                style={({ isActive }) => ({
-                  color: isActive ? '#fff' : 'var(--hc-muted)',
-                })}
-              >
-                <span className="w-4 h-4 flex items-center justify-center shrink-0">
-                  <SidebarIcon name={link.icon} />
-                </span>
-                {link.label}
-              </NavLink>
-            )
-          })
-        })()}
+              )}
+
+              {/* Items de la sección con animación */}
+              <AnimatePresence initial={false}>
+                {isOpen && (
+                  <motion.div
+                    key={group.section || 'top'}
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                    style={{ overflow: 'hidden' }}
+                  >
+                    {group.items.map((link, li) => (
+                      <motion.div
+                        key={link.to}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: li * 0.028, duration: 0.18, ease: 'easeOut' }}
+                      >
+                        <NavLink
+                          to={link.to}
+                          end={link.exact}
+                          className="group/item relative flex items-center gap-3 px-3 py-2.5 rounded-xl mb-0.5 transition-colors duration-150"
+                          style={({ isActive }) => ({
+                            color:           isActive ? '#fff' : 'rgba(255,255,255,0.48)',
+                            backgroundColor: isActive ? 'rgba(79,124,255,0.11)' : 'transparent',
+                            border:          isActive ? '1px solid rgba(79,124,255,0.28)' : '1px solid transparent',
+                          })}
+                        >
+                          {({ isActive }) => (
+                            <>
+                              {/* Línea lateral activa */}
+                              {isActive && (
+                                <motion.div
+                                  layoutId="sidebar-active-line"
+                                  className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full"
+                                  style={{ backgroundColor: color || '#4f7cff' }}
+                                  transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                                />
+                              )}
+
+                              {/* Hover background */}
+                              {!isActive && (
+                                <motion.div
+                                  className="absolute inset-0 rounded-xl opacity-0 group-hover/item:opacity-100 transition-opacity duration-150"
+                                  style={{ backgroundColor: 'rgba(255,255,255,0.04)' }}
+                                />
+                              )}
+
+                              {/* Icono */}
+                              <motion.span
+                                className="relative w-[18px] h-[18px] flex items-center justify-center shrink-0 transition-colors duration-150"
+                                style={{ color: isActive ? (color || '#4f7cff') : 'rgba(255,255,255,0.38)' }}
+                                whileHover={{ scale: 1.12 }}
+                                transition={{ duration: 0.15 }}
+                              >
+                                <SidebarIcon name={link.icon} />
+                              </motion.span>
+
+                              {/* Label */}
+                              <motion.span
+                                className="relative flex-1 text-[13px] font-medium leading-tight"
+                                whileHover={{ x: 2 }}
+                                transition={{ duration: 0.15 }}
+                              >
+                                {link.label}
+                              </motion.span>
+
+                              {/* Dot activo animado */}
+                              {isActive && (
+                                <motion.div
+                                  layoutId="sidebar-active-dot"
+                                  className="w-1.5 h-1.5 rounded-full shrink-0"
+                                  style={{ backgroundColor: color || '#4f7cff' }}
+                                  transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                                />
+                              )}
+                            </>
+                          )}
+                        </NavLink>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )
+        })}
       </nav>
 
       {/* User */}
@@ -440,15 +550,30 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
           Ver tienda como cliente
         </NavLink>
         <button
+          onClick={() => window.dispatchEvent(new Event('hc-open-tour'))}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors text-left hover:bg-white/[0.04]"
+          style={{ color: 'var(--hc-muted)' }}
+        >
+          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+          </svg>
+          Tour del panel
+        </button>
+        <motion.button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-red-400 hover:bg-red-500/5 transition-colors text-left"
+          whileHover={{ backgroundColor: 'rgba(239,68,68,0.06)' }}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-red-400 transition-colors text-left"
         >
           {t('admin.sidebar.cerrarSesion')}
-        </button>
+        </motion.button>
         <div className="flex items-center gap-2 px-3 py-2">
-          <div className="w-7 h-7 rounded-full bg-[#4f7cff]/20 flex items-center justify-center text-xs font-semibold text-[#4f7cff]">
+          <motion.div
+            whileHover={{ scale: 1.08 }}
+            transition={{ duration: 0.15 }}
+            className="w-7 h-7 rounded-full bg-[#4f7cff]/20 flex items-center justify-center text-xs font-semibold text-[#4f7cff] shrink-0"
+          >
             {userName?.[0]?.toUpperCase() || 'A'}
-          </div>
+          </motion.div>
           <div className="min-w-0">
             <div className="text-xs truncate" style={{ color: 'var(--hc-muted)' }}>{userName || 'Admin'}</div>
             {empresaNombre && (
@@ -694,6 +819,7 @@ function SidebarIcon({ name }) {
     case 'globe':     return <svg className={ic} {...s}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
     case 'qr':        return <svg className={ic} {...s}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="5" y="5" width="3" height="3"/><rect x="16" y="5" width="3" height="3"/><rect x="5" y="16" width="3" height="3"/><path d="M14 14h3v3h-3zM17 17h3v3h-3zM14 20h3"/></svg>
     case 'sync':      return <svg className={ic} {...s}><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+    case 'assign':    return <svg className={ic} {...s}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
     default:          return <svg className={ic} {...s}><circle cx="12" cy="12" r="3"/></svg>
   }
 }

@@ -77,6 +77,7 @@ public class PedidoService {
         pedido.setCostoEnvio(dto.getCostoEnvio() != null ? dto.getCostoEnvio() : 0);
         pedido.setEstadoPedido(dto.getEstadoPedido() != null ? dto.getEstadoPedido() : Constants.PEDIDO_PENDIENTE);
         pedido.setNotas(dto.getNotas());
+        if (dto.getOrigen() != null) pedido.setOrigen(dto.getOrigen());
         pedido.setDescuentoTotal(0);
         pedido.setAplicaImpuesto(false);
         pedido.setMontoImpuesto(0);

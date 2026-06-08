@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import QRCode from 'react-qr-code'
 import POSProductSearch from '@/components/pos/POSProductSearch'
 import { posService } from '@/services/posService'
 import { useToast } from '@/components/ui/Toast'
@@ -175,20 +176,24 @@ function PayModal({ total, onConfirm, onClose, loading }) {
             </div>
           )}
 
-          {/* SINPE ref */}
-          {metodo === 'SINPE' && (
-            <input
-              ref={inputRef}
-              value={sinpeRef} onChange={e => setSinpeRef(e.target.value)}
-              placeholder="Confirmación SINPE (opcional)"
-              className="w-full px-4 py-3.5 rounded-2xl text-sm outline-none"
-              style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(255,255,255,0.12)', color: '#fff' }}
-            />
+          {/* Info QR para SINPE/TARJETA */}
+          {(metodo === 'SINPE' || metodo === 'TARJETA') && (
+            <div className="rounded-2xl p-4 text-center"
+              style={{ backgroundColor: 'rgba(79,124,255,0.06)', border: '1px solid rgba(79,124,255,0.2)' }}>
+              <p className="text-xs font-semibold" style={{ color: '#7aa3ff' }}>
+                {metodo === 'SINPE'
+                  ? '📱 Se generará un QR con instrucciones de SINPE'
+                  : '💳 Se generará un QR para pago con tarjeta vía Stripe'}
+              </p>
+              <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                El cliente escanea el QR con su celular
+              </p>
+            </div>
           )}
 
           {/* Botón confirmar */}
           <button
-            onClick={() => onConfirm({ metodoPago: metodo, montoRecibido: metodo === 'EFECTIVO' ? recibidoNum : null, confirmacionSinpe: metodo === 'SINPE' ? sinpeRef : null })}
+            onClick={() => onConfirm({ metodoPago: metodo, montoRecibido: metodo === 'EFECTIVO' ? recibidoNum : null })}
             disabled={!puedeConfirmar || loading}
             className="w-full py-4 rounded-2xl font-black text-base transition-all disabled:opacity-30 disabled:cursor-not-allowed"
             style={{
@@ -196,7 +201,11 @@ function PayModal({ total, onConfirm, onClose, loading }) {
               color: '#fff',
               boxShadow: puedeConfirmar ? '0 8px 24px rgba(79,124,255,0.35)' : 'none',
             }}>
-            {loading ? '⏳ Procesando…' : '✓  Confirmar cobro'}
+            {loading
+              ? '⏳ Generando…'
+              : (metodo === 'SINPE' || metodo === 'TARJETA')
+                ? '📲 Generar QR de pago'
+                : '✓  Confirmar cobro'}
           </button>
         </div>
       </motion.div>
@@ -305,6 +314,118 @@ function ReceiptModal({ venta, onNuevaVenta }) {
   )
 }
 
+/* ── QR Payment Modal ────────────────────────────────────────── */
+function QRModal({ qrData, onConfirmSinpe, onCancelar, loadingConfirm }) {
+  const { token, metodoPago, total, sinpeNumero, sinpeRef } = qrData
+  const qrUrl = `${window.location.origin}/pos/pago/${token}`
+  const [polling, setPolling]   = useState(false)
+  const [paid, setPaid]         = useState(false)
+  const pollRef                 = useRef(null)
+
+  useEffect(() => {
+    if (metodoPago !== 'TARJETA') return
+    setPolling(true)
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await posService.estadoQrSesion(token)
+        if (res?.estado === 'PAGADO') {
+          clearInterval(pollRef.current)
+          setPaid(true)
+        } else if (res?.estado === 'EXPIRADO' || res?.estado === 'CANCELADO') {
+          clearInterval(pollRef.current)
+        }
+      } catch {}
+    }, 3000)
+    return () => clearInterval(pollRef.current)
+  }, [token, metodoPago])
+
+  useEffect(() => {
+    if (paid) onConfirmSinpe(null, true)
+  }, [paid]) // eslint-disable-line
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(6px)' }}
+    >
+      <motion.div
+        initial={{ scale: 0.92, y: 20 }} animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.92, y: 20 }} transition={{ type: 'spring', damping: 22, stiffness: 280 }}
+        className="w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl"
+        style={{ backgroundColor: '#0c0c10', border: '1px solid rgba(255,255,255,0.1)' }}
+      >
+        <div className="px-6 pt-6 pb-4">
+          <p className="text-xs font-bold uppercase tracking-widest mb-1"
+            style={{ color: metodoPago === 'SINPE' ? '#60a5fa' : '#a78bfa' }}>
+            {metodoPago === 'SINPE' ? '📱 Pago SINPE' : '💳 Pago con tarjeta'}
+          </p>
+          <p className="text-3xl font-black tabular-nums" style={{ color: '#fff', letterSpacing: '-1px' }}>
+            ₡{fmt(total)}
+          </p>
+        </div>
+
+        {/* QR */}
+        <div className="flex justify-center px-6 pb-4">
+          <div className="p-4 rounded-2xl" style={{ backgroundColor: '#fff' }}>
+            <QRCode value={qrUrl} size={180} />
+          </div>
+        </div>
+
+        {/* SINPE details */}
+        {metodoPago === 'SINPE' && (
+          <div className="mx-6 mb-4 rounded-2xl p-4 space-y-2"
+            style={{ backgroundColor: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.2)' }}>
+            <div className="flex justify-between text-sm">
+              <span style={{ color: 'rgba(255,255,255,0.45)' }}>SINPE Móvil a:</span>
+              <span className="font-bold font-mono" style={{ color: '#60a5fa' }}>{sinpeNumero}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span style={{ color: 'rgba(255,255,255,0.45)' }}>Referencia:</span>
+              <span className="font-bold font-mono" style={{ color: '#fff' }}>{sinpeRef}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span style={{ color: 'rgba(255,255,255,0.45)' }}>Monto exacto:</span>
+              <span className="font-bold" style={{ color: '#34d399' }}>₡{fmt(total)}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Tarjeta waiting */}
+        {metodoPago === 'TARJETA' && !paid && polling && (
+          <div className="mx-6 mb-4 text-center py-3 rounded-2xl"
+            style={{ backgroundColor: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)' }}>
+            <span className="text-xs animate-pulse" style={{ color: '#a78bfa' }}>⏳ Esperando pago del cliente…</span>
+          </div>
+        )}
+
+        <div className="px-6 pb-6 grid grid-cols-2 gap-3">
+          <button onClick={onCancelar}
+            className="py-3 rounded-2xl text-sm font-semibold transition-all hover:brightness-125"
+            style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
+            Cancelar
+          </button>
+          {metodoPago === 'SINPE' && (
+            <button
+              onClick={() => onConfirmSinpe(token, false)}
+              disabled={loadingConfirm}
+              className="py-3 rounded-2xl text-sm font-black transition-all disabled:opacity-40"
+              style={{ background: 'linear-gradient(135deg,#4f7cff,#7c3aed)', color: '#fff' }}>
+              {loadingConfirm ? '⏳…' : '✓ SINPE recibido'}
+            </button>
+          )}
+          {metodoPago === 'TARJETA' && (
+            <div className="py-3 rounded-2xl text-xs text-center"
+              style={{ backgroundColor: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.35)' }}>
+              Auto-detecta el pago
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
 /* ── POS principal ───────────────────────────────────────────── */
 export default function AdminPOS() {
   const { showToast }  = useToast()
@@ -317,6 +438,8 @@ export default function AdminPOS() {
   const [receipt, setReceipt]         = useState(null)
   const [loadingVenta, setLoadingVenta] = useState(false)
   const [ventasHoy, setVentasHoy]     = useState({ count: 0, total: 0 })
+  const [qrData, setQrData]           = useState(null)
+  const [loadingConfirm, setLoadingConfirm] = useState(false)
 
   const searchRef = useRef(null)
 
@@ -377,6 +500,30 @@ export default function AdminPOS() {
   const total    = Math.max(0, subtotal - descuento)
 
   const handleConfirmarPago = async (payload) => {
+    if (payload.metodoPago === 'SINPE' || payload.metodoPago === 'TARJETA') {
+      setLoadingVenta(true)
+      try {
+        const res = await posService.crearQrSesion({
+          metodoPago: payload.metodoPago,
+          items: cartItems.map(i => ({ productoId: i.id, cantidad: i.cantidad, precioUnitario: i.precio, nombre: i.nombre })),
+        })
+        const data = res.data ?? res
+        setShowPayment(false)
+        setQrData({
+          token:       data.token,
+          metodoPago:  data.metodoPago,
+          total:       data.total ?? total,
+          sinpeNumero: data.sinpeNumero ?? '50689745370',
+          sinpeRef:    (data.token ?? '').substring(0, 8).toUpperCase(),
+        })
+      } catch (err) {
+        showToast(err?.response?.data?.message ?? 'Error al generar QR', 'error')
+      } finally {
+        setLoadingVenta(false)
+      }
+      return
+    }
+
     setLoadingVenta(true)
     try {
       const res = await posService.crearVenta({
@@ -393,6 +540,37 @@ export default function AdminPOS() {
     } finally {
       setLoadingVenta(false)
     }
+  }
+
+  const handleQrConfirmSinpe = async (token, autoConfirmed) => {
+    if (autoConfirmed) {
+      showToast('✓ Pago con tarjeta confirmado', 'success')
+      setVentasHoy(v => ({ count: v.count + 1, total: v.total + (qrData?.total ?? 0) }))
+      setQrData(null)
+      setReceipt({ totalPedido: qrData?.total, metodoPago: qrData?.metodoPago, items: cartItems.map(i => ({ producto: { nombreProducto: i.nombre }, cantidad: i.cantidad, subtotalItem: i.precio * i.cantidad })) })
+      nuevaVenta()
+      return
+    }
+    setLoadingConfirm(true)
+    try {
+      await posService.confirmarSinpeQr(token, {})
+      showToast('✓ SINPE confirmado', 'success')
+      setVentasHoy(v => ({ count: v.count + 1, total: v.total + (qrData?.total ?? 0) }))
+      setReceipt({ totalPedido: qrData?.total, metodoPago: 'SINPE', numeroPedido: '—', items: cartItems.map(i => ({ producto: { nombreProducto: i.nombre }, cantidad: i.cantidad, subtotalItem: i.precio * i.cantidad })) })
+      setQrData(null)
+      nuevaVenta()
+    } catch (err) {
+      showToast(err?.response?.data?.message ?? 'Error al confirmar SINPE', 'error')
+    } finally {
+      setLoadingConfirm(false)
+    }
+  }
+
+  const handleQrCancelar = async () => {
+    if (qrData?.token) {
+      try { await posService.cancelarQrSesion(qrData.token) } catch {}
+    }
+    setQrData(null)
   }
 
   /* ─── Turno elapsed ─── */
@@ -719,6 +897,14 @@ export default function AdminPOS() {
             onConfirm={handleConfirmarPago}
             onClose={() => setShowPayment(false)}
             loading={loadingVenta}
+          />
+        )}
+        {qrData && (
+          <QRModal
+            qrData={qrData}
+            onConfirmSinpe={handleQrConfirmSinpe}
+            onCancelar={handleQrCancelar}
+            loadingConfirm={loadingConfirm}
           />
         )}
         {receipt && (

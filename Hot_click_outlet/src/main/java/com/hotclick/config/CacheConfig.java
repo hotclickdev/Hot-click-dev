@@ -68,6 +68,22 @@ public class CacheConfig {
                 .recordStats()
                 .build());
 
+        // Catálogo público: páginas de productos, destacados, carrusel (write-rarely)
+        manager.registerCustomCache("productos-publicos",
+            Caffeine.newBuilder()
+                .maximumSize(500)
+                .expireAfterWrite(60, TimeUnit.SECONDS)
+                .recordStats()
+                .build());
+
+        // Testimonios aprobados — cambian solo cuando admin aprueba/rechaza
+        manager.registerCustomCache("testimonios-publicos",
+            Caffeine.newBuilder()
+                .maximumSize(50)
+                .expireAfterWrite(300, TimeUnit.SECONDS)
+                .recordStats()
+                .build());
+
         // Default para todos los demás @Cacheable
         manager.setCaffeine(
             Caffeine.newBuilder()

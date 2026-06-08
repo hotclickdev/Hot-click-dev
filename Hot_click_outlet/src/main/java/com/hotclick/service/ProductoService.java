@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -44,6 +45,12 @@ public class ProductoService {
         }
     }
 
+    @SuppressWarnings("null")
+    private void evictProductosPublicos() {
+        Cache c = cacheManager.getCache("productos-publicos");
+        if (c != null) c.clear();
+    }
+
     @Transactional
     public Producto crearProducto(ProductoRequestDTO dto, String adminCorreo) {
         return crearProducto(dto, adminCorreo, null);
@@ -53,6 +60,7 @@ public class ProductoService {
         key = "#empresa != null ? #empresa.id.toString() : 'global'")
     @Transactional
     public Producto crearProducto(ProductoRequestDTO dto, String adminCorreo, Empresa empresa) {
+        evictProductosPublicos();
         if (dto.getCategoriaId() == null)
             throw new IllegalArgumentException("Debe seleccionar una categoría");
         if (dto.getBodegaId() == null)
@@ -94,6 +102,7 @@ public class ProductoService {
                 }
                 Producto saved = productoRepository.save(p);
                 evictDashboard(empresaId);
+                evictProductosPublicos();
                 return saved;
             } catch (org.springframework.orm.ObjectOptimisticLockingFailureException e) {
                 if (++intentos >= 3) {
@@ -144,6 +153,8 @@ public class ProductoService {
         }
     }
 
+    @Cacheable(value = "productos-publicos", key = "'rec-' + #id + '-' + #limit")
+    @Transactional(readOnly = true)
     public List<Producto> getRecomendaciones(Long id, int limit) {
         Producto base = productoRepository.findById(id).orElse(null);
         if (base == null) return List.of();
@@ -180,6 +191,8 @@ public class ProductoService {
         return result.stream().limit(limit).toList();
     }
 
+    @Cacheable(value = "productos-publicos", key = "'marca-' + #marcaId + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
+    @Transactional(readOnly = true)
     public Page<Producto> listarPorMarca(Long marcaId, Pageable pageable) {
         // Solo negocios aprobados y visibles
         return productoRepository.findByMarcaPublico(marcaId, Constants.ESTADO_ACTIVO, pageable);
@@ -192,6 +205,7 @@ public class ProductoService {
             .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
         p.setEstado(Constants.ESTADO_INACTIVO);
         productoRepository.save(p);
+        evictProductosPublicos();
     }
 
     @Transactional
@@ -199,7 +213,9 @@ public class ProductoService {
         Producto p = productoRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
         p.setDestacado(valor);
-        return productoRepository.save(p);
+        Producto saved = productoRepository.save(p);
+        evictProductosPublicos();
+        return saved;
     }
 
     @Transactional
@@ -208,31 +224,43 @@ public class ProductoService {
             .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
         p.setVendido(true);
         p.setStockActual(0);
-        return productoRepository.save(p);
+        Producto saved = productoRepository.save(p);
+        evictProductosPublicos();
+        return saved;
     }
 
+    @Transactional(readOnly = true)
     public Producto buscarPorId(Long id) {
         return productoRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
     }
 
+    @Transactional(readOnly = true)
     public Page<Producto> listarProductosDisponibles(Pageable pageable) {
         return productoRepository.findByEstado(Constants.ESTADO_ACTIVO, pageable);
     }
 
+    @Cacheable(value = "productos-publicos", key = "'todos-' + #pageable.pageNumber + '-' + #pageable.pageSize")
+    @Transactional(readOnly = true)
     public Page<Producto> listarTodosActivos(Pageable pageable) {
         // Solo negocios aprobados visibles en catálogo público
         return productoRepository.findByEstadoAndEmpresaAprobada(Constants.ESTADO_ACTIVO, pageable);
     }
 
+    @Cacheable(value = "productos-publicos", key = "'cat-' + #categoriaId + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
+    @Transactional(readOnly = true)
     public Page<Producto> listarPorCategoria(Long categoriaId, Pageable pageable) {
         return productoRepository.findByCategoriaPublico(categoriaId, Constants.ESTADO_ACTIVO, pageable);
     }
 
+    @Cacheable(value = "productos-publicos", key = "'destacados'")
+    @Transactional(readOnly = true)
     public List<Producto> listarDestacados() {
         return productoRepository.findDestacadosPublicos(Constants.ESTADO_ACTIVO);
     }
 
+    @Cacheable(value = "productos-publicos", key = "'carrusel'")
+    @Transactional(readOnly = true)
     public List<Producto> listarCarrusel() {
         return productoRepository.findCarruselPublico(Constants.ESTADO_ACTIVO);
     }
@@ -243,13 +271,17 @@ public class ProductoService {
             .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
         p.setEnCarrusel(valor);
         if (orden != null) p.setOrdenCarrusel(orden);
-        return productoRepository.save(p);
+        Producto saved = productoRepository.save(p);
+        evictProductosPublicos();
+        return saved;
     }
 
+    @Transactional(readOnly = true)
     public List<Producto> listarArticulosUnicos() {
         return productoRepository.findByEsUnicoTrueAndVendidoFalseAndEstado(Constants.ESTADO_ACTIVO);
     }
 
+    @Transactional(readOnly = true)
     public List<Producto> productosConStockBajo() {
         return productoRepository.findProductosConStockBajo();
     }

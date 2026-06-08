@@ -118,6 +118,9 @@ public class SecurityConfig {
                 // Self-checkout QR — completamente público (sin JWT)
                 .requestMatchers(GET,  "/api/qr/**").permitAll()
                 .requestMatchers(POST, "/api/qr/*/pedido").permitAll()
+                // POS QR pago — rutas públicas (cliente escanea QR)
+                .requestMatchers(GET,  "/api/pos/qr/pago/**").permitAll()
+                .requestMatchers(POST, "/api/pos/qr/pago/*/stripe").permitAll()
                 // Compra sin registro (invitados)
                 .requestMatchers(POST, "/api/payments/guest-checkout").permitAll()
                 .requestMatchers(POST, "/api/payments/guest/paypal/capture").permitAll()
@@ -237,6 +240,7 @@ public class SecurityConfig {
                     "/nosotros", "/productos", "/productos/**", "/informacion", "/contacto",
                     "/carrito", "/login", "/registro", "/registro-empresa", "/perfil", "/perfil/**", "/mis-pedidos",
                     "/checkout", "/pago/exito", "/pago/cancelado",
+                    "/pos/pago", "/pos/pago/**",
                     "/recuperar-carrito", "/recuperar-carrito/**",
                     "/servicios", "/servicios/**",
                     "/admin/empresas", "/admin/empresas/**",
@@ -268,7 +272,7 @@ public class SecurityConfig {
                         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
                         "font-src 'self' https://fonts.gstatic.com; " +
                         "img-src 'self' data: blob: " + supabaseUrl + " https://www.paypalobjects.com https://*.googleusercontent.com https://img.clerk.com https://avatars.githubusercontent.com; " +
-                        "connect-src 'self' " + supabaseUrl + " https://*.clerk.accounts.dev https://api.clerk.com https://clerk.hot-spider-31.lcl.dev https://api-m.paypal.com https://api-m.sandbox.paypal.com https://api.stripe.com https://hooks.stripe.com https://www.google-analytics.com https://region1.google-analytics.com; " +
+                        "connect-src 'self' " + supabaseUrl + " https://*.clerk.accounts.dev https://api.clerk.com https://clerk-telemetry.com https://clerk.hot-spider-31.lcl.dev https://api-m.paypal.com https://api-m.sandbox.paypal.com https://api.stripe.com https://hooks.stripe.com https://www.google-analytics.com https://region1.google-analytics.com; " +
                         "frame-src https://www.paypal.com https://www.sandbox.paypal.com https://js.stripe.com https://hooks.stripe.com https://www.youtube.com https://www.youtube-nocookie.com https://www.tiktok.com https://www.instagram.com; " +
                         "object-src 'none'; " +
                         "base-uri 'self';"

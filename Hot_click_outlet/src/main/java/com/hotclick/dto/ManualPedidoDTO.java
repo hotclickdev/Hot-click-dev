@@ -54,6 +54,10 @@ public class ManualPedidoDTO {
     public List<ItemDTO> getItems() { return items; }
     public void setItems(List<ItemDTO> items) { this.items = items; }
 
+    private String origen;
+    public String getOrigen() { return origen; }
+    public void setOrigen(String origen) { this.origen = origen; }
+
     public static class ItemDTO {
 
         @NotNull(message = "El ID de producto es requerido")

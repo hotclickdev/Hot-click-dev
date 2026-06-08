@@ -18,7 +18,9 @@ export default function CookieBanner({ onConsent }) {
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY)
-    if (!saved) setVisible(true)
+    if (saved) return
+    const t = setTimeout(() => setVisible(true), 12000)
+    return () => clearTimeout(t)
   }, [])
 
   const accept = (analytics) => {

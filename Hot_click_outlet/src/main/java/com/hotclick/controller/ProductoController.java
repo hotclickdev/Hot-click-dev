@@ -13,8 +13,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import java.util.concurrent.TimeUnit;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
@@ -107,12 +110,18 @@ public class ProductoController {
 
     @GetMapping("/destacados")
     public ResponseEntity<ResponseDTO> listarDestacados() {
-        return ResponseEntity.ok(ResponseDTO.success("Destacados obtenidos", productoService.listarDestacados()));
+        HttpHeaders headers = new HttpHeaders();
+        headers.setCacheControl(CacheControl.maxAge(60, TimeUnit.SECONDS).cachePublic());
+        return ResponseEntity.ok().headers(headers)
+                .body(ResponseDTO.success("Destacados obtenidos", productoService.listarDestacados()));
     }
 
     @GetMapping("/carrusel")
     public ResponseEntity<ResponseDTO> listarCarrusel() {
-        return ResponseEntity.ok(ResponseDTO.success("Carrusel obtenido", productoService.listarCarrusel()));
+        HttpHeaders headers = new HttpHeaders();
+        headers.setCacheControl(CacheControl.maxAge(60, TimeUnit.SECONDS).cachePublic());
+        return ResponseEntity.ok().headers(headers)
+                .body(ResponseDTO.success("Carrusel obtenido", productoService.listarCarrusel()));
     }
 
     @PatchMapping("/{id}/carrusel")

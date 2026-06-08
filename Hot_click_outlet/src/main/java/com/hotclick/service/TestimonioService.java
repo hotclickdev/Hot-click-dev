@@ -7,6 +7,8 @@ import com.hotclick.repository.TestimonioRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.utils.InputSanitizer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,6 +62,7 @@ public class TestimonioService {
     }
 
     /** Lista aprobados para el endpoint público (sin email ni datos sensibles). */
+    @Cacheable("testimonios-publicos")
     @Transactional(readOnly = true)
     public List<Map<String, Object>> listarAprobadosPublico() {
         return repo.findByEstadoOrderByFechaAprobacionDesc("APROBADO")
@@ -96,6 +99,7 @@ public class TestimonioService {
             .toList();
     }
 
+    @CacheEvict(value = "testimonios-publicos", allEntries = true)
     public Testimonio aprobar(Long id) {
         Testimonio t = repo.findById(id)
             .orElseThrow(() -> new RuntimeException("Testimonio no encontrado"));
@@ -104,6 +108,7 @@ public class TestimonioService {
         return repo.save(t);
     }
 
+    @CacheEvict(value = "testimonios-publicos", allEntries = true)
     public Testimonio rechazar(Long id) {
         Testimonio t = repo.findById(id)
             .orElseThrow(() -> new RuntimeException("Testimonio no encontrado"));

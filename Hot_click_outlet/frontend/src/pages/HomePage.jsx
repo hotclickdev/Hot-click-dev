@@ -120,9 +120,9 @@ function HeroCarousel({ slides }) {
           <motion.span
             key={`wm-${current}`}
             aria-hidden="true"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            initial={{ y: 20 }}
+            animate={{ y: 0 }}
+            exit={{ y: -20 }}
             transition={{ duration: 0.55 }}
             className="font-black uppercase tracking-[-0.02em] whitespace-nowrap leading-none"
             style={{ fontSize: '20vw', color: 'color-mix(in srgb, var(--hc-text) 4%, transparent)' }}
@@ -231,7 +231,7 @@ function HeroCarousel({ slides }) {
           </AnimatePresence>
 
           {/* ── Right: product image ── */}
-          <div className="relative hidden sm:flex items-center justify-center lg:justify-end">
+          <div className="relative flex items-center justify-center lg:justify-end">
             {/* Ambient glow behind image */}
             <AnimatePresence>
               <motion.div

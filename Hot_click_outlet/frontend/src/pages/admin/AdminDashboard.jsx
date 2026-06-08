@@ -173,6 +173,7 @@ export default function AdminDashboard() {
   ]
 
   const quickLinks = [
+    { to: '/admin/pos',       label: 'Caja POS',                icon: '🖥️',               roles: ['ADMIN_IT', 'ADMIN_CLIENTE', 'EMPRENDEDOR', 'CAJERO', 'GERENTE', 'SUPERVISOR'], highlight: true },
     { to: '/admin/pedidos',   label: t('admin.orders.title'),   icon: <ClipboardQLIcon />, roles: ['ADMIN_IT', 'ADMIN_CLIENTE', 'EMPRENDEDOR'] },
     { to: '/admin/productos', label: t('admin.products.title'), icon: <PackageIcon />,     roles: ['ADMIN_IT', 'ADMIN_CLIENTE', 'EMPRENDEDOR'] },
     { to: '/admin/usuarios',  label: t('admin.users.title'),    icon: <PeopleIcon />,      roles: ['ADMIN_IT'] },
@@ -458,18 +459,32 @@ export default function AdminDashboard() {
               </h2>
               <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
                 {quickLinks.map((link) => (
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    className="flex flex-col items-center gap-2 p-4 bg-[#111114] border border-white/8 rounded-2xl hover:border-white/15 hover:bg-[#1a1a1f] transition-all text-center group"
-                  >
-                    <span className="w-5 h-5 text-[#8e8e9a] group-hover:text-white transition-colors">
-                      {link.icon}
-                    </span>
-                    <span className="text-xs text-[#8e8e9a] group-hover:text-white transition-colors leading-tight">
-                      {link.label}
-                    </span>
-                  </Link>
+                  link.highlight ? (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      className="flex flex-col items-center gap-2 p-4 rounded-2xl transition-all text-center group col-span-1"
+                      style={{ background: 'linear-gradient(135deg,rgba(79,124,255,0.18),rgba(124,58,237,0.18))', border: '1.5px solid rgba(79,124,255,0.4)' }}
+                    >
+                      <span className="text-xl">{link.icon}</span>
+                      <span className="text-xs font-bold leading-tight" style={{ color: '#7aa3ff' }}>
+                        {link.label}
+                      </span>
+                    </Link>
+                  ) : (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      className="flex flex-col items-center gap-2 p-4 bg-[#111114] border border-white/8 rounded-2xl hover:border-white/15 hover:bg-[#1a1a1f] transition-all text-center group"
+                    >
+                      <span className="w-5 h-5 text-[#8e8e9a] group-hover:text-white transition-colors">
+                        {link.icon}
+                      </span>
+                      <span className="text-xs text-[#8e8e9a] group-hover:text-white transition-colors leading-tight">
+                        {link.label}
+                      </span>
+                    </Link>
+                  )
                 ))}
               </div>
             </div>

@@ -56,7 +56,7 @@ export default function AdminConfiguracion() {
     { id: 'notificaciones', label: t('adminConfig.navNotificaciones'), icon: BellIcon,     desc: 'Alertas y emails' },
     { id: 'datos',          label: t('adminConfig.navDatos'),          icon: DatabaseIcon, desc: 'Exportar información' },
     { id: 'apariencia',     label: t('adminConfig.navApariencia'),     icon: PaletteIcon,  desc: 'Tema, fuente e idioma' },
-    { id: 'sistema',        label: t('adminConfig.navSistema'),        icon: CogIcon,      desc: 'Servidor y mantenimiento',  emprendedor: false },
+    { id: 'sistema',        label: t('adminConfig.navSistema'),        icon: CogIcon,      desc: 'Servidor y mantenimiento' },
   ]
   // EMPRENDEDOR: ocultar tabs marcados con emprendedor: false
   const nav = isEmprendedor ? allNav.filter(n => n.emprendedor !== false) : allNav
