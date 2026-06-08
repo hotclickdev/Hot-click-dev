@@ -11,6 +11,7 @@ const CHAT_CSS = `
   @keyframes hc-modal-in  { from { opacity:0; transform:scale(0.95) translateY(16px) } to { opacity:1; transform:none } }
   @keyframes hc-dot       { 0%,60%,100% { transform:translateY(0);   opacity:0.3 }
                              30%         { transform:translateY(-5px); opacity:1   } }
+  @keyframes hc-shake     { 0%,100% { transform:translateX(0) } 20%,60% { transform:translateX(-4px) } 40%,80% { transform:translateX(4px) } }
 `
 if (typeof document !== 'undefined' && !document.getElementById('hc-chat-css')) {
   const s = document.createElement('style')
@@ -123,23 +124,24 @@ function Burbuja({ msg }) {
 }
 
 // ── Main widget ───────────────────────────────────────────────────────────────
-// El chat solo se abre desde el HomeChatBar (barra de inicio). No hay botón flotante.
 export default function ChatWidget({ slug }) {
   const branding = useBranding(slug)
-  // Si el flag está explícitamente desactivado, no renderizar nada
   if (branding !== null && branding?.chatActivo === false) return null
   return <ChatWidgetInner slug={slug} />
 }
 
 function ChatWidgetInner({ slug }) {
-  const [abierto, setAbierto] = useState(false)
-  const [input, setInput]     = useState('')
+  const [abierto, setAbierto]   = useState(false)
+  const [input, setInput]       = useState('')
   const [cargando, setCargando] = useState(false)
-  const bottomRef  = useRef(null)
-  const inputRef   = useRef(null)
-  const pendingRef = useRef(null)
+  const [shake, setShake]       = useState(false)
 
-  // Mensajes y actividad viven en el store global → sobreviven navegación
+  const bottomRef   = useRef(null)
+  const inputRef    = useRef(null)
+  const pendingRef  = useRef(null)
+  // Ref síncrono para cargando — evita que closures async lean valor stale
+  const cargandoRef = useRef(false)
+
   const storeMensajes    = useChatStore((s) => s.mensajes)
   const storeSetMensajes = useChatStore((s) => s.setMensajes)
   const checkExpiry      = useChatStore((s) => s.checkExpiry)
@@ -148,10 +150,14 @@ function ChatWidgetInner({ slug }) {
   const storeClear       = useChatStore((s) => s.clearPending)
   const storeClose       = useChatStore((s) => s.close)
 
-  // Al montar verificar si la conversación expiró (5 min sin actividad)
+  function setLoading(val) {
+    cargandoRef.current = val
+    setCargando(val)
+  }
+
   useEffect(() => { checkExpiry() }, [checkExpiry])
 
-  // Escuchar apertura desde HomeChatBar u otros componentes
+  // Efecto 1: reacciona a apertura externa (desde HeroRotator u otro componente)
   useEffect(() => {
     if (!storeOpen) return
     if (storePending) {
@@ -162,11 +168,14 @@ function ChatWidgetInner({ slug }) {
     storeClose()
   }, [storeOpen, storePending, storeClear, storeClose])
 
-  // Enviar mensaje pendiente o mostrar saludo al abrir
+  // Efecto 2: al ABRIR el modal, procesa mensaje pendiente o muestra saludo
+  // IMPORTANTE: solo depende de [abierto] — si incluyéramos storeOpen se
+  // dispararía dos veces (una al abrir y otra al ejecutar storeClose()).
   useEffect(() => {
     if (!abierto) return
-    if (!pendingRef.current) {
-      if (storeMensajes.length === 0) {
+    const msg = pendingRef.current
+    if (!msg) {
+      if (useChatStore.getState().mensajes.length === 0) {
         const t = setTimeout(() => {
           storeSetMensajes([{
             rol: 'bot',
@@ -177,13 +186,12 @@ function ChatWidgetInner({ slug }) {
       }
       return
     }
-    const msg = pendingRef.current
     pendingRef.current = null
     storeSetMensajes(prev => [...prev, { rol: 'user', texto: msg }])
     const t = setTimeout(() => enviar(msg), 80)
     return () => clearTimeout(t)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [abierto, storeOpen])
+  }, [abierto])
 
   // Scroll al último mensaje
   useEffect(() => {
@@ -192,26 +200,39 @@ function ChatWidgetInner({ slug }) {
 
   // Bloquear scroll del body cuando el modal está abierto
   useEffect(() => {
-    if (abierto) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
+    if (abierto) document.body.style.overflow = 'hidden'
+    else document.body.style.overflow = ''
     return () => { document.body.style.overflow = '' }
   }, [abierto])
 
+  // Cerrar con Escape
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') setAbierto(false) }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+
   async function enviar(mensajeTexto, currentOffset = 0) {
     const msg = (mensajeTexto ?? input).trim()
-    if (!msg || cargando) return
+    if (!msg) return
+
+    // Usar ref en lugar de closure para evitar leer cargando stale
+    if (cargandoRef.current) {
+      // Feedback visual: sacudir el input en lugar de fallar silenciosamente
+      setShake(true)
+      setTimeout(() => setShake(false), 400)
+      return
+    }
 
     setInput('')
-    setCargando(true)
+    setLoading(true)
 
-    // Capturar historial ANTES de agregar el mensaje actual
-    // Si el mensaje actual ya está al final del store (caso pending), lo excluimos
-    const allCompleted = storeMensajes.filter(m => m.texto && !m.streaming)
-    const lastMsg = allCompleted[allCompleted.length - 1]
-    const historyBase = (lastMsg?.rol === 'user' && lastMsg?.texto === msg)
+    // Leer mensajes FRESCOS del store (no de la closure del render anterior)
+    const freshMensajes = useChatStore.getState().mensajes
+    const allCompleted  = freshMensajes.filter(m => m.texto && !m.streaming)
+    const lastMsg       = allCompleted[allCompleted.length - 1]
+    // Si el msg ya está al final del store (caso auto-send), excluirlo del historial
+    const historyBase   = (lastMsg?.rol === 'user' && lastMsg?.texto === msg)
       ? allCompleted.slice(0, -1)
       : allCompleted
     const history = historyBase.slice(-12).map(m => ({ rol: m.rol, texto: m.texto }))
@@ -227,16 +248,25 @@ function ChatWidgetInner({ slug }) {
 
     storeSetMensajes(prev => [...prev, { rol: 'bot', texto: '', streaming: true, productos: [] }])
 
+    // AbortController con timeout de 30s — evita que cargando quede stuck forever
+    const controller = new AbortController()
+    const timeoutId  = setTimeout(() => controller.abort(), 30_000)
+
     try {
       const url = slug ? `/api/public/chat?slug=${slug}` : '/api/public/chat'
       const response = await fetch(url, {
         method: 'POST',
+        signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ message: msg, offset: currentOffset, history }),
       })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
 
       const reader  = response.body.getReader()
       const decoder = new TextDecoder()
@@ -251,38 +281,39 @@ function ChatWidgetInner({ slug }) {
 
         for (const line of lines) {
           if (line.startsWith('event:')) continue
-          if (!line.startsWith('data:')) continue
+          if (!line.startsWith('data:'))  continue
+          let data
           try {
             const raw = line.startsWith('data: ') ? line.slice(6) : line.slice(5)
-            const data = JSON.parse(raw)
-            if (data.productos !== undefined) {
-              productos = data.productos
-              hasMore   = data.hasMore
-              storeSetMensajes(prev => {
-                const next = [...prev]
-                next[next.length - 1] = { ...next[next.length - 1], productos }
-                return next
-              })
-            }
-            if (data.text) {
-              accText += data.text
-              storeSetMensajes(prev => {
-                const next = [...prev]
-                next[next.length - 1] = { ...next[next.length - 1], texto: accText, streaming: true }
-                return next
-              })
-            }
-          } catch {}
+            data = JSON.parse(raw)
+          } catch {
+            continue
+          }
+          if (data.error) throw new Error(data.error)
+          if (data.productos !== undefined) {
+            productos = data.productos
+            hasMore   = data.hasMore
+            storeSetMensajes(prev => {
+              const next = [...prev]
+              next[next.length - 1] = { ...next[next.length - 1], productos }
+              return next
+            })
+          }
+          if (data.text) {
+            accText += data.text
+            storeSetMensajes(prev => {
+              const next = [...prev]
+              next[next.length - 1] = { ...next[next.length - 1], texto: accText, streaming: true }
+              return next
+            })
+          }
         }
       }
 
       const nextOffset = currentOffset + 5
       const acciones = []
       if (hasMore) {
-        acciones.push({
-          label: 'Ver 5 más ▸',
-          onClick: () => enviar(msg, nextOffset),
-        })
+        acciones.push({ label: 'Ver 5 más ▸', onClick: () => enviar(msg, nextOffset) })
       }
       acciones.push({ label: 'Buscar otra cosa 🔄', onClick: resetear })
 
@@ -292,14 +323,21 @@ function ChatWidgetInner({ slug }) {
         return next
       })
 
-    } catch {
+    } catch (err) {
+      const texto = err.name === 'AbortError'
+        ? 'La respuesta tardó demasiado. ¿Podés intentarlo de nuevo?'
+        : 'Hubo un error al conectar. Verificá tu conexión e intentá de nuevo.'
       storeSetMensajes(prev => {
         const next = [...prev]
-        next[next.length - 1] = { rol: 'bot', texto: 'Hubo un error. ¿Podés intentarlo de nuevo?' }
+        next[next.length - 1] = {
+          rol: 'bot', texto,
+          acciones: [{ label: 'Reintentar 🔄', onClick: () => enviar(msg, currentOffset) }, { label: 'Buscar otra cosa', onClick: resetear }],
+        }
         return next
       })
     } finally {
-      setCargando(false)
+      clearTimeout(timeoutId)
+      setLoading(false)
       inputRef.current?.focus()
     }
   }
@@ -310,23 +348,16 @@ function ChatWidgetInner({ slug }) {
   }
 
   function onKeyDown(e) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() }
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      enviar()
+    }
   }
-
-  // Cerrar con Escape
-  useEffect(() => {
-    const handler = (e) => { if (e.key === 'Escape') setAbierto(false) }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [])
 
   const accent = 'var(--hc-accent, #ff4b12)'
 
   return (
     <>
-      {/* El chat se abre exclusivamente desde HomeChatBar — no hay botón flotante */}
-
-      {/* Modal centrado */}
       {abierto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
           style={{ animation: 'hc-fade-up 0.18s ease both' }}>
@@ -353,7 +384,9 @@ function ChatWidgetInner({ slug }) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-base font-bold text-white leading-none">Asistente de compras</p>
-                <p className="text-xs text-white/70 mt-0.5">HOTCLICK — Te ayudo a encontrar lo que buscás</p>
+                <p className="text-xs text-white/70 mt-0.5">
+                  {cargando ? 'Buscando productos...' : 'HOTCLICK — Te ayudo a encontrar lo que buscás'}
+                </p>
               </div>
               <button onClick={() => setAbierto(false)} aria-label="Cerrar"
                 className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors shrink-0">
@@ -391,20 +424,30 @@ function ChatWidgetInner({ slug }) {
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={onKeyDown}
-                  placeholder="Escribí qué buscás..."
+                  placeholder={cargando ? 'Procesando respuesta...' : 'Escribí qué buscás...'}
                   disabled={cargando}
                   autoFocus
-                  className="flex-1 px-4 py-2.5 rounded-xl text-sm outline-none disabled:opacity-50"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#e8e8ed',
-                    border: '1px solid rgba(255,255,255,0.14)' }}
+                  className="flex-1 px-4 py-2.5 rounded-xl text-sm outline-none disabled:opacity-60"
+                  style={{
+                    backgroundColor: 'rgba(255,255,255,0.08)',
+                    color: '#e8e8ed',
+                    border: '1px solid rgba(255,255,255,0.14)',
+                    animation: shake ? 'hc-shake 0.35s ease' : undefined,
+                  }}
                 />
-                <button onClick={() => enviar()} disabled={cargando || !input.trim()}
+                <button
+                  onClick={() => enviar()}
+                  disabled={!input.trim()}
                   aria-label="Enviar"
-                  className="w-10 h-10 rounded-xl flex items-center justify-center disabled:opacity-40 hover:opacity-80 transition-opacity"
+                  className="w-10 h-10 rounded-xl flex items-center justify-center transition-opacity hover:opacity-80 disabled:opacity-40"
                   style={{ backgroundColor: accent, color: '#fff' }}>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                  </svg>
+                  {cargando ? (
+                    <TypingDots color="#fff" />
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                  )}
                 </button>
               </div>
             </div>
