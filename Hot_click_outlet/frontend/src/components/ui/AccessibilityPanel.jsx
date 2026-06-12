@@ -33,7 +33,7 @@ export default function AccessibilityPanel() {
   const isDark = theme === 'dark'
 
   return (
-    <div className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 flex flex-col items-end gap-2">
+    <div className="fixed bottom-[calc(9rem+env(safe-area-inset-bottom,0px))] md:bottom-20 right-4 md:right-6 z-50 flex flex-col items-end gap-2">
       <AnimatePresence>
         {open && (
           <motion.div

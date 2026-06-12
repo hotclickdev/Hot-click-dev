@@ -29,7 +29,7 @@ export default function SocialProofToast({ notification }) {
     <div
       aria-live="polite"
       aria-atomic="false"
-      className="fixed bottom-[4.75rem] left-3 right-auto w-[calc(100vw-5.5rem)] max-w-xs sm:bottom-4 sm:left-auto sm:right-4 sm:w-80 z-40 flex flex-col gap-2 pointer-events-none"
+      className="fixed bottom-[4.75rem] left-3 right-auto w-[calc(100vw-5.5rem)] max-w-xs sm:bottom-4 md:bottom-20 sm:left-auto sm:right-4 sm:w-80 z-40 flex flex-col gap-2 pointer-events-none"
     >
       <AnimatePresence initial={false}>
         {queue.map((item) => (
