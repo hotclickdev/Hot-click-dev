@@ -373,7 +373,7 @@ export default function LoginPage() {
                       </button>
                     </form>
 
-                    {CLERK_ENABLED && <SocialLoginButtons />}
+                    {CLERK_ENABLED && <SocialLoginButtons mode="signIn" />}
 
                     <p className="text-center text-sm mt-4" style={{ color: 'var(--hc-muted)' }}>
                       ¿No tenés cuenta?{' '}

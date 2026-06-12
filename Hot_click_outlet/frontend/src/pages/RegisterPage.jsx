@@ -651,7 +651,7 @@ export default function RegisterPage() {
                           {loading ? 'Enviando código…' : <>{t('register.sendCode')} <span className="group-hover:translate-x-1 transition-transform">→</span></>}
                         </button>
                       </form>
-                      {CLERK_ENABLED && <SocialLoginButtons />}
+                      {CLERK_ENABLED && <SocialLoginButtons mode="signUp" />}
                       <p className="text-center text-sm mt-4" style={{ color: 'var(--hc-muted)' }}>
                         {t('register.alreadyAccount')}{' '}
                         <Link to="/login" className="font-semibold" style={{ color: BUYER.color }}>{t('register.login')}</Link>

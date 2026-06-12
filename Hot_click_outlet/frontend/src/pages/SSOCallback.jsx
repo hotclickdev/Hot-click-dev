@@ -21,8 +21,8 @@ export default function SSOCallback() {
       <AuthenticateWithRedirectCallback
         signInFallbackRedirectUrl="/sso-complete"
         signUpFallbackRedirectUrl="/sso-complete"
-        afterSignInUrl="/sso-complete"
-        afterSignUpUrl="/sso-complete"
+        signInForceRedirectUrl="/sso-complete"
+        signUpForceRedirectUrl="/sso-complete"
       />
       <div
         style={{

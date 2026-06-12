@@ -32,10 +32,18 @@ export default function SSOComplete() {
     ;(async () => {
       try {
         const clerkToken = await getToken()
+        if (!clerkToken) {
+          throw new Error('No se pudo obtener el token de sesión de Clerk')
+        }
+
         const email      = user.primaryEmailAddress?.emailAddress ?? ''
         const nombre     = user.firstName ?? ''
         const apellido   = user.lastName  ?? ''
         const fotoUrl    = user.imageUrl  ?? ''
+
+        if (!email) {
+          throw new Error('No se pudo obtener el email de tu cuenta Google')
+        }
 
         const res = await fetch('/api/auth/clerk-sync', {
           method: 'POST',
@@ -46,7 +54,11 @@ export default function SSOComplete() {
           body: JSON.stringify({ email, nombre, apellido, fotoUrl }),
         })
 
-        const json = await res.json()
+        const json = await res.json().catch(() => ({}))
+
+        if (!res.ok || !json.success) {
+          throw new Error(json.message || `Error del servidor (${res.status})`)
+        }
 
         if (json.success && json.data) {
           login(json.data)
@@ -62,7 +74,8 @@ export default function SSOComplete() {
       } catch (err) {
         console.error('[sso-complete]', err)
         try { await signOut() } catch { /* ignore */ }
-        toast({ message: 'Error al conectar tu cuenta social. Intentá de nuevo.', type: 'error' })
+        const msg = err?.message || 'Error al conectar tu cuenta social. Intentá de nuevo.'
+        toast({ message: msg, type: 'error' })
         navigate('/login', { replace: true })
       }
     })()

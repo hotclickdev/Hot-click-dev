@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { useSignIn } from '@clerk/react'
+import { useSignIn, useSignUp } from '@clerk/react'
+import { useToast } from '@/components/ui/Toast'
 
 const ACTIVE_PROVIDERS = [
   {
@@ -40,27 +41,46 @@ const COMING_SOON = [
   },
 ]
 
-export default function SocialLoginButtons() {
-  const { signIn, isLoaded } = useSignIn()
-  const [loading, setLoading] = useState(null)
+export default function SocialLoginButtons({ mode = 'signIn' }) {
+  const { signIn, isLoaded: signInLoaded }   = useSignIn()
+  const { signUp, isLoaded: signUpLoaded }   = useSignUp()
+  const [loading, setLoading]               = useState(null)
+  const [error,   setError]                 = useState('')
+  const toast                               = useToast()
+
+  const isLoaded = mode === 'signUp' ? signUpLoaded : signInLoaded
 
   const handleSocial = async (providerId) => {
     if (!isLoaded || loading) return
+    const client = mode === 'signUp' ? signUp : signIn
+    if (!client) {
+      toast({ message: 'Error al inicializar autenticación social. Recargá la página.', type: 'error' })
+      return
+    }
+    setError('')
     setLoading(providerId)
     try {
-      await signIn.authenticateWithRedirect({
+      await client.authenticateWithRedirect({
         strategy: `oauth_${providerId}`,
         redirectUrl:         `${window.location.origin}/sso-callback`,
         redirectUrlComplete: `${window.location.origin}/sso-complete`,
       })
     } catch (err) {
       console.error('[social-login]', err)
+      const msg = err?.errors?.[0]?.message || err?.message || 'Error al conectar con Google. Intentá de nuevo.'
+      setError(msg)
       setLoading(null)
     }
   }
 
   return (
     <div className="mt-5">
+      {error && (
+        <div className="mb-3 px-3 py-2 rounded-xl text-sm text-center"
+          style={{ color: 'var(--hc-danger)', background: 'color-mix(in srgb, var(--hc-danger) 7%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-danger) 22%, transparent)' }}>
+          {error}
+        </div>
+      )}
       <div className="flex items-center gap-3 mb-4">
         <div className="flex-1 h-px" style={{ background: 'var(--hc-border)' }} />
         <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--hc-muted)' }}>
