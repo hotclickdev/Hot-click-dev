@@ -34,7 +34,7 @@ public class ImageModerationService {
     private static final List<String> LIKELIHOOD_ORDER =
         List.of("UNKNOWN", "VERY_UNLIKELY", "UNLIKELY", "POSSIBLE", "LIKELY", "VERY_LIKELY");
 
-    @Value("${google.vision.api-key}")
+    @Value("${google.vision.api-key:}")
     private String apiKey;
 
     public record ModerationResult(boolean safe, String reason) {}
@@ -54,6 +54,10 @@ public class ImageModerationService {
     }
 
     private ModerationResult moderarBase64(String base64) {
+        if (apiKey == null || apiKey.isBlank()) {
+            log.debug("[Moderación] google.vision.api-key no configurada — imagen aprobada (fail-open)");
+            return new ModerationResult(true, null);
+        }
         try {
             RestTemplate rt = buildRestTemplate();
             String url = String.format(VISION_URL, apiKey);

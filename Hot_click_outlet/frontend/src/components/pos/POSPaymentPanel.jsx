@@ -11,7 +11,7 @@ const METODOS = [
   { id: 'DATAFONO',     label: 'Datafono integrado',     icon: '🔌', desc: 'Próximamente', disabled: true },
 ]
 
-const SEG_COLOR = { NUEVO: '#60a5fa', FRECUENTE: '#34d399', VIP: '#fbbf24', INACTIVO: '#8e8e9a' }
+const SEG_COLOR = { NUEVO: '#6490EA', FRECUENTE: '#34d399', VIP: '#fbbf24', INACTIVO: '#A7B0BC' }
 
 export default function POSPaymentPanel({ total, onConfirm, onClose, loading }) {
   const [metodoPago, setMetodoPago]       = useState('EFECTIVO')
@@ -83,7 +83,7 @@ export default function POSPaymentPanel({ total, onConfirm, onClose, loading }) 
 
         {/* Total */}
         <div className="rounded-xl p-4 text-center"
-          style={{ backgroundColor: 'rgba(79,124,255,0.1)', border: '1px solid rgba(79,124,255,0.2)' }}>
+          style={{ backgroundColor: 'rgba(23,71,168,0.1)', border: '1px solid rgba(23,71,168,0.2)' }}>
           <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Total a cobrar</p>
           <p className="text-3xl font-black mt-1" style={{ color: 'var(--hc-accent)' }}>₡{fmt(total)}</p>
         </div>
@@ -144,7 +144,7 @@ export default function POSPaymentPanel({ total, onConfirm, onClose, loading }) 
             Cliente
             {clienteInfo && (
               <span className="ml-2 font-normal" style={{ color: 'var(--hc-muted)' }}>
-                — <span style={{ color: SEG_COLOR[clienteInfo.segmento] ?? '#8e8e9a' }}>
+                — <span style={{ color: SEG_COLOR[clienteInfo.segmento] ?? '#A7B0BC' }}>
                   {clienteInfo.segmento ?? 'NUEVO'}
                 </span>
                 {' · '}
@@ -181,7 +181,7 @@ export default function POSPaymentPanel({ total, onConfirm, onClose, loading }) 
                   </div>
                   <div className="text-right shrink-0 ml-3">
                     <p style={{ color: '#fbbf24' }}>{c.puntosFidelidad ?? 0} pts</p>
-                    <p style={{ color: SEG_COLOR[c.segmento] ?? '#8e8e9a', fontSize: '10px' }}>
+                    <p style={{ color: SEG_COLOR[c.segmento] ?? '#A7B0BC', fontSize: '10px' }}>
                       {c.segmento ?? 'NUEVO'}
                     </p>
                   </div>

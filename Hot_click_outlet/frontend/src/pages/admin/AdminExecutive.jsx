@@ -158,7 +158,7 @@ export default function AdminExecutive() {
         <div className="flex gap-2">
           <button onClick={generarAiSummary} disabled={aiLoading}
             className="px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 hover:opacity-80"
-            style={{ backgroundColor: 'rgba(79,124,255,0.15)', color: '#4f7cff', border: '1px solid rgba(79,124,255,0.3)' }}>
+            style={{ backgroundColor: 'rgba(23,71,168,0.15)', color: 'var(--hc-accent)', border: '1px solid rgba(23,71,168,0.3)' }}>
             {aiLoading ? '⏳ Generando…' : '🤖 Resumen AI'}
           </button>
           <button onClick={imprimir}
@@ -238,14 +238,14 @@ export default function AdminExecutive() {
       {/* AI Summary */}
       {(aiText || aiLoading) && (
         <div className="rounded-2xl p-5 space-y-3"
-          style={{ backgroundColor: 'rgba(79,124,255,0.06)', border: '1px solid rgba(79,124,255,0.2)' }}>
+          style={{ backgroundColor: 'rgba(23,71,168,0.06)', border: '1px solid rgba(23,71,168,0.2)' }}>
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-[#4f7cff]">🤖 Resumen ejecutivo AI</p>
             {aiText && !aiLoading && (
               <button onClick={guardarResumen}
                 className="text-xs px-3 py-1 rounded-lg hover:opacity-80"
-                style={{ backgroundColor: guardado ? 'rgba(52,211,153,0.15)' : 'rgba(79,124,255,0.15)',
-                  color: guardado ? '#34d399' : '#4f7cff', border: '1px solid currentColor' }}>
+                style={{ backgroundColor: guardado ? 'rgba(52,211,153,0.15)' : 'rgba(23,71,168,0.15)',
+                  color: guardado ? '#34d399' : 'var(--hc-accent)', border: '1px solid currentColor' }}>
                 {guardado ? '✓ Guardado' : 'Guardar'}
               </button>
             )}
@@ -276,7 +276,7 @@ export default function AdminExecutive() {
 
       {/* Print footer */}
       <div className="hidden print:block text-xs text-gray-400 text-center pt-4 border-t">
-        Generado por HOTCLICK · {new Date().toLocaleDateString('es-CR')}
+        Generado por HotClick · {new Date().toLocaleDateString('es-CR')}
       </div>
     </div>
   )

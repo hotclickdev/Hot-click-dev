@@ -3,6 +3,7 @@ package com.hotclick.service;
 import com.hotclick.dto.ProductoRequestDTO;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Producto;
+import com.hotclick.rag.event.ProductoGuardadoEvent;
 import com.hotclick.repository.BodegaRepository;
 import com.hotclick.repository.CategoriaRepository;
 import com.hotclick.repository.MarcaRepository;
@@ -15,6 +16,7 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +35,7 @@ public class ProductoService {
     @Autowired private MarcaRepository marcaRepository;
     @Autowired private CacheManager cacheManager;
     @Autowired private InputSanitizer sanitizer;
+    @Autowired private ApplicationEventPublisher eventPublisher;
 
     @SuppressWarnings("null")
     private void evictDashboard(Long empresaId) {
@@ -79,7 +82,19 @@ public class ProductoService {
         p.setAdminCliente(usuarioRepository.findByCorreo(adminCorreo)
             .orElseThrow(() -> new RuntimeException("Admin no encontrado")));
         p.setEmpresa(empresa);
-        return productoRepository.save(p);
+        Producto saved = productoRepository.save(p);
+        eventPublisher.publishEvent(new ProductoGuardadoEvent(
+            this,
+            saved.getId(),
+            empresa != null ? empresa.getId() : null,
+            saved.getNombreProducto(),
+            saved.getDescripcionCorta(),
+            saved.getMarcaTexto(),
+            saved.getSku(),
+            saved.getTags(),
+            saved.getEspecificaciones()
+        ));
+        return saved;
     }
 
     public Producto actualizarProducto(Long id, ProductoRequestDTO dto, String adminCorreo) {
@@ -103,6 +118,17 @@ public class ProductoService {
                 Producto saved = productoRepository.save(p);
                 evictDashboard(empresaId);
                 evictProductosPublicos();
+                eventPublisher.publishEvent(new ProductoGuardadoEvent(
+                    this,
+                    saved.getId(),
+                    empresaId,
+                    saved.getNombreProducto(),
+                    saved.getDescripcionCorta(),
+                    saved.getMarcaTexto(),
+                    saved.getSku(),
+                    saved.getTags(),
+                    saved.getEspecificaciones()
+                ));
                 return saved;
             } catch (org.springframework.orm.ObjectOptimisticLockingFailureException e) {
                 if (++intentos >= 3) {

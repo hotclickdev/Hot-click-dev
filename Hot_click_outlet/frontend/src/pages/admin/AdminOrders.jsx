@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import Spinner from '@/components/ui/Spinner'
 import { orderService } from '@/services/orderService'
@@ -15,18 +15,18 @@ const FILTERS = ['Todos', 'PENDIENTE', 'PAGADO', 'EN_PREPARACION', 'LISTO_RETIRO
 
 const ESTADO_STYLE = {
   PENDIENTE:      { bg: 'rgba(212,177,6,0.15)',   text: '#d4b106', border: 'rgba(212,177,6,0.35)' },
-  PAGADO:         { bg: 'rgba(79,124,255,0.14)',  text: '#4f7cff', border: 'rgba(79,124,255,0.35)' },
+  PAGADO:         { bg: 'rgba(23,71,168,0.14)',  text: 'var(--hc-accent)', border: 'rgba(23,71,168,0.35)' },
   EN_PREPARACION: { bg: 'rgba(245,158,11,0.14)',  text: '#f59e0b', border: 'rgba(245,158,11,0.35)' },
   LISTO_RETIRO:   { bg: 'rgba(34,197,94,0.14)',   text: '#22c55e', border: 'rgba(34,197,94,0.35)' },
-  ENVIADO:        { bg: 'rgba(96,165,250,0.14)',  text: '#60a5fa', border: 'rgba(96,165,250,0.35)' },
+  ENVIADO:        { bg: 'rgba(96,165,250,0.14)',  text: '#6490EA', border: 'rgba(96,165,250,0.35)' },
   ENTREGADO:      { bg: 'rgba(74,222,128,0.14)',  text: '#4ade80', border: 'rgba(74,222,128,0.35)' },
-  COMPLETADO:     { bg: 'rgba(147,51,234,0.14)',  text: '#a855f7', border: 'rgba(147,51,234,0.35)' },
+  COMPLETADO:     { bg: 'rgba(63,108,222,0.14)',  text: 'var(--hc-blue-400)', border: 'rgba(63,108,222,0.35)' },
   CANCELADO:      { bg: 'rgba(248,113,113,0.14)', text: '#f87171', border: 'rgba(248,113,113,0.35)' },
 }
 
 function EstadoBadge({ estado }) {
   const { t } = useTranslation()
-  const s = ESTADO_STYLE[estado] ?? { bg: 'rgba(142,142,154,0.14)', text: '#8e8e9a', border: 'rgba(142,142,154,0.35)' }
+  const s = ESTADO_STYLE[estado] ?? { bg: 'rgba(142,142,154,0.14)', text: '#A7B0BC', border: 'rgba(142,142,154,0.35)' }
   return (
     <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
       style={{ backgroundColor: s.bg, color: s.text, border: `1px solid ${s.border}` }}>
@@ -122,13 +122,13 @@ function buildWaMessage(order) {
   if (order.numeroGuia) {
     const isCorreos = !order.urlTracking || order.urlTracking.includes('correos.go.cr')
     const trackUrl  = order.urlTracking ?? `https://rastreo.correos.go.cr/?codigo=${order.numeroGuia}`
-    const courier   = isCorreos ? '🟡 Correos de Costa Rica' : '🛵 Entrega directa por HOTCLICK'
+    const courier   = isCorreos ? '🟡 Correos de Costa Rica' : '🛵 Entrega directa por HotClick'
     extra = `\n\n📦 *Envío:* ${courier}\n*Guía:* ${order.numeroGuia}\n🔍 Rastrear: ${trackUrl}`
   } else if (esRetiro && (estado === 'LISTO_RETIRO' || estado === 'EN_PREPARACION')) {
     extra = `\n\n📍 *Retiro en tienda:* Cuando esté listo te avisamos.\nhttps://waze.com/ul?ll=9.9342,-84.0877&navigate=yes`
   }
   return encodeURIComponent(
-    `Hola ${order.nombreCliente ?? 'Cliente'}! 👋 Te escribimos desde HOTCLICK con una actualización de tu pedido.\n\n` +
+    `Hola ${order.nombreCliente ?? 'Cliente'}! 👋 Te escribimos desde HotClick con una actualización de tu pedido.\n\n` +
     `📋 *Pedido #${order.numeroPedido ?? order.id}*\n` +
     `Estado: *${estado}*\n\n` +
     `${items}\n\n` +
@@ -607,7 +607,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
           </span>
           {order.metodoPago && (
             <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-              style={{ backgroundColor: 'rgba(79,124,255,0.12)', color: '#4f7cff', border: '1px solid rgba(79,124,255,0.25)' }}>
+              style={{ backgroundColor: 'rgba(23,71,168,0.12)', color: 'var(--hc-accent)', border: '1px solid rgba(23,71,168,0.25)' }}>
               {order.metodoPago}
             </span>
           )}
@@ -754,7 +754,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
               const numero = tel.startsWith('506') ? tel : `506${tel}`
               const productos = (order.items ?? []).map(i => `• ${i.nombreProducto} ×${i.cantidad}`).join('\n')
               const msg = [
-                `Hola ${order.nombreCliente ?? ''}, te escribimos de *HOTCLICK* sobre tu pedido *#${order.id}*.`,
+                `Hola ${order.nombreCliente ?? ''}, te escribimos de *HotClick* sobre tu pedido *#${order.id}*.`,
                 '',
                 `Estado actual: *${order.estado ?? estado}*`,
                 ...(productos ? ['\nProductos:', productos] : []),
@@ -802,7 +802,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
             <p className="text-center text-sm text-green-400 py-1">{t('adminOrders.orderDelivered')}</p>
           )}
           {estado === 'COMPLETADO' && (
-            <p className="text-center text-sm py-1" style={{ color: '#a855f7' }}>{t('adminOrders.orderCompleted')}</p>
+            <p className="text-center text-sm py-1" style={{ color: 'var(--hc-blue-400)' }}>{t('adminOrders.orderCompleted')}</p>
           )}
           {estado === 'CANCELADO' && (
             <p className="text-center text-sm text-red-400 py-1">{t('adminOrders.orderCancelled')}</p>
@@ -1003,15 +1003,15 @@ export default function AdminOrders() {
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center" style={{ backgroundColor: 'rgba(79,124,255,0.08)', border: '1px solid rgba(79,124,255,0.15)' }}>
-                  <svg className="w-7 h-7" style={{ color: '#4f7cff' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+                <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center" style={{ backgroundColor: 'rgba(23,71,168,0.08)', border: '1px solid rgba(23,71,168,0.15)' }}>
+                  <svg className="w-7 h-7" style={{ color: 'var(--hc-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
                 </div>
                 <p className="font-semibold text-[#e8e8ed]">Sin pedidos todavía</p>
                 <p className="text-sm text-[#8e8e9a] max-w-xs mx-auto">Los pedidos de tus clientes aparecen aquí. También podés registrar uno manual.</p>
                 <button
                   onClick={() => setShowCreate(true)}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold mt-1 transition-opacity hover:opacity-80"
-                  style={{ backgroundColor: '#4f7cff', color: '#fff' }}
+                  style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
                 >
                   + Registrar pedido manual
                 </button>

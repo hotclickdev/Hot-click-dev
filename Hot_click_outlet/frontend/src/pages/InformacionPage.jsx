@@ -10,7 +10,7 @@ export default function InformacionPage() {
 
   const STEPS = [
     { n: '01', title: t('informacion.step1Title'), desc: t('informacion.step1Desc'), icon: <SearchIcon />, color: 'text-[#4f7cff]', bg: 'bg-[#4f7cff]/10', border: 'border-[#4f7cff]/20' },
-    { n: '02', title: t('informacion.step2Title'), desc: t('informacion.step2Desc'), icon: <EyeIcon />, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
+    { n: '02', title: t('informacion.step2Title'), desc: t('informacion.step2Desc'), icon: <EyeIcon />, color: 'text-[var(--hc-blue-400)]', bg: 'bg-[var(--hc-blue-500)]/10', border: 'border-[var(--hc-blue-500)]/20' },
     { n: '03', title: t('informacion.step3Title'), desc: t('informacion.step3Desc'), icon: <CartIcon />, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
     { n: '04', title: t('informacion.step4Title'), desc: t('informacion.step4Desc'), icon: <WhatsIcon />, color: 'text-[#25D366]', bg: 'bg-[#25D366]/10', border: 'border-[#25D366]/20' },
     { n: '05', title: t('informacion.step5Title'), desc: t('informacion.step5Desc'), icon: <CheckIcon />, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
@@ -87,7 +87,7 @@ export default function InformacionPage() {
           <div className="mt-6 text-center">
             <Link
               to="/productos"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-semibold text-sm transition-all shadow-[0_0_24px_rgba(79,124,255,0.3)]"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-semibold text-sm transition-all shadow-[0_0_24px_rgba(23,71,168,0.3)]"
             >
               {t('informacion.goCatalog')}
             </Link>
@@ -325,7 +325,7 @@ export default function InformacionPage() {
         {/* CTA */}
         <section className="text-center">
           <div className="relative rounded-3xl bg-[#111114] border border-white/8 p-10 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#4f7cff]/8 to-purple-500/5 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-br from-[#4f7cff]/8 to-[var(--hc-blue-500)]/5 pointer-events-none" />
             <div className="relative">
               <h2 className="text-2xl font-bold text-[#e8e8ed] mb-3">{t('informacion.ctaTitle')}</h2>
               <p className="text-[#8e8e9a] mb-6 max-w-sm mx-auto text-sm">{t('informacion.ctaSub')}</p>

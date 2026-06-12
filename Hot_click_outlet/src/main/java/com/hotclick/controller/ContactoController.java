@@ -36,7 +36,7 @@ public class ContactoController {
 
         try {
             String html = "<div style='font-family:sans-serif;max-width:560px'>"
-                + "<h2 style='color:#4f7cff'>Nuevo mensaje de contacto</h2>"
+                + "<h2 style='color:#1747A8'>Nuevo mensaje de contacto</h2>"
                 + "<table style='width:100%;border-collapse:collapse'>"
                 + "<tr><td style='padding:8px;font-weight:bold;color:#555'>Nombre</td>"
                 + "<td style='padding:8px'>" + HtmlUtils.htmlEscape(nombre) + "</td></tr>"

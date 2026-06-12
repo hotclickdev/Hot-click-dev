@@ -5,17 +5,19 @@ const WA_URL   = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent('¡Hola! Q
 
 export default function WhatsAppFab() {
   return (
-    <div className="fixed bottom-[10.5rem] sm:bottom-24 right-4 sm:right-6 z-50 flex flex-col items-center">
+    // Brand Book §15.4: 56px móvil / 48px desktop, margen 16px, abajo-derecha;
+    // en móvil se eleva sobre el BottomNav para no tapar CTAs
+    <div className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:bottom-4 right-4 z-40 flex flex-col items-center">
 
       {/* Ícono WhatsApp */}
       <motion.a
         href={WA_URL}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="WhatsApp"
-        title="WhatsApp"
-        className="w-12 h-12 rounded-2xl flex items-center justify-center"
-        style={{ backgroundColor: '#25D366', boxShadow: '0 4px 20px rgba(37,211,102,0.4)' }}
+        aria-label="Escribinos por WhatsApp"
+        title="Escribinos por WhatsApp"
+        className="w-14 h-14 md:w-12 md:h-12 rounded-full flex items-center justify-center"
+        style={{ backgroundColor: '#25D366', boxShadow: 'var(--hc-shadow-2)' }}
         whileHover={{ scale: 1.12, boxShadow: '0 4px 28px rgba(37,211,102,0.65)' }}
         whileTap={{ scale: 0.93 }}
         transition={{ type: 'spring', stiffness: 400, damping: 18 }}

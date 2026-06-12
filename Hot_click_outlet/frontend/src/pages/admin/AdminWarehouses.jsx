@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -129,7 +129,7 @@ export default function AdminWarehouses() {
                         style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }} />
                     ) : (
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-sm font-bold"
-                        style={{ backgroundColor: 'rgba(79,124,255,0.1)', color: '#4f7cff', border: '1px solid rgba(79,124,255,0.2)' }}>
+                        style={{ backgroundColor: 'rgba(23,71,168,0.1)', color: 'var(--hc-accent)', border: '1px solid rgba(23,71,168,0.2)' }}>
                         {(w.nombreBodega ?? 'B').charAt(0).toUpperCase()}
                       </div>
                     )}

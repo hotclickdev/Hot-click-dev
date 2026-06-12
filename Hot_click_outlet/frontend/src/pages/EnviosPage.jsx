@@ -8,11 +8,11 @@ const LAST_UPDATED = '5 de junio de 2025'
 const shippingJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebPage',
-  name: 'Política de envíos HOTCLICK — Costa Rica',
+  name: 'Política de envíos HotClick — Costa Rica',
   description: 'Información completa sobre envíos a todo Costa Rica: tiempos de entrega, couriers, costos y zonas de cobertura.',
   url: `${SITE_URL}/envios`,
   inLanguage: 'es-CR',
-  isPartOf: { '@type': 'WebSite', name: 'HOTCLICK', url: SITE_URL },
+  isPartOf: { '@type': 'WebSite', name: 'HotClick', url: SITE_URL },
   about: {
     '@type': 'OfferShippingDetails',
     shippingDestination: {
@@ -35,7 +35,7 @@ const sections = [
     title: '1. Información General',
     content: (
       <>
-        <p>HOTCLICK es un marketplace donde emprendedores costarricenses venden sus productos. Los envíos son gestionados por cada emprendedor de forma independiente, usando los métodos disponibles en Costa Rica. A continuación encontrás todo lo que necesitás saber sobre cómo llegan tus pedidos.</p>
+        <p>HotClick es un marketplace donde emprendedores costarricenses venden sus productos. Los envíos son gestionados por cada emprendedor de forma independiente, usando los métodos disponibles en Costa Rica. A continuación encontrás todo lo que necesitás saber sobre cómo llegan tus pedidos.</p>
       </>
     ),
   },
@@ -98,7 +98,7 @@ const sections = [
         <p>Podés rastrear el estado de tu pedido de estas formas:</p>
         <ul>
           <li>
-            <strong>En HOTCLICK:</strong> ingresá a <Link to="/mis-pedidos" style={{ color: 'var(--hc-accent)' }}>Mis Pedidos</Link> para ver el estado actualizado en tiempo real.
+            <strong>En HotClick:</strong> ingresá a <Link to="/mis-pedidos" style={{ color: 'var(--hc-accent)' }}>Mis Pedidos</Link> para ver el estado actualizado en tiempo real.
           </li>
           <li>
             <strong>Notificaciones por correo:</strong> te enviamos un email cuando tu pedido es confirmado, despachado y entregado.
@@ -118,7 +118,7 @@ const sections = [
     title: '6. Cobertura Geográfica',
     content: (
       <>
-        <p>HOTCLICK opera exclusivamente en <strong>Costa Rica</strong>. No realizamos envíos internacionales.</p>
+        <p>HotClick opera exclusivamente en <strong>Costa Rica</strong>. No realizamos envíos internacionales.</p>
         <ul>
           <li><strong>Correos de Costa Rica:</strong> cubre todo el territorio nacional, incluyendo zonas rurales y costeras.</li>
           <li><strong>Entrega directa:</strong> cada emprendedor define su zona de cobertura. Se indica en la página del producto.</li>
@@ -148,19 +148,19 @@ export default function EnviosPage() {
   return (
     <MainLayout>
       <Helmet>
-        <title>Envíos a todo Costa Rica — HOTCLICK Marketplace</title>
-        <meta name="description" content="Enviamos a todas las provincias de Costa Rica en 1 a 5 días hábiles. Conocé los métodos de envío, couriers disponibles y zonas de cobertura de HOTCLICK." />
+        <title>Envíos a todo Costa Rica — HotClick Marketplace</title>
+        <meta name="description" content="Enviamos a todas las provincias de Costa Rica en 1 a 5 días hábiles. Conocé los métodos de envío, couriers disponibles y zonas de cobertura de HotClick." />
         <link rel="canonical" href={`${SITE_URL}/envios`} />
         <link rel="alternate" hreflang="es-CR" href={`${SITE_URL}/envios`} />
         <link rel="alternate" hreflang="es" href={`${SITE_URL}/envios`} />
         <link rel="alternate" hreflang="x-default" href={`${SITE_URL}/`} />
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="Envíos a todo Costa Rica — HOTCLICK" />
+        <meta property="og:title" content="Envíos a todo Costa Rica — HotClick" />
         <meta property="og:description" content="Entrega en 1 a 5 días hábiles a San José, Alajuela, Heredia, Cartago, Puntarenas, Limón y Guanacaste." />
         <meta property="og:url" content={`${SITE_URL}/envios`} />
         <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
         <meta property="og:locale" content="es_CR" />
-        <meta property="og:site_name" content="HOTCLICK" />
+        <meta property="og:site_name" content="HotClick" />
         <script type="application/ld+json">{JSON.stringify(shippingJsonLd)}</script>
       </Helmet>
       <div style={{ background: 'var(--hc-bg)', minHeight: '100vh', paddingBottom: '4rem' }}>
@@ -202,7 +202,7 @@ export default function EnviosPage() {
                   Política de Envíos
                 </h1>
                 <p style={{ fontSize: 13, color: 'var(--hc-muted)', margin: '4px 0 0' }}>
-                  HOTCLICK · Última actualización: {LAST_UPDATED}
+                  HotClick · Última actualización: {LAST_UPDATED}
                 </p>
               </div>
             </div>

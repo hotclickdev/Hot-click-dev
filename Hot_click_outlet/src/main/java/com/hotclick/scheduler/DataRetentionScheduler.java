@@ -21,6 +21,8 @@ import java.time.LocalDateTime;
  *   - hot_click_webhook_event_tb:                90 días (solo procesado=true)
  *   - hot_click_rate_limit_tb:                   on-expiry (expires_at < epoch now)
  *   - shedlock (locks viejos):                   7 días
+ *   - hot_click_chat_sesion_tb:                  30 días (inactividad por ultimo_mensaje_en)
+ *     └─ hot_click_chat_mensaje_shopping_tb:     cascada automática vía ON DELETE CASCADE
  *
  * Corre a las 2:30 AM con ShedLock — solo un pod lo ejecuta en multi-pod.
  * Borra en lotes pequeños (LIMIT 500) para no generar un lock masivo en la tabla.
@@ -48,6 +50,7 @@ public class DataRetentionScheduler {
         total += limpiarWebhookEvents();
         total += limpiarRateLimitExpirados();
         total += limpiarShedlockViejos();
+        total += limpiarSesionesChatAsistente();
 
         long ms = System.currentTimeMillis() - inicio;
         if (total > 0) {
@@ -119,5 +122,22 @@ public class DataRetentionScheduler {
         LocalDateTime corte = LocalDateTime.now().minusDays(7);
         int n = jdbc.update("DELETE FROM shedlock WHERE lock_until < ?", corte);
         return n;
+    }
+
+    private int limpiarSesionesChatAsistente() {
+        LocalDateTime corte = LocalDateTime.now().minusDays(30);
+        // Los mensajes en hot_click_chat_mensaje_shopping_tb se eliminan automáticamente
+        // por ON DELETE CASCADE definido en V63. Solo es necesario borrar la sesión padre.
+        // do/while vacía el backlog completo si se acumularon más de 500 sesiones.
+        int total = 0, n;
+        do {
+            n = jdbc.update(
+                "DELETE FROM hot_click_chat_sesion_tb WHERE ctid IN " +
+                "(SELECT ctid FROM hot_click_chat_sesion_tb WHERE ultimo_mensaje_en < ? LIMIT 500)",
+                corte);
+            total += n;
+        } while (n == 500);
+        if (total > 0) log.info("[retention] chat_sesion: {} sesiones eliminadas (> 30 días, mensajes en cascada)", total);
+        return total;
     }
 }

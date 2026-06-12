@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import MainLayout from '@/layouts/MainLayout'
+import SellerBadge from '@/components/ui/SellerBadge'
 import api from '@/services/api'
 
 export default function EmprendimientosPage() {
@@ -31,13 +32,13 @@ export default function EmprendimientosPage() {
               fontSize: 12, fontWeight: 700, color: 'var(--hc-accent)',
               letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 16,
             }}>
-              Convenios HOTCLICK
+              Convenios HotClick
             </span>
             <h1 style={{ fontSize: 36, fontWeight: 900, color: 'var(--hc-text)', margin: '0 0 12px' }}>
               Emprendimientos aliados
             </h1>
             <p style={{ fontSize: 16, color: 'var(--hc-muted)', maxWidth: 520, margin: '0 auto' }}>
-              Conocé los negocios con los que tenemos convenio. Aquí piensas con la mente arriba.
+              Conocé los negocios ticos con los que tenemos convenio. Apoyá lo hecho en Costa Rica.
             </p>
           </motion.div>
         </div>
@@ -93,6 +94,7 @@ export default function EmprendimientosPage() {
                   )}
                   <div>
                     <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--hc-text)', margin: '0 0 6px' }}>{c.nombre}</h3>
+                    <SellerBadge verificado className="mb-1.5 justify-center" />
                     {c.descripcion && (
                       <p style={{ fontSize: 13, color: 'var(--hc-muted)', lineHeight: 1.55, margin: 0 }}>
                         {c.descripcion}

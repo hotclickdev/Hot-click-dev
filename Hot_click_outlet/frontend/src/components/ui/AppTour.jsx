@@ -7,10 +7,10 @@ const TOUR_KEY = 'hc-admin-tour-v3-done'
 const STEPS = [
   {
     type: 'welcome',
-    emoji: '⚡',
-    title: '¡Bienvenido al Panel HOTCLICK!',
+    emoji: '🛒',
+    title: '¡Bienvenido al Panel HotClick!',
     desc: 'Este tour te lleva por cada sección del panel para que aprendas a gestionar tu negocio paso a paso. Solo toma un par de minutos.',
-    color: '#7840e0',
+    color: 'var(--hc-accent)',
   },
   {
     path: '/admin',
@@ -25,7 +25,7 @@ const STEPS = [
       '👥 Últimos clientes registrados en la plataforma',
     ],
     tip: 'Empezá aquí cada día para ver el panorama completo antes de atender clientes.',
-    color: '#7840e0',
+    color: 'var(--hc-accent)',
   },
   {
     path: '/admin/productos',
@@ -41,7 +41,7 @@ const STEPS = [
       '⭐ Destacar productos para que aparezcan en el homepage',
     ],
     tip: 'Usá "Crear con IA" — sacás una foto y la IA rellena título, descripción y precio sugerido.',
-    color: '#4f7cff',
+    color: 'var(--hc-accent)',
   },
   {
     path: '/admin/pedidos',
@@ -103,7 +103,7 @@ const STEPS = [
       '🤝 Aparecer en el directorio de emprendimientos',
     ],
     tip: 'Los cupones se aplican automáticamente en el checkout — sin pasos extra para el cliente.',
-    color: '#fb923c',
+    color: '#E5A93D',
   },
   {
     path: '/admin/copilot',
@@ -118,7 +118,7 @@ const STEPS = [
       '🏆 Executive BI: dashboard gerencial con insights y alertas',
     ],
     tip: 'Probá preguntarle al Copilot: "¿Cuál es mi producto más rentable este mes?"',
-    color: '#a78bfa',
+    color: 'var(--hc-blue-300)',
   },
   {
     path: '/admin/mi-empresa',
@@ -133,15 +133,15 @@ const STEPS = [
       '🔌 Conectar plugins e integraciones externas',
       '💎 Ver tu plan actual, uso y límites',
     ],
-    tip: 'Un perfil completo te hace aparecer en el directorio público de emprendimientos de HOTCLICK.',
-    color: '#60a5fa',
+    tip: 'Un perfil completo te hace aparecer en el directorio público de emprendimientos de HotClick.',
+    color: '#6490EA',
   },
   {
     type: 'done',
     emoji: '🎉',
     title: '¡Tour completado!',
     desc: 'Ya conocés las secciones principales del panel. Podés volver a ver este tour cuando quieras desde el botón de ayuda en el menú.',
-    color: '#7840e0',
+    color: 'var(--hc-accent)',
   },
 ]
 
@@ -153,8 +153,8 @@ const TOUR_CSS = `
     animation: hc-tour-glow 2s ease-in-out infinite !important;
   }
   @keyframes hc-tour-glow {
-    0%, 100% { box-shadow: 0 0 0 2px rgba(79,124,255,.55), 0 0 18px rgba(79,124,255,.25); }
-    50%       { box-shadow: 0 0 0 3px rgba(79,124,255,.4),  0 0 32px rgba(79,124,255,.45); }
+    0%, 100% { box-shadow: 0 0 0 2px rgba(23,71,168,.55), 0 0 18px rgba(23,71,168,.25); }
+    50%       { box-shadow: 0 0 0 3px rgba(23,71,168,.4),  0 0 32px rgba(23,71,168,.45); }
   }
 `
 

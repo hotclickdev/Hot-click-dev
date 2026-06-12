@@ -111,7 +111,7 @@ export default function AdminApiKeys() {
         <div>
           <h1 className="text-2xl font-bold" style={{ color: 'var(--hc-text)' }}>API Keys</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>
-            Acceso programático a la API de HOTCLICK para apps externas
+            Acceso programático a la API de HotClick para apps externas
           </p>
         </div>
         <button onClick={() => setMostrarForm(v => !v)}

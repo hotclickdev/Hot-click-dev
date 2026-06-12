@@ -80,7 +80,7 @@ export default function AdminSuperAdmin() {
                   <button
                     onClick={() => cargarFlags(e)}
                     className={`w-full px-4 py-3 text-left transition hover:bg-gray-50 dark:hover:bg-gray-800 ${
-                      selected?.id === e.id ? 'bg-orange-50 dark:bg-orange-950/30' : ''
+                      selected?.id === e.id ? 'bg-[var(--hc-info-bg)] dark:bg-[var(--hc-info-bg)]' : ''
                     }`}
                   >
                     <p className="font-medium text-gray-900 dark:text-white">{e.nombreEmpresa}</p>
@@ -138,8 +138,8 @@ export default function AdminSuperAdmin() {
                         onClick={() => toggleFlag(flag.nombre, activo)}
                         disabled={isBusy}
                         className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent
-                          transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500
-                          ${activo ? 'bg-orange-500' : 'bg-gray-200 dark:bg-gray-600'}
+                          transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--hc-focus-ring)]
+                          ${activo ? 'bg-[var(--hc-accent)]' : 'bg-gray-200 dark:bg-gray-600'}
                           ${isBusy ? 'opacity-50 cursor-not-allowed' : ''}`}
                         title={activo ? 'Desactivar' : 'Activar'}
                       >

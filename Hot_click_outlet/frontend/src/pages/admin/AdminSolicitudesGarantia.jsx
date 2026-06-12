@@ -66,7 +66,7 @@ export default function AdminSolicitudesGarantia() {
     const num = tel.replace(/\D/g, '')
     const full = num.startsWith('506') ? num : `506${num}`
     const msg = encodeURIComponent(
-      `Hola ${s.usuarioNombre || ''}! 👋 Te contactamos de HOTCLICK sobre tu solicitud de garantía del producto "${(s.productoNombre || '').slice(0, 50)}".`
+      `Hola ${s.usuarioNombre || ''}! 👋 Te contactamos de HotClick sobre tu solicitud de garantía del producto "${(s.productoNombre || '').slice(0, 50)}".`
     )
     return `https://wa.me/${full}?text=${msg}`
   }
@@ -78,7 +78,7 @@ export default function AdminSolicitudesGarantia() {
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-black" style={{ fontFamily: "'Barlow', sans-serif", color: 'var(--hc-text)' }}>
+            <h1 className="text-2xl font-black" style={{ fontFamily: 'var(--hc-font-display)', color: 'var(--hc-text)' }}>
               🛡️ Solicitudes de Garantía
             </h1>
             <p className="text-sm mt-0.5" style={{ color: 'var(--hc-muted)' }}>

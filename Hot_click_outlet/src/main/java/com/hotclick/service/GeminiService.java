@@ -13,20 +13,19 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Llama a Gemini 1.5 Flash para analizar imágenes de producto y extraer
+ * Analiza imágenes de producto usando Claude (Anthropic) para extraer
  * nombre, descripción, specs y cómo usar en español.
- * Usa la misma API key que Google Vision (${GOOGLE_VISION_API_KEY}).
- * Gemini free tier: 15 req/min, 1500 req/día.
+ * Reemplaza la implementación anterior basada en Gemini.
  */
 @Service
 public class GeminiService {
 
     private static final Logger log = LoggerFactory.getLogger(GeminiService.class);
-    private static final String GEMINI_URL =
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=%s";
+    private static final String CLAUDE_URL = "https://api.anthropic.com/v1/messages";
+    private static final String CLAUDE_MODEL = "claude-haiku-4-5-20251001";
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    @Value("${google.gemini.api-key}")
+    @Value("${anthropic.api-key:}")
     private String apiKey;
 
     public static class ProductoIA {
@@ -39,10 +38,14 @@ public class GeminiService {
 
     /**
      * Analiza una o varias imágenes en base64 y devuelve datos del producto.
-     * Devuelve null si Gemini no puede identificar el producto o falla la llamada.
+     * Devuelve null si Claude no puede identificar el producto o falla la llamada.
      */
     public ProductoIA analizarProducto(List<String> imagenesBase64) {
         if (imagenesBase64 == null || imagenesBase64.isEmpty()) return null;
+        if (apiKey == null || apiKey.isBlank()) {
+            log.warn("[GeminiService] anthropic.api-key no configurada — análisis de imágenes deshabilitado");
+            return null;
+        }
         try {
             String prompt = """
                 You are a product catalog assistant for HOTCLICK, an e-commerce store in Costa Rica.
@@ -69,34 +72,40 @@ public class GeminiService {
                 - Return ONLY the JSON object
                 """;
 
-            // Construir partes: primero el texto del prompt, luego las imágenes
-            var parts = new java.util.ArrayList<>();
-            parts.add(Map.of("text", prompt));
+            // Construir content de Claude: texto + imágenes
+            var contentParts = new java.util.ArrayList<>();
             for (String b64 : imagenesBase64) {
-                parts.add(Map.of("inline_data", Map.of(
-                    "mime_type", "image/jpeg",
-                    "data", b64
-                )));
+                contentParts.add(Map.of(
+                    "type", "image",
+                    "source", Map.of(
+                        "type",       "base64",
+                        "media_type", "image/jpeg",
+                        "data",       b64
+                    )
+                ));
             }
+            contentParts.add(Map.of("type", "text", "text", prompt));
 
             Map<String, Object> body = Map.of(
-                "contents", List.of(Map.of("parts", parts)),
-                "generationConfig", Map.of(
-                    "temperature", 0.2,
-                    "maxOutputTokens", 600
-                )
+                "model",      CLAUDE_MODEL,
+                "max_tokens", 600,
+                "messages",   List.of(Map.of("role", "user", "content", contentParts))
             );
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            String url = String.format(GEMINI_URL, apiKey);
+            headers.set("x-api-key",         apiKey);
+            headers.set("anthropic-version",  "2023-06-01");
 
             ResponseEntity<Map> resp = new RestTemplate().exchange(
-                url, HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
+                java.net.URI.create(CLAUDE_URL),
+                HttpMethod.POST,
+                new HttpEntity<>(body, headers),
+                Map.class);
 
             return parsearRespuesta(resp.getBody());
         } catch (Exception e) {
-            log.warn("Gemini no disponible: {}", e.getMessage());
+            log.warn("[GeminiService] Claude no disponible para análisis de imagen: {}", e.getMessage());
             return null;
         }
     }
@@ -105,18 +114,13 @@ public class GeminiService {
     private ProductoIA parsearRespuesta(Map<?, ?> body) {
         try {
             if (body == null) return null;
-            List<?> candidates = (List<?>) body.get("candidates");
-            if (candidates == null || candidates.isEmpty()) return null;
-            Map<?, ?> candidate = (Map<?, ?>) candidates.get(0);
-            Map<?, ?> content = (Map<?, ?>) candidate.get("content");
-            if (content == null) return null;
-            List<?> parts = (List<?>) content.get("parts");
-            if (parts == null || parts.isEmpty()) return null;
-            Map<?, ?> part = (Map<?, ?>) parts.get(0);
-            String text = (String) part.get("text");
+            // Formato de respuesta Claude: {"content": [{"type":"text","text":"..."}], ...}
+            List<?> content = (List<?>) body.get("content");
+            if (content == null || content.isEmpty()) return null;
+            Map<?, ?> firstBlock = (Map<?, ?>) content.get(0);
+            String text = (String) firstBlock.get("text");
             if (text == null || text.isBlank()) return null;
 
-            // Limpiar markdown si Gemini lo agrega de todas formas
             text = text.strip();
             if (text.startsWith("```")) {
                 text = text.replaceAll("(?s)^```[a-z]*\\n?", "").replaceAll("```$", "").strip();
@@ -124,18 +128,17 @@ public class GeminiService {
 
             JsonNode node = JSON.readTree(text);
             ProductoIA p = new ProductoIA();
-            p.nombre          = textoONull(node, "nombre");
-            p.marca           = textoONull(node, "marca");
+            p.nombre           = textoONull(node, "nombre");
+            p.marca            = textoONull(node, "marca");
             p.descripcionCorta = textoONull(node, "descripcionCorta");
             p.especificaciones = textoONull(node, "especificaciones");
-            p.comoUsar        = textoONull(node, "comoUsar");
+            p.comoUsar         = textoONull(node, "comoUsar");
 
-            // Solo devolver si al menos un campo tiene datos
             if (p.nombre == null && p.descripcionCorta == null && p.especificaciones == null)
                 return null;
             return p;
         } catch (Exception e) {
-            log.debug("No se pudo parsear respuesta de Gemini: {}", e.getMessage());
+            log.debug("[GeminiService] No se pudo parsear respuesta de Claude: {}", e.getMessage());
             return null;
         }
     }

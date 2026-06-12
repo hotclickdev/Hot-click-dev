@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
+import BrandLogo from '@/components/ui/BrandLogo'
 import { getAvailableModes, MODE_PREF_KEY } from '@/utils/modes'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
@@ -265,10 +266,7 @@ export default function LoginPage() {
       <header className="relative z-10 flex items-center justify-between px-5 sm:px-8 py-4 border-b"
         style={{ borderColor: 'var(--hc-border)', background: 'var(--hc-glass-bg)', backdropFilter: 'blur(16px)' }}>
         <Link to="/" className="flex items-center gap-2.5">
-          <div className="hc-logo-badge w-8 h-8 rounded-lg flex items-center justify-center">
-            <svg width={15} height={15} viewBox="0 0 24 24" fill="white"><path d="M13 2L3 14h8l-2 8 12-12h-8z"/></svg>
-          </div>
-          <span className="hc-logo-text font-bold tracking-wide text-sm">HOTCLICK</span>
+          <BrandLogo size={28} wordmarkSize={15} />
         </Link>
         <div className="flex items-center gap-3">
           <span className="text-sm hidden sm:block" style={{ color: 'var(--hc-muted)' }}>¿Primera vez?</span>
@@ -307,14 +305,14 @@ export default function LoginPage() {
                   </h1>
                   <h1 className="font-black leading-[1.0] tracking-tight"
                     style={{ fontSize: 'clamp(2.4rem, 7vw, 3.4rem)',
-                      background: `linear-gradient(120deg, ${A.color} 0%, color-mix(in srgb, ${A.color} 65%, #a78bfa) 100%)`,
+                      background: `linear-gradient(120deg, ${A.color} 0%, color-mix(in srgb, ${A.color} 65%, var(--hc-blue-300)) 100%)`,
                       WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
                     de vuelta
                   </h1>
                   <div className="flex items-center gap-2 mt-3">
                     <div className="w-5 h-[2px] rounded-full" style={{ background: A.color }} />
                     <p className="text-sm font-medium" style={{ color: 'var(--hc-muted)' }}>
-                      Ingresá a tu cuenta HOTCLICK
+                      Ingresá a tu cuenta HotClick
                     </p>
                   </div>
                 </div>
@@ -598,7 +596,7 @@ export default function LoginPage() {
       {/* ── Footer ── */}
       <footer className="relative z-10 text-center py-4 text-xs border-t"
         style={{ borderColor: 'var(--hc-border)', color: 'var(--hc-muted)', background: 'var(--hc-glass-bg)', backdropFilter: 'blur(8px)' }}>
-        © {new Date().getFullYear()} HOTCLICK · Costa Rica ·{' '}
+        © {new Date().getFullYear()} HotClick · Costa Rica ·{' '}
         <Link to="/informacion" style={{ color: A.color }}>Términos</Link>
       </footer>
 

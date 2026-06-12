@@ -1,26 +1,19 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import BrandLogo from '@/components/ui/BrandLogo'
 export default function AuthLayout({ children }) {
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--hc-bg)' }}>
       {/* Header */}
       <header className="h-16 flex items-center justify-between px-6">
-        <Link to="/" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 hc-logo-badge">
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-              <path d="M13 2L3 14h8l-2 8 12-12h-8z"/>
-            </svg>
-          </div>
-          <span className="font-extrabold text-lg tracking-tight leading-none uppercase hc-logo-text">
-            HOTCLICK
-          </span>
+        <Link to="/" className="flex items-center gap-2.5" aria-label="HotClick — inicio">
+          <BrandLogo size={30} wordmarkSize={18} />
         </Link>
       </header>
 
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[280px] sm:w-[420px] md:w-[600px] h-[280px] sm:h-[420px] md:h-[600px] bg-[#4f7cff]/5 rounded-full blur-[80px] sm:blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-[200px] sm:w-[300px] md:w-[400px] h-[200px] sm:h-[300px] md:h-[400px] bg-purple-500/5 rounded-full blur-[60px] sm:blur-[100px]" />
       </div>
 
       {/* Center content */}

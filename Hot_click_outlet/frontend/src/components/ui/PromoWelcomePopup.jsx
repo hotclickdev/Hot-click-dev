@@ -97,7 +97,7 @@ export default function PromoWelcomePopup() {
               <div className="relative h-32 flex items-center justify-center overflow-hidden"
                 style={{ background: 'linear-gradient(135deg, #1a1060 0%, #0d0d1a 60%, #1a0a2e 100%)' }}>
                 <div className="absolute w-40 h-40 rounded-full opacity-30 blur-3xl"
-                  style={{ background: '#4f7cff', top: '-20px', left: '-20px' }} />
+                  style={{ background: 'var(--hc-accent)', top: '-20px', left: '-20px' }} />
                 <div className="absolute w-32 h-32 rounded-full opacity-20 blur-3xl"
                   style={{ background: '#8c5cf6', bottom: '-10px', right: '-10px' }} />
 
@@ -147,7 +147,7 @@ export default function PromoWelcomePopup() {
                               border: `1.5px solid ${errorMsg ? '#f87171' : 'var(--hc-border)'}`,
                               color: 'var(--hc-text)',
                             }}
-                            onFocus={(e) => { e.target.style.borderColor = '#4f7cff'; e.target.style.boxShadow = '0 0 0 3px rgba(79,124,255,0.12)' }}
+                            onFocus={(e) => { e.target.style.borderColor = 'var(--hc-accent)'; e.target.style.boxShadow = '0 0 0 3px rgba(23,71,168,0.12)' }}
                             onBlur={(e) => { e.target.style.boxShadow = '' }}
                           />
                           {errorMsg && (
@@ -160,7 +160,7 @@ export default function PromoWelcomePopup() {
                           disabled={status === 'loading' || !email.trim()}
                           whileTap={{ scale: 0.97 }}
                           className="w-full py-3 rounded-xl font-semibold text-sm text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ background: '#4f7cff', boxShadow: '0 0 20px rgba(79,124,255,0.3)' }}
+                          style={{ background: 'var(--hc-accent)', boxShadow: '0 0 20px rgba(23,71,168,0.3)' }}
                         >
                           {status === 'loading' ? (
                             <span className="flex items-center justify-center gap-2">
@@ -213,7 +213,7 @@ export default function PromoWelcomePopup() {
                         onClick={() => { dismiss(); navigate('/productos') }}
                         whileTap={{ scale: 0.97 }}
                         className="w-full py-3 rounded-xl font-semibold text-sm text-white"
-                        style={{ background: '#4f7cff', boxShadow: '0 0 20px rgba(79,124,255,0.3)' }}
+                        style={{ background: 'var(--hc-accent)', boxShadow: '0 0 20px rgba(23,71,168,0.3)' }}
                       >
                         {t('promo.viewProducts')}
                       </motion.button>

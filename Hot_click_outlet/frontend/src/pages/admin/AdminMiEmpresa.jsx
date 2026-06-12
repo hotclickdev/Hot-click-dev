@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useBlocker } from 'react-router-dom'
 import api from '@/services/api'
 import useAuthStore from '@/store/authStore'
@@ -7,8 +7,8 @@ import { useToast } from '@/components/ui/Toast'
 const PLAN_COLOR = {
   GRATUITO:   'bg-gray-500/15 text-gray-400',
   BASICO:     'bg-blue-500/15 text-blue-400',
-  PRO:        'bg-purple-500/15 text-purple-400',
-  ENTERPRISE: 'bg-orange-500/15 text-orange-400',
+  PRO:        'bg-[var(--hc-blue-500)]/15 text-[var(--hc-blue-400)]',
+  ENTERPRISE: 'bg-amber-500/15 text-amber-400',
 }
 const ESTADO_COLOR = {
   ACTIVO:               'bg-green-500/15 text-green-400',
@@ -37,7 +37,7 @@ export default function AdminMiEmpresa() {
   const [form, setForm]         = useState({
     nombreComercial: '', descripcion: '', telefonoEmpresa: '',
     correoEmpresa: '', numeroWhatsapp: '',
-    colorPrimario: '#FF4B12', colorSecundario: '#1A1A2E', logoUrl: '',
+    colorPrimario: '#E73B33', colorSecundario: '#1747A8', logoUrl: '',
   })
   const [fotos, setFotos]       = useState([])
   const [uploadingFoto, setUploadingFoto] = useState(false)
@@ -64,8 +64,8 @@ export default function AdminMiEmpresa() {
         telefonoEmpresa:  e.telefonoEmpresa  ?? '',
         correoEmpresa:    e.correoEmpresa    ?? '',
         numeroWhatsapp:   e.numeroWhatsapp   ?? '',
-        colorPrimario:    e.colorPrimario    ?? '#FF4B12',
-        colorSecundario:  e.colorSecundario  ?? '#1A1A2E',
+        colorPrimario:    e.colorPrimario    ?? '#E73B33',
+        colorSecundario:  e.colorSecundario  ?? '#1747A8',
         logoUrl:          e.logoUrl          ?? '',
       }
       setForm(initialForm)
@@ -256,7 +256,7 @@ export default function AdminMiEmpresa() {
           </div>
           {empresa.estadoEmpresa === 'PENDIENTE_APROBACION' && (
             <div className="w-full mt-2 px-3 py-2 rounded-lg text-xs bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
-              Tu negocio está pendiente de aprobación por el equipo de HOTCLICK. Te notificaremos por correo cuando sea aprobado.
+              Tu negocio está pendiente de aprobación por el equipo de HotClick. Te notificaremos por correo cuando sea aprobado.
             </div>
           )}
         </div>
@@ -501,7 +501,7 @@ export default function AdminMiEmpresa() {
           {/* Galería de fotos para galería de emprendedores */}
           <Section title="Galería de fotos">
             <p className="text-xs mb-3" style={{ color: 'var(--hc-muted)' }}>
-              Estas fotos se mostrarán en la galería de emprendedores de HOTCLICK. Máximo 10 imágenes.
+              Estas fotos se mostrarán en la galería de emprendedores de HotClick. Máximo 10 imágenes.
               Las fotos se guardan automáticamente al subirlas.
             </p>
             <input

@@ -1,0 +1,117 @@
+/* ============================================================
+   HotClick Design Tokens · v1.0 (Brand Book v1.1, cap. 13)
+   Importar antes de cualquier hoja de componentes.
+   Modo oscuro vía html.dark (mecanismo del repo) o [data-theme="dark"].
+   ============================================================ */
+
+:root {
+  /* ---------- Color · Marca ---------- */
+  --hc-red-50:  #FEF2F1;
+  --hc-red-100: #FDDFDD;
+  --hc-red-200: #FBC1BD;
+  --hc-red-300: #F69690;
+  --hc-red-400: #EF655D;
+  --hc-red-500: #E73B33;  /* Rojo Hot — primario */
+  --hc-red-600: #D02A23;  /* hover / texto sobre claro */
+  --hc-red-700: #AE211C;  /* pressed */
+  --hc-red-800: #8F1F1B;
+  --hc-red-900: #76211E;
+
+  --hc-blue-50:  #EFF4FE;
+  --hc-blue-100: #DEE9FC;
+  --hc-blue-200: #C2D5F9;
+  --hc-blue-300: #97B7F3;
+  --hc-blue-400: #6490EA;
+  --hc-blue-500: #3F6CDE;
+  --hc-blue-600: #1747A8;  /* Azul Click — secundario */
+  --hc-blue-700: #143A8C;
+  --hc-blue-800: #143173;
+  --hc-blue-900: #152B5E;
+
+  /* ---------- Color · Neutros ---------- */
+  --hc-n-0:   #FFFFFF;
+  --hc-n-50:  #F8F9FB;
+  --hc-n-100: #F1F3F6;
+  --hc-n-200: #E4E7EC;
+  --hc-n-300: #CDD2DB;
+  --hc-n-400: #9AA1AE;
+  --hc-n-500: #6E7682;
+  --hc-n-600: #4D5560;
+  --hc-n-700: #353C46;
+  --hc-n-800: #232830;
+  --hc-n-900: #14171C;
+  --hc-n-950: #0C0E12;
+
+  /* ---------- Color · Semánticos ---------- */
+  --hc-success: #178A50;  --hc-success-bg: #E9F7F0;
+  --hc-warning: #9A6700;  --hc-warning-bg: #FDF3DC;
+  --hc-danger:  #D02A23;  --hc-danger-bg:  #FEF2F1;
+  --hc-info:    #1747A8;  --hc-info-bg:    #EFF4FE;
+
+  /* ---------- Roles semánticos (modo claro) ---------- */
+  --hc-bg:            var(--hc-n-50);
+  --hc-surface:       var(--hc-n-0);
+  --hc-surface-raised:var(--hc-n-0);
+  --hc-text:          var(--hc-n-900);
+  --hc-text-secondary:var(--hc-n-600);
+  --hc-text-disabled: var(--hc-n-400);
+  --hc-border:        var(--hc-n-200);
+  --hc-border-strong: var(--hc-n-300);
+  --hc-primary:       var(--hc-red-500);
+  --hc-primary-hover: var(--hc-red-600);
+  --hc-primary-press: var(--hc-red-700);
+  --hc-link:          var(--hc-blue-600);
+  --hc-focus-ring:    var(--hc-blue-500);
+
+  /* ---------- Tipografía ---------- */
+  --hc-font-display: 'Sora', system-ui, sans-serif;
+  --hc-font-text:    'Public Sans', system-ui, sans-serif;
+  --hc-font-mono:    'IBM Plex Mono', ui-monospace, monospace;
+
+  /* ---------- Espaciado (base 4px) ---------- */
+  --hc-sp-1: 4px;   --hc-sp-2: 8px;   --hc-sp-3: 12px;  --hc-sp-4: 16px;
+  --hc-sp-5: 20px;  --hc-sp-6: 24px;  --hc-sp-8: 32px;  --hc-sp-10: 40px;
+  --hc-sp-12: 48px; --hc-sp-16: 64px; --hc-sp-20: 80px; --hc-sp-24: 96px;
+
+  /* ---------- Radios ---------- */
+  --hc-r-sm: 6px;    /* chips, badges */
+  --hc-r-md: 10px;   /* botones, inputs */
+  --hc-r-lg: 16px;   /* tarjetas, modales */
+  --hc-r-xl: 24px;   /* heros, sheets */
+  --hc-r-full: 999px;
+
+  /* ---------- Sombras ---------- */
+  --hc-shadow-1: 0 1px 2px rgba(20,23,28,.06);
+  --hc-shadow-2: 0 2px 8px rgba(20,23,28,.08);
+  --hc-shadow-3: 0 12px 32px rgba(20,23,28,.14);
+
+  /* ---------- Movimiento ---------- */
+  --hc-ease: cubic-bezier(.2,.8,.2,1);
+  --hc-dur-fast: 120ms;
+  --hc-dur-base: 200ms;
+  --hc-dur-slow: 320ms;
+}
+
+html.dark,
+[data-theme="dark"] {
+  --hc-bg:            #0E1116;
+  --hc-surface:       #161B22;
+  --hc-surface-raised:#1E242E;
+  --hc-text:          #F4F6F9;
+  --hc-text-secondary:#A7B0BC;
+  --hc-text-disabled: #5C6571;
+  --hc-border:        #262D38;
+  --hc-border-strong: #333B48;
+  --hc-primary:       #F0524A;   /* rojo elevado para fondo oscuro */
+  --hc-primary-hover: #F3766F;
+  --hc-primary-press: #E73B33;
+  --hc-link:          #7AA3F2;
+  --hc-focus-ring:    #6490EA;
+  --hc-success: #3DCB82;  --hc-success-bg: #10301F;
+  --hc-warning: #E5A93D;  --hc-warning-bg: #33270D;
+  --hc-danger:  #F0524A;  --hc-danger-bg:  #3A1513;
+  --hc-info:    #7AA3F2;  --hc-info-bg:    #13203A;
+  --hc-shadow-1: 0 1px 2px rgba(0,0,0,.4);
+  --hc-shadow-2: 0 2px 8px rgba(0,0,0,.45);
+  --hc-shadow-3: 0 12px 32px rgba(0,0,0,.55);
+}

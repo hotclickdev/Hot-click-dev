@@ -15,7 +15,7 @@ export default function POSReceipt({ venta, onNuevaVenta }) {
       .map(i => `• ${i.producto?.nombreProducto ?? 'Producto'} ×${i.cantidad} = ₡${fmt(i.subtotalItem)}`)
       .join('\n')
     const msg = encodeURIComponent(
-      `*Recibo HOTCLICK*\n` +
+      `*Recibo HotClick*\n` +
       `Ticket: ${venta.numeroPedido}\n` +
       `Cajero: ${userName}\n\n` +
       `${items}\n\n` +
@@ -42,7 +42,7 @@ export default function POSReceipt({ venta, onNuevaVenta }) {
           id="pos-receipt">
           {/* Cabecera */}
           <div className="text-center mb-4">
-            <p className="text-xl font-black" style={{ color: 'var(--hc-accent)' }}>HOTCLICK</p>
+            <p className="text-xl font-black" style={{ color: 'var(--hc-accent)' }}>HotClick</p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>Caja registradora</p>
           </div>
 

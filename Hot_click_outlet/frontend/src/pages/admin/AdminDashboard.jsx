@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
@@ -29,7 +29,7 @@ const badgeStyle = (badge) => {
   if (b === 'COMPLETADO' || b === 'ENTREGADO') return 'bg-emerald-500/15 text-emerald-400'
   if (b === 'PENDIENTE') return 'bg-amber-500/15 text-amber-400'
   if (b === 'PAGADO') return 'bg-[#4f7cff]/15 text-[#4f7cff]'
-  if (b === 'REGISTRO') return 'bg-purple-500/15 text-purple-400'
+  if (b === 'REGISTRO') return 'bg-[var(--hc-blue-500)]/15 text-[var(--hc-blue-400)]'
   if (b === 'CANCELADO') return 'bg-red-500/15 text-red-400'
   return 'bg-white/10 text-[#8e8e9a]'
 }
@@ -160,7 +160,7 @@ export default function AdminDashboard() {
       label: t('admin.dashboard.totalUsers'),
       value: stats?.totalUsuarios ?? '—',
       icon: <PeopleIcon />,
-      color: 'text-purple-400',
+      color: 'text-[var(--hc-blue-400)]',
       sub: usuariosNuevosMes > 0 ? `+${usuariosNuevosMes} este mes` : 'usuarios activos',
     },
     {
@@ -200,7 +200,7 @@ export default function AdminDashboard() {
               window.dispatchEvent(new Event('hc-open-tour'))
             }}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all hover:opacity-80 shrink-0"
-            style={{ backgroundColor: 'rgba(120,64,224,0.1)', border: '1px solid rgba(120,64,224,0.25)', color: '#a78bfa' }}
+            style={{ backgroundColor: 'rgba(23,71,168,0.1)', border: '1px solid rgba(23,71,168,0.25)', color: 'var(--hc-blue-300)' }}
           >
             🎯 Ver tutorial
           </button>
@@ -208,7 +208,7 @@ export default function AdminDashboard() {
 
         {/* Banner: Primeros pasos — solo para negocios nuevos sin productos */}
         {!loading && !setupDismissed && (stats?.totalProductos === 0 || stats?.totalProductos == null) && ['EMPRENDEDOR', 'ADMIN_CLIENTE'].includes(userRole) && (
-          <div className="rounded-2xl p-5" style={{ backgroundColor: 'rgba(79,124,255,0.06)', border: '1px solid rgba(79,124,255,0.2)' }}>
+          <div className="rounded-2xl p-5" style={{ backgroundColor: 'rgba(23,71,168,0.06)', border: '1px solid rgba(23,71,168,0.2)' }}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm text-[#e8e8ed] mb-1">Empezá en 3 pasos</p>
@@ -223,9 +223,9 @@ export default function AdminDashboard() {
                       key={step}
                       to={to}
                       className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all hover:opacity-80"
-                      style={{ backgroundColor: 'rgba(79,124,255,0.12)', border: '1px solid rgba(79,124,255,0.25)', color: '#7fa0ff' }}
+                      style={{ backgroundColor: 'rgba(23,71,168,0.12)', border: '1px solid rgba(23,71,168,0.25)', color: '#7fa0ff' }}
                     >
-                      <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0" style={{ backgroundColor: '#4f7cff', color: '#fff' }}>{step}</span>
+                      <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0" style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>{step}</span>
                       {label} →
                     </Link>
                   ))}
@@ -234,7 +234,7 @@ export default function AdminDashboard() {
               <button
                 onClick={dismissSetup}
                 className="p-1 rounded-lg hover:bg-white/5 transition-colors shrink-0"
-                style={{ color: '#8e8e9a' }}
+                style={{ color: '#A7B0BC' }}
                 title="Cerrar"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -262,7 +262,13 @@ export default function AdminDashboard() {
                 >
                   <div className="flex items-start justify-between mb-1.5 sm:mb-2">
                     <span className="w-4 h-4 sm:w-5 sm:h-5 text-[#8e8e9a]">{card.icon}</span>
-                    <div className={`text-lg sm:text-2xl font-bold ${card.color} leading-none`}>{card.value}</div>
+                    {/* Cifra KPI en Sora 700 con dígitos tabulares (Brand Book cap. 6.2) */}
+                    <div
+                      className={`text-lg sm:text-2xl ${card.color} leading-none`}
+                      style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}
+                    >
+                      {card.value}
+                    </div>
                   </div>
                   <p className="text-xs sm:text-sm font-medium text-[#e8e8ed] leading-tight">{card.label}</p>
                   <p className="text-[10px] sm:text-xs text-[#8e8e9a] mt-0.5">{card.sub}</p>
@@ -421,12 +427,12 @@ export default function AdminDashboard() {
                     >
                       <div
                         className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                          item.type === 'user' ? 'bg-purple-500/15' : 'bg-[#4f7cff]/15'
+                          item.type === 'user' ? 'bg-[var(--hc-blue-500)]/15' : 'bg-[#4f7cff]/15'
                         }`}
                       >
                         <span
                           className={`w-4 h-4 ${
-                            item.type === 'user' ? 'text-purple-400' : 'text-[#4f7cff]'
+                            item.type === 'user' ? 'text-[var(--hc-blue-400)]' : 'text-[#4f7cff]'
                           }`}
                         >
                           {item.type === 'user' ? <PeopleIcon /> : <BoltIcon />}
@@ -464,7 +470,7 @@ export default function AdminDashboard() {
                       key={link.to}
                       to={link.to}
                       className="flex flex-col items-center gap-2 p-4 rounded-2xl transition-all text-center group col-span-1"
-                      style={{ background: 'linear-gradient(135deg,rgba(79,124,255,0.18),rgba(124,58,237,0.18))', border: '1.5px solid rgba(79,124,255,0.4)' }}
+                      style={{ background: 'linear-gradient(135deg,rgba(23,71,168,0.18),rgba(23,71,168,0.18))', border: '1.5px solid rgba(23,71,168,0.4)' }}
                     >
                       <span className="text-xl">{link.icon}</span>
                       <span className="text-xs font-bold leading-tight" style={{ color: '#7aa3ff' }}>

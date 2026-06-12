@@ -12,9 +12,11 @@ import { productService, normalizeProduct } from '@/services/productService'
 import { formatPrice } from '@/utils/format'
 import { useToast } from '@/components/ui/Toast'
 import { abandonedCartService } from '@/services/abandonedCartService'
+import AICartSection from '@/components/ai/AICartSection'
 
 const WHATSAPP = '50689745370'
 const EMAIL_PROMPT_DELAY_MS = 45_000  // 45 segundos
+const WA_PROMPT_DELAY_MS    = 30_000  // 30 segundos
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart, total, toWhatsAppMessage, addItem } = useCartStore()
@@ -28,15 +30,25 @@ export default function CartPage() {
   const [emailPrompt, setEmailPrompt] = useState(false)
   const [capturedEmail, setCapturedEmail] = useState('')
   const [emailSaved, setEmailSaved] = useState(false)
+  const [waPrompt, setWaPrompt] = useState(false)
   const promptTimerRef = useRef(null)
+  const waTimerRef     = useRef(null)
 
   // Mostrar prompt de email a usuarios anónimos después de 45 s
   useEffect(() => {
     const alreadyCaptured = localStorage.getItem('hc-cart-email')
     if (token || user || alreadyCaptured || items.length === 0) return
-    promptTimerRef.current = setTimeout(() => setEmailPrompt(true), EMAIL_PROMPT_DELAY_MS)
+    promptTimerRef.current = setTimeout(() => { setEmailPrompt(true); setWaPrompt(false) }, EMAIL_PROMPT_DELAY_MS)
     return () => clearTimeout(promptTimerRef.current)
   }, [token, user, items.length])
+
+  // Agente de carrito abandonado — WhatsApp (todos los usuarios, 30 s)
+  useEffect(() => {
+    const dismissed = sessionStorage.getItem('hc-cart-wa-dismissed')
+    if (items.length === 0 || dismissed) return
+    waTimerRef.current = setTimeout(() => setWaPrompt(true), WA_PROMPT_DELAY_MS)
+    return () => clearTimeout(waTimerRef.current)
+  }, [items.length])
 
   const handleEmailSave = () => {
     if (!capturedEmail.includes('@')) return
@@ -44,6 +56,17 @@ export default function CartPage() {
     abandonedCartService.saveAbandonedCart(items, capturedEmail).catch(() => {})
     setEmailSaved(true)
     setTimeout(() => setEmailPrompt(false), 1800)
+  }
+
+  function buildAbandonedMsg() {
+    const lines = items.map(i =>
+      `  • ${i.nombre ?? i.nombreProducto} x${i.cantidad} — ₡${((i.precio ?? i.precioVenta ?? 0) * i.cantidad).toLocaleString('es-CR')}`
+    )
+    return encodeURIComponent(
+      `Hola! 😊 Dejé estos artículos en mi carrito de HotClick:\n\n${lines.join('\n')}\n\n` +
+      `💰 Total: ₡${total().toLocaleString('es-CR')}\n\n` +
+      `¿Me ayudan a completar la compra cuando pueda? Muchas gracias 🙏`
+    )
   }
 
   useEffect(() => {
@@ -127,7 +150,7 @@ export default function CartPage() {
             <div className="flex flex-col sm:flex-row gap-3 mt-1">
               <Link
                 to="/productos"
-                className="px-6 py-2.5 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-medium text-sm transition-all shadow-[0_0_20px_rgba(79,124,255,0.25)] hover:shadow-[0_0_32px_rgba(79,124,255,0.4)]"
+                className="px-6 py-2.5 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-medium text-sm transition-all shadow-[0_0_20px_rgba(23,71,168,0.25)] hover:shadow-[0_0_32px_rgba(23,71,168,0.4)]"
               >
                 {t('cart.explore')}
               </Link>
@@ -332,7 +355,7 @@ export default function CartPage() {
               <div className="pt-2 space-y-2">
                 <Button
                   onClick={() => navigate('/checkout')}
-                  className="w-full bg-[#4f7cff] hover:bg-[#3d6ee0] shadow-[0_0_20px_rgba(79,124,255,0.3)]"
+                  className="w-full bg-[#4f7cff] hover:bg-[#3d6ee0] shadow-[0_0_20px_rgba(23,71,168,0.3)]"
                   size="lg"
                 >
                   <LockIcon />
@@ -360,6 +383,11 @@ export default function CartPage() {
               </p>
             </motion.div>
           </div>
+        </div>
+
+        {/* ── Agente del carrito ── */}
+        <div className="mt-6">
+          <AICartSection cartItems={items} cartTotal={total()} />
         </div>
 
         {/* ── Cross-sell: Completa tu compra ── */}
@@ -420,6 +448,62 @@ export default function CartPage() {
           </div>
         )}
       </div>
+
+      {/* ── Agente HotClick AI — carrito abandonado → WhatsApp ── */}
+      <AnimatePresence>
+        {waPrompt && (
+          <motion.div
+            initial={{ y: 120, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 120, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 280, damping: 28 }}
+            className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4"
+          >
+            <div
+              className="rounded-2xl px-5 py-4 shadow-2xl"
+              style={{
+                background: 'var(--hc-surface)',
+                border: '1px solid var(--hc-border)',
+                backdropFilter: 'blur(20px)',
+                boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
+              }}
+            >
+              <button
+                onClick={() => { setWaPrompt(false); sessionStorage.setItem('hc-cart-wa-dismissed', '1') }}
+                className="absolute top-3 right-3 w-6 h-6 flex items-center justify-center rounded-lg text-[#8e8e9a] hover:text-white transition-colors hover:bg-white/8"
+                aria-label="Cerrar"
+              >✕</button>
+
+              {/* Avatar + mensaje del agente */}
+              <div className="flex gap-3 mb-4">
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold mt-0.5"
+                  style={{ background: 'var(--hc-accent)', color: '#fff' }}
+                >✦</div>
+                <div>
+                  <p className="text-xs font-semibold mb-0.5" style={{ color: 'var(--hc-text)' }}>HotClick AI</p>
+                  <p className="text-sm leading-snug" style={{ color: 'var(--hc-muted)' }}>
+                    Tenés {items.length} producto{items.length !== 1 ? 's' : ''} en tu carrito.
+                    {' '}¿Te enviamos todo por WhatsApp para retomarlo cuando quieras? Disculpá las molestias.
+                  </p>
+                </div>
+              </div>
+
+              <a
+                href={`https://wa.me/${WHATSAPP}?text=${buildAbandonedMsg()}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => { setWaPrompt(false); sessionStorage.setItem('hc-cart-wa-dismissed', '1') }}
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 active:scale-95"
+                style={{ background: '#25D366', color: '#fff' }}
+              >
+                <WhatsAppIcon />
+                Enviar carrito por WhatsApp
+              </a>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Email capture para carrito abandonado (usuarios anónimos) ── */}
       <AnimatePresence>

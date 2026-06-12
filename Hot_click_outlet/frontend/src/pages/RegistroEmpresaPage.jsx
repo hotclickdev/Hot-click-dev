@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { HotClickMark } from '@/components/ui/BrandLogo'
 import { motion, AnimatePresence } from 'framer-motion'
 import { authService } from '@/services/authService'
 import { useToast } from '@/components/ui/Toast'
@@ -78,53 +79,45 @@ export default function RegistroEmpresaPage() {
 
   /* ─── JSX ─────────────────────────────────────────────────── */
   return (
-    <div className="min-h-screen flex" style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+    <div className="min-h-screen flex" style={{ fontFamily: 'var(--hc-font-text)' }}>
 
       {/* ════════════════════════════════════════════════════
           PANEL IZQUIERDO — emprendedores
       ════════════════════════════════════════════════════ */}
       <div className="hidden lg:flex lg:w-[44%] relative flex-col overflow-hidden shrink-0"
-        style={{ background: 'linear-gradient(158deg, #0d0400 0%, #1c0a00 45%, #2a0e00 100%)' }}>
+        style={{ background: 'var(--hc-blue-900)' }}>
 
         {/* Grid naranja sutil */}
         <div className="absolute inset-0 pointer-events-none" style={{
-          backgroundImage: 'linear-gradient(rgba(249,115,22,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(249,115,22,0.05) 1px, transparent 1px)',
+          backgroundImage: 'linear-gradient(rgba(231,59,51,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(231,59,51,0.05) 1px, transparent 1px)',
           backgroundSize: '56px 56px',
         }} />
         {/* Orbe naranja */}
         <div className="absolute pointer-events-none" style={{
           top: '-10%', right: '-12%', width: '60%', height: '60%',
-          background: 'radial-gradient(circle, rgba(249,115,22,0.3) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(231,59,51,0.3) 0%, transparent 70%)',
           filter: 'blur(50px)',
         }} />
         {/* Orbe ámbar */}
         <div className="absolute pointer-events-none" style={{
           bottom: '5%', left: '-10%', width: '50%', height: '50%',
-          background: 'radial-gradient(circle, rgba(234,88,12,0.18) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(63,108,222,0.20) 0%, transparent 70%)',
           filter: 'blur(55px)',
         }} />
         {/* Línea derecha */}
         <div className="absolute right-0 top-0 bottom-0 w-px" style={{
-          background: 'linear-gradient(to bottom, transparent, rgba(249,115,22,0.25) 25%, rgba(249,115,22,0.25) 75%, transparent)',
+          background: 'linear-gradient(to bottom, transparent, rgba(231,59,51,0.25) 25%, rgba(231,59,51,0.25) 75%, transparent)',
         }} />
 
         <div className="relative z-10 flex flex-col h-full p-10">
 
           {/* Logo */}
           <motion.div {...stagger(0)} className="flex items-center gap-3 mb-12">
-            <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: 12, flexShrink: 0,
-                background: 'linear-gradient(135deg, #f97316, #ea580c)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 4px 20px rgba(249,115,22,0.5)',
-              }}>
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="white">
-                  <path d="M13 2L3 14h8l-2 8 12-12h-8z" />
-                </svg>
-              </div>
-              <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '1.25rem', letterSpacing: '0.04em', color: '#fff5ee' }}>
-                HOTCLICK
+            {/* Logo sobre fondo oscuro de marca (§2.4): rojo elevado + «Click» blanco */}
+            <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', '--hc-wordmark-hot': '#F0524A', '--hc-wordmark-click': '#FFFFFF' }}>
+              <HotClickMark size={38} gap="#152B5E" />
+              <span className="hc-wordmark" style={{ fontSize: '1.25rem' }}>
+                <span className="hot">Hot</span><span className="click">Click</span>
               </span>
             </Link>
           </motion.div>
@@ -133,42 +126,42 @@ export default function RegistroEmpresaPage() {
           <div className="flex-1 flex flex-col justify-center">
             <motion.p {...stagger(1)} style={{
               fontSize: 11, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase',
-              color: '#f97316', marginBottom: 18,
+              color: 'var(--hc-primary)', marginBottom: 18,
             }}>
               Para emprendedores · Costa Rica
             </motion.p>
 
             {['Emprendé.', 'Crecé.', 'Brillá.'].map((line, i) => (
               <motion.div key={line} {...stagger(2 + i)} style={{
-                fontFamily: "'Barlow', sans-serif", fontWeight: 900,
+                fontFamily: 'var(--hc-font-display)', fontWeight: 800,
                 fontSize: 'clamp(2.4rem, 3.8vw, 3.4rem)', lineHeight: 1.0,
                 letterSpacing: '-0.025em',
-                color: i === 2 ? '#f97316' : '#fff5ee',
-                textShadow: i === 2 ? '0 0 48px rgba(249,115,22,0.55)' : 'none',
+                color: i === 2 ? '#F0524A' : '#FFFFFF',
+                
               }}>
                 {line}
               </motion.div>
             ))}
 
             <motion.p {...stagger(5)} style={{
-              color: 'rgba(255,245,238,0.35)', fontSize: '0.9rem',
+              color: 'var(--hc-blue-200)', fontSize: '0.9rem',
               marginTop: '1.1rem', lineHeight: 1.65, marginBottom: '2.5rem', maxWidth: 320,
             }}>
-              Registrá tu negocio en HOTCLICK y llegá a miles de compradores en Costa Rica.
+              Registrá tu negocio en HotClick y llegá a miles de compradores en Costa Rica.
             </motion.p>
 
             {/* Beneficios 2×2 */}
             <motion.div {...stagger(6)} className="grid grid-cols-2 gap-3 mb-10">
               {PERKS.map(({ icon, title, desc }) => (
                 <div key={title} style={{
-                  background: 'rgba(249,115,22,0.06)',
-                  border: '1px solid rgba(249,115,22,0.14)',
+                  background: 'rgba(231,59,51,0.06)',
+                  border: '1px solid rgba(231,59,51,0.14)',
                   borderRadius: 14, padding: '14px 12px',
                   backdropFilter: 'blur(12px)',
                 }}>
                   <div style={{ fontSize: '1.3rem', marginBottom: 6 }}>{icon}</div>
-                  <p style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '0.78rem', color: '#fff5ee', marginBottom: 3, lineHeight: 1.2 }}>{title}</p>
-                  <p style={{ fontSize: '0.68rem', color: 'rgba(255,245,238,0.35)', lineHeight: 1.4 }}>{desc}</p>
+                  <p style={{ fontFamily: 'var(--hc-font-display)', fontWeight: 600, fontSize: '0.78rem', color: '#FFFFFF', marginBottom: 3, lineHeight: 1.2 }}>{title}</p>
+                  <p style={{ fontSize: '0.68rem', color: 'var(--hc-blue-200)', lineHeight: 1.4 }}>{desc}</p>
                 </div>
               ))}
             </motion.div>
@@ -176,12 +169,12 @@ export default function RegistroEmpresaPage() {
 
           {/* Stats */}
           <motion.div {...stagger(7)} style={{
-            borderTop: '1px solid rgba(249,115,22,0.18)', paddingTop: 24, display: 'flex', gap: 36,
+            borderTop: '1px solid rgba(231,59,51,0.18)', paddingTop: 24, display: 'flex', gap: 36,
           }}>
             {STATS.map(({ n, s }) => (
               <div key={s}>
-                <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 900, fontSize: '1.75rem', color: '#f97316', lineHeight: 1 }}>{n}</p>
-                <p style={{ fontSize: '0.65rem', color: 'rgba(255,245,238,0.28)', marginTop: 3, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{s}</p>
+                <p style={{ fontFamily: 'var(--hc-font-display)', fontWeight: 800, fontSize: '1.75rem', color: 'var(--hc-primary)', lineHeight: 1 }}>{n}</p>
+                <p style={{ fontSize: '0.65rem', color: 'var(--hc-blue-300)', marginTop: 3, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{s}</p>
               </div>
             ))}
           </motion.div>
@@ -197,11 +190,9 @@ export default function RegistroEmpresaPage() {
         <div className="flex items-center justify-between px-6 py-4 shrink-0"
           style={{ borderBottom: '1px solid var(--hc-border)' }}>
           <Link to="/" className="flex items-center gap-2.5" style={{ textDecoration: 'none' }}>
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 hc-logo-badge">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="white"><path d="M13 2L3 14h8l-2 8 12-12h-8z"/></svg>
-            </div>
-            <span className="hc-logo-text lg:hidden" style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '1rem', letterSpacing: '0.04em' }}>
-              HOTCLICK
+            <HotClickMark size={28} className="shrink-0" />
+            <span className="hc-wordmark lg:hidden" style={{ fontSize: '1rem' }}>
+              <span className="hot">Hot</span><span className="click">Click</span>
             </span>
           </Link>
           <div className="flex items-center gap-2.5">
@@ -218,15 +209,15 @@ export default function RegistroEmpresaPage() {
           {/* Título */}
           <div className="text-center mb-8 w-full max-w-[460px]">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-4"
-              style={{ background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.22)', color: '#f97316', letterSpacing: '0.06em' }}>
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+              style={{ background: 'rgba(231,59,51,0.08)', border: '1px solid rgba(231,59,51,0.22)', color: 'var(--hc-primary)', letterSpacing: '0.06em' }}>
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--hc-primary)] animate-pulse" />
               Registro de emprendimiento
             </div>
-            <h1 style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 900, fontSize: 'clamp(1.9rem, 5vw, 2.8rem)', color: 'var(--hc-text)', lineHeight: 1.05, marginBottom: '0.5rem', letterSpacing: '-0.01em' }}>
+            <h1 style={{ fontFamily: 'var(--hc-font-display)', fontWeight: 800, fontSize: 'clamp(1.9rem, 5vw, 2.8rem)', color: 'var(--hc-text)', lineHeight: 1.05, marginBottom: '0.5rem', letterSpacing: '-0.01em' }}>
               Registrá tu empresa
             </h1>
             <p style={{ color: 'var(--hc-muted)', fontSize: '0.9rem' }}>
-              Completá los datos y empezá a vender hoy en HOTCLICK.
+              Completá los datos y empezá a vender hoy en HotClick.
             </p>
           </div>
 
@@ -241,13 +232,13 @@ export default function RegistroEmpresaPage() {
               {/* Barra de color */}
               <div style={{
                 height: 3,
-                background: 'linear-gradient(90deg, transparent, #f97316, #ea580c, transparent)',
+                background: 'linear-gradient(90deg, transparent, var(--hc-primary), transparent)',
               }} />
 
               <div className="p-6 sm:p-8">
 
                 <div className="mb-6">
-                  <h2 style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 900, fontSize: '1.7rem', color: 'var(--hc-text)', lineHeight: 1.1, letterSpacing: '-0.01em' }}>
+                  <h2 style={{ fontFamily: 'var(--hc-font-display)', fontWeight: 800, fontSize: '1.7rem', color: 'var(--hc-text)', lineHeight: 1.1, letterSpacing: '-0.01em' }}>
                     {step === 0 ? 'Tu empresa' : 'Tu cuenta de acceso'}
                   </h2>
                   <p style={{ color: 'var(--hc-muted)', fontSize: '0.85rem', marginTop: '0.3rem' }}>
@@ -263,14 +254,14 @@ export default function RegistroEmpresaPage() {
                         style={i < step
                           ? { background: 'var(--hc-success, #22c55e)', color: '#fff' }
                           : i === step
-                          ? { background: '#f97316', color: '#fff', boxShadow: '0 0 12px rgba(249,115,22,0.4)' }
+                          ? { background: 'var(--hc-primary)', color: '#fff', boxShadow: '0 0 12px rgba(231,59,51,0.4)' }
                           : { background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
                         {i < step
                           ? <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><polyline points="20 6 9 17 4 12"/></svg>
                           : i + 1}
                       </div>
                       <span className="text-xs font-medium" style={{ color: i === step ? 'var(--hc-text)' : 'var(--hc-muted)' }}>{label}</span>
-                      {i < 1 && <div className="h-px w-8 mx-1 rounded transition-all duration-500" style={{ background: step > 0 ? '#f97316' : 'var(--hc-border)' }} />}
+                      {i < 1 && <div className="h-px w-8 mx-1 rounded transition-all duration-500" style={{ background: step > 0 ? 'var(--hc-primary)' : 'var(--hc-border)' }} />}
                     </div>
                   ))}
                 </div>
@@ -290,7 +281,7 @@ export default function RegistroEmpresaPage() {
                         value={form.telefonoEmpresa} onChange={set('telefonoEmpresa')} />
                       {error && <ErrMsg>{error}</ErrMsg>}
                       <button type="submit" className="hc-btn hc-btn-primary hc-btn-lg w-full"
-                        style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', borderColor: '#f97316', boxShadow: '0 4px 20px rgba(249,115,22,0.3)' }}>
+                        style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px rgba(231,59,51,0.3)' }}>
                         Siguiente — Datos del administrador →
                       </button>
                     </motion.form>
@@ -322,7 +313,7 @@ export default function RegistroEmpresaPage() {
                           className="hc-btn hc-btn-outline px-4">← Atrás</button>
                         <button type="submit" disabled={loading}
                           className="hc-btn hc-btn-primary hc-btn-lg flex-1 disabled:opacity-60"
-                          style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', borderColor: '#f97316', boxShadow: '0 4px 20px rgba(249,115,22,0.3)' }}>
+                          style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px rgba(231,59,51,0.3)' }}>
                           {loading
                             ? <span className="flex items-center gap-2"><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Creando…</span>
                             : '¡Crear mi empresa! 🚀'}
@@ -340,7 +331,7 @@ export default function RegistroEmpresaPage() {
 
             {/* Footer */}
             <p className="text-center text-xs mt-6" style={{ color: 'var(--hc-muted)' }}>
-              © {new Date().getFullYear()} HOTCLICK · Costa Rica ·{' '}
+              © {new Date().getFullYear()} HotClick · Costa Rica ·{' '}
               <Link to="/informacion" className="hover:underline" style={{ color: 'var(--hc-accent)' }}>Términos</Link>
             </p>
           </div>

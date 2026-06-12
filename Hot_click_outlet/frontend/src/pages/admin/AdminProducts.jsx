@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useStickyState } from '@/hooks/useStickyState'
@@ -272,7 +272,7 @@ export default function AdminProducts() {
 
   useEffect(() => {
     if (!seoAutoTitle || !modalOpen) return
-    setForm(p => ({ ...p, metaTitle: p.nombre ? `${p.nombre} | HOTCLICK Outlet`.slice(0, 60) : '' }))
+    setForm(p => ({ ...p, metaTitle: p.nombre ? `${p.nombre} | HotClick Outlet`.slice(0, 60) : '' }))
   }, [form.nombre, seoAutoTitle, modalOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -428,8 +428,8 @@ export default function AdminProducts() {
             className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/3 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.3)' }}>
-                <svg className="w-4 h-4" style={{ color: '#a855f7' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'rgba(100,144,234,0.15)', border: '1px solid rgba(100,144,234,0.3)' }}>
+                <svg className="w-4 h-4" style={{ color: 'var(--hc-blue-400)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="3"/><path d="M12 3v3m0 12v3M3 12h3m12 0h3m-2.636-6.364-2.122 2.122M8.758 15.242l-2.122 2.122m0-12.728 2.122 2.122m6.364 6.364 2.122 2.122"/>
                 </svg>
               </div>
@@ -446,8 +446,8 @@ export default function AdminProducts() {
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                 {Array.from({ length: 5 }, (_, i) => {
                   const slot = carruselSlots[i]
-                  const slotColor = ['rgba(79,124,255,0.2)', 'rgba(168,85,247,0.2)', 'rgba(16,185,129,0.2)', 'rgba(245,158,11,0.2)', 'rgba(244,63,94,0.2)'][i]
-                  const slotBorder = ['rgba(79,124,255,0.4)', 'rgba(168,85,247,0.4)', 'rgba(16,185,129,0.4)', 'rgba(245,158,11,0.4)', 'rgba(244,63,94,0.4)'][i]
+                  const slotColor = ['rgba(23,71,168,0.2)', 'rgba(100,144,234,0.2)', 'rgba(16,185,129,0.2)', 'rgba(245,158,11,0.2)', 'rgba(244,63,94,0.2)'][i]
+                  const slotBorder = ['rgba(23,71,168,0.4)', 'rgba(100,144,234,0.4)', 'rgba(16,185,129,0.4)', 'rgba(245,158,11,0.4)', 'rgba(244,63,94,0.4)'][i]
                   return (
                     <div
                       key={i}
@@ -548,7 +548,7 @@ export default function AdminProducts() {
         {/* Aviso de scope cuando hay búsqueda activa y catálogo paginado */}
         {debouncedSearch && totalProds > PROD_PAGE_SIZE && (
           <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs"
-            style={{ backgroundColor: 'rgba(79,124,255,0.06)', border: '1px solid rgba(79,124,255,0.18)', color: '#7fa0ff' }}>
+            style={{ backgroundColor: 'rgba(23,71,168,0.06)', border: '1px solid rgba(23,71,168,0.18)', color: '#7fa0ff' }}>
             <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             Buscando en los {PROD_PAGE_SIZE} productos de la página actual. Para buscar en todo el catálogo, limpiá el texto y navegá por páginas.
           </div>
@@ -666,10 +666,10 @@ export default function AdminProducts() {
                               title={p.enCarrusel ? `Quitar del carrusel (pos. ${p.ordenCarrusel})` : carruselSlots.length >= 5 ? 'Carrusel lleno (5/5)' : 'Agregar al carrusel'}
                               className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all text-sm ${
                                 p.enCarrusel
-                                  ? 'bg-purple-500/20 border border-purple-500/40 text-purple-300'
+                                  ? 'bg-[var(--hc-blue-500)]/20 border border-[var(--hc-blue-500)]/40 text-[var(--hc-blue-300)]'
                                   : carruselSlots.length >= 5
                                   ? 'text-[#8e8e9a]/20 cursor-not-allowed'
-                                  : 'text-[#8e8e9a]/40 hover:text-purple-400 hover:bg-purple-500/10'
+                                  : 'text-[#8e8e9a]/40 hover:text-[var(--hc-blue-400)] hover:bg-[var(--hc-blue-500)]/10'
                               }`}
                             >
                               {p.enCarrusel ? (
@@ -739,15 +739,15 @@ export default function AdminProducts() {
                         </div>
                       ) : (
                         <div className="space-y-3">
-                          <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center" style={{ backgroundColor: 'rgba(79,124,255,0.1)', border: '1px solid rgba(79,124,255,0.15)' }}>
-                            <svg className="w-7 h-7" style={{ color: '#4f7cff' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                          <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center" style={{ backgroundColor: 'rgba(23,71,168,0.1)', border: '1px solid rgba(23,71,168,0.15)' }}>
+                            <svg className="w-7 h-7" style={{ color: 'var(--hc-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
                           </div>
                           <p className="font-semibold text-[#e8e8ed]">Sin productos publicados</p>
                           <p className="text-sm text-[#8e8e9a] max-w-xs mx-auto">Tu catálogo está vacío. Agregá tu primer producto para comenzar a vender.</p>
                           <button
                             onClick={openNew}
                             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold mt-1 transition-opacity hover:opacity-80"
-                            style={{ backgroundColor: '#4f7cff', color: '#fff' }}
+                            style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
                           >
                             + Crear primer producto
                           </button>
@@ -982,7 +982,7 @@ export default function AdminProducts() {
                   <input
                     value={form.metaTitle || ''}
                     maxLength={60}
-                    placeholder="Nombre del producto | HOTCLICK Outlet"
+                    placeholder="Nombre del producto | HotClick Outlet"
                     onChange={e => { setSeoAutoTitle(false); setField('metaTitle', e.target.value) }}
                     className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm placeholder:text-[#8e8e9a]/40 focus:outline-none focus:border-[#4f7cff]/60 transition-all"
                   />

@@ -274,11 +274,11 @@ export default function AdminConfigFiscal() {
             accept=".p12,.pfx"
             onChange={e => setP12File(e.target.files?.[0] ?? null)}
             className="block w-full text-sm text-gray-500 file:mr-3 file:rounded-lg file:border-0
-              file:bg-orange-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-orange-600
-              hover:file:bg-orange-100 dark:text-gray-400"
+              file:bg-[var(--hc-info-bg)] file:px-4 file:py-2 file:text-sm file:font-medium file:text-[var(--hc-link)]
+              hover:file:bg-[var(--hc-blue-100)] dark:text-gray-400"
           />
           {p12File && (
-            <p className="mt-1 text-xs text-orange-600 dark:text-orange-400">
+            <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
               Archivo listo: {p12File.name} ({(p12File.size / 1024).toFixed(1)} KB)
             </p>
           )}
@@ -308,8 +308,8 @@ export default function AdminConfigFiscal() {
         <button
           type="submit"
           disabled={saving}
-          className="w-full rounded-xl bg-orange-500 py-2.5 text-sm font-semibold text-white
-            hover:bg-orange-600 disabled:opacity-50 transition"
+          className="w-full rounded-xl bg-[var(--hc-primary)] py-2.5 text-sm font-semibold text-white
+            hover:bg-[var(--hc-primary-hover)] disabled:opacity-50 transition"
         >
           {saving ? 'Guardando…' : 'Guardar configuración fiscal'}
         </button>

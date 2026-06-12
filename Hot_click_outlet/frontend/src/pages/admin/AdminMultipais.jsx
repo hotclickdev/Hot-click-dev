@@ -80,7 +80,7 @@ export default function AdminMultipais() {
                 className="py-3 px-2 rounded-xl text-center transition-all"
                 style={{
                   border: `1.5px solid ${form.paisOperacion === p.codigo ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
-                  backgroundColor: form.paisOperacion === p.codigo ? 'rgba(79,124,255,0.08)' : 'var(--hc-bg)',
+                  backgroundColor: form.paisOperacion === p.codigo ? 'rgba(23,71,168,0.08)' : 'var(--hc-bg)',
                   color: 'var(--hc-text)',
                 }}>
                 <div className="text-2xl">{p.bandera}</div>

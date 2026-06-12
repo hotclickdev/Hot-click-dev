@@ -42,8 +42,8 @@ function sugerirRecibidos(total) {
 /* ── Método de pago ──────────────────────────────────────────── */
 const METODOS = [
   { id: 'EFECTIVO',      label: 'Efectivo',     icon: '💵', color: '#34d399' },
-  { id: 'SINPE',         label: 'SINPE',         icon: '📱', color: '#60a5fa' },
-  { id: 'TARJETA',       label: 'Tarjeta',       icon: '💳', color: '#a78bfa' },
+  { id: 'SINPE',         label: 'SINPE',         icon: '📱', color: '#6490EA' },
+  { id: 'TARJETA',       label: 'Tarjeta',       icon: '💳', color: 'var(--hc-blue-300)' },
   { id: 'TRANSFERENCIA', label: 'Transferencia', icon: '🏦', color: '#fbbf24' },
 ]
 
@@ -77,7 +77,7 @@ function PayModal({ total, onConfirm, onClose, loading }) {
         {/* Header */}
         <div className="px-6 pt-6 pb-4 flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: '#4f7cff' }}>Cobrar venta</p>
+            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--hc-accent)' }}>Cobrar venta</p>
             <p className="text-4xl font-black mt-1 tabular-nums" style={{ color: '#fff', letterSpacing: '-1px' }}>
               ₡{fmt(total)}
             </p>
@@ -119,8 +119,8 @@ function PayModal({ total, onConfirm, onClose, loading }) {
                   <button key={m} onClick={() => setRecibido(String(m))}
                     className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:scale-105"
                     style={{
-                      backgroundColor: recibidoNum === m ? 'rgba(79,124,255,0.25)' : 'rgba(79,124,255,0.08)',
-                      border: `1px solid ${recibidoNum === m ? '#4f7cff' : 'rgba(79,124,255,0.25)'}`,
+                      backgroundColor: recibidoNum === m ? 'rgba(23,71,168,0.25)' : 'rgba(23,71,168,0.08)',
+                      border: `1px solid ${recibidoNum === m ? 'var(--hc-accent)' : 'rgba(23,71,168,0.25)'}`,
                       color: '#7aa3ff',
                     }}>
                     ₡{fmt(m)}
@@ -179,7 +179,7 @@ function PayModal({ total, onConfirm, onClose, loading }) {
           {/* Info QR para SINPE/TARJETA */}
           {(metodo === 'SINPE' || metodo === 'TARJETA') && (
             <div className="rounded-2xl p-4 text-center"
-              style={{ backgroundColor: 'rgba(79,124,255,0.06)', border: '1px solid rgba(79,124,255,0.2)' }}>
+              style={{ backgroundColor: 'rgba(23,71,168,0.06)', border: '1px solid rgba(23,71,168,0.2)' }}>
               <p className="text-xs font-semibold" style={{ color: '#7aa3ff' }}>
                 {metodo === 'SINPE'
                   ? '📱 Se generará un QR con instrucciones de SINPE'
@@ -197,9 +197,9 @@ function PayModal({ total, onConfirm, onClose, loading }) {
             disabled={!puedeConfirmar || loading}
             className="w-full py-4 rounded-2xl font-black text-base transition-all disabled:opacity-30 disabled:cursor-not-allowed"
             style={{
-              background: puedeConfirmar ? 'linear-gradient(135deg, #4f7cff 0%, #7c3aed 100%)' : 'rgba(255,255,255,0.08)',
+              background: puedeConfirmar ? 'var(--hc-accent)' : 'rgba(255,255,255,0.08)',
               color: '#fff',
-              boxShadow: puedeConfirmar ? '0 8px 24px rgba(79,124,255,0.35)' : 'none',
+              boxShadow: puedeConfirmar ? '0 8px 24px rgba(23,71,168,0.35)' : 'none',
             }}>
             {loading
               ? '⏳ Generando…'
@@ -232,7 +232,7 @@ function ReceiptModal({ venta, onNuevaVenta }) {
   function whatsapp() {
     const items = (venta?.items ?? [])
       .map(i => `• ${i.producto?.nombreProducto ?? 'Producto'} ×${i.cantidad} = ₡${fmt(i.subtotalItem)}`).join('\n')
-    window.open(`https://wa.me/?text=${encodeURIComponent(`*Recibo HOTCLICK*\nTicket: ${venta.numeroPedido}\n\n${items}\n\n*Total: ₡${fmt(venta.totalPedido)}*\n¡Gracias!`)}`, '_blank')
+    window.open(`https://wa.me/?text=${encodeURIComponent(`*Recibo HotClick*\nTicket: ${venta.numeroPedido}\n\n${items}\n\n*Total: ₡${fmt(venta.totalPedido)}*\n¡Gracias!`)}`, '_blank')
   }
 
   return (
@@ -287,7 +287,7 @@ function ReceiptModal({ venta, onNuevaVenta }) {
           )}
 
           <p className="text-center text-xs mt-4" style={{ color: 'rgba(255,255,255,0.25)' }}>
-            ¡Gracias por su compra! · HOTCLICK CR
+            ¡Gracias por su compra! · HotClick CR
           </p>
         </div>
 
@@ -305,7 +305,7 @@ function ReceiptModal({ venta, onNuevaVenta }) {
           </button>
           <button onClick={onNuevaVenta}
             className="py-3 rounded-2xl text-xs font-semibold transition-all hover:brightness-125"
-            style={{ background: 'linear-gradient(135deg,#4f7cff,#7c3aed)', color: '#fff' }}>
+            style={{ background: 'var(--hc-accent)', color: '#fff' }}>
             + Nueva
           </button>
         </div>
@@ -357,7 +357,7 @@ function QRModal({ qrData, onConfirmSinpe, onCancelar, loadingConfirm }) {
       >
         <div className="px-6 pt-6 pb-4">
           <p className="text-xs font-bold uppercase tracking-widest mb-1"
-            style={{ color: metodoPago === 'SINPE' ? '#60a5fa' : '#a78bfa' }}>
+            style={{ color: metodoPago === 'SINPE' ? '#6490EA' : 'var(--hc-blue-300)' }}>
             {metodoPago === 'SINPE' ? '📱 Pago SINPE' : '💳 Pago con tarjeta'}
           </p>
           <p className="text-3xl font-black tabular-nums" style={{ color: '#fff', letterSpacing: '-1px' }}>
@@ -378,7 +378,7 @@ function QRModal({ qrData, onConfirmSinpe, onCancelar, loadingConfirm }) {
             style={{ backgroundColor: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.2)' }}>
             <div className="flex justify-between text-sm">
               <span style={{ color: 'rgba(255,255,255,0.45)' }}>SINPE Móvil a:</span>
-              <span className="font-bold font-mono" style={{ color: '#60a5fa' }}>{sinpeNumero}</span>
+              <span className="font-bold font-mono" style={{ color: '#6490EA' }}>{sinpeNumero}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span style={{ color: 'rgba(255,255,255,0.45)' }}>Referencia:</span>
@@ -394,8 +394,8 @@ function QRModal({ qrData, onConfirmSinpe, onCancelar, loadingConfirm }) {
         {/* Tarjeta waiting */}
         {metodoPago === 'TARJETA' && !paid && polling && (
           <div className="mx-6 mb-4 text-center py-3 rounded-2xl"
-            style={{ backgroundColor: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)' }}>
-            <span className="text-xs animate-pulse" style={{ color: '#a78bfa' }}>⏳ Esperando pago del cliente…</span>
+            style={{ backgroundColor: 'rgba(151,183,243,0.08)', border: '1px solid rgba(151,183,243,0.2)' }}>
+            <span className="text-xs animate-pulse" style={{ color: 'var(--hc-blue-300)' }}>⏳ Esperando pago del cliente…</span>
           </div>
         )}
 
@@ -410,7 +410,7 @@ function QRModal({ qrData, onConfirmSinpe, onCancelar, loadingConfirm }) {
               onClick={() => onConfirmSinpe(token, false)}
               disabled={loadingConfirm}
               className="py-3 rounded-2xl text-sm font-black transition-all disabled:opacity-40"
-              style={{ background: 'linear-gradient(135deg,#4f7cff,#7c3aed)', color: '#fff' }}>
+              style={{ background: 'var(--hc-accent)', color: '#fff' }}>
               {loadingConfirm ? '⏳…' : '✓ SINPE recibido'}
             </button>
           )}
@@ -591,12 +591,12 @@ export default function AdminPOS() {
 
       {/* ── TOP BAR ─────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 px-4 py-2.5 shrink-0 border-b border-white/5"
-        style={{ backgroundColor: '#0c0c12', backgroundImage: 'linear-gradient(90deg, rgba(79,124,255,0.04) 0%, transparent 50%)' }}>
+        style={{ backgroundColor: '#0c0c12', backgroundImage: 'linear-gradient(90deg, rgba(23,71,168,0.04) 0%, transparent 50%)' }}>
 
         {/* Logo + título */}
         <div className="flex items-center gap-2 mr-2">
           <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black"
-            style={{ background: 'linear-gradient(135deg,#4f7cff,#7c3aed)', color: '#fff' }}>HC</div>
+            style={{ background: 'var(--hc-accent)', color: '#fff' }}>HC</div>
           <span className="text-sm font-bold tracking-wider" style={{ color: '#fff' }}>POS</span>
         </div>
 
@@ -626,7 +626,7 @@ export default function AdminPOS() {
               {ventasHoy.count} ventas
             </span>
             <span className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>·</span>
-            <span className="text-xs font-bold tabular-nums" style={{ color: '#60a5fa' }}>₡{fmt(ventasHoy.total)}</span>
+            <span className="text-xs font-bold tabular-nums" style={{ color: '#6490EA' }}>₡{fmt(ventasHoy.total)}</span>
           </div>
         )}
 
@@ -638,7 +638,7 @@ export default function AdminPOS() {
             <div key={key} className="flex items-center gap-1 px-2 py-1 rounded-md"
               style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
               <kbd className="text-[10px] font-bold px-1.5 rounded"
-                style={{ backgroundColor: 'rgba(79,124,255,0.2)', color: '#7aa3ff' }}>{key}</kbd>
+                style={{ backgroundColor: 'rgba(23,71,168,0.2)', color: '#7aa3ff' }}>{key}</kbd>
               <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.35)' }}>{label}</span>
             </div>
           ))}
@@ -686,7 +686,7 @@ export default function AdminPOS() {
               <span className="text-sm font-bold" style={{ color: '#fff' }}>PEDIDO</span>
               {cartItems.length > 0 && (
                 <span className="text-xs px-2 py-0.5 rounded-full font-bold"
-                  style={{ backgroundColor: 'rgba(79,124,255,0.2)', color: '#7aa3ff' }}>
+                  style={{ backgroundColor: 'rgba(23,71,168,0.2)', color: '#7aa3ff' }}>
                   {cartItems.length}
                 </span>
               )}
@@ -740,7 +740,7 @@ export default function AdminPOS() {
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-1">
-                        <p className="text-xs font-semibold line-clamp-2 leading-tight" style={{ color: '#e8e8ed' }}>
+                        <p className="text-xs font-semibold line-clamp-2 leading-tight" style={{ color: '#F4F6F9' }}>
                           {item.nombre}
                         </p>
                         <button onClick={() => quitarItem(item.id)}
@@ -771,15 +771,15 @@ export default function AdminPOS() {
 
                         {/* Precio editable */}
                         <div className="flex-1 relative">
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{ color: 'rgba(79,124,255,0.6)' }}>₡</span>
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]" style={{ color: 'rgba(23,71,168,0.6)' }}>₡</span>
                           <input
                             type="text"
                             value={fmt(item.precio)}
                             onChange={e => setPrecio(item.id, e.target.value)}
                             className="w-full pl-5 pr-2 text-xs font-bold text-right rounded-lg outline-none tabular-nums"
                             style={{
-                              backgroundColor: item.precio !== item.precioOriginal ? 'rgba(251,191,36,0.08)' : 'rgba(79,124,255,0.06)',
-                              border: `1px solid ${item.precio !== item.precioOriginal ? 'rgba(251,191,36,0.3)' : 'rgba(79,124,255,0.2)'}`,
+                              backgroundColor: item.precio !== item.precioOriginal ? 'rgba(251,191,36,0.08)' : 'rgba(23,71,168,0.06)',
+                              border: `1px solid ${item.precio !== item.precioOriginal ? 'rgba(251,191,36,0.3)' : 'rgba(23,71,168,0.2)'}`,
                               color: item.precio !== item.precioOriginal ? '#fbbf24' : '#7aa3ff',
                               padding: '4px 8px 4px 18px',
                             }}
@@ -852,9 +852,9 @@ export default function AdminPOS() {
             <div className="mx-4 mb-3 rounded-2xl px-5 py-4 flex items-center justify-between"
               style={{
                 background: cartItems.length > 0
-                  ? 'linear-gradient(135deg, rgba(79,124,255,0.15) 0%, rgba(124,58,237,0.1) 100%)'
+                  ? 'linear-gradient(135deg, rgba(23,71,168,0.15) 0%, rgba(23,71,168,0.1) 100%)'
                   : 'rgba(255,255,255,0.03)',
-                border: `1px solid ${cartItems.length > 0 ? 'rgba(79,124,255,0.25)' : 'rgba(255,255,255,0.06)'}`,
+                border: `1px solid ${cartItems.length > 0 ? 'rgba(23,71,168,0.25)' : 'rgba(255,255,255,0.06)'}`,
               }}>
               <span className="text-sm font-bold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.5)' }}>
                 TOTAL
@@ -876,10 +876,10 @@ export default function AdminPOS() {
                 className="w-full py-4 rounded-2xl font-black text-base tracking-wide transition-all disabled:opacity-20 disabled:cursor-not-allowed"
                 style={{
                   background: cartItems.length > 0
-                    ? 'linear-gradient(135deg, #4f7cff 0%, #7c3aed 100%)'
+                    ? 'var(--hc-accent)'
                     : 'rgba(255,255,255,0.06)',
                   color: '#fff',
-                  boxShadow: cartItems.length > 0 ? '0 8px 32px rgba(79,124,255,0.4)' : 'none',
+                  boxShadow: cartItems.length > 0 ? '0 8px 32px rgba(23,71,168,0.4)' : 'none',
                   letterSpacing: '0.05em',
                 }}>
                 {cartItems.length === 0 ? 'CARRITO VACÍO' : `COBRAR  ·  F4`}

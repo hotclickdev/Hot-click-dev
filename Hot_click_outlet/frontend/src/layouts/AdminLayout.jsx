@@ -8,6 +8,7 @@ import useAuthStore from '@/store/authStore'
 import useTenantStore from '@/store/tenantStore'
 import { authService } from '@/services/authService'
 import GlobalSearch from '@/components/admin/GlobalSearch'
+import { HotClickMark } from '@/components/ui/BrandLogo'
 import TrialBanner from '@/components/TrialBanner'
 import OfflineBanner from '@/components/OfflineBanner'
 import AppTour from '@/components/ui/AppTour'
@@ -312,12 +313,12 @@ const SECTION_COLORS = {
   'POS':                 '#10b981',
   'Punto de venta':      '#10b981',
   'Marketing':           '#f59e0b',
-  'Sistema':             '#8b5cf6',
-  'Mi negocio':          '#8b5cf6',
+  'Sistema':             '#6490EA',
+  'Mi negocio':          '#6490EA',
 }
 
 function getSectionColor(section) {
-  return SECTION_COLORS[section] || '#4f7cff'
+  return SECTION_COLORS[section] || 'var(--hc-accent)'
 }
 
 function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, empresaId, userRole, handleLogout, onSearch }) {
@@ -357,17 +358,14 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
 
   return (
     <>
-      {/* Logo */}
-      <div className="h-16 flex items-center px-5 shrink-0" style={{ borderBottom: '1px solid var(--hc-border)' }}>
+      {/* Logo sobre nav oscura (§2.4): rojo elevado + «Click» blanco */}
+      <div className="h-16 flex items-center px-5 shrink-0"
+        style={{ borderBottom: '1px solid var(--hc-n-800)', '--hc-wordmark-hot': '#F0524A', '--hc-wordmark-click': '#FFFFFF', '--hc-surface': '#14171C' }}>
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg hc-logo-badge flex items-center justify-center shrink-0">
-            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-              <path d="M13 2L3 14h8l-2 8 12-12h-8z"/>
-            </svg>
-          </div>
+          <HotClickMark size={26} className="shrink-0" />
           <div>
-            <div className="font-extrabold text-sm tracking-tight leading-none hc-logo-text">HOTCLICK</div>
-            <div className="text-[10px] mt-0.5" style={{ color: 'var(--hc-muted)' }}>{t('admin.sidebar.panelAdmin')}</div>
+            <div className="hc-wordmark text-sm leading-none"><span className="hot">Hot</span><span className="click">Click</span></div>
+            <div className="text-[10px] mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>{t('admin.sidebar.panelAdmin')}</div>
           </div>
         </div>
       </div>
@@ -379,7 +377,7 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.98 }}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs transition-colors hover:bg-white/[0.06]"
-          style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: 'var(--hc-muted)' }}
+          style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.45)' }}
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
@@ -470,8 +468,8 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
                           className="group/item relative flex items-center gap-3 px-3 py-2.5 rounded-xl mb-0.5 transition-colors duration-150"
                           style={({ isActive }) => ({
                             color:           isActive ? '#fff' : 'rgba(255,255,255,0.48)',
-                            backgroundColor: isActive ? 'rgba(79,124,255,0.11)' : 'transparent',
-                            border:          isActive ? '1px solid rgba(79,124,255,0.28)' : '1px solid transparent',
+                            backgroundColor: isActive ? 'rgba(231,59,51,0.16)' : 'transparent',
+                            border:          '1px solid transparent',
                           })}
                         >
                           {({ isActive }) => (
@@ -481,7 +479,7 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
                                 <motion.div
                                   layoutId="sidebar-active-line"
                                   className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full"
-                                  style={{ backgroundColor: color || '#4f7cff' }}
+                                  style={{ backgroundColor: 'var(--hc-red-500)' }}
                                   transition={{ type: 'spring', stiffness: 420, damping: 32 }}
                                 />
                               )}
@@ -497,7 +495,7 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
                               {/* Icono */}
                               <motion.span
                                 className="relative w-[18px] h-[18px] flex items-center justify-center shrink-0 transition-colors duration-150"
-                                style={{ color: isActive ? (color || '#4f7cff') : 'rgba(255,255,255,0.38)' }}
+                                style={{ color: isActive ? (color || 'var(--hc-accent)') : 'rgba(255,255,255,0.38)' }}
                                 whileHover={{ scale: 1.12 }}
                                 transition={{ duration: 0.15 }}
                               >
@@ -518,7 +516,7 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
                                 <motion.div
                                   layoutId="sidebar-active-dot"
                                   className="w-1.5 h-1.5 rounded-full shrink-0"
-                                  style={{ backgroundColor: color || '#4f7cff' }}
+                                  style={{ backgroundColor: 'var(--hc-red-500)' }}
                                   transition={{ type: 'spring', stiffness: 420, damping: 32 }}
                                 />
                               )}
@@ -536,7 +534,7 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
       </nav>
 
       {/* User */}
-      <div className="p-3 space-y-1 shrink-0" style={{ borderTop: '1px solid var(--hc-border)' }}>
+      <div className="p-3 space-y-1 shrink-0" style={{ borderTop: '1px solid var(--hc-n-800)' }}>
         <ModeSwitcherWrapper userRole={userRole} />
         <NavLink
           to="/"
@@ -552,7 +550,7 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
         <button
           onClick={() => window.dispatchEvent(new Event('hc-open-tour'))}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors text-left hover:bg-white/[0.04]"
-          style={{ color: 'var(--hc-muted)' }}
+          style={{ color: 'rgba(255,255,255,0.45)' }}
         >
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
@@ -575,9 +573,9 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
             {userName?.[0]?.toUpperCase() || 'A'}
           </motion.div>
           <div className="min-w-0">
-            <div className="text-xs truncate" style={{ color: 'var(--hc-muted)' }}>{userName || 'Admin'}</div>
+            <div className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.55)' }}>{userName || 'Admin'}</div>
             {empresaNombre && (
-              <div className="text-[10px] truncate text-orange-400">{empresaNombre}</div>
+              <div className="text-[10px] truncate text-amber-400">{empresaNombre}</div>
             )}
           </div>
         </div>
@@ -631,7 +629,7 @@ export default function AdminLayout({ children }) {
 
   const roleBadge = {
     ADMIN_IT:      { label: 'IT Admin',      color: 'bg-red-500/20 text-red-400' },
-    EMPRENDEDOR:   { label: 'Emprendedor',   color: 'bg-orange-500/20 text-orange-400' },
+    EMPRENDEDOR:   { label: 'Emprendedor',   color: 'bg-amber-500/20 text-amber-400' },
     ADMIN_CLIENTE: { label: 'Admin',         color: 'bg-blue-500/20 text-blue-400' },
   }[userRole] ?? { label: userRole, color: 'bg-gray-500/20 text-gray-400' }
 
@@ -644,9 +642,11 @@ export default function AdminLayout({ children }) {
       </Helmet>
 
       {/* ── Desktop sidebar ── */}
+      {/* Nav oscura n-900 con ítem activo rojo (Brand Book cap. 6): el panel se
+          siente «de la casa» sin competir con los datos, en ambos modos. */}
       <aside
         className="hc-admin-sidebar w-60 shrink-0 flex-col fixed inset-y-0 left-0 z-20 hidden md:flex"
-        style={{ backgroundColor: 'var(--hc-surface)', borderRight: '1px solid var(--hc-border)' }}
+        style={{ backgroundColor: 'var(--hc-n-900)', borderRight: '1px solid var(--hc-n-800)' }}
       >
         <SidebarContent {...sidebarProps} />
       </aside>
@@ -670,12 +670,8 @@ export default function AdminLayout({ children }) {
               </svg>
             </button>
           )}
-          <div className="w-7 h-7 rounded-lg hc-logo-badge flex items-center justify-center shrink-0">
-            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-              <path d="M13 2L3 14h8l-2 8 12-12h-8z"/>
-            </svg>
-          </div>
-          <div className="font-extrabold text-sm hc-logo-text">HOTCLICK</div>
+          <HotClickMark size={26} className="shrink-0" />
+          <div className="hc-wordmark text-sm"><span className="hot">Hot</span><span className="click">Click</span></div>
           <span className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>Admin</span>
         </div>
         <button
@@ -707,8 +703,8 @@ export default function AdminLayout({ children }) {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 350, damping: 35 }}
-              className="fixed inset-y-0 left-0 z-50 w-64 flex flex-col md:hidden"
-              style={{ backgroundColor: 'var(--hc-surface)', borderRight: '1px solid var(--hc-border)' }}
+              className="hc-admin-sidebar fixed inset-y-0 left-0 z-50 w-64 flex flex-col md:hidden"
+              style={{ backgroundColor: 'var(--hc-n-900)', borderRight: '1px solid var(--hc-n-800)' }}
             >
               <button
                 onClick={() => setDrawerOpen(false)}

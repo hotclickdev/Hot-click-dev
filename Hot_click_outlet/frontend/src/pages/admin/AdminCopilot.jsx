@@ -191,7 +191,7 @@ export default function AdminCopilot() {
         {mensajes.length === 0 && !streamText && (
           <div className="text-center py-12 space-y-3">
             <div className="text-5xl">🤖</div>
-            <p className="font-semibold" style={{ color: 'var(--hc-text)' }}>HOTCLICK Copilot</p>
+            <p className="font-semibold" style={{ color: 'var(--hc-text)' }}>HotClick Copilot</p>
             <p className="text-sm max-w-md mx-auto" style={{ color: 'var(--hc-muted)' }}>
               Pregúntame sobre tus ventas, inventario, clientes o cualquier aspecto de tu negocio.
               Tengo acceso en tiempo real a tus datos.

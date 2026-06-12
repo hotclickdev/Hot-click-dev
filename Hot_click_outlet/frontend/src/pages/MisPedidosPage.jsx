@@ -20,10 +20,10 @@ const STATUS_ICONS = {
 
 function estadoColor(e) {
   if (e === 'ENTREGADO')      return { bg: 'rgba(5,150,105,0.12)', text: '#059669', border: 'rgba(5,150,105,0.25)' }
-  if (e === 'ENVIADO')        return { bg: 'rgba(79,124,255,0.1)', text: '#4f7cff', border: 'rgba(79,124,255,0.25)' }
+  if (e === 'ENVIADO')        return { bg: 'rgba(23,71,168,0.1)', text: 'var(--hc-accent)', border: 'rgba(23,71,168,0.25)' }
   if (e === 'LISTO_RETIRO')   return { bg: 'rgba(5,150,105,0.1)',  text: '#059669', border: 'rgba(5,150,105,0.25)' }
   if (e === 'EN_PREPARACION') return { bg: 'rgba(217,119,6,0.1)',  text: '#d97706', border: 'rgba(217,119,6,0.25)' }
-  if (e === 'PAGADO')         return { bg: 'rgba(79,124,255,0.08)', text: '#4f7cff', border: 'rgba(79,124,255,0.2)' }
+  if (e === 'PAGADO')         return { bg: 'rgba(23,71,168,0.08)', text: 'var(--hc-accent)', border: 'rgba(23,71,168,0.2)' }
   if (e === 'CANCELADO')      return { bg: 'rgba(220,38,38,0.08)', text: '#dc2626', border: 'rgba(220,38,38,0.2)' }
   return { bg: 'var(--hc-surface-2)', text: 'var(--hc-muted)', border: 'var(--hc-border)' }
 }
@@ -73,7 +73,7 @@ function Timeline({ estadoActual, esRetiro }) {
                 style={{
                   backgroundColor: done ? 'var(--hc-accent)' : 'var(--hc-surface-2)',
                   border: `2px solid ${done ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
-                  boxShadow: current ? '0 0 10px rgba(79,124,255,0.4)' : 'none',
+                  boxShadow: current ? '0 0 10px rgba(23,71,168,0.4)' : 'none',
                 }}
               >
                 {done ? <span className="text-white text-[10px]">✓</span> : <span style={{ color: 'var(--hc-muted)', fontSize: 9 }}>○</span>}
@@ -148,10 +148,10 @@ function NotificacionesTab({ notificaciones }) {
     <div className="space-y-2">
       {[...list].reverse().map((n, i) => (
         <div key={i} className="rounded-xl px-4 py-3 space-y-1"
-          style={{ backgroundColor: 'rgba(79,124,255,0.06)', border: '1px solid rgba(79,124,255,0.15)' }}>
+          style={{ backgroundColor: 'rgba(23,71,168,0.06)', border: '1px solid rgba(23,71,168,0.15)' }}>
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-              style={{ backgroundColor: 'rgba(79,124,255,0.12)', color: '#4f7cff' }}>
+              style={{ backgroundColor: 'rgba(23,71,168,0.12)', color: 'var(--hc-accent)' }}>
               {ESTADO_LABELS[n.estado] ?? n.estado}
             </span>
             <span className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>
@@ -239,7 +239,7 @@ function OrderCard({ order }) {
                         Notificaciones
                         {hasNotifs && (
                           <span className="w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center"
-                            style={{ backgroundColor: '#4f7cff', color: '#fff' }}>
+                            style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
                             {notificaciones.length}
                           </span>
                         )}

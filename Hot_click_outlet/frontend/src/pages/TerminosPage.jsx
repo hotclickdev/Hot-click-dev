@@ -8,11 +8,11 @@ const LAST_UPDATED = '5 de junio de 2025'
 const termsJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebPage',
-  name: 'Términos y Condiciones — HOTCLICK',
-  description: 'Términos y condiciones de uso de HOTCLICK Marketplace Costa Rica. Condiciones para compradores y vendedores emprendedores.',
+  name: 'Términos y Condiciones — HotClick',
+  description: 'Términos y condiciones de uso de HotClick Marketplace Costa Rica. Condiciones para compradores y vendedores emprendedores.',
   url: `${SITE_URL}/terminos`,
   inLanguage: 'es-CR',
-  isPartOf: { '@type': 'WebSite', name: 'HOTCLICK', url: SITE_URL },
+  isPartOf: { '@type': 'WebSite', name: 'HotClick', url: SITE_URL },
   about: { '@type': 'Thing', name: 'Términos y condiciones de uso de marketplace' },
   dateModified: '2025-06-05',
 }
@@ -114,18 +114,18 @@ export default function TerminosPage() {
   return (
     <MainLayout>
       <Helmet>
-        <title>Términos y Condiciones — HOTCLICK Costa Rica</title>
-        <meta name="description" content="Términos y condiciones de uso de HOTCLICK Marketplace. Condiciones para compradores y vendedores emprendedores costarricenses." />
+        <title>Términos y Condiciones — HotClick Costa Rica</title>
+        <meta name="description" content="Términos y condiciones de uso de HotClick Marketplace. Condiciones para compradores y vendedores emprendedores costarricenses." />
         <link rel="canonical" href={`${SITE_URL}/terminos`} />
         <link rel="alternate" hreflang="es-CR" href={`${SITE_URL}/terminos`} />
         <link rel="alternate" hreflang="es" href={`${SITE_URL}/terminos`} />
         <link rel="alternate" hreflang="x-default" href={`${SITE_URL}/`} />
         <meta name="robots" content="noindex, follow" />
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="Términos y Condiciones — HOTCLICK" />
+        <meta property="og:title" content="Términos y Condiciones — HotClick" />
         <meta property="og:url" content={`${SITE_URL}/terminos`} />
         <meta property="og:locale" content="es_CR" />
-        <meta property="og:site_name" content="HOTCLICK" />
+        <meta property="og:site_name" content="HotClick" />
         <script type="application/ld+json">{JSON.stringify(termsJsonLd)}</script>
       </Helmet>
       <div style={{ background: 'var(--hc-bg)', minHeight: '100vh', paddingBottom: '4rem' }}>

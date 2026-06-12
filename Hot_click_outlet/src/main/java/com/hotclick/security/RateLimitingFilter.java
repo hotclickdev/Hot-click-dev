@@ -45,8 +45,9 @@ import java.util.Map;
  *
  *   AI (IP-level; per-empresa burst in AiCopilotController)
  *   ────────────────────────────────────────────
- *   /api/public/chat             → 10 / 60s
- *   /api/admin/ai/chat           →  5 / 60s
+ *   /api/public/chat                      → 10 / 60s
+ *   /api/public/shopping-assistant/chat   → 10 / 60s
+ *   /api/admin/ai/chat                    →  5 / 60s
  */
 public class RateLimitingFilter extends OncePerRequestFilter {
 
@@ -76,8 +77,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         Map.entry("/api/pedidos",                 new Limit(15,   60)),
         Map.entry("/api/payment/checkout",        new Limit(3,    60)),
         // AI — IP level (per-empresa burst handled in controller)
-        Map.entry("/api/public/chat",             new Limit(10,   60)),
-        Map.entry("/api/admin/ai/chat",           new Limit(5,    60))
+        Map.entry("/api/public/chat",                         new Limit(10,  60)),
+        Map.entry("/api/public/shopping-assistant/chat",      new Limit(10,  60)),
+        Map.entry("/api/admin/ai/chat",                       new Limit(5,   60))
     );
 
     // Prefix-based limits for paths with variables (e.g. /api/pedidos/123/notificar).

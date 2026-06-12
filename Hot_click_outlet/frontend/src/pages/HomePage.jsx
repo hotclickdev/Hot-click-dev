@@ -1,399 +1,65 @@
-import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
+import { useEffect, useState, useMemo } from 'react'
+import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import { Helmet } from 'react-helmet-async'
 import Seo from '@/components/seo/Seo'
 import { generateWebsiteJsonLd, generateOrganizationJsonLd, generateFAQJsonLd, generateItemListJsonLd } from '@/utils/jsonLd'
-import { productService, normalizeProduct } from '@/services/productService'
+import { productService } from '@/services/productService'
 import { marcaService } from '@/services/marcaService'
 import useCartStore from '@/store/cartStore'
 import useRecentlyViewedStore from '@/store/recentlyViewedStore'
 import { useToast } from '@/components/ui/Toast'
 import { formatPrice } from '@/utils/format'
-import { useScrollReveal } from '@/hooks/useScrollReveal'
 import ProductCard from '@/components/ui/ProductCard'
 import { getOptimizedUrl } from '@/utils/imageUtils'
 import HeroRotator from '@/components/ui/HeroRotator'
+import Section, { SectionHeader } from '@/components/ui/Section'
 
-const stagger = {
-  container: { hidden: {}, show: { transition: { staggerChildren: 0.08 } } },
-  item: { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.4 } } },
-}
-
-// Accent colors por slide (cíclicos)
-const SLIDE_COLORS = [
-  { accent: '#4f7cff', glow: 'rgba(79,124,255,0.28)', bg: 'rgba(79,124,255,0.07)', ring: 'rgba(79,124,255,0.35)' },
-  { accent: '#a855f7', glow: 'rgba(168,85,247,0.28)', bg: 'rgba(168,85,247,0.07)', ring: 'rgba(168,85,247,0.35)' },
-  { accent: '#10b981', glow: 'rgba(16,185,129,0.28)', bg: 'rgba(16,185,129,0.07)', ring: 'rgba(16,185,129,0.35)' },
-  { accent: '#f59e0b', glow: 'rgba(245,158,11,0.28)', bg: 'rgba(245,158,11,0.07)', ring: 'rgba(245,158,11,0.35)' },
-  { accent: '#f43f5e', glow: 'rgba(244,63,94,0.28)', bg: 'rgba(244,63,94,0.07)', ring: 'rgba(244,63,94,0.35)' },
-]
-
-const PLACEHOLDER_SLIDES = Array.from({ length: 5 }, (_, i) => ({
-  id: `ph-${i}`,
-  nombre: 'Tecnología premium',
-  descripcion: 'Productos de calidad al mejor precio en Costa Rica.',
-  precio: 0,
-  imagenUrl: '',
-  categoriaNombre: 'HOTCLICK',
-  stock: 1,
-}))
-
-// ─── Carousel Hero ────────────────────────────────────────────────────────────
-function HeroCarousel({ slides }) {
-  const [current, setCurrent] = useState(0)
-  const [dir, setDir] = useState(1)
-  const [progress, setProgress] = useState(0)
-  const intervalRef = useRef(null)
-  const progressRef = useRef(null)
-  const navigate = useNavigate()
+/* Franja de confianza bajo el hero (patrón Mercurio × Brand Book §15.1):
+   los diferenciadores reales del negocio, con icono azul — el color guía, no decora. */
+function TrustStrip() {
   const { t } = useTranslation()
-
-  const DURATION = 6000
-
-  const goTo = useCallback((idx, direction) => {
-    setDir(direction ?? (idx > current ? 1 : -1))
-    setCurrent(idx)
-    setProgress(0)
-  }, [current])
-
-  const next = useCallback(() => goTo((current + 1) % slides.length, 1), [current, slides.length, goTo])
-  const prev = useCallback(() => goTo((current - 1 + slides.length) % slides.length, -1), [current, slides.length, goTo])
-
-  // Auto-advance + progress bar
-  useEffect(() => {
-    clearInterval(intervalRef.current)
-    clearInterval(progressRef.current)
-    setProgress(0)
-    const step = 50
-    const increment = (step / DURATION) * 100
-    progressRef.current = setInterval(() => {
-      setProgress((p) => Math.min(p + increment, 100))
-    }, step)
-    intervalRef.current = setTimeout(() => next(), DURATION)
-    return () => { clearInterval(intervalRef.current); clearInterval(progressRef.current) }
-  }, [current, next])
-
-  const slide = slides[current]
-  const color = SLIDE_COLORS[current % SLIDE_COLORS.length]
-  const watermark = slide.categoriaNombre || slide.nombre || 'HOTCLICK'
-
-  const slideVariants = {
-    enter: (d) => ({ x: d > 0 ? '100%' : '-100%', opacity: 0 }),
-    center: { x: 0, opacity: 1, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } },
-    exit: (d) => ({ x: d > 0 ? '-40%' : '40%', opacity: 0, transition: { duration: 0.45, ease: [0.4, 0, 1, 1] } }),
-  }
-
-  const imgVariants = {
-    enter: (d) => ({ x: d > 0 ? 80 : -80, opacity: 0, scale: 0.88 }),
-    center: { x: 0, opacity: 1, scale: 1, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.08 } },
-    exit: { opacity: 0, scale: 0.92, transition: { duration: 0.35 } },
-  }
-
+  const items = [
+    { icon: <ChatTrustIcon />, title: 'Estamos disponibles', desc: 'Escribinos por WhatsApp', href: 'https://wa.me/50689745370' },
+    { icon: <TruckStepIcon />, title: t('home.feat1Title'), desc: t('home.feat1Desc') },
+    { icon: <LockTrustIcon />, title: t('home.feat2Title'), desc: t('home.feat2Desc') },
+    { icon: <CheckTrustIcon />, title: t('home.feat3Title'), desc: t('home.feat3Desc') },
+  ]
   return (
-    <section className="relative overflow-hidden" style={{ minHeight: '82vh' }}>
-      {/* Animated background glow per slide */}
-      <AnimatePresence>
-        <motion.div
-          key={`glow-${current}`}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.8 }}
-          className="absolute inset-0 pointer-events-none"
-        >
-          <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 70% 70% at 70% 50%, ${color.glow}, transparent 70%)` }} />
-          <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 40% 60% at 30% 30%, ${color.bg}, transparent 65%)` }} />
-          {/* Grid */}
-          <div className="absolute inset-0 opacity-[0.35]" style={{
-            backgroundImage: `linear-gradient(var(--hc-border) 1px, transparent 1px), linear-gradient(90deg, var(--hc-border) 1px, transparent 1px)`,
-            backgroundSize: '60px 60px',
-          }} />
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Watermark */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden select-none">
-        <AnimatePresence mode="wait">
-          <motion.span
-            key={`wm-${current}`}
-            aria-hidden="true"
-            initial={{ y: 20 }}
-            animate={{ y: 0 }}
-            exit={{ y: -20 }}
-            transition={{ duration: 0.55 }}
-            className="font-black uppercase tracking-[-0.02em] whitespace-nowrap leading-none"
-            style={{ fontSize: '20vw', color: 'color-mix(in srgb, var(--hc-text) 4%, transparent)' }}
-          >
-            {watermark.split(' ')[0]}
-          </motion.span>
-        </AnimatePresence>
-      </div>
-
-      {/* Main content */}
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 w-full" style={{ minHeight: 'min(60vh, 460px)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-4 items-center py-5 lg:py-8">
-
-          {/* ── Left: text content ── */}
-          <AnimatePresence mode="wait" custom={dir}>
-            <motion.div
-              key={`text-${current}`}
-              custom={dir}
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              className="flex flex-col"
+    <section style={{ background: 'var(--hc-surface)', borderTop: '1px solid var(--hc-border)', borderBottom: '1px solid var(--hc-border)' }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        {items.map(({ icon, title, desc, href }) => {
+          const Tag = href ? 'a' : 'div'
+          return (
+            <Tag
+              key={title}
+              {...(href ? { href, target: '_blank', rel: 'noopener noreferrer' } : {})}
+              className="flex items-center gap-3"
             >
-              {/* Category badge */}
-              <div
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold mb-5 w-fit"
-                style={{ background: color.bg, border: `1px solid ${color.ring}`, color: color.accent }}
+              <span
+                className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                style={{ background: 'var(--hc-blue-50)', color: 'var(--hc-link)' }}
+                aria-hidden="true"
               >
-                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: color.accent }} />
-                {slide.categoriaNombre || 'Tecnología'}
-              </div>
-
-              <h1
-                className="font-black leading-[1.02] tracking-tight mb-3 line-clamp-2"
-                style={{ fontSize: 'clamp(1.5rem, 3.5vw, 3rem)', color: 'var(--hc-text)' }}
-              >
-                {slide.nombre}
-              </h1>
-
-              {slide.descripcion && (
-                <p className="text-base text-[#8e8e9a] max-w-lg mb-4 sm:mb-6 leading-relaxed line-clamp-2 sm:line-clamp-3">
-                  {slide.descripcion}
-                </p>
-              )}
-
-              {/* Price */}
-              {slide.precio > 0 && (
-                <div className="flex items-baseline gap-3 mb-4 sm:mb-6">
-                  <span className="text-3xl font-black" style={{ color: color.accent }}>
-                    {formatPrice(slide.precio)}
-                  </span>
-                  {slide.condicion && slide.condicion !== 'NUEVO' && (
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
-                      slide.condicion === 'COMO_NUEVO'
-                        ? 'bg-[#4f7cff]/15 border-[#4f7cff]/30 text-[#4f7cff]'
-                        : 'bg-amber-500/15 border-amber-500/30 text-amber-400'
-                    }`}>{slide.condicion === 'COMO_NUEVO' ? 'Como nuevo' : 'Usado'}</span>
-                  )}
-                </div>
-              )}
-
-              <div className="flex flex-col sm:flex-row gap-3">
-                {slide.id && !String(slide.id).startsWith('ph-') ? (
-                  <button
-                    onClick={() => navigate(`/productos/${slide.id}`, { state: { product: slide } })}
-                    className="group inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl font-bold text-sm text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
-                    style={{ background: color.accent, boxShadow: `0 0 32px ${color.ring}` }}
-                  >
-                    Ver producto
-                    <span className="inline-block group-hover:translate-x-1 transition-transform duration-200">→</span>
-                  </button>
-                ) : (
-                  <Link
-                    to="/productos"
-                    className="group inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl font-bold text-sm text-white transition-all duration-200 hover:-translate-y-0.5"
-                    style={{ background: color.accent, boxShadow: `0 0 32px ${color.ring}` }}
-                  >
-                    {t('home.verProductos')}
-                    <span className="inline-block group-hover:translate-x-1 transition-transform duration-200">→</span>
-                  </Link>
-                )}
-                <a
-                  href="#como-comprar"
-                  className="inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl bg-white/6 hover:bg-white/10 border border-white/10 text-[#e8e8ed] font-semibold text-sm transition-all duration-200 hover:-translate-y-0.5"
-                >
-                  {t('home.comoComprar')}
-                </a>
-              </div>
-
-              {/* Mini stats */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.35 }}
-                className="flex flex-wrap gap-4 sm:gap-5 mt-3 sm:mt-6"
-              >
-                {[['100%', t('home.garantia')], ['24h', t('home.envios')], ['5★', t('home.satisfaccion')]].map(([value, label]) => (
-                  <div key={label}>
-                    <div className="text-xl font-bold text-[#e8e8ed]">{value}</div>
-                    <div className="text-sm text-[#8e8e9a] mt-0.5">{label}</div>
-                  </div>
-                ))}
-              </motion.div>
-            </motion.div>
-          </AnimatePresence>
-
-          {/* ── Right: product image ── */}
-          <div className="relative flex items-center justify-center lg:justify-end">
-            {/* Ambient glow behind image */}
-            <AnimatePresence>
-              <motion.div
-                key={`img-glow-${current}`}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.6 }}
-                className="absolute w-[200px] sm:w-[320px] md:w-[420px] h-[200px] sm:h-[320px] md:h-[420px] rounded-full blur-[60px] sm:blur-[80px] md:blur-[100px] pointer-events-none"
-                style={{ background: color.glow }}
-              />
-            </AnimatePresence>
-
-            <AnimatePresence mode="wait" custom={dir}>
-              <motion.div
-                key={`img-${current}`}
-                custom={dir}
-                variants={imgVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                className="relative z-10 flex items-center justify-center"
-                style={{ width: 'min(400px, 85vw)', height: 'min(400px, 85vw)' }}
-              >
-                {slide.imagenUrl ? (
-                  <>
-                    {/* Floating animation wrapper */}
-                    <motion.div
-                      animate={{ y: [0, -16, 0] }}
-                      transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-                      className="w-full h-full"
-                    >
-                      <img
-                        src={getOptimizedUrl(slide.imagenUrl, { width: 800, quality: 80 })}
-                        alt={slide.nombre}
-                        width={800}
-                        height={800}
-                        className="w-full h-full"
-                        style={{ objectFit: 'contain', filter: `drop-shadow(0 0 48px ${color.glow}) drop-shadow(0 32px 48px rgba(0,0,0,0.6))` }}
-                        fetchPriority={current === 0 ? 'high' : 'auto'}
-                        loading={current === 0 ? 'eager' : 'lazy'}
-                        decoding={current === 0 ? 'sync' : 'async'}
-                      />
-                    </motion.div>
-                    {/* Floating badges */}
-                    <motion.div
-                      initial={{ opacity: 0, x: 16, y: -16 }}
-                      animate={{ opacity: 1, x: 0, y: 0 }}
-                      transition={{ delay: 0.7 }}
-                      className="absolute top-4 right-0 flex items-center gap-2 px-3 py-2 rounded-2xl backdrop-blur-sm"
-                      style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
-                    >
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="text-xs font-semibold" style={{ color: 'var(--hc-text)' }}>{t('home.shipping24h')}</span>
-                    </motion.div>
-                    {slide.stock > 0 && slide.stock <= 3 && (
-                      <motion.div
-                        initial={{ opacity: 0, x: -16, y: 16 }}
-                        animate={{ opacity: 1, x: 0, y: 0 }}
-                        transition={{ delay: 0.9 }}
-                        className="absolute bottom-4 left-0 px-3 py-2 rounded-2xl backdrop-blur-sm"
-                        style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)' }}
-                      >
-                        <span className="text-xs font-semibold text-amber-400">¡Últimas {slide.stock} unidades!</span>
-                      </motion.div>
-                    )}
-                  </>
-                ) : (
-                  <motion.div
-                    animate={{ y: [0, -14, 0] }}
-                    transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
-                    className="w-full h-full flex items-center justify-center"
-                  >
-                    <FallbackIllustration color={color.accent} />
-                  </motion.div>
-                )}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </div>
-
-        {/* ── Bottom: thumbnail navigation ── */}
-        <div className="pb-4 sm:pb-8 flex flex-col items-center gap-3">
-          {/* Progress bar */}
-          <div className="w-full max-w-xs h-0.5 rounded-full bg-white/10 overflow-hidden">
-            <motion.div
-              className="h-full rounded-full"
-              style={{ width: `${progress}%`, background: color.accent }}
-              transition={{ duration: 0 }}
-            />
-          </div>
-
-          {/* Thumbnails */}
-          <div className="flex items-center gap-3">
-            {/* Prev arrow */}
-            <button
-              onClick={prev}
-              aria-label={t('common.previous')}
-              className="w-9 h-9 rounded-xl bg-white/6 border border-white/10 flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/12 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-
-            <div className="flex items-center gap-2">
-              {slides.map((s, i) => {
-                const c = SLIDE_COLORS[i % SLIDE_COLORS.length]
-                const isActive = i === current
-                return (
-                  <button
-                    key={s.id ?? i}
-                    onClick={() => goTo(i)}
-                    aria-label={`Slide ${i + 1}`}
-                    className="relative rounded-xl overflow-hidden transition-all duration-300 shrink-0"
-                    style={{
-                      width: isActive ? 72 : 48,
-                      height: 48,
-                      border: isActive ? `2px solid ${c.accent}` : '2px solid var(--hc-border)',
-                      boxShadow: isActive ? `0 0 16px ${c.ring}` : 'none',
-                      background: 'var(--hc-surface)',
-                    }}
-                  >
-                    {s.imagenUrl ? (
-                      <img
-                        src={getOptimizedUrl(s.imagenUrl, { width: 96, quality: 70 })}
-                        alt={s.nombre}
-                        className="w-full h-full"
-                        style={{ objectFit: 'contain' }}
-                        loading="lazy"
-                        decoding="async"
-                        width={96}
-                        height={48}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <span className="text-lg">📦</span>
-                      </div>
-                    )}
-                    {isActive && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: c.accent }} />
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-
-            {/* Next arrow */}
-            <button
-              onClick={next}
-              aria-label={t('common.next')}
-              className="w-9 h-9 rounded-xl bg-white/6 border border-white/10 flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/12 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-            </button>
-          </div>
-
-          {/* Slide counter */}
-          <span className="text-xs text-[#8e8e9a]">{current + 1} / {slides.length}</span>
-        </div>
+                {icon}
+              </span>
+              <span>
+                <span className="block text-sm font-bold leading-tight" style={{ color: 'var(--hc-text)' }}>{title}</span>
+                <span className="block text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>{desc}</span>
+              </span>
+            </Tag>
+          )
+        })}
       </div>
     </section>
   )
 }
+
+function ChatTrustIcon() { return <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg> }
+function LockTrustIcon() { return <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> }
+function CheckTrustIcon() { return <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> }
 
 // ─── Marquee de emprendimientos con convenio ──────────────────────────────────
 function ConveniosMarquee() {
@@ -465,16 +131,12 @@ function CategoryBrowse({ products, categories }) {
   if (catGroups.length === 0) return null
 
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
-      <div className="flex items-center justify-between mb-5">
-        <h2 className="text-lg sm:text-xl font-bold" style={{ color: 'var(--hc-text)' }}>
-          Explorá por categoría
-        </h2>
-        <Link to="/productos" className="text-xs font-semibold hover:opacity-70 transition-opacity"
-          style={{ color: 'var(--hc-accent)' }}>
-          Ver catálogo completo →
-        </Link>
-      </div>
+    <Section
+      title="Elegí una categoría."
+      subtitle="Hay mucho por explorar."
+      action={{ label: 'Ver catálogo completo', to: '/productos' }}
+      tone="surface"
+    >
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
         {catGroups.map((group, gi) => (
           <motion.div
@@ -532,7 +194,7 @@ function CategoryBrowse({ products, categories }) {
           </motion.div>
         ))}
       </div>
-    </section>
+    </Section>
   )
 }
 
@@ -544,9 +206,7 @@ export default function HomePage() {
   const [productsMuestra, setProductsMuestra] = useState([])
   const addItem = useCartStore((s) => s.addItem)
   const toast = useToast()
-  const navigate = useNavigate()
   const { t } = useTranslation()
-  const featuresRef = useScrollReveal({ threshold: 0.08 })
   const recentlyViewed = useRecentlyViewedStore((s) => s.items)
 
   useEffect(() => {
@@ -576,7 +236,7 @@ export default function HomePage() {
   return (
     <MainLayout>
       <Seo
-        title="HOTCLICK — Marketplace de emprendedores en Costa Rica"
+        title="HotClick — Marketplace de emprendedores en Costa Rica"
         description="Marketplace de emprendedores costarricenses. Productos únicos con envío a todo Costa Rica, pagos seguros y soporte local."
         type="website"
       />
@@ -601,26 +261,26 @@ export default function HomePage() {
           </script>
         )}
       </Helmet>
-      <h1 className="sr-only">HOTCLICK — Marketplace de emprendedores en Costa Rica</h1>
-      {/* ── Hero Rotador: Chat → Productos → Emprendimientos ── */}
+      <h1 className="sr-only">HotClick — Marketplace de emprendedores en Costa Rica</h1>
+      {/* ── Hero: rotador con chat conversacional → Productos → Emprendimientos ── */}
       <HeroRotator destacados={destacados.slice(0, 3)} />
+
+      {/* Franja de confianza — diferenciadores reales con icono azul (§15.1) */}
+      <TrustStrip />
 
       {/* Productos destacados */}
       {destacados.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
-          <div className="flex items-center justify-between mb-3 sm:mb-5">
-            <div className="flex items-center gap-2">
-              <span className="w-1 h-4 rounded-full bg-[#4f7cff]" />
-              <h2 className="text-sm font-semibold tracking-wide uppercase text-[#8e8e9a]">{t('home.destacados')}</h2>
-            </div>
-            <Link to="/productos" className="text-xs text-[#4f7cff] hover:underline">{t('home.verTodos')}</Link>
-          </div>
+        <Section
+          title={`${t('home.destacados')}.`}
+          subtitle="Esto te va a gustar."
+          action={{ label: t('home.verTodos'), to: '/productos' }}
+        >
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {destacados.map((product, i) => (
               <ProductCard key={product.id} product={product} priority={i < 2} index={i} />
             ))}
           </div>
-        </section>
+        </Section>
       )}
 
       {/* Explorar por categoría — estilo Amazon */}
@@ -628,11 +288,7 @@ export default function HomePage() {
 
       {/* Visto recientemente */}
       {recentlyViewed.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
-          <div className="flex items-center gap-2 mb-3 sm:mb-5">
-            <span className="w-1 h-4 rounded-full bg-[#4f7cff]" />
-            <h2 className="text-sm font-semibold tracking-wide uppercase text-[#8e8e9a]">{t('home.recentlyViewed')}</h2>
-          </div>
+        <Section title={`${t('home.recentlyViewed')}.`} subtitle="Seguí donde lo dejaste.">
           <div role="list" className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide">
             {recentlyViewed.map((p) => (
               <motion.article
@@ -675,23 +331,21 @@ export default function HomePage() {
               </motion.article>
             ))}
           </div>
-        </section>
+        </Section>
       )}
 
       {/* Emprendimientos con convenio — marquee */}
       <ConveniosMarquee />
 
       {/* Marcas — sección siempre renderizada para evitar CLS al cargar */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8" style={{ minHeight: '130px' }}>
+      <section style={{ minHeight: '130px' }}>
         {marcas.length > 0 && (
-          <>
-            <div className="flex items-center justify-between mb-3 sm:mb-5">
-              <div className="flex items-center gap-2">
-                <span className="w-1 h-4 rounded-full bg-[#4f7cff]" />
-                <h2 className="text-sm font-semibold tracking-wide uppercase text-[#8e8e9a]">{t('home.brands')}</h2>
-              </div>
-              <Link to="/productos" className="text-xs text-[#4f7cff] hover:underline">Ver todas</Link>
-            </div>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+            <SectionHeader
+              title={`${t('home.brands')}.`}
+              subtitle="Confianza que se reconoce."
+              action={{ label: 'Ver todas', to: '/productos' }}
+            />
             <div className="flex flex-wrap gap-3 sm:gap-4 justify-center">
               {marcas.map((m) => (
                 <motion.div
@@ -728,82 +382,49 @@ export default function HomePage() {
                 </motion.div>
               ))}
             </div>
-          </>
+          </div>
         )}
       </section>
 
-      {/* How to buy section */}
-      <section id="como-comprar" className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-5 sm:mb-8"
-        >
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#4f7cff]/10 border border-[#4f7cff]/20 text-sm text-[#4f7cff] mb-4">
-            {t('home.procesoBadge')}
-          </div>
-          <h2 className="text-3xl font-bold text-[#e8e8ed]">{t('home.comoComprarTitle')}</h2>
-          <p className="text-[#8e8e9a] mt-2">{t('home.comoComprarSub')}</p>
-        </motion.div>
-
+      {/* Cómo comprar — franja de pasos sobre azul 50 (§15.5) */}
+      <Section
+        id="como-comprar"
+        title={`${t('home.comoComprarTitle')}.`}
+        subtitle={t('home.comoComprarSub')}
+        tone="blue50"
+      >
         <div className="relative">
-          <div className="hidden lg:block absolute top-10 left-[12.5%] right-[12.5%] h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+          <div className="hidden lg:block absolute top-10 left-[12.5%] right-[12.5%] h-px" style={{ background: 'linear-gradient(90deg, transparent, var(--hc-blue-200), transparent)' }} />
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             {[
-              { step: '01', icon: <SearchStepIcon />, title: t('home.step1Title'), desc: t('home.step1Desc'), color: 'text-[#4f7cff]', glow: 'bg-[#4f7cff]/10', border: 'border-[#4f7cff]/20' },
-              { step: '02', icon: <CartStepIcon />, title: t('home.step2Title'), desc: t('home.step2Desc'), color: 'text-purple-400', glow: 'bg-purple-500/10', border: 'border-purple-500/20' },
-              { step: '03', icon: <WhatsStepIcon />, title: t('home.step3Title'), desc: t('home.step3Desc'), color: 'text-[#25D366]', glow: 'bg-[#25D366]/10', border: 'border-[#25D366]/20' },
-              { step: '04', icon: <TruckStepIcon />, title: t('home.step4Title'), desc: t('home.step4Desc'), color: 'text-amber-400', glow: 'bg-amber-500/10', border: 'border-amber-500/20' },
-            ].map(({ step, icon, title, desc, color, glow, border }, i) => (
+              { step: '01', icon: <SearchStepIcon />, title: t('home.step1Title'), desc: t('home.step1Desc'), accent: 'var(--hc-link)' },
+              { step: '02', icon: <CartStepIcon />, title: t('home.step2Title'), desc: t('home.step2Desc'), accent: 'var(--hc-link)' },
+              { step: '03', icon: <WhatsStepIcon />, title: t('home.step3Title'), desc: t('home.step3Desc'), accent: '#25D366' },
+              { step: '04', icon: <TruckStepIcon />, title: t('home.step4Title'), desc: t('home.step4Desc'), accent: 'var(--hc-success)' },
+            ].map(({ step, icon, title, desc, accent }, i) => (
               <motion.div
                 key={step}
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: i * 0.08 }}
-                className="hc-step-card relative flex flex-col items-center text-center p-4 sm:p-6 rounded-2xl bg-[#111114] border border-white/8"
+                className="hc-step-card relative flex flex-col items-center text-center p-4 sm:p-6 rounded-2xl"
+                style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
               >
-                <div className={`hc-step-icon w-11 h-11 sm:w-14 sm:h-14 rounded-2xl ${glow} border ${border} flex items-center justify-center mb-3 sm:mb-4 ${color}`}>
+                <div
+                  className="hc-step-icon w-11 h-11 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center mb-3 sm:mb-4"
+                  style={{ color: accent, background: `color-mix(in srgb, ${accent} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 22%, transparent)` }}
+                >
                   {icon}
                 </div>
-                <span className={`text-[10px] font-bold tracking-widest ${color} mb-2`}>{step}</span>
-                <h3 className="font-semibold text-[#e8e8ed] mb-2">{title}</h3>
-                <p className="text-xs text-[#8e8e9a] leading-relaxed">{desc}</p>
+                <span className="text-[10px] font-bold tracking-widest mb-2" style={{ color: accent }}>{step}</span>
+                <h3 className="font-semibold mb-2" style={{ color: 'var(--hc-text)' }}>{title}</h3>
+                <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>{desc}</p>
               </motion.div>
             ))}
           </div>
         </div>
-      </section>
-
-      {/* Features section */}
-      <section className="border-t" style={{ borderColor: 'var(--hc-border)', backgroundColor: 'var(--hc-surface)' }}>
-        <div ref={featuresRef} className="hc-reveal max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-10">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6">
-            {[
-              { icon: '🚚', title: t('home.feat1Title'), desc: t('home.feat1Desc') },
-              { icon: '🔒', title: t('home.feat2Title'), desc: t('home.feat2Desc') },
-              { icon: '✓', title: t('home.feat3Title'), desc: t('home.feat3Desc') },
-            ].map(({ icon, title, desc }, i) => (
-              <motion.div
-                key={title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.45, delay: i * 0.1 }}
-                className="hc-glass-card flex items-start gap-3 p-4 sm:p-6"
-              >
-                <span className="text-3xl shrink-0">{icon}</span>
-                <div>
-                  <h3 className="font-semibold mb-1" style={{ color: 'var(--hc-text)' }}>{title}</h3>
-                  <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>{desc}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+      </Section>
 
       {/* Testimonials */}
       <TestimonialsCarousel />
@@ -956,41 +577,39 @@ export default function HomePage() {
         </motion.div>
       </section>
 
-      {/* CTA */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-16 text-center">
+      {/* CTA — banner de campaña sobre azul 900 (§5.3: el rojo solo en el CTA) */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14 text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="relative rounded-3xl overflow-hidden p-7 sm:p-12"
-          style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
+          className="rounded-3xl overflow-hidden p-7 sm:p-12"
+          style={{ background: 'var(--hc-blue-900)' }}
         >
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] opacity-20"
-              style={{ background: 'radial-gradient(ellipse at center, var(--hc-accent), transparent 70%)' }} />
-            <div className="absolute bottom-0 right-0 w-64 h-64 opacity-10"
-              style={{ background: 'radial-gradient(circle, #a78bfa, transparent 70%)' }} />
-          </div>
-          <div className="relative">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: 'var(--hc-text)' }}>
-              {t('home.ctaTitle')}
-            </h2>
-            <p className="mb-5 sm:mb-8 max-w-md mx-auto" style={{ color: 'var(--hc-muted)' }}>
-              {t('home.ctaSub')}
-            </p>
-            <Link to="/productos" className="hc-btn hc-btn-primary hc-btn-lg inline-flex">
-              {t('home.ctaBtn')}
-            </Link>
-          </div>
+          <p className="text-[11px] font-bold tracking-[0.14em] uppercase mb-3" style={{ color: 'var(--hc-blue-300)', fontFamily: 'var(--font-mono)' }}>
+            HotClick · Costa Rica
+          </p>
+          <h2
+            className="text-3xl sm:text-4xl mb-4"
+            style={{ color: '#FFFFFF', fontFamily: 'var(--font-display)', fontWeight: 800, letterSpacing: '-0.02em' }}
+          >
+            {t('home.ctaTitle')}
+          </h2>
+          <p className="mb-6 sm:mb-8 max-w-md mx-auto" style={{ color: 'var(--hc-blue-200)' }}>
+            {t('home.ctaSub')}
+          </p>
+          <Link to="/productos" className="hc-btn hc-btn-primary hc-btn-lg inline-flex">
+            {t('home.ctaBtn')}
+          </Link>
         </motion.div>
       </section>
       {/* Sección SEO — contenido indexable para Google (visible en pantallas pequeñas como texto de apoyo) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8 border-t" style={{ borderColor: 'var(--hc-border)' }} aria-label="Sobre HOTCLICK">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8 border-t" style={{ borderColor: 'var(--hc-border)' }} aria-label="Sobre HotClick">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center sm:text-left">
           <div>
             <h2 className="text-sm font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--hc-accent)' }}>Marketplace costarricense</h2>
             <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-              HOTCLICK conecta emprendedores y compradores de todo Costa Rica. Encontrá tecnología, ropa, accesorios, artículos del hogar y más, con envío a todo el país.
+              HotClick conecta emprendedores y compradores de todo Costa Rica. Encontrá tecnología, ropa, accesorios, artículos del hogar y más, con envío a todo el país.
             </p>
           </div>
           <div>
@@ -1041,7 +660,7 @@ const TESTIMONIALS = [
   { name: 'Andrés M.', location: 'San José', rating: 5, text: 'Compré unos audífonos y llegaron en perfectas condiciones. El trato por WhatsApp fue muy rápido y claro. 100% recomendado.' },
   { name: 'Valeria R.', location: 'Heredia', rating: 5, text: 'Encontré una laptop como nueva a un precio increíble. El proceso fue sencillo: elegí, mandé el WhatsApp y en 2 días la tenía en casa.' },
   { name: 'Carlos B.', location: 'Cartago', rating: 5, text: 'Excelente servicio. Me explicaron todo sobre la condición del producto antes de comprar. Llegó exactamente como lo describieron.' },
-  { name: 'Sofía L.', location: 'Alajuela', rating: 5, text: 'Precios muy accesibles y productos de buena calidad. Ya es mi segunda compra y sigo igual de satisfecha con HOTCLICK.' },
+  { name: 'Sofía L.', location: 'Alajuela', rating: 5, text: 'Precios muy accesibles y productos de buena calidad. Ya es mi segunda compra y sigo igual de satisfecha con HotClick.' },
   { name: 'Diego P.', location: 'Liberia', rating: 5, text: 'Me sorprendió lo rápido que respondieron. En menos de 10 minutos ya tenía confirmado el pedido. El envío llegó sin problemas al Correos.' },
 ]
 
@@ -1057,15 +676,11 @@ function TestimonialsCarousel() {
   ]
 
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
-      <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-5 sm:mb-8">
-        <h2 className="text-2xl font-bold text-[#e8e8ed]">{t('home.testimoniosTitle')}</h2>
-        <p className="text-sm text-[#8e8e9a] mt-1">{t('home.testimoniosSub')}</p>
-      </motion.div>
+    <Section title={`${t('home.testimoniosTitle')}.`} subtitle={t('home.testimoniosSub')} tone="surface">
       <div className="relative">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 overflow-hidden">
           {visible.map((t, i) => (
-            <motion.div key={idx + i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: i * 0.08 }} className="hc-glass-card p-4 sm:p-6 flex flex-col gap-3">
+            <motion.div key={idx + i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: i * 0.08 }} className="hc-card p-4 sm:p-6 flex flex-col gap-3">
               <div className="flex gap-0.5">
                 {Array.from({ length: t.rating }).map((_, s) => (
                   <svg key={s} className="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
@@ -1100,7 +715,7 @@ function TestimonialsCarousel() {
           </button>
         </div>
       </div>
-    </section>
+    </Section>
   )
 }
 
@@ -1113,21 +728,4 @@ function CartStepIcon() { return <svg className={si} viewBox="0 0 24 24" {...ss}
 function WhatsStepIcon() { return <svg className={si} viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> }
 function TruckStepIcon() { return <svg className={si} viewBox="0 0 24 24" {...ss}><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> }
 
-function FallbackIllustration({ color }) {
-  return (
-    <svg viewBox="0 0 200 200" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg"
-      style={{ filter: `drop-shadow(0 0 32px ${color}55)` }}>
-      <path d="M40 110 C40 60 160 60 160 110" stroke={color} strokeWidth="8" strokeLinecap="round" fill="none" opacity="0.9"/>
-      <rect x="20" y="108" width="36" height="48" rx="18" fill="#1a1a2e" stroke={color} strokeWidth="3" opacity="0.95"/>
-      <rect x="28" y="116" width="20" height="32" rx="10" fill={color} opacity="0.18"/>
-      <rect x="28" y="116" width="20" height="32" rx="10" stroke={color} strokeWidth="1.5" opacity="0.5"/>
-      <rect x="144" y="108" width="36" height="48" rx="18" fill="#1a1a2e" stroke={color} strokeWidth="3" opacity="0.95"/>
-      <rect x="152" y="116" width="20" height="32" rx="10" fill={color} opacity="0.18"/>
-      <rect x="152" y="116" width="20" height="32" rx="10" stroke={color} strokeWidth="1.5" opacity="0.5"/>
-      <path d="M60 78 C80 65 120 65 140 78" stroke="white" strokeWidth="2" strokeLinecap="round" opacity="0.15"/>
-      <circle cx="38" cy="132" r="3" fill={color} opacity="0.7"/>
-      <circle cx="162" cy="132" r="3" fill={color} opacity="0.7"/>
-    </svg>
-  )
-}
 

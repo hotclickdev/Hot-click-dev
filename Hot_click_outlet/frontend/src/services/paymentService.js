@@ -21,7 +21,7 @@ export const paymentService = {
   /**
    * Captura un pago PayPal tras el redirect de aprobación.
    * @param {string} paypalOrderId  El token devuelto por PayPal en la URL de retorno.
-   * @param {string} numeroPedido   El número de pedido de HOTCLICK.
+   * @param {string} numeroPedido   El número de pedido de HotClick.
    */
   capturarPayPal(paypalOrderId, numeroPedido) {
     return api.post('/payments/paypal/capture', null, {

@@ -55,7 +55,7 @@ export default function WishlistPage() {
             <div className="flex flex-col sm:flex-row gap-3 mt-1">
               <button
                 onClick={() => navigate('/productos')}
-                className="px-6 py-2.5 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-medium text-sm transition-all shadow-[0_0_20px_rgba(79,124,255,0.25)] hover:shadow-[0_0_32px_rgba(79,124,255,0.4)]"
+                className="px-6 py-2.5 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-medium text-sm transition-all shadow-[0_0_20px_rgba(23,71,168,0.25)] hover:shadow-[0_0_32px_rgba(23,71,168,0.4)]"
               >
                 {t('wishlist.explore')}
               </button>

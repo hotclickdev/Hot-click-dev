@@ -2741,3 +2741,120 @@ UPDATE hot_click_cupon_tb SET usos_actuales = max_usos WHERE usado = true;
 
 ALTER TABLE hot_click_cupon_tb
   ADD CONSTRAINT chk_cupon_usos CHECK (usos_actuales <= max_usos);
+
+-- ============================================================
+-- V62: RAG — pgvector extension + product semantic embeddings
+-- ============================================================
+CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE IF NOT EXISTS hot_click_producto_embedding_tb (
+    id_embedding     BIGSERIAL    PRIMARY KEY,
+    fk_id_producto   BIGINT       NOT NULL
+                         REFERENCES hot_click_producto_tb(id_producto)
+                         ON DELETE CASCADE,
+    fk_id_empresa    BIGINT       NOT NULL
+                         REFERENCES hot_click_empresa_tb(id_empresa)
+                         ON DELETE CASCADE,
+    embedding        vector(768)  NOT NULL,
+    texto_indexado   TEXT         NOT NULL,
+    modelo_version   VARCHAR(50)  NOT NULL DEFAULT 'text-embedding-004',
+    creado_en        TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    actualizado_en   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_embedding_producto UNIQUE (fk_id_producto)
+);
+
+CREATE INDEX IF NOT EXISTS idx_producto_emb_hnsw
+    ON hot_click_producto_embedding_tb
+    USING hnsw (embedding vector_cosine_ops)
+    WITH (m = 16, ef_construction = 64);
+
+CREATE INDEX IF NOT EXISTS idx_producto_emb_empresa
+    ON hot_click_producto_embedding_tb (fk_id_empresa);
+
+CREATE INDEX IF NOT EXISTS idx_producto_emb_stale
+    ON hot_click_producto_embedding_tb (fk_id_empresa, actualizado_en);
+
+-- ============================================================
+-- V63: RAG — Shopping assistant sessions + conversation messages
+-- ============================================================
+CREATE TABLE IF NOT EXISTS hot_click_chat_sesion_tb (
+    id_sesion         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    fk_id_empresa     BIGINT       NOT NULL
+                          REFERENCES hot_click_empresa_tb(id_empresa)
+                          ON DELETE CASCADE,
+    fk_id_usuario     BIGINT
+                          REFERENCES hot_click_usuario_tb(id_usuario)
+                          ON DELETE SET NULL,
+    canal             VARCHAR(20)  NOT NULL DEFAULT 'WEB',
+    iniciada_en       TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    ultimo_mensaje_en TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    metadatos         JSONB        NOT NULL DEFAULT '{}'::jsonb,
+    CONSTRAINT chk_chat_sesion_canal
+        CHECK (canal IN ('WEB', 'WHATSAPP', 'QR', 'EMBED'))
+);
+
+CREATE TABLE IF NOT EXISTS hot_click_chat_mensaje_shopping_tb (
+    id_mensaje        BIGSERIAL    PRIMARY KEY,
+    fk_id_sesion      UUID         NOT NULL
+                          REFERENCES hot_click_chat_sesion_tb(id_sesion)
+                          ON DELETE CASCADE,
+    fk_id_empresa     BIGINT       NOT NULL
+                          REFERENCES hot_click_empresa_tb(id_empresa)
+                          ON DELETE CASCADE,
+    rol               VARCHAR(20)  NOT NULL,
+    contenido         TEXT         NOT NULL,
+    tokens_entrada    INTEGER      NOT NULL DEFAULT 0,
+    tokens_salida     INTEGER      NOT NULL DEFAULT 0,
+    productos_refs    JSONB        NOT NULL DEFAULT '[]'::jsonb,
+    fecha_creacion    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_chat_msg_rol
+        CHECK (rol IN ('user', 'assistant', 'system'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_sesion_empresa
+    ON hot_click_chat_sesion_tb (fk_id_empresa, ultimo_mensaje_en DESC);
+
+CREATE INDEX IF NOT EXISTS idx_chat_sesion_expiry
+    ON hot_click_chat_sesion_tb (ultimo_mensaje_en);
+
+CREATE INDEX IF NOT EXISTS idx_chat_sesion_usuario
+    ON hot_click_chat_sesion_tb (fk_id_usuario)
+    WHERE fk_id_usuario IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_chat_msg_sesion
+    ON hot_click_chat_mensaje_shopping_tb (fk_id_sesion, fecha_creacion ASC);
+
+CREATE INDEX IF NOT EXISTS idx_chat_msg_empresa_fecha
+    ON hot_click_chat_mensaje_shopping_tb (fk_id_empresa, fecha_creacion DESC);
+
+
+-- V65: Memoria persistente de visitante anónimo
+CREATE TABLE IF NOT EXISTS customer_memory (
+    id               BIGSERIAL    PRIMARY KEY,
+    visitor_id       VARCHAR(36)  NOT NULL,
+    summary          TEXT,
+    interests        JSONB        NOT NULL DEFAULT '[]',
+    preferred_brands JSONB        NOT NULL DEFAULT '[]',
+    estimated_budget BIGINT,
+    last_visit       TIMESTAMPTZ,
+    created_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_customer_memory_visitor UNIQUE (visitor_id)
+);
+CREATE INDEX IF NOT EXISTS idx_customer_memory_visitor ON customer_memory (visitor_id);
+
+
+-- V66: Solicitudes especiales de productos no encontrados en catálogo
+CREATE TABLE IF NOT EXISTS hot_click_solicitud_especial_tb (
+    id              BIGSERIAL    PRIMARY KEY,
+    nombre          VARCHAR(100) NOT NULL,
+    whatsapp        VARCHAR(20)  NOT NULL,
+    correo          VARCHAR(150),
+    descripcion     TEXT,
+    imagen_url      TEXT,
+    estado          VARCHAR(20)  NOT NULL DEFAULT 'PENDIENTE',
+    creado_en       TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    fk_id_empresa   BIGINT REFERENCES hot_click_empresa_tb(id_empresa)
+);
+CREATE INDEX IF NOT EXISTS idx_solicitud_especial_estado ON hot_click_solicitud_especial_tb (estado);
+CREATE INDEX IF NOT EXISTS idx_solicitud_especial_empresa ON hot_click_solicitud_especial_tb (fk_id_empresa);

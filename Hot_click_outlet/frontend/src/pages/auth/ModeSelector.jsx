@@ -69,7 +69,7 @@ export default function ModeSelector() {
       {/* Logo */}
       <div className="mb-8 text-center">
         <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center mb-4"
-          style={{ backgroundColor: 'var(--hc-accent)', boxShadow: '0 0 30px rgba(79,124,255,0.3)' }}>
+          style={{ backgroundColor: 'var(--hc-accent)', boxShadow: '0 0 30px rgba(23,71,168,0.3)' }}>
           <svg width="26" height="26" fill="none" stroke="white" strokeWidth={2} viewBox="0 0 24 24">
             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
           </svg>
@@ -95,7 +95,7 @@ export default function ModeSelector() {
             }}
           >
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center transition-colors"
-              style={{ backgroundColor: 'rgba(79,124,255,0.12)', color: 'var(--hc-accent)' }}>
+              style={{ backgroundColor: 'rgba(23,71,168,0.12)', color: 'var(--hc-accent)' }}>
               <ModeIcon icon={mode.icon} size={28} />
             </div>
             <div>

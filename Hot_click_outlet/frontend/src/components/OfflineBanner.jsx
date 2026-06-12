@@ -34,7 +34,7 @@ export default function OfflineBanner() {
       <div className="flex items-center gap-3 px-4 py-2 text-sm"
         style={{ backgroundColor: '#0c1a2e', borderBottom: '1px solid #1e3a5f', color: '#93c5fd' }}>
         <div className="w-3.5 h-3.5 border-2 rounded-full animate-spin shrink-0"
-          style={{ borderColor: '#1e3a5f', borderTopColor: '#60a5fa' }} />
+          style={{ borderColor: '#1e3a5f', borderTopColor: '#6490EA' }} />
         <span>Sincronizando {pendientes} operación{pendientes !== 1 ? 'es' : ''}…</span>
       </div>
     )
@@ -50,7 +50,7 @@ export default function OfflineBanner() {
           borderBottom: `1px solid ${tieneConflictos ? '#78350f' : '#365314'}`,
         }}>
         <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full shrink-0 ${tieneConflictos ? 'bg-orange-400' : 'bg-yellow-400'}`} />
+          <span className={`w-2 h-2 rounded-full shrink-0 ${tieneConflictos ? 'bg-amber-400' : 'bg-yellow-400'}`} />
           <span style={{ color: tieneConflictos ? '#fb923c' : '#a3e635' }}>
             {tieneConflictos
               ? `${lastSyncResult.conflictos} conflicto${lastSyncResult.conflictos > 1 ? 's' : ''} — revisión requerida`

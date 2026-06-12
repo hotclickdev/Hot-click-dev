@@ -24,12 +24,12 @@ function buildBlogPostingJsonLd(post) {
     dateModified: post.fechaPublicacion || post.fechaCreacion,
     author: {
       '@type': 'Organization',
-      name: 'HOTCLICK',
+      name: 'HotClick',
       url: SITE_URL,
     },
     publisher: {
       '@type': 'Organization',
-      name: 'HOTCLICK',
+      name: 'HotClick',
       logo: {
         '@type': 'ImageObject',
         url: `${SITE_URL}/favicon.svg`,
@@ -42,7 +42,7 @@ function buildBlogPostingJsonLd(post) {
     inLanguage: 'es-CR',
     isPartOf: {
       '@type': 'Blog',
-      name: 'Blog HOTCLICK',
+      name: 'Blog HotClick',
       url: `${SITE_URL}/blog`,
     },
   }
@@ -79,7 +79,7 @@ export default function BlogPostPage() {
     return (
       <MainLayout>
         <Helmet>
-          <title>Artículo no encontrado | Blog HOTCLICK</title>
+          <title>Artículo no encontrado | Blog HotClick</title>
           <meta name="robots" content="noindex, follow" />
         </Helmet>
         <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: 'var(--hc-bg)' }}>
@@ -91,7 +91,7 @@ export default function BlogPostPage() {
     )
   }
 
-  const seoTitle = `${post.titulo} | Blog HOTCLICK`
+  const seoTitle = `${post.titulo} | Blog HotClick`
   const seoDesc = post.resumen || post.titulo
   const seoImage = post.imagenUrl || `${SITE_URL}/og-image.png`
   const canonicalUrl = `${SITE_URL}/blog/${post.slug || post.id}`
@@ -112,7 +112,7 @@ export default function BlogPostPage() {
         <meta property="og:image" content={seoImage} />
         <meta property="og:image:alt" content={post.titulo} />
         <meta property="og:locale" content="es_CR" />
-        <meta property="og:site_name" content="HOTCLICK" />
+        <meta property="og:site_name" content="HotClick" />
         {post.fechaPublicacion && <meta property="article:published_time" content={new Date(post.fechaPublicacion).toISOString()} />}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@hotclickcr" />
@@ -142,7 +142,7 @@ export default function BlogPostPage() {
           {/* Breadcrumb */}
           <nav aria-label="Ruta de navegación">
             <ol className="flex items-center gap-2 text-sm mb-6 list-none p-0 m-0" style={{ color: 'var(--hc-muted)' }}>
-              <li><a href="/" onClick={e => { e.preventDefault(); navigate('/') }} className="hover:underline" style={{ color: 'var(--hc-muted)' }}>HOTCLICK</a></li>
+              <li><a href="/" onClick={e => { e.preventDefault(); navigate('/') }} className="hover:underline" style={{ color: 'var(--hc-muted)' }}>HotClick</a></li>
               <li><span aria-hidden="true">/</span></li>
               <li><a href="/blog" onClick={e => { e.preventDefault(); navigate('/blog') }} className="hover:underline" style={{ color: 'var(--hc-muted)' }}>Blog</a></li>
               <li><span aria-hidden="true">/</span></li>
@@ -153,7 +153,7 @@ export default function BlogPostPage() {
           {/* Cabecera */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <p style={{ fontSize: 12, color: 'var(--hc-accent)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>
-              Blog HOTCLICK
+              Blog HotClick
             </p>
             <h1 style={{ fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: 900, color: 'var(--hc-text)', lineHeight: 1.2, margin: '0 0 16px' }}>
               {post.titulo}
@@ -167,7 +167,7 @@ export default function BlogPostPage() {
               <span style={{ fontSize: 13, color: 'var(--hc-muted)' }}>
                 {fmtDate(post.fechaPublicacion || post.fechaCreacion)}
               </span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--hc-text)' }}>HOTCLICK</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--hc-text)' }}>HotClick</span>
             </div>
           </motion.div>
 

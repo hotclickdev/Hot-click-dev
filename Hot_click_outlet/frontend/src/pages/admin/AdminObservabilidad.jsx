@@ -9,7 +9,7 @@ function KpiCard({ label, value, sub, color = 'gray', icon }) {
     red:    'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30',
     amber:  'border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30',
     blue:   'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30',
-    purple: 'border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-950/30',
+    purple: 'border-[var(--hc-blue-200)] bg-[var(--hc-blue-50)] dark:border-[var(--hc-blue-800)] dark:bg-[var(--hc-blue-900)]/30',
     gray:   'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900',
   }
   return (
@@ -68,7 +68,7 @@ export default function AdminObservabilidad() {
   if (error) return (
     <div className="mx-auto max-w-2xl p-8 text-center">
       <p className="text-red-500">{error}</p>
-      <button onClick={cargar} className="mt-4 rounded-lg bg-orange-500 px-4 py-2 text-sm text-white hover:bg-orange-600">
+      <button onClick={cargar} className="mt-4 rounded-lg bg-[var(--hc-primary)] px-4 py-2 text-sm text-white hover:bg-[var(--hc-primary-hover)]">
         Reintentar
       </button>
     </div>
@@ -82,7 +82,7 @@ export default function AdminObservabilidad() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Observabilidad — Plataforma HOTCLICK
+            Observabilidad — Plataforma HotClick
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Métricas en tiempo real del SaaS multi-tenant. Solo visible para ADMIN_IT.

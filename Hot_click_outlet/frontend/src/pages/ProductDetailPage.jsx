@@ -18,6 +18,7 @@ import { analytics } from '@/utils/analytics'
 import SocialProof from '@/components/ui/SocialProof'
 import OptimizedImage from '@/components/ui/OptimizedImage'
 import { getOptimizedUrl } from '@/utils/imageUtils'
+import AIProductSection from '@/components/ai/AIProductSection'
 
 export default function ProductDetailPage() {
   const { id } = useParams()
@@ -173,7 +174,7 @@ export default function ProductDetailPage() {
     fr: { title: product.metaTitleFr,       description: product.metaDescriptionFr },
   }
   const activeSeo = seoByLang[userLang] ?? {}
-  const fallbackTitle = `${product.titulo || product.nombre} | HOTCLICK Outlet`
+  const fallbackTitle = `${product.titulo || product.nombre} | HotClick Outlet`
   const fallbackDesc  = `${product.descripcion || product.nombre} | Precio: ₡${new Intl.NumberFormat('es-CR').format(product.precio)} | Envíos en Costa Rica`
   const seoTitle       = activeSeo.title       || seoByLang.es.title       || fallbackTitle
   const seoDescription = activeSeo.description || seoByLang.es.description || fallbackDesc
@@ -193,7 +194,7 @@ export default function ProductDetailPage() {
         </script>
         <script type="application/ld+json">
           {JSON.stringify(generateBreadcrumbJsonLd([
-            { name: 'HOTCLICK', url: window.location.origin + '/' },
+            { name: 'HotClick', url: window.location.origin + '/' },
             { name: 'Productos', url: window.location.origin + '/productos' },
             ...(product.marcaNombre ? [{ name: product.marcaNombre, url: `${window.location.origin}/productos?marcaId=${product.marcaId}` }] : []),
             { name: product.titulo || product.nombre, url: window.location.href },
@@ -472,7 +473,7 @@ export default function ProductDetailPage() {
                   ? 'bg-white/5 text-[#8e8e9a] cursor-not-allowed border border-white/8'
                   : justAdded
                   ? 'bg-emerald-500 text-white shadow-[0_0_28px_rgba(16,185,129,0.45)]'
-                  : 'bg-[#4f7cff] hover:bg-[#3d6ee0] text-white shadow-[0_0_20px_rgba(79,124,255,0.3)] hover:shadow-[0_0_36px_rgba(79,124,255,0.5)]'
+                  : 'bg-[#4f7cff] hover:bg-[#3d6ee0] text-white shadow-[0_0_20px_rgba(23,71,168,0.3)] hover:shadow-[0_0_36px_rgba(23,71,168,0.5)]'
               }`}
             >
               {/* Ripple al hacer click */}
@@ -683,6 +684,11 @@ export default function ProductDetailPage() {
           </motion.div>
         )}
 
+        {/* ── Agente experto del producto ── */}
+        <div className="mt-6 sm:mt-10">
+          <AIProductSection product={product} />
+        </div>
+
         {/* ── MÁS DE [MARCA] — Logo grande + productos sin precio ── */}
         {brandProducts.length > 0 && (
           <motion.div
@@ -862,6 +868,7 @@ export default function ProductDetailPage() {
           />
         )}
       </AnimatePresence>
+
     </MainLayout>
   )
 }
@@ -1033,7 +1040,7 @@ function StickyCartBar({ product, quantity, onDecrease, onIncrease, onAdd, justA
             justAdded
               ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)]'
               : inStock
-              ? 'bg-[#4f7cff] hover:bg-[#3d6ee0] text-white shadow-[0_0_20px_rgba(79,124,255,0.35)] hover:shadow-[0_0_32px_rgba(79,124,255,0.55)]'
+              ? 'bg-[#4f7cff] hover:bg-[#3d6ee0] text-white shadow-[0_0_20px_rgba(23,71,168,0.35)] hover:shadow-[0_0_32px_rgba(23,71,168,0.55)]'
               : 'bg-white/5 text-[#8e8e9a] cursor-not-allowed'
           }`}
         >

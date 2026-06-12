@@ -77,7 +77,7 @@ export default function AdminSolicitudesServicio() {
     const num = tel.replace(/\D/g, '')
     const full = num.startsWith('506') ? num : `506${num}`
     const msg = encodeURIComponent(
-      `Hola ${s.nombreContacto || s.usuario?.nombre || ''}! 👋 Te contactamos de HOTCLICK sobre tu solicitud de "${s.descripcion.slice(0, 60)}${s.descripcion.length > 60 ? '...' : ''}".`
+      `Hola ${s.nombreContacto || s.usuario?.nombre || ''}! 👋 Te contactamos de HotClick sobre tu solicitud de "${s.descripcion.slice(0, 60)}${s.descripcion.length > 60 ? '...' : ''}".`
     )
     return `https://wa.me/${full}?text=${msg}`
   }
@@ -88,7 +88,7 @@ export default function AdminSolicitudesServicio() {
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-black" style={{ fontFamily: "'Barlow', sans-serif", color: 'var(--hc-text)' }}>
+            <h1 className="text-2xl font-black" style={{ fontFamily: 'var(--hc-font-display)', color: 'var(--hc-text)' }}>
               {t('adminSolicitudes.title')}
             </h1>
             <p className="text-sm mt-0.5" style={{ color: 'var(--hc-muted)' }}>

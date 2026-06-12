@@ -24,6 +24,7 @@ export default function CookieBanner({ onConsent }) {
   }, [])
 
   const accept = (analytics) => {
+    document.activeElement?.blur()
     const consent = { analytics, functional: true, timestamp: Date.now() }
     setCookieConsent(consent)
     setVisible(false)

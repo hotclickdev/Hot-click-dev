@@ -8,8 +8,8 @@ const LAST_UPDATED = '5 de junio de 2025'
 const returnPolicyJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'MerchantReturnPolicy',
-  name: 'Política de devoluciones HOTCLICK',
-  description: 'Tenés 7 días hábiles desde la recepción para solicitar cambio o devolución de cualquier producto comprado en HOTCLICK.',
+  name: 'Política de devoluciones HotClick',
+  description: 'Tenés 7 días hábiles desde la recepción para solicitar cambio o devolución de cualquier producto comprado en HotClick.',
   url: `${SITE_URL}/devoluciones`,
   inLanguage: 'es-CR',
   applicableCountry: 'CR',
@@ -27,8 +27,8 @@ const sections = [
     title: '1. Resumen de la Política',
     content: (
       <>
-        <p>En HOTCLICK queremos que tu experiencia de compra sea 100% satisfactoria. Si por alguna razón no estás conforme con tu pedido, tenés <strong>7 días hábiles</strong> desde la fecha de recepción para solicitar un cambio o devolución.</p>
-        <p>Dado que HOTCLICK es un marketplace que conecta compradores con emprendedores costarricenses, el proceso de devolución se coordina directamente con el emprendedor vendedor.</p>
+        <p>En HotClick queremos que tu experiencia de compra sea 100% satisfactoria. Si por alguna razón no estás conforme con tu pedido, tenés <strong>7 días hábiles</strong> desde la fecha de recepción para solicitar un cambio o devolución.</p>
+        <p>Dado que HotClick es un marketplace que conecta compradores con emprendedores costarricenses, el proceso de devolución se coordina directamente con el emprendedor vendedor.</p>
       </>
     ),
   },
@@ -120,7 +120,7 @@ const sections = [
     title: '7. ¿Necesitás Ayuda?',
     content: (
       <>
-        <p>Si tenés dudas sobre tu devolución o necesitás que HOTCLICK intervenga como mediador, contactanos:</p>
+        <p>Si tenés dudas sobre tu devolución o necesitás que HotClick intervenga como mediador, contactanos:</p>
         <ul>
           <li><strong>Correo:</strong> <a href="mailto:hotclick.cr@gmail.com" style={{ color: 'var(--hc-accent)' }}>hotclick.cr@gmail.com</a></li>
           <li><strong>WhatsApp:</strong> <a href="https://wa.me/50689745370" style={{ color: 'var(--hc-accent)' }} target="_blank" rel="noopener noreferrer">+506 8974-5370</a></li>
@@ -135,19 +135,19 @@ export default function DevolucionesPage() {
   return (
     <MainLayout>
       <Helmet>
-        <title>Política de devoluciones — HOTCLICK Costa Rica</title>
-        <meta name="description" content="Tenés 7 días hábiles para devolver cualquier producto. Conocé el proceso de devolución y cambio de HOTCLICK Marketplace Costa Rica." />
+        <title>Política de devoluciones — HotClick Costa Rica</title>
+        <meta name="description" content="Tenés 7 días hábiles para devolver cualquier producto. Conocé el proceso de devolución y cambio de HotClick Marketplace Costa Rica." />
         <link rel="canonical" href={`${SITE_URL}/devoluciones`} />
         <link rel="alternate" hreflang="es-CR" href={`${SITE_URL}/devoluciones`} />
         <link rel="alternate" hreflang="es" href={`${SITE_URL}/devoluciones`} />
         <link rel="alternate" hreflang="x-default" href={`${SITE_URL}/`} />
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="Política de devoluciones — HOTCLICK Costa Rica" />
+        <meta property="og:title" content="Política de devoluciones — HotClick Costa Rica" />
         <meta property="og:description" content="7 días hábiles para cambios y devoluciones. Sin costo para el comprador." />
         <meta property="og:url" content={`${SITE_URL}/devoluciones`} />
         <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
         <meta property="og:locale" content="es_CR" />
-        <meta property="og:site_name" content="HOTCLICK" />
+        <meta property="og:site_name" content="HotClick" />
         <script type="application/ld+json">{JSON.stringify(returnPolicyJsonLd)}</script>
       </Helmet>
       <div style={{ background: 'var(--hc-bg)', minHeight: '100vh', paddingBottom: '4rem' }}>
@@ -189,7 +189,7 @@ export default function DevolucionesPage() {
                   Política de Devoluciones
                 </h1>
                 <p style={{ fontSize: 13, color: 'var(--hc-muted)', margin: '4px 0 0' }}>
-                  HOTCLICK · Última actualización: {LAST_UPDATED}
+                  HotClick · Última actualización: {LAST_UPDATED}
                 </p>
               </div>
             </div>

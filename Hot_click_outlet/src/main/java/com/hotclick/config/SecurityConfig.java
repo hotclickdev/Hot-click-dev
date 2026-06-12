@@ -152,6 +152,7 @@ public class SecurityConfig {
                 // White label branding y chat público — sin auth
                 .requestMatchers(GET,  "/api/public/branding").permitAll()
                 .requestMatchers(POST, "/api/public/chat").permitAll()
+                .requestMatchers(POST, "/api/public/shopping-assistant/chat").permitAll()
                 .requestMatchers("/api/admin/branding").authenticated()
                 // Marketplace de plugins y API keys
                 .requestMatchers("/api/admin/plugins/**").authenticated()

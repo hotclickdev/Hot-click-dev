@@ -120,7 +120,7 @@ export default function AdminNuevaCompra() {
           <h2 className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>Productos a comprar</h2>
           <button type="button" onClick={addItem}
             className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-70"
-            style={{ backgroundColor: 'rgba(79,124,255,0.12)', color: 'var(--hc-accent)' }}>
+            style={{ backgroundColor: 'rgba(23,71,168,0.12)', color: 'var(--hc-accent)' }}>
             + Agregar línea
           </button>
         </div>

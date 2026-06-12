@@ -97,7 +97,7 @@ function ToastItem({ item, onDismiss }) {
         ) : (
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
-            style={{ background: 'rgba(79,124,255,0.12)', border: '1px solid rgba(79,124,255,0.25)' }}
+            style={{ background: 'rgba(23,71,168,0.12)', border: '1px solid rgba(23,71,168,0.25)' }}
           >
             {action.emoji}
           </div>

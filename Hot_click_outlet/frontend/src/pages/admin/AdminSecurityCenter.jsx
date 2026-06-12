@@ -13,7 +13,7 @@ const PERIODS = [
 const SEVERITY_COLOR = {
   LOW:      { bg: 'rgba(34,197,94,0.12)',   text: '#4ade80', border: 'rgba(34,197,94,0.25)'  },
   MEDIUM:   { bg: 'rgba(234,179,8,0.12)',   text: '#facc15', border: 'rgba(234,179,8,0.25)'  },
-  HIGH:     { bg: 'rgba(249,115,22,0.12)',  text: '#fb923c', border: 'rgba(249,115,22,0.25)' },
+  HIGH:     { bg: 'rgba(229,169,61,0.12)',  text: '#E5A93D', border: 'rgba(229,169,61,0.25)' },
   CRITICAL: { bg: 'rgba(239,68,68,0.12)',   text: '#f87171', border: 'rgba(239,68,68,0.25)'  },
 }
 
@@ -201,9 +201,9 @@ export default function AdminSecurityCenter() {
                 {/* KPI row */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                   <KpiCard label="Eventos totales"   value={summary.totalEvents}    />
-                  <KpiCard label="Logins fallidos"   value={summary.failedLogins}   accent="#fb923c" />
+                  <KpiCard label="Logins fallidos"   value={summary.failedLogins}   accent="#E5A93D" />
                   <KpiCard label="Tokens rechazados" value={summary.tokenRejections} accent="#facc15" />
-                  <KpiCard label="Rate limits"       value={summary.rateLimitEvents} accent="#fb923c" />
+                  <KpiCard label="Rate limits"       value={summary.rateLimitEvents} accent="#E5A93D" />
                   <KpiCard label="Alertas activas"   value={summary.activeAlerts}   accent={summary.activeAlerts > 0 ? '#f87171' : undefined} />
                 </div>
 

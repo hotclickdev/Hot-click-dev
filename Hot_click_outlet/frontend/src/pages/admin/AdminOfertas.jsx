@@ -9,9 +9,9 @@ function PctBadge({ pct }) {
   if (!pct) return null
   return (
     <span style={{
-      background: '#fef2f2', color: '#dc2626',
+      background: 'rgba(220,38,38,0.12)', color: '#dc2626',
       fontSize: 11, fontWeight: 700, padding: '2px 7px',
-      borderRadius: 6, border: '1px solid #fecaca',
+      borderRadius: 6, border: '1px solid rgba(220,38,38,0.25)',
     }}>
       -{pct}%
     </span>

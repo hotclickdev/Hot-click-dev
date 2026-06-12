@@ -15,7 +15,7 @@ import PhoneField from '@/components/ui/PhoneField'
 const BODEGA_DEFAULT = 1
 const WHATSAPP = '50689745370'
 const SINPE_NUMERO = '8974-5370'
-const SINPE_TITULAR = 'Andrés Zúñiga (HOTCLICK)'
+const SINPE_TITULAR = 'Andrés Zúñiga (HotClick)'
 
 function formatPhone(v) {
   const d = v.replace(/\D/g, '').slice(0, 8)
@@ -48,7 +48,7 @@ function SmartField({ label, id, value, onChange, onBlur, error, success, placeh
                     success ? '1.5px solid #34d399' :
                               '1.5px solid var(--hc-border)',
           }}
-          onFocus={(e) => { e.target.style.borderColor = error ? '#f87171' : 'var(--hc-accent)'; e.target.style.boxShadow = error ? '0 0 0 3px rgba(248,113,113,0.1)' : '0 0 0 3px rgba(79,124,255,0.12)' }}
+          onFocus={(e) => { e.target.style.borderColor = error ? '#f87171' : 'var(--hc-accent)'; e.target.style.boxShadow = error ? '0 0 0 3px rgba(248,113,113,0.1)' : '0 0 0 3px rgba(23,71,168,0.12)' }}
           onBlurCapture={(e) => { e.target.style.boxShadow = '' }}
         />
         {!multiline && (success || error) && (
@@ -92,22 +92,23 @@ export default function CheckoutPage() {
   const { estado, pagoData, error, intentos, maxIntentos, iniciarPago } = usePayment()
   const { t } = useTranslation()
 
+  // SINPE Móvil siempre primero, con su beneficio explícito (Brand Book §15.4)
   const METODOS_PAGO = [
-    {
-      id: 'STRIPE',
-      label: 'Tarjeta de crédito / débito',
-      descripcion: t('checkout.stripeDesc'),
-      badge: t('checkout.stripeBadge'),
-      badgeColor: 'bg-violet-500/20 text-violet-400 border-violet-500/30',
-      icon: CardIcon,
-    },
     {
       id: 'SINPE',
       label: 'SINPE Móvil',
       descripcion: 'Transferencia directa · Se verifica en minutos',
-      badge: 'Costa Rica',
-      badgeColor: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+      badge: 'Sin comisión',
+      badgeColor: 'bg-[var(--hc-success)]/15 text-[var(--hc-success)] border-[var(--hc-success)]/30',
       icon: SinpeIcon,
+    },
+    {
+      id: 'STRIPE',
+      label: 'Visa / Mastercard',
+      descripcion: t('checkout.stripeDesc'),
+      badge: t('checkout.stripeBadge'),
+      badgeColor: 'bg-[var(--hc-blue-500)]/20 text-[var(--hc-blue-400)] border-[var(--hc-blue-500)]/30',
+      icon: CardIcon,
     },
   ]
 
@@ -263,7 +264,7 @@ export default function CheckoutPage() {
     const productos = items.map((i) => `• ${i.nombre} x${i.cantidad}`).join('\n')
     const numeroPedido = pagoData?.numeroPedido ?? ''
     const msg = encodeURIComponent(
-      `Hola HOTCLICK 👋\n\n*Comprobante SINPE Móvil*\n\n` +
+      `Hola HotClick 👋\n\n*Comprobante SINPE Móvil*\n\n` +
       `Nombre: ${sinpeNombre || '(sin nombre)'}\n` +
       (numeroPedido ? `Pedido: ${numeroPedido}\n` : '') +
       `Monto: ${formatPrice(totalFinal)}\n\n` +
@@ -351,7 +352,7 @@ export default function CheckoutPage() {
                 placeholder="Ej: María González Solano"
                 className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all"
                 style={{ background: 'var(--hc-surface-2, var(--hc-surface))', border: '1.5px solid var(--hc-border)', color: 'var(--hc-text)' }}
-                onFocus={(e) => { e.target.style.borderColor = 'var(--hc-accent)'; e.target.style.boxShadow = '0 0 0 3px rgba(79,124,255,0.12)' }}
+                onFocus={(e) => { e.target.style.borderColor = 'var(--hc-accent)'; e.target.style.boxShadow = '0 0 0 3px rgba(23,71,168,0.12)' }}
                 onBlur={(e) => { e.target.style.boxShadow = '' }}
               />
               <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
@@ -673,14 +674,14 @@ export default function CheckoutPage() {
                       key={mp.id}
                       className="flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all duration-200"
                       style={selected
-                        ? { borderColor: 'var(--hc-accent)', background: 'color-mix(in srgb, var(--hc-accent) 6%, transparent)' }
+                        ? { borderColor: 'var(--hc-accent)', boxShadow: 'inset 0 0 0 1px var(--hc-accent)', background: 'var(--hc-info-bg)' }
                         : { borderColor: 'var(--hc-border)' }}
                     >
                       <input
                         type="radio" name="pago" value={mp.id}
                         checked={selected}
                         onChange={() => setMetodoPago(mp.id)}
-                        className="accent-[#4f7cff] shrink-0"
+                        className="accent-[var(--hc-accent)] shrink-0"
                       />
                       <div className="w-10 h-7 flex items-center justify-center shrink-0">
                         <Icon selected={selected} />
@@ -697,7 +698,7 @@ export default function CheckoutPage() {
                         <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>{mp.descripcion}</p>
                       </div>
                       {selected && (
-                        <div className="w-4 h-4 rounded-full bg-[#4f7cff] flex items-center justify-center shrink-0">
+                        <div className="w-4 h-4 rounded-full bg-[var(--hc-accent)] flex items-center justify-center shrink-0">
                           <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
@@ -883,7 +884,7 @@ export default function CheckoutPage() {
                     onClick={validarCupon}
                     disabled={cuponEstado === 'loading' || !cuponInput.trim()}
                     className="shrink-0 px-3 py-2 rounded-xl text-xs font-semibold transition-all disabled:opacity-40"
-                    style={{ background: 'rgba(79,124,255,0.12)', color: '#4f7cff', border: '1px solid rgba(79,124,255,0.25)' }}
+                    style={{ background: 'rgba(23,71,168,0.12)', color: 'var(--hc-accent)', border: '1px solid rgba(23,71,168,0.25)' }}
                   >
                     {cuponEstado === 'loading' ? '...' : 'Aplicar'}
                   </button>
@@ -966,23 +967,22 @@ export default function CheckoutPage() {
                 </span>
               </label>
 
+              {/* CTA único rojo del checkout — el botón repite el monto (§5.6 / voseo 15.3) */}
               <button
                 onClick={handlePagar}
                 disabled={!aceptaDatos || estado === 'loading' || estado === 'redirecting' || intentos >= maxIntentos}
-                className={`w-full py-3.5 rounded-xl font-semibold text-sm transition-all
-                           disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2
-                           ${metodoPago === 'SINPE'
-                             ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_32px_rgba(16,185,129,0.45)]'
-                             : 'bg-[#4f7cff] hover:bg-[#3d6ee0] text-white shadow-[0_0_20px_rgba(79,124,255,0.3)] hover:shadow-[0_0_32px_rgba(79,124,255,0.45)]'
-                           }`}
+                className="hc-btn hc-btn-primary w-full !h-12 text-[15px] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {metodoPago === 'SINPE' ? <SinpeIcon selected /> : <LockIcon />}
                 {metodoPago === 'SINPE'
-                  ? `Confirmar SINPE · ${formatPrice(totalFinal)}`
-                  : `${t('checkout.payWithStripe')} · ${formatPrice(totalFinal)}`
+                  ? `Pagá con SINPE · ${formatPrice(totalFinal)}`
+                  : `Pagá ${formatPrice(totalFinal)}`
                 }
               </button>
 
+              <p className="text-[10px] text-center leading-relaxed flex items-center justify-center gap-1" style={{ color: 'var(--hc-muted)' }}>
+                <LockIcon /> Pago cifrado · Protección al comprador incluida
+              </p>
               <p className="text-[10px] text-center leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
                 {t('checkout.terms')} <Link to="/informacion" className="hover:underline">{t('checkout.termsLink')}</Link>.
               </p>
@@ -1008,7 +1008,7 @@ function StripeIcon({ selected }) {
 function CardIcon({ selected }) {
   return (
     <svg className={`w-8 h-5 ${selected ? 'opacity-100' : 'opacity-50'}`} viewBox="0 0 32 20" fill="none">
-      <rect width="32" height="20" rx="3" fill="#1a1a2e" stroke="rgba(255,255,255,0.15)" strokeWidth="0.8" />
+      <rect width="32" height="20" rx="3" fill="#1E242E" stroke="rgba(255,255,255,0.15)" strokeWidth="0.8" />
       <rect y="4" width="32" height="4" fill="rgba(255,255,255,0.15)" />
       <rect x="4" y="12" width="10" height="3" rx="1" fill="rgba(255,255,255,0.4)" />
     </svg>

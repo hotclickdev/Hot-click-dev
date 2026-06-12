@@ -7,6 +7,7 @@ import { usePayment } from '@/hooks/usePayment'
 import { formatPrice } from '@/utils/format'
 import useCartStore from '@/store/cartStore'
 import useAuthStore from '@/store/authStore'
+import AIPostPaySection from '@/components/ai/AIPostPaySection'
 
 const BENEFITS = [
   { icon: '🛡', text: 'Tu compra está protegida con garantía de 40 días' },
@@ -74,7 +75,7 @@ function PaymentLoadingScreen({ estado }) {
             style={{ background: 'var(--hc-surface-2)' }}>
             <motion.div
               className="h-full rounded-full"
-              style={{ background: 'linear-gradient(90deg, var(--hc-accent), color-mix(in srgb, var(--hc-accent) 70%, #a78bfa))' }}
+              style={{ background: 'linear-gradient(90deg, var(--hc-accent), color-mix(in srgb, var(--hc-accent) 70%, var(--hc-blue-300)))' }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.4, ease: 'easeOut' }}
             />
@@ -210,7 +211,13 @@ export default function PaymentStatusPage() {
               </p>
             </div>
 
-            <p className="text-xs text-[#8e8e9a] mb-6">
+            <AIPostPaySection
+              tipo="success"
+              numeroPedido={pagoData?.numeroPedido || numeroPedido || ''}
+              metodoPago={pagoData?.metodoPago || ''}
+            />
+
+            <p className="text-xs text-[#8e8e9a] mb-6 mt-4">
               Recibirás un correo de confirmación. ¿Tienes dudas? Contáctanos por WhatsApp.
             </p>
 
@@ -294,8 +301,8 @@ export default function PaymentStatusPage() {
             animate={{ opacity: 1, scale: 1 }}
             className="bg-[#111114] border border-white/8 rounded-2xl p-8 text-center"
           >
-            <div className="w-16 h-16 rounded-full bg-orange-500/15 border border-orange-500/30 flex items-center justify-center mx-auto mb-6">
-              <svg className="w-8 h-8 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+            <div className="w-16 h-16 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto mb-6">
+              <svg className="w-8 h-8 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <circle cx="12" cy="12" r="10" />
                 <polyline points="12 6 12 12 16 14" />
               </svg>
@@ -353,14 +360,13 @@ export default function PaymentStatusPage() {
           <p className="text-[#8e8e9a] text-sm mb-2">
             {error || 'Tu tarjeta no fue cargada. Puedes intentarlo nuevamente.'}
           </p>
-          <p className="text-xs text-[#8e8e9a] mb-6">
-            Si el problema persiste, contáctanos a{' '}
-            <a href="mailto:hotclick.cr@gmail.com" className="text-[#4f7cff] hover:underline">
-              hotclick.cr@gmail.com
-            </a>
-          </p>
+          <AIPostPaySection
+            tipo="failed"
+            numeroPedido={numeroPedido || ''}
+            errorCode={error || ''}
+          />
 
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 mt-4">
             <Link to="/checkout" className="w-full py-3 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-semibold text-sm transition-all text-center">
               {t('payment.retry')}
             </Link>

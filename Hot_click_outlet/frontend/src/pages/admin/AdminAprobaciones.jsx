@@ -6,7 +6,7 @@ const ESTADO_COLOR = {
   PENDIENTE_APROBACION: 'bg-yellow-500/15 text-yellow-400',
   ACTIVO:               'bg-green-500/15 text-green-400',
   RECHAZADO:            'bg-red-500/15 text-red-400',
-  SUSPENDIDO:           'bg-orange-500/15 text-orange-400',
+  SUSPENDIDO:           'bg-amber-500/15 text-amber-400',
 }
 
 function fmtDate(d) {

@@ -251,7 +251,7 @@ export default function AdminAiControl() {
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                        style={{ backgroundColor: 'rgba(79,124,255,0.1)', color: '#4f7cff' }}>
+                        style={{ backgroundColor: 'rgba(23,71,168,0.1)', color: 'var(--hc-accent)' }}>
                         {e.plan}
                       </span>
                     </td>
@@ -310,7 +310,7 @@ export default function AdminAiControl() {
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                      style={{ backgroundColor: 'rgba(79,124,255,0.1)', color: '#4f7cff' }}>
+                      style={{ backgroundColor: 'rgba(23,71,168,0.1)', color: 'var(--hc-accent)' }}>
                       {e.plan}
                     </span>
                   </td>

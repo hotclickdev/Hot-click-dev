@@ -52,7 +52,7 @@ export default function POSPagoPage() {
     <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#08080c' }}>
       <div className="text-center">
         <div className="w-12 h-12 rounded-2xl mx-auto mb-4 animate-pulse"
-          style={{ background: 'linear-gradient(135deg,#4f7cff,#7c3aed)' }} />
+          style={{ background: 'var(--hc-accent)' }} />
         <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>Cargando…</p>
       </div>
     </div>
@@ -133,7 +133,7 @@ export default function POSPagoPage() {
               <span style={{ color: 'rgba(255,255,255,0.65)' }}>
                 {item.nombre ?? item.nombreProducto} ×{item.cantidad}
               </span>
-              <span className="font-semibold tabular-nums" style={{ color: '#e8e8ed' }}>
+              <span className="font-semibold tabular-nums" style={{ color: '#F4F6F9' }}>
                 ₡{fmt((item.precioUnitario ?? 0) * (item.cantidad ?? 1))}
               </span>
             </div>
@@ -144,7 +144,7 @@ export default function POSPagoPage() {
         {isSinpe && (
           <div className="rounded-2xl p-5 space-y-3 mb-5"
             style={{ backgroundColor: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.25)' }}>
-            <p className="text-xs font-bold uppercase tracking-wider" style={{ color: '#60a5fa' }}>
+            <p className="text-xs font-bold uppercase tracking-wider" style={{ color: '#6490EA' }}>
               Instrucciones SINPE Móvil
             </p>
             <ol className="text-sm space-y-2" style={{ color: 'rgba(255,255,255,0.7)' }}>
@@ -165,14 +165,14 @@ export default function POSPagoPage() {
             onClick={handleStripe}
             disabled={paying}
             className="w-full py-4 rounded-2xl font-black text-base transition-all disabled:opacity-50"
-            style={{ background: 'linear-gradient(135deg,#4f7cff,#7c3aed)', color: '#fff',
-              boxShadow: '0 8px 24px rgba(79,124,255,0.35)' }}>
+            style={{ background: 'var(--hc-accent)', color: '#fff',
+              boxShadow: '0 8px 24px rgba(23,71,168,0.35)' }}>
             {paying ? '⏳ Redirigiendo…' : '💳 Pagar con tarjeta'}
           </button>
         )}
 
         <p className="text-center text-xs mt-6" style={{ color: 'rgba(255,255,255,0.2)' }}>
-          HOTCLICK · Pago seguro
+          HotClick · Pago seguro
         </p>
       </div>
     </div>

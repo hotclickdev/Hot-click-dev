@@ -13,6 +13,7 @@ import useLazyLoad from '@/hooks/useLazyLoad'
 import { formatPrice } from '@/utils/format'
 import useCartStore from '@/store/cartStore'
 import { generateItemListJsonLd } from '@/utils/jsonLd'
+import ProductsAssistantPanel from '@/components/ai/ProductsAssistantPanel'
 
 const PAGE_SIZE = 24
 
@@ -438,6 +439,7 @@ function CatalogFilterBar({
   filterCond, setFilterCond, filterStock, setFilterStock,
   filterTalla, setFilterTalla, priceMin, setPriceMin, priceMax, setPriceMax,
   hasFilters, clearFilters, COND_OPTIONS, STOCK_OPTIONS, SORT_OPTIONS, filteredCount,
+  onOpenSidebar,
 }) {
   return (
     <div className="sticky top-0 z-30 backdrop-blur-xl"
@@ -463,20 +465,34 @@ function CatalogFilterBar({
 
           {/* Dropdowns */}
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-0.5 sm:pb-0">
-            <CategoryDropdown
-              categories={categories}
-              category={category}
-              setCategory={setCategory}
-            />
+            {/* Mobile: botón abre sidebar drawer */}
+            <button
+              onClick={onOpenSidebar}
+              className="flex lg:hidden items-center gap-1.5 h-9 px-3 rounded-xl text-sm font-semibold border shrink-0 transition-all hover:opacity-80"
+              style={{ color: 'var(--hc-text)', borderColor: 'var(--hc-border)', background: 'var(--hc-surface)' }}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h10M4 18h7"/>
+              </svg>
+              Filtrar
+            </button>
 
-            <BrandDropdown
-              marcas={marcas}
-              marcasFilter={marcasFilter}
-              toggleMarca={toggleMarca}
-              clearMarcas={clearMarcas}
-              marcaProductCount={marcaProductCount}
-              filteredCount={filteredCount}
-            />
+            {/* Desktop: dropdowns de categoría y marca (en sidebar en desktop, aquí en mobile) */}
+            <div className="hidden lg:flex items-center gap-2">
+              <CategoryDropdown
+                categories={categories}
+                category={category}
+                setCategory={setCategory}
+              />
+              <BrandDropdown
+                marcas={marcas}
+                marcasFilter={marcasFilter}
+                toggleMarca={toggleMarca}
+                clearMarcas={clearMarcas}
+                marcaProductCount={marcaProductCount}
+                filteredCount={filteredCount}
+              />
+            </div>
 
             <MoreFiltersDropdown
               filterCond={filterCond} setFilterCond={setFilterCond}
@@ -520,75 +536,225 @@ function CatalogFilterBar({
   )
 }
 
-// ── Ofertas HOT ───────────────────────────────────────────────────────────────
-function DealCard({ p, i }) {
+// ── Sidebar de categorías y marcas ───────────────────────────────────────────
+function CategorySidebar({
+  categories, category, setCategory,
+  marcas, marcasFilter, toggleMarca, clearMarcas, marcaProductCount,
+  onCategorySelect,
+}) {
+  const tree = useMemo(() => buildCategoryTree(categories), [categories])
+  const [expandedCats, setExpandedCats] = useState(new Set())
+  const [marcaSearch, setMarcaSearch] = useState('')
+
+  function toggleExpand(id) {
+    setExpandedCats(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function handleCatSelect(id) {
+    setCategory(id)
+    onCategorySelect?.()
+  }
+
+  const visibleMarcas = marcaSearch.trim()
+    ? marcas.filter(m => m.nombreMarca?.toLowerCase().includes(marcaSearch.toLowerCase()))
+    : marcas
+
+  return (
+    <div className="space-y-6">
+      {/* Categorías */}
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-widest mb-3 px-1"
+          style={{ color: 'var(--hc-muted)' }}>Categorías</p>
+        <div className="space-y-0.5">
+          <button
+            onClick={() => handleCatSelect('')}
+            className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-all"
+            style={!category
+              ? { background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)' }
+              : { color: 'var(--hc-text-2, var(--hc-text))' }
+            }
+          >
+            Todos los productos
+          </button>
+          {tree.map(cat => (
+            <div key={cat.id}>
+              <button
+                onClick={() => {
+                  if (cat.children?.length) toggleExpand(cat.id)
+                  handleCatSelect(String(cat.id))
+                }}
+                className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-all flex items-center justify-between group"
+                style={String(category) === String(cat.id)
+                  ? { background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)' }
+                  : { color: 'var(--hc-text)' }
+                }
+              >
+                <span className="truncate">{cat.nombreCategoria ?? cat.nombre}</span>
+                {cat.children?.length > 0 && (
+                  <svg
+                    className={`w-3.5 h-3.5 shrink-0 transition-transform ${expandedCats.has(cat.id) ? 'rotate-90' : 'opacity-40 group-hover:opacity-100'}`}
+                    fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
+                  </svg>
+                )}
+              </button>
+              {cat.children?.length > 0 && expandedCats.has(cat.id) && (
+                <div className="pl-3 mt-0.5 space-y-0.5">
+                  {cat.children.map(sub => (
+                    <button key={sub.id}
+                      onClick={() => handleCatSelect(String(sub.id))}
+                      className="w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                      style={String(category) === String(sub.id)
+                        ? { background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', color: 'var(--hc-accent)' }
+                        : { color: 'var(--hc-muted)' }
+                      }
+                    >
+                      {sub.nombreCategoria ?? sub.nombre}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Marcas */}
+      {marcas.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between px-1 mb-3">
+            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--hc-muted)' }}>Marcas</p>
+            {marcasFilter.size > 0 && (
+              <button onClick={clearMarcas}
+                className="text-[10px] underline transition-opacity hover:opacity-70"
+                style={{ color: 'var(--hc-accent)' }}>
+                Limpiar
+              </button>
+            )}
+          </div>
+          {marcas.length > 5 && (
+            <div className="mb-2">
+              <input
+                value={marcaSearch}
+                onChange={e => setMarcaSearch(e.target.value)}
+                placeholder="Buscar marca..."
+                className="w-full h-7 px-2.5 rounded-lg text-xs outline-none"
+                style={{ background: 'var(--hc-bg)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
+              />
+            </div>
+          )}
+          <div className="space-y-0.5 max-h-52 overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
+            {visibleMarcas.map(m => {
+              const checked = marcasFilter.has(String(m.id))
+              const count = marcaProductCount[m.id] ?? 0
+              return (
+                <label key={m.id}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl cursor-pointer transition-all hover:opacity-80"
+                  style={checked ? { background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)' } : {}}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggleMarca(String(m.id))}
+                    className="accent-[var(--hc-accent)] shrink-0"
+                  />
+                  {m.logoUrl && (
+                    <img src={m.logoUrl} alt={m.nombreMarca} className="w-5 h-5 object-contain rounded-sm shrink-0"
+                      onError={e => { e.target.style.display = 'none' }} />
+                  )}
+                  <span className="flex-1 truncate text-xs font-medium"
+                    style={{ color: checked ? 'var(--hc-accent)' : 'var(--hc-text)' }}>
+                    {m.nombreMarca}
+                  </span>
+                  {count > 0 && (
+                    <span className="text-[10px] shrink-0" style={{ color: 'var(--hc-muted)' }}>{count}</span>
+                  )}
+                </label>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Banner Emprendimientos dentro del catálogo ────────────────────────────────
+function EmprendimientosBanner({ onClick }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-      whileHover={{ y: -4 }} className="relative rounded-2xl overflow-hidden cursor-pointer group"
-      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+      className="col-span-full rounded-2xl overflow-hidden cursor-pointer group"
+      onClick={onClick}
+      whileHover={{ scale: 1.005 }}
+      transition={{ duration: 0.15 }}
+      style={{
+        background: 'linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.03) 100%)',
+        border: '1.5px solid rgba(16,185,129,0.22)',
+      }}
     >
-      <Link to={`/productos/${p.id}`}>
-        <div className="absolute top-3 left-3 z-10 flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider"
-          style={{ background: 'linear-gradient(135deg,#ff4b12,#ff9500)', color: '#fff' }}>
-          🔥 HOT
+      <div className="flex items-center gap-4 p-4 sm:p-5">
+        <span className="text-4xl shrink-0" style={{ filter: 'drop-shadow(0 0 8px rgba(16,185,129,0.35))' }}>🤝</span>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-sm sm:text-base" style={{ color: '#10b981' }}>
+            Emprendimientos Costarricenses
+          </p>
+          <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--hc-muted)' }}>
+            Apoyá el comercio local — productos únicos de emprendedores CR
+          </p>
         </div>
-        {p.stock <= 3 && p.stock > 0 && (
-          <div className="absolute top-3 right-3 z-10 px-2 py-0.5 rounded-full text-[9px] font-bold"
-            style={{ background: 'rgba(255,75,18,0.2)', color: '#ff6b35', border: '1px solid rgba(255,75,18,0.3)' }}>
-            ¡Últimas {p.stock}!
-          </div>
-        )}
-        <div className="aspect-square overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)' }}>
-          {p.imagenUrl
-            ? <img src={p.imagenUrl} alt={p.nombre} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-            : <div className="w-full h-full flex items-center justify-center opacity-20 text-5xl">📦</div>
-          }
+        <div
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all group-hover:gap-2.5"
+          style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981' }}
+        >
+          Ver emprendimientos
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
+          </svg>
         </div>
-        <div className="p-4">
-          {p.marcaNombre && <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: '#ff6b35' }}>{p.marcaNombre}</p>}
-          <p className="text-sm font-semibold line-clamp-2 mb-3" style={{ color: '#e8e8ed' }}>{p.nombre}</p>
-          <p className="text-2xl font-black" style={{ color: '#ff4b12' }}>{formatPrice(p.precio)}</p>
-        </div>
-      </Link>
+      </div>
     </motion.div>
   )
 }
 
+// ── Ofertas HOT — usa la ProductCard compartida con tag roja (una sola tarjeta en todo el sitio)
 function OfertasView({ products, loading }) {
   return (
     <motion.div key="ofertas" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       transition={{ duration: 0.35 }} className="min-h-screen"
-      style={{ background: 'linear-gradient(160deg, #1a0a00 0%, #0d0d14 40%, #0d0d14 100%)' }}>
+      style={{ background: 'var(--hc-blue-900)' }}>
       <div className="relative overflow-hidden py-12 px-4"
-        style={{ background: 'linear-gradient(135deg, rgba(255,75,18,0.18) 0%, rgba(255,149,0,0.08) 60%, transparent 100%)' }}>
+        style={{ background: 'linear-gradient(135deg, rgba(231,59,51,0.14) 0%, transparent 60%)' }}>
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-4 mb-2">
-            <span className="text-5xl" style={{ filter: 'drop-shadow(0 0 16px #ff4b12)' }}>🔥</span>
+            <span className="text-5xl" style={{ filter: 'drop-shadow(0 0 16px rgba(231,59,51,0.6))' }}>🔥</span>
             <div>
-              <h2 className="text-4xl sm:text-5xl font-black tracking-tight" style={{ color: '#fff', textShadow: '0 0 40px rgba(255,75,18,0.4)' }}>Ofertas HOT</h2>
+              <h2 className="text-4xl sm:text-5xl font-black tracking-tight" style={{ color: '#fff' }}>Ofertas HOT</h2>
               <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>Los mejores precios del momento — no dejes pasar ninguno</p>
             </div>
           </div>
           <div className="flex items-center gap-2 mt-4">
-            <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#ff4b12' }} />
+            <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'var(--hc-red-500)' }} />
             <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.45)' }}>{products.length} productos disponibles ahora</span>
           </div>
         </div>
         <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full pointer-events-none"
-          style={{ background: 'radial-gradient(circle, rgba(255,75,18,0.15), transparent 70%)' }} />
+          style={{ background: 'radial-gradient(circle, rgba(231,59,51,0.15), transparent 70%)' }} />
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {loading ? <div className="flex justify-center py-20"><Spinner size="lg" /></div>
           : products.length === 0 ? (
             <div className="text-center py-24">
               <p className="text-6xl mb-4">🔥</p>
-              <p className="text-lg font-bold" style={{ color: '#e8e8ed' }}>Las ofertas están cargando</p>
+              <p className="text-lg font-bold" style={{ color: '#F4F6F9' }}>Las ofertas están cargando</p>
               <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.35)' }}>Volvé pronto para no perder ningún precio</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-              {products.map((p, i) => <DealCard key={p.id} p={p} i={i} />)}
+              {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} hotTag="HOT" />)}
             </div>
           )}
       </div>
@@ -601,24 +767,31 @@ function EmpCard({ p, i }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-      whileHover={{ y: -4 }} className="relative rounded-2xl overflow-hidden cursor-pointer group"
-      style={{ background: 'rgba(255,255,255,0.92)', boxShadow: '0 2px 16px rgba(16,185,129,0.1)' }}
+      whileHover={{ y: -4 }} className="relative rounded-2xl overflow-hidden cursor-pointer group hc-card"
+      style={{ boxShadow: '0 2px 16px rgba(16,185,129,0.08)' }}
     >
       <Link to={`/productos/${p.id}`}>
         <div className="absolute top-3 left-3 z-10 flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black"
-          style={{ background: '#10b98120', color: '#059669', border: '1px solid #10b98140' }}>
+          style={{ background: 'rgba(16,185,129,0.18)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' }}>
           🤝 Local
         </div>
-        <div className="aspect-square overflow-hidden" style={{ background: '#f0fdf4' }}>
+        <div className="aspect-square overflow-hidden"
+          style={{ background: 'color-mix(in srgb, #10b981 7%, var(--hc-surface))' }}>
           {p.imagenUrl
             ? <img src={p.imagenUrl} alt={p.nombre} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             : <div className="w-full h-full flex items-center justify-center opacity-30 text-5xl">🌿</div>
           }
         </div>
         <div className="p-4">
-          {p.marcaNombre && <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: '#059669' }}>{p.marcaNombre}</p>}
-          <p className="text-sm font-semibold line-clamp-2 mb-3" style={{ color: '#111' }}>{p.nombre}</p>
-          <p className="text-xl font-black" style={{ color: '#065f46' }}>{formatPrice(p.precio)}</p>
+          {p.marcaNombre && (
+            <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: '#10b981' }}>
+              {p.marcaNombre}
+            </p>
+          )}
+          <p className="text-sm font-semibold line-clamp-2 mb-3" style={{ color: 'var(--hc-text)' }}>{p.nombre}</p>
+          <p className="text-xl font-black" style={{ color: 'var(--hc-text)', fontFamily: 'var(--font-display)' }}>
+            {formatPrice(p.precio)}
+          </p>
         </div>
       </Link>
     </motion.div>
@@ -629,49 +802,52 @@ function EmprendimientosView({ products, convenios, loading }) {
   return (
     <motion.div key="emprendimientos" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       transition={{ duration: 0.35 }} className="min-h-screen"
-      style={{ background: 'linear-gradient(160deg, #f0fdf4 0%, #ecfdf5 50%, #f8fafc 100%)' }}>
+      style={{ background: 'var(--hc-bg)' }}>
       <div className="relative overflow-hidden py-12 px-4"
-        style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.1) 0%, rgba(52,211,153,0.05) 100%)' }}>
+        style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(52,211,153,0.03) 60%, transparent 100%)' }}>
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-4 mb-2">
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
               style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.25)' }}>🤝</div>
             <div>
-              <h2 className="text-4xl sm:text-5xl font-black tracking-tight" style={{ color: '#064e3b' }}>Emprendimientos</h2>
-              <p className="text-sm mt-1" style={{ color: '#6b7280' }}>Apoyá negocios locales de Costa Rica — cada compra cuenta</p>
+              <h2 className="text-4xl sm:text-5xl font-black tracking-tight" style={{ color: 'var(--hc-text)' }}>Emprendimientos</h2>
+              <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>Apoyá negocios locales de Costa Rica — cada compra cuenta</p>
             </div>
           </div>
         </div>
       </div>
       {convenios.length > 0 && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-2">
-          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#6b7280' }}>Aliados HOTCLICK</p>
+          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--hc-muted)' }}>Aliados HotClick</p>
           <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
             {convenios.map((c, i) => (
               <motion.div key={i} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.06 }}
                 className="shrink-0 flex flex-col items-center gap-2 p-4 rounded-2xl"
-                style={{ background: '#fff', border: '1px solid rgba(16,185,129,0.2)', minWidth: '110px', boxShadow: '0 2px 12px rgba(16,185,129,0.08)' }}>
+                style={{ background: 'var(--hc-surface)', border: '1px solid rgba(16,185,129,0.22)', minWidth: '110px', boxShadow: '0 2px 12px rgba(16,185,129,0.06)' }}>
                 {c.logoUrl
                   ? <img src={c.logoUrl} alt={c.nombre} className="w-10 h-10 object-contain rounded-xl" onError={e => e.target.style.display='none'} />
-                  : <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-black" style={{ background: 'rgba(16,185,129,0.15)', color: '#059669' }}>{(c.nombre ?? '?')[0].toUpperCase()}</div>
+                  : <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-black" style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981' }}>{(c.nombre ?? '?')[0].toUpperCase()}</div>
                 }
-                <p className="text-[11px] font-bold text-center leading-tight" style={{ color: '#064e3b' }}>{c.nombre}</p>
-                <div className="text-[9px] px-2 py-0.5 rounded-full font-semibold" style={{ background: '#d1fae5', color: '#059669' }}>Activo</div>
+                <p className="text-[11px] font-bold text-center leading-tight" style={{ color: 'var(--hc-text)' }}>{c.nombre}</p>
+                <div className="text-[9px] px-2 py-0.5 rounded-full font-semibold"
+                  style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.25)' }}>
+                  Activo
+                </div>
               </motion.div>
             ))}
           </div>
         </div>
       )}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        <p className="text-sm font-bold mb-4" style={{ color: '#374151' }}>
+        <p className="text-sm font-bold mb-4" style={{ color: 'var(--hc-text)' }}>
           {products.length > 0 ? `${products.length} productos de emprendimientos` : 'Explorá el catálogo de negocios locales'}
         </p>
         {loading ? <div className="flex justify-center py-20"><Spinner size="lg" /></div>
           : products.length === 0 ? (
             <div className="text-center py-24">
               <p className="text-6xl mb-4">🌱</p>
-              <p className="text-lg font-bold" style={{ color: '#064e3b' }}>Próximamente más productos</p>
-              <p className="text-sm mt-1" style={{ color: '#6b7280' }}>Los emprendimientos están cargando su inventario</p>
+              <p className="text-lg font-bold" style={{ color: 'var(--hc-text)' }}>Próximamente más productos</p>
+              <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>Los emprendimientos están cargando su inventario</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -733,7 +909,15 @@ export default function ProductsPage() {
   const [filterTalla, setFilterTalla] = useState('')
   const [priceMin,    setPriceMin]    = useState('')
   const [priceMax,    setPriceMax]    = useState('')
-  const [quickView,   setQuickView]   = useState(null)
+  const [quickView,     setQuickView]     = useState(null)
+  const [aiPanelOpen,   setAiPanelOpen]   = useState(false)
+  const [sidebarOpen,   setSidebarOpen]   = useState(false)
+  const aiQuery = searchParams.get('q') || ''
+
+  useEffect(() => {
+    if (searchParams.get('ai') === '1') setAiPanelOpen(true)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const [productGridRef, shouldRenderGrid] = useLazyLoad({ threshold: 0.1, rootMargin: '200px' })
 
   // Sincronizar URL params al cambiar filtros
@@ -791,7 +975,7 @@ export default function ProductsPage() {
     const minPrice = priceMin !== '' ? Number(priceMin) : null
     const maxPrice = priceMax !== '' ? Number(priceMax) : null
     return products
-      .filter(p => viewMode !== 'ofertas' || p.destacado)
+      .filter(p => viewMode !== 'ofertas' || p.enOferta === true)
       .filter(p => viewMode !== 'emprendimientos' || convenioMarcaNames.has(p.marcaNombre?.toLowerCase()))
       .filter(p => !search || p.nombre?.toLowerCase().includes(search.toLowerCase()) || p.marcaNombre?.toLowerCase().includes(search.toLowerCase()))
       .filter(p => !category || String(p.categoriaId) === String(category))
@@ -868,18 +1052,18 @@ export default function ProductsPage() {
     : null
 
   const seoTitle = (() => {
-    if (viewMode === 'ofertas') return 'Ofertas HOT — Mejores precios del día | HOTCLICK'
-    if (viewMode === 'emprendimientos') return 'Emprendimientos Costarricenses — Negocios locales CR | HOTCLICK'
-    if (activeCatName) return `${activeCatName} en Costa Rica — Compra online | HOTCLICK`
-    if (activeMarcaName) return `${activeMarcaName} en Costa Rica — Productos originales | HOTCLICK`
-    return 'Catálogo de productos — Compra online en Costa Rica | HOTCLICK'
+    if (viewMode === 'ofertas') return 'Ofertas HOT — Mejores precios del día | HotClick'
+    if (viewMode === 'emprendimientos') return 'Emprendimientos Costarricenses — Negocios locales CR | HotClick'
+    if (activeCatName) return `${activeCatName} en Costa Rica — Compra online | HotClick`
+    if (activeMarcaName) return `${activeMarcaName} en Costa Rica — Productos originales | HotClick`
+    return 'Catálogo de productos — Compra online en Costa Rica | HotClick'
   })()
 
   const seoDesc = (() => {
     if (viewMode === 'ofertas') return `${filtered.length > 0 ? filtered.length + ' productos con ' : ''}Ofertas y descuentos especiales de emprendedores costarricenses. Precios directos, envío a todo Costa Rica.`
     if (viewMode === 'emprendimientos') return 'Apoyá el comercio local. Descubrí emprendimientos costarricenses y comprá productos únicos con envío a todo el país.'
     if (activeCatName) return `Explorá los mejores productos de ${activeCatName} de emprendedores en Costa Rica. Envío a todo el país, precios directos y pagos seguros.`
-    if (activeMarcaName) return `Todos los productos de ${activeMarcaName} disponibles en HOTCLICK Costa Rica. Entrega a domicilio, pagos con SINPE Móvil y tarjeta.`
+    if (activeMarcaName) return `Todos los productos de ${activeMarcaName} disponibles en HotClick Costa Rica. Entrega a domicilio, pagos con SINPE Móvil y tarjeta.`
     return `Explorá más de ${products.length > 0 ? products.length + ' ' : ''}productos únicos de emprendedores costarricenses. Tecnología, ropa, accesorios y más con envío a todo Costa Rica.`
   })()
 
@@ -887,7 +1071,39 @@ export default function ProductsPage() {
   const shouldNoIndex = hasFilters && (marcasFilter.size > 1 || (marcasFilter.size > 0 && !!category))
 
   return (
-    <MainLayout>
+    <>
+      <ProductsAssistantPanel
+        isOpen={aiPanelOpen}
+        onClose={() => setAiPanelOpen(false)}
+        initialQuery={aiQuery}
+      />
+
+      {/* Botón flotante izquierdo para abrir/cerrar el asistente */}
+      <button
+        onClick={() => setAiPanelOpen(v => !v)}
+        className="fixed left-0 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-1.5 py-4 px-1.5 rounded-r-2xl shadow-xl transition-all hover:scale-105 active:scale-95"
+        style={{
+          background: aiPanelOpen
+            ? 'rgba(255,255,255,0.12)'
+            : 'var(--hc-accent)',
+          color: '#fff',
+          border: aiPanelOpen ? '1px solid rgba(255,255,255,0.2)' : 'none',
+          backdropFilter: aiPanelOpen ? 'blur(8px)' : 'none',
+        }}
+        aria-label={aiPanelOpen ? 'Cerrar asistente IA' : 'Abrir asistente IA'}
+      >
+        <span style={{ fontSize: 14 }}>✦</span>
+        <span style={{
+          writingMode: 'vertical-lr',
+          transform: 'rotate(180deg)',
+          fontSize: 9,
+          fontWeight: 700,
+          letterSpacing: 1.5,
+          textTransform: 'uppercase',
+        }}>IA</span>
+      </button>
+
+      <MainLayout>
       <Helmet>
         <title>{seoTitle}</title>
         <meta name="description" content={seoDesc} />
@@ -927,7 +1143,7 @@ export default function ProductsPage() {
             {
               id: 'ofertas', label: 'Ofertas HOT', sub: 'Precios increíbles',
               icon: <span className="text-xl leading-none">🔥</span>,
-              accent: '#ff4b12', accentBg: 'rgba(255,75,18,0.12)',
+              accent: 'var(--hc-red-500)', accentBg: 'rgba(231,59,51,0.12)',
             },
             {
               id: 'emprendimientos', label: 'Emprendimientos', sub: 'Negocios locales CR',
@@ -941,7 +1157,7 @@ export default function ProductsPage() {
                 onClick={() => { setViewMode(tab.id); clearFilters() }}
                 className="relative shrink-0 flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-left transition-all duration-200 whitespace-nowrap"
                 style={active
-                  ? { background: tab.accentBg, border: `1.5px solid ${tab.accent}33` }
+                  ? { background: tab.accentBg, border: `1.5px solid color-mix(in srgb, ${tab.accent} 20%, transparent)` }
                   : { background: 'transparent', border: '1.5px solid transparent' }
                 }
               >
@@ -980,6 +1196,16 @@ export default function ProductsPage() {
             <div className="relative overflow-hidden py-10 px-4"
               style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--hc-accent) 10%, var(--hc-bg)) 0%, color-mix(in srgb, var(--hc-accent) 3%, var(--hc-bg)) 60%, var(--hc-bg) 100%)' }}>
               <div className="max-w-7xl mx-auto">
+                {/* Breadcrumb desde categoría (Brand Book §7.4) */}
+                {activeCatName && (
+                  <nav aria-label="Ruta de navegación" className="flex items-center gap-2 text-xs mb-4">
+                    <Link to="/" className="hover:underline" style={{ color: 'var(--hc-muted)' }}>Inicio</Link>
+                    <span aria-hidden="true" style={{ color: 'var(--hc-border-strong)' }}>/</span>
+                    <button onClick={() => setCategory('all')} className="hover:underline" style={{ color: 'var(--hc-muted)' }}>Productos</button>
+                    <span aria-hidden="true" style={{ color: 'var(--hc-border-strong)' }}>/</span>
+                    <span className="font-semibold" style={{ color: 'var(--hc-text-2)' }}>{activeCatName}</span>
+                  </nav>
+                )}
                 <div className="flex items-center gap-4 mb-2">
                   <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 text-3xl"
                     style={{ background: 'color-mix(in srgb, var(--hc-accent) 15%, var(--hc-surface))', border: '1px solid color-mix(in srgb, var(--hc-accent) 28%, transparent)' }}>
@@ -1020,88 +1246,202 @@ export default function ProductsPage() {
               hasFilters={hasFilters} clearFilters={clearFilters}
               COND_OPTIONS={COND_OPTIONS} STOCK_OPTIONS={STOCK_OPTIONS} SORT_OPTIONS={SORT_OPTIONS}
               filteredCount={filtered.length}
+              onOpenSidebar={() => setSidebarOpen(true)}
             />
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 space-y-4">
-              {/* Chips de filtros activos */}
-              {activeChips.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2">
-                  {activeChips.map(chip => (
-                    <button key={chip.key} onClick={chip.clear}
-                      className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-all hover:opacity-80"
-                      style={{ background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', color: 'var(--hc-accent)', borderColor: 'color-mix(in srgb, var(--hc-accent) 25%, transparent)' }}>
-                      {chip.label}
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                      </svg>
-                    </button>
-                  ))}
-                  {activeChips.length > 1 && (
-                    <button onClick={clearFilters} className="text-xs hover:opacity-70 transition-opacity underline" style={{ color: 'var(--hc-muted)' }}>
-                      Limpiar todo
-                    </button>
-                  )}
-                </div>
-              )}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5">
+              <div className="flex items-start gap-6">
+                {/* Sidebar — desktop */}
+                <aside
+                  className="hidden lg:block shrink-0 sticky"
+                  style={{ width: 252, top: 72, alignSelf: 'flex-start' }}
+                >
+                  <div className="rounded-2xl p-4"
+                    style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+                    <CategorySidebar
+                      categories={categories}
+                      category={category}
+                      setCategory={setCategory}
+                      marcas={marcas}
+                      marcasFilter={marcasFilter}
+                      toggleMarca={toggleMarca}
+                      clearMarcas={clearMarcas}
+                      marcaProductCount={marcaProductCount}
+                    />
+                  </div>
+                </aside>
 
-              {/* Grid de productos */}
-              <div ref={productGridRef}>
-                {!shouldRenderGrid ? (
-                  <div className="h-96 animate-pulse rounded-2xl" style={{ background: 'var(--hc-surface)' }} />
-                ) : loading ? (
-                  <div className="flex justify-center py-20"><Spinner size="lg" /></div>
-                ) : filtered.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-24 text-center gap-5">
-                    <div className="relative w-24 h-24 flex items-center justify-center">
-                      <div className="absolute inset-0 rounded-3xl"
-                        style={{ background: 'color-mix(in srgb, var(--hc-accent) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 16%, transparent)' }} />
-                      <svg className="relative w-12 h-12" style={{ color: 'var(--hc-accent)' }} fill="none" stroke="currentColor" strokeWidth={1.3} viewBox="0 0 24 24">
-                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                        <line x1="8" y1="11" x2="14" y2="11" strokeLinecap="round"/>
-                      </svg>
+                {/* Contenido principal */}
+                <div className="flex-1 min-w-0 space-y-4">
+                  {/* Chips de filtros activos */}
+                  {activeChips.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      {activeChips.map(chip => (
+                        <button key={chip.key} onClick={chip.clear}
+                          className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-all hover:opacity-80"
+                          style={{ background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', color: 'var(--hc-accent)', borderColor: 'color-mix(in srgb, var(--hc-accent) 25%, transparent)' }}>
+                          {chip.label}
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                          </svg>
+                        </button>
+                      ))}
+                      {activeChips.length > 1 && (
+                        <button onClick={clearFilters} className="text-xs hover:opacity-70 transition-opacity underline" style={{ color: 'var(--hc-muted)' }}>
+                          Limpiar todo
+                        </button>
+                      )}
                     </div>
-                    <div>
-                      <p className="font-semibold text-base mb-1" style={{ color: 'var(--hc-text)' }}>No se encontraron productos</p>
-                      <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>Intentá con otros filtros o buscá por nombre</p>
-                    </div>
-                    {hasFilters && (
-                      <button onClick={clearFilters}
-                        className="px-5 py-2 rounded-xl border text-sm font-medium transition-colors hover:opacity-70"
-                        style={{ color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }}>
-                        Limpiar filtros
-                      </button>
+                  )}
+
+                  {/* Grid de productos */}
+                  <div ref={productGridRef}>
+                    {!shouldRenderGrid ? (
+                      <div className="h-96 animate-pulse rounded-2xl" style={{ background: 'var(--hc-surface)' }} />
+                    ) : loading ? (
+                      <div className="flex justify-center py-20"><Spinner size="lg" /></div>
+                    ) : filtered.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-24 text-center gap-5">
+                        <div className="relative w-24 h-24 flex items-center justify-center">
+                          <div className="absolute inset-0 rounded-3xl"
+                            style={{ background: 'color-mix(in srgb, var(--hc-accent) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 16%, transparent)' }} />
+                          <svg className="relative w-12 h-12" style={{ color: 'var(--hc-accent)' }} fill="none" stroke="currentColor" strokeWidth={1.3} viewBox="0 0 24 24">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            <line x1="8" y1="11" x2="14" y2="11" strokeLinecap="round"/>
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-base mb-1" style={{ color: 'var(--hc-text)' }}>No se encontraron productos</p>
+                          <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>Intentá con otros filtros o buscá por nombre</p>
+                        </div>
+                        {hasFilters && (
+                          <button onClick={clearFilters}
+                            className="px-5 py-2 rounded-xl border text-sm font-medium transition-colors hover:opacity-70"
+                            style={{ color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }}>
+                            Limpiar filtros
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={page + search + category + sort + filterStock + filterCond + priceMin + priceMax + [...marcasFilter].join()}
+                          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4"
+                        >
+                          {filtered.flatMap((product, i) => {
+                            const cards = []
+                            if (i === 5 && !hasFilters && filtered.length > 6) {
+                              cards.push(
+                                <EmprendimientosBanner key="emp-banner" onClick={() => setViewMode('emprendimientos')} />
+                              )
+                            }
+                            cards.push(
+                              <ProductCard key={product.id} product={product} priority={i < 6} index={i} onQuickView={setQuickView} />
+                            )
+                            return cards
+                          })}
+                        </motion.div>
+                      </AnimatePresence>
+                    )}
+
+                    {/* Paginación numerada (Brand Book §5.6) */}
+                    {totalPages > 1 && !search && !hasFilters && (
+                      <nav aria-label="Paginación" className="flex items-center justify-center gap-1.5 mt-8 flex-wrap">
+                        <button onClick={() => fetchProducts(page - 1)} disabled={page === 0}
+                          className="hc-btn hc-btn-outline hc-btn-sm disabled:opacity-30 disabled:cursor-not-allowed">
+                          Anterior
+                        </button>
+                        {Array.from({ length: totalPages }, (_, i) => i)
+                          .filter(i => i === 0 || i === totalPages - 1 || Math.abs(i - page) <= 1)
+                          .reduce((acc, i, idx, arr) => {
+                            if (idx > 0 && i - arr[idx - 1] > 1) acc.push('…')
+                            acc.push(i)
+                            return acc
+                          }, [])
+                          .map((i, idx) =>
+                            i === '…' ? (
+                              <span key={`gap-${idx}`} className="px-1 text-sm" style={{ color: 'var(--hc-muted)' }}>…</span>
+                            ) : (
+                              <button
+                                key={i}
+                                onClick={() => fetchProducts(i)}
+                                aria-label={`Página ${i + 1}`}
+                                aria-current={i === page ? 'page' : undefined}
+                                className="w-8 h-8 rounded-lg text-sm font-semibold transition-colors"
+                                style={i === page
+                                  ? { background: 'var(--hc-accent)', color: '#fff' }
+                                  : { color: 'var(--hc-text-2)', border: '1px solid var(--hc-border)' }}
+                              >
+                                {i + 1}
+                              </button>
+                            )
+                          )}
+                        <button onClick={() => fetchProducts(page + 1)} disabled={page >= totalPages - 1}
+                          className="hc-btn hc-btn-outline hc-btn-sm disabled:opacity-30 disabled:cursor-not-allowed">
+                          Siguiente
+                        </button>
+                      </nav>
                     )}
                   </div>
-                ) : (
-                  <AnimatePresence mode="wait">
+                </div>
+              </div>
+
+              {/* Sidebar drawer — mobile */}
+              <AnimatePresence>
+                {sidebarOpen && (
+                  <>
                     <motion.div
-                      key={page + search + category + sort + filterStock + filterCond + priceMin + priceMax + [...marcasFilter].join()}
+                      key="sidebar-backdrop"
                       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                       transition={{ duration: 0.2 }}
-                      className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4"
+                      onClick={() => setSidebarOpen(false)}
+                      className="fixed inset-0 z-40 lg:hidden"
+                      style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(2px)' }}
+                    />
+                    <motion.aside
+                      key="sidebar-drawer"
+                      initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
+                      transition={{ type: 'spring', damping: 26, stiffness: 260 }}
+                      className="fixed left-0 top-0 bottom-0 z-50 overflow-y-auto lg:hidden"
+                      style={{
+                        width: 'min(300px, 90vw)',
+                        background: 'var(--hc-surface)',
+                        borderRight: '1px solid var(--hc-border)',
+                        boxShadow: '8px 0 48px rgba(0,0,0,0.14)',
+                      }}
                     >
-                      {filtered.map((product, i) => (
-                        <ProductCard key={product.id} product={product} priority={i < 6} index={i} onQuickView={setQuickView} />
-                      ))}
-                    </motion.div>
-                  </AnimatePresence>
+                      <div className="flex items-center justify-between px-5 py-4"
+                        style={{ borderBottom: '1px solid var(--hc-border)' }}>
+                        <p className="font-bold text-sm" style={{ color: 'var(--hc-text)' }}>Filtrar catálogo</p>
+                        <button
+                          onClick={() => setSidebarOpen(false)}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center transition-opacity hover:opacity-60"
+                          style={{ color: 'var(--hc-muted)' }}
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="p-5">
+                        <CategorySidebar
+                          categories={categories}
+                          category={category}
+                          setCategory={setCategory}
+                          marcas={marcas}
+                          marcasFilter={marcasFilter}
+                          toggleMarca={toggleMarca}
+                          clearMarcas={clearMarcas}
+                          marcaProductCount={marcaProductCount}
+                          onCategorySelect={() => setSidebarOpen(false)}
+                        />
+                      </div>
+                    </motion.aside>
+                  </>
                 )}
-
-                {/* Paginación */}
-                {totalPages > 1 && !search && !hasFilters && (
-                  <div className="flex items-center justify-center gap-2 mt-8">
-                    <button onClick={() => fetchProducts(page - 1)} disabled={page === 0}
-                      className="hc-btn hc-btn-outline hc-btn-sm disabled:opacity-30 disabled:cursor-not-allowed">
-                      Anterior
-                    </button>
-                    <span className="text-sm px-2" style={{ color: 'var(--hc-muted)' }}>{page + 1} / {totalPages}</span>
-                    <button onClick={() => fetchProducts(page + 1)} disabled={page >= totalPages - 1}
-                      className="hc-btn hc-btn-outline hc-btn-sm disabled:opacity-30 disabled:cursor-not-allowed">
-                      Siguiente
-                    </button>
-                  </div>
-                )}
-              </div>
+              </AnimatePresence>
             </div>
           </motion.div>
         )}
@@ -1113,6 +1453,7 @@ export default function ProductsPage() {
 
       <CartMiniBar />
     </MainLayout>
+    </>
   )
 }
 

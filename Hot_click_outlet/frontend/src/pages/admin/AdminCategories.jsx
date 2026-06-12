@@ -30,13 +30,13 @@ function CategoryCard({ node, onEdit, onDelete, onAddSub }) {
 
   return (
     <div className="rounded-2xl overflow-hidden"
-      style={{ border: '1px solid rgba(79,124,255,0.2)', backgroundColor: '#0e0e12' }}>
+      style={{ border: '1px solid rgba(23,71,168,0.2)', backgroundColor: '#0e0e12' }}>
       {/* Encabezado grupo */}
       <div className="flex items-center justify-between px-4 py-3.5"
-        style={{ backgroundColor: 'rgba(79,124,255,0.07)', borderBottom: hasSubs && open ? '1px solid rgba(79,124,255,0.12)' : 'none' }}>
+        style={{ backgroundColor: 'rgba(23,71,168,0.07)', borderBottom: hasSubs && open ? '1px solid rgba(23,71,168,0.12)' : 'none' }}>
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-lg font-bold"
-            style={{ backgroundColor: 'rgba(79,124,255,0.15)', color: '#4f7cff' }}>
+            style={{ backgroundColor: 'rgba(23,71,168,0.15)', color: 'var(--hc-accent)' }}>
             {node.nombreCategoria.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0">
@@ -47,7 +47,7 @@ function CategoryCard({ node, onEdit, onDelete, onAddSub }) {
           </div>
           {hasSubs && (
             <span className="ml-1 shrink-0 text-xs px-2 py-0.5 rounded-full font-medium"
-              style={{ backgroundColor: 'rgba(79,124,255,0.15)', color: '#7aa3ff' }}>
+              style={{ backgroundColor: 'rgba(23,71,168,0.15)', color: '#7aa3ff' }}>
               {node.children.length} sub
             </span>
           )}
@@ -55,7 +55,7 @@ function CategoryCard({ node, onEdit, onDelete, onAddSub }) {
         <div className="flex items-center gap-1 shrink-0 ml-2">
           <button onClick={() => onAddSub(node)}
             className="px-2 py-1 rounded-lg text-xs font-medium transition-colors"
-            style={{ backgroundColor: 'rgba(79,124,255,0.12)', color: '#7aa3ff' }}
+            style={{ backgroundColor: 'rgba(23,71,168,0.12)', color: '#7aa3ff' }}
             title="Agregar subcategoría">
             + sub
           </button>
@@ -234,8 +234,8 @@ export default function AdminCategories() {
         ) : cats.length === 0 ? (
           <div className="text-center py-14 space-y-3">
             <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center"
-              style={{ backgroundColor: 'rgba(79,124,255,0.08)', border: '1px solid rgba(79,124,255,0.15)' }}>
-              <svg className="w-7 h-7" style={{ color: '#4f7cff' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              style={{ backgroundColor: 'rgba(23,71,168,0.08)', border: '1px solid rgba(23,71,168,0.15)' }}>
+              <svg className="w-7 h-7" style={{ color: 'var(--hc-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
                 <line x1="7" y1="7" x2="7.01" y2="7"/>
               </svg>
@@ -247,7 +247,7 @@ export default function AdminCategories() {
             <button
               onClick={openNew}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold mt-1 transition-opacity hover:opacity-80"
-              style={{ backgroundColor: '#4f7cff', color: '#fff' }}
+              style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
             >+ Crear primera categoría</button>
           </div>
         ) : (

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -270,12 +270,12 @@ function TagSelector({ value, onChange }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-semibold" style={{ color: '#e8e8ed' }}>
+        <label className="text-xs font-semibold" style={{ color: '#F4F6F9' }}>
           Tags del chat 🛍️
         </label>
         {selected.size > 0 && (
           <button type="button" onClick={() => onChange('')}
-            className="text-[10px] hover:underline" style={{ color: '#8e8e9a' }}>
+            className="text-[10px] hover:underline" style={{ color: '#A7B0BC' }}>
             Limpiar ({selected.size})
           </button>
         )}
@@ -283,7 +283,7 @@ function TagSelector({ value, onChange }) {
 
       {TAG_GROUPS.map(group => (
         <div key={group.label} className="space-y-1.5">
-          <p className="text-[10px] font-medium" style={{ color: '#8e8e9a' }}>{group.label}</p>
+          <p className="text-[10px] font-medium" style={{ color: '#A7B0BC' }}>{group.label}</p>
           <div className="flex flex-wrap gap-1.5">
             {group.tags.map(tag => {
               const active = selected.has(tag)
@@ -292,7 +292,7 @@ function TagSelector({ value, onChange }) {
                   className="px-2.5 py-1 rounded-full text-xs font-medium transition-all"
                   style={{
                     backgroundColor: active ? 'var(--hc-accent, #4f7cff)' : 'rgba(255,255,255,0.07)',
-                    color:           active ? '#fff' : '#8e8e9a',
+                    color:           active ? '#fff' : '#A7B0BC',
                     border:          active ? '1px solid transparent' : '1px solid rgba(255,255,255,0.12)',
                   }}>
                   {tag}
@@ -303,7 +303,7 @@ function TagSelector({ value, onChange }) {
         </div>
       ))}
 
-      <p className="text-[10px]" style={{ color: '#8e8e9a' }}>
+      <p className="text-[10px]" style={{ color: '#A7B0BC' }}>
         Seleccioná los que mejor describen este producto. El chat los usa para recomendarlo.
         {selected.size > 0 && <span className="ml-1 text-[#4f7cff]">({selected.size} seleccionados)</span>}
       </p>
@@ -415,26 +415,26 @@ export default function AdminNuevoProducto() {
       const next = { ...p.seoByLang }
       if (seoAuto.es) {
         next.es = {
-          title: nombre ? `${nombre} | HOTCLICK Outlet`.slice(0, 60) : '',
+          title: nombre ? `${nombre} | HotClick Outlet`.slice(0, 60) : '',
           description: desc ? `${desc}${precio ? ` | Precio: ₡${precio}` : ''} | Envíos a todo Costa Rica`.slice(0, 160) : '',
         }
       }
       if (seoAuto.en) {
         next.en = {
-          title: nombre ? `${nombre} | HOTCLICK Outlet`.slice(0, 60) : '',
-          description: desc ? `${desc} | Free shipping in Costa Rica | HOTCLICK`.slice(0, 160) : '',
+          title: nombre ? `${nombre} | HotClick Outlet`.slice(0, 60) : '',
+          description: desc ? `${desc} | Free shipping in Costa Rica | HotClick`.slice(0, 160) : '',
         }
       }
       if (seoAuto.pt) {
         next.pt = {
-          title: nombre ? `${nombre} | HOTCLICK Outlet`.slice(0, 60) : '',
-          description: desc ? `${desc} | Envio grátis pelo Costa Rica | HOTCLICK`.slice(0, 160) : '',
+          title: nombre ? `${nombre} | HotClick Outlet`.slice(0, 60) : '',
+          description: desc ? `${desc} | Envio grátis pelo Costa Rica | HotClick`.slice(0, 160) : '',
         }
       }
       if (seoAuto.fr) {
         next.fr = {
-          title: nombre ? `${nombre} | HOTCLICK Outlet`.slice(0, 60) : '',
-          description: desc ? `${desc} | Livraison gratuite au Costa Rica | HOTCLICK`.slice(0, 160) : '',
+          title: nombre ? `${nombre} | HotClick Outlet`.slice(0, 60) : '',
+          description: desc ? `${desc} | Livraison gratuite au Costa Rica | HotClick`.slice(0, 160) : '',
         }
       }
       return {
@@ -648,13 +648,13 @@ export default function AdminNuevoProducto() {
         {/* Aviso borrador guardado */}
         {tieneBorrador && paso === 1 && (
           <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm"
-            style={{ background: 'rgba(79,124,255,0.08)', border: '1px solid rgba(79,124,255,0.25)' }}>
+            style={{ background: 'rgba(23,71,168,0.08)', border: '1px solid rgba(23,71,168,0.25)' }}>
             <svg className="w-4 h-4 text-[#4f7cff] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             <span style={{ color: '#a0b4ff' }} className="flex-1">Tenés un borrador guardado.</span>
             <button onClick={cargarBorrador} className="text-xs font-semibold px-3 py-1 rounded-lg"
-              style={{ background: '#4f7cff', color: '#fff' }}>Cargar</button>
+              style={{ background: 'var(--hc-accent)', color: '#fff' }}>Cargar</button>
             <button onClick={limpiarBorrador} className="text-xs px-2 py-1 rounded-lg"
-              style={{ color: '#8e8e9a' }}>Descartar</button>
+              style={{ color: '#A7B0BC' }}>Descartar</button>
           </div>
         )}
 
@@ -1093,7 +1093,7 @@ export default function AdminNuevoProducto() {
                               className={inp}
                               value={currentSeo.title}
                               maxLength={60}
-                              placeholder={isEs ? 'Nombre del producto | HOTCLICK Outlet' : `Product name in ${langMeta?.name} | HOTCLICK Outlet`}
+                              placeholder={isEs ? 'Nombre del producto | HotClick Outlet' : `Product name in ${langMeta?.name} | HotClick Outlet`}
                               onChange={e => handleTitleChange(e.target.value)}
                               aria-describedby={`seo-title-hint-${seoLang}`}
                             />

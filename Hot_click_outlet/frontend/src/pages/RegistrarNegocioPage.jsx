@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import BrandLogo from '@/components/ui/BrandLogo'
 import { motion } from 'framer-motion'
 import Input from '@/components/ui/Input'
 import useAuthStore from '@/store/authStore'
 import { useToast } from '@/components/ui/Toast'
 import api, { registrarConsentimiento } from '@/services/api'
 
-const A = { color: '#f97316', ring: 'rgba(249,115,22,0.32)', bg: 'rgba(249,115,22,0.08)' }
+const A = { color: 'var(--hc-primary)', ring: 'rgba(231,59,51,0.32)', bg: 'rgba(231,59,51,0.08)' }
 
 export default function RegistrarNegocioPage() {
   const navigate = useNavigate()
@@ -48,7 +49,7 @@ export default function RegistrarNegocioPage() {
 
       {/* Fondo */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 60% 50% at 70% 25%, rgba(249,115,22,0.1), transparent 65%)` }} />
+        <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 60% 50% at 70% 25%, rgba(231,59,51,0.1), transparent 65%)` }} />
       </div>
       <div className="absolute inset-0 opacity-[0.25] pointer-events-none" style={{
         backgroundImage: 'linear-gradient(var(--hc-border) 1px,transparent 1px),linear-gradient(90deg,var(--hc-border) 1px,transparent 1px)',
@@ -59,10 +60,7 @@ export default function RegistrarNegocioPage() {
       <header className="relative z-10 flex items-center justify-between px-5 sm:px-8 py-4 border-b"
         style={{ borderColor: 'var(--hc-border)', background: 'var(--hc-glass-bg)', backdropFilter: 'blur(16px)' }}>
         <Link to="/" className="flex items-center gap-2.5">
-          <div className="hc-logo-badge w-8 h-8 rounded-lg flex items-center justify-center">
-            <svg width={15} height={15} viewBox="0 0 24 24" fill="white"><path d="M13 2L3 14h8l-2 8 12-12h-8z"/></svg>
-          </div>
-          <span className="hc-logo-text font-bold tracking-wide text-sm">HOTCLICK</span>
+          <BrandLogo size={28} wordmarkSize={15} />
         </Link>
         <button onClick={() => navigate('/')} className="hc-btn hc-btn-ghost hc-btn-sm">
           Hacer esto después →

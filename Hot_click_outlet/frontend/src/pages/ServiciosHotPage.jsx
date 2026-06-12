@@ -17,8 +17,8 @@ const SITE_URL = 'https://hotclick.lat'
 const serviciosJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'ItemList',
-  name: 'Servicios HOTCLICK',
-  description: 'Servicios disponibles para clientes de HOTCLICK Marketplace Costa Rica.',
+  name: 'Servicios HotClick',
+  description: 'Servicios disponibles para clientes de HotClick Marketplace Costa Rica.',
   url: `${SITE_URL}/servicios`,
   numberOfItems: 2,
   itemListElement: [
@@ -29,7 +29,7 @@ const serviciosJsonLd = {
         '@type': 'Service',
         name: 'Búsqueda de producto',
         description: 'Te ayudamos a encontrar cualquier producto que no esté en nuestro catálogo. Enviá tu solicitud y nuestro equipo lo busca por vos en Costa Rica.',
-        provider: { '@type': 'Organization', name: 'HOTCLICK', url: SITE_URL },
+        provider: { '@type': 'Organization', name: 'HotClick', url: SITE_URL },
         areaServed: { '@type': 'Country', name: 'Costa Rica' },
         availableChannel: {
           '@type': 'ServiceChannel',
@@ -45,8 +45,8 @@ const serviciosJsonLd = {
       item: {
         '@type': 'Service',
         name: 'Garantía de producto',
-        description: 'Todos los productos de HOTCLICK incluyen garantía. Reportá un problema con tu compra desde esta sección y te gestionamos la solución.',
-        provider: { '@type': 'Organization', name: 'HOTCLICK', url: SITE_URL },
+        description: 'Todos los productos de HotClick incluyen garantía. Reportá un problema con tu compra desde esta sección y te gestionamos la solución.',
+        provider: { '@type': 'Organization', name: 'HotClick', url: SITE_URL },
         areaServed: { '@type': 'Country', name: 'Costa Rica' },
         availableChannel: {
           '@type': 'ServiceChannel',
@@ -64,7 +64,7 @@ const ESTADO_STYLES = {
   EN_BUSQUEDA:   { color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
   ENCONTRADO:    { color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
   NO_ENCONTRADO: { color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
-  CANCELADO:     { color: '#6b7280', bg: 'rgba(107,114,128,0.12)' },
+  CANCELADO:     { color: 'var(--hc-muted)', bg: 'rgba(107,114,128,0.12)' },
 }
 
 function EstadoBadge({ estado }) {
@@ -83,7 +83,7 @@ function Field({ label, required, hint, children }) {
     <div className="space-y-2">
       <div className="flex items-baseline justify-between">
         <label className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
-          {label}{required && <span className="ml-1" style={{ color: '#7c3aed' }}>*</span>}
+          {label}{required && <span className="ml-1" style={{ color: 'var(--hc-accent)' }}>*</span>}
         </label>
         {hint && <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>{hint}</span>}
       </div>
@@ -112,7 +112,7 @@ function GarantiaCard({ g, onReportado }) {
   let barColor = '#10b981'
   if (pct < 30) barColor = '#f59e0b'
   if (pct < 10) barColor = '#ef4444'
-  if (!activa) barColor = '#6b7280'
+  if (!activa) barColor = 'var(--hc-muted)'
 
   const fechaVenc = new Date(g.fechaVencimiento).toLocaleDateString('es-CR', {
     day: '2-digit', month: 'short', year: 'numeric',
@@ -157,13 +157,13 @@ function GarantiaCard({ g, onReportado }) {
           borderBottom: `1px solid ${activa ? 'rgba(16,185,129,0.15)' : 'var(--hc-border)'}`,
         }}>
         <span className="text-xs font-bold flex items-center gap-1.5"
-          style={{ color: activa ? '#10b981' : '#6b7280' }}>
+          style={{ color: activa ? '#10b981' : 'var(--hc-muted)' }}>
           🛡️ {activa ? 'Garantía activa' : 'Garantía vencida'}
         </span>
         <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
           style={{
             backgroundColor: activa ? 'rgba(16,185,129,0.15)' : 'rgba(107,114,128,0.15)',
-            color: activa ? '#10b981' : '#9ca3af',
+            color: activa ? '#10b981' : 'var(--hc-muted)',
           }}>
           No disponible
         </span>
@@ -263,7 +263,7 @@ function GarantiaCard({ g, onReportado }) {
         <div className="px-4 pb-4">
           <div className="py-3 px-4 rounded-xl text-sm font-semibold flex items-center gap-2"
             style={{ backgroundColor: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.25)' }}>
-            ✅ Solicitud enviada — HOTCLICK te contactará pronto.
+            ✅ Solicitud enviada — HotClick te contactará pronto.
           </div>
         </div>
       )}
@@ -395,7 +395,7 @@ function TestimonioCard({ p, onEnviado }) {
               {/* Selector de estrellas */}
               <div className="pt-3">
                 <p className="text-xs font-semibold mb-2" style={{ color: 'var(--hc-muted)' }}>
-                  Calificación <span style={{ color: '#7c3aed' }}>*</span>
+                  Calificación <span style={{ color: 'var(--hc-accent)' }}>*</span>
                 </p>
                 <div className="flex items-center gap-3">
                   <StarPicker value={calificacion} onChange={setCalificacion} />
@@ -562,19 +562,19 @@ export default function ServiciosHotPage() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--hc-bg)' }}>
       <Helmet>
-        <title>Servicios HOTCLICK — Búsqueda de productos y garantías en Costa Rica</title>
-        <meta name="description" content="Solicitá búsqueda de cualquier producto o gestioná la garantía de tu compra. Servicios gratuitos para clientes de HOTCLICK en Costa Rica." />
+        <title>Servicios HotClick — Búsqueda de productos y garantías en Costa Rica</title>
+        <meta name="description" content="Solicitá búsqueda de cualquier producto o gestioná la garantía de tu compra. Servicios gratuitos para clientes de HotClick en Costa Rica." />
         <link rel="canonical" href={`${SITE_URL}/servicios`} />
         <link rel="alternate" hreflang="es-CR" href={`${SITE_URL}/servicios`} />
         <link rel="alternate" hreflang="es"    href={`${SITE_URL}/servicios`} />
         <link rel="alternate" hreflang="x-default" href={`${SITE_URL}/`} />
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="Servicios HOTCLICK — Búsqueda y garantías en Costa Rica" />
-        <meta property="og:description" content="Te buscamos el producto que necesitás y gestionamos garantías. Gratis para todos los clientes de HOTCLICK." />
+        <meta property="og:title" content="Servicios HotClick — Búsqueda y garantías en Costa Rica" />
+        <meta property="og:description" content="Te buscamos el producto que necesitás y gestionamos garantías. Gratis para todos los clientes de HotClick." />
         <meta property="og:url" content={`${SITE_URL}/servicios`} />
         <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
         <meta property="og:locale" content="es_CR" />
-        <meta property="og:site_name" content="HOTCLICK" />
+        <meta property="og:site_name" content="HotClick" />
         <script type="application/ld+json">{JSON.stringify(serviciosJsonLd)}</script>
       </Helmet>
       <Navbar />
@@ -582,16 +582,16 @@ export default function ServiciosHotPage() {
       {/* ── HERO ─────────────────────────────────────── */}
       <section className="pt-20 sm:pt-28 pb-10 px-4 text-center relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(124,58,237,0.1) 0%, transparent 70%)' }} />
+          style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(23,71,168,0.1) 0%, transparent 70%)' }} />
         <motion.div className="relative max-w-xl mx-auto"
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
           <span className="inline-block px-4 py-1.5 rounded-full text-xs font-bold mb-5 tracking-wide uppercase"
-            style={{ backgroundColor: 'rgba(124,58,237,0.15)', color: '#7c3aed', border: '1px solid rgba(124,58,237,0.3)' }}>
+            style={{ backgroundColor: 'rgba(23,71,168,0.15)', color: 'var(--hc-accent)', border: '1px solid rgba(23,71,168,0.3)' }}>
             ✦ Servicios HOT
           </span>
           <h1 className="text-3xl sm:text-5xl font-black mb-3 leading-tight" style={{ color: 'var(--hc-text)' }}>
             ¿En qué te podemos{' '}
-            <span style={{ color: '#7c3aed' }}>ayudar?</span>
+            <span style={{ color: 'var(--hc-accent)' }}>ayudar?</span>
           </h1>
           <p className="text-base leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
             Tocá el servicio que necesitás.
@@ -616,7 +616,7 @@ export default function ServiciosHotPage() {
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                 onClick={() => irA('busqueda')}
                 className="text-left rounded-3xl overflow-hidden relative group cursor-pointer"
-                style={{ border: '1px solid rgba(124,58,237,0.2)', backgroundColor: 'var(--hc-surface)' }}>
+                style={{ border: '1px solid rgba(23,71,168,0.2)', backgroundColor: 'var(--hc-surface)' }}>
 
                 {/* Imagen de fondo */}
                 <div className="relative h-44 overflow-hidden">
@@ -626,7 +626,7 @@ export default function ServiciosHotPage() {
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className="absolute inset-0"
-                    style={{ background: 'linear-gradient(to top, rgba(124,58,237,0.85) 0%, rgba(124,58,237,0.2) 50%, transparent 100%)' }} />
+                    style={{ background: 'linear-gradient(to top, rgba(23,71,168,0.85) 0%, rgba(23,71,168,0.2) 50%, transparent 100%)' }} />
                   {/* Ícono flotante */}
                   <div className="absolute top-4 left-4 w-11 h-11 rounded-2xl flex items-center justify-center text-2xl shadow-lg"
                     style={{ backgroundColor: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
@@ -634,7 +634,7 @@ export default function ServiciosHotPage() {
                   </div>
                   {/* Badge */}
                   <span className="absolute top-4 right-4 px-2.5 py-1 rounded-full text-xs font-bold"
-                    style={{ backgroundColor: 'rgba(124,58,237,0.9)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }}>
+                    style={{ backgroundColor: 'rgba(23,71,168,0.9)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }}>
                     Gratis
                   </span>
                   {/* Flecha */}
@@ -699,7 +699,7 @@ export default function ServiciosHotPage() {
                     Garantía de productos
                   </h3>
                   <p className="text-sm leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-                    Revisá la garantía activa de los productos que compraste en HOTCLICK.
+                    Revisá la garantía activa de los productos que compraste en HotClick.
                   </p>
                 </div>
               </motion.button>
@@ -759,7 +759,7 @@ export default function ServiciosHotPage() {
 
               {/* Header */}
               <div className="flex items-center gap-3 mb-6 p-4 rounded-2xl"
-                style={{ backgroundColor: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)' }}>
+                style={{ backgroundColor: 'rgba(23,71,168,0.08)', border: '1px solid rgba(23,71,168,0.2)' }}>
                 <span className="text-3xl">🔍</span>
                 <div>
                   <h2 className="font-black text-lg" style={{ color: 'var(--hc-text)' }}>Buscar producto por ti</h2>
@@ -774,7 +774,7 @@ export default function ServiciosHotPage() {
                     <button key={tb.key} onClick={() => setTabBusqueda(tb.key)}
                       className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all duration-200"
                       style={{
-                        backgroundColor: tabBusqueda === tb.key ? '#7c3aed' : 'transparent',
+                        backgroundColor: tabBusqueda === tb.key ? 'var(--hc-accent)' : 'transparent',
                         color: tabBusqueda === tb.key ? '#fff' : 'var(--hc-muted)',
                       }}>
                       {tb.label}
@@ -798,7 +798,7 @@ export default function ServiciosHotPage() {
                         </p>
                         <button onClick={() => { setSuccess(false); setTabBusqueda(token ? 'mis-solicitudes' : 'solicitar') }}
                           className="px-8 py-3 rounded-2xl text-sm font-bold"
-                          style={{ backgroundColor: '#7c3aed', color: '#fff' }}>
+                          style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
                           {token ? t('serviciosPage.viewMine') : t('serviciosPage.newRequestBtn')}
                         </button>
                       </div>
@@ -829,8 +829,8 @@ export default function ServiciosHotPage() {
                                 style={{ border: '2px dashed var(--hc-border)', color: 'var(--hc-muted)' }}>
                                 {uploading
                                   ? <div className="w-5 h-5 rounded-full border-2 animate-spin"
-                                      style={{ borderColor: 'var(--hc-border)', borderTopColor: '#7c3aed' }} />
-                                  : <><span className="text-3xl leading-none" style={{ color: '#7c3aed' }}>+</span><span>Foto</span></>
+                                      style={{ borderColor: 'var(--hc-border)', borderTopColor: 'var(--hc-accent)' }} />
+                                  : <><span className="text-3xl leading-none" style={{ color: 'var(--hc-accent)' }}>+</span><span>Foto</span></>
                                 }
                               </motion.button>
                             )}
@@ -862,7 +862,7 @@ export default function ServiciosHotPage() {
                         <motion.button type="submit" disabled={sending || uploading}
                           whileHover={{ scale: sending ? 1 : 1.02 }} whileTap={{ scale: 0.97 }}
                           className="w-full py-4 rounded-2xl font-black text-base disabled:opacity-50"
-                          style={{ backgroundColor: '#7c3aed', color: '#fff' }}>
+                          style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
                           {sending
                             ? <span className="flex items-center justify-center gap-2">
                                 <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
@@ -881,7 +881,7 @@ export default function ServiciosHotPage() {
                     {loadingMias ? (
                       <div className="text-center py-20" style={{ color: 'var(--hc-muted)' }}>
                         <div className="w-8 h-8 rounded-full border-2 animate-spin mx-auto mb-4"
-                          style={{ borderColor: 'var(--hc-border)', borderTopColor: '#7c3aed' }} />
+                          style={{ borderColor: 'var(--hc-border)', borderTopColor: 'var(--hc-accent)' }} />
                         {t('serviciosPage.loading')}
                       </div>
                     ) : !misSolicitudes?.length ? (
@@ -892,7 +892,7 @@ export default function ServiciosHotPage() {
                         <p className="text-sm mb-6" style={{ color: 'var(--hc-muted)' }}>Creá una solicitud y te buscamos el producto.</p>
                         <button onClick={() => setTabBusqueda('solicitar')}
                           className="px-6 py-3 rounded-2xl text-sm font-bold"
-                          style={{ backgroundColor: '#7c3aed', color: '#fff' }}>
+                          style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
                           Nueva solicitud
                         </button>
                       </div>
@@ -910,13 +910,13 @@ export default function ServiciosHotPage() {
                           const hasNote = s.notasAdmin?.trim()
                           return (
                             <div key={s.id} className="rounded-2xl overflow-hidden"
-                              style={{ backgroundColor: 'var(--hc-surface)', border: `1px solid ${hasNote ? 'rgba(124,58,237,0.35)' : 'var(--hc-border)'}` }}>
+                              style={{ backgroundColor: 'var(--hc-surface)', border: `1px solid ${hasNote ? 'rgba(23,71,168,0.35)' : 'var(--hc-border)'}` }}>
                               {hasNote && (
                                 <div className="px-5 py-3 flex items-start gap-2"
-                                  style={{ backgroundColor: 'rgba(124,58,237,0.1)', borderBottom: '1px solid rgba(124,58,237,0.2)' }}>
+                                  style={{ backgroundColor: 'rgba(23,71,168,0.1)', borderBottom: '1px solid rgba(23,71,168,0.2)' }}>
                                   <span className="text-base shrink-0">💬</span>
                                   <div>
-                                    <p className="text-xs font-bold mb-0.5" style={{ color: '#7c3aed' }}>Respuesta de HOTCLICK</p>
+                                    <p className="text-xs font-bold mb-0.5" style={{ color: 'var(--hc-accent)' }}>Respuesta de HotClick</p>
                                     <p className="text-sm leading-relaxed" style={{ color: 'var(--hc-text)' }}>{s.notasAdmin}</p>
                                   </div>
                                 </div>
@@ -972,7 +972,7 @@ export default function ServiciosHotPage() {
                 <div>
                   <h2 className="font-black text-lg" style={{ color: 'var(--hc-text)' }}>Garantía de productos</h2>
                   <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-                    Estado de garantía de tus productos HOTCLICK.
+                    Estado de garantía de tus productos HotClick.
                   </p>
                 </div>
               </div>
@@ -1070,7 +1070,7 @@ export default function ServiciosHotPage() {
                 <div>
                   <p className="text-sm font-bold" style={{ color: '#f59e0b' }}>Beneficio por reseñar</p>
                   <p className="text-xs leading-relaxed mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-                    Al dejar tu reseña, HOTCLICK te contactará con un beneficio especial para tu próxima compra.
+                    Al dejar tu reseña, HotClick te contactará con un beneficio especial para tu próxima compra.
                   </p>
                 </div>
               </div>

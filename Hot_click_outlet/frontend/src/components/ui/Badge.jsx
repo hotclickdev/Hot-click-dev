@@ -4,7 +4,7 @@ const variants = {
   success: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20',
   warning: 'bg-amber-500/15 text-amber-400 border border-amber-500/20',
   danger: 'bg-red-500/15 text-red-400 border border-red-500/20',
-  purple: 'bg-purple-500/15 text-purple-400 border border-purple-500/20',
+  purple: 'bg-[var(--hc-blue-500)]/15 text-[var(--hc-blue-400)] border border-[var(--hc-blue-500)]/20',
 }
 
 export default function Badge({ variant = 'default', className = '', children }) {

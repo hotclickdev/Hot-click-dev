@@ -12,8 +12,8 @@ const TIPO_COLORS = {
   AJUSTE_SALIDA:      { bg: 'rgba(239,68,68,0.12)',   text: '#f87171' },
   RESERVA:            { bg: 'rgba(251,191,36,0.12)',  text: '#fbbf24' },
   LIBERACION_RESERVA: { bg: 'rgba(251,191,36,0.12)',  text: '#fbbf24' },
-  DEVOLUCION:         { bg: 'rgba(167,139,250,0.12)', text: '#a78bfa' },
-  TRANSFERENCIA:      { bg: 'rgba(96,165,250,0.12)',  text: '#60a5fa' },
+  DEVOLUCION:         { bg: 'rgba(151,183,243,0.12)', text: 'var(--hc-blue-300)' },
+  TRANSFERENCIA:      { bg: 'rgba(96,165,250,0.12)',  text: '#6490EA' },
 }
 
 function TipoBadge({ tipo }) {

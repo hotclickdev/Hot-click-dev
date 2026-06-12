@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom'
 
 /**
  * Barra de progreso delgada en el tope de la pantalla.
- * Se activa en cada cambio de ruta: progresa de 0 → 85 % durante la
+ * Se activa en cada cambio de ruta: progresa de 0 â†’ 85 % durante la
  * transición y salta a 100 % antes de desaparecer con fade-out.
  */
 export default function PageProgressBar() {
@@ -48,8 +48,8 @@ export default function PageProgressBar() {
         height:     3,
         width:      `${pct}%`,
         zIndex:     9999,
-        background: 'linear-gradient(90deg, var(--hc-accent, #ff4b12), color-mix(in srgb, var(--hc-accent, #ff4b12) 70%, #fff))',
-        boxShadow:  '0 0 10px var(--hc-accent, #ff4b12), 0 0 3px var(--hc-accent, #ff4b12)',
+        background: 'var(--hc-primary)',
+        boxShadow:  '0 0 10px color-mix(in srgb, var(--hc-primary) 45%, transparent)',
         transition: easing,
         opacity:    phase === 'out' ? 0 : 1,
         pointerEvents: 'none',

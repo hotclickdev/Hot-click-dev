@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import Button from '@/components/ui/Button'
@@ -425,7 +425,7 @@ export default function AdminPublicaciones() {
               onClick={() => setTab(key)}
               className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 ${
                 tab === key
-                  ? 'bg-[#4f7cff] text-white shadow-[0_0_12px_rgba(79,124,255,0.3)]'
+                  ? 'bg-[#4f7cff] text-white shadow-[0_0_12px_rgba(23,71,168,0.3)]'
                   : 'text-[#8e8e9a] hover:text-white'
               }`}
             >

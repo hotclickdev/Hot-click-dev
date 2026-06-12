@@ -5,10 +5,10 @@ import { useOffline } from '@/hooks/useOffline'
 
 const ESTADO_STYLE = {
   PENDIENTE:     { label: 'Pendiente',     color: '#fbbf24', bg: '#78350f22' },
-  SINCRONIZANDO: { label: 'Sincronizando', color: '#60a5fa', bg: '#1e3a5f22' },
+  SINCRONIZANDO: { label: 'Sincronizando', color: '#6490EA', bg: '#1e3a5f22' },
   OK:            { label: 'Sincronizado',  color: '#22c55e', bg: '#16a34a22' },
   ERROR:         { label: 'Error',         color: '#f87171', bg: '#7f1d1d22' },
-  CONFLICTO:     { label: 'Conflicto',     color: '#fb923c', bg: '#78350f22' },
+  CONFLICTO:     { label: 'Conflicto',     color: '#E5A93D', bg: '#78350f22' },
 }
 
 function EstadoBadge({ estado }) {

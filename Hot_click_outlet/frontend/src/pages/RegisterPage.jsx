@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import BrandLogo from '@/components/ui/BrandLogo'
 import { motion, AnimatePresence } from 'framer-motion'
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons'
 import { registrarConsentimiento } from '@/services/api'
@@ -49,7 +50,7 @@ function EmprendimientoCloud({ onRegistrar }) {
         </div>
         <h2 className="font-black leading-[1.02] tracking-tight mb-3"
           style={{ fontSize: 'clamp(1.5rem, 5vw, 2rem)', color: 'var(--hc-text)' }}>
-          Emprendé en<br /><span style={{ color: EMPR.color }}>HOTCLICK</span>
+          Emprendé en<br /><span style={{ color: EMPR.color }}>HotClick</span>
         </h2>
         <p className="text-sm mb-5 leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
           Únite a la comunidad de emprendedores activos en Costa Rica. Miles de compradores ya esperan tu tienda.
@@ -171,8 +172,8 @@ function EmprendimientoForm({ onVolver }) {
       {/* Badge */}
       <div className="flex items-center gap-3 mb-5">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold"
-          style={{ background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.22)', color: '#f97316', letterSpacing: '0.06em' }}>
-          <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+          style={{ background: 'rgba(231,59,51,0.08)', border: '1px solid rgba(231,59,51,0.22)', color: 'var(--hc-primary)', letterSpacing: '0.06em' }}>
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--hc-primary)] animate-pulse" />
           Registro de emprendimiento
         </div>
       </div>
@@ -182,9 +183,9 @@ function EmprendimientoForm({ onVolver }) {
         <h1 className="font-black leading-[1.0] tracking-tight"
           style={{ fontSize: 'clamp(2rem, 6vw, 2.8rem)', color: 'var(--hc-text)' }}>Registrá tu</h1>
         <h1 className="font-black leading-[1.0] tracking-tight"
-          style={{ fontSize: 'clamp(2rem, 6vw, 2.8rem)', color: '#f97316' }}>negocio</h1>
+          style={{ fontSize: 'clamp(2rem, 6vw, 2.8rem)', color: 'var(--hc-primary)' }}>negocio</h1>
         <div className="flex items-center gap-2 mt-3">
-          <div className="w-5 h-[2px] rounded-full bg-orange-500" />
+          <div className="w-5 h-[2px] rounded-full bg-[var(--hc-primary)]" />
           <p className="text-sm font-medium" style={{ color: 'var(--hc-muted)' }}>Completá los datos y empezá a vender hoy.</p>
         </div>
       </div>
@@ -192,7 +193,7 @@ function EmprendimientoForm({ onVolver }) {
       {/* Card */}
       <div className="rounded-2xl overflow-hidden"
         style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)', boxShadow: '0 4px 32px var(--hc-shadow)' }}>
-        <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, transparent, #f97316, #ea580c, transparent)' }} />
+        <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, transparent, var(--hc-primary), transparent)' }} />
         <div className="p-6 sm:p-8">
 
           {/* Progreso */}
@@ -201,12 +202,12 @@ function EmprendimientoForm({ onVolver }) {
               <div key={i} className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300"
                   style={i < step ? { background: 'var(--hc-success, #22c55e)', color: '#fff' }
-                    : i === step ? { background: '#f97316', color: '#fff', boxShadow: '0 0 12px rgba(249,115,22,0.4)' }
+                    : i === step ? { background: 'var(--hc-primary)', color: '#fff', boxShadow: '0 0 12px rgba(231,59,51,0.4)' }
                     : { background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
                   {i < step ? <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><polyline points="20 6 9 17 4 12"/></svg> : i + 1}
                 </div>
                 <span className="text-xs font-medium" style={{ color: i === step ? 'var(--hc-text)' : 'var(--hc-muted)' }}>{label}</span>
-                {i < 2 && <div className="h-px w-6 mx-1 rounded transition-all duration-500" style={{ background: step > i ? '#f97316' : 'var(--hc-border)' }} />}
+                {i < 2 && <div className="h-px w-6 mx-1 rounded transition-all duration-500" style={{ background: step > i ? 'var(--hc-primary)' : 'var(--hc-border)' }} />}
               </div>
             ))}
           </div>
@@ -224,7 +225,7 @@ function EmprendimientoForm({ onVolver }) {
                   value={form.telefonoEmpresa} onChange={set('telefonoEmpresa')} maxLength={20} />
                 {error && <ErrMsg>{error}</ErrMsg>}
                 <button type="submit" className="hc-btn hc-btn-primary hc-btn-lg w-full"
-                  style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', borderColor: '#f97316', boxShadow: '0 4px 20px rgba(249,115,22,0.3)' }}>
+                  style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px rgba(231,59,51,0.3)' }}>
                   Continuar →
                 </button>
               </motion.form>
@@ -266,7 +267,7 @@ function EmprendimientoForm({ onVolver }) {
                   <button type="button" onClick={() => { setStep(0); setError('') }} className="hc-btn hc-btn-outline px-4">← Atrás</button>
                   <button type="submit" disabled={loading || !aceptaTerminos}
                     className="hc-btn hc-btn-primary hc-btn-lg flex-1 disabled:opacity-60"
-                    style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', borderColor: '#f97316', boxShadow: '0 4px 20px rgba(249,115,22,0.3)' }}>
+                    style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px rgba(231,59,51,0.3)' }}>
                     {loading ? <span className="flex items-center gap-2"><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Creando…</span> : 'Crear mi negocio →'}
                   </button>
                 </div>
@@ -319,7 +320,7 @@ function EmprendimientoForm({ onVolver }) {
                 {!otpFalló && (
                   <button type="submit" disabled={loading || codigoVerif.length !== 6}
                     className="hc-btn hc-btn-primary hc-btn-lg w-full disabled:opacity-50"
-                    style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', borderColor: '#f97316', boxShadow: '0 4px 20px rgba(249,115,22,0.3)' }}>
+                    style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px rgba(231,59,51,0.3)' }}>
                     {loading ? 'Verificando…' : 'Verificar y entrar al panel →'}
                   </button>
                 )}
@@ -414,7 +415,7 @@ export default function RegisterPage() {
       const authData = res.data?.data
       if (authData?.accessToken) {
         loginStore(authData)
-        toast({ message: '¡Bienvenido a HOTCLICK! Tu cuenta fue verificada.', type: 'success' })
+        toast({ message: '¡Bienvenido a HotClick! Tu cuenta fue verificada.', type: 'success' })
         try {
           const { data: r } = await abandonedCartService.getAbandonedCartBySession()
           if (r?.data?.items?.length > 0) { setRecoveryCart(r.data); setShowCartRecovery(true); return }
@@ -566,10 +567,7 @@ export default function RegisterPage() {
       <header className="relative z-10 flex items-center justify-between px-5 sm:px-8 py-4 border-b"
         style={{ borderColor: 'var(--hc-border)', background: 'var(--hc-glass-bg)', backdropFilter: 'blur(16px)' }}>
         <Link to="/" className="flex items-center gap-2.5">
-          <div className="hc-logo-badge w-8 h-8 rounded-lg flex items-center justify-center">
-            <svg width={15} height={15} viewBox="0 0 24 24" fill="white"><path d="M13 2L3 14h8l-2 8 12-12h-8z"/></svg>
-          </div>
-          <span className="hc-logo-text font-bold tracking-wide text-sm">HOTCLICK</span>
+          <BrandLogo size={28} wordmarkSize={15} />
         </Link>
         <div className="flex items-center gap-3">
           <span className="text-sm hidden sm:block" style={{ color: 'var(--hc-muted)' }}>¿Ya tenés cuenta?</span>
@@ -607,9 +605,9 @@ export default function RegisterPage() {
                     </h1>
                     <h1 className="font-black leading-[1.0] tracking-tight"
                       style={{ fontSize: 'clamp(2.2rem, 5vw, 3rem)',
-                        background: `linear-gradient(120deg, ${BUYER.color} 0%, color-mix(in srgb, ${BUYER.color} 65%, #a78bfa) 100%)`,
+                        background: `linear-gradient(120deg, ${BUYER.color} 0%, color-mix(in srgb, ${BUYER.color} 65%, var(--hc-blue-300)) 100%)`,
                         WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-                      en HOTCLICK
+                      en HotClick
                     </h1>
                     <div className="flex items-center gap-2 mt-2">
                       <div className="w-5 h-[2px] rounded-full" style={{ background: BUYER.color }} />

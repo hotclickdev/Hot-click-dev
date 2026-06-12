@@ -6,6 +6,7 @@ import useAuthStore from '@/store/authStore'
 import useCartStore from '@/store/cartStore'
 import useWishlistStore from '@/store/wishlistStore'
 import useUiStore from '@/store/uiStore'
+import { HotClickMark } from '@/components/ui/BrandLogo'
 
 export default function Navbar() {
   const { t } = useTranslation()
@@ -90,16 +91,11 @@ export default function Navbar() {
         style={scrolled ? { borderBottomColor: 'var(--hc-border)', backgroundColor: 'var(--hc-surface)' } : {}}
       >
         <nav className={`max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-4 hc-nav-inner ${scrolled ? 'h-12' : 'h-14'}`}>
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 shrink-0 group">
-            <div className="flex items-center justify-center w-8 h-8 rounded-xl shrink-0 hc-logo-badge transition-transform duration-200 group-hover:scale-105">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-                <path d="M13 2L3 14h8l-2 8 12-12h-8z"/>
-              </svg>
-            </div>
-            <span className="text-[18px] leading-none uppercase hc-logo-text transition-opacity duration-200 group-hover:opacity-80"
-              style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 900 }}>
-              HOTCLICK
+          {/* Logo — horizontal en desktop, símbolo solo en móvil (Brand Book §2.4) */}
+          <Link to="/" className="flex items-center gap-2 shrink-0 group" aria-label="HotClick — inicio">
+            <HotClickMark size={30} className="shrink-0 transition-transform duration-200 group-hover:scale-105" />
+            <span className="hc-wordmark hidden sm:inline text-[18px] leading-none transition-opacity duration-200 group-hover:opacity-80">
+              <span className="hot">Hot</span><span className="click">Click</span>
             </span>
           </Link>
 
@@ -374,9 +370,7 @@ export default function Navbar() {
                   >
                     <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                       style={{ backgroundColor: 'color-mix(in srgb, var(--hc-accent) 20%, transparent)' }}>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
+                      <HotClickMark size={18} />
                     </span>
                     <span className="text-sm font-semibold">✦ Servicios HOT</span>
                   </Link>

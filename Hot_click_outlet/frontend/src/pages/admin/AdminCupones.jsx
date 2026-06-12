@@ -7,7 +7,7 @@ const FILTERS = [
   { label: 'Usados',       value: true },
 ]
 
-function StatCard({ label, value, color = '#4f7cff' }) {
+function StatCard({ label, value, color = 'var(--hc-accent)' }) {
   return (
     <div className="rounded-2xl p-5 flex flex-col gap-1"
       style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
@@ -129,7 +129,7 @@ export default function AdminCupones() {
           <StatCard
             label="% Redención"
             value={stats.total > 0 ? `${Math.round(stats.usados / stats.total * 100)}%` : '0%'}
-            color="#a78bfa"
+            color="var(--hc-blue-300)"
           />
         </div>
       )}
@@ -144,7 +144,7 @@ export default function AdminCupones() {
               <div key={t.porcentaje} className="flex items-center justify-between py-3">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black"
-                    style={{ background: 'rgba(79,124,255,0.12)', color: '#4f7cff' }}>
+                    style={{ background: 'rgba(23,71,168,0.12)', color: 'var(--hc-accent)' }}>
                     {t.porcentaje}%
                   </div>
                   <div>
@@ -178,7 +178,7 @@ export default function AdminCupones() {
                 onClick={() => applyFilter(f.value)}
                 className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
                 style={filter === f.value
-                  ? { background: '#4f7cff', color: '#fff' }
+                  ? { background: 'var(--hc-accent)', color: '#fff' }
                   : { background: 'var(--hc-bg)', color: 'var(--hc-muted)', border: '1px solid var(--hc-border)' }}
               >
                 {f.label}
@@ -226,13 +226,13 @@ export default function AdminCupones() {
                     className="hover:bg-white/[0.02] transition-colors">
                     <td className="px-4 py-3">
                       <span className="font-mono font-bold text-xs px-2 py-1 rounded-lg"
-                        style={{ background: 'rgba(79,124,255,0.1)', color: '#4f7cff' }}>
+                        style={{ background: 'rgba(23,71,168,0.1)', color: 'var(--hc-accent)' }}>
                         {c.codigo}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs" style={{ color: 'var(--hc-text)' }}>{c.email}</td>
                     <td className="px-4 py-3">
-                      <span className="font-bold text-xs" style={{ color: '#a78bfa' }}>
+                      <span className="font-bold text-xs" style={{ color: 'var(--hc-blue-300)' }}>
                         {c.descuentoPorcentaje}%
                       </span>
                     </td>

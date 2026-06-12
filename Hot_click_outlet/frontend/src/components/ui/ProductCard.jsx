@@ -8,7 +8,9 @@ import { useToast } from '@/components/ui/Toast'
 import { formatPrice, conditionLabel, conditionVariant } from '@/utils/format'
 import OptimizedImage from '@/components/ui/OptimizedImage'
 
-function ProductCard({ product, priority = false, index = 0 }) {
+// hotTag: etiqueta promocional roja («HOT», «-33%») — único rojo permitido dentro
+// de la tarjeta (Brand Book cap. 3.5). La usa la vista de Ofertas.
+function ProductCard({ product, priority = false, index = 0, hotTag = null }) {
   const navigate = useNavigate()
   const { toggle: toggleWishlist, isLiked } = useWishlistStore()
   const addItem = useCartStore((s) => s.addItem)
@@ -37,8 +39,8 @@ function ProductCard({ product, priority = false, index = 0 }) {
       className="group hc-card hc-card-glow rounded-2xl overflow-hidden cursor-pointer"
       onClick={() => navigate(`/productos/${product.id}`, { state: { product } })}
     >
-      {/* ── Image ── */}
-      <div className="hc-product-img relative h-36 sm:h-48 flex items-center justify-center overflow-hidden">
+      {/* ── Image — ratio 1:1 en catálogo (Brand Book §5.2) ── */}
+      <div className="hc-product-img relative aspect-square flex items-center justify-center overflow-hidden">
         {product.imagenUrl && !imgError ? (
           <OptimizedImage
             src={product.imagenUrl}
@@ -78,24 +80,31 @@ function ProductCard({ product, priority = false, index = 0 }) {
           </div>
         )}
 
-        {/* Condition badge */}
-        {product.condicion && (
-          <div className="absolute top-2.5 left-2.5">
-            {product.condicion === 'NUEVO' ? (
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400">
-                {conditionLabel(product.condicion)}
-              </span>
-            ) : product.condicion === 'COMO_NUEVO' ? (
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#4f7cff]/15 border border-[#4f7cff]/30 text-[#4f7cff]">
-                {conditionLabel(product.condicion)}
-              </span>
-            ) : (
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400">
-                {conditionLabel(product.condicion)}
-              </span>
-            )}
-          </div>
-        )}
+        {/* Tag promocional roja + badge de condición (semánticos del manual) */}
+        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+          {hotTag && (
+            <span
+              className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-md"
+              style={{ background: 'var(--hc-red-500)', color: '#FFFFFF', fontFamily: 'var(--font-display)' }}
+            >
+              {hotTag}
+            </span>
+          )}
+          {product.condicion && (
+            <span
+              className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
+              style={
+                product.condicion === 'NUEVO'
+                  ? { background: 'var(--hc-success-bg)', color: 'var(--hc-success)', border: '1px solid color-mix(in srgb, var(--hc-success) 30%, transparent)' }
+                  : product.condicion === 'COMO_NUEVO'
+                  ? { background: 'var(--hc-info-bg)', color: 'var(--hc-info)', border: '1px solid color-mix(in srgb, var(--hc-info) 30%, transparent)' }
+                  : { background: 'var(--hc-warning-bg)', color: 'var(--hc-warning)', border: '1px solid color-mix(in srgb, var(--hc-warning) 30%, transparent)' }
+              }
+            >
+              {conditionLabel(product.condicion)}
+            </span>
+          )}
+        </div>
 
         {/* Wishlist heart */}
         <button
@@ -134,19 +143,22 @@ function ProductCard({ product, priority = false, index = 0 }) {
         </h3>
 
         <div className="flex items-end justify-between gap-2">
+          {/* Precio en Sora 700 (Brand Book cap. 4.3) */}
           <span
-            className="text-lg sm:text-xl font-black tracking-tight leading-none"
-            style={{ color: 'var(--hc-text)' }}
+            className="text-lg sm:text-xl leading-none"
+            style={{ color: 'var(--hc-text)', fontFamily: 'var(--font-display)', fontWeight: 700, letterSpacing: '-0.02em' }}
           >
             {formatPrice(product.precio)}
           </span>
           <div className="flex items-center gap-1.5 shrink-0 pb-0.5">
-            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-              product.stock === 0 ? 'bg-red-400' : product.stock <= 3 ? 'bg-amber-400' : 'bg-emerald-400'
-            }`} />
-            <span className={`text-[10px] font-semibold ${
-              product.stock === 0 ? 'text-red-400' : product.stock <= 3 ? 'text-amber-400' : 'text-emerald-400'
-            }`}>
+            <span
+              className="w-1.5 h-1.5 rounded-full shrink-0"
+              style={{ background: product.stock === 0 ? 'var(--hc-danger)' : product.stock <= 3 ? 'var(--hc-warning)' : 'var(--hc-success)' }}
+            />
+            <span
+              className="text-[10px] font-semibold"
+              style={{ color: product.stock === 0 ? 'var(--hc-danger)' : product.stock <= 3 ? 'var(--hc-warning)' : 'var(--hc-success)' }}
+            >
               {product.stock === 0
                 ? t('products.outOfStock')
                 : product.stock <= 3
@@ -155,6 +167,11 @@ function ProductCard({ product, priority = false, index = 0 }) {
             </span>
           </div>
         </div>
+
+        {/* Beneficio de envío (§5.3: la tarjeta siempre muestra el beneficio) */}
+        <p className="text-[11px] leading-none -mt-0.5" style={{ color: 'var(--hc-muted)' }}>
+          {t('products.shippingBenefit', 'Envío a todo Costa Rica · 1–5 días')}
+        </p>
 
         {/* Botón agregar al carrito */}
         <motion.button

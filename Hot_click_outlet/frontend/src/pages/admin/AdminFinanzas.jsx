@@ -246,11 +246,11 @@ function SaleDetailModal({ pedidoId, onClose }) {
               {data.numeroGuia && (
                 <div className="rounded-xl p-3"
                   style={{ backgroundColor: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.2)' }}>
-                  <p className="text-xs font-semibold text-[#60a5fa] mb-0.5">Guía de envío</p>
+                  <p className="text-xs font-semibold text-[#6490EA] mb-0.5">Guía de envío</p>
                   <p className="text-sm text-[#e8e8ed]">{data.numeroGuia}</p>
                   {data.urlTracking && (
                     <a href={data.urlTracking} target="_blank" rel="noopener noreferrer"
-                      className="text-xs text-[#60a5fa] underline mt-1 block">
+                      className="text-xs text-[#6490EA] underline mt-1 block">
                       Rastrear →
                     </a>
                   )}
@@ -274,7 +274,7 @@ function SaleDetailModal({ pedidoId, onClose }) {
           <div className="flex gap-2">
             <Link to={`/admin/pedidos`}
               className="flex-1 py-2 rounded-xl text-xs font-semibold text-center transition-opacity hover:opacity-80"
-              style={{ backgroundColor: 'rgba(79,124,255,0.12)', color: '#4f7cff', border: '1px solid rgba(79,124,255,0.25)' }}>
+              style={{ backgroundColor: 'rgba(23,71,168,0.12)', color: 'var(--hc-accent)', border: '1px solid rgba(23,71,168,0.25)' }}>
               Ver en pedidos
             </Link>
             <button onClick={onClose}
@@ -523,8 +523,8 @@ export default function AdminFinanzas() {
                               <td className="px-4 py-3">
                                 <span className="px-1.5 py-0.5 rounded text-[10px] font-medium"
                                   style={{
-                                    backgroundColor: { ONLINE:'rgba(79,124,255,0.12)', POS:'rgba(52,211,153,0.12)', MANUAL:'rgba(251,191,36,0.12)' }[p.origen ?? 'ONLINE'] ?? 'rgba(255,255,255,0.06)',
-                                    color: { ONLINE:'#4f7cff', POS:'#34d399', MANUAL:'#fbbf24' }[p.origen ?? 'ONLINE'] ?? '#8e8e9a',
+                                    backgroundColor: { ONLINE:'rgba(23,71,168,0.12)', POS:'rgba(52,211,153,0.12)', MANUAL:'rgba(251,191,36,0.12)' }[p.origen ?? 'ONLINE'] ?? 'rgba(255,255,255,0.06)',
+                                    color: { ONLINE:'var(--hc-accent)', POS:'#34d399', MANUAL:'#fbbf24' }[p.origen ?? 'ONLINE'] ?? '#A7B0BC',
                                   }}>{p.origen ?? 'ONLINE'}</span>
                               </td>
                               <td className="px-4 py-3 text-xs text-[#8e8e9a]">{p.metodoPago ?? '—'}</td>
@@ -649,10 +649,10 @@ export default function AdminFinanzas() {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <KPI label="Ingresos brutos"  value={totalIngresos} color="#4ade80"/>
                 <KPI label="Egresos totales"  value={totalEgresos}  color="#f87171" negative/>
-                <KPI label="Utilidad neta"    value={utilidadNeta}  color={utilidadNeta >= 0 ? '#4f7cff' : '#f87171'}/>
+                <KPI label="Utilidad neta"    value={utilidadNeta}  color={utilidadNeta >= 0 ? 'var(--hc-accent)' : '#f87171'}/>
                 <div className="bg-[#111114] border border-white/8 rounded-2xl p-5">
                   <p className="text-xs text-[#8e8e9a] mb-1">Margen neto</p>
-                  <p className="text-2xl font-bold" style={{ color: utilidadNeta >= 0 ? '#4f7cff' : '#f87171' }}>
+                  <p className="text-2xl font-bold" style={{ color: utilidadNeta >= 0 ? 'var(--hc-accent)' : '#f87171' }}>
                     {totalIngresos > 0 ? `${((utilidadNeta / totalIngresos) * 100).toFixed(1)}%` : '—'}
                   </p>
                   <p className="text-xs text-[#8e8e9a] mt-1">sobre ingresos brutos</p>
@@ -679,7 +679,7 @@ export default function AdminFinanzas() {
                   </div>
                   <div className="pt-2 border-t border-white/8 flex justify-between text-sm">
                     <span style={{ color: 'var(--hc-muted)' }}>Utilidad neta</span>
-                    <span className="font-bold" style={{ color: utilidadNeta >= 0 ? '#4f7cff' : '#f87171' }}>
+                    <span className="font-bold" style={{ color: utilidadNeta >= 0 ? 'var(--hc-accent)' : '#f87171' }}>
                       {utilidadNeta >= 0 ? '+' : ''}₡{fmt(utilidadNeta)}
                     </span>
                   </div>
@@ -694,13 +694,13 @@ export default function AdminFinanzas() {
                   {Object.entries(porOrigen).filter(([,v]) => v > 0).map(([origen, valor]) => (
                     <div key={origen}>
                       <div className="flex justify-between text-xs mb-1">
-                        <span style={{ color: { ONLINE:'#4f7cff', POS:'#34d399', MANUAL:'#fbbf24' }[origen] ?? '#8e8e9a' }}>
+                        <span style={{ color: { ONLINE:'var(--hc-accent)', POS:'#34d399', MANUAL:'#fbbf24' }[origen] ?? '#A7B0BC' }}>
                           {origen}
                         </span>
                         <span className="text-[#8e8e9a]">₡{fmt(valor)} ({totalIngresos > 0 ? ((valor/totalIngresos)*100).toFixed(0) : 0}%)</span>
                       </div>
                       <ProgressBar value={valor} total={totalIngresos}
-                        color={{ ONLINE:'#4f7cff', POS:'#34d399', MANUAL:'#fbbf24' }[origen] ?? '#8e8e9a'}/>
+                        color={{ ONLINE:'var(--hc-accent)', POS:'#34d399', MANUAL:'#fbbf24' }[origen] ?? '#A7B0BC'}/>
                     </div>
                   ))}
                   {Object.values(porOrigen).every(v => v === 0) && (

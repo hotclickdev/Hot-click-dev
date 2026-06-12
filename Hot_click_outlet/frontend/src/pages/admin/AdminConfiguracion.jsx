@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '@/components/ui/Toast'
@@ -25,14 +25,14 @@ function usePremiumFonts() {
     const el = document.createElement('link')
     el.id = 'hc-cfg-fonts'
     el.rel = 'stylesheet'
-    el.href = 'https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap'
+    el.href = 'https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap'
     document.head.appendChild(el)
   }, [])
 }
 
 const F = {
-  display: '"Syne","DM Sans",system-ui,sans-serif',
-  body: '"Plus Jakarta Sans","DM Sans",system-ui,sans-serif',
+  display: 'var(--hc-font-display)',
+  body: 'var(--hc-font-text)',
   mono: '"JetBrains Mono","Fira Mono",monospace',
 }
 
@@ -77,7 +77,7 @@ export default function AdminConfiguracion() {
         .cfg-card:hover { border-color: var(--hc-border-strong); box-shadow: 0 2px 14px var(--hc-shadow); }
         .cfg-input {
           width:100%; padding:10px 14px; border-radius:10px;
-          font-size:13.5px; font-family:"Plus Jakarta Sans","DM Sans",system-ui,sans-serif;
+          font-size:13.5px; font-family:var(--hc-font-text);
           background:var(--hc-bg); border:1px solid var(--hc-border);
           color:var(--hc-text); outline:none; transition:all .15s ease; box-sizing:border-box;
         }
@@ -92,7 +92,7 @@ export default function AdminConfiguracion() {
           display:inline-flex; align-items:center; gap:6px;
           padding:9px 16px; border-radius:10px; font-size:13px;
           font-weight:600; cursor:pointer; border:none; outline:none;
-          font-family:"Plus Jakarta Sans","DM Sans",system-ui,sans-serif;
+          font-family:var(--hc-font-text);
           transition:all .15s ease;
         }
         .cfg-btn-primary { background:var(--hc-accent); color:#fff; box-shadow:0 1px 12px var(--hc-shadow); }
@@ -108,7 +108,7 @@ export default function AdminConfiguracion() {
           display:flex; align-items:center; gap:10px; padding:10px 12px;
           border-radius:12px; border:1px solid var(--hc-border); cursor:pointer; width:100%;
           text-align:left; font-size:13px; font-weight:500;
-          font-family:"Plus Jakarta Sans","DM Sans",system-ui,sans-serif;
+          font-family:var(--hc-font-text);
           transition:all .18s ease; position:relative;
           background:var(--hc-surface);
           box-shadow:0 1px 3px var(--hc-shadow);
@@ -135,7 +135,7 @@ export default function AdminConfiguracion() {
           transition:left .2s cubic-bezier(.34,1.56,.64,1);
         }
         .cfg-divider { border:none; border-top:1px solid var(--hc-border); margin:0; }
-        .cfg-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--hc-muted); font-family:"Plus Jakarta Sans","DM Sans",system-ui,sans-serif; }
+        .cfg-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--hc-muted); font-family:var(--hc-font-text); }
         textarea.cfg-input { resize:vertical; line-height:1.5; }
       `}</style>
 
@@ -187,7 +187,7 @@ export default function AdminConfiguracion() {
               })}
             </nav>
             <div style={{ marginTop: '20px', paddingTop: '14px', borderTop: '1px solid var(--hc-border)', paddingLeft: '4px' }}>
-              <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--hc-muted)', fontFamily: F.body, margin: 0, opacity: 0.6 }}>HOTCLICK</p>
+              <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--hc-muted)', fontFamily: F.body, margin: 0, opacity: 0.6 }}>HotClick</p>
               <p style={{ fontSize: '11px', color: 'var(--hc-muted)', marginTop: '2px', fontFamily: F.body, opacity: 0.4 }}>v1.0 · Admin Panel</p>
             </div>
           </aside>
@@ -318,7 +318,7 @@ function SeccionPerfil({ userId, userEmail, userName, setUserName, toast }) {
       <Block>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ position: 'relative', flexShrink: 0 }}>
-            <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: 'linear-gradient(135deg,#4f7cff,#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: 700, color: '#fff', fontFamily: F.display, boxShadow: '0 4px 20px rgba(79,124,255,0.35)' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: 'var(--hc-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: 700, color: '#fff', fontFamily: F.display, boxShadow: '0 4px 20px rgba(23,71,168,0.35)' }}>
               {initials.toUpperCase() || 'HC'}
             </div>
           </div>
@@ -501,7 +501,7 @@ function SeccionSeguridad({ refreshToken, toast, onTwoFAChange }) {
             🔑 Contraseña
           </span>
           {totpEnabled && (
-            <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '6px', background: 'rgba(79,124,255,0.1)', color: '#4f7cff', border: '1px solid rgba(79,124,255,0.2)' }}>
+            <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '6px', background: 'rgba(23,71,168,0.1)', color: 'var(--hc-accent)', border: '1px solid rgba(23,71,168,0.2)' }}>
               🔐 App Authenticator
             </span>
           )}
@@ -679,18 +679,18 @@ function Panel2FA({ enabled, loading, toast, onEnabled, onDisabled }) {
   const cancel = () => { setStep('idle'); resetCode(); setPassword(''); setQrData(null); setQrDataUrl(null) }
   const copyAllCodes = () => { navigator.clipboard.writeText(recoveryCodes.join('\n')); setCopiedAll(true); toast({ message: t('adminConfig.tfaCopiedToast'), type: 'success' }) }
   const downloadCodes = () => {
-    const blob = new Blob(['HOTCLICK — Códigos de recuperación 2FA\n','========================================\n','Guardá estos códigos en un lugar seguro.\nCada código solo se puede usar una vez.\n\n',recoveryCodes.join('\n'),'\n'],{type:'text/plain'})
+    const blob = new Blob(['HotClick — Códigos de recuperación 2FA\n','========================================\n','Guardá estos códigos en un lugar seguro.\nCada código solo se puede usar una vez.\n\n',recoveryCodes.join('\n'),'\n'],{type:'text/plain'})
     const url = URL.createObjectURL(blob); const a = document.createElement('a')
     a.href = url; a.download = 'hotclick-recovery-codes.txt'; a.click(); URL.revokeObjectURL(url)
   }
 
-  const OtpInputs = ({ accent = '#4f7cff' }) => (
+  const OtpInputs = ({ accent = 'var(--hc-accent)' }) => (
     <div style={{ display: 'flex', gap: '8px' }} onPaste={handlePaste}>
       {code.map((d, i) => (
         <input key={i} ref={el => inputRefs.current[i] = el}
           type="text" inputMode="numeric" maxLength={1}
           value={d} onChange={e => handleDigit(i, e.target.value)} onKeyDown={e => handleKeyDown(i, e)}
-          style={{ width: '42px', height: '46px', borderRadius: '10px', textAlign: 'center', fontSize: '17px', fontWeight: 700, fontFamily: F.mono, outline: 'none', transition: 'all .15s', background: d ? `${accent}18` : 'var(--hc-bg)', border: `1px solid ${d ? `${accent}55` : 'var(--hc-border)'}`, color: 'var(--hc-text)', boxSizing: 'border-box' }}
+          style={{ width: '42px', height: '46px', borderRadius: '10px', textAlign: 'center', fontSize: '17px', fontWeight: 700, fontFamily: F.mono, outline: 'none', transition: 'all .15s', background: d ? `color-mix(in srgb, ${accent} 10%, transparent)` : 'var(--hc-bg)', border: `1px solid ${d ? `color-mix(in srgb, ${accent} 35%, transparent)` : 'var(--hc-border)'}`, color: 'var(--hc-text)', boxSizing: 'border-box' }}
         />
       ))}
     </div>
@@ -733,7 +733,7 @@ function Panel2FA({ enabled, loading, toast, onEnabled, onDisabled }) {
             )}
 
             {step === 'setup' && qrData && (
-              <div style={{ borderRadius: '12px', padding: '16px', background: 'rgba(79,124,255,0.06)', border: `1px solid ${copiedAll ? 'rgba(34,197,94,0.3)' : 'rgba(79,124,255,0.18)'}`, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ borderRadius: '12px', padding: '16px', background: 'rgba(23,71,168,0.06)', border: `1px solid ${copiedAll ? 'rgba(34,197,94,0.3)' : 'rgba(23,71,168,0.18)'}`, display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--hc-accent)', color: '#fff', fontSize: '10px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>1</span>
                   <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--hc-text)', fontFamily: F.body, margin: 0 }}>{t('adminConfig.tfaStep1')}</p>
@@ -787,18 +787,18 @@ function Panel2FA({ enabled, loading, toast, onEnabled, onDisabled }) {
             )}
 
             {step === 'regen' && (
-              <div style={{ borderRadius: '12px', padding: '16px', background: 'rgba(168,85,247,0.06)', border: '1px solid rgba(168,85,247,0.2)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ borderRadius: '12px', padding: '16px', background: 'rgba(100,144,234,0.06)', border: '1px solid rgba(100,144,234,0.2)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <KeyIcon style={{ width: '14px', height: '14px', color: '#c084fc' }} />
+                  <KeyIcon style={{ width: '14px', height: '14px', color: '#97B7F3' }} />
                   <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--hc-text)', fontFamily: F.body, margin: 0 }}>{t('adminConfig.tfaRegenTitle')}</p>
                 </div>
                 <p style={{ fontSize: '12px', color: 'var(--hc-muted)', fontFamily: F.body, margin: 0 }}>{t('adminConfig.tfaRegenDesc')}</p>
                 <div>
                   <label className="cfg-label" style={{ display: 'block', marginBottom: '8px' }}>{t('adminConfig.tfaAuthCode')}</label>
-                  <OtpInputs accent="#a855f7" />
+                  <OtpInputs accent="var(--hc-blue-400)" />
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={regenerate} disabled={working || codeStr.length !== 6} className="cfg-btn" style={{ background: '#7c3aed', color: '#fff', opacity: (working || codeStr.length !== 6) ? 0.4 : 1, cursor: (working || codeStr.length !== 6) ? 'not-allowed' : 'pointer' }}>{working ? <Spinner size="xs" /> : <RefreshIcon style={{ width: '14px', height: '14px' }} />}{t('adminConfig.tfaRegenSubmit')}</button>
+                  <button onClick={regenerate} disabled={working || codeStr.length !== 6} className="cfg-btn" style={{ background: 'var(--hc-accent)', color: '#fff', opacity: (working || codeStr.length !== 6) ? 0.4 : 1, cursor: (working || codeStr.length !== 6) ? 'not-allowed' : 'pointer' }}>{working ? <Spinner size="xs" /> : <RefreshIcon style={{ width: '14px', height: '14px' }} />}{t('adminConfig.tfaRegenSubmit')}</button>
                   <button onClick={cancel} className="cfg-btn cfg-btn-ghost">{t('adminConfig.tfaCancel')}</button>
                 </div>
               </div>
@@ -810,10 +810,10 @@ function Panel2FA({ enabled, loading, toast, onEnabled, onDisabled }) {
       {/* Recovery codes modal */}
       {recoveryCodes && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(6px)' }}>
-          <div style={{ width: '100%', maxWidth: '440px', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.6)', background: 'var(--hc-surface)', border: '1px solid rgba(168,85,247,0.3)' }}>
+          <div style={{ width: '100%', maxWidth: '440px', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.6)', background: 'var(--hc-surface)', border: '1px solid rgba(100,144,234,0.3)' }}>
             <div style={{ padding: '24px 24px 16px', display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-              <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(168,85,247,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <KeyIcon style={{ width: '20px', height: '20px', color: '#c084fc' }} />
+              <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(100,144,234,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <KeyIcon style={{ width: '20px', height: '20px', color: '#97B7F3' }} />
               </div>
               <div>
                 <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--hc-text)', fontFamily: F.display, margin: 0 }}>{t('adminConfig.tfaModalTitle')}</h3>
@@ -837,7 +837,7 @@ function Panel2FA({ enabled, loading, toast, onEnabled, onDisabled }) {
                 {copiedAll ? <CheckIcon style={{ width: '14px', height: '14px' }} /> : <CopyIcon style={{ width: '14px', height: '14px' }} />}
                 {copiedAll ? t('adminConfig.tfaCopiedAll') : t('adminConfig.tfaCopyAll')}
               </button>
-              <button onClick={downloadCodes} className="cfg-btn" style={{ flex: 1, justifyContent: 'center', background: 'rgba(168,85,247,0.08)', color: 'var(--hc-accent)', border: '1px solid rgba(168,85,247,0.2)' }}>
+              <button onClick={downloadCodes} className="cfg-btn" style={{ flex: 1, justifyContent: 'center', background: 'rgba(100,144,234,0.08)', color: 'var(--hc-accent)', border: '1px solid rgba(100,144,234,0.2)' }}>
                 <DownloadIcon style={{ width: '14px', height: '14px' }} />{t('adminConfig.tfaDownload')}
               </button>
               <button onClick={() => setRecoveryCodes(null)} className="cfg-btn cfg-btn-ghost">{t('adminConfig.tfaClose')}</button>
@@ -1004,7 +1004,7 @@ function SeccionTienda({ toast }) {
   const [form, setForm] = useState(() => {
     try {
       return {
-        nombreTienda: 'HOTCLICK',
+        nombreTienda: 'HotClick',
         descripcion: 'Tu tienda de electrónica y tecnología en Costa Rica',
         whatsapp: '50689745370',
         emailContacto: '',
@@ -1012,7 +1012,7 @@ function SeccionTienda({ toast }) {
         horario: 'Lun-Vie 8am-6pm, Sáb 9am-1pm',
         ...JSON.parse(localStorage.getItem(STORE_KEY) || '{}'),
       }
-    } catch { return { nombreTienda: 'HOTCLICK', descripcion: '', whatsapp: '50689745370', emailContacto: '', direccion: '', horario: '' } }
+    } catch { return { nombreTienda: 'HotClick', descripcion: '', whatsapp: '50689745370', emailContacto: '', direccion: '', horario: '' } }
   })
   const [saved, setSaved] = useState(false)
   const set = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }))
@@ -1034,16 +1034,16 @@ function SeccionTienda({ toast }) {
       {/* Preview card */}
       <Block>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: 'linear-gradient(135deg,#4f7cff,#06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: 800, color: '#fff', fontFamily: F.display, flexShrink: 0, boxShadow: '0 4px 18px rgba(79,124,255,0.3)' }}>
+          <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: 'linear-gradient(135deg,#4f7cff,#06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: 800, color: '#fff', fontFamily: F.display, flexShrink: 0, boxShadow: '0 4px 18px rgba(23,71,168,0.3)' }}>
             {initials}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: '16px', fontWeight: 700, color: 'var(--hc-text)', fontFamily: F.display, margin: 0, letterSpacing: '-0.01em' }}>{form.nombreTienda || 'HOTCLICK'}</p>
+            <p style={{ fontSize: '16px', fontWeight: 700, color: 'var(--hc-text)', fontFamily: F.display, margin: 0, letterSpacing: '-0.01em' }}>{form.nombreTienda || 'HotClick'}</p>
             <p style={{ fontSize: '12px', color: 'var(--hc-muted)', marginTop: '3px', fontFamily: F.body }}>{form.descripcion || 'Sin descripción'}</p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '8px' }}>
               {form.whatsapp && <span style={{ fontSize: '11px', color: '#4ade80', fontFamily: F.body }}>📱 +{form.whatsapp}</span>}
-              {form.emailContacto && <span style={{ fontSize: '11px', color: '#60a5fa', fontFamily: F.body }}>✉ {form.emailContacto}</span>}
-              {form.horario && <span style={{ fontSize: '11px', color: '#a78bfa', fontFamily: F.body }}>🕐 {form.horario}</span>}
+              {form.emailContacto && <span style={{ fontSize: '11px', color: '#6490EA', fontFamily: F.body }}>✉ {form.emailContacto}</span>}
+              {form.horario && <span style={{ fontSize: '11px', color: 'var(--hc-blue-300)', fontFamily: F.body }}>🕐 {form.horario}</span>}
             </div>
           </div>
         </div>
@@ -1222,8 +1222,8 @@ function SeccionDatos({ toast, isEmprendedor = false }) {
   }
 
   const StatCard = ({ label, value, color, icon: Icon }) => (
-    <div style={{ padding: '16px', borderRadius: '12px', background: `${color}0f`, border: `1px solid ${color}25`, display: 'flex', alignItems: 'center', gap: '12px' }}>
-      <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: `${color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+    <div style={{ padding: '16px', borderRadius: '12px', background: `color-mix(in srgb, ${color} 6%, transparent)`, border: `1px solid color-mix(in srgb, ${color} 15%, transparent)`, display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: `color-mix(in srgb, ${color} 12%, transparent)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <Icon style={{ width: '16px', height: '16px', color }} />
       </div>
       <div>
@@ -1243,7 +1243,7 @@ function SeccionDatos({ toast, isEmprendedor = false }) {
         <p style={{ fontSize: '12px', color: 'var(--hc-muted)', fontFamily: F.body }}>{desc}</p>
       </div>
       <button onClick={onExport} disabled={loading} className="cfg-btn"
-        style={{ flexShrink: 0, padding: '7px 14px', fontSize: '12px', fontWeight: 600, background: `${color}18`, color, border: `1px solid ${color}35`, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, gap: '6px' }}>
+        style={{ flexShrink: 0, padding: '7px 14px', fontSize: '12px', fontWeight: 600, background: `color-mix(in srgb, ${color} 9%, transparent)`, color, border: `1px solid color-mix(in srgb, ${color} 21%, transparent)`, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, gap: '6px' }}>
         {loading ? <Spinner size="xs" /> : <DownloadIcon style={{ width: '13px', height: '13px' }} />}
         {t('adminConfig.datosExportBtn')}
       </button>
@@ -1271,7 +1271,7 @@ function SeccionDatos({ toast, isEmprendedor = false }) {
       <div className={`grid gap-3 ${isEmprendedor ? 'grid-cols-2' : 'grid-cols-3'}`}>
         <StatCard label={t('adminConfig.datosStatsProducts')} value={stats?.productos} color="#4f7cff" icon={BoxIcon} />
         <StatCard label={t('adminConfig.datosStatsOrders')}   value={stats?.pedidos}   color="#22c55e" icon={ShoppingIcon} />
-        {!isEmprendedor && <StatCard label={t('adminConfig.datosStatsClients')} value={stats?.clientes} color="#a78bfa" icon={UserIcon} />}
+        {!isEmprendedor && <StatCard label={t('adminConfig.datosStatsClients')} value={stats?.clientes} color="var(--hc-blue-300)" icon={UserIcon} />}
       </div>
 
       {/* Export */}
@@ -1282,7 +1282,7 @@ function SeccionDatos({ toast, isEmprendedor = false }) {
           <ExportRow label={t('adminConfig.datosExportOrdersLabel')}   desc={t('adminConfig.datosExportOrdersDesc')}   loading={expOrd}  onExport={exportPedidos}  color="#22c55e" />
           {!isEmprendedor && <>
             <hr className="cfg-divider" />
-            <ExportRow label={t('adminConfig.datosExportClientsLabel')} desc={t('adminConfig.datosExportClientsDesc')} loading={expCli} onExport={exportClientes} color="#a78bfa" />
+            <ExportRow label={t('adminConfig.datosExportClientsLabel')} desc={t('adminConfig.datosExportClientsDesc')} loading={expCli} onExport={exportClientes} color="var(--hc-blue-300)" />
           </>}
         </div>
       </Block>
@@ -1397,8 +1397,8 @@ function SeccionApariencia() {
   const { theme, setTheme, fontSize, setFontSize, highContrast, toggleHighContrast, reduceMotion, toggleReduceMotion } = useUiStore()
 
   const themes = [
-    { id: 'dark',  labelKey: 'adminConfig.apThemeDark',  bg: '#0a0a0d', accent: '#4f7cff' },
-    { id: 'light', labelKey: 'adminConfig.apThemeLight', bg: '#f5f5f5', accent: '#4f7cff' },
+    { id: 'dark',  labelKey: 'adminConfig.apThemeDark',  bg: '#0a0a0d', accent: 'var(--hc-accent)' },
+    { id: 'light', labelKey: 'adminConfig.apThemeLight', bg: '#f5f5f5', accent: 'var(--hc-accent)' },
   ]
   const sizes = [
     { id: 'base', labelKey: 'adminConfig.apFontNormal' },
@@ -1519,11 +1519,11 @@ function SeccionSistema({ toast }) {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {[
             { labelKey: 'adminConfig.sysBackend',  value: 'Spring Boot 3.4', color: 'var(--hc-accent)' },
-            { labelKey: 'adminConfig.sysFrontend', value: 'React + Vite',    color: '#a78bfa' },
+            { labelKey: 'adminConfig.sysFrontend', value: 'React + Vite',    color: 'var(--hc-blue-300)' },
             { labelKey: 'adminConfig.sysDB',       value: 'Supabase (PG)',   color: '#34d399' },
-            { labelKey: 'adminConfig.sysDeploy',   value: 'Render',          color: '#fb923c' },
+            { labelKey: 'adminConfig.sysDeploy',   value: 'Render',          color: '#E5A93D' },
             { labelKey: 'adminConfig.sysPayments', value: 'Tarjetas / SINPE', color: '#f472b6' },
-            { labelKey: 'adminConfig.sysStorage',  value: 'Supabase S3',     color: '#60a5fa' },
+            { labelKey: 'adminConfig.sysStorage',  value: 'Supabase S3',     color: '#6490EA' },
           ].map(({ labelKey, value, color }) => (
             <div key={labelKey} style={{ padding: '12px', borderRadius: '10px', background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
               <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--hc-muted)', margin: '0 0 4px', fontFamily: F.body }}>{t(labelKey)}</p>
@@ -1605,13 +1605,13 @@ function SeccionSistema({ toast }) {
             { label: 'Base de datos',     descKey: 'adminConfig.sysSupabaseDesc', color: '#3ecf8e', icon: DBIcon },
             { label: 'Servidor',          descKey: 'adminConfig.sysRenderDesc',   color: '#46e3b7', icon: ServerIcon },
             { label: 'Correo electrónico',descKey: 'adminConfig.sysSendGridDesc', color: '#1a82e2', icon: MailIcon },
-            { label: 'Pasarela de pagos', descKey: 'adminConfig.sysStripeDesc', color: '#a78bfa', icon: CardIcon },
+            { label: 'Pasarela de pagos', descKey: 'adminConfig.sysStripeDesc', color: 'var(--hc-blue-300)', icon: CardIcon },
           ].map(({ label, descKey, color, icon: Icon }) => (
             <div key={label}
               style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', borderRadius: '10px', background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', cursor: 'pointer', transition: 'border-color .2s' }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = `${color}40`}
+              onMouseEnter={e => e.currentTarget.style.borderColor = `color-mix(in srgb, ${color} 25%, transparent)`}
               onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--hc-border)'}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: `${color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: `color-mix(in srgb, ${color} 9%, transparent)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <Icon style={{ width: '15px', height: '15px', color }} />
               </div>
               <div>

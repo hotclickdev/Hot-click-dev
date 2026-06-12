@@ -16,7 +16,7 @@ function ColorField({ label, value, onChange }) {
         <input type="text" value={value || ''}
           onChange={e => onChange(e.target.value)}
           maxLength={7}
-          placeholder="#FF4B12"
+          placeholder="#E73B33"
           className="flex-1 px-3 py-2 rounded-xl text-sm font-mono outline-none"
           style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }} />
       </div>
@@ -132,7 +132,7 @@ export default function AdminBranding() {
                     style={{
                       fontFamily: `'${f}', system-ui`,
                       border: `1.5px solid ${form.fontFamilia === f ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
-                      backgroundColor: form.fontFamilia === f ? 'rgba(79,124,255,0.08)' : 'var(--hc-bg)',
+                      backgroundColor: form.fontFamilia === f ? 'rgba(23,71,168,0.08)' : 'var(--hc-bg)',
                       color: 'var(--hc-text)',
                     }}>
                     {f}
@@ -191,12 +191,12 @@ export default function AdminBranding() {
             <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
               {/* Header */}
               <div className="px-4 py-3 flex items-center gap-3"
-                style={{ backgroundColor: form.colorSecundario || '#1a1a2e' }}>
+                style={{ backgroundColor: form.colorSecundario || '#1E242E' }}>
                 {form.logoUrl ? (
                   <img src={form.logoUrl} alt="" className="w-8 h-8 rounded-lg object-cover" />
                 ) : (
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm"
-                    style={{ backgroundColor: form.colorPrimario || '#ff4b12', color: '#fff' }}>
+                    style={{ backgroundColor: form.colorPrimario || '#E73B33', color: '#fff' }}>
                     {(form.nombreComercial || 'T')[0].toUpperCase()}
                   </div>
                 )}
@@ -213,15 +213,15 @@ export default function AdminBranding() {
               {/* Product cards mock */}
               <div className="p-3 grid grid-cols-2 gap-2" style={{ backgroundColor: '#0f0f17' }}>
                 {[1, 2].map(i => (
-                  <div key={i} className="rounded-lg overflow-hidden" style={{ backgroundColor: form.colorSecundario || '#1a1a2e' }}>
+                  <div key={i} className="rounded-lg overflow-hidden" style={{ backgroundColor: form.colorSecundario || '#1E242E' }}>
                     <div className="h-16" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }} />
                     <div className="p-2 space-y-1">
                       <div className="h-2 rounded-full w-3/4 bg-white/20" />
-                      <p className="text-[10px] font-bold" style={{ color: form.colorPrimario || '#ff4b12' }}>
+                      <p className="text-[10px] font-bold" style={{ color: form.colorPrimario || '#E73B33' }}>
                         ₡12.500
                       </p>
                       <div className="h-5 rounded-lg flex items-center justify-center text-[9px] font-bold text-white"
-                        style={{ backgroundColor: form.colorPrimario || '#ff4b12' }}>
+                        style={{ backgroundColor: form.colorPrimario || '#E73B33' }}>
                         Agregar
                       </div>
                     </div>
@@ -231,7 +231,7 @@ export default function AdminBranding() {
 
               {/* Footer */}
               <div className="px-3 py-2 text-center text-[9px]"
-                style={{ backgroundColor: form.colorSecundario || '#1a1a2e', color: 'rgba(255,255,255,0.4)' }}>
+                style={{ backgroundColor: form.colorSecundario || '#1E242E', color: 'rgba(255,255,255,0.4)' }}>
                 {form.footerTexto || `© 2026 ${form.nombreComercial || 'Mi Tienda'}`}
               </div>
             </div>
@@ -243,7 +243,7 @@ export default function AdminBranding() {
                 {form.fontFamilia || 'Inter'}
               </p>
               <p className="text-xs" style={{ fontFamily: `'${form.fontFamilia}', sans-serif`, color: 'var(--hc-muted)' }}>
-                HOTCLICK · E-commerce para emprendedores
+                HotClick · E-commerce para emprendedores
               </p>
             </div>
 

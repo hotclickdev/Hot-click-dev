@@ -44,6 +44,36 @@
       "name": "internal.secret",
       "type": "java.lang.String",
       "description": "Secret requerido en header X-Internal-Secret para endpoints server-only (reset-datos, etc.). Configurar como variable de entorno INTERNAL_SECRET. Si está vacío, los endpoints protegidos quedan bloqueados."
+    },
+    {
+      "name": "totp.encryption.key",
+      "type": "java.lang.String",
+      "description": "Clave AES-256 para cifrar secretos TOTP. 64 hex chars (32 bytes). Requerida fuera de perfiles dev/test. Configurar como variable de entorno TOTP_ENCRYPTION_KEY en producción."
+    },
+    {
+      "name": "rag.indexer.cron",
+      "type": "java.lang.String",
+      "description": "Cron expression para el job de reindexado de embeddings. Default: '0 0 4 * * *' (4:00 AM)."
+    },
+    {
+      "name": "rag.indexer.batch-delay-ms",
+      "type": "java.lang.Long",
+      "description": "Delay en milisegundos entre productos en el batch de embeddings. Default: 400 ms."
+    },
+    {
+      "name": "google.vision.api-key",
+      "type": "java.lang.String",
+      "description": "Google Cloud Vision API key. Opcional — sin key, análisis de imagen y moderación quedan deshabilitados (fail-open)."
+    },
+    {
+      "name": "google.gemini.api-key",
+      "type": "java.lang.String",
+      "description": "Google Gemini API key. Opcional — reemplazado por Claude (Anthropic). Mantenido por compatibilidad con WhatsAppService."
+    },
+    {
+      "name": "voyage.api-key",
+      "type": "java.lang.String",
+      "description": "Voyage AI API key (pa-...) para generar embeddings del catálogo. Tier gratis: 200M tokens/mes. Obtener en https://dash.voyageai.com"
     }
   ]
 }

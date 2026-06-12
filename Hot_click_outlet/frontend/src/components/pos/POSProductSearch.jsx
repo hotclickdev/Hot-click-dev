@@ -6,12 +6,12 @@ const fmt = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
 
 // Paleta de colores para las tarjetas de categoría
 const CAT_COLORS = [
-  { bg: 'rgba(79,124,255,0.15)',  border: 'rgba(79,124,255,0.35)',  text: '#7aa3ff' },
+  { bg: 'rgba(23,71,168,0.15)',  border: 'rgba(23,71,168,0.35)',  text: '#7aa3ff' },
   { bg: 'rgba(52,211,153,0.15)', border: 'rgba(52,211,153,0.35)', text: '#34d399' },
   { bg: 'rgba(251,191,36,0.15)', border: 'rgba(251,191,36,0.35)', text: '#fbbf24' },
   { bg: 'rgba(239,68,68,0.15)',  border: 'rgba(239,68,68,0.35)',  text: '#f87171' },
-  { bg: 'rgba(168,85,247,0.15)', border: 'rgba(168,85,247,0.35)', text: '#a855f7' },
-  { bg: 'rgba(251,146,60,0.15)', border: 'rgba(251,146,60,0.35)', text: '#fb923c' },
+  { bg: 'rgba(100,144,234,0.15)', border: 'rgba(100,144,234,0.35)', text: 'var(--hc-blue-400)' },
+  { bg: 'rgba(229,169,61,0.15)', border: 'rgba(229,169,61,0.35)', text: '#E5A93D' },
   { bg: 'rgba(20,184,166,0.15)', border: 'rgba(20,184,166,0.35)', text: '#14b8a6' },
   { bg: 'rgba(236,72,153,0.15)', border: 'rgba(236,72,153,0.35)', text: '#ec4899' },
 ]
@@ -116,7 +116,7 @@ export default function POSProductSearch({ onAdd }) {
           className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm outline-none"
           style={{
             backgroundColor: 'var(--hc-surface)',
-            border: `1px solid ${query ? 'rgba(79,124,255,0.4)' : 'rgba(255,255,255,0.08)'}`,
+            border: `1px solid ${query ? 'rgba(23,71,168,0.4)' : 'rgba(255,255,255,0.08)'}`,
             color: 'var(--hc-text)',
           }}
         />

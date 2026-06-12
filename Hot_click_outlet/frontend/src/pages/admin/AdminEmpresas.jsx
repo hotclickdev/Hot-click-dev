@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import api from '@/services/api'
 import { useToast } from '@/components/ui/Toast'
 
@@ -15,23 +15,23 @@ const ESTADO_COLOR_USUARIO = {
 
 const ESTADO_PEDIDO_STYLE = {
   PENDIENTE:      { bg: 'rgba(212,177,6,0.15)',   text: '#d4b106' },
-  PAGADO:         { bg: 'rgba(79,124,255,0.14)',  text: '#4f7cff' },
+  PAGADO:         { bg: 'rgba(23,71,168,0.14)',  text: 'var(--hc-accent)' },
   EN_PREPARACION: { bg: 'rgba(245,158,11,0.14)',  text: '#f59e0b' },
-  ENVIADO:        { bg: 'rgba(96,165,250,0.14)',  text: '#60a5fa' },
+  ENVIADO:        { bg: 'rgba(96,165,250,0.14)',  text: '#6490EA' },
   ENTREGADO:      { bg: 'rgba(74,222,128,0.14)',  text: '#4ade80' },
-  COMPLETADO:     { bg: 'rgba(147,51,234,0.14)',  text: '#a855f7' },
+  COMPLETADO:     { bg: 'rgba(63,108,222,0.14)',  text: 'var(--hc-blue-400)' },
   CANCELADO:      { bg: 'rgba(248,113,113,0.14)', text: '#f87171' },
 }
 
 const ROL_CONFIG = {
-  PROPIETARIO: { label: 'Propietario', color: 'bg-orange-500/15 text-orange-400' },
-  ADMIN:       { label: 'Admin',       color: 'bg-purple-500/15 text-purple-400' },
+  PROPIETARIO: { label: 'Propietario', color: 'bg-amber-500/15 text-amber-400' },
+  ADMIN:       { label: 'Admin',       color: 'bg-[var(--hc-blue-500)]/15 text-[var(--hc-blue-400)]' },
   EDITOR:      { label: 'Editor',      color: 'bg-blue-500/15 text-blue-400' },
   LECTOR:      { label: 'Lector',      color: 'bg-gray-500/15 text-gray-400' },
 }
 
 function EstadoBadge({ estado }) {
-  const s = ESTADO_PEDIDO_STYLE[estado] ?? { bg: 'rgba(142,142,154,0.14)', text: '#8e8e9a' }
+  const s = ESTADO_PEDIDO_STYLE[estado] ?? { bg: 'rgba(142,142,154,0.14)', text: '#A7B0BC' }
   return (
     <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
       style={{ backgroundColor: s.bg, color: s.text }}>{estado}</span>
@@ -52,8 +52,8 @@ function TabEmpty({ text }) {
 const PLAN_COLOR = {
   GRATUITO:   'bg-gray-500/15 text-gray-400',
   BASICO:     'bg-blue-500/15 text-blue-400',
-  PRO:        'bg-purple-500/15 text-purple-400',
-  ENTERPRISE: 'bg-orange-500/15 text-orange-400',
+  PRO:        'bg-[var(--hc-blue-500)]/15 text-[var(--hc-blue-400)]',
+  ENTERPRISE: 'bg-amber-500/15 text-amber-400',
 }
 const ESTADO_COLOR = {
   ACTIVO:    'bg-green-500/15 text-green-400',
@@ -210,7 +210,7 @@ export default function AdminEmpresas() {
             { label: 'Total',       value: kpis.total,       color: 'text-blue-400' },
             { label: 'Activas',     value: kpis.activas,     color: 'text-green-400' },
             { label: 'Suspendidas', value: kpis.suspendidas, color: 'text-red-400' },
-            { label: 'PRO/Enterprise', value: kpis.pro,      color: 'text-orange-400' },
+            { label: 'PRO/Enterprise', value: kpis.pro,      color: 'text-amber-400' },
           ].map(k => (
             <div key={k.label} className="rounded-xl p-4" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
               <div className={`text-2xl font-bold ${k.color}`}>{k.value}</div>
@@ -435,7 +435,7 @@ export default function AdminEmpresas() {
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       {[
                         { label: 'Usuarios',  value: fmt(detail.totalUsuarios),  color: 'text-blue-400' },
-                        { label: 'Productos', value: fmt(detail.totalProductos), color: 'text-purple-400' },
+                        { label: 'Productos', value: fmt(detail.totalProductos), color: 'text-[var(--hc-blue-400)]' },
                         { label: 'Pedidos',   value: fmt(detail.totalPedidos),   color: 'text-amber-400' },
                         { label: 'Ventas',    value: fmtMoney(detail.totalVentas), color: 'text-green-400' },
                       ].map(k => (

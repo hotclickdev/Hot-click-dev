@@ -81,8 +81,9 @@ function PlanCard({ plan, esCurrent, loading, onSelect }) {
           disabled={loading}
           className="w-full py-2.5 rounded-xl font-semibold text-sm transition-opacity hover:opacity-80 disabled:opacity-50"
           style={{
-            backgroundColor: esEnterprise ? '#fff' : 'var(--hc-accent)',
+            backgroundColor: esEnterprise ? 'transparent' : 'var(--hc-accent)',
             color: esEnterprise ? 'var(--hc-accent)' : '#fff',
+            border: esEnterprise ? '2px solid var(--hc-accent)' : 'none',
           }}
         >
           {loading ? 'Redirigiendo…' : `Suscribirse al ${plan.nombre}`}

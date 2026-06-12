@@ -10,6 +10,7 @@ import useUiStore from '@/store/uiStore'
 import AccessibilityPanel from '@/components/ui/AccessibilityPanel'
 import WhatsAppFab from '@/components/ui/WhatsAppFab'
 import AuthPromptModal from '@/components/ui/AuthPromptModal'
+import ChatModal from '@/components/ai/ChatModal'
 import SocialProofToast from '@/components/ui/SocialProofToast'
 import { useSocialProof } from '@/hooks/useSocialProof'
 import { productService, normalizeProduct } from '@/services/productService'
@@ -21,7 +22,6 @@ import { useBranding } from '@/hooks/useBranding'
 import CookieBanner from '@/components/ui/CookieBanner'
 import { setAnalyticsConsent } from '@/utils/analytics'
 import { initGA4, trackPageView } from '@/utils/ga4'
-import ChatWidget from '@/components/ui/ChatWidget'
 
 const CLERK_ENABLED = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 // ClerkShell se carga sólo al navegar a rutas de auth — saca @clerk/react del bundle inicial
@@ -254,7 +254,8 @@ function HtmlClassManager() {
 // Excluded paths — social proof / abandoned-cart watcher skip these
 const EXCLUDED_PREFIXES = ['/admin', '/checkout', '/pago']
 
-const WAB_HIDDEN_PATHS = ['/login', '/registro', '/carrito']
+// El botón de WhatsApp no aparece en checkout/pago (Brand Book §15.4) ni en flujos de auth
+const WAB_HIDDEN_PATHS = ['/login', '/registro', '/carrito', '/checkout']
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -279,7 +280,7 @@ function PageFade({ children }) {
 function ConditionalWhatsAppFab() {
   const { pathname } = useLocation()
   if (WAB_HIDDEN_PATHS.includes(pathname)) return null
-  if (pathname.startsWith('/admin')) return null
+  if (pathname.startsWith('/admin') || pathname.startsWith('/checkout') || pathname.startsWith('/pago')) return null
   return <WhatsAppFab />
 }
 
@@ -452,9 +453,9 @@ export default function App() {
           </PageFade>
           </Suspense>
           <ConditionalWhatsAppFab />
-          <ChatWidget />
           <AccessibilityPanel />
           <AuthPromptModal />
+          <ChatModal />
           <SocialProofController />
           <AbandonedCartWatcher />
           <WishlistAlertWatcher />

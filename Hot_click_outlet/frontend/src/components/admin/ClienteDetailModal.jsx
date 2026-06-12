@@ -7,7 +7,7 @@ const fmtDate = (d) => d ? new Date(d).toLocaleDateString('es-CR') : '—'
 
 const SEGMENTOS = ['NUEVO', 'FRECUENTE', 'VIP', 'INACTIVO']
 const SEG_META  = {
-  NUEVO:     { bg: 'rgba(96,165,250,0.12)',  text: '#60a5fa' },
+  NUEVO:     { bg: 'rgba(96,165,250,0.12)',  text: '#6490EA' },
   FRECUENTE: { bg: 'rgba(52,211,153,0.12)', text: '#34d399' },
   VIP:       { bg: 'rgba(251,191,36,0.12)',  text: '#fbbf24' },
   INACTIVO:  { bg: 'rgba(255,255,255,0.06)', text: 'var(--hc-muted)' },
@@ -108,7 +108,7 @@ export default function ClienteDetailModal({ clienteId, onClose }) {
             {/* Info básica */}
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-bold shrink-0"
-                style={{ backgroundColor: 'rgba(79,124,255,0.15)', color: 'var(--hc-accent)' }}>
+                style={{ backgroundColor: 'rgba(23,71,168,0.15)', color: 'var(--hc-accent)' }}>
                 {(cliente.nombre ?? '?')[0].toUpperCase()}
               </div>
               <div className="min-w-0">

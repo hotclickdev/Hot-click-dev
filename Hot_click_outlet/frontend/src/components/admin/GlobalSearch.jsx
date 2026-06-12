@@ -55,7 +55,7 @@ function ResultGroup({ title, items, onSelect }) {
           className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-white/[0.05] rounded-lg"
           style={{ color: 'var(--hc-text)' }}>
           <span className="w-6 h-6 flex items-center justify-center rounded-md shrink-0 text-xs"
-            style={{ backgroundColor: `${item.iconColor ?? 'rgba(79,124,255,'}0.15)`, color: item.iconColor ?? 'var(--hc-accent)' }}>
+            style={{ backgroundColor: `${item.iconColor ?? 'rgba(23,71,168,'}0.15)`, color: item.iconColor ?? 'var(--hc-accent)' }}>
             {item.icon}
           </span>
           <div className="flex-1 min-w-0">
@@ -118,7 +118,7 @@ export default function GlobalSearch({ open, onClose }) {
             label: p.nombreProducto ?? p.nombre,
             sub: `SKU: ${p.sku ?? '—'} · Stock: ${p.stockActual ?? p.stock ?? 0}`,
             meta: `₡${fmt(p.precioEfectivo ?? p.precioVenta ?? p.precio)}`,
-            icon: '📦', iconColor: 'rgba(79,124,255,',
+            icon: '📦', iconColor: 'rgba(23,71,168,',
             path: `/admin/productos`,
           })),
           pedidos: pedidoList.slice(0, 3).map(p => ({
@@ -131,7 +131,7 @@ export default function GlobalSearch({ open, onClose }) {
             label: `${c.nombre ?? ''} ${c.apellidoPaterno ?? ''}`.trim(),
             sub: c.correo,
             meta: `${c.puntosFidelidad ?? 0} pts`,
-            icon: '👤', iconColor: 'rgba(167,139,250,',
+            icon: '👤', iconColor: 'rgba(151,183,243,',
             path: `/admin/usuarios`,
           })),
         })

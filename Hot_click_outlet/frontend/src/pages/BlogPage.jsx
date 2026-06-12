@@ -72,10 +72,10 @@ export default function BlogPage() {
   const blogListJsonLd = entradas.length > 0 ? {
     '@context': 'https://schema.org',
     '@type': 'Blog',
-    name: 'Blog HOTCLICK',
+    name: 'Blog HotClick',
     description: 'Artículos, tips y novedades sobre tecnología, emprendimiento y compras online en Costa Rica.',
     url: 'https://hotclick.lat/blog',
-    publisher: { '@type': 'Organization', name: 'HOTCLICK', url: 'https://hotclick.lat' },
+    publisher: { '@type': 'Organization', name: 'HotClick', url: 'https://hotclick.lat' },
     blogPost: entradas.map(e => ({
       '@type': 'BlogPosting',
       headline: e.titulo,
@@ -89,19 +89,19 @@ export default function BlogPage() {
   return (
     <MainLayout>
       <Helmet>
-        <title>Blog HOTCLICK — Consejos de tecnología y emprendimiento en Costa Rica</title>
-        <meta name="description" content="Artículos y tips sobre tecnología, compras online y emprendimiento costarricense. El blog oficial de HOTCLICK Marketplace." />
+        <title>Blog HotClick — Consejos de tecnología y emprendimiento en Costa Rica</title>
+        <meta name="description" content="Artículos y tips sobre tecnología, compras online y emprendimiento costarricense. El blog oficial de HotClick Marketplace." />
         <link rel="canonical" href="https://hotclick.lat/blog" />
         <link rel="alternate" hreflang="es-CR" href="https://hotclick.lat/blog" />
         <link rel="alternate" hreflang="es"    href="https://hotclick.lat/blog" />
         <link rel="alternate" hreflang="x-default" href="https://hotclick.lat/" />
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="Blog HOTCLICK — Consejos para compradores y emprendedores en Costa Rica" />
-        <meta property="og:description" content="Artículos de tecnología, moda, emprendimiento y novedades de HOTCLICK. Todo lo que necesitás para comprar y vender mejor en Costa Rica." />
+        <meta property="og:title" content="Blog HotClick — Consejos para compradores y emprendedores en Costa Rica" />
+        <meta property="og:description" content="Artículos de tecnología, moda, emprendimiento y novedades de HotClick. Todo lo que necesitás para comprar y vender mejor en Costa Rica." />
         <meta property="og:url" content="https://hotclick.lat/blog" />
         <meta property="og:image" content="https://hotclick.lat/og-image.png" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Blog HOTCLICK" />
+        <meta name="twitter:title" content="Blog HotClick" />
         <meta name="twitter:description" content="Tips de tecnología, emprendimiento y compras online en Costa Rica." />
         {blogListJsonLd && (
           <script type="application/ld+json">{JSON.stringify(blogListJsonLd)}</script>
@@ -122,13 +122,13 @@ export default function BlogPage() {
               fontSize: 12, fontWeight: 700, color: 'var(--hc-accent)',
               letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 16,
             }}>
-              Blog HOTCLICK
+              Blog HotClick
             </span>
             <h1 style={{ fontSize: 36, fontWeight: 900, color: 'var(--hc-text)', margin: '0 0 12px' }}>
               Noticias y consejos
             </h1>
             <p style={{ fontSize: 16, color: 'var(--hc-muted)', maxWidth: 480, margin: '0 auto' }}>
-              Tips de tecnología, novedades de HOTCLICK y más.
+              Tips de tecnología, novedades de HotClick y más.
             </p>
           </motion.div>
         </div>

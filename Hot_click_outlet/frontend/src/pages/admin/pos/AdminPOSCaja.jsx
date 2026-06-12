@@ -180,13 +180,13 @@ export default function AdminPOSCaja() {
         <>
           <div className="grid grid-cols-2 gap-3">
             <StatBox label="Efectivo"      value={turno.totalEfectivo}      color="#34d399"/>
-            <StatBox label="SINPE"         value={turno.totalSinpe}         color="#60a5fa"/>
-            <StatBox label="Tarjeta"       value={turno.totalTarjeta}       color="#a78bfa"/>
+            <StatBox label="SINPE"         value={turno.totalSinpe}         color="#6490EA"/>
+            <StatBox label="Tarjeta"       value={turno.totalTarjeta}       color="var(--hc-blue-300)"/>
             <StatBox label="Transferencia" value={turno.totalTransferencia} color="#fbbf24"/>
           </div>
 
           <div className="rounded-xl p-4 flex justify-between items-center"
-            style={{ backgroundColor: 'rgba(79,124,255,0.1)', border: '1px solid rgba(79,124,255,0.2)' }}>
+            style={{ backgroundColor: 'rgba(23,71,168,0.1)', border: '1px solid rgba(23,71,168,0.2)' }}>
             <div>
               <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Transacciones</p>
               <p className="text-2xl font-black" style={{ color: 'var(--hc-accent)' }}>{turno.numTransacciones}</p>

@@ -13,14 +13,77 @@ import org.springframework.stereotype.Service;
 import java.text.NumberFormat;
 import java.util.Locale;
 
+/**
+ * Emails transaccionales con la plantilla del Brand Book HotClick v1.1 (cap. 12.1):
+ * header azul 900 con wordmark bicolor, cuerpo blanco, UN solo CTA rojo por correo,
+ * colores semánticos del cap. 3.3 y footer neutro 900. Tono: voseo costarricense
+ * (cap. 15.3) — el usuario nunca tiene la culpa y todo error trae salida (cap. 10.3).
+ */
 @Service
 public class NotificacionEmailService {
 
     private static final Logger log = LoggerFactory.getLogger(NotificacionEmailService.class);
     private static final NumberFormat CRC = NumberFormat.getInstance(Locale.forLanguageTag("es-CR"));
 
+    // Tipografía con fallback de email (cap. 12.1): Sora → Arial Black · Public Sans → Arial
+    private static final String F_TEXT    = "'Public Sans',Arial,Helvetica,sans-serif";
+    private static final String F_DISPLAY = "'Sora','Arial Black',Arial,sans-serif";
+
     @Autowired private ResendEmailService resendEmailService;
     @Autowired private WhatsAppService    whatsAppService;
+
+    /* ──────────────────────────── piezas compartidas ──────────────────────────── */
+
+    /** Wordmark bicolor (§2.1). Sobre fondo oscuro el rojo sube un paso y «Click» pasa a blanco (§2.4). */
+    private String wordmark(boolean sobreOscuro) {
+        String hot   = sobreOscuro ? "#F0524A" : "#E73B33";
+        String click = sobreOscuro ? "#FFFFFF" : "#1747A8";
+        return "<span style=\"font-family:" + F_DISPLAY + ";font-weight:800;font-size:20px;letter-spacing:-0.5px\">"
+             + "<span style='color:" + hot + "'>Hot</span><span style='color:" + click + "'>Click</span></span>";
+    }
+
+    private String abrirHtml() {
+        return "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'>"
+             + "<meta name='viewport' content='width=device-width,initial-scale=1'></head>"
+             + "<body style=\"margin:0;padding:0;background:#F8F9FB;font-family:" + F_TEXT + "\">"
+             + "<div style='max-width:600px;margin:32px auto;padding:0 16px'>";
+    }
+
+    /** Header de campaña sobre azul 900 (§5.3): el rojo queda reservado al CTA. */
+    private String header(String titulo, String sub) {
+        return "<div style='background:#152B5E;border-radius:16px 16px 0 0;padding:32px 36px 28px;text-align:center'>"
+             + wordmark(true)
+             + "<h1 style=\"margin:18px 0 0;color:#FFFFFF;font-size:26px;font-weight:800;line-height:1.2;font-family:" + F_DISPLAY + "\">" + titulo + "</h1>"
+             + (sub != null ? "<p style='margin:10px 0 0;color:#C2D5F9;font-size:14px'>" + sub + "</p>" : "")
+             + "</div>";
+    }
+
+    private String abrirCuerpo() {
+        return "<div style='background:#FFFFFF;padding:32px 36px;border-left:1px solid #E4E7EC;border-right:1px solid #E4E7EC'>";
+    }
+
+    /** CTA primario — Rojo Hot, uno por correo (cap. 3.5 / 12.1). */
+    private String cta(String url, String label) {
+        return "<div style='text-align:center;padding:8px 0'>"
+             + "<a href='" + esc(url) + "' style='display:inline-block;background:#E73B33;color:#FFFFFF;text-decoration:none;"
+             + "padding:14px 36px;border-radius:10px;font-size:15px;font-weight:700'>" + label + "</a></div>";
+    }
+
+    /** Footer neutro 900 con soporte por WhatsApp (canal primario, cap. 15) y firma. */
+    private String footer(String pregunta) {
+        return "</div>"
+             + "<div style='background:#14171C;border-radius:0 0 16px 16px;padding:28px 36px;text-align:center'>"
+             + "<p style='margin:0 0 14px;color:#9AA1AE;font-size:13px'>" + pregunta + "</p>"
+             + "<a href='https://wa.me/50689745370' style='display:inline-block;background:#25D366;color:#FFFFFF;text-decoration:none;"
+             + "padding:11px 26px;border-radius:10px;font-size:14px;font-weight:700;margin-bottom:20px'>Escribinos por WhatsApp</a>"
+             + "<div style='border-top:1px solid #232830;padding-top:16px;margin-top:4px'>"
+             + "<p style='margin:0 0 4px'>" + wordmark(true) + "</p>"
+             + "<p style='margin:0;color:#6E7682;font-size:11px'>hotclick.cr@gmail.com · Costa Rica · <a href='https://hotclick.lat' style='color:#6E7682'>hotclick.lat</a></p>"
+             + "</div></div>"
+             + "</div></body></html>";
+    }
+
+    /* ──────────────────────────── notificaciones de pedido ──────────────────────────── */
 
     @Async
     public void enviarConfirmacionPedido(Pedido pedido) {
@@ -52,7 +115,7 @@ public class NotificacionEmailService {
             try {
                 resendEmailService.send(
                     cliente.getCorreo(),
-                    "Tu pedido fue enviado — " + pedido.getNumeroPedido(),
+                    "Tu pedido va en camino — " + pedido.getNumeroPedido(),
                     buildGuiaHtml(pedido, cliente)
                 );
                 log.info("Email guía enviado a {} para pedido {}", cliente.getCorreo(), pedido.getNumeroPedido());
@@ -96,7 +159,7 @@ public class NotificacionEmailService {
         try {
             resendEmailService.send(
                 email,
-                "¡Todavía tienes productos esperando en HOTCLICK!",
+                "Tu carrito te espera — HotClick",
                 buildRecuperacionCarritoHtml(carritoId, items, appUrl)
             );
             log.info("Email recuperación carrito enviado a {} (carrito {})", email, carritoId);
@@ -120,53 +183,30 @@ public class NotificacionEmailService {
                 ? "<img src='" + esc(item.getImagenUrl()) + "' width='48' height='48' style='object-fit:cover;border-radius:8px;vertical-align:middle;margin-right:10px'>"
                 : "";
             rows.append("<tr>")
-                .append("<td style='padding:10px 8px;border-bottom:1px solid #e8e8ed'>")
+                .append("<td style='padding:10px 8px;border-bottom:1px solid #E4E7EC;color:#14171C'>")
                 .append(img).append(esc(item.getNombre())).append("</td>")
-                .append("<td style='padding:10px 8px;border-bottom:1px solid #e8e8ed;text-align:center;color:#6e6e82'>×")
+                .append("<td style='padding:10px 8px;border-bottom:1px solid #E4E7EC;text-align:center;color:#4D5560'>×")
                 .append(item.getCantidad() != null ? item.getCantidad() : 1).append("</td>")
-                .append("<td style='padding:10px 8px;border-bottom:1px solid #e8e8ed;text-align:right;font-weight:600;color:#1a1a2e'>₡")
+                .append("<td style='padding:10px 8px;border-bottom:1px solid #E4E7EC;text-align:right;font-weight:700;color:#14171C'>₡")
                 .append(CRC.format(subtotal)).append("</td>")
                 .append("</tr>");
         }
 
         String recoverUrl = appUrl + "/recuperar-carrito/" + carritoId;
 
-        return "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'>"
-            + "<meta name='viewport' content='width=device-width,initial-scale=1'></head>"
-            + "<body style='margin:0;padding:0;background:#f0f2f5;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif'>"
-            + "<div style='max-width:600px;margin:32px auto;padding:0 16px'>"
-
-            + "<div style='background:linear-gradient(135deg,#4f7cff 0%,#7c3aed 100%);border-radius:20px 20px 0 0;padding:36px 36px 28px;text-align:center'>"
-            + "<div style='display:inline-block;background:rgba(255,255,255,0.15);border-radius:12px;padding:6px 16px;margin-bottom:16px'>"
-            + "<span style='color:rgba(255,255,255,0.9);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase'>HOTCLICK</span>"
-            + "</div>"
-            + "<div style='font-size:40px;margin-bottom:12px'>🛒</div>"
-            + "<h1 style='margin:0;color:#fff;font-size:26px;font-weight:800'>¡Tu carrito te espera!</h1>"
-            + "<p style='margin:10px 0 0;color:rgba(255,255,255,0.85);font-size:14px'>Dejaste productos sin completar tu compra</p>"
-            + "</div>"
-
-            + "<div style='background:#fff;padding:32px 36px;border-left:1px solid #e8e8ed;border-right:1px solid #e8e8ed'>"
-            + "<p style='margin:0 0 24px;color:#6e6e82;font-size:14px;line-height:1.6'>Estos productos están esperando por ti. ¡No dejes que se agoten!</p>"
+        return abrirHtml()
+            + header("Tu carrito te espera", "Dejaste productos sin completar la compra")
+            + abrirCuerpo()
+            + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px;line-height:1.6'>Guardamos tu carrito tal cual lo dejaste. Completá la compra antes de que se agote el stock.</p>"
             + "<table style='width:100%;border-collapse:collapse;margin-bottom:20px'>"
             + "<tbody>" + rows + "</tbody>"
             + "</table>"
-            + "<div style='background:#f9fafb;border-radius:12px;padding:16px 20px;text-align:right;margin-bottom:28px'>"
-            + "<span style='color:#1a1a2e;font-weight:800;font-size:16px'>Total estimado: ₡" + CRC.format(total) + "</span>"
+            + "<div style='background:#F8F9FB;border-radius:10px;padding:16px 20px;text-align:right;margin-bottom:28px'>"
+            + "<span style=\"color:#14171C;font-weight:800;font-size:16px;font-family:" + F_DISPLAY + "\">Total estimado: ₡" + CRC.format(total) + "</span>"
             + "</div>"
-            + "<div style='text-align:center'>"
-            + "<a href='" + esc(recoverUrl) + "' style='display:inline-block;background:linear-gradient(135deg,#4f7cff,#7c3aed);color:#fff;text-decoration:none;padding:15px 40px;border-radius:12px;font-size:16px;font-weight:800;letter-spacing:0.5px'>Recuperar mi carrito →</a>"
-            + "</div>"
-            + "</div>"
-
-            + "<div style='background:#1a1a2e;border-radius:0 0 20px 20px;padding:28px 36px;text-align:center'>"
-            + "<p style='margin:0 0 16px;color:rgba(255,255,255,0.7);font-size:13px'>¿Tienes alguna pregunta?</p>"
-            + "<a href='https://wa.me/50689745370' style='display:inline-block;background:#25D366;color:#fff;text-decoration:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;margin-bottom:20px'>📱 Necesito ayuda</a>"
-            + "<div style='border-top:1px solid rgba(255,255,255,0.1);padding-top:16px;margin-top:4px'>"
-            + "<p style='margin:0 0 4px;color:#fff;font-size:13px;font-weight:700;letter-spacing:1px'>HOTCLICK</p>"
-            + "<p style='margin:0 0 6px;color:rgba(255,255,255,0.5);font-size:11px'>hotclick.cr@gmail.com · Costa Rica</p>"
-            + "<p style='margin:0;color:rgba(255,255,255,0.3);font-size:10px'>Si no deseas más recordatorios, simplemente ignorá este mensaje.</p>"
-            + "</div></div>"
-            + "</div></body></html>";
+            + cta(recoverUrl, "Recuperar mi carrito")
+            + "<p style='margin:16px 0 0;color:#9AA1AE;font-size:11px;text-align:center'>Si ya no querés recordatorios, simplemente ignorá este mensaje.</p>"
+            + footer("¿Tenés alguna pregunta?");
     }
 
     @Async
@@ -195,9 +235,9 @@ public class NotificacionEmailService {
             for (PedidoItem item : pedido.getItems()) {
                 String prod = item.getProducto() != null ? item.getProducto().getNombreProducto() : "Producto";
                 items.append("<tr>")
-                    .append("<td style='padding:8px 0;border-bottom:1px solid #e8e8ed;font-size:13px;color:#1a1a2e'>").append(esc(prod)).append("</td>")
-                    .append("<td style='padding:8px 0;border-bottom:1px solid #e8e8ed;text-align:center;font-size:13px;color:#6e6e82'>×").append(item.getCantidad()).append("</td>")
-                    .append("<td style='padding:8px 0;border-bottom:1px solid #e8e8ed;text-align:right;font-size:13px;color:#1a1a2e'>₡").append(CRC.format(item.getSubtotalItem())).append("</td>")
+                    .append("<td style='padding:8px 0;border-bottom:1px solid #E4E7EC;font-size:13px;color:#14171C'>").append(esc(prod)).append("</td>")
+                    .append("<td style='padding:8px 0;border-bottom:1px solid #E4E7EC;text-align:center;font-size:13px;color:#4D5560'>×").append(item.getCantidad()).append("</td>")
+                    .append("<td style='padding:8px 0;border-bottom:1px solid #E4E7EC;text-align:right;font-size:13px;color:#14171C'>₡").append(CRC.format(item.getSubtotalItem())).append("</td>")
                     .append("</tr>");
             }
         }
@@ -207,65 +247,53 @@ public class NotificacionEmailService {
             boolean isCorreos = pedido.getUrlTracking() == null || pedido.getUrlTracking().contains("correos.go.cr");
             String url = pedido.getUrlTracking() != null ? pedido.getUrlTracking()
                 : "https://rastreo.correos.go.cr/?codigo=" + pedido.getNumeroGuia();
-            String courierLabel = isCorreos ? "🟡 Correos de Costa Rica" : "🛵 Entrega directa por HOTCLICK";
-            guiaSection = "<div style='background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px 20px;margin-bottom:20px;text-align:center'>"
-                + "<p style='margin:0 0 4px;font-size:12px;color:#059669;font-weight:600;text-transform:uppercase;letter-spacing:1px'>Envío · " + esc(courierLabel) + "</p>"
-                + "<p style='margin:0 0 4px;font-size:12px;color:#6e6e82'>Número de guía</p>"
-                + "<p style='margin:0 0 12px;font-size:20px;font-weight:900;color:#1a1a2e;letter-spacing:2px'>" + esc(pedido.getNumeroGuia()) + "</p>"
-                + "<a href='" + url + "' style='display:inline-block;background:#059669;color:#fff;text-decoration:none;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:700'>📦 Rastrear paquete</a>"
+            String courierLabel = isCorreos ? "Correos de Costa Rica" : "Entrega directa por HotClick";
+            guiaSection = "<div style='background:#E9F7F0;border:1px solid #BFE5D1;border-radius:12px;padding:16px 20px;margin-bottom:20px;text-align:center'>"
+                + "<p style='margin:0 0 4px;font-size:12px;color:#178A50;font-weight:700;text-transform:uppercase;letter-spacing:1px'>Envío · " + esc(courierLabel) + "</p>"
+                + "<p style='margin:0 0 4px;font-size:12px;color:#4D5560'>Número de guía</p>"
+                + "<p style=\"margin:0 0 12px;font-size:20px;font-weight:800;color:#14171C;letter-spacing:2px;font-family:'IBM Plex Mono',monospace\">" + esc(pedido.getNumeroGuia()) + "</p>"
+                + "<a href='" + url + "' style='display:inline-block;background:#E73B33;color:#FFFFFF;text-decoration:none;padding:9px 22px;border-radius:10px;font-size:13px;font-weight:700'>Rastrear paquete</a>"
                 + "</div>";
         }
 
         String retiroSection = "";
         if (esRetiro && ("LISTO_RETIRO".equals(pedido.getEstadoPedido()) || "EN_PREPARACION".equals(pedido.getEstadoPedido()))) {
-            retiroSection = "<div style='background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:16px 20px;margin-bottom:20px;text-align:center'>"
-                + "<p style='margin:0 0 8px;font-size:14px;color:#1a1a2e;font-weight:600'>📍 Retiro en tienda</p>"
-                + "<p style='margin:0 0 12px;font-size:13px;color:#6e6e82'>HOTCLICK · Centro Comercial · Costa Rica</p>"
-                + "<a href='https://waze.com/ul?ll=9.9342,-84.0877&navigate=yes' style='display:inline-block;background:#00b4ff;color:#fff;text-decoration:none;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:700'>🗺 Cómo llegar (Waze)</a>"
+            retiroSection = "<div style='background:#EFF4FE;border:1px solid #C2D5F9;border-radius:12px;padding:16px 20px;margin-bottom:20px;text-align:center'>"
+                + "<p style='margin:0 0 8px;font-size:14px;color:#14171C;font-weight:700'>Retiro en tienda</p>"
+                + "<p style='margin:0 0 12px;font-size:13px;color:#4D5560'>HotClick · Centro Comercial · Costa Rica</p>"
+                + "<a href='https://waze.com/ul?ll=9.9342,-84.0877&navigate=yes' style='display:inline-block;border:1px solid #1747A8;color:#1747A8;text-decoration:none;padding:8px 20px;border-radius:10px;font-size:13px;font-weight:700'>Cómo llegar (Waze)</a>"
                 + "</div>";
         }
 
         String notaSection = (nota != null && !nota.isBlank())
-            ? "<div style='background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:14px 18px;margin-bottom:20px'>"
-                + "<p style='margin:0 0 4px;font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:1px'>Mensaje de HOTCLICK</p>"
-                + "<p style='margin:0;font-size:14px;color:#1a1a2e'>" + esc(nota) + "</p>"
+            ? "<div style='background:#FDF3DC;border:1px solid #EBD9A8;border-radius:12px;padding:14px 18px;margin-bottom:20px'>"
+                + "<p style='margin:0 0 4px;font-size:11px;font-weight:700;color:#9A6700;text-transform:uppercase;letter-spacing:1px'>Mensaje de HotClick</p>"
+                + "<p style='margin:0;font-size:14px;color:#14171C'>" + esc(nota) + "</p>"
                 + "</div>"
             : "";
 
+        // Estados con los colores semánticos del cap. 3.3 / 6.2
         String estadoColor;
-        String estadoEmoji;
         switch (pedido.getEstadoPedido() != null ? pedido.getEstadoPedido() : "") {
-            case "PAGADO":         estadoColor = "#4f7cff"; estadoEmoji = "💳"; break;
-            case "EN_PREPARACION": estadoColor = "#f59e0b"; estadoEmoji = "📦"; break;
-            case "LISTO_RETIRO":   estadoColor = "#8b5cf6"; estadoEmoji = "🏪"; break;
-            case "ENVIADO":        estadoColor = "#059669"; estadoEmoji = "🚚"; break;
-            case "ENTREGADO":      estadoColor = "#10b981"; estadoEmoji = "✅"; break;
-            case "CANCELADO":      estadoColor = "#ef4444"; estadoEmoji = "❌"; break;
-            default:               estadoColor = "#6b7280"; estadoEmoji = "📋";
+            case "PAGADO":         estadoColor = "#1747A8"; break;
+            case "EN_PREPARACION": estadoColor = "#9A6700"; break;
+            case "LISTO_RETIRO":   estadoColor = "#1747A8"; break;
+            case "ENVIADO":        estadoColor = "#178A50"; break;
+            case "ENTREGADO":      estadoColor = "#178A50"; break;
+            case "CANCELADO":      estadoColor = "#D02A23"; break;
+            default:               estadoColor = "#6E7682";
         }
 
-        return "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'>"
-            + "<meta name='viewport' content='width=device-width,initial-scale=1'></head>"
-            + "<body style='margin:0;padding:0;background:#f0f2f5;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif'>"
-            + "<div style='max-width:600px;margin:32px auto;padding:0 16px'>"
+        return abrirHtml()
+            + header("Actualización de tu pedido", "Tenemos novedades para vos")
+            + abrirCuerpo()
+            + "<p style='margin:0 0 6px;color:#14171C;font-size:16px'>Hola, <strong>" + nombre + "</strong>.</p>"
+            + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px;line-height:1.6'>Esta es la información actualizada de tu pedido <strong style='color:#14171C'>" + esc(pedido.getNumeroPedido()) + "</strong>.</p>"
 
-            + "<div style='background:linear-gradient(135deg,#4f7cff 0%,#7c3aed 100%);border-radius:20px 20px 0 0;padding:36px 36px 28px;text-align:center'>"
-            + "<div style='display:inline-block;background:rgba(255,255,255,0.15);border-radius:12px;padding:6px 16px;margin-bottom:16px'>"
-            + "<span style='color:rgba(255,255,255,0.9);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase'>HOTCLICK</span>"
-            + "</div>"
-            + "<div style='font-size:40px;margin-bottom:12px'>📬</div>"
-            + "<h1 style='margin:0;color:#fff;font-size:26px;font-weight:800'>Actualización de tu pedido</h1>"
-            + "<p style='margin:10px 0 0;color:rgba(255,255,255,0.85);font-size:14px'>Tenemos novedades para ti</p>"
-            + "</div>"
-
-            + "<div style='background:#fff;padding:32px 36px;border-left:1px solid #e8e8ed;border-right:1px solid #e8e8ed'>"
-            + "<p style='margin:0 0 6px;color:#1a1a2e;font-size:16px'>Hola <strong>" + nombre + "</strong> 👋</p>"
-            + "<p style='margin:0 0 24px;color:#6e6e82;font-size:14px;line-height:1.6'>Aquí está la información actualizada de tu pedido <strong style='color:#1a1a2e'>" + esc(pedido.getNumeroPedido()) + "</strong>.</p>"
-
-            // Status badge
-            + "<div style='background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between'>"
-            + "<div><p style='margin:0 0 2px;font-size:11px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:1px'>Estado actual</p>"
-            + "<p style='margin:0;font-size:16px;font-weight:800;color:" + estadoColor + "'>" + estadoEmoji + " " + estado + "</p></div>"
+            // Badge de estado: punto de color + texto (cap. 6.2)
+            + "<div style='background:#F8F9FB;border:1px solid #E4E7EC;border-radius:12px;padding:16px 20px;margin-bottom:20px'>"
+            + "<p style='margin:0 0 2px;font-size:11px;color:#9AA1AE;font-weight:600;text-transform:uppercase;letter-spacing:1px'>Estado actual</p>"
+            + "<p style='margin:0;font-size:16px;font-weight:800;color:" + estadoColor + "'>&#9679; " + estado + "</p>"
             + "</div>"
 
             + notaSection
@@ -276,19 +304,10 @@ public class NotificacionEmailService {
             + "<tbody>" + items + "</tbody>"
             + "</table>"
 
-            + "<div style='background:#f9fafb;border-radius:12px;padding:16px 20px;text-align:right'>"
-            + "<span style='color:#1a1a2e;font-weight:800;font-size:16px'>Total: ₡" + CRC.format(pedido.getTotalPedido()) + "</span>"
+            + "<div style='background:#F8F9FB;border-radius:10px;padding:16px 20px;text-align:right'>"
+            + "<span style=\"color:#14171C;font-weight:800;font-size:16px;font-family:" + F_DISPLAY + "\">Total: ₡" + CRC.format(pedido.getTotalPedido()) + "</span>"
             + "</div>"
-            + "</div>"
-
-            + "<div style='background:#1a1a2e;border-radius:0 0 20px 20px;padding:28px 36px;text-align:center'>"
-            + "<p style='margin:0 0 16px;color:rgba(255,255,255,0.7);font-size:13px'>¿Tienes alguna pregunta?</p>"
-            + "<a href='https://wa.me/50689745370' style='display:inline-block;background:#25D366;color:#fff;text-decoration:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;margin-bottom:20px'>📱 Escríbenos por WhatsApp</a>"
-            + "<div style='border-top:1px solid rgba(255,255,255,0.1);padding-top:16px;margin-top:4px'>"
-            + "<p style='margin:0 0 4px;color:#fff;font-size:13px;font-weight:700;letter-spacing:1px'>HOTCLICK</p>"
-            + "<p style='margin:0;color:rgba(255,255,255,0.5);font-size:11px'>hotclick.cr@gmail.com · Costa Rica</p>"
-            + "</div></div>"
-            + "</div></body></html>";
+            + footer("¿Tenés alguna pregunta?");
     }
 
     private String buildGuiaHtml(Pedido pedido, Usuario cliente) {
@@ -297,53 +316,27 @@ public class NotificacionEmailService {
         boolean isCorreos = pedido.getUrlTracking() == null || pedido.getUrlTracking().contains("correos.go.cr");
         String url    = pedido.getUrlTracking() != null ? pedido.getUrlTracking()
             : "https://rastreo.correos.go.cr/?codigo=" + pedido.getNumeroGuia();
-        String courierNombre = isCorreos ? "Correos de Costa Rica" : "HOTCLICK Express";
-        String courierEmoji = isCorreos ? "🟡" : "🛵";
+        String courierNombre = isCorreos ? "Correos de Costa Rica" : "HotClick Express";
 
-        return "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'>"
-            + "<meta name='viewport' content='width=device-width,initial-scale=1'></head>"
-            + "<body style='margin:0;padding:0;background:#f0f2f5;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif'>"
-            + "<div style='max-width:600px;margin:32px auto;padding:0 16px'>"
+        return abrirHtml()
+            + header("Tu pedido va en camino", "Ya salió de nuestras manos hacia las tuyas")
+            + abrirCuerpo()
+            + "<p style='margin:0 0 6px;color:#14171C;font-size:16px'>Hola, <strong>" + nombre + "</strong>.</p>"
+            + "<p style='margin:0 0 28px;color:#4D5560;font-size:14px;line-height:1.6'>Tu pedido <strong style='color:#14171C'>" + esc(pedido.getNumeroPedido()) + "</strong> fue enviado con <strong>" + courierNombre + "</strong>.</p>"
 
-            // Header
-            + "<div style='background:linear-gradient(135deg,#059669 0%,#047857 100%);border-radius:20px 20px 0 0;padding:36px 36px 28px;text-align:center'>"
-            + "<div style='display:inline-block;background:rgba(255,255,255,0.15);border-radius:12px;padding:6px 16px;margin-bottom:16px'>"
-            + "<span style='color:rgba(255,255,255,0.9);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase'>HOTCLICK</span>"
-            + "</div>"
-            + "<div style='font-size:40px;margin-bottom:12px'>🚚</div>"
-            + "<h1 style='margin:0;color:#fff;font-size:26px;font-weight:800;line-height:1.2'>¡Tu pedido está en camino!</h1>"
-            + "<p style='margin:10px 0 0;color:rgba(255,255,255,0.85);font-size:14px'>Ya salió de nuestras manos hacia las tuyas</p>"
+            // Número de guía en mono (cap. 4.1: datos en IBM Plex Mono)
+            + "<div style='background:#E9F7F0;border:1px solid #BFE5D1;border-radius:16px;padding:24px;text-align:center;margin-bottom:24px'>"
+            + "<p style='margin:0 0 8px;font-size:12px;color:#178A50;font-weight:700;text-transform:uppercase;letter-spacing:2px'>Número de guía</p>"
+            + "<p style=\"margin:0 0 20px;font-size:28px;font-weight:800;color:#14171C;letter-spacing:3px;font-family:'IBM Plex Mono',monospace\">" + guia + "</p>"
+            + "<a href='" + esc(url) + "' style='display:inline-block;background:#E73B33;color:#FFFFFF;text-decoration:none;padding:13px 32px;border-radius:10px;font-size:15px;font-weight:700'>Rastrear mi paquete</a>"
             + "</div>"
 
-            // Main
-            + "<div style='background:#fff;padding:32px 36px;border-left:1px solid #e8e8ed;border-right:1px solid #e8e8ed'>"
-            + "<p style='margin:0 0 6px;color:#1a1a2e;font-size:16px'>Hola <strong>" + nombre + "</strong> 👋</p>"
-            + "<p style='margin:0 0 28px;color:#6e6e82;font-size:14px;line-height:1.6'>Tu pedido <strong style='color:#1a1a2e'>" + esc(pedido.getNumeroPedido()) + "</strong> fue enviado con " + courierEmoji + " <strong>" + courierNombre + "</strong>.</p>"
-
-            // Tracking number
-            + "<div style='background:linear-gradient(135deg,#ecfdf5,#f0fdf4);border:2px solid #6ee7b7;border-radius:16px;padding:24px;text-align:center;margin-bottom:24px'>"
-            + "<p style='margin:0 0 8px;font-size:12px;color:#059669;font-weight:700;text-transform:uppercase;letter-spacing:2px'>📦 Número de guía</p>"
-            + "<p style='margin:0 0 20px;font-size:28px;font-weight:900;color:#1a1a2e;letter-spacing:3px;font-family:monospace'>" + guia + "</p>"
-            + "<a href='" + esc(url) + "' style='display:inline-block;background:#059669;color:#fff;text-decoration:none;padding:13px 32px;border-radius:10px;font-size:15px;font-weight:700'>Rastrear mi paquete →</a>"
+            + "<div style='border:1px solid #EBD9A8;background:#FDF3DC;border-radius:12px;padding:14px 18px;margin-bottom:8px'>"
+            + "<p style='margin:0;font-size:13px;color:#9A6700;line-height:1.6'><strong>Dato útil:</strong> también podés rastrear en "
+            + (isCorreos ? "<strong>rastreo.correos.go.cr</strong> ingresando tu número de guía." : "el enlace de arriba.")
+            + " La entrega tarda de 2 a 5 días hábiles.</p>"
             + "</div>"
-
-            // Info tip
-            + "<div style='border:1px solid #fde68a;background:#fffbeb;border-radius:12px;padding:14px 18px;margin-bottom:8px'>"
-            + "<p style='margin:0;font-size:13px;color:#92400e;line-height:1.6'>💡 <strong>Tip:</strong> También puedes rastrear en "
-            + (isCorreos ? "<strong>rastreo.correos.go.cr</strong> ingresando tu número de guía." : "el link de arriba.")
-            + " Los tiempos de entrega son de 2–5 días hábiles.</p>"
-            + "</div>"
-            + "</div>"
-
-            // Footer
-            + "<div style='background:#1a1a2e;border-radius:0 0 20px 20px;padding:28px 36px;text-align:center'>"
-            + "<p style='margin:0 0 16px;color:rgba(255,255,255,0.7);font-size:13px'>¿Alguna pregunta sobre tu envío?</p>"
-            + "<a href='https://wa.me/50689745370' style='display:inline-block;background:#25D366;color:#fff;text-decoration:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;margin-bottom:20px'>📱 Escríbenos por WhatsApp</a>"
-            + "<div style='border-top:1px solid rgba(255,255,255,0.1);padding-top:16px;margin-top:4px'>"
-            + "<p style='margin:0 0 4px;color:#fff;font-size:13px;font-weight:700;letter-spacing:1px'>HOTCLICK</p>"
-            + "<p style='margin:0;color:rgba(255,255,255,0.5);font-size:11px'>hotclick.cr@gmail.com · Costa Rica</p>"
-            + "</div></div>"
-            + "</div></body></html>";
+            + footer("¿Alguna pregunta sobre tu envío?");
     }
 
     private String buildHtml(Pedido pedido, Usuario cliente) {
@@ -352,167 +345,117 @@ public class NotificacionEmailService {
             String nombre = item.getProducto() != null ? esc(item.getProducto().getNombreProducto()) : "Producto";
             String imgUrl = item.getProducto() != null ? item.getProducto().getImagenPrincipalUrl() : null;
             String imgTag = (imgUrl != null && !imgUrl.isBlank())
-                ? "<img src='" + esc(imgUrl) + "' width='52' height='52' style='object-fit:cover;border-radius:8px;display:block;border:1px solid #e8e8ed' alt=''>"
-                : "<div style='width:52px;height:52px;border-radius:8px;background:#f0f0f5;display:flex;align-items:center;justify-content:center;font-size:20px'>📦</div>";
+                ? "<img src='" + esc(imgUrl) + "' width='52' height='52' style='object-fit:cover;border-radius:8px;display:block;border:1px solid #E4E7EC' alt=''>"
+                : "<div style='width:52px;height:52px;border-radius:8px;background:#F1F3F6'></div>";
             itemRows.append("<tr>")
-                .append("<td style='padding:14px 8px;border-bottom:1px solid #f0f0f5;vertical-align:middle'>")
+                .append("<td style='padding:14px 8px;border-bottom:1px solid #F1F3F6;vertical-align:middle'>")
                 .append("<table cellpadding='0' cellspacing='0' style='border-collapse:collapse'><tr>")
                 .append("<td style='padding-right:12px;vertical-align:middle'>").append(imgTag).append("</td>")
-                .append("<td style='vertical-align:middle'><span style='font-size:13px;color:#1a1a2e;font-weight:500;display:block'>").append(nombre).append("</span>")
-                .append("<span style='font-size:11px;color:#9ca3af;margin-top:2px;display:block'>Cantidad: ×").append(item.getCantidad()).append("</span></td>")
+                .append("<td style='vertical-align:middle'><span style='font-size:13px;color:#14171C;font-weight:500;display:block'>").append(nombre).append("</span>")
+                .append("<span style='font-size:11px;color:#9AA1AE;margin-top:2px;display:block'>Cantidad: ×").append(item.getCantidad()).append("</span></td>")
                 .append("</tr></table></td>")
-                .append("<td style='padding:14px 8px;border-bottom:1px solid #f0f0f5;text-align:right;vertical-align:middle;white-space:nowrap'>")
-                .append("<span style='font-size:14px;font-weight:700;color:#4f7cff'>₡").append(CRC.format(item.getSubtotalItem())).append("</span></td>")
+                .append("<td style='padding:14px 8px;border-bottom:1px solid #F1F3F6;text-align:right;vertical-align:middle;white-space:nowrap'>")
+                .append("<span style=\"font-size:14px;font-weight:700;color:#14171C;font-family:" + F_DISPLAY + "\">₡").append(CRC.format(item.getSubtotalItem())).append("</span></td>")
                 .append("</tr>");
         }
 
         boolean esEnvio = "ENVIO_A_DOMICILIO".equals(pedido.getMetodoEnvio());
-        String metodoEnvioLabel = esEnvio
-            ? "🚚 Envío a domicilio"
-            : "🏪 Retiro en tienda";
+        String metodoEnvioLabel = esEnvio ? "Envío a domicilio" : "Retiro en tienda";
         String metodoEnvioSub = esEnvio
-            ? "Recibirás tu pedido en la dirección indicada"
-            : "Tu pedido estará listo para retirar en nuestra tienda";
+            ? "Vas a recibir tu pedido en la dirección indicada"
+            : "Tu pedido va a estar listo para retirar en nuestra tienda";
 
         String nombreCliente = esc(cliente.getNombre() != null ? cliente.getNombre() : "Cliente");
 
-        return "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'>"
-            + "<meta name='viewport' content='width=device-width,initial-scale=1'>"
-            + "<title>Pedido confirmado</title></head>"
-            + "<body style='margin:0;padding:0;background:#f0f2f5;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif'>"
-            + "<div style='max-width:600px;margin:32px auto;padding:0 16px'>"
+        return abrirHtml()
+            + header("¡Listo! Pedido confirmado", "Tu pago se procesó sin problemas")
+            + abrirCuerpo()
 
-            // Header card
-            + "<div style='background:linear-gradient(135deg,#4f7cff 0%,#7c3aed 100%);border-radius:20px 20px 0 0;padding:36px 36px 28px;text-align:center'>"
-            + "<div style='display:inline-block;background:rgba(255,255,255,0.15);border-radius:12px;padding:6px 16px;margin-bottom:16px'>"
-            + "<span style='color:rgba(255,255,255,0.9);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase'>HOTCLICK</span>"
-            + "</div>"
-            + "<div style='width:64px;height:64px;background:rgba(255,255,255,0.2);border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:28px'>✅</div>"
-            + "<h1 style='margin:0;color:#fff;font-size:26px;font-weight:800;line-height:1.2'>¡Pedido confirmado!</h1>"
-            + "<p style='margin:10px 0 0;color:rgba(255,255,255,0.8);font-size:14px'>Tu pago fue procesado exitosamente</p>"
-            + "</div>"
+            + "<p style='margin:0 0 6px;color:#14171C;font-size:16px'>Hola, <strong>" + nombreCliente + "</strong>.</p>"
+            + "<p style='margin:0 0 28px;color:#4D5560;font-size:14px;line-height:1.6'>Gracias por tu compra. Este es el resumen de tu pedido:</p>"
 
-            // Main content
-            + "<div style='background:#fff;padding:32px 36px;border-left:1px solid #e8e8ed;border-right:1px solid #e8e8ed'>"
-
-            // Greeting
-            + "<p style='margin:0 0 6px;color:#1a1a2e;font-size:16px'>Hola <strong>" + nombreCliente + "</strong> 👋</p>"
-            + "<p style='margin:0 0 28px;color:#6e6e82;font-size:14px;line-height:1.6'>Gracias por tu compra. Aquí está el resumen de tu pedido:</p>"
-
-            // Order number badge
-            + "<div style='background:#f5f5ff;border:1.5px solid #c7d2fe;border-radius:12px;padding:16px 20px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between'>"
-            + "<div><p style='margin:0 0 2px;font-size:11px;color:#6366f1;font-weight:600;text-transform:uppercase;letter-spacing:1px'>Número de pedido</p>"
-            + "<p style='margin:0;font-size:16px;font-weight:800;color:#1a1a2e;font-family:monospace'>" + esc(pedido.getNumeroPedido()) + "</p></div>"
-            + "<div style='font-size:24px'>🧾</div>"
+            // Número de pedido (datos en mono, cap. 4.1)
+            + "<div style='background:#EFF4FE;border:1px solid #C2D5F9;border-radius:12px;padding:16px 20px;margin-bottom:24px'>"
+            + "<p style='margin:0 0 2px;font-size:11px;color:#1747A8;font-weight:700;text-transform:uppercase;letter-spacing:1px'>Número de pedido</p>"
+            + "<p style=\"margin:0;font-size:16px;font-weight:800;color:#14171C;font-family:'IBM Plex Mono',monospace\">" + esc(pedido.getNumeroPedido()) + "</p>"
             + "</div>"
 
             // Items
             + "<table style='width:100%;border-collapse:collapse;margin-bottom:24px'>"
-            + "<thead><tr style='border-bottom:2px solid #f0f0f5'>"
-            + "<th style='padding:10px 8px;text-align:left;font-size:11px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:1px'>Producto</th>"
-            + "<th style='padding:10px 8px;text-align:right;font-size:11px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:1px'>Total</th>"
+            + "<thead><tr style='border-bottom:2px solid #E4E7EC'>"
+            + "<th style='padding:10px 8px;text-align:left;font-size:11px;color:#9AA1AE;font-weight:600;text-transform:uppercase;letter-spacing:1px'>Producto</th>"
+            + "<th style='padding:10px 8px;text-align:right;font-size:11px;color:#9AA1AE;font-weight:600;text-transform:uppercase;letter-spacing:1px'>Total</th>"
             + "</tr></thead>"
             + "<tbody>" + itemRows + "</tbody>"
             + "</table>"
 
-            // Totals
-            + "<div style='background:#f9fafb;border-radius:12px;padding:16px 20px;margin-bottom:24px'>"
+            // Totales
+            + "<div style='background:#F8F9FB;border-radius:10px;padding:16px 20px;margin-bottom:24px'>"
             + "<div style='display:flex;justify-content:space-between;margin-bottom:8px'>"
-            + "<span style='color:#6e6e82;font-size:13px'>Subtotal</span>"
-            + "<span style='color:#1a1a2e;font-size:13px'>₡" + CRC.format(pedido.getSubtotal()) + "</span>"
+            + "<span style='color:#4D5560;font-size:13px'>Subtotal</span>"
+            + "<span style='color:#14171C;font-size:13px'>₡" + CRC.format(pedido.getSubtotal()) + "</span>"
             + "</div>"
             + (esEnvio ? "<div style='display:flex;justify-content:space-between;margin-bottom:8px'>"
-            + "<span style='color:#6e6e82;font-size:13px'>Envío</span>"
-            + "<span style='color:#1a1a2e;font-size:13px'>₡" + CRC.format(pedido.getCostoEnvio()) + "</span>"
+            + "<span style='color:#4D5560;font-size:13px'>Envío</span>"
+            + "<span style='color:#14171C;font-size:13px'>₡" + CRC.format(pedido.getCostoEnvio()) + "</span>"
             + "</div>" : "")
-            + "<div style='display:flex;justify-content:space-between;padding-top:12px;border-top:2px solid #e8e8ed;margin-top:4px'>"
-            + "<span style='color:#1a1a2e;font-weight:800;font-size:16px'>Total pagado</span>"
-            + "<span style='color:#4f7cff;font-weight:800;font-size:18px'>₡" + CRC.format(pedido.getTotalPedido()) + "</span>"
+            + "<div style='display:flex;justify-content:space-between;padding-top:12px;border-top:2px solid #E4E7EC;margin-top:4px'>"
+            + "<span style=\"color:#14171C;font-weight:800;font-size:16px;font-family:" + F_DISPLAY + "\">Total pagado</span>"
+            + "<span style=\"color:#14171C;font-weight:800;font-size:18px;font-family:" + F_DISPLAY + "\">₡" + CRC.format(pedido.getTotalPedido()) + "</span>"
             + "</div></div>"
 
-            // Delivery method
-            + "<div style='border:1px solid #e8e8ed;border-radius:12px;padding:16px 20px;margin-bottom:24px'>"
-            + "<p style='margin:0 0 4px;font-size:14px;font-weight:700;color:#1a1a2e'>" + metodoEnvioLabel + "</p>"
-            + "<p style='margin:0;font-size:13px;color:#6e6e82'>" + metodoEnvioSub + "</p>"
+            // Método de entrega
+            + "<div style='border:1px solid #E4E7EC;border-radius:12px;padding:16px 20px;margin-bottom:24px'>"
+            + "<p style='margin:0 0 4px;font-size:14px;font-weight:700;color:#14171C'>" + metodoEnvioLabel + "</p>"
+            + "<p style='margin:0;font-size:13px;color:#4D5560'>" + metodoEnvioSub + "</p>"
             + "</div>"
 
-            // Warranty / trust
-            + "<div style='background:linear-gradient(135deg,#ecfdf5,#f0fdf4);border:1px solid #bbf7d0;border-radius:12px;padding:16px 20px;margin-bottom:8px'>"
-            + "<p style='margin:0 0 4px;font-size:14px;font-weight:700;color:#065f46'>🛡 Garantía de 40 días activa</p>"
-            + "<p style='margin:0;font-size:13px;color:#047857'>Si tienes cualquier problema con tu pedido, contáctanos por WhatsApp y lo resolvemos.</p>"
-            + "</div>"
+            // Garantía / confianza
+            + "<div style='background:#E9F7F0;border:1px solid #BFE5D1;border-radius:12px;padding:16px 20px;margin-bottom:24px'>"
+            + "<p style='margin:0 0 4px;font-size:14px;font-weight:700;color:#178A50'>Garantía de 40 días activa</p>"
+            + "<p style='margin:0;font-size:13px;color:#14171C'>Si tenés cualquier problema con tu pedido, escribinos por WhatsApp y lo resolvemos.</p>"
             + "</div>"
 
-            // Footer
-            + "<div style='background:#1a1a2e;border-radius:0 0 20px 20px;padding:28px 36px;text-align:center'>"
-            + "<p style='margin:0 0 16px;color:rgba(255,255,255,0.7);font-size:13px'>¿Tienes alguna pregunta sobre tu pedido?</p>"
-            + "<a href='https://wa.me/50689745370' style='display:inline-block;background:#25D366;color:#fff;text-decoration:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;margin-bottom:20px'>📱 Escríbenos por WhatsApp</a>"
-            + "<div style='border-top:1px solid rgba(255,255,255,0.1);padding-top:16px;margin-top:4px'>"
-            + "<p style='margin:0 0 4px;color:#fff;font-size:13px;font-weight:700;letter-spacing:1px'>HOTCLICK</p>"
-            + "<p style='margin:0;color:rgba(255,255,255,0.5);font-size:11px'>hotclick.cr@gmail.com · Costa Rica</p>"
-            + "</div></div>"
-
-            + "</div></body></html>";
+            + cta("https://hotclick.lat/mis-pedidos", "Ver mi pedido")
+            + footer("¿Tenés alguna pregunta sobre tu pedido?");
     }
 
     private String buildPagoFallidoHtml(Pedido pedido, Usuario cliente, String motivo) {
         String nombre = esc(cliente.getNombre() != null ? cliente.getNombre() : "Cliente");
-        return "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'>"
-            + "<meta name='viewport' content='width=device-width,initial-scale=1'></head>"
-            + "<body style='margin:0;padding:0;background:#f0f2f5;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif'>"
-            + "<div style='max-width:600px;margin:32px auto;padding:0 16px'>"
+        return abrirHtml()
+            + header("No pudimos procesar tu pago", "Tu carrito sigue guardado")
+            + abrirCuerpo()
+            + "<p style='margin:0 0 6px;color:#14171C;font-size:16px'>Hola, <strong>" + nombre + "</strong>.</p>"
+            + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px;line-height:1.6'>El pago de tu pedido <strong style='color:#14171C'>" + esc(pedido.getNumeroPedido()) + "</strong> no se pudo completar. No se hizo ningún cargo.</p>"
 
-            + "<div style='background:linear-gradient(135deg,#ef4444 0%,#dc2626 100%);border-radius:20px 20px 0 0;padding:36px 36px 28px;text-align:center'>"
-            + "<div style='display:inline-block;background:rgba(255,255,255,0.15);border-radius:12px;padding:6px 16px;margin-bottom:16px'>"
-            + "<span style='color:rgba(255,255,255,0.9);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase'>HOTCLICK</span>"
-            + "</div>"
-            + "<div style='font-size:40px;margin-bottom:12px'>⚠️</div>"
-            + "<h1 style='margin:0;color:#fff;font-size:24px;font-weight:800'>Problema con tu pago</h1>"
-            + "<p style='margin:10px 0 0;color:rgba(255,255,255,0.85);font-size:14px'>No se pudo procesar el pago de tu pedido</p>"
+            // Alerta de error: fondo semántico 50 + texto 600 (cap. 3.5)
+            + "<div style='background:#FEF2F1;border:1px solid #FBC1BD;border-radius:12px;padding:16px 20px;margin-bottom:24px'>"
+            + "<p style='margin:0 0 4px;font-size:11px;font-weight:700;color:#D02A23;text-transform:uppercase;letter-spacing:1px'>Qué pasó</p>"
+            + "<p style='margin:0;font-size:14px;color:#76211E'>" + esc(motivo != null ? motivo : "El pago fue rechazado o cancelado por el procesador.") + "</p>"
             + "</div>"
 
-            + "<div style='background:#fff;padding:32px 36px;border-left:1px solid #e8e8ed;border-right:1px solid #e8e8ed'>"
-            + "<p style='margin:0 0 6px;color:#1a1a2e;font-size:16px'>Hola <strong>" + nombre + "</strong>,</p>"
-            + "<p style='margin:0 0 24px;color:#6e6e82;font-size:14px;line-height:1.6'>Tu pago para el pedido <strong style='color:#1a1a2e'>" + esc(pedido.getNumeroPedido()) + "</strong> no pudo completarse.</p>"
+            + "<p style='margin:0 0 20px;color:#4D5560;font-size:14px;line-height:1.6'>El stock fue liberado y podés intentarlo de nuevo cuando querás — revisá los datos del método de pago o probá con otro. Si el problema sigue, escribinos por WhatsApp y lo vemos juntos.</p>"
 
-            + "<div style='background:#fef2f2;border:1.5px solid #fca5a5;border-radius:12px;padding:16px 20px;margin-bottom:24px'>"
-            + "<p style='margin:0 0 4px;font-size:11px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:1px'>Motivo</p>"
-            + "<p style='margin:0;font-size:14px;color:#7f1d1d'>" + esc(motivo != null ? motivo : "El pago fue rechazado o cancelado.") + "</p>"
-            + "</div>"
-
-            + "<p style='margin:0 0 20px;color:#6e6e82;font-size:14px;line-height:1.6'>El stock fue liberado y puedes volver a intentarlo. Si el problema persiste, contáctanos por WhatsApp.</p>"
-
-            + "<div style='text-align:center;padding:8px 0'>"
-            + "<a href='https://hotclick.lat/checkout' style='display:inline-block;background:#4f7cff;color:#fff;text-decoration:none;padding:13px 32px;border-radius:10px;font-size:15px;font-weight:700'>Intentar de nuevo →</a>"
-            + "</div>"
-            + "</div>"
-
-            + "<div style='background:#1a1a2e;border-radius:0 0 20px 20px;padding:28px 36px;text-align:center'>"
-            + "<p style='margin:0 0 16px;color:rgba(255,255,255,0.7);font-size:13px'>¿Necesitas ayuda con tu pago?</p>"
-            + "<a href='https://wa.me/50689745370' style='display:inline-block;background:#25D366;color:#fff;text-decoration:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;margin-bottom:20px'>📱 Contáctanos por WhatsApp</a>"
-            + "<div style='border-top:1px solid rgba(255,255,255,0.1);padding-top:16px;margin-top:4px'>"
-            + "<p style='margin:0 0 4px;color:#fff;font-size:13px;font-weight:700;letter-spacing:1px'>HOTCLICK</p>"
-            + "<p style='margin:0;color:rgba(255,255,255,0.5);font-size:11px'>hotclick.cr@gmail.com · Costa Rica</p>"
-            + "</div></div>"
-            + "</div></body></html>";
+            + cta("https://hotclick.lat/checkout", "Intentar de nuevo")
+            + footer("¿Necesitás ayuda con tu pago?");
     }
+
+    /* ──────────────────────────── marketing y cuentas ──────────────────────────── */
 
     @Async
     public void enviarCuponBienvenida(String email, String codigo) {
         try {
-            String html = "<div style='font-family:sans-serif;max-width:480px;margin:0 auto;background:#0d0d14;color:#e8e8ed;padding:32px;border-radius:16px'>" +
-                "<h2 style='color:#4f7cff;margin-bottom:8px'>¡Tu código de descuento!</h2>" +
-                "<p style='color:#8e8e9a;margin-bottom:24px'>Gracias por unirte a HOTCLICK. Usá este código para obtener un <strong style='color:#e8e8ed'>13% de descuento</strong> en tu primera compra en línea:</p>" +
-                "<div style='background:#1a1a2e;border:2px dashed #4f7cff;border-radius:12px;padding:20px;text-align:center;margin-bottom:24px'>" +
-                "<span style='font-size:28px;font-weight:900;letter-spacing:4px;color:#4f7cff'>" + esc(codigo) + "</span>" +
-                "</div>" +
-                "<p style='color:#8e8e9a;font-size:13px'>• Válido para una sola compra<br>• Una vez por persona<br>• Ingresalo en el campo \"¿Tenés un cupón?\" al hacer checkout</p>" +
-                "<div style='margin-top:28px;padding-top:20px;border-top:1px solid #1a1a2e;text-align:center'>" +
-                "<a href='https://hotclick.lat/productos' style='background:#4f7cff;color:#fff;padding:12px 28px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px'>Ver productos →</a>" +
-                "</div>" +
-                "<p style='color:#5e5e6e;font-size:11px;text-align:center;margin-top:20px'>HOTCLICK Outlet · Costa Rica</p>" +
-                "</div>";
-            resendEmailService.send(email, "Tu cupón de 13% OFF — HOTCLICK", html);
+            String html = abrirHtml()
+                + header("Tu código de descuento", "13% menos en tu primera compra en línea")
+                + abrirCuerpo()
+                + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px;line-height:1.6'>Gracias por unirte a HotClick. Usá este código al pagar y obtené un <strong style='color:#14171C'>13% de descuento</strong> en tu primera compra en línea:</p>"
+                + "<div style='background:#FEF2F1;border:2px dashed #E73B33;border-radius:12px;padding:20px;text-align:center;margin-bottom:24px'>"
+                + "<span style=\"font-size:28px;font-weight:800;letter-spacing:4px;color:#D02A23;font-family:'IBM Plex Mono',monospace\">" + esc(codigo) + "</span>"
+                + "</div>"
+                + "<p style='margin:0 0 24px;color:#4D5560;font-size:13px;line-height:1.8'>• Válido para una sola compra<br>• Una vez por persona<br>• Ingresalo en el campo «¿Tenés un cupón?» al hacer checkout</p>"
+                + cta("https://hotclick.lat/productos", "Encontrá lo que buscás")
+                + footer("¿Tenés alguna pregunta?");
+            resendEmailService.send(email, "Tu cupón de 13% OFF — HotClick", html);
             log.info("Email cupón bienvenida enviado a {}", email);
         } catch (Exception e) {
             log.error("No se pudo enviar email de cupón a {}: {}", email, e.getMessage());
@@ -522,27 +465,22 @@ public class NotificacionEmailService {
     @Async
     public void enviarBienvenidaEmprendedor(String correo, String nombre, String nombreEmpresa) {
         try {
-            String html = "<div style='font-family:sans-serif;max-width:520px;margin:0 auto;background:#0d0d14;color:#e8e8ed;padding:32px;border-radius:16px'>"
-                + "<div style='text-align:center;margin-bottom:24px'>"
-                + "<div style='display:inline-block;background:linear-gradient(135deg,#ff4b12,#ff7b00);padding:12px 20px;border-radius:12px;font-weight:900;font-size:18px;letter-spacing:2px;color:#fff'>HOTCLICK</div>"
-                + "</div>"
-                + "<h2 style='color:#ff4b12;margin-bottom:8px'>¡Bienvenido a HOTCLICK, " + esc(nombre) + "!</h2>"
-                + "<p style='color:#8e8e9a;margin-bottom:20px'>Tu empresa <strong style='color:#e8e8ed'>" + esc(nombreEmpresa) + "</strong> fue registrada exitosamente. "
-                + "Ya podés acceder a tu panel de administración y empezar a configurar tu tienda.</p>"
-                + "<div style='background:#1a1a2e;border-radius:12px;padding:20px;margin-bottom:20px'>"
-                + "<p style='margin:0 0 10px;font-weight:700;color:#e8e8ed'>Próximos pasos:</p>"
-                + "<ul style='margin:0;padding-left:20px;color:#8e8e9a;line-height:1.8'>"
-                + "<li>Agrega tus primeros productos desde el panel</li>"
-                + "<li>Configura el perfil de tu empresa (logo, colores, WhatsApp)</li>"
-                + "<li>Invita a tu equipo de administración</li>"
+            String html = abrirHtml()
+                + header("Tu tienda está lista", "Bienvenido a la comunidad de emprendedores")
+                + abrirCuerpo()
+                + "<p style='margin:0 0 6px;color:#14171C;font-size:16px'>Hola, <strong>" + esc(nombre) + "</strong>.</p>"
+                + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px;line-height:1.6'>Tu negocio <strong style='color:#14171C'>" + esc(nombreEmpresa) + "</strong> quedó registrado en HotClick. Ya podés entrar a tu panel y empezar a configurar tu tienda.</p>"
+                + "<div style='background:#EFF4FE;border:1px solid #C2D5F9;border-radius:12px;padding:20px;margin-bottom:24px'>"
+                + "<p style='margin:0 0 10px;font-weight:700;color:#14171C'>Próximos pasos:</p>"
+                + "<ul style='margin:0;padding-left:20px;color:#4D5560;line-height:1.8;font-size:14px'>"
+                + "<li>Agregá tus primeros productos desde el panel</li>"
+                + "<li>Configurá el perfil de tu negocio (logo, colores, WhatsApp)</li>"
+                + "<li>Invitá a tu equipo de administración</li>"
                 + "</ul>"
                 + "</div>"
-                + "<div style='text-align:center;margin-top:24px'>"
-                + "<a href='https://hotclick.lat/admin' style='background:linear-gradient(135deg,#ff4b12,#ff7b00);color:#fff;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px'>Ir a mi panel →</a>"
-                + "</div>"
-                + "<p style='color:#5e5e6e;font-size:11px;text-align:center;margin-top:24px'>HOTCLICK Outlet · Costa Rica · <a href='https://hotclick.lat' style='color:#5e5e6e'>hotclick.lat</a></p>"
-                + "</div>";
-            resendEmailService.send(correo, "¡Bienvenido a HOTCLICK! Tu tienda está lista — " + esc(nombreEmpresa), html);
+                + cta("https://hotclick.lat/admin", "Ir a mi panel")
+                + footer("¿Tenés dudas para arrancar?");
+            resendEmailService.send(correo, "Tu tienda está lista en HotClick — " + esc(nombreEmpresa), html);
             log.info("Email bienvenida emprendedor enviado a {}", correo);
         } catch (Exception e) {
             log.error("No se pudo enviar email de bienvenida a {}: {}", correo, e.getMessage());
@@ -552,19 +490,18 @@ public class NotificacionEmailService {
     @Async
     public void enviarAprobacionNegocio(String correo, String nombre, String nombreEmpresa) {
         try {
-            String html = "<div style='font-family:sans-serif;max-width:520px;margin:0 auto;background:#0d0d14;color:#e8e8ed;padding:32px;border-radius:16px'>"
-                + "<div style='text-align:center;margin-bottom:24px'><div style='display:inline-block;background:linear-gradient(135deg,#ff4b12,#ff7b00);padding:12px 20px;border-radius:12px;font-weight:900;font-size:18px;letter-spacing:2px;color:#fff'>HOTCLICK</div></div>"
-                + "<div style='text-align:center;margin-bottom:20px'><div style='font-size:48px'>✅</div></div>"
-                + "<h2 style='color:#22c55e;text-align:center;margin-bottom:8px'>¡Tu negocio fue aprobado!</h2>"
-                + "<p style='color:#8e8e9a;text-align:center;margin-bottom:24px'>Hola <strong style='color:#e8e8ed'>" + esc(nombre) + "</strong>, tu negocio <strong style='color:#e8e8ed'>" + esc(nombreEmpresa) + "</strong> fue revisado y aprobado. "
-                + "Ahora tus productos son visibles al público en HOTCLICK.</p>"
-                + "<div style='background:#0f2b1e;border:1px solid #22c55e33;border-radius:12px;padding:20px;margin-bottom:24px'>"
-                + "<p style='margin:0 0 10px;font-weight:700;color:#22c55e'>Tu tienda ya está en línea</p>"
-                + "<p style='margin:0;color:#8e8e9a;line-height:1.7'>Podés activar la visibilidad, agregar más productos y configurar tu perfil desde el panel de administración.</p>"
+            String html = abrirHtml()
+                + header("¡Tu negocio fue aprobado!", "Tus productos ya son visibles al público")
+                + abrirCuerpo()
+                + "<p style='margin:0 0 6px;color:#14171C;font-size:16px'>Hola, <strong>" + esc(nombre) + "</strong>.</p>"
+                + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px;line-height:1.6'>Tu negocio <strong style='color:#14171C'>" + esc(nombreEmpresa) + "</strong> fue revisado y aprobado. Desde ahora tus productos aparecen en HotClick.</p>"
+                + "<div style='background:#E9F7F0;border:1px solid #BFE5D1;border-radius:12px;padding:20px;margin-bottom:24px'>"
+                + "<p style='margin:0 0 10px;font-weight:700;color:#178A50'>Tu tienda ya está en línea</p>"
+                + "<p style='margin:0;color:#14171C;line-height:1.7;font-size:14px'>Podés activar la visibilidad, agregar más productos y configurar tu perfil desde el panel de administración.</p>"
                 + "</div>"
-                + "<div style='text-align:center'><a href='https://hotclick.lat/admin' style='background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px'>Ver mi panel →</a></div>"
-                + "<p style='color:#5e5e6e;font-size:11px;text-align:center;margin-top:24px'>HOTCLICK Outlet · Costa Rica</p></div>";
-            resendEmailService.send(correo, "¡Tu negocio " + esc(nombreEmpresa) + " fue aprobado en HOTCLICK!", html);
+                + cta("https://hotclick.lat/admin", "Ver mi panel")
+                + footer("¿Tenés alguna pregunta?");
+            resendEmailService.send(correo, "Tu negocio " + esc(nombreEmpresa) + " fue aprobado — HotClick", html);
             log.info("Email aprobación enviado a {}", correo);
         } catch (Exception e) {
             log.error("No se pudo enviar email de aprobación a {}: {}", correo, e.getMessage());
@@ -574,12 +511,13 @@ public class NotificacionEmailService {
     @Async
     public void enviarRechazoNegocio(String correo, String nombre, String nombreEmpresa) {
         try {
-            String html = "<div style='font-family:sans-serif;max-width:520px;margin:0 auto;background:#0d0d14;color:#e8e8ed;padding:32px;border-radius:16px'>"
-                + "<div style='text-align:center;margin-bottom:24px'><div style='display:inline-block;background:linear-gradient(135deg,#ff4b12,#ff7b00);padding:12px 20px;border-radius:12px;font-weight:900;font-size:18px;letter-spacing:2px;color:#fff'>HOTCLICK</div></div>"
-                + "<h2 style='color:#ef4444;text-align:center;margin-bottom:8px'>Solicitud no aprobada</h2>"
-                + "<p style='color:#8e8e9a;margin-bottom:20px'>Hola <strong style='color:#e8e8ed'>" + esc(nombre) + "</strong>, lamentablemente tu solicitud para <strong style='color:#e8e8ed'>" + esc(nombreEmpresa) + "</strong> no fue aprobada en esta ocasión.</p>"
-                + "<p style='color:#8e8e9a;margin-bottom:24px'>Si tenés dudas o querés más información, escribinos a <a href='mailto:soporte@hotclick.cr' style='color:#ff4b12'>soporte@hotclick.cr</a>.</p>"
-                + "<p style='color:#5e5e6e;font-size:11px;text-align:center;margin-top:24px'>HOTCLICK Outlet · Costa Rica</p></div>";
+            String html = abrirHtml()
+                + header("Actualización sobre tu solicitud", null)
+                + abrirCuerpo()
+                + "<p style='margin:0 0 6px;color:#14171C;font-size:16px'>Hola, <strong>" + esc(nombre) + "</strong>.</p>"
+                + "<p style='margin:0 0 16px;color:#4D5560;font-size:14px;line-height:1.6'>Revisamos tu solicitud para <strong style='color:#14171C'>" + esc(nombreEmpresa) + "</strong> y en esta ocasión no fue aprobada.</p>"
+                + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px;line-height:1.6'>Esto no cierra la puerta: si tenés dudas o querés saber qué ajustar para volver a aplicar, escribinos a <a href='mailto:soporte@hotclick.cr' style='color:#1747A8'>soporte@hotclick.cr</a> o por WhatsApp.</p>"
+                + footer("¿Querés que lo revisemos juntos?");
             resendEmailService.send(correo, "Actualización sobre tu solicitud — " + esc(nombreEmpresa), html);
             log.info("Email rechazo enviado a {}", correo);
         } catch (Exception e) {
@@ -603,45 +541,38 @@ public class NotificacionEmailService {
                 default -> rolEnEmpresa;
             };
 
-            String credencialesBlock = "";
+            String credencialesBlock;
             if (passwordPlano != null) {
-                credencialesBlock = "<div style='background:#111827;border:1px solid #374151;border-radius:12px;padding:20px;margin:20px 0'>"
-                    + "<p style='margin:0 0 12px;font-weight:700;color:#e8e8ed'>Tus credenciales de acceso</p>"
+                credencialesBlock = "<div style='background:#F8F9FB;border:1px solid #E4E7EC;border-radius:12px;padding:20px;margin:20px 0'>"
+                    + "<p style='margin:0 0 12px;font-weight:700;color:#14171C'>Tus credenciales de acceso</p>"
                     + "<table style='width:100%;border-collapse:collapse'>"
-                    + "<tr><td style='color:#8e8e9a;padding:4px 0;width:110px'>Correo:</td>"
-                    + "<td style='color:#e8e8ed;font-family:monospace'>" + esc(correo) + "</td></tr>"
-                    + "<tr><td style='color:#8e8e9a;padding:4px 0'>Contraseña:</td>"
-                    + "<td style='color:#f59e0b;font-family:monospace;font-weight:700'>" + esc(passwordPlano) + "</td></tr>"
+                    + "<tr><td style='color:#4D5560;padding:4px 0;width:110px;font-size:14px'>Correo:</td>"
+                    + "<td style=\"color:#14171C;font-family:'IBM Plex Mono',monospace;font-size:14px\">" + esc(correo) + "</td></tr>"
+                    + "<tr><td style='color:#4D5560;padding:4px 0;font-size:14px'>Contraseña:</td>"
+                    + "<td style=\"color:#9A6700;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:14px\">" + esc(passwordPlano) + "</td></tr>"
                     + "</table>"
-                    + "<p style='margin:12px 0 0;font-size:12px;color:#6b7280'>Te recomendamos cambiar la contraseña al ingresar desde Configuración → Seguridad.</p>"
+                    + "<p style='margin:12px 0 0;font-size:12px;color:#6E7682'>Te recomendamos cambiar la contraseña al ingresar desde Configuración → Seguridad.</p>"
                     + "</div>";
             } else {
-                credencialesBlock = "<p style='color:#8e8e9a;background:#1a1a2e;border-radius:10px;padding:14px;margin:16px 0'>"
-                    + "Ingresá con tu correo <strong style='color:#e8e8ed'>" + esc(correo) + "</strong> y tu contraseña habitual.</p>";
+                credencialesBlock = "<p style='color:#4D5560;background:#F8F9FB;border:1px solid #E4E7EC;border-radius:10px;padding:14px;margin:16px 0;font-size:14px'>"
+                    + "Ingresá con tu correo <strong style='color:#14171C'>" + esc(correo) + "</strong> y tu contraseña habitual.</p>";
             }
 
-            String html = "<div style='font-family:sans-serif;max-width:520px;margin:0 auto;background:#0d0d14;color:#e8e8ed;padding:32px;border-radius:16px'>"
-                + "<div style='text-align:center;margin-bottom:24px'>"
-                + "<div style='display:inline-block;background:linear-gradient(135deg,#ff4b12,#ff7b00);padding:12px 20px;border-radius:12px;font-weight:900;font-size:18px;letter-spacing:2px;color:#fff'>HOTCLICK</div>"
-                + "</div>"
-                + "<div style='text-align:center;margin-bottom:16px'><div style='font-size:40px'>👋</div></div>"
-                + "<h2 style='color:#4f7cff;text-align:center;margin-bottom:8px'>Te agregaron a un equipo</h2>"
-                + "<p style='color:#8e8e9a;text-align:center;margin-bottom:4px'>Hola <strong style='color:#e8e8ed'>" + esc(nombre) + "</strong>,</p>"
-                + "<p style='color:#8e8e9a;text-align:center;margin-bottom:24px'>"
-                + "Fuiste invitado al negocio <strong style='color:#e8e8ed'>" + esc(nombreEmpresa) + "</strong> en HOTCLICK.</p>"
-                + "<div style='background:#1a1a2e;border:1px solid #2d2d44;border-radius:12px;padding:16px;margin-bottom:20px'>"
-                + "<p style='margin:0 0 6px;color:#8e8e9a;font-size:13px'>Tu rol asignado</p>"
-                + "<p style='margin:0;color:#4f7cff;font-weight:700'>" + esc(rolLabel) + "</p>"
+            String html = abrirHtml()
+                + header("Te agregaron a un equipo", "Ya tenés acceso al panel del negocio")
+                + abrirCuerpo()
+                + "<p style='margin:0 0 6px;color:#14171C;font-size:16px'>Hola, <strong>" + esc(nombre) + "</strong>.</p>"
+                + "<p style='margin:0 0 20px;color:#4D5560;font-size:14px;line-height:1.6'>Fuiste invitado al negocio <strong style='color:#14171C'>" + esc(nombreEmpresa) + "</strong> en HotClick.</p>"
+                + "<div style='background:#EFF4FE;border:1px solid #C2D5F9;border-radius:12px;padding:16px;margin-bottom:4px'>"
+                + "<p style='margin:0 0 6px;color:#4D5560;font-size:13px'>Tu rol asignado</p>"
+                + "<p style='margin:0;color:#1747A8;font-weight:700'>" + esc(rolLabel) + "</p>"
                 + "</div>"
                 + credencialesBlock
-                + "<div style='text-align:center;margin-top:24px'>"
-                + "<a href='https://hotclick.lat/login' style='background:linear-gradient(135deg,#4f7cff,#7fa0ff);color:#fff;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px'>Ingresar al panel →</a>"
-                + "</div>"
-                + "<p style='color:#5e5e6e;font-size:11px;text-align:center;margin-top:24px'>HOTCLICK Outlet · Costa Rica · <a href='https://hotclick.lat' style='color:#5e5e6e'>hotclick.lat</a></p>"
-                + "</div>";
+                + cta("https://hotclick.lat/login", "Ingresar al panel")
+                + footer("¿Tenés alguna pregunta?");
 
             resendEmailService.send(correo,
-                "Te invitaron al equipo de " + esc(nombreEmpresa) + " en HOTCLICK",
+                "Te invitaron al equipo de " + esc(nombreEmpresa) + " en HotClick",
                 html);
             log.info("Email invitación miembro enviado a {}", correo);
         } catch (Exception e) {

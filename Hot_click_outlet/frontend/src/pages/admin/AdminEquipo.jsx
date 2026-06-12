@@ -12,8 +12,8 @@ const ESTADO_COLOR = {
 }
 
 const ROL_CONFIG = {
-  PROPIETARIO: { label: 'Propietario', color: 'bg-orange-500/15 text-orange-400', desc: 'Control total' },
-  ADMIN:       { label: 'Admin',       color: 'bg-purple-500/15 text-purple-400', desc: 'Acceso completo' },
+  PROPIETARIO: { label: 'Propietario', color: 'bg-amber-500/15 text-amber-400', desc: 'Control total' },
+  ADMIN:       { label: 'Admin',       color: 'bg-[var(--hc-blue-500)]/15 text-[var(--hc-blue-400)]', desc: 'Acceso completo' },
   EDITOR:      { label: 'Editor',      color: 'bg-blue-500/15 text-blue-400',     desc: 'Edita productos y pedidos' },
   LECTOR:      { label: 'Lector',      color: 'bg-gray-500/15 text-gray-400',     desc: 'Solo lectura' },
 }

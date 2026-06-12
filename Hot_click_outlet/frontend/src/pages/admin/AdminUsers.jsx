@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
@@ -297,7 +297,7 @@ export default function AdminUsers() {
                       .filter(c => !crmSearch || [c.nombre, c.correo, c.telefono].some(f => f?.toLowerCase().includes(crmSearch.toLowerCase())))
                       .map(c => {
                         const seg = c.segmento ?? 'NUEVO'
-                        const segColor = { NUEVO: '#60a5fa', FRECUENTE: '#34d399', VIP: '#fbbf24', INACTIVO: '#8e8e9a' }[seg] ?? '#8e8e9a'
+                        const segColor = { NUEVO: '#6490EA', FRECUENTE: '#34d399', VIP: '#fbbf24', INACTIVO: '#A7B0BC' }[seg] ?? '#A7B0BC'
                         return (
                           <tr key={c.id} className="hover:bg-white/3 transition-colors cursor-pointer" onClick={() => setSelectedCliente(c.id)}>
                             <td className="px-4 py-3">

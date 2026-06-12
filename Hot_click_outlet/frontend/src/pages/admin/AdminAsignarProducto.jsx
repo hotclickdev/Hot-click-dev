@@ -97,7 +97,7 @@ function BuscarCliente({ onSelect }) {
                     style={{ borderBottom: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
                   >
                     <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-sm font-bold"
-                      style={{ backgroundColor: 'rgba(79,124,255,0.12)', color: 'var(--hc-accent)' }}>
+                      style={{ backgroundColor: 'rgba(23,71,168,0.12)', color: 'var(--hc-accent)' }}>
                       {u.nombre?.[0]?.toUpperCase()}
                     </div>
                     <div className="min-w-0">
@@ -500,7 +500,7 @@ export default function AdminAsignarProducto() {
 function ClienteBadge({ cliente, onCambiar }) {
   if (!cliente) return null
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(79,124,255,0.08)', border: '1px solid rgba(79,124,255,0.2)' }}>
+    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(23,71,168,0.08)', border: '1px solid rgba(23,71,168,0.2)' }}>
       <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
         style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
         {cliente.nombre?.[0]?.toUpperCase()}

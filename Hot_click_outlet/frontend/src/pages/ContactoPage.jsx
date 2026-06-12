@@ -13,13 +13,13 @@ const SITE_URL = 'https://hotclick.lat'
 const contactPageJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'ContactPage',
-  name: 'Contacto HOTCLICK — Soporte al cliente en Costa Rica',
-  description: 'Contactá al equipo de HOTCLICK por WhatsApp, email o formulario. Atención en horario extendido de lunes a sábado.',
+  name: 'Contacto HotClick — Soporte al cliente en Costa Rica',
+  description: 'Contactá al equipo de HotClick por WhatsApp, email o formulario. Atención en horario extendido de lunes a sábado.',
   url: `${SITE_URL}/contacto`,
   inLanguage: 'es-CR',
   mainEntity: {
     '@type': 'Organization',
-    name: 'HOTCLICK',
+    name: 'HotClick',
     url: SITE_URL,
     telephone: '+506-8974-5370',
     contactPoint: [
@@ -83,19 +83,19 @@ export default function ContactoPage() {
   return (
     <MainLayout>
       <Helmet>
-        <title>Contacto — HOTCLICK Marketplace Costa Rica</title>
-        <meta name="description" content="Contactá al equipo de HOTCLICK por WhatsApp al +506 8974-5370, por email o formulario. Atención de lunes a sábado 8 a.m.–7 p.m." />
+        <title>Contacto — HotClick Marketplace Costa Rica</title>
+        <meta name="description" content="Contactá al equipo de HotClick por WhatsApp al +506 8974-5370, por email o formulario. Atención de lunes a sábado 8 a.m.–7 p.m." />
         <link rel="canonical" href={`${SITE_URL}/contacto`} />
         <link rel="alternate" hreflang="es-CR" href={`${SITE_URL}/contacto`} />
         <link rel="alternate" hreflang="es"    href={`${SITE_URL}/contacto`} />
         <link rel="alternate" hreflang="x-default" href={`${SITE_URL}/`} />
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="Contacto HOTCLICK — Soporte al cliente en Costa Rica" />
+        <meta property="og:title" content="Contacto HotClick — Soporte al cliente en Costa Rica" />
         <meta property="og:description" content="Escribinos por WhatsApp, email o formulario. Te respondemos el mismo día." />
         <meta property="og:url" content={`${SITE_URL}/contacto`} />
         <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
         <meta property="og:locale" content="es_CR" />
-        <meta property="og:site_name" content="HOTCLICK" />
+        <meta property="og:site_name" content="HotClick" />
         <script type="application/ld+json">{JSON.stringify(contactPageJsonLd)}</script>
       </Helmet>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16">
@@ -153,7 +153,7 @@ export default function ContactoPage() {
                   type="submit"
                   disabled={loading}
                   className="w-full"
-                  style={{ backgroundColor: '#4f7cff', opacity: loading ? 0.7 : 1 }}
+                  style={{ backgroundColor: 'var(--hc-accent)', opacity: loading ? 0.7 : 1 }}
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">

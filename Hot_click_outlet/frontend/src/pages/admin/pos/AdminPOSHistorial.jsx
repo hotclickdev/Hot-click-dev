@@ -141,7 +141,7 @@ export default function AdminPOSHistorial() {
                     </td>
                     <td className="px-4 py-3">
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-medium"
-                        style={{ backgroundColor: 'rgba(79,124,255,0.12)', color: 'var(--hc-accent)' }}>
+                        style={{ backgroundColor: 'rgba(23,71,168,0.12)', color: 'var(--hc-accent)' }}>
                         {v.metodoPago}
                       </span>
                     </td>

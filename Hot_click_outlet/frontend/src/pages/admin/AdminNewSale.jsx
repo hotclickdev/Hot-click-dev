@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Button from '@/components/ui/Button'
@@ -185,7 +185,7 @@ export default function AdminNewSale() {
   const handleCotizacion = () => {
     if (items.length === 0) { toast({ message: 'Agrega al menos un producto', type: 'error' }); return }
     const lines = items.map((i) => `• ${i.nombre} ×${i.cantidad} — ${formatPrice(i.precio * i.cantidad)}`)
-    let header = 'Hola HOTCLICK, solicito una *cotización formal*'
+    let header = 'Hola HotClick, solicito una *cotización formal*'
     if (cotNombre) header += ` para *${cotNombre}*`
     if (cotTelefono) header += ` (${cotTelefono})`
     const body = [
@@ -286,7 +286,7 @@ export default function AdminNewSale() {
               className={`
                 flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
                 ${tab === t.id
-                  ? 'bg-[#4f7cff] text-white shadow-[0_0_12px_rgba(79,124,255,0.35)]'
+                  ? 'bg-[#4f7cff] text-white shadow-[0_0_12px_rgba(23,71,168,0.35)]'
                   : 'text-[#8e8e9a] hover:text-[#e8e8ed] hover:bg-white/5'
                 }
               `}

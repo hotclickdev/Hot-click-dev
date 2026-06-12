@@ -59,7 +59,7 @@ export default function UpgradePrompt({ feature, planRequerido = 'PRO', compact 
 
       <button
         onClick={() => navigate('/admin/planes')}
-        className="rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:from-orange-600 hover:to-amber-600 focus:outline-none focus:ring-2 focus:ring-orange-400"
+        className="rounded-xl bg-[var(--hc-primary)] px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-[var(--hc-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--hc-focus-ring)]"
       >
         Ver planes disponibles →
       </button>

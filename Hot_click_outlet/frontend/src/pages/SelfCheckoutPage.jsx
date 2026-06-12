@@ -19,7 +19,7 @@ function ProductCard({ producto, onAdd }) {
 
   return (
     <div className="rounded-2xl overflow-hidden flex flex-col"
-      style={{ backgroundColor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.08)' }}>
+      style={{ backgroundColor: '#1E242E', border: '1px solid rgba(255,255,255,0.08)' }}>
       {producto.imagenUrl ? (
         <img src={producto.imagenUrl} alt={producto.nombre}
           className="w-full h-36 object-cover" />
@@ -36,27 +36,27 @@ function ProductCard({ producto, onAdd }) {
         {producto.descripcion && (
           <p className="text-xs text-gray-400 line-clamp-2">{producto.descripcion}</p>
         )}
-        <p className="text-base font-bold mt-auto" style={{ color: '#ff4b12' }}>
+        <p className="text-base font-bold mt-auto" style={{ color: 'var(--hc-primary)' }}>
           ₡{fmt(producto.precio)}
         </p>
         <div className="flex items-center gap-2">
           {qty === 0 ? (
             <button onClick={agregar}
               className="w-full py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
-              style={{ backgroundColor: '#ff4b12', color: '#fff' }}>
+              style={{ backgroundColor: 'var(--hc-primary)', color: '#fff' }}>
               Agregar
             </button>
           ) : (
             <div className="flex items-center gap-2 w-full justify-between">
               <button onClick={quitar}
                 className="w-10 h-10 rounded-xl font-bold text-lg flex items-center justify-center"
-                style={{ backgroundColor: 'rgba(255,75,18,0.15)', color: '#ff4b12' }}>
+                style={{ backgroundColor: 'rgba(231,59,51,0.15)', color: 'var(--hc-primary)' }}>
                 −
               </button>
               <span className="text-white font-bold">{qty}</span>
               <button onClick={agregar}
                 className="w-10 h-10 rounded-xl font-bold text-lg flex items-center justify-center"
-                style={{ backgroundColor: '#ff4b12', color: '#fff' }}>
+                style={{ backgroundColor: 'var(--hc-primary)', color: '#fff' }}>
                 +
               </button>
             </div>
@@ -123,7 +123,7 @@ export default function SelfCheckoutPage() {
     }
   }
 
-  const primaryColor = mesa?.colorPrimario ?? '#ff4b12'
+  const primaryColor = mesa?.colorPrimario ?? '#E73B33'
 
   if (cargando) {
     return (
@@ -160,7 +160,7 @@ export default function SelfCheckoutPage() {
           <p className="text-gray-400 mt-1">{mesa?.mesaNombre}</p>
         </div>
         {pedidoResult && (
-          <div className="rounded-2xl p-5 w-full max-w-sm space-y-2" style={{ backgroundColor: '#1a1a2e' }}>
+          <div className="rounded-2xl p-5 w-full max-w-sm space-y-2" style={{ backgroundColor: '#1E242E' }}>
             <p className="text-xs text-gray-400">Número de pedido</p>
             <p className="text-xl font-bold text-white">{pedidoResult.numeroPedido}</p>
             <p className="text-xs text-gray-400 mt-2">Total</p>
@@ -222,7 +222,7 @@ export default function SelfCheckoutPage() {
           </button>
           <h2 className="text-lg font-bold text-white">Tu pedido</h2>
 
-          <div className="rounded-2xl divide-y" style={{ backgroundColor: '#1a1a2e', divideColor: 'rgba(255,255,255,0.05)' }}>
+          <div className="rounded-2xl divide-y" style={{ backgroundColor: '#1E242E', divideColor: 'rgba(255,255,255,0.05)' }}>
             {Object.values(carrito).map(({ producto, cantidad }) => (
               <div key={producto.id} className="flex items-center justify-between px-4 py-3 gap-3">
                 <div className="flex-1 min-w-0">
@@ -243,18 +243,18 @@ export default function SelfCheckoutPage() {
               value={form.clienteNombre}
               onChange={e => setForm(p => ({ ...p, clienteNombre: e.target.value }))}
               className="w-full px-4 py-3 rounded-xl text-sm text-white outline-none"
-              style={{ backgroundColor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.1)' }} />
+              style={{ backgroundColor: '#1E242E', border: '1px solid rgba(255,255,255,0.1)' }} />
             <input placeholder="Teléfono (opcional)"
               value={form.clienteTel}
               onChange={e => setForm(p => ({ ...p, clienteTel: e.target.value }))}
               className="w-full px-4 py-3 rounded-xl text-sm text-white outline-none"
-              style={{ backgroundColor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.1)' }} />
+              style={{ backgroundColor: '#1E242E', border: '1px solid rgba(255,255,255,0.1)' }} />
             <textarea placeholder="Notas (alergias, preferencias...)"
               rows={2}
               value={form.notas}
               onChange={e => setForm(p => ({ ...p, notas: e.target.value }))}
               className="w-full px-4 py-3 rounded-xl text-sm text-white outline-none resize-none"
-              style={{ backgroundColor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.1)' }} />
+              style={{ backgroundColor: '#1E242E', border: '1px solid rgba(255,255,255,0.1)' }} />
           </div>
 
           {error && <p className="text-sm text-red-400">{error}</p>}

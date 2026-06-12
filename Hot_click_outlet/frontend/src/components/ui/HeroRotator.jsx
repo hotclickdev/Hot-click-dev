@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import useChatStore from '@/store/chatStore'
 import { formatPrice } from '@/utils/format'
 
-// ── Constantes ────────────────────────────────────────────────────────────────
+// â”€â”€ Constantes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const PREGUNTAS = [
   '¿Buscas algo para tu sala de estar?',
@@ -157,15 +157,15 @@ const PHASES = [
     id: 'chat',
     duration: 15000,
     label: 'Asistente',
-    accent: 'var(--hc-accent, #ff4b12)',
-    glow: 'color-mix(in srgb, var(--hc-accent, #ff4b12) 10%, transparent)',
+    accent: 'var(--hc-accent)',
+    glow: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)',
   },
   {
     id: 'products',
     duration: 9000,
     label: 'Destacados',
-    accent: '#4f7cff',
-    glow: 'rgba(79,124,255,0.10)',
+    accent: 'var(--hc-accent)',
+    glow: 'rgba(23,71,168,0.10)',
   },
   {
     id: 'businesses',
@@ -176,13 +176,13 @@ const PHASES = [
   },
 ]
 
-// Escala tamaño con viewport: 100% en 1440px → ~35% en 375px
+// Escala tamaÃ±o con viewport: 100% en 1440px â†’ ~35% en 375px
 function vs(size) {
   const min = Math.round(size * 0.32)
   return `clamp(${min}px, ${(size / 1440 * 100).toFixed(2)}vw, ${size}px)`
 }
 
-// ── Decoraciones Chat — blobs orgánicos con productos ─────────────────────────
+// â”€â”€ Decoraciones Chat â€” blobs orgÃ¡nicos con productos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ChatDecos({ productos }) {
   const p0 = productos?.[0]?.imagenUrl
@@ -229,7 +229,7 @@ function ChatDecos({ productos }) {
   )
 }
 
-// ── Decoraciones Productos — tarjetas inclinadas (polaroid) ───────────────────
+// â”€â”€ Decoraciones Productos â€” tarjetas inclinadas (polaroid) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ProductDecos({ productos }) {
   const cards = [
@@ -265,7 +265,7 @@ function ProductDecos({ productos }) {
                 onError={(e) => { e.target.style.display = 'none' }} />
             ) : (
               <div className="w-full h-4/5 flex items-center justify-center opacity-20"
-                style={{ background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', fontSize: '2rem' }}>📦</div>
+                style={{ background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', fontSize: '2rem' }}>ðŸ“¦</div>
             )}
             <div className="absolute bottom-0 inset-x-0 h-1/5 flex items-center justify-center"
               style={{ background: 'var(--hc-surface)' }}>
@@ -278,7 +278,7 @@ function ProductDecos({ productos }) {
   )
 }
 
-// ── Decoraciones Emprendimientos — círculos grandes ───────────────────────────
+// â”€â”€ Decoraciones Emprendimientos â€” cÃ­rculos grandes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function BusinessDecos({ convenios, accent }) {
   const circles = [
@@ -317,7 +317,7 @@ function BusinessDecos({ convenios, accent }) {
   )
 }
 
-// ── Fase Chat ─────────────────────────────────────────────────────────────────
+// â”€â”€ Fase Chat â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ChatPhase({ accent, onPause, onResume, destacados }) {
   const [qIdx, setQIdx] = useState(0)
@@ -375,7 +375,7 @@ function ChatPhase({ accent, onPause, onResume, destacados }) {
             </AnimatePresence>
           </div>
 
-          {/* Sugerencia de respuesta — solo texto */}
+          {/* Sugerencia de respuesta â€” solo texto */}
           <AnimatePresence mode="wait">
             <motion.button
               key={`s-${qIdx}`}
@@ -441,7 +441,7 @@ function ChatPhase({ accent, onPause, onResume, destacados }) {
   )
 }
 
-// ── Fase Productos ────────────────────────────────────────────────────────────
+// â”€â”€ Fase Productos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ProductsPhase({ productos, accent }) {
   const navigate = useNavigate()
@@ -511,7 +511,7 @@ function ProductsPhase({ productos, accent }) {
                     loading="lazy" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center opacity-20"
-                    style={{ fontSize: '3rem' }}>📦</div>
+                    style={{ fontSize: '3rem' }}>ðŸ“¦</div>
                 )}
               </div>
               <div className="p-4">
@@ -526,7 +526,7 @@ function ProductsPhase({ productos, accent }) {
   )
 }
 
-// ── Fase Emprendimientos ──────────────────────────────────────────────────────
+// â”€â”€ Fase Emprendimientos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function BusinessesPhase({ convenios, accent }) {
   const items = (convenios ?? []).slice(0, 2)
@@ -543,7 +543,7 @@ function BusinessesPhase({ convenios, accent }) {
       {/* Header */}
       <div className="text-center mb-8">
         <p className="text-[10px] font-bold tracking-[0.22em] uppercase mb-1" style={{ color: accent }}>
-          Aliados HOTCLICK
+          Aliados HotClick
         </p>
         <h2 className="font-black tracking-tight" style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', color: 'var(--hc-text)', lineHeight: 1.1 }}>
           Emprendimientos con convenio
@@ -573,17 +573,17 @@ function BusinessesPhase({ convenios, accent }) {
               transition={{ delay: i * 0.12 }}
               whileHover={{ y: -5, boxShadow: `0 16px 40px rgba(0,0,0,0.13)` }}
               className="flex-1 max-w-sm rounded-2xl overflow-hidden transition-all"
-              style={{ background: 'var(--hc-surface)', border: `1px solid ${accent}22` }}
+              style={{ background: 'var(--hc-surface)', border: `1px solid color-mix(in srgb, ${accent} 13%, transparent)` }}
             >
               {/* Banner / logo area */}
               <div className="h-28 flex items-center justify-center"
-                style={{ background: `linear-gradient(135deg, ${accent}18, ${accent}08)` }}>
+                style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${accent} 9%, transparent), color-mix(in srgb, ${accent} 3%, transparent))` }}>
                 {c.logoUrl ? (
                   <img src={c.logoUrl} alt={c.nombre}
                     className="max-h-16 max-w-[70%] object-contain" />
                 ) : (
                   <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-black"
-                    style={{ background: `${accent}20`, color: accent }}>
+                    style={{ background: `color-mix(in srgb, ${accent} 12%, transparent)`, color: accent }}>
                     {(c.nombre ?? '?')[0].toUpperCase()}
                   </div>
                 )}
@@ -612,7 +612,7 @@ function BusinessesPhase({ convenios, accent }) {
   )
 }
 
-// ── Indicador de fases (bolitas) ─────────────────────────────────────────────
+// â”€â”€ Indicador de fases (bolitas) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const CIRCUMFERENCE = 2 * Math.PI * 10  // radio = 10
 
@@ -659,7 +659,7 @@ function PhaseBar({ phases, currentIdx, progress, onSelect }) {
   )
 }
 
-// ── Componente principal ──────────────────────────────────────────────────────
+// â”€â”€ Componente principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function HeroRotator({ destacados }) {
   const [phaseIdx, setPhaseIdx] = useState(0)
@@ -683,7 +683,7 @@ export default function HeroRotator({ destacados }) {
     })
   }, [])
 
-  // Timer por fase — basado en progreso para respetar la pausa
+  // Timer por fase â€” basado en progreso para respetar la pausa
   useEffect(() => {
     setProgress(0)
     pausedRef.current = false
@@ -718,7 +718,7 @@ export default function HeroRotator({ destacados }) {
       className="relative w-full overflow-hidden flex flex-col"
       style={{ minHeight: '82vh' }}
     >
-      {/* Fondo atmosférico — actualiza color según fase */}
+      {/* Fondo atmosfÃ©rico â€” actualiza color segÃºn fase */}
       <AnimatePresence>
         <motion.div
           key={`bg-${phaseIdx}`}
@@ -768,7 +768,7 @@ export default function HeroRotator({ destacados }) {
         </AnimatePresence>
       </div>
 
-      {/* Elementos decorativos laterales — fuera del contenido, en los márgenes */}
+      {/* Elementos decorativos laterales â€” fuera del contenido, en los mÃ¡rgenes */}
       <AnimatePresence mode="wait">
         {phase.id === 'chat' && <ChatDecos key="deco-chat" productos={destacados} />}
         {phase.id === 'products' && <ProductDecos key="deco-prod" productos={destacados} />}

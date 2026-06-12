@@ -12,15 +12,15 @@ export default defineConfig({
       registerType: 'prompt',     // muestra "nueva versión disponible" vs. actualización silenciosa
       injectRegister: null,       // lo hacemos manualmente en main.jsx
       manifest: {
-        name: 'HOTCLICK Admin',
-        short_name: 'HOTCLICK',
-        description: 'Panel de administración HOTCLICK — POS, ventas, inventario',
+        name: 'HotClick Admin',
+        short_name: 'HotClick',
+        description: 'Panel de administración HotClick — POS, ventas, inventario',
         start_url: '/admin',
         scope: '/',
         display: 'standalone',
         orientation: 'any',
-        background_color: '#0f0f17',
-        theme_color: '#ff4b12',
+        background_color: '#F8F9FB',
+        theme_color: '#E73B33',
         lang: 'es-CR',
         icons: [
           { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' },

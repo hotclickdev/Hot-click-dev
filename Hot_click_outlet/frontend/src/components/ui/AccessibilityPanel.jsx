@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import useUiStore from '@/store/uiStore'
+import { HotClickMark } from '@/components/ui/BrandLogo'
 
 const LANGUAGES = [
   { code: 'es', label: 'Español',   flagSrc: 'https://flagcdn.com/cr.svg', country: 'CR' },
@@ -10,7 +11,7 @@ const LANGUAGES = [
 ]
 
 const COLOR_FILTERS = [
-  { value: 'none',         label: 'Normal',         desc: 'Todos los colores',         dot: '#a855f7' },
+  { value: 'none',         label: 'Normal',         desc: 'Todos los colores',         dot: 'var(--hc-blue-400)' },
   { value: 'grayscale',    label: 'Sin color',       desc: 'Escala de grises',          dot: '#888' },
   { value: 'deuteranopia', label: 'Dalton. verde',   desc: 'Dificultad para ver verde', dot: '#22c55e' },
   { value: 'protanopia',   label: 'Dalton. rojo',    desc: 'Dificultad para ver rojo',  dot: '#ef4444' },
@@ -178,7 +179,7 @@ export default function AccessibilityPanel() {
         )}
       </AnimatePresence>
 
-      {/* ── Trigger button ── */}
+      {/* ── Trigger button — símbolo de marca (§2.4) ── */}
       <button
         onClick={() => setOpen(!open)}
         aria-label={t('a11y.open')}
@@ -186,12 +187,11 @@ export default function AccessibilityPanel() {
         className="w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200
           shadow-[0_4px_20px_var(--hc-shadow)] hover:scale-110 active:scale-95"
         style={{
-          backgroundColor: open ? 'var(--hc-accent)' : 'var(--hc-surface)',
-          color: open ? '#fff' : 'var(--hc-muted)',
+          backgroundColor: 'var(--hc-surface)',
           border: `1px solid ${open ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
         }}
       >
-        <A11yIcon />
+        <HotClickMark size={24} />
       </button>
     </div>
   )

@@ -159,7 +159,7 @@ export default function AdminPlugins() {
         <div>
           <h1 className="text-2xl font-bold" style={{ color: 'var(--hc-text)' }}>Plugins / Integraciones</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>
-            Conecta HOTCLICK con servicios externos via Webhook o iframe embebido
+            Conecta HotClick con servicios externos via Webhook o iframe embebido
           </p>
         </div>
         <button onClick={abrirNuevo}
@@ -226,7 +226,7 @@ export default function AdminPlugins() {
                   className="w-full px-3 py-2 rounded-xl text-sm font-mono outline-none"
                   style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }} />
                 <p className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>
-                  Header enviado: <code>X-HOTCLICK-Signature: sha256=&lt;hmac&gt;</code>
+                  Header enviado: <code>X-HotClick-Signature: sha256=&lt;hmac&gt;</code>
                 </p>
               </div>
             </>
@@ -281,7 +281,7 @@ export default function AdminPlugins() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold text-sm" style={{ color: 'var(--hc-text)' }}>{p.nombre}</p>
                       <span className="text-[10px] px-2 py-0.5 rounded-full font-bold"
-                        style={{ backgroundColor: 'rgba(79,124,255,0.1)', color: '#4f7cff' }}>
+                        style={{ backgroundColor: 'rgba(23,71,168,0.1)', color: 'var(--hc-accent)' }}>
                         {p.tipo}
                       </span>
                       {p.tieneSecretoHmac && (

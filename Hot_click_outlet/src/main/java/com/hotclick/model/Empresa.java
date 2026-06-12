@@ -35,10 +35,10 @@ public class Empresa {
     private String logoUrl;
 
     @Column(name = "color_primario", length = 7)
-    private String colorPrimario = "#FF4B12";
+    private String colorPrimario = "#E73B33";
 
     @Column(name = "color_secundario", length = 7)
-    private String colorSecundario = "#1A1A2E";
+    private String colorSecundario = "#152B5E";
 
     @Column(name = "moneda_defecto", length = 3)
     private String monedaDefecto = "CRC";
@@ -131,7 +131,7 @@ public class Empresa {
     // ── White label branding (F18) ────────────────────────────────────────────
 
     @Column(name = "color_acento", length = 7)
-    private String colorAcento = "#4f7cff";
+    private String colorAcento = "#1747A8";
 
     @Column(name = "tagline", length = 200)
     private String tagline;
@@ -276,7 +276,7 @@ public class Empresa {
     public String getTimezone() { return timezone != null ? timezone : "America/Costa_Rica"; }
     public void setTimezone(String timezone) { this.timezone = timezone; }
 
-    public String getColorAcento() { return colorAcento != null ? colorAcento : "#4f7cff"; }
+    public String getColorAcento() { return colorAcento != null ? colorAcento : "#1747A8"; }
     public void setColorAcento(String v) { this.colorAcento = v; }
 
     public String getTagline() { return tagline; }

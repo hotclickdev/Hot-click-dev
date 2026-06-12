@@ -21,7 +21,7 @@ const QUICK = [
 
 function toISO(date) { return date.toISOString().slice(0, 10) }
 
-function StatCard({ label, value, sub, color = '#e8e8ed' }) {
+function StatCard({ label, value, sub, color = '#F4F6F9' }) {
   return (
     <div className="bg-[#111114] border border-white/8 rounded-2xl p-4">
       <p className="text-xs text-[#8e8e9a] mb-1">{label}</p>
@@ -275,7 +275,7 @@ export default function AdminReportes() {
               <StatCard label="Ingresos (completadas)" value={formatPrice(totalIngresos)} color="#4ade80"
                 sub={totalEnvios > 0 ? `Productos: ${formatPrice(totalProductos)}` : undefined}/>
               <StatCard label="Completadas" value={completadas.length} color="#4f7cff"/>
-              <StatCard label="Ticket promedio" value={formatPrice(ticketPromedio)} color="#a855f7"/>
+              <StatCard label="Ticket promedio" value={formatPrice(ticketPromedio)} color="var(--hc-blue-400)"/>
             </div>
 
             {/* Tabla */}
@@ -344,7 +344,7 @@ export default function AdminReportes() {
             ) : (
               <>
                 <div className="grid grid-cols-3 gap-3">
-                  <StatCard label="Productos únicos" value={topProductos.length} color="#e8e8ed"/>
+                  <StatCard label="Productos únicos" value={topProductos.length} color="#F4F6F9"/>
                   <StatCard label="Unidades vendidas" value={fmt(topProductos.reduce((s,p) => s + p.cantidad, 0))} color="#4ade80"/>
                   <StatCard label="Ingreso total" value={formatPrice(topProductos.reduce((s,p) => s + p.ingreso, 0))} color="#4f7cff"/>
                 </div>
@@ -387,9 +387,9 @@ export default function AdminReportes() {
           loadingPOS ? <div className="flex justify-center py-16"><Spinner size="lg"/></div> : (
             <>
               <div className="grid grid-cols-3 gap-3">
-                <StatCard label="Ventas POS" value={posTx} color="#e8e8ed"/>
+                <StatCard label="Ventas POS" value={posTx} color="#F4F6F9"/>
                 <StatCard label="Total facturado" value={formatPrice(posTotal)} color="#34d399"/>
-                <StatCard label="Ticket promedio" value={formatPrice(posTicket)} color="#a78bfa"/>
+                <StatCard label="Ticket promedio" value={formatPrice(posTicket)} color="var(--hc-blue-300)"/>
               </div>
 
               {posFiltradas.length === 0 ? (
@@ -434,7 +434,7 @@ export default function AdminReportes() {
           loadingP ? <div className="flex justify-center py-16"><Spinner size="lg"/></div> : (
             <>
               <div className="grid grid-cols-3 gap-3">
-                <StatCard label="Total productos" value={productos.length} color="#e8e8ed"/>
+                <StatCard label="Total productos" value={productos.length} color="#F4F6F9"/>
                 <StatCard label="Stock en riesgo" value={stockRiesgo.length} color="#f87171"
                   sub="stockActual ≤ stockMínimo"/>
                 <StatCard label="Agotados" value={stockRiesgo.filter(p => (p.stockActual ?? p.stock ?? 0) <= 0).length} color="#f87171"/>

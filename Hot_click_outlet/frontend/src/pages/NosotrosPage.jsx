@@ -9,15 +9,15 @@ const SITE_URL = 'https://hotclick.lat'
 const aboutPageJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'AboutPage',
-  name: 'Sobre HOTCLICK — Marketplace de emprendedores costarricenses',
-  description: 'Conocé la historia, misión y valores de HOTCLICK, el marketplace que conecta emprendedores costarricenses con compradores de todo el país.',
+  name: 'Sobre HotClick — Marketplace de emprendedores costarricenses',
+  description: 'Conocé la historia, misión y valores de HotClick, el marketplace que conecta emprendedores costarricenses con compradores de todo el país.',
   url: `${SITE_URL}/nosotros`,
   inLanguage: 'es-CR',
-  isPartOf: { '@type': 'WebSite', name: 'HOTCLICK', url: SITE_URL },
-  author: { '@type': 'Organization', name: 'HOTCLICK', url: SITE_URL },
+  isPartOf: { '@type': 'WebSite', name: 'HotClick', url: SITE_URL },
+  author: { '@type': 'Organization', name: 'HotClick', url: SITE_URL },
   about: {
     '@type': 'Organization',
-    name: 'HOTCLICK',
+    name: 'HotClick',
     description: 'Marketplace 100% costarricense que apoya el comercio local con tecnología moderna, pagos seguros y envío confiable a todo Costa Rica.',
     foundingDate: '2024',
     url: SITE_URL,
@@ -49,19 +49,19 @@ export default function NosotrosPage() {
   return (
     <MainLayout>
       <Helmet>
-        <title>Sobre nosotros — HOTCLICK Marketplace Costa Rica</title>
-        <meta name="description" content="Conocé la historia y misión de HOTCLICK, el marketplace 100% costarricense que conecta emprendedores con compradores de todo el país." />
+        <title>Sobre nosotros — HotClick Marketplace Costa Rica</title>
+        <meta name="description" content="Conocé la historia y misión de HotClick, el marketplace 100% costarricense que conecta emprendedores con compradores de todo el país." />
         <link rel="canonical" href={`${SITE_URL}/nosotros`} />
         <link rel="alternate" hreflang="es-CR" href={`${SITE_URL}/nosotros`} />
         <link rel="alternate" hreflang="es"    href={`${SITE_URL}/nosotros`} />
         <link rel="alternate" hreflang="x-default" href={`${SITE_URL}/`} />
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="Sobre nosotros — HOTCLICK Marketplace Costa Rica" />
-        <meta property="og:description" content="Conocé la historia y misión de HOTCLICK, el marketplace 100% costarricense." />
+        <meta property="og:title" content="Sobre nosotros — HotClick Marketplace Costa Rica" />
+        <meta property="og:description" content="Conocé la historia y misión de HotClick, el marketplace 100% costarricense." />
         <meta property="og:url" content={`${SITE_URL}/nosotros`} />
         <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
         <meta property="og:locale" content="es_CR" />
-        <meta property="og:site_name" content="HOTCLICK" />
+        <meta property="og:site_name" content="HotClick" />
         <script type="application/ld+json">{JSON.stringify(aboutPageJsonLd)}</script>
       </Helmet>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16 space-y-16">
@@ -86,8 +86,8 @@ export default function NosotrosPage() {
           <div className="shrink-0">
             <img
               src="/fundador.jpg"
-              alt="Fundador de HOTCLICK"
-              className="w-36 h-36 rounded-2xl object-cover ring-2 ring-[#4f7cff]/40 shadow-[0_0_24px_rgba(79,124,255,0.2)]"
+              alt="Fundador de HotClick"
+              className="w-36 h-36 rounded-2xl object-cover ring-2 ring-[#4f7cff]/40 shadow-[0_0_24px_rgba(23,71,168,0.2)]"
             />
           </div>
           <div className="text-center sm:text-left">
@@ -129,7 +129,7 @@ export default function NosotrosPage() {
         </motion.div>
 
         {/* Shipping */}
-        <motion.div {...fadeUp(0.1)} className="bg-gradient-to-br from-[#4f7cff]/8 to-purple-500/5 border border-white/8 rounded-3xl p-8">
+        <motion.div {...fadeUp(0.1)} className="bg-gradient-to-br from-[#4f7cff]/8 to-[var(--hc-blue-500)]/5 border border-white/8 rounded-3xl p-8">
           <div className="text-center mb-6">
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#4f7cff]/10 mb-3">
               <svg className="w-6 h-6 text-[#4f7cff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -176,7 +176,7 @@ export default function NosotrosPage() {
           </p>
           <Link
             to="/contacto"
-            className="inline-block px-6 py-2.5 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white text-sm font-medium transition-all duration-200 shadow-[0_0_16px_rgba(79,124,255,0.25)] hover:shadow-[0_0_24px_rgba(79,124,255,0.4)]"
+            className="inline-block px-6 py-2.5 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white text-sm font-medium transition-all duration-200 shadow-[0_0_16px_rgba(23,71,168,0.25)] hover:shadow-[0_0_24px_rgba(23,71,168,0.4)]"
           >
             {t('nosotros.ctaBtn')}
           </Link>

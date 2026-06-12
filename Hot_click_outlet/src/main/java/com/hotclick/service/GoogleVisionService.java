@@ -22,10 +22,14 @@ public class GoogleVisionService {
     private static final String VISION_URL =
         "https://vision.googleapis.com/v1/images:annotate?key=%s";
 
-    @Value("${google.vision.api-key}")
+    @Value("${google.vision.api-key:}")
     private String apiKey;
 
     public VisionResult analizar(String imagenBase64) {
+        if (apiKey == null || apiKey.isBlank()) {
+            log.debug("[Vision] google.vision.api-key no configurada — devolviendo resultado vacío");
+            return new VisionResult();
+        }
         try {
             RestTemplate rt = buildRestTemplate();
             String url = String.format(VISION_URL, apiKey);
@@ -50,8 +54,9 @@ public class GoogleVisionService {
         }
     }
 
-    /** Extrae texto OCR de una imagen. Devuelve cadena vacía si falla. */
+    /** Extrae texto OCR de una imagen. Devuelve cadena vacía si falla o sin key. */
     public String extraerTextoOcr(String imagenBase64) {
+        if (apiKey == null || apiKey.isBlank()) return "";
         try {
             String url = String.format(VISION_URL, apiKey);
             Map<String, Object> body = Map.of("requests", List.of(

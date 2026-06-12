@@ -212,7 +212,7 @@ export default function AdminPagos() {
                             <span className={`px-2 py-0.5 rounded-full border text-[10px] font-semibold ${
                               p.proveedor === 'SINPE'
                                 ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                                : 'bg-purple-500/15 text-purple-400 border-purple-500/30'
+                                : 'bg-[var(--hc-blue-500)]/15 text-[var(--hc-blue-400)] border-[var(--hc-blue-500)]/30'
                             }`}>{p.proveedor}</span>
                           </td>
                           <td className="px-4 py-3">
