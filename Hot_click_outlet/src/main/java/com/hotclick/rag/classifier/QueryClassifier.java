@@ -82,7 +82,7 @@ public class QueryClassifier {
         "garantía", "garantías",
         "talla", "tamaño", "dimensiones", "medidas",
         "compatible", "compatibilidad",
-        "recomendar", "recomendás", "recomendes", "sugerir", "sugerís", "sugerís",
+        "recomendar", "recomendás", "recomendes", "sugerir", "sugerís",
         "catálogo", "colección", "tienda", "hotclick",
         "carrito", "agregar", "añadir", "comprar",
         "oferta", "descuento", "promoción", "cupón",
