@@ -16,7 +16,7 @@ public class HealthController {
         response.put("status", "UP");
         response.put("timestamp", LocalDateTime.now().toString());
         response.put("service", "HOT_CLICK Outlet");
-        response.put("version", "1.0");
+        response.put("version", "1.1");
         return response;
     }
 }
