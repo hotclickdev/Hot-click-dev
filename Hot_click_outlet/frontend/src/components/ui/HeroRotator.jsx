@@ -1,10 +1,17 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
-import useChatStore from '@/store/chatStore'
 import { formatPrice } from '@/utils/format'
+import AIChat from '@/components/ai/AIChat'
 
-// â”€â”€ Constantes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const CHAT_CHIPS = [
+  '¿Qué tenés en oferta?',
+  'Algo para la sala',
+  'Productos para regalar',
+  'Accesorios de cocina',
+]
+
+// â"€â"€ Constantes â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 const PREGUNTAS = [
   '¿Buscas algo para tu sala de estar?',
@@ -182,7 +189,7 @@ function vs(size) {
   return `clamp(${min}px, ${(size / 1440 * 100).toFixed(2)}vw, ${size}px)`
 }
 
-// â”€â”€ Decoraciones Chat â€” blobs orgÃ¡nicos con productos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Decoraciones Chat â€" blobs orgÃ¡nicos con productos â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 function ChatDecos({ productos }) {
   const p0 = productos?.[0]?.imagenUrl
@@ -229,7 +236,7 @@ function ChatDecos({ productos }) {
   )
 }
 
-// â”€â”€ Decoraciones Productos â€” tarjetas inclinadas (polaroid) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Decoraciones Productos â€" tarjetas inclinadas (polaroid) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 function ProductDecos({ productos }) {
   const cards = [
@@ -265,7 +272,7 @@ function ProductDecos({ productos }) {
                 onError={(e) => { e.target.style.display = 'none' }} />
             ) : (
               <div className="w-full h-4/5 flex items-center justify-center opacity-20"
-                style={{ background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', fontSize: '2rem' }}>ðŸ“¦</div>
+                style={{ background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', fontSize: '2rem' }}>ðŸ"¦</div>
             )}
             <div className="absolute bottom-0 inset-x-0 h-1/5 flex items-center justify-center"
               style={{ background: 'var(--hc-surface)' }}>
@@ -278,7 +285,7 @@ function ProductDecos({ productos }) {
   )
 }
 
-// â”€â”€ Decoraciones Emprendimientos â€” cÃ­rculos grandes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Decoraciones Emprendimientos â€" cÃ­rculos grandes â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 function BusinessDecos({ convenios, accent }) {
   const circles = [
@@ -317,14 +324,13 @@ function BusinessDecos({ convenios, accent }) {
   )
 }
 
-// â”€â”€ Fase Chat â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Fase Chat â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
-function ChatPhase({ accent, onPause, onResume, destacados }) {
+function ChatPhase({ accent, onPause, onResume, destacados, onSubmit }) {
   const [qIdx, setQIdx] = useState(0)
   const [input, setInput] = useState('')
   const [focused, setFocused] = useState(false)
   const inputRef = useRef(null)
-  const openChat = useChatStore((s) => s.open)
 
   useEffect(() => {
     const t = setInterval(() => setQIdx((i) => (i + 1) % PREGUNTAS.length), 8000)
@@ -334,7 +340,7 @@ function ChatPhase({ accent, onPause, onResume, destacados }) {
   function submit(msg) {
     const text = (msg ?? input).trim()
     if (!text) return
-    openChat(text)
+    onSubmit?.(text)
     setInput('')
   }
 
@@ -375,7 +381,7 @@ function ChatPhase({ accent, onPause, onResume, destacados }) {
             </AnimatePresence>
           </div>
 
-          {/* Sugerencia de respuesta â€” solo texto */}
+          {/* Sugerencia de respuesta â€" solo texto */}
           <AnimatePresence mode="wait">
             <motion.button
               key={`s-${qIdx}`}
@@ -441,7 +447,7 @@ function ChatPhase({ accent, onPause, onResume, destacados }) {
   )
 }
 
-// â”€â”€ Fase Productos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Fase Productos â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 function ProductsPhase({ productos, accent }) {
   const navigate = useNavigate()
@@ -511,7 +517,7 @@ function ProductsPhase({ productos, accent }) {
                     loading="lazy" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center opacity-20"
-                    style={{ fontSize: '3rem' }}>ðŸ“¦</div>
+                    style={{ fontSize: '3rem' }}>ðŸ"¦</div>
                 )}
               </div>
               <div className="p-4">
@@ -526,7 +532,7 @@ function ProductsPhase({ productos, accent }) {
   )
 }
 
-// â”€â”€ Fase Emprendimientos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Fase Emprendimientos â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 function BusinessesPhase({ convenios, accent }) {
   const items = (convenios ?? []).slice(0, 2)
@@ -612,7 +618,7 @@ function BusinessesPhase({ convenios, accent }) {
   )
 }
 
-// â”€â”€ Indicador de fases (bolitas) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Indicador de fases (bolitas) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 const CIRCUMFERENCE = 2 * Math.PI * 10  // radio = 10
 
@@ -659,20 +665,94 @@ function PhaseBar({ phases, currentIdx, progress, onSelect }) {
   )
 }
 
-// â”€â”€ Componente principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€ Componente principal â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+
+// ── Chat inline dentro del hero ───────────────────────────────────────────────
+
+function InlineChat({ initialQuery, accent, onClose }) {
+  return (
+    <motion.div
+      key="inline-chat"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -16 }}
+      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+      className="w-full max-w-2xl mx-auto px-4 flex flex-col"
+      style={{ minHeight: '68vh' }}
+    >
+      <div className="flex items-center gap-3 mb-5">
+        <button
+          onClick={onClose}
+          aria-label="Volver"
+          className="flex items-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-60"
+          style={{ color: 'var(--hc-muted)' }}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 5l-7 7 7 7" />
+          </svg>
+          Volver
+        </button>
+        <div className="flex-1" />
+        <div className="flex items-center gap-2">
+          <div
+            className="w-7 h-7 rounded-lg flex items-center justify-center"
+            style={{ background: accent }}
+          >
+            <svg className="w-4 h-4" style={{ color: '#fff' }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round"
+                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            </svg>
+          </div>
+          <span className="text-sm font-bold" style={{ color: 'var(--hc-text)' }}>Asistente HotClick</span>
+        </div>
+      </div>
+
+      <div
+        className="flex-1 rounded-2xl overflow-hidden"
+        style={{
+          background: 'var(--hc-surface)',
+          border: '1px solid var(--hc-border)',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.08)',
+        }}
+      >
+        <AIChat
+          context="GENERAL"
+          sessionKey="hotclick"
+          chips={CHAT_CHIPS}
+          placeholder="¿Qué estás buscando?"
+          autoQuery={initialQuery || undefined}
+          maxHistoryHeight={Math.max(320, (typeof window !== 'undefined' ? window.innerHeight : 800) - 280)}
+        />
+      </div>
+    </motion.div>
+  )
+}
 
 export default function HeroRotator({ destacados }) {
   const [phaseIdx, setPhaseIdx] = useState(0)
   const [progress, setProgress] = useState(0)
   const [convenios, setConvenios] = useState([])
+  const [chatMode, setChatMode] = useState(false)
+  const [chatQuery, setChatQuery] = useState(null)
   const progressRef = useRef(null)
   const pausedRef   = useRef(false)
 
   const phase = PHASES[phaseIdx]
 
-  // Pausa el temporizador cuando el usuario está escribiendo
   function pauseTimer()  { pausedRef.current = true }
   function resumeTimer() { pausedRef.current = false }
+
+  function handleChatSubmit(text) {
+    clearInterval(progressRef.current)
+    setChatQuery(text)
+    setChatMode(true)
+  }
+
+  function handleChatClose() {
+    setChatMode(false)
+    setChatQuery(null)
+    setPhaseIdx(0)
+  }
 
   // Fetch emprendimientos una sola vez
   useEffect(() => {
@@ -683,7 +763,7 @@ export default function HeroRotator({ destacados }) {
     })
   }, [])
 
-  // Timer por fase â€” basado en progreso para respetar la pausa
+  // Timer por fase â€" basado en progreso para respetar la pausa
   useEffect(() => {
     setProgress(0)
     pausedRef.current = false
@@ -718,7 +798,7 @@ export default function HeroRotator({ destacados }) {
       className="relative w-full overflow-hidden flex flex-col"
       style={{ minHeight: '82vh' }}
     >
-      {/* Fondo atmosfÃ©rico â€” actualiza color segÃºn fase */}
+      {/* Fondo atmosfÃ©rico â€" actualiza color segÃºn fase */}
       <AnimatePresence>
         <motion.div
           key={`bg-${phaseIdx}`}
@@ -768,41 +848,57 @@ export default function HeroRotator({ destacados }) {
         </AnimatePresence>
       </div>
 
-      {/* Elementos decorativos laterales â€” fuera del contenido, en los mÃ¡rgenes */}
-      <AnimatePresence mode="wait">
-        {phase.id === 'chat' && <ChatDecos key="deco-chat" productos={destacados} />}
-        {phase.id === 'products' && <ProductDecos key="deco-prod" productos={destacados} />}
-        {phase.id === 'businesses' && <BusinessDecos key="deco-biz" convenios={convenios} accent={phase.accent} />}
-      </AnimatePresence>
+      {/* Elementos decorativos laterales — ocultos en modo chat */}
+      {!chatMode && (
+        <AnimatePresence mode="wait">
+          {phase.id === 'chat' && <ChatDecos key="deco-chat" productos={destacados} />}
+          {phase.id === 'products' && <ProductDecos key="deco-prod" productos={destacados} />}
+          {phase.id === 'businesses' && <BusinessDecos key="deco-biz" convenios={convenios} accent={phase.accent} />}
+        </AnimatePresence>
+      )}
 
       {/* Contenido principal centrado */}
       <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full">
           <AnimatePresence mode="wait">
-            {phase.id === 'chat' && (
-              <ChatPhase key="chat" accent={phase.accent}
-                onPause={pauseTimer} onResume={resumeTimer}
-                destacados={destacados} />
-            )}
-            {phase.id === 'products' && (
-              <ProductsPhase key="products" productos={destacados} accent={phase.accent} />
-            )}
-            {phase.id === 'businesses' && (
-              <BusinessesPhase key="businesses" convenios={convenios} accent={phase.accent} />
+            {chatMode ? (
+              <InlineChat
+                key="inline-chat"
+                initialQuery={chatQuery}
+                accent={phase.accent}
+                onClose={handleChatClose}
+              />
+            ) : (
+              <>
+                {phase.id === 'chat' && (
+                  <ChatPhase key="chat" accent={phase.accent}
+                    onPause={pauseTimer} onResume={resumeTimer}
+                    destacados={destacados}
+                    onSubmit={handleChatSubmit} />
+                )}
+                {phase.id === 'products' && (
+                  <ProductsPhase key="products" productos={destacados} accent={phase.accent} />
+                )}
+                {phase.id === 'businesses' && (
+                  <BusinessesPhase key="businesses" convenios={convenios} accent={phase.accent} />
+                )}
+              </>
             )}
           </AnimatePresence>
         </div>
       </div>
 
-      {/* Bolitas indicadoras centradas */}
-      <div className="relative w-full flex justify-center pb-6">
-        <PhaseBar
-          phases={PHASES}
-          currentIdx={phaseIdx}
-          progress={progress}
-          onSelect={goTo}
-        />
-      </div>
+      {/* Bolitas indicadoras — ocultas en modo chat */}
+      {!chatMode && (
+        <div className="relative w-full flex justify-center pb-6">
+          <PhaseBar
+            phases={PHASES}
+            currentIdx={phaseIdx}
+            progress={progress}
+            onSelect={goTo}
+          />
+        </div>
+      )}
     </section>
   )
 }

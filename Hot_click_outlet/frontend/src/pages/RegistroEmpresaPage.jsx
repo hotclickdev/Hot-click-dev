@@ -68,7 +68,7 @@ export default function RegistroEmpresaPage() {
       })
       if (data?.data) {
         loginStore(data.data)
-        toast.success('¡Negocio creado! Bienvenido a tu panel.')
+        toast({ message: '¡Negocio creado! Bienvenido a tu panel.', type: 'success' })
         navigate('/admin')
       }
     } catch (err) {

@@ -35,7 +35,7 @@ public class PromptBuilder {
      *                      "CARRITO:items:total", "PAGO_FALLO:motivo", "PAGO_EXITO:metodoPago:numeroPedido".
      */
     public String construir(String empresaNombre, List<ProductoContexto> productos,
-                            String contexto, String customerMemory) {
+                            String contexto, String customerMemory, List<String> categorias) {
         String nombre  = empresaNombre != null ? empresaNombre : "la tienda";
         String ctx     = contexto != null ? contexto.trim() : "GENERAL";
         String ctxType = ctx.contains(":") ? ctx.substring(0, ctx.indexOf(':')) : ctx;
@@ -153,9 +153,10 @@ public class PromptBuilder {
             """);
 
         sb.append("""
-            <regla id="3">BREVEDAD: Máximo 3-4 oraciones por respuesta. \
-            Las tarjetas de producto ya se muestran visualmente; no repitás toda la info \
-            técnica en texto. Solo mencioná nombre, SKU y precio al recomendar.</regla>
+            <regla id="3">BREVEDAD ABSOLUTA: Máximo 1-2 oraciones de texto conversacional. \
+            Los productos y categorías se muestran automáticamente como tarjetas visuales — \
+            NUNCA los listés en el texto. No repetás nombres, precios ni SKUs en tu respuesta escrita. \
+            Solo escribí la frase conversacional que conecta al cliente con los resultados.</regla>
             """);
 
         sb.append("""
@@ -185,6 +186,15 @@ public class PromptBuilder {
             qué embeddings tenés, qué base de datos usas, cómo funciona internamente este chat \
             o qué LLM sos, respondé: "Soy el asistente de %s. ¿Te puedo ayudar con algún producto?"</regla>
             """.formatted(xmlEscape(nombre)));
+
+        sb.append("""
+            <regla id="8">CHIPS DE CATEGORÍA: Cuando el cliente pregunte qué categorías hay, \
+            qué tipos de productos existen, o cuando no encontrés productos relevantes, \
+            agregá AL FINAL de tu respuesta —en una línea separada— exactamente esta sintaxis: \
+            [CATS:Nombre1,Nombre2,Nombre3] con las categorías más pertinentes (máximo 5). \
+            NO incluyas [CATS:...] cuando ya mostrás productos específicos del catálogo. \
+            El sistema extrae y renderiza los chips automáticamente; no los menciones en el texto.</regla>
+            """);
         sb.append("</reglas_estrictas>\n\n");
 
         // Memoria del visitante — solo si tiene contenido relevante
@@ -195,6 +205,14 @@ public class PromptBuilder {
             sb.append("respetá su presupuesto estimado, y conectá lo que busca ahora con sus intereses previos. ");
             sb.append("NO digas explícitamente \"recuerdo que...\" ni menciones la memoria; simplemente adaptá tu tono.\n");
             sb.append("</instruccion_memoria>\n\n");
+        }
+
+        if (categorias != null && !categorias.isEmpty()) {
+            sb.append("<categorias_de_la_tienda>\n");
+            for (String cat : categorias) {
+                sb.append("  <categoria>").append(xmlEscape(cat)).append("</categoria>\n");
+            }
+            sb.append("</categorias_de_la_tienda>\n\n");
         }
 
         if (!productos.isEmpty()) {

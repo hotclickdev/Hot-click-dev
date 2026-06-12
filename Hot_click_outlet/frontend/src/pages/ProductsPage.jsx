@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
@@ -29,38 +30,63 @@ function buildCategoryTree(cats) {
 function Dropdown({ trigger, children, align = 'left', width = 320 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
+  const panelRef = useRef(null)
+  const [rect, setRect] = useState(null)
 
   useEffect(() => {
     if (!open) return
-    const fn = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    const fn = (e) => {
+      if (
+        ref.current && !ref.current.contains(e.target) &&
+        panelRef.current && !panelRef.current.contains(e.target)
+      ) setOpen(false)
+    }
     document.addEventListener('mousedown', fn)
     return () => document.removeEventListener('mousedown', fn)
   }, [open])
 
+  const handleToggle = () => {
+    if (ref.current) setRect(ref.current.getBoundingClientRect())
+    setOpen(v => !v)
+  }
+
+  const top = rect ? rect.bottom + window.scrollY + 8 : 0
+  const left = rect && align !== 'right' ? rect.left + window.scrollX : undefined
+  const right = rect && align === 'right' ? window.innerWidth - rect.right : undefined
+
   return (
     <div className="relative shrink-0" ref={ref}>
-      {trigger(open, () => setOpen(v => !v))}
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: 6, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6, scale: 0.97 }}
-            transition={{ duration: 0.14 }}
-            className="absolute top-full mt-2 rounded-2xl shadow-2xl overflow-hidden"
-            style={{
-              background: 'var(--hc-surface)',
-              border: '1px solid var(--hc-border)',
-              zIndex: 60,
-              width,
-              maxWidth: 'calc(100vw - 1.5rem)',
-              [align === 'right' ? 'right' : 'left']: 0,
-            }}
-          >
-            {children(() => setOpen(false))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {trigger(open, handleToggle)}
+      {createPortal(
+        <AnimatePresence>
+          {open && rect && (
+            <motion.div
+              ref={panelRef}
+              initial={{ opacity: 0, y: 6, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 6, scale: 0.97 }}
+              transition={{ duration: 0.14 }}
+              style={{
+                position: 'absolute',
+                top,
+                ...(left !== undefined ? { left } : {}),
+                ...(right !== undefined ? { right } : {}),
+                background: 'var(--hc-surface)',
+                border: '1px solid var(--hc-border)',
+                zIndex: 9999,
+                width,
+                maxWidth: 'calc(100vw - 1.5rem)',
+                borderRadius: '1rem',
+                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+                overflow: 'hidden',
+              }}
+            >
+              {children(() => setOpen(false))}
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   )
 }
@@ -683,6 +709,92 @@ function CategorySidebar({
   )
 }
 
+// ── Fila de una categoría (3 productos + Ver más) ─────────────────────────────
+function CategoryRow({ catName, catId, products, onVerMas, onQuickView }) {
+  const slice = products.slice(0, 3)
+  return (
+    <div className="mb-8">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-black uppercase tracking-wide" style={{ color: 'var(--hc-text)' }}>
+            {catName}
+          </span>
+          <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', color: 'var(--hc-accent)' }}>
+            {products.length}
+          </span>
+        </div>
+        <button
+          onClick={() => onVerMas(catId)}
+          className="flex items-center gap-1 text-xs font-semibold transition-opacity hover:opacity-70"
+          style={{ color: 'var(--hc-accent)' }}
+        >
+          Ver más
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+        {slice.map((p, i) => (
+          <ProductCard key={p.id} product={p} index={i} onQuickView={onQuickView} />
+        ))}
+        {/* Tarjeta "ver todos" si hay más de 3 */}
+        {products.length > 3 && (
+          <button
+            onClick={() => onVerMas(catId)}
+            className="hidden sm:flex flex-col items-center justify-center rounded-2xl border-2 border-dashed transition-all hover:opacity-80 min-h-[180px]"
+            style={{ borderColor: 'color-mix(in srgb, var(--hc-accent) 25%, transparent)', background: 'color-mix(in srgb, var(--hc-accent) 4%, transparent)' }}
+          >
+            <span className="text-3xl mb-2" style={{ color: 'var(--hc-accent)' }}>+{products.length - 3}</span>
+            <span className="text-xs font-bold" style={{ color: 'var(--hc-accent)' }}>Ver todos en</span>
+            <span className="text-xs font-bold text-center px-3 mt-0.5 line-clamp-2" style={{ color: 'var(--hc-accent)' }}>{catName}</span>
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Fila de Emprendimientos intercalada ───────────────────────────────────────
+function EmprendimientosRow({ products, onVerEmprendimientos }) {
+  const slice = products.slice(0, 3)
+  if (slice.length === 0) return null
+  return (
+    <div className="mb-8 rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.07) 0%, rgba(16,185,129,0.02) 100%)', border: '1.5px solid rgba(16,185,129,0.18)' }}>
+      <div className="flex items-center justify-between px-4 pt-4 pb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-base">🤝</span>
+          <span className="text-sm font-black uppercase tracking-wide" style={{ color: '#10b981' }}>Emprendimientos CR</span>
+          <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981' }}>
+            {products.length}
+          </span>
+        </div>
+        <button
+          onClick={onVerEmprendimientos}
+          className="flex items-center gap-1 text-xs font-semibold transition-opacity hover:opacity-70"
+          style={{ color: '#10b981' }}
+        >
+          Ver todos
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 px-4 pb-4">
+        {slice.map((p, i) => (
+          <div key={p.id} className="relative">
+            <div className="absolute top-2 left-2 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black"
+              style={{ background: 'rgba(16,185,129,0.22)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' }}>
+              🤝 Local
+            </div>
+            <ProductCard product={p} index={i} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── Banner Emprendimientos dentro del catálogo ────────────────────────────────
 function EmprendimientosBanner({ onClick }) {
   return (
@@ -855,6 +967,70 @@ function EmprendimientosView({ products, convenios, loading }) {
             </div>
           )}
       </div>
+    </motion.div>
+  )
+}
+
+// ── Vista por filas de categoría (modo exploración sin filtros) ───────────────
+function CategoryRowsView({ products, categories, convenioMarcaNames, onVerMas, onVerEmprendimientos, onQuickView, page }) {
+  const emprendimientosProducts = useMemo(
+    () => products.filter(p => convenioMarcaNames.has(p.marcaNombre?.toLowerCase())),
+    [products, convenioMarcaNames]
+  )
+
+  const categoryRows = useMemo(() => {
+    const catMap = new Map()
+    products.forEach(p => {
+      const catId = p.categoriaId ?? '__sin__'
+      if (!catMap.has(catId)) catMap.set(catId, [])
+      catMap.get(catId).push(p)
+    })
+    return [...catMap.entries()]
+      .filter(([, ps]) => ps.length > 0)
+      .map(([catId, ps]) => {
+        const catObj = categories.find(c => String(c.id) === String(catId))
+        const catName = catObj?.nombreCategoria ?? catObj?.nombre ?? 'Otros productos'
+        return { catId, catName, products: ps }
+      })
+      .sort((a, b) => b.products.length - a.products.length)
+  }, [products, categories])
+
+  const rows = useMemo(() => {
+    const result = []
+    categoryRows.forEach((row, idx) => {
+      result.push({ type: 'category', ...row })
+      if (idx === 1 && emprendimientosProducts.length > 0) {
+        result.push({ type: 'emprendimientos' })
+      }
+    })
+    if (emprendimientosProducts.length > 0 && categoryRows.length <= 1) {
+      result.push({ type: 'emprendimientos' })
+    }
+    return result
+  }, [categoryRows, emprendimientosProducts])
+
+  if (rows.length === 0) return null
+
+  return (
+    <motion.div key={`cat-rows-p${page}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+      {rows.map((row, idx) =>
+        row.type === 'emprendimientos' ? (
+          <EmprendimientosRow
+            key="emp-row"
+            products={emprendimientosProducts}
+            onVerEmprendimientos={onVerEmprendimientos}
+          />
+        ) : (
+          <CategoryRow
+            key={row.catId}
+            catName={row.catName}
+            catId={row.catId}
+            products={row.products}
+            onVerMas={onVerMas}
+            onQuickView={onQuickView}
+          />
+        )
+      )}
     </motion.div>
   )
 }
@@ -1132,20 +1308,6 @@ export default function ProductsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-2 overflow-x-auto scrollbar-hide py-3">
           {[
             {
-              id: 'all', label: 'Catálogo', sub: 'Todos los productos',
-              icon: (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h7" />
-                </svg>
-              ),
-              accent: 'var(--hc-accent)', accentBg: 'color-mix(in srgb, var(--hc-accent) 14%, transparent)',
-            },
-            {
-              id: 'ofertas', label: 'Ofertas HOT', sub: 'Precios increíbles',
-              icon: <span className="text-xl leading-none">🔥</span>,
-              accent: 'var(--hc-red-500)', accentBg: 'rgba(231,59,51,0.12)',
-            },
-            {
               id: 'emprendimientos', label: 'Emprendimientos', sub: 'Negocios locales CR',
               icon: <span className="text-xl leading-none">🤝</span>,
               accent: '#10b981', accentBg: 'rgba(16,185,129,0.12)',
@@ -1322,32 +1484,41 @@ export default function ProductsPage() {
                           </button>
                         )}
                       </div>
-                    ) : (
+                    ) : hasFilters ? (
+                      /* ── Modo búsqueda / filtros: grid flat reactivo ── */
                       <AnimatePresence mode="wait">
                         <motion.div
-                          key={page + search + category + sort + filterStock + filterCond + priceMin + priceMax + [...marcasFilter].join()}
+                          key={search + category + sort + filterStock + filterCond + priceMin + priceMax + [...marcasFilter].join()}
                           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4"
+                          transition={{ duration: 0.15 }}
                         >
-                          {filtered.flatMap((product, i) => {
-                            const cards = []
-                            if (i === 5 && !hasFilters && filtered.length > 6) {
-                              cards.push(
-                                <EmprendimientosBanner key="emp-banner" onClick={() => setViewMode('emprendimientos')} />
-                              )
-                            }
-                            cards.push(
+                          {search && (
+                            <p className="text-xs mb-3 font-medium" style={{ color: 'var(--hc-muted)' }}>
+                              {filtered.length} resultado{filtered.length !== 1 ? 's' : ''} para <span style={{ color: 'var(--hc-text)' }}>"{search}"</span>
+                            </p>
+                          )}
+                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                            {filtered.map((product, i) => (
                               <ProductCard key={product.id} product={product} priority={i < 6} index={i} onQuickView={setQuickView} />
-                            )
-                            return cards
-                          })}
+                            ))}
+                          </div>
                         </motion.div>
                       </AnimatePresence>
+                    ) : (
+                      /* ── Modo por categorías: filas con 3 productos + ver más ── */
+                      <CategoryRowsView
+                        products={products}
+                        categories={categories}
+                        convenioMarcaNames={convenioMarcaNames}
+                        onVerMas={(catId) => { setCategory(String(catId)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                        onVerEmprendimientos={() => { setViewMode('emprendimientos'); clearFilters() }}
+                        onQuickView={setQuickView}
+                        page={page}
+                      />
                     )}
 
-                    {/* Paginación numerada (Brand Book §5.6) */}
-                    {totalPages > 1 && !search && !hasFilters && (
+                    {/* Paginación — solo en modo grid flat (cuando hay filtros activos) */}
+                    {totalPages > 1 && hasFilters && (
                       <nav aria-label="Paginación" className="flex items-center justify-center gap-1.5 mt-8 flex-wrap">
                         <button onClick={() => fetchProducts(page - 1)} disabled={page === 0}
                           className="hc-btn hc-btn-outline hc-btn-sm disabled:opacity-30 disabled:cursor-not-allowed">

@@ -85,8 +85,8 @@ export default function AdminWarehouses() {
       <div className="space-y-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.warehouses.title')}</h1>
-            <p className="text-sm text-[#8e8e9a] mt-1">{warehouses.length} registradas</p>
+            <h1 className="text-2xl font-bold" style={{ color: 'var(--hc-text)' }}>{t('admin.warehouses.title')}</h1>
+            <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>{warehouses.length} registradas</p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             <ImportExportBar
@@ -119,14 +119,14 @@ export default function AdminWarehouses() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {warehouses.map((w) => (
-              <div key={w.id} className="bg-[#111114] border border-white/8 rounded-2xl p-5 space-y-3">
+              <div key={w.id} className="rounded-2xl p-5 space-y-3" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3 min-w-0">
                     {/* Logo negocio */}
                     {w.empresaLogoUrl ? (
                       <img src={w.empresaLogoUrl} alt={w.empresaNombre ?? 'Negocio'}
                         className="w-10 h-10 rounded-xl object-contain p-1 shrink-0"
-                        style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }} />
+                        style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }} />
                     ) : (
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-sm font-bold"
                         style={{ backgroundColor: 'rgba(23,71,168,0.1)', color: 'var(--hc-accent)', border: '1px solid rgba(23,71,168,0.2)' }}>
@@ -134,18 +134,18 @@ export default function AdminWarehouses() {
                       </div>
                     )}
                     <div className="min-w-0">
-                      <h3 className="font-semibold text-[#e8e8ed] truncate">{w.nombreBodega}</h3>
+                      <h3 className="font-semibold truncate" style={{ color: 'var(--hc-text)' }}>{w.nombreBodega}</h3>
                       {w.empresaNombre && (
-                        <p className="text-xs text-[#8e8e9a] truncate">{w.empresaNombre}</p>
+                        <p className="text-xs truncate" style={{ color: 'var(--hc-muted)' }}>{w.empresaNombre}</p>
                       )}
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0 ml-2">
-                    <button onClick={() => openEdit(w)} className="p-1.5 text-[#8e8e9a] hover:text-white hover:bg-white/8 rounded-lg transition-colors text-sm">✎</button>
-                    <button onClick={() => handleDelete(w.id, w.nombreBodega)} className="p-1.5 text-[#8e8e9a] hover:text-red-400 hover:bg-red-500/8 rounded-lg transition-colors text-sm">✕</button>
+                    <button onClick={() => openEdit(w)} className="p-1.5 rounded-lg transition-colors text-sm hover:bg-[var(--hc-surface-2)]" style={{ color: 'var(--hc-muted)' }}>✎</button>
+                    <button onClick={() => handleDelete(w.id, w.nombreBodega)} className="p-1.5 rounded-lg transition-colors text-sm hover:text-red-400 hover:bg-red-500/10" style={{ color: 'var(--hc-muted)' }}>✕</button>
                   </div>
                 </div>
-                <div className="space-y-1 text-xs text-[#8e8e9a]">
+                <div className="space-y-1 text-xs" style={{ color: 'var(--hc-muted)' }}>
                   {w.direccionExacta && <div>📍 {w.direccionExacta}</div>}
                   {w.telefono && <div>📞 {w.telefono}</div>}
                   {w.correoContacto && <div>✉ {w.correoContacto}</div>}
@@ -154,7 +154,7 @@ export default function AdminWarehouses() {
               </div>
             ))}
             {warehouses.length === 0 && (
-              <div className="col-span-full text-center py-12 text-[#8e8e9a]">{t('common.noData')}</div>
+              <div className="col-span-full text-center py-12" style={{ color: 'var(--hc-muted)' }}>{t('common.noData')}</div>
             )}
           </div>
         )}

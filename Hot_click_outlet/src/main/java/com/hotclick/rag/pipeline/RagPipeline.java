@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.rag.dto.ProductoContexto;
 import com.hotclick.rag.service.VectorSearchService;
+import com.hotclick.repository.CategoriaRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,9 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Núcleo del flujo RAG (Retrieval-Augmented Generation).
@@ -40,7 +44,8 @@ public class RagPipeline {
 
     private static final Logger    log      = LoggerFactory.getLogger(RagPipeline.class);
     private static final int       TOP_K    = 5;
-    private static final int       MAX_TOKENS = 512;
+    private static final int       MAX_TOKENS = 250;
+    private static final Pattern   CATS_TAG = Pattern.compile("\\[CATS:([^\\]]+)\\]");
     private static final HttpClient HTTP    = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(15))
         .build();
@@ -54,13 +59,16 @@ public class RagPipeline {
     private final VectorSearchService vectorSearchService;
     private final PromptBuilder       promptBuilder;
     private final ObjectMapper        objectMapper;
+    private final CategoriaRepository categoriaRepository;
 
     public RagPipeline(VectorSearchService vectorSearchService,
                        PromptBuilder promptBuilder,
-                       ObjectMapper objectMapper) {
-        this.vectorSearchService = vectorSearchService;
-        this.promptBuilder       = promptBuilder;
-        this.objectMapper        = objectMapper;
+                       ObjectMapper objectMapper,
+                       CategoriaRepository categoriaRepository) {
+        this.vectorSearchService  = vectorSearchService;
+        this.promptBuilder        = promptBuilder;
+        this.objectMapper         = objectMapper;
+        this.categoriaRepository  = categoriaRepository;
     }
 
     // ── Punto de entrada ──────────────────────────────────────────────────────
@@ -83,19 +91,22 @@ public class RagPipeline {
         // 1. Búsqueda semántica (degrada graciosamente si Voyage no está disponible)
         List<ProductoContexto> productos = vectorSearchService.buscarSimilares(empresaId, query, TOP_K);
 
-        // 2. System prompt con catálogo XML + contexto de página + memoria del visitante
-        String systemPrompt = promptBuilder.construir(empresaNombre, productos, contexto, customerMemory);
+        // 2. Categorías de la empresa para el prompt (best-effort)
+        List<String> categorias = fetchCategorias(empresaId);
 
-        // 3. Mensajes para Claude: historial + query actual
+        // 3. System prompt con catálogo XML + contexto de página + memoria del visitante
+        String systemPrompt = promptBuilder.construir(empresaNombre, productos, contexto, customerMemory, categorias);
+
+        // 4. Mensajes para Claude: historial + query actual
         List<Map<String, Object>> messages = buildMessages(historial, query);
 
-        // 4. Llamada a Claude
+        // 5. Llamada a Claude
         if (apiKey == null || apiKey.isBlank()) {
             log.debug("[rag] Dev mode — ANTHROPIC_API_KEY no configurado, retornando mock");
-            return mockResponse(productos, query);
+            return mockResponse(productos, categorias, query);
         }
 
-        return llamarClaude(systemPrompt, messages, productos);
+        return llamarClaude(systemPrompt, messages, productos, categorias);
     }
 
     // ── Fallback de Circuit Breaker ───────────────────────────────────────────
@@ -112,7 +123,8 @@ public class RagPipeline {
 
     private RagResult llamarClaude(String systemPrompt,
                                    List<Map<String, Object>> messages,
-                                   List<ProductoContexto> productos) {
+                                   List<ProductoContexto> productos,
+                                   List<String> categoriasDisponibles) {
         try {
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("model",      model);
@@ -120,8 +132,7 @@ public class RagPipeline {
             body.put("stream",     false);
             body.put("system",     systemPrompt);
             body.put("messages",   messages);
-            // Stop sequences previenen prompt injection:
-            // si la respuesta intenta impersonar "Human:" o "User:", Claude se detiene.
+            // Stop sequences previenen prompt injection
             body.put("stop_sequences", List.of("\n\nHuman:", "\n\nUser:", "Human:", "User:"));
 
             String requestJson = objectMapper.writeValueAsString(body);
@@ -152,15 +163,39 @@ public class RagPipeline {
                 return RagResult.fallback();
             }
 
-            return new RagResult(texto, productos, tokIn, tokOut);
+            // Extraer [CATS:cat1,cat2,...] del texto y separarlo como lista estructurada
+            List<String> categoriasSugeridas = List.of();
+            Matcher m = CATS_TAG.matcher(texto);
+            if (m.find()) {
+                categoriasSugeridas = Arrays.stream(m.group(1).split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isBlank())
+                    .limit(5)
+                    .collect(Collectors.toList());
+                texto = texto.replace(m.group(0), "").strip();
+            }
+
+            return new RagResult(texto, productos, categoriasSugeridas, tokIn, tokOut);
 
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Llamada a Claude interrumpida", ie);
         } catch (RuntimeException re) {
-            throw re; // propaga para que el circuit breaker lo registre como fallo
+            throw re;
         } catch (Exception e) {
             throw new RuntimeException("Error llamando a Claude: " + e.getMessage(), e);
+        }
+    }
+
+    private List<String> fetchCategorias(Long empresaId) {
+        try {
+            return categoriaRepository.findByEmpresaIdAndEstado(empresaId, 1)
+                .stream()
+                .map(c -> c.getNombreCategoria())
+                .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.warn("[rag] No se pudieron cargar categorías empresa={}: {}", empresaId, e.getMessage());
+            return List.of();
         }
     }
 
@@ -193,10 +228,10 @@ public class RagPipeline {
         return messages;
     }
 
-    private static RagResult mockResponse(List<ProductoContexto> productos, String query) {
+    private static RagResult mockResponse(List<ProductoContexto> productos, List<String> categorias, String query) {
         String texto = productos.isEmpty()
             ? "*(modo desarrollo)* No encontré productos específicos para tu consulta. ¿Podés describir con más detalle lo que buscás?"
             : "*(modo desarrollo)* Encontré " + productos.size() + " producto(s) relevante(s) para \"" + query + "\". Configurá ANTHROPIC_API_KEY para respuestas reales.";
-        return new RagResult(texto, productos, 0, 0);
+        return new RagResult(texto, productos, List.of(), 0, 0);
     }
 }

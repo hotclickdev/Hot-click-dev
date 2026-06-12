@@ -20,6 +20,7 @@ import useCartStore from '@/store/cartStore'
 import { shoppingAssistantService } from '@/services/shoppingAssistantService'
 import { getOrCreateVisitorId } from '@/utils/visitorId'
 import AIProductCard from './AIProductCard'
+import AICategoryChip from './AICategoryChip'
 import { TypingDots, AIAvatar } from './AITypingBubble'
 
 const MSG_CSS_ID = 'hc-ai-msg-css'
@@ -92,7 +93,9 @@ export default function AIChat({
         shoppingAssistantService.saveSesionId(sessionKey, result.sesionId)
       }
       setMensajes(prev => [...prev.slice(0, -1), {
-        rol: 'assistant', texto: result.respuesta, productos: result.productos ?? [],
+        rol: 'assistant', texto: result.respuesta,
+        productos: result.productos ?? [],
+        categorias: result.categorias ?? [],
       }])
     } catch {
       setMensajes(prev => prev.slice(0, -1))
@@ -117,7 +120,9 @@ export default function AIChat({
         shoppingAssistantService.saveSesionId(sessionKey, result.sesionId)
       }
       setMensajes(prev => [...prev.slice(0, -1), {
-        rol: 'assistant', texto: result.respuesta, productos: result.productos ?? [],
+        rol: 'assistant', texto: result.respuesta,
+        productos: result.productos ?? [],
+        categorias: result.categorias ?? [],
       }])
     } catch (err) {
       setMensajes(prev => [...prev.slice(0, -1), {
@@ -191,6 +196,13 @@ export default function AIChat({
                         similarity={p.similarity}
                         onAdd={handleAdd}
                       />
+                    ))}
+                  </div>
+                )}
+                {!m.typing && m.categorias?.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-0.5">
+                    {m.categorias.map(cat => (
+                      <AICategoryChip key={cat} nombre={cat} accentColor={accent} />
                     ))}
                   </div>
                 )}

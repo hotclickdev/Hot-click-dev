@@ -16,13 +16,16 @@ public class ChatResponse {
     private String                respuesta;
     private String                sesionId;
     private List<ProductoContexto> productos;
+    private List<String>          categorias;
 
     public ChatResponse() {}
 
-    public ChatResponse(String respuesta, String sesionId, List<ProductoContexto> productos) {
-        this.respuesta = respuesta;
-        this.sesionId  = sesionId;
-        this.productos = productos;
+    public ChatResponse(String respuesta, String sesionId,
+                        List<ProductoContexto> productos, List<String> categorias) {
+        this.respuesta  = respuesta;
+        this.sesionId   = sesionId;
+        this.productos  = productos;
+        this.categorias = categorias;
     }
 
     public String                 getRespuesta() { return respuesta; }
@@ -33,4 +36,7 @@ public class ChatResponse {
 
     public List<ProductoContexto> getProductos() { return productos; }
     public void                   setProductos(List<ProductoContexto> productos) { this.productos = productos; }
+
+    public List<String>           getCategorias() { return categorias; }
+    public void                   setCategorias(List<String> categorias) { this.categorias = categorias; }
 }

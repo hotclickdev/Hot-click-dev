@@ -700,17 +700,25 @@ function TestimonialsCarousel() {
           ))}
         </div>
         <div className="flex items-center justify-center gap-4 mt-6">
-          <button onClick={prev} aria-label={t('common.previous')} className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/10 transition-colors">
+          <button onClick={prev} aria-label={t('common.previous')}
+            className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors"
+            style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
           <div className="flex gap-1.5">
             {TESTIMONIALS.map((_, i) => (
               <button key={i} onClick={() => setIdx(i)} aria-label={`Ver testimonio ${i + 1}`} className="p-2.5 flex items-center justify-center" style={{ background: 'transparent', border: 'none' }}>
-                <span className={`block rounded-full transition-all ${i === idx ? 'bg-[#4f7cff] w-4 h-2.5' : 'bg-white/20 w-2.5 h-2.5'}`} />
+                <span className="block rounded-full transition-all" style={{
+                  width: i === idx ? 16 : 10,
+                  height: i === idx ? 10 : 10,
+                  backgroundColor: i === idx ? 'var(--hc-accent)' : 'var(--hc-border-strong)',
+                }} />
               </button>
             ))}
           </div>
-          <button onClick={next} aria-label={t('common.next')} className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/10 transition-colors">
+          <button onClick={next} aria-label={t('common.next')}
+            className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors"
+            style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
         </div>

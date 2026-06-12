@@ -111,8 +111,8 @@ export default function AdminMarcas() {
         {/* Header */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.marcas.title')}</h1>
-            <p className="text-sm text-[#8e8e9a] mt-1">{marcas.length} marca{marcas.length !== 1 ? 's' : ''} registrada{marcas.length !== 1 ? 's' : ''}</p>
+            <h1 className="text-2xl font-bold" style={{ color: 'var(--hc-text)' }}>{t('admin.marcas.title')}</h1>
+            <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>{marcas.length} marca{marcas.length !== 1 ? 's' : ''} registrada{marcas.length !== 1 ? 's' : ''}</p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             <ImportExportBar
@@ -143,8 +143,8 @@ export default function AdminMarcas() {
                 <line x1="7" y1="7" x2="7.01" y2="7"/>
               </svg>
             </div>
-            <p className="font-semibold text-[#e8e8ed]">Sin marcas registradas</p>
-            <p className="text-sm text-[#8e8e9a] max-w-xs mx-auto">Las marcas aparecen en el catálogo y en cada producto.</p>
+            <p className="font-semibold" style={{ color: 'var(--hc-text)' }}>Sin marcas registradas</p>
+            <p className="text-sm max-w-xs mx-auto" style={{ color: 'var(--hc-muted)' }}>Las marcas aparecen en el catálogo y en cada producto.</p>
             <button onClick={openNew}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold mt-1 transition-opacity hover:opacity-80"
               style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
@@ -156,10 +156,10 @@ export default function AdminMarcas() {
             {marcas.map((m) => (
               <div key={m.id}
                 className="group rounded-2xl p-4 flex flex-col items-center gap-3 transition-colors"
-                style={{ backgroundColor: '#111114', border: '1px solid rgba(255,255,255,0.07)' }}>
+                style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
                 {/* Logo */}
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden shrink-0"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
                   {m.logoUrl && !imgError[m.id] ? (
                     <img
                       src={m.logoUrl}
@@ -174,20 +174,22 @@ export default function AdminMarcas() {
                   )}
                 </div>
                 {/* Nombre */}
-                <p className="text-sm font-semibold text-center text-[#e8e8ed] truncate w-full text-center leading-tight">
+                <p className="text-sm font-semibold text-center truncate w-full leading-tight" style={{ color: 'var(--hc-text)' }}>
                   {m.nombreMarca}
                 </p>
                 {/* Acciones */}
                 <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => openEdit(m)}
-                    className="p-1.5 rounded-lg text-[#8e8e9a] hover:text-white hover:bg-white/8 transition-colors"
+                    className="p-1.5 rounded-lg transition-colors hover:bg-[var(--hc-surface-2)]"
+                    style={{ color: 'var(--hc-muted)' }}
                     title="Editar">
                     <EditIcon />
                   </button>
                   <button
                     onClick={() => handleDelete(m.id, m.nombreMarca)}
-                    className="p-1.5 rounded-lg text-[#8e8e9a] hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                    className="p-1.5 rounded-lg transition-colors hover:bg-red-500/10 hover:text-red-400"
+                    style={{ color: 'var(--hc-muted)' }}
                     title="Eliminar">
                     <TrashIcon />
                   </button>
@@ -215,11 +217,11 @@ export default function AdminMarcas() {
 
           {/* Logo upload */}
           <div className="space-y-2">
-            <span className="text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">Logo</span>
+            <span className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>Logo</span>
             {form.logoUrl ? (
               <div className="flex items-center justify-center">
                 <div className="relative group">
-                  <div className="w-24 h-24 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
+                  <div className="w-24 h-24 rounded-xl flex items-center justify-center overflow-hidden" style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
                     <img
                       src={form.logoUrl}
                       alt="Logo"
@@ -243,21 +245,21 @@ export default function AdminMarcas() {
                 onDragLeave={() => setDragOver(false)}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className={`relative flex flex-col items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed cursor-pointer transition-colors ${
-                  dragOver
-                    ? 'border-[#8c5cf6] bg-[#8c5cf6]/10'
-                    : 'border-white/15 bg-white/3 hover:border-white/30 hover:bg-white/5'
-                }`}
+                className="relative flex flex-col items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed cursor-pointer transition-colors"
+                style={{
+                  borderColor: dragOver ? 'var(--hc-accent)' : 'var(--hc-border-strong)',
+                  backgroundColor: dragOver ? 'rgba(23,71,168,0.08)' : 'var(--hc-surface-2)',
+                }}
               >
                 {uploading ? (
                   <Spinner size="sm" />
                 ) : (
                   <>
                     <UploadIcon />
-                    <p className="text-sm text-[#8e8e9a]">
-                      <span className="text-white font-medium">Hacé clic</span> o arrastrá una imagen
+                    <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
+                      <span className="font-medium" style={{ color: 'var(--hc-text)' }}>Hacé clic</span> o arrastrá una imagen
                     </p>
-                    <p className="text-xs text-[#8e8e9a]/60">PNG, JPG, SVG · máx. 5 MB</p>
+                    <p className="text-xs" style={{ color: 'var(--hc-muted)', opacity: 0.6 }}>PNG, JPG, SVG · máx. 5 MB</p>
                   </>
                 )}
                 <input

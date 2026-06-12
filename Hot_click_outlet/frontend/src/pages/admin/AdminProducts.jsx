@@ -70,7 +70,7 @@ const STOCK_OPTIONS = [
   { label: 'Agotado', value: 'out' },
 ]
 
-const ta = 'w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm placeholder:text-[#8e8e9a]/40 focus:outline-none focus:border-[#4f7cff]/60 focus:ring-2 focus:ring-[#4f7cff]/10 resize-y transition-all'
+const ta = 'w-full px-4 py-3 rounded-xl text-sm resize-y transition-all focus:outline-none'
 
 export default function AdminProducts() {
   const { t } = useTranslation()
@@ -107,13 +107,18 @@ export default function AdminProducts() {
     setLoading(true)
     setLoadError(false)
     try {
-      const [{ data: prods }, { data: cats }, { data: bods }, { data: marcsR }] = await Promise.all([
+      const [prodsRes, catsRes, bodsRes, marcsRes] = await Promise.allSettled([
         productService.adminGetAll(page, PROD_PAGE_SIZE),
         productService.getCategories(),
         warehouseService.getAll(),
         marcaService.getAll(),
       ])
       if (id !== loadIdRef.current) return // stale — se disparó una carga más reciente
+      if (prodsRes.status === 'rejected') throw prodsRes.reason
+      const prods = prodsRes.value.data
+      const cats  = catsRes.status  === 'fulfilled' ? (catsRes.value.data  ?? []) : []
+      const bods  = bodsRes.status  === 'fulfilled' ? (bodsRes.value.data  ?? []) : []
+      const marcsR = marcsRes.status === 'fulfilled' ? (marcsRes.value.data ?? []) : []
       const pageData = prods.content ?? prods ?? []
       setProducts(pageData)
       setTotalProds(prods.totalElements ?? pageData.length)
@@ -292,6 +297,17 @@ export default function AdminProducts() {
     }
     if (!form.bodegaId && bodegas.length > 0) {
       toast({ message: 'Selecciona una bodega', type: 'error' }); return
+    }
+    const compra = Number(form.precioCompra)
+    const venta  = Number(form.precioVenta)
+    if (compra < 0) {
+      toast({ message: 'El precio de compra no puede ser negativo', type: 'error' }); return
+    }
+    if (venta < 0) {
+      toast({ message: 'El precio de venta no puede ser negativo', type: 'error' }); return
+    }
+    if (venta < compra) {
+      toast({ message: 'El precio de venta no puede ser menor al precio de compra', type: 'error' }); return
     }
     setSaving(true)
     try {
@@ -797,7 +813,7 @@ export default function AdminProducts() {
             <p className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider mb-3">Precios</p>
             <div className="grid grid-cols-2 gap-3">
               <Input label="Precio compra (₡) *" type="number" step="1" min="0" value={form.precioCompra} onChange={set('precioCompra')} required hint="Costo de adquisición" />
-              <Input label="Precio venta (₡) *" type="number" step="1" min="0" value={form.precioVenta} onChange={set('precioVenta')} required hint="Precio al público" />
+              <Input label="Precio venta (₡) *" type="number" step="1" min={form.precioCompra || 0} value={form.precioVenta} onChange={set('precioVenta')} required hint="Debe ser ≥ precio de compra" />
             </div>
             {form.precioCompra && form.precioVenta && (
               <div className="flex gap-2 mt-2 text-xs">

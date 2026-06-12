@@ -147,23 +147,23 @@ function GarantiaCard({ g, onReportado }) {
     <div className="rounded-2xl overflow-hidden"
       style={{
         backgroundColor: 'var(--hc-surface)',
-        border: `1px solid ${activa ? 'rgba(16,185,129,0.3)' : 'var(--hc-border)'}`,
+        border: `1px solid ${activa ? 'rgba(23,71,168,0.3)' : 'var(--hc-border)'}`,
       }}>
 
       {/* Banner estado */}
       <div className="px-4 py-2 flex items-center justify-between"
         style={{
-          backgroundColor: activa ? 'rgba(16,185,129,0.08)' : 'rgba(107,114,128,0.08)',
-          borderBottom: `1px solid ${activa ? 'rgba(16,185,129,0.15)' : 'var(--hc-border)'}`,
+          backgroundColor: activa ? 'rgba(23,71,168,0.08)' : 'rgba(107,114,128,0.08)',
+          borderBottom: `1px solid ${activa ? 'rgba(23,71,168,0.15)' : 'var(--hc-border)'}`,
         }}>
         <span className="text-xs font-bold flex items-center gap-1.5"
-          style={{ color: activa ? '#10b981' : 'var(--hc-muted)' }}>
+          style={{ color: activa ? 'var(--hc-accent)' : 'var(--hc-muted)' }}>
           🛡️ {activa ? 'Garantía activa' : 'Garantía vencida'}
         </span>
         <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
           style={{
-            backgroundColor: activa ? 'rgba(16,185,129,0.15)' : 'rgba(107,114,128,0.15)',
-            color: activa ? '#10b981' : 'var(--hc-muted)',
+            backgroundColor: activa ? 'rgba(23,71,168,0.15)' : 'rgba(107,114,128,0.15)',
+            color: activa ? 'var(--hc-accent)' : 'var(--hc-muted)',
           }}>
           No disponible
         </span>
@@ -262,7 +262,7 @@ function GarantiaCard({ g, onReportado }) {
       {enviado && (
         <div className="px-4 pb-4">
           <div className="py-3 px-4 rounded-xl text-sm font-semibold flex items-center gap-2"
-            style={{ backgroundColor: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.25)' }}>
+            style={{ backgroundColor: 'rgba(23,71,168,0.1)', color: 'var(--hc-accent)', border: '1px solid rgba(23,71,168,0.25)' }}>
             ✅ Solicitud enviada — HotClick te contactará pronto.
           </div>
         </div>
@@ -353,7 +353,7 @@ function TestimonioCard({ p, onEnviado }) {
           <p className="font-semibold text-sm truncate" style={{ color: 'var(--hc-text)' }}>{p.nombre}</p>
           {enviado
             ? <p className="text-xs font-semibold mt-0.5" style={{ color: '#f59e0b' }}>✅ Reseña enviada — ¡gracias!</p>
-            : <p className="text-xs font-semibold mt-0.5" style={{ color: '#10b981' }}>✓ Ya dejaste una reseña</p>
+            : <p className="text-xs font-semibold mt-0.5" style={{ color: 'var(--hc-accent)' }}>✓ Ya dejaste una reseña</p>
           }
         </div>
       </div>
@@ -468,6 +468,38 @@ function BotonVolver({ onClick }) {
       </svg>
       Volver a servicios
     </button>
+  )
+}
+
+/* ─── Imágenes de tarjetas: local primero, Unsplash como respaldo ───────── */
+const CARD_IMAGES = {
+  busqueda: {
+    local: '/servicios/busqueda.jpg',
+    fallback: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&q=80',
+    alt: 'Búsqueda de producto',
+  },
+  garantia: {
+    local: '/servicios/garantia.jpg',
+    fallback: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=600&q=80',
+    alt: 'Garantía de productos',
+  },
+  resena: {
+    local: '/servicios/resena.jpg',
+    fallback: 'https://images.unsplash.com/photo-1556742031-c6961e8560b0?w=800&q=80',
+    alt: 'Dejar reseña',
+  },
+}
+
+function ServiceCardImage({ type, className }) {
+  const cfg = CARD_IMAGES[type]
+  const [src, setSrc] = useState(cfg.local)
+  return (
+    <img
+      src={src}
+      alt={cfg.alt}
+      className={className}
+      onError={() => { if (src !== cfg.fallback) setSrc(cfg.fallback) }}
+    />
   )
 }
 
@@ -620,11 +652,7 @@ export default function ServiciosHotPage() {
 
                 {/* Imagen de fondo */}
                 <div className="relative h-44 overflow-hidden">
-                  <img
-                    src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&q=80"
-                    alt="Búsqueda de producto"
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
+                  <ServiceCardImage type="busqueda" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                   <div className="absolute inset-0"
                     style={{ background: 'linear-gradient(to top, rgba(23,71,168,0.85) 0%, rgba(23,71,168,0.2) 50%, transparent 100%)' }} />
                   {/* Ícono flotante */}
@@ -663,17 +691,13 @@ export default function ServiciosHotPage() {
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                 onClick={() => irA('garantia')}
                 className="text-left rounded-3xl overflow-hidden relative group cursor-pointer"
-                style={{ border: '1px solid rgba(16,185,129,0.2)', backgroundColor: 'var(--hc-surface)' }}>
+                style={{ border: '1px solid rgba(23,71,168,0.2)', backgroundColor: 'var(--hc-surface)' }}>
 
                 {/* Imagen de fondo */}
                 <div className="relative h-44 overflow-hidden">
-                  <img
-                    src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=600&q=80"
-                    alt="Garantía de productos"
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
+                  <ServiceCardImage type="garantia" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                   <div className="absolute inset-0"
-                    style={{ background: 'linear-gradient(to top, rgba(5,150,105,0.88) 0%, rgba(16,185,129,0.2) 50%, transparent 100%)' }} />
+                    style={{ background: 'linear-gradient(to top, rgba(23,71,168,0.88) 0%, rgba(23,71,168,0.2) 50%, transparent 100%)' }} />
                   {/* Ícono flotante */}
                   <div className="absolute top-4 left-4 w-11 h-11 rounded-2xl flex items-center justify-center text-2xl shadow-lg"
                     style={{ backgroundColor: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
@@ -681,7 +705,7 @@ export default function ServiciosHotPage() {
                   </div>
                   {/* Badge */}
                   <span className="absolute top-4 right-4 px-2.5 py-1 rounded-full text-xs font-bold"
-                    style={{ backgroundColor: 'rgba(5,150,105,0.9)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }}>
+                    style={{ backgroundColor: 'rgba(23,71,168,0.9)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }}>
                     Incluida
                   </span>
                   {/* Flecha */}
@@ -713,11 +737,7 @@ export default function ServiciosHotPage() {
                 style={{ border: '1px solid rgba(245,158,11,0.2)', backgroundColor: 'var(--hc-surface)' }}>
 
                 <div className="relative h-44 overflow-hidden">
-                  <img
-                    src="https://images.unsplash.com/photo-1556742031-c6961e8560b0?w=800&q=80"
-                    alt="Dejar reseña"
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
+                  <ServiceCardImage type="resena" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                   <div className="absolute inset-0"
                     style={{ background: 'linear-gradient(to top, rgba(180,83,9,0.88) 0%, rgba(245,158,11,0.2) 50%, transparent 100%)' }} />
                   <div className="absolute top-4 left-4 w-11 h-11 rounded-2xl flex items-center justify-center text-2xl shadow-lg"
@@ -967,7 +987,7 @@ export default function ServiciosHotPage() {
 
               {/* Header */}
               <div className="flex items-center gap-3 mb-6 p-4 rounded-2xl"
-                style={{ backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                style={{ backgroundColor: 'rgba(23,71,168,0.08)', border: '1px solid rgba(23,71,168,0.2)' }}>
                 <span className="text-3xl">🛡️</span>
                 <div>
                   <h2 className="font-black text-lg" style={{ color: 'var(--hc-text)' }}>Garantía de productos</h2>
@@ -985,14 +1005,14 @@ export default function ServiciosHotPage() {
                   <p className="text-sm mb-6" style={{ color: 'var(--hc-muted)' }}>Tus garantías activas aparecen vinculadas a tu cuenta.</p>
                   <button onClick={() => navigate('/login')}
                     className="px-6 py-3 rounded-2xl text-sm font-bold"
-                    style={{ backgroundColor: '#10b981', color: '#fff' }}>
+                    style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
                     Iniciar sesión
                   </button>
                 </div>
               ) : loadingGarantias ? (
                 <div className="text-center py-20" style={{ color: 'var(--hc-muted)' }}>
                   <div className="w-8 h-8 rounded-full border-2 animate-spin mx-auto mb-4"
-                    style={{ borderColor: 'var(--hc-border)', borderTopColor: '#10b981' }} />
+                    style={{ borderColor: 'var(--hc-border)', borderTopColor: 'var(--hc-accent)' }} />
                   Cargando garantías…
                 </div>
               ) : !misGarantias?.length ? (
@@ -1012,9 +1032,9 @@ export default function ServiciosHotPage() {
                     return (
                       <div className="flex gap-3 mb-2">
                         <div className="flex-1 text-center p-3 rounded-2xl"
-                          style={{ backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                          <p className="text-2xl font-black" style={{ color: '#10b981' }}>{activas}</p>
-                          <p className="text-xs font-semibold" style={{ color: '#10b981' }}>Activa{activas !== 1 ? 's' : ''}</p>
+                          style={{ backgroundColor: 'rgba(23,71,168,0.08)', border: '1px solid rgba(23,71,168,0.2)' }}>
+                          <p className="text-2xl font-black" style={{ color: 'var(--hc-accent)' }}>{activas}</p>
+                          <p className="text-xs font-semibold" style={{ color: 'var(--hc-accent)' }}>Activa{activas !== 1 ? 's' : ''}</p>
                         </div>
                         {vencidas > 0 && (
                           <div className="flex-1 text-center p-3 rounded-2xl"
@@ -1036,7 +1056,7 @@ export default function ServiciosHotPage() {
                   <p className="text-xs text-center pt-2" style={{ color: 'var(--hc-muted)' }}>
                     ¿Problema con un producto?{' '}
                     <a href="https://wa.me/50689745370" target="_blank" rel="noopener noreferrer"
-                      className="font-semibold" style={{ color: '#10b981' }}>
+                      className="font-semibold" style={{ color: 'var(--hc-accent)' }}>
                       Contactanos por WhatsApp
                     </a>
                   </p>

@@ -35,7 +35,7 @@ export default function RegistrarNegocioPage() {
     registrarConsentimiento('VENDEDOR')
     try {
       const { data } = await api.post('/auth/upgrade-emprendedor', form)
-      login(data)
+      login(data?.data ?? data)
       toast({ message: '¡Negocio registrado! Bienvenido al panel de emprendedor.', type: 'success' })
       navigate('/admin', { replace: true })
     } catch (err) {

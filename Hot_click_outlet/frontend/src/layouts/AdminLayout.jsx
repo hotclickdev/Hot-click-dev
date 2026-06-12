@@ -307,14 +307,14 @@ function ModeSwitcherWrapper({ userRole }) {
 }
 
 const SECTION_COLORS = {
-  'Catálogo':            '#6366f1',
-  'Catálogo e inventario': '#6366f1',
-  'Ventas':              '#10b981',
-  'POS':                 '#10b981',
-  'Punto de venta':      '#10b981',
-  'Marketing':           '#f59e0b',
-  'Sistema':             '#6490EA',
-  'Mi negocio':          '#6490EA',
+  'Catálogo':              'var(--hc-primary)',
+  'Catálogo e inventario': 'var(--hc-primary)',
+  'Ventas':                'var(--hc-link)',
+  'POS':                   'var(--hc-link)',
+  'Punto de venta':        'var(--hc-link)',
+  'Marketing':             '#f59e0b',
+  'Sistema':               'var(--hc-link)',
+  'Mi negocio':            'var(--hc-link)',
 }
 
 function getSectionColor(section) {
@@ -539,7 +539,7 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
         <NavLink
           to="/"
           className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors"
-          style={{ color: '#34d399', backgroundColor: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)' }}
+          style={{ color: 'var(--hc-link)', backgroundColor: 'rgba(23,71,168,0.08)', border: '1px solid rgba(23,71,168,0.2)' }}
         >
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
