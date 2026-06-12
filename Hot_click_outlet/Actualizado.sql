@@ -2660,8 +2660,27 @@ CREATE INDEX IF NOT EXISTS idx_consentimiento_tipo_fecha
 
 -- V57: Agrega campo calificacion (1-5 estrellas) a testimonios
 ALTER TABLE hot_click_testimonio_tb
-  ADD COLUMN IF NOT EXISTS calificacion INTEGER,
-  ADD CONSTRAINT IF NOT EXISTS chk_testimonio_calificacion CHECK (calificacion BETWEEN 1 AND 5);
+  ADD COLUMN IF NOT EXISTS calificacion INTEGER;
+
+ALTER TABLE hot_click_testimonio_tb
+  DROP CONSTRAINT IF EXISTS chk_testimonio_calificacion;
+ALTER TABLE hot_click_testimonio_tb
+  ADD CONSTRAINT chk_testimonio_calificacion CHECK (calificacion BETWEEN 1 AND 5);
+
+-- V69: Divide en TESTIMONIO (comentario web) y RESENA (reseña de producto, máx 3 por usuario)
+ALTER TABLE hot_click_testimonio_tb
+    DROP CONSTRAINT IF EXISTS uq_testimonio_usuario_producto;
+
+ALTER TABLE hot_click_testimonio_tb
+    ADD COLUMN IF NOT EXISTS tipo VARCHAR(20) NOT NULL DEFAULT 'RESENA';
+
+ALTER TABLE hot_click_testimonio_tb
+    DROP CONSTRAINT IF EXISTS chk_testimonio_tipo;
+ALTER TABLE hot_click_testimonio_tb
+    ADD CONSTRAINT chk_testimonio_tipo CHECK (tipo IN ('TESTIMONIO', 'RESENA'));
+
+CREATE INDEX IF NOT EXISTS idx_testimonio_usuario_producto_tipo
+    ON hot_click_testimonio_tb (fk_id_usuario, fk_id_producto, tipo);
 
 -- ============================================================
 -- V58: Row Level Security en tablas con datos sensibles

@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import useCartStore from '@/store/cartStore'
 import useWishlistStore from '@/store/wishlistStore'
-import { formatPrice } from '@/utils/format'
 
 const FIRST_VISIT_KEY = 'hc-first-visit-ts'
 const DISMISSED_KEY   = 'hc-return-banner-dismissed'
@@ -22,18 +21,21 @@ function getVisitInfo() {
 export default function ReturnVisitorBanner() {
   const [visible, setVisible] = useState(false)
   const [info, setInfo]       = useState(null)
-  const cartItems    = useCartStore((s) => s.items)
-  const cartTotal    = useCartStore((s) => s.total)
-  const wishCount    = useWishlistStore((s) => s.items.length)
+  const location  = useLocation()
+  const cartItems = useCartStore((s) => s.items)
+  const wishCount = useWishlistStore((s) => s.items.length)
+
+  const hiddenPaths = ['/carrito', '/checkout']
 
   useEffect(() => {
+    if (hiddenPaths.some(p => location.pathname.startsWith(p))) return
     if (sessionStorage.getItem(DISMISSED_KEY)) return
     const visitInfo = getVisitInfo()
     if (!visitInfo.isReturn) return
     if (!cartItems.length && !wishCount) return
     setInfo(visitInfo)
     setVisible(true)
-  }, [])
+  }, [location.pathname])
 
   const dismiss = () => {
     sessionStorage.setItem(DISMISSED_KEY, '1')
@@ -72,7 +74,7 @@ export default function ReturnVisitorBanner() {
                 </span>
                 {cartItems.length > 0 && (
                   <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-                    Tienes {cartItems.length} producto{cartItems.length > 1 ? 's' : ''} en el carrito ({formatPrice(cartTotal())}).
+                    Tienes {cartItems.length} producto{cartItems.length > 1 ? 's' : ''} en el carrito.
                   </span>
                 )}
                 {!cartItems.length && wishCount > 0 && (

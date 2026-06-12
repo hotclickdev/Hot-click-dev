@@ -25,6 +25,9 @@ public class GiftCardController {
     @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN_IT','ADMIN_CLIENTE')")
     public ResponseEntity<?> listar() {
         Long empresaId = TenantContext.get();
+        if (empresaId == null) {
+            return ResponseEntity.status(403).build();
+        }
         List<Map<String, Object>> result = giftCardService.listarPorEmpresa(empresaId)
             .stream().map(giftCardService::toMap).collect(Collectors.toList());
         return ResponseEntity.ok(result);

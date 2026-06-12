@@ -44,6 +44,7 @@ public class PublicChatController {
     @Autowired private EmpresaRepository  empresaRepository;
     @Autowired private RateLimiter        rateLimiter;
     @Autowired @Qualifier("sseExecutor") private Executor sseExecutor;
+    @Autowired private com.hotclick.service.TextModerationService textModerationService;
 
     @PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter chat(
@@ -58,6 +59,11 @@ public class PublicChatController {
 
         if (message.isBlank()) {
             return doneEmitter(emitter);
+        }
+
+        var textMod = textModerationService.moderar(message);
+        if (!textMod.safe()) {
+            return errorEmitter(emitter, "Mensaje rechazado: contenido no permitido en la plataforma");
         }
 
         // Truncate to avoid token bombs

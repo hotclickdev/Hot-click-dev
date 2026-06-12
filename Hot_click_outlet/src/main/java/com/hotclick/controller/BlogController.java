@@ -15,6 +15,7 @@ public class BlogController {
 
     @Autowired private BlogEntradaRepository repo;
     @Autowired private InputSanitizer sanitizer;
+    @Autowired private com.hotclick.service.TextModerationService textModerationService;
 
     /** Público — solo publicados */
     @GetMapping("/publico")
@@ -46,6 +47,9 @@ public class BlogController {
 
     @PostMapping
     public ResponseEntity<ResponseDTO> crear(@RequestBody BlogEntrada entrada) {
+        var textMod = textModerationService.moderar(entrada.getTitulo(), entrada.getResumen(), entrada.getContenido());
+        if (!textMod.safe())
+            return ResponseEntity.badRequest().body(ResponseDTO.error("El contenido de la publicación no está permitido en la plataforma"));
         sanitizarEntrada(entrada);
         entrada.setFechaCreacion(LocalDateTime.now());
         entrada.setEstado(1);
@@ -60,6 +64,9 @@ public class BlogController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ResponseDTO> actualizar(@PathVariable Long id, @RequestBody BlogEntrada datos) {
+        var textMod = textModerationService.moderar(datos.getTitulo(), datos.getResumen(), datos.getContenido());
+        if (!textMod.safe())
+            return ResponseEntity.badRequest().body(ResponseDTO.error("El contenido de la publicación no está permitido en la plataforma"));
         sanitizarEntrada(datos);
         BlogEntrada e = repo.findById(id).orElseThrow(() -> new RuntimeException("No encontrado"));
         e.setTitulo(datos.getTitulo());

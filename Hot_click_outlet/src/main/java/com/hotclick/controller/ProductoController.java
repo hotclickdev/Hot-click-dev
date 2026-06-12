@@ -39,6 +39,8 @@ public class ProductoController {
     @Autowired private CompanyScope       companyScope;
     @Autowired private com.hotclick.repository.EmpresaRepository empresaRepository;
     @Autowired private com.hotclick.service.StockService stockService;
+    @Autowired private com.hotclick.service.ImageModerationService imageModerationService;
+    @Autowired private com.hotclick.service.TextModerationService  textModerationService;
 
     private static final int MAX_PAGE_SIZE = 100;
 
@@ -204,6 +206,12 @@ public class ProductoController {
     @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE') or hasAuthority('SCOPE_write:productos')")
     public ResponseEntity<ResponseDTO> crearProducto(@RequestBody ProductoRequestDTO dto) {
         try {
+            var textMod = textModerationService.moderar(
+                dto.getNombreProducto(), dto.getDescripcionCorta(),
+                dto.getTituloProducto(), dto.getDescripcionLarga(),
+                dto.getEspecificaciones(), dto.getComoUsar(), dto.getTags());
+            if (!textMod.safe())
+                return ResponseEntity.badRequest().body(ResponseDTO.error("El contenido del producto no está permitido en la plataforma"));
             Empresa empresa = companyScope.getCurrentEmpresaId() != null
                 ? empresaRepository.findById(companyScope.getCurrentEmpresaId()).orElse(null) : null;
             var producto = productoService.crearProducto(dto, currentUserName(), empresa);
@@ -222,6 +230,12 @@ public class ProductoController {
             var existente = productoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
             companyScope.assertCanAccessNullable(existente.getEmpresaId());
+            var textMod = textModerationService.moderar(
+                dto.getNombreProducto(), dto.getDescripcionCorta(),
+                dto.getTituloProducto(), dto.getDescripcionLarga(),
+                dto.getEspecificaciones(), dto.getComoUsar(), dto.getTags());
+            if (!textMod.safe())
+                return ResponseEntity.badRequest().body(ResponseDTO.error("El contenido del producto no está permitido en la plataforma"));
             var producto = productoService.actualizarProducto(id, dto, currentUserName());
             return ResponseEntity.ok(ResponseDTO.success("Producto actualizado", producto));
         } catch (Exception e) {
@@ -315,6 +329,9 @@ public class ProductoController {
         if (file == null || file.isEmpty())
             return ResponseEntity.badRequest().body(ResponseDTO.error("No se recibió ningún archivo"));
         try {
+            var mod = imageModerationService.moderar(file);
+            if (!mod.safe())
+                return ResponseEntity.badRequest().body(ResponseDTO.error("Imagen rechazada: " + mod.reason()));
             String url = supabaseStorageService.subirImagen(file);
             return ResponseEntity.ok(ResponseDTO.success("Imagen subida", Map.of("url", url)));
         } catch (IllegalArgumentException e) {

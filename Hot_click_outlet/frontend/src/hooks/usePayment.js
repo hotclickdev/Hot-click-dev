@@ -15,14 +15,19 @@ export function usePayment() {
   const [intentos, setIntentos] = useState(0)
   const pollRef                 = useRef(null)
 
-  // iniciarPago acepta isGuest=true para compras sin cuenta
-  const iniciarPago = useCallback(async (checkoutPayload, isGuest = false) => {
+  // iniciarPago acepta isGuest=true para compras sin cuenta, isSinpe=true para usar SinpeController
+  const iniciarPago = useCallback(async (checkoutPayload, isGuest = false, isSinpe = false) => {
     sessionStorage.setItem(GUEST_KEY, isGuest ? '1' : '0')
     setEstado('loading')
     setError(null)
     setIntentos((i) => i + 1)
     try {
-      const method = isGuest ? paymentService.guestCheckout : paymentService.checkout
+      let method
+      if (isSinpe) {
+        method = isGuest ? paymentService.guestSinpeCheckout : paymentService.sinpeCheckout
+      } else {
+        method = isGuest ? paymentService.guestCheckout : paymentService.checkout
+      }
       const { data } = await method(checkoutPayload)
       setPagoData(data)
       if (data.proveedor === 'GIFT_CARD') {

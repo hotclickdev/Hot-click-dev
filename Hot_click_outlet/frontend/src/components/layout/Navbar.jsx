@@ -91,13 +91,27 @@ export default function Navbar() {
         style={scrolled ? { borderBottomColor: 'var(--hc-border)', backgroundColor: 'var(--hc-surface)' } : {}}
       >
         <nav className={`max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-4 hc-nav-inner ${scrolled ? 'h-12' : 'h-14'}`}>
-          {/* Logo — horizontal en desktop, símbolo solo en móvil (Brand Book §2.4) */}
-          <Link to="/" className="flex items-center gap-2 shrink-0 group" aria-label="HotClick — inicio">
-            <HotClickMark size={30} className="shrink-0 transition-transform duration-200 group-hover:scale-105" />
-            <span className="hc-wordmark hidden sm:inline text-[18px] leading-none transition-opacity duration-200 group-hover:opacity-80">
-              <span className="hot">Hot</span><span className="click">Click</span>
-            </span>
-          </Link>
+          {/* Left: hamburger (mobile) + logo */}
+          <div className="flex items-center gap-1">
+            {/* Mobile menu button */}
+            <button
+              className="md:hidden p-2 rounded-lg transition-colors"
+              style={{ color: 'var(--hc-muted)' }}
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label={t('nav.menu')}
+              aria-expanded={menuOpen}
+            >
+              <MenuIcon open={menuOpen} />
+            </button>
+
+            {/* Logo — horizontal en desktop, símbolo solo en móvil (Brand Book §2.4) */}
+            <Link to="/" className="flex items-center gap-2 shrink-0 group" aria-label="HotClick — inicio">
+              <HotClickMark size={30} className="shrink-0 transition-transform duration-200 group-hover:scale-105" />
+              <span className="hc-wordmark hidden sm:inline text-[18px] leading-none transition-opacity duration-200 group-hover:opacity-80">
+                <span className="hot">Hot</span><span className="click">Click</span>
+              </span>
+            </Link>
+          </div>
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-0.5">
@@ -294,16 +308,6 @@ export default function Navbar() {
               </div>
             )}
 
-            {/* Mobile menu */}
-            <button
-              className="md:hidden p-2 rounded-lg transition-colors"
-              style={{ color: 'var(--hc-muted)' }}
-              onClick={() => setMenuOpen(!menuOpen)}
-              aria-label={t('nav.menu')}
-              aria-expanded={menuOpen}
-            >
-              <MenuIcon open={menuOpen} />
-            </button>
           </div>
         </nav>
       </header>

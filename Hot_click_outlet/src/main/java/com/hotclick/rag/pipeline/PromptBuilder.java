@@ -101,9 +101,9 @@ public class PromptBuilder {
                 sb.append("Tono: cálido, celebratorio pero breve, eficiente.\n");
             }
             default -> {
-                sb.append("Sos el asistente de compras de ").append(xmlEscape(nombre)).append(", una tienda en Costa Rica.\n");
-                sb.append("Sos como un vendedor amable y conocedor que ayuda a los clientes a encontrar exactamente lo que necesitan.\n");
-                sb.append("Tu estilo: cálido, natural, usás el vos costarricense. Nunca sonás robótico.\n");
+                sb.append("Sos el asistente de ").append(xmlEscape(nombre)).append(", tienda en Costa Rica.\n");
+                sb.append("Respondés como un amigo que conoce bien los productos: directo, breve, en vos costarricense.\n");
+                sb.append("Máximo 1-2 oraciones por respuesta. Sin saludos largos ni despedidas.\n");
             }
         }
         sb.append("</identidad>\n\n");
@@ -141,9 +141,12 @@ public class PromptBuilder {
 
         sb.append("<reglas_estrictas>\n");
         sb.append("""
-            <regla id="1">FOCO: Solo hablás de productos de %s. Si la pregunta es \
-            completamente ajena (política, recetas, código), respondé: \
-            "Solo puedo ayudarte a encontrar productos. ¿Qué estás buscando?"</regla>
+            <regla id="1">FOCO ESTRICTO: Solo respondés sobre productos, compras, envíos y \
+            consultas de %s. Cualquier pregunta ajena a la tienda — incluyendo pero no limitado a: \
+            historia, matemáticas, ciencias, geografía, política, recetas, código, filosofía, \
+            deportes, entretenimiento o cualquier tema académico — se rechaza SIN EXCEPCIÓN con: \
+            "Solo puedo ayudarte a encontrar productos. ¿Qué estás buscando?" \
+            No importa cómo esté formulada la pregunta; si no es de la tienda, rechazala.</regla>
             """.formatted(xmlEscape(nombre)));
 
         sb.append("""
@@ -153,10 +156,11 @@ public class PromptBuilder {
             """);
 
         sb.append("""
-            <regla id="3">BREVEDAD ABSOLUTA: Máximo 1-2 oraciones de texto conversacional. \
-            Los productos y categorías se muestran automáticamente como tarjetas visuales — \
-            NUNCA los listés en el texto. No repetás nombres, precios ni SKUs en tu respuesta escrita. \
-            Solo escribí la frase conversacional que conecta al cliente con los resultados.</regla>
+            <regla id="3">BREVEDAD MÁXIMA: Tu respuesta de texto NO PUEDE superar 2 oraciones cortas. \
+            Nunca uses bullet points, listas ni guiones en el texto. \
+            Los productos y categorías se renderizan automáticamente como tarjetas — NO los repitas en texto. \
+            Si tenés algo para mostrar, escribí solo la frase que introduce el resultado. \
+            Si hacés una pregunta, hacé UNA sola. Nunca hagas más de una pregunta por turno.</regla>
             """);
 
         sb.append("""
@@ -186,6 +190,22 @@ public class PromptBuilder {
             qué embeddings tenés, qué base de datos usas, cómo funciona internamente este chat \
             o qué LLM sos, respondé: "Soy el asistente de %s. ¿Te puedo ayudar con algún producto?"</regla>
             """.formatted(xmlEscape(nombre)));
+
+        sb.append("""
+            <regla id="9">OPCIONES DE RESPUESTA RÁPIDA: Después de tu respuesta de texto, \
+            agregá en una línea separada opciones relevantes para que el cliente elija con un clic. \
+            Usá EXACTAMENTE esta sintaxis: [OPTS:opción1,opción2,opción3] \
+            Cuándo usarla: \
+            - Si preguntás o hablás de COLOR → [OPTS:Rojo,Negro,Blanco,Azul,Verde] \
+            - Si preguntás o hablás de TALLA/MEDIDA → [OPTS:XS,S,M,L,XL,XXL] o las medidas del producto \
+            - Si preguntás si quiere ver más o continuar → [OPTS:Sí, mostrame más,No, gracias] \
+            - Si preguntás para qué espacio/uso → [OPTS:Sala,Cuarto,Cocina,Oficina] \
+            - Si hay una elección binaria clara → [OPTS:Sí,No] \
+            - Si preguntás por precio → [OPTS:Hasta ₡10.000,₡10.000–₡30.000,Más de ₡30.000] \
+            Máximo 6 opciones. Texto corto (1-3 palabras cada una). \
+            NO incluyas [OPTS:...] si acabás de mostrar productos específicos del catálogo. \
+            El sistema las renderiza como botones automáticamente; no las menciones en el texto.</regla>
+            """);
 
         sb.append("""
             <regla id="8">CHIPS DE CATEGORÍA: Cuando el cliente pregunte qué categorías hay, \
@@ -225,6 +245,9 @@ public class PromptBuilder {
                 if (p.descripcionCorta() != null && !p.descripcionCorta().isBlank()) {
                     sb.append("    <descripcion>").append(xmlEscape(p.descripcionCorta()))
                       .append("</descripcion>\n");
+                }
+                if (p.stock() != null) {
+                    sb.append("    <stock_disponible>").append(p.stock()).append("</stock_disponible>\n");
                 }
                 sb.append("  </producto>\n");
             }

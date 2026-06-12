@@ -21,6 +21,8 @@ import java.util.Map;
 @Service
 public class TestimonioService {
 
+    private static final int MAX_RESENAS_POR_PRODUCTO = 3;
+
     @Autowired private TestimonioRepository repo;
     @Autowired private UsuarioRepository usuarioRepo;
     @Autowired private ProductoRepository productoRepo;
@@ -28,11 +30,34 @@ public class TestimonioService {
     @Autowired private InputSanitizer sanitizer;
 
     /**
-     * Crea un testimonio. Valida:
-     * 1. El usuario compró el producto (estado de pedido válido).
-     * 2. Aún no tiene un testimonio para ese producto.
+     * Crea un testimonio general sobre la web/servicio.
+     * No requiere producto ni compra previa. Calificación opcional.
      */
-    public Testimonio crear(String correo, String comentario, String imagenUrl, Long productoId, Integer calificacion) {
+    @CacheEvict(value = "testimonios-publicos", allEntries = true)
+    public Testimonio crearTestimonio(String correo, String comentario, String imagenUrl, Integer calificacion) {
+        var usuario = usuarioRepo.findByCorreo(correo)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        if (calificacion != null && (calificacion < 1 || calificacion > 5))
+            throw new RuntimeException("La calificación debe ser entre 1 y 5 estrellas");
+
+        Testimonio t = new Testimonio();
+        t.setUsuario(usuario);
+        t.setTipo("TESTIMONIO");
+        t.setComentario(sanitizer.cleanWithLimit(comentario, 1000));
+        t.setImagenUrl(imagenUrl != null ? sanitizer.cleanWithLimit(imagenUrl, 1000) : null);
+        t.setCalificacion(calificacion);
+        return repo.save(t);
+    }
+
+    /**
+     * Crea una reseña de producto. Valida:
+     * 1. El usuario compró el producto.
+     * 2. No superó el límite de 3 reseñas para ese producto.
+     * 3. Calificación requerida (1-5).
+     */
+    @CacheEvict(value = "testimonios-publicos", allEntries = true)
+    public Testimonio crearResena(String correo, String comentario, String imagenUrl, Long productoId, Integer calificacion) {
         var usuario = usuarioRepo.findByCorreo(correo)
             .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
@@ -44,28 +69,41 @@ public class TestimonioService {
 
         Long compras = repo.countCompra(productoId, usuario.getId());
         if (compras == null || compras == 0)
-            throw new RuntimeException("Solo puedes dejar un testimonio de productos que hayas comprado");
+            throw new RuntimeException("Solo puedes reseñar productos que hayas comprado");
 
-        if (repo.existsByUsuarioIdAndProductoId(usuario.getId(), productoId))
-            throw new RuntimeException("Ya enviaste un testimonio para este producto");
+        long resenasPrevias = repo.countByUsuarioIdAndProductoIdAndTipo(usuario.getId(), productoId, "RESENA");
+        if (resenasPrevias >= MAX_RESENAS_POR_PRODUCTO)
+            throw new RuntimeException("Ya alcanzaste el límite de " + MAX_RESENAS_POR_PRODUCTO + " reseñas para este producto");
 
-        if (calificacion != null && (calificacion < 1 || calificacion > 5))
+        if (calificacion == null)
+            throw new RuntimeException("La calificación es obligatoria");
+        if (calificacion < 1 || calificacion > 5)
             throw new RuntimeException("La calificación debe ser entre 1 y 5 estrellas");
 
         Testimonio t = new Testimonio();
         t.setUsuario(usuario);
         t.setProducto(producto);
+        t.setTipo("RESENA");
         t.setComentario(sanitizer.cleanWithLimit(comentario, 1000));
         t.setImagenUrl(imagenUrl != null ? sanitizer.cleanWithLimit(imagenUrl, 1000) : null);
         t.setCalificacion(calificacion);
         return repo.save(t);
     }
 
-    /** Lista aprobados para el endpoint público (sin email ni datos sensibles). */
+    /** Testimonios generales aprobados (para carrusel de la web). */
     @Cacheable("testimonios-publicos")
     @Transactional(readOnly = true)
     public List<Map<String, Object>> listarAprobadosPublico() {
-        return repo.findByEstadoOrderByFechaAprobacionDesc("APROBADO")
+        return repo.findByEstadoAndTipoOrderByFechaAprobacionDesc("APROBADO", "TESTIMONIO")
+            .stream()
+            .map(this::toPublicMap)
+            .toList();
+    }
+
+    /** Reseñas aprobadas de un producto (para página de detalle). */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> listarResenasProducto(Long productoId) {
+        return repo.findResenasByProducto(productoId)
             .stream()
             .map(this::toPublicMap)
             .toList();
@@ -80,7 +118,7 @@ public class TestimonioService {
             .toList();
     }
 
-    /** Testimonios del usuario (para que el frontend sepa cuáles productos ya revisó). */
+    /** Testimonios y reseñas del usuario autenticado. */
     public List<Map<String, Object>> listarPorUsuario(String correo) {
         var usuario = usuarioRepo.findByCorreo(correo)
             .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
@@ -89,14 +127,45 @@ public class TestimonioService {
             .map(t -> {
                 Map<String, Object> m = new LinkedHashMap<>();
                 m.put("id", t.getId());
+                m.put("tipo", t.getTipo());
                 m.put("productoId", t.getProducto() != null ? t.getProducto().getId() : null);
                 m.put("productoNombre", t.getProducto() != null ? t.getProducto().getNombreProducto() : null);
                 m.put("comentario", t.getComentario());
+                m.put("calificacion", t.getCalificacion());
                 m.put("estado", t.getEstado());
                 m.put("fechaCreacion", t.getFechaCreacion());
                 return m;
             })
             .toList();
+    }
+
+    /**
+     * Productos entregados al usuario con cuántas reseñas ya dejó (máx 3).
+     */
+    public List<Map<String, Object>> productosParaResenar(String correo) {
+        var usuario = usuarioRepo.findByCorreo(correo)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        var pedidos = pedidoRepo.findEntregadosConItemsByUsuarioId(usuario.getId());
+
+        Map<Long, Map<String, Object>> vistos = new LinkedHashMap<>();
+        for (var pedido : pedidos) {
+            if (pedido.getItems() == null) continue;
+            for (var item : pedido.getItems()) {
+                var p = item.getProducto();
+                if (p == null || vistos.containsKey(p.getId())) continue;
+                long resenasEnviadas = repo.countByUsuarioIdAndProductoIdAndTipo(usuario.getId(), p.getId(), "RESENA");
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("productoId", p.getId());
+                m.put("nombre", p.getNombreProducto());
+                m.put("imagenUrl", p.getImagenPrincipalUrl());
+                m.put("pedidoId", pedido.getId());
+                m.put("resenasEnviadas", resenasEnviadas);
+                m.put("puedeResenar", resenasEnviadas < MAX_RESENAS_POR_PRODUCTO);
+                vistos.put(p.getId(), m);
+            }
+        }
+        return new ArrayList<>(vistos.values());
     }
 
     @CacheEvict(value = "testimonios-publicos", allEntries = true)
@@ -116,37 +185,6 @@ public class TestimonioService {
         return repo.save(t);
     }
 
-    /**
-     * Productos entregados al usuario, enriquecidos con si ya dejó reseña.
-     * Desduplicado por producto (varios pedidos del mismo item → una entrada).
-     */
-    public List<Map<String, Object>> productosParaResenar(String correo) {
-        var usuario = usuarioRepo.findByCorreo(correo)
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        var pedidos = pedidoRepo.findEntregadosConItemsByUsuarioId(usuario.getId());
-
-        Map<Long, Map<String, Object>> vistos = new LinkedHashMap<>();
-        for (var pedido : pedidos) {
-            if (pedido.getItems() == null) continue;
-            for (var item : pedido.getItems()) {
-                var p = item.getProducto();
-                if (p == null || vistos.containsKey(p.getId())) continue;
-                boolean yaReseno = repo.existsByUsuarioIdAndProductoId(usuario.getId(), p.getId());
-                Map<String, Object> m = new LinkedHashMap<>();
-                m.put("productoId", p.getId());
-                m.put("nombre", p.getNombreProducto());
-                m.put("imagenUrl", p.getImagenPrincipalUrl());
-                m.put("pedidoId", pedido.getId());
-                m.put("yaReseno", yaReseno);
-                vistos.put(p.getId(), m);
-            }
-        }
-        return new ArrayList<>(vistos.values());
-    }
-
-    // ── Proyecciones ─────────────────────────────────────────────────────────
-
     public Map<String, Object> getRatingStats(Long productoId) {
         Double avg   = repo.avgCalificacion(productoId);
         Long   count = repo.countAprobadosConCalificacion(productoId);
@@ -159,6 +197,7 @@ public class TestimonioService {
     private Map<String, Object> toPublicMap(Testimonio t) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", t.getId());
+        m.put("tipo", t.getTipo());
         m.put("nombreUsuario", nombreCompleto(t));
         m.put("productoNombre", t.getProducto() != null ? t.getProducto().getNombreProducto() : null);
         m.put("comentario", t.getComentario());
@@ -171,6 +210,7 @@ public class TestimonioService {
     private Map<String, Object> toAdminMap(Testimonio t) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", t.getId());
+        m.put("tipo", t.getTipo());
         m.put("nombreUsuario", nombreCompleto(t));
         m.put("correoUsuario", t.getUsuario() != null ? t.getUsuario().getCorreo() : null);
         m.put("productoId", t.getProducto() != null ? t.getProducto().getId() : null);

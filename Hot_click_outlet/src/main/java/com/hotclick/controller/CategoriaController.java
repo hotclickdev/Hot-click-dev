@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,6 +50,7 @@ public class CategoriaController {
         return ResponseEntity.ok(ResponseDTO.success("Categorías", cats));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE')")
     @CacheEvict(value = {"categorias", "categorias-publicas"}, allEntries = true)
     @PostMapping
     public ResponseEntity<ResponseDTO> crear(
@@ -63,6 +65,7 @@ public class CategoriaController {
             Categoria cat = new Categoria();
             cat.setNombreCategoria(sanitizer.cleanWithLimit(body.get("nombreCategoria"), 150));
             cat.setDescripcion(sanitizer.cleanWithLimit(body.getOrDefault("descripcion", ""), 500));
+            if (body.get("icono") != null) cat.setIcono(sanitizer.cleanWithLimit(body.get("icono"), 20));
             cat.setEstado(Constants.ESTADO_ACTIVO);
             cat.setEmpresa(empresa);
             cat.setAdminCliente(
@@ -80,6 +83,7 @@ public class CategoriaController {
         }
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE')")
     @Transactional
     @CacheEvict(value = {"categorias", "categorias-publicas"}, allEntries = true)
     @PostMapping("/bulk")
@@ -106,6 +110,7 @@ public class CategoriaController {
         return ResponseEntity.ok(ResponseDTO.success("Importadas: " + batch.size() + " categorías", Map.of("ok", batch.size())));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE')")
     @CacheEvict(value = {"categorias", "categorias-publicas"}, allEntries = true)
     @PutMapping("/{id}")
     public ResponseEntity<ResponseDTO> actualizar(
@@ -119,6 +124,8 @@ public class CategoriaController {
                 cat.setNombreCategoria(sanitizer.cleanWithLimit(body.get("nombreCategoria"), 150));
             if (body.get("descripcion") != null)
                 cat.setDescripcion(sanitizer.cleanWithLimit(body.get("descripcion"), 500));
+            if (body.containsKey("icono"))
+                cat.setIcono(body.get("icono") != null ? sanitizer.cleanWithLimit(body.get("icono"), 20) : null);
             if (body.containsKey("padreId")) {
                 String padreIdStr = body.get("padreId");
                 if (padreIdStr == null || padreIdStr.isBlank()) {
@@ -139,6 +146,7 @@ public class CategoriaController {
         }
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE')")
     @CacheEvict(value = {"categorias", "categorias-publicas"}, allEntries = true)
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseDTO> eliminar(@PathVariable Long id) {

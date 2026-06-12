@@ -20,9 +20,9 @@ const PAGE_SIZE = 24
 
 // ── Utilidad: construir árbol de categorías ───────────────────────────────────
 function buildCategoryTree(cats) {
-  const roots = cats.filter(c => !c.categoriaPadre && !c.parentId)
+  const roots = cats.filter(c => !c.padreId && !c.categoriaPadre && !c.parentId)
   const children = (parentId) =>
-    cats.filter(c => String(c.categoriaPadre?.id ?? c.parentId ?? '') === String(parentId))
+    cats.filter(c => String(c.padreId ?? c.categoriaPadre?.id ?? c.parentId ?? '') === String(parentId))
   return roots.map(r => ({ ...r, children: children(r.id) }))
 }
 
@@ -569,21 +569,24 @@ function CategorySidebar({
   onCategorySelect,
 }) {
   const tree = useMemo(() => buildCategoryTree(categories), [categories])
-  const [expandedCats, setExpandedCats] = useState(new Set())
   const [marcaSearch, setMarcaSearch] = useState('')
-
-  function toggleExpand(id) {
-    setExpandedCats(prev => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
-  }
 
   function handleCatSelect(id) {
     setCategory(id)
     onCategorySelect?.()
   }
+
+  // Determina el nodo raíz "activo" para el modo drill-down
+  const drilledNode = useMemo(() => {
+    if (!category) return null
+    const activeCat = categories.find(c => String(c.id) === String(category))
+    if (!activeCat) return null
+    if (activeCat.padreId) {
+      return tree.find(r => String(r.id) === String(activeCat.padreId)) ?? null
+    }
+    const rootNode = tree.find(r => String(r.id) === String(activeCat.id))
+    return rootNode?.children?.length > 0 ? rootNode : null
+  }, [category, categories, tree])
 
   const visibleMarcas = marcaSearch.trim()
     ? marcas.filter(m => m.nombreMarca?.toLowerCase().includes(marcaSearch.toLowerCase()))
@@ -596,56 +599,83 @@ function CategorySidebar({
         <p className="text-[10px] font-bold uppercase tracking-widest mb-3 px-1"
           style={{ color: 'var(--hc-muted)' }}>Categorías</p>
         <div className="space-y-0.5">
-          <button
-            onClick={() => handleCatSelect('')}
-            className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-all"
-            style={!category
-              ? { background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)' }
-              : { color: 'var(--hc-text-2, var(--hc-text))' }
-            }
-          >
-            Todos los productos
-          </button>
-          {tree.map(cat => (
-            <div key={cat.id}>
+          {drilledNode ? (
+            /* ── Modo drill-down: muestra solo la categoría padre + sus hijos ── */
+            <>
               <button
-                onClick={() => {
-                  if (cat.children?.length) toggleExpand(cat.id)
-                  handleCatSelect(String(cat.id))
-                }}
-                className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-all flex items-center justify-between group"
-                style={String(category) === String(cat.id)
+                onClick={() => handleCatSelect('')}
+                className="w-full text-left px-3 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 mb-1"
+                style={{ color: 'var(--hc-muted)' }}
+              >
+                <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/>
+                </svg>
+                Todas las categorías
+              </button>
+              {/* Padre */}
+              <button
+                onClick={() => handleCatSelect(String(drilledNode.id))}
+                className="w-full text-left px-3 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2"
+                style={String(category) === String(drilledNode.id)
                   ? { background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)' }
                   : { color: 'var(--hc-text)' }
                 }
               >
-                <span className="truncate">{cat.nombreCategoria ?? cat.nombre}</span>
-                {cat.children?.length > 0 && (
-                  <svg
-                    className={`w-3.5 h-3.5 shrink-0 transition-transform ${expandedCats.has(cat.id) ? 'rotate-90' : 'opacity-40 group-hover:opacity-100'}`}
-                    fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
-                  </svg>
-                )}
+                {drilledNode.icono && <span className="text-base leading-none">{drilledNode.icono}</span>}
+                <span className="truncate">{drilledNode.nombreCategoria ?? drilledNode.nombre}</span>
               </button>
-              {cat.children?.length > 0 && expandedCats.has(cat.id) && (
-                <div className="pl-3 mt-0.5 space-y-0.5">
-                  {cat.children.map(sub => (
-                    <button key={sub.id}
-                      onClick={() => handleCatSelect(String(sub.id))}
-                      className="w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                      style={String(category) === String(sub.id)
-                        ? { background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', color: 'var(--hc-accent)' }
-                        : { color: 'var(--hc-muted)' }
-                      }
-                    >
-                      {sub.nombreCategoria ?? sub.nombre}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+              {/* Hijos */}
+              <div className="pl-3 mt-0.5 space-y-0.5">
+                {drilledNode.children.map(sub => (
+                  <button key={sub.id}
+                    onClick={() => handleCatSelect(String(sub.id))}
+                    className="w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5"
+                    style={String(category) === String(sub.id)
+                      ? { background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', color: 'var(--hc-accent)' }
+                      : { color: 'var(--hc-muted)' }
+                    }
+                  >
+                    {sub.icono && <span className="text-sm leading-none">{sub.icono}</span>}
+                    {sub.nombreCategoria ?? sub.nombre}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            /* ── Vista normal: todas las categorías ── */
+            <>
+              <button
+                onClick={() => handleCatSelect('')}
+                className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-all"
+                style={!category
+                  ? { background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)' }
+                  : { color: 'var(--hc-text-2, var(--hc-text))' }
+                }
+              >
+                Todos los productos
+              </button>
+              {tree.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => handleCatSelect(String(cat.id))}
+                  className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 group"
+                  style={String(category) === String(cat.id)
+                    ? { background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)' }
+                    : { color: 'var(--hc-text)' }
+                  }
+                >
+                  {cat.icono && <span className="text-base leading-none shrink-0">{cat.icono}</span>}
+                  <span className="truncate flex-1">{cat.nombreCategoria ?? cat.nombre}</span>
+                  {cat.children?.length > 0 && (
+                    <svg className="w-3.5 h-3.5 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity"
+                      fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  )}
+                </button>
+              ))}
+            </>
+          )}
         </div>
       </div>
 
@@ -1188,6 +1218,20 @@ export default function ProductsPage() {
 
   const clearMarcas = useCallback(() => setMarcasFilter(new Set()), [])
 
+  // Conjunto de IDs de la categoría seleccionada + todos sus descendientes
+  const categoryScope = useMemo(() => {
+    if (!category) return null
+    const ids = new Set([String(category)])
+    const queue = [String(category)]
+    while (queue.length > 0) {
+      const pid = queue.shift()
+      categories
+        .filter(c => String(c.padreId ?? '') === pid)
+        .forEach(c => { ids.add(String(c.id)); queue.push(String(c.id)) })
+    }
+    return ids
+  }, [category, categories])
+
   const filtered = useMemo(() => {
     const minPrice = priceMin !== '' ? Number(priceMin) : null
     const maxPrice = priceMax !== '' ? Number(priceMax) : null
@@ -1195,7 +1239,7 @@ export default function ProductsPage() {
       .filter(p => viewMode !== 'ofertas' || p.enOferta === true)
       .filter(p => viewMode !== 'emprendimientos' || convenioMarcaNames.has(p.marcaNombre?.toLowerCase()))
       .filter(p => !search || p.nombre?.toLowerCase().includes(search.toLowerCase()) || p.marcaNombre?.toLowerCase().includes(search.toLowerCase()))
-      .filter(p => !category || String(p.categoriaId) === String(category))
+      .filter(p => !categoryScope || categoryScope.has(String(p.categoriaId)))
       .filter(p => marcasFilter.size === 0 || marcasFilter.has(String(p.marcaId)))
       .filter(p => {
         if (filterStock === 'ok')  return p.stock > 3
@@ -1213,7 +1257,7 @@ export default function ProductsPage() {
         if (sort === 'name')       return a.nombre?.localeCompare(b.nombre)
         return 0
       })
-  }, [products, search, category, marcasFilter, sort, filterStock, filterCond, priceMin, priceMax, viewMode, convenioMarcaNames, filterTalla])
+  }, [products, search, categoryScope, marcasFilter, sort, filterStock, filterCond, priceMin, priceMax, viewMode, convenioMarcaNames, filterTalla])
 
   const marcaProductCount = useMemo(() =>
     Object.fromEntries(marcas.map(m => [m.id, products.filter(p => String(p.marcaId) === String(m.id)).length]))

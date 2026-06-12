@@ -46,6 +46,8 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
         "SELECT p.* FROM hot_click_producto_tb p " +
         "LEFT JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
         "WHERE p.fk_id_estado = :estado " +
+        "AND p.visible_catalogo = TRUE " +
+        "AND p.vendido = FALSE " +
         "AND (p.fk_id_empresa IS NULL " +
         "     OR (e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE)) " +
         "ORDER BY p.id_producto DESC",
@@ -53,6 +55,8 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
         "SELECT COUNT(*) FROM hot_click_producto_tb p " +
         "LEFT JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
         "WHERE p.fk_id_estado = :estado " +
+        "AND p.visible_catalogo = TRUE " +
+        "AND p.vendido = FALSE " +
         "AND (p.fk_id_empresa IS NULL " +
         "     OR (e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE))")
     Page<Producto> findByEstadoAndEmpresaAprobada(@Param("estado") Integer estado, Pageable pageable);

@@ -49,7 +49,8 @@ public class VectorSearchService {
                        p.sku,
                        p.precio_venta,
                        p.descripcion_corta,
-                       p.imagen_principal_url
+                       p.imagen_principal_url,
+                       (p.stock_actual - COALESCE(p.stock_reservado, 0)) AS stock_disponible
                 FROM   hot_click_producto_embedding_tb e
                 JOIN   hot_click_producto_tb p ON p.id_producto = e.fk_id_producto
                 WHERE  e.fk_id_empresa = ?
@@ -122,7 +123,8 @@ public class VectorSearchService {
                        p.sku,
                        p.precio_venta,
                        p.descripcion_corta,
-                       p.imagen_principal_url
+                       p.imagen_principal_url,
+                       (p.stock_actual - COALESCE(p.stock_reservado, 0)) AS stock_disponible
                 FROM   hot_click_producto_tb p
                 WHERE  p.fk_id_empresa   = ?
                   AND  p.fk_id_estado    = 1
@@ -161,7 +163,8 @@ public class VectorSearchService {
             rs.getString("sku"),
             rs.getInt("precio_venta"),
             rs.getString("descripcion_corta"),
-            rs.getString("imagen_principal_url")
+            rs.getString("imagen_principal_url"),
+            rs.getInt("stock_disponible")
         );
     }
 

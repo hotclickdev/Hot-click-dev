@@ -29,6 +29,9 @@ public class Testimonio {
     @Column(name = "calificacion")
     private Integer calificacion;
 
+    @Column(name = "tipo", nullable = false, length = 20)
+    private String tipo = "RESENA";
+
     @Column(name = "estado", nullable = false, length = 20)
     private String estado = "PENDIENTE";
 
@@ -54,6 +57,9 @@ public class Testimonio {
 
     public Integer getCalificacion() { return calificacion; }
     public void setCalificacion(Integer calificacion) { this.calificacion = calificacion; }
+
+    public String getTipo() { return tipo; }
+    public void setTipo(String tipo) { this.tipo = tipo; }
 
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }

@@ -8,15 +8,47 @@ import { formatPrice } from '@/utils/format'
 const SESSION_KEY = 'hc-exit-intent-shown'
 const DELAY_BEFORE_ARMED_MS = 5000
 const BLOCKED_PATHS = ['/checkout', '/pago/exito', '/pago/cancelado', '/carrito']
+const CART_EXIT_DELAY_MS = 5 * 60 * 1000
 
 export default function ExitIntentModal() {
   const [open, setOpen] = useState(false)
   const armed = useRef(false)
+  const prevPathnameRef = useRef(null)
+  const cartExitTimerRef = useRef(null)
   const { pathname } = useLocation()
   const cartItems = useCartStore((s) => s.items)
   const cartTotal = useCartStore((s) => s.total)
   const wishItems = useWishlistStore((s) => s.items)
 
+  // Disparador: 5 min después de salir de /carrito
+  useEffect(() => {
+    const prev = prevPathnameRef.current
+    prevPathnameRef.current = pathname
+
+    const leftCart = prev === '/carrito'
+    const safeRoute = !BLOCKED_PATHS.some(p => pathname.startsWith(p))
+
+    // Si el usuario vuelve al carrito o llega a checkout, cancelar el timer
+    if (pathname === '/carrito' || pathname.startsWith('/checkout') || pathname.startsWith('/pago')) {
+      clearTimeout(cartExitTimerRef.current)
+      return
+    }
+
+    if (!leftCart || !safeRoute) return
+    if (sessionStorage.getItem(SESSION_KEY)) return
+    if (!cartItems.length) return
+
+    cartExitTimerRef.current = setTimeout(() => {
+      if (!sessionStorage.getItem(SESSION_KEY) && cartItems.length > 0) {
+        sessionStorage.setItem(SESSION_KEY, '1')
+        setOpen(true)
+      }
+    }, CART_EXIT_DELAY_MS)
+
+    return () => clearTimeout(cartExitTimerRef.current)
+  }, [pathname])
+
+  // Disparadores existentes: cursor sale del viewport (desktop) + inactividad (mobile)
   useEffect(() => {
     if (BLOCKED_PATHS.some(p => pathname.startsWith(p))) return
     if (sessionStorage.getItem(SESSION_KEY)) return

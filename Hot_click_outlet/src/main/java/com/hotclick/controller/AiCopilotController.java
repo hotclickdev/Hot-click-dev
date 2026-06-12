@@ -30,6 +30,7 @@ public class AiCopilotController {
     @Autowired private AiQuotaService   aiQuotaService;
     @Autowired private RateLimiter      rateLimiter;
     @Autowired @Qualifier("sseExecutor") private Executor sseExecutor;
+    @Autowired private com.hotclick.service.TextModerationService textModerationService;
 
     /** SSE streaming chat endpoint. */
     @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -39,6 +40,11 @@ public class AiCopilotController {
 
         if (message.isBlank()) {
             return errorEmitter(emitter, "Mensaje vacío");
+        }
+
+        var textMod = textModerationService.moderar(message);
+        if (!textMod.safe()) {
+            return errorEmitter(emitter, "Mensaje rechazado: contenido no permitido en la plataforma");
         }
 
         // Truncate oversized messages rather than reject — preserves UX,

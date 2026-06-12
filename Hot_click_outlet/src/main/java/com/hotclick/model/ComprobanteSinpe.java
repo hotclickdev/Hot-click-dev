@@ -40,6 +40,15 @@ public class ComprobanteSinpe {
     @Column(name = "admin_email", length = 150)
     private String adminEmail;
 
+    @Column(name = "cedula_remitente", length = 20)
+    private String cedulaRemitente;
+
+    @Column(name = "telefono_remitente", length = 20)
+    private String telefonoRemitente;
+
+    @Column(name = "correo_remitente", length = 150)
+    private String correoRemitente;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -69,4 +78,13 @@ public class ComprobanteSinpe {
 
     public String getAdminEmail() { return adminEmail; }
     public void setAdminEmail(String adminEmail) { this.adminEmail = adminEmail; }
+
+    public String getCedulaRemitente() { return cedulaRemitente; }
+    public void setCedulaRemitente(String cedulaRemitente) { this.cedulaRemitente = cedulaRemitente; }
+
+    public String getTelefonoRemitente() { return telefonoRemitente; }
+    public void setTelefonoRemitente(String telefonoRemitente) { this.telefonoRemitente = telefonoRemitente; }
+
+    public String getCorreoRemitente() { return correoRemitente; }
+    public void setCorreoRemitente(String correoRemitente) { this.correoRemitente = correoRemitente; }
 }

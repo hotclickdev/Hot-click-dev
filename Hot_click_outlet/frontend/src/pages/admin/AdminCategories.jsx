@@ -10,7 +10,30 @@ import { categoriaService } from '@/services/orderService'
 import ImportExportBar from '@/components/admin/ImportExportBar'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 
-const EMPTY = { nombreCategoria: '', descripcion: '', padreId: '' }
+const EMPTY = { nombreCategoria: '', descripcion: '', padreId: '', icono: '' }
+
+const CATEGORY_ICONS = [
+  { emoji: '👕', label: 'Ropa' },
+  { emoji: '👟', label: 'Calzado' },
+  { emoji: '🎮', label: 'Videojuegos' },
+  { emoji: '📱', label: 'Tecnología' },
+  { emoji: '🖥️', label: 'Computadoras' },
+  { emoji: '🪑', label: 'Muebles' },
+  { emoji: '🏋️', label: 'Deportes' },
+  { emoji: '🧸', label: 'Juguetes' },
+  { emoji: '🚗', label: 'Vehículos' },
+  { emoji: '💄', label: 'Belleza' },
+  { emoji: '🍽️', label: 'Hogar' },
+  { emoji: '📚', label: 'Libros' },
+  { emoji: '🎵', label: 'Música' },
+  { emoji: '🌿', label: 'Jardín' },
+  { emoji: '🐾', label: 'Mascotas' },
+  { emoji: '🎨', label: 'Arte' },
+  { emoji: '💍', label: 'Joyería' },
+  { emoji: '🔧', label: 'Herramientas' },
+  { emoji: '🎁', label: 'Regalos' },
+  { emoji: '🧴', label: 'Cuidado personal' },
+]
 
 // ── Árbol ────────────────────────────────────────────────────────────
 function buildTree(cats) {
@@ -37,7 +60,7 @@ function CategoryCard({ node, onEdit, onDelete, onAddSub }) {
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-lg font-bold"
             style={{ backgroundColor: 'rgba(23,71,168,0.15)', color: 'var(--hc-accent)' }}>
-            {node.nombreCategoria.charAt(0).toUpperCase()}
+            {node.icono || node.nombreCategoria.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0">
             <p className="font-semibold text-[#e8e8ed] text-sm truncate">{node.nombreCategoria}</p>
@@ -146,6 +169,7 @@ export default function AdminCategories() {
       nombreCategoria: c.nombreCategoria ?? '',
       descripcion:     c.descripcion ?? '',
       padreId:         c.padreId ? String(c.padreId) : '',
+      icono:           c.icono ?? '',
     })
     setModalOpen(true)
   }
@@ -274,6 +298,39 @@ export default function AdminCategories() {
         <form onSubmit={handleSave} className="space-y-4">
           <Input label="Nombre *" value={form.nombreCategoria} onChange={set('nombreCategoria')} required />
           <Input label="Descripción" value={form.descripcion} onChange={set('descripcion')} />
+
+          {/* Icon picker */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-[#e8e8ed]">Icono (opcional)</label>
+            <div className="grid grid-cols-10 gap-1">
+              <button
+                type="button"
+                onClick={() => setForm(p => ({ ...p, icono: '' }))}
+                title="Sin icono"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all border"
+                style={!form.icono
+                  ? { background: 'rgba(23,71,168,0.2)', borderColor: 'var(--hc-accent)', color: 'var(--hc-accent)' }
+                  : { background: 'transparent', borderColor: 'rgba(255,255,255,0.1)', color: '#8e8e9a' }
+                }
+              >—</button>
+              {CATEGORY_ICONS.map(({ emoji, label }) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => setForm(p => ({ ...p, icono: emoji }))}
+                  title={label}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-lg transition-all border"
+                  style={form.icono === emoji
+                    ? { background: 'rgba(23,71,168,0.2)', borderColor: 'var(--hc-accent)' }
+                    : { background: 'transparent', borderColor: 'transparent' }
+                  }
+                >{emoji}</button>
+              ))}
+            </div>
+            {form.icono && (
+              <p className="text-xs text-[#8e8e9a]">Icono seleccionado: {form.icono}</p>
+            )}
+          </div>
 
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-[#e8e8ed]">Grupo al que pertenece (opcional)</label>

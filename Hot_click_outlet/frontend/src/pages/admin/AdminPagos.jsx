@@ -6,6 +6,7 @@ import { paymentService } from '@/services/paymentService'
 
 const PROVEEDORES  = ['', 'STRIPE', 'SINPE']
 const ESTADOS_PAGO = ['', 'CAPTURADO', 'PENDIENTE', 'FALLIDO', 'CANCELADO']
+const ESTADOS_COMPROBANTE = ['', 'PENDIENTE', 'APROBADO', 'RECHAZADO']
 
 const BADGE = {
   CAPTURADO: 'bg-green-500/15 text-green-400 border-green-500/30',
@@ -45,6 +46,17 @@ export default function AdminPagos() {
   const [loadingW, setLoadingW]     = useState(false)
   const [actionLoading, setActionLoading] = useState(null) // pagoId procesándose
 
+  // ── Comprobantes SINPE ────────────────────────────────────────────
+  const [comprobantes, setComprobantes]   = useState([])
+  const [filtComp, setFiltComp]           = useState('PENDIENTE')
+  const [compPage, setCompPage]           = useState(0)
+  const [compTotal, setCompTotal]         = useState(0)
+  const [loadingC, setLoadingC]           = useState(false)
+  const [compAction, setCompAction]       = useState(null) // comprobanteId procesándose
+  const [motivoModal, setMotivoModal]     = useState(null) // comprobanteId para modal rechazo
+  const [motivoTexto, setMotivoTexto]     = useState('')
+  const [imgModal, setImgModal]           = useState(null) // URL imagen ampliada
+
   const fetchKpis = useCallback(async () => {
     try {
       const { data } = await api.get('/admin/pagos/kpis')
@@ -75,9 +87,19 @@ export default function AdminPagos() {
     } catch { setWebhooks([]) } finally { setLoadingW(false) }
   }, [whPage, filtProc])
 
+  const fetchComprobantes = useCallback(async () => {
+    setLoadingC(true)
+    try {
+      const { data } = await paymentService.listarComprobantes(filtComp, compPage)
+      setComprobantes(data.content ?? [])
+      setCompTotal(data.totalPages ?? 0)
+    } catch { setComprobantes([]) } finally { setLoadingC(false) }
+  }, [filtComp, compPage])
+
   useEffect(() => { fetchKpis() }, [fetchKpis])
   useEffect(() => { fetchPagos() }, [fetchPagos])
   useEffect(() => { fetchWebhooks() }, [fetchWebhooks])
+  useEffect(() => { if (tab === 'comprobantes') fetchComprobantes() }, [tab, fetchComprobantes])
 
   const handleConfirmarSinpe = async (pagoId) => {
     if (!window.confirm('¿Confirmar este pago SINPE? Se marcará como CAPTURADO y se procesará el pedido.')) return
@@ -105,6 +127,30 @@ export default function AdminPagos() {
     } finally {
       setActionLoading(null)
     }
+  }
+
+  const handleAprobarComprobante = async (id) => {
+    setCompAction(id)
+    try {
+      await paymentService.aprobarComprobante(id)
+      await fetchComprobantes()
+      await fetchKpis()
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error aprobando comprobante SINPE')
+    } finally { setCompAction(null) }
+  }
+
+  const handleRechazarComprobante = async (id) => {
+    setCompAction(id)
+    try {
+      await paymentService.rechazarComprobante(id, motivoTexto || undefined)
+      setMotivoModal(null)
+      setMotivoTexto('')
+      await fetchComprobantes()
+      await fetchKpis()
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error rechazando comprobante SINPE')
+    } finally { setCompAction(null) }
   }
 
   const handleFiltProv   = (v) => { setFiltProv(v);   setPagePage(0) }
@@ -157,8 +203,9 @@ export default function AdminPagos() {
         {/* Tabs */}
         <div className="flex gap-2 mb-6 border-b border-white/8">
           {[
-            { key: 'pagos',    label: t('admin.pagos.title') },
-            { key: 'webhooks', label: t('admin.pagos.webhooks') },
+            { key: 'pagos',         label: t('admin.pagos.title') },
+            { key: 'comprobantes',  label: 'Comprobantes SINPE' },
+            { key: 'webhooks',      label: t('admin.pagos.webhooks') },
           ].map((tabItem) => (
             <button
               key={tabItem.key}
@@ -256,6 +303,120 @@ export default function AdminPagos() {
           </>
         )}
 
+        {/* ── Tab Comprobantes SINPE ──────────────────────────────── */}
+        {tab === 'comprobantes' && (
+          <>
+            <div className="flex flex-wrap gap-3 mb-4 items-center">
+              <Select
+                value={filtComp}
+                onChange={(v) => { setFiltComp(v); setCompPage(0) }}
+                options={ESTADOS_COMPROBANTE.map(e => ({ value: e, label: e || 'Todos los estados' }))}
+              />
+              <button
+                onClick={fetchComprobantes}
+                className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/8 text-[#8e8e9a] hover:text-[#e8e8ed] text-sm transition-colors"
+              >
+                Actualizar
+              </button>
+              {filtComp === 'PENDIENTE' && comprobantes.length > 0 && (
+                <span className="ml-auto px-2.5 py-1 rounded-full text-[11px] font-semibold bg-yellow-500/15 text-yellow-400 border border-yellow-500/30">
+                  {comprobantes.length} pendiente{comprobantes.length !== 1 ? 's' : ''} de verificar
+                </span>
+              )}
+            </div>
+
+            {loadingC ? (
+              <div className="text-center py-16 text-[#8e8e9a]">{t('common.loading')}</div>
+            ) : comprobantes.length === 0 ? (
+              <div className="text-center py-16 text-[#8e8e9a]">No hay comprobantes en este estado</div>
+            ) : (
+              <div className="space-y-4">
+                {comprobantes.map((c) => (
+                  <div
+                    key={c.id}
+                    className="rounded-2xl p-5 space-y-4"
+                    style={{ background: '#111114', border: `1px solid ${c.estado === 'PENDIENTE' ? 'rgba(245,158,11,0.25)' : 'rgba(255,255,255,0.08)'}` }}
+                  >
+                    {/* Header fila */}
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono text-sm font-semibold text-[#4f7cff]">{c.numeroPedido}</span>
+                          <span className={`px-2 py-0.5 rounded-full border text-[10px] font-semibold ${
+                            c.estado === 'PENDIENTE'  ? 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30' :
+                            c.estado === 'APROBADO'   ? 'bg-green-500/15 text-green-400 border-green-500/30' :
+                                                        'bg-red-500/15 text-red-400 border-red-500/30'
+                          }`}>{c.estado}</span>
+                          {c.monto && (
+                            <span className="text-sm font-bold text-emerald-400">{formatCRC(c.monto)}</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-[#8e8e9a]">Subido: {c.fechaSubida}</p>
+                        {c.fechaResolucion && (
+                          <p className="text-xs text-[#8e8e9a]">Resuelto: {c.fechaResolucion} por {c.adminEmail}</p>
+                        )}
+                      </div>
+
+                      {/* Acciones */}
+                      {c.estado === 'PENDIENTE' && (
+                        <div className="flex gap-2 shrink-0">
+                          <button
+                            onClick={() => handleAprobarComprobante(c.id)}
+                            disabled={compAction === c.id}
+                            className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
+                          >
+                            {compAction === c.id ? '…' : '✓ Aprobar'}
+                          </button>
+                          <button
+                            onClick={() => { setMotivoModal(c.id); setMotivoTexto('') }}
+                            disabled={compAction === c.id}
+                            className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25"
+                          >
+                            ✕ Rechazar
+                          </button>
+                        </div>
+                      )}
+                      {c.notasAdmin && (
+                        <p className="w-full text-xs text-red-300/80 bg-red-500/8 border border-red-500/20 rounded-lg px-3 py-1.5">
+                          Motivo rechazo: {c.notasAdmin}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Datos del remitente */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                      {c.nombreRemitente   && <DataCell label="Nombre"   value={c.nombreRemitente} />}
+                      {c.cedulaRemitente   && <DataCell label="Cédula"   value={c.cedulaRemitente} />}
+                      {c.telefonoRemitente && <DataCell label="Teléfono" value={c.telefonoRemitente} />}
+                      {c.correoRemitente   && <DataCell label="Correo"   value={c.correoRemitente} />}
+                    </div>
+
+                    {/* Imagen del comprobante */}
+                    {c.urlComprobante && (
+                      <div>
+                        <p className="text-xs text-[#8e8e9a] mb-2">Comprobante:</p>
+                        <button
+                          onClick={() => setImgModal(c.urlComprobante)}
+                          className="block rounded-xl overflow-hidden border border-white/10 hover:border-[#4f7cff]/50 transition-colors group max-w-xs"
+                        >
+                          <img
+                            src={c.urlComprobante}
+                            alt="Comprobante SINPE"
+                            className="w-full max-h-48 object-contain bg-black/30 group-hover:opacity-90 transition-opacity"
+                            loading="lazy"
+                          />
+                          <p className="text-[10px] text-center text-[#8e8e9a] py-1.5">Clic para ampliar</p>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                <Pagination page={compPage} totalPages={compTotal} onPage={setCompPage} />
+              </div>
+            )}
+          </>
+        )}
+
         {/* ── Tab Webhooks ────────────────────────────────────────── */}
         {tab === 'webhooks' && (
           <>
@@ -316,11 +477,77 @@ export default function AdminPagos() {
           </>
         )}
       </div>
+
+      {/* ── Modal: ampliar imagen comprobante ── */}
+      {imgModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          onClick={() => setImgModal(null)}
+        >
+          <div className="relative max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setImgModal(null)}
+              className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-[#111114] border border-white/15 text-[#8e8e9a] hover:text-white flex items-center justify-center z-10 transition-colors"
+            >✕</button>
+            <img
+              src={imgModal}
+              alt="Comprobante SINPE ampliado"
+              className="w-full rounded-2xl border border-white/10 max-h-[80vh] object-contain bg-black/40"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: motivo de rechazo ── */}
+      {motivoModal !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div
+            className="w-full max-w-sm rounded-2xl p-6 space-y-4"
+            style={{ background: '#111114', border: '1px solid rgba(248,113,113,0.25)' }}
+          >
+            <h3 className="font-semibold text-[#e8e8ed]">Rechazar comprobante</h3>
+            <p className="text-xs text-[#8e8e9a]">Indicá el motivo (opcional). Se notificará al cliente por correo.</p>
+            <textarea
+              value={motivoTexto}
+              onChange={(e) => setMotivoTexto(e.target.value)}
+              placeholder="Ej: Monto incorrecto, imagen ilegible, comprobante vencido…"
+              rows={3}
+              className="w-full rounded-xl px-4 py-3 text-sm outline-none resize-none"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1.5px solid rgba(255,255,255,0.1)', color: '#e8e8ed' }}
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setMotivoModal(null); setMotivoTexto('') }}
+                className="flex-1 py-2.5 rounded-xl text-sm border text-[#8e8e9a] hover:text-[#e8e8ed] transition-colors"
+                style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleRechazarComprobante(motivoModal)}
+                disabled={compAction === motivoModal}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
+              >
+                {compAction === motivoModal ? '…' : 'Confirmar rechazo'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
 
 // ── Componentes auxiliares ──────────────────────────────────────────
+
+function DataCell({ label, value }) {
+  return (
+    <div className="rounded-lg p-2.5" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+      <p className="text-[10px] text-[#8e8e9a] mb-0.5">{label}</p>
+      <p className="text-[#e8e8ed] font-medium truncate">{value}</p>
+    </div>
+  )
+}
 
 function KpiCard({ label, value, color = 'text-[#e8e8ed]' }) {
   return (

@@ -70,7 +70,7 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
      */
     private List<SimpleGrantedAuthority> buildAuthorities(String scopes) {
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-        if (scopes == null || scopes.isBlank() || scopes.contains("read:all")) {
+        if (scopes == null || scopes.isBlank() || java.util.Arrays.asList(scopes.split(",")).contains("read:all")) {
             authorities.add(new SimpleGrantedAuthority("ROLE_EMPRENDEDOR"));
             return authorities;
         }

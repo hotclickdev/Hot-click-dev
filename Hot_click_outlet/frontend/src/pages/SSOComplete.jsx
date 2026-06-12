@@ -31,15 +31,17 @@ export default function SSOComplete() {
 
     ;(async () => {
       try {
-        const clerkToken = await getToken()
-        if (!clerkToken) {
-          throw new Error('No se pudo obtener el token de sesión de Clerk')
-        }
+        // Intentar el template con email claim; si no existe (dev/sin configurar) usar el default.
+        const clerkToken = await getToken({ template: 'hotclick-session' })
+          .catch(() => null)
+          ?? await getToken()
 
-        const email      = user.primaryEmailAddress?.emailAddress ?? ''
-        const nombre     = user.firstName ?? ''
-        const apellido   = user.lastName  ?? ''
-        const fotoUrl    = user.imageUrl  ?? ''
+        if (!clerkToken) throw new Error('No se pudo obtener el token de sesión de Clerk')
+
+        const email    = user.primaryEmailAddress?.emailAddress ?? ''
+        const nombre   = user.firstName ?? ''
+        const apellido = user.lastName  ?? ''
+        const fotoUrl  = user.imageUrl  ?? ''
 
         if (!email) {
           throw new Error('No se pudo obtener el email de tu cuenta Google')
@@ -51,6 +53,8 @@ export default function SSOComplete() {
             'Authorization': `Bearer ${clerkToken}`,
             'Content-Type': 'application/json',
           },
+          // email incluido como fallback para cuando el JWT template no está configurado.
+          // El backend prefiere el email del JWT verificado si está disponible.
           body: JSON.stringify({ email, nombre, apellido, fotoUrl }),
         })
 

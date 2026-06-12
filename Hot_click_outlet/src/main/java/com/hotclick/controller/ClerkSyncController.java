@@ -2,7 +2,9 @@ package com.hotclick.controller;
 
 import com.hotclick.dto.AuthResponse;
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.model.Rol;
 import com.hotclick.model.Usuario;
+import com.hotclick.utils.Constants;
 import com.hotclick.repository.PermisoRepository;
 import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
@@ -73,16 +75,33 @@ public class ClerkSyncController {
         if (clerkUserId == null || clerkUserId.isBlank()) {
             return ResponseEntity.status(401).body(ResponseDTO.error("Token de Clerk sin subject"));
         }
-        String email       = Optional.ofNullable(body.get("email")).orElse("").toLowerCase().trim();
-        String nombre      = Optional.ofNullable(body.get("nombre")).orElse("");
-        String apellido    = Optional.ofNullable(body.get("apellido")).orElse("");
-        String fotoUrl     = Optional.ofNullable(body.get("fotoUrl")).orElse("");
+
+        // Prefer email from the verified JWT claims (hotclick-session template).
+        // Fall back to body email only when the template isn't configured yet —
+        // security is maintained by the elevated-role guard in resolveUser().
+        String emailFromJwt  = Optional.ofNullable(clerkJwt.getClaimAsString("email"))
+            .orElse("").toLowerCase().trim();
+        String emailFromBody = Optional.ofNullable(body.get("email")).orElse("").toLowerCase().trim();
+        String email = emailFromJwt.isBlank() ? emailFromBody : emailFromJwt;
+
+        if (emailFromJwt.isBlank()) {
+            log.warn("[clerk-sync] JWT sin claim 'email' — usando email del body (configura el JWT template). clerkUserId={}", clerkUserId);
+        }
 
         if (email.isBlank()) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Email requerido"));
         }
 
-        Usuario usuario = resolveUser(clerkUserId, email, nombre, apellido, fotoUrl);
+        String nombre   = Optional.ofNullable(body.get("nombre")).orElse("");
+        String apellido = Optional.ofNullable(body.get("apellido")).orElse("");
+        String fotoUrl  = Optional.ofNullable(body.get("fotoUrl")).orElse("");
+
+        Usuario usuario;
+        try {
+            usuario = resolveUser(clerkUserId, email, nombre, apellido, fotoUrl);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
+        }
 
         usuarioRepository.updateUltimoAcceso(usuario.getId(), LocalDateTime.now());
 
@@ -107,6 +126,17 @@ public class ClerkSyncController {
         Optional<Usuario> byEmail = usuarioRepository.findByCorreo(email);
         if (byEmail.isPresent()) {
             Usuario u = byEmail.get();
+            // Refuse to auto-link elevated accounts. An attacker with a valid Clerk token
+            // for any email could supply an admin's email in the body and take over the account.
+            boolean hasElevatedRole = u.getRoles().stream()
+                .map(Rol::getNombreRol)
+                .anyMatch(r -> Constants.ROL_ADMIN_IT.equals(r)
+                            || Constants.ROL_EMPRENDEDOR.equals(r)
+                            || Constants.ROL_ADMIN_CLIENTE.equals(r));
+            if (hasElevatedRole && u.getClerkUserId() == null) {
+                log.warn("[clerk-sync] Blocked Clerk merge for elevated account email={} clerkId={}", email, clerkUserId);
+                throw new SecurityException("Esta cuenta requiere verificación adicional para vincular login social. Usá tu contraseña.");
+            }
             u.setClerkUserId(clerkUserId);
             if (u.getFotoPerfilUrl() == null && !fotoUrl.isBlank()) {
                 u.setFotoPerfilUrl(fotoUrl);

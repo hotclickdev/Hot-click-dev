@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
@@ -8,6 +8,7 @@ import CheckoutStepper from '@/components/ui/CheckoutStepper'
 import useCartStore from '@/store/cartStore'
 import useAuthStore from '@/store/authStore'
 import { usePayment } from '@/hooks/usePayment'
+import { paymentService } from '@/services/paymentService'
 import { formatPrice } from '@/utils/format'
 import { analytics } from '@/utils/analytics'
 import PhoneField from '@/components/ui/PhoneField'
@@ -128,9 +129,19 @@ export default function CheckoutPage() {
   const [metodoPago,   setMetodoPago]   = useState('STRIPE')
   const [notas,        setNotas]        = useState('')
 
-  // SINPE state
+  // SINPE — datos del remitente (se capturan ANTES del pago)
   const [sinpeNombre,     setSinpeNombre]     = useState('')
-  const [sinpeComprobante, setSinpeComprobante] = useState(null)
+  const [sinpeCedula,     setSinpeCedula]     = useState('')
+  const [sinpeTelefono,   setSinpeTelefono]   = useState('')
+  const [sinpeEmail,      setSinpeEmail]      = useState('')
+  const [sinpeNombreErr,  setSinpeNombreErr]  = useState('')
+  const [sinpeCedulaErr,  setSinpeCedulaErr]  = useState('')
+
+  // SINPE — comprobante (se sube DESPUÉS de crear el pedido)
+  const [sinpeImagen,         setSinpeImagen]         = useState(null)
+  const [sinpeImagenErr,      setSinpeImagenErr]      = useState('')
+  const [sinpeUploadEstado,   setSinpeUploadEstado]   = useState('idle') // idle | uploading | done | error
+  const [sinpeUploadError,    setSinpeUploadError]    = useState('')
   const sinpeInputRef = useRef(null)
 
   // Domicilio fields
@@ -166,6 +177,12 @@ export default function CheckoutPage() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())) return t('checkout.guestEmailInvalid')
     return ''
   }
+
+  // Limpiar carrito al confirmar pedido (gift card o SINPE registrado)
+  const { clearCart: clearCartFn } = useCartStore()
+  useEffect(() => {
+    if (estado === 'gift_card_paid' || estado === 'sinpe_pendiente') clearCartFn()
+  }, [estado, clearCartFn])
 
   const costoEnvio     = metodoEnvio === 'ENVIO_A_DOMICILIO' ? 2000 : 0
   const subtotalCart   = total()
@@ -238,6 +255,17 @@ export default function CheckoutPage() {
       setGuestEmailDirty(true)
       if (eErr) return
     }
+
+    // Validar datos requeridos para SINPE
+    if (metodoPago === 'SINPE') {
+      let valid = true
+      if (!sinpeNombre.trim()) { setSinpeNombreErr('El nombre completo es requerido'); valid = false }
+      else setSinpeNombreErr('')
+      if (!sinpeCedula.trim()) { setSinpeCedulaErr('El número de cédula es requerido'); valid = false }
+      else setSinpeCedulaErr('')
+      if (!valid) return
+    }
+
     registrarConsentimiento('CHECKOUT')
 
     const phoneEfectivo = !token ? guestPhone : telefono
@@ -245,6 +273,7 @@ export default function CheckoutPage() {
       notas.trim(),
       metodoEnvio === 'ENVIO_A_DOMICILIO' && phoneEfectivo ? `Teléfono: ${phoneEfectivo}` : '',
       metodoEnvio === 'ENVIO_A_DOMICILIO' && direccion ? `Dirección: ${direccion}` : '',
+      metodoPago === 'SINPE' && sinpeCedula ? `Cédula: ${sinpeCedula}` : '',
     ].filter(Boolean).join(' | ')
 
     analytics.checkoutStart(totalFinal, items.reduce((s, i) => s + i.cantidad, 0))
@@ -256,22 +285,57 @@ export default function CheckoutPage() {
       items: items.map((i) => ({ productoId: i.id, cantidad: i.cantidad })),
       codigoCupon:    cuponCodigo || null,
       codigoGiftCard: gcCodigo   || null,
-      ...(token ? {} : { guestEmail: guestEmail.trim(), guestPhone: guestPhone || null }),
-    }, !token)
+      ...(token ? {} : {
+        guestEmail: metodoPago === 'SINPE'
+          ? (sinpeEmail.trim() || guestEmail.trim())
+          : guestEmail.trim(),
+        guestPhone: guestPhone || sinpeTelefono || null,
+      }),
+    }, !token, metodoPago === 'SINPE')
   }
 
   const handleSinpeWhatsApp = () => {
-    const productos = items.map((i) => `• ${i.nombre} x${i.cantidad}`).join('\n')
+    const productos = (pagoData?._itemsSnapshot || []).map((i) => `• ${i.nombre} x${i.cantidad}`).join('\n') || '(ver pedido)'
     const numeroPedido = pagoData?.numeroPedido ?? ''
     const msg = encodeURIComponent(
       `Hola HotClick 👋\n\n*Comprobante SINPE Móvil*\n\n` +
       `Nombre: ${sinpeNombre || '(sin nombre)'}\n` +
+      (sinpeCedula ? `Cédula: ${sinpeCedula}\n` : '') +
+      (sinpeTelefono ? `Teléfono: ${sinpeTelefono}\n` : '') +
       (numeroPedido ? `Pedido: ${numeroPedido}\n` : '') +
       `Monto: ${formatPrice(totalFinal)}\n\n` +
-      `Productos:\n${productos}\n\n` +
-      `_Adjunto el comprobante de pago._`
+      `_Ya subí el comprobante en la web. ¡Gracias!_`
     )
     window.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank')
+  }
+
+  const handleSubirComprobante = async () => {
+    if (!sinpeImagen) { setSinpeImagenErr('Debes adjuntar una imagen del comprobante'); return }
+    setSinpeImagenErr('')
+    setSinpeUploadEstado('uploading')
+    setSinpeUploadError('')
+
+    const fd = new FormData()
+    fd.append('imagen', sinpeImagen)
+    fd.append('nombreRemitente', sinpeNombre)
+    if (sinpeCedula)   fd.append('cedulaRemitente',   sinpeCedula)
+    if (sinpeTelefono) fd.append('telefonoRemitente', sinpeTelefono)
+
+    try {
+      const numeroPedido = pagoData?.numeroPedido
+      if (token) {
+        await paymentService.subirComprobanteSinpe(numeroPedido, fd)
+      } else {
+        const correo = sinpeEmail.trim() || guestEmail.trim()
+        fd.append('correoUsuario', correo)
+        await paymentService.guestSubirComprobanteSinpe(numeroPedido, fd)
+      }
+      setSinpeUploadEstado('done')
+    } catch (err) {
+      const msg = err?.response?.data?.message || 'Error al subir el comprobante. Intentá de nuevo.'
+      setSinpeUploadError(msg)
+      setSinpeUploadEstado('error')
+    }
   }
 
   const handleWhatsApp = () => {
@@ -312,16 +376,25 @@ export default function CheckoutPage() {
                 </svg>
               </div>
               <div>
-                <h2 className="font-bold text-base" style={{ color: 'var(--hc-text)' }}>Instrucciones de pago SINPE</h2>
-                <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Realiza la transferencia y sube tu comprobante</p>
+                <h2 className="font-bold text-base" style={{ color: 'var(--hc-text)' }}>Pedido registrado — realizá tu SINPE</h2>
+                <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Transferí el monto exacto y subí la foto del comprobante</p>
               </div>
             </div>
 
+            {/* Datos del remitente */}
+            <div className="rounded-xl p-4 space-y-1.5 text-sm" style={{ background: 'color-mix(in srgb, var(--hc-surface) 50%, transparent)', border: '1px solid var(--hc-border)' }}>
+              <p className="text-xs font-semibold mb-2" style={{ color: 'var(--hc-muted)' }}>TUS DATOS DE TRANSFERENCIA</p>
+              {sinpeNombre   && <div className="flex justify-between"><span style={{ color: 'var(--hc-muted)' }}>👤 Nombre</span><span style={{ color: 'var(--hc-text)' }}>{sinpeNombre}</span></div>}
+              {sinpeCedula   && <div className="flex justify-between"><span style={{ color: 'var(--hc-muted)' }}>🪪 Cédula</span><span style={{ color: 'var(--hc-text)' }}>{sinpeCedula}</span></div>}
+              {sinpeTelefono && <div className="flex justify-between"><span style={{ color: 'var(--hc-muted)' }}>📞 Teléfono</span><span style={{ color: 'var(--hc-text)' }}>{sinpeTelefono}</span></div>}
+            </div>
+
             {/* SINPE Info card */}
-            <div className="rounded-xl p-5 space-y-3" style={{ background: 'color-mix(in srgb, var(--hc-accent) 5%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 20%, transparent)' }}>
+            <div className="rounded-xl p-5 space-y-3" style={{ background: 'color-mix(in srgb, #10b981 6%, transparent)', border: '1px solid color-mix(in srgb, #10b981 25%, transparent)' }}>
+              <p className="text-xs font-semibold text-emerald-400">REALIZÁ LA TRANSFERENCIA A:</p>
               <div className="flex justify-between items-center text-sm">
                 <span style={{ color: 'var(--hc-muted)' }}>📱 Número SINPE</span>
-                <span className="font-bold text-base tracking-wider" style={{ color: 'var(--hc-text)' }}>{SINPE_NUMERO}</span>
+                <span className="font-bold text-xl tracking-widest text-emerald-300">{SINPE_NUMERO}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span style={{ color: 'var(--hc-muted)' }}>👤 Titular</span>
@@ -333,78 +406,129 @@ export default function CheckoutPage() {
                   <span className="font-mono font-semibold text-[#4f7cff]">{pagoData.numeroPedido}</span>
                 </div>
               )}
-              <div className="border-t" style={{ borderColor: 'var(--hc-border)' }} />
-              <div className="flex justify-between items-center">
-                <span className="text-sm" style={{ color: 'var(--hc-muted)' }}>💰 Monto exacto</span>
-                <span className="font-bold text-lg text-[#4f7cff]">{formatPrice(totalFinal)}</span>
+              <div className="border-t pt-3" style={{ borderColor: 'color-mix(in srgb, #10b981 20%, transparent)' }}>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-semibold" style={{ color: 'var(--hc-muted)' }}>💰 Monto EXACTO</span>
+                  <span className="font-bold text-2xl text-emerald-300">{formatPrice(totalFinal)}</span>
+                </div>
               </div>
             </div>
 
-            {/* Nombre completo */}
-            <div className="space-y-2">
-              <label className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>
-                Tu nombre completo <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="text"
-                value={sinpeNombre}
-                onChange={(e) => setSinpeNombre(e.target.value)}
-                placeholder="Ej: María González Solano"
-                className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all"
-                style={{ background: 'var(--hc-surface-2, var(--hc-surface))', border: '1.5px solid var(--hc-border)', color: 'var(--hc-text)' }}
-                onFocus={(e) => { e.target.style.borderColor = 'var(--hc-accent)'; e.target.style.boxShadow = '0 0 0 3px rgba(23,71,168,0.12)' }}
-                onBlur={(e) => { e.target.style.boxShadow = '' }}
-              />
-              <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-                El nombre debe coincidir con quien realiza la transferencia
-              </p>
-            </div>
+            {/* Subir comprobante obligatorio */}
+            {sinpeUploadEstado !== 'done' ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center text-white text-[10px] font-bold shrink-0">!</span>
+                  <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
+                    Subir comprobante <span className="text-red-400">*</span>
+                  </p>
+                </div>
+                <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+                  Adjuntá una foto o captura del comprobante SINPE. Solo imágenes (JPG, PNG, WebP).
+                </p>
 
-            {/* Upload comprobante */}
-            <div className="space-y-2">
-              <label className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>Comprobante de pago</label>
-              <input
-                ref={sinpeInputRef}
-                type="file"
-                accept="image/*,.pdf"
-                className="hidden"
-                onChange={(e) => setSinpeComprobante(e.target.files?.[0] ?? null)}
-              />
-              <button
-                onClick={() => sinpeInputRef.current?.click()}
-                className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl text-sm font-medium transition-all border-dashed border-2"
-                style={sinpeComprobante
-                  ? { borderColor: 'color-mix(in srgb, var(--hc-accent) 60%, transparent)', background: 'color-mix(in srgb, var(--hc-accent) 8%, transparent)', color: 'var(--hc-accent)' }
-                  : { borderColor: 'var(--hc-border)', color: 'var(--hc-muted)' }}
+                <input
+                  ref={sinpeInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+                  className="hidden"
+                  onChange={(e) => {
+                    setSinpeImagen(e.target.files?.[0] ?? null)
+                    setSinpeImagenErr('')
+                    setSinpeUploadEstado('idle')
+                    setSinpeUploadError('')
+                  }}
+                />
+                <button
+                  onClick={() => sinpeInputRef.current?.click()}
+                  className="w-full flex items-center justify-center gap-2.5 py-4 rounded-xl text-sm font-medium transition-all border-dashed border-2"
+                  style={sinpeImagen
+                    ? { borderColor: '#10b981', background: 'rgba(16,185,129,0.08)', color: '#10b981' }
+                    : { borderColor: sinpeImagenErr ? '#f87171' : 'var(--hc-border)', color: sinpeImagenErr ? '#f87171' : 'var(--hc-muted)' }}
+                >
+                  {sinpeImagen ? (
+                    <>
+                      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                      {sinpeImagen.name}
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                      Seleccionar imagen del comprobante
+                    </>
+                  )}
+                </button>
+                {sinpeImagenErr && <p className="text-xs text-red-400">{sinpeImagenErr}</p>}
+
+                {/* Preview de imagen seleccionada */}
+                {sinpeImagen && (
+                  <div className="rounded-xl overflow-hidden border" style={{ borderColor: 'var(--hc-border)' }}>
+                    <img
+                      src={URL.createObjectURL(sinpeImagen)}
+                      alt="Vista previa del comprobante"
+                      className="w-full max-h-48 object-contain bg-black/20"
+                    />
+                  </div>
+                )}
+
+                {sinpeUploadError && (
+                  <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                    {sinpeUploadError}
+                  </p>
+                )}
+
+                <button
+                  onClick={handleSubirComprobante}
+                  disabled={sinpeUploadEstado === 'uploading'}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50"
+                  style={{ background: 'var(--hc-accent)', color: '#fff' }}
+                >
+                  {sinpeUploadEstado === 'uploading' ? (
+                    <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Subiendo comprobante…</>
+                  ) : (
+                    <><svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>Enviar comprobante</>
+                  )}
+                </button>
+              </div>
+            ) : (
+              /* Estado: comprobante subido con éxito */
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="rounded-xl p-5 space-y-3 text-center"
+                style={{ background: 'color-mix(in srgb, #10b981 8%, transparent)', border: '1px solid color-mix(in srgb, #10b981 25%, transparent)' }}
               >
-                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                </svg>
-                {sinpeComprobante ? sinpeComprobante.name : 'Adjuntar comprobante (foto o PDF)'}
-              </button>
-            </div>
+                <div className="w-12 h-12 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto">
+                  <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <p className="font-bold text-emerald-400">¡Comprobante recibido!</p>
+                <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+                  Un administrador verificará tu pago y activará tu pedido. Te avisamos por correo.
+                </p>
+                <button
+                  onClick={handleSinpeWhatsApp}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/18"
+                >
+                  <WhatsAppIcon />
+                  Notificar también por WhatsApp
+                </button>
+                <a href="/mis-pedidos" className="block text-xs text-[#4f7cff] hover:underline mt-1">
+                  Ver mis pedidos →
+                </a>
+              </motion.div>
+            )}
 
-            {/* Nota admin */}
+            {/* Nota */}
             <div className="flex gap-2.5 p-3.5 rounded-xl" style={{ background: 'color-mix(in srgb, #f59e0b 8%, transparent)', border: '1px solid color-mix(in srgb, #f59e0b 25%, transparent)' }}>
               <svg className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p className="text-xs leading-relaxed text-amber-300/90">
-                Tu pago será <strong>verificado por un administrador</strong>. Te notificaremos lo antes posible una vez confirmado.
-              </p>
-            </div>
-
-            {/* Acciones */}
-            <div className="flex flex-col gap-2.5 pt-1">
-              <button
-                onClick={handleSinpeWhatsApp}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-sm transition-all bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/18"
-              >
-                <WhatsAppIcon />
-                Enviar comprobante por WhatsApp
-              </button>
-              <p className="text-[10px] text-center" style={{ color: 'var(--hc-muted)' }}>
-                Tu pedido quedó registrado. Expira en 24 horas si no se confirma el pago.
+                Tu pago será <strong>verificado por un administrador</strong>. El pedido expira en 72 horas si no se confirma.
               </p>
             </div>
           </motion.div>
@@ -442,7 +566,7 @@ export default function CheckoutPage() {
 
   if (estado === 'redirecting' || estado === 'loading') {
     const msg = estado === 'redirecting'
-      ? t('checkout.redirectingPaypal')
+      ? t('checkout.redirectingPayment', { defaultValue: 'Redirigiendo al pago seguro…' })
       : t('checkout.preparing')
     return (
       <MainLayout>
@@ -727,19 +851,83 @@ export default function CheckoutPage() {
                     transition={{ duration: 0.22 }}
                     className="overflow-hidden"
                   >
-                    <div className="rounded-xl p-4 space-y-2.5" style={{ background: 'color-mix(in srgb, #10b981 6%, transparent)', border: '1px solid color-mix(in srgb, #10b981 20%, transparent)' }}>
-                      <p className="text-xs font-semibold text-emerald-400">Datos para tu transferencia</p>
-                      <div className="flex justify-between text-xs">
-                        <span style={{ color: 'var(--hc-muted)' }}>📱 Número SINPE</span>
-                        <span className="font-bold tracking-wider" style={{ color: 'var(--hc-text)' }}>{SINPE_NUMERO}</span>
+                    <div className="space-y-4 pt-1">
+                      {/* Datos del remitente — requeridos antes de pagar */}
+                      <div className="rounded-xl p-4 space-y-3" style={{ background: 'color-mix(in srgb, #10b981 5%, transparent)', border: '1px solid color-mix(in srgb, #10b981 20%, transparent)' }}>
+                        <p className="text-xs font-semibold text-emerald-400">DATOS DEL REMITENTE <span className="text-red-400 font-normal">(requerido)</span></p>
+
+                        {/* Nombre completo */}
+                        <div className="space-y-1">
+                          <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Nombre completo <span className="text-red-400">*</span></label>
+                          <input
+                            type="text"
+                            value={sinpeNombre}
+                            onChange={(e) => { setSinpeNombre(e.target.value); if (sinpeNombreErr) setSinpeNombreErr('') }}
+                            placeholder="Ej: María González Solano"
+                            className="w-full rounded-xl px-3 py-2.5 text-sm outline-none transition-all"
+                            style={{ background: 'var(--hc-bg)', border: `1.5px solid ${sinpeNombreErr ? '#f87171' : 'var(--hc-border)'}`, color: 'var(--hc-text)' }}
+                          />
+                          {sinpeNombreErr && <p className="text-xs text-red-400">{sinpeNombreErr}</p>}
+                        </div>
+
+                        {/* Cédula */}
+                        <div className="space-y-1">
+                          <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Número de cédula <span className="text-red-400">*</span></label>
+                          <input
+                            type="text"
+                            value={sinpeCedula}
+                            onChange={(e) => { setSinpeCedula(e.target.value.replace(/\D/g, '')); if (sinpeCedulaErr) setSinpeCedulaErr('') }}
+                            placeholder="Ej: 123456789"
+                            maxLength={12}
+                            className="w-full rounded-xl px-3 py-2.5 text-sm outline-none transition-all"
+                            style={{ background: 'var(--hc-bg)', border: `1.5px solid ${sinpeCedulaErr ? '#f87171' : 'var(--hc-border)'}`, color: 'var(--hc-text)' }}
+                          />
+                          {sinpeCedulaErr && <p className="text-xs text-red-400">{sinpeCedulaErr}</p>}
+                        </div>
+
+                        {/* Teléfono del remitente */}
+                        <div className="space-y-1">
+                          <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Teléfono del SINPE</label>
+                          <input
+                            type="tel"
+                            value={sinpeTelefono}
+                            onChange={(e) => setSinpeTelefono(e.target.value.replace(/\D/g, '').slice(0, 8))}
+                            placeholder="Ej: 88887777"
+                            maxLength={8}
+                            className="w-full rounded-xl px-3 py-2.5 text-sm outline-none transition-all"
+                            style={{ background: 'var(--hc-bg)', border: '1.5px solid var(--hc-border)', color: 'var(--hc-text)' }}
+                          />
+                        </div>
+
+                        {/* Correo (siempre requerido para SINPE, incluso autenticado) */}
+                        {!token && (
+                          <div className="space-y-1">
+                            <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Correo electrónico</label>
+                            <input
+                              type="email"
+                              value={sinpeEmail}
+                              onChange={(e) => setSinpeEmail(e.target.value)}
+                              placeholder="tu@correo.com"
+                              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none transition-all"
+                              style={{ background: 'var(--hc-bg)', border: '1.5px solid var(--hc-border)', color: 'var(--hc-text)' }}
+                            />
+                          </div>
+                        )}
                       </div>
-                      <div className="flex justify-between text-xs">
-                        <span style={{ color: 'var(--hc-muted)' }}>👤 Titular</span>
-                        <span style={{ color: 'var(--hc-text)' }}>{SINPE_TITULAR}</span>
-                      </div>
-                      <div className="border-t pt-2" style={{ borderColor: 'color-mix(in srgb, #10b981 20%, transparent)' }}>
-                        <p className="text-[11px]" style={{ color: 'var(--hc-muted)' }}>
-                          Al hacer clic en "Confirmar SINPE" podrás adjuntar tu comprobante de pago.
+
+                      {/* Preview destino SINPE */}
+                      <div className="rounded-xl p-3.5 space-y-1.5" style={{ background: 'color-mix(in srgb, #10b981 6%, transparent)', border: '1px solid color-mix(in srgb, #10b981 20%, transparent)' }}>
+                        <p className="text-[10px] font-semibold text-emerald-400 mb-1.5">DESTINO DEL SINPE</p>
+                        <div className="flex justify-between text-xs">
+                          <span style={{ color: 'var(--hc-muted)' }}>📱 Número</span>
+                          <span className="font-bold tracking-wider" style={{ color: 'var(--hc-text)' }}>{SINPE_NUMERO}</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span style={{ color: 'var(--hc-muted)' }}>👤 Titular</span>
+                          <span style={{ color: 'var(--hc-text)' }}>{SINPE_TITULAR}</span>
+                        </div>
+                        <p className="text-[10px] pt-1" style={{ color: 'var(--hc-muted)' }}>
+                          Al confirmar, deberás subir una foto del comprobante.
                         </p>
                       </div>
                     </div>
@@ -774,22 +962,84 @@ export default function CheckoutPage() {
             </motion.div>
 
             {/* Error */}
-            {estado === 'failed' && error && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-red-400"
-                role="alert"
-              >
-                <p className="font-medium mb-1">{t('checkout.payError')}</p>
-                <p>{error}</p>
-                {intentos < maxIntentos && (
-                  <button onClick={handlePagar} className="mt-3 text-[#4f7cff] hover:underline text-xs">
-                    {t('checkout.retry', { remaining: maxIntentos - intentos })}
-                  </button>
-                )}
-              </motion.div>
-            )}
+            {estado === 'failed' && error && (() => {
+              const errorStr = typeof error === 'string' ? error : JSON.stringify(error)
+              const isStockError = /stock insuficiente|stock\s*=\s*0|disponible=0/i.test(errorStr)
+              // Extrae nombre del producto del mensaje "Stock insuficiente para 'X': ..."
+              const stockMatch = errorStr.match(/para\s+'([^']+)'/)
+              const productoBloqueado = stockMatch?.[1] ?? null
+              return (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="space-y-3"
+                  role="alert"
+                >
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-red-400">
+                    <p className="font-medium mb-1">{t('checkout.payError')}</p>
+                    {isStockError ? (
+                      <div className="space-y-2">
+                        <p>
+                          {productoBloqueado
+                            ? <>El producto <strong className="text-red-300">"{productoBloqueado}"</strong> ya no tiene stock disponible.</>
+                            : 'Uno o más productos ya no tienen stock disponible.'
+                          }
+                        </p>
+                        <p className="text-xs text-red-300/80">
+                          Retirá ese producto del carrito y volvé a intentarlo.
+                        </p>
+                        <Link
+                          to="/carrito"
+                          className="inline-block mt-1 text-xs font-semibold text-white bg-red-500/60 hover:bg-red-500/80 px-3 py-1.5 rounded-lg transition-colors"
+                        >
+                          Ir al carrito →
+                        </Link>
+                      </div>
+                    ) : (
+                      <>
+                        <p>{errorStr}</p>
+                        {intentos < maxIntentos && (
+                          <button onClick={handlePagar} className="mt-3 text-[#4f7cff] hover:underline text-xs">
+                            {t('checkout.retry', { remaining: maxIntentos - intentos })}
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  {/* Intervención del agente — el error es nuestro, no del usuario */}
+                  <div
+                    className="rounded-xl p-4 space-y-3"
+                    style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
+                  >
+                    <div className="flex gap-3">
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold mt-0.5"
+                        style={{ background: 'var(--hc-accent)', color: '#fff' }}
+                      >✦</div>
+                      <div>
+                        <p className="text-xs font-semibold mb-0.5" style={{ color: 'var(--hc-text)' }}>HotClick AI</p>
+                        <p className="text-sm leading-snug" style={{ color: 'var(--hc-muted)' }}>
+                          {isStockError
+                            ? 'Si querés ese producto podés consultarnos por WhatsApp — a veces tenemos unidades en bodega no publicadas.'
+                            : 'Un agente puede ayudarte a completar tu compra ahora mismo por WhatsApp con solo un clic.'}
+                        </p>
+                      </div>
+                    </div>
+                    <a
+                      href={`https://wa.me/${WHATSAPP}?text=${toWhatsAppMessage()}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 active:scale-95"
+                      style={{ background: '#25D366', color: '#fff' }}
+                    >
+                      <WhatsAppIcon />
+                      {isStockError ? 'Consultar disponibilidad por WhatsApp' : 'Continuar compra por WhatsApp'}
+                    </a>
+                  </div>
+                </motion.div>
+              )
+            })()}
           </div>
 
           {/* ── Resumen ── */}

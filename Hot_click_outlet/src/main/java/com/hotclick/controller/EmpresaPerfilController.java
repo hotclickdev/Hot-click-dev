@@ -29,6 +29,7 @@ public class EmpresaPerfilController {
     @Autowired private CompanyScope               companyScope;
     @Autowired private SupabaseStorageService     supabaseStorageService;
     @Autowired private TotpSecretEncryptionService encryptionService;
+    @Autowired private com.hotclick.service.ImageModerationService imageModerationService;
 
     private static final List<String> AMBIENTES_VALIDOS = List.of("STAG", "PROD");
     private static final List<String> TIPOS_CEDULA_VALIDOS = List.of("01", "02", "03", "04");
@@ -189,6 +190,9 @@ public class EmpresaPerfilController {
         Long empresaId = companyScope.getCurrentEmpresaId();
         if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada"));
         try {
+            var mod = imageModerationService.moderar(file);
+            if (!mod.safe())
+                return ResponseEntity.badRequest().body(ResponseDTO.error("Imagen rechazada: " + mod.reason()));
             String url = supabaseStorageService.subirImagen(file, "Empredimientos");
             Optional<Empresa> opt = empresaRepository.findById(empresaId);
             opt.ifPresent(e -> { e.setLogoUrl(url); empresaRepository.save(e); });

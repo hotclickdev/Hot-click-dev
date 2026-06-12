@@ -270,6 +270,9 @@ public class Producto extends BaseEntity {
 
     public Integer getStockDisponible() { return getStockActual() - getStockReservado(); }
 
+    /** Alias para el frontend: 'stock' = unidades disponibles reales (actual − reservado). */
+    public Integer getStock() { return getStockDisponible(); }
+
     public Integer getStockMinimo() { return stockMinimo; }
     public void setStockMinimo(Integer stockMinimo) { this.stockMinimo = stockMinimo; }
 

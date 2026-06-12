@@ -42,10 +42,12 @@ public class TotpSecretEncryptionService {
     @Value("${totp.encryption.key:}")
     private String encryptionKeyHex;
 
+    @Value("${spring.profiles.active:}")
+    private String activeProfiles;
+
     @PostConstruct
     void validate() {
-        String profile = System.getProperty("spring.profiles.active", "");
-        if (!profile.contains("dev") && !profile.contains("test")
+        if (!activeProfiles.contains("dev") && !activeProfiles.contains("test")
                 && (encryptionKeyHex == null || encryptionKeyHex.isBlank())) {
             throw new IllegalStateException(
                 "TOTP_ENCRYPTION_KEY debe configurarse en producción (totp.encryption.key)");

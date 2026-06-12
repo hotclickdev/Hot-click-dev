@@ -14,6 +14,7 @@ import java.util.Map;
 public class ContactoController {
 
     @Autowired private ResendEmailService resendEmailService;
+    @Autowired private com.hotclick.service.TextModerationService textModerationService;
 
     @Value("${sendgrid.from-email}")
     private String fromEmail;
@@ -33,6 +34,10 @@ public class ContactoController {
         if (!correo.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
             return ResponseEntity.badRequest().body(Map.of("error", "Correo inválido"));
         }
+        var textMod = textModerationService.moderar(nombre, mensaje);
+        if (!textMod.safe()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "El mensaje contiene contenido no permitido"));
+        }
 
         try {
             String html = "<div style='font-family:sans-serif;max-width:560px'>"
@@ -51,7 +56,8 @@ public class ContactoController {
                 + "<p style='margin-top:16px;font-size:12px;color:#999'>Enviado desde el formulario de contacto de HOTCLICK</p>"
                 + "</div>";
 
-            resendEmailService.send(fromEmail, "Nuevo mensaje de contacto — " + HtmlUtils.htmlEscape(nombre), html);
+            String safeSubjectNombre = HtmlUtils.htmlEscape(nombre).replaceAll("[\r\n]", " ");
+            resendEmailService.send(fromEmail, "Nuevo mensaje de contacto — " + safeSubjectNombre, html);
             return ResponseEntity.ok(Map.of("ok", true));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", "No se pudo enviar el mensaje"));

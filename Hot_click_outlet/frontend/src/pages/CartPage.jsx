@@ -15,8 +15,8 @@ import { abandonedCartService } from '@/services/abandonedCartService'
 import AICartSection from '@/components/ai/AICartSection'
 
 const WHATSAPP = '50689745370'
-const EMAIL_PROMPT_DELAY_MS = 45_000  // 45 segundos
-const WA_PROMPT_DELAY_MS    = 30_000  // 30 segundos
+const EMAIL_PROMPT_DELAY_MS = 45_000   // 45 segundos
+const WA_PROMPT_DELAY_MS    = 180_000  // 3 minutos
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart, total, toWhatsAppMessage, addItem } = useCartStore()
@@ -483,23 +483,32 @@ export default function CartPage() {
                 <div>
                   <p className="text-xs font-semibold mb-0.5" style={{ color: 'var(--hc-text)' }}>HotClick AI</p>
                   <p className="text-sm leading-snug" style={{ color: 'var(--hc-muted)' }}>
-                    Tenés {items.length} producto{items.length !== 1 ? 's' : ''} en tu carrito.
-                    {' '}¿Te enviamos todo por WhatsApp para retomarlo cuando quieras? Disculpá las molestias.
+                    Llevás un rato aquí con {items.length} producto{items.length !== 1 ? 's' : ''} en el carrito.
+                    {' '}¿Continuamos la compra por WhatsApp o preferís seguir en la tienda?
                   </p>
                 </div>
               </div>
 
-              <a
-                href={`https://wa.me/${WHATSAPP}?text=${buildAbandonedMsg()}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => { setWaPrompt(false); sessionStorage.setItem('hc-cart-wa-dismissed', '1') }}
-                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 active:scale-95"
-                style={{ background: '#25D366', color: '#fff' }}
-              >
-                <WhatsAppIcon />
-                Enviar carrito por WhatsApp
-              </a>
+              <div className="space-y-2">
+                <a
+                  href={`https://wa.me/${WHATSAPP}?text=${buildAbandonedMsg()}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => { setWaPrompt(false); sessionStorage.setItem('hc-cart-wa-dismissed', '1') }}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 active:scale-95"
+                  style={{ background: '#25D366', color: '#fff' }}
+                >
+                  <WhatsAppIcon />
+                  Continuar por WhatsApp
+                </a>
+                <button
+                  onClick={() => { setWaPrompt(false); sessionStorage.setItem('hc-cart-wa-dismissed', '1') }}
+                  className="w-full py-2 rounded-xl text-sm transition-opacity hover:opacity-70"
+                  style={{ color: 'var(--hc-muted)' }}
+                >
+                  Seguir en la tienda
+                </button>
+              </div>
             </div>
           </motion.div>
         )}

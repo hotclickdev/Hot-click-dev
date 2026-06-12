@@ -34,6 +34,8 @@ public class MarcaController {
     @Autowired private CompanyScope           companyScope;
     @Autowired private com.hotclick.repository.EmpresaRepository empresaRepository;
     @Autowired private InputSanitizer         sanitizer;
+    @Autowired private com.hotclick.service.ImageModerationService imageModerationService;
+    @Autowired private com.hotclick.service.TextModerationService  textModerationService;
 
     /** Endpoint público — solo marcas de negocios aprobados y visibles */
     @Cacheable("marcas-publicas")
@@ -70,6 +72,10 @@ public class MarcaController {
             if (nombre == null || nombre.isBlank())
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El nombre de la marca es requerido"));
 
+            var textMod = textModerationService.moderar(nombre);
+            if (!textMod.safe())
+                return ResponseEntity.badRequest().body(ResponseDTO.error("El nombre de la marca contiene contenido no permitido"));
+
             var admin = usuarioRepository.findByCorreo(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
             var empresa = companyScope.getCurrentEmpresaId() != null
@@ -104,6 +110,9 @@ public class MarcaController {
                 .orElseThrow(() -> new RuntimeException("Marca no encontrada"));
             companyScope.assertCanAccessNullable(m.getEmpresaId());
             if (body.containsKey("nombreMarca") && !body.get("nombreMarca").isBlank()) {
+                var textMod = textModerationService.moderar(body.get("nombreMarca"));
+                if (!textMod.safe())
+                    return ResponseEntity.badRequest().body(ResponseDTO.error("El nombre de la marca contiene contenido no permitido"));
                 String nuevoNombre = sanitizer.cleanWithLimit(body.get("nombreMarca"), 150);
                 Long empresaId = m.getEmpresaId();
                 boolean duplicado = empresaId != null
@@ -157,6 +166,9 @@ public class MarcaController {
         if (file == null || file.isEmpty())
             return ResponseEntity.badRequest().body(ResponseDTO.error("No se recibió ningún archivo"));
         try {
+            var mod = imageModerationService.moderar(file);
+            if (!mod.safe())
+                return ResponseEntity.badRequest().body(ResponseDTO.error("Imagen rechazada: " + mod.reason()));
             String url = supabaseStorageService.subirImagen(file, "Marcas");
             return ResponseEntity.ok(ResponseDTO.success("Logo subido", Map.of("url", url)));
         } catch (IllegalArgumentException e) {

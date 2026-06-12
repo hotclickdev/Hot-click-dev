@@ -126,6 +126,9 @@ public class SecurityConfig {
                 .requestMatchers(POST, "/api/payments/guest/paypal/capture").permitAll()
                 .requestMatchers(POST, "/api/payments/guest/cancel/*").permitAll()
                 .requestMatchers(GET,  "/api/payments/status/*").permitAll()
+                // SINPE — invitados
+                .requestMatchers(POST, "/api/sinpe/guest-checkout").permitAll()
+                .requestMatchers(POST, "/api/sinpe/guest/*/comprobante").permitAll()
                 // Catálogo público - solo GETs específicos
                 .requestMatchers(GET, "/api/productos/admin/todos").authenticated()
                 .requestMatchers(GET, "/api/productos/pos/**").authenticated()
@@ -267,12 +270,12 @@ public class SecurityConfig {
                     res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
                     res.setHeader("Content-Security-Policy",
                         "default-src 'self'; " +
-                        "script-src 'self' 'unsafe-inline' https://www.paypal.com https://www.sandbox.paypal.com https://js.stripe.com https://*.clerk.accounts.dev https://clerk.hotclick.lat https://www.googletagmanager.com https://www.google-analytics.com; " +
-                        "script-src-elem 'self' 'unsafe-inline' https://www.paypal.com https://www.sandbox.paypal.com https://js.stripe.com https://*.clerk.accounts.dev https://clerk.hotclick.lat https://www.googletagmanager.com https://www.google-analytics.com; " +
+                        "script-src 'self' https://www.paypal.com https://www.sandbox.paypal.com https://js.stripe.com https://*.clerk.accounts.dev https://clerk.hotclick.lat https://www.googletagmanager.com https://www.google-analytics.com; " +
+                        "script-src-elem 'self' https://www.paypal.com https://www.sandbox.paypal.com https://js.stripe.com https://*.clerk.accounts.dev https://clerk.hotclick.lat https://www.googletagmanager.com https://www.google-analytics.com; " +
                         "worker-src blob: 'self'; " +
                         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
                         "font-src 'self' https://fonts.gstatic.com; " +
-                        "img-src 'self' data: blob: " + supabaseUrl + " https://www.paypalobjects.com https://*.googleusercontent.com https://img.clerk.com https://avatars.githubusercontent.com; " +
+                        "img-src 'self' data: blob: " + supabaseUrl + " https://www.paypalobjects.com https://*.googleusercontent.com https://img.clerk.com https://avatars.githubusercontent.com https://cdnjs.cloudflare.com; " +
                         "connect-src 'self' " + supabaseUrl + " https://*.clerk.accounts.dev https://clerk.hotclick.lat https://api.clerk.com https://clerk-telemetry.com https://api-m.paypal.com https://api-m.sandbox.paypal.com https://api.stripe.com https://hooks.stripe.com https://www.google-analytics.com https://region1.google-analytics.com; " +
                         "frame-src https://www.paypal.com https://www.sandbox.paypal.com https://js.stripe.com https://hooks.stripe.com https://www.youtube.com https://www.youtube-nocookie.com https://www.tiktok.com https://www.instagram.com; " +
                         "object-src 'none'; " +

@@ -136,8 +136,8 @@ export default function ContactoPage() {
               </motion.div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
-                <Input label={`${t('contacto.name')} *`} value={form.nombre} onChange={set('nombre')} required />
-                <Input label={`${t('contacto.email')} *`} type="email" value={form.correo} onChange={set('correo')} required />
+                <Input label={`${t('contacto.name')} *`} value={form.nombre} onChange={set('nombre')} required maxLength={120} />
+                <Input label={`${t('contacto.email')} *`} type="email" value={form.correo} onChange={set('correo')} required maxLength={254} />
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-medium text-[#e8e8ed]">{t('contacto.message')} *</label>
                   <textarea
@@ -145,6 +145,7 @@ export default function ContactoPage() {
                     onChange={set('mensaje')}
                     required
                     rows={5}
+                    maxLength={3000}
                     placeholder={t('contacto.messagePlaceholder')}
                     className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-[#e8e8ed] placeholder:text-[#8e8e9a]/60 focus:outline-none focus:border-[#4f7cff]/60 resize-none transition-colors"
                   />
@@ -153,7 +154,7 @@ export default function ContactoPage() {
                   type="submit"
                   disabled={loading}
                   className="w-full"
-                  style={{ backgroundColor: 'var(--hc-accent)', opacity: loading ? 0.7 : 1 }}
+                  style={{ backgroundColor: 'var(--hc-accent)', borderColor: 'var(--hc-accent)', opacity: loading ? 0.7 : 1 }}
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">

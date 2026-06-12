@@ -176,11 +176,11 @@ public class SinpeService {
     // ================================================================
     @Transactional
     public void subirComprobante(String numeroPedido, MultipartFile archivo,
-                                 String nombreRemitente, String correoUsuario) {
+                                 String nombreRemitente, String cedulaRemitente,
+                                 String telefonoRemitente, String correoUsuario) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
             .orElseThrow(() -> new RuntimeException("Pedido no encontrado: " + numeroPedido));
 
-        // Validar propiedad
         if (!pedido.getUsuarioFinal().getCorreo().equals(correoUsuario)) {
             throw new SecurityException("No tienes permiso para modificar este pedido");
         }
@@ -208,6 +208,9 @@ public class SinpeService {
         comprobante.setPedido(pedido);
         comprobante.setUrlComprobante(url);
         comprobante.setNombreRemitente(nombreRemitente.trim());
+        comprobante.setCedulaRemitente(cedulaRemitente != null ? cedulaRemitente.trim() : null);
+        comprobante.setTelefonoRemitente(telefonoRemitente != null ? telefonoRemitente.trim() : null);
+        comprobante.setCorreoRemitente(correoUsuario);
         comprobante.setEstado(Constants.COMPROBANTE_PENDIENTE);
         comprobante.setFechaSubida(LocalDateTime.now());
         comprobanteRepository.save(comprobante);
@@ -215,7 +218,7 @@ public class SinpeService {
         pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE_APROBACION);
         pedidoRepository.save(pedido);
 
-        log.info("Comprobante SINPE subido: pedido={} remitente={}", numeroPedido, nombreRemitente);
+        log.info("Comprobante SINPE subido: pedido={} remitente={} cedula={}", numeroPedido, nombreRemitente, cedulaRemitente);
     }
 
     // ================================================================

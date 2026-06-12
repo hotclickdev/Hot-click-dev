@@ -94,7 +94,7 @@ public class ShoppingAssistantService {
         if (mensaje.isBlank()) {
             return new ChatResponse(
                 "No recibí ningún mensaje. ¿En qué te puedo ayudar?",
-                sesionIdStr, List.of(), List.of());
+                sesionIdStr, List.of(), List.of(), List.of());
         }
 
         // 2. Clasificar la consulta — bloquear antes de cualquier I/O si no es del dominio
@@ -104,10 +104,8 @@ public class ShoppingAssistantService {
             String respuesta = classification.isInjection()
                 ? "No puedo proporcionar información interna del sistema. " +
                   "Puedo ayudarte únicamente con consultas relacionadas con HOTCLICK."
-                : "Soy el asistente de HOTCLICK y únicamente puedo ayudarte con " +
-                  "productos, compras, pagos, entregas y consultas relacionadas con nuestra tienda. " +
-                  "¿En qué te puedo ayudar?";
-            return new ChatResponse(respuesta, sesionIdStr, List.of(), List.of());
+                : "Solo puedo ayudarte a encontrar productos. ¿Qué estás buscando?";
+            return new ChatResponse(respuesta, sesionIdStr, List.of(), List.of(), List.of());
         }
 
         // 3. Resolver o crear sesión
@@ -144,7 +142,8 @@ public class ShoppingAssistantService {
             resultado.respuesta(),
             sesionId.toString(),
             resultado.productosReferenciados(),
-            resultado.categorias()
+            resultado.categorias(),
+            resultado.opts()
         );
     }
 

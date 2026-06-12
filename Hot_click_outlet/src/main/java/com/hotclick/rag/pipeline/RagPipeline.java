@@ -46,6 +46,7 @@ public class RagPipeline {
     private static final int       TOP_K    = 5;
     private static final int       MAX_TOKENS = 250;
     private static final Pattern   CATS_TAG = Pattern.compile("\\[CATS:([^\\]]+)\\]");
+    private static final Pattern   OPTS_TAG = Pattern.compile("\\[OPTS:([^\\]]+)\\]");
     private static final HttpClient HTTP    = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(15))
         .build();
@@ -163,19 +164,26 @@ public class RagPipeline {
                 return RagResult.fallback();
             }
 
-            // Extraer [CATS:cat1,cat2,...] del texto y separarlo como lista estructurada
+            // Extraer [CATS:...] y [OPTS:...] del texto como listas estructuradas
             List<String> categoriasSugeridas = List.of();
-            Matcher m = CATS_TAG.matcher(texto);
-            if (m.find()) {
-                categoriasSugeridas = Arrays.stream(m.group(1).split(","))
-                    .map(String::trim)
-                    .filter(s -> !s.isBlank())
-                    .limit(5)
+            Matcher mc = CATS_TAG.matcher(texto);
+            if (mc.find()) {
+                categoriasSugeridas = Arrays.stream(mc.group(1).split(","))
+                    .map(String::trim).filter(s -> !s.isBlank()).limit(5)
                     .collect(Collectors.toList());
-                texto = texto.replace(m.group(0), "").strip();
+                texto = texto.replace(mc.group(0), "").strip();
             }
 
-            return new RagResult(texto, productos, categoriasSugeridas, tokIn, tokOut);
+            List<String> opts = List.of();
+            Matcher mo = OPTS_TAG.matcher(texto);
+            if (mo.find()) {
+                opts = Arrays.stream(mo.group(1).split(","))
+                    .map(String::trim).filter(s -> !s.isBlank()).limit(8)
+                    .collect(Collectors.toList());
+                texto = texto.replace(mo.group(0), "").strip();
+            }
+
+            return new RagResult(texto, productos, categoriasSugeridas, opts, tokIn, tokOut);
 
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
@@ -232,6 +240,6 @@ public class RagPipeline {
         String texto = productos.isEmpty()
             ? "*(modo desarrollo)* No encontré productos específicos para tu consulta. ¿Podés describir con más detalle lo que buscás?"
             : "*(modo desarrollo)* Encontré " + productos.size() + " producto(s) relevante(s) para \"" + query + "\". Configurá ANTHROPIC_API_KEY para respuestas reales.";
-        return new RagResult(texto, productos, List.of(), 0, 0);
+        return new RagResult(texto, productos, List.of(), List.of(), 0, 0);
     }
 }

@@ -57,7 +57,7 @@ export const paymentService = {
     return api.post(`/payments/guest/cancel/${numeroPedido}`)
   },
 
-  // ── Admin SINPE ──────────────────────────────────────────────────────────
+  // ── Admin SINPE (legacy, por pagoId) ─────────────────────────────────────
 
   /** Confirma un pago SINPE tras verificar el comprobante (solo admin). */
   confirmarSinpe(pagoId) {
@@ -68,5 +68,57 @@ export const paymentService = {
   rechazarSinpe(pagoId, motivo) {
     return api.post(`/admin/pagos/${pagoId}/rechazar-sinpe`, null,
       motivo ? { params: { motivo } } : undefined)
+  },
+
+  // ── SINPE Móvil — flujo completo ─────────────────────────────────────────
+
+  /** Checkout SINPE autenticado → crea pedido en PENDIENTE_COMPROBANTE. */
+  sinpeCheckout(payload) {
+    return api.post('/sinpe/checkout', payload)
+  },
+
+  /** Checkout SINPE para invitados. */
+  guestSinpeCheckout(payload) {
+    return api.post('/sinpe/guest-checkout', payload)
+  },
+
+  /**
+   * Sube el comprobante de pago SINPE (autenticado).
+   * FormData fields: imagen, nombreRemitente, cedulaRemitente?, telefonoRemitente?
+   */
+  subirComprobanteSinpe(numeroPedido, formData) {
+    return api.post(`/sinpe/${numeroPedido}/comprobante`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+
+  /**
+   * Sube el comprobante de pago SINPE (invitado).
+   * FormData fields: imagen, nombreRemitente, correoUsuario, cedulaRemitente?, telefonoRemitente?
+   */
+  guestSubirComprobanteSinpe(numeroPedido, formData) {
+    return api.post(`/sinpe/guest/${numeroPedido}/comprobante`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+
+  // ── Admin SINPE — comprobantes (nuevo flujo) ──────────────────────────────
+
+  /** Lista comprobantes SINPE para revisión admin. */
+  listarComprobantes(estado = '', page = 0) {
+    const params = new URLSearchParams({ page, size: 20 })
+    if (estado) params.set('estado', estado)
+    return api.get(`/sinpe/admin/comprobantes?${params}`)
+  },
+
+  /** Aprueba un comprobante SINPE (por id de comprobante). */
+  aprobarComprobante(comprobanteId) {
+    return api.post(`/sinpe/admin/comprobantes/${comprobanteId}/aprobar`)
+  },
+
+  /** Rechaza un comprobante SINPE con motivo opcional. */
+  rechazarComprobante(comprobanteId, motivo) {
+    const params = motivo ? `?motivo=${encodeURIComponent(motivo)}` : ''
+    return api.post(`/sinpe/admin/comprobantes/${comprobanteId}/rechazar${params}`)
   },
 }

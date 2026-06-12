@@ -28,8 +28,8 @@ export default defineConfig({
       },
       workbox: {
         // Precachea assets con hash (JS/CSS/SVG/HTML)
-        globPatterns: ['**/*.{js,css,html,svg}'],
-        globIgnores: ['**/node_modules/**'],
+        globPatterns: ['**/*.{js,css,html}', '*.svg'],
+        globIgnores: ['**/node_modules/**', 'brand/**', 'admin/**'],
         // Network First para llamadas API GET (catálogo, marcas)
         runtimeCaching: [
           {

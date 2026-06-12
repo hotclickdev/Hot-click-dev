@@ -15,13 +15,52 @@
  *   inputRef       (ref)      ref externo opcional para hacer focus desde el padre
  *   onProductAdd   (fn)       callback adicional al añadir producto al carrito
  */
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo, Fragment } from 'react'
 import useCartStore from '@/store/cartStore'
 import { shoppingAssistantService } from '@/services/shoppingAssistantService'
 import { getOrCreateVisitorId } from '@/utils/visitorId'
 import AIProductCard from './AIProductCard'
 import AICategoryChip from './AICategoryChip'
 import { TypingDots, AIAvatar } from './AITypingBubble'
+
+const MAX_VISIBLE_CHARS = 280
+
+// Renderiza **negrita** y saltos de línea sin dangerouslySetInnerHTML
+function MarkdownSpan({ text }) {
+  const segments = text.split(/(\*\*[^*\n]+\*\*)/g)
+  return (
+    <Fragment>
+      {segments.flatMap((seg, i) => {
+        if (seg.startsWith('**') && seg.endsWith('**')) {
+          return [<strong key={i} style={{ fontWeight: 700 }}>{seg.slice(2, -2)}</strong>]
+        }
+        return seg.split('\n').flatMap((line, j, arr) =>
+          j < arr.length - 1 ? [line, <br key={`${i}-${j}`} />] : [line]
+        )
+      })}
+    </Fragment>
+  )
+}
+
+function TruncatedText({ texto, color }) {
+  const [expanded, setExpanded] = useState(false)
+  const needsTruncate = texto.length > MAX_VISIBLE_CHARS
+  const visible = needsTruncate && !expanded ? texto.slice(0, MAX_VISIBLE_CHARS).trimEnd() + '…' : texto
+  return (
+    <Fragment>
+      <span style={{ whiteSpace: 'pre-wrap' }}><MarkdownSpan text={visible} /></span>
+      {needsTruncate && (
+        <button
+          onClick={() => setExpanded(v => !v)}
+          className="block mt-1 text-xs font-medium underline underline-offset-2 opacity-70 hover:opacity-100 transition-opacity"
+          style={{ color }}
+        >
+          {expanded ? 'Ver menos' : 'Ver más'}
+        </button>
+      )}
+    </Fragment>
+  )
+}
 
 const MSG_CSS_ID = 'hc-ai-msg-css'
 if (typeof document !== 'undefined' && !document.getElementById(MSG_CSS_ID)) {
@@ -43,14 +82,22 @@ export default function AIChat({
   onProductAdd = null,
 }) {
   const addItem    = useCartStore(s => s.addItem)
-  const [mensajes, setMensajes] = useState([])
+  const storageKey = `hc-chat-msgs-${sessionKey}`
+  const [mensajes, setMensajes] = useState(() => {
+    try {
+      const raw = localStorage.getItem(storageKey)
+      if (!raw) return []
+      const parsed = JSON.parse(raw)
+      return Array.isArray(parsed) ? parsed.filter(m => !m.typing && !m.failed) : []
+    } catch { return [] }
+  })
   const [input,    setInput]    = useState('')
   const [cargando, setCargando] = useState(false)
   const [sesionId, setSesionId] = useState(
     () => shoppingAssistantService.loadSesionId(sessionKey)
   )
   const visitorId  = useMemo(() => getOrCreateVisitorId(), [])
-  const bottomRef  = useRef(null)
+  const historyRef = useRef(null)
   const internalInputRef = useRef(null)
   const inputRef   = externalInputRef || internalInputRef
   const cargRef    = useRef(false)
@@ -61,8 +108,16 @@ export default function AIChat({
   function setLoading(v) { cargRef.current = v; setCargando(v) }
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (historyRef.current) {
+      historyRef.current.scrollTop = historyRef.current.scrollHeight
+    }
   }, [mensajes])
+
+  // Persiste el historial en localStorage (máx 30 mensajes, sin burbujas transitorias)
+  useEffect(() => {
+    const toSave = mensajes.filter(m => !m.typing && !m.failed).slice(-30)
+    try { localStorage.setItem(storageKey, JSON.stringify(toSave)) } catch {}
+  }, [mensajes, storageKey])
 
   useEffect(() => {
     if (!autoQuery || autoSent.current) return
@@ -75,7 +130,7 @@ export default function AIChat({
     addItem({
       id: producto.id, nombre: producto.nombre, sku: producto.sku ?? '',
       precio: producto.precio, precioVenta: producto.precio,
-      imagenPrincipalUrl: producto.imagenUrl ?? null, stock: 99,
+      imagenPrincipalUrl: producto.imagenUrl ?? null, stock: producto.stock ?? 99,
     }, 1)
     onProductAdd?.(producto)
   }, [addItem, onProductAdd])
@@ -96,6 +151,7 @@ export default function AIChat({
         rol: 'assistant', texto: result.respuesta,
         productos: result.productos ?? [],
         categorias: result.categorias ?? [],
+        opts: result.opts ?? [],
       }])
     } catch {
       setMensajes(prev => prev.slice(0, -1))
@@ -123,13 +179,14 @@ export default function AIChat({
         rol: 'assistant', texto: result.respuesta,
         productos: result.productos ?? [],
         categorias: result.categorias ?? [],
+        opts: result.opts ?? [],
       }])
     } catch (err) {
+      const errorText = err?.response?.status === 429
+        ? 'Muchas consultas seguidas. Esperá un momento.'
+        : 'No pude conectar. Verificá tu conexión.'
       setMensajes(prev => [...prev.slice(0, -1), {
-        rol: 'assistant',
-        texto: err?.response?.status === 429
-          ? 'Muchas consultas seguidas. Esperá un momento e intentá de nuevo.'
-          : 'No pude conectar. Verificá tu conexión e intentá de nuevo.',
+        rol: 'assistant', failed: true, failedQuery: msg, texto: errorText,
       }])
     } finally {
       setLoading(false)
@@ -142,7 +199,20 @@ export default function AIChat({
   }
 
   const userMsgCount = mensajes.filter(m => m.rol === 'user').length
-  const showChips    = chips.length > 0 && userMsgCount === 0 && !cargando
+  const lastAssistant = [...mensajes].reverse().find(m => m.rol === 'assistant' && !m.typing)
+  const lastUserMsg = [...mensajes].reverse().find(m => m.rol === 'user')
+  const contextChips = lastAssistant?.categorias?.length > 0
+    ? lastAssistant.categorias
+    : null
+  const activeChips = userMsgCount === 0 ? chips : (contextChips ?? [])
+  const showChips = activeChips.length > 0 && !cargando
+  // Mostrar chip de alternativas cuando el AI respondió pero no devolvió productos
+  const showAlternativas =
+    !cargando &&
+    userMsgCount > 0 &&
+    lastAssistant != null &&
+    (lastAssistant.productos?.length ?? 0) === 0 &&
+    lastUserMsg != null
 
   return (
     <div className="flex flex-col gap-3">
@@ -150,6 +220,7 @@ export default function AIChat({
       {/* ── Historial de mensajes ── */}
       {mensajes.length > 0 && (
         <div
+          ref={historyRef}
           className="space-y-3 overflow-y-auto"
           style={{
             maxHeight: maxHistoryHeight,
@@ -166,25 +237,42 @@ export default function AIChat({
               {m.rol === 'assistant' && <AIAvatar accentColor={accent} />}
               <div className="max-w-[85%] space-y-2">
                 {m.typing
-                  ? <div className="px-3 py-2.5 rounded-2xl rounded-tl-sm"
+                  ? <div className="px-3 py-2 rounded-2xl rounded-tl-sm"
                       style={{
-                        background: 'var(--hc-surface-2, rgba(0,0,0,0.06))',
-                        border: '1px solid var(--hc-border)',
-                        color: 'var(--hc-muted)',
+                        background: '#f1f3f5',
+                        border: '1px solid #e0e0e0',
                       }}>
                       <TypingDots />
                     </div>
                   : <div
-                      className={`px-3 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${m.rol === 'user' ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}
+                      className={`px-3 py-2 rounded-2xl text-sm leading-snug ${m.rol === 'user' ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}
                       style={m.rol === 'user'
-                        ? { background: accent, color: '#fff' }
+                        ? { background: accent, color: '#ffffff', fontWeight: 500 }
                         : {
-                            background: 'var(--hc-surface-2, rgba(0,0,0,0.06))',
-                            color: 'var(--hc-text)',
-                            border: '1px solid var(--hc-border)',
+                            background: m.failed ? '#fff5f5' : '#f1f3f5',
+                            color: '#1a1a2e',
+                            border: `1px solid ${m.failed ? '#fecaca' : '#e0e0e0'}`,
                           }}
                     >
-                      {m.texto}
+                      {m.rol === 'user'
+                        ? <span style={{ whiteSpace: 'pre-wrap' }}>{m.texto}</span>
+                        : <TruncatedText texto={m.texto} color={accent} />
+                      }
+                      {m.failed && (
+                        <button
+                          onClick={() => {
+                            setMensajes(prev => prev.filter(x => x !== m))
+                            enviar(m.failedQuery)
+                          }}
+                          className="flex items-center gap-1 mt-2 text-[11px] font-medium transition-opacity hover:opacity-80"
+                          style={{ color: accent }}
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          Reintentar
+                        </button>
+                      )}
                     </div>
                 }
                 {!m.typing && m.productos?.length > 0 && (
@@ -206,17 +294,34 @@ export default function AIChat({
                     ))}
                   </div>
                 )}
+                {!m.typing && m.opts?.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-0.5">
+                    {m.opts.map(opt => (
+                      <button
+                        key={opt}
+                        onClick={() => enviar(opt)}
+                        className="text-[11px] px-3 py-1.5 rounded-full font-medium transition-all hover:opacity-80 active:scale-95"
+                        style={{
+                          background: `color-mix(in srgb, ${accent} 12%, transparent)`,
+                          color: accent,
+                          border: `1px solid color-mix(in srgb, ${accent} 30%, transparent)`,
+                        }}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           ))}
-          <div ref={bottomRef} />
         </div>
       )}
 
       {/* ── Chips de sugerencia ── */}
       {showChips && (
         <div className="flex flex-wrap gap-1.5">
-          {chips.map(chip => (
+          {activeChips.map(chip => (
             <button
               key={chip}
               onClick={() => enviar(chip)}
@@ -233,6 +338,24 @@ export default function AIChat({
         </div>
       )}
 
+      {/* ── Chip de alternativas ── */}
+      {showAlternativas && (
+        <button
+          onClick={() => enviar(`¿Qué productos similares o relacionados con "${lastUserMsg.texto}" tenés disponibles?`)}
+          className="self-start text-[11px] px-3 py-1.5 rounded-full transition-all hover:opacity-80 active:scale-95 flex items-center gap-1.5"
+          style={{
+            background: `color-mix(in srgb, ${accent} 10%, transparent)`,
+            color: accent,
+            border: `1px solid color-mix(in srgb, ${accent} 25%, transparent)`,
+          }}
+        >
+          <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h8m-8 6h16" />
+          </svg>
+          Ver productos similares
+        </button>
+      )}
+
       {/* ── Input bar ── */}
       <div className="flex gap-2">
         <input
@@ -245,9 +368,9 @@ export default function AIChat({
           maxLength={500}
           className="flex-1 px-3 py-2.5 rounded-xl text-sm outline-none disabled:opacity-50 transition-all"
           style={{
-            background: 'var(--hc-surface-2, rgba(0,0,0,0.04))',
-            border: '1px solid var(--hc-border)',
-            color: 'var(--hc-text)',
+            background: '#f1f3f5',
+            border: '1px solid #d0d0d0',
+            color: '#1a1a2e',
             caretColor: accent,
           }}
           onFocus={e => { e.target.style.borderColor = accent }}
