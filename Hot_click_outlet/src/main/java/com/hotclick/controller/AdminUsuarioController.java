@@ -9,6 +9,7 @@ import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,12 +26,14 @@ public class AdminUsuarioController {
     @Autowired private RolRepository     rolRepository;
 
     /** Lista todos los usuarios ordenados por ID desc. */
+    @Transactional(readOnly = true)
     @GetMapping
     public ResponseDTO listarTodos() {
         return ResponseDTO.success("Usuarios", usuarioRepository.findAllByOrderByIdDesc());
     }
 
     /** Lista solo los usuarios pendientes de aprobación. */
+    @Transactional(readOnly = true)
     @GetMapping("/pendientes")
     public ResponseDTO listarPendientes() {
         List<Usuario> pendientes = usuarioRepository.findByEstadoOrderByIdDesc(Constants.ESTADO_PENDIENTE);
