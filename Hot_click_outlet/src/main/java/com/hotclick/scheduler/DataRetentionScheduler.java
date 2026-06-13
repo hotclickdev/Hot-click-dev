@@ -59,15 +59,19 @@ public class DataRetentionScheduler {
     }
 
     private int limpiarAuditoriaSeguridad() {
-        LocalDateTime corte = LocalDateTime.now().minusDays(90);
-        // PostgreSQL no soporta LIMIT en DELETE — usar subconsulta con ctid para batching
-        int n = jdbc.update(
-            "DELETE FROM hot_click_auditoria_admin_tb " +
-            "WHERE ctid IN (SELECT ctid FROM hot_click_auditoria_admin_tb WHERE fecha < ? LIMIT 500)",
-            corte
-        );
-        if (n > 0) log.info("[retention] auditoria_admin: {} registros eliminados (> 90 días)", n);
-        return n;
+        try {
+            LocalDateTime corte = LocalDateTime.now().minusDays(90);
+            int n = jdbc.update(
+                "DELETE FROM hot_click_auditoria_admin_tb " +
+                "WHERE ctid IN (SELECT ctid FROM hot_click_auditoria_admin_tb WHERE fecha < ? LIMIT 500)",
+                corte
+            );
+            if (n > 0) log.info("[retention] auditoria_admin: {} registros eliminados (> 90 días)", n);
+            return n;
+        } catch (Exception e) {
+            log.warn("[retention] auditoria_admin: tabla no disponible, omitiendo — {}", e.getMessage());
+            return 0;
+        }
     }
 
     private int limpiarCarritosExpirados() {
