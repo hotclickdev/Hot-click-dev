@@ -861,15 +861,13 @@ export default function AdminProducts() {
                 required
               />
             </div>
-            {bodegas.length > 0 && (
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-[#e8e8ed]">Bodega *</label>
-                <select value={form.bodegaId} onChange={set('bodegaId')} className="h-11 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60" required>
-                  <option value="">Selecciona bodega</option>
-                  {bodegas.map((b) => <option key={b.id} value={b.id}>{b.nombreBodega ?? b.nombre}</option>)}
-                </select>
-              </div>
-            )}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-[#e8e8ed]">Bodega *</label>
+              <select value={form.bodegaId} onChange={set('bodegaId')} className="h-11 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60" required={bodegas.length > 0}>
+                <option value="">{bodegas.length === 0 ? '— Sin bodegas —' : 'Selecciona bodega'}</option>
+                {bodegas.map((b) => <option key={b.id} value={b.id}>{b.nombreBodega ?? b.nombre}</option>)}
+              </select>
+            </div>
           </div>
 
           {/* Marca */}
