@@ -929,7 +929,7 @@ export default function AdminNuevoProducto() {
               </div>
 
               {/* Condición, Categoría, Bodega */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
                 <div>
                   <Label>Condición</Label>
                   <select className={sel} value={form.condicion} onChange={set('condicion')}>
