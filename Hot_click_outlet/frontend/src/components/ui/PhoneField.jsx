@@ -141,6 +141,7 @@ export default function PhoneField({
   hint,
   error,
   defaultCountry = 'cr',
+  disabled = false,
 }) {
   return (
     <div className="space-y-1.5">
@@ -159,6 +160,7 @@ export default function PhoneField({
         countries={COUNTRIES}
         value={value}
         onChange={onChange}
+        disabled={disabled}
         FlagComponent={FlagEmoji}
         inputStyle={{
           backgroundColor: 'var(--hc-surface-2)',

@@ -60,8 +60,8 @@ public class CategoriaController {
             if (body.get("nombreCategoria") == null || body.get("nombreCategoria").isBlank())
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El nombre es obligatorio"));
 
-            var empresa = companyScope.getCurrentEmpresaId() != null
-                ? empresaRepository.findById(companyScope.getCurrentEmpresaId()).orElse(null) : null;
+            Long eid = companyScope.getCurrentEmpresaIdOrOwn();
+            var empresa = eid != null ? empresaRepository.findById(eid).orElse(null) : null;
             Categoria cat = new Categoria();
             cat.setNombreCategoria(sanitizer.cleanWithLimit(body.get("nombreCategoria"), 150));
             cat.setDescripcion(sanitizer.cleanWithLimit(body.getOrDefault("descripcion", ""), 500));
@@ -92,8 +92,8 @@ public class CategoriaController {
             @AuthenticationPrincipal UserDetails ud) {
         var admin = usuarioRepository.findByCorreo(ud.getUsername())
             .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
-        var empresa = companyScope.getCurrentEmpresaId() != null
-                ? empresaRepository.findById(companyScope.getCurrentEmpresaId()).orElse(null) : null;
+        Long eid2 = companyScope.getCurrentEmpresaIdOrOwn();
+        var empresa = eid2 != null ? empresaRepository.findById(eid2).orElse(null) : null;
         List<Categoria> batch = new ArrayList<>();
         for (Map<String, String> item : items) {
             String nombre = item.get("nombreCategoria");

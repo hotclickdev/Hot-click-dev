@@ -411,13 +411,13 @@ function SeccionPerfil({ userId, userEmail, userName, setUserName, toast }) {
                   required
                   style={{ flex: 1, minWidth: '200px', padding: '9px 14px', borderRadius: '10px', background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)', fontSize: '13px', fontFamily: F.body, outline: 'none' }}
                 />
-                <input
-                  type="tel"
-                  value={negocioTelefono}
-                  onChange={e => setNegocioTelefono(e.target.value)}
-                  placeholder="Teléfono (opcional)"
-                  style={{ flex: 1, minWidth: '150px', padding: '9px 14px', borderRadius: '10px', background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)', fontSize: '13px', fontFamily: F.body, outline: 'none' }}
-                />
+                <div style={{ flex: 1, minWidth: '150px' }}>
+                  <PhoneField
+                    value={negocioTelefono}
+                    onChange={setNegocioTelefono}
+                    hint="Opcional"
+                  />
+                </div>
               </div>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button

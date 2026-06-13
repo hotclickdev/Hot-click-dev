@@ -15,8 +15,11 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
 import java.text.NumberFormat;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 /**
@@ -106,17 +109,22 @@ public class CustomerMemoryService {
         try {
             return jdbc.queryForObject(
                 """
-                SELECT visitor_id, summary, interests, preferred_brands, estimated_budget
+                SELECT visitor_id, summary, interests, preferred_brands, estimated_budget, updated_at
                 FROM   customer_memory
                 WHERE  visitor_id = ?
                 """,
-                (rs, rowNum) -> new CustomerMemoryDto(
-                    rs.getString("visitor_id"),
-                    rs.getString("summary"),
-                    parseJsonArray(rs.getString("interests")),
-                    parseJsonArray(rs.getString("preferred_brands")),
-                    rs.getObject("estimated_budget", Long.class)
-                ),
+                (rs, rowNum) -> {
+                    Timestamp updatedAt = rs.getTimestamp("updated_at");
+                    boolean stale = updatedAt == null ||
+                        updatedAt.toInstant().isBefore(Instant.now().minus(30, ChronoUnit.DAYS));
+                    return new CustomerMemoryDto(
+                        rs.getString("visitor_id"),
+                        rs.getString("summary"),
+                        stale ? List.of() : parseJsonArray(rs.getString("interests")),
+                        stale ? List.of() : parseJsonArray(rs.getString("preferred_brands")),
+                        rs.getObject("estimated_budget", Long.class)
+                    );
+                },
                 visitorId
             );
         } catch (EmptyResultDataAccessException e) {

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import PhoneField from '@/components/ui/PhoneField'
 import { useBlocker } from 'react-router-dom'
 import api from '@/services/api'
 import useAuthStore from '@/store/authStore'
@@ -359,13 +360,10 @@ export default function AdminMiEmpresa() {
                 />
               </Field>
               <Field label="Teléfono del negocio">
-                <input
+                <PhoneField
                   value={form.telefonoEmpresa}
-                  onChange={e => setForm(s => ({ ...s, telefonoEmpresa: e.target.value }))}
+                  onChange={(val) => setForm(s => ({ ...s, telefonoEmpresa: val }))}
                   disabled={!canEdit}
-                  placeholder="2222-0000"
-                  className="w-full px-3 py-2.5 rounded-xl text-sm outline-none disabled:opacity-60"
-                  style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
                 />
               </Field>
               <Field label="WhatsApp" hint="Formato: 50688880000 (código país + número)">

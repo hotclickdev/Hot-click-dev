@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect } from 'react'
 import api from '@/services/api'
 import { useToast } from '@/components/ui/Toast'
+import PhoneField from '@/components/ui/PhoneField'
 
 const ESTADO_LABEL = { 1: 'Activo', 2: 'Inactivo', 3: 'Eliminado', 4: 'Suspendido', 5: 'Pendiente' }
 const ESTADO_COLOR = {
@@ -224,12 +225,10 @@ export default function AdminEquipo() {
                 </div>
               </Field>
               <Field label="Teléfono (opcional)">
-                <input
+                <PhoneField
                   value={form.telefono}
-                  onChange={e => setForm(s => ({ ...s, telefono: e.target.value }))}
-                  placeholder="8888-0000"
-                  className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-                  style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
+                  onChange={(val) => setForm(s => ({ ...s, telefono: val }))}
+                  hint="Opcional"
                 />
               </Field>
             </div>

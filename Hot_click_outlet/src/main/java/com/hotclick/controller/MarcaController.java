@@ -78,8 +78,8 @@ public class MarcaController {
 
             var admin = usuarioRepository.findByCorreo(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-            var empresa = companyScope.getCurrentEmpresaId() != null
-                ? empresaRepository.findById(companyScope.getCurrentEmpresaId()).orElse(null) : null;
+            Long _eid = companyScope.getCurrentEmpresaIdOrOwn();
+            var empresa = _eid != null ? empresaRepository.findById(_eid).orElse(null) : null;
             Long empresaId = empresa != null ? empresa.getId() : null;
 
             boolean duplicado = empresaId != null
@@ -137,8 +137,8 @@ public class MarcaController {
             @AuthenticationPrincipal UserDetails userDetails) {
         var admin = usuarioRepository.findByCorreo(userDetails.getUsername())
             .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
-        var empresa = companyScope.getCurrentEmpresaId() != null
-                ? empresaRepository.findById(companyScope.getCurrentEmpresaId()).orElse(null) : null;
+        Long _eid2 = companyScope.getCurrentEmpresaIdOrOwn();
+        var empresa = _eid2 != null ? empresaRepository.findById(_eid2).orElse(null) : null;
         Long empresaId = empresa != null ? empresa.getId() : null;
         int ok = 0; int duplicates = 0;
         for (Map<String, String> item : items) {

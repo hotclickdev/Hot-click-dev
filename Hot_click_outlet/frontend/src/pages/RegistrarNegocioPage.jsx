@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import BrandLogo from '@/components/ui/BrandLogo'
 import { motion } from 'framer-motion'
 import Input from '@/components/ui/Input'
+import PhoneField from '@/components/ui/PhoneField'
 import useAuthStore from '@/store/authStore'
 import { useToast } from '@/components/ui/Toast'
 import api, { registrarConsentimiento } from '@/services/api'
@@ -115,11 +116,10 @@ export default function RegistrarNegocioPage() {
                     value={form.nombreComercial}
                     onChange={set('nombreComercial')}
                   />
-                  <Input
+                  <PhoneField
                     label="Teléfono del negocio (opcional)"
-                    placeholder="+506 8888-8888"
                     value={form.telefonoEmpresa}
-                    onChange={set('telefonoEmpresa')}
+                    onChange={(val) => setForm(p => ({ ...p, telefonoEmpresa: val }))}
                   />
                   <Input
                     label="Correo del negocio"

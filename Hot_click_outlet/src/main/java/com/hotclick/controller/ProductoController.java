@@ -212,8 +212,8 @@ public class ProductoController {
                 dto.getEspecificaciones(), dto.getComoUsar(), dto.getTags());
             if (!textMod.safe())
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El contenido del producto no está permitido en la plataforma"));
-            Empresa empresa = companyScope.getCurrentEmpresaId() != null
-                ? empresaRepository.findById(companyScope.getCurrentEmpresaId()).orElse(null) : null;
+            Long eid = companyScope.getCurrentEmpresaIdOrOwn();
+            Empresa empresa = eid != null ? empresaRepository.findById(eid).orElse(null) : null;
             var producto = productoService.crearProducto(dto, currentUserName(), empresa);
             return ResponseEntity.ok(ResponseDTO.success("Producto creado", producto));
         } catch (Exception e) {
@@ -306,8 +306,8 @@ public class ProductoController {
     public ResponseEntity<ResponseDTO> importarBulk(@RequestBody List<ProductoRequestDTO> dtos) {
         if (dtos == null || dtos.size() > 200)
             return ResponseEntity.badRequest().body(ResponseDTO.error("El bulk acepta entre 1 y 200 productos por lote"));
-        Empresa empresa = companyScope.getCurrentEmpresaId() != null
-                ? empresaRepository.findById(companyScope.getCurrentEmpresaId()).orElse(null) : null;
+        Long eid2 = companyScope.getCurrentEmpresaIdOrOwn();
+        Empresa empresa = eid2 != null ? empresaRepository.findById(eid2).orElse(null) : null;
         String adminCorreo = currentUserName();
         int ok = 0; int errors = 0;
         StringBuilder errMsg = new StringBuilder();

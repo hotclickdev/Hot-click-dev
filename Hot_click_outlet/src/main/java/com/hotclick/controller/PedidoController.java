@@ -35,8 +35,8 @@ public class PedidoController {
     @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE') or hasAuthority('SCOPE_write:pedidos')")
     public ResponseEntity<ResponseDTO> crearPedidoManual(@Valid @RequestBody ManualPedidoDTO dto) {
         try {
-            com.hotclick.model.Empresa empresa = companyScope.getCurrentEmpresaId() != null
-                ? empresaRepository.findById(companyScope.getCurrentEmpresaId()).orElse(null) : null;
+            Long eid = companyScope.getCurrentEmpresaIdOrOwn();
+            com.hotclick.model.Empresa empresa = eid != null ? empresaRepository.findById(eid).orElse(null) : null;
             Pedido nuevo = pedidoService.crearPedidoManual(dto, empresa);
             return ResponseEntity.ok(ResponseDTO.success("Pedido creado", nuevo));
         } catch (Exception e) {

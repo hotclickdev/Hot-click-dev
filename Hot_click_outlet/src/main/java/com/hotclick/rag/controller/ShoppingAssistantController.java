@@ -4,6 +4,7 @@ import com.hotclick.model.Empresa;
 import com.hotclick.rag.classifier.AssistantMetricsService;
 import com.hotclick.rag.dto.ChatRequest;
 import com.hotclick.rag.dto.ChatResponse;
+import com.hotclick.rag.dto.FeedbackRequest;
 import com.hotclick.rag.dto.ProductoContexto;
 import com.hotclick.rag.service.ShoppingAssistantService;
 import com.hotclick.rag.service.VectorSearchService;
@@ -193,6 +194,14 @@ public class ShoppingAssistantController {
             vision.labelsFisicos.stream().limit(2).forEach(partes::add);
         }
         return String.join(" ", partes);
+    }
+
+    // Feedback de mensajes — publico, sin auth, best-effort
+    @PostMapping("/feedback")
+    public ResponseEntity<Void> feedback(@Valid @RequestBody FeedbackRequest request) {
+        assistantService.submitFeedback(
+            request.getSesionId(), request.getMsgIndex(), request.getRating());
+        return ResponseEntity.noContent().build();
     }
 
     /**

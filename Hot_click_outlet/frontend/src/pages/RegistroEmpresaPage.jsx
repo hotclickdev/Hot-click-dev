@@ -6,6 +6,7 @@ import { authService } from '@/services/authService'
 import { useToast } from '@/components/ui/Toast'
 import useAuthStore from '@/store/authStore'
 import Input from '@/components/ui/Input'
+import PhoneField from '@/components/ui/PhoneField'
 
 /* ─── Panel izquierdo ────────────────────────────────────────── */
 const PERKS = [
@@ -277,8 +278,8 @@ export default function RegistroEmpresaPage() {
                         value={form.nombreEmpresa} onChange={set('nombreEmpresa')} autoFocus required />
                       <Input label="Correo del negocio" type="email" placeholder="contacto@minegocio.com"
                         value={form.correoEmpresa} onChange={set('correoEmpresa')} hint="Opcional" />
-                      <Input label="Teléfono del negocio" type="tel" placeholder="+506 8888-8888"
-                        value={form.telefonoEmpresa} onChange={set('telefonoEmpresa')} />
+                      <PhoneField label="Teléfono del negocio"
+                        value={form.telefonoEmpresa} onChange={(val) => setForm(p => ({ ...p, telefonoEmpresa: val }))} />
                       {error && <ErrMsg>{error}</ErrMsg>}
                       <button type="submit" className="hc-btn hc-btn-primary hc-btn-lg w-full"
                         style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px rgba(231,59,51,0.3)' }}>
@@ -305,8 +306,8 @@ export default function RegistroEmpresaPage() {
                         value={form.correoAdmin} onChange={set('correoAdmin')} required />
                       <Input label="Contraseña *" type="password" placeholder="Mínimo 6 caracteres"
                         value={form.passwordAdmin} onChange={set('passwordAdmin')} required minLength={6} />
-                      <Input label="Teléfono personal" type="tel" placeholder="+506 8888-8888"
-                        value={form.telefonoAdmin} onChange={set('telefonoAdmin')} />
+                      <PhoneField label="Teléfono personal"
+                        value={form.telefonoAdmin} onChange={(val) => setForm(p => ({ ...p, telefonoAdmin: val }))} />
                       {error && <ErrMsg>{error}</ErrMsg>}
                       <div className="flex gap-2.5">
                         <button type="button" onClick={() => { setStep(0); setError('') }}

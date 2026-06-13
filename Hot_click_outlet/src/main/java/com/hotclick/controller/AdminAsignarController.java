@@ -138,9 +138,8 @@ public class AdminAsignarController {
             }).toList();
             dto.setItems(items);
 
-            com.hotclick.model.Empresa empresa = companyScope.getCurrentEmpresaId() != null
-                ? empresaRepository.findById(companyScope.getCurrentEmpresaId()).orElse(null)
-                : null;
+            Long eid = companyScope.getCurrentEmpresaIdOrOwn();
+            com.hotclick.model.Empresa empresa = eid != null ? empresaRepository.findById(eid).orElse(null) : null;
 
             com.hotclick.model.Pedido pedido = pedidoService.crearPedidoManual(dto, empresa);
             return ResponseEntity.ok(ResponseDTO.success("Compra registrada correctamente", pedido));

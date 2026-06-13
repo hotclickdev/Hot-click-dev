@@ -120,6 +120,17 @@ public class CompanyScope {
         return user != null ? user.getId() : null;
     }
 
+    /**
+     * Like getCurrentEmpresaId() but for ADMIN_IT falls back to their own fk_id_empresa.
+     * Use when creating resources that require a non-null fk_id_empresa.
+     */
+    public Long getCurrentEmpresaIdOrOwn() {
+        Long id = getCurrentEmpresaId();
+        if (id != null) return id;
+        Usuario user = getCurrentUser();
+        return user != null ? user.getEmpresaId() : null;
+    }
+
     private boolean isAdminIT(Usuario user) {
         return user.getRoles().stream()
             .anyMatch(r -> "ADMIN_IT".equals(r.getNombreRol()));

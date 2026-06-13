@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { compraService } from '@/services/compraService'
 import { useToast } from '@/components/ui/Toast'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import PhoneField from '@/components/ui/PhoneField'
 
 const EMPTY = { nombre: '', contacto: '', telefono: '', correo: '', notas: '' }
 
@@ -167,10 +168,12 @@ export default function AdminProveedores() {
 
             <Field label="Nombre *"   value={form.nombre}   onChange={set('nombre')}   placeholder="Ej: Distribuidora ABC" />
             <Field label="Contacto"   value={form.contacto} onChange={set('contacto')} placeholder="Nombre del contacto" />
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Teléfono" value={form.telefono} onChange={set('telefono')} placeholder="8888-8888" />
-              <Field label="Correo"   value={form.correo}   onChange={set('correo')}   type="email" placeholder="proveedor@mail.com" />
-            </div>
+            <PhoneField
+              label="Teléfono"
+              value={form.telefono}
+              onChange={set('telefono')}
+            />
+            <Field label="Correo" value={form.correo} onChange={set('correo')} type="email" placeholder="proveedor@mail.com" />
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--hc-muted)' }}>Notas</label>
               <textarea value={form.notas} onChange={e => set('notas')(e.target.value)} rows={2}

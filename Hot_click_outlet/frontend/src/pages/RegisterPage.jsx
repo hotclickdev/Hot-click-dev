@@ -221,8 +221,8 @@ function EmprendimientoForm({ onVolver }) {
                   value={form.nombreEmpresa} onChange={set('nombreEmpresa')} autoFocus required maxLength={150} />
                 <Input label="Correo del negocio" type="email" placeholder="contacto@minegocio.com"
                   value={form.correoEmpresa} onChange={set('correoEmpresa')} hint="Opcional" maxLength={150} />
-                <Input label="Teléfono del negocio" type="tel" placeholder="+506 8888-8888"
-                  value={form.telefonoEmpresa} onChange={set('telefonoEmpresa')} maxLength={20} />
+                <PhoneField label="Teléfono del negocio"
+                  value={form.telefonoEmpresa} onChange={(val) => setForm(p => ({ ...p, telefonoEmpresa: val }))} />
                 {error && <ErrMsg>{error}</ErrMsg>}
                 <button type="submit" className="hc-btn hc-btn-primary hc-btn-lg w-full"
                   style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px rgba(231,59,51,0.3)' }}>
@@ -243,7 +243,8 @@ function EmprendimientoForm({ onVolver }) {
                 <Input label="Tu nombre completo" placeholder="Ana García" value={form.nombreAdmin} onChange={set('nombreAdmin')} autoFocus maxLength={100} />
                 <Input label="Tu correo *" type="email" placeholder="ana@miempresa.com" value={form.correoAdmin} onChange={set('correoAdmin')} required maxLength={150} />
                 <Input label="Contraseña *" type="password" placeholder="Mínimo 8 caracteres" value={form.passwordAdmin} onChange={set('passwordAdmin')} required minLength={8} maxLength={128} />
-                <Input label="Teléfono personal" type="tel" placeholder="+506 8888-8888" value={form.telefonoAdmin} onChange={set('telefonoAdmin')} maxLength={20} />
+                <PhoneField label="Teléfono personal"
+                  value={form.telefonoAdmin} onChange={(val) => setForm(p => ({ ...p, telefonoAdmin: val }))} />
                 {error && <ErrMsg>{error}</ErrMsg>}
 
                 {/* Consentimiento informado — Ley 8968 */}
