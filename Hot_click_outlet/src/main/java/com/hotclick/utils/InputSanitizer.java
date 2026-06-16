@@ -4,6 +4,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import org.springframework.stereotype.Component;
 
+import java.text.Normalizer;
 import java.util.regex.Pattern;
 
 /**
@@ -61,5 +62,16 @@ public class InputSanitizer {
         if (value == null) return null;
         String cleaned = clean(value);
         return cleaned.length() > maxLength ? cleaned.substring(0, maxLength) : cleaned;
+    }
+
+    /**
+     * Normaliza un nombre geográfico para comparación: trim + mayúsculas + sin acentos.
+     * "San José " → "SAN JOSE", "  san josÉ  " → "SAN JOSE"
+     * Usar para provincia/canton antes de persistir o de pasar como parámetro a queries.
+     */
+    public String normalizeGeo(String value) {
+        if (value == null || value.isBlank()) return "";
+        String nfd = Normalizer.normalize(value.trim(), Normalizer.Form.NFD);
+        return nfd.replaceAll("\\p{InCombiningDiacriticalMarks}", "").toUpperCase();
     }
 }

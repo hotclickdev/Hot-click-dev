@@ -6,6 +6,7 @@ import com.hotclick.repository.BodegaRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.utils.Constants;
+import com.hotclick.utils.InputSanitizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,6 +25,8 @@ public class BodegaController {
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private CompanyScope      companyScope;
     @Autowired private com.hotclick.repository.EmpresaRepository empresaRepository;
+    @Autowired private com.hotclick.service.TenantService         tenantService;
+    @Autowired private InputSanitizer    sanitizer;
 
     @Transactional(readOnly = true)
     @GetMapping
@@ -55,6 +58,10 @@ public class BodegaController {
     public ResponseEntity<ResponseDTO> crear(
             @RequestBody Map<String, String> body,
             @AuthenticationPrincipal UserDetails ud) {
+        // Verificación de límite de plan — propaga PlanLimitException → GlobalExceptionHandler (HTTP 403)
+        Long eid = companyScope.getCurrentEmpresaIdOrOwn();
+        if (eid != null) tenantService.verificarLimiteBodegas(eid);
+
         try {
             if (body.get("nombreBodega") == null || body.get("nombreBodega").isBlank())
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El nombre es obligatorio"));
@@ -62,8 +69,6 @@ public class BodegaController {
                 return ResponseEntity.badRequest().body(ResponseDTO.error("La dirección es obligatoria"));
             if (body.get("telefono") == null || body.get("telefono").isBlank())
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El teléfono es obligatorio"));
-
-            Long eid = companyScope.getCurrentEmpresaIdOrOwn();
             var empresa = eid != null ? empresaRepository.findById(eid).orElse(null) : null;
             Bodega b = new Bodega();
             b.setNombreBodega(body.get("nombreBodega").trim());
@@ -71,6 +76,8 @@ public class BodegaController {
             b.setTelefono(body.get("telefono").trim());
             b.setCorreoContacto(body.getOrDefault("correoContacto", ""));
             b.setEncargadoNombre(body.getOrDefault("encargadoNombre", ""));
+            b.setProvincia(sanitizer.normalizeGeo(body.get("provincia")));
+            b.setCanton(sanitizer.normalizeGeo(body.get("canton")));
             b.setEstado(Constants.ESTADO_ACTIVO);
             b.setEmpresa(empresa);
             b.setAdminCliente(
@@ -90,6 +97,8 @@ public class BodegaController {
         var admin = usuarioRepository.findByCorreo(ud.getUsername())
             .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
         Long eid2 = companyScope.getCurrentEmpresaIdOrOwn();
+        // Verifica que el lote completo quepa dentro del plan antes de procesar (HTTP 403 si no)
+        if (eid2 != null) tenantService.verificarLimiteBodegasBulk(eid2, items.size());
         var empresa = eid2 != null ? empresaRepository.findById(eid2).orElse(null) : null;
         int ok = 0; int errors = 0;
         for (Map<String, String> item : items) {
@@ -106,6 +115,8 @@ public class BodegaController {
             b.setTelefono(tel.trim());
             b.setCorreoContacto(item.getOrDefault("correoContacto", ""));
             b.setEncargadoNombre(item.getOrDefault("encargadoNombre", ""));
+            b.setProvincia(sanitizer.normalizeGeo(item.get("provincia")));
+            b.setCanton(sanitizer.normalizeGeo(item.get("canton")));
             b.setEstado(Constants.ESTADO_ACTIVO);
             b.setEmpresa(empresa);
             b.setAdminCliente(admin);
@@ -134,6 +145,10 @@ public class BodegaController {
                 b.setCorreoContacto(body.get("correoContacto"));
             if (body.get("encargadoNombre") != null)
                 b.setEncargadoNombre(body.get("encargadoNombre"));
+            if (body.containsKey("provincia"))
+                b.setProvincia(sanitizer.normalizeGeo(body.get("provincia")));
+            if (body.containsKey("canton"))
+                b.setCanton(sanitizer.normalizeGeo(body.get("canton")));
             return ResponseEntity.ok(ResponseDTO.success("Bodega actualizada", bodegaRepository.save(b)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));

@@ -9,6 +9,7 @@ import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.service.NotificacionEmailService;
+import com.hotclick.service.TenantService;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +32,7 @@ public class EquipoController {
     @Autowired private CompanyScope             companyScope;
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
     @Autowired private NotificacionEmailService notificacionEmailService;
+    @Autowired private TenantService            tenantService;
 
     private static final int MAX_EMPRESAS_POR_USUARIO = 20;
     private static final java.util.Set<String> ROLES_PERMITIDOS = java.util.Set.of("EDITOR", "LECTOR", "ADMIN");
@@ -86,6 +88,11 @@ public class EquipoController {
 
         Empresa empresa    = currentUser.getEmpresa();
         String correoNorm  = correo.trim().toLowerCase();
+
+        Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
+        if (empresaId != null) {
+            tenantService.verificarLimiteUsuariosEquipo(empresaId);
+        }
 
         var rolAdminCliente = rolRepository.findByNombreRol(Constants.ROL_ADMIN_CLIENTE)
             .orElseThrow(() -> new RuntimeException("Rol ADMIN_CLIENTE no configurado"));

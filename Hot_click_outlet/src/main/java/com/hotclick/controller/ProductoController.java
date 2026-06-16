@@ -41,6 +41,7 @@ public class ProductoController {
     @Autowired private com.hotclick.service.StockService stockService;
     @Autowired private com.hotclick.service.ImageModerationService imageModerationService;
     @Autowired private com.hotclick.service.TextModerationService  textModerationService;
+    @Autowired private com.hotclick.service.TenantService          tenantService;
 
     private static final int MAX_PAGE_SIZE = 100;
 
@@ -51,7 +52,7 @@ public class ProductoController {
         Long empresaId = companyScope.getCurrentEmpresaId();
         var pageable  = PageRequest.of(Math.max(0, page), Math.min(size, MAX_PAGE_SIZE));
         // Si hay empresaId en el JWT (contexto admin de ese negocio) → mostrar sus propios productos
-        // Si es público (sin empresa) → usar catálogo filtrado (solo negocios aprobados y visibles)
+        // Si es público (sin empresa, incluye ADMIN_IT sin empresa) → catálogo filtrado (negocios aprobados y visibles)
         var productos = empresaId != null
             ? productoRepository.findByEmpresaIdAndEstado(empresaId, com.hotclick.utils.Constants.ESTADO_ACTIVO, pageable)
             : productoService.listarTodosActivos(pageable);
@@ -62,7 +63,7 @@ public class ProductoController {
     public ResponseEntity<ResponseDTO> listarTodosAdmin(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "100") int size) {
-        Long empresaId = companyScope.getCurrentEmpresaId();
+        Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
         var pageable = PageRequest.of(Math.max(0, page), Math.min(size, MAX_PAGE_SIZE));
         var productos = empresaId != null
             ? productoRepository.findByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO, pageable)
@@ -205,6 +206,10 @@ public class ProductoController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE') or hasAuthority('SCOPE_write:productos')")
     public ResponseEntity<ResponseDTO> crearProducto(@RequestBody ProductoRequestDTO dto) {
+        // Verificación de límite de plan — propaga PlanLimitException → GlobalExceptionHandler (HTTP 403)
+        Long eid = companyScope.getCurrentEmpresaIdOrOwn();
+        if (eid != null) tenantService.verificarLimiteProductos(eid);
+
         try {
             var textMod = textModerationService.moderar(
                 dto.getNombreProducto(), dto.getDescripcionCorta(),
@@ -212,7 +217,6 @@ public class ProductoController {
                 dto.getEspecificaciones(), dto.getComoUsar(), dto.getTags());
             if (!textMod.safe())
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El contenido del producto no está permitido en la plataforma"));
-            Long eid = companyScope.getCurrentEmpresaIdOrOwn();
             Empresa empresa = eid != null ? empresaRepository.findById(eid).orElse(null) : null;
             var producto = productoService.crearProducto(dto, currentUserName(), empresa);
             return ResponseEntity.ok(ResponseDTO.success("Producto creado", producto));
@@ -306,7 +310,9 @@ public class ProductoController {
     public ResponseEntity<ResponseDTO> importarBulk(@RequestBody List<ProductoRequestDTO> dtos) {
         if (dtos == null || dtos.size() > 200)
             return ResponseEntity.badRequest().body(ResponseDTO.error("El bulk acepta entre 1 y 200 productos por lote"));
+        // Verificación de límite antes de procesar el lote completo — propaga PlanLimitException (HTTP 403)
         Long eid2 = companyScope.getCurrentEmpresaIdOrOwn();
+        if (eid2 != null) tenantService.verificarLimiteProductosBulk(eid2, dtos.size());
         Empresa empresa = eid2 != null ? empresaRepository.findById(eid2).orElse(null) : null;
         String adminCorreo = currentUserName();
         int ok = 0; int errors = 0;

@@ -45,6 +45,12 @@ public class Bodega extends BaseEntity {
     @Column(name = "encargado_nombre", length = 100)
     private String encargadoNombre;
 
+    @Column(name = "provincia", length = 50)
+    private String provincia;
+
+    @Column(name = "canton", length = 100)
+    private String canton;
+
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_id_admin_cliente", nullable = false)
@@ -90,6 +96,12 @@ public class Bodega extends BaseEntity {
 
     public String getEncargadoNombre() { return encargadoNombre; }
     public void setEncargadoNombre(String encargadoNombre) { this.encargadoNombre = encargadoNombre; }
+
+    public String getProvincia() { return provincia; }
+    public void setProvincia(String provincia) { this.provincia = provincia; }
+
+    public String getCanton() { return canton; }
+    public void setCanton(String canton) { this.canton = canton; }
 
     public Usuario getAdminCliente() { return adminCliente; }
     public void setAdminCliente(Usuario adminCliente) { this.adminCliente = adminCliente; }
