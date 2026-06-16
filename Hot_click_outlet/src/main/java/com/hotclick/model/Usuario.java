@@ -1,6 +1,7 @@
 package com.hotclick.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -9,6 +10,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "hot_click_usuario_tb")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Usuario extends BaseEntity {
 
     @Id

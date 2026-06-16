@@ -23,14 +23,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * OWASP A07 / API2 — 2FA Security.
+ * OWASP A07 / API2 â€” 2FA Security.
  *
  * Cubre:
  *  - TOTP replay attack blocked
  *  - Forged tempToken cannot skip 2FA
  *  - Email OTP single-use enforcement
- *  - Email OTP brute force (5 attempts → invalidated)
- *  - Method injection (requesting EMAIL_OTP when not enabled → rejected)
+ *  - Email OTP brute force (5 attempts â†’ invalidated)
+ *  - Method injection (requesting EMAIL_OTP when not enabled â†’ rejected)
  *  - EmpresaSelectionToken cannot be used as 2FA tempToken
  *  - AES-256-GCM encryption service: encrypt/decrypt round-trip
  *  - Encrypted secrets verify correctly via TwoFactorService
@@ -38,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *  - Login returns method info when 2FA is enabled
  *  - 2FA status endpoint returns correct method breakdown
  */
-@DisplayName("[OWASP A07/API2] Two-Factor Authentication — security tests")
+@DisplayName("[OWASP A07/API2] Two-Factor Authentication â€” security tests")
 class TwoFactorSecurityTest extends BaseIntegrationTest {
 
     @Autowired private ObjectMapper                  mapper;
@@ -49,13 +49,13 @@ class TwoFactorSecurityTest extends BaseIntegrationTest {
 
     private static final String TEST_PLAIN_SECRET = "JBSWY3DPEHPK3PXP"; // fixed test secret
 
-    // ── Encryption service unit-level tests ─────────────────────────────────
+    // â”€â”€ Encryption service unit-level tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
-    @DisplayName("TotpSecretEncryptionService — encrypt/decrypt round-trip preserves plaintext")
+    @DisplayName("TotpSecretEncryptionService â€” encrypt/decrypt round-trip preserves plaintext")
     void encryption_roundTrip() {
         // Inject a 32-byte test key
-        TotpSecretEncryptionService svc = new TotpSecretEncryptionService();
+        TotpSecretEncryptionService svc = new TotpSecretEncryptionService(null);
         ReflectionTestUtils.setField(svc, "encryptionKeyHex",
             "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20");
 
@@ -68,34 +68,34 @@ class TwoFactorSecurityTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("TotpSecretEncryptionService — legacy plaintext secret returned unchanged")
+    @DisplayName("TotpSecretEncryptionService â€” legacy plaintext secret returned unchanged")
     void encryption_legacyPlaintext_returnedAsIs() {
-        TotpSecretEncryptionService svc = new TotpSecretEncryptionService();
+        TotpSecretEncryptionService svc = new TotpSecretEncryptionService(null);
         ReflectionTestUtils.setField(svc, "encryptionKeyHex",
             "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20");
 
-        // A plaintext Base32 secret (no ENC: prefix) → returned as-is
+        // A plaintext Base32 secret (no ENC: prefix) â†’ returned as-is
         String result = svc.decrypt(TEST_PLAIN_SECRET);
         assertThat(result).isEqualTo(TEST_PLAIN_SECRET);
     }
 
     @Test
-    @DisplayName("TotpSecretEncryptionService — two encryptions of same plaintext produce different ciphertexts (IV randomness)")
+    @DisplayName("TotpSecretEncryptionService â€” two encryptions of same plaintext produce different ciphertexts (IV randomness)")
     void encryption_ivRandomness() {
-        TotpSecretEncryptionService svc = new TotpSecretEncryptionService();
+        TotpSecretEncryptionService svc = new TotpSecretEncryptionService(null);
         ReflectionTestUtils.setField(svc, "encryptionKeyHex",
             "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20");
 
         String enc1 = svc.encrypt(TEST_PLAIN_SECRET);
         String enc2 = svc.encrypt(TEST_PLAIN_SECRET);
-        // Different IVs → different ciphertexts (IND-CPA)
+        // Different IVs â†’ different ciphertexts (IND-CPA)
         assertThat(enc1).isNotEqualTo(enc2);
     }
 
-    // ── JWT 2FA gate — JWT not issued before 2FA ──────────────────────────
+    // â”€â”€ JWT 2FA gate â€” JWT not issued before 2FA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
-    @DisplayName("Login with 2FA enabled → returns tempToken, NOT full JWT")
+    @DisplayName("Login with 2FA enabled â†’ returns tempToken, NOT full JWT")
     void login_with2FA_returnsTempTokenNotJwt() throws Exception {
         // Enable TOTP on testUser with a fake secret
         testUser.setTwoFactorEnabled(true);
@@ -120,7 +120,7 @@ class TwoFactorSecurityTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("Login with 2FA + EMAIL_OTP → response includes method='EMAIL_OTP'")
+    @DisplayName("Login with 2FA + EMAIL_OTP â†’ response includes method='EMAIL_OTP'")
     void login_with2FA_emailOtp_includesMethod() throws Exception {
         testUser.setTwoFactorEnabled(true);
         testUser.addMethod(Constants.METODO_2FA_EMAIL_OTP);
@@ -138,7 +138,7 @@ class TwoFactorSecurityTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("Login with TOTP + EMAIL_OTP → response includes methods array (picker)")
+    @DisplayName("Login with TOTP + EMAIL_OTP â†’ response includes methods array (picker)")
     void login_with2FA_bothMethods_includesMethodsArray() throws Exception {
         testUser.setTwoFactorEnabled(true);
         testUser.addMethod(Constants.METODO_2FA_TOTP);
@@ -158,10 +158,10 @@ class TwoFactorSecurityTest extends BaseIntegrationTest {
             .andExpect(jsonPath("$.methods.length()").value(2));
     }
 
-    // ── Forged tempToken cannot bypass 2FA ────────────────────────────────
+    // â”€â”€ Forged tempToken cannot bypass 2FA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
-    @DisplayName("Forged tempToken (normal JWT) → 401 at 2fa/verify")
+    @DisplayName("Forged tempToken (normal JWT) â†’ 401 at 2fa/verify")
     void forgedTempToken_normalJwt_returns401() throws Exception {
         // Normal JWT (not a temp token) cannot be used as a 2FA tempToken
         String normalJwt = jwtUtil.generateToken(testUser.getCorreo(), testUser.getId(), "USUARIO_FINAL");
@@ -176,7 +176,7 @@ class TwoFactorSecurityTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("EmpresaSelectionToken cannot be used as 2FA tempToken → 401")
+    @DisplayName("EmpresaSelectionToken cannot be used as 2FA tempToken â†’ 401")
     void empresaSelectionToken_cannot_bypass_2fa() throws Exception {
         String selToken = jwtUtil.generateEmpresaSelectionToken(testUser.getCorreo(), testUser.getId());
 
@@ -190,7 +190,7 @@ class TwoFactorSecurityTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("2fa/verify with garbage token → 401, not 500")
+    @DisplayName("2fa/verify with garbage token â†’ 401, not 500")
     void garbageToken_returns401NotServerError() throws Exception {
         mockMvc.perform(post("/api/auth/2fa/verify")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -201,10 +201,10 @@ class TwoFactorSecurityTest extends BaseIntegrationTest {
             .andExpect(status().isUnauthorized());
     }
 
-    // ── Method injection prevention ───────────────────────────────────────
+    // â”€â”€ Method injection prevention â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
-    @DisplayName("EMAIL_OTP verify with method injection → 400 when email OTP not enabled")
+    @DisplayName("EMAIL_OTP verify with method injection â†’ 400 when email OTP not enabled")
     void methodInjection_emailOtpNotEnabled_returns400() throws Exception {
         // User only has TOTP, but attacker requests EMAIL_OTP method
         testUser.setTwoFactorEnabled(true);
@@ -224,10 +224,10 @@ class TwoFactorSecurityTest extends BaseIntegrationTest {
             .andExpect(status().is4xxClientError());
     }
 
-    // ── TOTP replay protection ────────────────────────────────────────────
+    // â”€â”€ TOTP replay protection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
-    @DisplayName("TOTP verifyCodeWithReplayProtection — second call with same code within window → false")
+    @DisplayName("TOTP verifyCodeWithReplayProtection â€” second call with same code within window â†’ false")
     void totp_replayProtection_blocksSecondUse() {
         testUser.setTwoFactorEnabled(true);
         testUser.addMethod(Constants.METODO_2FA_TOTP);
@@ -239,24 +239,24 @@ class TwoFactorSecurityTest extends BaseIntegrationTest {
         // Using the EXACT same OTP that was last used
         boolean result = twoFactorService.verifyCodeWithReplayProtection(testUser, "123456");
         // Should be false (replay OR invalid code)
-        // If the code happens to be valid AND is a replay → false
-        // If the code is invalid → false
+        // If the code happens to be valid AND is a replay â†’ false
+        // If the code is invalid â†’ false
         // Either way it should not return true for a replayed code in window
         assertThat(result).isFalse();
     }
 
     @Test
-    @DisplayName("TOTP verifyCodeWithReplayProtection — same code AFTER replay window → re-evaluated normally")
+    @DisplayName("TOTP verifyCodeWithReplayProtection â€” same code AFTER replay window â†’ re-evaluated normally")
     void totp_replayProtection_allowsAfterWindow() {
         testUser.setTwoFactorEnabled(true);
         testUser.addMethod(Constants.METODO_2FA_TOTP);
         testUser.setTwoFactorSecret(TEST_PLAIN_SECRET);
         testUser.setTotpLastUsedOtp("999999");
-        // Last used 120s ago — outside the 90s replay window
+        // Last used 120s ago â€” outside the 90s replay window
         testUser.setTotpLastUsedAt(LocalDateTime.now().minusSeconds(120));
         testUser = usuarioRepository.saveAndFlush(testUser);
 
-        // Code "999999" should NOT be blocked even if it matches — replay window expired
+        // Code "999999" should NOT be blocked even if it matches â€” replay window expired
         // (The code will still be cryptographically verified; if invalid it returns false)
         // This just confirms the replay check itself doesn't block outside the window
         boolean wouldBeBlockedByReplay = "999999".equals(testUser.getTotpLastUsedOtp())
@@ -264,10 +264,10 @@ class TwoFactorSecurityTest extends BaseIntegrationTest {
         assertThat(wouldBeBlockedByReplay).isFalse();
     }
 
-    // ── Email OTP single-use ──────────────────────────────────────────────
+    // â”€â”€ Email OTP single-use â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
-    @DisplayName("Email OTP — second use of same OTP after marcarUsado → rejected")
+    @DisplayName("Email OTP â€” second use of same OTP after marcarUsado â†’ rejected")
     void emailOtp_singleUse_secondAttemptFails() throws Exception {
         // Seed the 2FA_LOGIN tipo_otp if needed
         TipoOtp tipo = tipoOtpRepository.findByNombre(Constants.OTP_TIPO_2FA_LOGIN)
@@ -292,7 +292,7 @@ class TwoFactorSecurityTest extends BaseIntegrationTest {
         otp.setEstado(1);
         codigoOtpRepository.save(otp);
 
-        // Trying to verify should fail — no active OTP exists
+        // Trying to verify should fail â€” no active OTP exists
         testUser.setTwoFactorEnabled(true);
         testUser.addMethod(Constants.METODO_2FA_EMAIL_OTP);
         usuarioRepository.saveAndFlush(testUser);
@@ -310,7 +310,7 @@ class TwoFactorSecurityTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("Email OTP — expired code → 401")
+    @DisplayName("Email OTP â€” expired code â†’ 401")
     void emailOtp_expired_returns401() throws Exception {
         TipoOtp tipo = tipoOtpRepository.findByNombre(Constants.OTP_TIPO_2FA_LOGIN)
             .orElseGet(() -> {
@@ -345,7 +345,7 @@ class TwoFactorSecurityTest extends BaseIntegrationTest {
             .andExpect(status().isUnauthorized());
     }
 
-    // ── 2FA status endpoint ───────────────────────────────────────────────
+    // â”€â”€ 2FA status endpoint â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     @DisplayName("GET /api/auth/2fa/status returns totpEnabled + emailOtpEnabled fields")
@@ -364,16 +364,16 @@ class TwoFactorSecurityTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("GET /api/auth/2fa/status without token → 401")
+    @DisplayName("GET /api/auth/2fa/status without token â†’ 401")
     void twoFAStatus_noToken_returns401() throws Exception {
         mockMvc.perform(get("/api/auth/2fa/status"))
             .andExpect(status().isUnauthorized());
     }
 
-    // ── 2fa/email/send — tempToken validation ─────────────────────────────
+    // â”€â”€ 2fa/email/send â€” tempToken validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
-    @DisplayName("POST /2fa/email/send with normal JWT → 401 (not a tempToken)")
+    @DisplayName("POST /2fa/email/send with normal JWT â†’ 401 (not a tempToken)")
     void emailSend_withNormalJwt_returns401() throws Exception {
         mockMvc.perform(post("/api/auth/2fa/email/send")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -384,7 +384,7 @@ class TwoFactorSecurityTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("POST /2fa/email/send — user without EMAIL_OTP enabled → 400")
+    @DisplayName("POST /2fa/email/send â€” user without EMAIL_OTP enabled â†’ 400")
     void emailSend_userWithoutEmailOtp_returns400() throws Exception {
         // User has NO 2FA methods
         String tempToken = jwtUtil.generateTempToken(testUser.getCorreo(), testUser.getId());
@@ -395,10 +395,10 @@ class TwoFactorSecurityTest extends BaseIntegrationTest {
             .andExpect(status().is4xxClientError());
     }
 
-    // ── Recovery code single-use via API ─────────────────────────────────
+    // â”€â”€ Recovery code single-use via API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
-    @DisplayName("Recovery code — invalid code → 401")
+    @DisplayName("Recovery code â€” invalid code â†’ 401")
     void recoveryCode_invalid_returns401() throws Exception {
         testUser.setTwoFactorEnabled(true);
         testUser.addMethod(Constants.METODO_2FA_TOTP);
@@ -420,10 +420,10 @@ class TwoFactorSecurityTest extends BaseIntegrationTest {
             .andExpect(status().isUnauthorized());
     }
 
-    // ── Email OTP management — authenticated endpoints ────────────────────
+    // â”€â”€ Email OTP management â€” authenticated endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
-    @DisplayName("POST /2fa/email/enable without auth → 401")
+    @DisplayName("POST /2fa/email/enable without auth â†’ 401")
     void emailEnable_noAuth_returns401() throws Exception {
         mockMvc.perform(post("/api/auth/2fa/email/enable")
                 .contentType(MediaType.APPLICATION_JSON))
@@ -431,7 +431,7 @@ class TwoFactorSecurityTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("POST /2fa/email/disable without auth → 401")
+    @DisplayName("POST /2fa/email/disable without auth â†’ 401")
     void emailDisable_noAuth_returns401() throws Exception {
         mockMvc.perform(post("/api/auth/2fa/email/disable")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -440,7 +440,7 @@ class TwoFactorSecurityTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("POST /2fa/email/activate without auth → 401")
+    @DisplayName("POST /2fa/email/activate without auth â†’ 401")
     void emailActivate_noAuth_returns401() throws Exception {
         mockMvc.perform(post("/api/auth/2fa/email/activate")
                 .contentType(MediaType.APPLICATION_JSON)

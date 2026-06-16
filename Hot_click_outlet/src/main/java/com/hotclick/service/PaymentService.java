@@ -7,10 +7,12 @@ import com.hotclick.model.*;
 import com.hotclick.payment.PaymentProviderFactory;
 import com.hotclick.payment.PaymentSession;
 import com.hotclick.repository.*;
+import com.hotclick.sse.StockCambioEvent;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -52,6 +54,7 @@ public class PaymentService {
     @Autowired private CuponService               cuponService;
     @Autowired private GiftCardService            giftCardService;
     @Autowired private WebhookDispatcherService   webhookDispatcher;
+    @Autowired private ApplicationEventPublisher  eventPublisher;
 
     // ================================================================
     // CHECKOUT — Valida stock (con lock), reserva, crea Pedido + sesión
@@ -80,6 +83,19 @@ public class PaymentService {
         Long bodegaId = req.getBodegaId() != null ? req.getBodegaId() : 1L;
         Bodega bodega = bodegaRepository.findById(bodegaId)
             .orElseThrow(() -> new RuntimeException("Bodega no encontrada: " + bodegaId));
+
+        // Tenant assertion: la bodega del checkout debe pertenecer al negocio activo
+        // (slug de la tienda pública). Evita que un pedido de la Empresa A se asiente
+        // contra el inventario/empresa de la Bodega de la Empresa B.
+        Long tenantId = com.hotclick.security.TenantContext.get();
+        if (tenantId != null) {
+            Long bodegaEmpresaId = bodega.getEmpresa() != null ? bodega.getEmpresa().getId() : null;
+            if (!tenantId.equals(bodegaEmpresaId)) {
+                log.warn("[checkout] Intento cross-tenant bloqueado: tenant={}, bodegaId={}, bodega.empresaId={}",
+                    tenantId, bodegaId, bodegaEmpresaId);
+                throw new SecurityException("La bodega seleccionada no pertenece a este negocio");
+            }
+        }
 
         // ── Validar y RESERVAR stock con bloqueo pesimista ──────────────
         // La reserva (stockReservado) impide que dos compradores simultáneos
@@ -119,7 +135,10 @@ public class PaymentService {
         String codigoCuponAplicado = null;
         String codigoCupon = req.getCodigoCupon();
         if (codigoCupon != null && !codigoCupon.isBlank()) {
-            var cuponOpt = cuponService.validarCodigo(codigoCupon);
+            Long empresaIdCupon = bodega.getEmpresa() != null ? bodega.getEmpresa().getId() : null;
+            var cuponOpt = empresaIdCupon != null
+                ? cuponService.validarCodigo(codigoCupon, empresaIdCupon)
+                : cuponService.validarCodigo(codigoCupon);
             if (cuponOpt.isPresent()) {
                 descuento = (int) Math.round(subtotal * cuponOpt.get().getDescuentoPorcentaje() / 100.0);
                 codigoCuponAplicado = cuponOpt.get().getCodigo();
@@ -294,13 +313,20 @@ public class PaymentService {
                 producto.setVisibleCatalogo(false);
             }
             productoRepository.save(producto);
+
+            eventPublisher.publishEvent(new StockCambioEvent(
+                this, producto.getId(), producto.getEmpresaId(), nuevoStock));
         }
 
         pedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
         pedidoRepository.save(pedido);
 
         if (pedido.getCuponCodigo() != null) {
-            cuponService.marcarUsado(pedido.getCuponCodigo());
+            if (pedido.getEmpresa() != null) {
+                cuponService.marcarUsado(pedido.getCuponCodigo(), pedido.getEmpresa().getId());
+            } else {
+                cuponService.marcarUsado(pedido.getCuponCodigo());
+            }
         }
         if (pedido.getGiftCardCodigo() != null && pedido.getGiftCardMonto() != null && pedido.getGiftCardMonto() > 0) {
             giftCardService.canjear(pedido.getGiftCardCodigo(), pedido, pedido.getGiftCardMonto());

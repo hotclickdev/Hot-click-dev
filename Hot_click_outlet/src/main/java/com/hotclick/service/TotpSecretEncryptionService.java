@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Cipher;
@@ -42,13 +43,17 @@ public class TotpSecretEncryptionService {
     @Value("${totp.encryption.key:}")
     private String encryptionKeyHex;
 
-    @Value("${spring.profiles.active:}")
-    private String activeProfiles;
+    private final Environment environment;
+
+    public TotpSecretEncryptionService(Environment environment) {
+        this.environment = environment;
+    }
 
     @PostConstruct
     void validate() {
-        if (!activeProfiles.contains("dev") && !activeProfiles.contains("test")
-                && (encryptionKeyHex == null || encryptionKeyHex.isBlank())) {
+        boolean isDevOrTest = Arrays.stream(environment.getActiveProfiles())
+                .anyMatch(p -> p.equals("dev") || p.equals("test"));
+        if (!isDevOrTest && (encryptionKeyHex == null || encryptionKeyHex.isBlank())) {
             throw new IllegalStateException(
                 "TOTP_ENCRYPTION_KEY debe configurarse en producción (totp.encryption.key)");
         }

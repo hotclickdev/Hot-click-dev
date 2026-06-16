@@ -7,6 +7,7 @@ import com.hotclick.repository.MiembroEmpresaRepository;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.security.CompanyScope;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -27,6 +28,7 @@ public class EmpresaController {
     @Autowired private ProductoRepository       productoRepository;
     @Autowired private PedidoRepository         pedidoRepository;
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
+    @Autowired private CompanyScope             companyScope;
 
     @GetMapping
     public ResponseDTO listar(@RequestParam(defaultValue = "0") int page,
@@ -36,8 +38,12 @@ public class EmpresaController {
         return ResponseDTO.success("Empresas", result);
     }
 
+    // companyScope.assertCanAccess(id) es no-op para ADMIN_IT (rol único permitido
+    // por SecurityConfig en esta ruta) y bloquea con 403 cualquier otro rol que
+    // llegara a tener acceso al endpoint por un cambio futuro de configuración.
     @GetMapping("/{id}")
     public ResponseEntity<ResponseDTO> detalle(@PathVariable Long id) {
+        companyScope.assertCanAccess(id);
         Optional<Empresa> opt = empresaRepository.findById(id);
         if (opt.isEmpty()) return ResponseEntity.status(404).body(ResponseDTO.error("Empresa no encontrada"));
         Empresa e = opt.get();

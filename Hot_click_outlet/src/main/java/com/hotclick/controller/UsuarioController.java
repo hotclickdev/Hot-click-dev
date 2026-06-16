@@ -1,8 +1,10 @@
 package com.hotclick.controller;
 
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.security.CompanyScope;
 import com.hotclick.service.UsuarioService;
 import com.hotclick.utils.InputSanitizer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +25,14 @@ public class UsuarioController {
     @Autowired private UsuarioService    usuarioService;
     @Autowired private PasswordEncoder   passwordEncoder;
     @Autowired private InputSanitizer    sanitizer;
+    @Autowired private CompanyScope      companyScope;
+
+    private void assertSelfOrAdmin(Long id) {
+        if (companyScope.isAdminIT()) return;
+        if (!id.equals(companyScope.getCurrentUserId())) {
+            throw new TenantAccessDeniedException("Acceso denegado: solo puedes acceder a tu propio perfil");
+        }
+    }
 
     @GetMapping
     public ResponseDTO listarUsuarios() {
@@ -32,6 +42,7 @@ public class UsuarioController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ResponseDTO> obtenerUsuario(@PathVariable Long id) {
+        assertSelfOrAdmin(id);
         Optional<Usuario> usuario = usuarioService.buscarPorId(id);
         if (usuario.isEmpty()) {
             return ResponseEntity.status(404).body(ResponseDTO.error("Usuario no encontrado"));
@@ -41,6 +52,7 @@ public class UsuarioController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ResponseDTO> actualizarUsuario(@PathVariable Long id, @RequestBody Map<String, String> datos) {
+        assertSelfOrAdmin(id);
         Optional<Usuario> opt = usuarioService.buscarPorId(id);
         if (opt.isEmpty()) {
             return ResponseEntity.status(404).body(ResponseDTO.error("Usuario no encontrado"));

@@ -1,19 +1,22 @@
-import { forwardRef } from 'react'
+import { forwardRef, useId } from 'react'
 
 const Input = forwardRef(({
   label,
   error,
   hint,
   icon,
+  id,
   className = '',
   containerClassName = '',
   type = 'text',
   ...props
 }, ref) => {
+  const generatedId = useId()
+  const inputId = id || generatedId
   return (
     <div className={`flex flex-col gap-1.5 ${containerClassName}`}>
       {label && (
-        <label className="hc-input-label">
+        <label htmlFor={inputId} className="hc-input-label">
           {label}
         </label>
       )}
@@ -25,6 +28,7 @@ const Input = forwardRef(({
         )}
         <input
           ref={ref}
+          id={inputId}
           type={type}
           className={`
             hc-input

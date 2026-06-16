@@ -16,6 +16,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
@@ -55,6 +56,7 @@ public class PedidoController {
         }
     }
 
+    @Transactional(readOnly = true)
     @GetMapping("/{id}")
     public ResponseEntity<ResponseDTO> obtenerPedido(@PathVariable Long id, HttpServletRequest request) {
         try {
@@ -215,12 +217,15 @@ public class PedidoController {
         return jwtUtil.extractUserId(auth.substring(7));
     }
 
+    /**
+     * Solo ADMIN_IT (staff de la plataforma) se salta el chequeo de companyScope.
+     * EMPRENDEDOR y ADMIN_CLIENTE son roles por-tenant — deben pasar por la
+     * validación de empresaId más abajo, o un tenant podría leer pedidos de otro.
+     */
     private boolean isAdmin() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null) return false;
         return auth.getAuthorities().stream()
-            .anyMatch(a -> a.getAuthority().equals("ROLE_" + Constants.ROL_ADMIN_IT) ||
-                           a.getAuthority().equals("ROLE_" + Constants.ROL_ADMIN_CLIENTE) ||
-                           a.getAuthority().equals("ROLE_" + Constants.ROL_EMPRENDEDOR));
+            .anyMatch(a -> a.getAuthority().equals("ROLE_" + Constants.ROL_ADMIN_IT));
     }
 }

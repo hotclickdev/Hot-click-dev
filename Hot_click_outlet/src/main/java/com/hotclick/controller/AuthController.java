@@ -191,11 +191,19 @@ public class AuthController {
         try {
             Usuario currentUser = usuarioFromRequest(request);
             Long empresaId = Long.parseLong(body.get("empresaId").toString());
-            if (!miembroEmpresaRepository.existsByUsuarioIdAndEmpresaIdAndEstado(currentUser.getId(), empresaId, 1))
+            // La membresía es la única fuente de verdad sobre pertenencia Y rol en
+            // ESE negocio — currentUser.getRoles() es el rol global de la cuenta y
+            // puede no coincidir con el rol que el usuario tiene en esta empresa.
+            MiembroEmpresa membresia = miembroEmpresaRepository
+                .findByUsuarioIdAndEmpresaIdAndEstado(currentUser.getId(), empresaId, 1)
+                .orElse(null);
+            if (membresia == null)
                 return ResponseEntity.status(403).body(ResponseDTO.error("No tenés acceso a ese negocio"));
             Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new RuntimeException("Negocio no encontrado"));
-            String rol = currentUser.getRoles().isEmpty() ? "USUARIO_FINAL" : currentUser.getRoles().get(0).getNombreRol();
+            String rol = membresia.getRolEnEmpresa() != null && !membresia.getRolEnEmpresa().isBlank()
+                ? membresia.getRolEnEmpresa()
+                : (currentUser.getRoles().isEmpty() ? "USUARIO_FINAL" : currentUser.getRoles().get(0).getNombreRol());
             String accessToken = jwtUtil.generateToken(currentUser.getCorreo(), currentUser.getId(), rol, empresaId, empresa.getSlug());
             RefreshToken rt = refreshTokenService.crear(currentUser);
             String nombre = currentUser.getNombre() != null ? currentUser.getNombre() : currentUser.getCorreo().split("@")[0];
@@ -255,12 +263,18 @@ public class AuthController {
             Long empresaId = Long.parseLong(empresaIdRaw.toString());
             Usuario usuario = usuarioService.buscarPorId(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-            if (!miembroEmpresaRepository.existsByUsuarioIdAndEmpresaIdAndEstado(userId, empresaId, 1))
+            MiembroEmpresa membresia = miembroEmpresaRepository
+                .findByUsuarioIdAndEmpresaIdAndEstado(userId, empresaId, 1)
+                .orElse(null);
+            if (membresia == null)
                 return ResponseEntity.status(403).body(ResponseDTO.error("No tenés acceso a ese negocio"));
             Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new RuntimeException("Negocio no encontrado"));
-            // Generar JWT apuntando a la empresa seleccionada
-            String rol         = usuario.getRoles().isEmpty() ? "USUARIO_FINAL" : usuario.getRoles().get(0).getNombreRol();
+            // Generar JWT apuntando a la empresa seleccionada, con el rol QUE TIENE
+            // en esa empresa (no el rol global de la cuenta)
+            String rol          = membresia.getRolEnEmpresa() != null && !membresia.getRolEnEmpresa().isBlank()
+                ? membresia.getRolEnEmpresa()
+                : (usuario.getRoles().isEmpty() ? "USUARIO_FINAL" : usuario.getRoles().get(0).getNombreRol());
             String accessToken = jwtUtil.generateToken(usuario.getCorreo(), userId, rol, empresaId, empresa.getSlug());
             RefreshToken rt    = refreshTokenService.crear(usuario);
             String nombre      = usuario.getNombre() != null ? usuario.getNombre() : usuario.getCorreo().split("@")[0];
