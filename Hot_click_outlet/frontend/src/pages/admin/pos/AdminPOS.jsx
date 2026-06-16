@@ -5,6 +5,8 @@ import POSProductSearch from '@/components/pos/POSProductSearch'
 import { posService } from '@/services/posService'
 import { useToast } from '@/components/ui/Toast'
 import useAuthStore from '@/store/authStore'
+import usePosStore from '@/store/posStore'
+import BodegaSelectorModal from '@/components/pos/BodegaSelectorModal'
 
 const fmt = n => new Intl.NumberFormat('es-CR').format(Math.round(n ?? 0))
 
@@ -102,7 +104,7 @@ function ConteoEfectivo({ label, onTotal }) {
 }
 
 /* ── Header ────────────────────────────────────────── */
-function POSHeader({ userName, turno, step }) {
+function POSHeader({ userName, turno, step, bodegaNombre, onCambiarBodega }) {
   const labels = { apertura: 'Paso 1 — Abrir turno', venta: 'Paso 2 — Pedido', cobro: 'Paso 3 — Cobrar', qr: 'Esperando pago', recibo: 'Venta lista' }
   return (
     <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 shrink-0 border-b border-white/5"
@@ -126,6 +128,16 @@ function POSHeader({ userName, turno, step }) {
           <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
           <span className="text-xs font-bold" style={{ color: '#34d399' }}>TURNO ACTIVO</span>
         </div>
+      )}
+
+      {bodegaNombre && (
+        <button onClick={onCambiarBodega}
+          title="Cambiar bodega de operación"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all hover:brightness-125"
+          style={{ backgroundColor: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)' }}>
+          <span className="text-xs" style={{ color: '#fbbf24' }}>🏭</span>
+          <span className="text-xs font-bold max-w-[120px] truncate" style={{ color: '#fbbf24' }}>{bodegaNombre}</span>
+        </button>
       )}
 
       <div className="flex-1" />
@@ -743,6 +755,7 @@ function StepRecibo({ venta, userName, onNueva }) {
 export default function AdminPOS() {
   const { showToast } = useToast()
   const userName = useAuthStore(s => s.userName)
+  const { bodegaId, bodegaNombre, setBodega, clearBodega } = usePosStore()
 
   const [step, setStep]   = useState('loading')
   const [turno, setTurno] = useState(null)
@@ -756,14 +769,27 @@ export default function AdminPOS() {
   const [loadingConfirm, setLoadingConfirm] = useState(false)
 
   useEffect(() => {
-    posService.getCajaActiva()
-      .then(res => {
-        const t = res?.data ?? null
+    const init = async () => {
+      // Plan Inicio Ferial (1 bodega) → auto-selección silenciosa sin mostrar modal
+      if (!bodegaId) {
+        try {
+          const res  = await posService.getBodegas()
+          const lista = (res?.data ?? []).filter(b => b.estado === 1)
+          if (lista.length === 1) setBodega(lista[0].id, lista[0].nombreBodega)
+          // Si lista.length > 1 → bodegaId sigue null → BodegaSelectorModal se muestra
+        } catch { /* no bloquea el inicio del POS */ }
+      }
+      try {
+        const res = await posService.getCajaActiva()
+        const t   = res?.data ?? null
         setTurno(t)
         setStep(t ? 'venta' : 'apertura')
-      })
-      .catch(() => setStep('apertura'))
-  }, [])
+      } catch {
+        setStep('apertura')
+      }
+    }
+    init()
+  }, []) // eslint-disable-line
 
   const agregarProducto = useCallback((producto) => {
     setCartItems(prev => {
@@ -825,6 +851,7 @@ export default function AdminPOS() {
       try {
         const res = await posService.crearQrSesion({
           metodoPago: payload.metodoPago,
+          bodegaId,
           items: cartItems.map(i => ({ productoId: i.id, cantidad: i.cantidad, precioUnitario: i.precio, nombre: i.nombre })),
         })
         const data = res.data ?? res
@@ -848,6 +875,7 @@ export default function AdminPOS() {
       const res = await posService.crearVenta({
         ...payload,
         descuentoGlobal: descuento,
+        bodegaId,
         items: cartItems.map(i => ({ productoId: i.id, cantidad: i.cantidad, precioUnitario: i.precio })),
       })
       setReceipt(res.data ?? res)
@@ -917,10 +945,16 @@ export default function AdminPOS() {
     )
   }
 
+  /* Plan Pro+: exige seleccionar bodega antes de operar */
+  if (!bodegaId) {
+    return <BodegaSelectorModal onSelect={setBodega} />
+  }
+
   return (
     <div className="flex flex-col h-screen overflow-hidden"
       style={{ backgroundColor: '#08080c', fontFamily: "'JetBrains Mono','Fira Code','Consolas',monospace" }}>
-      <POSHeader userName={userName} turno={turno} step={step} />
+      <POSHeader userName={userName} turno={turno} step={step}
+        bodegaNombre={bodegaNombre} onCambiarBodega={clearBodega} />
 
       {step === 'apertura' && <StepApertura onAbrir={handleAbrir} loading={saving} />}
 
