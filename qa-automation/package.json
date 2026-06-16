@@ -1,0 +1,13 @@
+{
+  "name": "hotclick-qa-automation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Script QA con Playwright para HOTCLICK: crawlea panel admin y flujo de compra pública, registra errores de consola/red/HTTP por pestaña visitada.",
+  "scripts": {
+    "test": "node qa-test.js",
+    "install-browsers": "playwright install chromium"
+  },
+  "dependencies": {
+    "playwright": "^1.49.0"
+  }
+}
