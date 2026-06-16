@@ -4,9 +4,11 @@ import com.hotclick.security.TenantAwareTaskDecorator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.concurrent.ConcurrentTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Ejecutor async con TenantAwareTaskDecorator para propagar el tenant
@@ -51,6 +53,24 @@ public class AsyncConfig {
         executor.setTaskDecorator(new TenantAwareTaskDecorator());
         executor.setRejectedExecutionHandler(new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy());
         executor.initialize();
+        return executor;
+    }
+
+    /**
+     * Executor para StockEventListener — un hilo virtual por evento de stock
+     * o conexión SSE despachada, en vez de un pool acotado de platform threads.
+     * Apto para esta carga porque cada tarea es de I/O corto (push a un emisor SSE)
+     * y el volumen puede picar con clientes conectados simultáneamente; los hilos
+     * virtuales no se bloquean reservando un platform thread mientras esperan I/O.
+     *
+     * ConcurrentTaskExecutor envuelve Executors.newVirtualThreadPerTaskExecutor()
+     * para que Spring pueda aplicar TenantAwareTaskDecorator — sin esto, el
+     * StockEventListener perdería el empresaId del TenantContext al saltar de thread.
+     */
+    @Bean(name = "stockEventExecutor")
+    public Executor stockEventExecutor() {
+        ConcurrentTaskExecutor executor = new ConcurrentTaskExecutor(Executors.newVirtualThreadPerTaskExecutor());
+        executor.setTaskDecorator(new TenantAwareTaskDecorator());
         return executor;
     }
 }

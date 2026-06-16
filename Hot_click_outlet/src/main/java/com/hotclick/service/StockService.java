@@ -5,10 +5,12 @@ import com.hotclick.model.MovimientoStock;
 import com.hotclick.model.Producto;
 import com.hotclick.repository.MovimientoStockRepository;
 import com.hotclick.repository.ProductoRepository;
+import com.hotclick.sse.StockCambioEvent;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +37,7 @@ public class StockService {
 
     @Autowired private ProductoRepository         productoRepository;
     @Autowired private MovimientoStockRepository  movimientoStockRepository;
+    @Autowired private ApplicationEventPublisher  eventPublisher;
 
     // ── Operaciones públicas ─────────────────────────────────────────────────────
 
@@ -135,6 +138,8 @@ public class StockService {
             resAntes, resDespues,
             referencia, operadorCorreo);
 
+        publicarCambioStock(producto, actDespues);
+
         log.info("Venta ({}) — producto id={} '{}': actual {} → {}, reservado {} → {}",
             tipo, producto.getId(), producto.getNombreProducto(),
             actAntes, actDespues, resAntes, resDespues);
@@ -161,6 +166,8 @@ public class StockService {
         m.setNotas(notas);
         movimientoStockRepository.save(m);
 
+        publicarCambioStock(producto, actDespues);
+
         log.info("Ajuste entrada — producto id={}: actual {} → {}", productoId, actAntes, actDespues);
     }
 
@@ -171,6 +178,15 @@ public class StockService {
     }
 
     // ── Helpers internos ─────────────────────────────────────────────────────────
+
+    /**
+     * Publica StockCambioEvent tras un cambio exitoso de stockActual.
+     * El listener lo despacha vía SSE solo después del COMMIT de la transacción actual.
+     */
+    private void publicarCambioStock(Producto producto, int stockActualDespues) {
+        eventPublisher.publishEvent(new StockCambioEvent(
+            this, producto.getId(), producto.getEmpresaId(), stockActualDespues));
+    }
 
     private void registrar(Producto producto, String tipo, int cantidad,
                             int actAntes, int actDespues,
