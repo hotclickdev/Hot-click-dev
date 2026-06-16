@@ -50,7 +50,7 @@ public class TextModerationService {
         "cumshot", "creampie", "bukake", "bukakke",
         "gangbang",
         "orgasmo", "orgasm",
-        "masturbacion", "masturbate", "masturbacion",
+        "masturbacion", "masturbate",
         "eyaculacion", "ejaculation",
         // -- Contenido visual explícito --
         "desnudo", "desnuda",

@@ -3,6 +3,7 @@ package com.hotclick.integration;
 import com.hotclick.model.Rol;
 import com.hotclick.model.Usuario;
 import com.hotclick.payment.PayPalPaymentProvider;
+import com.hotclick.repository.MiembroEmpresaRepository;
 import com.hotclick.repository.RefreshTokenRepository;
 import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
@@ -54,9 +55,10 @@ public abstract class BaseIntegrationTest {
     @Autowired protected JwtUtil        jwtUtil;
     @Autowired protected PasswordEncoder passwordEncoder;
 
-    @Autowired protected UsuarioRepository      usuarioRepository;
-    @Autowired protected RolRepository          rolRepository;
-    @Autowired protected RefreshTokenRepository refreshTokenRepository;
+    @Autowired protected UsuarioRepository        usuarioRepository;
+    @Autowired protected RolRepository            rolRepository;
+    @Autowired protected RefreshTokenRepository   refreshTokenRepository;
+    @Autowired protected MiembroEmpresaRepository miembroEmpresaRepository;
 
     // ── Datos de test expuestos a subclases ───────────────────────────────────
     protected Usuario testUser;
@@ -68,6 +70,7 @@ public abstract class BaseIntegrationTest {
     void baseSetUp() {
         // Limpiar estado previo (falla segura si ya no hay datos)
         refreshTokenRepository.deleteAll();
+        miembroEmpresaRepository.deleteAll();
         usuarioRepository.deleteAll();
 
         Rol rolUser  = obtenerOCrearRol(Constants.ROL_USUARIO_FINAL, 1);
@@ -85,6 +88,7 @@ public abstract class BaseIntegrationTest {
     @AfterEach
     void baseTearDown() {
         refreshTokenRepository.deleteAll();
+        miembroEmpresaRepository.deleteAll();
         usuarioRepository.deleteAll();
     }
 
