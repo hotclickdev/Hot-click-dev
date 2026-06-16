@@ -174,10 +174,8 @@ public class PedidoService {
 
     @Transactional(readOnly = true)
     public Pedido buscarPorId(Long id) {
-        Pedido p = pedidoRepository.findById(id)
+        return pedidoRepository.findByIdWithDetails(id)
             .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
-        p.getItems().size(); // force-initialize within session
-        return p;
     }
 
     @Transactional(readOnly = true)

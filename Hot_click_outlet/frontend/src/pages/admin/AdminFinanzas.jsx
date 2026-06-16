@@ -419,6 +419,10 @@ export default function AdminFinanzas() {
           <div>
             <h1 className="text-2xl font-bold text-[#e8e8ed]">Finanzas</h1>
             <p className="text-sm text-[#8e8e9a] mt-1">Ingresos, egresos y flujo de caja</p>
+            <Link to="/admin/finanzas/reporte-contador"
+              className="inline-block text-xs text-[#4f7cff] hover:underline mt-1">
+              Ver analítica financiera y reporte para el contador →
+            </Link>
           </div>
           {tab === 'ingresos' && (
             <ImportExportBar exportOnly
