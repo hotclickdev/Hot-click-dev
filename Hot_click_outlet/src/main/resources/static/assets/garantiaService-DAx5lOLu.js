@@ -1,1 +1,0 @@
-import{t as e}from"./api-8bRXDw6e.js";var t={misGarantias:()=>e.get(`/garantias/mis-garantias`),crearSolicitud:t=>e.post(`/garantias/solicitudes`,t),misSolicitudes:()=>e.get(`/garantias/solicitudes/mis-solicitudes`),listarTodas:()=>e.get(`/garantias/solicitudes`),cambiarEstado:(t,n,r)=>e.put(`/garantias/solicitudes/${t}/estado`,{estado:n,notasAdmin:r})};export{t};
