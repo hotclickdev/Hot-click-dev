@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -42,6 +43,7 @@ class PaymentServiceTest {
     @Mock private TransaccionPagoRepository transaccionPagoRepository;
     @Mock private NotificacionEmailService  notificacionEmailService;
     @Mock private PaymentProvider           mockProvider;
+    @Mock private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks private PaymentService service;
 

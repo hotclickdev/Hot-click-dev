@@ -34,11 +34,13 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     @Query("SELECT DISTINCT p FROM Pedido p LEFT JOIN FETCH p.items WHERE p.usuarioFinal.id = :usuarioId ORDER BY p.fechaPedido DESC")
     List<Pedido> findByUsuarioFinalIdWithItems(@Param("usuarioId") Long usuarioId);
 
-    /** Con items precargados — evita N+1 en listarPendientes por empresa. */
-    @Query("SELECT DISTINCT p FROM Pedido p LEFT JOIN FETCH p.items WHERE p.empresa.id = :empresaId AND p.estadoPedido = :estadoPedido AND p.estado = :estado")
+    /** Con items + usuarioFinal + bodega precargados — evita N+1 y LazyInitializationException al serializar en listarPendientes por empresa. */
+    @Query("SELECT DISTINCT p FROM Pedido p LEFT JOIN FETCH p.items LEFT JOIN FETCH p.usuarioFinal LEFT JOIN FETCH p.bodega WHERE p.empresa.id = :empresaId AND p.estadoPedido = :estadoPedido AND p.estado = :estado")
     List<Pedido> findByEmpresaIdAndEstadoPedidoWithItems(@Param("empresaId") Long empresaId, @Param("estadoPedido") String estadoPedido, @Param("estado") Integer estado);
 
-    List<Pedido> findByEstadoPedidoAndEstado(String estadoPedido, Integer estado);
+    /** Con items + usuarioFinal + bodega precargados — variante ADMIN_IT (todas las empresas) de findByEmpresaIdAndEstadoPedidoWithItems. */
+    @Query("SELECT DISTINCT p FROM Pedido p LEFT JOIN FETCH p.items LEFT JOIN FETCH p.usuarioFinal LEFT JOIN FETCH p.bodega WHERE p.estadoPedido = :estadoPedido AND p.estado = :estado")
+    List<Pedido> findByEstadoPedidoAndEstado(@Param("estadoPedido") String estadoPedido, @Param("estado") Integer estado);
 
     Long countByEstadoPedidoAndEstado(String estadoPedido, Integer estado);
 

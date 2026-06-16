@@ -145,6 +145,7 @@ public class PedidoService {
         pedido.getItems().size(); // force-initialize items within session
         // Inicializar proxy LAZY de usuarioFinal para que el @Async email no falle
         if (pedido.getUsuarioFinal() != null) { pedido.getUsuarioFinal().getCorreo(); }
+        if (pedido.getBodega() != null) { pedido.getBodega().getNombreBodega(); } // evita LazyInitializationException al serializar la respuesta
         if (nota != null && !nota.isBlank()) {
             notificacionEmailService.enviarSeguimientoEstado(pedido, nota);
         }
@@ -205,6 +206,7 @@ public class PedidoService {
         pedido = pedidoRepository.save(pedido);
         pedido.getItems().size();
         if (pedido.getUsuarioFinal() != null) { pedido.getUsuarioFinal().getCorreo(); }
+        if (pedido.getBodega() != null) { pedido.getBodega().getNombreBodega(); }
         notificacionEmailService.enviarNotificacionGuia(pedido);
         return pedido;
     }
@@ -221,6 +223,7 @@ public class PedidoService {
         pedido = pedidoRepository.save(pedido);
         pedido.getItems().size();
         if (pedido.getUsuarioFinal() != null) { pedido.getUsuarioFinal().getCorreo(); }
+        if (pedido.getBodega() != null) { pedido.getBodega().getNombreBodega(); }
         notificacionEmailService.enviarNotificacionGuia(pedido);
         return pedido;
     }
