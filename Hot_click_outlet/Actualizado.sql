@@ -2876,4 +2876,75 @@ CREATE TABLE IF NOT EXISTS hot_click_solicitud_especial_tb (
     fk_id_empresa   BIGINT REFERENCES hot_click_empresa_tb(id_empresa)
 );
 CREATE INDEX IF NOT EXISTS idx_solicitud_especial_estado ON hot_click_solicitud_especial_tb (estado);
+
+
+-- V77: Tenant isolation para Carrito y Cupon (fuga de datos entre empresas)
+ALTER TABLE hot_click_carrito_tb
+    ADD COLUMN IF NOT EXISTS fk_id_empresa BIGINT;
+
+UPDATE hot_click_carrito_tb c
+SET fk_id_empresa = u.fk_id_empresa
+FROM hot_click_usuario_tb u
+WHERE u.id_usuario = c.fk_id_usuario_final
+  AND c.fk_id_empresa IS NULL
+  AND u.fk_id_empresa IS NOT NULL;
+
+ALTER TABLE hot_click_carrito_tb
+    DROP CONSTRAINT IF EXISTS fk_carrito_empresa;
+
+ALTER TABLE hot_click_carrito_tb
+    ADD CONSTRAINT fk_carrito_empresa
+    FOREIGN KEY (fk_id_empresa) REFERENCES hot_click_empresa_tb(id_empresa)
+    ON DELETE CASCADE;
+
+CREATE INDEX IF NOT EXISTS idx_carrito_tenant
+    ON hot_click_carrito_tb(fk_id_empresa);
+
+ALTER TABLE hot_click_cupon_tb
+    ADD COLUMN IF NOT EXISTS fk_id_empresa BIGINT;
+
+ALTER TABLE hot_click_cupon_tb
+    DROP CONSTRAINT IF EXISTS hot_click_cupon_tb_codigo_key;
+
+ALTER TABLE hot_click_cupon_tb
+    DROP CONSTRAINT IF EXISTS fk_cupon_empresa;
+
+ALTER TABLE hot_click_cupon_tb
+    ADD CONSTRAINT fk_cupon_empresa
+    FOREIGN KEY (fk_id_empresa) REFERENCES hot_click_empresa_tb(id_empresa)
+    ON DELETE CASCADE;
+
+ALTER TABLE hot_click_cupon_tb
+    DROP CONSTRAINT IF EXISTS uq_cupon_codigo_empresa;
+
+ALTER TABLE hot_click_cupon_tb
+    ADD CONSTRAINT uq_cupon_codigo_empresa
+    UNIQUE NULLS NOT DISTINCT (codigo, fk_id_empresa);
+
+CREATE INDEX IF NOT EXISTS idx_cupon_tenant
+    ON hot_click_cupon_tb(fk_id_empresa);
 CREATE INDEX IF NOT EXISTS idx_solicitud_especial_empresa ON hot_click_solicitud_especial_tb (fk_id_empresa);
+
+-- ============================================================
+-- V78: Cola de contingencia para facturación electrónica Hacienda CR
+-- ============================================================
+CREATE TABLE IF NOT EXISTS hot_click_cola_facturacion_offline_tb (
+    id_cola_offline       BIGSERIAL     PRIMARY KEY,
+    fk_id_empresa         BIGINT        NOT NULL REFERENCES hot_click_empresa_tb(id_empresa),
+    fk_id_comprobante     BIGINT        NOT NULL UNIQUE REFERENCES hot_click_comprobante_fiscal_tb(id_comprobante),
+    estado                VARCHAR(20)   NOT NULL DEFAULT 'PENDIENTE',
+    intentos              INTEGER       NOT NULL DEFAULT 0,
+    max_intentos          INTEGER       NOT NULL DEFAULT 12,
+    ultimo_error          TEXT,
+    fecha_creacion        TIMESTAMP     NOT NULL DEFAULT NOW(),
+    fecha_proximo_intento TIMESTAMP     NOT NULL DEFAULT NOW(),
+    fecha_inicio_proceso  TIMESTAMP,
+    fecha_completado      TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_cola_offline_pendientes
+    ON hot_click_cola_facturacion_offline_tb (fecha_proximo_intento)
+    WHERE estado = 'PENDIENTE';
+
+CREATE INDEX IF NOT EXISTS idx_cola_offline_empresa
+    ON hot_click_cola_facturacion_offline_tb (fk_id_empresa);
