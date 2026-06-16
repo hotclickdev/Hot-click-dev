@@ -1,4 +1,4 @@
--- V71: 7 categorías padre + 14 subcategorías + 40 productos con imágenes
+-- V71: 8 marcas + 7 categorías padre + 14 subcategorías + 40 productos con imágenes
 
 -- ── 1. Categorías padre ──────────────────────────────────────────
 INSERT INTO hot_click_categoria_tb
@@ -92,18 +92,18 @@ BEGIN
         ('Jean Skinny Stretch Mujer',           'Denim elastizado, cintura alta, tallas 26-34',         13000, 27900, 25,  4, 'HC2-ROC-002', true,  true, 1, sub_ropa,  1, 1, 1, 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&q=80'),
         ('Camisa Lino Manga Larga Hombre',      'Regular fit, 8 colores, perfecta para verano',         10000, 21900, 20,  3, 'HC2-ROC-003', false, true, 1, sub_ropa,  1, 1, 1, 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=400&q=80'),
         ('Vestido Mini Estampado Floral',       'Tiras ajustables, espalda descubierta, S-XL',           9500, 19900, 22,  4, 'HC2-ROC-004', true,  true, 1, sub_ropa,  1, 1, 1, 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400&q=80'),
-        ('Set Loungewear Pantalón + Top',        'Tejido suave, elástico ajustable, varios tonos',       11000, 23900, 18,  3, 'HC2-ROC-005', false, true, 1, sub_ropa,  1, 1, 1, 'https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=400&q=80'),
+        ('Set Loungewear Pantalón + Top',        'Tejido suave, elástico ajustable, varios tonos',       11000, 23900, 18,  3, 'HC2-ROC-005', false, true, 1, sub_ropa,  1, 1, 1, 'https://images.unsplash.com/photo-1542327897-d73f4005b533?w=400&q=80'),
         -- ── Calzado y Bolsos (3) ────────────────────────────────────
         ('Zapatillas Chunky Retro Unisex',      'Suela 5cm, materiales mixtos, tallas 35-45',           24000, 49900, 15,  2, 'HC2-CAL-001', true,  true, 1, sub_calz,  1, 1, 1, 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80'),
         ('Bolso Tote Canvas Grande',            'Asas reforzadas, bolsillo interior con cierre',         7500, 15900, 30,  5, 'HC2-CAL-002', false, true, 1, sub_calz,  1, 1, 1, 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&q=80'),
         ('Sandalias Plataforma 6cm',            'Tiras ajustables, cómodas, 5 colores',                 12000, 24900, 20,  3, 'HC2-CAL-003', false, true, 1, sub_calz,  1, 1, 1, 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=400&q=80'),
         -- ── Sala y Comedor (3) ───────────────────────────────────────
-        ('Set Portavelas Geométrico x3',        'Metal dorado/negro, varios tamaños, centro mesa',       7000, 14900, 20,  3, 'HC2-SAL-001', false, true, 1, sub_sala,  1, 1, 1, 'https://images.unsplash.com/photo-1602178510900-fef4a8a5d1a8?w=400&q=80'),
+        ('Set Portavelas Geométrico x3',        'Metal dorado/negro, varios tamaños, centro mesa',       7000, 14900, 20,  3, 'HC2-SAL-001', false, true, 1, sub_sala,  1, 1, 1, 'https://images.unsplash.com/photo-1602910344008-22f323cc1817?w=400&q=80'),
         ('Bandeja Decorativa Madera Oval',      '35cm, manijas latón, multiusos sala o cocina',          8500, 17900, 15,  3, 'HC2-SAL-002', false, true, 1, sub_sala,  1, 1, 1, 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&q=80'),
         ('Manteles Individuales Algodón x4',    'Reversibles, varios patrones, 30x45cm',                6000, 12900, 25,  5, 'HC2-SAL-003', false, true, 1, sub_sala,  1, 1, 1, 'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=400&q=80'),
         -- ── Dormitorio (2) ───────────────────────────────────────────
         ('Almohada Ergonómica Cervical',        'Espuma viscoelástica, funda lavable, M/L',             14000, 28900, 15,  3, 'HC2-DOR-001', true,  true, 1, sub_dorm,  1, 1, 1, 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=400&q=80'),
-        ('Difusor Aromas Ultrasónico 300ml',    'LED 7 colores, timer, silencioso, 5h continuo',        12000, 24900, 20,  3, 'HC2-DOR-002', false, true, 1, sub_dorm,  1, 1, 1, 'https://images.unsplash.com/photo-1602178510900-fef4a8a5d1a8?w=400&q=80'),
+        ('Difusor Aromas Ultrasónico 300ml',    'LED 7 colores, timer, silencioso, 5h continuo',        12000, 24900, 20,  3, 'HC2-DOR-002', false, true, 1, sub_dorm,  1, 1, 1, 'https://images.unsplash.com/photo-1603006905003-be475563bc59?w=400&q=80'),
         -- ── Gym y Fitness (4) ────────────────────────────────────────
         ('Guantes Gym Antideslizantes',         'Acolchado en palma, ventilados, velcro, S-XL',         5000, 10900, 30,  5, 'HC2-GYM-001', false, true, 1, sub_gym,   1, 1, 1, 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&q=80'),
         ('Rueda Ab Roller Doble',               'Rodamientos silenciosos, rodillera incluida',           6500, 13900, 25,  4, 'HC2-GYM-002', false, true, 1, sub_gym,   1, 1, 1, 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400&q=80'),
@@ -120,7 +120,7 @@ BEGIN
         ('Mascarilla Capilar Keratina 300g',    'Reparación profunda, liso suave, 3 minutos',            5500, 11900, 25,  4, 'HC2-CAB-001', false, true, 1, sub_cab,   1, 1, 1, 'https://images.unsplash.com/photo-1522338242992-e1a54906a8da?w=400&q=80'),
         ('Exfoliante Corporal Café + Coco',     'Azúcar + aceite de coco, anticelulítico, 250g',         5000, 10900, 25,  4, 'HC2-CAB-002', false, true, 1, sub_cab,   1, 1, 1, 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=400&q=80'),
         -- ── Para Perros (2) ──────────────────────────────────────────
-        ('Snacks Premium Perro 200g',           'Sin gluten, colágeno dental, raza pequeña',             3500,  7900, 40,  8, 'HC2-PRO-001', false, true, 1, sub_perro, 1, 1, 1, 'https://images.unsplash.com/photo-1548767797-d8c844163c4a?w=400&q=80'),
+        ('Snacks Premium Perro 200g',           'Sin gluten, colágeno dental, raza pequeña',             3500,  7900, 40,  8, 'HC2-PRO-001', false, true, 1, sub_perro, 1, 1, 1, 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&q=80'),
         ('Correa Retráctil 5m hasta 25kg',      'Freno automático, mango ergonómico, reflectante',       8000, 16900, 20,  3, 'HC2-PRO-002', false, true, 1, sub_perro, 1, 1, 1, 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&q=80'),
         -- ── Para Gatos (1) ───────────────────────────────────────────
         ('Arena Gato Aglomerante 4kg',          'Control olor 7 días, polvo mínimo, clumping premium',   4500,  9900, 25,  5, 'HC2-GAT-001', false, true, 1, sub_gato,  1, 1, 1, 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=400&q=80'),

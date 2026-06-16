@@ -129,6 +129,11 @@ public class SecurityConfig {
                 // SINPE — invitados
                 .requestMatchers(POST, "/api/sinpe/guest-checkout").permitAll()
                 .requestMatchers(POST, "/api/sinpe/guest/*/comprobante").permitAll()
+                // Catálogo público por slug — tienda propia del emprendedor (sin JWT)
+                // Tienda pública por slug — API y SPA (sin JWT)
+                .requestMatchers(GET,  "/api/tienda/**").permitAll()
+                .requestMatchers(POST, "/api/tienda/*/pedidos").permitAll()
+                .requestMatchers("/tienda", "/tienda/**").permitAll()
                 // Catálogo público - solo GETs específicos
                 .requestMatchers(GET, "/api/productos/admin/todos").authenticated()
                 .requestMatchers(GET, "/api/productos/pos/**").authenticated()
@@ -137,6 +142,8 @@ public class SecurityConfig {
                 .requestMatchers(GET, "/api/productos/marca/*").permitAll()
                 .requestMatchers(GET, "/api/productos/*/recomendaciones").permitAll()
                 .requestMatchers(GET, "/api/productos/*").permitAll()
+                // Stock en tiempo real (SSE) — público; el tenant se infiere del producto, no del caller
+                .requestMatchers(GET, "/api/marketplace/productos/*/stock-stream").permitAll()
                 // Gestión de productos — roles de empresa + API keys con scope write:productos
                 .requestMatchers(POST,   "/api/productos").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
                 .requestMatchers(PUT,    "/api/productos/*").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
@@ -275,7 +282,7 @@ public class SecurityConfig {
                         "worker-src blob: 'self'; " +
                         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
                         "font-src 'self' https://fonts.gstatic.com; " +
-                        "img-src 'self' data: blob: " + supabaseUrl + " https://www.paypalobjects.com https://*.googleusercontent.com https://img.clerk.com https://avatars.githubusercontent.com https://cdnjs.cloudflare.com; " +
+                        "img-src 'self' data: blob: " + supabaseUrl + " https://images.unsplash.com https://www.paypalobjects.com https://*.googleusercontent.com https://img.clerk.com https://avatars.githubusercontent.com https://cdnjs.cloudflare.com; " +
                         "connect-src 'self' " + supabaseUrl + " https://*.clerk.accounts.dev https://clerk.hotclick.lat https://api.clerk.com https://clerk-telemetry.com https://api-m.paypal.com https://api-m.sandbox.paypal.com https://api.stripe.com https://hooks.stripe.com https://www.google-analytics.com https://region1.google-analytics.com; " +
                         "frame-src https://www.paypal.com https://www.sandbox.paypal.com https://js.stripe.com https://hooks.stripe.com https://www.youtube.com https://www.youtube-nocookie.com https://www.tiktok.com https://www.instagram.com; " +
                         "object-src 'none'; " +

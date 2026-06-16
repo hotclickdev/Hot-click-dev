@@ -3,7 +3,6 @@ package com.hotclick.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.service.GoogleVisionService.VisionResult;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -32,10 +31,15 @@ public class ExtraccionService {
         "(\\d{1,6}(?:[.,]\\d{1,2})?)\\s*(?:USD|US\\$)"
     );
 
+    private static final String USER_AGENT_DESKTOP =
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36";
+
     @Autowired
     private BccrService bccrService;
     @Autowired
     private GeminiService geminiService;
+    @Autowired
+    private ScrapingClient scrapingClient;
 
     /** Busca precios en ecommerce usando el nombre del producto (sin Vision API). */
     public ResultadoExtraccion extraerPorNombre(String nombreProducto) {
@@ -67,50 +71,30 @@ public class ExtraccionService {
     }
 
     private PrecioExtraido extraerPrecioDeResultados(String searchUrl, int tc) {
-        for (int intento = 1; intento <= 2; intento++) {
-            try {
-                Document doc = Jsoup.connect(searchUrl)
-                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36")
-                    .header("Accept-Language", "en-US,en;q=0.9")
-                    .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-                    .timeout(10000)
-                    .get();
+        Document doc = scrapingClient.fetchDocument(searchUrl, USER_AGENT_DESKTOP, Map.of(
+            "Accept-Language", "en-US,en;q=0.9",
+            "Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        ), 10000);
+        if (doc == null) return null;
 
-                // Selectores de precio en páginas de resultados de búsqueda
-                String[] selectores = {
-                    ".a-price .a-offscreen",   // Amazon
-                    ".s-item__price",           // eBay
-                    "[itemprop=price]",
-                    ".price-main",              // Walmart
-                    ".product-price",
-                    ".price",
-                    ".a-price-whole",
-                };
+        // Selectores de precio en páginas de resultados de búsqueda
+        String[] selectores = {
+            ".a-price .a-offscreen",   // Amazon
+            ".s-item__price",           // eBay
+            "[itemprop=price]",
+            ".price-main",              // Walmart
+            ".product-price",
+            ".price",
+            ".a-price-whole",
+        };
 
-                for (String sel : selectores) {
-                    Element el = doc.selectFirst(sel);
-                    if (el != null) {
-                        String texto = el.attr("content").isBlank() ? el.text() : el.attr("content");
-                        if (!texto.isBlank()) {
-                            Integer usd = parsearPrecio(texto);
-                            if (usd != null && usd > 0 && usd < 50000) {
-                                PrecioExtraido p = new PrecioExtraido();
-                                p.fuente = extraerNombreFuente(searchUrl);
-                                p.url = searchUrl;
-                                p.precioUsd = usd;
-                                p.precioCrc = usd * tc;
-                                return p;
-                            }
-                        }
-                    }
-                }
-
-                // Fallback: regex en texto completo
-                Matcher m = PRECIO_USD.matcher(doc.text());
-                if (m.find()) {
-                    String val = m.group(1) != null ? m.group(1) : m.group(2);
-                    Integer usd = parsearPrecio(val);
-                    if (usd != null && usd > 5 && usd < 50000) {
+        for (String sel : selectores) {
+            Element el = doc.selectFirst(sel);
+            if (el != null) {
+                String texto = el.attr("content").isBlank() ? el.text() : el.attr("content");
+                if (!texto.isBlank()) {
+                    Integer usd = parsearPrecio(texto);
+                    if (usd != null && usd > 0 && usd < 50000) {
                         PrecioExtraido p = new PrecioExtraido();
                         p.fuente = extraerNombreFuente(searchUrl);
                         p.url = searchUrl;
@@ -119,9 +103,21 @@ public class ExtraccionService {
                         return p;
                     }
                 }
-                break;
-            } catch (Exception e) {
-                log.debug("Intento {} fallido para búsqueda {}: {}", intento, searchUrl, e.getMessage());
+            }
+        }
+
+        // Fallback: regex en texto completo
+        Matcher m = PRECIO_USD.matcher(doc.text());
+        if (m.find()) {
+            String val = m.group(1) != null ? m.group(1) : m.group(2);
+            Integer usd = parsearPrecio(val);
+            if (usd != null && usd > 5 && usd < 50000) {
+                PrecioExtraido p = new PrecioExtraido();
+                p.fuente = extraerNombreFuente(searchUrl);
+                p.url = searchUrl;
+                p.precioUsd = usd;
+                p.precioCrc = usd * tc;
+                return p;
             }
         }
         return null;
@@ -167,57 +163,48 @@ public class ExtraccionService {
     }
 
     private PrecioExtraido extraerPrecioDeUrl(String url, int tc) {
-        for (int intento = 1; intento <= 3; intento++) {
-            try {
-                Document doc = Jsoup.connect(url)
-                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36")
-                    .header("Accept-Language", "es-CR,es;q=0.9,en;q=0.8")
-                    .timeout(8000)
-                    .get();
+        Document doc = scrapingClient.fetchDocument(url, USER_AGENT_DESKTOP, Map.of(
+            "Accept-Language", "es-CR,es;q=0.9,en;q=0.8"
+        ), 8000);
+        if (doc == null) return null;
 
-                // Buscar precio en meta tags og:price
-                String precioStr = null;
-                Element ogPrice = doc.selectFirst("meta[property=og:price:amount]");
-                if (ogPrice != null) precioStr = ogPrice.attr("content");
+        // Buscar precio en meta tags og:price
+        String precioStr = null;
+        Element ogPrice = doc.selectFirst("meta[property=og:price:amount]");
+        if (ogPrice != null) precioStr = ogPrice.attr("content");
 
-                // Buscar en selectores comunes de precio
-                if (precioStr == null) {
-                    String[] selectores = {
-                        "[itemprop=price]", ".a-price .a-offscreen", ".price", "#priceblock_ourprice",
-                        ".product-price", ".sale-price", "[data-price]", ".current-price"
-                    };
-                    for (String sel : selectores) {
-                        Element el = doc.selectFirst(sel);
-                        if (el != null) {
-                            precioStr = el.attr("content").isBlank() ? el.text() : el.attr("content");
-                            if (!precioStr.isBlank()) break;
-                        }
-                    }
+        // Buscar en selectores comunes de precio
+        if (precioStr == null) {
+            String[] selectores = {
+                "[itemprop=price]", ".a-price .a-offscreen", ".price", "#priceblock_ourprice",
+                ".product-price", ".sale-price", "[data-price]", ".current-price"
+            };
+            for (String sel : selectores) {
+                Element el = doc.selectFirst(sel);
+                if (el != null) {
+                    precioStr = el.attr("content").isBlank() ? el.text() : el.attr("content");
+                    if (!precioStr.isBlank()) break;
                 }
+            }
+        }
 
-                // Buscar en texto de la página con regex
-                if (precioStr == null) {
-                    Matcher m = PRECIO_USD.matcher(doc.text());
-                    if (m.find()) {
-                        precioStr = m.group(1) != null ? m.group(1) : m.group(2);
-                    }
-                }
+        // Buscar en texto de la página con regex
+        if (precioStr == null) {
+            Matcher m = PRECIO_USD.matcher(doc.text());
+            if (m.find()) {
+                precioStr = m.group(1) != null ? m.group(1) : m.group(2);
+            }
+        }
 
-                if (precioStr != null && !precioStr.isBlank()) {
-                    Integer usd = parsearPrecio(precioStr);
-                    if (usd != null && usd > 0 && usd < 50000) {
-                        PrecioExtraido p = new PrecioExtraido();
-                        p.fuente = extraerNombreFuente(url);
-                        p.url = url;
-                        p.precioUsd = usd;
-                        p.precioCrc = usd * tc;
-                        return p;
-                    }
-                }
-                break;
-            } catch (Exception e) {
-                log.debug("Intento {} fallido para {}: {}", intento, url, e.getMessage());
-                if (intento == 3) log.warn("No se pudo extraer precio de {}", url);
+        if (precioStr != null && !precioStr.isBlank()) {
+            Integer usd = parsearPrecio(precioStr);
+            if (usd != null && usd > 0 && usd < 50000) {
+                PrecioExtraido p = new PrecioExtraido();
+                p.fuente = extraerNombreFuente(url);
+                p.url = url;
+                p.precioUsd = usd;
+                p.precioCrc = usd * tc;
+                return p;
             }
         }
         return null;
@@ -475,23 +462,17 @@ public class ExtraccionService {
             "https://www.walmart.com/search?q=" + query,
         };
         for (String url : urls) {
-            try {
-                Document doc = Jsoup.connect(url)
-                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36")
-                    .header("Accept-Language", "en-US,en;q=0.9")
-                    .timeout(8000)
-                    .get();
-                Element meta = doc.selectFirst("meta[name=description], meta[property=og:description]");
-                if (meta != null) {
-                    String content = meta.attr("content").trim();
-                    if (content.length() > 30) return content;
-                }
-                for (String sel : new String[]{".item-description", ".product-description", ".short-description", "[data-testid=description]"}) {
-                    Element el = doc.selectFirst(sel);
-                    if (el != null && !el.text().isBlank()) return el.text().trim();
-                }
-            } catch (Exception e) {
-                log.debug("Descripción no encontrada en {}: {}", url, e.getMessage());
+            Document doc = scrapingClient.fetchDocument(url, USER_AGENT_DESKTOP,
+                Map.of("Accept-Language", "en-US,en;q=0.9"), 8000);
+            if (doc == null) continue;
+            Element meta = doc.selectFirst("meta[name=description], meta[property=og:description]");
+            if (meta != null) {
+                String content = meta.attr("content").trim();
+                if (content.length() > 30) return content;
+            }
+            for (String sel : new String[]{".item-description", ".product-description", ".short-description", "[data-testid=description]"}) {
+                Element el = doc.selectFirst(sel);
+                if (el != null && !el.text().isBlank()) return el.text().trim();
             }
         }
         return null;
@@ -499,18 +480,17 @@ public class ExtraccionService {
 
     /** Consulta DuckDuckGo Instant Answer API. Sin API key. Devuelve null si no hay resultado. */
     private String buscarEnDuckDuckGo(String query) {
+        String enc = URLEncoder.encode(query, StandardCharsets.UTF_8);
+        String json = scrapingClient.fetchBody(
+            "https://api.duckduckgo.com/?q=" + enc + "&format=json&no_html=1&skip_disambig=1",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", 8000);
+        if (json == null) return null;
         try {
-            String enc = URLEncoder.encode(query, StandardCharsets.UTF_8);
-            String json = Jsoup.connect("https://api.duckduckgo.com/?q=" + enc + "&format=json&no_html=1&skip_disambig=1")
-                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
-                .ignoreContentType(true)
-                .timeout(8000)
-                .execute().body();
             JsonNode root = JSON.readTree(json);
             String text = root.path("AbstractText").asText("").trim();
             if (text.length() > 50) return text;
         } catch (Exception e) {
-            log.debug("DuckDuckGo instant answer fallido para '{}': {}", query, e.getMessage());
+            log.debug("DuckDuckGo instant answer: respuesta no parseable para '{}': {}", query, e.getMessage());
         }
         return null;
     }
@@ -522,31 +502,25 @@ public class ExtraccionService {
             ? nombre
             : (etiquetas.isEmpty() ? "" : etiquetas.get(0));
         if (base.isBlank()) return urls;
-        try {
-            String enc = URLEncoder.encode(base + " product specifications review", StandardCharsets.UTF_8);
-            Document doc = Jsoup.connect("https://html.duckduckgo.com/html/?q=" + enc)
-                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36")
-                .referrer("https://duckduckgo.com")
-                .header("Accept-Language", "en-US,en;q=0.9")
-                .timeout(12000)
-                .get();
-            for (Element a : doc.select("a.result__a, h2.result__title a")) {
-                String href = a.attr("href");
-                // DDG encodes la URL real en el parámetro uddg=
-                if (href.contains("uddg=")) {
-                    try {
-                        int i = href.indexOf("uddg=") + 5;
-                        int end = href.indexOf("&", i);
-                        href = URLDecoder.decode(end > i ? href.substring(i, end) : href.substring(i), StandardCharsets.UTF_8);
-                    } catch (Exception ignored) {}
-                }
-                if (href.startsWith("http") && !href.contains("duckduckgo.com") && !esPaginaDeResultados(href)) {
-                    urls.add(href);
-                    if (urls.size() >= 4) break;
-                }
+        String enc = URLEncoder.encode(base + " product specifications review", StandardCharsets.UTF_8);
+        Document doc = scrapingClient.fetchDocument("https://html.duckduckgo.com/html/?q=" + enc, USER_AGENT_DESKTOP,
+            Map.of("Accept-Language", "en-US,en;q=0.9", "Referer", "https://duckduckgo.com"), 12000);
+        if (doc == null) return urls;
+
+        for (Element a : doc.select("a.result__a, h2.result__title a")) {
+            String href = a.attr("href");
+            // DDG encodes la URL real en el parámetro uddg=
+            if (href.contains("uddg=")) {
+                try {
+                    int i = href.indexOf("uddg=") + 5;
+                    int end = href.indexOf("&", i);
+                    href = URLDecoder.decode(end > i ? href.substring(i, end) : href.substring(i), StandardCharsets.UTF_8);
+                } catch (Exception ignored) {}
             }
-        } catch (Exception e) {
-            log.debug("Búsqueda DuckDuckGo web fallida para '{}': {}", base, e.getMessage());
+            if (href.startsWith("http") && !href.contains("duckduckgo.com") && !esPaginaDeResultados(href)) {
+                urls.add(href);
+                if (urls.size() >= 4) break;
+            }
         }
         return urls;
     }
@@ -613,35 +587,29 @@ public class ExtraccionService {
 
     private String buscarEspecificacionesPorNombre(String nombre) {
         String query = nombre.trim().replace(" ", "+");
-        try {
-            Document doc = Jsoup.connect("https://www.newegg.com/p/pl?d=" + query)
-                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36")
-                .timeout(8000)
-                .get();
-            // Buscar primer link de producto y scrapearlo
-            Element productLink = doc.selectFirst("a.item-title");
-            if (productLink != null) {
-                String productUrl = productLink.attr("abs:href");
-                if (!productUrl.isBlank()) {
-                    DetallesProducto d2 = extraerDetallesDeUrl(productUrl);
-                    if (d2 != null && d2.especificaciones != null) return d2.especificaciones;
-                }
+        Document doc = scrapingClient.fetchDocument("https://www.newegg.com/p/pl?d=" + query, USER_AGENT_DESKTOP,
+            Map.of(), 8000);
+        if (doc == null) return null;
+        // Buscar primer link de producto y scrapearlo
+        Element productLink = doc.selectFirst("a.item-title");
+        if (productLink != null) {
+            String productUrl = productLink.attr("abs:href");
+            if (!productUrl.isBlank()) {
+                DetallesProducto d2 = extraerDetallesDeUrl(productUrl);
+                if (d2 != null && d2.especificaciones != null) return d2.especificaciones;
             }
-        } catch (Exception e) {
-            log.debug("Specs no encontradas para {}: {}", nombre, e.getMessage());
         }
         return null;
     }
 
     private DetallesProducto extraerDetallesDeUrl(String url) {
-        try {
-            Document doc = Jsoup.connect(url)
-                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36")
-                .header("Accept-Language", "en-US,en;q=0.9")
-                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-                .timeout(10000)
-                .get();
+        Document doc = scrapingClient.fetchDocument(url, USER_AGENT_DESKTOP, Map.of(
+            "Accept-Language", "en-US,en;q=0.9",
+            "Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        ), 10000);
+        if (doc == null) return null;
 
+        try {
             DetallesProducto d = new DetallesProducto();
             d.fuenteDetalles = extraerNombreFuente(url);
 

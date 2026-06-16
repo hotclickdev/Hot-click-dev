@@ -63,12 +63,15 @@ public class Categoria extends BaseEntity {
     public void setCategoriaPadre(Categoria categoriaPadre) { this.categoriaPadre = categoriaPadre; }
 
     public Long getPadreId() { return categoriaPadre != null ? categoriaPadre.getId() : null; }
+
+    @JsonIgnore
     public String getPadreNombre() { return categoriaPadre != null ? categoriaPadre.getNombreCategoria() : null; }
 
     @JsonIgnore
     public Usuario getAdminCliente() { return adminCliente; }
     public void setAdminCliente(Usuario adminCliente) { this.adminCliente = adminCliente; }
 
+    @JsonIgnore
     public Empresa getEmpresa() { return empresa; }
     public void setEmpresa(Empresa empresa) { this.empresa = empresa; }
     public Long getEmpresaId() { return empresa != null ? empresa.getId() : null; }

@@ -2,6 +2,7 @@ package com.hotclick.service;
 
 import com.hotclick.model.AiUso;
 import com.hotclick.model.Empresa;
+import com.hotclick.model.Plan;
 import com.hotclick.repository.AiUsoRepository;
 import com.hotclick.repository.EmpresaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,33 +15,34 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Enforces monthly AI call limits per SaaS plan.
+ * Controla el consumo mensual de créditos de IA por empresa.
  *
- * Plan limits (calls/month):
- *   GRATUITO   → 0   (AI disabled)
- *   PRO        → 50
- *   ENTERPRISE → 500
- *   ADMIN_IT   → unlimited
+ * Límites leídos directamente de Plan.maxCreditosAi:
+ *   -1 = ilimitado   (Comercio Expansión / Personalizado / ADMIN_IT)
+ *    0 = sin acceso  (Inicio Ferial)
+ *   25 = 25/mes      (Emprendedor Pro)
+ *
+ * El flujo atómico correcto es:
+ *   1. verificarYReservar()  — decrementa el slot ANTES del call HTTP a Claude
+ *   2. actualizarTokens()    — actualiza tokens IN/OUT DESPUÉS del call
+ * No llamar registrarUso() si ya se usó verificarYReservar().
  */
 @Service
 public class AiQuotaService {
 
-    private static final Map<String, Integer> LIMITES = Map.of(
-        "GRATUITO",   0,
-        "PRO",        50,
-        "ENTERPRISE", 500
-    );
-
     @Autowired private AiUsoRepository   aiUsoRepository;
     @Autowired private EmpresaRepository empresaRepository;
 
-    /** Returns true if the empresa can make another AI call this month. */
+    // ── API pública ───────────────────────────────────────────────────────────
+
+    /** Retorna true si la empresa puede hacer al menos un call de IA este mes. */
+    @Transactional(readOnly = true)
     public boolean puedeUsarAi(Long empresaId) {
         Empresa empresa = empresaRepository.findById(empresaId).orElse(null);
         if (empresa == null) return false;
 
-        int limite = limiteParaPlan(empresa.getPlanSaas());
-        if (limite < 0) return true; // unlimited (ADMIN_IT sentinel)
+        int limite = resolverLimite(empresa);
+        if (limite < 0) return true;   // ilimitado
         if (limite == 0) return false;
 
         LocalDate hoy = LocalDate.now();
@@ -50,7 +52,28 @@ public class AiQuotaService {
         return llamadas < limite;
     }
 
-    /** Atomically increments usage counters. Safe under PgBouncer transaction mode (short TX). */
+    /**
+     * Check-and-reserve atómico: incrementa el contador de llamadas con
+     * WHERE llamadas < limite (UPSERT condicional).
+     * Llamar ANTES del request HTTP a Claude. Retorna true si el slot fue reservado.
+     * Elimina el race condition TOCTOU que tendría puedeUsarAi() + registrarUso().
+     */
+    @Transactional
+    public boolean verificarYReservar(Long empresaId) {
+        Empresa empresa = empresaRepository.findById(empresaId).orElse(null);
+        if (empresa == null) return false;
+
+        int limite = resolverLimite(empresa);
+        if (limite < 0) return true;   // ilimitado
+        if (limite == 0) return false;
+
+        LocalDate hoy = LocalDate.now();
+        List<Object[]> result = aiUsoRepository.reservarSlot(
+            empresaId, hoy.getYear(), hoy.getMonthValue(), limite);
+        return !result.isEmpty();
+    }
+
+    /** Incrementa contadores completos (llamadas + tokens). Usar cuando NO se usó verificarYReservar(). */
     @Transactional
     public void registrarUso(Long empresaId, int tokensEntrada, int tokensSalida) {
         LocalDate hoy = LocalDate.now();
@@ -58,17 +81,29 @@ public class AiQuotaService {
             1, tokensEntrada, tokensSalida);
     }
 
+    /** Actualiza solo tokens IN/OUT después del call a Claude. Llamadas ya fue incrementado por verificarYReservar(). */
+    @Transactional
+    public void actualizarTokens(Long empresaId, int tokensEntrada, int tokensSalida) {
+        LocalDate hoy = LocalDate.now();
+        aiUsoRepository.actualizarTokens(empresaId, hoy.getYear(), hoy.getMonthValue(),
+            tokensEntrada, tokensSalida);
+    }
+
+    /** Resumen del consumo del mes actual para el dashboard. */
+    @Transactional(readOnly = true)
     public Map<String, Object> getUsoMes(Long empresaId) {
         Empresa empresa = empresaRepository.findById(empresaId).orElse(null);
         LocalDate hoy = LocalDate.now();
         AiUso uso = aiUsoRepository.findByEmpresaIdAndAnioAndMes(
             empresaId, hoy.getYear(), hoy.getMonthValue()).orElse(null);
 
-        String plan    = empresa != null ? empresa.getPlanSaas() : "GRATUITO";
-        int limite     = limiteParaPlan(plan);
-        int llamadas   = (uso != null) ? uso.getLlamadas() : 0;
-        int teInput    = (uso != null) ? uso.getTokensEntrada() : 0;
-        int tsOutput   = (uso != null) ? uso.getTokensSalida() : 0;
+        int limite   = empresa != null ? resolverLimite(empresa) : 0;
+        String plan  = empresa != null && empresa.getPlan() != null
+                       ? empresa.getPlan().getNombre()
+                       : (empresa != null ? empresa.getPlanSaas() : "Sin plan");
+        int llamadas = (uso != null) ? uso.getLlamadas() : 0;
+        int teInput  = (uso != null) ? uso.getTokensEntrada() : 0;
+        int tsOutput = (uso != null) ? uso.getTokensSalida() : 0;
 
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("plan",          plan);
@@ -81,41 +116,27 @@ public class AiQuotaService {
         return m;
     }
 
-    /**
-     * Atomic check-and-reserve: llama reservarSlot() que hace el UPSERT con WHERE llamadas < limite.
-     * Llamar ANTES del HTTP call a Claude. Devuelve true si el slot fue reservado.
-     * Reemplaza el par puedeUsarAi() + registrarUso() eliminando el race condition TOCTOU.
-     */
-    @Transactional
-    public boolean verificarYReservar(Long empresaId) {
-        Empresa empresa = empresaRepository.findById(empresaId).orElse(null);
-        if (empresa == null) return false;
-
-        int limite = limiteParaPlan(empresa.getPlanSaas());
-        if (limite < 0) return true;  // unlimited (ADMIN_IT)
-        if (limite == 0) return false;
-
-        LocalDate hoy = LocalDate.now();
-        List<Object[]> result = aiUsoRepository.reservarSlot(
-            empresaId, hoy.getYear(), hoy.getMonthValue(), limite);
-        return !result.isEmpty();
-    }
+    // ── Resolución del límite ─────────────────────────────────────────────────
 
     /**
-     * Actualiza solo los contadores de tokens después del HTTP call a Claude.
-     * llamadas ya fue incrementado por verificarYReservar(). NO llamar registrarUso() después.
+     * Resuelve el límite de créditos de IA para la empresa.
+     * Prioridad:
+     *   1. planSaas == "ADMIN_IT"           → -1 (ilimitado, bypass total)
+     *   2. empresa.getPlan().maxCreditosAi  → valor del Plan entity
+     *   3. Fallback legacy por planSaas     → para empresas sin plan asignado
      */
-    @Transactional
-    public void actualizarTokens(Long empresaId, int tokensEntrada, int tokensSalida) {
-        LocalDate hoy = LocalDate.now();
-        aiUsoRepository.actualizarTokens(empresaId, hoy.getYear(), hoy.getMonthValue(),
-            tokensEntrada, tokensSalida);
-    }
+    private int resolverLimite(Empresa empresa) {
+        // ADMIN_IT siempre es ilimitado independientemente del plan
+        if ("ADMIN_IT".equals(empresa.getPlanSaas())) return -1;
 
-    private int limiteParaPlan(String plan) {
-        if (plan == null) return 0;
-        // ADMIN_IT is stored as "ADMIN_IT" in planSaas; treat as unlimited
-        if ("ADMIN_IT".equals(plan)) return -1;
-        return LIMITES.getOrDefault(plan.toUpperCase(), 0);
+        Plan plan = empresa.getPlan();
+        if (plan != null) return plan.getMaxCreditosAi();
+
+        // Fallback para empresas que aún no tienen plan FK asignado
+        return switch (empresa.getPlanSaas().toUpperCase()) {
+            case "ENTERPRISE" -> 500;
+            case "PRO"        -> 50;
+            default           -> 0;
+        };
     }
 }

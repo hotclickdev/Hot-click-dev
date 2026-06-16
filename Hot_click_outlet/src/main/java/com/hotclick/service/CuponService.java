@@ -1,7 +1,9 @@
 package com.hotclick.service;
 
 import com.hotclick.model.Cupon;
+import com.hotclick.model.Empresa;
 import com.hotclick.repository.CuponRepository;
+import com.hotclick.repository.EmpresaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,20 +19,35 @@ public class CuponService {
     private static final SecureRandom RNG = new SecureRandom();
 
     @Autowired private CuponRepository cuponRepository;
+    @Autowired private EmpresaRepository empresaRepository;
     @Autowired private NotificacionEmailService notificacionEmailService;
 
+    /** @deprecated cupón global sin empresa — usar {@link #solicitarCupon(String, Long)} en flujos multi-tenant. */
+    @Deprecated
     @Transactional
     public Cupon solicitarCupon(String email) {
+        return solicitarCupon(email, null);
+    }
+
+    @Transactional
+    public Cupon solicitarCupon(String email, Long empresaId) {
         String emailLower = email.trim().toLowerCase();
 
         if (cuponRepository.existsByEmail(emailLower)) {
             throw new IllegalStateException("Ya existe un cupón para este correo");
         }
 
-        String codigo = generarCodigo();
+        Empresa empresa = null;
+        if (empresaId != null) {
+            empresa = empresaRepository.findById(empresaId)
+                .orElseThrow(() -> new RuntimeException("Empresa no encontrada: " + empresaId));
+        }
+
+        String codigo = generarCodigo(empresaId);
         Cupon cupon = new Cupon();
         cupon.setCodigo(codigo);
         cupon.setEmail(emailLower);
+        cupon.setEmpresa(empresa);
         cupon.setDescuentoPorcentaje(13);
         cupon.setUsado(false);
         cupon.setFechaCreacion(LocalDateTime.now());
@@ -41,8 +58,16 @@ public class CuponService {
         return cupon;
     }
 
+    /** @deprecated no filtra por empresa — el mismo código ahora puede existir en distintos tenants. */
+    @Deprecated
     public Optional<Cupon> validarCodigo(String codigo) {
         return cuponRepository.findByCodigo(codigo.trim().toUpperCase())
+                .filter(c -> !Boolean.TRUE.equals(c.getUsado())
+                          && c.getUsosActuales() < c.getMaxUsos());
+    }
+
+    public Optional<Cupon> validarCodigo(String codigo, Long empresaId) {
+        return cuponRepository.findByCodigoAndEmpresaId(codigo.trim().toUpperCase(), empresaId)
                 .filter(c -> !Boolean.TRUE.equals(c.getUsado())
                           && c.getUsosActuales() < c.getMaxUsos());
     }
@@ -51,7 +76,10 @@ public class CuponService {
      * Registra un uso del cupón de forma atómica.
      * Retorna false si el cupón ya alcanzó su límite (bloqueado).
      * El UPDATE en BD previene que dos requests simultáneos pasen el límite.
+     *
+     * @deprecated no filtra por empresa — usar {@link #marcarUsado(String, Long)}.
      */
+    @Deprecated
     @Transactional
     public boolean marcarUsado(String codigo) {
         String codigoUpper = codigo.trim().toUpperCase();
@@ -64,7 +92,18 @@ public class CuponService {
         return true;
     }
 
-    private String generarCodigo() {
+    @Transactional
+    public boolean marcarUsado(String codigo, Long empresaId) {
+        String codigoUpper = codigo.trim().toUpperCase();
+        int actualizados = cuponRepository.incrementarUsoSiDisponiblePorEmpresa(codigoUpper, empresaId, LocalDateTime.now());
+        if (actualizados == 0) {
+            return false;
+        }
+        cuponRepository.bloquearSiAlcanzaLimitePorEmpresa(codigoUpper, empresaId);
+        return true;
+    }
+
+    private String generarCodigo(Long empresaId) {
         String codigo;
         int intentos = 0;
         do {
@@ -75,7 +114,11 @@ public class CuponService {
             codigo = sb.toString();
             intentos++;
             if (intentos > 20) throw new RuntimeException("No se pudo generar código único");
-        } while (cuponRepository.findByCodigo(codigo).isPresent());
+            boolean existe = empresaId != null
+                ? cuponRepository.findByCodigoAndEmpresaId(codigo, empresaId).isPresent()
+                : cuponRepository.findByCodigo(codigo).isPresent();
+            if (!existe) break;
+        } while (true);
         return codigo;
     }
 }

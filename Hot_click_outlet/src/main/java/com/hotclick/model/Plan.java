@@ -54,6 +54,10 @@ public class Plan {
     @Column(name = "activo", nullable = false)
     private Boolean activo = true;
 
+    /** Créditos de IA por mes. -1 = ilimitado, 0 = sin acceso a IA. */
+    @Column(name = "max_creditos_ai", nullable = false)
+    private Integer maxCreditosAi = 0;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -98,6 +102,9 @@ public class Plan {
 
     public Boolean getActivo() { return activo; }
     public void setActivo(Boolean activo) { this.activo = activo; }
+
+    public Integer getMaxCreditosAi() { return maxCreditosAi; }
+    public void setMaxCreditosAi(Integer maxCreditosAi) { this.maxCreditosAi = maxCreditosAi; }
 
     /** Conveniencia para verificar si un límite es ilimitado (-1) */
     public boolean estaEnLimite(int uso, int limite) {

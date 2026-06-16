@@ -54,6 +54,7 @@ const AdminCategories = lazy(() => import('@/pages/admin/AdminCategories'))
 const AdminWarehouses = lazy(() => import('@/pages/admin/AdminWarehouses'))
 const AdminNewSale = lazy(() => import('@/pages/admin/AdminNewSale'))
 const AdminFinanzas = lazy(() => import('@/pages/admin/AdminFinanzas'))
+const AdminReporteContador = lazy(() => import('@/pages/admin/AdminReporteContador'))
 const AdminReportes       = lazy(() => import('@/pages/admin/AdminReportes'))
 const AdminPublicaciones  = lazy(() => import('@/pages/admin/AdminPublicaciones'))
 const AdminNuevoProducto  = lazy(() => import('@/pages/admin/AdminNuevoProducto'))
@@ -112,6 +113,14 @@ const AdminMultipais            = lazy(() => import('@/pages/admin/AdminMultipai
 // const SelfCheckoutPage          = lazy(() => import('@/pages/SelfCheckoutPage'))  // futuro (QR mesas)
 const POSPagoPage               = lazy(() => import('@/pages/pos/POSPagoPage'))
 const RegistrarNegocioPage      = lazy(() => import('@/pages/RegistrarNegocioPage'))
+
+// ── Tienda pública por slug (/tienda/{slug}/...) ─────────────────────────────
+const TiendaLayout       = lazy(() => import('@/pages/tienda/TiendaLayout'))
+const TiendaHomePage     = lazy(() => import('@/pages/tienda/TiendaHomePage'))
+const TiendaProductoPage = lazy(() => import('@/pages/tienda/TiendaProductoPage'))
+const TiendaCarritoPage  = lazy(() => import('@/pages/tienda/TiendaCarritoPage'))
+const TiendaCheckoutPage = lazy(() => import('@/pages/tienda/TiendaCheckoutPage'))
+const TiendaSuccessPage  = lazy(() => import('@/pages/tienda/TiendaSuccessPage'))
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -395,6 +404,7 @@ export default function App() {
                 <Route path="/admin/bodegas" element={<AdminWarehouses />} />
                 <Route path="/admin/ventas" element={<AdminNewSale />} />
                 <Route path="/admin/finanzas" element={<AdminFinanzas />} />
+                <Route path="/admin/finanzas/reporte-contador" element={<AdminReporteContador />} />
                 <Route path="/admin/reportes" element={<AdminReportes />} />
                 <Route path="/admin/publicaciones" element={<AdminPublicaciones />} />
                 <Route path="/admin/nuevo-producto" element={<AdminNuevoProducto />} />
@@ -448,6 +458,14 @@ export default function App() {
               */}
               {/* POS QR pago — página pública para el cliente */}
               <Route path="/pos/pago/:token" element={<POSPagoPage />} />
+              {/* Tienda pública por slug — layout y rutas completamente independientes */}
+              <Route path="/tienda/:slug" element={<TiendaLayout />}>
+                <Route index element={<TiendaHomePage />} />
+                <Route path="producto/:productoId" element={<TiendaProductoPage />} />
+                <Route path="carrito"  element={<TiendaCarritoPage />} />
+                <Route path="checkout" element={<TiendaCheckoutPage />} />
+                <Route path="checkout/exito" element={<TiendaSuccessPage />} />
+              </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </PageFade>

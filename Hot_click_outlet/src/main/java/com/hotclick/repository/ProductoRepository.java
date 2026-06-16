@@ -169,6 +169,30 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @Query("SELECT p FROM Producto p WHERE p.empresa.id = :empresaId AND p.estado = :estado")
     Page<Producto> findByEmpresaIdAndEstado(@Param("empresaId") Long empresaId, @Param("estado") Integer estado, Pageable pageable);
 
+    /** Catálogo público de una tienda por slug: solo visibles en catálogo, con stock. */
+    @Query("SELECT p FROM Producto p WHERE p.empresa.id = :empresaId AND p.estado = 1 " +
+           "AND p.visibleCatalogo = true AND p.stockActual > 0 AND p.vendido = false ORDER BY p.id DESC")
+    Page<Producto> findCatalogoPublicoByEmpresa(@Param("empresaId") Long empresaId, Pageable pageable);
+
+    /** Búsqueda de texto en la tienda pública de un tenant. */
+    @Query("SELECT p FROM Producto p WHERE p.empresa.id = :empresaId AND p.estado = 1 " +
+           "AND p.visibleCatalogo = true AND p.stockActual > 0 AND p.vendido = false " +
+           "AND LOWER(p.nombreProducto) LIKE LOWER(CONCAT('%',:q,'%')) ORDER BY p.id DESC")
+    Page<Producto> findCatalogoPublicoByEmpresaAndNombre(
+            @Param("empresaId") Long empresaId, @Param("q") String q, Pageable pageable);
+
+    /** Catálogo de una tienda filtrado por categoría. */
+    @Query("SELECT p FROM Producto p WHERE p.empresa.id = :empresaId AND p.categoria.id = :catId " +
+           "AND p.estado = 1 AND p.visibleCatalogo = true AND p.stockActual > 0 AND p.vendido = false ORDER BY p.id DESC")
+    Page<Producto> findCatalogoPublicoByEmpresaAndCategoria(
+            @Param("empresaId") Long empresaId, @Param("catId") Long catId, Pageable pageable);
+
+    /** Producto individual en tienda pública — valida que sea visible y tenga stock. */
+    @Query("SELECT p FROM Producto p WHERE p.empresa.id = :empresaId AND p.id = :id " +
+           "AND p.estado = 1 AND p.visibleCatalogo = true")
+    java.util.Optional<Producto> findProductoPublicoByEmpresaAndId(
+            @Param("empresaId") Long empresaId, @Param("id") Long id);
+
     @Query("SELECT p FROM Producto p WHERE p.estado = 1 AND (p.stockActual IS NULL OR p.stockActual <= 0) AND p.empresa.id = :empresaId")
     List<Producto> findActivosSinStockByEmpresaId(@Param("empresaId") Long empresaId);
 

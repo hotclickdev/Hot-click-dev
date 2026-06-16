@@ -30,6 +30,10 @@ public class Carrito extends BaseEntity {
     @JoinColumn(name = "fk_id_usuario_final", nullable = false)
     private Usuario usuarioFinal;
 
+    @ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)
+    @JoinColumn(name = "fk_id_empresa", nullable = false)
+    private Empresa empresa;
+
     @OneToMany(mappedBy = "carrito", cascade = CascadeType.ALL)
     private List<CarritoItem> items = new ArrayList<>();
 
@@ -50,6 +54,9 @@ public class Carrito extends BaseEntity {
 
     public Usuario getUsuarioFinal() { return usuarioFinal; }
     public void setUsuarioFinal(Usuario usuarioFinal) { this.usuarioFinal = usuarioFinal; }
+
+    public Empresa getEmpresa() { return empresa; }
+    public void setEmpresa(Empresa empresa) { this.empresa = empresa; }
 
     public List<CarritoItem> getItems() { return items; }
     public void setItems(List<CarritoItem> items) { this.items = items; }

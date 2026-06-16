@@ -151,6 +151,14 @@ public class Empresa {
     @Column(name = "dominio_custom", length = 200)
     private String dominioCustom;
 
+    // ── Tienda pública por slug ───────────────────────────────────────────────
+
+    /** Bodega que recibe los pedidos del catálogo público (/tienda/{slug}).
+     *  Si es null, el StorefrontController usa la primera bodega activa de la empresa. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fk_id_bodega_venta_online")
+    private Bodega bodegaVentaOnline;
+
     // ── LATAM Expansion (F25) ─────────────────────────────────────────────────
 
     @Column(name = "moneda_facturacion", length = 3)
@@ -305,6 +313,9 @@ public class Empresa {
 
     public String getLocaleCodigo() { return localeCodigo != null ? localeCodigo : "es-CR"; }
     public void setLocaleCodigo(String v) { this.localeCodigo = v; }
+
+    public Bodega getBodegaVentaOnline() { return bodegaVentaOnline; }
+    public void setBodegaVentaOnline(Bodega bodegaVentaOnline) { this.bodegaVentaOnline = bodegaVentaOnline; }
 
     /** Días de trial restantes. -1 si no está en trial. */
     public long getTrialDiasRestantes() {

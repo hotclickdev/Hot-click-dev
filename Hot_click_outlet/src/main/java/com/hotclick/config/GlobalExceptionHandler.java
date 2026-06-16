@@ -1,9 +1,11 @@
 package com.hotclick.config;
 
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.exception.IntegracionExternaException;
 import com.hotclick.exception.PlanLimitException;
 import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.exception.TenantAccessDeniedException;
+import com.hotclick.exception.TenantNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +18,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
@@ -32,14 +36,43 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseDTO.error(ex.getMessage()));
     }
 
+    @ExceptionHandler(TenantNotFoundException.class)
+    public ResponseEntity<ResponseDTO> handleTenantNotFound(TenantNotFoundException ex) {
+        log.warn("Tenant not resolved: {}", ex.getMessage());
+        return ResponseEntity.badRequest().body(ResponseDTO.error(ex.getMessage()));
+    }
+
     @ExceptionHandler(StockInsuficienteException.class)
     public ResponseEntity<ResponseDTO> handleStock(StockInsuficienteException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseDTO.error(ex.getMessage()));
     }
 
     @ExceptionHandler(PlanLimitException.class)
-    public ResponseEntity<ResponseDTO> handlePlanLimit(PlanLimitException ex) {
-        return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(ResponseDTO.error(ex.getMessage()));
+    public ResponseEntity<Object> handlePlanLimit(PlanLimitException ex) {
+        log.warn("[plan-limit] entidad={} msg={}", ex.getEntidad(), ex.getMessage());
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error",   "LIMIT_REACHED");
+        body.put("message", ex.getMessage());
+        body.put("upgrade", ex.getUpgrade() != null
+                ? ex.getUpgrade()
+                : "Actualiza tu suscripción en Configuración → Plan.");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+    }
+
+    /** Integraciones externas (Claude API, Vision API, Gemini, scraping, BCCR). */
+    @ExceptionHandler(IntegracionExternaException.class)
+    public ResponseEntity<Object> handleIntegracionExterna(IntegracionExternaException ex) {
+        HttpStatus status = ex.getTipo() == IntegracionExternaException.Tipo.TIMEOUT
+                ? HttpStatus.GATEWAY_TIMEOUT
+                : HttpStatus.BAD_GATEWAY;
+        log.error("[integracion-externa] integracion={} tipo={} tenantId={} msg={}",
+                ex.getIntegracion(), ex.getTipo(), ex.getTenantId(), ex.getMessage(), ex);
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error",       "INTEGRACION_EXTERNA_FALLO");
+        body.put("integracion", ex.getIntegracion());
+        body.put("tipo",        ex.getTipo().name());
+        body.put("message",     "No se pudo completar la operación con un servicio externo. Intenta de nuevo en unos minutos.");
+        return ResponseEntity.status(status).body(body);
     }
 
     // ── Validación de entrada ─────────────────────────────────────────────────

@@ -12,6 +12,7 @@ import java.util.Optional;
 
 public interface CuponRepository extends JpaRepository<Cupon, Long> {
     Optional<Cupon> findByCodigo(String codigo);
+    Optional<Cupon> findByCodigoAndEmpresaId(String codigo, Long empresaId);
     boolean existsByEmail(String email);
     Page<Cupon> findAllByOrderByFechaCreacionDesc(Pageable pageable);
     Page<Cupon> findByUsadoOrderByFechaCreacionDesc(Boolean usado, Pageable pageable);
@@ -34,4 +35,16 @@ public interface CuponRepository extends JpaRepository<Cupon, Long> {
     @Modifying
     @Query("UPDATE Cupon c SET c.usado = true WHERE c.codigo = :codigo AND c.usosActuales >= c.maxUsos")
     void bloquearSiAlcanzaLimite(@Param("codigo") String codigo);
+
+    /** Variante tenant-aware: el código de cupón es único por empresa, no global. */
+    @Modifying
+    @Query("UPDATE Cupon c SET c.usosActuales = c.usosActuales + 1, c.fechaUso = :ahora " +
+           "WHERE c.codigo = :codigo AND c.empresa.id = :empresaId AND c.usosActuales < c.maxUsos")
+    int incrementarUsoSiDisponiblePorEmpresa(@Param("codigo") String codigo,
+                                              @Param("empresaId") Long empresaId,
+                                              @Param("ahora") LocalDateTime ahora);
+
+    @Modifying
+    @Query("UPDATE Cupon c SET c.usado = true WHERE c.codigo = :codigo AND c.empresa.id = :empresaId AND c.usosActuales >= c.maxUsos")
+    void bloquearSiAlcanzaLimitePorEmpresa(@Param("codigo") String codigo, @Param("empresaId") Long empresaId);
 }

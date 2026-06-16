@@ -1,11 +1,15 @@
 package com.hotclick.service;
 
+import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.model.Carrito;
 import com.hotclick.model.CarritoItem;
+import com.hotclick.model.Empresa;
 import com.hotclick.model.Producto;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.CarritoRepository;
+import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.ProductoRepository;
+import com.hotclick.security.TenantContext;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,17 +23,33 @@ public class CarritoService {
 
     @Autowired private CarritoRepository  carritoRepository;
     @Autowired private ProductoRepository productoRepository;
+    @Autowired private EmpresaRepository  empresaRepository;
     @Autowired private StockService       stockService;
 
+    /**
+     * El carrito está aislado por empresa: un mismo usuario que compra en dos
+     * negocios distintos (multi-tenant) no debe compartir carrito entre ambos.
+     */
+    @Transactional
     public Carrito obtenerCarritoActivo(Usuario usuario) {
-        return carritoRepository.findByUsuarioFinalIdAndEstadoCarrito(usuario.getId(), Constants.CARRITO_ACTIVO)
-            .orElseGet(() -> crearCarrito(usuario));
+        Long empresaId = TenantContext.get();
+        if (empresaId == null) {
+            throw new SecurityException("Contexto de empresa requerido para acceder al carrito");
+        }
+        return carritoRepository.findByUsuarioFinalIdAndEmpresaIdAndEstadoCarrito(
+                usuario.getId(), empresaId, Constants.CARRITO_ACTIVO)
+            .orElseGet(() -> crearCarrito(usuario, empresaId));
     }
 
     @Transactional
     public Carrito agregarItem(Long carritoId, Long productoId, Integer cantidad) {
-        Carrito carrito = carritoRepository.findById(carritoId)
-            .orElseThrow(() -> new RuntimeException("Carrito no encontrado"));
+        Long empresaId = TenantContext.get();
+        if (empresaId == null) {
+            throw new SecurityException("Contexto de empresa requerido para modificar el carrito");
+        }
+        Carrito carrito = carritoRepository.findByIdAndEmpresaId(carritoId, empresaId)
+            .orElseThrow(() -> new TenantAccessDeniedException(
+                "Acceso denegado: el carrito no pertenece a este comercio"));
 
         // SELECT FOR UPDATE: evita doble-reserva concurrente del mismo producto
         Producto producto = productoRepository.findByIdForUpdate(productoId)
@@ -65,8 +85,13 @@ public class CarritoService {
 
     @Transactional
     public void vaciarCarrito(Long carritoId) {
-        Carrito carrito = carritoRepository.findById(carritoId)
-            .orElseThrow(() -> new RuntimeException("Carrito no encontrado"));
+        Long empresaId = TenantContext.get();
+        if (empresaId == null) {
+            throw new SecurityException("Contexto de empresa requerido para modificar el carrito");
+        }
+        Carrito carrito = carritoRepository.findByIdAndEmpresaId(carritoId, empresaId)
+            .orElseThrow(() -> new TenantAccessDeniedException(
+                "Acceso denegado: el carrito no pertenece a este comercio"));
 
         // Liberar todas las reservas antes de borrar los ítems
         liberarReservasDeItems(carrito.getItems(), carritoId);
@@ -79,10 +104,12 @@ public class CarritoService {
 
     // ── Helpers ──────────────────────────────────────────────────────────────────
 
-    @Transactional
-    private Carrito crearCarrito(Usuario usuario) {
+    private Carrito crearCarrito(Usuario usuario, Long empresaId) {
+        Empresa empresa = empresaRepository.findById(empresaId)
+            .orElseThrow(() -> new RuntimeException("Empresa no encontrada: " + empresaId));
         Carrito carrito = new Carrito();
         carrito.setUsuarioFinal(usuario);
+        carrito.setEmpresa(empresa);
         carrito.setEstadoCarrito(Constants.CARRITO_ACTIVO);
         carrito.setFechaCreacion(LocalDateTime.now());
         carrito.setFechaActualizacion(LocalDateTime.now());
