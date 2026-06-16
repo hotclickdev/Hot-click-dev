@@ -1,6 +1,7 @@
 package com.hotclick.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import jakarta.persistence.*;
@@ -119,6 +120,9 @@ public class Pedido extends BaseEntity {
     @JoinColumn(name = "fk_id_empresa")
     private Empresa empresa;
 
+    // roles ignorado: usuarioFinal se carga via JOIN FETCH (entidad real, no proxy)
+    // pero su colección roles sigue lazy y la sesión ya cerró al serializar.
+    @JsonIgnoreProperties({"roles"})
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_id_usuario_final", nullable = false)
     private Usuario usuarioFinal;

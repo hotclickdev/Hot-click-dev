@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
  *   - shedlock (locks viejos):                   7 días
  *   - hot_click_chat_sesion_tb:                  30 días (inactividad por ultimo_mensaje_en)
  *     └─ hot_click_chat_mensaje_shopping_tb:     cascada automática vía ON DELETE CASCADE
+ *   - hot_click_cola_facturacion_offline_tb:     30 días (estado COMPLETADO o AGOTADO)
  *
  * Corre a las 2:30 AM con ShedLock — solo un pod lo ejecuta en multi-pod.
  * Borra en lotes pequeños (LIMIT 500) para no generar un lock masivo en la tabla.
@@ -51,6 +52,7 @@ public class DataRetentionScheduler {
         total += limpiarRateLimitExpirados();
         total += limpiarShedlockViejos();
         total += limpiarSesionesChatAsistente();
+        total += limpiarColaFacturacionOffline();
 
         long ms = System.currentTimeMillis() - inicio;
         if (total > 0) {
@@ -125,6 +127,18 @@ public class DataRetentionScheduler {
     private int limpiarShedlockViejos() {
         LocalDateTime corte = LocalDateTime.now().minusDays(7);
         int n = jdbc.update("DELETE FROM shedlock WHERE lock_until < ?", corte);
+        return n;
+    }
+
+    private int limpiarColaFacturacionOffline() {
+        LocalDateTime corte = LocalDateTime.now().minusDays(30);
+        int n = jdbc.update(
+            "DELETE FROM hot_click_cola_facturacion_offline_tb WHERE ctid IN (" +
+            "  SELECT ctid FROM hot_click_cola_facturacion_offline_tb " +
+            "  WHERE estado IN ('COMPLETADO', 'AGOTADO') AND fecha_creacion < ? LIMIT 500" +
+            ")",
+            corte);
+        if (n > 0) log.info("[retention] cola_facturacion_offline: {} eliminados (> 30 días, COMPLETADO/AGOTADO)", n);
         return n;
     }
 
