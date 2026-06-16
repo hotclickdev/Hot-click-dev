@@ -6,6 +6,7 @@ import com.hotclick.model.Pedido;
 import com.hotclick.repository.ComprobanteFiscalRepository;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.PedidoRepository;
+import com.hotclick.security.CompanyScope;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +48,8 @@ public class FacturacionService {
     private final XmlFacturaBuilder xmlBuilder;
     private final FirmaDigitalService firmaService;
     private final HaciendaApiClient haciendaClient;
+    private final FacturacionContingenciaService contingenciaService;
+    private final CompanyScope companyScope;
 
     public FacturacionService(ComprobanteFiscalRepository comprobanteRepo,
                                PedidoRepository pedidoRepo,
@@ -55,7 +58,9 @@ public class FacturacionService {
                                ClaveNumericaService claveService,
                                XmlFacturaBuilder xmlBuilder,
                                FirmaDigitalService firmaService,
-                               HaciendaApiClient haciendaClient) {
+                               HaciendaApiClient haciendaClient,
+                               FacturacionContingenciaService contingenciaService,
+                               CompanyScope companyScope) {
         this.comprobanteRepo    = comprobanteRepo;
         this.pedidoRepo         = pedidoRepo;
         this.empresaRepo        = empresaRepo;
@@ -64,6 +69,8 @@ public class FacturacionService {
         this.xmlBuilder         = xmlBuilder;
         this.firmaService       = firmaService;
         this.haciendaClient     = haciendaClient;
+        this.contingenciaService = contingenciaService;
+        this.companyScope       = companyScope;
     }
 
     /**
@@ -84,6 +91,7 @@ public class FacturacionService {
         if (empresa == null) {
             throw new IllegalStateException("El pedido no tiene empresa asociada");
         }
+        companyScope.assertCanAccess(empresa.getId());
 
         // Verificar que no existe ya un comprobante válido para este pedido
         if (comprobanteRepo.existsByPedidoIdAndEstadoIn(pedidoId,
@@ -212,11 +220,15 @@ public class FacturacionService {
             if (!enviado) {
                 cf.setEstado(ComprobanteFiscal.ESTADO_ERROR);
                 comprobanteRepo.save(cf);
+                // ESTADO_ERROR no es revisitado por este polling (solo mira PENDIENTE/ENVIADO):
+                // la cola de contingencia toma el relevo con su propio backoff.
+                contingenciaService.encolar(comprobanteId);
             }
         } catch (Exception e) {
             cf.setEstado(ComprobanteFiscal.ESTADO_ERROR);
             cf.setMensajeHacienda(e.getMessage());
             comprobanteRepo.save(cf);
+            contingenciaService.encolar(comprobanteId);
             log.error("[facturacion] Error enviando comprobante={}: {}", comprobanteId, e.getMessage());
         }
     }
@@ -241,6 +253,9 @@ public class FacturacionService {
                 if (cf.getIntentosEnvio() >= MAX_INTENTOS) {
                     cf.setEstado(ComprobanteFiscal.ESTADO_ERROR);
                     cf.setMensajeHacienda("Max intentos alcanzado. Último estado: " + estadoHacienda);
+                    comprobanteRepo.save(cf);
+                    contingenciaService.encolar(cf.getId());
+                    return;
                 }
             }
         }
