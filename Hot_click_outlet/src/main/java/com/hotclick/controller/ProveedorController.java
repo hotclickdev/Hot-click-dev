@@ -35,7 +35,7 @@ public class ProveedorController {
     @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE')")
     public ResponseEntity<?> crear(@RequestBody Map<String, Object> body) {
         try {
-            Long empresaId = companyScope.getCurrentEmpresaId();
+            Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
             String nombre = (String) body.get("nombre");
             if (nombre == null || nombre.isBlank())
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El nombre es requerido"));

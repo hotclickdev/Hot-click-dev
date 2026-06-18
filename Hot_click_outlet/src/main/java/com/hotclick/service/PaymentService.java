@@ -9,6 +9,7 @@ import com.hotclick.payment.PaymentSession;
 import com.hotclick.repository.*;
 import com.hotclick.sse.StockCambioEvent;
 import com.hotclick.utils.Constants;
+import com.hotclick.service.AggregatorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,6 +56,7 @@ public class PaymentService {
     @Autowired private GiftCardService            giftCardService;
     @Autowired private WebhookDispatcherService   webhookDispatcher;
     @Autowired private ApplicationEventPublisher  eventPublisher;
+    @Autowired private AggregatorService          aggregatorService;
 
     // ================================================================
     // CHECKOUT — Valida stock (con lock), reserva, crea Pedido + sesión
@@ -343,6 +345,8 @@ public class PaymentService {
             "total",        pedido.getTotalPedido(),
             "proveedor",    pago.getProveedor()
         ));
+        // Acreditar wallet del emprendedor (async, fuera de esta TX)
+        aggregatorService.acreditarVentaAsync(pedido);
         log.info("Pedido {} confirmado PAGADO via {}", pedido.getNumeroPedido(), pago.getProveedor());
     }
 

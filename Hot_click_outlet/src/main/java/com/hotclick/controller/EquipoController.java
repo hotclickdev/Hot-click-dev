@@ -39,7 +39,7 @@ public class EquipoController {
 
     @GetMapping
     public ResponseEntity<ResponseDTO> listar() {
-        Long empresaId = companyScope.getCurrentEmpresaId();
+        Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
         if (empresaId == null)
             return ResponseEntity.status(403).body(ResponseDTO.error("Solo disponible para empresas"));
 

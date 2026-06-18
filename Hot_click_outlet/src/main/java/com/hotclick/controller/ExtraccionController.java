@@ -3,12 +3,15 @@ package com.hotclick.controller;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Producto;
 import com.hotclick.repository.ProductoRepository;
+import com.hotclick.security.CompanyScope;
 import com.hotclick.service.BccrService;
 import com.hotclick.service.ExtraccionService;
 import com.hotclick.service.ExtraccionService.ResultadoExtraccion;
 import com.hotclick.service.GoogleVisionService;
 import com.hotclick.service.PrecioSugeridoService;
 import com.hotclick.service.PublicacionFacebookService;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +23,8 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 @RestController
@@ -34,15 +39,39 @@ public class ExtraccionController {
     @Autowired private PublicacionFacebookService publicacionService;
     @Autowired private ProductoRepository productoRepo;
     @Autowired private BccrService bccrService;
+    @Autowired private CompanyScope companyScope;
+
+    // Rate limit: max 10 llamadas IA por empresa por minuto (evita costos descontrolados #25)
+    private static final int AI_MAX_PER_MINUTE = 10;
+    private final Cache<Long, AtomicInteger> aiCallsPerMinute = Caffeine.newBuilder()
+        .maximumSize(5_000)
+        .expireAfterWrite(60, TimeUnit.SECONDS)
+        .build();
 
     /**
      * Analiza una imagen y extrae precios de ecommerce.
      * Si se pasa productoId, guarda los precios en BD y genera entrada FB.
      */
+    private ResponseEntity<ResponseDTO> checkAiRateLimit() {
+        Long eid = companyScope.getCurrentEmpresaId();
+        if (eid != null) {
+            int calls = aiCallsPerMinute.asMap()
+                .computeIfAbsent(eid, k -> new AtomicInteger(0))
+                .incrementAndGet();
+            if (calls > AI_MAX_PER_MINUTE) {
+                return ResponseEntity.status(429).body(ResponseDTO.error(
+                    "Límite de análisis IA alcanzado (" + AI_MAX_PER_MINUTE + "/minuto). Esperá un momento e intentá de nuevo."));
+            }
+        }
+        return null;
+    }
+
     @PostMapping("/analizar")
     public ResponseEntity<ResponseDTO> analizar(
             @RequestParam MultipartFile imagen,
             @RequestParam(required = false) Long productoId) {
+        var rateLimitResponse = checkAiRateLimit();
+        if (rateLimitResponse != null) return rateLimitResponse;
         try {
             if (imagen.isEmpty()) {
                 return ResponseEntity.badRequest().body(ResponseDTO.error("La imagen es requerida"));
@@ -106,6 +135,8 @@ public class ExtraccionController {
     @PostMapping("/detalles-producto")
     public ResponseEntity<ResponseDTO> detallesProducto(
             @RequestParam("imagenes") List<MultipartFile> imagenes) {
+        var rateLimitResponse = checkAiRateLimit();
+        if (rateLimitResponse != null) return rateLimitResponse;
         try {
             if (imagenes == null || imagenes.isEmpty())
                 return ResponseEntity.badRequest().body(ResponseDTO.error("Se requiere al menos una imagen"));

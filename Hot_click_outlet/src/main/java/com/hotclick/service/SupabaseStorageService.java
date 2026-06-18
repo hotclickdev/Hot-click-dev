@@ -7,12 +7,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.Map;
 import java.util.UUID;
 
@@ -21,15 +21,18 @@ public class SupabaseStorageService {
 
     private static final Logger log = LoggerFactory.getLogger(SupabaseStorageService.class);
 
-    @Value("${supabase.url}")
-    private String supabaseUrl;
+    private final S3Client s3Client;
 
-    @Value("${supabase.service-key}")
-    private String serviceKey;
+    @Value("${aws.s3.bucket}")
+    private String bucket;
 
-    private static final String BUCKET = "HOT_CLICK";
+    @Value("${aws.s3.public-url}")
+    private String publicUrl;
 
-    // Strict allowlist: extension → canonical MIME type
+    public SupabaseStorageService(S3Client s3Client) {
+        this.s3Client = s3Client;
+    }
+
     private static final Map<String, String> ALLOWED_EXTENSIONS = Map.of(
         "jpg",  "image/jpeg",
         "jpeg", "image/jpeg",
@@ -39,85 +42,69 @@ public class SupabaseStorageService {
         "avif", "image/avif"
     );
 
-    // F29: connectTimeout explicit — previously default (could hang indefinitely on Supabase timeouts)
-    private final HttpClient httpClient = HttpClient.newBuilder()
-        .connectTimeout(java.time.Duration.ofSeconds(10))
-        .build();
-
     /**
-     * Sube un certificado PKCS#12 (.p12/.pfx) al bucket privado.
+     * Sube un certificado PKCS#12 al bucket privado de S3.
      * Path: certificados/{empresaId}/{uuid}.p12
-     * NO devuelve URL pública — solo el path relativo para guardarlo en BD.
+     * Devuelve solo el path relativo (sin URL pública — el objeto es privado).
      */
-    @CircuitBreaker(name = "supabase", fallbackMethod = "subirCertificadoFallback")
-    @Retry(name = "supabase")
-    public String subirCertificado(MultipartFile file, Long empresaId) throws IOException, InterruptedException {
+    @CircuitBreaker(name = "s3", fallbackMethod = "subirCertificadoFallback")
+    @Retry(name = "s3")
+    public String subirCertificado(MultipartFile file, Long empresaId) throws IOException {
         if (file == null || file.isEmpty()) throw new IllegalArgumentException("El archivo está vacío");
         if (file.getSize() > 5 * 1024 * 1024) throw new IllegalArgumentException("El certificado no puede superar 5 MB");
 
-        String original = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";
+        String fn = file.getOriginalFilename();
+        String original = fn != null ? fn.toLowerCase() : "";
         if (!original.endsWith(".p12") && !original.endsWith(".pfx"))
             throw new IllegalArgumentException("Solo se permiten archivos .p12 o .pfx");
 
         byte[] bytes = file.getBytes();
-        // PKCS#12 magic bytes: 30 82 (DER encoding of a SEQUENCE)
         if (bytes.length < 2 || bytes[0] != 0x30)
             throw new IllegalArgumentException("El archivo no es un certificado PKCS#12 válido");
 
         String path = "certificados/" + empresaId + "/" + UUID.randomUUID() + ".p12";
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(supabaseUrl + "/storage/v1/object/" + BUCKET + "/" + path))
-                .header("Authorization", "Bearer " + serviceKey)
-                .header("apikey", serviceKey)
-                .header("Content-Type", "application/x-pkcs12")
-                .POST(HttpRequest.BodyPublishers.ofByteArray(bytes))
-                .build();
+        s3Client.putObject(
+                PutObjectRequest.builder()
+                        .bucket(bucket)
+                        .key(path)
+                        .contentType("application/x-pkcs12")
+                        .build(),
+                RequestBody.fromBytes(bytes)
+        );
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() < 200 || response.statusCode() >= 300)
-            throw new RuntimeException("Supabase Storage error " + response.statusCode());
-
-        return path; // solo el path, no URL pública
+        return path;
     }
 
-    public String subirImagen(MultipartFile file) throws IOException, InterruptedException {
+    public String subirImagen(MultipartFile file) throws IOException {
         return subirImagen(file, "productos");
     }
 
-    @CircuitBreaker(name = "supabase", fallbackMethod = "subirImagenFallback")
-    @Retry(name = "supabase")
-    public String subirImagen(MultipartFile file, String carpeta) throws IOException, InterruptedException {
+    @CircuitBreaker(name = "s3", fallbackMethod = "subirImagenFallback")
+    @Retry(name = "s3")
+    public String subirImagen(MultipartFile file, String carpeta) throws IOException {
         byte[] bytes = validarArchivo(file);
         String ext = obtenerExtension(file.getOriginalFilename());
         String contentType = ALLOWED_EXTENSIONS.get(ext);
         String path = carpeta + "/" + UUID.randomUUID() + "." + ext;
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(supabaseUrl + "/storage/v1/object/" + BUCKET + "/" + path))
-                .header("Authorization", "Bearer " + serviceKey)
-                .header("apikey", serviceKey)
-                .header("Content-Type", contentType)
-                .POST(HttpRequest.BodyPublishers.ofByteArray(bytes))
-                .build();
+        s3Client.putObject(
+                PutObjectRequest.builder()
+                        .bucket(bucket)
+                        .key(path)
+                        .contentType(contentType)
+                        .acl(ObjectCannedACL.PUBLIC_READ)
+                        .build(),
+                RequestBody.fromBytes(bytes)
+        );
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-        if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw new RuntimeException("Supabase Storage error " + response.statusCode());
-        }
-
-        return supabaseUrl + "/storage/v1/object/public/" + BUCKET + "/" + path;
+        return publicUrl + "/" + path;
     }
 
-    /** Validates the file and returns its bytes. Throws IllegalArgumentException on any violation. */
     private byte[] validarArchivo(MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) throw new IllegalArgumentException("El archivo está vacío");
         if (file.getSize() > 10 * 1024 * 1024) throw new IllegalArgumentException("La imagen no puede superar 10 MB");
 
-        // Reject clearly non-image MIME types. application/octet-stream is allowed
-        // because iOS Safari and some mobile browsers report it for all files;
-        // the actual content is validated below via magic bytes.
         String ct = file.getContentType();
         if (ct != null && !ct.isBlank()
                 && !ct.startsWith("image/")
@@ -140,20 +127,15 @@ public class SupabaseStorageService {
         if (bytes.length < 4) return false;
         return switch (ext) {
             case "jpg", "jpeg" ->
-                // FF D8 FF
                 (bytes[0] & 0xFF) == 0xFF && (bytes[1] & 0xFF) == 0xD8 && (bytes[2] & 0xFF) == 0xFF;
             case "png" ->
-                // 89 50 4E 47
                 (bytes[0] & 0xFF) == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47;
             case "gif" ->
-                // GIF8
                 bytes[0] == 0x47 && bytes[1] == 0x49 && bytes[2] == 0x46 && bytes[3] == 0x38;
             case "webp" ->
-                // RIFF (bytes 0-3) + WEBP (bytes 8-11) — must be at least 12 bytes
                 bytes.length >= 12
                     && bytes[0] == 0x52 && bytes[1] == 0x49 && bytes[2] == 0x46 && bytes[3] == 0x46
                     && bytes[8] == 0x57 && bytes[9] == 0x45 && bytes[10] == 0x42 && bytes[11] == 0x50;
-            // AVIF is an ISO Base Media File Format container — no reliable short magic; trust ext + MIME
             default -> true;
         };
     }
@@ -161,17 +143,16 @@ public class SupabaseStorageService {
     private String obtenerExtension(String filename) {
         if (filename == null || !filename.contains(".")) return "";
         String ext = filename.substring(filename.lastIndexOf('.') + 1).toLowerCase().trim();
-        // Reject empty extensions (e.g. filename ending with a dot)
         return ext.isEmpty() ? "" : ext;
     }
 
     private String subirCertificadoFallback(MultipartFile file, Long empresaId, Throwable t) {
-        log.error("[supabase-circuit] OPEN subirCertificado empresa={}: {}", empresaId, t.getMessage());
+        log.error("[s3-circuit] OPEN subirCertificado empresa={}: {}", empresaId, t.getMessage());
         throw new RuntimeException("Servicio de almacenamiento no disponible temporalmente");
     }
 
     private String subirImagenFallback(MultipartFile file, String carpeta, Throwable t) {
-        log.error("[supabase-circuit] OPEN subirImagen carpeta={}: {}", carpeta, t.getMessage());
+        log.error("[s3-circuit] OPEN subirImagen carpeta={}: {}", carpeta, t.getMessage());
         throw new RuntimeException("Servicio de almacenamiento no disponible temporalmente");
     }
 }

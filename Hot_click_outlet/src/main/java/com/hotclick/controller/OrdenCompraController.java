@@ -36,7 +36,7 @@ public class OrdenCompraController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE','INVENTARIO','CONTABILIDAD')")
     public ResponseEntity<?> listar() {
-        Long empresaId = companyScope.getCurrentEmpresaId();
+        Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
         if (empresaId == null)
             return ResponseEntity.badRequest().body(ResponseDTO.error("Empresa requerida"));
         return ResponseEntity.ok(ResponseDTO.success("OK",
@@ -56,7 +56,7 @@ public class OrdenCompraController {
     @Transactional
     public ResponseEntity<?> crear(@RequestBody OrdenCompraDTO dto, HttpServletRequest request) {
         try {
-            Long empresaId = companyScope.getCurrentEmpresaId();
+            Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
             if (empresaId == null)
                 return ResponseEntity.badRequest().body(ResponseDTO.error("Empresa requerida"));
             if (dto.getItems() == null || dto.getItems().isEmpty())

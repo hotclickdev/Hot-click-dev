@@ -24,6 +24,10 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.empresa LEFT JOIN FETCH u.roles WHERE u.clerkUserId = :clerkUserId")
     Optional<Usuario> findByClerkUserId(@Param("clerkUserId") String clerkUserId);
 
+    /** Para endpoints que serializan el usuario con sus roles (evita LazyInitializationException). */
+    @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.roles WHERE u.id = :id")
+    Optional<Usuario> findByIdWithRoles(@Param("id") Long id);
+
     boolean existsByCorreo(String correo);
 
     boolean existsByIdentificacion(String identificacion);
@@ -43,19 +47,23 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     void incrementarIntentosFallidos(@Param("id") Long id);
 
     // Incrementa intentos + bloquea condicionalmente en una sola operación atómica.
-    // RETURNING evita el SELECT extra y elimina el race condition de emails duplicados.
+    // No usa RETURNING (no portable a H2 en tests) — el llamador debe leer
+    // intentosFallidos con findIntentosFallidos() dentro de la MISMA transacción
+    // para que el lock de fila evite que dos hilos concurrentes vean intentos==5.
     @Modifying
     @Transactional
     @Query(value = """
         UPDATE hot_click_usuario_tb
         SET intentos_fallidos = intentos_fallidos + 1,
             bloqueado_hasta   = CASE
-                WHEN intentos_fallidos + 1 >= 5 THEN NOW() + INTERVAL '30 minutes'
+                WHEN intentos_fallidos + 1 >= 5 THEN NOW() + INTERVAL '30' MINUTE
                 ELSE bloqueado_hasta END
         WHERE id_usuario = :id
-        RETURNING intentos_fallidos
         """, nativeQuery = true)
-    List<Object[]> incrementarYBloquear(@Param("id") Long id);
+    void incrementarYBloquear(@Param("id") Long id);
+
+    @Query("SELECT u.intentosFallidos FROM Usuario u WHERE u.id = :id")
+    Optional<Integer> findIntentosFallidos(@Param("id") Long id);
 
     @Modifying
     @Transactional

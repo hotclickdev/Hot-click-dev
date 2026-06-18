@@ -41,8 +41,8 @@ public class SecurityConfig {
     @Value("${cors.allowed.origins:http://localhost:3000,http://localhost:5173}")
     private String allowedOrigins;
 
-    @Value("${supabase.url:https://nkevwfcjhjaawtdqquns.supabase.co}")
-    private String supabaseUrl;
+    @Value("${aws.s3.public-url:https://hotclick-media.s3.us-east-2.amazonaws.com}")
+    private String s3PublicUrl;
 
     // ── Filtros de seguridad como @Bean (sin @Component) ─────────────────────────
     // Spring Security 6.3 requiere que los filtros usados en addFilterBefore no sean
@@ -113,6 +113,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/health").permitAll()
                 .requestMatchers(POST, "/api/webhooks/paypal").permitAll()
                 .requestMatchers(POST, "/api/webhooks/stripe").permitAll()
+                .requestMatchers(POST, "/api/webhooks/payxpert").permitAll()
                 // Bitácora de consentimiento — público (también lo usan invitados en checkout)
                 .requestMatchers(POST, "/api/consentimiento").permitAll()
                 // Self-checkout QR — completamente público (sin JWT)
@@ -141,6 +142,7 @@ public class SecurityConfig {
                 .requestMatchers(GET, "/api/productos/destacados").permitAll()
                 .requestMatchers(GET, "/api/productos/marca/*").permitAll()
                 .requestMatchers(GET, "/api/productos/*/recomendaciones").permitAll()
+                .requestMatchers(GET, "/api/productos/*/imagenes").permitAll()
                 .requestMatchers(GET, "/api/productos/*").permitAll()
                 // Stock en tiempo real (SSE) — público; el tenant se infiere del producto, no del caller
                 .requestMatchers(GET, "/api/marketplace/productos/*/stock-stream").permitAll()
@@ -190,6 +192,10 @@ public class SecurityConfig {
                 .requestMatchers(PUT, "/api/garantias/solicitudes/*/estado").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
                 // Testimonios — público: GET aprobados; auth: crear + subir imagen; admin: listar todos + moderar
                 .requestMatchers(GET, "/api/testimonios/publicos").permitAll()
+                .requestMatchers(GET, "/api/testimonios/producto/*/rating").permitAll()
+                // Blog — público: listado y detalle de publicaciones publicadas
+                .requestMatchers(GET, "/api/blog/publico").permitAll()
+                .requestMatchers(GET, "/api/blog/publico/*").permitAll()
                 .requestMatchers(GET, "/api/testimonios/admin").hasRole("ADMIN_IT")
                 .requestMatchers(PUT, "/api/testimonios/*/aprobar").hasRole("ADMIN_IT")
                 .requestMatchers(PUT, "/api/testimonios/*/rechazar").hasRole("ADMIN_IT")
@@ -282,8 +288,8 @@ public class SecurityConfig {
                         "worker-src blob: 'self'; " +
                         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
                         "font-src 'self' https://fonts.gstatic.com; " +
-                        "img-src 'self' data: blob: " + supabaseUrl + " https://images.unsplash.com https://www.paypalobjects.com https://*.googleusercontent.com https://img.clerk.com https://avatars.githubusercontent.com https://cdnjs.cloudflare.com; " +
-                        "connect-src 'self' " + supabaseUrl + " https://*.clerk.accounts.dev https://clerk.hotclick.lat https://api.clerk.com https://clerk-telemetry.com https://api-m.paypal.com https://api-m.sandbox.paypal.com https://api.stripe.com https://hooks.stripe.com https://www.google-analytics.com https://region1.google-analytics.com; " +
+                        "img-src 'self' data: blob: " + s3PublicUrl + " https://*.amazonaws.com https://images.unsplash.com https://www.paypalobjects.com https://*.googleusercontent.com https://img.clerk.com https://avatars.githubusercontent.com https://cdnjs.cloudflare.com; " +
+                        "connect-src 'self' " + s3PublicUrl + " https://*.amazonaws.com https://*.clerk.accounts.dev https://clerk.hotclick.lat https://api.clerk.com https://clerk-telemetry.com https://api-m.paypal.com https://api-m.sandbox.paypal.com https://api.stripe.com https://hooks.stripe.com https://www.google-analytics.com https://region1.google-analytics.com; " +
                         "frame-src https://www.paypal.com https://www.sandbox.paypal.com https://js.stripe.com https://hooks.stripe.com https://www.youtube.com https://www.youtube-nocookie.com https://www.tiktok.com https://www.instagram.com; " +
                         "object-src 'none'; " +
                         "base-uri 'self';"

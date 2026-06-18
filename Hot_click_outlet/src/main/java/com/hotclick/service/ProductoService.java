@@ -1,6 +1,7 @@
 package com.hotclick.service;
 
 import com.hotclick.dto.ProductoRequestDTO;
+import com.hotclick.model.Bodega;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Producto;
 import com.hotclick.rag.event.ProductoGuardadoEvent;
@@ -66,8 +67,6 @@ public class ProductoService {
         evictProductosPublicos();
         if (dto.getCategoriaId() == null)
             throw new IllegalArgumentException("Debe seleccionar una categoría");
-        if (dto.getBodegaId() == null)
-            throw new IllegalArgumentException("Debe seleccionar una bodega");
 
         Producto p = new Producto();
         mapDtoToProducto(dto, p);
@@ -77,8 +76,19 @@ public class ProductoService {
         }
         p.setCategoria(categoriaRepository.findById(dto.getCategoriaId())
             .orElseThrow(() -> new RuntimeException("Categoría no encontrada")));
-        p.setBodega(bodegaRepository.findById(dto.getBodegaId())
-            .orElseThrow(() -> new RuntimeException("Bodega no encontrada")));
+
+        if (dto.getBodegaId() != null) {
+            p.setBodega(bodegaRepository.findById(dto.getBodegaId())
+                .orElseThrow(() -> new RuntimeException("Bodega no encontrada")));
+        } else if (empresa != null) {
+            List<Bodega> bodsEmpresa = bodegaRepository
+                .findByEmpresaIdAndEstadoOrderByFechaCreacionAsc(empresa.getId(), Constants.ESTADO_ACTIVO);
+            if (bodsEmpresa.isEmpty())
+                throw new IllegalArgumentException("No tenés bodegas creadas. Creá una bodega antes de publicar.");
+            p.setBodega(bodsEmpresa.get(0));
+        } else {
+            throw new IllegalArgumentException("Debe seleccionar una bodega");
+        }
         p.setAdminCliente(usuarioRepository.findByCorreo(adminCorreo)
             .orElseThrow(() -> new RuntimeException("Admin no encontrado")));
         p.setEmpresa(empresa);

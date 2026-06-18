@@ -36,7 +36,7 @@ public class EmpresaPerfilController {
 
     @GetMapping
     public ResponseEntity<ResponseDTO> get() {
-        Long empresaId = companyScope.getCurrentEmpresaId();
+        Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
         if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada"));
         Optional<Empresa> opt = empresaRepository.findById(empresaId);
         if (opt.isEmpty()) return ResponseEntity.status(404).body(ResponseDTO.error("Empresa no encontrada"));
@@ -46,7 +46,7 @@ public class EmpresaPerfilController {
     /** Guarda la configuración fiscal (Hacienda CR). Nunca devuelve ni almacena la clave en texto plano. */
     @PutMapping("/fiscal")
     public ResponseEntity<ResponseDTO> updateFiscal(@RequestBody Map<String, String> body) {
-        Long empresaId = companyScope.getCurrentEmpresaId();
+        Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
         if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada"));
         Optional<Empresa> opt = empresaRepository.findById(empresaId);
         if (opt.isEmpty()) return ResponseEntity.status(404).body(ResponseDTO.error("Empresa no encontrada"));
@@ -100,7 +100,7 @@ public class EmpresaPerfilController {
     /** Sube el certificado PKCS#12 (.p12) a Supabase Storage y guarda el path en BD. */
     @PostMapping("/cert-p12")
     public ResponseEntity<ResponseDTO> subirCertP12(@RequestParam("file") MultipartFile file) {
-        Long empresaId = companyScope.getCurrentEmpresaId();
+        Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
         if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada"));
         try {
             String path = supabaseStorageService.subirCertificado(file, empresaId);
@@ -147,7 +147,7 @@ public class EmpresaPerfilController {
 
     @PutMapping
     public ResponseEntity<ResponseDTO> update(@RequestBody Map<String, String> body) {
-        Long empresaId = companyScope.getCurrentEmpresaId();
+        Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
         if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada"));
         Optional<Empresa> opt = empresaRepository.findById(empresaId);
         if (opt.isEmpty()) return ResponseEntity.status(404).body(ResponseDTO.error("Empresa no encontrada"));
@@ -170,7 +170,7 @@ public class EmpresaPerfilController {
     @CacheEvict(value = {"marcas-publicas", "categorias", "categorias-publicas"}, allEntries = true)
     @PutMapping("/visibilidad")
     public ResponseEntity<ResponseDTO> toggleVisibilidad(@RequestBody Map<String, Object> body) {
-        Long empresaId = companyScope.getCurrentEmpresaId();
+        Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
         if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada"));
         Optional<Empresa> opt = empresaRepository.findById(empresaId);
         if (opt.isEmpty()) return ResponseEntity.status(404).body(ResponseDTO.error("Empresa no encontrada"));
@@ -187,7 +187,7 @@ public class EmpresaPerfilController {
 
     @PostMapping("/logo")
     public ResponseEntity<ResponseDTO> subirLogo(@RequestParam("file") MultipartFile file) {
-        Long empresaId = companyScope.getCurrentEmpresaId();
+        Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
         if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada"));
         try {
             var mod = imageModerationService.moderar(file);

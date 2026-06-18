@@ -2,6 +2,7 @@ package com.hotclick.security;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -29,24 +30,23 @@ public class RateLimiter {
         this.jdbc = jdbc;
     }
 
-    // Fixed-window UPSERT. RETURNING count is post-increment value.
-    private static final String UPSERT_SQL = """
-        INSERT INTO hot_click_rate_limit_tb (bucket_key, count, window_start, expires_at)
-        VALUES (?, 1, ?, ?)
-        ON CONFLICT (bucket_key) DO UPDATE SET
-          count        = CASE
-                           WHEN hot_click_rate_limit_tb.window_start + ? <= ?
-                           THEN 1
-                           ELSE hot_click_rate_limit_tb.count + 1
-                         END,
-          window_start = CASE
-                           WHEN hot_click_rate_limit_tb.window_start + ? <= ?
-                           THEN ?
-                           ELSE hot_click_rate_limit_tb.window_start
-                         END,
-          expires_at   = ?
-        RETURNING count
-        """;
+    // No usa ON CONFLICT / RETURNING (H2 no soporta ninguno de los dos en tests) —
+    // lectura + insert-o-update explícito. La ventana de carrera entre el SELECT y el
+    // INSERT/UPDATE es aceptable: el diseño ya es fail-open (disponibilidad > precisión).
+    private static final String SELECT_WINDOW_SQL =
+        "SELECT window_start FROM hot_click_rate_limit_tb WHERE bucket_key = ?";
+
+    private static final String INSERT_SQL =
+        "INSERT INTO hot_click_rate_limit_tb (bucket_key, count, window_start, expires_at) VALUES (?, 1, ?, ?)";
+
+    private static final String RESET_WINDOW_SQL =
+        "UPDATE hot_click_rate_limit_tb SET count = 1, window_start = ?, expires_at = ? WHERE bucket_key = ?";
+
+    private static final String INCREMENT_SQL =
+        "UPDATE hot_click_rate_limit_tb SET count = count + 1, expires_at = ? WHERE bucket_key = ?";
+
+    private static final String COUNT_SQL =
+        "SELECT count FROM hot_click_rate_limit_tb WHERE bucket_key = ?";
 
     /**
      * Returns true if this request is within the limit (allowed).
@@ -60,17 +60,32 @@ public class RateLimiter {
         long now     = Instant.now().getEpochSecond();
         long expires = now + windowSeconds;
         try {
-            Integer count = jdbc.queryForObject(UPSERT_SQL, Integer.class,
-                key, now, expires,
-                (long) windowSeconds, now,
-                (long) windowSeconds, now,
-                now,
-                expires
-            );
-            return count != null && count <= maxRequests;
+            int count = incrementarYContar(key, now, expires, windowSeconds);
+            return count <= maxRequests;
         } catch (Exception e) {
             log.warn("[RATE-LIMIT] DB unavailable, fail-open: {}", e.getMessage());
             return true;
         }
+    }
+
+    private int incrementarYContar(String key, long now, long expires, int windowSeconds) {
+        java.util.List<Long> existing = jdbc.queryForList(SELECT_WINDOW_SQL, Long.class, key);
+        if (existing.isEmpty()) {
+            try {
+                jdbc.update(INSERT_SQL, key, now, expires);
+                return 1;
+            } catch (DataIntegrityViolationException dup) {
+                // Carrera: otro hilo insertó primero — continúa por la rama de incremento.
+            }
+            existing = jdbc.queryForList(SELECT_WINDOW_SQL, Long.class, key);
+        }
+        long windowStart = existing.isEmpty() ? now : existing.get(0);
+        if (windowStart + windowSeconds <= now) {
+            jdbc.update(RESET_WINDOW_SQL, now, expires, key);
+            return 1;
+        }
+        jdbc.update(INCREMENT_SQL, expires, key);
+        Integer count = jdbc.queryForObject(COUNT_SQL, Integer.class, key);
+        return count == null ? 1 : count;
     }
 }

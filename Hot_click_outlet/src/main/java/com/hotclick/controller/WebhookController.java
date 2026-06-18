@@ -18,6 +18,18 @@ public class WebhookController {
 
     @Autowired private PayPalPaymentProvider payPalProvider;
 
+    // TODO[PAYXPERT-REACTIVAR]: Para reactivar PayXpert, restaurar el handler completo
+    // desde archive/payxpert/REACTIVACION.md y quitar este bloque de 410.
+    @PostMapping("/payxpert")
+    public ResponseEntity<Map<String, String>> recibirWebhookPayXpert(
+            @RequestBody(required = false) Object dto,
+            HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isBlank()) ip = request.getRemoteAddr();
+        log.warn("Webhook PayXpert recibido pero proveedor está ARCHIVADO — ip={}", ip);
+        return ResponseEntity.status(410).body(Map.of("status", "GONE", "message", "PayXpert archived"));
+    }
+
     /**
      * Callback de PayPal para eventos de pago (PAYMENT.CAPTURE.COMPLETED, etc.).
      * Valida la firma de PayPal antes de procesar.

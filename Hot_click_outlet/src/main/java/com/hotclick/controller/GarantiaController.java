@@ -90,7 +90,7 @@ public class GarantiaController {
      */
     @GetMapping("/mis-productos")
     public ResponseEntity<ResponseDTO> garantiasDeEmpresa() {
-        Long empresaId = companyScope.getCurrentEmpresaId();
+        Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
         if (empresaId == null)
             return ResponseEntity.status(403).body(ResponseDTO.error("Solo disponible para empresas"));
 

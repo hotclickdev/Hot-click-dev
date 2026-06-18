@@ -6,11 +6,11 @@ import com.hotclick.utils.Constants;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.repository.RolRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -28,6 +28,9 @@ public class UsuarioService {
 
     @Autowired
     private N8nWebhookService n8nWebhookService;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public Usuario registrarUsuario(Usuario usuario) {
@@ -69,18 +72,16 @@ public class UsuarioService {
         usuarioRepository.updateUltimoAcceso(id, LocalDateTime.now());
     }
 
+    @Transactional
     public void incrementarIntentosFallidos(Long id) {
-        // Operación atómica: incrementa + bloquea condicionalmente en un solo UPDATE.
-        // intentos == 5 (no >= 5) garantiza que solo un thread envía el email.
-        List<Object[]> result = usuarioRepository.incrementarYBloquear(id);
-        if (result.isEmpty()) return;
-        int intentos = ((Number) result.get(0)[0]).intValue();
+        // Incremento + lectura en la MISMA transacción: el lock de fila de la UPDATE
+        // se mantiene hasta el SELECT, así que intentos == 5 (no >= 5) garantiza que
+        // solo un hilo concurrente ve el umbral y dispara el evento de bloqueo.
+        usuarioRepository.incrementarYBloquear(id);
+        int intentos = usuarioRepository.findIntentosFallidos(id).orElse(0);
         if (intentos == 5) {
-            usuarioRepository.findById(id).ifPresent(u -> {
-                try {
-                    passwordResetService.enviarCodigo(u.getCorreo());
-                } catch (Exception ignored) { /* no interrumpe el flujo si falla el email */ }
-            });
+            usuarioRepository.findById(id).ifPresent(u ->
+                eventPublisher.publishEvent(new CuentaBloqueadaEvent(this, u.getCorreo())));
         }
     }
 

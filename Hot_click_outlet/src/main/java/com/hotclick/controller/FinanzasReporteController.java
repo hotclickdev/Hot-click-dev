@@ -44,11 +44,22 @@ public class FinanzasReporteController {
             @RequestParam(defaultValue = "false") boolean download,
             HttpServletResponse response) throws IOException {
 
-        Long empresaId = companyScope.getCurrentEmpresaId();
-        if (empresaId == null)
+        Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
+        if (empresaId == null) {
+            if (companyScope.isAdminIT()) {
+                Map<String, Object> empty = new LinkedHashMap<>();
+                empty.put("cantidadVentas", 0L); empty.put("ventasTotales", 0L);
+                empty.put("subtotalProductos", 0L); empty.put("costoEnvio", 0L);
+                empty.put("cmv", 0L); empty.put("utilidadBruta", 0L);
+                empty.put("gananciaNeta", 0L); empty.put("margenPct", 0.0);
+                empty.put("ivaRecaudado", 0L); empty.put("ivaEstimado", 0L);
+                empty.put("comprasRecibidas", 0L);
+                return ResponseEntity.ok(ResponseDTO.success("OK", empty));
+            }
             return ResponseEntity.badRequest().body(ResponseDTO.error("Empresa requerida"));
+        }
 
-        if (!tenantService.tieneFeature("reportes"))
+        if (!companyScope.isAdminIT() && !tenantService.tieneFeature("reportes"))
             return ResponseEntity.status(403).body(ResponseDTO.error(
                 "El reporte de analítica financiera requiere un plan Pro o superior. " +
                 "Ve a Configuración → Suscripción para mejorar tu plan."));
@@ -67,7 +78,8 @@ public class FinanzasReporteController {
     // ── KPIs agregados ───────────────────────────────────────────────────────
 
     private Map<String, Object> calcularKpis(Long empresaId, String desde, String hasta) {
-        Object[] row = pedidoRepository.reporteIvaKpis(empresaId, desde, hasta);
+        List<Object[]> kpisRows = pedidoRepository.reporteIvaKpis(empresaId, desde, hasta);
+        Object[] row = (kpisRows != null && !kpisRows.isEmpty()) ? kpisRows.get(0) : new Object[8];
 
         long cantidadVentas  = toLong(row[0]);
         long ventasTotales   = toLong(row[1]);

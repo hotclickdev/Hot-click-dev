@@ -43,7 +43,7 @@ public class UsuarioController {
     @GetMapping("/{id}")
     public ResponseEntity<ResponseDTO> obtenerUsuario(@PathVariable Long id) {
         assertSelfOrAdmin(id);
-        Optional<Usuario> usuario = usuarioService.buscarPorId(id);
+        Optional<Usuario> usuario = usuarioRepository.findByIdWithRoles(id);
         if (usuario.isEmpty()) {
             return ResponseEntity.status(404).body(ResponseDTO.error("Usuario no encontrado"));
         }

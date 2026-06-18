@@ -138,13 +138,12 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
         "FROM hot_click_pedido_tb p " +
         "WHERE p.fk_id_empresa = :empresaId " +
         "AND p.estado_pedido IN ('ENTREGADO','COMPLETADO') " +
-        "AND p.estado = 1 " +
         "AND (:desde IS NULL OR DATE(p.fecha_pedido) >= CAST(:desde AS date)) " +
         "AND (:hasta IS NULL OR DATE(p.fecha_pedido) <= CAST(:hasta AS date))",
         nativeQuery = true)
-    Object[] reporteIvaKpis(@Param("empresaId") Long empresaId,
-                            @Param("desde") String desde,
-                            @Param("hasta") String hasta);
+    List<Object[]> reporteIvaKpis(@Param("empresaId") Long empresaId,
+                                 @Param("desde") String desde,
+                                 @Param("hasta") String hasta);
 
     /**
      * Reporte IVA — detalle fila por fila para exportación a CSV (control contable).
@@ -163,7 +162,6 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
         "LEFT JOIN hot_click_usuario_tb u ON u.id_usuario = p.fk_id_usuario_final " +
         "WHERE p.fk_id_empresa = :empresaId " +
         "AND p.estado_pedido IN ('ENTREGADO','COMPLETADO') " +
-        "AND p.estado = 1 " +
         "AND (:desde IS NULL OR DATE(p.fecha_pedido) >= CAST(:desde AS date)) " +
         "AND (:hasta IS NULL OR DATE(p.fecha_pedido) <= CAST(:hasta AS date)) " +
         "ORDER BY p.fecha_pedido DESC",

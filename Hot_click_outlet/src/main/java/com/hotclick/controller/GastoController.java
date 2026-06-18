@@ -30,7 +30,7 @@ public class GastoController {
     @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE','CONTABILIDAD')")
     public ResponseEntity<?> listar(@RequestParam(required = false) String desde,
                                     @RequestParam(required = false) String hasta) {
-        Long empresaId = companyScope.getCurrentEmpresaId();
+        Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
         if (empresaId == null)
             return ResponseEntity.badRequest().body(ResponseDTO.error("Empresa requerida"));
         LocalDate d = desde != null && !desde.isBlank() ? LocalDate.parse(desde) : null;

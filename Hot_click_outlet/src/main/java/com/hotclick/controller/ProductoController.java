@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
@@ -42,6 +43,7 @@ public class ProductoController {
     @Autowired private com.hotclick.service.ImageModerationService imageModerationService;
     @Autowired private com.hotclick.service.TextModerationService  textModerationService;
     @Autowired private com.hotclick.service.TenantService          tenantService;
+    @Autowired private org.springframework.cache.CacheManager      cacheManager;
 
     private static final int MAX_PAGE_SIZE = 100;
 
@@ -74,7 +76,7 @@ public class ProductoController {
     /** POS: productos por categoría dentro de la empresa. */
     @GetMapping("/pos/categoria/{catId}")
     public ResponseEntity<ResponseDTO> porCategoriaPOS(@PathVariable Long catId) {
-        Long empresaId = companyScope.getCurrentEmpresaId();
+        Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
         if (empresaId == null) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Empresa requerida en el contexto"));
         }
@@ -85,7 +87,7 @@ public class ProductoController {
     /** Búsqueda POS: por nombre, SKU o barcode dentro de la empresa. */
     @GetMapping("/buscar")
     public ResponseEntity<ResponseDTO> buscar(@RequestParam String q) {
-        Long empresaId = companyScope.getCurrentEmpresaId();
+        Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
         if (empresaId == null) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Empresa requerida en el contexto"));
         }
@@ -205,7 +207,17 @@ public class ProductoController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE') or hasAuthority('SCOPE_write:productos')")
-    public ResponseEntity<ResponseDTO> crearProducto(@RequestBody ProductoRequestDTO dto) {
+    public ResponseEntity<ResponseDTO> crearProducto(
+            @RequestBody @Valid ProductoRequestDTO dto,
+            @RequestHeader(value = "X-Idempotency-Key", required = false) String idempotencyKey) {
+        // Idempotencia: misma clave = mismo tab o doble-clic → 409 en vez de duplicar (#17)
+        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+            var idempCache = cacheManager.getCache("idempotency-keys");
+            if (idempCache != null && idempCache.get(idempotencyKey) != null) {
+                return ResponseEntity.status(409)
+                    .body(ResponseDTO.error("Este producto ya fue publicado. Actualizá la página."));
+            }
+        }
         // Verificación de límite de plan — propaga PlanLimitException → GlobalExceptionHandler (HTTP 403)
         Long eid = companyScope.getCurrentEmpresaIdOrOwn();
         if (eid != null) tenantService.verificarLimiteProductos(eid);
@@ -219,6 +231,11 @@ public class ProductoController {
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El contenido del producto no está permitido en la plataforma"));
             Empresa empresa = eid != null ? empresaRepository.findById(eid).orElse(null) : null;
             var producto = productoService.crearProducto(dto, currentUserName(), empresa);
+            // Registrar la clave para futuras solicitudes duplicadas
+            if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+                var idempCache = cacheManager.getCache("idempotency-keys");
+                if (idempCache != null) idempCache.put(idempotencyKey, Boolean.TRUE);
+            }
             return ResponseEntity.ok(ResponseDTO.success("Producto creado", producto));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(mensajeAmigable(e)));

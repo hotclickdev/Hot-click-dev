@@ -21,14 +21,10 @@ import java.time.Duration;
 public class ImageProxyController {
 
     private static final Logger log = LoggerFactory.getLogger(ImageProxyController.class);
-    private static final String ALLOWED_BUCKET = "HOT_CLICK/";
     private static final int MAX_DIM = 1200;
 
-    @Value("${supabase.url}")
-    private String supabaseUrl;
-
-    @Value("${supabase.service-key}")
-    private String serviceKey;
+    @Value("${aws.s3.public-url}")
+    private String s3PublicUrl;
 
     private final HttpClient httpClient = HttpClient.newBuilder()
         .followRedirects(HttpClient.Redirect.NORMAL)
@@ -36,9 +32,9 @@ public class ImageProxyController {
         .build();
 
     /**
-     * Proxies and optionally resizes images from Supabase Storage.
+     * Proxies and optionally resizes images from S3.
      *
-     * @param p  path inside the HOT_CLICK bucket, e.g. "HOT_CLICK/productos/abc.jpg"
+     * @param p  relative path inside the S3 bucket, e.g. "productos/abc.jpg"
      * @param w  target width  in px (optional, max 1200)
      * @param h  target height in px (optional, max 1200)
      * @param q  JPEG quality 1–100 (default 82)
@@ -50,22 +46,21 @@ public class ImageProxyController {
             @RequestParam(value = "h", required = false) Integer h,
             @RequestParam(value = "q", defaultValue = "82") int q) {
 
-        if (p == null || p.contains("..") || !p.startsWith(ALLOWED_BUCKET)) {
+        if (p == null || p.contains("..") || p.startsWith("/")) {
             return ResponseEntity.badRequest().build();
         }
 
-        // Clamp dimensions
-        int width  = (w != null) ? Math.min(w, MAX_DIM) : 0;
-        int height = (h != null) ? Math.min(h, MAX_DIM) : 0;
+        int width   = (w != null) ? Math.min(w, MAX_DIM) : 0;
+        int height  = (h != null) ? Math.min(h, MAX_DIM) : 0;
         int quality = Math.min(Math.max(q, 10), 100);
 
-        String imageUrl = supabaseUrl + "/storage/v1/object/" + p;
+        // Strip legacy "HOT_CLICK/" prefix from old Supabase-era URLs stored in DB
+        String cleanPath = p.startsWith("HOT_CLICK/") ? p.substring("HOT_CLICK/".length()) : p;
+        String imageUrl  = s3PublicUrl + "/" + cleanPath;
 
         try {
             HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(imageUrl))
-                .header("Authorization", "Bearer " + serviceKey)
-                .header("apikey", serviceKey)
                 .timeout(Duration.ofSeconds(15))
                 .GET()
                 .build();
@@ -79,7 +74,6 @@ public class ImageProxyController {
             byte[] imageBytes = response.body();
             String contentType = response.headers().firstValue("content-type").orElse("image/jpeg");
 
-            // Resize only when dimensions are requested and the source is a raster image
             if ((width > 0 || height > 0) && isResizable(contentType)) {
                 imageBytes = resize(imageBytes, width, height, quality);
                 contentType = "image/jpeg";
@@ -91,7 +85,7 @@ public class ImageProxyController {
                 .body(imageBytes);
 
         } catch (Exception e) {
-            log.warn("[img-proxy] Error fetching {}: {}", p, e.getMessage());
+            log.warn("[img-proxy] Error fetching {}: {}", cleanPath, e.getMessage());
             return ResponseEntity.status(502).build();
         }
     }

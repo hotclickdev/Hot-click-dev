@@ -84,6 +84,14 @@ public class CacheConfig {
                 .recordStats()
                 .build());
 
+        // Idempotencia de publicación — evita que doble-clic/doble-tab creen el mismo producto (TTL 5 min)
+        manager.registerCustomCache("idempotency-keys",
+            Caffeine.newBuilder()
+                .maximumSize(10_000)
+                .expireAfterWrite(5, TimeUnit.MINUTES)
+                .recordStats()
+                .build());
+
         // Default para todos los demás @Cacheable
         manager.setCaffeine(
             Caffeine.newBuilder()

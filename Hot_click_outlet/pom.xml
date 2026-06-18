@@ -175,6 +175,13 @@
             <version>0.4.20</version>
         </dependency>
 
+        <!-- AWS SDK v2 — S3 (reemplaza Supabase Storage) -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <version>2.25.60</version>
+        </dependency>
+
         <!-- H2 para pruebas -->
         <dependency>
             <groupId>com.h2database</groupId>

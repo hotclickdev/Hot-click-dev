@@ -93,7 +93,13 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain chain) throws ServletException, IOException {
-        String path   = request.getServletPath();
+        // getServletPath() devuelve "" en MockMvc (y con el dispatcher mapeado en "/"
+        // bajo ciertos contenedores) — usar requestURI menos contextPath es portable.
+        String path = request.getRequestURI();
+        String contextPath = request.getContextPath();
+        if (contextPath != null && !contextPath.isEmpty() && path.startsWith(contextPath)) {
+            path = path.substring(contextPath.length());
+        }
         String method = request.getMethod();
 
         if ("POST".equalsIgnoreCase(method)) {

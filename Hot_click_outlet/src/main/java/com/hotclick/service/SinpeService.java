@@ -199,8 +199,7 @@ public class SinpeService {
         String url;
         try {
             url = storageService.subirImagen(archivo, "comprobantes-sinpe");
-        } catch (IOException | InterruptedException e) {
-            Thread.currentThread().interrupt();
+        } catch (IOException e) {
             throw new RuntimeException("Error al subir el comprobante: " + e.getMessage(), e);
         }
 

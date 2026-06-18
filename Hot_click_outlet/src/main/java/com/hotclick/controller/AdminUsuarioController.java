@@ -29,7 +29,7 @@ public class AdminUsuarioController {
     @Transactional(readOnly = true)
     @GetMapping
     public ResponseDTO listarTodos() {
-        return ResponseDTO.success("Usuarios", usuarioRepository.findAllByOrderByIdDesc());
+        return ResponseDTO.success("Usuarios", usuarioRepository.findAllWithRolesOrderByIdDesc());
     }
 
     /** Lista solo los usuarios pendientes de aprobación. */

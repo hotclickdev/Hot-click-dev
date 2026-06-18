@@ -24,4 +24,7 @@ public interface BodegaRepository extends JpaRepository<Bodega, Long> {
 
     @Query("SELECT COUNT(b) FROM Bodega b WHERE b.empresa.id = :empresaId AND b.estado = :estado")
     long countByEmpresaIdAndEstado(@Param("empresaId") Long empresaId, @Param("estado") Integer estado);
+
+    @Query("SELECT b FROM Bodega b WHERE b.empresa.id = :empresaId AND b.estado = :estado ORDER BY b.fechaCreacion ASC")
+    List<Bodega> findByEmpresaIdAndEstadoOrderByFechaCreacionAsc(@Param("empresaId") Long empresaId, @Param("estado") Integer estado);
 }
