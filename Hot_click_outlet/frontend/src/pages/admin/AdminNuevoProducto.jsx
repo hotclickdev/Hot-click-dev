@@ -954,6 +954,48 @@ export default function AdminNuevoProducto() {
               </div>
             )}
 
+            {/* Progreso del formulario */}
+            {(() => {
+              const secciones = [
+                { label: 'Fotos',       done: form.imagenes.length > 0 || imagenesFile.length > 0 },
+                { label: 'Nombre',      done: !!form.nombre.trim() },
+                { label: 'Precio',      done: !!form.precioVenta && !!form.precioCompra },
+                { label: 'Categoría',   done: !!form.categoriaId },
+                { label: 'Descripción', done: !!(form.descripcion.trim() || form.especificaciones.trim()) },
+              ]
+              const completadas = secciones.filter(s => s.done).length
+              const pct = Math.round((completadas / secciones.length) * 100)
+              const listo = completadas === secciones.length
+              return (
+                <div className="rounded-xl border border-white/10 bg-white/3 px-4 py-3 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className={listo ? 'text-emerald-400 font-semibold' : 'text-[#8e8e9a]'}>
+                      {listo ? '¡Listo para publicar!' : `${completadas} de ${secciones.length} secciones completadas`}
+                    </span>
+                    <span className={`tabular-nums font-semibold ${listo ? 'text-emerald-400' : 'text-[#4f7cff]'}`}>{pct}%</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-white/8 overflow-hidden">
+                    <motion.div
+                      className={`h-full rounded-full ${listo ? 'bg-emerald-400' : 'bg-[#4f7cff]'}`}
+                      animate={{ width: `${pct}%` }}
+                      transition={{ duration: 0.4, ease: 'easeOut' }}
+                    />
+                  </div>
+                  <div className="flex gap-3 flex-wrap">
+                    {secciones.map(s => (
+                      <span key={s.label} className={`flex items-center gap-1 text-[10px] ${s.done ? 'text-emerald-400' : 'text-[#8e8e9a]/50'}`}>
+                        {s.done
+                          ? <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                          : <span className="w-3 h-3 rounded-full border border-white/20 shrink-0 inline-block" />
+                        }
+                        {s.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
+
             <form className="space-y-4">
               {/* Nombre y Título */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -91,6 +91,7 @@ export default function CheckoutPage() {
   const { token }                    = useAuthStore()
   const navigate                     = useNavigate()
   const { estado, pagoData, error, intentos, maxIntentos, iniciarPago } = usePayment()
+  const errorBannerRef = useRef(null)
   const { t } = useTranslation()
 
   // SINPE Móvil siempre primero, con su beneficio explícito (Brand Book §15.4)
@@ -189,10 +190,14 @@ export default function CheckoutPage() {
     window.scrollTo({ top: 0, behavior: 'instant' })
   }, [])
 
-  // Scroll al inicio al transicionar a una pantalla diferente dentro del flujo
+  // Scroll al inicio solo cuando se cambia a una PANTALLA COMPLETA diferente.
+  // Para 'failed' el usuario permanece en el formulario — desplazamos al banner de error.
   useEffect(() => {
-    if (estado === 'sinpe_pendiente' || estado === 'gift_card_paid' || estado === 'failed') {
+    if (estado === 'sinpe_pendiente' || estado === 'gift_card_paid') {
       window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else if (estado === 'failed') {
+      // Llevar el foco al banner de error, no al inicio de la página
+      errorBannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
   }, [estado])
 
@@ -984,6 +989,7 @@ export default function CheckoutPage() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
+                  ref={errorBannerRef}
                   className="space-y-3"
                   role="alert"
                 >

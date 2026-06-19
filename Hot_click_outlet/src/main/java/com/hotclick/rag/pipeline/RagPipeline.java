@@ -44,9 +44,10 @@ public class RagPipeline {
 
     private static final Logger    log      = LoggerFactory.getLogger(RagPipeline.class);
     private static final int       TOP_K    = 5;
-    private static final int       MAX_TOKENS = 250;
-    private static final Pattern   CATS_TAG = Pattern.compile("\\[CATS:([^\\]]+)\\]");
-    private static final Pattern   OPTS_TAG = Pattern.compile("\\[OPTS:([^\\]]+)\\]");
+    private static final int       MAX_TOKENS = 450;
+    private static final Pattern   CATS_TAG  = Pattern.compile("\\[CATS:([^\\]]+)\\]");
+    private static final Pattern   OPTS_TAG  = Pattern.compile("\\[OPTS:([^\\]]+)\\]");
+    private static final Pattern   PRODS_TAG = Pattern.compile("\\[PRODS:([^\\]]+)\\]");
     private static final HttpClient HTTP    = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(15))
         .build();
@@ -164,7 +165,7 @@ public class RagPipeline {
                 return RagResult.fallback();
             }
 
-            // Extraer [CATS:...] y [OPTS:...] del texto como listas estructuradas
+            // Extraer [CATS:...] del texto
             List<String> categoriasSugeridas = List.of();
             Matcher mc = CATS_TAG.matcher(texto);
             if (mc.find()) {
@@ -174,6 +175,7 @@ public class RagPipeline {
                 texto = texto.replace(mc.group(0), "").strip();
             }
 
+            // Extraer [OPTS:...]
             List<String> opts = List.of();
             Matcher mo = OPTS_TAG.matcher(texto);
             if (mo.find()) {
@@ -183,7 +185,23 @@ public class RagPipeline {
                 texto = texto.replace(mo.group(0), "").strip();
             }
 
-            return new RagResult(texto, productos, categoriasSugeridas, opts, tokIn, tokOut);
+            // Extraer [PRODS:sku1,sku2] — Claude decide exactamente qué productos mostrar.
+            // Si no hay tag [PRODS:], no se muestran tarjetas (evita mostrar cards cuando
+            // Claude está haciendo una pregunta aclaratoria o no hay match relevante).
+            List<ProductoContexto> productosAMostrar = List.of();
+            Matcher mp = PRODS_TAG.matcher(texto);
+            if (mp.find()) {
+                Set<String> skusSeleccionados = Arrays.stream(mp.group(1).split(","))
+                    .map(s -> s.trim().toUpperCase())
+                    .filter(s -> !s.isBlank())
+                    .collect(Collectors.toSet());
+                productosAMostrar = productos.stream()
+                    .filter(p -> p.sku() != null && skusSeleccionados.contains(p.sku().toUpperCase()))
+                    .collect(Collectors.toList());
+                texto = texto.replace(mp.group(0), "").strip();
+            }
+
+            return new RagResult(texto, productosAMostrar, categoriasSugeridas, opts, tokIn, tokOut);
 
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
@@ -226,6 +244,13 @@ public class RagPipeline {
             if (role.equals(lastRole)) continue; // evitar roles consecutivos iguales
             messages.add(Map.of("role", role, "content", content));
             lastRole = role;
+        }
+
+        // Claude API exige que el primer mensaje sea "user". Si el historial truncado
+        // empieza con "assistant" (ocurre cuando hay más de HISTORY_MESSAGES/2 turnos),
+        // se descartan mensajes del inicio hasta encontrar el primer "user".
+        while (!messages.isEmpty() && "assistant".equals(messages.get(0).get("role"))) {
+            messages.remove(0);
         }
 
         // La query actual siempre es el último turno de user

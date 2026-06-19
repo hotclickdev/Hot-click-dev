@@ -57,6 +57,14 @@ public class PromptBuilder {
                 sb.append("Tu rol: explicar exactamente cómo funciona este producto, para quién es ideal ");
                 sb.append("y si se adapta a lo que el cliente necesita. Sé directo: si el producto ");
                 sb.append("NO se adapta a su necesidad, decíselo claramente. Si SÍ, explicá exactamente por qué.\n");
+                sb.append("\n");
+                sb.append("REGLA CRÍTICA DE FOCO: El cliente está viendo '").append(pNombre).append("'. ");
+                sb.append("NUNCA agregués [PRODS:] con otros productos a menos que el cliente EXPLÍCITAMENTE pida ");
+                sb.append("alternativas, similares, otras opciones, o diga que este producto no le sirve. ");
+                sb.append("Si el cliente hace preguntas sobre el producto (talla, color, material, precio, disponibilidad, ");
+                sb.append("para qué sirve, etc.), respondé solo sobre '").append(pNombre).append("' sin mostrar otras tarjetas. ");
+                sb.append("Solo podés usar [PRODS:] con el SKU de '").append(pNombre).append("' cuando sea necesario reafirmar el producto, ");
+                sb.append("o con otros SKUs ÚNICAMENTE si el cliente pidió explícitamente ver alternativas (máximo 2).\n");
             }
             case "CARRITO" -> {
                 String[] parts = ctx.split(":", 3);
@@ -143,9 +151,10 @@ public class PromptBuilder {
             </paso>
 
             <paso id="3" nombre="RECOMENDAR_CON_RAZON">
-            Al mostrar productos del catálogo, explicá en 1 frase CORTA por qué ese producto \
-            encaja con lo que el cliente necesita. No solo listés el nombre; conectá el producto \
-            con la necesidad expresada. Incluí siempre SKU y precio en ₡.
+            Al recomendar productos, escribí 1 frase CORTA que conecte el producto con la \
+            necesidad del cliente. Luego agregá [PRODS:SKU1,SKU2] con los SKUs exactos del \
+            catálogo. Las tarjetas con precio e imagen se renderizan automáticamente — \
+            no repitas nombre ni precio en el texto.
             </paso>
 
             <paso id="4" nombre="SIN_RESULTADOS">
@@ -171,9 +180,14 @@ public class PromptBuilder {
             si el cliente quiere explorar alguna de ellas. Si categorias_de_la_tienda está vacío, \
             decile que puede preguntar qué tipos de productos manejamos.
 
-            EJEMPLO CORRECTO:
-            "Ahora mismo no tenemos utensilios de cocina. Lo que sí manejamos son bloques \
-            magnéticos y parlantes portátiles — ¿te interesa alguno, o querés ver otras categorías?"
+            EJEMPLO CORRECTO (con alternativa relacionada):
+            "Ahora mismo no tenemos utensilios de cocina, pero este parlante es ideal para \
+            ambientar cualquier espacio del hogar:"
+            [PRODS:HC2-AUD-002]
+            [CATS:Tecnología,Mascotas,Hogar]
+
+            EJEMPLO CORRECTO (sin alternativa relacionada):
+            "Ahora mismo no tenemos utensilios de cocina. ¿Te puedo ayudar con algo más?"
             [CATS:Tecnología,Mascotas,Hogar]
 
             EJEMPLO DE LO QUE NUNCA DEBES HACER:
@@ -210,8 +224,9 @@ public class PromptBuilder {
         sb.append("""
             <regla id="3">BREVEDAD MÁXIMA: Tu respuesta de texto NO PUEDE superar 2 oraciones cortas. \
             Nunca uses bullet points, listas ni guiones en el texto. \
-            Los productos y categorías se renderizan automáticamente como tarjetas — NO los repitas en texto. \
-            Si tenés algo para mostrar, escribí solo la frase que introduce el resultado. \
+            Los productos se muestran automáticamente como tarjetas cuando agregás [PRODS:SKU1,SKU2] \
+            al final — NO describas productos en texto. \
+            Si tenés algo para mostrar, escribí UNA frase introductoria y luego el [PRODS:]. \
             Si hacés una pregunta, hacé UNA sola. Nunca hagas más de una pregunta por turno.</regla>
             """);
 
@@ -279,6 +294,19 @@ public class PromptBuilder {
             [CATS:Nombre1,Nombre2,Nombre3] con las categorías más pertinentes (máximo 5). \
             NO incluyas [CATS:...] cuando ya mostrás productos específicos del catálogo. \
             El sistema extrae y renderiza los chips automáticamente; no los menciones en el texto.</regla>
+            """);
+
+        sb.append("""
+            <regla id="11">MOSTRAR PRODUCTOS — OBLIGATORIO: Cada vez que quieras presentar \
+            uno o más productos al cliente, DEBES agregar al FINAL de tu respuesta, \
+            en una línea separada, la etiqueta [PRODS:SKU1,SKU2,...] con los SKUs EXACTOS \
+            de los productos que querés mostrar (máximo 4, solo los más relevantes). \
+            Los SKUs deben coincidir EXACTAMENTE con los que figuran en <catalogo_disponible>. \
+            Las tarjetas se renderizan automáticamente — no describas los productos en texto. \
+            Si no vas a mostrar productos (ej: estás haciendo una pregunta aclaratoria o \
+            no hay match), NO incluyas [PRODS:]. \
+            NUNCA digas "te voy a mostrar" o "mirá lo que tenemos" sin incluir [PRODS:] \
+            en la misma respuesta.</regla>
             """);
         sb.append("</reglas_estrictas>\n\n");
 

@@ -206,6 +206,12 @@ export default function AIChat({
     : null
   const activeChips = userMsgCount === 0 ? chips : (contextChips ?? [])
   const showChips = activeChips.length > 0 && !cargando
+
+  // En contexto PRODUCTO extraemos el nombre para el chip de alternativas
+  const productoNombreCtx = context.startsWith('PRODUCTO:')
+    ? context.split(':')[1] ?? null
+    : null
+
   // Mostrar chip de alternativas cuando el AI respondió pero no devolvió productos
   const showAlternativas =
     !cargando &&
@@ -213,6 +219,10 @@ export default function AIChat({
     lastAssistant != null &&
     (lastAssistant.productos?.length ?? 0) === 0 &&
     lastUserMsg != null
+
+  const queryAlternativas = productoNombreCtx
+    ? `¿Qué productos similares o alternativos a "${productoNombreCtx}" tenés disponibles?`
+    : `¿Qué productos similares o relacionados con "${lastUserMsg?.texto ?? ''}" tenés disponibles?`
 
   return (
     <div className="flex flex-col gap-3">
@@ -239,8 +249,8 @@ export default function AIChat({
                 {m.typing
                   ? <div className="px-3 py-2 rounded-2xl rounded-tl-sm"
                       style={{
-                        background: '#f1f3f5',
-                        border: '1px solid #e0e0e0',
+                        background: 'var(--hc-surface-2)',
+                        border: '1px solid var(--hc-border)',
                       }}>
                       <TypingDots />
                     </div>
@@ -249,9 +259,9 @@ export default function AIChat({
                       style={m.rol === 'user'
                         ? { background: accent, color: '#ffffff', fontWeight: 500 }
                         : {
-                            background: m.failed ? '#fff5f5' : '#f1f3f5',
-                            color: '#1a1a2e',
-                            border: `1px solid ${m.failed ? '#fecaca' : '#e0e0e0'}`,
+                            background: m.failed ? 'var(--hc-danger-bg)' : 'var(--hc-surface-2)',
+                            color: 'var(--hc-text)',
+                            border: `1px solid ${m.failed ? 'var(--hc-danger)' : 'var(--hc-border)'}`,
                           }}
                     >
                       {m.rol === 'user'
@@ -341,7 +351,7 @@ export default function AIChat({
       {/* ── Chip de alternativas ── */}
       {showAlternativas && (
         <button
-          onClick={() => enviar(`¿Qué productos similares o relacionados con "${lastUserMsg.texto}" tenés disponibles?`)}
+          onClick={() => enviar(queryAlternativas)}
           className="self-start text-[11px] px-3 py-1.5 rounded-full transition-all hover:opacity-80 active:scale-95 flex items-center gap-1.5"
           style={{
             background: `color-mix(in srgb, ${accent} 10%, transparent)`,
@@ -368,9 +378,9 @@ export default function AIChat({
           maxLength={500}
           className="flex-1 px-3 py-2.5 rounded-xl text-sm outline-none disabled:opacity-50 transition-all"
           style={{
-            background: '#f1f3f5',
-            border: '1px solid #d0d0d0',
-            color: '#1a1a2e',
+            background: 'var(--hc-surface-2)',
+            border: '1px solid var(--hc-border)',
+            color: 'var(--hc-text)',
             caretColor: accent,
           }}
           onFocus={e => { e.target.style.borderColor = accent }}

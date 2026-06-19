@@ -208,13 +208,15 @@ public class SuscripcionService {
             log.warn("[stripe-webhook] marcarEventoRecibido llamado con eventId nulo/vacío — ignorando");
             return true;
         }
-        return eventoRepo.findById(eventId).map(existing -> {
+        // PESSIMISTIC_WRITE serializa reintentos concurrentes del mismo evento:
+        // dos threads que lean procesadoOk=false simultáneamente no pueden
+        // entrar a despachar al mismo tiempo — el segundo bloquea hasta que
+        // el primero confirme (procesadoOk=true) o falle (procesadoOk=false).
+        return eventoRepo.findByIdForUpdate(eventId).map(existing -> {
             if (Boolean.TRUE.equals(existing.getProcesadoOk())) {
-                // El evento ya fue procesado con éxito — ignorar el reintento de Stripe
                 log.info("[stripe-webhook] Evento procesado exitosamente — ignorando reintento: {}", eventId);
                 return true;
             }
-            // El intento previo falló (procesadoOk=false); permitir reintento
             log.info("[stripe-webhook] Reintentando evento fallido: {}", eventId);
             return false;
         }).orElseGet(() -> {

@@ -109,15 +109,19 @@ public class BillingWebhookController {
                     (Session) deserializer.getObject().get(), event.toJson(), "webhook");
             }
             case "payment_intent.payment_failed" -> {
-                // Registrar el fallo; la UI de Stripe Checkout ya mostró el error al usuario.
-                // El pedido queda en PENDIENTE hasta que el usuario cancele o reintente.
-                deserializer.getObject().ifPresent(obj -> {
-                    PaymentIntent pi = (PaymentIntent) obj;
-                    String motivo = pi.getLastPaymentError() != null
-                        ? pi.getLastPaymentError().getMessage() : "sin_detalle";
-                    log.warn("[stripe-webhook] payment_intent.payment_failed id={} motivo='{}'",
-                        pi.getId(), motivo);
-                });
+                // Mismo guard que checkout.session.completed: fallar explícitamente ante
+                // deserialización vacía para que Stripe reintente en lugar de perder el evento.
+                if (deserializer.getObject().isEmpty()) {
+                    log.error("[stripe-webhook] No se pudo deserializar payment_intent.payment_failed id={}",
+                              event.getId());
+                    throw new IllegalStateException(
+                        "Deserialization failed for payment_intent.payment_failed event.id=" + event.getId());
+                }
+                PaymentIntent pi = (PaymentIntent) deserializer.getObject().get();
+                String motivo = pi.getLastPaymentError() != null
+                    ? pi.getLastPaymentError().getMessage() : "sin_detalle";
+                log.warn("[stripe-webhook] payment_intent.payment_failed id={} motivo='{}'",
+                    pi.getId(), motivo);
             }
             case "invoice.payment_succeeded" -> {
                 deserializer.getObject().ifPresent(obj -> {

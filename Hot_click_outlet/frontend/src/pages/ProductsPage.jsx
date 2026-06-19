@@ -390,14 +390,14 @@ function BrandDropdown({ marcas, marcasFilter, toggleMarca, clearMarcas, marcaPr
 // ── Dropdown de filtros extra ─────────────────────────────────────────────────
 function MoreFiltersDropdown({
   filterCond, setFilterCond, filterStock, setFilterStock,
-  filterTalla, setFilterTalla, priceMin, setPriceMin, priceMax, setPriceMax,
-  COND_OPTIONS, STOCK_OPTIONS, tallaOptions, filteredCount,
+  priceMin, setPriceMin, priceMax, setPriceMax,
+  COND_OPTIONS, STOCK_OPTIONS, filteredCount,
 }) {
-  const extraCount = [filterCond, filterStock, filterTalla, priceMin, priceMax]
+  const extraCount = [filterCond, filterStock, priceMin, priceMax]
     .filter(v => v !== '' && v != null).length
 
   const clearExtra = () => {
-    setFilterCond(''); setFilterStock(''); setFilterTalla(''); setPriceMin(''); setPriceMax('')
+    setFilterCond(''); setFilterStock(''); setPriceMin(''); setPriceMax('')
   }
 
   return (
@@ -455,33 +455,6 @@ function MoreFiltersDropdown({
             </div>
           </div>
 
-          {/* Tallas */}
-          {(tallaOptions.ropa.length > 0 || tallaOptions.zapatos.length > 0) && (
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--hc-muted)' }}>Talla</p>
-              {tallaOptions.ropa.length > 0 && (
-                <div className="mb-2">
-                  <p className="text-[9px] uppercase tracking-wider mb-1 opacity-50" style={{ color: 'var(--hc-muted)' }}>👕 Ropa</p>
-                  <div className="flex flex-wrap gap-1">
-                    {tallaOptions.ropa.map(t => (
-                      <FPill key={t} active={filterTalla === t} onClick={() => setFilterTalla(filterTalla === t ? '' : t)}>{t}</FPill>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {tallaOptions.zapatos.length > 0 && (
-                <div>
-                  <p className="text-[9px] uppercase tracking-wider mb-1 opacity-50" style={{ color: 'var(--hc-muted)' }}>👟 Zapatos</p>
-                  <div className="flex flex-wrap gap-1">
-                    {tallaOptions.zapatos.map(t => (
-                      <FPill key={t} active={filterTalla === t} onClick={() => setFilterTalla(filterTalla === t ? '' : t)}>{t}</FPill>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Precio */}
           <div>
             <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--hc-muted)' }}>Precio</p>
@@ -528,11 +501,11 @@ function FPill({ active, onClick, children }) {
 // ── Barra de filtros completa ─────────────────────────────────────────────────
 function CatalogFilterBar({
   search, setSearch, sort, setSort,
-  categories, marcas, marcaProductCount, tallaOptions,
+  categories, marcas, marcaProductCount,
   category, setCategory,
   marcasFilter, toggleMarca, clearMarcas,
   filterCond, setFilterCond, filterStock, setFilterStock,
-  filterTalla, setFilterTalla, priceMin, setPriceMin, priceMax, setPriceMax,
+  priceMin, setPriceMin, priceMax, setPriceMax,
   hasFilters, clearFilters, COND_OPTIONS, STOCK_OPTIONS, SORT_OPTIONS, filteredCount,
   onOpenSidebar,
 }) {
@@ -579,27 +552,14 @@ function CatalogFilterBar({
               Filtrar
             </button>
 
-            {/* Marca — desktop */}
-            <div className="hidden lg:flex">
-              <BrandDropdown
-                marcas={marcas}
-                marcasFilter={marcasFilter}
-                toggleMarca={toggleMarca}
-                clearMarcas={clearMarcas}
-                marcaProductCount={marcaProductCount}
-                filteredCount={filteredCount}
-              />
-            </div>
-
-            {/* Filtros adicionales (condición, stock, talla, precio) */}
+            {/* Filtros adicionales (condición, stock, precio) */}
             <MoreFiltersDropdown
               filterCond={filterCond} setFilterCond={setFilterCond}
               filterStock={filterStock} setFilterStock={setFilterStock}
-              filterTalla={filterTalla} setFilterTalla={setFilterTalla}
               priceMin={priceMin} setPriceMin={setPriceMin}
               priceMax={priceMax} setPriceMax={setPriceMax}
               COND_OPTIONS={COND_OPTIONS} STOCK_OPTIONS={STOCK_OPTIONS}
-              tallaOptions={tallaOptions} filteredCount={filteredCount}
+              filteredCount={filteredCount}
             />
 
             {/* Ordenar */}
@@ -639,8 +599,6 @@ function CatalogFilterBar({
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="flex gap-1.5 py-2 min-w-max">
-              {/* Todos */}
-              {/* Todos */}
               <button
                 onClick={() => setCategory('')}
                 className="flex items-center gap-1.5 shrink-0 h-8 px-3.5 rounded-full text-xs font-semibold transition-all"
@@ -674,6 +632,64 @@ function CatalogFilterBar({
                       <svg className="w-2.5 h-2.5 opacity-40 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/>
                       </svg>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* — Fila 3: pills de marcas — */}
+      {marcas.length > 0 && (
+        <div
+          className="overflow-x-auto scrollbar-hide"
+          style={{ borderTop: '1px solid color-mix(in srgb, var(--hc-border) 40%, transparent)' }}
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="flex gap-1.5 py-1.5 min-w-max items-center">
+              {/* Label */}
+              <span className="text-[10px] font-bold uppercase tracking-wider shrink-0 mr-1" style={{ color: 'var(--hc-muted)' }}>
+                Marca
+              </span>
+
+              {/* Todas las marcas */}
+              <button
+                onClick={clearMarcas}
+                className="flex items-center gap-1 shrink-0 h-7 px-3 rounded-full text-[11px] font-semibold transition-all whitespace-nowrap"
+                style={marcasFilter.size === 0
+                  ? { background: 'var(--hc-accent)', color: '#fff', boxShadow: '0 2px 6px color-mix(in srgb, var(--hc-accent) 30%, transparent)' }
+                  : { background: 'color-mix(in srgb, var(--hc-text) 6%, transparent)', color: 'var(--hc-text)', border: '1.5px solid var(--hc-border)' }
+                }
+              >
+                Todas
+              </button>
+
+              {marcas.map(m => {
+                const isActive = marcasFilter.has(String(m.id))
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => toggleMarca(String(m.id))}
+                    className="flex items-center gap-1.5 shrink-0 h-7 px-3 rounded-full text-[11px] font-semibold transition-all whitespace-nowrap"
+                    style={isActive
+                      ? { background: 'var(--hc-accent)', color: '#fff', boxShadow: '0 2px 6px color-mix(in srgb, var(--hc-accent) 30%, transparent)' }
+                      : { background: 'color-mix(in srgb, var(--hc-text) 6%, transparent)', color: 'var(--hc-text)', border: '1.5px solid var(--hc-border)' }
+                    }
+                  >
+                    {m.logoUrl && (
+                      <img
+                        src={m.logoUrl}
+                        alt=""
+                        className="w-4 h-4 object-contain rounded-sm shrink-0"
+                        style={{ filter: isActive ? 'brightness(0) invert(1)' : 'none' }}
+                        onError={e => { e.target.style.display = 'none' }}
+                      />
+                    )}
+                    <span className="max-w-[100px] truncate">{m.nombreMarca}</span>
+                    {marcaProductCount[m.id] > 0 && (
+                      <span className="text-[9px] font-bold opacity-60">{marcaProductCount[m.id]}</span>
                     )}
                   </button>
                 )
@@ -1291,9 +1307,10 @@ export default function ProductsPage() {
   const [filterTalla, setFilterTalla] = useState('')
   const [priceMin,    setPriceMin]    = useState('')
   const [priceMax,    setPriceMax]    = useState('')
-  const [quickView,     setQuickView]     = useState(null)
-  const [aiPanelOpen,   setAiPanelOpen]   = useState(false)
-  const [sidebarOpen,   setSidebarOpen]   = useState(false)
+  const [quickView,       setQuickView]       = useState(null)
+  const [aiPanelOpen,     setAiPanelOpen]     = useState(false)
+  const [sidebarOpen,     setSidebarOpen]     = useState(false)
+  const [filterViewPage,  setFilterViewPage]  = useState(0)
   const aiQuery = searchParams.get('q') || ''
 
   useEffect(() => {
@@ -1301,6 +1318,9 @@ export default function ProductsPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const [productGridRef, shouldRenderGrid] = useLazyLoad({ threshold: 0.1, rootMargin: '200px' })
+
+  // Resetear página local cuando cambian los filtros
+  useEffect(() => { setFilterViewPage(0) }, [search, category, marcasFilter, filterStock, filterCond, filterTalla, priceMin, priceMax, sort])
 
   // Sincronizar URL params al cambiar filtros (y página actual)
   useEffect(() => {
@@ -1430,6 +1450,11 @@ export default function ProductsPage() {
   }, [products])
 
   const hasFilters = !!(category || marcasFilter.size || filterStock || filterCond || filterTalla || priceMin || priceMax || search)
+
+  // Paginación local sobre resultados filtrados (evita dependencia del totalPages del backend)
+  const filteredPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const filteredSlice = filtered.slice(filterViewPage * PAGE_SIZE, (filterViewPage + 1) * PAGE_SIZE)
+
   const clearFilters = useCallback(() => {
     setCategory(''); clearMarcas(); setFilterStock(''); setFilterCond('')
     setFilterTalla(''); setSearch(''); setPriceMin(''); setPriceMax('')
@@ -1736,7 +1761,7 @@ export default function ProductsPage() {
                             </p>
                           )}
                           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-                            {filtered.map((product, i) => (
+                            {filteredSlice.map((product, i) => (
                               <ProductCard key={product.id} product={product} priority={i < 6} index={i} onQuickView={setQuickView} />
                             ))}
                           </div>
@@ -1755,15 +1780,17 @@ export default function ProductsPage() {
                       />
                     )}
 
-                    {/* Paginación — solo en modo grid flat (cuando hay filtros activos) */}
-                    {totalPages > 1 && hasFilters && (
+                    {/* Paginación local — basada en los resultados filtrados, no en páginas del backend */}
+                    {filteredPages > 1 && hasFilters && (
                       <nav aria-label="Paginación" className="flex items-center justify-center gap-1.5 mt-8 flex-wrap">
-                        <button onClick={() => fetchProducts(page - 1)} disabled={page === 0}
+                        <button
+                          onClick={() => { setFilterViewPage(p => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                          disabled={filterViewPage === 0}
                           className="hc-btn hc-btn-outline hc-btn-sm disabled:opacity-30 disabled:cursor-not-allowed">
                           Anterior
                         </button>
-                        {Array.from({ length: totalPages }, (_, i) => i)
-                          .filter(i => i === 0 || i === totalPages - 1 || Math.abs(i - page) <= 1)
+                        {Array.from({ length: filteredPages }, (_, i) => i)
+                          .filter(i => i === 0 || i === filteredPages - 1 || Math.abs(i - filterViewPage) <= 1)
                           .reduce((acc, i, idx, arr) => {
                             if (idx > 0 && i - arr[idx - 1] > 1) acc.push('…')
                             acc.push(i)
@@ -1775,11 +1802,11 @@ export default function ProductsPage() {
                             ) : (
                               <button
                                 key={i}
-                                onClick={() => fetchProducts(i)}
+                                onClick={() => { setFilterViewPage(i); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
                                 aria-label={`Página ${i + 1}`}
-                                aria-current={i === page ? 'page' : undefined}
+                                aria-current={i === filterViewPage ? 'page' : undefined}
                                 className="w-8 h-8 rounded-lg text-sm font-semibold transition-colors"
-                                style={i === page
+                                style={i === filterViewPage
                                   ? { background: 'var(--hc-accent)', color: '#fff' }
                                   : { color: 'var(--hc-text-2)', border: '1px solid var(--hc-border)' }}
                               >
@@ -1787,7 +1814,9 @@ export default function ProductsPage() {
                               </button>
                             )
                           )}
-                        <button onClick={() => fetchProducts(page + 1)} disabled={page >= totalPages - 1}
+                        <button
+                          onClick={() => { setFilterViewPage(p => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                          disabled={filterViewPage >= filteredPages - 1}
                           className="hc-btn hc-btn-outline hc-btn-sm disabled:opacity-30 disabled:cursor-not-allowed">
                           Siguiente
                         </button>

@@ -64,6 +64,7 @@ export default function ChatModal() {
               background: 'var(--hc-surface)',
               borderLeft: '1px solid var(--hc-border)',
               boxShadow: '-8px 0 48px rgba(0,0,0,0.14)',
+              color: 'var(--hc-text)',
             }}
           >
             {/* Header */}
