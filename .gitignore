@@ -34,3 +34,8 @@ start-local.ps1
 
 # Reportes internos — no subir a git
 REPORTE_*.md
+
+# Herramientas locales — no subir a git
+repomix-output.txt
+loadtest.py
+reset_admin.py
