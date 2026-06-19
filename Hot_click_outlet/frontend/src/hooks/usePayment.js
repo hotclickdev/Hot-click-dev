@@ -14,6 +14,7 @@ export function usePayment() {
   const [error, setError]       = useState(null)
   const [intentos, setIntentos] = useState(0)
   const pollRef                 = useRef(null)
+  const redirectTimeoutRef      = useRef(null)
 
   // iniciarPago acepta isGuest=true para compras sin cuenta, isSinpe=true para usar SinpeController
   const iniciarPago = useCallback(async (checkoutPayload, isGuest = false, isSinpe = false) => {
@@ -36,6 +37,17 @@ export function usePayment() {
         setEstado('sinpe_pendiente')
       } else {
         setEstado('redirecting')
+        // Guard: si el navegador bloquea la redirección (CSP, popup blocker, URL inválida)
+        // el usuario no debe quedar atrapado en el spinner para siempre.
+        if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current)
+        redirectTimeoutRef.current = setTimeout(() => {
+          redirectTimeoutRef.current = null
+          setError(
+            'La página de pago no cargó. Es posible que tu navegador bloqueó la redirección. ' +
+            'Intenta de nuevo o contáctanos por WhatsApp.'
+          )
+          setEstado('failed')
+        }, 12000)
         window.location.href = data.redirectUrl
       }
     } catch (err) {
@@ -165,10 +177,17 @@ export function usePayment() {
     [intentos, iniciarPago]
   )
 
-  useEffect(() => () => stopPolling(), [stopPolling])
+  useEffect(() => () => {
+    stopPolling()
+    if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current)
+  }, [stopPolling])
 
   const reset = useCallback(() => {
     stopPolling()
+    if (redirectTimeoutRef.current) {
+      clearTimeout(redirectTimeoutRef.current)
+      redirectTimeoutRef.current = null
+    }
     setEstado('idle')
     setError(null)
     setPagoData(null)

@@ -184,6 +184,18 @@ export default function CheckoutPage() {
     if (estado === 'gift_card_paid' || estado === 'sinpe_pendiente') clearCartFn()
   }, [estado, clearCartFn])
 
+  // Scroll al inicio al llegar desde /carrito (React Router no lo hace automáticamente)
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [])
+
+  // Scroll al inicio al transicionar a una pantalla diferente dentro del flujo
+  useEffect(() => {
+    if (estado === 'sinpe_pendiente' || estado === 'gift_card_paid' || estado === 'failed') {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }, [estado])
+
   const costoEnvio     = metodoEnvio === 'ENVIO_A_DOMICILIO' ? 2000 : 0
   const subtotalCart   = total()
   const descuentoMonto = cuponDescuento > 0 ? Math.round(subtotalCart * cuponDescuento / 100) : 0

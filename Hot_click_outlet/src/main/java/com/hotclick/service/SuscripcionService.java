@@ -204,15 +204,26 @@ public class SuscripcionService {
      */
     @Transactional
     public boolean marcarEventoRecibido(String eventId, String tipo) {
-        if (eventoRepo.existsById(eventId)) {
-            log.info("[stripe-webhook] Evento ya procesado — ignorando: {}", eventId);
+        if (eventId == null || eventId.isBlank()) {
+            log.warn("[stripe-webhook] marcarEventoRecibido llamado con eventId nulo/vacío — ignorando");
             return true;
         }
-        StripeEvento ev = new StripeEvento();
-        ev.setStripeEventId(eventId);
-        ev.setTipo(tipo);
-        eventoRepo.save(ev);
-        return false;
+        return eventoRepo.findById(eventId).map(existing -> {
+            if (Boolean.TRUE.equals(existing.getProcesadoOk())) {
+                // El evento ya fue procesado con éxito — ignorar el reintento de Stripe
+                log.info("[stripe-webhook] Evento procesado exitosamente — ignorando reintento: {}", eventId);
+                return true;
+            }
+            // El intento previo falló (procesadoOk=false); permitir reintento
+            log.info("[stripe-webhook] Reintentando evento fallido: {}", eventId);
+            return false;
+        }).orElseGet(() -> {
+            StripeEvento ev = new StripeEvento();
+            ev.setStripeEventId(eventId);
+            ev.setTipo(tipo);
+            eventoRepo.save(ev);
+            return false;
+        });
     }
 
     @Transactional

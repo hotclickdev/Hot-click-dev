@@ -15,6 +15,7 @@ const SECCIONES = [
   { label: 'Categorías',            path: '/admin/categorias',     icon: '📂', keys: ['categorias','categoria','categorías','departamentos','secciones','tipos'] },
   { label: 'Bodegas / Almacenes',   path: '/admin/bodegas',        icon: '🏭', keys: ['bodegas','bodega','almacen','almacén','almacenes','depósito','deposito','stock','inventario'] },
   { label: 'Finanzas',              path: '/admin/finanzas',       icon: '💰', keys: ['finanzas','finanza','dinero','caja','ingresos','egresos','contabilidad','ganancias'] },
+  { label: 'Mi Billetera',         path: '/admin/billetera',      icon: '👛', keys: ['billetera','wallet','saldo','retiro','payout','comision','comisión','cobrar'] },
   { label: 'Reportes',              path: '/admin/reportes',       icon: '📊', keys: ['reportes','reporte','informe','informes','estadisticas','estadísticas','analitica'] },
   { label: 'Proveedores',           path: '/admin/proveedores',    icon: '🚚', keys: ['proveedores','proveedor','suppliers','suministros','compras'] },
   { label: 'Compras a Proveedor',   path: '/admin/compras',        icon: '🛒', keys: ['compras','compra','ordenes de compra','orden de compra','reabastecimiento'] },

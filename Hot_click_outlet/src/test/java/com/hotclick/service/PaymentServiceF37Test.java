@@ -6,6 +6,7 @@ import com.hotclick.payment.PaymentProvider;
 import com.hotclick.payment.PaymentProviderFactory;
 import com.hotclick.payment.PaymentSession;
 import com.hotclick.repository.*;
+import com.hotclick.service.AggregatorService;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -17,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;
 import java.util.Optional;
@@ -50,6 +52,9 @@ class PaymentServiceF37Test {
     @Mock WebhookDispatcherService  webhookDispatcher;
     @Mock PasswordEncoder           passwordEncoder;
     @Mock PaymentProvider           mockProvider;
+    @Mock N8nWebhookService         n8nWebhookService;
+    @Mock AggregatorService         aggregatorService;
+    @Mock ApplicationEventPublisher eventPublisher;
 
     @InjectMocks PaymentService service;
 

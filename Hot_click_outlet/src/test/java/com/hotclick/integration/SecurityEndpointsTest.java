@@ -48,9 +48,10 @@ class SecurityEndpointsTest extends BaseIntegrationTest {
     @DisplayName("POST /api/auth/login → público, sin token")
     void authLogin_public_noAuth() throws Exception {
         // Solo verificamos que no retorna 401/403 por auth
+        // (contraseña >= 6 chars para pasar la validación @Size y llegar al chequeo de credenciales)
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"correo\":\"x@x.com\",\"contrasena\":\"wrong\"}"))
+                .content("{\"correo\":\"x@x.com\",\"contrasena\":\"wrongpassword\"}"))
             .andExpect(status().isUnauthorized()); // 401 por credenciales, no por auth filter
     }
 

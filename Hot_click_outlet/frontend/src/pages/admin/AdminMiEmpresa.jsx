@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import PhoneField from '@/components/ui/PhoneField'
-import { useBlocker } from 'react-router-dom'
 import api from '@/services/api'
 import useAuthStore from '@/store/authStore'
 import { useToast } from '@/components/ui/Toast'
@@ -195,9 +194,6 @@ export default function AdminMiEmpresa() {
     window.addEventListener('beforeunload', handler)
     return () => window.removeEventListener('beforeunload', handler)
   }, [isDirty])
-
-  // Bloquear navegación in-app con cambios sin guardar
-  const blocker = useBlocker(isDirty && !saving)
 
   const canEdit = userRole === 'EMPRENDEDOR' || userRole === 'ADMIN_IT'
 
@@ -579,36 +575,6 @@ export default function AdminMiEmpresa() {
         </form>
       </div>
 
-      {/* Modal: confirmar navegación con cambios sin guardar */}
-      {blocker.state === 'blocked' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
-          <div className="rounded-2xl p-6 max-w-sm w-full space-y-4"
-            style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
-            <div>
-              <p className="font-semibold text-base" style={{ color: 'var(--hc-text)' }}>Cambios sin guardar</p>
-              <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>
-                Tenés cambios sin guardar en el perfil de tu negocio. ¿Salir sin guardar?
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => blocker.proceed?.()}
-                className="flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-opacity hover:opacity-80"
-                style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}
-              >
-                Salir sin guardar
-              </button>
-              <button
-                onClick={() => blocker.reset?.()}
-                className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
-                style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
-              >
-                Volver a guardar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   )
 }

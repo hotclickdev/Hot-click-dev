@@ -53,7 +53,8 @@ const AdminUsers = lazy(() => import('@/pages/admin/AdminUsers'))
 const AdminCategories = lazy(() => import('@/pages/admin/AdminCategories'))
 const AdminWarehouses = lazy(() => import('@/pages/admin/AdminWarehouses'))
 const AdminNewSale = lazy(() => import('@/pages/admin/AdminNewSale'))
-const AdminFinanzas = lazy(() => import('@/pages/admin/AdminFinanzas'))
+const AdminFinanzas   = lazy(() => import('@/pages/admin/AdminFinanzas'))
+const AdminBilletera  = lazy(() => import('@/pages/admin/AdminBilletera'))
 const AdminReporteContador = lazy(() => import('@/pages/admin/AdminReporteContador'))
 const AdminReportes       = lazy(() => import('@/pages/admin/AdminReportes'))
 const AdminPublicaciones  = lazy(() => import('@/pages/admin/AdminPublicaciones'))
@@ -405,6 +406,7 @@ export default function App() {
                 <Route path="/admin/ventas" element={<AdminNewSale />} />
                 <Route path="/admin/finanzas" element={<AdminFinanzas />} />
                 <Route path="/admin/finanzas/reporte-contador" element={<AdminReporteContador />} />
+                <Route path="/admin/billetera" element={<AdminBilletera />} />
                 <Route path="/admin/reportes" element={<AdminReportes />} />
                 <Route path="/admin/publicaciones" element={<AdminPublicaciones />} />
                 <Route path="/admin/nuevo-producto" element={<AdminNuevoProducto />} />

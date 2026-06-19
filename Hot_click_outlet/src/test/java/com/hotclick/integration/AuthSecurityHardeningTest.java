@@ -286,10 +286,10 @@ class AuthSecurityHardeningTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("Response incluye X-Frame-Options: DENY")
+    @DisplayName("Response incluye X-Frame-Options: SAMEORIGIN (DENY rompería los widgets de checkout PayPal/Stripe)")
     void response_hasXFrameOptions() throws Exception {
         mockMvc.perform(get("/api/health"))
-            .andExpect(header().string("X-Frame-Options", "DENY"));
+            .andExpect(header().string("X-Frame-Options", "SAMEORIGIN"));
     }
 
     @Test
@@ -329,7 +329,7 @@ class AuthSecurityHardeningTest extends BaseIntegrationTest {
                     "correo",    longValue + "@x.com",
                     "contrasena", longValue
                 ))))
-            .andExpect(status().isUnauthorized()); // no 500, no timeout
+            .andExpect(status().isBadRequest()); // @Size en JwtRequest rechaza antes del lookup — no 500, no timeout
     }
 
 }

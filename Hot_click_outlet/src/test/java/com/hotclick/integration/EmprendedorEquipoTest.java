@@ -42,12 +42,22 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
         emprendedor  = crearConEmpresa("empr-eq@test.cr",  "Empr Eq", rolEmp,   empresa);
         adminCliente = crearConEmpresa("admin-eq@test.cr", "Admin Eq", rolAdmin, empresa);
 
+        // La gestión de equipo (invitar/eliminar) se basa en la tabla de unión
+        // MiembroEmpresa, no solo en usuario.empresa — sin esto, el emprendedor
+        // no puede eliminar a adminCliente ni detectar invitaciones duplicadas.
+        miembroEmpresaRepository.save(new MiembroEmpresa(emprendedor, empresa, "PROPIETARIO"));
+        miembroEmpresaRepository.save(new MiembroEmpresa(adminCliente, empresa, "EDITOR"));
+
         tokenEmp         = "Bearer " + jwtUtil.generateToken(emprendedor.getCorreo(),  emprendedor.getId(),  Constants.ROL_EMPRENDEDOR);
         tokenAdminCliente = "Bearer " + jwtUtil.generateToken(adminCliente.getCorreo(), adminCliente.getId(), Constants.ROL_ADMIN_CLIENTE);
     }
 
     @AfterEach
     void tearDown() {
+        // MiembroEmpresa tiene FK no-nula a Empresa — debe limpiarse antes de
+        // borrar la empresa, o la siguiente prueba falla por FK violation
+        // seguida de unique constraint en el slug reutilizado.
+        miembroEmpresaRepository.deleteAll();
         usuarioRepository.findAll().stream()
             .filter(u -> u.getEmpresa() != null)
             .forEach(u -> { u.setEmpresa(null); usuarioRepository.save(u); });
@@ -218,13 +228,13 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
             .andExpect(status().isBadRequest());
     }
 
-    // ── T-EQ-016: Eliminar miembro inexistente → 404 ─────────────────────────
+    // ── T-EQ-016: Eliminar miembro inexistente → 403 (no distingue de "no es tu equipo") ──
     @Test
-    @DisplayName("T-EQ-016 | BÁSICO — Eliminar miembro inexistente → 404")
-    void eliminar_miembroInexistente_404() throws Exception {
+    @DisplayName("T-EQ-016 | BÁSICO — Eliminar miembro inexistente → 403 (no filtra existencia de IDs)")
+    void eliminar_miembroInexistente_403() throws Exception {
         mockMvc.perform(delete("/api/empresa/equipo/999999")
                 .header("Authorization", tokenEmp))
-            .andExpect(status().isNotFound());
+            .andExpect(status().isForbidden());
     }
 
     // ── T-EQ-017: Invitar body vacío → 400 ───────────────────────────────────
@@ -326,9 +336,9 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
         org.junit.jupiter.api.Assertions.assertEquals("Perez", juan.getApellidoPaterno());
     }
 
-    // ── T-EQ-024: Nombre sin apellido usa "Admin" como default ───────────────
+    // ── T-EQ-024: Nombre sin apellido usa "Miembro" como default ─────────────
     @Test
-    @DisplayName("T-EQ-024 | BÁSICO — Nombre sin apellido usa 'Admin' como apellido default")
+    @DisplayName("T-EQ-024 | BÁSICO — Nombre sin apellido usa 'Miembro' como apellido default")
     void invitar_nombreSinApellido_apellidoDefault() throws Exception {
         String body = "{\"nombre\":\"Solo\",\"correo\":\"solo-nombre@test.cr\","
             + "\"password\":\"Pass1234!\",\"telefono\":\"88661177\"}";
@@ -340,13 +350,13 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
 
         Usuario solo = usuarioRepository.findByCorreo("solo-nombre@test.cr")
             .orElseThrow(() -> new AssertionError("Usuario no encontrado"));
-        org.junit.jupiter.api.Assertions.assertEquals("Admin", solo.getApellidoPaterno());
+        org.junit.jupiter.api.Assertions.assertEquals("Miembro", solo.getApellidoPaterno());
     }
 
-    // ── T-EQ-025: Miembro eliminado (soft-delete) no puede re-invitarse ──────
+    // ── T-EQ-025: Miembro eliminado (soft-delete) puede reactivarse re-invitando ──
     @Test
-    @DisplayName("T-EQ-025 | BÁSICO — Correo de miembro eliminado no queda libre (soft delete)")
-    void eliminado_correoNoLiberado() throws Exception {
+    @DisplayName("T-EQ-025 | BÁSICO — Re-invitar correo de miembro eliminado reactiva su membresía → 200")
+    void eliminado_seReactivaAlReinvitar() throws Exception {
         mockMvc.perform(delete("/api/empresa/equipo/" + adminCliente.getId())
                 .header("Authorization", tokenEmp))
             .andExpect(status().isOk());
@@ -357,7 +367,8 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(bodyReinvite))
-            .andExpect(status().isBadRequest());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

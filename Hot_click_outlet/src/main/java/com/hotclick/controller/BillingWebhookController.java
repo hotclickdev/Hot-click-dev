@@ -7,6 +7,7 @@ import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.Invoice;
+import com.stripe.model.PaymentIntent;
 import com.stripe.model.Subscription;
 import com.stripe.model.checkout.Session;
 import jakarta.servlet.http.HttpServletRequest;
@@ -93,10 +94,29 @@ public class BillingWebhookController {
 
         switch (event.getType()) {
             case "checkout.session.completed" -> {
+                // Fallar explícitamente si el SDK no puede deserializar (mismatch de API version).
+                // Sin esto, el ifPresent() no ejecuta nada, el webhook devuelve 200 y el pedido
+                // jamás queda confirmado — causa raíz del spinner infinito con Google Pay.
+                if (deserializer.getObject().isEmpty()) {
+                    log.error("[stripe-webhook] No se pudo deserializar checkout.session.completed id={} " +
+                              "— posible mismatch entre stripe-java y la API version del webhook", event.getId());
+                    throw new IllegalStateException(
+                        "Stripe SDK falló al deserializar checkout.session.completed. " +
+                        "Verifica que la API version del webhook coincida con la del SDK. event.id=" + event.getId()
+                    );
+                }
+                stripePaymentProvider.procesarCheckoutCompletado(
+                    (Session) deserializer.getObject().get(), event.toJson(), "webhook");
+            }
+            case "payment_intent.payment_failed" -> {
+                // Registrar el fallo; la UI de Stripe Checkout ya mostró el error al usuario.
+                // El pedido queda en PENDIENTE hasta que el usuario cancele o reintente.
                 deserializer.getObject().ifPresent(obj -> {
-                    String ip = "webhook";
-                    stripePaymentProvider.procesarCheckoutCompletado(
-                        (Session) obj, event.toJson(), ip);
+                    PaymentIntent pi = (PaymentIntent) obj;
+                    String motivo = pi.getLastPaymentError() != null
+                        ? pi.getLastPaymentError().getMessage() : "sin_detalle";
+                    log.warn("[stripe-webhook] payment_intent.payment_failed id={} motivo='{}'",
+                        pi.getId(), motivo);
                 });
             }
             case "invoice.payment_succeeded" -> {

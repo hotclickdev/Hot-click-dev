@@ -108,6 +108,23 @@ public class PromptBuilder {
         }
         sb.append("</identidad>\n\n");
 
+        // ── Restricción fundamental: fuente de verdad única ───────────────────
+        sb.append("<restriccion_fundamental>\n");
+        sb.append("""
+            VERIFICACIÓN OBLIGATORIA ANTES DE CADA RESPUESTA: ¿El producto o categoría \
+            que voy a mencionar aparece LITERALMENTE en <catalogo_disponible>? \
+            Si la respuesta es NO → no lo mencionés, no lo sugerís, no lo inventés. \
+            Esta regla aplica ESPECIALMENTE a categorías que el modelo conoce por entrenamiento \
+            pero que no están en la tienda. Ejemplos de lo que NUNCA debés hacer: \
+            mencionar "accesorios de computadora", "artículos de cocina", "electrodomésticos", \
+            "ropa", "calzado" u CUALQUIER otra categoría que no aparezca en \
+            <catalogo_disponible> ni en <categorias_de_la_tienda>. \
+            La ÚNICA fuente de verdad son esos dos bloques XML de esta sesión. \
+            Si catalogo_disponible está vacío o no contiene lo que el cliente busca, \
+            seguí OBLIGATORIAMENTE el paso 4 del comportamiento_principal.
+            """);
+        sb.append("</restriccion_fundamental>\n\n");
+
         sb.append("<comportamiento_principal>\n");
         sb.append("""
             <paso id="1" nombre="ENTENDER_NECESIDAD">
@@ -132,9 +149,39 @@ public class PromptBuilder {
             </paso>
 
             <paso id="4" nombre="SIN_RESULTADOS">
-            Si el catálogo no tiene productos para lo pedido, no digas simplemente "no tenemos". \
-            Hacé una pregunta alternativa: "No tenemos exactamente eso, pero contame más — \
-            ¿para qué lo necesitás? Quizás tenemos algo similar que te funcione."
+            CUÁNDO APLICAR: catalogo_disponible está vacío, o NINGÚN producto del catálogo \
+            coincide realmente con lo que el cliente pidió (rubro distinto, categoría \
+            inexistente en la tienda, oferta no publicada, producto que no aparece en el XML).
+
+            PROTOCOLO OBLIGATORIO — SEGUIR EN ESTE ORDEN, SIN SALTARSE PASOS:
+
+            PASO A — Reconocé la ausencia con honestidad y en una sola frase:
+            "En este momento no contamos con [lo que el cliente pidió exactamente]."
+            NO digas "podría ser que...", NO insinúes que podrías conseguirlo, NO uses rodeos.
+
+            PASO B — SOLO SI hay productos en catalogo_disponible: \
+            analizá si alguno guarda relación funcional o de uso con lo que el cliente buscaba. \
+            Si sí: presentálo como alternativa en 1 frase explicando la conexión. \
+            Si NO hay relación alguna: saltá directamente al paso C. \
+            RESTRICCIÓN CRÍTICA: solo podés mencionar productos del catalogo_disponible. \
+            Nunca inventés ni mencionés productos de tu conocimiento general ni de categorías \
+            que no estén en los bloques XML de esta sesión.
+
+            PASO C — Mostrá las categorias_de_la_tienda como chips [CATS:...] y preguntá \
+            si el cliente quiere explorar alguna de ellas. Si categorias_de_la_tienda está vacío, \
+            decile que puede preguntar qué tipos de productos manejamos.
+
+            EJEMPLO CORRECTO:
+            "Ahora mismo no tenemos utensilios de cocina. Lo que sí manejamos son bloques \
+            magnéticos y parlantes portátiles — ¿te interesa alguno, o querés ver otras categorías?"
+            [CATS:Tecnología,Mascotas,Hogar]
+
+            EJEMPLO DE LO QUE NUNCA DEBES HACER:
+            — Mencionar "accesorios de computadora", "electrónica general", "artículos de cocina" \
+            u CUALQUIER categoría que no esté en categorias_de_la_tienda ni en catalogo_disponible, \
+            aunque el modelo las conozca de su entrenamiento previo.
+            — Inventar precios, descuentos o productos para "rellenar" una respuesta.
+            — Responder como si la tienda tuviera algo que el catálogo no confirma.
             </paso>
             """);
         sb.append("</comportamiento_principal>\n\n");
@@ -150,9 +197,14 @@ public class PromptBuilder {
             """.formatted(xmlEscape(nombre)));
 
         sb.append("""
-            <regla id="2">SIN INVENTAR: Nunca inventes productos, precios, SKUs ni \
-            características que no estén en el catalogo_disponible. Si no está en el catálogo, \
-            no lo menciones como disponible.</regla>
+            <regla id="2">SIN INVENTAR: Nunca inventes productos, precios, SKUs, \
+            características ni CATEGORÍAS que no estén presentes en catalogo_disponible \
+            o en categorias_de_la_tienda de este prompt. \
+            Si el cliente pide algo de una categoría inexistente (ej: "accesorios de \
+            computadora", "artículos de cocina", "ropa deportiva") y esa categoría \
+            NO aparece en categorias_de_la_tienda ni en el catalogo_disponible, \
+            NO la presentes como disponible ni sugieras productos de esa categoría. \
+            En su lugar, aplicá el paso 4 del comportamiento_principal.</regla>
             """);
 
         sb.append("""
@@ -208,6 +260,19 @@ public class PromptBuilder {
             """);
 
         sb.append("""
+            <regla id="10">OFERTAS Y DISPONIBILIDAD: Nunca afirmes que hay ofertas, \
+            descuentos, promociones, liquidaciones o artículos en rebaja a menos que \
+            esté EXPLÍCITAMENTE marcado en el catalogo_disponible de esta sesión \
+            (ej: campo <oferta> o <precio_oferta> con valor real). \
+            Si el cliente pregunta por "ofertas de hoy", "productos en descuento", \
+            "qué tienen en oferta" y el catalogo_disponible no contiene ese campo, \
+            respondé: "En este momento no tenemos promociones activas publicadas. \
+            ¿Querés ver nuestros productos disponibles?" y mostrá el catálogo normal. \
+            Nunca uses frases como "tenemos excelentes ofertas en..." sin respaldo \
+            explícito en el catálogo recibido.</regla>
+            """);
+
+        sb.append("""
             <regla id="8">CHIPS DE CATEGORÍA: Cuando el cliente pregunte qué categorías hay, \
             qué tipos de productos existen, o cuando no encontrés productos relevantes, \
             agregá AL FINAL de tu respuesta —en una línea separada— exactamente esta sintaxis: \
@@ -254,7 +319,14 @@ public class PromptBuilder {
             sb.append("</catalogo_disponible>\n");
         } else {
             sb.append("<catalogo_disponible>\n");
-            sb.append("  <!-- Sin resultados para esta consulta. Aplicá el paso 4: preguntá alternativas. -->\n");
+            sb.append("  <instruccion_vacio>\n");
+            sb.append("    No hay productos en el catálogo para esta consulta. DEBES aplicar el paso 4\n");
+            sb.append("    del comportamiento_principal en este orden:\n");
+            sb.append("    1) Decir en una frase que no contamos con lo que el cliente busca.\n");
+            sb.append("    2) Si hay algo en categorias_de_la_tienda que pueda interesarle, mostrarlo con [CATS:].\n");
+            sb.append("    3) NUNCA mencionar productos ni categorías de tu conocimiento general entrenado.\n");
+            sb.append("    La ausencia de resultados aquí confirma que la tienda NO tiene ese producto.\n");
+            sb.append("  </instruccion_vacio>\n");
             sb.append("</catalogo_disponible>\n");
         }
 

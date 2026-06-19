@@ -28,6 +28,7 @@ class PedidoServiceTest {
 
     @Mock private PedidoRepository         pedidoRepository;
     @Mock private NotificacionEmailService  notificacionEmailService;
+    @Mock private N8nWebhookService         n8nWebhookService;
     @Mock private UsuarioRepository         usuarioRepository;
     @Mock private BodegaRepository          bodegaRepository;
     @Mock private ProductoRepository        productoRepository;
@@ -88,8 +89,7 @@ class PedidoServiceTest {
 
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(bodegaRepository.findById(1L)).thenReturn(Optional.of(testBodega));
-        when(productoRepository.findById(10L)).thenReturn(Optional.of(testProducto));
-        when(productoRepository.findById(20L)).thenReturn(Optional.of(p2));
+        when(productoRepository.findAllById(anyList())).thenReturn(List.of(testProducto, p2));
         when(pedidoRepository.save(any())).thenAnswer(inv -> {
             Pedido p = inv.getArgument(0);
             if (p.getId() == null) p.setId(100L);
@@ -143,7 +143,7 @@ class PedidoServiceTest {
     void crearPedidoManual_productoNoExiste_throws() {
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(bodegaRepository.findById(1L)).thenReturn(Optional.of(testBodega));
-        when(productoRepository.findById(99L)).thenReturn(Optional.empty());
+        when(productoRepository.findAllById(anyList())).thenReturn(List.of());
 
         ManualPedidoDTO.ItemDTO item = new ManualPedidoDTO.ItemDTO();
         item.setProductoId(99L);
@@ -209,7 +209,7 @@ class PedidoServiceTest {
     @Test
     @DisplayName("buscarPorId → lanza excepción si no existe")
     void buscarPorId_noExiste_throws() {
-        when(pedidoRepository.findById(999L)).thenReturn(Optional.empty());
+        when(pedidoRepository.findByIdWithDetails(999L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.buscarPorId(999L))
             .isInstanceOf(RuntimeException.class)
@@ -255,7 +255,7 @@ class PedidoServiceTest {
     private void setupManualMocks() {
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(bodegaRepository.findById(1L)).thenReturn(Optional.of(testBodega));
-        when(productoRepository.findById(10L)).thenReturn(Optional.of(testProducto));
+        when(productoRepository.findAllById(anyList())).thenReturn(List.of(testProducto));
         when(pedidoRepository.save(any())).thenAnswer(inv -> {
             Pedido p = inv.getArgument(0);
             if (p.getId() == null) p.setId(100L);

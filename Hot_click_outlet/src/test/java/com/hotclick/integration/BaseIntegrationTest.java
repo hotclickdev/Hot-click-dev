@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ActiveProfiles;
@@ -59,6 +60,7 @@ public abstract class BaseIntegrationTest {
     @Autowired protected RolRepository            rolRepository;
     @Autowired protected RefreshTokenRepository   refreshTokenRepository;
     @Autowired protected MiembroEmpresaRepository miembroEmpresaRepository;
+    @Autowired protected JdbcTemplate             jdbcTemplate;
 
     // ── Datos de test expuestos a subclases ───────────────────────────────────
     protected Usuario testUser;
@@ -72,6 +74,9 @@ public abstract class BaseIntegrationTest {
         refreshTokenRepository.deleteAll();
         miembroEmpresaRepository.deleteAll();
         usuarioRepository.deleteAll();
+        // El rate limiter es real (no mockeado) — sin esto, los contadores se acumulan
+        // entre clases de test y bloquean con 429 llamadas legítimas de tests posteriores.
+        jdbcTemplate.update("DELETE FROM hot_click_rate_limit_tb");
 
         Rol rolUser  = obtenerOCrearRol(Constants.ROL_USUARIO_FINAL, 1);
         Rol rolAdmin = obtenerOCrearRol(Constants.ROL_ADMIN_IT, 10);
@@ -90,6 +95,7 @@ public abstract class BaseIntegrationTest {
         refreshTokenRepository.deleteAll();
         miembroEmpresaRepository.deleteAll();
         usuarioRepository.deleteAll();
+        jdbcTemplate.update("DELETE FROM hot_click_rate_limit_tb");
     }
 
     // ── Helpers para subclases ────────────────────────────────────────────────

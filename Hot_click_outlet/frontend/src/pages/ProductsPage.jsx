@@ -20,10 +20,76 @@ const PAGE_SIZE = 24
 
 // ── Utilidad: construir árbol de categorías ───────────────────────────────────
 function buildCategoryTree(cats) {
-  const roots = cats.filter(c => !c.padreId && !c.categoriaPadre && !c.parentId)
+  const unique = [...new Map(cats.map(c => [c.id, c])).values()]
+  const roots = unique.filter(c => !c.padreId && !c.categoriaPadre && !c.parentId)
   const children = (parentId) =>
-    cats.filter(c => String(c.padreId ?? c.categoriaPadre?.id ?? c.parentId ?? '') === String(parentId))
+    unique.filter(c => String(c.padreId ?? c.categoriaPadre?.id ?? c.parentId ?? '') === String(parentId))
   return roots.map(r => ({ ...r, children: children(r.id) }))
+}
+
+// ── Iconos SVG minimalistas por categoría ────────────────────────────────────
+const CAT_ICONS = {
+  // Electrónica / gadgets / celular / tecnología
+  electr:    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 8.25h3" />,
+  gadget:    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 8.25h3" />,
+  celular:   <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 8.25h3" />,
+  tecnol:    <path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0H3" />,
+  comput:    <path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0H3" />,
+  // Moda / ropa / estilo
+  moda:      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" />,
+  ropa:      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" />,
+  estilo:    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" />,
+  // Hogar / decoración / mueble
+  hogar:     <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />,
+  decor:     <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />,
+  mueble:    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />,
+  // Deporte / aventura
+  deport:    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.25v-1.5m0 1.5c-1.355 0-2.697.056-4.024.166C6.845 8.51 6 9.473 6 10.608v2.513m6-4.87c1.355 0 2.697.055 4.024.165C17.155 8.51 18 9.473 18 10.608v2.513m-3-4.87v-1.5m-6 1.5v-1.5m12 9.75l-1.5.75a3.354 3.354 0 01-3 0 3.354 3.354 0 00-3 0 3.354 3.354 0 01-3 0 3.354 3.354 0 00-3 0 3.354 3.354 0 01-1.5-.75m0-6l1.5-.75a3.354 3.354 0 013 0 3.354 3.354 0 003 0 3.354 3.354 0 013 0 3.354 3.354 0 003 0 3.354 3.354 0 011.5.75" />,
+  aventur:   <path strokeLinecap="round" strokeLinejoin="round" d="M6.115 5.19l.319 1.913A6 6 0 008.11 10.36L9.75 12l-.387.775c-.217.433-.132.956.21 1.298l1.348 1.348c.21.21.329.497.329.795v1.089c0 .426.24.815.622 1.006l.153.076c.433.217.956.132 1.298-.21l.723-.723a8.7 8.7 0 002.288-4.042 1.087 1.087 0 00-.358-1.099l-1.33-1.108c-.251-.21-.582-.299-.905-.245l-1.17.195a1.125 1.125 0 01-.98-.314l-.295-.295a1.125 1.125 0 010-1.591l.13-.132a1.125 1.125 0 011.3-.21l.603.302a.809.809 0 001.086-1.086L14.25 7.5l1.256-.837a4.5 4.5 0 001.528-1.732l.146-.292M6.115 5.19A9 9 0 1017.18 4.64M6.115 5.19A8.965 8.965 0 0112 3c1.929 0 3.716.607 5.18 1.64" />,
+  ejercici:  <path strokeLinecap="round" strokeLinejoin="round" d="M6.115 5.19l.319 1.913A6 6 0 008.11 10.36L9.75 12l-.387.775c-.217.433-.132.956.21 1.298l1.348 1.348c.21.21.329.497.329.795v1.089c0 .426.24.815.622 1.006l.153.076c.433.217.956.132 1.298-.21l.723-.723a8.7 8.7 0 002.288-4.042 1.087 1.087 0 00-.358-1.099l-1.33-1.108c-.251-.21-.582-.299-.905-.245l-1.17.195a1.125 1.125 0 01-.98-.314l-.295-.295a1.125 1.125 0 010-1.591l.13-.132a1.125 1.125 0 011.3-.21l.603.302a.809.809 0 001.086-1.086L14.25 7.5l1.256-.837a4.5 4.5 0 001.528-1.732l.146-.292M6.115 5.19A9 9 0 1017.18 4.64M6.115 5.19A8.965 8.965 0 0112 3c1.929 0 3.716.607 5.18 1.64" />,
+  // Belleza / cosmética / natural
+  belleza:   <><path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" /></>,
+  cosmet:    <><path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" /></>,
+  perfum:    <><path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" /></>,
+  // Mascotas
+  mascot:    <path strokeLinecap="round" strokeLinejoin="round" d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z" />,
+  animal:    <path strokeLinecap="round" strokeLinejoin="round" d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z" />,
+  // Juguetes / entretenimiento
+  juguet:    <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 6.087c0-.355.186-.676.401-.959.221-.29.349-.634.349-1.003 0-1.036-1.007-1.875-2.25-1.875s-2.25.84-2.25 1.875c0 .369.128.713.349 1.003.215.283.401.604.401.959v0a.64.64 0 01-.657.643 48.39 48.39 0 01-4.163-.3c.186 1.613.293 3.25.315 4.907a.656.656 0 01-.658.663v0c-.355 0-.676-.186-.959-.401a1.647 1.647 0 00-1.003-.349c-1.036 0-1.875 1.007-1.875 2.25s.84 2.25 1.875 2.25c.369 0 .713-.128 1.003-.349.283-.215.604-.401.959-.401v0c.31 0 .555.26.532.57a48.039 48.039 0 01-.642 5.056c1.518.19 3.058.309 4.616.354a.64.64 0 00.657-.643v0c0-.355-.186-.676-.401-.959a1.647 1.647 0 01-.349-1.003c0-1.035 1.008-1.875 2.25-1.875 1.243 0 2.25.84 2.25 1.875 0 .369-.128.713-.349 1.003-.215.283-.4.604-.4.959v0c0 .333.277.599.61.58a48.1 48.1 0 005.427-.63 48.05 48.05 0 00.582-4.717.532.532 0 00-.533-.57v0c-.355 0-.676.186-.959.401-.29.221-.634.349-1.003.349-1.035 0-1.875-1.007-1.875-2.25s.84-2.25 1.875-2.25c.37 0 .713.128 1.003.349.283.215.604.401.96.401v0a.656.656 0 00.658-.663 48.422 48.422 0 00-.37-5.36c-1.886.342-3.81.574-5.766.689a.578.578 0 01-.61-.58v0z" />,
+  entret:    <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 6.087c0-.355.186-.676.401-.959.221-.29.349-.634.349-1.003 0-1.036-1.007-1.875-2.25-1.875s-2.25.84-2.25 1.875c0 .369.128.713.349 1.003.215.283.401.604.401.959v0a.64.64 0 01-.657.643 48.39 48.39 0 01-4.163-.3c.186 1.613.293 3.25.315 4.907a.656.656 0 01-.658.663v0c-.355 0-.676-.186-.959-.401a1.647 1.647 0 00-1.003-.349c-1.036 0-1.875 1.007-1.875 2.25s.84 2.25 1.875 2.25c.369 0 .713-.128 1.003-.349.283-.215.604-.401.959-.401v0c.31 0 .555.26.532.57a48.039 48.039 0 01-.642 5.056c1.518.19 3.058.309 4.616.354a.64.64 0 00.657-.643v0c0-.355-.186-.676-.401-.959a1.647 1.647 0 01-.349-1.003c0-1.035 1.008-1.875 2.25-1.875 1.243 0 2.25.84 2.25 1.875 0 .369-.128.713-.349 1.003-.215.283-.4.604-.4.959v0c0 .333.277.599.61.58a48.1 48.1 0 005.427-.63 48.05 48.05 0 00.582-4.717.532.532 0 00-.533-.57v0c-.355 0-.676.186-.959.401-.29.221-.634.349-1.003.349-1.035 0-1.875-1.007-1.875-2.25s.84-2.25 1.875-2.25c.37 0 .713.128 1.003.349.283.215.604.401.96.401v0a.656.656 0 00.658-.663 48.422 48.422 0 00-.37-5.36c-1.886.342-3.81.574-5.766.689a.578.578 0 01-.61-.58v0z" />,
+  // Salud / farmacia
+  salud:     <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />,
+  farma:     <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />,
+  // Libros / educación
+  libros:    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />,
+  educaci:   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />,
+  // Joyería / accesorios / reloj
+  joyeria:   <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />,
+  joyería:   <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />,
+  accesori:  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />,
+  reloj:     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />,
+  // Alimentación / bebida
+  aliment:   <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />,
+  comida:    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />,
+  // Autos / motos
+  auto:      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />,
+}
+
+const CAT_ICON_DEFAULT = <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
+
+function catSvgIcon(name) {
+  if (!name) return CAT_ICON_DEFAULT
+  const n = name.toLowerCase()
+  for (const [k, v] of Object.entries(CAT_ICONS)) if (n.includes(k)) return v
+  return CAT_ICON_DEFAULT
+}
+
+function CatIcon({ name, className = 'w-3.5 h-3.5 shrink-0' }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
+      {catSvgIcon(name)}
+    </svg>
+  )
 }
 
 // ── Dropdown base con cierre al click afuera ──────────────────────────────────
@@ -224,8 +290,8 @@ function BrandDropdown({ marcas, marcasFilter, toggleMarca, clearMarcas, marcaPr
             : { background: 'var(--hc-surface)', color: 'var(--hc-text)', border: '1.5px solid var(--hc-border)' }
           }
         >
-          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
+          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
           </svg>
           <span className="max-w-[100px] truncate">{label}</span>
           {isActive && (
@@ -347,7 +413,10 @@ function MoreFiltersDropdown({
           }
         >
           <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
+            <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+            <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+            <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
           </svg>
           <span>Filtros</span>
           {extraCount > 0 && (
@@ -467,10 +536,14 @@ function CatalogFilterBar({
   hasFilters, clearFilters, COND_OPTIONS, STOCK_OPTIONS, SORT_OPTIONS, filteredCount,
   onOpenSidebar,
 }) {
+  const tree = useMemo(() => buildCategoryTree(categories), [categories])
+
   return (
     <div className="sticky top-0 z-30 backdrop-blur-xl"
-      style={{ background: 'color-mix(in srgb, var(--hc-bg) 92%, transparent)', borderBottom: '1px solid var(--hc-border)' }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+      style={{ background: 'color-mix(in srgb, var(--hc-bg) 94%, transparent)', borderBottom: '1px solid var(--hc-border)' }}>
+
+      {/* — Fila 1: búsqueda + filtros — */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-3 pb-2">
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
 
           {/* Búsqueda */}
@@ -489,27 +562,25 @@ function CatalogFilterBar({
             />
           </div>
 
-          {/* Dropdowns */}
+          {/* Botones de filtro */}
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-0.5 sm:pb-0">
-            {/* Mobile: botón abre sidebar drawer */}
+            {/* Mobile: abre sidebar drawer */}
             <button
               onClick={onOpenSidebar}
               className="flex lg:hidden items-center gap-1.5 h-9 px-3 rounded-xl text-sm font-semibold border shrink-0 transition-all hover:opacity-80"
               style={{ color: 'var(--hc-text)', borderColor: 'var(--hc-border)', background: 'var(--hc-surface)' }}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h10M4 18h7"/>
+                <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+                <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+                <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
               </svg>
               Filtrar
             </button>
 
-            {/* Desktop: dropdowns de categoría y marca (en sidebar en desktop, aquí en mobile) */}
-            <div className="hidden lg:flex items-center gap-2">
-              <CategoryDropdown
-                categories={categories}
-                category={category}
-                setCategory={setCategory}
-              />
+            {/* Marca — desktop */}
+            <div className="hidden lg:flex">
               <BrandDropdown
                 marcas={marcas}
                 marcasFilter={marcasFilter}
@@ -520,6 +591,7 @@ function CatalogFilterBar({
               />
             </div>
 
+            {/* Filtros adicionales (condición, stock, talla, precio) */}
             <MoreFiltersDropdown
               filterCond={filterCond} setFilterCond={setFilterCond}
               filterStock={filterStock} setFilterStock={setFilterStock}
@@ -558,6 +630,58 @@ function CatalogFilterBar({
           </div>
         </div>
       </div>
+
+      {/* — Fila 2: pills de categorías con íconos — */}
+      {tree.length > 0 && (
+        <div
+          className="overflow-x-auto scrollbar-hide"
+          style={{ borderTop: '1px solid color-mix(in srgb, var(--hc-border) 55%, transparent)' }}
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="flex gap-1.5 py-2 min-w-max">
+              {/* Todos */}
+              {/* Todos */}
+              <button
+                onClick={() => setCategory('')}
+                className="flex items-center gap-1.5 shrink-0 h-8 px-3.5 rounded-full text-xs font-semibold transition-all"
+                style={!category
+                  ? { background: 'var(--hc-accent)', color: '#fff', boxShadow: '0 2px 8px color-mix(in srgb, var(--hc-accent) 35%, transparent)' }
+                  : { background: 'color-mix(in srgb, var(--hc-text) 6%, transparent)', color: 'var(--hc-text)', border: '1.5px solid var(--hc-border)' }
+                }
+              >
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                </svg>
+                <span>Todos</span>
+              </button>
+
+              {tree.map(cat => {
+                const catName = cat.nombreCategoria ?? cat.nombre
+                const isActive = String(category) === String(cat.id)
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setCategory(isActive ? '' : String(cat.id))}
+                    className="flex items-center gap-1.5 shrink-0 h-8 px-3.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap"
+                    style={isActive
+                      ? { background: 'var(--hc-accent)', color: '#fff', boxShadow: '0 2px 8px color-mix(in srgb, var(--hc-accent) 35%, transparent)' }
+                      : { background: 'color-mix(in srgb, var(--hc-text) 6%, transparent)', color: 'var(--hc-text)', border: '1.5px solid var(--hc-border)' }
+                    }
+                  >
+                    <CatIcon name={catName} />
+                    <span className="max-w-[110px] truncate">{catName}</span>
+                    {cat.children?.length > 0 && (
+                      <svg className="w-2.5 h-2.5 opacity-40 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/>
+                      </svg>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -981,7 +1105,7 @@ function EmpCard({ p, i }) {
   )
 }
 
-function EmprendimientosView({ products, convenios, loading }) {
+function EmprendimientosView({ products, convenios, loading, onBack }) {
   return (
     <motion.div key="emprendimientos" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       transition={{ duration: 0.35 }} className="min-h-screen"
@@ -989,6 +1113,14 @@ function EmprendimientosView({ products, convenios, loading }) {
       <div className="relative overflow-hidden py-12 px-4"
         style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(52,211,153,0.03) 60%, transparent 100%)' }}>
         <div className="max-w-7xl mx-auto">
+          {/* Breadcrumb */}
+          <nav aria-label="Ruta de navegación" className="flex items-center gap-2 text-xs mb-5">
+            <Link to="/" className="hover:underline" style={{ color: 'var(--hc-muted)' }}>Inicio</Link>
+            <span aria-hidden="true" style={{ color: 'var(--hc-border-strong)' }}>/</span>
+            <button onClick={onBack} className="hover:underline" style={{ color: 'var(--hc-muted)' }}>Productos</button>
+            <span aria-hidden="true" style={{ color: 'var(--hc-border-strong)' }}>/</span>
+            <span className="font-semibold" style={{ color: '#10b981' }}>Emprendimientos</span>
+          </nav>
           <div className="flex items-center gap-4 mb-2">
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
               style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.25)' }}>🤝</div>
@@ -1108,7 +1240,7 @@ function CategoryRowsView({ products, categories, convenioMarcaNames, onVerMas, 
 
 // ── Página principal ──────────────────────────────────────────────────────────
 export default function ProductsPage() {
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
   const { t } = useTranslation()
 
@@ -1138,7 +1270,10 @@ export default function ProductsPage() {
   const [categories, setCategories] = useState([])
   const [marcas,    setMarcas]    = useState([])
   const [loading,   setLoading]   = useState(true)
-  const [page,      setPage]      = useState(0)
+  const [page,      setPage]      = useState(() => {
+    const p = parseInt(searchParams.get('page') ?? '0', 10)
+    return isNaN(p) || p < 0 ? 0 : p
+  })
   const [totalPages, setTotalPages] = useState(1)
   const [viewMode,  setViewMode]  = useState('all')
   const [convenios, setConvenios] = useState([])
@@ -1167,24 +1302,40 @@ export default function ProductsPage() {
   }, [])
   const [productGridRef, shouldRenderGrid] = useLazyLoad({ threshold: 0.1, rootMargin: '200px' })
 
-  // Sincronizar URL params al cambiar filtros
+  // Sincronizar URL params al cambiar filtros (y página actual)
   useEffect(() => {
-    const params = new URLSearchParams()
-    if (search)             params.set('search', search)
-    if (category)           params.set('cat', category)
-    if (marcasFilter.size)  params.set('marcas', [...marcasFilter].join(','))
-    const qs = params.toString()
-    navigate(`/productos${qs ? `?${qs}` : ''}`, { replace: true })
-  }, [search, category, marcasFilter, navigate])
+    const params = {}
+    if (search)             params.search = search
+    if (category)           params.cat = category
+    if (marcasFilter.size)  params.marcas = [...marcasFilter].join(',')
+    if (page > 0)           params.page = String(page)
+    setSearchParams(params, { replace: true })
+  }, [search, category, marcasFilter, page, setSearchParams])
 
   const fetchProducts = useCallback(async (p = 0) => {
     setLoading(true)
     try {
       const { data } = await productService.getAll(p, PAGE_SIZE)
       const content = (data.content ?? data ?? []).map(normalizeProduct)
-      setProducts(content)
-      setTotalPages(data.totalPages ?? 1)
-      setPage(p)
+      // Calcular totalPages desde totalElements para mayor precisión
+      const safeTotal = data.totalElements != null
+        ? Math.ceil(data.totalElements / PAGE_SIZE)
+        : (data.totalPages ?? 1)
+      const clampedTotal = Math.max(1, safeTotal)
+
+      if (content.length === 0 && p > 0) {
+        // Página fantasma: el backend reportó más páginas de las que existen con contenido
+        // Volver a página 0 automáticamente
+        const { data: d0 } = await productService.getAll(0, PAGE_SIZE)
+        const c0 = (d0.content ?? d0 ?? []).map(normalizeProduct)
+        setProducts(c0)
+        setTotalPages(clampedTotal)
+        setPage(0)
+      } else {
+        setProducts(content)
+        setTotalPages(clampedTotal)
+        setPage(p)
+      }
     } catch {
       setProducts([])
     } finally {
@@ -1192,7 +1343,9 @@ export default function ProductsPage() {
     }
   }, [])
 
-  useEffect(() => { fetchProducts(0) }, [fetchProducts])
+  // Usar la página guardada en la URL para restaurar posición al volver atrás
+  const initialPageRef = useRef(page)
+  useEffect(() => { fetchProducts(initialPageRef.current) }, [fetchProducts])
   useEffect(() => {
     productService.getCategories().then(({ data }) => setCategories(data ?? [])).catch(() => {})
     marcaService.getPublicas().then(r => {
@@ -1433,7 +1586,7 @@ export default function ProductsPage() {
           <OfertasView key="v-ofertas" products={filtered} loading={loading} />
         )}
         {viewMode === 'emprendimientos' && (
-          <EmprendimientosView key="v-emp" products={filtered} convenios={convenios} loading={loading} />
+          <EmprendimientosView key="v-emp" products={filtered} convenios={convenios} loading={loading} onBack={() => setViewMode('all')} />
         )}
         {viewMode === 'all' && (
           <motion.div key="v-all" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -1448,7 +1601,7 @@ export default function ProductsPage() {
                   <nav aria-label="Ruta de navegación" className="flex items-center gap-2 text-xs mb-4">
                     <Link to="/" className="hover:underline" style={{ color: 'var(--hc-muted)' }}>Inicio</Link>
                     <span aria-hidden="true" style={{ color: 'var(--hc-border-strong)' }}>/</span>
-                    <button onClick={() => setCategory('all')} className="hover:underline" style={{ color: 'var(--hc-muted)' }}>Productos</button>
+                    <button onClick={() => setCategory('')} className="hover:underline" style={{ color: 'var(--hc-muted)' }}>Productos</button>
                     <span aria-hidden="true" style={{ color: 'var(--hc-border-strong)' }}>/</span>
                     <span className="font-semibold" style={{ color: 'var(--hc-text-2)' }}>{activeCatName}</span>
                   </nav>

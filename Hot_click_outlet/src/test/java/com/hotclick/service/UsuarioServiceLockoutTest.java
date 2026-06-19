@@ -1,6 +1,5 @@
 package com.hotclick.service;
 
-import com.hotclick.service.PasswordResetService;
 import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -11,11 +10,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.context.ApplicationEventPublisher;
 
-import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -23,30 +21,28 @@ import static org.mockito.Mockito.*;
  * F35-02 — UsuarioService.incrementarIntentosFallidos(): atómico, sin race condition.
  *
  * Verifica:
- * - Con exactamente 5 intentos → envía email de recuperación (una sola vez)
- * - Con 6+ intentos → NO envía email (exactamente == 5, no >= 5)
- * - Con < 5 intentos → NO envía email
+ * - Con exactamente 5 intentos → publica CuentaBloqueadaEvent (una sola vez)
+ * - Con 6+ intentos → NO publica evento (exactamente == 5, no >= 5)
+ * - Con < 5 intentos → NO publica evento
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("F35-02 — UsuarioService: lockout atómico sin race condition email")
 class UsuarioServiceLockoutTest {
 
-    @Mock UsuarioRepository    usuarioRepository;
-    @Mock RolRepository        rolRepository;
-    @Mock PasswordResetService passwordResetService;
+    @Mock UsuarioRepository         usuarioRepository;
+    @Mock RolRepository             rolRepository;
+    @Mock PasswordResetService      passwordResetService;
+    @Mock ApplicationEventPublisher eventPublisher;
 
     @InjectMocks UsuarioService service;
 
-    // ── Exactamente 5 → email enviado ─────────────────────────────────────
+    // ── Exactamente 5 → evento publicado ──────────────────────────────────
 
     @Test
-    @DisplayName("RETURNING = 5 → envía email de recuperación (exactamente una vez)")
-    void incrementar_at5Intentos_sendsEmail() {
-        // Simula RETURNING devuelve intentos_fallidos = 5
-        List<Object[]> result = new java.util.ArrayList<>();
-        result.add(new Object[]{5});
-        when(usuarioRepository.incrementarYBloquear(1L)).thenReturn(result);
+    @DisplayName("intentosFallidos = 5 → publica CuentaBloqueadaEvent (exactamente una vez)")
+    void incrementar_at5Intentos_publicaEvento() {
+        when(usuarioRepository.findIntentosFallidos(1L)).thenReturn(Optional.of(5));
 
         com.hotclick.model.Usuario usuario = new com.hotclick.model.Usuario();
         usuario.setId(1L);
@@ -55,97 +51,68 @@ class UsuarioServiceLockoutTest {
 
         service.incrementarIntentosFallidos(1L);
 
-        verify(passwordResetService, times(1)).enviarCodigo("victim@test.cr");
+        verify(usuarioRepository).incrementarYBloquear(1L);
+        verify(eventPublisher, times(1)).publishEvent(
+            argThat(e -> e instanceof CuentaBloqueadaEvent
+                && "victim@test.cr".equals(((CuentaBloqueadaEvent) e).getCorreo())));
     }
 
-    // ── 6 intentos (ya bloqueado) → NO email ──────────────────────────────
+    // ── 6 intentos (ya bloqueado) → sin evento ────────────────────────────
 
     @Test
-    @DisplayName("RETURNING = 6 → NO envía email (solo al exacto 5, no >=5)")
-    void incrementar_at6Intentos_noEmail() {
-        List<Object[]> result = new java.util.ArrayList<>();
-        result.add(new Object[]{6});
-        when(usuarioRepository.incrementarYBloquear(1L)).thenReturn(result);
+    @DisplayName("intentosFallidos = 6 → NO publica evento (solo al exacto 5, no >=5)")
+    void incrementar_at6Intentos_sinEvento() {
+        when(usuarioRepository.findIntentosFallidos(1L)).thenReturn(Optional.of(6));
 
         service.incrementarIntentosFallidos(1L);
 
-        verify(passwordResetService, never()).enviarCodigo(anyString());
+        verify(eventPublisher, never()).publishEvent(any());
         verify(usuarioRepository, never()).findById(anyLong());
     }
 
-    // ── 4 intentos → NO email, NO bloqueo ─────────────────────────────────
+    // ── 4 intentos → sin evento, sin bloqueo ──────────────────────────────
 
     @Test
-    @DisplayName("RETURNING = 4 → NO envía email, advertencia silenciosa")
-    void incrementar_at4Intentos_noEmail() {
-        List<Object[]> result = new java.util.ArrayList<>();
-        result.add(new Object[]{4});
-        when(usuarioRepository.incrementarYBloquear(1L)).thenReturn(result);
+    @DisplayName("intentosFallidos = 4 → NO publica evento, advertencia silenciosa")
+    void incrementar_at4Intentos_sinEvento() {
+        when(usuarioRepository.findIntentosFallidos(1L)).thenReturn(Optional.of(4));
 
         service.incrementarIntentosFallidos(1L);
 
-        verify(passwordResetService, never()).enviarCodigo(anyString());
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
-    // ── RETURNING vacío (usuario no existe) → sin error ───────────────────
+    // ── Usuario no existe → sin error ──────────────────────────────────────
 
     @Test
-    @DisplayName("RETURNING vacío (usuario no encontrado) → retorna silenciosamente")
-    void incrementar_emptyResult_noCrash() {
-        when(usuarioRepository.incrementarYBloquear(99L))
-            .thenReturn(java.util.Collections.emptyList());
+    @DisplayName("findIntentosFallidos vacío (usuario no encontrado) → retorna silenciosamente")
+    void incrementar_sinResultado_noCrash() {
+        when(usuarioRepository.findIntentosFallidos(99L)).thenReturn(Optional.empty());
 
         // No debe lanzar excepción
         service.incrementarIntentosFallidos(99L);
 
-        verify(passwordResetService, never()).enviarCodigo(anyString());
-    }
-
-    // ── Email falla → no interrumpe el flujo de login ─────────────────────
-
-    @Test
-    @DisplayName("Email de recuperación falla → excepción capturada, flujo continúa")
-    void incrementar_emailFails_noExceptionPropagated() {
-        List<Object[]> result = new java.util.ArrayList<>();
-        result.add(new Object[]{5});
-        when(usuarioRepository.incrementarYBloquear(1L)).thenReturn(result);
-
-        com.hotclick.model.Usuario usuario = new com.hotclick.model.Usuario();
-        usuario.setCorreo("victim@test.cr");
-        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
-        doThrow(new RuntimeException("SendGrid down"))
-            .when(passwordResetService).enviarCodigo(anyString());
-
-        // No debe propagarse la excepción del email
-        assertThatNoException().isThrownBy(() -> service.incrementarIntentosFallidos(1L));
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     // ── CRÍTICO: exactamente 5 (no >= 5) elimina race condition ───────────
 
     @Test
-    @DisplayName("Thread A devuelve 5, Thread B devuelve 6 → solo A envía email (anti-TOCTOU)")
-    void incrementar_concurrentThreads_onlyExact5SendsEmail() {
-        // Thread A ve intentos = 5
-        List<Object[]> resultA = new java.util.ArrayList<>();
-        resultA.add(new Object[]{5});
-
-        // Thread B ve intentos = 6 (ya fue incrementado por A)
-        List<Object[]> resultB = new java.util.ArrayList<>();
-        resultB.add(new Object[]{6});
-
-        when(usuarioRepository.incrementarYBloquear(1L))
-            .thenReturn(resultA)   // primera llamada (Thread A)
-            .thenReturn(resultB);  // segunda llamada (Thread B)
+    @DisplayName("Thread A lee 5, Thread B lee 6 → solo A publica el evento (anti-TOCTOU)")
+    void incrementar_concurrentThreads_soloExact5PublicaEvento() {
+        when(usuarioRepository.findIntentosFallidos(1L))
+            .thenReturn(Optional.of(5))   // primera llamada (Thread A)
+            .thenReturn(Optional.of(6));  // segunda llamada (Thread B)
 
         com.hotclick.model.Usuario usuario = new com.hotclick.model.Usuario();
         usuario.setCorreo("victim@test.cr");
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
 
         // Simular dos llamadas concurrentes
-        service.incrementarIntentosFallidos(1L); // Thread A → email
-        service.incrementarIntentosFallidos(1L); // Thread B → sin email
+        service.incrementarIntentosFallidos(1L); // Thread A → evento
+        service.incrementarIntentosFallidos(1L); // Thread B → sin evento
 
-        // Solo 1 email enviado (Thread A), no 2
-        verify(passwordResetService, times(1)).enviarCodigo("victim@test.cr");
+        // Solo 1 evento publicado (Thread A), no 2
+        verify(eventPublisher, times(1)).publishEvent(any(CuentaBloqueadaEvent.class));
     }
 }

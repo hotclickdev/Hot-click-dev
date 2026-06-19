@@ -39,9 +39,17 @@ class PaymentServiceTest {
     @Mock private ProductoRepository        productoRepository;
     @Mock private BodegaRepository          bodegaRepository;
     @Mock private UsuarioRepository         usuarioRepository;
+    @Mock private RolRepository             rolRepository;
     @Mock private PagoRepository            pagoRepository;
     @Mock private TransaccionPagoRepository transaccionPagoRepository;
+    @Mock private EmpresaRepository         empresaRepository;
     @Mock private NotificacionEmailService  notificacionEmailService;
+    @Mock private N8nWebhookService         n8nWebhookService;
+    @Mock private AggregatorService         aggregatorService;
+    @Mock private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+    @Mock private CuponService              cuponService;
+    @Mock private GiftCardService           giftCardService;
+    @Mock private WebhookDispatcherService  webhookDispatcher;
     @Mock private PaymentProvider           mockProvider;
     @Mock private ApplicationEventPublisher eventPublisher;
 
@@ -336,7 +344,12 @@ class PaymentServiceTest {
         Pago pago = buildPago(pedido, Constants.PAGO_PENDIENTE);
         pago.setFechaExpiracion(LocalDateTime.now().minusMinutes(31));
 
-        when(pagoRepository.findExpiradosPendientes(any())).thenReturn(List.of(pago));
+        Empresa empresa = new Empresa();
+        empresa.setId(1L);
+        empresa.setEstadoEmpresa("ACTIVO");
+
+        when(empresaRepository.findByEstadoEmpresaOrderByFechaRegistroAsc("ACTIVO")).thenReturn(List.of(empresa));
+        when(pagoRepository.findExpiradosPendientesByEmpresa(any(), eq(1L))).thenReturn(List.of(pago));
         when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(testProducto));
         when(productoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(pagoRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
@@ -356,7 +369,7 @@ class PaymentServiceTest {
     @Test
     @DisplayName("cancelarExpirados → sin pagos expirados → sin operaciones")
     void cancelarExpirados_noExpired_noOps() {
-        when(pagoRepository.findExpiradosPendientes(any())).thenReturn(List.of());
+        when(empresaRepository.findByEstadoEmpresaOrderByFechaRegistroAsc("ACTIVO")).thenReturn(List.of());
 
         service.cancelarExpirados();
 
@@ -422,6 +435,7 @@ class PaymentServiceTest {
         p.setUsuarioFinal(testUser);
         p.setBodega(testBodega);
         p.setCostoEnvio(0);
+        p.setTotalPedido(25000);
         p.setItems(new ArrayList<>());
         return p;
     }

@@ -7,6 +7,7 @@ import com.hotclick.repository.CategoriaRepository;
 import com.hotclick.repository.MarcaRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.utils.InputSanitizer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.cache.CacheManager;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import java.util.Optional;
@@ -45,6 +47,8 @@ class ProductoServiceOptimisticLockTest {
     @Mock UsuarioRepository   usuarioRepository;
     @Mock MarcaRepository     marcaRepository;
     @Mock CacheManager        cacheManager;
+    @Mock InputSanitizer      sanitizer;
+    @Mock ApplicationEventPublisher eventPublisher;
 
     @InjectMocks ProductoService service;
 

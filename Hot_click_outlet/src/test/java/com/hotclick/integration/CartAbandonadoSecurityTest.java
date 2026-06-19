@@ -132,7 +132,7 @@ class CartAbandonadoSecurityTest extends BaseIntegrationTest {
     void recover_public_noAuthNeeded() throws Exception {
         mockMvc.perform(get("/api/cart/abandoned/recover/" + carritoA.getId()))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.items").isArray());
+            .andExpect(jsonPath("$.data.items").isArray());
     }
 
     @Test

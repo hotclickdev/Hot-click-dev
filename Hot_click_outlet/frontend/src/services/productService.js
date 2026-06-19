@@ -111,8 +111,8 @@ export const productService = {
     api.get(`/productos/marca/${marcaId}`, { params: { page, size } })
        .then((r) => ({ ...r, data: normalizeList(r.data) })),
 
-  create: (data) =>
-    api.post('/productos', data),
+  create: (data, config = {}) =>
+    api.post('/productos', data, config),
 
   update: (id, data) =>
     api.put(`/productos/${id}`, data),

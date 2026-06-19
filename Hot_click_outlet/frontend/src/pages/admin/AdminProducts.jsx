@@ -16,6 +16,7 @@ import KardexDrawer from '@/components/pos/KardexDrawer'
 import { warehouseService } from '@/services/orderService'
 import { marcaService } from '@/services/marcaService'
 import ImportExportBar from '@/components/admin/ImportExportBar'
+import EmpresaProfileCard from '@/components/admin/EmpresaProfileCard'
 import CategoriaSelect from '@/components/admin/CategoriaSelect'
 import MultiImagePicker from '@/components/ui/MultiImagePicker'
 import { useToast } from '@/components/ui/Toast'
@@ -391,9 +392,15 @@ export default function AdminProducts() {
 
         {/* Header */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.products.title')}</h1>
-            <p className="text-sm text-[#8e8e9a] mt-1">{filtered.length} de {totalProds} productos</p>
+          <div className="flex items-center gap-4 flex-wrap">
+            <div>
+              <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.products.title')}</h1>
+              <p className="text-sm text-[#8e8e9a] mt-1">{filtered.length} de {totalProds} productos</p>
+            </div>
+            <div className="flex flex-col items-start gap-0.5">
+              <span className="text-[10px] text-[#8e8e9a]">Cuenta</span>
+              <EmpresaProfileCard totalProductos={totalProds} />
+            </div>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             <ImportExportBar

@@ -304,12 +304,13 @@ class EmprendedorProductoTest extends BaseIntegrationTest {
     @Test
     @DisplayName("T-PROD-023 | NORMAL — archivarSinStock solo afecta productos de la empresa → 200")
     void archivarSinStock_onlyOwnEmpresa_200() throws Exception {
-        Producto sinStock = crearProducto("Sin Stock Test", "SKU-SS-001", 5000, 3000, 0, empresa);
+        // No se borra manualmente al final: el endpoint le sube la versión (optimistic
+        // lock) y tearDown() ya limpia todos los productos con deleteAll().
+        crearProducto("Sin Stock Test", "SKU-SS-001", 5000, 3000, 0, empresa);
         mockMvc.perform(post("/api/productos/archivar-sin-stock")
                 .header("Authorization", tokenEmp))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true));
-        productoRepository.delete(sinStock);
     }
 
     // ── T-PROD-024: Archivar sin stock sin token → 401 ───────────────────────

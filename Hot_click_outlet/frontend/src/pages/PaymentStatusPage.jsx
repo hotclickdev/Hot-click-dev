@@ -128,6 +128,11 @@ export default function PaymentStatusPage() {
   // Limpiar el polling al desmontar el componente
   useEffect(() => () => stopPolling(), [stopPolling])
 
+  // Scroll al inicio al regresar de la pasarela de pago
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [])
+
   // Limpiar carrito cuando el pago se confirma (independiente del proveedor)
   useEffect(() => {
     if (estado === 'success') clearCart()

@@ -24,8 +24,8 @@ export default function AIProductCard({ producto, similarity, onAdd }) {
     <div
       className="rounded-xl overflow-hidden"
       style={{
-        background: 'var(--hc-surface)',
-        border: '1px solid var(--hc-border)',
+        background: '#ffffff',
+        border: '1px solid #e0e0e0',
         animation: 'ai-msg-in 0.28s ease both',
       }}
     >
@@ -33,21 +33,21 @@ export default function AIProductCard({ producto, similarity, onAdd }) {
         {producto.imagenUrl
           ? <img src={producto.imagenUrl} alt={producto.nombre} className="w-14 h-14 rounded-lg object-cover shrink-0" loading="lazy" />
           : <div className="w-14 h-14 rounded-lg shrink-0 flex items-center justify-center text-xl opacity-20"
-              style={{ background: 'var(--hc-surface-2, rgba(0,0,0,0.06))' }}>📦</div>
+              style={{ background: 'rgba(0,0,0,0.06)' }}>📦</div>
         }
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold line-clamp-2 leading-snug" style={{ color: 'var(--hc-text)' }}>
+          <p className="text-xs font-semibold line-clamp-2 leading-snug" style={{ color: '#14171C' }}>
             {producto.nombre}
           </p>
           {producto.sku && (
-            <p className="text-[10px] font-mono mt-0.5" style={{ color: 'var(--hc-muted)' }}>
+            <p className="text-[10px] font-mono mt-0.5" style={{ color: '#4D5560' }}>
               SKU {producto.sku}
             </p>
           )}
           {similarity != null && (
             <span
               className="inline-block text-[10px] font-bold px-1.5 py-0.5 rounded-full mt-1"
-              style={{ background: 'rgba(34,197,94,0.12)', color: '#4ade80' }}
+              style={{ background: 'rgba(34,197,94,0.15)', color: '#178A50' }}
             >
               {similarity}% similar
             </span>

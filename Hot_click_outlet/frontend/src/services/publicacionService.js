@@ -10,7 +10,7 @@ export const publicacionService = {
   detallesProducto: (formData) =>
     api.post('/extraccion/detalles-producto', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 90000,
+      timeout: 20000,
     }),
 
   getTipoCambio: () =>
