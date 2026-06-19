@@ -59,18 +59,56 @@ Cuando agregas o modificas `@Column`, `@Table`, `@JoinColumn` en cualquier entid
 Ejemplo: agregás campo en Java → creás V3__nuevo_campo.sql al mismo tiempo
 ```
 
-Flyway ejecuta las migraciones automáticamente al arrancar en Render. Sin migración → la columna no existe en Supabase → 500 en producción.
+Flyway ejecuta las migraciones automáticamente al arrancar. Sin migración → la columna no existe en RDS → 500 en producción.
 
 Migraciones existentes:
 
 - `V1__initial_schema.sql` — baseline (no se ejecuta, ya estaba aplicado)
 - `V2__marcas_y_fk_producto.sql` — tabla marcas, fk_id_marca en producto, testimonio+producto
 
+## Infraestructura AWS (producción)
+
+| Servicio | Recurso | Detalle |
+|----------|---------|---------|
+| **EC2** | `hotclick-app` t3.small | us-east-2, Elastic IP `18.227.68.15`, Docker + Nginx + Certbot |
+| **RDS** | `hotclick-db` db.t4g.micro | PostgreSQL 18.4, us-east-2, SSL requerido |
+| **S3** | `hotclick-media` | us-east-2, imágenes y archivos públicos |
+| **IAM** | `hotclick-ec2-role` | Política `HotclickS3Access` — permisos S3 via Instance Profile |
+| **Dominio** | `hotclick.lat` | DNS en Spaceship → Elastic IP; HTTPS via Let's Encrypt |
+
+### Deploy en producción
+
+```bash
+# 1. Conectarse al EC2
+ssh -i "C:\Users\pmdan\Downloads\hotclick-key.pem" ec2-user@18.227.68.15
+
+# 2. Actualizar código
+cd /home/ec2-user/app && git pull origin master
+
+# 3. Rebuild Docker (requiere t3.small — el t3.micro se queda sin RAM)
+docker build -t hotclick .
+
+# 4. Reemplazar contenedor
+docker stop hotclick && docker rm hotclick
+docker run -d --name hotclick --env-file /home/ec2-user/app/.env -p 8080:8080 --restart unless-stopped hotclick
+
+# 5. Verificar logs
+docker logs -f hotclick
+```
+
+### Variables de entorno en EC2
+
+El archivo `/home/ec2-user/app/.env` contiene todas las variables. Para modificar una variable:
+```bash
+nano /home/ec2-user/app/.env
+docker restart hotclick
+```
+
 ## Arquitectura
 
-Proyecto Spring Boot 3.4.4 con Java 24. El código vive bajo `Hot_click_outlet/`.
+Proyecto Spring Boot 3.4.4 con Java 21 (`pom.xml` fija `java.version=21`; el JDK instalado puede ser más nuevo, p. ej. 25, y compila igual). El código vive bajo `Hot_click_outlet/`.
 
-- **Punto de entrada**: `Hot_click_outlet/src/main/java/com/hotclick/AppApplication.java`
+- **Punto de entrada**: `Hot_click_outlet/src/main/java/com/hotclick/HotclickApplication.java`
 - **Paquete base**: `com.hotclick`
 - **Controladores REST**: `com.hotclick.controller`
 - **Modelos JPA**: `com.hotclick.model`
@@ -78,7 +116,7 @@ Proyecto Spring Boot 3.4.4 con Java 24. El código vive bajo `Hot_click_outlet/`
 - **Repositorios**: `com.hotclick.repository`
 - **Seguridad**: `com.hotclick.security` (JWT)
 - **Configuración**: `Hot_click_outlet/src/main/resources/application.properties`
-- **Base de datos**: PostgreSQL en Supabase (`ddl-auto=none`, esquema en `Hot_click_outlet/Actualizado.sql`)
+- **Base de datos**: PostgreSQL en AWS RDS (`ddl-auto=none`, esquema en `Hot_click_outlet/Actualizado.sql`)
 
 ### Principales endpoints
 
@@ -93,7 +131,7 @@ Proyecto Spring Boot 3.4.4 con Java 24. El código vive bajo `Hot_click_outlet/`
 | POST | `/api/marcas` | Crear marca (admin) |
 | PUT | `/api/marcas/{id}` | Actualizar marca (admin) |
 | DELETE | `/api/marcas/{id}` | Eliminar marca — soft delete (admin) |
-| POST | `/api/marcas/logo` | Subir logo a Supabase Storage |
+| POST | `/api/marcas/logo` | Subir logo a AWS S3 |
 | POST | `/api/pedidos` | Crear pedido |
 | GET | `/api/pedidos` | Listar todos los pedidos (admin) |
 | GET | `/api/pedidos/{id}` | Obtener pedido |
