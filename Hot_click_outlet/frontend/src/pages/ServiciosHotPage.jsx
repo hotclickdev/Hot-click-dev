@@ -34,7 +34,7 @@ const serviciosJsonLd = {
         availableChannel: {
           '@type': 'ServiceChannel',
           serviceUrl: `${SITE_URL}/servicios`,
-          servicePhone: '+506-8974-5370',
+          servicePhone: '+506-8666-7888',
         },
         offers: { '@type': 'Offer', price: '0', priceCurrency: 'CRC', availability: 'https://schema.org/InStock' },
       },
@@ -1055,7 +1055,7 @@ export default function ServiciosHotPage() {
                   ))}
                   <p className="text-xs text-center pt-2" style={{ color: 'var(--hc-muted)' }}>
                     ¿Problema con un producto?{' '}
-                    <a href="https://wa.me/50689745370" target="_blank" rel="noopener noreferrer"
+                    <a href="https://wa.me/50686667888" target="_blank" rel="noopener noreferrer"
                       className="font-semibold" style={{ color: 'var(--hc-accent)' }}>
                       Contactanos por WhatsApp
                     </a>

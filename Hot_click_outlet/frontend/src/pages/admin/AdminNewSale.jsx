@@ -70,7 +70,7 @@ function SaleStepTracker({ estado, esRetiro }) {
   )
 }
 
-const WHATSAPP = '50689745370'
+const WHATSAPP = '50686667888'
 const TABS = [
   { id: 'cliente', label: 'Venta con Cliente', icon: '👤' },
   { id: 'rapida',  label: 'Venta Rápida',      icon: '⚡' },

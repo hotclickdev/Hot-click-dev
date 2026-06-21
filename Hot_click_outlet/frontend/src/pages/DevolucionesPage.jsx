@@ -123,7 +123,7 @@ const sections = [
         <p>Si tenés dudas sobre tu devolución o necesitás que HotClick intervenga como mediador, contactanos:</p>
         <ul>
           <li><strong>Correo:</strong> <a href="mailto:hotclick.cr@gmail.com" style={{ color: 'var(--hc-accent)' }}>hotclick.cr@gmail.com</a></li>
-          <li><strong>WhatsApp:</strong> <a href="https://wa.me/50689745370" style={{ color: 'var(--hc-accent)' }} target="_blank" rel="noopener noreferrer">+506 8974-5370</a></li>
+          <li><strong>WhatsApp:</strong> <a href="https://wa.me/50686667888" style={{ color: 'var(--hc-accent)' }} target="_blank" rel="noopener noreferrer">+506 8666-7888</a></li>
           <li><strong>Horario:</strong> Lunes a Sábado, 8:00 am – 7:00 pm</li>
         </ul>
       </>
@@ -269,7 +269,7 @@ export default function DevolucionesPage() {
             borderRadius: 16, textAlign: 'center',
           }}>
             <p style={{ fontSize: 14, color: 'var(--hc-muted)', margin: '0 0 0.5rem' }}>¿Tenés un problema con tu pedido?</p>
-            <a href="https://wa.me/50689745370" target="_blank" rel="noopener noreferrer"
+            <a href="https://wa.me/50686667888" target="_blank" rel="noopener noreferrer"
               style={{ fontSize: 15, fontWeight: 700, color: 'var(--hc-accent)', textDecoration: 'none' }}>
               Contactanos por WhatsApp →
             </a>

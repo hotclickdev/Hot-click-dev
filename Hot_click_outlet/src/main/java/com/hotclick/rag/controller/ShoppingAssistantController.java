@@ -196,6 +196,29 @@ public class ShoppingAssistantController {
         return String.join(" ", partes);
     }
 
+    /**
+     * Retorna el historial de mensajes de una sesión para re-sincronizar el contexto
+     * en page reload o cuando CartAssistant necesita leer las búsquedas previas.
+     *
+     * <p>El {@code sesionId} (UUID v4) es el único credential; endpoint público.
+     */
+    @GetMapping("/session/{sesionId}/history")
+    public ResponseEntity<Map<String, Object>> getHistory(@PathVariable String sesionId) {
+        Map<String, Object> result = assistantService.getSessionHistory(sesionId);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * Expira una sesión eliminando sus mensajes del backend.
+     * Llamado por el frontend cuando el temporizador de inactividad de 10 min dispara.
+     * Idempotente: si la sesión no existe retorna 204 sin error.
+     */
+    @DeleteMapping("/session/{sesionId}")
+    public ResponseEntity<Void> expireSession(@PathVariable String sesionId) {
+        assistantService.expireSession(sesionId);
+        return ResponseEntity.noContent().build();
+    }
+
     // Feedback de mensajes — publico, sin auth, best-effort
     @PostMapping("/feedback")
     public ResponseEntity<Void> feedback(@Valid @RequestBody FeedbackRequest request) {

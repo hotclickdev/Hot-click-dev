@@ -130,7 +130,7 @@ public class PaymentService {
             costoTotal += p.getPrecioCompra() * item.getCantidad();
         }
 
-        int costoEnvio = "ENVIO_A_DOMICILIO".equals(req.getMetodoEnvio()) ? 2000 : 0;
+        int costoEnvio = calcularCostoEnvio(req.getMetodoEnvio());
 
         // ── Validar y aplicar cupón de descuento ────────────────────────
         int descuento = 0;
@@ -680,5 +680,17 @@ public class PaymentService {
                 ? txn.getFechaTransaccion().toString() : null);
         }
         return resp;
+    }
+
+    private int calcularCostoEnvio(String metodoEnvio) {
+        if (metodoEnvio == null) return 0;
+        return switch (metodoEnvio) {
+            case "ENVIO_RAPIDO"            -> 5000;
+            case "ENVIO_NORMAL_GAM"        -> 4000;
+            case "ENVIO_NORMAL_FUERA_GAM"  -> 4000;
+            case "ENCOMIENDA_PROPIA"       -> 2500;
+            case "ENVIO_A_DOMICILIO"       -> 2000;
+            default                        -> 0;
+        };
     }
 }

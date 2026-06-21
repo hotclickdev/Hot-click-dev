@@ -1,11 +1,17 @@
 import { create } from 'zustand'
+import { shoppingAssistantService } from '@/services/shoppingAssistantService'
 
-const INACTIVITY_MS = 5 * 60 * 1000 // 5 minutos
+const INACTIVITY_MS = 10 * 60 * 1000  // 10 minutos — system prompt requirement
+let _interval = null
 
 const useChatStore = create((set, get) => ({
   isOpen: false,
   pendingMessage: null,
+
+  // Historial de la sesión GENERAL (homepage). Sincronizado por AIChat para
+  // que CartAssistant y otros componentes lean el contexto sin page reload.
   mensajes: [],
+  sesionId: null,
   lastActivity: null,
 
   open: (message = null) => set({ isOpen: true, pendingMessage: message }),
@@ -18,12 +24,29 @@ const useChatStore = create((set, get) => ({
     set({ mensajes: next, lastActivity: Date.now() })
   },
 
-  // Limpia la conversación si pasaron más de 5 minutos de inactividad
+  setSesionId: (id) => set({ sesionId: id }),
+
+  // Limpia historial + sesionId (llamado por checkExpiry o reset manual)
+  resetSession: () => set({ mensajes: [], sesionId: null, lastActivity: null }),
+
   checkExpiry: () => {
-    const { lastActivity, mensajes } = get()
+    const { lastActivity, mensajes, sesionId } = get()
     if (mensajes.length > 0 && lastActivity && Date.now() - lastActivity > INACTIVITY_MS) {
-      set({ mensajes: [], lastActivity: null })
+      // Limpia el backend en background antes de resetear el estado local
+      if (sesionId) shoppingAssistantService.expireSession(sesionId)
+      set({ mensajes: [], sesionId: null, lastActivity: null })
     }
+  },
+
+  // Inicia el polling de expiración (60 s). Idempotente: no crea duplicados.
+  startExpiryTimer: () => {
+    if (_interval) return
+    _interval = setInterval(() => get().checkExpiry(), 60_000)
+  },
+
+  stopExpiryTimer: () => {
+    clearInterval(_interval)
+    _interval = null
   },
 }))
 

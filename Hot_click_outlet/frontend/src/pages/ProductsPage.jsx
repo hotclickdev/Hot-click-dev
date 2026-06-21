@@ -502,6 +502,7 @@ function FPill({ active, onClick, children }) {
 function CatalogFilterBar({
   search, setSearch, sort, setSort,
   categories, marcas, marcaProductCount,
+  categoryTotalCount,
   category, setCategory,
   marcasFilter, toggleMarca, clearMarcas,
   filterCond, setFilterCond, filterStock, setFilterStock,
@@ -509,7 +510,10 @@ function CatalogFilterBar({
   hasFilters, clearFilters, COND_OPTIONS, STOCK_OPTIONS, SORT_OPTIONS, filteredCount,
   onOpenSidebar,
 }) {
-  const tree = useMemo(() => buildCategoryTree(categories), [categories])
+  const tree = useMemo(
+    () => buildCategoryTree(categories).filter(c => (categoryTotalCount?.[c.id] ?? 0) > 0),
+    [categories, categoryTotalCount]
+  )
 
   return (
     <div className="sticky top-0 z-30 backdrop-blur-xl"
@@ -551,28 +555,6 @@ function CatalogFilterBar({
               </svg>
               Filtrar
             </button>
-
-            {/* Filtros adicionales (condición, stock, precio) */}
-            <MoreFiltersDropdown
-              filterCond={filterCond} setFilterCond={setFilterCond}
-              filterStock={filterStock} setFilterStock={setFilterStock}
-              priceMin={priceMin} setPriceMin={setPriceMin}
-              priceMax={priceMax} setPriceMax={setPriceMax}
-              COND_OPTIONS={COND_OPTIONS} STOCK_OPTIONS={STOCK_OPTIONS}
-              filteredCount={filteredCount}
-            />
-
-            {/* Ordenar */}
-            <select
-              value={sort}
-              onChange={e => { setSort(e.target.value); localStorage.setItem('hc-products-sort', e.target.value) }}
-              className="h-9 px-3 rounded-xl text-sm font-semibold cursor-pointer outline-none shrink-0"
-              style={{ background: 'var(--hc-surface)', border: '1.5px solid var(--hc-border)', color: 'var(--hc-text)' }}
-            >
-              {SORT_OPTIONS.map(({ value, label }) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
 
             {/* Limpiar todo */}
             {hasFilters && (
@@ -616,6 +598,7 @@ function CatalogFilterBar({
               {tree.map(cat => {
                 const catName = cat.nombreCategoria ?? cat.nombre
                 const isActive = String(category) === String(cat.id)
+                const catCount = categoryTotalCount?.[cat.id] ?? 0
                 return (
                   <button
                     key={cat.id}
@@ -627,12 +610,8 @@ function CatalogFilterBar({
                     }
                   >
                     <CatIcon name={catName} />
-                    <span className="max-w-[110px] truncate">{catName}</span>
-                    {cat.children?.length > 0 && (
-                      <svg className="w-2.5 h-2.5 opacity-40 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/>
-                      </svg>
-                    )}
+                    <span className="max-w-[100px] truncate">{catName}</span>
+                    <span className="shrink-0 text-[10px] font-bold opacity-60">{catCount}</span>
                   </button>
                 )
               })}
@@ -641,63 +620,6 @@ function CatalogFilterBar({
         </div>
       )}
 
-      {/* — Fila 3: pills de marcas — */}
-      {marcas.length > 0 && (
-        <div
-          className="overflow-x-auto scrollbar-hide"
-          style={{ borderTop: '1px solid color-mix(in srgb, var(--hc-border) 40%, transparent)' }}
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="flex gap-1.5 py-1.5 min-w-max items-center">
-              {/* Label */}
-              <span className="text-[10px] font-bold uppercase tracking-wider shrink-0 mr-1" style={{ color: 'var(--hc-muted)' }}>
-                Marca
-              </span>
-
-              {/* Todas las marcas */}
-              <button
-                onClick={clearMarcas}
-                className="flex items-center gap-1 shrink-0 h-7 px-3 rounded-full text-[11px] font-semibold transition-all whitespace-nowrap"
-                style={marcasFilter.size === 0
-                  ? { background: 'var(--hc-accent)', color: '#fff', boxShadow: '0 2px 6px color-mix(in srgb, var(--hc-accent) 30%, transparent)' }
-                  : { background: 'color-mix(in srgb, var(--hc-text) 6%, transparent)', color: 'var(--hc-text)', border: '1.5px solid var(--hc-border)' }
-                }
-              >
-                Todas
-              </button>
-
-              {marcas.map(m => {
-                const isActive = marcasFilter.has(String(m.id))
-                return (
-                  <button
-                    key={m.id}
-                    onClick={() => toggleMarca(String(m.id))}
-                    className="flex items-center gap-1.5 shrink-0 h-7 px-3 rounded-full text-[11px] font-semibold transition-all whitespace-nowrap"
-                    style={isActive
-                      ? { background: 'var(--hc-accent)', color: '#fff', boxShadow: '0 2px 6px color-mix(in srgb, var(--hc-accent) 30%, transparent)' }
-                      : { background: 'color-mix(in srgb, var(--hc-text) 6%, transparent)', color: 'var(--hc-text)', border: '1.5px solid var(--hc-border)' }
-                    }
-                  >
-                    {m.logoUrl && (
-                      <img
-                        src={m.logoUrl}
-                        alt=""
-                        className="w-4 h-4 object-contain rounded-sm shrink-0"
-                        style={{ filter: isActive ? 'brightness(0) invert(1)' : 'none' }}
-                        onError={e => { e.target.style.display = 'none' }}
-                      />
-                    )}
-                    <span className="max-w-[100px] truncate">{m.nombreMarca}</span>
-                    {marcaProductCount[m.id] > 0 && (
-                      <span className="text-[9px] font-bold opacity-60">{marcaProductCount[m.id]}</span>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
@@ -706,10 +628,13 @@ function CatalogFilterBar({
 function CategorySidebar({
   categories, category, setCategory,
   marcas, marcasFilter, toggleMarca, clearMarcas, marcaProductCount,
+  categoryTotalCount,
   onCategorySelect,
 }) {
-  const tree = useMemo(() => buildCategoryTree(categories), [categories])
-  const [marcaSearch, setMarcaSearch] = useState('')
+  const tree = useMemo(
+    () => buildCategoryTree(categories).filter(c => (categoryTotalCount?.[c.id] ?? 0) > 0),
+    [categories, categoryTotalCount]
+  )
 
   function handleCatSelect(id) {
     setCategory(id)
@@ -727,10 +652,6 @@ function CategorySidebar({
     const rootNode = tree.find(r => String(r.id) === String(activeCat.id))
     return rootNode?.children?.length > 0 ? rootNode : null
   }, [category, categories, tree])
-
-  const visibleMarcas = marcaSearch.trim()
-    ? marcas.filter(m => m.nombreMarca?.toLowerCase().includes(marcaSearch.toLowerCase()))
-    : marcas
 
   return (
     <div className="space-y-6">
@@ -766,19 +687,25 @@ function CategorySidebar({
               </button>
               {/* Hijos */}
               <div className="pl-3 mt-0.5 space-y-0.5">
-                {drilledNode.children.map(sub => (
-                  <button key={sub.id}
-                    onClick={() => handleCatSelect(String(sub.id))}
-                    className="w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5"
-                    style={String(category) === String(sub.id)
-                      ? { background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', color: 'var(--hc-accent)' }
-                      : { color: 'var(--hc-muted)' }
-                    }
-                  >
-                    {sub.icono && <span className="text-sm leading-none">{sub.icono}</span>}
-                    {sub.nombreCategoria ?? sub.nombre}
-                  </button>
-                ))}
+                {drilledNode.children
+                  .filter(sub => (categoryTotalCount?.[sub.id] ?? 0) > 0)
+                  .map(sub => {
+                    const subCount = categoryTotalCount?.[sub.id] ?? 0
+                    return (
+                      <button key={sub.id}
+                        onClick={() => handleCatSelect(String(sub.id))}
+                        className="w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5"
+                        style={String(category) === String(sub.id)
+                          ? { background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', color: 'var(--hc-accent)' }
+                          : { color: 'var(--hc-muted)' }
+                        }
+                      >
+                        {sub.icono && <span className="text-sm leading-none">{sub.icono}</span>}
+                        <span className="flex-1 truncate">{sub.nombreCategoria ?? sub.nombre}</span>
+                        <span className="text-[10px] font-bold opacity-50 shrink-0">{subCount}</span>
+                      </button>
+                    )
+                  })}
               </div>
             </>
           ) : (
@@ -794,87 +721,226 @@ function CategorySidebar({
               >
                 Todos los productos
               </button>
-              {tree.map(cat => (
-                <button
-                  key={cat.id}
-                  onClick={() => handleCatSelect(String(cat.id))}
-                  className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 group"
-                  style={String(category) === String(cat.id)
-                    ? { background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)' }
-                    : { color: 'var(--hc-text)' }
-                  }
-                >
-                  {cat.icono && <span className="text-base leading-none shrink-0">{cat.icono}</span>}
-                  <span className="truncate flex-1">{cat.nombreCategoria ?? cat.nombre}</span>
-                  {cat.children?.length > 0 && (
-                    <svg className="w-3.5 h-3.5 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity"
-                      fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
-                    </svg>
-                  )}
-                </button>
-              ))}
+              {tree.map(cat => {
+                const catCount = categoryTotalCount?.[cat.id] ?? 0
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => handleCatSelect(String(cat.id))}
+                    className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 group"
+                    style={String(category) === String(cat.id)
+                      ? { background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)' }
+                      : { color: 'var(--hc-text)' }
+                    }
+                  >
+                    {cat.icono && <span className="text-base leading-none shrink-0">{cat.icono}</span>}
+                    <span className="truncate flex-1">{cat.nombreCategoria ?? cat.nombre}</span>
+                    <span className="text-[10px] font-bold opacity-50 shrink-0 ml-auto">{catCount}</span>
+                    {cat.children?.length > 0 && (
+                      <svg className="w-3.5 h-3.5 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity"
+                        fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
+                      </svg>
+                    )}
+                  </button>
+                )
+              })}
             </>
           )}
         </div>
       </div>
 
-      {/* Marcas */}
-      {marcas.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between px-1 mb-3">
-            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--hc-muted)' }}>Marcas</p>
-            {marcasFilter.size > 0 && (
-              <button onClick={clearMarcas}
-                className="text-[10px] underline transition-opacity hover:opacity-70"
-                style={{ color: 'var(--hc-accent)' }}>
-                Limpiar
-              </button>
-            )}
-          </div>
-          {marcas.length > 5 && (
-            <div className="mb-2">
-              <input
-                value={marcaSearch}
-                onChange={e => setMarcaSearch(e.target.value)}
-                placeholder="Buscar marca..."
-                className="w-full h-7 px-2.5 rounded-lg text-xs outline-none"
-                style={{ background: 'var(--hc-bg)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
-              />
-            </div>
-          )}
-          <div className="space-y-0.5 max-h-52 overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
-            {visibleMarcas.map(m => {
-              const checked = marcasFilter.has(String(m.id))
-              const count = marcaProductCount[m.id] ?? 0
-              return (
-                <label key={m.id}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl cursor-pointer transition-all hover:opacity-80"
-                  style={checked ? { background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)' } : {}}
-                >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => toggleMarca(String(m.id))}
-                    className="accent-[var(--hc-accent)] shrink-0"
-                  />
-                  {m.logoUrl && (
-                    <img src={m.logoUrl} alt={m.nombreMarca} className="w-5 h-5 object-contain rounded-sm shrink-0"
-                      onError={e => { e.target.style.display = 'none' }} />
-                  )}
-                  <span className="flex-1 truncate text-xs font-medium"
-                    style={{ color: checked ? 'var(--hc-accent)' : 'var(--hc-text)' }}>
-                    {m.nombreMarca}
-                  </span>
-                  {count > 0 && (
-                    <span className="text-[10px] shrink-0" style={{ color: 'var(--hc-muted)' }}>{count}</span>
-                  )}
-                </label>
-              )
-            })}
-          </div>
-        </div>
+    </div>
+  )
+}
+
+// ── Logo de marca con fallback a iniciales ────────────────────────────────────
+function BrandLogo({ marca, size = 56 }) {
+  const [imgError, setImgError] = useState(false)
+  const initials = (marca.nombreMarca ?? '')
+    .split(' ').slice(0, 2).map(w => w[0] ?? '').join('').toUpperCase()
+  return (
+    <div
+      className="rounded-xl flex items-center justify-center overflow-hidden shrink-0"
+      style={{ width: size, height: size, background: 'var(--hc-bg)', border: '1px solid var(--hc-border)' }}
+    >
+      {marca.logoUrl && !imgError ? (
+        <img
+          src={marca.logoUrl}
+          alt={marca.nombreMarca}
+          className="object-contain"
+          style={{ width: size - 8, height: size - 8 }}
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        <span className="font-black text-lg leading-none" style={{ color: 'var(--hc-accent)' }}>
+          {initials || '?'}
+        </span>
       )}
+    </div>
+  )
+}
+
+// ── Showcase de marcas en grande (reemplaza las pills pequeñas) ───────────────
+function BrandShowcase({ marcas, visibleMarcaIds, marcasCountInScope = {}, marcasFilter, toggleMarca, clearMarcas, title = 'Compra por Marca' }) {
+  const visible = (visibleMarcaIds
+    ? marcas.filter(m => visibleMarcaIds.has(String(m.id)))
+    : marcas
+  ).filter(m => (marcasCountInScope[m.id] ?? 0) > 0)
+
+  if (visible.length === 0) return null
+
+  return (
+    <div className="mb-8">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-base font-black tracking-tight" style={{ color: 'var(--hc-text)' }}>{title}</h2>
+          {visibleMarcaIds && (
+            <p className="text-[11px] mt-0.5" style={{ color: 'var(--hc-muted)' }}>
+              {visible.length} marca{visible.length !== 1 ? 's' : ''} disponible{visible.length !== 1 ? 's' : ''}
+            </p>
+          )}
+        </div>
+        {marcasFilter.size > 0 && (
+          <button
+            onClick={clearMarcas}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-all hover:opacity-80"
+            style={{ color: 'var(--hc-accent)', background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)' }}
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+            Ver todas
+          </button>
+        )}
+      </div>
+
+      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
+        {visible.map(m => {
+          const isActive = marcasFilter.has(String(m.id))
+          const count = marcasCountInScope[m.id] ?? 0
+          return (
+            <button
+              key={m.id}
+              onClick={() => toggleMarca(String(m.id))}
+              aria-pressed={isActive}
+              className="flex-none flex flex-col items-center gap-2 p-4 rounded-2xl transition-all duration-200 hover:scale-[1.04] active:scale-[0.97]"
+              style={{
+                width: 108,
+                background: isActive
+                  ? 'color-mix(in srgb, var(--hc-accent) 12%, var(--hc-surface))'
+                  : 'var(--hc-surface)',
+                border: isActive
+                  ? '2px solid color-mix(in srgb, var(--hc-accent) 45%, transparent)'
+                  : '1.5px solid var(--hc-border)',
+                boxShadow: isActive
+                  ? '0 4px 16px color-mix(in srgb, var(--hc-accent) 18%, transparent)'
+                  : '0 1px 3px rgba(0,0,0,0.05)',
+              }}
+            >
+              <BrandLogo marca={m} size={52} />
+              <span
+                className="text-[11px] font-semibold text-center leading-tight line-clamp-2 w-full"
+                style={{ color: isActive ? 'var(--hc-accent)' : 'var(--hc-text)' }}
+              >
+                {m.nombreMarca}
+              </span>
+              <span
+                className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                style={{
+                  background: isActive
+                    ? 'color-mix(in srgb, var(--hc-accent) 20%, transparent)'
+                    : 'color-mix(in srgb, var(--hc-text) 8%, transparent)',
+                  color: isActive ? 'var(--hc-accent)' : 'var(--hc-muted)',
+                }}
+              >
+                {count}
+              </span>
+              {isActive && (
+                <div
+                  className="w-5 h-5 rounded-full flex items-center justify-center -mt-1"
+                  style={{ background: 'var(--hc-accent)' }}
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="#fff" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
+                  </svg>
+                </div>
+              )}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ── Cuadrícula de categorías hijas (Cajas Hijas) ─────────────────────────────
+function SubcategoryGrid({ subcats, onSelect, productCountByCat }) {
+  if (!subcats || subcats.length === 0) return null
+
+  const PALETTE = [
+    { bg: 'color-mix(in srgb, #3b82f6 9%, var(--hc-surface))', border: 'color-mix(in srgb, #3b82f6 22%, transparent)', icon: '#3b82f6' },
+    { bg: 'color-mix(in srgb, #8b5cf6 9%, var(--hc-surface))', border: 'color-mix(in srgb, #8b5cf6 22%, transparent)', icon: '#8b5cf6' },
+    { bg: 'color-mix(in srgb, #10b981 9%, var(--hc-surface))', border: 'color-mix(in srgb, #10b981 22%, transparent)', icon: '#10b981' },
+    { bg: 'color-mix(in srgb, #f59e0b 9%, var(--hc-surface))', border: 'color-mix(in srgb, #f59e0b 22%, transparent)', icon: '#f59e0b' },
+    { bg: 'color-mix(in srgb, #ef4444 9%, var(--hc-surface))', border: 'color-mix(in srgb, #ef4444 22%, transparent)', icon: '#ef4444' },
+    { bg: 'color-mix(in srgb, #06b6d4 9%, var(--hc-surface))', border: 'color-mix(in srgb, #06b6d4 22%, transparent)', icon: '#06b6d4' },
+    { bg: 'color-mix(in srgb, #ec4899 9%, var(--hc-surface))', border: 'color-mix(in srgb, #ec4899 22%, transparent)', icon: '#ec4899' },
+    { bg: 'color-mix(in srgb, #14b8a6 9%, var(--hc-surface))', border: 'color-mix(in srgb, #14b8a6 22%, transparent)', icon: '#14b8a6' },
+  ]
+
+  return (
+    <div className="mb-8">
+      <div className="mb-5">
+        <h2 className="text-base font-black tracking-tight" style={{ color: 'var(--hc-text)' }}>
+          Subcategorías
+        </h2>
+        <p className="text-[11px] mt-0.5" style={{ color: 'var(--hc-muted)' }}>
+          Seleccioná una para ver sus productos
+        </p>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        {subcats.filter(sub => (productCountByCat[sub.id] ?? 0) > 0).map((sub, idx) => {
+          const count = productCountByCat[sub.id] ?? 0
+          const c = PALETTE[idx % PALETTE.length]
+          const name = sub.nombreCategoria ?? sub.nombre ?? ''
+          return (
+            <button
+              key={sub.id}
+              onClick={() => onSelect(String(sub.id))}
+              className="group flex flex-col items-start p-4 rounded-2xl text-left transition-all duration-200 hover:scale-[1.02] hover:shadow-md active:scale-[0.98]"
+              style={{ background: c.bg, border: `1.5px solid ${c.border}` }}
+            >
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center mb-3 text-xl leading-none shrink-0"
+                style={{ background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(4px)' }}
+              >
+                {sub.icono ? (
+                  <span>{sub.icono}</span>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke={c.icon} strokeWidth={1.6} viewBox="0 0 24 24">
+                    {catSvgIcon(name)}
+                  </svg>
+                )}
+              </div>
+              <span className="text-sm font-bold leading-snug mb-1" style={{ color: 'var(--hc-text)' }}>
+                {name}
+              </span>
+              {count > 0 && (
+                <span className="text-[11px] font-medium" style={{ color: c.icon }}>
+                  {count} producto{count !== 1 ? 's' : ''}
+                </span>
+              )}
+              <svg
+                className="w-4 h-4 mt-2 opacity-60 transition-transform group-hover:translate-x-1"
+                fill="none" stroke={c.icon} strokeWidth={2} viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+              </svg>
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -1190,6 +1256,110 @@ function EmprendimientosView({ products, convenios, loading, onBack }) {
   )
 }
 
+// ── Fila de categoría PADRE: 1 producto por cada categoría hija ──────────────
+function ParentCategoryRow({ catName, catId, childItems, totalCount, onVerMas, onQuickView }) {
+  const visible = childItems.slice(0, 3)
+  const extraChildren = childItems.length - 3
+
+  return (
+    <div className="mb-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-black uppercase tracking-wide" style={{ color: 'var(--hc-text)' }}>
+            {catName}
+          </span>
+          <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+            style={{ background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', color: 'var(--hc-accent)' }}>
+            {totalCount}
+          </span>
+        </div>
+        <button
+          onClick={() => onVerMas(catId)}
+          className="flex items-center gap-1 text-xs font-semibold transition-opacity hover:opacity-70"
+          style={{ color: 'var(--hc-accent)' }}
+        >
+          Ver más
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
+      </div>
+
+      {/* Grid: 2 cols mobile / 4 cols desktop */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        {/* Primeros 2 hijos — siempre visibles */}
+        {visible.slice(0, 2).map(item => (
+          <div key={item.childId} className="flex flex-col gap-1">
+            <span className="text-[9px] font-black uppercase tracking-widest px-0.5 truncate"
+              style={{ color: 'var(--hc-accent)', opacity: 0.75 }}>
+              {item.childName}
+            </span>
+            <ProductCard product={item.product} onQuickView={onQuickView} />
+          </div>
+        ))}
+
+        {/* 3er hijo — solo desktop */}
+        {visible[2] && (
+          <div className="hidden sm:flex flex-col gap-1">
+            <span className="text-[9px] font-black uppercase tracking-widest px-0.5 truncate"
+              style={{ color: 'var(--hc-accent)', opacity: 0.75 }}>
+              {visible[2].childName}
+            </span>
+            <ProductCard product={visible[2].product} onQuickView={onQuickView} />
+          </div>
+        )}
+
+        {/* Tarjeta 4: "+N categorías más" o "Ver categoría completa" */}
+        <button
+          onClick={() => onVerMas(catId)}
+          className="hidden sm:flex flex-col rounded-2xl overflow-hidden transition-all hover:opacity-80 hover:scale-[1.01] text-left"
+          style={{
+            border: '1.5px dashed color-mix(in srgb, var(--hc-accent) 30%, transparent)',
+            background: 'color-mix(in srgb, var(--hc-accent) 5%, var(--hc-surface))',
+          }}
+        >
+          <div className="aspect-square flex flex-col items-center justify-center gap-1.5"
+            style={{ background: 'color-mix(in srgb, var(--hc-accent) 8%, transparent)' }}>
+            {extraChildren > 0 ? (
+              <>
+                <span className="text-3xl font-black leading-none" style={{ color: 'var(--hc-accent)' }}>
+                  +{extraChildren}
+                </span>
+                <span className="text-[11px] font-semibold" style={{ color: 'var(--hc-accent)', opacity: 0.8 }}>
+                  categorías más
+                </span>
+              </>
+            ) : (
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={1.4} viewBox="0 0 24 24"
+                style={{ color: 'var(--hc-accent)', opacity: 0.7 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/>
+              </svg>
+            )}
+          </div>
+          <div className="p-3 flex-1 flex flex-col justify-between">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider mb-1"
+                style={{ color: 'color-mix(in srgb, var(--hc-accent) 70%, transparent)' }}>
+                {catName}
+              </p>
+              <p className="text-sm font-bold line-clamp-2 leading-snug" style={{ color: 'var(--hc-text)' }}>
+                Ver todos los productos
+              </p>
+            </div>
+            <div className="mt-2 flex items-center gap-1 text-xs font-semibold" style={{ color: 'var(--hc-accent)' }}>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
+              </svg>
+              Ver categoría completa
+            </div>
+          </div>
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Vista por filas de categoría (modo exploración sin filtros) ───────────────
 function CategoryRowsView({ products, categories, convenioMarcaNames, onVerMas, onVerEmprendimientos, onQuickView, page }) {
   const emprendimientosProducts = useMemo(
@@ -1198,26 +1368,75 @@ function CategoryRowsView({ products, categories, convenioMarcaNames, onVerMas, 
   )
 
   const categoryRows = useMemo(() => {
-    const catMap = new Map()
-    products.forEach(p => {
-      const catId = p.categoriaId ?? '__sin__'
-      if (!catMap.has(catId)) catMap.set(catId, [])
-      catMap.get(catId).push(p)
+    const tree = buildCategoryTree(categories)
+    const result = []
+
+    // IDs presentes en el árbol (raíz + hijos directos)
+    const treeIds = new Set()
+    tree.forEach(r => {
+      treeIds.add(String(r.id))
+      r.children?.forEach(c => treeIds.add(String(c.id)))
     })
-    return [...catMap.entries()]
-      .filter(([, ps]) => ps.length > 0)
-      .map(([catId, ps]) => {
-        const catObj = categories.find(c => String(c.id) === String(catId))
-        const catName = catObj?.nombreCategoria ?? catObj?.nombre ?? 'Otros productos'
-        return { catId, catName, products: ps }
+
+    tree.forEach(parent => {
+      if (parent.children?.length > 0) {
+        // Categoría padre con hijos: 1 producto representativo por hijo
+        const childItems = parent.children
+          .map(child => {
+            const childProds = products.filter(p => String(p.categoriaId) === String(child.id))
+            if (childProds.length === 0) return null
+            return {
+              childId: child.id,
+              childName: child.nombreCategoria ?? child.nombre ?? '',
+              product: childProds[0],
+              count: childProds.length,
+            }
+          })
+          .filter(Boolean)
+
+        if (childItems.length > 0) {
+          result.push({
+            type: 'parent',
+            catId: parent.id,
+            catName: parent.nombreCategoria ?? parent.nombre ?? '',
+            childItems,
+            totalCount: childItems.reduce((s, i) => s + i.count, 0),
+          })
+        }
+      } else {
+        // Categoría hoja sin hijos
+        const catProds = products.filter(p => String(p.categoriaId) === String(parent.id))
+        if (catProds.length > 0) {
+          result.push({
+            type: 'leaf',
+            catId: parent.id,
+            catName: parent.nombreCategoria ?? parent.nombre ?? '',
+            products: catProds,
+            totalCount: catProds.length,
+          })
+        }
+      }
+    })
+
+    // Productos huérfanos (sin categoría o en categoría fuera del árbol)
+    const orphans = products.filter(p => !p.categoriaId || !treeIds.has(String(p.categoriaId)))
+    if (orphans.length > 0) {
+      result.push({
+        type: 'leaf',
+        catId: '__otros__',
+        catName: 'Otros productos',
+        products: orphans,
+        totalCount: orphans.length,
       })
-      .sort((a, b) => b.products.length - a.products.length)
+    }
+
+    return result.sort((a, b) => b.totalCount - a.totalCount)
   }, [products, categories])
 
   const rows = useMemo(() => {
     const result = []
     categoryRows.forEach((row, idx) => {
-      result.push({ type: 'category', ...row })
+      result.push(row)
       if (idx === 1 && emprendimientosProducts.length > 0) {
         result.push({ type: 'emprendimientos' })
       }
@@ -1232,12 +1451,22 @@ function CategoryRowsView({ products, categories, convenioMarcaNames, onVerMas, 
 
   return (
     <motion.div key={`cat-rows-p${page}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
-      {rows.map((row, idx) =>
+      {rows.map((row) =>
         row.type === 'emprendimientos' ? (
           <EmprendimientosRow
             key="emp-row"
             products={emprendimientosProducts}
             onVerEmprendimientos={onVerEmprendimientos}
+          />
+        ) : row.type === 'parent' ? (
+          <ParentCategoryRow
+            key={row.catId}
+            catName={row.catName}
+            catId={row.catId}
+            childItems={row.childItems}
+            totalCount={row.totalCount}
+            onVerMas={onVerMas}
+            onQuickView={onQuickView}
           />
         ) : (
           <CategoryRow
@@ -1436,6 +1665,62 @@ export default function ProductsPage() {
     Object.fromEntries(marcas.map(m => [m.id, products.filter(p => String(p.marcaId) === String(m.id)).length]))
   , [marcas, products])
 
+  // Conteo de productos por ID de categoría — solo directos (para SubcategoryGrid)
+  const productCountByCat = useMemo(() => {
+    const counts = {}
+    products.forEach(p => {
+      if (p.categoriaId) counts[p.categoriaId] = (counts[p.categoriaId] ?? 0) + 1
+    })
+    return counts
+  }, [products])
+
+  // Conteo total por categoría incluyendo todos sus descendientes (para pills y sidebar)
+  const categoryTotalCount = useMemo(() => {
+    const counts = {}
+    categories.forEach(cat => {
+      const scope = new Set([String(cat.id)])
+      const queue = [String(cat.id)]
+      while (queue.length > 0) {
+        const pid = queue.shift()
+        categories
+          .filter(c => String(c.padreId ?? '') === pid)
+          .forEach(c => { scope.add(String(c.id)); queue.push(String(c.id)) })
+      }
+      counts[cat.id] = products.filter(p => scope.has(String(p.categoriaId))).length
+    })
+    return counts
+  }, [categories, products])
+
+  // Conteo de productos por marca filtrado por la categoría actualmente seleccionada
+  const marcasCountInScope = useMemo(() => {
+    const base = categoryScope
+      ? products.filter(p => categoryScope.has(String(p.categoriaId)))
+      : products
+    return Object.fromEntries(
+      marcas.map(m => [m.id, base.filter(p => String(p.marcaId) === String(m.id)).length])
+    )
+  }, [marcas, products, categoryScope])
+
+  // IDs de marcas que tienen al menos un producto en el scope de categoría actual
+  const marcasForCategoryScope = useMemo(() => {
+    if (!categoryScope) return null // null = mostrar todas las marcas
+    const ids = new Set()
+    products.forEach(p => {
+      if (p.marcaId && categoryScope.has(String(p.categoriaId))) {
+        ids.add(String(p.marcaId))
+      }
+    })
+    return ids
+  }, [categoryScope, products])
+
+  // Nodo padre seleccionado (solo cuando la categoría activa tiene hijos directos)
+  const selectedParentNode = useMemo(() => {
+    if (!category) return null
+    const t = buildCategoryTree(categories)
+    const rootNode = t.find(r => String(r.id) === String(category))
+    return (rootNode?.children?.length ?? 0) > 0 ? rootNode : null
+  }, [category, categories])
+
   const tallaOptions = useMemo(() => {
     const all = [...new Set(products.map(p => p.talla).filter(Boolean))]
     const zapatos = all.filter(t => /^\d/.test(t)).sort((a, b) => Number(a) - Number(b))
@@ -1450,6 +1735,12 @@ export default function ProductsPage() {
   }, [products])
 
   const hasFilters = !!(category || marcasFilter.size || filterStock || filterCond || filterTalla || priceMin || priceMax || search)
+
+  // Muestra cuadrícula de subcategorías cuando: hay categoría padre con hijos y ningún otro filtro activo
+  const showSubcatGrid = !!(
+    selectedParentNode &&
+    !search && !filterCond && !filterStock && !priceMin && !priceMax && marcasFilter.size === 0
+  )
 
   // Paginación local sobre resultados filtrados (evita dependencia del totalPages del backend)
   const filteredPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
@@ -1515,6 +1806,16 @@ export default function ProductsPage() {
         isOpen={aiPanelOpen}
         onClose={() => setAiPanelOpen(false)}
         initialQuery={aiQuery}
+        onCategoryFilter={(nombre) => {
+          // Busca la categoría por nombre (parcial, case-insensitive) y aplica el filtro
+          const match = categories.find(c =>
+            (c.nombreCategoria ?? c.nombre ?? '').toLowerCase().includes(nombre.toLowerCase())
+          )
+          if (match) {
+            setCategory(String(match.id))
+            setAiPanelOpen(false)
+          }
+        }}
       />
 
       {/* Botón flotante izquierdo para abrir/cerrar el asistente */}
@@ -1531,7 +1832,7 @@ export default function ProductsPage() {
         }}
         aria-label={aiPanelOpen ? 'Cerrar asistente IA' : 'Abrir asistente IA'}
       >
-        <span style={{ fontSize: 14 }}>✦</span>
+        <span style={{ fontSize: 14, animation: aiPanelOpen ? 'none' : 'hc-fab-pulse 2s ease-in-out infinite' }}>✦</span>
         <span style={{
           writingMode: 'vertical-lr',
           transform: 'rotate(180deg)',
@@ -1539,7 +1840,8 @@ export default function ProductsPage() {
           fontWeight: 700,
           letterSpacing: 1.5,
           textTransform: 'uppercase',
-        }}>IA</span>
+        }}>¿DUDAS?</span>
+        <style>{`@keyframes hc-fab-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.15)}}`}</style>
       </button>
 
       <MainLayout>
@@ -1661,6 +1963,7 @@ export default function ProductsPage() {
               search={search} setSearch={setSearch}
               sort={sort} setSort={setSort}
               categories={categories} marcas={marcas} marcaProductCount={marcaProductCount}
+              categoryTotalCount={categoryTotalCount}
               tallaOptions={tallaOptions} category={category} setCategory={setCategory}
               marcasFilter={marcasFilter} toggleMarca={toggleMarca} clearMarcas={clearMarcas}
               filterCond={filterCond} setFilterCond={setFilterCond}
@@ -1692,6 +1995,7 @@ export default function ProductsPage() {
                       toggleMarca={toggleMarca}
                       clearMarcas={clearMarcas}
                       marcaProductCount={marcaProductCount}
+                      categoryTotalCount={categoryTotalCount}
                     />
                   </div>
                 </aside>
@@ -1717,6 +2021,28 @@ export default function ProductsPage() {
                         </button>
                       )}
                     </div>
+                  )}
+
+                  {/* ── Showcase de marcas en grande ── */}
+                  {!loading && marcas.length > 0 && (
+                    <BrandShowcase
+                      marcas={marcas}
+                      visibleMarcaIds={marcasForCategoryScope}
+                      marcasCountInScope={marcasCountInScope}
+                      marcasFilter={marcasFilter}
+                      toggleMarca={toggleMarca}
+                      clearMarcas={clearMarcas}
+                      title={category ? 'Marcas en esta categoría' : 'Compra por Marca'}
+                    />
+                  )}
+
+                  {/* ── Cuadrícula de subcategorías (Cajas Hijas) ── */}
+                  {showSubcatGrid && (
+                    <SubcategoryGrid
+                      subcats={selectedParentNode.children}
+                      onSelect={(id) => { setCategory(id); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                      productCountByCat={productCountByCat}
+                    />
                   )}
 
                   {/* Grid de productos */}
@@ -1873,6 +2199,7 @@ export default function ProductsPage() {
                           toggleMarca={toggleMarca}
                           clearMarcas={clearMarcas}
                           marcaProductCount={marcaProductCount}
+                          categoryTotalCount={categoryTotalCount}
                           onCategorySelect={() => setSidebarOpen(false)}
                         />
                       </div>

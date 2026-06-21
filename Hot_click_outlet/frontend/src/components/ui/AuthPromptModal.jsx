@@ -137,7 +137,7 @@ export default function AuthPromptModal() {
                 <button
                   onClick={() => {
                     setAuthPromptOpen(false)
-                    window.open(`https://wa.me/50689745370?text=${toWhatsAppMessage()}`, '_blank')
+                    window.open(`https://wa.me/50686667888?text=${toWhatsAppMessage()}`, '_blank')
                   }}
                   className="w-full h-12 rounded-2xl bg-[#25D366] hover:bg-[#1da851] text-white font-bold text-sm transition-all flex items-center justify-center gap-2.5 shadow-[0_0_16px_rgba(37,211,102,0.2)] hover:shadow-[0_0_24px_rgba(37,211,102,0.35)]"
                 >

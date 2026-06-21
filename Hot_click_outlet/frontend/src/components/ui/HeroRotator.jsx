@@ -482,11 +482,11 @@ function ProductsPhase({ productos, accent }) {
         </Link>
       </div>
 
-      {/* Cards */}
+      {/* Cards — scroll horizontal en móvil, grid 3 col en desktop */}
       {items.length === 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 sm:grid sm:grid-cols-3 sm:overflow-visible sm:mx-0 sm:px-0">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="rounded-2xl overflow-hidden animate-pulse"
+            <div key={i} className="shrink-0 w-[70vw] sm:w-auto rounded-2xl overflow-hidden animate-pulse"
               style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
               <div className="aspect-[4/3]" style={{ background: 'var(--hc-border)' }} />
               <div className="p-4 space-y-2">
@@ -497,7 +497,7 @@ function ProductsPhase({ productos, accent }) {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 snap-x snap-mandatory sm:grid sm:grid-cols-3 sm:overflow-visible sm:mx-0 sm:px-0 sm:snap-none">
           {items.map((p, i) => (
             <motion.div
               key={p.id}
@@ -506,7 +506,7 @@ function ProductsPhase({ productos, accent }) {
               transition={{ delay: i * 0.1 }}
               whileHover={{ y: -4, boxShadow: `0 12px 32px rgba(0,0,0,0.12)` }}
               onClick={() => navigate(`/productos/${p.id}`)}
-              className="rounded-2xl overflow-hidden cursor-pointer group transition-all"
+              className="shrink-0 w-[70vw] snap-center sm:w-auto rounded-2xl overflow-hidden cursor-pointer group transition-all"
               style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
             >
               <div className="overflow-hidden" style={{ background: 'var(--hc-border)', aspectRatio: '4/3' }}>
@@ -517,7 +517,7 @@ function ProductsPhase({ productos, accent }) {
                     loading="lazy" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center opacity-20"
-                    style={{ fontSize: '3rem' }}>ðŸ"¦</div>
+                    style={{ fontSize: '3rem' }}>📦</div>
                 )}
               </div>
               <div className="p-4">
@@ -796,7 +796,7 @@ export default function HeroRotator({ destacados }) {
   return (
     <section
       className="relative w-full overflow-hidden flex flex-col"
-      style={{ minHeight: '82vh' }}
+      style={{ minHeight: '82vh', maxHeight: '100vh' }}
     >
       {/* Fondo atmosfÃ©rico â€" actualiza color segÃºn fase */}
       <AnimatePresence>
@@ -858,7 +858,7 @@ export default function HeroRotator({ destacados }) {
       )}
 
       {/* Contenido principal centrado */}
-      <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-12">
+      <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-10 overflow-hidden">
         <div className="w-full">
           <AnimatePresence mode="wait">
             {chatMode ? (

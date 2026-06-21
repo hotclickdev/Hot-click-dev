@@ -44,14 +44,30 @@ export default function AIProductCard({ producto, similarity, onAdd }) {
               SKU {producto.sku}
             </p>
           )}
-          {similarity != null && (
-            <span
-              className="inline-block text-[10px] font-bold px-1.5 py-0.5 rounded-full mt-1"
-              style={{ background: 'rgba(34,197,94,0.15)', color: '#178A50' }}
-            >
-              {similarity}% similar
-            </span>
-          )}
+          <div className="flex flex-wrap items-center gap-1 mt-1">
+            {similarity != null && (
+              <span
+                className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                style={{ background: 'rgba(34,197,94,0.15)', color: '#178A50' }}
+              >
+                {similarity}% similar
+              </span>
+            )}
+            {producto.stock != null && (
+              <span
+                className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                style={
+                  producto.stock === 0
+                    ? { background: 'rgba(239,68,68,0.12)', color: '#dc2626' }
+                    : producto.stock <= 5
+                    ? { background: 'rgba(245,158,11,0.12)', color: '#b45309' }
+                    : { background: 'rgba(34,197,94,0.10)', color: '#178A50' }
+                }
+              >
+                {producto.stock === 0 ? 'Sin stock' : `${producto.stock} disp.`}
+              </span>
+            )}
+          </div>
           <p className="text-sm font-bold mt-1" style={{ color: 'var(--hc-accent)' }}>
             ₡{fmt(producto.precio)}
           </p>

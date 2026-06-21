@@ -33,9 +33,11 @@ export default function RegistroEmpresaPage() {
   const toast      = useToast()
   const loginStore = useAuthStore((s) => s.login)
 
-  const [step,    setStep]    = useState(0)
-  const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState('')
+  // step 0 = check tributación, step 1 = datos empresa, step 2 = datos admin
+  const [step,           setStep]          = useState(0)
+  const [tributacion,    setTributacion]   = useState(null) // null | true | false
+  const [loading,        setLoading]       = useState(false)
+  const [error,          setError]         = useState('')
 
   const [form, setForm] = useState({
     nombreEmpresa: '', correoEmpresa: '', telefonoEmpresa: '',
@@ -44,11 +46,18 @@ export default function RegistroEmpresaPage() {
 
   const set = (f) => (e) => setForm(p => ({ ...p, [f]: e.target.value }))
 
+  /* Paso 0 → 1 (sólo si está inscrito) */
+  const handleTributacion = (valor) => {
+    setTributacion(valor)
+    if (valor) setStep(1)
+    // si es false, permanece en step 0 mostrando el bloqueo
+  }
+
   /* Paso 1 → 2 */
   const handleNext = (e) => {
     e.preventDefault(); setError('')
     if (!form.nombreEmpresa.trim()) { setError('El nombre del negocio es requerido'); return }
-    setStep(1)
+    setStep(2)
   }
 
   /* Submit */
@@ -59,13 +68,14 @@ export default function RegistroEmpresaPage() {
     setLoading(true)
     try {
       const { data } = await authService.registroEmpresa({
-        nombreEmpresa:   form.nombreEmpresa.trim(),
-        correoEmpresa:   form.correoEmpresa.trim().toLowerCase() || undefined,
-        telefonoEmpresa: form.telefonoEmpresa.trim() || undefined,
-        nombreAdmin:     form.nombreAdmin.trim() || undefined,
-        correoAdmin:     form.correoAdmin.trim().toLowerCase(),
-        passwordAdmin:   form.passwordAdmin,
-        telefonoAdmin:   form.telefonoAdmin.trim() || undefined,
+        nombreEmpresa:        form.nombreEmpresa.trim(),
+        correoEmpresa:        form.correoEmpresa.trim().toLowerCase() || undefined,
+        telefonoEmpresa:      form.telefonoEmpresa.trim() || undefined,
+        nombreAdmin:          form.nombreAdmin.trim() || undefined,
+        correoAdmin:          form.correoAdmin.trim().toLowerCase(),
+        passwordAdmin:        form.passwordAdmin,
+        telefonoAdmin:        form.telefonoAdmin.trim() || undefined,
+        inscritoTributacion:  true,
       })
       if (data?.data) {
         loginStore(data.data)
@@ -240,37 +250,104 @@ export default function RegistroEmpresaPage() {
 
                 <div className="mb-6">
                   <h2 style={{ fontFamily: 'var(--hc-font-display)', fontWeight: 800, fontSize: '1.7rem', color: 'var(--hc-text)', lineHeight: 1.1, letterSpacing: '-0.01em' }}>
-                    {step === 0 ? 'Tu empresa' : 'Tu cuenta de acceso'}
+                    {step === 0 ? 'Requisito previo' : step === 1 ? 'Tu empresa' : 'Tu cuenta de acceso'}
                   </h2>
                   <p style={{ color: 'var(--hc-muted)', fontSize: '0.85rem', marginTop: '0.3rem' }}>
-                    {step === 0 ? 'Datos básicos de tu negocio.' : 'Con estos datos iniciás sesión en el panel.'}
+                    {step === 0 ? 'Verificamos que puedas emitir facturas electrónicas.' : step === 1 ? 'Datos básicos de tu negocio.' : 'Con estos datos iniciás sesión en el panel.'}
                   </p>
                 </div>
 
                 {/* Progreso */}
                 <div className="flex items-center gap-3 mb-6">
-                  {['Tu empresa', 'Tu cuenta'].map((label, i) => (
+                  {['Tributación', 'Tu empresa', 'Tu cuenta'].map((label, i) => (
                     <div key={i} className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300"
                         style={i < step
                           ? { background: 'var(--hc-success, #22c55e)', color: '#fff' }
                           : i === step
-                          ? { background: 'var(--hc-primary)', color: '#fff', boxShadow: '0 0 12px rgba(231,59,51,0.4)' }
+                          ? { background: tributacion === false && i === 0 ? 'var(--hc-danger)' : 'var(--hc-primary)', color: '#fff', boxShadow: tributacion === false && i === 0 ? '0 0 12px rgba(239,68,68,0.4)' : '0 0 12px rgba(231,59,51,0.4)' }
                           : { background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
                         {i < step
                           ? <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><polyline points="20 6 9 17 4 12"/></svg>
                           : i + 1}
                       </div>
                       <span className="text-xs font-medium" style={{ color: i === step ? 'var(--hc-text)' : 'var(--hc-muted)' }}>{label}</span>
-                      {i < 1 && <div className="h-px w-8 mx-1 rounded transition-all duration-500" style={{ background: step > 0 ? 'var(--hc-primary)' : 'var(--hc-border)' }} />}
+                      {i < 2 && <div className="h-px w-6 mx-1 rounded transition-all duration-500" style={{ background: step > i ? 'var(--hc-primary)' : 'var(--hc-border)' }} />}
                     </div>
                   ))}
                 </div>
 
                 <AnimatePresence mode="wait">
-                  {/* Paso 0 — datos de la empresa */}
-                  {step === 0 && (
-                    <motion.form key="s0"
+                  {/* Paso 0 — verificación tributación */}
+                  {step === 0 && tributacion !== false && (
+                    <motion.div key="s0"
+                      initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }}
+                      className="space-y-4">
+                      <div className="rounded-xl p-4" style={{ background: 'rgba(63,108,222,0.06)', border: '1px solid rgba(63,108,222,0.18)' }}>
+                        <p className="text-sm font-semibold mb-1" style={{ color: 'var(--hc-text)' }}>
+                          ¿Por qué es necesario?
+                        </p>
+                        <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
+                          Para vender en HotClick debés poder emitir <strong>facturas electrónicas</strong> según la normativa del Ministerio de Hacienda de Costa Rica. Esto requiere estar inscrito en <strong>Tributación Directa</strong> (ATV).
+                        </p>
+                      </div>
+                      <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
+                        ¿Estás inscrito en Tributación Directa (ATV)?
+                      </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <button type="button" onClick={() => handleTributacion(true)}
+                          className="flex flex-col items-center gap-2 rounded-xl p-4 transition-all duration-200 hover:scale-[1.02]"
+                          style={{ border: '2px solid rgba(34,197,94,0.35)', background: 'rgba(34,197,94,0.06)', cursor: 'pointer' }}>
+                          <span style={{ fontSize: '1.6rem' }}>✅</span>
+                          <span className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>Sí, estoy inscrito</span>
+                          <span className="text-xs text-center leading-tight" style={{ color: 'var(--hc-muted)' }}>Tengo usuario en ATV y puedo emitir facturas</span>
+                        </button>
+                        <button type="button" onClick={() => handleTributacion(false)}
+                          className="flex flex-col items-center gap-2 rounded-xl p-4 transition-all duration-200 hover:scale-[1.02]"
+                          style={{ border: '2px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.04)', cursor: 'pointer' }}>
+                          <span style={{ fontSize: '1.6rem' }}>❌</span>
+                          <span className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>No estoy inscrito</span>
+                          <span className="text-xs text-center leading-tight" style={{ color: 'var(--hc-muted)' }}>Aún no tengo usuario en ATV</span>
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Paso 0 bloqueado — no inscrito en tributación */}
+                  {step === 0 && tributacion === false && (
+                    <motion.div key="s0-blocked"
+                      initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.25 }}
+                      className="space-y-4">
+                      <div className="rounded-xl p-5 text-center" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.22)' }}>
+                        <div style={{ fontSize: '2.5rem', marginBottom: 10 }}>🚫</div>
+                        <p className="text-sm font-bold mb-2" style={{ color: 'var(--hc-danger, #ef4444)' }}>
+                          No podés registrarte aún
+                        </p>
+                        <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
+                          Para vender en HotClick necesitás estar inscrito en <strong>Tributación Directa (ATV)</strong> del Ministerio de Hacienda. Esto es obligatorio para emitir facturas electrónicas a tus clientes.
+                        </p>
+                      </div>
+                      <div className="rounded-xl p-4" style={{ background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
+                        <p className="text-xs font-semibold mb-2" style={{ color: 'var(--hc-text)' }}>Cómo inscribirte:</p>
+                        <ol className="text-xs space-y-1.5" style={{ color: 'var(--hc-muted)', paddingLeft: 16, listStyleType: 'decimal' }}>
+                          <li>Ingresá al portal <strong>ATV de Hacienda</strong> (atv.hacienda.go.cr)</li>
+                          <li>Creá tu usuario con tu cédula física o jurídica</li>
+                          <li>Inscribite en el régimen tributario correspondiente</li>
+                          <li>Una vez inscrito, regresá aquí para registrar tu empresa</li>
+                        </ol>
+                      </div>
+                      <button type="button" onClick={() => setTributacion(null)}
+                        className="hc-btn hc-btn-outline w-full">
+                        ← Volver a la pregunta
+                      </button>
+                    </motion.div>
+                  )}
+
+                  {/* Paso 1 — datos de la empresa */}
+                  {step === 1 && (
+                    <motion.form key="s1"
                       initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }}
                       onSubmit={handleNext} className="space-y-4">
@@ -281,16 +358,20 @@ export default function RegistroEmpresaPage() {
                       <PhoneField label="Teléfono del negocio"
                         value={form.telefonoEmpresa} onChange={(val) => setForm(p => ({ ...p, telefonoEmpresa: val }))} />
                       {error && <ErrMsg>{error}</ErrMsg>}
-                      <button type="submit" className="hc-btn hc-btn-primary hc-btn-lg w-full"
-                        style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px rgba(231,59,51,0.3)' }}>
-                        Siguiente — Datos del administrador →
-                      </button>
+                      <div className="flex gap-2.5">
+                        <button type="button" onClick={() => { setStep(0); setTributacion(null); setError('') }}
+                          className="hc-btn hc-btn-outline px-4">← Atrás</button>
+                        <button type="submit" className="hc-btn hc-btn-primary hc-btn-lg flex-1"
+                          style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px rgba(231,59,51,0.3)' }}>
+                          Siguiente →
+                        </button>
+                      </div>
                     </motion.form>
                   )}
 
-                  {/* Paso 1 — datos del admin */}
-                  {step === 1 && (
-                    <motion.form key="s1"
+                  {/* Paso 2 — datos del admin */}
+                  {step === 2 && (
+                    <motion.form key="s2"
                       initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }}
                       onSubmit={handleSubmit} className="space-y-4">
@@ -310,7 +391,7 @@ export default function RegistroEmpresaPage() {
                         value={form.telefonoAdmin} onChange={(val) => setForm(p => ({ ...p, telefonoAdmin: val }))} />
                       {error && <ErrMsg>{error}</ErrMsg>}
                       <div className="flex gap-2.5">
-                        <button type="button" onClick={() => { setStep(0); setError('') }}
+                        <button type="button" onClick={() => { setStep(1); setError('') }}
                           className="hc-btn hc-btn-outline px-4">← Atrás</button>
                         <button type="submit" disabled={loading}
                           className="hc-btn hc-btn-primary hc-btn-lg flex-1 disabled:opacity-60"

@@ -7,7 +7,7 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { useToast } from '@/components/ui/Toast'
 
-const WHATSAPP = '50689745370'
+const WHATSAPP = '50686667888'
 const SITE_URL = 'https://hotclick.lat'
 
 const contactPageJsonLd = {
@@ -21,11 +21,11 @@ const contactPageJsonLd = {
     '@type': 'Organization',
     name: 'HotClick',
     url: SITE_URL,
-    telephone: '+506-8974-5370',
+    telephone: '+506-8666-7888',
     contactPoint: [
       {
         '@type': 'ContactPoint',
-        telephone: '+506-8974-5370',
+        telephone: '+506-8666-7888',
         contactType: 'customer service',
         contactOption: 'TollFree',
         availableLanguage: 'Spanish',
@@ -84,7 +84,7 @@ export default function ContactoPage() {
     <MainLayout>
       <Helmet>
         <title>Contacto — HotClick Marketplace Costa Rica</title>
-        <meta name="description" content="Contactá al equipo de HotClick por WhatsApp al +506 8974-5370, por email o formulario. Atención de lunes a sábado 8 a.m.–7 p.m." />
+        <meta name="description" content="Contactá al equipo de HotClick por WhatsApp al +506 8666-7888, por email o formulario. Atención de lunes a sábado 8 a.m.–7 p.m." />
         <link rel="canonical" href={`${SITE_URL}/contacto`} />
         <link rel="alternate" hreflang="es-CR" href={`${SITE_URL}/contacto`} />
         <link rel="alternate" hreflang="es"    href={`${SITE_URL}/contacto`} />
@@ -188,7 +188,7 @@ export default function ContactoPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-[#8e8e9a] mb-0.5">WhatsApp</p>
-                <p className="text-sm font-semibold text-green-400 group-hover:text-green-300 transition-colors">+506 8974-5370</p>
+                <p className="text-sm font-semibold text-green-400 group-hover:text-green-300 transition-colors">+506 8666-7888</p>
                 <p className="text-xs text-[#8e8e9a] mt-0.5">{t('contacto.waHint')}</p>
               </div>
               <svg className="w-4 h-4 text-[#8e8e9a] group-hover:text-green-400 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

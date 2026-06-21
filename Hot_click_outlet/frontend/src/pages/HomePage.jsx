@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import { Helmet } from 'react-helmet-async'
@@ -22,7 +22,7 @@ import Section, { SectionHeader } from '@/components/ui/Section'
 function TrustStrip() {
   const { t } = useTranslation()
   const items = [
-    { icon: <ChatTrustIcon />, title: 'Estamos disponibles', desc: 'Escribinos por WhatsApp', href: 'https://wa.me/50689745370' },
+    { icon: <ChatTrustIcon />, title: 'Estamos disponibles', desc: 'Escribinos por WhatsApp', href: 'https://wa.me/50686667888' },
     { icon: <TruckStepIcon />, title: t('home.feat1Title'), desc: t('home.feat1Desc') },
     { icon: <LockTrustIcon />, title: t('home.feat2Title'), desc: t('home.feat2Desc') },
     { icon: <CheckTrustIcon />, title: t('home.feat3Title'), desc: t('home.feat3Desc') },
@@ -198,6 +198,253 @@ function CategoryBrowse({ products, categories }) {
   )
 }
 
+// ─── Sección de envío ────────────────────────────────────────────────────────
+const si2 = 'w-5 h-5'
+const ss2 = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round' }
+
+function IconRayo() { return <svg className={si2} viewBox="0 0 24 24" {...ss2}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> }
+function IconPaquete() { return <svg className={si2} viewBox="0 0 24 24" {...ss2}><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> }
+function IconPin() { return <svg className={si2} viewBox="0 0 24 24" {...ss2}><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg> }
+function IconCamion() { return <svg className={si2} viewBox="0 0 24 24" {...ss2}><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> }
+function IconAvion() { return <svg className={si2} viewBox="0 0 24 24" {...ss2}><path d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0011.5 2v0A1.5 1.5 0 0010 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg> }
+
+function IconSinpe() { return <svg className="w-4 h-4" viewBox="0 0 24 24" {...ss2}><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18" strokeWidth="2.5"/><line x1="9" y1="6" x2="15" y2="6"/></svg> }
+function IconEfectivo() { return <svg className="w-4 h-4" viewBox="0 0 24 24" {...ss2}><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></svg> }
+function IconTarjeta() { return <svg className="w-4 h-4" viewBox="0 0 24 24" {...ss2}><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg> }
+
+const ENVIO_OPTS = [
+  {
+    Icon: IconRayo,
+    title: 'Envío Rápido',
+    time: '30 min – 2 horas',
+    desc: 'Dentro de la GAM · Pago previo requerido',
+    price: '₡5,000',
+    accent: '#f59e0b',
+    accentBg: 'rgba(245,158,11,0.10)',
+    accentBorder: 'rgba(245,158,11,0.25)',
+  },
+  {
+    Icon: IconPaquete,
+    title: 'Envío Normal — GAM',
+    time: '2–4 días hábiles',
+    desc: 'Con número de rastreo incluido',
+    price: '₡4,000',
+    accent: 'var(--hc-accent)',
+    accentBg: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)',
+    accentBorder: 'color-mix(in srgb, var(--hc-accent) 28%, transparent)',
+  },
+  {
+    Icon: IconPin,
+    title: 'Fuera de la GAM',
+    time: '3–4 días hábiles',
+    desc: 'Con número de rastreo incluido',
+    price: '₡4,000',
+    accent: '#6366f1',
+    accentBg: 'rgba(99,102,241,0.10)',
+    accentBorder: 'rgba(99,102,241,0.28)',
+  },
+  {
+    Icon: IconCamion,
+    title: 'Tu encomienda',
+    time: 'Según tu mensajero',
+    desc: 'Te entregamos en el punto de tu preferencia',
+    price: '₡2,500',
+    accent: '#10b981',
+    accentBg: 'rgba(16,185,129,0.09)',
+    accentBorder: 'rgba(16,185,129,0.24)',
+  },
+  {
+    Icon: IconAvion,
+    title: 'Internacional',
+    time: 'A coordinar',
+    desc: 'Realizamos envíos fuera de Costa Rica',
+    price: 'Consultar',
+    accent: '#8b5cf6',
+    accentBg: 'rgba(139,92,246,0.10)',
+    accentBorder: 'rgba(139,92,246,0.28)',
+    whatsapp: true,
+  },
+]
+
+const PAGO_OPTS = [
+  { label: 'SINPE Móvil', Icon: IconSinpe, color: '#10b981' },
+  { label: 'Efectivo', Icon: IconEfectivo, color: '#f59e0b' },
+  { label: 'Tarjeta', Icon: IconTarjeta, color: 'var(--hc-muted)', soon: true },
+]
+
+function ShippingSection() {
+  const [active, setActive] = useState(0)
+  const opt = ENVIO_OPTS[active]
+
+  return (
+    <section style={{ borderTop: '1px solid var(--hc-border)', borderBottom: '1px solid var(--hc-border)' }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-8">
+          <div>
+            <p className="text-[11px] font-bold tracking-[0.12em] uppercase mb-2" style={{ color: 'var(--hc-accent)' }}>
+              Logística HotClick
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-black leading-tight" style={{ color: 'var(--hc-text)', letterSpacing: '-0.02em' }}>
+              Enviamos a todo el país.
+            </h2>
+            <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>Elegí la opción que mejor se adapte a vos.</p>
+          </div>
+          {/* Métodos de pago */}
+          <div className="flex items-center gap-2">
+            {PAGO_OPTS.map(p => (
+              <div
+                key={p.label}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold"
+                style={{
+                  background: p.soon ? 'transparent' : `color-mix(in srgb, ${p.color} 12%, transparent)`,
+                  border: `1px solid color-mix(in srgb, ${p.color} ${p.soon ? '20%' : '30%'}, transparent)`,
+                  color: p.soon ? 'var(--hc-muted)' : p.color,
+                  opacity: p.soon ? 0.55 : 1,
+                }}
+              >
+                <p.Icon />
+                <span>{p.label}</span>
+                {p.soon && <span className="text-[9px] font-bold opacity-70">pronto</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Cards desktop grid + tab selector mobile */}
+        <div className="hidden sm:grid grid-cols-5 gap-3">
+          {ENVIO_OPTS.map((o, i) => (
+            <motion.div
+              key={o.title}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.35, delay: i * 0.07 }}
+              className="rounded-2xl p-4 flex flex-col gap-3"
+              style={{ background: 'var(--hc-surface)', border: `1px solid ${o.accentBorder}` }}
+            >
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: o.accentBg, border: `1px solid ${o.accentBorder}`, color: o.accent }}
+              >
+                <o.Icon />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-sm leading-snug" style={{ color: 'var(--hc-text)' }}>{o.title}</p>
+                <p className="text-[11px] font-semibold mt-0.5" style={{ color: o.accent }}>{o.time}</p>
+                <p className="text-[11px] mt-1 leading-snug" style={{ color: 'var(--hc-muted)' }}>{o.desc}</p>
+              </div>
+              <div className="flex items-center justify-between mt-auto pt-2" style={{ borderTop: `1px solid ${o.accentBorder}` }}>
+                <span className="text-sm font-black" style={{ color: o.accent }}>{o.price}</span>
+                {o.whatsapp && (
+                  <a
+                    href="https://wa.me/50686667888?text=Hola%20HotClick%2C%20quiero%20info%20de%20env%C3%ADo%20internacional"
+                    target="_blank" rel="noopener noreferrer"
+                    className="text-[10px] font-semibold px-2 py-1 rounded-lg"
+                    style={{ background: 'rgba(37,211,102,0.12)', color: '#25D366', border: '1px solid rgba(37,211,102,0.25)' }}
+                  >
+                    WhatsApp →
+                  </a>
+                )}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Mobile: tabs + panel */}
+        <div className="sm:hidden">
+          {/* Tab pills */}
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
+            {ENVIO_OPTS.map((o, i) => (
+              <button
+                key={o.title}
+                onClick={() => setActive(i)}
+                className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+                style={active === i
+                  ? { background: o.accentBg, border: `1.5px solid ${o.accentBorder}`, color: o.accent }
+                  : { background: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}
+              >
+                <o.Icon />
+                <span className="whitespace-nowrap">{o.title}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Panel */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={active}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+              className="mt-4 rounded-2xl p-5 flex gap-4"
+              style={{ background: 'var(--hc-surface)', border: `1px solid ${opt.accentBorder}` }}
+            >
+              <div
+                className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: opt.accentBg, border: `1px solid ${opt.accentBorder}`, color: opt.accent }}
+              >
+                <opt.Icon />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold" style={{ color: 'var(--hc-text)' }}>{opt.title}</p>
+                <p className="text-sm font-semibold" style={{ color: opt.accent }}>{opt.time}</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--hc-muted)' }}>{opt.desc}</p>
+                <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: `1px solid ${opt.accentBorder}` }}>
+                  <span className="text-lg font-black" style={{ color: opt.accent }}>{opt.price}</span>
+                  {opt.whatsapp ? (
+                    <a
+                      href="https://wa.me/50686667888?text=Hola%20HotClick%2C%20quiero%20info%20de%20env%C3%ADo%20internacional"
+                      target="_blank" rel="noopener noreferrer"
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg"
+                      style={{ background: 'rgba(37,211,102,0.12)', color: '#25D366', border: '1px solid rgba(37,211,102,0.25)' }}
+                    >
+                      Consultar por WhatsApp →
+                    </a>
+                  ) : (
+                    <a href="/checkout" className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ background: 'var(--hc-accent)', color: '#fff' }}>
+                      Comprar ahora →
+                    </a>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* Footer strip — envío rápido call to action */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          className="mt-6 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-3"
+          style={{ background: 'color-mix(in srgb, #f59e0b 6%, transparent)', border: '1px solid rgba(245,158,11,0.25)' }}
+        >
+          <div className="flex items-center gap-3 text-center sm:text-left">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(245,158,11,0.18)', color: '#f59e0b' }}>
+              <IconRayo />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-amber-300">¿Necesitás algo urgente?</p>
+              <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Envío rápido disponible — llegás a tu puerta en 30 min a 2 horas dentro de la GAM</p>
+            </div>
+          </div>
+          <a
+            href="https://wa.me/50686667888?text=Hola%20HotClick%2C%20quiero%20hacer%20un%20pedido%20con%20env%C3%ADo%20r%C3%A1pido"
+            target="_blank" rel="noopener noreferrer"
+            className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
+            style={{ background: '#25D366', color: '#fff' }}
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+            Pedir envío rápido
+          </a>
+        </motion.div>
+      </div>
+    </section>
+  )
+}
+
 // ─── Página principal ─────────────────────────────────────────────────────────
 export default function HomePage() {
   const [destacados, setDestacados] = useState([])
@@ -248,7 +495,7 @@ export default function HomePage() {
           {JSON.stringify(generateOrganizationJsonLd(window.location.origin, [
             'https://www.facebook.com/hotclickcr',
             'https://www.instagram.com/hotclickcr',
-            'https://wa.me/50689745370',
+            'https://wa.me/50686667888',
             'https://www.tiktok.com/@hotclickcr',
           ]))}
         </script>
@@ -289,44 +536,55 @@ export default function HomePage() {
       {/* Visto recientemente */}
       {recentlyViewed.length > 0 && (
         <Section title={`${t('home.recentlyViewed')}.`} subtitle="Seguí donde lo dejaste.">
-          <div role="list" className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide">
+          <div role="list" className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide px-1">
             {recentlyViewed.map((p) => (
               <motion.article
                 key={p.id}
                 role="listitem"
-                whileHover={{ y: -4, scale: 1.02 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="shrink-0 relative w-44 rounded-2xl overflow-visible"
+                whileHover={{ y: -3, boxShadow: '0 8px 24px rgba(0,0,0,0.10)' }}
+                transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+                className="shrink-0 w-36 rounded-2xl overflow-hidden flex flex-col"
                 style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
               >
                 <Link
                   to={`/productos/${p.id}`}
                   aria-hidden="true"
                   tabIndex={-1}
-                  className="absolute -top-4 -left-3 w-20 h-20 drop-shadow-xl"
+                  className="block w-full h-28 bg-gray-50 flex items-center justify-center overflow-hidden"
+                  style={{ background: 'var(--hc-bg)' }}
                 >
                   {p.imagenUrl ? (
-                    <img src={getOptimizedUrl(p.imagenUrl, { width: 80, quality: 75 })} alt="" className="w-full h-full object-contain" loading="lazy" decoding="async" width={80} height={80} />
+                    <img
+                      src={getOptimizedUrl(p.imagenUrl, { width: 160, quality: 80 })}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      decoding="async"
+                      width={144}
+                      height={112}
+                    />
                   ) : (
-                    <span aria-hidden="true" className="flex items-center justify-center w-full h-full text-3xl">📦</span>
+                    <span aria-hidden="true" className="text-4xl">📦</span>
                   )}
                 </Link>
-                <Link
-                  to={`/productos/${p.id}`}
-                  className="block pl-16 pr-3 pt-3 pb-1 rounded-t-2xl"
-                  aria-label={`Ver ${p.nombre}, ${formatPrice(p.precio)}`}
-                >
-                  <p className="text-xs font-medium truncate max-w-[90px] leading-tight" style={{ color: 'var(--hc-muted)' }}>{p.nombre}</p>
-                  <p className="text-sm font-bold mt-0.5" style={{ color: 'var(--hc-text)' }}>{formatPrice(p.precio)}</p>
-                </Link>
-                <div className="flex justify-end px-3 pb-3 pt-1">
-                  <motion.button
-                    whileTap={{ scale: 0.88 }}
-                    aria-label={`Añadir ${p.nombre} al carrito`}
-                    onClick={() => { addItem(p); toast({ message: t('product.added', { name: p.nombre }), type: 'success' }) }}
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-white text-base font-bold shadow-lg"
-                    style={{ background: 'var(--hc-accent)' }}
-                  >+</motion.button>
+                <div className="flex flex-col flex-1 px-3 pt-2 pb-3 gap-1">
+                  <Link
+                    to={`/productos/${p.id}`}
+                    aria-label={`Ver ${p.nombre}, ${formatPrice(p.precio)}`}
+                    className="flex-1"
+                  >
+                    <p className="text-xs font-medium leading-snug line-clamp-2" style={{ color: 'var(--hc-muted)' }}>{p.nombre}</p>
+                    <p className="text-sm font-bold mt-1" style={{ color: 'var(--hc-text)' }}>{formatPrice(p.precio)}</p>
+                  </Link>
+                  <div className="flex justify-end mt-1">
+                    <motion.button
+                      whileTap={{ scale: 0.88 }}
+                      aria-label={`Añadir ${p.nombre} al carrito`}
+                      onClick={() => { addItem(p); toast({ message: t('product.added', { name: p.nombre }), type: 'success' }) }}
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-white text-base font-bold shadow"
+                      style={{ background: 'var(--hc-accent)' }}
+                    >+</motion.button>
+                  </div>
                 </div>
               </motion.article>
             ))}
@@ -385,6 +643,9 @@ export default function HomePage() {
           </div>
         )}
       </section>
+
+      {/* Opciones de envío y pago */}
+      <ShippingSection />
 
       {/* Cómo comprar — franja de pasos sobre azul 50 (§15.5) */}
       <Section

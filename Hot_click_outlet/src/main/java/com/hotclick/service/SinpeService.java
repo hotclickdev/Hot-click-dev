@@ -92,7 +92,7 @@ public class SinpeService {
             costoTotal += p.getPrecioCompra() * item.getCantidad();
         }
 
-        int costoEnvio = "ENVIO_A_DOMICILIO".equals(req.getMetodoEnvio()) ? 2000 : 0;
+        int costoEnvio = calcularCostoEnvio(req.getMetodoEnvio());
 
         int descuento = 0;
         String codigoCuponAplicado = null;
@@ -124,7 +124,8 @@ public class SinpeService {
                     .divide(BigDecimal.valueOf(subtotal), 4, RoundingMode.HALF_UP)
                     .multiply(BigDecimal.valueOf(100)));
         }
-        pedido.setMetodoPago(Constants.PROVEEDOR_SINPE);
+        String proveedorEfectivo = req.getProvider() != null ? req.getProvider() : Constants.PROVEEDOR_SINPE;
+        pedido.setMetodoPago(proveedorEfectivo);
         pedido.setMetodoEnvio(req.getMetodoEnvio() != null ? req.getMetodoEnvio() : "RETIRO_EN_TIENDA");
         pedido.setNotas(req.getNotas());
         pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE_COMPROBANTE);
@@ -164,11 +165,11 @@ public class SinpeService {
         pago.setEstado(Constants.ESTADO_ACTIVO);
         pagoRepository.save(pago);
 
-        log.info("Checkout SINPE iniciado: pedido={} total={}", pedido.getNumeroPedido(), total);
+        log.info("Checkout {} iniciado: pedido={} total={}", proveedorEfectivo, pedido.getNumeroPedido(), total);
 
         return new PaymentCheckoutResponse(
             pedido.getId(), pedido.getNumeroPedido(),
-            null, Constants.PAGO_PENDIENTE, total, Constants.PROVEEDOR_SINPE);
+            null, Constants.PAGO_PENDIENTE, total, proveedorEfectivo);
     }
 
     // ================================================================
@@ -366,6 +367,18 @@ public class SinpeService {
     // ================================================================
     // Helpers
     // ================================================================
+
+    private int calcularCostoEnvio(String metodoEnvio) {
+        if (metodoEnvio == null) return 0;
+        return switch (metodoEnvio) {
+            case "ENVIO_RAPIDO"            -> 5000;
+            case "ENVIO_NORMAL_GAM"        -> 4000;
+            case "ENVIO_NORMAL_FUERA_GAM"  -> 4000;
+            case "ENCOMIENDA_PROPIA"       -> 2500;
+            case "ENVIO_A_DOMICILIO"       -> 2000;
+            default                        -> 0;
+        };
+    }
 
     private void registrarAuditoria(Long adminId, String adminEmail,
                                     String accion, String entidad,

@@ -3,7 +3,7 @@ import { paymentService } from '../services/paymentService'
 
 const MAX_INTENTOS     = 3
 const POLL_INTERVAL_MS = 3000
-const POLL_MAX_ATTEMPTS = 30  // 90 segundos
+const POLL_MAX_ATTEMPTS = 60  // 180 segundos
 
 const GUEST_KEY = 'hc-guest-checkout'
 

@@ -859,7 +859,7 @@ export default function AdminPOS() {
           token:       data.token,
           metodoPago:  data.metodoPago,
           total:       data.total ?? total,
-          sinpeNumero: data.sinpeNumero ?? '50689745370',
+          sinpeNumero: data.sinpeNumero ?? '8666-7888',
         })
         setStep('qr')
       } catch (err) {

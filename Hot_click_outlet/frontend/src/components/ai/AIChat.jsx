@@ -17,6 +17,7 @@
  */
 import { useState, useRef, useCallback, useEffect, useMemo, Fragment } from 'react'
 import useCartStore from '@/store/cartStore'
+import useChatStore from '@/store/chatStore'
 import { shoppingAssistantService } from '@/services/shoppingAssistantService'
 import { getOrCreateVisitorId } from '@/utils/visitorId'
 import AIProductCard from './AIProductCard'
@@ -118,6 +119,18 @@ export default function AIChat({
     const toSave = mensajes.filter(m => !m.typing && !m.failed).slice(-30)
     try { localStorage.setItem(storageKey, JSON.stringify(toSave)) } catch {}
   }, [mensajes, storageKey])
+
+  // Sincroniza mensajes y sesionId al chatStore para que CartAssistant y otros
+  // componentes lean el contexto de la sesión GENERAL sin recargar la página.
+  useEffect(() => {
+    if (sessionKey !== 'hotclick') return
+    useChatStore.getState().setMensajes(mensajes)
+  }, [mensajes, sessionKey])
+
+  useEffect(() => {
+    if (sessionKey !== 'hotclick' || !sesionId) return
+    useChatStore.getState().setSesionId(sesionId)
+  }, [sesionId, sessionKey])
 
   useEffect(() => {
     if (!autoQuery || autoSent.current) return

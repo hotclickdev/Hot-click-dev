@@ -18,7 +18,7 @@ const BENEFITS = [
   { icon: '⭐', text: 'Miles de clientes satisfechos en Costa Rica' },
 ]
 
-function PaymentLoadingScreen({ estado }) {
+function PaymentLoadingScreen({ estado, stripeApproved }) {
   const [progress, setProgress] = useState(0)
   const [benefitIdx, setBenefitIdx] = useState(0)
 
@@ -65,7 +65,11 @@ function PaymentLoadingScreen({ estado }) {
             ¡Gracias por tu compra!
           </h2>
           <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
-            {estado === 'capturing' ? 'Confirmando tu pago…' : 'Verificando el pago con el banco…'}
+            {estado === 'capturing'
+              ? 'Confirmando tu pago…'
+              : stripeApproved
+                ? 'Pago aprobado — registrando en el sistema…'
+                : 'Verificando el pago con el banco…'}
           </p>
         </div>
 
@@ -116,7 +120,10 @@ export default function PaymentStatusPage() {
   const numeroPedido  = params.get('order')
   const provider      = params.get('provider')
   const paypalToken   = params.get('token')
-  const esCancelacion = pathname === '/pago/cancelado'
+  // Stripe agrega redirect_status=succeeded cuando el pago ya fue aprobado
+  const redirectStatus = params.get('redirect_status')
+  const stripeApproved = redirectStatus === 'succeeded'
+  const esCancelacion = pathname === '/pago/cancelado' || redirectStatus === 'failed'
 
   const { clearCart }                                                           = useCartStore()
   const { token }                                                               = useAuthStore()
@@ -161,7 +168,7 @@ export default function PaymentStatusPage() {
   const isBusy = estado === 'idle' || estado === 'polling' || estado === 'capturing'
 
   // ── Pantalla de carga ──────────────────────────────────────────────
-  if (isBusy) return <PaymentLoadingScreen estado={estado} />
+  if (isBusy) return <PaymentLoadingScreen estado={estado} stripeApproved={stripeApproved} />
 
   // ── Pago exitoso ───────────────────────────────────────────────────
   if (estado === 'success') {
@@ -236,7 +243,7 @@ export default function PaymentStatusPage() {
                 </Link>
               ) : (
                 <a
-                  href="https://wa.me/50689745370"
+                  href="https://wa.me/50686667888"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block w-full py-3 rounded-xl bg-[#25D366] hover:bg-[#1da851] text-white font-semibold text-sm transition-all text-center"
@@ -312,12 +319,16 @@ export default function PaymentStatusPage() {
                 <polyline points="12 6 12 12 16 14" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-[#e8e8ed] mb-2">Tu pago está siendo revisado</h1>
+            <h1 className="text-2xl font-bold text-[#e8e8ed] mb-2">
+              {stripeApproved ? '¡Pago aprobado!' : 'Tu pago está siendo revisado'}
+            </h1>
             <p className="text-[#8e8e9a] text-sm mb-2">
-              La confirmación puede tardar unos minutos más. Te enviaremos un correo cuando se procese.
+              {stripeApproved
+                ? 'Tu banco ya confirmó el pago. Estamos registrando tu pedido — recibirás un correo en unos minutos.'
+                : 'La confirmación puede tardar unos minutos más. Te enviaremos un correo cuando se procese.'}
             </p>
             <p className="text-xs text-[#8e8e9a] mb-6">
-              Si tu banco ya lo cobró y no recibes confirmación en 15 minutos, contáctanos.
+              Si no recibes confirmación en 15 minutos, contáctanos por WhatsApp con el número de pedido.
             </p>
 
             {pagoData?.numeroPedido && (
@@ -329,7 +340,7 @@ export default function PaymentStatusPage() {
 
             <div className="flex flex-col gap-3">
               <a
-                href="https://wa.me/50689745370"
+                href="https://wa.me/50686667888"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full py-3 rounded-xl bg-[#25D366] hover:bg-[#1da851] text-white font-semibold text-sm transition-all text-center"

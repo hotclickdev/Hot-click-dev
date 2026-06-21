@@ -2,15 +2,24 @@ import { useNavigate } from 'react-router-dom'
 
 /**
  * Chip clicable de categoría sugerida por el asistente AI.
- * Navega a /productos?categoria=nombre al hacer clic.
+ * - Si `onSelect` está definido (uso dentro de ProductsPage): lo llama con el nombre.
+ * - Si no: navega a /productos?categoria=nombre (uso desde otras páginas).
  */
-export default function AICategoryChip({ nombre, accentColor }) {
+export default function AICategoryChip({ nombre, accentColor, onSelect }) {
   const navigate = useNavigate()
   const accent = accentColor || 'var(--hc-accent)'
 
+  function handleClick() {
+    if (onSelect) {
+      onSelect(nombre)
+    } else {
+      navigate(`/productos?categoria=${encodeURIComponent(nombre)}`)
+    }
+  }
+
   return (
     <button
-      onClick={() => navigate(`/productos?categoria=${encodeURIComponent(nombre)}`)}
+      onClick={handleClick}
       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:opacity-80 active:scale-95"
       style={{
         background: `color-mix(in srgb, ${accent} 12%, transparent)`,

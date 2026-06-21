@@ -1,7 +1,9 @@
 package com.hotclick.dto;
 
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
@@ -40,6 +42,10 @@ public class RegistroEmpresaDTO {
     @Pattern(regexp = "^[0-9+\\-\\s()]{7,20}$", message = "Teléfono de administrador inválido (7–20 dígitos)")
     private String telefonoAdmin;
 
+    @NotNull(message = "Debe indicar si está inscrito en Tributación Directa")
+    @AssertTrue(message = "Debe estar inscrito en Tributación Directa (ATV) para vender en HotClick")
+    private Boolean inscritoTributacion;
+
     public String getNombreEmpresa()   { return nombreEmpresa; }
     public void setNombreEmpresa(String v)   { this.nombreEmpresa = v; }
     public String getNombreComercial() { return nombreComercial; }
@@ -56,6 +62,8 @@ public class RegistroEmpresaDTO {
     public void setCorreoAdmin(String v)     { this.correoAdmin = v; }
     public String getPasswordAdmin()   { return passwordAdmin; }
     public void setPasswordAdmin(String v)   { this.passwordAdmin = v; }
-    public String getTelefonoAdmin()   { return telefonoAdmin; }
-    public void setTelefonoAdmin(String v)   { this.telefonoAdmin = v; }
+    public String getTelefonoAdmin()          { return telefonoAdmin; }
+    public void setTelefonoAdmin(String v)         { this.telefonoAdmin = v; }
+    public Boolean getInscritoTributacion()   { return inscritoTributacion; }
+    public void setInscritoTributacion(Boolean v)  { this.inscritoTributacion = v; }
 }

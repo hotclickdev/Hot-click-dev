@@ -1006,13 +1006,13 @@ function SeccionTienda({ toast }) {
       return {
         nombreTienda: 'HotClick',
         descripcion: 'Tu tienda de electrónica y tecnología en Costa Rica',
-        whatsapp: '50689745370',
+        whatsapp: '50686667888',
         emailContacto: '',
         direccion: '',
         horario: 'Lun-Vie 8am-6pm, Sáb 9am-1pm',
         ...JSON.parse(localStorage.getItem(STORE_KEY) || '{}'),
       }
-    } catch { return { nombreTienda: 'HotClick', descripcion: '', whatsapp: '50689745370', emailContacto: '', direccion: '', horario: '' } }
+    } catch { return { nombreTienda: 'HotClick', descripcion: '', whatsapp: '50686667888', emailContacto: '', direccion: '', horario: '' } }
   })
   const [saved, setSaved] = useState(false)
   const set = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }))
@@ -1379,7 +1379,7 @@ function SeccionNotificaciones({ toast, soloVentas = false }) {
         <Block label={t('adminConfig.notifWaTitle')} sublabel={t('adminConfig.notifWaSubtitle')}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', borderRadius: '10px', background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)', fontSize: '13px', fontFamily: F.mono }}>
             <span style={{ fontSize: '16px' }}>📱</span>
-            <span style={{ flex: 1 }}>+506 8974-5370</span>
+            <span style={{ flex: 1 }}>+506 8666-7888</span>
             <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>Andrés Zúñiga</span>
           </div>
           <p style={{ fontSize: '12px', color: 'var(--hc-muted)', marginTop: '8px', fontFamily: F.body }}>{t('adminConfig.notifWaNote')}</p>

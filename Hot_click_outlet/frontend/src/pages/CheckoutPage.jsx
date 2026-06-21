@@ -14,8 +14,8 @@ import { analytics } from '@/utils/analytics'
 import PhoneField from '@/components/ui/PhoneField'
 
 const BODEGA_DEFAULT = 1
-const WHATSAPP = '50689745370'
-const SINPE_NUMERO = '8974-5370'
+const WHATSAPP = '50686667888'
+const SINPE_NUMERO = '8666-7888'
 const SINPE_TITULAR = 'Andrés Zúñiga (HotClick)'
 
 function formatPhone(v) {
@@ -94,6 +94,58 @@ export default function CheckoutPage() {
   const errorBannerRef = useRef(null)
   const { t } = useTranslation()
 
+  const SHIPPING_COSTS = {
+    RETIRO_EN_TIENDA:       0,
+    ENCOMIENDA_PROPIA:   2500,
+    ENVIO_NORMAL_GAM:    4000,
+    ENVIO_NORMAL_FUERA_GAM: 4000,
+    ENVIO_RAPIDO:        5000,
+  }
+
+  const SHIPPING_OPTIONS = [
+    {
+      value: 'RETIRO_EN_TIENDA',
+      label: 'Retiro en punto HotClick',
+      sub: 'Gratis · Coordinamos el punto de entrega',
+      precio: 0,
+      badge: null,
+      needsAddress: false,
+    },
+    {
+      value: 'ENCOMIENDA_PROPIA',
+      label: 'Tu encomienda preferida',
+      sub: 'Te entregamos en el punto de tu mensajero o encomienda favorita',
+      precio: 2500,
+      badge: null,
+      needsAddress: true,
+    },
+    {
+      value: 'ENVIO_NORMAL_GAM',
+      label: 'Envío Normal — GAM',
+      sub: '2–4 días hábiles · Incluye número de rastreo',
+      precio: 4000,
+      badge: null,
+      needsAddress: true,
+    },
+    {
+      value: 'ENVIO_NORMAL_FUERA_GAM',
+      label: 'Envío Normal — Fuera de la GAM',
+      sub: '3–4 días hábiles · Incluye número de rastreo',
+      precio: 4000,
+      badge: null,
+      needsAddress: true,
+    },
+    {
+      value: 'ENVIO_RAPIDO',
+      label: 'Envío Rápido (Express)',
+      sub: '30 min – 2 horas en la GAM · Pago previo obligatorio',
+      precio: 5000,
+      badge: 'Pago previo',
+      badgeColor: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+      needsAddress: true,
+    },
+  ]
+
   // SINPE Móvil siempre primero, con su beneficio explícito (Brand Book §15.4)
   const METODOS_PAGO = [
     {
@@ -103,14 +155,27 @@ export default function CheckoutPage() {
       badge: 'Sin comisión',
       badgeColor: 'bg-[var(--hc-success)]/15 text-[var(--hc-success)] border-[var(--hc-success)]/30',
       icon: SinpeIcon,
+      disabled: false,
+    },
+    {
+      id: 'EFECTIVO',
+      label: 'Efectivo contra entrega',
+      descripcion: 'Pagás en efectivo al recibir tu pedido',
+      badge: 'Sin costo extra',
+      badgeColor: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+      icon: EfectivoIcon,
+      disabled: metodoEnvio === 'ENVIO_RAPIDO',
+      disabledReason: 'El envío rápido requiere pago previo',
     },
     {
       id: 'STRIPE',
       label: 'Visa / Mastercard',
-      descripcion: t('checkout.stripeDesc'),
-      badge: t('checkout.stripeBadge'),
+      descripcion: 'Pagos con tarjeta · Próximamente disponible',
+      badge: 'Próximamente',
       badgeColor: 'bg-[var(--hc-blue-500)]/20 text-[var(--hc-blue-400)] border-[var(--hc-blue-500)]/30',
       icon: CardIcon,
+      disabled: true,
+      disabledReason: 'Disponible próximamente',
     },
   ]
 
@@ -127,7 +192,7 @@ export default function CheckoutPage() {
   }
 
   const [metodoEnvio,  setMetodoEnvio]  = useState('RETIRO_EN_TIENDA')
-  const [metodoPago,   setMetodoPago]   = useState('STRIPE')
+  const [metodoPago,   setMetodoPago]   = useState('SINPE')
   const [notas,        setNotas]        = useState('')
 
   // SINPE — datos del remitente (se capturan ANTES del pago)
@@ -201,7 +266,7 @@ export default function CheckoutPage() {
     }
   }, [estado])
 
-  const costoEnvio     = metodoEnvio === 'ENVIO_A_DOMICILIO' ? 2000 : 0
+  const costoEnvio     = SHIPPING_COSTS[metodoEnvio] ?? 0
   const subtotalCart   = total()
   const descuentoMonto = cuponDescuento > 0 ? Math.round(subtotalCart * cuponDescuento / 100) : 0
   const baseConCupon   = subtotalCart - descuentoMonto + costoEnvio
@@ -247,7 +312,8 @@ export default function CheckoutPage() {
 
   // Validate domicilio fields before pay
   const validateDomicilio = useCallback(() => {
-    if (metodoEnvio !== 'ENVIO_A_DOMICILIO') return true
+    const op = SHIPPING_OPTIONS.find(o => o.value === metodoEnvio)
+    if (!op?.needsAddress) return true
     const dErr = validateAddress(direccion)
     setDireccionError(dErr)
     setDireccionDirty(true)
@@ -286,13 +352,16 @@ export default function CheckoutPage() {
     registrarConsentimiento('CHECKOUT')
 
     const phoneEfectivo = !token ? guestPhone : telefono
+    const opEnvio = SHIPPING_OPTIONS.find(o => o.value === metodoEnvio)
     const notasFull = [
       notas.trim(),
-      metodoEnvio === 'ENVIO_A_DOMICILIO' && phoneEfectivo ? `Teléfono: ${phoneEfectivo}` : '',
-      metodoEnvio === 'ENVIO_A_DOMICILIO' && direccion ? `Dirección: ${direccion}` : '',
+      opEnvio?.needsAddress && phoneEfectivo ? `Teléfono: ${phoneEfectivo}` : '',
+      opEnvio?.needsAddress && direccion ? `Dirección: ${direccion}` : '',
       metodoPago === 'SINPE' && sinpeCedula ? `Cédula: ${sinpeCedula}` : '',
+      opEnvio ? `Envío: ${opEnvio.label}` : '',
     ].filter(Boolean).join(' | ')
 
+    const isManual = metodoPago === 'SINPE' || metodoPago === 'EFECTIVO'
     analytics.checkoutStart(totalFinal, items.reduce((s, i) => s + i.cantidad, 0))
     iniciarPago({
       bodegaId:    BODEGA_DEFAULT,
@@ -308,7 +377,7 @@ export default function CheckoutPage() {
           : guestEmail.trim(),
         guestPhone: guestPhone || sinpeTelefono || null,
       }),
-    }, !token, metodoPago === 'SINPE')
+    }, !token, isManual)
   }
 
   const handleSinpeWhatsApp = () => {
@@ -375,6 +444,7 @@ export default function CheckoutPage() {
   }
 
   if (estado === 'sinpe_pendiente') {
+    const esEfectivo = pagoData?.proveedor === 'EFECTIVO'
     return (
       <MainLayout>
         <div className="max-w-xl mx-auto px-4 py-14">
@@ -393,10 +463,62 @@ export default function CheckoutPage() {
                 </svg>
               </div>
               <div>
-                <h2 className="font-bold text-base" style={{ color: 'var(--hc-text)' }}>Pedido registrado — realizá tu SINPE</h2>
-                <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Transferí el monto exacto y subí la foto del comprobante</p>
+                <h2 className="font-bold text-base" style={{ color: 'var(--hc-text)' }}>
+                  {esEfectivo ? '¡Pedido registrado!' : 'Pedido registrado — realizá tu SINPE'}
+                </h2>
+                <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+                  {esEfectivo
+                    ? 'Pagás en efectivo cuando recibas tu pedido — monto exacto'
+                    : 'Transferí el monto exacto y subí la foto del comprobante'}
+                </p>
               </div>
             </div>
+
+            {/* Efectivo contra entrega — pantalla simplificada */}
+            {esEfectivo && (
+              <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="space-y-4">
+                <div className="rounded-xl p-5 space-y-3" style={{ background: 'color-mix(in srgb, #f59e0b 6%, transparent)', border: '1px solid color-mix(in srgb, #f59e0b 25%, transparent)' }}>
+                  <p className="text-xs font-semibold text-amber-400">DETALLES DEL PAGO</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm" style={{ color: 'var(--hc-muted)' }}>💵 Método</span>
+                    <span className="font-semibold text-amber-300">Efectivo contra entrega</span>
+                  </div>
+                  {pagoData?.numeroPedido && (
+                    <div className="flex justify-between items-center text-sm">
+                      <span style={{ color: 'var(--hc-muted)' }}>🔖 Pedido</span>
+                      <span className="font-mono font-semibold text-[#4f7cff]">{pagoData.numeroPedido}</span>
+                    </div>
+                  )}
+                  <div className="border-t pt-3" style={{ borderColor: 'color-mix(in srgb, #f59e0b 20%, transparent)' }}>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-semibold" style={{ color: 'var(--hc-muted)' }}>💰 Monto EXACTO a pagar</span>
+                      <span className="font-bold text-2xl text-amber-300">{formatPrice(totalFinal)}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-2.5 p-3.5 rounded-xl" style={{ background: 'color-mix(in srgb, #10b981 8%, transparent)', border: '1px solid color-mix(in srgb, #10b981 25%, transparent)' }}>
+                  <svg className="w-4 h-4 shrink-0 mt-0.5 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-xs leading-relaxed text-emerald-300/90">
+                    Nuestro repartidor llevará tu pedido y cobrará el monto exacto en efectivo. Te avisamos por WhatsApp antes de salir.
+                  </p>
+                </div>
+                <button
+                  onClick={handleSinpeWhatsApp}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/18"
+                >
+                  <WhatsAppIcon />
+                  Notificar también por WhatsApp
+                </button>
+                <a href="/mis-pedidos" className="block text-xs text-center text-[#4f7cff] hover:underline mt-1">
+                  Ver mis pedidos →
+                </a>
+              </motion.div>
+            )}
+
+            {/* SINPE flow — solo si no es efectivo */}
+            {!esEfectivo && <>
 
             {/* Datos del remitente */}
             <div className="rounded-xl p-4 space-y-1.5 text-sm" style={{ background: 'color-mix(in srgb, var(--hc-surface) 50%, transparent)', border: '1px solid var(--hc-border)' }}>
@@ -539,15 +661,18 @@ export default function CheckoutPage() {
               </motion.div>
             )}
 
-            {/* Nota */}
-            <div className="flex gap-2.5 p-3.5 rounded-xl" style={{ background: 'color-mix(in srgb, #f59e0b 8%, transparent)', border: '1px solid color-mix(in srgb, #f59e0b 25%, transparent)' }}>
-              <svg className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p className="text-xs leading-relaxed text-amber-300/90">
-                Tu pago será <strong>verificado por un administrador</strong>. El pedido expira en 72 horas si no se confirma.
-              </p>
-            </div>
+            {/* Nota — solo para SINPE */}
+            {!esEfectivo && (
+              <div className="flex gap-2.5 p-3.5 rounded-xl" style={{ background: 'color-mix(in srgb, #f59e0b 8%, transparent)', border: '1px solid color-mix(in srgb, #f59e0b 25%, transparent)' }}>
+                <svg className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-xs leading-relaxed text-amber-300/90">
+                  Tu pago será <strong>verificado por un administrador</strong>. El pedido expira en 72 horas si no se confirma.
+                </p>
+              </div>
+            )}
+            </>}
           </motion.div>
         </div>
       </MainLayout>
@@ -718,11 +843,8 @@ export default function CheckoutPage() {
               style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
             >
               <h2 className="font-semibold" style={{ color: 'var(--hc-text)' }}>{t('checkout.deliveryMethod')}</h2>
-              <div className="space-y-3">
-                {[
-                  { value: 'RETIRO_EN_TIENDA', label: t('checkout.storePickup'), sub: t('checkout.storePickupSub'), precio: '₡0' },
-                  { value: 'ENVIO_A_DOMICILIO', label: t('checkout.homeDelivery'), sub: t('checkout.homeDeliverySub'), precio: formatPrice(2000) },
-                ].map((op) => (
+              <div className="space-y-2">
+                {SHIPPING_OPTIONS.map((op) => (
                   <label
                     key={op.value}
                     className="flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all duration-200"
@@ -733,24 +855,49 @@ export default function CheckoutPage() {
                     <input
                       type="radio" name="envio" value={op.value}
                       checked={metodoEnvio === op.value}
-                      onChange={() => setMetodoEnvio(op.value)}
+                      onChange={() => {
+                        setMetodoEnvio(op.value)
+                        if (op.value === 'ENVIO_RAPIDO' && metodoPago === 'EFECTIVO') setMetodoPago('SINPE')
+                      }}
                       className="accent-[#4f7cff]"
                     />
-                    <div className="flex-1">
-                      <p className="font-medium text-sm" style={{ color: 'var(--hc-text)' }}>{op.label}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-medium text-sm" style={{ color: 'var(--hc-text)' }}>{op.label}</p>
+                        {op.badge && (
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${op.badgeColor}`}>
+                            {op.badge}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>{op.sub}</p>
                     </div>
-                    <span className={`font-semibold text-sm ${op.value === 'RETIRO_EN_TIENDA' ? 'text-[#4f7cff]' : ''}`}
-                      style={op.value !== 'RETIRO_EN_TIENDA' ? { color: 'var(--hc-text)' } : {}}>
-                      {op.precio}
+                    <span className={`font-semibold text-sm shrink-0 ${op.precio === 0 ? 'text-[#4f7cff]' : ''}`}
+                      style={op.precio !== 0 ? { color: 'var(--hc-text)' } : {}}>
+                      {op.precio === 0 ? 'Gratis' : formatPrice(op.precio)}
                     </span>
                   </label>
                 ))}
+
+                {/* Internacional — enlace a WhatsApp */}
+                <a
+                  href="https://wa.me/50686667888?text=Hola%20HotClick%2C%20quiero%20realizar%20un%20env%C3%ADo%20internacional"
+                  target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-4 p-4 rounded-xl border transition-all duration-200 hover:opacity-80"
+                  style={{ borderColor: 'var(--hc-border)', borderStyle: 'dashed' }}
+                >
+                  <span className="text-lg">✈️</span>
+                  <div className="flex-1">
+                    <p className="font-medium text-sm" style={{ color: 'var(--hc-text)' }}>Envío Internacional</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>Disponible · Consultá precio por WhatsApp</p>
+                  </div>
+                  <span className="text-xs font-semibold" style={{ color: '#25D366' }}>Consultar →</span>
+                </a>
               </div>
 
               {/* Domicilio fields — animate in */}
               <AnimatePresence>
-                {metodoEnvio === 'ENVIO_A_DOMICILIO' && (
+                {SHIPPING_OPTIONS.find(o => o.value === metodoEnvio)?.needsAddress && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
@@ -813,15 +960,17 @@ export default function CheckoutPage() {
                   return (
                     <label
                       key={mp.id}
-                      className="flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all duration-200"
-                      style={selected
+                      className={`flex items-center gap-4 p-4 rounded-xl border transition-all duration-200 ${mp.disabled ? 'opacity-45 cursor-not-allowed' : 'cursor-pointer'}`}
+                      style={selected && !mp.disabled
                         ? { borderColor: 'var(--hc-accent)', boxShadow: 'inset 0 0 0 1px var(--hc-accent)', background: 'var(--hc-info-bg)' }
                         : { borderColor: 'var(--hc-border)' }}
+                      title={mp.disabled ? mp.disabledReason : undefined}
                     >
                       <input
                         type="radio" name="pago" value={mp.id}
                         checked={selected}
-                        onChange={() => setMetodoPago(mp.id)}
+                        disabled={mp.disabled}
+                        onChange={() => !mp.disabled && setMetodoPago(mp.id)}
                         className="accent-[var(--hc-accent)] shrink-0"
                       />
                       <div className="w-10 h-7 flex items-center justify-center shrink-0">
@@ -838,7 +987,7 @@ export default function CheckoutPage() {
                         </div>
                         <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>{mp.descripcion}</p>
                       </div>
-                      {selected && (
+                      {selected && !mp.disabled && (
                         <div className="w-4 h-4 rounded-full bg-[var(--hc-accent)] flex items-center justify-center shrink-0">
                           <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -850,10 +999,10 @@ export default function CheckoutPage() {
                 })}
               </div>
 
-              {metodoPago === 'STRIPE' && (
-                <div className="p-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--hc-surface) 50%, transparent)', border: '1px solid var(--hc-border)' }}>
-                  <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-                    {t('checkout.stripeNote')}
+              {metodoPago === 'EFECTIVO' && (
+                <div className="p-3 rounded-xl" style={{ background: 'color-mix(in srgb, #f59e0b 8%, transparent)', border: '1px solid color-mix(in srgb, #f59e0b 25%, transparent)' }}>
+                  <p className="text-xs leading-relaxed text-amber-300/90">
+                    💵 Tenés que tener el monto exacto disponible al recibir el pedido. Nuestro repartidor no maneja cambio.
                   </p>
                 </div>
               )}
@@ -1241,10 +1390,12 @@ export default function CheckoutPage() {
                 disabled={!aceptaDatos || estado === 'loading' || estado === 'redirecting' || intentos >= maxIntentos}
                 className="hc-btn hc-btn-primary w-full !h-12 text-[15px] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {metodoPago === 'SINPE' ? <SinpeIcon selected /> : <LockIcon />}
+                {metodoPago === 'SINPE' ? <SinpeIcon selected /> : metodoPago === 'EFECTIVO' ? <EfectivoIcon selected /> : <LockIcon />}
                 {metodoPago === 'SINPE'
                   ? `Pagá con SINPE · ${formatPrice(totalFinal)}`
-                  : `Pagá ${formatPrice(totalFinal)}`
+                  : metodoPago === 'EFECTIVO'
+                    ? `Confirmar pedido · ${formatPrice(totalFinal)} en efectivo`
+                    : `Pagá ${formatPrice(totalFinal)}`
                 }
               </button>
 
@@ -1303,6 +1454,17 @@ function ApplePayIcon() {
   return (
     <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
       <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+    </svg>
+  )
+}
+
+function EfectivoIcon({ selected }) {
+  return (
+    <svg className={`w-7 h-5 ${selected ? 'opacity-100' : 'opacity-70'}`} viewBox="0 0 36 20" fill="none">
+      <rect width="36" height="20" rx="4" fill={selected ? '#78350f' : '#451a03'} />
+      <rect x="2" y="5" width="32" height="10" rx="2" fill={selected ? '#d97706' : '#92400e'} opacity="0.5" />
+      <circle cx="18" cy="10" r="3.5" stroke={selected ? '#fbbf24' : '#d97706'} strokeWidth="1.2" />
+      <text x="4" y="8" fontSize="5" fontWeight="800" fontFamily="sans-serif" fill={selected ? '#fbbf24' : '#d97706'}>₡</text>
     </svg>
   )
 }

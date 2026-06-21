@@ -330,7 +330,7 @@ export default function InformacionPage() {
               <h2 className="text-2xl font-bold text-[#e8e8ed] mb-3">{t('informacion.ctaTitle')}</h2>
               <p className="text-[#8e8e9a] mb-6 max-w-sm mx-auto text-sm">{t('informacion.ctaSub')}</p>
               <a
-                href="https://wa.me/50689745370"
+                href="https://wa.me/50686667888"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#25D366] hover:bg-[#1da851] text-white font-semibold text-sm transition-all shadow-[0_0_24px_rgba(37,211,102,0.25)]"

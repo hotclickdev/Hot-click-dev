@@ -14,7 +14,7 @@ import { useToast } from '@/components/ui/Toast'
 import { abandonedCartService } from '@/services/abandonedCartService'
 import AICartSection from '@/components/ai/AICartSection'
 
-const WHATSAPP = '50689745370'
+const WHATSAPP = '50686667888'
 const EMAIL_PROMPT_DELAY_MS = 45_000   // 45 segundos
 const WA_PROMPT_DELAY_MS    = 180_000  // 3 minutos
 

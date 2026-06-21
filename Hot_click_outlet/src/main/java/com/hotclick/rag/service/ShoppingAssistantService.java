@@ -283,6 +283,91 @@ public class ShoppingAssistantService {
             sesionId.toString());
     }
 
+    // ── Historial público ─────────────────────────────────────────────────────
+
+    /**
+     * Retorna los últimos 30 mensajes de una sesión en formato frontend
+     * ({@code rol}/{@code texto}), para re-sincronizar el historial en page reload
+     * y permitir que CartAssistant lea el contexto de la sesión GENERAL.
+     *
+     * <p>Seguridad: el {@code sesionId} (UUID v4, 122 bits de entropía) funciona
+     * como token opaco. Si el UUID no existe en BD se retorna lista vacía.
+     */
+    public Map<String, Object> getSessionHistory(String sesionIdStr) {
+        if (sesionIdStr == null || sesionIdStr.isBlank()) {
+            return Map.of("sesionId", "", "mensajes", List.of());
+        }
+        try {
+            UUID sesionId = UUID.fromString(sesionIdStr.trim());
+
+            Integer count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM hot_click_chat_sesion_tb WHERE id_sesion = ?::uuid",
+                Integer.class, sesionId.toString());
+            if (count == null || count == 0) {
+                return Map.of("sesionId", sesionIdStr, "mensajes", List.of());
+            }
+
+            List<Map<String, Object>> rows = jdbc.queryForList(
+                """
+                SELECT rol, contenido
+                FROM   hot_click_chat_mensaje_shopping_tb
+                WHERE  fk_id_sesion = ?::uuid
+                  AND  rol IN ('user', 'assistant')
+                ORDER  BY fecha_creacion DESC
+                LIMIT  30
+                """,
+                sesionId.toString());
+
+            Collections.reverse(rows);
+
+            List<Map<String, Object>> mensajes = rows.stream()
+                .filter(r -> r.get("contenido") != null)
+                .map(r -> Map.<String, Object>of(
+                    "rol",   r.get("rol").toString(),
+                    "texto", r.get("contenido").toString()
+                ))
+                .collect(Collectors.toList());
+
+            return Map.of("sesionId", sesionIdStr, "mensajes", mensajes);
+
+        } catch (IllegalArgumentException e) {
+            return Map.of("sesionId", sesionIdStr, "mensajes", List.of());
+        }
+    }
+
+    // ── Expiración manual de sesión ───────────────────────────────────────────
+
+    /**
+     * Expira una sesión eliminando sus mensajes y adelantando el timestamp de
+     * retención para que {@code DataRetentionScheduler} la limpie en el próximo ciclo.
+     *
+     * <p>Llamado por el frontend cuando el temporizador de 10 min de inactividad dispara.
+     * Operación idempotente: si la sesión no existe o el UUID es inválido, retorna sin error.
+     */
+    @Transactional
+    public void expireSession(String sesionIdStr) {
+        if (sesionIdStr == null || sesionIdStr.isBlank()) return;
+        try {
+            UUID sesionId = UUID.fromString(sesionIdStr.trim());
+
+            jdbc.update(
+                "DELETE FROM hot_click_chat_mensaje_shopping_tb WHERE fk_id_sesion = ?::uuid",
+                sesionId.toString());
+
+            // Retrocede el timestamp para que DataRetentionScheduler (30 días) la limpie pronto
+            jdbc.update(
+                "UPDATE hot_click_chat_sesion_tb " +
+                "SET ultimo_mensaje_en = NOW() - INTERVAL '31 days' " +
+                "WHERE id_sesion = ?::uuid",
+                sesionId.toString());
+
+            log.debug("[rag] Sesión expirada manualmente id={}", sesionId);
+
+        } catch (IllegalArgumentException ignored) {
+            // UUID inválido — no-op silencioso
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private String toJson(List<ProductoContexto> productos) {

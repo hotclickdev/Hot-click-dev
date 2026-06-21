@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import useCartStore from '@/store/cartStore'
 import { shoppingAssistantService } from '@/services/shoppingAssistantService'
 import { getOrCreateVisitorId } from '@/utils/visitorId'
+import AICategoryChip from './AICategoryChip'
 
 const fmt = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
 
@@ -87,7 +88,7 @@ function ProductCard({ producto, onAdd }) {
   )
 }
 
-function Burbuja({ msg, onAdd }) {
+function Burbuja({ msg, onAdd, onCategoryFilter }) {
   const isUser = msg.rol === 'user'
   return (
     <div className={`flex gap-2 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -120,12 +121,23 @@ function Burbuja({ msg, onAdd }) {
             ))}
           </div>
         )}
+        {!msg.typing && msg.categorias?.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 pt-0.5">
+            {msg.categorias.map(cat => (
+              <AICategoryChip
+                key={cat}
+                nombre={cat}
+                onSelect={onCategoryFilter}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
-export default function ProductsAssistantPanel({ isOpen, onClose, initialQuery = '' }) {
+export default function ProductsAssistantPanel({ isOpen, onClose, initialQuery = '', onCategoryFilter }) {
   const addItem = useCartStore(s => s.addItem)
   const [mensajes, setMensajes] = useState([])
   const [input, setInput] = useState('')
@@ -189,6 +201,7 @@ export default function ProductsAssistantPanel({ isOpen, onClose, initialQuery =
         rol: 'assistant',
         texto: result.respuesta,
         productos: result.productos ?? [],
+        categorias: result.categorias ?? [],
       }])
     } catch (err) {
       setMensajes(prev => [...prev.slice(0, -1), {
@@ -223,6 +236,7 @@ export default function ProductsAssistantPanel({ isOpen, onClose, initialQuery =
         rol: 'assistant',
         texto: result.respuesta,
         productos: result.productos ?? [],
+        categorias: result.categorias ?? [],
       }])
     } catch (err) {
       setMensajes(prev => [...prev.slice(0, -1), {
@@ -315,7 +329,7 @@ export default function ProductsAssistantPanel({ isOpen, onClose, initialQuery =
             {/* Mensajes */}
             <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
               {mensajes.map((m, i) => (
-                <Burbuja key={i} msg={m} onAdd={addCartItem} />
+                <Burbuja key={i} msg={m} onAdd={addCartItem} onCategoryFilter={onCategoryFilter} />
               ))}
               <div ref={bottomRef} />
             </div>

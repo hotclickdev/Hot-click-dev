@@ -25,7 +25,7 @@ export default function ReturnVisitorBanner() {
   const cartItems = useCartStore((s) => s.items)
   const wishCount = useWishlistStore((s) => s.items.length)
 
-  const hiddenPaths = ['/carrito', '/checkout']
+  const hiddenPaths = ['/carrito', '/checkout', '/pago']
 
   useEffect(() => {
     if (hiddenPaths.some(p => location.pathname.startsWith(p))) return

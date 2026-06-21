@@ -43,4 +43,25 @@ export const shoppingAssistantService = {
     })
     return data
   },
+
+  // Returns { sesionId, mensajes: [{rol, texto}] }
+  // Usado en page reload para re-sincronizar el historial al chatStore.
+  async getHistory(sesionId) {
+    if (!sesionId) return { sesionId: '', mensajes: [] }
+    try {
+      const { data } = await api.get(`/public/shopping-assistant/session/${sesionId}/history`)
+      return data
+    } catch {
+      return { sesionId, mensajes: [] }
+    }
+  },
+
+  // Expira la sesión en el backend (borra mensajes). Best-effort: ignora errores.
+  // Llamado por chatStore cuando el temporizador de 10 min de inactividad dispara.
+  async expireSession(sesionId) {
+    if (!sesionId) return
+    try {
+      await api.delete(`/public/shopping-assistant/session/${sesionId}`)
+    } catch { /* noop — best-effort */ }
+  },
 }

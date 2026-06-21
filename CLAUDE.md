@@ -210,7 +210,7 @@ Un pedido aparece en finanzas automáticamente al marcarlo como ENTREGADO.
 - Naming strategy: `PhysicalNamingStrategyStandardImpl` — los nombres de entidad deben coincidir exactamente con los nombres de columna/tabla en BD (minúsculas).
 - Todos los montos monetarios son enteros en colones costarricenses (₡), sin decimales. Usar `Intl.NumberFormat('es-CR')` en frontend y `NumberFormat.getInstance(Locale.forLanguageTag("es-CR"))` en backend.
 - **Nunca cambiar `ddl-auto=none`**; todo cambio de esquema se aplica manualmente con `Actualizado.sql`.
-- El número de WhatsApp de HOTCLICK es `50689745370` (Andrés Zúñiga).
+- El número de WhatsApp/SINPE Móvil de HOTCLICK es `50686667888` (8666-7888).
 - Soft delete en Marcas: `estado = 0` (INACTIVO) en vez de borrar el registro.
 
 ## Constraints de infraestructura — PgBouncer transaction mode (CRÍTICO)

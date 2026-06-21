@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import api from '@/services/api'
 import { useTranslation } from 'react-i18next'
 import useAuthStore from '@/store/authStore'
 import useCartStore from '@/store/cartStore'
@@ -21,6 +22,18 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [cartBounce, setCartBounce] = useState(false)
   const prevCartCount = useRef(cartCount)
+  const [categoriasOpen, setCategoriasOpen] = useState(false)
+  const [categoriasPadre, setCategoriasPadre] = useState([])
+
+  const loadCategorias = useCallback(() => {
+    if (categoriasPadre.length > 0) return
+    api.get('/categorias/publicas')
+      .then(({ data }) => {
+        const all = Array.isArray(data) ? data : []
+        setCategoriasPadre(all.filter(c => !c.padreId))
+      })
+      .catch(() => {})
+  }, [categoriasPadre.length])
 
   const navLinks = [
     { href: '/', label: t('nav.inicio') },
@@ -65,7 +78,7 @@ export default function Navbar() {
     }
   }, [])
 
-  useEffect(() => setMenuOpen(false), [location.pathname])
+  useEffect(() => { setMenuOpen(false); setCategoriasOpen(false) }, [location.pathname])
 
   const handleLogout = () => {
     logout()
@@ -340,15 +353,11 @@ export default function Navbar() {
                 <p className="text-[10px] font-bold tracking-[0.18em] uppercase px-3 mb-2"
                   style={{ color: 'var(--hc-muted)' }}>Explorar</p>
                 <div className="flex flex-col gap-0.5">
-                  {[
-                    { to: '/', label: 'Inicio', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /> },
-                    { to: '/productos', label: 'Productos', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" /> },
-                    { to: '/productos?descuento=true', label: 'Ofertas', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /> },
-                    { to: '/emprendimientos', label: 'Emprendimientos', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /> },
-                  ].map(({ to, label, icon }) => {
-                    const isActive = location.pathname === to
+                  {/* Inicio */}
+                  {(() => {
+                    const isActive = location.pathname === '/'
                     return (
-                      <Link key={to} to={to} onClick={() => setMenuOpen(false)}
+                      <Link to="/" onClick={() => setMenuOpen(false)}
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150"
                         style={{ color: isActive ? 'var(--hc-text)' : 'var(--hc-muted)', backgroundColor: isActive ? 'var(--hc-surface-2)' : 'transparent' }}
                         onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--hc-surface-2)'; e.currentTarget.style.color = 'var(--hc-text)' }}
@@ -357,13 +366,103 @@ export default function Navbar() {
                         <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                           style={{ backgroundColor: isActive ? 'color-mix(in srgb, var(--hc-accent) 15%, transparent)' : 'var(--hc-surface)' }}>
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"
-                            style={{ color: isActive ? 'var(--hc-accent)' : 'inherit' }}>{icon}</svg>
+                            style={{ color: isActive ? 'var(--hc-accent)' : 'inherit' }}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                          </svg>
                         </span>
-                        <span className="text-sm font-medium">{label}</span>
+                        <span className="text-sm font-medium">Inicio</span>
                         {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: 'var(--hc-accent)' }} />}
                       </Link>
                     )
-                  })}
+                  })()}
+
+                  {/* Productos + submenú de categorías padre */}
+                  <div>
+                    <button
+                      onClick={() => { setCategoriasOpen(o => !o); loadCategorias() }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150"
+                      style={{ color: location.pathname === '/productos' ? 'var(--hc-text)' : 'var(--hc-muted)', backgroundColor: location.pathname === '/productos' ? 'var(--hc-surface-2)' : 'transparent' }}
+                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--hc-surface-2)'; e.currentTarget.style.color = 'var(--hc-text)' }}
+                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = location.pathname === '/productos' ? 'var(--hc-surface-2)' : 'transparent'; e.currentTarget.style.color = location.pathname === '/productos' ? 'var(--hc-text)' : 'var(--hc-muted)' }}
+                    >
+                      <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: location.pathname === '/productos' ? 'color-mix(in srgb, var(--hc-accent) 15%, transparent)' : 'var(--hc-surface)' }}>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"
+                          style={{ color: location.pathname === '/productos' ? 'var(--hc-accent)' : 'inherit' }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
+                        </svg>
+                      </span>
+                      <span className="text-sm font-medium">Productos</span>
+                      <svg className="w-3.5 h-3.5 ml-auto transition-transform duration-200 shrink-0"
+                        style={{ transform: categoriasOpen ? 'rotate(180deg)' : 'rotate(0deg)', color: 'var(--hc-muted)' }}
+                        fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+
+                    <AnimatePresence>
+                      {categoriasOpen && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2, ease: [0.16,1,0.3,1] }}
+                          style={{ overflow: 'hidden' }}
+                        >
+                          <div className="flex flex-col gap-0.5 pl-4 pt-1 pb-1">
+                            <Link to="/productos" onClick={() => setMenuOpen(false)}
+                              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-150"
+                              style={{ color: 'var(--hc-muted)' }}
+                              onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--hc-surface-2)'; e.currentTarget.style.color = 'var(--hc-text)' }}
+                              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--hc-muted)' }}
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: 'var(--hc-border)' }} />
+                              Todos los productos
+                            </Link>
+                            {categoriasPadre.map(cat => (
+                              <Link key={cat.id}
+                                to={`/productos?categoria=${cat.id}`}
+                                onClick={() => setMenuOpen(false)}
+                                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-150"
+                                style={{ color: 'var(--hc-muted)' }}
+                                onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--hc-surface-2)'; e.currentTarget.style.color = 'var(--hc-text)' }}
+                                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--hc-muted)' }}
+                              >
+                                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: 'var(--hc-border)' }} />
+                                {cat.icono ? `${cat.icono} ` : ''}{cat.nombreCategoria}
+                              </Link>
+                            ))}
+                            {categoriasPadre.length === 0 && (
+                              <span className="px-3 py-2 text-xs" style={{ color: 'var(--hc-muted)' }}>Cargando…</span>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Emprendimientos */}
+                  {(() => {
+                    const isActive = location.pathname === '/emprendimientos'
+                    return (
+                      <Link to="/emprendimientos" onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150"
+                        style={{ color: isActive ? 'var(--hc-text)' : 'var(--hc-muted)', backgroundColor: isActive ? 'var(--hc-surface-2)' : 'transparent' }}
+                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--hc-surface-2)'; e.currentTarget.style.color = 'var(--hc-text)' }}
+                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = isActive ? 'var(--hc-surface-2)' : 'transparent'; e.currentTarget.style.color = isActive ? 'var(--hc-text)' : 'var(--hc-muted)' }}
+                      >
+                        <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                          style={{ backgroundColor: isActive ? 'color-mix(in srgb, var(--hc-accent) 15%, transparent)' : 'var(--hc-surface)' }}>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"
+                            style={{ color: isActive ? 'var(--hc-accent)' : 'inherit' }}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                        </span>
+                        <span className="text-sm font-medium">Emprendimientos</span>
+                        {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: 'var(--hc-accent)' }} />}
+                      </Link>
+                    )
+                  })()}
 
                   {/* Servicios HOT — destacado */}
                   <Link to="/servicios" onClick={() => setMenuOpen(false)}
@@ -393,7 +492,6 @@ export default function Navbar() {
                   style={{ color: 'var(--hc-muted)' }}>Información</p>
                 <div className="flex flex-col gap-0.5">
                   {[
-                    { to: '/blog', label: 'Blog', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" /> },
                     { to: '/nosotros', label: 'Nosotros', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /> },
                     { to: '/contacto', label: 'Contacto', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /> },
                     { to: '/informacion', label: 'Información', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /> },
@@ -519,7 +617,7 @@ export default function Navbar() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.24, duration: 0.3, ease: [0.16,1,0.3,1] }}
               >
-                <a href="https://wa.me/50689745370" target="_blank" rel="noopener noreferrer"
+                <a href="https://wa.me/50686667888" target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl transition-all duration-150"
                   style={{ backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', color: '#22c55e', textDecoration: 'none' }}
                   onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(34,197,94,0.16)' }}
@@ -530,7 +628,7 @@ export default function Navbar() {
                   </svg>
                   <div>
                     <p className="text-sm font-semibold leading-tight">¿Necesitás ayuda? Escribinos</p>
-                    <p className="text-xs opacity-70 mt-0.5">+506 8974-5370 · Lun–Sáb 8am–7pm</p>
+                    <p className="text-xs opacity-70 mt-0.5">+506 8666-7888 · Lun–Sáb 8am–7pm</p>
                   </div>
                 </a>
               </motion.div>

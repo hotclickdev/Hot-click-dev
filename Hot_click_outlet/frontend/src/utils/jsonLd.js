@@ -140,7 +140,7 @@ export function generateOrganizationJsonLd(urlBase, socialUrls = []) {
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'customer service',
-      telephone: '+506-8974-5370',
+      telephone: '+506-8666-7888',
       contactOption: 'TollFree',
       availableLanguage: ['Spanish'],
       hoursAvailable: {
@@ -199,7 +199,7 @@ export function generateFAQJsonLd() {
         name: '¿Puedo devolver un producto?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Sí, tenemos política de devoluciones. Si el producto llegó dañado o no coincide con la descripción, contáctanos por WhatsApp al +506 8974-5370 dentro de los 7 días después de recibir tu pedido.',
+          text: 'Sí, tenemos política de devoluciones. Si el producto llegó dañado o no coincide con la descripción, contáctanos por WhatsApp al +506 8666-7888 dentro de los 7 días después de recibir tu pedido.',
         },
       },
       {

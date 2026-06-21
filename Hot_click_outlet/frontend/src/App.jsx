@@ -262,7 +262,7 @@ function HtmlClassManager() {
 }
 
 // Excluded paths — social proof / abandoned-cart watcher skip these
-const EXCLUDED_PREFIXES = ['/admin', '/checkout', '/pago']
+const EXCLUDED_PREFIXES = ['/admin', '/carrito', '/checkout', '/pago']
 
 // El botón de WhatsApp no aparece en checkout/pago (Brand Book §15.4) ni en flujos de auth
 const WAB_HIDDEN_PATHS = ['/login', '/registro', '/carrito', '/checkout']
