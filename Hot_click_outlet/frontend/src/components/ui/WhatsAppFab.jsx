@@ -1,9 +1,13 @@
 import { motion } from 'framer-motion'
+import useChatStore from '@/store/chatStore'
 
-const WHATSAPP = '50689745370'
+const WHATSAPP = '50686667888'
 const WA_URL   = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent('¡Hola! Quiero consultar sobre un producto 👋')}`
 
 export default function WhatsAppFab() {
+  const chatOpen = useChatStore(s => s.isOpen)
+  if (chatOpen) return null
+
   return (
     // Brand Book §15.4: 56px móvil / 48px desktop, margen 16px, abajo-derecha;
     // en móvil se eleva sobre el BottomNav para no tapar CTAs

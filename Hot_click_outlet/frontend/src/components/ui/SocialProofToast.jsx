@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import useChatStore from '@/store/chatStore'
 
 const AUTO_DISMISS_MS = 5_000
 const MAX_VISIBLE     = 2   // never stack more than 2 at once
@@ -15,12 +16,16 @@ const MAX_VISIBLE     = 2   // never stack more than 2 at once
  */
 export default function SocialProofToast({ notification }) {
   const [queue, setQueue] = useState([])
+  const chatOpen = useChatStore(s => s.isOpen)
 
   // Push incoming notification into the queue (cap at MAX_VISIBLE)
   useEffect(() => {
     if (!notification) return
     setQueue((prev) => [...prev, notification].slice(-MAX_VISIBLE))
   }, [notification])
+
+  // No mostrar notificaciones cuando el chat está abierto
+  if (chatOpen) return null
 
   const dismiss = (id) => setQueue((prev) => prev.filter((n) => n.id !== id))
 
@@ -73,9 +78,9 @@ function ToastItem({ item, onDismiss }) {
       role="status"
       className="pointer-events-auto flex items-center gap-3 rounded-2xl px-4 py-3 shadow-lg"
       style={{
-        background:   'var(--hc-surface)',
-        border:       '1px solid var(--hc-border)',
-        boxShadow:    '0 8px 32px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.04) inset',
+        background:   '#ffffff',
+        border:       '1px solid #e5e7eb',
+        boxShadow:    '0 8px 32px rgba(0,0,0,0.14)',
       }}
     >
       {/* Left: product thumbnail or action emoji */}
@@ -106,16 +111,16 @@ function ToastItem({ item, onDismiss }) {
 
       {/* Center: message */}
       <div className="flex-1 min-w-0">
-        <p className="text-xs leading-snug" style={{ color: 'var(--hc-text)' }}>
+        <p className="text-xs leading-snug" style={{ color: '#111827' }}>
           <span className="font-semibold">{buyer.nombre}</span>
           {' '}
-          <span style={{ color: 'var(--hc-muted)' }}>{t('socialProofToast.from')} {buyer.ciudad}</span>
+          <span style={{ color: '#6B7280' }}>{t('socialProofToast.from')} {buyer.ciudad}</span>
           {' '}
           <span>{action.text}</span>
           {' '}
           <span className="font-medium truncate">{product.nombre}</span>
         </p>
-        <p className="text-[10px] mt-0.5" style={{ color: 'var(--hc-muted)' }}>
+        <p className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>
           {t('socialProofToast.moment')}
         </p>
       </div>

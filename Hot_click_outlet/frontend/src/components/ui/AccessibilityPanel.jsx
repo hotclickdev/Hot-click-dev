@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import { useLocation } from 'react-router-dom'
 import useUiStore from '@/store/uiStore'
 import { HotClickMark } from '@/components/ui/BrandLogo'
+import useChatStore from '@/store/chatStore'
 
 const LANGUAGES = [
   { code: 'es', label: 'Español',   flagSrc: 'https://flagcdn.com/cr.svg', country: 'CR' },
@@ -20,7 +22,14 @@ const COLOR_FILTERS = [
 
 export default function AccessibilityPanel() {
   const { t } = useTranslation()
+  const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
+
+  const chatOpen = useChatStore(s => s.isOpen)
+
+  if (pathname.startsWith('/checkout') || pathname.startsWith('/pago')) return null
+  if (chatOpen) return null
+
   const {
     theme, setTheme,
     language, setLanguage,
