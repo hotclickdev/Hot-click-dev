@@ -204,6 +204,10 @@ public class SecurityConfig {
                 .requestMatchers(GET,  "/api/cart/abandoned/recover/**").permitAll()
                 .requestMatchers(GET,  "/api/cart/abandoned/session/**").permitAll()
                 .requestMatchers(DELETE, "/api/cart/abandoned/**").permitAll()
+                // Cotizaciones — enlace público para cliente (sin auth)
+                .requestMatchers(GET, "/api/cotizaciones/publica/**").permitAll()
+                // Hacienda — consulta de contribuyente (pública, sin auth)
+                .requestMatchers(GET, "/api/hacienda/contribuyente/**").permitAll()
                 // Proxy de imágenes Supabase — público, sin auth
                 .requestMatchers(GET, "/api/img").permitAll()
                 // Feeds y sitemap públicos

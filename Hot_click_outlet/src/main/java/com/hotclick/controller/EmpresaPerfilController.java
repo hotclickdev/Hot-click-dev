@@ -142,6 +142,9 @@ public class EmpresaPerfilController {
         m.put("tieneCertP12",        e.getCertP12Path() != null && !e.getCertP12Path().isBlank());
         m.put("tieneClaveHacienda",  e.getClaveHaciendaEnc() != null && !e.getClaveHaciendaEnc().isBlank());
         m.put("configuracionFiscalCompleta", e.isConfiguracionFiscalCompleta());
+        m.put("inscritoHacienda",    Boolean.TRUE.equals(e.getInscritoHacienda()));
+        m.put("nombreHacienda",      e.getNombreHacienda());
+        m.put("regimenTributario",   e.getRegimenTributario());
         return m;
     }
 

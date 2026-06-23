@@ -159,6 +159,20 @@ public class Empresa {
     @JoinColumn(name = "fk_id_bodega_venta_online")
     private Bodega bodegaVentaOnline;
 
+    // ── Verificación Hacienda CR (V85) ───────────────────────────────────────
+
+    @Column(name = "inscrito_hacienda", nullable = false)
+    private Boolean inscritoHacienda = false;
+
+    @Column(name = "regimen_tributario", length = 60)
+    private String regimenTributario;
+
+    @Column(name = "nombre_hacienda", length = 200)
+    private String nombreHacienda;
+
+    @Column(name = "fecha_verificacion_hacienda")
+    private LocalDateTime fechaVerificacionHacienda;
+
     // ── LATAM Expansion (F25) ─────────────────────────────────────────────────
 
     @Column(name = "moneda_facturacion", length = 3)
@@ -304,6 +318,18 @@ public class Empresa {
 
     public String getDominioCustom() { return dominioCustom; }
     public void setDominioCustom(String v) { this.dominioCustom = v; }
+
+    public Boolean getInscritoHacienda() { return inscritoHacienda != null ? inscritoHacienda : false; }
+    public void setInscritoHacienda(Boolean v) { this.inscritoHacienda = v; }
+
+    public String getRegimenTributario() { return regimenTributario; }
+    public void setRegimenTributario(String v) { this.regimenTributario = v; }
+
+    public String getNombreHacienda() { return nombreHacienda; }
+    public void setNombreHacienda(String v) { this.nombreHacienda = v; }
+
+    public LocalDateTime getFechaVerificacionHacienda() { return fechaVerificacionHacienda; }
+    public void setFechaVerificacionHacienda(LocalDateTime v) { this.fechaVerificacionHacienda = v; }
 
     public String getMonedaFacturacion() { return monedaFacturacion != null ? monedaFacturacion : "CRC"; }
     public void setMonedaFacturacion(String v) { this.monedaFacturacion = v; }

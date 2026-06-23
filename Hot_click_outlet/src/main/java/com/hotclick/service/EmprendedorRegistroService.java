@@ -134,7 +134,9 @@ public class EmprendedorRegistroService {
     @Transactional
     public Usuario upgradeExistingUser(Usuario usuario, String nombreEmpresa,
                                         String nombreComercial, String telefonoEmpresa,
-                                        String correoEmpresa) {
+                                        String correoEmpresa,
+                                        String cedulaJuridica, Boolean inscritoHacienda,
+                                        String regimenTributario, String nombreHacienda) {
         if (usuario.getEmpresa() != null) {
             throw new IllegalArgumentException("Este usuario ya tiene un negocio registrado");
         }
@@ -163,6 +165,15 @@ public class EmprendedorRegistroService {
         empresa.setVisibilidadPublica(false);
         empresa.setFechaRegistro(LocalDateTime.now());
         empresa.setEstado(Constants.ESTADO_ACTIVO);
+        if (cedulaJuridica != null && !cedulaJuridica.isBlank()) {
+            empresa.setCedulaJuridica(cedulaJuridica.trim());
+            empresa.setInscritoHacienda(Boolean.TRUE.equals(inscritoHacienda));
+            empresa.setRegimenTributario(regimenTributario);
+            empresa.setNombreHacienda(nombreHacienda);
+            if (Boolean.TRUE.equals(inscritoHacienda)) {
+                empresa.setFechaVerificacionHacienda(LocalDateTime.now());
+            }
+        }
         empresa = empresaRepository.save(empresa);
 
         // 2. Cambiar rol a EMPRENDEDOR

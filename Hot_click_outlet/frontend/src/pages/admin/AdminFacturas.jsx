@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import facturaService from '@/services/facturaService'
+import api from '@/services/api'
 
 const ESTADO_COLORS = {
   PENDIENTE:  'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
@@ -24,6 +26,7 @@ export default function AdminFacturas() {
   const [total, setTotal]               = useState(0)
   const [page, setPage]                 = useState(0)
   const [loading, setLoading]           = useState(true)
+  const [empresa, setEmpresa]           = useState(null)
 
   const cargar = async (p = 0) => {
     setLoading(true)
@@ -36,7 +39,10 @@ export default function AdminFacturas() {
     finally { setLoading(false) }
   }
 
-  useEffect(() => { cargar(0) }, [])
+  useEffect(() => {
+    cargar(0)
+    api.get('/empresa/perfil').then(r => setEmpresa(r.data?.data ?? r.data)).catch(() => {})
+  }, [])
 
   return (
     <div className="mx-auto max-w-7xl space-y-5 p-6">
@@ -50,6 +56,24 @@ export default function AdminFacturas() {
           </p>
         </div>
       </div>
+
+      {/* Banner — cédula no configurada */}
+      {empresa !== null && !empresa.cedulaJuridica && (
+        <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/30">
+          <svg className="mt-0.5 h-5 w-5 shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          </svg>
+          <div className="text-sm">
+            <p className="font-semibold text-red-800 dark:text-red-300">Cédula jurídica no configurada</p>
+            <p className="text-red-700 dark:text-red-400 mt-0.5">
+              Para emitir comprobantes electrónicos debés ingresar tu cédula jurídica en{' '}
+              <Link to="/admin/config-fiscal" className="underline font-medium">Configuración Fiscal</Link>.
+              Solo emprendimientos inscritos en Tributación Directa pueden facturar electrónicamente.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Aviso sandbox */}
       <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">

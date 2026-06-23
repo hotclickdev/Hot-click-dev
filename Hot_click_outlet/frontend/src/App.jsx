@@ -78,6 +78,9 @@ const AdminMiEmpresa            = lazy(() => import('@/pages/admin/AdminMiEmpres
 const AdminSecurityCenter       = lazy(() => import('@/pages/admin/AdminSecurityCenter'))
 const AdminSuperAdmin           = lazy(() => import('@/pages/admin/AdminSuperAdmin'))
 const AdminObservabilidad       = lazy(() => import('@/pages/admin/AdminObservabilidad'))
+const AdminCotizaciones         = lazy(() => import('@/pages/admin/AdminCotizaciones'))
+const AdminNuevaCotizacion      = lazy(() => import('@/pages/admin/AdminNuevaCotizacion'))
+const CotizacionPublicaPage     = lazy(() => import('@/pages/CotizacionPublicaPage'))
 const AdminAiControl            = lazy(() => import('@/pages/admin/AdminAiControl'))
 const AdminFacturas             = lazy(() => import('@/pages/admin/AdminFacturas'))
 const AdminConfigFiscal         = lazy(() => import('@/pages/admin/AdminConfigFiscal'))
@@ -391,6 +394,7 @@ export default function App() {
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/wishlist" element={<WishlistPage />} />
               <Route path="/recuperar-carrito/:id" element={<RecuperarCarritoPage />} />
+              <Route path="/cotizacion/:token" element={<CotizacionPublicaPage />} />
               <Route path="/servicios" element={<ServiciosHotPage />} />
               <Route path="/blog" element={<BlogPage />} />
               <Route path="/blog/:slug" element={<BlogPostPage />} />
@@ -404,6 +408,9 @@ export default function App() {
                 <Route path="/admin/categorias" element={<AdminCategories />} />
                 <Route path="/admin/bodegas" element={<AdminWarehouses />} />
                 <Route path="/admin/ventas" element={<AdminNewSale />} />
+                <Route path="/admin/cotizaciones" element={<AdminCotizaciones />} />
+                <Route path="/admin/cotizaciones/nueva" element={<AdminNuevaCotizacion />} />
+                <Route path="/admin/cotizaciones/:id" element={<AdminNuevaCotizacion />} />
                 <Route path="/admin/finanzas" element={<AdminFinanzas />} />
                 <Route path="/admin/finanzas/reporte-contador" element={<AdminReporteContador />} />
                 <Route path="/admin/billetera" element={<AdminBilletera />} />

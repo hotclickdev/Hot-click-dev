@@ -32,6 +32,7 @@ function buildSidebarLinks(t, userRole) {
       { to: '/admin/asignar-compra', label: 'Registrar compra externa',   icon: 'assign'   },
       { to: '/admin/pos',            label: 'Caja POS',                    icon: 'pos'      },
       // { to: '/admin/mesas',        label: 'Mesas / QR',                  icon: 'qr'       },  // futuro
+      { to: '/admin/cotizaciones',  label: 'Cotizaciones B2B',            icon: 'doc'      },
       { to: '/admin/gift-cards',   label: 'Gift Cards',                  icon: 'gift'     },
       { to: '/admin/inventario',   label: 'AI Inventario',               icon: 'ai'       },
       { to: '/admin/copilot',      label: 'AI Copilot',                  icon: 'copilot'  },
@@ -86,6 +87,7 @@ function buildSidebarLinks(t, userRole) {
       { to: '/admin/asignar-compra', label: 'Registrar compra externa',   icon: 'assign'   },
       { to: '/admin/pos',            label: 'Caja POS',                    icon: 'pos'      },
       // { to: '/admin/mesas',          label: 'Mesas / QR',                  icon: 'qr'       },  // futuro
+      { to: '/admin/cotizaciones',   label: 'Cotizaciones B2B',            icon: 'doc'      },
       { to: '/admin/gift-cards',     label: 'Gift Cards',                  icon: 'gift'     },
       { to: '/admin/inventario',     label: 'AI Inventario',               icon: 'ai'       },
       { to: '/admin/copilot',        label: 'AI Copilot',                  icon: 'copilot'  },

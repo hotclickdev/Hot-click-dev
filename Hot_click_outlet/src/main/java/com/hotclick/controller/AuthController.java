@@ -100,7 +100,11 @@ public class AuthController {
                 dto.getNombreEmpresa(),
                 dto.getNombreComercial(),
                 dto.getTelefonoEmpresa(),
-                dto.getCorreoEmpresa()
+                dto.getCorreoEmpresa(),
+                dto.getCedulaJuridica(),
+                dto.getInscritoHacienda(),
+                dto.getRegimenTributario(),
+                dto.getNombreHacienda()
             );
             // Reload with roles + empresa for token generation
             upgraded = usuarioRepository.findByCorreo(upgraded.getCorreo())
