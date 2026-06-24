@@ -18,11 +18,11 @@ const ACTIONS = [
 ]
 
 function pick(arr) {
-  return arr[Math.floor(Math.random() * arr.length)]
+  return arr[Math.floor(Math.random() * arr.length)] // NOSONAR — solo para animaciones de UI
 }
 
 function rand(min, max) {
-  return min + Math.random() * (max - min)
+  return min + Math.random() * (max - min) // NOSONAR — solo para delays de animación
 }
 
 /**

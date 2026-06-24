@@ -8,7 +8,7 @@ export function getOrCreateSessionId() {
   if (!sid) {
     sid = (typeof crypto !== 'undefined' && crypto.randomUUID)
       ? crypto.randomUUID()
-      : Math.random().toString(36).slice(2) + Date.now().toString(36)
+      : (crypto.getRandomValues(new Uint32Array(2))[0].toString(36) + Date.now().toString(36))
     localStorage.setItem(SESSION_KEY, sid)
   }
   return sid

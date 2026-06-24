@@ -29,7 +29,7 @@ const path = require('path');
 
 const BASE_URL = process.env.QA_BASE_URL || 'http://localhost:8080';
 const ADMIN_EMAIL = process.env.QA_ADMIN_EMAIL || 'admin@hotclick.com';
-const ADMIN_PASSWORD = process.env.QA_ADMIN_PASSWORD || 'Admin1234!';
+const ADMIN_PASSWORD = process.env.QA_ADMIN_PASSWORD || (() => { throw new Error('QA_ADMIN_PASSWORD env var is required') })();
 const HEADLESS = process.env.HEADLESS !== 'false';
 const RUN_TAG = Date.now().toString(36); // sufijo único para los datos de prueba
 

@@ -599,7 +599,7 @@ function IpsTab() {
             <p className="text-sm font-semibold mb-3" style={{ color: 'var(--hc-text)' }}>Bloquear IP manualmente</p>
             <div className="flex flex-wrap gap-2">
               <input value={ipInput} onChange={e => setIpInput(e.target.value)}
-                placeholder="192.168.1.1"
+                placeholder="Ej: 203.0.113.0"
                 className="px-3 py-2 rounded-lg text-sm w-40"
                 style={{ backgroundColor: 'var(--hc-bg)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }} />
               <input value={motivoInput} onChange={e => setMotivoInput(e.target.value)}

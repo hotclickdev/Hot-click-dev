@@ -1,0 +1,67 @@
+name: SonarCloud — Análisis de seguridad y calidad
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:   # Permite correrlo manualmente desde GitHub
+
+jobs:
+  sonarcloud:
+    name: Escaneo SonarCloud
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout del código
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # SonarCloud necesita el historial completo para blame/nuevo código
+
+      # 2. Configurar Java 21
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      # 3. Setup pnpm (para frontend)
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      # 4. Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: Hot_click_outlet/frontend/pnpm-lock.yaml
+
+      # 5. Compilar Java + generar reporte de cobertura JaCoCo
+      #    -DskipTests=false corre los tests para tener cobertura real
+      #    Si no tenés tests, cambiá a -DskipTests=true
+      - name: Build Java y cobertura
+        run: |
+          cd Hot_click_outlet
+          ../maven/bin/mvn clean verify \
+            -DskipTests=true \
+            -Pcoverage \
+            --no-transfer-progress \
+            -Dspring.profiles.active=test
+        env:
+          DB_URL: jdbc:h2:mem:testdb
+          DB_USERNAME: sa
+          DB_PASSWORD: ""
+          JWT_SECRET: test-secret-for-ci-only-not-production
+          SENTRY_DSN: ""
+
+      # 6. Escaneo SonarCloud
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN:  ${{ secrets.SONAR_TOKEN }}

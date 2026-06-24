@@ -27,7 +27,8 @@ function fmtDate(d) {
 
 function generatePassword() {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%'
-  return Array.from({ length: 14 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+  const bytes = crypto.getRandomValues(new Uint8Array(14))
+  return Array.from(bytes, b => chars[b % chars.length]).join('')
 }
 
 export default function AdminEquipo() {

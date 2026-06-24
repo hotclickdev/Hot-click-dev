@@ -15,9 +15,10 @@ jobs:
       - name: Dump and compress
         env:
           PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_BACKUP_URL: ${{ secrets.SUPABASE_BACKUP_URL }}
         run: |
           FILENAME="hotclick-backup-$(date +%Y%m%d-%H%M%S).sql.gz"
-          pg_dump "${{ secrets.SUPABASE_BACKUP_URL }}" \
+          pg_dump "$SUPABASE_BACKUP_URL" \
             --no-owner --no-acl --format=plain | gzip > "$FILENAME"
           echo "BACKUP_FILE=$FILENAME" >> $GITHUB_ENV
           echo "Backup generado: $(du -sh $FILENAME)"
