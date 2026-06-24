@@ -91,7 +91,7 @@ public class QueryClassifier {
         "pagar", "pago", "pagos", "forma de pago",
         "tarjeta", "crédito", "débito",
         "sinpe", "sinpe móvil", "transferencia",
-        "stripe", "paypal",
+        "stripe",
         "envío", "entrega", "despacho", "domicilio",
         "tiempo de entrega", "cuándo llega", "cuando llega",
         "costo de envío", "envío gratis",

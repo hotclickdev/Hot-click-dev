@@ -20,7 +20,7 @@ public class PaymentController {
 
     /**
      * Crea un pedido PENDIENTE y una sesión de pago con el proveedor elegido
-     * (STRIPE, PAYPAL o SINPE). Devuelve la redirectUrl al proveedor externo.
+     * (STRIPE o SINPE). Devuelve la redirectUrl al proveedor externo.
      */
     @PostMapping("/checkout")
     public ResponseEntity<ResponseDTO> checkout(@Valid @RequestBody PaymentCheckoutRequest request) {
@@ -85,23 +85,6 @@ public class PaymentController {
         }
     }
 
-    /** Captura PayPal sin autenticación (invitados). */
-    @PostMapping("/guest/paypal/capture")
-    public ResponseEntity<ResponseDTO> guestCapturarPayPal(
-            @RequestParam String paypalOrderId,
-            @RequestParam String numeroPedido) {
-        try {
-            PaymentStatusResponse response = paymentService.capturarPayPalAnon(paypalOrderId, numeroPedido);
-            return ResponseEntity.ok(ResponseDTO.success("Pago capturado exitosamente", response));
-        } catch (SecurityException e) {
-            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
-        } catch (IllegalStateException | IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(ResponseDTO.error(e.getMessage()));
-        }
-    }
-
     /** Cancela un pedido pendiente sin autenticación (invitados). */
     @PostMapping("/guest/cancel/{numeroPedido}")
     public ResponseEntity<ResponseDTO> guestCancelarPedido(@PathVariable String numeroPedido) {
@@ -115,27 +98,4 @@ public class PaymentController {
         }
     }
 
-    // ── Endpoints autenticados ─────────────────────────────────────────────
-
-    /**
-     * Captura un pago PayPal tras el redirect de aprobación.
-     * PayPal redirige con ?token={paypalOrderId}&PayerID={payerId} en la URL de retorno.
-     * El frontend llama este endpoint antes de mostrar la pantalla de éxito.
-     */
-    @PostMapping("/paypal/capture")
-    public ResponseEntity<ResponseDTO> capturarPayPal(
-            @RequestParam String paypalOrderId,
-            @RequestParam String numeroPedido) {
-        try {
-            String correoUsuario = SecurityContextHolder.getContext().getAuthentication().getName();
-            PaymentStatusResponse response = paymentService.capturarPayPal(paypalOrderId, numeroPedido, correoUsuario);
-            return ResponseEntity.ok(ResponseDTO.success("Pago capturado exitosamente", response));
-        } catch (SecurityException e) {
-            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
-        } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(ResponseDTO.error(e.getMessage()));
-        }
-    }
 }

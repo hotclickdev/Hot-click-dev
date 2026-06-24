@@ -66,7 +66,6 @@ public class Constants {
 
     // Proveedores de pago
     public static final String PROVEEDOR_STRIPE = "STRIPE";
-    public static final String PROVEEDOR_PAYPAL = "PAYPAL";
     public static final String PROVEEDOR_SINPE  = "SINPE";
 
     // Estados de pedido SINPE

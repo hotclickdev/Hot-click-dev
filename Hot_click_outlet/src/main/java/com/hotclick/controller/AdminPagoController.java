@@ -92,7 +92,6 @@ public class AdminPagoController {
         long pendientes = pagoRepository.countByEstadoPagoAndEmpresa("PENDIENTE", empresaId);
         long fallidos   = pagoRepository.countByEstadoPagoAndEmpresa("FALLIDO",   empresaId);
         long stripe     = pagoRepository.countByProveedorAndEmpresa("STRIPE",  empresaId);
-        long paypal     = pagoRepository.countByProveedorAndEmpresa("PAYPAL",  empresaId);
         long sinpe      = pagoRepository.countByProveedorAndEmpresa("SINPE",   empresaId);
         long webhooksErr= webhookEventRepository.countByProcesado(false);
 
@@ -104,7 +103,6 @@ public class AdminPagoController {
             "pendientes",  pendientes,
             "fallidos",    fallidos,
             "stripe",      stripe,
-            "paypal",      paypal,
             "sinpe",       sinpe,
             "tasaExito",   tasaExito,
             "webhooksErr", webhooksErr

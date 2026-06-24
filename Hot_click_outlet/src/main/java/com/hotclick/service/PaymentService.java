@@ -405,54 +405,6 @@ public class PaymentService {
     }
 
     // ================================================================
-    // CAPTURAR PAYPAL — Llamado desde PaymentController tras el redirect.
-    // Valida que el usuario sea dueño del pedido.
-    // ================================================================
-    @Transactional
-    public PaymentStatusResponse capturarPayPal(String paypalOrderId, String numeroPedido,
-                                                String correoUsuario) {
-        Pago pago = pagoRepository.findByMerchantToken(paypalOrderId)
-            .orElseThrow(() -> new RuntimeException("Pago no encontrado: " + paypalOrderId));
-
-        // Validar propiedad — el usuario actual debe ser el dueño del pedido
-        if (!pago.getUsuario().getCorreo().equals(correoUsuario)) {
-            throw new SecurityException("No tienes permiso para capturar este pago");
-        }
-
-        // Verificar que el pedido coincida
-        if (!pago.getPedido().getNumeroPedido().equals(numeroPedido)) {
-            throw new IllegalArgumentException("El número de pedido no coincide con el pago");
-        }
-
-        // Idempotencia: ya fue capturado (webhook llegó primero)
-        if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
-            log.info("capturarPayPal: pago {} ya capturado, devolviendo estado actual", paypalOrderId);
-            return buildStatusResponse(pago);
-        }
-
-        // Pago en estado inválido para captura
-        if (Constants.PAGO_CANCELADO.equals(pago.getEstadoPago())
-            || Constants.PAGO_FALLIDO.equals(pago.getEstadoPago())) {
-            throw new IllegalStateException("El pago ya fue " + pago.getEstadoPago().toLowerCase()
-                + " y no puede capturarse");
-        }
-
-        com.hotclick.payment.PayPalPaymentProvider payPalProvider =
-            (com.hotclick.payment.PayPalPaymentProvider) providerFactory.get("PAYPAL");
-
-        try {
-            payPalProvider.capturar(paypalOrderId, pago);
-        } catch (IllegalStateException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Error capturando pago PayPal: " + e.getMessage(), e);
-        }
-
-        pago = pagoRepository.findByMerchantToken(paypalOrderId).orElseThrow();
-        return buildStatusResponse(pago);
-    }
-
-    // ================================================================
     // CONSULTAR ESTADO
     // ================================================================
     @Transactional(readOnly = true)
@@ -575,45 +527,6 @@ public class PaymentService {
             pedidoRepository.saveAll(pedidosActualizados);
             log.info("Cleanup TTL empresa={}: {} pagos expirados cancelados", empresaId, pagosActualizados.size());
         }
-    }
-
-    // ================================================================
-    // CAPTURAR PAYPAL ANÓNIMO — Sin validación de propiedad de usuario.
-    // Solo valida que paypalOrderId corresponda al numeroPedido (ambos
-    // vienen del redirect URL de PayPal, que solo el comprador real tiene).
-    // ================================================================
-    @Transactional
-    public PaymentStatusResponse capturarPayPalAnon(String paypalOrderId, String numeroPedido) {
-        Pago pago = pagoRepository.findByMerchantToken(paypalOrderId)
-            .orElseThrow(() -> new RuntimeException("Pago no encontrado: " + paypalOrderId));
-
-        if (!pago.getPedido().getNumeroPedido().equals(numeroPedido)) {
-            throw new IllegalArgumentException("El número de pedido no coincide con el pago");
-        }
-
-        if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
-            return buildStatusResponse(pago);
-        }
-
-        if (Constants.PAGO_CANCELADO.equals(pago.getEstadoPago())
-            || Constants.PAGO_FALLIDO.equals(pago.getEstadoPago())) {
-            throw new IllegalStateException("El pago ya fue " + pago.getEstadoPago().toLowerCase()
-                + " y no puede capturarse");
-        }
-
-        com.hotclick.payment.PayPalPaymentProvider payPalProvider =
-            (com.hotclick.payment.PayPalPaymentProvider) providerFactory.get("PAYPAL");
-
-        try {
-            payPalProvider.capturar(paypalOrderId, pago);
-        } catch (IllegalStateException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Error capturando pago PayPal: " + e.getMessage(), e);
-        }
-
-        pago = pagoRepository.findByMerchantToken(paypalOrderId).orElseThrow();
-        return buildStatusResponse(pago);
     }
 
     // ================================================================

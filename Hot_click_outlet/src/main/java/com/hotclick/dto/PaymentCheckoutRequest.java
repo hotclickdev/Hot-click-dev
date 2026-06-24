@@ -22,7 +22,7 @@ public class PaymentCheckoutRequest {
     @Valid
     private List<ItemDTO> items;
 
-    /** Proveedor de pago: "STRIPE" (default), "PAYPAL" o "SINPE". */
+    /** Proveedor de pago: "STRIPE" (default) o "SINPE". */
     private String provider;
 
     /** Correo del comprador invitado (no autenticado). */
