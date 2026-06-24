@@ -27,19 +27,7 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      # 3. Setup Node.js 22 (requerido por pnpm v11)
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      # 4. Setup pnpm
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 11
-
-      # 5. Compilar Java + generar reporte de cobertura JaCoCo
+      # 3. Compilar Java + generar reporte de cobertura JaCoCo
       #    -DskipTests=false corre los tests para tener cobertura real
       #    Si no tenés tests, cambiá a -DskipTests=true
       - name: Build Java y cobertura
@@ -57,7 +45,7 @@ jobs:
           JWT_SECRET: test-secret-for-ci-only-not-production
           SENTRY_DSN: ""
 
-      # 6. Escaneo SonarCloud
+      # 4. Escaneo SonarCloud
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
