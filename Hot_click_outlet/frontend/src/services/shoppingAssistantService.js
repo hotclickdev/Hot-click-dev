@@ -64,4 +64,13 @@ export const shoppingAssistantService = {
       await api.delete(`/public/shopping-assistant/session/${sesionId}`)
     } catch { /* noop — best-effort */ }
   },
+
+  // Envía feedback (1 = thumbs up, -1 = thumbs down) de un mensaje del AI.
+  // Best-effort: ignora errores para no bloquear la UI.
+  async feedback(sesionId, msgIndex, rating) {
+    if (!sesionId) return
+    try {
+      await api.post('/public/shopping-assistant/feedback', { sesionId, msgIndex, rating })
+    } catch { /* noop — best-effort */ }
+  },
 }

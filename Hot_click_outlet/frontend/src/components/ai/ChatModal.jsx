@@ -6,9 +6,6 @@ import AIChat from './AIChat'
 import POSPaymentPanel from './POSPaymentPanel'
 import { HotClickMark } from '@/components/ui/BrandLogo'
 
-// Arranca el timer de expiración de sesión (10 min) al montar el modal.
-// ChatModal siempre está en el DOM, por eso es el lugar correcto para iniciarlo.
-
 const CHIPS = [
   '¿Qué tenés en oferta?',
   'Algo para la sala',
@@ -23,27 +20,22 @@ export default function ChatModal() {
   const clearPending   = useChatStore(s => s.clearPending)
   const cartCount      = useCartStore(s => s.items.length)
 
-  // checkoutMode: false = chat, true = panel de pago inline
   const [checkoutMode, setCheckoutMode] = useState(false)
 
-  // Timer de expiración: corre siempre en background, no solo cuando el drawer está abierto
   useEffect(() => {
     const { startExpiryTimer, stopExpiryTimer } = useChatStore.getState()
     startExpiryTimer()
     return () => stopExpiryTimer()
   }, [])
 
-  // Limpia el pendingMessage del store después de que AIChat lo recibe
   useEffect(() => {
     if (isOpen && pendingMessage) clearPending()
   }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Al cerrar el drawer, volvemos al modo chat para la próxima apertura
   useEffect(() => {
     if (!isOpen) setCheckoutMode(false)
   }, [isOpen])
 
-  // Cierra con Escape
   useEffect(() => {
     if (!isOpen) return
     const onKey = (e) => {
@@ -56,8 +48,14 @@ export default function ChatModal() {
     return () => window.removeEventListener('keydown', onKey)
   }, [isOpen, checkoutMode, close])
 
-  // maxHistoryHeight: altura dinámica según viewport, dejando espacio para header + input
-  const histHeight = typeof window !== 'undefined' ? Math.max(280, window.innerHeight - 220) : 500
+  const histHeight = typeof window !== 'undefined' ? Math.max(300, window.innerHeight - 200) : 500
+
+  // En mobile (<640px) ocupa pantalla completa; en desktop, drawer fijo 420px desde la izquierda
+  const drawerVariants = {
+    hidden:  { x: '-100%' },
+    visible: { x: 0 },
+    exit:    { x: '-100%' },
+  }
 
   return (
     <AnimatePresence>
@@ -72,38 +70,39 @@ export default function ChatModal() {
             transition={{ duration: 0.2 }}
             onClick={close}
             className="fixed inset-0 z-40"
-            style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(2px)' }}
+            style={{ background: 'rgba(0,0,0,0.30)' }}
             aria-hidden="true"
           />
 
-          {/* Drawer — slide desde la derecha */}
+          {/* Drawer — izquierda en desktop, fullscreen en mobile */}
           <motion.aside
             key="chat-drawer"
             role="dialog"
             aria-label="Asistente HotClick"
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 26, stiffness: 260 }}
-            className="fixed right-0 top-0 bottom-0 z-50 flex flex-col"
+            variants={drawerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+            className="fixed left-0 top-0 bottom-0 z-50 flex flex-col"
             style={{
               width: 'min(440px, 100vw)',
               background: 'var(--hc-surface)',
-              borderLeft: '1px solid var(--hc-border)',
-              boxShadow: '-8px 0 48px rgba(0,0,0,0.14)',
+              borderRight: '1px solid var(--hc-border)',
+              boxShadow: '8px 0 48px rgba(0,0,0,0.12)',
               color: 'var(--hc-text)',
             }}
           >
-            {/* Header */}
+            {/* Header minimalista */}
             <div
-              className="flex items-center gap-3 px-5 py-4 shrink-0"
+              className="flex items-center gap-3 px-4 py-3.5 shrink-0"
               style={{ borderBottom: '1px solid var(--hc-border)' }}
             >
               {/* Botón volver — solo en modo checkout */}
               {checkoutMode && (
                 <button
                   onClick={() => setCheckoutMode(false)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-opacity hover:opacity-60 active:scale-95 shrink-0"
+                  className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-60 shrink-0"
                   style={{ color: 'var(--hc-muted)' }}
                   aria-label="Volver al chat"
                 >
@@ -113,25 +112,19 @@ export default function ChatModal() {
                 </button>
               )}
 
-              {/* Logo HotClick */}
-              {!checkoutMode && (
-                <div className="shrink-0">
-                  <HotClickMark size={36} />
-                </div>
-              )}
+              {/* Logo */}
+              {!checkoutMode && <HotClickMark size={32} className="shrink-0" />}
 
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm truncate" style={{ color: 'var(--hc-text)' }}>
+                <p className="font-bold text-sm" style={{ color: 'var(--hc-text)' }}>
                   {checkoutMode ? 'Pagar pedido' : 'Asistente HotClick'}
                 </p>
-                <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-                  {checkoutMode
-                    ? 'Sin salir del chat · Sin redirecciones'
-                    : 'Te ayudo a encontrar lo que buscás'}
+                <p className="text-[11px] leading-none mt-0.5" style={{ color: 'var(--hc-muted)' }}>
+                  {checkoutMode ? 'Sin salir del chat' : 'Tu guía de compras'}
                 </p>
               </div>
 
-              {/* Botón "Pagar ya" — visible en modo chat cuando hay items en el carrito */}
+              {/* Botón "Pagar ya" */}
               {!checkoutMode && cartCount > 0 && (
                 <button
                   onClick={() => setCheckoutMode(true)}
@@ -146,11 +139,11 @@ export default function ChatModal() {
                 </button>
               )}
 
-              {/* Botón cerrar */}
+              {/* Cerrar */}
               <button
                 onClick={close}
                 aria-label="Cerrar asistente"
-                className="w-8 h-8 rounded-lg flex items-center justify-center transition-opacity hover:opacity-60 active:scale-95 shrink-0"
+                className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-60 shrink-0"
                 style={{ color: 'var(--hc-muted)' }}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -159,26 +152,26 @@ export default function ChatModal() {
               </button>
             </div>
 
-            {/* Cuerpo — alterna entre chat y panel de pago */}
-            <div className="flex-1 overflow-y-auto px-5 py-4 min-h-0">
+            {/* Cuerpo */}
+            <div className="flex-1 overflow-y-auto px-4 py-4 min-h-0">
               <AnimatePresence mode="wait">
                 {checkoutMode ? (
                   <motion.div
                     key="checkout"
-                    initial={{ opacity: 0, x: 24 }}
+                    initial={{ opacity: 0, x: -24 }}
                     animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 24 }}
-                    transition={{ duration: 0.2 }}
+                    exit={{ opacity: 0, x: -24 }}
+                    transition={{ duration: 0.18 }}
                   >
                     <POSPaymentPanel onClose={close} />
                   </motion.div>
                 ) : (
                   <motion.div
                     key="chat"
-                    initial={{ opacity: 0, x: -24 }}
+                    initial={{ opacity: 0, x: 24 }}
                     animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -24 }}
-                    transition={{ duration: 0.2 }}
+                    exit={{ opacity: 0, x: 24 }}
+                    transition={{ duration: 0.18 }}
                   >
                     <AIChat
                       context="GENERAL"

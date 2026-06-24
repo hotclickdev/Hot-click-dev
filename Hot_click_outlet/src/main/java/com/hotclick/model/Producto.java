@@ -219,6 +219,13 @@ public class Producto extends BaseEntity {
     @Column(name = "codigo_tarifa_iva", length = 2, columnDefinition = "VARCHAR(2) DEFAULT '08'")
     private String codigoTarifaIva = "08";
 
+    // ── Calificación de producto (F-rating) ──────────────────────────────────
+    @Column(name = "rating_promedio", precision = 3, scale = 2, columnDefinition = "NUMERIC(3,2) DEFAULT 0.00")
+    private java.math.BigDecimal ratingPromedio = java.math.BigDecimal.ZERO;
+
+    @Column(name = "total_resenas", columnDefinition = "INTEGER DEFAULT 0")
+    private Integer totalResenas = 0;
+
     /**
      * Optimistic locking — previene race condition cuando dos cajeros venden
      * el mismo producto simultáneamente. Hibernate lanza OptimisticLockException
@@ -420,6 +427,12 @@ public class Producto extends BaseEntity {
 
     public Integer getPorcentajeDescuento() { return porcentajeDescuento; }
     public void setPorcentajeDescuento(Integer porcentajeDescuento) { this.porcentajeDescuento = porcentajeDescuento; }
+
+    public java.math.BigDecimal getRatingPromedio() { return ratingPromedio != null ? ratingPromedio : java.math.BigDecimal.ZERO; }
+    public void setRatingPromedio(java.math.BigDecimal v) { this.ratingPromedio = v; }
+
+    public Integer getTotalResenas() { return totalResenas != null ? totalResenas : 0; }
+    public void setTotalResenas(Integer v) { this.totalResenas = v; }
 
     public Integer getVersion() { return version; }
     public void setVersion(Integer version) { this.version = version; }
