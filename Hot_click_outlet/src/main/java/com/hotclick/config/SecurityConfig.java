@@ -1,6 +1,7 @@
 package com.hotclick.config;
 
 import com.hotclick.security.ApiKeyAuthFilter;
+import com.hotclick.security.BlockedIpFilter;
 import com.hotclick.security.InternalSecretFilter;
 import com.hotclick.security.JwtRequestFilter;
 import com.hotclick.security.RateLimitingFilter;
@@ -65,6 +66,9 @@ public class SecurityConfig {
     InternalSecretFilter internalSecretFilter() { return new InternalSecretFilter(); }
 
     @Bean
+    BlockedIpFilter blockedIpFilter() { return new BlockedIpFilter(); }
+
+    @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
@@ -92,7 +96,8 @@ public class SecurityConfig {
             RateLimitingFilter rateLimitingFilter,
             TenantFilter tenantFilter,
             ApiKeyAuthFilter apiKeyAuthFilter,
-            InternalSecretFilter internalSecretFilter) throws Exception {
+            InternalSecretFilter internalSecretFilter,
+            BlockedIpFilter blockedIpFilter) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
@@ -279,9 +284,9 @@ public class SecurityConfig {
                 .contentTypeOptions(ct -> {})
                 .httpStrictTransportSecurity(hsts -> hsts
                     .includeSubDomains(true)
-                    .maxAgeInSeconds(31536000))
+                    .maxAgeInSeconds(31536000)
+                    .preload(true))
                 .addHeaderWriter((req, res) -> {
-                    res.setHeader("X-Content-Type-Options", "nosniff");
                     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
                     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
                     res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
@@ -295,6 +300,7 @@ public class SecurityConfig {
                         "img-src 'self' data: blob: " + s3PublicUrl + " https://*.amazonaws.com https://images.unsplash.com https://www.paypalobjects.com https://*.googleusercontent.com https://img.clerk.com https://avatars.githubusercontent.com https://cdnjs.cloudflare.com; " +
                         "connect-src 'self' " + s3PublicUrl + " https://*.amazonaws.com https://*.clerk.accounts.dev https://clerk.hotclick.lat https://api.clerk.com https://clerk-telemetry.com https://api-m.paypal.com https://api-m.sandbox.paypal.com https://api.stripe.com https://hooks.stripe.com https://www.google-analytics.com https://region1.google-analytics.com; " +
                         "frame-src https://www.paypal.com https://www.sandbox.paypal.com https://js.stripe.com https://hooks.stripe.com https://www.youtube.com https://www.youtube-nocookie.com https://www.tiktok.com https://www.instagram.com; " +
+                        "frame-ancestors 'self'; " +
                         "object-src 'none'; " +
                         "base-uri 'self';"
                     );
@@ -304,8 +310,8 @@ public class SecurityConfig {
         http.exceptionHandling(ex -> ex
             .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
         );
-        // Orden garantizado usando filtros estándar de Spring Security como referencia.
-        // Internal(~400) → RateLimiting(~500) → ApiKey(~600) → Jwt(~700) → UPAF(800, no-op) → Tenant(~900)
+        // Orden: BlockedIp(~300) → Internal(~400) → RateLimiting(~500) → ApiKey(~600) → Jwt(~700) → Tenant(~900)
+        http.addFilterBefore(blockedIpFilter, CsrfFilter.class);
         http.addFilterBefore(internalSecretFilter, CsrfFilter.class);
         http.addFilterBefore(rateLimitingFilter, CsrfFilter.class);
         http.addFilterBefore(apiKeyAuthFilter, LogoutFilter.class);

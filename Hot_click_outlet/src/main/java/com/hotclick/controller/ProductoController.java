@@ -45,14 +45,15 @@ public class ProductoController {
     @Autowired private com.hotclick.service.TenantService          tenantService;
     @Autowired private org.springframework.cache.CacheManager      cacheManager;
 
-    private static final int MAX_PAGE_SIZE = 100;
+    private static final int MAX_PAGE_SIZE        = 100;
+    private static final int MAX_PAGE_SIZE_PUBLIC =  50;
 
     @GetMapping
     public ResponseEntity<ResponseDTO> listarProductos(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Long empresaId = companyScope.getCurrentEmpresaId();
-        var pageable  = PageRequest.of(Math.max(0, page), Math.min(size, MAX_PAGE_SIZE));
+        var pageable  = PageRequest.of(Math.max(0, page), Math.min(size, MAX_PAGE_SIZE_PUBLIC));
         // Si hay empresaId en el JWT (contexto admin de ese negocio) → mostrar sus propios productos
         // Si es público (sin empresa, incluye ADMIN_IT sin empresa) → catálogo filtrado (negocios aprobados y visibles)
         var productos = empresaId != null

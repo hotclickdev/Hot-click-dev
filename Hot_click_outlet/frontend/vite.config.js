@@ -99,6 +99,7 @@ export default defineConfig({
     emptyOutDir: true,
     cssMinify: true,
     reportCompressedSize: false,
+
     rollupOptions: {
       output: {
         manualChunks(id) {

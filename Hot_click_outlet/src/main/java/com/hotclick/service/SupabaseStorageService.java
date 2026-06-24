@@ -2,6 +2,7 @@ package com.hotclick.service;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
+import net.coobird.thumbnailator.Thumbnails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +13,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
@@ -85,6 +88,7 @@ public class SupabaseStorageService {
     public String subirImagen(MultipartFile file, String carpeta) throws IOException {
         byte[] bytes = validarArchivo(file);
         String ext = obtenerExtension(file.getOriginalFilename());
+        bytes = sanitizarImagen(bytes, ext);
         String contentType = ALLOWED_EXTENSIONS.get(ext);
         String path = carpeta + "/" + UUID.randomUUID() + "." + ext;
 
@@ -144,6 +148,34 @@ public class SupabaseStorageService {
         if (filename == null || !filename.contains(".")) return "";
         String ext = filename.substring(filename.lastIndexOf('.') + 1).toLowerCase().trim();
         return ext.isEmpty() ? "" : ext;
+    }
+
+    /**
+     * Re-encodea la imagen para eliminar payloads embebidos (EXIF malicioso, PolyGlots,
+     * scripts en comentarios). Solo aplica a JPEG y PNG — son los únicos formatos que
+     * ImageIO soporta de forma confiable. GIF, WebP y AVIF se devuelven sin modificar;
+     * la validación de magic bytes en validarArchivo() es suficiente para esos formatos.
+     *
+     * Fail-open: si Thumbnailator no puede procesar la imagen (edge case), devuelve los
+     * bytes originales ya validados y registra un warning. Esto preserva disponibilidad
+     * sin sacrificar la capa primaria de defensa (magic bytes + extension whitelist).
+     */
+    private byte[] sanitizarImagen(byte[] bytes, String ext) {
+        if (!"jpg".equals(ext) && !"jpeg".equals(ext) && !"png".equals(ext)) {
+            return bytes;
+        }
+        String formatName = "png".equals(ext) ? "png" : "jpeg";
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            Thumbnails.of(new ByteArrayInputStream(bytes))
+                .scale(1.0)
+                .outputFormat(formatName)
+                .toOutputStream(out);
+            return out.toByteArray();
+        } catch (Exception e) {
+            log.warn("[sanitize] No se pudo re-encodear imagen .{}: {} — se sube el original validado", ext, e.getMessage());
+            return bytes;
+        }
     }
 
     private String subirCertificadoFallback(MultipartFile file, Long empresaId, Throwable t) {

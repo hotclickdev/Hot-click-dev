@@ -3,6 +3,7 @@ package com.hotclick.repository;
 import com.hotclick.model.SecurityAuditLog;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -41,4 +42,32 @@ public interface SecurityAuditLogRepository extends JpaRepository<SecurityAuditL
     long countBySeverityAndTimestampAfter(String severity, LocalDateTime from);
 
     long countByEventTypeAndTimestampAfter(String eventType, LocalDateTime from);
+
+    // ── Por usuario (email) ───────────────────────────────────────────────────
+
+    List<SecurityAuditLog> findTop50ByEmailOrderByTimestampDesc(String email);
+
+    long countByEmail(String email);
+
+    long countByEmailAndEventType(String email, String eventType);
+
+    @Query("SELECT DISTINCT s.ipAddress FROM SecurityAuditLog s WHERE s.email = :email AND s.ipAddress IS NOT NULL ORDER BY s.ipAddress")
+    List<String> findDistinctIpsByEmail(@Param("email") String email);
+
+    @Query("SELECT s.eventType, COUNT(s) FROM SecurityAuditLog s WHERE s.email = :email GROUP BY s.eventType ORDER BY COUNT(s) DESC")
+    List<Object[]> countByEventTypeForEmail(@Param("email") String email);
+
+    // ── Sesiones activas (logins exitosos en últimos N minutos) ──────────────
+
+    @Query("SELECT COUNT(DISTINCT s.email) FROM SecurityAuditLog s WHERE s.eventType = 'LOGIN_SUCCESS' AND s.timestamp > :from")
+    long countDistinctActiveUsers(@Param("from") LocalDateTime from);
+
+    // ── Top IPs sospechosas (todos los tipos de evento, no solo LOGIN_FAILED) ─
+
+    @Query("SELECT s.ipAddress, COUNT(s), MAX(s.timestamp) FROM SecurityAuditLog s WHERE s.timestamp > :from AND s.ipAddress IS NOT NULL GROUP BY s.ipAddress ORDER BY COUNT(s) DESC")
+    List<Object[]> topIpsByRequests(@Param("from") LocalDateTime from, Pageable pageable);
+
+    // ── Export (sin paginación, limitado por fecha) ───────────────────────────
+
+    List<SecurityAuditLog> findByTimestampAfterOrderByTimestampDesc(LocalDateTime from);
 }

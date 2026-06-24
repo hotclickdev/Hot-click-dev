@@ -1,5 +1,6 @@
 package com.hotclick.scheduler;
 
+import com.hotclick.repository.IpBloqueadaRepository;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,10 +34,12 @@ public class DataRetentionScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(DataRetentionScheduler.class);
 
-    private final JdbcTemplate jdbc;
+    private final JdbcTemplate          jdbc;
+    private final IpBloqueadaRepository ipBloqueadaRepo;
 
-    public DataRetentionScheduler(JdbcTemplate jdbc) {
-        this.jdbc = jdbc;
+    public DataRetentionScheduler(JdbcTemplate jdbc, IpBloqueadaRepository ipBloqueadaRepo) {
+        this.jdbc            = jdbc;
+        this.ipBloqueadaRepo = ipBloqueadaRepo;
     }
 
     @Scheduled(cron = "0 30 2 * * *")
@@ -53,6 +56,7 @@ public class DataRetentionScheduler {
         total += limpiarShedlockViejos();
         total += limpiarSesionesChatAsistente();
         total += limpiarColaFacturacionOffline();
+        total += expirarIpsBloqueadas();
 
         long ms = System.currentTimeMillis() - inicio;
         if (total > 0) {
@@ -140,6 +144,20 @@ public class DataRetentionScheduler {
             corte);
         if (n > 0) log.info("[retention] cola_facturacion_offline: {} eliminados (> 30 días, COMPLETADO/AGOTADO)", n);
         return n;
+    }
+
+    private int expirarIpsBloqueadas() {
+        try {
+            var expiradas = ipBloqueadaRepo.findByActivaTrueAndExpiresAtBefore(LocalDateTime.now());
+            if (expiradas.isEmpty()) return 0;
+            expiradas.forEach(ip -> ip.setActiva(false));
+            ipBloqueadaRepo.saveAll(expiradas);
+            log.info("[retention] ip_bloqueada: {} IPs expiradas desactivadas", expiradas.size());
+            return expiradas.size();
+        } catch (Exception e) {
+            log.warn("[retention] ip_bloqueada: error al expirar IPs — {}", e.getMessage());
+            return 0;
+        }
     }
 
     private int limpiarSesionesChatAsistente() {

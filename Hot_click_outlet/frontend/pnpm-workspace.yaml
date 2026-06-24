@@ -1,2 +1,3 @@
 allowBuilds:
   '@clerk/shared': false
+  '@sentry/cli': set this to true or false

@@ -6,8 +6,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
 /**
  * OWASP A04 / A08 — Insecure File Upload.
@@ -49,9 +51,9 @@ class UploadSecurityTest {
 
     @BeforeEach
     void setUp() {
-        service = new SupabaseStorageService();
-        ReflectionTestUtils.setField(service, "supabaseUrl", "https://fake.supabase.co");
-        ReflectionTestUtils.setField(service, "serviceKey",  "fake-service-key");
+        service = new SupabaseStorageService(mock(S3Client.class));
+        ReflectionTestUtils.setField(service, "bucket",    "fake-bucket");
+        ReflectionTestUtils.setField(service, "publicUrl", "https://fake.s3.amazonaws.com");
     }
 
     // ── Extension allowlist ──────────────────────────────────────────────────

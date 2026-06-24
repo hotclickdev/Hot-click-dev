@@ -48,6 +48,16 @@ import java.util.Map;
  *   /api/public/chat                      → 10 / 60s
  *   /api/public/shopping-assistant/chat   → 10 / 60s
  *   /api/admin/ai/chat                    →  5 / 60s
+ *
+ * Limits (GET, per IP — endpoints públicos sin auth):
+ *   /api/hacienda/contribuyente/** →  10 / 60s  (proxy a API externa de CR)
+ *   /api/convenios/publicos        →  60 / 60s
+ *   /api/marcas/publicas           →  60 / 60s
+ *   /api/categorias/**             →  60 / 60s
+ *   /api/blog/publico/**           →  60 / 60s
+ *   /api/public/**                 →  60 / 60s
+ *   /api/tienda/**                 → 120 / 60s
+ *   /api/productos/**              → 120 / 60s
  */
 public class RateLimitingFilter extends OncePerRequestFilter {
 
@@ -58,6 +68,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
     private record Limit(int maxRequests, int windowSeconds) {}
     private record PrefixLimit(String prefix, int maxRequests, int windowSeconds) {}
+    private record GetLimit(String prefix, int maxRequests, int windowSeconds) {}
 
     // Exact-path limits (POST only)
     private static final Map<String, Limit> LIMITS = Map.ofEntries(
@@ -87,6 +98,19 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     private static final List<PrefixLimit> PREFIX_LIMITS = List.of(
         // Prevent admins from accidentally spamming customers with email notifications.
         new PrefixLimit("/api/pedidos/", 5, 60)   // 5 notificar calls/min per IP
+    );
+
+    // GET limits for public endpoints vulnerable to scraping or external-API abuse.
+    // Matched in order — first prefix wins. Only covers unauthenticated-friendly routes.
+    private static final List<GetLimit> GET_LIMITS = List.of(
+        new GetLimit("/api/hacienda/contribuyente",      10,  60), // proxy a API Hacienda CR
+        new GetLimit("/api/convenios/publicos",          60,  60),
+        new GetLimit("/api/marcas/publicas",             60,  60),
+        new GetLimit("/api/categorias",                  60,  60),
+        new GetLimit("/api/blog/publico",                60,  60),
+        new GetLimit("/api/public",                      60,  60),
+        new GetLimit("/api/tienda",                     120,  60),
+        new GetLimit("/api/productos",                  120,  60)
     );
 
     @Override
@@ -127,6 +151,23 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                     response.getWriter().write(
                         "{\"success\":false,\"message\":\"Demasiados intentos. Esperá un momento antes de volver a intentar.\"}");
                     return;
+                }
+            }
+        } else if ("GET".equalsIgnoreCase(method)) {
+            String ip = request.getRemoteAddr();
+            for (GetLimit gl : GET_LIMITS) {
+                if (path.startsWith(gl.prefix())) {
+                    String key = "ip:" + ip + ":GET:" + gl.prefix();
+                    if (!rateLimiter.tryAcquire(key, gl.maxRequests(), gl.windowSeconds())) {
+                        log.warn("[RATE-LIMIT] GET ip={} path={}", ip, path);
+                        try { auditService.logRateLimitTriggered(ip, path); } catch (Exception ignored) {}
+                        response.setStatus(429);
+                        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                        response.getWriter().write(
+                            "{\"success\":false,\"message\":\"Demasiadas solicitudes. Esperá un momento antes de volver a intentar.\"}");
+                        return;
+                    }
+                    break; // first prefix wins
                 }
             }
         }

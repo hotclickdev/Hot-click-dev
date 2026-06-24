@@ -1,10 +1,13 @@
 package com.hotclick.controller;
 
+import com.hotclick.model.IpBloqueada;
 import com.hotclick.model.SecurityAlert;
 import com.hotclick.model.SecurityAuditLog;
+import com.hotclick.repository.IpBloqueadaRepository;
 import com.hotclick.repository.SecurityAlertRepository;
 import com.hotclick.repository.SecurityAuditLogRepository;
 import com.hotclick.repository.UsuarioRepository;
+import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,14 +16,15 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Security Center REST API — ADMIN_IT only.
@@ -41,6 +45,7 @@ public class SecurityController {
     @Autowired private SecurityAuditLogRepository auditRepo;
     @Autowired private SecurityAlertRepository    alertRepo;
     @Autowired private UsuarioRepository          usuarioRepo;
+    @Autowired private IpBloqueadaRepository      ipBloqueadaRepo;
 
     // ── Dashboard ─────────────────────────────────────────────────────────────
 
@@ -179,6 +184,181 @@ public class SecurityController {
         resp.put("success", true);
         resp.put("message", "Alerta resuelta");
         return ResponseEntity.ok(resp);
+    }
+
+    // ── Usuarios con perfil de seguridad ─────────────────────────────────────
+
+    @GetMapping("/usuarios/lista")
+    public ResponseEntity<Map<String, Object>> getUsuariosSeguridadLista(
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        int safePage = Math.max(0, page);
+        int safeSize = Math.min(size, 50);
+        var pageable = PageRequest.of(safePage, safeSize, Sort.by("fechaUltimoAcceso").descending());
+        var usuarios = usuarioRepo.findAll(pageable);
+
+        List<Map<String, Object>> result = usuarios.getContent().stream().map(u -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id",                u.getId());
+            m.put("nombre",            u.getNombre() + " " + (u.getApellidoPaterno() != null ? u.getApellidoPaterno() : ""));
+            m.put("correo",            u.getCorreo());
+            m.put("fechaRegistro",     u.getFechaRegistro());
+            m.put("fechaUltimoAcceso", u.getFechaUltimoAcceso());
+            m.put("intentosFallidos",  u.getIntentosFallidos());
+            m.put("bloqueadoHasta",    u.getBloqueadoHasta());
+            m.put("twoFactorEnabled",  Boolean.TRUE.equals(u.getTwoFactorEnabled()));
+            m.put("twoFactorMethods",  u.getTwoFactorMethods());
+            m.put("roles",             u.getRoles().stream().map(r -> r.getNombreRol()).collect(Collectors.toList()));
+            long loginsOk   = auditRepo.countByEmailAndEventType(u.getCorreo(), "LOGIN_SUCCESS");
+            long loginsFail = auditRepo.countByEmailAndEventType(u.getCorreo(), "LOGIN_FAILED");
+            m.put("loginsExitosos",  loginsOk);
+            m.put("loginsFallidos",  loginsFail);
+            m.put("ipsDistintas",    auditRepo.findDistinctIpsByEmail(u.getCorreo()).size());
+            return m;
+        }).collect(Collectors.toList());
+
+        Map<String, Object> resp = new LinkedHashMap<>();
+        resp.put("content",       result);
+        resp.put("totalElements", usuarios.getTotalElements());
+        resp.put("totalPages",    usuarios.getTotalPages());
+        resp.put("page",          usuarios.getNumber());
+        return ResponseEntity.ok(resp);
+    }
+
+    @GetMapping("/usuarios/{email}/eventos")
+    public ResponseEntity<Map<String, Object>> getEventosPorUsuario(@PathVariable String email) {
+        List<SecurityAuditLog> eventos = auditRepo.findTop50ByEmailOrderByTimestampDesc(email);
+        List<String>           ips     = auditRepo.findDistinctIpsByEmail(email);
+
+        Map<String, Long> porTipo = new LinkedHashMap<>();
+        for (Object[] row : auditRepo.countByEventTypeForEmail(email)) {
+            porTipo.put((String) row[0], (Long) row[1]);
+        }
+
+        Map<String, Object> resp = new LinkedHashMap<>();
+        resp.put("eventos",    eventos);
+        resp.put("ips",        ips);
+        resp.put("porTipo",    porTipo);
+        resp.put("total",      auditRepo.countByEmail(email));
+        return ResponseEntity.ok(resp);
+    }
+
+    // ── Sesiones activas ──────────────────────────────────────────────────────
+
+    @GetMapping("/sesiones-activas")
+    public ResponseEntity<Map<String, Object>> getSesionesActivas() {
+        LocalDateTime hace30m = LocalDateTime.now().minusMinutes(30);
+        LocalDateTime hace24h = LocalDateTime.now().minusHours(24);
+        long activas30m = auditRepo.countDistinctActiveUsers(hace30m);
+        long activas24h = auditRepo.countDistinctActiveUsers(hace24h);
+        Map<String, Object> resp = new LinkedHashMap<>();
+        resp.put("activas30min", activas30m);
+        resp.put("activas24h",   activas24h);
+        return ResponseEntity.ok(resp);
+    }
+
+    // ── IPs sospechosas ───────────────────────────────────────────────────────
+
+    @GetMapping("/ips-sospechosas")
+    public ResponseEntity<List<Map<String, Object>>> getIpsSospechosas(
+            @RequestParam(defaultValue = "24h") String period) {
+
+        LocalDateTime from = periodToDateTime(period);
+        var pageable = PageRequest.of(0, 20);
+        List<Object[]> topIps  = auditRepo.topIpsByRequests(from, pageable);
+        List<Object[]> fallidas = auditRepo.countByIpForEventTypeAfter("LOGIN_FAILED", from);
+        Map<String, Long> fallidasMap = new HashMap<>();
+        for (Object[] r : fallidas) {
+            if (r[0] != null) fallidasMap.put((String) r[0], (Long) r[1]);
+        }
+
+        List<Map<String, Object>> result = topIps.stream().map(row -> {
+            String ip    = (String)        row[0];
+            long   total = (Long)          row[1];
+            Object last  =                 row[2];
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("ip",             ip);
+            m.put("totalRequests",  total);
+            m.put("loginsFallidos", fallidasMap.getOrDefault(ip, 0L));
+            m.put("ultimoEvento",   last);
+            m.put("bloqueada",      ipBloqueadaRepo.existsByIpAddressAndActivaTrue(ip));
+            return m;
+        }).collect(Collectors.toList());
+
+        return ResponseEntity.ok(result);
+    }
+
+    // ── IPs bloqueadas ────────────────────────────────────────────────────────
+
+    @GetMapping("/ips-bloqueadas")
+    public ResponseEntity<List<IpBloqueada>> getIpsBloqueadas() {
+        return ResponseEntity.ok(ipBloqueadaRepo.findAllByOrderByFechaBloqueoDesc());
+    }
+
+    @PostMapping("/ips-bloqueadas")
+    public ResponseEntity<Map<String, Object>> bloquearIp(@RequestBody Map<String, String> body) {
+        String ip     = body.get("ip");
+        String motivo = body.getOrDefault("motivo", "Bloqueada manualmente");
+        if (ip == null || ip.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "IP requerida"));
+        }
+        String quien = SecurityContextHolder.getContext().getAuthentication().getName();
+        IpBloqueada bloqueo = ipBloqueadaRepo.findByIpAddressAndActivaTrue(ip)
+            .orElse(new IpBloqueada());
+        bloqueo.setIpAddress(ip.trim());
+        bloqueo.setMotivo(motivo);
+        bloqueo.setBloqueadaPor(quien);
+        bloqueo.setFechaBloqueo(LocalDateTime.now());
+        bloqueo.setActiva(true);
+        ipBloqueadaRepo.save(bloqueo);
+        log.warn("[SEC] IP bloqueada: {} por {}", ip, quien);
+        return ResponseEntity.ok(Map.of("success", true, "message", "IP bloqueada"));
+    }
+
+    @DeleteMapping("/ips-bloqueadas/{ip}")
+    public ResponseEntity<Map<String, Object>> desbloquearIp(@PathVariable String ip) {
+        ipBloqueadaRepo.findByIpAddressAndActivaTrue(ip).ifPresent(b -> {
+            b.setActiva(false);
+            ipBloqueadaRepo.save(b);
+            log.info("[SEC] IP desbloqueada: {}", ip);
+        });
+        return ResponseEntity.ok(Map.of("success", true, "message", "IP desbloqueada"));
+    }
+
+    // ── Export CSV ────────────────────────────────────────────────────────────
+
+    @GetMapping("/eventos/export")
+    public void exportEventosCsv(
+            @RequestParam(defaultValue = "7d") String period,
+            HttpServletResponse response) throws IOException {
+
+        LocalDateTime from = periodToDateTime(period);
+        List<SecurityAuditLog> eventos = auditRepo.findByTimestampAfterOrderByTimestampDesc(from);
+
+        response.setContentType("text/csv; charset=UTF-8");
+        response.setHeader("Content-Disposition",
+            "attachment; filename=\"security-log-" +
+            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmm")) + ".csv\"");
+
+        PrintWriter w = response.getWriter();
+        w.println("timestamp,tipo,severidad,ip,email,endpoint,userAgent");
+        for (SecurityAuditLog e : eventos) {
+            w.printf("%s,%s,%s,%s,%s,%s,%s%n",
+                e.getTimestamp(),
+                csv(e.getEventType()),
+                csv(e.getSeverity()),
+                csv(e.getIpAddress()),
+                csv(e.getEmail()),
+                csv(e.getEndpoint()),
+                csv(e.getUserAgent()));
+        }
+        w.flush();
+    }
+
+    private String csv(String v) {
+        if (v == null) return "";
+        return "\"" + v.replace("\"", "\"\"") + "\"";
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

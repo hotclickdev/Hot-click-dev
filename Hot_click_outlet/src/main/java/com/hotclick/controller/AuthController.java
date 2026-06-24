@@ -24,6 +24,7 @@ import com.hotclick.service.SecurityAuditService;
 import com.hotclick.service.SecurityDetectionService;
 import com.hotclick.service.TwoFactorService;
 import com.hotclick.service.UsuarioService;
+import com.hotclick.service.WebAuthnService;
 import com.hotclick.utils.Constants;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -58,6 +59,7 @@ public class AuthController {
     @Autowired private RefreshTokenService         refreshTokenService;
     @Autowired private PasswordEncoder             passwordEncoder;
     @Autowired private EmprendedorRegistroService  emprendedorRegistroService;
+    @Autowired private WebAuthnService             webAuthnService;
     @Autowired private MiembroEmpresaRepository    miembroEmpresaRepository;
     @Autowired private EmpresaRepository           empresaRepository;
     @Autowired private RolRepository               rolRepository;
@@ -426,6 +428,30 @@ public class AuthController {
         usuarioService.resetearIntentosFallidos(usuario.getId());
         usuarioService.actualizarUltimoAcceso(usuario.getId());
         try { securityAuditService.logLoginSuccess(usuario.getId(), usuario.getCorreo(), httpRequest); } catch (Exception ignored) {}
+
+        // ADMIN_IT debe tener 2FA activo — si no lo tiene, bloquear el login y forzar configuración
+        boolean esAdminIT = usuario.getRoles().stream()
+            .anyMatch(r -> Constants.ROL_ADMIN_IT.equals(r.getNombreRol()));
+        if (esAdminIT && !Boolean.TRUE.equals(usuario.getTwoFactorEnabled())) {
+            String tempToken = jwtUtil.generateTempToken(usuario.getCorreo(), usuario.getId());
+            return ResponseEntity.status(403).body(Map.of(
+                "success",        false,
+                "requires2faSetup", true,
+                "tempToken",      tempToken,
+                "message",        "Los administradores deben configurar 2FA antes de continuar. Usá la app Google Authenticator o Authy."
+            ));
+        }
+
+        // ADMIN_IT con llave WebAuthn registrada → requerir autenticación WebAuthn como 2do factor
+        if (esAdminIT && webAuthnService.tieneCredenciales(usuario.getCorreo())) {
+            String tempToken = jwtUtil.generateTempToken(usuario.getCorreo(), usuario.getId());
+            return ResponseEntity.ok(Map.of(
+                "success",          true,
+                "requiresWebauthn", true,
+                "tempToken",        tempToken,
+                "message",          "Usá tu llave de seguridad para completar el inicio de sesión."
+            ));
+        }
 
         if (Boolean.TRUE.equals(usuario.getTwoFactorEnabled())) {
             String tempToken = jwtUtil.generateTempToken(usuario.getCorreo(), usuario.getId());

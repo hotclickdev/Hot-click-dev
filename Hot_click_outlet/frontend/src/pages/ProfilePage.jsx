@@ -13,6 +13,7 @@ import { Link } from 'react-router-dom'
 import { useToast } from '@/components/ui/Toast'
 import { orderService } from '@/services/orderService'
 import { authService } from '@/services/authService'
+import AdminWebAuthnSetup from '@/components/admin/AdminWebAuthnSetup'
 import { testimonioService } from '@/services/testimonioService'
 import { formatDate, formatPrice } from '@/utils/format'
 
@@ -245,6 +246,9 @@ export default function ProfilePage() {
           </div>
           )}
         </div>
+
+        {/* Llave de seguridad WebAuthn — solo ADMIN_IT */}
+        {userRole === 'ADMIN_IT' && <AdminWebAuthnSetup />}
 
         {/* Testimonios y Reseñas */}
         <OpinionesSection orders={orders} ordersLoading={loading} />

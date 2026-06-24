@@ -7,11 +7,13 @@ import { useTranslation } from 'react-i18next'
 import Modal from '@/components/ui/Modal'
 import Input from '@/components/ui/Input'
 import { authService } from '@/services/authService'
+import { webAuthnService } from '@/services/webAuthnService'
 import useAuthStore from '@/store/authStore'
 import useCartStore from '@/store/cartStore'
 import { useToast } from '@/components/ui/Toast'
 import { abandonedCartService } from '@/services/abandonedCartService'
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons'
+import WebAuthnStep from '@/components/auth/WebAuthnStep'
 
 const CLERK_ENABLED = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 
@@ -61,7 +63,10 @@ export default function LoginPage() {
     e.preventDefault(); setError(''); setLoading(true)
     try {
       const { data } = await authService.login(correo, contrasena)
-      if (data.requires2fa) {
+      if (data.requiresWebauthn) {
+        setTempToken(data.tempToken)
+        setStep('webauthn')
+      } else if (data.requires2fa) {
         setTempToken(data.tempToken)
         // Multiple methods → show picker
         if (data.methods && data.methods.length > 1) {
@@ -515,6 +520,15 @@ export default function LoginPage() {
                   </div>
                 </div>
               </motion.div>
+            )}
+
+            {/* ── PASO WEBAUTHN ── */}
+            {step === 'webauthn' && (
+              <WebAuthnStep
+                correo={correo}
+                onSuccess={handleLoginSuccess}
+                onError={(msg) => { setError(msg); setStep('login') }}
+              />
             )}
 
             {/* ── PASO 2FA ── */}

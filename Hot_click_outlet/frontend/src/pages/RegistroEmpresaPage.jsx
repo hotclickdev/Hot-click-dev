@@ -7,6 +7,7 @@ import { useToast } from '@/components/ui/Toast'
 import useAuthStore from '@/store/authStore'
 import Input from '@/components/ui/Input'
 import PhoneField from '@/components/ui/PhoneField'
+import Seo from '@/components/seo/Seo'
 
 /* ─── Panel izquierdo ────────────────────────────────────────── */
 const PERKS = [
@@ -90,6 +91,12 @@ export default function RegistroEmpresaPage() {
 
   /* ─── JSX ─────────────────────────────────────────────────── */
   return (
+    <>
+    <Seo
+      title="Registrá tu emprendimiento — Vendé en HOTCLICK Costa Rica"
+      description="Creá tu tienda gratis en HOTCLICK. Sin comisiones el primer mes, tienda activa en 24 horas y acceso a miles de compradores en todo Costa Rica."
+      url="https://hotclick.lat/registro-empresa"
+    />
     <div className="min-h-screen flex" style={{ fontFamily: 'var(--hc-font-text)' }}>
 
       {/* ════════════════════════════════════════════════════
@@ -420,6 +427,7 @@ export default function RegistroEmpresaPage() {
         </div>
       </div>
     </div>
+    </>
   )
 }
 
