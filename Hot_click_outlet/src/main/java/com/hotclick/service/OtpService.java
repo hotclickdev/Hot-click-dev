@@ -33,7 +33,7 @@ public class OtpService {
         TipoOtp tipo = tipoOtpRepository.findByNombre(tipoNombre)
                 .orElseThrow(() -> new RuntimeException("Tipo de OTP no configurado: " + tipoNombre));
 
-        LocalDateTime ventana = LocalDateTime.now().minusMinutes(Constants.OTP_VENTANA_REENVIO_MIN);
+        LocalDateTime ventana = LocalDateTime.now(Constants.ZONA_CR).minusMinutes(Constants.OTP_VENTANA_REENVIO_MIN);
         long recientes = codigoOtpRepository.countRecentOtps(usuario, tipoNombre, ventana);
         if (recientes >= Constants.OTP_MAX_REENVIOS) {
             throw new RuntimeException(
@@ -49,7 +49,7 @@ public class OtpService {
         otp.setUsuario(usuario);
         otp.setTipoOtp(tipo);
         otp.setCodigoHash(codigoHash);
-        otp.setExpiresAt(LocalDateTime.now().plusSeconds(tipo.getTiempoExpiracionSeg()));
+        otp.setExpiresAt(LocalDateTime.now(Constants.ZONA_CR).plusSeconds(tipo.getTiempoExpiracionSeg()));
         otp.setAttempts(0);
         otp.setActiveFlag(true);
         codigoOtpRepository.save(otp);
@@ -93,7 +93,7 @@ public class OtpService {
      * Impide saltar el verify-code e ir directo a reset-password.
      */
     public boolean tieneOtpConsumidoReciente(Usuario usuario, String tipoNombre) {
-        LocalDateTime ventana = LocalDateTime.now().minusMinutes(Constants.OTP_VENTANA_REENVIO_MIN);
+        LocalDateTime ventana = LocalDateTime.now(Constants.ZONA_CR).minusMinutes(Constants.OTP_VENTANA_REENVIO_MIN);
         return codigoOtpRepository.countRecentlyConsumedOtps(usuario, tipoNombre, ventana) > 0;
     }
 
@@ -102,7 +102,7 @@ public class OtpService {
      */
     @Transactional
     public void marcarUsado(CodigoOtp otp) {
-        otp.setUsedAt(LocalDateTime.now());
+        otp.setUsedAt(LocalDateTime.now(Constants.ZONA_CR));
         otp.setActiveFlag(false);
         codigoOtpRepository.save(otp);
     }

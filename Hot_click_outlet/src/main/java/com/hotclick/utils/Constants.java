@@ -1,6 +1,11 @@
 package com.hotclick.utils;
 
+import java.time.ZoneId;
+
 public class Constants {
+
+    // Timezone oficial de Costa Rica (UTC−6, sin cambio de horario)
+    public static final ZoneId ZONA_CR = ZoneId.of("America/Costa_Rica");
 
     /**
      * Genera un número de pedido único con el prefijo dado.

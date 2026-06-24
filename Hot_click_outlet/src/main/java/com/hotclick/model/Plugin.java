@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -44,7 +45,7 @@ public class Plugin {
 
     @PrePersist
     void onCreate() {
-        fechaCreacion = LocalDateTime.now();
+        fechaCreacion = LocalDateTime.now(Constants.ZONA_CR);
     }
 
     public Long getId() { return id; }

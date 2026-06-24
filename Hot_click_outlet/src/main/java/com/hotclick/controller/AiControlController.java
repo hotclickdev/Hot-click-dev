@@ -1,4 +1,5 @@
 package com.hotclick.controller;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.service.FeatureFlagService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,8 +30,8 @@ public class AiControlController {
     public ResponseEntity<?> dashboard(
             @RequestParam(required = false) Integer anio,
             @RequestParam(required = false) Integer mes) {
-        int targetAnio = (anio != null) ? anio : java.time.LocalDate.now().getYear();
-        int targetMes  = (mes  != null) ? mes  : java.time.LocalDate.now().getMonthValue();
+        int targetAnio = (anio != null) ? anio : LocalDate.now(Constants.ZONA_CR).getYear();
+        int targetMes  = (mes  != null) ? mes  : LocalDate.now(Constants.ZONA_CR).getMonthValue();
 
         String sql = """
             SELECT
@@ -112,7 +113,7 @@ public class AiControlController {
         result.put("alertas",      alertas);
         result.put("costoTotal",   Math.round(costoTotalUsd * 10000.0) / 10000.0);
         result.put("totalLlamadas", totalLlamadas);
-        result.put("mes",          java.time.LocalDate.now().toString().substring(0, 7));
+        result.put("mes",          LocalDate.now(Constants.ZONA_CR).toString().substring(0, 7));
         return ResponseEntity.ok(result);
     }
 

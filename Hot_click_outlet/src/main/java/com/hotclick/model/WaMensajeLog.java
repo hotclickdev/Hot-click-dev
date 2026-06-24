@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -39,7 +40,7 @@ public class WaMensajeLog {
     private String metaMessageId;
 
     @Column(name = "fecha_envio", nullable = false)
-    private LocalDateTime fechaEnvio = LocalDateTime.now();
+    private LocalDateTime fechaEnvio = LocalDateTime.now(Constants.ZONA_CR);
 
     @Column(name = "pedido_numero", length = 20)
     private String pedidoNumero;

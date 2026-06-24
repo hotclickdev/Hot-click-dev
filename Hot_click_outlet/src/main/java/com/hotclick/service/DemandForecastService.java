@@ -1,4 +1,5 @@
 package com.hotclick.service;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Forecast;
@@ -100,7 +101,7 @@ public class DemandForecastService {
         forecastRepository.deleteEmpresaLevelForecasts(empresaId);
 
         // Save new forecasts
-        LocalDate now = LocalDate.now();
+        LocalDate now = LocalDate.now(Constants.ZONA_CR);
         for (int h = 1; h <= FORECAST_WEEKS; h++) {
             LocalDate weekStart = now.plusWeeks(h);
             String periodo = yearWeek(weekStart);

@@ -1,4 +1,5 @@
 package com.hotclick.service;
+nimport com.hotclick.utils.Constants;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -136,7 +137,7 @@ public class WebAuthnService {
         credRepo.findByCredentialId(result.getCredential().getCredentialId().getBase64Url())
             .ifPresent(c -> {
                 c.setSignCount(result.getSignatureCount());
-                c.setLastUsedAt(LocalDateTime.now());
+                c.setLastUsedAt(LocalDateTime.now(Constants.ZONA_CR));
                 credRepo.save(c);
             });
 

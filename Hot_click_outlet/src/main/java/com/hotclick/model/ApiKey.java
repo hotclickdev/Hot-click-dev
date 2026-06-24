@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -49,7 +50,7 @@ public class ApiKey {
     private LocalDateTime fechaCreacion;
 
     @PrePersist
-    void onCreate() { fechaCreacion = LocalDateTime.now(); }
+    void onCreate() { fechaCreacion = LocalDateTime.now(Constants.ZONA_CR); }
 
     public Long getId() { return id; }
 

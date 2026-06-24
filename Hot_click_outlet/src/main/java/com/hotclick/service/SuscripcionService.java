@@ -1,4 +1,5 @@
 package com.hotclick.service;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
@@ -73,13 +74,13 @@ public class SuscripcionService {
                 .filter(p -> !"FREE".equals(p.getNombre())).findFirst()
                 .orElseThrow());
 
-        LocalDate trialEnd = LocalDate.now().plusDays(14);
+        LocalDate trialEnd = LocalDate.now(Constants.ZONA_CR).plusDays(14);
 
         Suscripcion sub = new Suscripcion();
         sub.setEmpresa(empresa);
         sub.setPlan(planPro);
         sub.setEstado("TRIAL");
-        sub.setFechaInicio(LocalDate.now());
+        sub.setFechaInicio(LocalDate.now(Constants.ZONA_CR));
         sub.setTrialEnd(trialEnd);
         suscripcionRepo.save(sub);
 
@@ -177,7 +178,7 @@ public class SuscripcionService {
         Suscripcion sub = suscripcionRepo.findActivaByEmpresaId(empresaId).orElseThrow();
         if (inmediata) {
             sub.setEstado("CANCELADO");
-            sub.setFechaCancelacion(LocalDate.now());
+            sub.setFechaCancelacion(LocalDate.now(Constants.ZONA_CR));
             degradarAFree(sub.getEmpresa());
         } else {
             sub.setCancelarAlVencer(true);
@@ -232,7 +233,7 @@ public class SuscripcionService {
     public void marcarEventoProcesado(String eventId, boolean ok, String error) {
         eventoRepo.findById(eventId).ifPresent(ev -> {
             ev.setProcesadoOk(ok);
-            ev.setFechaProcesado(LocalDateTime.now());
+            ev.setFechaProcesado(LocalDateTime.now(Constants.ZONA_CR));
             ev.setError(error);
             eventoRepo.save(ev);
         });
@@ -318,7 +319,7 @@ public class SuscripcionService {
     public void procesarSuscripcionEliminada(String stripeSubId) {
         suscripcionRepo.findByStripeSubscriptionId(stripeSubId).ifPresent(sub -> {
             sub.setEstado("CANCELADO");
-            sub.setFechaCancelacion(LocalDate.now());
+            sub.setFechaCancelacion(LocalDate.now(Constants.ZONA_CR));
             suscripcionRepo.save(sub);
             degradarAFree(sub.getEmpresa());
             log.info("[billing] Suscripción eliminada empresa={}", sub.getEmpresa().getId());
@@ -376,7 +377,7 @@ public class SuscripcionService {
     /** Expira trials vencidos → degrada a FREE. Llamado por BillingRenewalScheduler. */
     @Transactional
     public int expirarTrialsVencidos() {
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy = LocalDate.now(Constants.ZONA_CR);
         // Leer IDs antes del batch update para poder evictar el cache después
         List<Long> empresaIds = suscripcionRepo.findEmpresaIdsTrialsVencidos(hoy);
         if (empresaIds.isEmpty()) return 0;
@@ -390,7 +391,7 @@ public class SuscripcionService {
     /** Expira PAST_DUE con fecha_fin pasada → degrada a FREE. */
     @Transactional
     public int expirarPastDueVencidos() {
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy = LocalDate.now(Constants.ZONA_CR);
         List<Long> empresaIds = suscripcionRepo.findEmpresaIdsPastDueVencidos(hoy);
         if (empresaIds.isEmpty()) return 0;
 
@@ -418,7 +419,7 @@ public class SuscripcionService {
         planRepo.findByNombre("FREE").ifPresent(free -> {
             empresa.setPlan(free);
             empresa.setEstadoPlan("VENCIDO");
-            empresa.setFechaVencPlan(LocalDate.now());
+            empresa.setFechaVencPlan(LocalDate.now(Constants.ZONA_CR));
             empresaRepo.save(empresa);
         });
     }

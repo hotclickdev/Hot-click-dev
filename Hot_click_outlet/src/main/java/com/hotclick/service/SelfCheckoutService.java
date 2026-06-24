@@ -106,7 +106,7 @@ public class SelfCheckoutService {
 
         Pedido pedido = new Pedido();
         pedido.setNumeroPedido(Constants.generarNumeroPedido("QR-"));
-        pedido.setFechaPedido(LocalDateTime.now());
+        pedido.setFechaPedido(LocalDateTime.now(Constants.ZONA_CR));
         pedido.setUsuarioFinal(proxy);
         pedido.setBodega(bodega);
         pedido.setEmpresa(empresa);

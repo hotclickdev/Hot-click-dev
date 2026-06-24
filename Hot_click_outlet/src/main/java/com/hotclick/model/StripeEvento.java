@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -19,7 +20,7 @@ public class StripeEvento {
     private Boolean procesadoOk = false;
 
     @Column(name = "fecha_recibido", nullable = false)
-    private LocalDateTime fechaRecibido = LocalDateTime.now();
+    private LocalDateTime fechaRecibido = LocalDateTime.now(Constants.ZONA_CR);
 
     @Column(name = "fecha_procesado")
     private LocalDateTime fechaProcesado;

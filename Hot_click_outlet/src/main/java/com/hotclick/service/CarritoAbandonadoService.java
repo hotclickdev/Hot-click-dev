@@ -1,4 +1,5 @@
 package com.hotclick.service;
+nimport com.hotclick.utils.Constants;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -68,7 +69,7 @@ public class CarritoAbandonadoService {
     public List<CarritoAbandonado> findPendientesAntiguos(int hoursToWait) {
         return repo.findByStatusAndCreatedAtBefore(
             "PENDIENTE",
-            java.time.LocalDateTime.now().minusHours(hoursToWait)
+            LocalDateTime.now(Constants.ZONA_CR).minusHours(hoursToWait)
         );
     }
 

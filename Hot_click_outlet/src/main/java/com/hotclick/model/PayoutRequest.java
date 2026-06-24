@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -57,7 +58,7 @@ public class PayoutRequest {
     private Long walletTxPagoId;
 
     @Column(name = "fecha_solicitud", nullable = false)
-    private LocalDateTime fechaSolicitud = LocalDateTime.now();
+    private LocalDateTime fechaSolicitud = LocalDateTime.now(Constants.ZONA_CR);
 
     @Column(name = "fecha_pago")
     private LocalDateTime fechaPago;

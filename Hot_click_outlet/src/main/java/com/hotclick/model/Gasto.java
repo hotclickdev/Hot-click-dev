@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
@@ -23,7 +24,7 @@ public class Gasto {
     private String categoria;
 
     @Column(name = "fecha", nullable = false)
-    private LocalDate fecha = LocalDate.now();
+    private LocalDate fecha = LocalDate.now(Constants.ZONA_CR);
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)

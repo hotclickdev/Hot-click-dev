@@ -1,4 +1,5 @@
 package com.hotclick.controller;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Pedido;
@@ -41,7 +42,7 @@ public class GarantiaController {
         Long usuarioId = usuarioOpt.get().getId();
         List<Pedido> pedidos = pedidoRepo.findEntregadosConItemsByUsuarioId(usuarioId);
 
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy = LocalDate.now(Constants.ZONA_CR);
         List<Map<String, Object>> resultado = new ArrayList<>();
 
         for (Pedido pedido : pedidos) {
@@ -95,7 +96,7 @@ public class GarantiaController {
             return ResponseEntity.status(403).body(ResponseDTO.error("Solo disponible para empresas"));
 
         List<Pedido> pedidos = pedidoRepo.findEntregadosConItemsByEmpresaId(empresaId);
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy = LocalDate.now(Constants.ZONA_CR);
         List<Map<String, Object>> resultado = new ArrayList<>();
 
         for (Pedido pedido : pedidos) {

@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
@@ -91,7 +92,7 @@ public class Cotizacion extends BaseEntity {
 
     @PrePersist
     void onCreate() {
-        if (fechaCotizacion == null) fechaCotizacion = LocalDateTime.now();
+        if (fechaCotizacion == null) fechaCotizacion = LocalDateTime.now(Constants.ZONA_CR);
         if (tokenPublico == null)    tokenPublico    = UUID.randomUUID();
     }
 

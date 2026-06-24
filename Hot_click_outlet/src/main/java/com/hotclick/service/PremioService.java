@@ -35,7 +35,7 @@ public class PremioService {
         giro.setUsuarioFinal(usuario);
         giro.setTipoOrigen(tipoOrigen);
         giro.setUsado(false);
-        giro.setFechaAsignacion(LocalDateTime.now());
+        giro.setFechaAsignacion(LocalDateTime.now(Constants.ZONA_CR));
         giro.setEstado(Constants.ESTADO_ACTIVO);
         return giroRuletaRepository.save(giro);
     }
@@ -57,17 +57,17 @@ public class PremioService {
         Premio premioGanado = sortearPremio(premios);
 
         giro.setUsado(true);
-        giro.setFechaUso(LocalDateTime.now());
+        giro.setFechaUso(LocalDateTime.now(Constants.ZONA_CR));
         giroRuletaRepository.save(giro);
 
         ResultadoRuleta resultado = new ResultadoRuleta();
         resultado.setGiro(giro);
         resultado.setUsuarioFinal(usuario);
         resultado.setPremio(premioGanado);
-        resultado.setFechaGiro(LocalDateTime.now());
+        resultado.setFechaGiro(LocalDateTime.now(Constants.ZONA_CR));
         resultado.setCodigoCanje(UUID.randomUUID().toString().substring(0, 10).toUpperCase());
         resultado.setCanjeado(false);
-        resultado.setExpiraEn(LocalDateTime.now().plusDays(30));
+        resultado.setExpiraEn(LocalDateTime.now(Constants.ZONA_CR).plusDays(30));
         resultado.setEstado(Constants.ESTADO_ACTIVO);
 
         return resultadoRuletaRepository.save(resultado);

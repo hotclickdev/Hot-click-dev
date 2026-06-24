@@ -163,7 +163,7 @@ public class PaymentService {
         // ── Crear Pedido PENDIENTE ───────────────────────────────────────
         Pedido pedido = new Pedido();
         pedido.setNumeroPedido(Constants.generarNumeroPedido("ORD-"));
-        pedido.setFechaPedido(LocalDateTime.now());
+        pedido.setFechaPedido(LocalDateTime.now(Constants.ZONA_CR));
         pedido.setSubtotal(subtotal);
         pedido.setTotalPedido(totalConGC);
         pedido.setCostoEnvio(costoEnvio);
@@ -249,13 +249,13 @@ public class PaymentService {
         pago.setMoneda("CRC");
         pago.setEstadoPago(Constants.PAGO_PENDIENTE);
         pago.setProveedor(provider);
-        pago.setFechaCreacion(LocalDateTime.now());
-        pago.setFechaActualizacion(LocalDateTime.now());
+        pago.setFechaCreacion(LocalDateTime.now(Constants.ZONA_CR));
+        pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
         // SINPE requiere más tiempo para revisión manual; resto expira en 30 min
         boolean esSinpe = "SINPE".equalsIgnoreCase(provider);
         pago.setFechaExpiracion(esSinpe
-            ? LocalDateTime.now().plusHours(24)
-            : LocalDateTime.now().plusMinutes(30));
+            ? LocalDateTime.now(Constants.ZONA_CR).plusHours(24)
+            : LocalDateTime.now(Constants.ZONA_CR).plusMinutes(30));
         pago.setPedido(pedido);
         pago.setUsuario(usuario);
         pago.setEstado(Constants.ESTADO_ACTIVO);
@@ -424,7 +424,7 @@ public class PaymentService {
         if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) return; // ya confirmado, no revertir
 
         pago.setEstadoPago(Constants.PAGO_FALLIDO);
-        pago.setFechaActualizacion(LocalDateTime.now());
+        pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
         pagoRepository.save(pago);
 
         Pedido pedido = pago.getPedido();
@@ -458,7 +458,7 @@ public class PaymentService {
         }
 
         pago.setEstadoPago(Constants.PAGO_CAPTURADO);
-        pago.setFechaActualizacion(LocalDateTime.now());
+        pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
         pagoRepository.save(pago);
 
         confirmarPedido(pago);
@@ -493,7 +493,7 @@ public class PaymentService {
     @SchedulerLock(name = "payment_expiration_cleanup", lockAtMostFor = "PT3M", lockAtLeastFor = "PT30S")
     @Transactional
     public void cancelarExpirados() {
-        LocalDateTime corte = LocalDateTime.now().minusMinutes(30);
+        LocalDateTime corte = LocalDateTime.now(Constants.ZONA_CR).minusMinutes(30);
         for (var empresa : empresaRepository.findByEstadoEmpresaOrderByFechaRegistroAsc("ACTIVO")) {
             try {
                 cancelarExpiradosDeEmpresa(empresa.getId(), corte);
@@ -510,7 +510,7 @@ public class PaymentService {
 
         for (Pago pago : expirados) {
             pago.setEstadoPago(Constants.PAGO_CANCELADO);
-            pago.setFechaActualizacion(LocalDateTime.now());
+            pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
             pagosActualizados.add(pago);
 
             Pedido pedido = pago.getPedido();
@@ -567,7 +567,7 @@ public class PaymentService {
         u.setTelefono(telefono != null && !telefono.isBlank()
             ? telefono.replaceAll("[^0-9]", "") : "00000000");
         u.setContrasenaHash(passwordEncoder.encode(UUID.randomUUID().toString()));
-        u.setFechaRegistro(LocalDateTime.now());
+        u.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
         u.setEstado(Constants.ESTADO_ACTIVO);
         rolRepository.findByNombreRol(Constants.ROL_USUARIO_FINAL)
             .ifPresent(rol -> u.setRoles(List.of(rol)));

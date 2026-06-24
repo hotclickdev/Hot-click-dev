@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -37,7 +38,7 @@ public class MiembroEmpresa {
         this.empresa = empresa;
         this.rolEnEmpresa = rolEnEmpresa;
         this.estado = 1;
-        this.fechaIngreso = LocalDateTime.now();
+        this.fechaIngreso = LocalDateTime.now(Constants.ZONA_CR);
     }
 
     public Long getId() { return id; }

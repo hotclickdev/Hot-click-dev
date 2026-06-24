@@ -1,4 +1,5 @@
 package com.hotclick.service;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.model.Producto;
 import com.hotclick.repository.ProductoRepository;
@@ -75,7 +76,7 @@ public class InventoryForecastService {
 
     /** Products with no sales in the last 60 days. */
     public List<Map<String, Object>> productosLentosMovimiento(Long empresaId) {
-        LocalDateTime corte = LocalDateTime.now().minusDays(SLOW_MOVER_DAYS);
+        LocalDateTime corte = LocalDateTime.now(Constants.ZONA_CR).minusDays(SLOW_MOVER_DAYS);
         String sql = """
             SELECT p.id_producto, p.nombre_producto, p.stock_actual,
                    p.clasificacion_abc, p.fecha_ultima_venta
@@ -123,7 +124,7 @@ public class InventoryForecastService {
         if (productos.isEmpty()) return;
 
         // Calculate revenue per product in last 90 days
-        LocalDateTime desde = LocalDateTime.now().minusDays(90);
+        LocalDateTime desde = LocalDateTime.now(Constants.ZONA_CR).minusDays(90);
         Map<Long, Double> ingresos = new HashMap<>();
         for (Producto p : productos) {
             double rev = calcularIngreso(p.getId(), desde);
@@ -138,7 +139,7 @@ public class InventoryForecastService {
 
         // Assign ABC class and update demand avg
         double acumulado = 0;
-        LocalDateTime window = LocalDateTime.now().minusDays(WINDOW_DAYS);
+        LocalDateTime window = LocalDateTime.now(Constants.ZONA_CR).minusDays(WINDOW_DAYS);
         for (Producto p : ordenados) {
             acumulado += ingresos.getOrDefault(p.getId(), 0.0);
             String clase = totalIngresos == 0 ? "C"

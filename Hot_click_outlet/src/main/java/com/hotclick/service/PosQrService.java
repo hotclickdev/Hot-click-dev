@@ -70,8 +70,8 @@ public class PosQrService {
         sesion.setTotal(total);
         sesion.setMetodoPago(metodoPago);
         sesion.setEstado("PENDIENTE");
-        sesion.setFechaCreacion(LocalDateTime.now());
-        sesion.setFechaExpiracion(LocalDateTime.now().plusMinutes(30));
+        sesion.setFechaCreacion(LocalDateTime.now(Constants.ZONA_CR));
+        sesion.setFechaExpiracion(LocalDateTime.now(Constants.ZONA_CR).plusMinutes(30));
         sesion.setNotas(notas);
 
         if (turnoId != null) {
@@ -166,7 +166,7 @@ public class PosQrService {
         }
 
         // Verificar expiración
-        if (LocalDateTime.now().isAfter(sesion.getFechaExpiracion())) {
+        if (LocalDateTime.now(Constants.ZONA_CR).isAfter(sesion.getFechaExpiracion())) {
             sesion.setEstado("EXPIRADO");
             posQrRepo.save(sesion);
             return "EXPIRADO";
@@ -227,7 +227,7 @@ public class PosQrService {
         if ("EXPIRADO".equals(sesion.getEstado()) || "CANCELADO".equals(sesion.getEstado())) {
             throw new NoSuchElementException("El QR ha expirado o fue cancelado");
         }
-        if (LocalDateTime.now().isAfter(sesion.getFechaExpiracion()) && "PENDIENTE".equals(sesion.getEstado())) {
+        if (LocalDateTime.now(Constants.ZONA_CR).isAfter(sesion.getFechaExpiracion()) && "PENDIENTE".equals(sesion.getEstado())) {
             sesion.setEstado("EXPIRADO");
             posQrRepo.save(sesion);
             throw new NoSuchElementException("El QR ha expirado");
@@ -262,7 +262,7 @@ public class PosQrService {
 
             Pedido pedido = new Pedido();
             pedido.setNumeroPedido(Constants.generarNumeroPedido("POS-QR-"));
-            pedido.setFechaPedido(LocalDateTime.now());
+            pedido.setFechaPedido(LocalDateTime.now(Constants.ZONA_CR));
             pedido.setUsuarioFinal(cliente);
             pedido.setBodega(bodega);
             pedido.setEmpresa(empresa);

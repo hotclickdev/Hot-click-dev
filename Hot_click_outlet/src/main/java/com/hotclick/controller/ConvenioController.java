@@ -1,4 +1,5 @@
 package com.hotclick.controller;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Convenio;
@@ -33,7 +34,7 @@ public class ConvenioController {
     @PostMapping
     public ResponseEntity<ResponseDTO> crear(@RequestBody Convenio convenio) {
         sanitizarConvenio(convenio);
-        convenio.setFechaRegistro(LocalDateTime.now());
+        convenio.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
         convenio.setEstado(1);
         return ResponseEntity.ok(ResponseDTO.success("Creado", repo.save(convenio)));
     }

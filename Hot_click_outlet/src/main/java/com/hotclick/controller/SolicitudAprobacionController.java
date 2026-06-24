@@ -1,4 +1,5 @@
 package com.hotclick.controller;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Empresa;
@@ -50,7 +51,7 @@ public class SolicitudAprobacionController {
         if (opt.isEmpty()) return ResponseEntity.status(404).body(ResponseDTO.error("Empresa no encontrada"));
         Empresa e = opt.get();
         e.setEstadoEmpresa("ACTIVO");
-        e.setFechaAprobacion(LocalDateTime.now());
+        e.setFechaAprobacion(LocalDateTime.now(Constants.ZONA_CR));
         empresaRepository.save(e);
         usuarioRepository.findByEmpresaIdConRoles(e.getId()).stream()
             .filter(u -> u.getRoles().stream().anyMatch(r -> "EMPRENDEDOR".equals(r.getNombreRol())))

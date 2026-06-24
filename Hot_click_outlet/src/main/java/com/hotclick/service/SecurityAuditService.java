@@ -1,4 +1,5 @@
 package com.hotclick.service;
+nimport com.hotclick.utils.Constants;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -59,7 +60,7 @@ public class SecurityAuditService {
 
         try {
             SecurityAuditLog record = new SecurityAuditLog();
-            record.setTimestamp(LocalDateTime.now());
+            record.setTimestamp(LocalDateTime.now(Constants.ZONA_CR));
             record.setEventType(evt);
             record.setSeverity(sev);
             record.setUserId(userId);

@@ -1,4 +1,5 @@
 package com.hotclick.service;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.model.RefreshToken;
 import com.hotclick.model.Usuario;
@@ -22,11 +23,11 @@ public class RefreshTokenService {
 
     @Transactional
     public RefreshToken crear(Usuario usuario) {
-        repo.revokeAllByUsuario(usuario, LocalDateTime.now());
+        repo.revokeAllByUsuario(usuario, LocalDateTime.now(Constants.ZONA_CR));
         RefreshToken rt = new RefreshToken();
         rt.setToken(UUID.randomUUID().toString());
         rt.setUsuario(usuario);
-        rt.setExpiresAt(LocalDateTime.now().plusDays(REFRESH_EXPIRY_DAYS));
+        rt.setExpiresAt(LocalDateTime.now(Constants.ZONA_CR).plusDays(REFRESH_EXPIRY_DAYS));
         return repo.save(rt);
     }
 
@@ -40,7 +41,7 @@ public class RefreshTokenService {
     @Transactional
     public void revocar(String tokenStr) {
         repo.findByToken(tokenStr).ifPresent(rt -> {
-            rt.setRevokedAt(LocalDateTime.now());
+            rt.setRevokedAt(LocalDateTime.now(Constants.ZONA_CR));
             repo.save(rt);
         });
     }
@@ -50,7 +51,7 @@ public class RefreshTokenService {
     @SchedulerLock(name = "refresh_token_cleanup", lockAtMostFor = "PT10M", lockAtLeastFor = "PT5M")
     @Transactional
     public void limpiarExpirados() {
-        repo.deleteExpired(LocalDateTime.now());
-        repo.deleteRevoked(LocalDateTime.now().minusHours(24));
+        repo.deleteExpired(LocalDateTime.now(Constants.ZONA_CR));
+        repo.deleteRevoked(LocalDateTime.now(Constants.ZONA_CR).minusHours(24));
     }
 }

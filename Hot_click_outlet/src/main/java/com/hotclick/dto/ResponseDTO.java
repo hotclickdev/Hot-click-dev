@@ -1,4 +1,5 @@
 package com.hotclick.dto;
+nimport com.hotclick.utils.Constants;
 
 import java.time.LocalDateTime;
 
@@ -19,11 +20,11 @@ public class ResponseDTO {
     }
 
     public static ResponseDTO success(String message, Object data) {
-        return new ResponseDTO(true, message, data, LocalDateTime.now().toString());
+        return new ResponseDTO(true, message, data, LocalDateTime.now(Constants.ZONA_CR).toString());
     }
 
     public static ResponseDTO error(String message) {
-        return new ResponseDTO(false, message, null, LocalDateTime.now().toString());
+        return new ResponseDTO(false, message, null, LocalDateTime.now(Constants.ZONA_CR).toString());
     }
 
     public boolean isSuccess() { return success; }

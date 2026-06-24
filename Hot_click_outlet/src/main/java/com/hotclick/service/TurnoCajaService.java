@@ -1,4 +1,5 @@
 package com.hotclick.service;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.model.Empresa;
 import com.hotclick.model.TurnoCaja;
@@ -37,7 +38,7 @@ public class TurnoCajaService {
         turno.setUsuario(usuario);
         turno.setEmpresa(empresa);
         turno.setMontoInicial(montoInicial != null ? montoInicial : 0);
-        turno.setFechaApertura(LocalDateTime.now());
+        turno.setFechaApertura(LocalDateTime.now(Constants.ZONA_CR));
         turno.setEstado("ABIERTO");
         return turnoCajaRepository.save(turno);
     }
@@ -60,7 +61,7 @@ public class TurnoCajaService {
         turno.setMontoCalculado(montoCalculado);
         turno.setDiferencia(turno.getMontoDeclarado() - montoCalculado);
         turno.setNotas(notas);
-        turno.setFechaCierre(LocalDateTime.now());
+        turno.setFechaCierre(LocalDateTime.now(Constants.ZONA_CR));
         turno.setEstado("CERRADO");
         return turnoCajaRepository.save(turno);
     }

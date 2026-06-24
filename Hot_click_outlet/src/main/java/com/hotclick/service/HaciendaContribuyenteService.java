@@ -1,4 +1,5 @@
 package com.hotclick.service;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.repository.EmpresaRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -67,7 +68,7 @@ public class HaciendaContribuyenteService {
             empresa.setInscritoHacienda(dto.inscrito());
             empresa.setRegimenTributario(dto.regimen());
             empresa.setNombreHacienda(dto.nombre());
-            empresa.setFechaVerificacionHacienda(LocalDateTime.now());
+            empresa.setFechaVerificacionHacienda(LocalDateTime.now(Constants.ZONA_CR));
             empresaRepository.save(empresa);
         });
         return dto;

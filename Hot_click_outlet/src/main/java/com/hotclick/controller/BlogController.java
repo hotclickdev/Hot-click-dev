@@ -1,4 +1,5 @@
 package com.hotclick.controller;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.BlogEntrada;
@@ -51,13 +52,13 @@ public class BlogController {
         if (!textMod.safe())
             return ResponseEntity.badRequest().body(ResponseDTO.error("El contenido de la publicación no está permitido en la plataforma"));
         sanitizarEntrada(entrada);
-        entrada.setFechaCreacion(LocalDateTime.now());
+        entrada.setFechaCreacion(LocalDateTime.now(Constants.ZONA_CR));
         entrada.setEstado(1);
         if (entrada.getSlug() == null || entrada.getSlug().isBlank()) {
             entrada.setSlug(slugify(entrada.getTitulo()));
         }
         if (Boolean.TRUE.equals(entrada.getPublicado()) && entrada.getFechaPublicacion() == null) {
-            entrada.setFechaPublicacion(LocalDateTime.now());
+            entrada.setFechaPublicacion(LocalDateTime.now(Constants.ZONA_CR));
         }
         return ResponseEntity.ok(ResponseDTO.success("Creado", repo.save(entrada)));
     }
@@ -79,7 +80,7 @@ public class BlogController {
         boolean wasDraft = !Boolean.TRUE.equals(e.getPublicado());
         e.setPublicado(datos.getPublicado());
         if (Boolean.TRUE.equals(datos.getPublicado()) && wasDraft) {
-            e.setFechaPublicacion(LocalDateTime.now());
+            e.setFechaPublicacion(LocalDateTime.now(Constants.ZONA_CR));
         }
         return ResponseEntity.ok(ResponseDTO.success("Actualizado", repo.save(e)));
     }

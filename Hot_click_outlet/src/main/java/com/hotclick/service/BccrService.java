@@ -1,4 +1,5 @@
 package com.hotclick.service;
+nimport com.hotclick.utils.Constants;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,7 @@ public class BccrService {
             return cachedTc.get();
         }
         try {
-            String hoy = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            String hoy = LocalDate.now(Constants.ZONA_CR).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
             String url = String.format(BCCR_URL, hoy, hoy);
             RestTemplate rt = new RestTemplate();
             String xml = rt.getForObject(url, String.class);

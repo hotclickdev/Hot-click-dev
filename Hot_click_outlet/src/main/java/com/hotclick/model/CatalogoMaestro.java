@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -59,13 +60,13 @@ public class CatalogoMaestro {
 
     @PrePersist
     void onCreate() {
-        fechaCreacion = LocalDateTime.now();
-        fechaActualizacion = LocalDateTime.now();
+        fechaCreacion = LocalDateTime.now(Constants.ZONA_CR);
+        fechaActualizacion = LocalDateTime.now(Constants.ZONA_CR);
     }
 
     @PreUpdate
     void onUpdate() {
-        fechaActualizacion = LocalDateTime.now();
+        fechaActualizacion = LocalDateTime.now(Constants.ZONA_CR);
     }
 
     public Long getId() { return id; }

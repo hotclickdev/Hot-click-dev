@@ -1,4 +1,5 @@
 package com.hotclick.service;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.model.WalletAcreditacionFallida;
 import com.hotclick.repository.WalletAcreditacionFallidaRepository;
@@ -64,7 +65,7 @@ public class WalletDlqTxOps {
     public void marcarProcesado(Long dlqId) {
         dlqRepo.findById(dlqId).ifPresent(item -> {
             item.setEstado(WalletAcreditacionFallida.PROCESADO);
-            item.setFechaCompletado(LocalDateTime.now());
+            item.setFechaCompletado(LocalDateTime.now(Constants.ZONA_CR));
             dlqRepo.save(item);
         });
     }
@@ -83,7 +84,7 @@ public class WalletDlqTxOps {
                     item.getPedidoId(), item.getEmpresaId(), item.getMontoNeto());
             } else {
                 long minutosBackoff = Math.min((long) Math.pow(2, intentos), BACKOFF_TOPE_MINUTOS);
-                item.setFechaProximoIntento(LocalDateTime.now().plusMinutes(minutosBackoff));
+                item.setFechaProximoIntento(LocalDateTime.now(Constants.ZONA_CR).plusMinutes(minutosBackoff));
                 log.warn("[wallet-dlq] Reintento {} fallido para pedido={}. Próximo en {} min",
                     intentos, item.getPedidoId(), minutosBackoff);
             }

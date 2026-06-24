@@ -1,4 +1,5 @@
 package com.hotclick.controller;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.security.TenantContext;
 import com.hotclick.service.AiCopilotService;
@@ -36,7 +37,7 @@ public class ExecutiveController {
     @PostMapping(value = "/ai-summary", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter aiSummary() {
         Long empresaId = TenantContext.get();
-        String periodo  = LocalDate.now().toString().substring(0, 7);
+        String periodo  = LocalDate.now(Constants.ZONA_CR).toString().substring(0, 7);
 
         if (!aiQuotaService.puedeUsarAi(empresaId)) {
             SseEmitter e = new SseEmitter(0L);
@@ -73,7 +74,7 @@ public class ExecutiveController {
     @PostMapping("/guardar-resumen")
     @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN_IT')")
     public ResponseEntity<?> guardarResumen(@RequestBody Map<String, String> body) {
-        String periodo = body.getOrDefault("periodo", LocalDate.now().toString().substring(0, 7));
+        String periodo = body.getOrDefault("periodo", LocalDate.now(Constants.ZONA_CR).toString().substring(0, 7));
         String resumen = body.getOrDefault("resumen", "");
         executiveService.guardarResumenAi(TenantContext.get(), periodo, resumen);
         return ResponseEntity.ok(Map.of("ok", true));

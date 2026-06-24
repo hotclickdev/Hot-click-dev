@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -37,7 +38,7 @@ public class SolicitudAprobacion {
     private String comentarioRevisor;
 
     @Column(name = "fecha_solicitud", nullable = false)
-    private LocalDateTime fechaSolicitud = LocalDateTime.now();
+    private LocalDateTime fechaSolicitud = LocalDateTime.now(Constants.ZONA_CR);
 
     @Column(name = "fecha_resolucion")
     private LocalDateTime fechaResolucion;

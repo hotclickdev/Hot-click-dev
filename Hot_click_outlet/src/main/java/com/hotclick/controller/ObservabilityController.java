@@ -91,7 +91,7 @@ public class ObservabilityController {
             metrics.put("usuarios", usuarios);
 
             // ── Seguridad (últimas 24h) ────────────────────────────────────────
-            LocalDateTime hace24h = LocalDateTime.now().minusHours(24);
+            LocalDateTime hace24h = LocalDateTime.now(Constants.ZONA_CR).minusHours(24);
             Map<String, Object> seguridad = new LinkedHashMap<>();
             seguridad.put("eventosTotal24h",    auditLogRepository.countByTimestampAfter(hace24h));
             seguridad.put("eventosCriticos24h", auditLogRepository.countBySeverityAndTimestampAfter("CRITICAL", hace24h));
@@ -102,8 +102,8 @@ public class ObservabilityController {
             metrics.put("seguridad", seguridad);
 
             // ── IA (mes actual) ────────────────────────────────────────────────
-            int anio = LocalDate.now().getYear();
-            int mes  = LocalDate.now().getMonthValue();
+            int anio = LocalDate.now(Constants.ZONA_CR).getYear();
+            int mes  = LocalDate.now(Constants.ZONA_CR).getMonthValue();
             Map<String, Object> ia = new LinkedHashMap<>();
             // Claude Haiku 3.5: $0.80/M input · $4.00/M output (https://www.anthropic.com/pricing)
             final double PRECIO_INPUT  = 0.80;
@@ -125,7 +125,7 @@ public class ObservabilityController {
             ia.put("costoEstimadoUSD", String.format("$%.4f", costoMes));
 
             // ── Costo diario promedio (mensual / días transcurridos) ──────────
-            int diaActual = LocalDate.now().getDayOfMonth();
+            int diaActual = LocalDate.now(Constants.ZONA_CR).getDayOfMonth();
             double costoDiario = diaActual > 0 ? costoMes / diaActual : 0;
             ia.put("costoDiarioPromedioUSD", String.format("$%.4f", costoDiario));
 
@@ -243,7 +243,7 @@ public class ObservabilityController {
             }
 
             // ── Timestamp ────────────────────────────────────────────────────
-            metrics.put("generadoEn", LocalDateTime.now().toString());
+            metrics.put("generadoEn", LocalDateTime.now(Constants.ZONA_CR).toString());
 
             return ResponseEntity.ok(ResponseDTO.success("Métricas de plataforma", metrics));
 

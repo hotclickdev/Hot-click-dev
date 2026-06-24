@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
@@ -42,7 +43,7 @@ public class Forecast {
     private LocalDateTime fechaGeneracion;
 
     @PrePersist
-    void onCreate() { fechaGeneracion = LocalDateTime.now(); }
+    void onCreate() { fechaGeneracion = LocalDateTime.now(Constants.ZONA_CR); }
 
     public Long getId() { return id; }
 

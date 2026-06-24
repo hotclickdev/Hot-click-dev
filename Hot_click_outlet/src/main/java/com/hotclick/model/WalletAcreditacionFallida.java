@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -57,10 +58,10 @@ public class WalletAcreditacionFallida {
     private String ultimoError;
 
     @Column(name = "fecha_creacion", nullable = false)
-    private LocalDateTime fechaCreacion = LocalDateTime.now();
+    private LocalDateTime fechaCreacion = LocalDateTime.now(Constants.ZONA_CR);
 
     @Column(name = "fecha_proximo_intento", nullable = false)
-    private LocalDateTime fechaProximoIntento = LocalDateTime.now();
+    private LocalDateTime fechaProximoIntento = LocalDateTime.now(Constants.ZONA_CR);
 
     @Column(name = "fecha_completado")
     private LocalDateTime fechaCompletado;

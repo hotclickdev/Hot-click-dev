@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
@@ -48,7 +49,7 @@ public class FacturaSaas {
     private String urlPdf;
 
     @Column(name = "fecha_creacion", nullable = false)
-    private LocalDateTime fechaCreacion = LocalDateTime.now();
+    private LocalDateTime fechaCreacion = LocalDateTime.now(Constants.ZONA_CR);
 
     public Long getId() { return id; }
     public Empresa getEmpresa() { return empresa; }

@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -25,7 +26,7 @@ public class RefreshToken {
     @Column(name = "revoked_at")
     private LocalDateTime revokedAt;
 
-    public boolean isExpired()  { return LocalDateTime.now().isAfter(expiresAt); }
+    public boolean isExpired()  { return LocalDateTime.now(Constants.ZONA_CR).isAfter(expiresAt); }
     public boolean isRevoked()  { return revokedAt != null; }
     public boolean isValid()    { return !isExpired() && !isRevoked(); }
 

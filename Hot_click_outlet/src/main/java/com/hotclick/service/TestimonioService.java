@@ -1,4 +1,5 @@
 package com.hotclick.service;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.model.Testimonio;
 import com.hotclick.repository.PedidoRepository;
@@ -173,7 +174,7 @@ public class TestimonioService {
         Testimonio t = repo.findById(id)
             .orElseThrow(() -> new RuntimeException("Testimonio no encontrado"));
         t.setEstado("APROBADO");
-        t.setFechaAprobacion(LocalDateTime.now());
+        t.setFechaAprobacion(LocalDateTime.now(Constants.ZONA_CR));
         return repo.save(t);
     }
 

@@ -1,4 +1,5 @@
 package com.hotclick.service;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.model.Producto;
 import com.hotclick.model.PublicacionFacebook;
@@ -56,7 +57,7 @@ public class PublicacionFacebookService {
         PublicacionFacebook pub = pubRepo.findById(id)
             .orElseThrow(() -> new RuntimeException("Publicación no encontrada: " + id));
         pub.setEstadoPublicacion("PUBLICADO");
-        pub.setFechaPublicacion(LocalDateTime.now());
+        pub.setFechaPublicacion(LocalDateTime.now(Constants.ZONA_CR));
         return pubRepo.save(pub);
     }
 

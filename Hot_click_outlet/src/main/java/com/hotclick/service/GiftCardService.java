@@ -1,4 +1,5 @@
 package com.hotclick.service;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.model.Empresa;
 import com.hotclick.model.GiftCard;
@@ -83,7 +84,7 @@ public class GiftCardService {
         if (!gc.getEmpresa().getId().equals(empresaId)) return Optional.empty();
         if (!"ACTIVA".equals(gc.getEstado())) return Optional.empty();
         if (gc.getSaldoActual() <= 0) return Optional.empty();
-        if (gc.getFechaVencimiento() != null && gc.getFechaVencimiento().isBefore(LocalDate.now())) {
+        if (gc.getFechaVencimiento() != null && gc.getFechaVencimiento().isBefore(LocalDate.now(Constants.ZONA_CR))) {
             gc.setEstado("VENCIDA");
             giftCardRepository.save(gc);
             return Optional.empty();

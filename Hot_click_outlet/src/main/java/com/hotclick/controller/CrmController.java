@@ -1,4 +1,5 @@
 package com.hotclick.controller;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Pedido;
@@ -229,7 +230,7 @@ public class CrmController {
     private String calcularSegmento(int numPedidos, int totalCompras, LocalDateTime ultimoAcceso) {
         if (numPedidos == 0) return "NUEVO";
         boolean inactivo = ultimoAcceso != null &&
-            ultimoAcceso.isBefore(LocalDateTime.now().minusDays(90));
+            ultimoAcceso.isBefore(LocalDateTime.now(Constants.ZONA_CR).minusDays(90));
         if (inactivo && numPedidos < 5) return "INACTIVO";
         if (numPedidos >= 10 || totalCompras >= 500_000) return "VIP";
         if (numPedidos >= 2) return "FRECUENTE";

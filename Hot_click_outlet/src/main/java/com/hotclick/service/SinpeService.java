@@ -108,7 +108,7 @@ public class SinpeService {
 
         Pedido pedido = new Pedido();
         pedido.setNumeroPedido(Constants.generarNumeroPedido("ORD-"));
-        pedido.setFechaPedido(LocalDateTime.now());
+        pedido.setFechaPedido(LocalDateTime.now(Constants.ZONA_CR));
         pedido.setSubtotal(subtotal);
         pedido.setTotalPedido(total);
         pedido.setCostoEnvio(costoEnvio);
@@ -157,8 +157,8 @@ public class SinpeService {
         pago.setMoneda("CRC");
         pago.setEstadoPago(Constants.PAGO_PENDIENTE);
         pago.setProveedor(Constants.PROVEEDOR_SINPE);
-        pago.setFechaCreacion(LocalDateTime.now());
-        pago.setFechaActualizacion(LocalDateTime.now());
+        pago.setFechaCreacion(LocalDateTime.now(Constants.ZONA_CR));
+        pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
         // Sin fecha de expiración: el TTL cleanup de PaymentService filtra por proveedor SINPE
         pago.setPedido(pedido);
         pago.setUsuario(usuario);
@@ -212,7 +212,7 @@ public class SinpeService {
         comprobante.setTelefonoRemitente(telefonoRemitente != null ? telefonoRemitente.trim() : null);
         comprobante.setCorreoRemitente(correoUsuario);
         comprobante.setEstado(Constants.COMPROBANTE_PENDIENTE);
-        comprobante.setFechaSubida(LocalDateTime.now());
+        comprobante.setFechaSubida(LocalDateTime.now(Constants.ZONA_CR));
         comprobanteRepository.save(comprobante);
 
         pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE_APROBACION);
@@ -242,11 +242,11 @@ public class SinpeService {
             .orElseThrow(() -> new RuntimeException("Pago SINPE no encontrado para pedido: " + pedido.getNumeroPedido()));
 
         pago.setEstadoPago(Constants.PAGO_CAPTURADO);
-        pago.setFechaActualizacion(LocalDateTime.now());
+        pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
         pagoRepository.save(pago);
 
         comprobante.setEstado(Constants.COMPROBANTE_APROBADO);
-        comprobante.setFechaResolucion(LocalDateTime.now());
+        comprobante.setFechaResolucion(LocalDateTime.now(Constants.ZONA_CR));
         comprobante.setAdminId(adminId);
         comprobante.setAdminEmail(adminEmail);
         comprobanteRepository.save(comprobante);
@@ -275,7 +275,7 @@ public class SinpeService {
         Pedido pedido = comprobante.getPedido();
 
         comprobante.setEstado(Constants.COMPROBANTE_RECHAZADO);
-        comprobante.setFechaResolucion(LocalDateTime.now());
+        comprobante.setFechaResolucion(LocalDateTime.now(Constants.ZONA_CR));
         comprobante.setNotasAdmin(motivo);
         comprobante.setAdminId(adminId);
         comprobante.setAdminEmail(adminEmail);
@@ -284,7 +284,7 @@ public class SinpeService {
         Pago pago = pagoRepository.findTopByPedidoId(pedido.getId()).orElse(null);
         if (pago != null) {
             pago.setEstadoPago(Constants.PAGO_CANCELADO);
-            pago.setFechaActualizacion(LocalDateTime.now());
+            pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
             pagoRepository.save(pago);
         }
 
@@ -310,7 +310,7 @@ public class SinpeService {
     @SchedulerLock(name = "sinpe_auto_approval", lockAtMostFor = "PT30M", lockAtLeastFor = "PT10M")
     @Transactional
     public void autoAprobarExpirados() {
-        LocalDateTime corte = LocalDateTime.now().minusDays(3);
+        LocalDateTime corte = LocalDateTime.now(Constants.ZONA_CR).minusDays(3);
         for (var empresa : empresaRepository.findByEstadoEmpresaOrderByFechaRegistroAsc("ACTIVO")) {
             try {
                 autoAprobarExpiradosDeEmpresa(empresa.getId(), corte);
@@ -332,11 +332,11 @@ public class SinpeService {
                 if (pago == null) continue;
 
                 pago.setEstadoPago(Constants.PAGO_CAPTURADO);
-                pago.setFechaActualizacion(LocalDateTime.now());
+                pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
                 pagoRepository.save(pago);
 
                 comprobante.setEstado(Constants.COMPROBANTE_APROBADO);
-                comprobante.setFechaResolucion(LocalDateTime.now());
+                comprobante.setFechaResolucion(LocalDateTime.now(Constants.ZONA_CR));
                 comprobante.setNotasAdmin("Auto-aprobado tras 3 días sin revisión");
                 comprobanteRepository.save(comprobante);
 
@@ -390,7 +390,7 @@ public class SinpeService {
         audit.setEntidad(entidad);
         audit.setEntidadId(entidadId);
         audit.setDetalle(detalle);
-        audit.setFecha(LocalDateTime.now());
+        audit.setFecha(LocalDateTime.now(Constants.ZONA_CR));
         auditoriaRepository.save(audit);
     }
 
@@ -404,7 +404,7 @@ public class SinpeService {
         u.setTelefono(telefono != null && !telefono.isBlank()
             ? telefono.replaceAll("[^0-9]", "") : "00000000");
         u.setContrasenaHash(passwordEncoder.encode(UUID.randomUUID().toString()));
-        u.setFechaRegistro(LocalDateTime.now());
+        u.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
         u.setEstado(Constants.ESTADO_ACTIVO);
         rolRepository.findByNombreRol(Constants.ROL_USUARIO_FINAL)
             .ifPresent(rol -> u.setRoles(List.of(rol)));

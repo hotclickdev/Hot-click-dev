@@ -1,4 +1,5 @@
 package com.hotclick.service;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Reporte;
@@ -35,7 +36,7 @@ public class ExecutiveDashboardService {
     @Autowired private ReporteRepository reporteRepository;
 
     public Map<String, Object> getDashboard(Long empresaId) {
-        LocalDate hoy   = LocalDate.now();
+        LocalDate hoy   = LocalDate.now(Constants.ZONA_CR);
         LocalDate mes1  = hoy.withDayOfMonth(1);
         LocalDate mes0  = mes1.minusMonths(1);
 

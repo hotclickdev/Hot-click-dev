@@ -1,4 +1,5 @@
 package com.hotclick.scheduler;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.dto.CarritoAbandonadoRequestDTO;
 import com.hotclick.model.CarritoAbandonado;
@@ -60,7 +61,7 @@ public class CarritoAbandonadoScheduler {
                 } else {
                     // No email — mark as expired after 24 h so scheduler doesn't reprocess
                     long hoursOld = java.time.Duration.between(
-                        carrito.getCreatedAt(), java.time.LocalDateTime.now()).toHours();
+                        carrito.getCreatedAt(), LocalDateTime.now(Constants.ZONA_CR)).toHours();
                     if (hoursOld >= 24) {
                         cartService.marcarVencido(carrito.getId());
                     }

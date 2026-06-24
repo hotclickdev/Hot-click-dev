@@ -116,7 +116,7 @@ public class EquipoController {
                 MiembroEmpresa m = previo.get();
                 m.setEstado(1);
                 m.setRolEnEmpresa(rolEnEmpresa);
-                m.setFechaIngreso(LocalDateTime.now());
+                m.setFechaIngreso(LocalDateTime.now(Constants.ZONA_CR));
                 miembroEmpresaRepository.save(m);
             } else {
                 miembroEmpresaRepository.save(new MiembroEmpresa(u, empresa, rolEnEmpresa));
@@ -139,7 +139,7 @@ public class EquipoController {
         nuevo.setTelefono(telefono);
         nuevo.setEstado(Constants.ESTADO_ACTIVO);
         nuevo.setIntentosFallidos(0);
-        nuevo.setFechaRegistro(LocalDateTime.now());
+        nuevo.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
         nuevo.setEmpresa(empresa);
         nuevo.getRoles().add(rolAdminCliente);
         Usuario saved = usuarioRepository.save(nuevo);

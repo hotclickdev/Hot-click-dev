@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -40,13 +41,13 @@ public class CarritoAbandonado {
 
     @PrePersist
     void prePersist() {
-        createdAt = LocalDateTime.now();
+        createdAt = LocalDateTime.now(Constants.ZONA_CR);
         updatedAt  = createdAt;
     }
 
     @PreUpdate
     void preUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now(Constants.ZONA_CR);
     }
 
     public Long getId()                  { return id; }

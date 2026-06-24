@@ -132,13 +132,13 @@ public class TwoFactorService {
         if (trimmed.equals(usuario.getTotpLastUsedOtp())
                 && usuario.getTotpLastUsedAt() != null
                 && usuario.getTotpLastUsedAt().isAfter(
-                    LocalDateTime.now().minusSeconds(Constants.TOTP_REPLAY_WINDOW_SECONDS))) {
+                    LocalDateTime.now(Constants.ZONA_CR).minusSeconds(Constants.TOTP_REPLAY_WINDOW_SECONDS))) {
             log.warn("[2FA] TOTP replay attack detected for userId={}", usuario.getId());
             return false;
         }
 
         // Persist used code to block replay
-        usuarioRepository.updateTotpReplayProtection(usuario.getId(), trimmed, LocalDateTime.now());
+        usuarioRepository.updateTotpReplayProtection(usuario.getId(), trimmed, LocalDateTime.now(Constants.ZONA_CR));
         return true;
     }
 

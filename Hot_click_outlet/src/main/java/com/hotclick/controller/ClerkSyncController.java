@@ -103,7 +103,7 @@ public class ClerkSyncController {
             return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
         }
 
-        usuarioRepository.updateUltimoAcceso(usuario.getId(), LocalDateTime.now());
+        usuarioRepository.updateUltimoAcceso(usuario.getId(), LocalDateTime.now(Constants.ZONA_CR));
 
         // Reload to ensure roles + empresa are properly fetched
         usuario = usuarioRepository.findByCorreo(usuario.getCorreo())
@@ -156,7 +156,7 @@ public class ClerkSyncController {
         u.setNombre(nombre.isBlank() ? email.split("@")[0] : nombre);
         u.setApellidoPaterno(apellido.isBlank() ? "-" : apellido);
         u.setTelefono("");
-        u.setFechaRegistro(LocalDateTime.now());
+        u.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
         u.setEstado(1); // active immediately — email verified by OAuth provider
 
         if (!fotoUrl.isBlank()) {

@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
@@ -68,6 +69,6 @@ public class CodigoOtp {
     public void setEstado(Integer estado) { this.estado = estado; }
 
     public boolean isExpired() {
-        return LocalDateTime.now().isAfter(expiresAt);
+        return LocalDateTime.now(Constants.ZONA_CR).isAfter(expiresAt);
     }
 }

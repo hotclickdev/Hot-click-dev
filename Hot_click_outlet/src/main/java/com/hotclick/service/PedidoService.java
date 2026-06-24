@@ -49,7 +49,7 @@ public class PedidoService {
     @Transactional
     public Pedido crearPedido(Pedido pedido) {
         pedido.setNumeroPedido(Constants.generarNumeroPedido("ORD-"));
-        pedido.setFechaPedido(LocalDateTime.now());
+        pedido.setFechaPedido(LocalDateTime.now(Constants.ZONA_CR));
         if (pedido.getEstadoPedido() == null) {
             pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
         }
@@ -69,7 +69,7 @@ public class PedidoService {
 
         Pedido pedido = new Pedido();
         pedido.setNumeroPedido(Constants.generarNumeroPedido("ORD-"));
-        pedido.setFechaPedido(LocalDateTime.now());
+        pedido.setFechaPedido(LocalDateTime.now(Constants.ZONA_CR));
         pedido.setUsuarioFinal(usuario);
         pedido.setBodega(bodega);
         pedido.setMetodoEnvio(dto.getMetodoEnvio() != null ? dto.getMetodoEnvio() : Constants.ENVIO_RETIRO);
@@ -165,7 +165,7 @@ public class PedidoService {
             Map<String, Object> entry = new LinkedHashMap<>();
             entry.put("estado", estado);
             entry.put("nota",   nota);
-            entry.put("fecha",  LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            entry.put("fecha",  LocalDateTime.now(Constants.ZONA_CR).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
             list.add(entry);
             pedido.setNotificaciones(objectMapper.writeValueAsString(list));
         } catch (Exception e) {
@@ -201,7 +201,7 @@ public class PedidoService {
             .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
         pedido.setNumeroGuia(numeroGuia);
         pedido.setUrlTracking("https://rastreo.correos.go.cr/?codigo=" + numeroGuia);
-        pedido.setFechaEnvio(LocalDateTime.now());
+        pedido.setFechaEnvio(LocalDateTime.now(Constants.ZONA_CR));
         pedido.setEstadoPedido(Constants.PEDIDO_ENVIADO);
         pedido = pedidoRepository.save(pedido);
         pedido.getItems().size();
@@ -217,7 +217,7 @@ public class PedidoService {
             .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
         pedido.setNumeroGuia(guia);
         pedido.setUrlTracking("https://rastreo.correos.go.cr/?codigo=" + guia);
-        pedido.setFechaEnvio(LocalDateTime.now());
+        pedido.setFechaEnvio(LocalDateTime.now(Constants.ZONA_CR));
         if (costoEnvio != null) pedido.setCostoEnvio(costoEnvio);
         pedido.setEstadoPedido(Constants.PEDIDO_ENVIADO);
         pedido = pedidoRepository.save(pedido);

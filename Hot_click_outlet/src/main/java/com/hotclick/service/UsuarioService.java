@@ -69,7 +69,7 @@ public class UsuarioService {
 
     @Transactional
     public void actualizarUltimoAcceso(Long id) {
-        usuarioRepository.updateUltimoAcceso(id, LocalDateTime.now());
+        usuarioRepository.updateUltimoAcceso(id, LocalDateTime.now(Constants.ZONA_CR));
     }
 
     @Transactional
@@ -132,7 +132,7 @@ public class UsuarioService {
         rolDefault.ifPresent(rol -> usuario.getRoles().add(rol));
         usuario.setEstado(Constants.ESTADO_PENDIENTE);
         usuario.setIntentosFallidos(0);
-        usuario.setFechaRegistro(LocalDateTime.now());
+        usuario.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
         return usuarioRepository.save(usuario);
     }
 

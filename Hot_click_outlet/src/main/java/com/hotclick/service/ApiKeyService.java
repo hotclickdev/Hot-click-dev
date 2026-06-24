@@ -1,4 +1,5 @@
 package com.hotclick.service;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.model.ApiKey;
 import com.hotclick.model.Empresa;
@@ -111,7 +112,7 @@ public class ApiKeyService {
         if (lastUpdate == null || now - lastUpdate > USO_THROTTLE) {
             lastUsoUpdate.put(keyId, now);
             CompletableFuture.runAsync(() ->
-                apiKeyRepository.updateUltimoUso(keyId, LocalDateTime.now()));
+                apiKeyRepository.updateUltimoUso(keyId, LocalDateTime.now(Constants.ZONA_CR)));
         }
     }
 

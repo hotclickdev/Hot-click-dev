@@ -1,4 +1,5 @@
 package com.hotclick.service;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.model.Empresa;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -66,7 +67,7 @@ public class HaciendaApiClient {
 
         Map<String, Object> payload = Map.of(
             "clave",            clave,
-            "fecha",            java.time.LocalDateTime.now().format(
+            "fecha",            LocalDateTime.now(Constants.ZONA_CR).format(
                                     java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME),
             "emisor", Map.of(
                 "tipoIdentificacion", empresa.getTipoCedula(),

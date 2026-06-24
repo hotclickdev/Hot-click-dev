@@ -86,7 +86,7 @@ public class AdminAsignarController {
             usuario.setTelefono(telefono.isBlank() ? "0000" : telefono);
             usuario.setIdentificacion(ident);
             usuario.setContrasenaHash(passwordEncoder.encode(UUID.randomUUID().toString()));
-            usuario.setFechaRegistro(LocalDateTime.now());
+            usuario.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
             usuario.setEstado(Constants.ESTADO_ACTIVO);
             usuario.setIntentosFallidos(0);
 

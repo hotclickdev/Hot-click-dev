@@ -1,4 +1,5 @@
 package com.hotclick.service;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.model.ComprobanteFiscal;
 import com.hotclick.model.Empresa;
@@ -110,7 +111,7 @@ public class FacturacionService {
         // Paso 2: generar clave numérica de 50 dígitos
         String cedulaEmisor = empresa.getCedulaJuridica() != null
             ? empresa.getCedulaJuridica() : "000000000000";
-        String clave = claveService.generar(cedulaEmisor, numConsecutivo, LocalDateTime.now());
+        String clave = claveService.generar(cedulaEmisor, numConsecutivo, LocalDateTime.now(Constants.ZONA_CR));
 
         // Paso 3: crear y persistir el comprobante en estado PENDIENTE
         ComprobanteFiscal cf = new ComprobanteFiscal();
@@ -239,12 +240,12 @@ public class FacturacionService {
         switch (estadoHacienda.toLowerCase()) {
             case "aceptado" -> {
                 cf.setEstado(ComprobanteFiscal.ESTADO_ACEPTADO);
-                cf.setFechaRespuesta(LocalDateTime.now());
+                cf.setFechaRespuesta(LocalDateTime.now(Constants.ZONA_CR));
                 log.info("[facturacion] Comprobante ACEPTADO id={} clave={}", cf.getId(), cf.getClaveNumerica());
             }
             case "rechazado" -> {
                 cf.setEstado(ComprobanteFiscal.ESTADO_RECHAZADO);
-                cf.setFechaRespuesta(LocalDateTime.now());
+                cf.setFechaRespuesta(LocalDateTime.now(Constants.ZONA_CR));
                 log.warn("[facturacion] Comprobante RECHAZADO id={} clave={}", cf.getId(), cf.getClaveNumerica());
             }
             case "en_procesamiento" -> log.debug("[facturacion] Comprobante en procesamiento id={}", cf.getId());

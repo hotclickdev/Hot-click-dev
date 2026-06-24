@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
@@ -346,7 +347,7 @@ public class Empresa {
     /** Días de trial restantes. -1 si no está en trial. */
     public long getTrialDiasRestantes() {
         if (trialHasta == null) return -1;
-        long dias = java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), trialHasta);
+        long dias = java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(Constants.ZONA_CR), trialHasta);
         return Math.max(0, dias);
     }
 }

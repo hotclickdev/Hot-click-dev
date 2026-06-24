@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
@@ -35,7 +36,7 @@ public class Suscripcion {
     private String estado = "TRIAL";
 
     @Column(name = "fecha_inicio", nullable = false)
-    private LocalDate fechaInicio = LocalDate.now();
+    private LocalDate fechaInicio = LocalDate.now(Constants.ZONA_CR);
 
     @Column(name = "fecha_fin")
     private LocalDate fechaFin;
@@ -53,10 +54,10 @@ public class Suscripcion {
     private String motivoCancelacion;
 
     @Column(name = "fecha_creacion", nullable = false)
-    private LocalDateTime fechaCreacion = LocalDateTime.now();
+    private LocalDateTime fechaCreacion = LocalDateTime.now(Constants.ZONA_CR);
 
     @Column(name = "fecha_actualizacion", nullable = false)
-    private LocalDateTime fechaActualizacion = LocalDateTime.now();
+    private LocalDateTime fechaActualizacion = LocalDateTime.now(Constants.ZONA_CR);
 
     public Long getId() { return id; }
     public Empresa getEmpresa() { return empresa; }
@@ -88,5 +89,5 @@ public class Suscripcion {
     public void setFechaActualizacion(LocalDateTime v) { this.fechaActualizacion = v; }
 
     @PreUpdate
-    public void preUpdate() { this.fechaActualizacion = LocalDateTime.now(); }
+    public void preUpdate() { this.fechaActualizacion = LocalDateTime.now(Constants.ZONA_CR); }
 }

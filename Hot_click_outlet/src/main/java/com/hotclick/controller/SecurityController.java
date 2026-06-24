@@ -1,4 +1,5 @@
 package com.hotclick.controller;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.model.IpBloqueada;
 import com.hotclick.model.SecurityAlert;
@@ -176,7 +177,7 @@ public class SecurityController {
         }
         SecurityAlert alert = opt.get();
         alert.setResolved(true);
-        alert.setResolvedAt(LocalDateTime.now());
+        alert.setResolvedAt(LocalDateTime.now(Constants.ZONA_CR));
         alertRepo.save(alert);
         log.info("[SEC] Alert {} resolved", id);
 
@@ -248,8 +249,8 @@ public class SecurityController {
 
     @GetMapping("/sesiones-activas")
     public ResponseEntity<Map<String, Object>> getSesionesActivas() {
-        LocalDateTime hace30m = LocalDateTime.now().minusMinutes(30);
-        LocalDateTime hace24h = LocalDateTime.now().minusHours(24);
+        LocalDateTime hace30m = LocalDateTime.now(Constants.ZONA_CR).minusMinutes(30);
+        LocalDateTime hace24h = LocalDateTime.now(Constants.ZONA_CR).minusHours(24);
         long activas30m = auditRepo.countDistinctActiveUsers(hace30m);
         long activas24h = auditRepo.countDistinctActiveUsers(hace24h);
         Map<String, Object> resp = new LinkedHashMap<>();
@@ -309,7 +310,7 @@ public class SecurityController {
         bloqueo.setIpAddress(ip.trim());
         bloqueo.setMotivo(motivo);
         bloqueo.setBloqueadaPor(quien);
-        bloqueo.setFechaBloqueo(LocalDateTime.now());
+        bloqueo.setFechaBloqueo(LocalDateTime.now(Constants.ZONA_CR));
         bloqueo.setActiva(true);
         ipBloqueadaRepo.save(bloqueo);
         log.warn("[SEC] IP bloqueada: {} por {}", ip, quien);
@@ -339,7 +340,7 @@ public class SecurityController {
         response.setContentType("text/csv; charset=UTF-8");
         response.setHeader("Content-Disposition",
             "attachment; filename=\"security-log-" +
-            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmm")) + ".csv\"");
+            LocalDateTime.now(Constants.ZONA_CR).format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmm")) + ".csv\"");
 
         PrintWriter w = response.getWriter();
         w.println("timestamp,tipo,severidad,ip,email,endpoint,userAgent");
@@ -365,12 +366,12 @@ public class SecurityController {
 
     private LocalDateTime periodToDateTime(String period) {
         return switch (period) {
-            case "1h"  -> LocalDateTime.now().minusHours(1);
-            case "24h" -> LocalDateTime.now().minusHours(24);
-            case "7d"  -> LocalDateTime.now().minusDays(7);
-            case "30d" -> LocalDateTime.now().minusDays(30);
-            case "90d" -> LocalDateTime.now().minusDays(90);
-            default    -> LocalDateTime.now().minusHours(24);
+            case "1h"  -> LocalDateTime.now(Constants.ZONA_CR).minusHours(1);
+            case "24h" -> LocalDateTime.now(Constants.ZONA_CR).minusHours(24);
+            case "7d"  -> LocalDateTime.now(Constants.ZONA_CR).minusDays(7);
+            case "30d" -> LocalDateTime.now(Constants.ZONA_CR).minusDays(30);
+            case "90d" -> LocalDateTime.now(Constants.ZONA_CR).minusDays(90);
+            default    -> LocalDateTime.now(Constants.ZONA_CR).minusHours(24);
         };
     }
 }

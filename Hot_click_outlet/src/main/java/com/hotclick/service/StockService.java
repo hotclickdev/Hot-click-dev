@@ -128,7 +128,7 @@ public class StockService {
             producto.setVisibleCatalogo(false);
             producto.setDestacado(false);
             if (producto.getFechaAgotado() == null) {
-                producto.setFechaAgotado(java.time.LocalDateTime.now());
+                producto.setFechaAgotado(LocalDateTime.now(Constants.ZONA_CR));
             }
         }
         productoRepository.save(producto);
@@ -213,7 +213,7 @@ public class StockService {
         m.setStockReservadoDespues(resDespues);
         m.setReferencia(referencia);
         m.setOperadorCorreo(operadorCorreo);
-        m.setFechaMovimiento(LocalDateTime.now());
+        m.setFechaMovimiento(LocalDateTime.now(Constants.ZONA_CR));
         return m;
     }
 

@@ -1,4 +1,5 @@
 package com.hotclick.scheduler;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.repository.IpBloqueadaRepository;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -66,7 +67,7 @@ public class DataRetentionScheduler {
 
     private int limpiarAuditoriaSeguridad() {
         try {
-            LocalDateTime corte = LocalDateTime.now().minusDays(90);
+            LocalDateTime corte = LocalDateTime.now(Constants.ZONA_CR).minusDays(90);
             int n = jdbc.update(
                 "DELETE FROM hot_click_auditoria_admin_tb " +
                 "WHERE ctid IN (SELECT ctid FROM hot_click_auditoria_admin_tb WHERE fecha < ? LIMIT 500)",
@@ -81,7 +82,7 @@ public class DataRetentionScheduler {
     }
 
     private int limpiarCarritosExpirados() {
-        LocalDateTime corte = LocalDateTime.now().minusDays(30);
+        LocalDateTime corte = LocalDateTime.now(Constants.ZONA_CR).minusDays(30);
         int n = jdbc.update(
             "DELETE FROM hot_click_carrito_abandonado_tb " +
             "WHERE ctid IN (" +
@@ -95,7 +96,7 @@ public class DataRetentionScheduler {
     }
 
     private int limpiarMensajesAi() {
-        LocalDateTime corte = LocalDateTime.now().minusDays(30);
+        LocalDateTime corte = LocalDateTime.now(Constants.ZONA_CR).minusDays(30);
         int total = 0, n;
         // do/while: vacía el backlog completo aunque supere 500 filas acumuladas
         do {
@@ -110,7 +111,7 @@ public class DataRetentionScheduler {
     }
 
     private int limpiarWebhookEvents() {
-        LocalDateTime corte = LocalDateTime.now().minusDays(90);
+        LocalDateTime corte = LocalDateTime.now(Constants.ZONA_CR).minusDays(90);
         int n = jdbc.update(
             "DELETE FROM hot_click_webhook_event_tb WHERE ctid IN (" +
             "  SELECT ctid FROM hot_click_webhook_event_tb " +
@@ -129,13 +130,13 @@ public class DataRetentionScheduler {
     }
 
     private int limpiarShedlockViejos() {
-        LocalDateTime corte = LocalDateTime.now().minusDays(7);
+        LocalDateTime corte = LocalDateTime.now(Constants.ZONA_CR).minusDays(7);
         int n = jdbc.update("DELETE FROM shedlock WHERE lock_until < ?", corte);
         return n;
     }
 
     private int limpiarColaFacturacionOffline() {
-        LocalDateTime corte = LocalDateTime.now().minusDays(30);
+        LocalDateTime corte = LocalDateTime.now(Constants.ZONA_CR).minusDays(30);
         int n = jdbc.update(
             "DELETE FROM hot_click_cola_facturacion_offline_tb WHERE ctid IN (" +
             "  SELECT ctid FROM hot_click_cola_facturacion_offline_tb " +
@@ -148,7 +149,7 @@ public class DataRetentionScheduler {
 
     private int expirarIpsBloqueadas() {
         try {
-            var expiradas = ipBloqueadaRepo.findByActivaTrueAndExpiresAtBefore(LocalDateTime.now());
+            var expiradas = ipBloqueadaRepo.findByActivaTrueAndExpiresAtBefore(LocalDateTime.now(Constants.ZONA_CR));
             if (expiradas.isEmpty()) return 0;
             expiradas.forEach(ip -> ip.setActiva(false));
             ipBloqueadaRepo.saveAll(expiradas);
@@ -161,7 +162,7 @@ public class DataRetentionScheduler {
     }
 
     private int limpiarSesionesChatAsistente() {
-        LocalDateTime corte = LocalDateTime.now().minusDays(30);
+        LocalDateTime corte = LocalDateTime.now(Constants.ZONA_CR).minusDays(30);
         // Los mensajes en hot_click_chat_mensaje_shopping_tb se eliminan automáticamente
         // por ON DELETE CASCADE definido en V63. Solo es necesario borrar la sesión padre.
         // do/while vacía el backlog completo si se acumularon más de 500 sesiones.

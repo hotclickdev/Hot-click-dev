@@ -56,7 +56,7 @@ public class CotizacionService {
         c.setEmpresa(empresa);
         c.setCliente(cliente);
         c.setNumeroCotizacion(generarConsecutivo(empresaId));
-        c.setFechaEmision(dto.getFechaEmision() != null ? dto.getFechaEmision() : LocalDate.now());
+        c.setFechaEmision(dto.getFechaEmision() != null ? dto.getFechaEmision() : LocalDate.now(Constants.ZONA_CR));
         c.setFechaVencimiento(dto.getFechaVencimiento());
         c.setEstadoCotizacion(dto.getEstadoCotizacion() != null ? dto.getEstadoCotizacion() : Cotizacion.ESTADO_BORRADOR);
         c.setAplicaIva(Boolean.TRUE.equals(dto.getAplicaIva()));
@@ -125,8 +125,8 @@ public class CotizacionService {
         copia.setEmpresa(original.getEmpresa());
         copia.setCliente(original.getCliente());
         copia.setNumeroCotizacion(generarConsecutivo(empresaId));
-        copia.setFechaEmision(LocalDate.now());
-        copia.setFechaVencimiento(LocalDate.now().plusDays(30));
+        copia.setFechaEmision(LocalDate.now(Constants.ZONA_CR));
+        copia.setFechaVencimiento(LocalDate.now(Constants.ZONA_CR).plusDays(30));
         copia.setEstadoCotizacion(Cotizacion.ESTADO_BORRADOR);
         copia.setAplicaIva(original.getAplicaIva());
         copia.setPorcentajeIva(original.getPorcentajeIva());

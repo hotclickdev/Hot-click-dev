@@ -106,7 +106,7 @@ public class StripePaymentProvider implements PaymentProvider {
         evento.setEventoTipo("checkout.session.completed");
         evento.setPayloadRaw(rawBody);
         evento.setIpOrigen(ipOrigen);
-        evento.setFechaRecepcion(LocalDateTime.now());
+        evento.setFechaRecepcion(LocalDateTime.now(Constants.ZONA_CR));
         evento.setEstado(Constants.ESTADO_ACTIVO);
         webhookEventRepository.save(evento);
 
@@ -123,20 +123,20 @@ public class StripePaymentProvider implements PaymentProvider {
         if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
             log.info("[stripe] Checkout ya confirmado: sessionId={}", sessionId);
             evento.setProcesado(true);
-            evento.setProcesadoEn(LocalDateTime.now());
+            evento.setProcesadoEn(LocalDateTime.now(Constants.ZONA_CR));
             webhookEventRepository.save(evento);
             return;
         }
 
         pago.setEstadoPago(Constants.PAGO_CAPTURADO);
         pago.setMetodoPagoTipo("STRIPE");
-        pago.setFechaActualizacion(LocalDateTime.now());
+        pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
         pagoRepository.save(pago);
 
         paymentService.confirmarPedido(pago);
 
         evento.setProcesado(true);
-        evento.setProcesadoEn(LocalDateTime.now());
+        evento.setProcesadoEn(LocalDateTime.now(Constants.ZONA_CR));
         webhookEventRepository.save(evento);
 
         log.info("[stripe] Checkout confirmado: sessionId={} pedido={}", sessionId, numeroPedido);

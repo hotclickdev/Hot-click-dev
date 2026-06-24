@@ -1,4 +1,5 @@
 package com.hotclick.service;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.model.SecurityAlert;
 import com.hotclick.repository.SecurityAlertRepository;
@@ -205,7 +206,7 @@ public class SecurityDetectionService {
             alert.setMessage(message);
             alert.setDetails(details);
             alert.setResolved(false);
-            alert.setCreatedAt(LocalDateTime.now());
+            alert.setCreatedAt(LocalDateTime.now(Constants.ZONA_CR));
             alertRepo.save(alert);
 
             log.warn("[SEC-ALERT] type={} severity={} ip={} userId={} msg={}",

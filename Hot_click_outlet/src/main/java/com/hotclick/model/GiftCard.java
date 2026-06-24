@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
@@ -41,12 +42,12 @@ public class GiftCard {
 
     @PrePersist
     void onCreate() {
-        fechaCreacion = LocalDateTime.now();
+        fechaCreacion = LocalDateTime.now(Constants.ZONA_CR);
     }
 
     @PreUpdate
     void onUpdate() {
-        fechaActualizacion = LocalDateTime.now();
+        fechaActualizacion = LocalDateTime.now(Constants.ZONA_CR);
     }
 
     public Long getId() { return id; }

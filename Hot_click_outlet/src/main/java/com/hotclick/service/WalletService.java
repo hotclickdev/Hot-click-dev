@@ -1,4 +1,5 @@
 package com.hotclick.service;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.model.PayoutRequest;
 import com.hotclick.model.Wallet;
@@ -225,7 +226,7 @@ public class WalletService {
         txPago = txRepo.save(txPago);
 
         pr.setEstado(PayoutRequest.PAGADO);
-        pr.setFechaPago(LocalDateTime.now());
+        pr.setFechaPago(LocalDateTime.now(Constants.ZONA_CR));
         pr.setNotasAdmin(notasAdmin);
         pr.setWalletTxPagoId(txPago.getId());
         pr = payoutRepo.save(pr);

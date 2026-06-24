@@ -78,7 +78,7 @@ public class CarritoService {
             .mapToInt(i -> i.getPrecioUnitarioMomento() * i.getCantidad())
             .sum();
         carrito.setTotalCarrito(total);
-        carrito.setFechaActualizacion(LocalDateTime.now());
+        carrito.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
 
         return carritoRepository.save(carrito);
     }
@@ -98,7 +98,7 @@ public class CarritoService {
 
         carrito.getItems().clear();
         carrito.setTotalCarrito(0);
-        carrito.setFechaActualizacion(LocalDateTime.now());
+        carrito.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
         carritoRepository.save(carrito);
     }
 
@@ -111,8 +111,8 @@ public class CarritoService {
         carrito.setUsuarioFinal(usuario);
         carrito.setEmpresa(empresa);
         carrito.setEstadoCarrito(Constants.CARRITO_ACTIVO);
-        carrito.setFechaCreacion(LocalDateTime.now());
-        carrito.setFechaActualizacion(LocalDateTime.now());
+        carrito.setFechaCreacion(LocalDateTime.now(Constants.ZONA_CR));
+        carrito.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
         carrito.setEstado(Constants.ESTADO_ACTIVO);
         return carritoRepository.save(carrito);
     }

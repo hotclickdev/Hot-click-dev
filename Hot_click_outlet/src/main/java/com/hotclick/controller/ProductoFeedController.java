@@ -82,7 +82,7 @@ public class ProductoFeedController {
         List<Producto>    productos  = productoRepository.findActivosVisibles();
         List<Categoria>   categorias = categoriaRepository.findByEstado(Constants.ESTADO_ACTIVO);
         List<BlogEntrada> articulos  = blogEntradaRepository.findByPublicadoTrueAndEstadoOrderByFechaPublicacionDesc(1);
-        String hoy = LocalDate.now().toString();
+        String hoy = LocalDate.now(Constants.ZONA_CR).toString();
 
         StringBuilder xml = new StringBuilder(2048 + (productos.size() + categorias.size()) * 200);
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");

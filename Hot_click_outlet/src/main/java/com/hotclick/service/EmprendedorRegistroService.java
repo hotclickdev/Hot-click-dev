@@ -78,7 +78,7 @@ public class EmprendedorRegistroService {
         empresa.setPlanSaas("GRATUITO");
         empresa.setEstadoEmpresa("PENDIENTE_APROBACION");
         empresa.setVisibilidadPublica(false);
-        empresa.setFechaRegistro(LocalDateTime.now());
+        empresa.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
         empresa.setEstado(Constants.ESTADO_ACTIVO);
         empresa = empresaRepository.save(empresa);
 
@@ -94,7 +94,7 @@ public class EmprendedorRegistroService {
         usuario.setCorreo(dto.getCorreoAdmin().trim().toLowerCase());
         usuario.setContrasenaHash(passwordEncoder.encode(dto.getPasswordAdmin()));
         usuario.setTelefono(dto.getTelefonoAdmin() != null ? dto.getTelefonoAdmin() : "00000000");
-        usuario.setFechaRegistro(LocalDateTime.now());
+        usuario.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
         usuario.setEstado(Constants.ESTADO_ACTIVO);
         usuario.setIntentosFallidos(0);
         usuario.setEmpresa(empresa);
@@ -163,7 +163,7 @@ public class EmprendedorRegistroService {
         empresa.setPlanSaas("GRATUITO");
         empresa.setEstadoEmpresa("PENDIENTE_APROBACION");
         empresa.setVisibilidadPublica(false);
-        empresa.setFechaRegistro(LocalDateTime.now());
+        empresa.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
         empresa.setEstado(Constants.ESTADO_ACTIVO);
         if (cedulaJuridica != null && !cedulaJuridica.isBlank()) {
             empresa.setCedulaJuridica(cedulaJuridica.trim());
@@ -171,7 +171,7 @@ public class EmprendedorRegistroService {
             empresa.setRegimenTributario(regimenTributario);
             empresa.setNombreHacienda(nombreHacienda);
             if (Boolean.TRUE.equals(inscritoHacienda)) {
-                empresa.setFechaVerificacionHacienda(LocalDateTime.now());
+                empresa.setFechaVerificacionHacienda(LocalDateTime.now(Constants.ZONA_CR));
             }
         }
         empresa = empresaRepository.save(empresa);

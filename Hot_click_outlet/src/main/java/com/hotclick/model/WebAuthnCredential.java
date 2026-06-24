@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -35,7 +36,7 @@ public class WebAuthnCredential {
     private String deviceName;
 
     @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt = LocalDateTime.now(Constants.ZONA_CR);
 
     @Column(name = "last_used_at")
     private LocalDateTime lastUsedAt;

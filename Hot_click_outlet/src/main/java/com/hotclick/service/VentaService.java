@@ -163,7 +163,7 @@ public class VentaService {
     private void convertirCarrito(Long carritoId, String numeroPedido) {
         carritoRepository.findById(carritoId).ifPresent(carrito -> {
             carrito.setEstadoCarrito(Constants.CARRITO_CONVERTIDO);
-            carrito.setFechaActualizacion(LocalDateTime.now());
+            carrito.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
             carrito.getItems().clear();
             carrito.setTotalCarrito(0);
             carritoRepository.save(carrito);

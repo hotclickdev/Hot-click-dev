@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
@@ -32,7 +33,7 @@ public class OrdenCompra {
     private Usuario usuario;
 
     @Column(name = "fecha_orden", nullable = false)
-    private LocalDateTime fechaOrden = LocalDateTime.now();
+    private LocalDateTime fechaOrden = LocalDateTime.now(Constants.ZONA_CR);
 
     @Column(name = "fecha_recepcion")
     private LocalDateTime fechaRecepcion;

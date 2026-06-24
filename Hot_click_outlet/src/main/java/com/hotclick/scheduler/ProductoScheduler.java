@@ -1,4 +1,5 @@
 package com.hotclick.scheduler;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.repository.ProductoRepository;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -24,7 +25,7 @@ public class ProductoScheduler {
     @SchedulerLock(name = "productos_inactivos", lockAtMostFor = "PT30M", lockAtLeastFor = "PT5M")
     @Transactional
     public void ocultarProductosAgotadosViejos() {
-        LocalDateTime hace3Meses = LocalDateTime.now().minusMonths(3);
+        LocalDateTime hace3Meses = LocalDateTime.now(Constants.ZONA_CR).minusMonths(3);
         int actualizados = productoRepository.inactivarProductosAgotadosAntesDe(hace3Meses);
         if (actualizados > 0) {
             log.info("Scheduler: {} producto(s) agotado(s) hace más de 3 meses marcados como inactivos", actualizados);

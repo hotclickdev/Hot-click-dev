@@ -228,7 +228,7 @@ public class StorefrontController {
 
         // 4. Construir pedido
         pedido.setNumeroPedido(Constants.generarNumeroPedido("ORD-"));
-        pedido.setFechaPedido(LocalDateTime.now());
+        pedido.setFechaPedido(LocalDateTime.now(Constants.ZONA_CR));
         pedido.setEmpresa(empresa);
         pedido.setUsuarioFinal(usuario);
         pedido.setBodega(bodega);
@@ -302,7 +302,7 @@ public class StorefrontController {
         u.setTelefono(telefono != null && !telefono.isBlank()
             ? telefono.replaceAll("[^0-9]", "") : "00000000");
         u.setContrasenaHash(passwordEncoder.encode(UUID.randomUUID().toString()));
-        u.setFechaRegistro(LocalDateTime.now());
+        u.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
         u.setEstado(Constants.ESTADO_ACTIVO);
         rolRepository.findByNombreRol(Constants.ROL_USUARIO_FINAL)
             .ifPresent(rol -> u.setRoles(List.of(rol)));

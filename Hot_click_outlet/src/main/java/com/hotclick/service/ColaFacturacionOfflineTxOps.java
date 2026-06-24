@@ -1,4 +1,5 @@
 package com.hotclick.service;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.model.ColaFacturacionOffline;
 import com.hotclick.model.ComprobanteFiscal;
@@ -67,7 +68,7 @@ public class ColaFacturacionOfflineTxOps {
     public void marcarCompletado(Long colaId, Long comprobanteId) {
         colaRepo.findById(colaId).ifPresent(item -> {
             item.setEstado(ColaFacturacionOffline.ESTADO_COMPLETADO);
-            item.setFechaCompletado(LocalDateTime.now());
+            item.setFechaCompletado(LocalDateTime.now(Constants.ZONA_CR));
             colaRepo.save(item);
         });
         // ENVIADO (no ACEPTADO): Hacienda procesa async. El polling normal de
@@ -93,7 +94,7 @@ public class ColaFacturacionOfflineTxOps {
             } else {
                 long backoffMin = Math.min(intentos * BACKOFF_MINUTOS_POR_INTENTO, BACKOFF_MINUTOS_MAX);
                 item.setEstado(ColaFacturacionOffline.ESTADO_PENDIENTE);
-                item.setFechaProximoIntento(LocalDateTime.now().plusMinutes(backoffMin));
+                item.setFechaProximoIntento(LocalDateTime.now(Constants.ZONA_CR).plusMinutes(backoffMin));
             }
             colaRepo.save(item);
         });

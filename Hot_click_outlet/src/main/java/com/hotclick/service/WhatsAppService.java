@@ -1,4 +1,5 @@
 package com.hotclick.service;
+nimport com.hotclick.utils.Constants;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -113,7 +114,7 @@ public class WhatsAppService {
         if (u == null || u.getTelefono() == null) return;
 
         long dias = u.getFechaUltimoAcceso() != null
-            ? ChronoUnit.DAYS.between(u.getFechaUltimoAcceso(), LocalDateTime.now())
+            ? ChronoUnit.DAYS.between(u.getFechaUltimoAcceso(), LocalDateTime.now(Constants.ZONA_CR))
             : 60;
 
         Map<String, String> ctx = new LinkedHashMap<>();

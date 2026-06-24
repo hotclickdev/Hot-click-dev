@@ -1,4 +1,5 @@
 package com.hotclick.controller;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.dto.OrdenCompraDTO;
 import com.hotclick.dto.ResponseDTO;
@@ -66,7 +67,7 @@ public class OrdenCompraController {
 
             OrdenCompra orden = new OrdenCompra();
             orden.setNumeroOrden(com.hotclick.utils.Constants.generarNumeroPedido("OC-"));
-            orden.setFechaOrden(LocalDateTime.now());
+            orden.setFechaOrden(LocalDateTime.now(Constants.ZONA_CR));
             orden.setEstado("PENDIENTE");
 
             empresaRepository.findById(empresaId).ifPresent(orden::setEmpresa);
@@ -172,7 +173,7 @@ public class OrdenCompraController {
             boolean todoRecibido = orden.getItems().stream()
                 .allMatch(i -> i.getCantidadRecibida() >= i.getCantidad());
             orden.setEstado(todoRecibido ? "RECIBIDA" : "PARCIAL");
-            if (todoRecibido) orden.setFechaRecepcion(LocalDateTime.now());
+            if (todoRecibido) orden.setFechaRecepcion(LocalDateTime.now(Constants.ZONA_CR));
 
             OrdenCompra saved = ordenCompraRepository.save(orden);
             return ResponseEntity.ok(ResponseDTO.success("Recepción registrada", saved));

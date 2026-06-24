@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -35,7 +36,7 @@ public class SplitPago {
 
     @PrePersist
     void onCreate() {
-        fechaPago = LocalDateTime.now();
+        fechaPago = LocalDateTime.now(Constants.ZONA_CR);
     }
 
     public Long getId() { return id; }

@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -24,7 +25,7 @@ public class Wallet {
     private Long totalRetirado = 0L;
 
     @Column(name = "ultima_actualizacion", nullable = false)
-    private LocalDateTime ultimaActualizacion = LocalDateTime.now();
+    private LocalDateTime ultimaActualizacion = LocalDateTime.now(Constants.ZONA_CR);
 
     public Long getEmpresaId()          { return empresaId; }
     public void setEmpresaId(Long v)    { this.empresaId = v; }

@@ -1,4 +1,5 @@
 package com.hotclick.service;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.model.Cupon;
 import com.hotclick.model.Empresa;
@@ -50,7 +51,7 @@ public class CuponService {
         cupon.setEmpresa(empresa);
         cupon.setDescuentoPorcentaje(13);
         cupon.setUsado(false);
-        cupon.setFechaCreacion(LocalDateTime.now());
+        cupon.setFechaCreacion(LocalDateTime.now(Constants.ZONA_CR));
         cuponRepository.save(cupon);
 
         notificacionEmailService.enviarCuponBienvenida(emailLower, codigo);
@@ -83,7 +84,7 @@ public class CuponService {
     @Transactional
     public boolean marcarUsado(String codigo) {
         String codigoUpper = codigo.trim().toUpperCase();
-        int actualizados = cuponRepository.incrementarUsoSiDisponible(codigoUpper, LocalDateTime.now());
+        int actualizados = cuponRepository.incrementarUsoSiDisponible(codigoUpper, LocalDateTime.now(Constants.ZONA_CR));
         if (actualizados == 0) {
             return false; // Ya estaba en el límite
         }
@@ -95,7 +96,7 @@ public class CuponService {
     @Transactional
     public boolean marcarUsado(String codigo, Long empresaId) {
         String codigoUpper = codigo.trim().toUpperCase();
-        int actualizados = cuponRepository.incrementarUsoSiDisponiblePorEmpresa(codigoUpper, empresaId, LocalDateTime.now());
+        int actualizados = cuponRepository.incrementarUsoSiDisponiblePorEmpresa(codigoUpper, empresaId, LocalDateTime.now(Constants.ZONA_CR));
         if (actualizados == 0) {
             return false;
         }

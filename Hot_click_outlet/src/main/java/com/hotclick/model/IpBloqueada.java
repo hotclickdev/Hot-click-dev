@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -22,7 +23,7 @@ public class IpBloqueada {
     private String bloqueadaPor;
 
     @Column(name = "fecha_bloqueo", nullable = false)
-    private LocalDateTime fechaBloqueo = LocalDateTime.now();
+    private LocalDateTime fechaBloqueo = LocalDateTime.now(Constants.ZONA_CR);
 
     @Column(name = "expires_at")
     private LocalDateTime expiresAt;

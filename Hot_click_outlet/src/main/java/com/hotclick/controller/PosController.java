@@ -73,7 +73,7 @@ public class PosController {
             // ── Construir pedido ──────────────────────────────────────────
             Pedido pedido = new Pedido();
             pedido.setNumeroPedido(com.hotclick.utils.Constants.generarNumeroPedido("POS-"));
-            pedido.setFechaPedido(LocalDateTime.now());
+            pedido.setFechaPedido(LocalDateTime.now(Constants.ZONA_CR));
             pedido.setUsuarioFinal(cliente);
             pedido.setBodega(bodega);
             pedido.setEmpresa(empresa);

@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -28,7 +29,7 @@ public class Convenio {
     private Boolean activo = true;
 
     @Column(name = "fecha_registro", nullable = false)
-    private LocalDateTime fechaRegistro = LocalDateTime.now();
+    private LocalDateTime fechaRegistro = LocalDateTime.now(Constants.ZONA_CR);
 
     @Column(name = "estado", nullable = false)
     private Integer estado = 1;

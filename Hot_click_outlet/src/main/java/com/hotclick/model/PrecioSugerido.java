@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -41,7 +42,7 @@ public class PrecioSugerido {
     private Integer precioSugeridoFinal;
 
     @Column(name = "fecha_extraccion", nullable = false)
-    private LocalDateTime fechaExtraccion = LocalDateTime.now();
+    private LocalDateTime fechaExtraccion = LocalDateTime.now(Constants.ZONA_CR);
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

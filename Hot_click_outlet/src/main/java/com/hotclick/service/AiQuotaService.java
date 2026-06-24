@@ -1,4 +1,5 @@
 package com.hotclick.service;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.model.AiUso;
 import com.hotclick.model.Empresa;
@@ -45,7 +46,7 @@ public class AiQuotaService {
         if (limite < 0) return true;   // ilimitado
         if (limite == 0) return false;
 
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy = LocalDate.now(Constants.ZONA_CR);
         AiUso uso = aiUsoRepository.findByEmpresaIdAndAnioAndMes(
             empresaId, hoy.getYear(), hoy.getMonthValue()).orElse(null);
         int llamadas = (uso != null) ? uso.getLlamadas() : 0;
@@ -67,7 +68,7 @@ public class AiQuotaService {
         if (limite < 0) return true;   // ilimitado
         if (limite == 0) return false;
 
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy = LocalDate.now(Constants.ZONA_CR);
         List<Object[]> result = aiUsoRepository.reservarSlot(
             empresaId, hoy.getYear(), hoy.getMonthValue(), limite);
         return !result.isEmpty();
@@ -76,7 +77,7 @@ public class AiQuotaService {
     /** Incrementa contadores completos (llamadas + tokens). Usar cuando NO se usó verificarYReservar(). */
     @Transactional
     public void registrarUso(Long empresaId, int tokensEntrada, int tokensSalida) {
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy = LocalDate.now(Constants.ZONA_CR);
         aiUsoRepository.upsertIncrement(empresaId, hoy.getYear(), hoy.getMonthValue(),
             1, tokensEntrada, tokensSalida);
     }
@@ -84,7 +85,7 @@ public class AiQuotaService {
     /** Actualiza solo tokens IN/OUT después del call a Claude. Llamadas ya fue incrementado por verificarYReservar(). */
     @Transactional
     public void actualizarTokens(Long empresaId, int tokensEntrada, int tokensSalida) {
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy = LocalDate.now(Constants.ZONA_CR);
         aiUsoRepository.actualizarTokens(empresaId, hoy.getYear(), hoy.getMonthValue(),
             tokensEntrada, tokensSalida);
     }
@@ -93,7 +94,7 @@ public class AiQuotaService {
     @Transactional(readOnly = true)
     public Map<String, Object> getUsoMes(Long empresaId) {
         Empresa empresa = empresaRepository.findById(empresaId).orElse(null);
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy = LocalDate.now(Constants.ZONA_CR);
         AiUso uso = aiUsoRepository.findByEmpresaIdAndAnioAndMes(
             empresaId, hoy.getYear(), hoy.getMonthValue()).orElse(null);
 

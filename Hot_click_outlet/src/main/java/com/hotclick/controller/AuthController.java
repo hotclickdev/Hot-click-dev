@@ -327,7 +327,7 @@ public class AuthController {
             empresa.setTelefonoEmpresa(dto.getTelefonoEmpresa());
             empresa.setPlanSaas("GRATUITO");
             empresa.setEstadoEmpresa("PENDIENTE_APROBACION");
-            empresa.setFechaRegistro(LocalDateTime.now());
+            empresa.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
             empresa.setEstado(Constants.ESTADO_ACTIVO);
             empresa = empresaRepository.save(empresa);
 
@@ -398,7 +398,7 @@ public class AuthController {
         Usuario usuario = usuarioOpt.get();
 
         // [FIX-1] Verificar bloqueo por intentos fallidos antes de validar contraseña
-        if (usuario.getBloqueadoHasta() != null && LocalDateTime.now().isBefore(usuario.getBloqueadoHasta())) {
+        if (usuario.getBloqueadoHasta() != null && LocalDateTime.now(Constants.ZONA_CR).isBefore(usuario.getBloqueadoHasta())) {
             log.warn("Login bloqueado para {}: cuenta bloqueada hasta {}", request.getCorreo(), usuario.getBloqueadoHasta());
             try { securityAuditService.logLoginBlocked(request.getCorreo(), httpRequest); } catch (Exception ignored) {}
             return ResponseEntity.status(403).body(ResponseDTO.error(
@@ -608,7 +608,7 @@ public class AuthController {
 
             Usuario usuario = opt.get();
 
-            if (usuario.getBloqueadoHasta() != null && LocalDateTime.now().isBefore(usuario.getBloqueadoHasta())) {
+            if (usuario.getBloqueadoHasta() != null && LocalDateTime.now(Constants.ZONA_CR).isBefore(usuario.getBloqueadoHasta())) {
                 return ResponseEntity.status(403).body(ResponseDTO.error(
                     "Cuenta temporalmente bloqueada. Intentá más tarde."));
             }

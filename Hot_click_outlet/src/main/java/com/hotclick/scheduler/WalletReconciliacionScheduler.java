@@ -1,4 +1,5 @@
 package com.hotclick.scheduler;
+nimport com.hotclick.utils.Constants;
 
 import com.hotclick.model.WalletAcreditacionFallida;
 import com.hotclick.repository.WalletAcreditacionFallidaRepository;
@@ -54,7 +55,7 @@ public class WalletReconciliacionScheduler {
                    lockAtLeastFor = "PT30S")
     public void reintentarAcreditacionesFallidas() {
         List<WalletAcreditacionFallida> pendientes =
-            dlqRepo.findPendientesParaReintento(LocalDateTime.now());
+            dlqRepo.findPendientesParaReintento(LocalDateTime.now(Constants.ZONA_CR));
 
         if (pendientes.isEmpty()) return;
 

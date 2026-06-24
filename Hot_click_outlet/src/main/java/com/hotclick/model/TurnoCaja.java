@@ -1,4 +1,5 @@
 package com.hotclick.model;
+nimport com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -21,7 +22,7 @@ public class TurnoCaja {
     private Empresa empresa;
 
     @Column(name = "fecha_apertura", nullable = false)
-    private LocalDateTime fechaApertura = LocalDateTime.now();
+    private LocalDateTime fechaApertura = LocalDateTime.now(Constants.ZONA_CR);
 
     @Column(name = "fecha_cierre")
     private LocalDateTime fechaCierre;
