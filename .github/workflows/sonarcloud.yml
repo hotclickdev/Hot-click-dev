@@ -27,17 +27,13 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      # 3. Compilar Java + generar reporte de cobertura JaCoCo
-      #    -DskipTests=false corre los tests para tener cobertura real
-      #    Si no tenés tests, cambiá a -DskipTests=true
-      - name: Build Java y cobertura
-        run: |
-          cd Hot_click_outlet
-          ../maven/bin/mvn clean verify \
-            -DskipTests=true \
-            -Pcoverage \
-            --no-transfer-progress \
-            -Dspring.profiles.active=test
+      # 3. Instalar Maven del sistema (el maven/ local es Windows-only)
+      - name: Setup Maven
+        run: sudo apt-get install -y maven --quiet
+
+      # 4. Compilar Java (skip tests — solo necesitamos que compile para el escaneo)
+      - name: Build Java
+        run: mvn clean package -DskipTests --no-transfer-progress -f Hot_click_outlet/pom.xml
         env:
           DB_URL: jdbc:h2:mem:testdb
           DB_USERNAME: sa
@@ -45,7 +41,7 @@ jobs:
           JWT_SECRET: test-secret-for-ci-only-not-production
           SENTRY_DSN: ""
 
-      # 4. Escaneo SonarCloud
+      # 5. Escaneo SonarCloud
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
