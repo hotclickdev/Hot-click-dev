@@ -67,8 +67,8 @@ public class PayPalPaymentProvider implements PaymentProvider {
             SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null, new TrustManager[]{new X509TrustManager() {
                 public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
-                public void checkClientTrusted(X509Certificate[] c, String a) {}
-                public void checkServerTrusted(X509Certificate[] c, String a) {}
+                public void checkClientTrusted(X509Certificate[] c, String a) {} // NOSONAR — intencional, solo activo cuando paypal.ssl.skip-verify=true (dev/sandbox)
+                public void checkServerTrusted(X509Certificate[] c, String a) {} // NOSONAR — intencional, solo activo cuando paypal.ssl.skip-verify=true (dev/sandbox)
             }}, null);
             httpClient = HttpClient.newBuilder().sslContext(sslContext).build();
         } else {

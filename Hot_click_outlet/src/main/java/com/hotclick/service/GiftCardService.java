@@ -16,13 +16,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
+import java.security.SecureRandom;
 
 @Service
 public class GiftCardService {
 
     private static final String CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    private static final Random RNG   = new Random();
+    private static final SecureRandom RNG = new SecureRandom();
 
     @Autowired private GiftCardRepository giftCardRepository;
     @Autowired private SplitPagoRepository splitPagoRepository;

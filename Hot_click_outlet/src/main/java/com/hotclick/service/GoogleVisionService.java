@@ -4,15 +4,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import javax.net.ssl.*;
-import java.io.IOException;
-import java.net.*;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
 import java.util.*;
 
 @Service
@@ -85,32 +79,7 @@ public class GoogleVisionService {
     }
 
     private RestTemplate buildRestTemplate() {
-        try {
-            TrustManager[] trustAll = new TrustManager[]{
-                new X509TrustManager() {
-                    public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
-                    public void checkClientTrusted(X509Certificate[] c, String a) {}
-                    public void checkServerTrusted(X509Certificate[] c, String a) {}
-                }
-            };
-            SSLContext ctx = SSLContext.getInstance("TLS");
-            ctx.init(null, trustAll, new SecureRandom());
-            SSLSocketFactory sf = ctx.getSocketFactory();
-            return new RestTemplate(new SimpleClientHttpRequestFactory() {
-                @Override
-                protected HttpURLConnection openConnection(URL url, Proxy proxy) throws IOException {
-                    HttpURLConnection conn = super.openConnection(url, proxy);
-                    if (conn instanceof HttpsURLConnection hc) {
-                        hc.setSSLSocketFactory(sf);
-                        hc.setHostnameVerifier((h, s) -> true);
-                    }
-                    return conn;
-                }
-            });
-        } catch (Exception e) {
-            log.warn("SSL trust-all falló, usando RestTemplate estándar: {}", e.getMessage());
-            return new RestTemplate();
-        }
+        return new RestTemplate();
     }
 
     @SuppressWarnings("unchecked")
