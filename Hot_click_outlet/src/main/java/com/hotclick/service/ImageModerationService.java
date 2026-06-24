@@ -3,6 +3,7 @@ package com.hotclick.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -32,6 +33,12 @@ public class ImageModerationService {
     @Value("${google.vision.api-key:}")
     private String apiKey;
 
+    private final RestTemplate restTemplate;
+
+    public ImageModerationService(RestTemplateBuilder builder) {
+        this.restTemplate = builder.build();
+    }
+
     public record ModerationResult(boolean safe, String reason) {}
 
     /**
@@ -54,7 +61,6 @@ public class ImageModerationService {
             return new ModerationResult(true, null);
         }
         try {
-            RestTemplate rt = buildRestTemplate();
             String url = String.format(VISION_URL, apiKey);
 
             Map<String, Object> body = Map.of("requests", List.of(
@@ -66,7 +72,7 @@ public class ImageModerationService {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            ResponseEntity<Map> response = rt.exchange(
+            ResponseEntity<Map> response = restTemplate.exchange(
                 url, HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
 
             return parseSafeSearch(response.getBody());
@@ -110,7 +116,4 @@ public class ImageModerationService {
         return idx < 0 ? 0 : idx;
     }
 
-    private RestTemplate buildRestTemplate() {
-        return new RestTemplate();
-    }
 }

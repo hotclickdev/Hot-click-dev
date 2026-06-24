@@ -3,6 +3,7 @@ package com.hotclick.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -19,13 +20,18 @@ public class GoogleVisionService {
     @Value("${google.vision.api-key:}")
     private String apiKey;
 
+    private final RestTemplate restTemplate;
+
+    public GoogleVisionService(RestTemplateBuilder builder) {
+        this.restTemplate = builder.build();
+    }
+
     public VisionResult analizar(String imagenBase64) {
         if (apiKey == null || apiKey.isBlank()) {
             log.debug("[Vision] google.vision.api-key no configurada — devolviendo resultado vacío");
             return new VisionResult();
         }
         try {
-            RestTemplate rt = buildRestTemplate();
             String url = String.format(VISION_URL, apiKey);
 
             Map<String, Object> imageContent = Map.of("content", imagenBase64);
@@ -40,7 +46,7 @@ public class GoogleVisionService {
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
 
-            ResponseEntity<Map> response = rt.exchange(url, HttpMethod.POST, entity, Map.class);
+            ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
             return parseResponse(response.getBody());
         } catch (Exception e) {
             log.warn("Vision API no disponible, continuando sin resultados web: {}", e.getMessage());
@@ -61,7 +67,7 @@ public class GoogleVisionService {
             ));
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            ResponseEntity<Map> response = buildRestTemplate().exchange(
+            ResponseEntity<Map> response = restTemplate.exchange(
                 url, HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
             Map<?, ?> respBody = response.getBody();
             if (respBody == null) return "";
@@ -76,10 +82,6 @@ public class GoogleVisionService {
             log.debug("OCR no disponible para imagen: {}", e.getMessage());
             return "";
         }
-    }
-
-    private RestTemplate buildRestTemplate() {
-        return new RestTemplate();
     }
 
     @SuppressWarnings("unchecked")
