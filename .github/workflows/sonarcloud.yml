@@ -27,19 +27,17 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      # 3. Setup pnpm (para frontend)
+      # 3. Setup Node.js 22 (requerido por pnpm v11)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # 4. Setup pnpm
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 11
-
-      # 4. Setup Node.js
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-          cache-dependency-path: Hot_click_outlet/frontend/pnpm-lock.yaml
 
       # 5. Compilar Java + generar reporte de cobertura JaCoCo
       #    -DskipTests=false corre los tests para tener cobertura real
