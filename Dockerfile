@@ -3,7 +3,7 @@
 FROM maven:3.9-eclipse-temurin-21 AS builder
 WORKDIR /build
 COPY Hot_click_outlet/pom.xml .
-RUN mvn dependency:go-offline -q
+RUN mvn dependency:resolve -q
 COPY Hot_click_outlet/src ./src
 RUN mvn clean package -Dmaven.test.skip=true -q
 
