@@ -2,7 +2,6 @@ package com.hotclick.controller;
 
 import com.hotclick.service.TelegramService;
 import com.hotclick.service.IncidentRemediationService;
-import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,16 +18,18 @@ public class WebhookController {
 
     private final TelegramService telegramService;
     private final IncidentRemediationService remediationService;
+    private final String uptimeWebhookSecret;
+    private final String sentryWebhookSecret;
 
-    @Value("${uptime.webhook-secret:}")
-    private String uptimeWebhookSecret;
-
-    @Value("${sentry.webhook-secret:}")
-    private String sentryWebhookSecret;
-
-    public WebhookController(TelegramService telegramService, IncidentRemediationService remediationService) {
+    public WebhookController(
+            TelegramService telegramService,
+            IncidentRemediationService remediationService,
+            @Value("${uptime.webhook-secret:}") String uptimeWebhookSecret,
+            @Value("${sentry.webhook-secret:}") String sentryWebhookSecret) {
         this.telegramService = telegramService;
         this.remediationService = remediationService;
+        this.uptimeWebhookSecret = uptimeWebhookSecret;
+        this.sentryWebhookSecret = sentryWebhookSecret;
     }
 
     @PostMapping("/uptime")
@@ -40,18 +41,17 @@ public class WebhookController {
             @RequestParam(required = false) String alertDetails) {
 
         if (!uptimeWebhookSecret.isBlank() && !uptimeWebhookSecret.equals(secret)) {
-            log.warn("Webhook UptimeRobot: secret inválido");
+            log.warn("Webhook UptimeRobot: secret invalido");
             return ResponseEntity.status(401).body(Map.of("error", "unauthorized"));
         }
 
         boolean caido = "1".equals(alertType);
-        String icono = caido ? "🔴" : "✅";
-        String estado = caido ? "SERVIDOR CAÍDO" : "SERVIDOR RECUPERADO";
+        String estado = caido ? "[ALERTA] SERVIDOR CAIDO" : "[OK] SERVIDOR RECUPERADO";
         String mensaje = String.format(
-                "%s *%s*\n\n*Detectado por:* UptimeRobot\n*Monitor:* %s\n*URL:* %s\n%s",
-                icono, estado,
-                monitorFriendlyName != null ? monitorFriendlyName : "—",
-                monitorURL != null ? monitorURL : "—",
+                "*%s*\n\n*Detectado por:* UptimeRobot\n*Monitor:* %s\n*URL:* %s%s",
+                estado,
+                monitorFriendlyName != null ? monitorFriendlyName : "-",
+                monitorURL != null ? monitorURL : "-",
                 alertDetails != null && !alertDetails.isBlank() ? "\n*Detalle:* " + alertDetails : "");
 
         telegramService.enviar(mensaje);
@@ -65,7 +65,7 @@ public class WebhookController {
             @RequestBody(required = false) Map<String, Object> body) {
 
         if (!sentryWebhookSecret.isBlank() && !sentryWebhookSecret.equals(secret)) {
-            log.warn("Webhook Sentry: secret inválido");
+            log.warn("Webhook Sentry: secret invalido");
             return ResponseEntity.status(401).body(Map.of("error", "unauthorized"));
         }
 
@@ -81,20 +81,19 @@ public class WebhookController {
         String nivel  = String.valueOf(issue.getOrDefault("level", "error")).toUpperCase();
         String url    = String.valueOf(issue.getOrDefault("permalink", ""));
 
-        String icono = "fatal".equalsIgnoreCase(nivel) || "error".equalsIgnoreCase(nivel) ? "🔴" : "⚠️";
+        String prefijo = "FATAL".equals(nivel) || "ERROR".equals(nivel) ? "[ERROR]" : "[WARNING]";
         String mensaje = String.format(
-                "%s *ERROR EN PRODUCCIÓN*\n\n*Detectado por:* Sentry\n*Nivel:* %s\n*Problema:* %s\n%s",
-                icono, nivel.toUpperCase(), titulo,
+                "%s *ERROR EN PRODUCCION*\n\n*Detectado por:* Sentry\n*Nivel:* %s\n*Problema:* %s%s",
+                prefijo, nivel, titulo,
                 url.isBlank() ? "" : "\n*Ver en Sentry:* " + url);
 
         telegramService.enviar(mensaje);
 
-        // Lanzar remediación automática en background (solo errores graves)
-        if ("fatal".equalsIgnoreCase(nivel) || "error".equalsIgnoreCase(nivel)) {
+        if ("FATAL".equals(nivel) || "ERROR".equals(nivel)) {
             String culprit = String.valueOf(issue.getOrDefault("culprit", ""));
             Object metaObj = issue.getOrDefault("metadata", Map.of());
             String stackTrace = "";
-            if (metaObj instanceof Map<?,?> m && m.containsKey("value")) {
+            if (metaObj instanceof Map<?, ?> m && m.containsKey("value")) {
                 stackTrace = String.valueOf(m.get("value"));
             }
             remediationService.remediar(titulo, nivel, culprit, url, stackTrace);
@@ -102,25 +101,5 @@ public class WebhookController {
 
         log.info("Webhook Sentry: action={} nivel={} titulo={}", action, nivel, titulo);
         return ResponseEntity.ok(Map.of("status", "ok"));
-    }
-
-    @PostMapping("/payxpert")
-    public ResponseEntity<Map<String, String>> recibirWebhookPayXpert(
-            @RequestBody(required = false) Object dto,
-            HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isBlank()) ip = request.getRemoteAddr();
-        log.warn("Webhook PayXpert recibido pero proveedor está ARCHIVADO — ip={}", ip);
-        return ResponseEntity.status(410).body(Map.of("status", "GONE", "message", "PayXpert archived"));
-    }
-
-    @PostMapping("/paypal")
-    public ResponseEntity<Map<String, String>> recibirWebhookPayPal(
-            @RequestBody(required = false) String rawBody,
-            HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isBlank()) ip = request.getRemoteAddr();
-        log.warn("Webhook PayPal recibido pero proveedor está ARCHIVADO — ip={}", ip);
-        return ResponseEntity.status(410).body(Map.of("status", "GONE", "message", "PayPal archived"));
     }
 }
