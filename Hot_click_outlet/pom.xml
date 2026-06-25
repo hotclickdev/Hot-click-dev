@@ -207,6 +207,20 @@
             <groupId>com.yubico</groupId>
             <artifactId>webauthn-server-core</artifactId>
             <version>2.5.4</version>
+            <exclusions>
+                <!-- yubico-util:2.5.4 tira jackson-dataformat-cbor:2.18.5 cuyo POM
+                     tiene una dep SNAPSHOT rota (jackson-databind:2.19.5-SNAPSHOT).
+                     Se excluye y se agrega abajo a 2.18.3 (versión de Spring Boot). -->
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.dataformat</groupId>
+                    <artifactId>jackson-dataformat-cbor</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-cbor</artifactId>
+            <version>2.18.3</version>
         </dependency>
 
         <!-- H2 para pruebas -->
