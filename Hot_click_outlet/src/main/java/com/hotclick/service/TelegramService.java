@@ -4,19 +4,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Map;
 
 @Service
 public class TelegramService {
 
     private static final Logger log = LoggerFactory.getLogger(TelegramService.class);
-    private static final String API_URL = "https://api.telegram.org/bot%s/sendMessage?chat_id=%s&text=%s&parse_mode=Markdown";
 
     @Value("${telegram.bot-token:}")
     private String botToken;
@@ -40,9 +41,18 @@ public class TelegramService {
             return;
         }
         try {
-            String encoded = URLEncoder.encode(mensaje, StandardCharsets.UTF_8);
-            String url = String.format(API_URL, botToken, chatId, encoded);
-            restTemplate.getForObject(url, String.class);
+            String url = "https://api.telegram.org/bot" + botToken + "/sendMessage";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            Map<String, String> body = Map.of(
+                    "chat_id", chatId,
+                    "text", mensaje,
+                    "parse_mode", "Markdown"
+            );
+
+            restTemplate.postForObject(url, new HttpEntity<>(body, headers), String.class);
             log.info("[telegram] mensaje enviado");
         } catch (Exception e) {
             log.error("[telegram] error al enviar — {}", e.getMessage());
