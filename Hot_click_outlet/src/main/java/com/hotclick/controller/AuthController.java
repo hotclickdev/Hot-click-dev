@@ -435,18 +435,8 @@ public class AuthController {
         usuarioService.actualizarUltimoAcceso(usuario.getId());
         try { securityAuditService.logLoginSuccess(usuario.getId(), usuario.getCorreo(), httpRequest); } catch (Exception ignored) {}
 
-        // ADMIN_IT debe tener 2FA activo — si no lo tiene, bloquear el login y forzar configuración
         boolean esAdminIT = usuario.getRoles().stream()
             .anyMatch(r -> Constants.ROL_ADMIN_IT.equals(r.getNombreRol()));
-        if (esAdminIT && !Boolean.TRUE.equals(usuario.getTwoFactorEnabled())) {
-            String tempToken = jwtUtil.generateTempToken(usuario.getCorreo(), usuario.getId());
-            return ResponseEntity.status(403).body(Map.of(
-                "success",        false,
-                "requires2faSetup", true,
-                "tempToken",      tempToken,
-                "message",        "Los administradores deben configurar 2FA antes de continuar. Usá la app Google Authenticator o Authy."
-            ));
-        }
 
         // ADMIN_IT con llave WebAuthn registrada → requerir autenticación WebAuthn como 2do factor
         if (esAdminIT && webAuthnService.tieneCredenciales(usuario.getCorreo())) {
