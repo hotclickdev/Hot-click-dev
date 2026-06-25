@@ -68,7 +68,55 @@ jobs:
         working-directory: Hot_click_outlet/frontend
         env:
           VITE_SENTRY_DSN: ""
-          VITE_POSTHOG_KEY: ""
-          VITE_POSTHOG_HOST: "https://app.posthog.com"
+          VITE_POSTHOG_PROJECT_TOKEN: ""
+          VITE_POSTHOG_HOST: "https://us.i.posthog.com"
           VITE_CLERK_PUBLISHABLE_KEY: pk_test_placeholder
           VITE_STRIPE_PUBLIC_KEY: pk_test_placeholder
+
+  auto-merge:
+    name: Auto-merge si CI pasa (hotfix)
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    if: success() && startsWith(github.head_ref, 'hotfix/')
+
+    steps:
+      - name: Merge PR automáticamente
+        run: |
+          PR_NUMBER=$(gh pr list --head "${{ github.head_ref }}" --json number -q '.[0].number')
+          if [ -n "$PR_NUMBER" ]; then
+            gh pr merge "$PR_NUMBER" --squash --auto --delete-branch
+            MESSAGE="✅ *Fix deployado automáticamente*
+
+*PR:* #$PR_NUMBER mergeado a master
+*Rama:* ${{ github.head_ref }}
+*CI:* Todos los tests pasaron"
+            curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+              -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+              -d text="$MESSAGE" \
+              -d parse_mode="Markdown"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify-failure:
+    name: Notificar fallo en Telegram
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    if: failure()
+
+    steps:
+      - name: Enviar alerta a Telegram
+        run: |
+          JOB_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          MESSAGE="❌ *FALLO EN CI/CD*
+
+*Detectado por:* GitHub Actions
+*Rama:* ${{ github.ref_name }}
+*Autor del commit:* ${{ github.actor }}
+*Commit:* \`${{ github.sha }}\`
+
+[Ver detalle del fallo]($JOB_URL)"
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d text="$MESSAGE" \
+            -d parse_mode="Markdown"

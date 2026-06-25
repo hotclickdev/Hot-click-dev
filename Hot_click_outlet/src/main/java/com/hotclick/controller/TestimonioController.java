@@ -26,6 +26,7 @@ public class TestimonioController {
     @Autowired private SupabaseStorageService supabaseStorageService;
     @Autowired private ImageModerationService moderationService;
     @Autowired private com.hotclick.service.TextModerationService textModerationService;
+    @Autowired private com.hotclick.service.TelegramService telegramService;
 
     /** Público — testimonios generales aprobados (comentarios de la web) */
     @GetMapping("/publicos")
@@ -103,6 +104,10 @@ public class TestimonioController {
             Integer calificacion = calObj instanceof Number n ? n.intValue() : null;
 
             var t = testimonioService.crearTestimonio(userDetails.getUsername(), comentario, imagenUrl, calificacion);
+            telegramService.enviar(String.format(
+                "💬 *NUEVO TESTIMONIO*\n\n*Usuario:* %s\n*Comentario:* %s",
+                userDetails.getUsername(),
+                comentario.length() > 200 ? comentario.substring(0, 200) + "..." : comentario));
             return ResponseEntity.ok(ResponseDTO.success("Testimonio enviado, pendiente de aprobación", t));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
@@ -137,6 +142,12 @@ public class TestimonioController {
             String imagenUrl = (String) body.get("imagenUrl");
 
             var t = testimonioService.crearResena(userDetails.getUsername(), comentario, imagenUrl, productoId, calificacion);
+            telegramService.enviar(String.format(
+                "⭐ *NUEVA RESEÑA*\n\n*Usuario:* %s\n*Producto ID:* %s\n*Calificación:* %s/5\n*Comentario:* %s",
+                userDetails.getUsername(),
+                productoId != null ? productoId : "—",
+                calificacion != null ? calificacion : "—",
+                comentario.length() > 200 ? comentario.substring(0, 200) + "..." : comentario));
             return ResponseEntity.ok(ResponseDTO.success("Reseña enviada, pendiente de aprobación", t));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));

@@ -43,6 +43,7 @@ public class PedidoService {
     @Autowired private BodegaRepository bodegaRepository;
     @Autowired private ProductoRepository productoRepository;
     @Autowired private ObjectMapper objectMapper;
+    @Autowired private TelegramService telegramService;
 
     @CacheEvict(value = "dashboard-metricas",
         key = "#pedido.empresa != null ? #pedido.empresa.id.toString() : 'global'")
@@ -54,7 +55,16 @@ public class PedidoService {
             pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
         }
         pedido.setEstado(Constants.ESTADO_ACTIVO);
-        return pedidoRepository.save(pedido);
+        Pedido saved = pedidoRepository.save(pedido);
+
+        String cliente = saved.getClienteNombre() != null ? saved.getClienteNombre()
+                : (saved.getUsuarioFinal() != null ? saved.getUsuarioFinal().getNombre() : "Invitado");
+        String metodo = saved.getMetodoPago() != null ? saved.getMetodoPago() : "—";
+        telegramService.enviar(String.format(
+                "🛒 *NUEVA COMPRA*\n\n*Cliente:* %s\n*Pedido:* %s\n*Total:* ₡%,d\n*Pago:* %s\n*Estado:* %s",
+                cliente, saved.getNumeroPedido(), saved.getTotalPedido() != null ? saved.getTotalPedido() : 0,
+                metodo, saved.getEstadoPedido()));
+        return saved;
     }
 
     @CacheEvict(value = "dashboard-metricas", key = "#empresa.id.toString()")

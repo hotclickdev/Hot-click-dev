@@ -43,6 +43,7 @@ export default function AdminDashboard() {
   const [ventas, setVentas] = useState([])
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
+  const [serverStatus, setServerStatus] = useState(null)
   const [setupDismissed, setSetupDismissed] = useState(() => {
     try { return localStorage.getItem(SETUP_KEY) === '1' } catch { return false }
   })
@@ -64,6 +65,22 @@ export default function AdminDashboard() {
       setVentas(Array.isArray(vs) ? vs : vs?.content ?? [])
       setUsers(Array.isArray(us) ? us : us?.content ?? [])
     }).finally(() => setLoading(false))
+  }, [userRole])
+
+  useEffect(() => {
+    if (userRole !== 'ADMIN_IT') return
+    const check = async () => {
+      try {
+        const t0 = Date.now()
+        const res = await fetch('/api/health')
+        setServerStatus({ up: res.ok, ms: Date.now() - t0 })
+      } catch {
+        setServerStatus({ up: false, ms: null })
+      }
+    }
+    check()
+    const interval = setInterval(check, 30000)
+    return () => clearInterval(interval)
   }, [userRole])
 
   const now = new Date()
@@ -495,6 +512,60 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+            {/* Sistema y herramientas — solo ADMIN_IT */}
+            {userRole === 'ADMIN_IT' && (
+              <div>
+                <h2 className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider mb-3">
+                  Sistema y herramientas
+                </h2>
+                <div className="bg-[#111114] border border-white/8 rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/8">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-2 h-2 rounded-full shrink-0 ${
+                          serverStatus === null
+                            ? 'bg-amber-400 animate-pulse'
+                            : serverStatus.up
+                              ? 'bg-emerald-400'
+                              : 'bg-red-400 animate-pulse'
+                        }`}
+                      />
+                      <span className="text-sm font-medium text-[#e8e8ed]">Servidor hotclick.lat</span>
+                    </div>
+                    <span className="text-xs text-[#8e8e9a]">
+                      {serverStatus === null
+                        ? 'Verificando...'
+                        : serverStatus.up
+                          ? `Operativo · ${serverStatus.ms}ms`
+                          : 'Sin respuesta'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[
+                      { label: 'Sentry',          desc: 'Errores en producción', href: 'https://sentry.io/',                                                                   color: '#f84f35' },
+                      { label: 'PostHog',         desc: 'Analytics y sesiones',  href: 'https://app.posthog.com/',                                                             color: '#f9bd2b' },
+                      { label: 'SonarCloud',      desc: 'Calidad de código',     href: 'https://sonarcloud.io/project/overview?id=hotclickdev_Hot-click-dev',                  color: '#f3702a' },
+                      { label: 'GitHub Actions',  desc: 'CI / CD',               href: 'https://github.com/hotclickdev/Hot-click-dev/actions',                                 color: '#4f7cff' },
+                    ].map(({ label, desc, href, color }) => (
+                      <a
+                        key={label}
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex flex-col gap-1.5 p-3 rounded-xl bg-white/3 border border-white/8 hover:border-white/15 hover:bg-white/5 transition-all group"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold" style={{ color }}>{label}</span>
+                          <ExternalLinkIcon className="w-3 h-3 text-[#8e8e9a] opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                        <span className="text-[10px] text-[#8e8e9a]">{desc}</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Recent sales table */}
             {ventas.length > 0 && (
               <div>
@@ -625,6 +696,15 @@ function BarChartIcon() {
       <line x1="12" y1="20" x2="12" y2="4" />
       <line x1="6" y1="20" x2="6" y2="14" />
       <line x1="2" y1="20" x2="22" y2="20" />
+    </svg>
+  )
+}
+function ExternalLinkIcon({ className }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+      <polyline points="15 3 21 3 21 9" />
+      <line x1="10" y1="14" x2="21" y2="3" />
     </svg>
   )
 }
