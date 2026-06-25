@@ -74,6 +74,16 @@
       "name": "voyage.api-key",
       "type": "java.lang.String",
       "description": "Voyage AI API key (pa-...) para generar embeddings del catálogo. Tier gratis: 200M tokens/mes. Obtener en https://dash.voyageai.com"
+    },
+    {
+      "name": "adminit.email",
+      "type": "java.lang.String",
+      "description": "Correo del equipo ADMIN_IT para recibir notificaciones de nuevos pedidos. Configurar como variable de entorno ADMINIT_EMAIL. Vacío = sin notificación por email a admin."
+    },
+    {
+      "name": "adminit.telefono",
+      "type": "java.lang.String",
+      "description": "Número WhatsApp del equipo ADMIN_IT (formato 506XXXXXXXX) para recibir notificaciones de nuevos pedidos. Configurar como variable de entorno ADMINIT_TELEFONO. Vacío = sin WhatsApp a admin."
     }
   ]
 }

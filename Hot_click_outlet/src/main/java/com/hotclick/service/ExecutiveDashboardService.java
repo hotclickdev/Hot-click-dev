@@ -1,5 +1,5 @@
 package com.hotclick.service;
-nimport com.hotclick.utils.Constants;
+import com.hotclick.utils.Constants;
 
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Reporte;

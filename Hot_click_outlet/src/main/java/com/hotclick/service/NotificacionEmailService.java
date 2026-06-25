@@ -8,6 +8,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import java.text.NumberFormat;
@@ -31,6 +32,12 @@ public class NotificacionEmailService {
 
     @Autowired private ResendEmailService resendEmailService;
     @Autowired private WhatsAppService    whatsAppService;
+
+    @Value("${adminit.email:}")
+    private String adminItEmail;
+
+    @Value("${adminit.telefono:}")
+    private String adminItTelefono;
 
     /* ──────────────────────────── piezas compartidas ──────────────────────────── */
 
@@ -102,8 +109,16 @@ public class NotificacionEmailService {
                 log.error("No se pudo enviar email de confirmación para pedido {}: {}", pedido.getNumeroPedido(), e.getMessage());
             }
         }
-        // WhatsApp — en paralelo, falla silenciosamente
+        // WhatsApp al cliente — en paralelo, falla silenciosamente
         whatsAppService.enviarConfirmacionPedido(pedido);
+
+        // Notificaciones al emprendedor (email + WhatsApp)
+        enviarNuevoPedidoAEmprendedor(pedido);
+        whatsAppService.enviarNuevoPedidoAEmprendedor(pedido);
+
+        // Notificaciones al admin IT (email + WhatsApp)
+        enviarNuevoPedidoAAdminIT(pedido, adminItEmail);
+        whatsAppService.enviarNuevoPedidoAAdminIT(pedido, adminItTelefono);
     }
 
     @Async
@@ -438,6 +453,161 @@ public class NotificacionEmailService {
 
             + cta("https://hotclick.lat/checkout", "Intentar de nuevo")
             + footer("¿Necesitás ayuda con tu pago?");
+    }
+
+    /* ──────────────────────────── notificaciones internas (emprendedor + admin IT) ──────────────────────────── */
+
+    @Async
+    public void enviarNuevoPedidoAEmprendedor(Pedido pedido) {
+        if (pedido.getEmpresa() == null) return;
+        String correo = pedido.getEmpresa().getCorreoEmpresa();
+        if (correo == null || correo.isBlank()) return;
+        try {
+            resendEmailService.send(
+                correo,
+                "Nueva venta — " + pedido.getNumeroPedido(),
+                buildNuevoPedidoEmprendedorHtml(pedido)
+            );
+            log.info("Email nueva venta enviado a emprendedor {} para pedido {}",
+                correo, pedido.getNumeroPedido());
+        } catch (Exception e) {
+            log.error("No se pudo enviar email nueva venta a emprendedor para pedido {}: {}",
+                pedido.getNumeroPedido(), e.getMessage());
+        }
+    }
+
+    @Async
+    public void enviarNuevoPedidoAAdminIT(Pedido pedido, String correoAdminIT) {
+        if (correoAdminIT == null || correoAdminIT.isBlank()) return;
+        try {
+            resendEmailService.send(
+                correoAdminIT,
+                "[ADMIN] Nuevo pedido — " + pedido.getNumeroPedido(),
+                buildNuevoPedidoAdminHtml(pedido)
+            );
+            log.info("Email nueva venta enviado a admin IT para pedido {}", pedido.getNumeroPedido());
+        } catch (Exception e) {
+            log.error("No se pudo enviar email nueva venta a admin IT para pedido {}: {}",
+                pedido.getNumeroPedido(), e.getMessage());
+        }
+    }
+
+    private String buildNuevoPedidoEmprendedorHtml(Pedido pedido) {
+        String nombreEmpresa = pedido.getEmpresa() != null
+            ? (pedido.getEmpresa().getNombreComercial() != null
+                ? pedido.getEmpresa().getNombreComercial()
+                : pedido.getEmpresa().getNombreEmpresa())
+            : "tu tienda";
+
+        StringBuilder rows = new StringBuilder();
+        if (pedido.getItems() != null) {
+            for (PedidoItem item : pedido.getItems()) {
+                String prod = item.getProducto() != null ? esc(item.getProducto().getNombreProducto()) : "Producto";
+                rows.append("<tr>")
+                    .append("<td style='padding:8px 0;border-bottom:1px solid #E4E7EC;font-size:13px;color:#14171C'>").append(prod).append("</td>")
+                    .append("<td style='padding:8px 0;border-bottom:1px solid #E4E7EC;text-align:center;font-size:13px;color:#4D5560'>×").append(item.getCantidad()).append("</td>")
+                    .append("<td style='padding:8px 0;border-bottom:1px solid #E4E7EC;text-align:right;font-size:13px;font-weight:700;color:#14171C'>₡").append(CRC.format(item.getSubtotalItem())).append("</td>")
+                    .append("</tr>");
+            }
+        }
+
+        String cliente = pedido.getUsuarioFinal() != null
+            ? esc(pedido.getUsuarioFinal().getNombre() + " — " + pedido.getUsuarioFinal().getCorreo())
+            : "Invitado";
+
+        String notasStr = pedido.getNotas() != null && !pedido.getNotas().isBlank()
+            ? "<div style='background:#FDF3DC;border:1px solid #EBD9A8;border-radius:10px;padding:12px 16px;margin-bottom:20px'>"
+                + "<p style='margin:0 0 4px;font-size:11px;font-weight:700;color:#9A6700;text-transform:uppercase'>Notas del cliente</p>"
+                + "<p style='margin:0;font-size:13px;color:#14171C'>" + esc(pedido.getNotas()) + "</p>"
+                + "</div>"
+            : "";
+
+        return abrirHtml()
+            + header("Nueva venta en " + esc(nombreEmpresa), "Pedido " + esc(pedido.getNumeroPedido()))
+            + abrirCuerpo()
+            + "<p style='margin:0 0 20px;color:#4D5560;font-size:14px'>Recibiste un nuevo pedido. Aquí está el resumen:</p>"
+
+            + "<div style='background:#EFF4FE;border:1px solid #C2D5F9;border-radius:12px;padding:14px 18px;margin-bottom:20px'>"
+            + "<div style='display:flex;justify-content:space-between;margin-bottom:6px'>"
+            + "<span style='color:#4D5560;font-size:13px'>Pedido</span>"
+            + "<span style=\"color:#14171C;font-weight:700;font-family:'IBM Plex Mono',monospace\">" + esc(pedido.getNumeroPedido()) + "</span>"
+            + "</div>"
+            + "<div style='display:flex;justify-content:space-between;margin-bottom:6px'>"
+            + "<span style='color:#4D5560;font-size:13px'>Cliente</span>"
+            + "<span style='color:#14171C;font-size:13px'>" + cliente + "</span>"
+            + "</div>"
+            + "<div style='display:flex;justify-content:space-between;margin-bottom:6px'>"
+            + "<span style='color:#4D5560;font-size:13px'>Método de pago</span>"
+            + "<span style='color:#14171C;font-size:13px'>" + esc(pedido.getMetodoPago() != null ? pedido.getMetodoPago() : "—") + "</span>"
+            + "</div>"
+            + "<div style='display:flex;justify-content:space-between'>"
+            + "<span style='color:#4D5560;font-size:13px'>Método de envío</span>"
+            + "<span style='color:#14171C;font-size:13px'>" + esc(pedido.getMetodoEnvio() != null ? pedido.getMetodoEnvio() : "—") + "</span>"
+            + "</div>"
+            + "</div>"
+
+            + "<table style='width:100%;border-collapse:collapse;margin-bottom:20px'>"
+            + "<thead><tr style='border-bottom:2px solid #E4E7EC'>"
+            + "<th style='padding:8px 0;text-align:left;font-size:11px;color:#9AA1AE;font-weight:600;text-transform:uppercase;letter-spacing:1px'>Producto</th>"
+            + "<th style='padding:8px 0;text-align:center;font-size:11px;color:#9AA1AE;font-weight:600;text-transform:uppercase'>Cant.</th>"
+            + "<th style='padding:8px 0;text-align:right;font-size:11px;color:#9AA1AE;font-weight:600;text-transform:uppercase;letter-spacing:1px'>Subtotal</th>"
+            + "</tr></thead><tbody>" + rows + "</tbody></table>"
+
+            + "<div style='background:#F8F9FB;border-radius:10px;padding:14px 18px;text-align:right;margin-bottom:20px'>"
+            + "<span style=\"color:#14171C;font-weight:800;font-size:18px;font-family:" + F_DISPLAY + "\">Total: ₡" + CRC.format(pedido.getTotalPedido()) + "</span>"
+            + "</div>"
+
+            + notasStr
+            + cta("https://hotclick.lat/admin/pedidos", "Ver pedido en el panel")
+            + footer("¿Tenés alguna pregunta sobre este pedido?");
+    }
+
+    private String buildNuevoPedidoAdminHtml(Pedido pedido) {
+        String nombreEmpresa = pedido.getEmpresa() != null
+            ? (pedido.getEmpresa().getNombreComercial() != null
+                ? pedido.getEmpresa().getNombreComercial()
+                : pedido.getEmpresa().getNombreEmpresa())
+            : "HotClick";
+
+        String cliente = pedido.getUsuarioFinal() != null
+            ? esc(pedido.getUsuarioFinal().getNombre()
+                + " &lt;" + pedido.getUsuarioFinal().getCorreo() + "&gt;"
+                + (pedido.getUsuarioFinal().getTelefono() != null ? " · " + pedido.getUsuarioFinal().getTelefono() : ""))
+            : "Invitado";
+
+        StringBuilder rows = new StringBuilder();
+        if (pedido.getItems() != null) {
+            for (PedidoItem item : pedido.getItems()) {
+                String prod = item.getProducto() != null ? esc(item.getProducto().getNombreProducto()) : "Producto";
+                rows.append("<tr>")
+                    .append("<td style='padding:6px 0;border-bottom:1px solid #E4E7EC;font-size:12px;color:#14171C'>").append(prod).append("</td>")
+                    .append("<td style='padding:6px 0;border-bottom:1px solid #E4E7EC;text-align:center;font-size:12px;color:#4D5560'>×").append(item.getCantidad()).append("</td>")
+                    .append("<td style='padding:6px 0;border-bottom:1px solid #E4E7EC;text-align:right;font-size:12px;font-weight:700;color:#14171C'>₡").append(CRC.format(item.getSubtotalItem())).append("</td>")
+                    .append("</tr>");
+            }
+        }
+
+        return abrirHtml()
+            + header("[ADMIN] Nuevo pedido", esc(pedido.getNumeroPedido()) + " · " + esc(nombreEmpresa))
+            + abrirCuerpo()
+            + "<div style='background:#F8F9FB;border:1px solid #E4E7EC;border-radius:12px;padding:14px 18px;margin-bottom:20px;font-size:13px'>"
+            + "<div style='margin-bottom:6px'><strong>Pedido:</strong> <span style=\"font-family:'IBM Plex Mono',monospace\">" + esc(pedido.getNumeroPedido()) + "</span></div>"
+            + "<div style='margin-bottom:6px'><strong>Empresa:</strong> " + esc(nombreEmpresa) + "</div>"
+            + "<div style='margin-bottom:6px'><strong>Cliente:</strong> " + cliente + "</div>"
+            + "<div style='margin-bottom:6px'><strong>Método de pago:</strong> " + esc(pedido.getMetodoPago() != null ? pedido.getMetodoPago() : "—") + "</div>"
+            + "<div style='margin-bottom:6px'><strong>Método de envío:</strong> " + esc(pedido.getMetodoEnvio() != null ? pedido.getMetodoEnvio() : "—") + "</div>"
+            + "<div><strong>Estado:</strong> " + esc(pedido.getEstadoPedido() != null ? pedido.getEstadoPedido() : "—") + "</div>"
+            + "</div>"
+            + "<table style='width:100%;border-collapse:collapse;margin-bottom:20px'>"
+            + "<tbody>" + rows + "</tbody></table>"
+            + "<div style='background:#F8F9FB;border-radius:10px;padding:12px 16px;text-align:right;margin-bottom:20px'>"
+            + "<span style=\"color:#14171C;font-weight:800;font-size:16px;font-family:" + F_DISPLAY + "\">Total: ₡" + CRC.format(pedido.getTotalPedido()) + "</span>"
+            + "</div>"
+            + (pedido.getNotas() != null && !pedido.getNotas().isBlank()
+                ? "<p style='font-size:12px;color:#4D5560;margin:0 0 20px'><strong>Notas:</strong> " + esc(pedido.getNotas()) + "</p>"
+                : "")
+            + cta("https://hotclick.lat/admin/pedidos", "Gestionar pedido")
+            + footer("Notificación automática del sistema HotClick.");
     }
 
     /* ──────────────────────────── marketing y cuentas ──────────────────────────── */

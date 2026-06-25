@@ -5,6 +5,7 @@ import './i18n'
 import App from './App.jsx'
 import { registerSW } from 'virtual:pwa-register'
 import * as Sentry from '@sentry/react'
+import posthog from 'posthog-js'
 
 if (import.meta.env.VITE_SENTRY_DSN) {
   Sentry.init({
@@ -12,6 +13,15 @@ if (import.meta.env.VITE_SENTRY_DSN) {
     environment: import.meta.env.MODE,
     tracesSampleRate: 0.1,
     integrations: [Sentry.browserTracingIntegration()],
+  })
+}
+
+if (import.meta.env.VITE_POSTHOG_KEY) {
+  posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
+    api_host: import.meta.env.VITE_POSTHOG_HOST || 'https://app.posthog.com',
+    capture_pageview: true,
+    capture_pageleave: true,
+    person_profiles: 'identified_only',
   })
 }
 

@@ -1,5 +1,5 @@
 package com.hotclick.dto;
-nimport com.hotclick.utils.Constants;
+import com.hotclick.utils.Constants;
 
 import java.time.LocalDateTime;
 

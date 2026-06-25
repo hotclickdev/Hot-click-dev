@@ -143,7 +143,45 @@ public enum WaPlantilla {
         """
     ),
 
-    // ── 5. REACTIVACIÓN (cliente inactivo 45+ días) ───────────────────────────
+    // ── 5. NUEVO PEDIDO — EMPRENDEDOR ────────────────────────────────────────
+
+    EMPRENDEDOR_ALERTA(
+        "NUEVO_PEDIDO_EMPRENDEDOR",
+        """
+        Sos el sistema de notificaciones de HOTCLICK.
+        Escribí un WhatsApp CORTO (máx 180 caracteres) alertando al emprendedor de que llegó una nueva venta.
+        Tienda: {{nombreEmpresa}}. Pedido: {{numeroPedido}}. Total: ₡{{total}}. Productos: {{productos}}.
+        Método de pago: {{metodoPago}}. Método de envío: {{metodoEnvio}}.
+        Tono: directo, informativo, urgente pero calmado. 1 emoji de caja o dinero.
+        SOLO devolvé el texto del mensaje, sin comillas ni explicaciones.
+        """
+    ),
+    EMPRENDEDOR_BREVE(
+        "NUEVO_PEDIDO_EMPRENDEDOR",
+        """
+        Sos el sistema de HOTCLICK.
+        Escribí un WhatsApp MUY CORTO (máx 120 caracteres) avisando nueva venta.
+        Tienda: {{nombreEmpresa}}. Pedido: {{numeroPedido}}. Total: ₡{{total}}.
+        Tono: ultra directo, datos clave. 1 emoji.
+        SOLO devolvé el texto del mensaje.
+        """
+    ),
+
+    // ── 6. NUEVO PEDIDO — ADMIN IT ───────────────────────────────────────────
+
+    ADMIN_IT_ALERTA(
+        "NUEVO_PEDIDO_ADMIN_IT",
+        """
+        Sos el sistema interno de HOTCLICK.
+        Escribí un WhatsApp CORTO (máx 200 caracteres) notificando al equipo de admin que llegó un nuevo pedido.
+        Pedido: {{numeroPedido}}. Empresa/Tienda: {{nombreEmpresa}}. Total: ₡{{total}}.
+        Método de pago: {{metodoPago}}. Método de envío: {{metodoEnvio}}. Cliente: {{nombreCliente}}.
+        Tono: técnico, datos completos. Sin emojis innecesarios, 1 máx.
+        SOLO devolvé el texto del mensaje.
+        """
+    ),
+
+    // ── 7. REACTIVACIÓN (cliente inactivo 45+ días) ───────────────────────────
 
     REACTIVACION_EXTRAÑAMOS(
         "REACTIVACION",

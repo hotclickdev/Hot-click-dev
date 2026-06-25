@@ -1,5 +1,5 @@
 package com.hotclick.scheduler;
-nimport com.hotclick.utils.Constants;
+import com.hotclick.utils.Constants;
 
 import com.hotclick.repository.ProductoRepository;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;

@@ -1,5 +1,5 @@
 package com.hotclick.service;
-nimport com.hotclick.utils.Constants;
+import com.hotclick.utils.Constants;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -126,6 +126,34 @@ public class WhatsAppService {
 
         enviar(u, empresaId, null,
                WaPlantilla.varianteAleatoria("REACTIVACION"), ctx);
+    }
+
+    @Async
+    public void enviarNuevoPedidoAEmprendedor(Pedido pedido) {
+        if (pedido.getEmpresa() == null) return;
+        String tel = pedido.getEmpresa().getNumeroWhatsapp() != null
+            ? pedido.getEmpresa().getNumeroWhatsapp()
+            : pedido.getEmpresa().getTelefonoEmpresa();
+        if (tel == null || tel.isBlank()) return;
+
+        Map<String, String> ctx = contextoEmprendedor(pedido);
+        enviarANumero(tel, pedido.getEmpresaId(), pedido.getNumeroPedido(),
+            WaPlantilla.varianteAleatoria("NUEVO_PEDIDO_EMPRENDEDOR"), ctx);
+    }
+
+    @Async
+    public void enviarNuevoPedidoAAdminIT(Pedido pedido, String telefonoAdminIT) {
+        if (telefonoAdminIT == null || telefonoAdminIT.isBlank()) return;
+
+        Map<String, String> ctx = contextoEmprendedor(pedido);
+        if (pedido.getUsuarioFinal() != null)
+            ctx.put("nombreCliente", pedido.getUsuarioFinal().getNombre() != null
+                ? pedido.getUsuarioFinal().getNombre() : "Invitado");
+        else
+            ctx.put("nombreCliente", "Invitado");
+
+        enviarANumero(telefonoAdminIT, pedido.getEmpresaId(), pedido.getNumeroPedido(),
+            WaPlantilla.varianteAleatoria("NUEVO_PEDIDO_ADMIN_IT"), ctx);
     }
 
     /**
@@ -265,6 +293,59 @@ public class WhatsAppService {
 
     private boolean credencialesConfiguradas() {
         return phoneId != null && !phoneId.isBlank() && token != null && !token.isBlank();
+    }
+
+    /** Envía a un número raw (empresa, admin) sin necesidad de un Usuario registrado. */
+    private String enviarANumero(String telefono, Long empresaId, String pedidoNum,
+                                  WaPlantilla plantilla, Map<String, String> ctx) {
+        String texto   = generarTexto(plantilla, ctx);
+        String telNorm = normalizarTelefono(telefono);
+
+        WaMensajeLog entry = new WaMensajeLog();
+        entry.setEmpresaId(empresaId);
+        entry.setTelefono(telNorm);
+        entry.setTipoMensaje(plantilla.escenario);
+        entry.setVariante(plantilla.name());
+        entry.setTextoEnviado(texto);
+        entry.setPedidoNumero(pedidoNum);
+
+        if (!credencialesConfiguradas()) {
+            entry.setEstado("SIMULADO");
+            logRepo.save(entry);
+            log.info("[WA-SIMULADO] {} → {}: {}", plantilla.escenario, telNorm, texto);
+            return texto;
+        }
+
+        try {
+            String metaId = llamarMetaApi(telNorm, texto);
+            entry.setEstado("ENVIADO");
+            entry.setMetaMessageId(metaId);
+            log.info("[WA-ENVIADO] {} → {} (msgId={})", plantilla.escenario, telNorm, metaId);
+        } catch (Exception e) {
+            entry.setEstado("ERROR");
+            entry.setErrorDetalle(e.getMessage() != null
+                ? e.getMessage().substring(0, Math.min(500, e.getMessage().length())) : "unknown");
+            log.error("[WA-ERROR] {} → {}: {}", plantilla.escenario, telNorm, e.getMessage());
+        }
+
+        logRepo.save(entry);
+        return texto;
+    }
+
+    /** Construye el contexto común para notificaciones de venta al emprendedor y admin IT. */
+    private Map<String, String> contextoEmprendedor(Pedido pedido) {
+        Map<String, String> ctx = new LinkedHashMap<>();
+        ctx.put("numeroPedido",  pedido.getNumeroPedido() != null ? pedido.getNumeroPedido() : "");
+        ctx.put("total",         CRC.format(pedido.getTotalPedido()));
+        ctx.put("productos",     resumirProductos(pedido.getItems()));
+        ctx.put("metodoPago",    pedido.getMetodoPago()  != null ? pedido.getMetodoPago()  : "");
+        ctx.put("metodoEnvio",   pedido.getMetodoEnvio() != null ? pedido.getMetodoEnvio() : "");
+        ctx.put("nombreEmpresa", pedido.getEmpresa() != null
+            ? (pedido.getEmpresa().getNombreComercial() != null
+                ? pedido.getEmpresa().getNombreComercial()
+                : pedido.getEmpresa().getNombreEmpresa())
+            : "HotClick");
+        return ctx;
     }
 
     /** Costa Rica: 8 dígitos → prefijo 506. Números ya con 506 se dejan igual. */

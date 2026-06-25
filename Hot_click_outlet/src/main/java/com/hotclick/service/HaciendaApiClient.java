@@ -1,5 +1,5 @@
 package com.hotclick.service;
-nimport com.hotclick.utils.Constants;
+import com.hotclick.utils.Constants;
 
 import com.hotclick.model.Empresa;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;

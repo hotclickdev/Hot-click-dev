@@ -1,5 +1,5 @@
 package com.hotclick.controller;
-nimport com.hotclick.utils.Constants;
+import com.hotclick.utils.Constants;
 
 import com.hotclick.service.FeatureFlagService;
 import org.springframework.beans.factory.annotation.Autowired;

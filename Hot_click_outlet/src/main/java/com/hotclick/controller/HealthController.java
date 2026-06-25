@@ -1,5 +1,5 @@
 package com.hotclick.controller;
-nimport com.hotclick.utils.Constants;
+import com.hotclick.utils.Constants;
 
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;

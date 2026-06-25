@@ -1,5 +1,5 @@
 package com.hotclick.model;
-nimport com.hotclick.utils.Constants;
+import com.hotclick.utils.Constants;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.JdbcTypeCode;

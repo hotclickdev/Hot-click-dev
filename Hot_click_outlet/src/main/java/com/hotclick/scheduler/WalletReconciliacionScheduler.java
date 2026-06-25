@@ -1,5 +1,5 @@
 package com.hotclick.scheduler;
-nimport com.hotclick.utils.Constants;
+import com.hotclick.utils.Constants;
 
 import com.hotclick.model.WalletAcreditacionFallida;
 import com.hotclick.repository.WalletAcreditacionFallidaRepository;

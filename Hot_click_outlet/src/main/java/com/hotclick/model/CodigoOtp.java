@@ -1,5 +1,5 @@
 package com.hotclick.model;
-nimport com.hotclick.utils.Constants;
+import com.hotclick.utils.Constants;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
