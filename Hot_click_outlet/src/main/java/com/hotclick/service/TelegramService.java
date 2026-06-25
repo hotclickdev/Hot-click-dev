@@ -3,11 +3,14 @@ package com.hotclick.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 
 @Service
 public class TelegramService {
@@ -21,20 +24,28 @@ public class TelegramService {
     @Value("${telegram.chat-id:}")
     private String chatId;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
 
+    public TelegramService(RestTemplateBuilder builder) {
+        this.restTemplate = builder
+                .connectTimeout(Duration.ofSeconds(5))
+                .readTimeout(Duration.ofSeconds(10))
+                .build();
+    }
+
+    @Async
     public void enviar(String mensaje) {
         if (botToken.isBlank() || chatId.isBlank()) {
-            log.warn("Telegram no configurado — TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID vacíos");
+            log.warn("[telegram] no configurado — TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID vacios");
             return;
         }
         try {
             String encoded = URLEncoder.encode(mensaje, StandardCharsets.UTF_8);
             String url = String.format(API_URL, botToken, chatId, encoded);
             restTemplate.getForObject(url, String.class);
-            log.info("Telegram: mensaje enviado");
+            log.info("[telegram] mensaje enviado");
         } catch (Exception e) {
-            log.error("Telegram: error al enviar mensaje — {}", e.getMessage());
+            log.error("[telegram] error al enviar — {}", e.getMessage());
         }
     }
 }
