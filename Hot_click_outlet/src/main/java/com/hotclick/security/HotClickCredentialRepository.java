@@ -28,7 +28,7 @@ public class HotClickCredentialRepository implements CredentialRepository {
     public Set<PublicKeyCredentialDescriptor> getCredentialIdsForUsername(String username) {
         var user = usuarioRepo.findByCorreo(username).orElse(null);
         if (user == null) return Set.of();
-        return credRepo.findByUsuario_IdUsuario(user.getId()).stream()
+        return credRepo.findByUsuario_Id(user.getId()).stream()
             .map(c -> {
                 try {
                     return PublicKeyCredentialDescriptor.builder()

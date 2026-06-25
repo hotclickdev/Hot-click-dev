@@ -146,7 +146,7 @@ public class WebAuthnService {
 
     public boolean tieneCredenciales(String email) {
         return usuarioRepo.findByCorreo(email)
-            .map(u -> credRepo.existsByUsuario_IdUsuario(u.getId()))
+            .map(u -> credRepo.existsByUsuario_Id(u.getId()))
             .orElse(false);
     }
 
