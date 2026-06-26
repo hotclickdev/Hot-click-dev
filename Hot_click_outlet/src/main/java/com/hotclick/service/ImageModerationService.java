@@ -2,118 +2,103 @@ package com.hotclick.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.rekognition.RekognitionClient;
+import software.amazon.awssdk.services.rekognition.model.DetectModerationLabelsRequest;
+import software.amazon.awssdk.services.rekognition.model.DetectModerationLabelsResponse;
+import software.amazon.awssdk.services.rekognition.model.Image;
+import software.amazon.awssdk.services.rekognition.model.InvalidImageFormatException;
+import software.amazon.awssdk.services.rekognition.model.ModerationLabel;
 
 import java.io.IOException;
-import java.util.Base64;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 /**
- * Moderación de contenido usando Google Vision SafeSearch.
- * Rechaza imágenes con contenido adulto, violento o racialmente inapropiado.
- * Fail-open: si la API no responde, permite la imagen y registra warning.
+ * Moderación de contenido usando AWS Rekognition DetectModerationLabels.
+ * Usa el Instance Profile de EC2 (hotclick-ec2-role) — no requiere API key.
+ *
+ * Requiere permiso IAM: rekognition:DetectModerationLabels en la política HotclickS3Access.
+ *
+ * Fail-open: si Rekognition no responde (red, IAM mal configurado), la imagen pasa
+ * y se registra un warning. La protección primaria son los magic bytes en SupabaseStorageService.
  */
 @Service
 public class ImageModerationService {
 
     private static final Logger log = LoggerFactory.getLogger(ImageModerationService.class);
-    private static final String VISION_URL =
-        "https://vision.googleapis.com/v1/images:annotate?key=%s";
 
-    // Likelihood values según Google Vision API
-    private static final List<String> LIKELIHOOD_ORDER =
-        List.of("UNKNOWN", "VERY_UNLIKELY", "UNLIKELY", "POSSIBLE", "LIKELY", "VERY_LIKELY");
+    // Categorías que Rekognition puede detectar y que queremos bloquear
+    private static final Set<String> BLOCKED_CATEGORIES = Set.of(
+        "Explicit Nudity",
+        "Violence",
+        "Visually Disturbing",
+        "Hate Symbols",
+        "Drugs & Tobacco"
+    );
 
-    @Value("${google.vision.api-key:}")
-    private String apiKey;
+    // Confianza mínima (%) para bloquear. 80 = buena precisión sin falsos positivos excesivos.
+    private static final float MIN_CONFIDENCE = 80.0f;
 
-    private final RestTemplate restTemplate;
+    private final RekognitionClient rekognition;
 
-    public ImageModerationService(RestTemplateBuilder builder) {
-        this.restTemplate = builder.build();
+    public ImageModerationService() {
+        this.rekognition = RekognitionClient.builder()
+            .region(Region.US_EAST_2)
+            .credentialsProvider(InstanceProfileCredentialsProvider.create())
+            .build();
     }
 
     public record ModerationResult(boolean safe, String reason) {}
 
     /**
-     * Verifica si el archivo de imagen es seguro para publicar.
-     * Fail-open: devuelve safe=true si la API falla.
+     * Verifica si la imagen es segura para publicar en el marketplace.
+     * Devuelve safe=true si la imagen es aceptable o si Rekognition no está disponible.
      */
     public ModerationResult moderar(MultipartFile file) {
         try {
-            String base64 = Base64.getEncoder().encodeToString(file.getBytes());
-            return moderarBase64(base64);
+            byte[] bytes = file.getBytes();
+            return moderarBytes(bytes);
         } catch (IOException e) {
             log.warn("[Moderación] No se pudo leer archivo: {}", e.getMessage());
             return new ModerationResult(true, null);
         }
     }
 
-    private ModerationResult moderarBase64(String base64) {
-        if (apiKey == null || apiKey.isBlank()) {
-            log.debug("[Moderación] google.vision.api-key no configurada — imagen aprobada (fail-open)");
-            return new ModerationResult(true, null);
-        }
+    private ModerationResult moderarBytes(byte[] bytes) {
         try {
-            String url = String.format(VISION_URL, apiKey);
+            DetectModerationLabelsRequest req = DetectModerationLabelsRequest.builder()
+                .image(Image.builder()
+                    .bytes(SdkBytes.fromByteArray(bytes))
+                    .build())
+                .minConfidence(MIN_CONFIDENCE)
+                .build();
 
-            Map<String, Object> body = Map.of("requests", List.of(
-                Map.of(
-                    "image",    Map.of("content", base64),
-                    "features", List.of(Map.of("type", "SAFE_SEARCH_DETECTION"))
-                )
-            ));
+            DetectModerationLabelsResponse resp = rekognition.detectModerationLabels(req);
+            List<ModerationLabel> labels = resp.moderationLabels();
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            ResponseEntity<Map> response = restTemplate.exchange(
-                url, HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
+            for (ModerationLabel label : labels) {
+                String topLevel = label.parentName() != null && !label.parentName().isBlank()
+                    ? label.parentName()
+                    : label.name();
+                if (BLOCKED_CATEGORIES.contains(topLevel)) {
+                    log.warn("[Moderación] Imagen rechazada: {} (confianza: {:.0f}%)", label.name(), label.confidence());
+                    return new ModerationResult(false, "Imagen rechazada: contenido no permitido detectado");
+                }
+            }
 
-            return parseSafeSearch(response.getBody());
+            return new ModerationResult(true, null);
+
+        } catch (InvalidImageFormatException e) {
+            log.warn("[Moderación] Imagen inválida para Rekognition: {}", e.getMessage());
+            return new ModerationResult(false, "La imagen no pudo ser procesada");
         } catch (Exception e) {
-            log.warn("[Moderación] Error API Vision (fail-open): {}", e.getMessage());
+            log.warn("[Moderación] Rekognition no disponible, fail-open: {}", e.getMessage());
             return new ModerationResult(true, null);
         }
     }
-
-    @SuppressWarnings("unchecked")
-    private ModerationResult parseSafeSearch(Map<?, ?> body) {
-        if (body == null) return new ModerationResult(true, null);
-
-        List<?> responses = (List<?>) body.get("responses");
-        if (responses == null || responses.isEmpty()) return new ModerationResult(true, null);
-
-        Map<?, ?> resp = (Map<?, ?>) responses.get(0);
-        Map<?, ?> ss   = (Map<?, ?>) resp.get("safeSearchAnnotation");
-        if (ss == null) return new ModerationResult(true, null);
-
-        String adult    = (String) ss.get("adult");
-        String violence = (String) ss.get("violence");
-        String racy     = (String) ss.get("racy");
-
-        // adult >= LIKELY → rechazar (POSSIBLE rechaza productos con formas ambiguas)
-        if (likelihood(adult) >= likelihood("LIKELY"))
-            return new ModerationResult(false, "Contenido adulto detectado");
-        // violence >= LIKELY → rechazar
-        if (likelihood(violence) >= likelihood("LIKELY"))
-            return new ModerationResult(false, "Contenido violento detectado");
-        // racy >= VERY_LIKELY → rechazar
-        if (likelihood(racy) >= likelihood("VERY_LIKELY"))
-            return new ModerationResult(false, "Contenido inapropiado detectado");
-
-        return new ModerationResult(true, null);
-    }
-
-    private int likelihood(String value) {
-        if (value == null) return 0;
-        int idx = LIKELIHOOD_ORDER.indexOf(value);
-        return idx < 0 ? 0 : idx;
-    }
-
 }

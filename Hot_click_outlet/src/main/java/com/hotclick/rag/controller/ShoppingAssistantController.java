@@ -127,6 +127,14 @@ public class ShoppingAssistantController {
         if (image.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La imagen está vacía");
         }
+        if (image.getSize() > 5 * 1024 * 1024) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La imagen no puede superar 5 MB");
+        }
+        String ct = image.getContentType();
+        if (ct == null || (!ct.startsWith("image/jpeg") && !ct.startsWith("image/png")
+                && !ct.startsWith("image/webp") && !ct.startsWith("image/gif"))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Formato no permitido. Usá JPG, PNG o WebP");
+        }
 
         Empresa empresa = empresaRepository.findBySlug(empresaSlug)
             .filter(e -> "ACTIVO".equals(e.getEstadoEmpresa()))

@@ -87,10 +87,13 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         Map.entry("/api/contacto",                new Limit(5,    60)),
         Map.entry("/api/pedidos",                 new Limit(15,   60)),
         Map.entry("/api/payment/checkout",        new Limit(3,    60)),
+        // Uploads públicos — limitar para evitar abuso de almacenamiento y costos S3
+        Map.entry("/api/servicios/fotos",                             new Limit(10,  60)),
         // AI — IP level (per-empresa burst handled in controller)
-        Map.entry("/api/public/chat",                         new Limit(10,  60)),
-        Map.entry("/api/public/shopping-assistant/chat",      new Limit(10,  60)),
-        Map.entry("/api/admin/ai/chat",                       new Limit(5,   60))
+        Map.entry("/api/public/chat",                                 new Limit(10,  60)),
+        Map.entry("/api/public/shopping-assistant/chat",              new Limit(10,  60)),
+        Map.entry("/api/public/shopping-assistant/search-by-image",   new Limit(5,   60)),
+        Map.entry("/api/admin/ai/chat",                               new Limit(5,   60))
     );
 
     // Prefix-based limits for paths with variables (e.g. /api/pedidos/123/notificar).
@@ -127,7 +130,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         String method = request.getMethod();
 
         if ("POST".equalsIgnoreCase(method)) {
-            String ip    = request.getRemoteAddr();
+            String ip    = resolveClientIp(request);
             Limit  limit = LIMITS.get(path);
 
             // Exact-path check
@@ -154,7 +157,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                 }
             }
         } else if ("GET".equalsIgnoreCase(method)) {
-            String ip = request.getRemoteAddr();
+            String ip = resolveClientIp(request);
             for (GetLimit gl : GET_LIMITS) {
                 if (path.startsWith(gl.prefix())) {
                     String key = "ip:" + ip + ":GET:" + gl.prefix();
@@ -173,5 +176,23 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         }
 
         chain.doFilter(request, response);
+    }
+
+    /**
+     * Extrae la IP real del cliente.
+     * X-Real-IP lo setea Nginx desde $remote_addr (no puede ser falsificado por el cliente).
+     * X-Forwarded-For puede contener IPs adicionales si hay múltiples proxies.
+     * Fallback a getRemoteAddr() para entornos locales sin proxy.
+     */
+    private String resolveClientIp(HttpServletRequest request) {
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isBlank()) return realIp.trim();
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            // Tomar la última IP — la que añade el proxy de confianza (Nginx)
+            String[] parts = forwarded.split(",");
+            return parts[parts.length - 1].trim();
+        }
+        return request.getRemoteAddr();
     }
 }

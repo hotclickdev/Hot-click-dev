@@ -183,7 +183,7 @@ public class ProductoController {
             @PathVariable Long marcaId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
-        var productos = productoService.listarPorMarca(marcaId, PageRequest.of(page, size));
+        var productos = productoService.listarPorMarca(marcaId, PageRequest.of(Math.max(0, page), Math.min(size, MAX_PAGE_SIZE_PUBLIC)));
         return ResponseEntity.ok(ResponseDTO.success("Productos por marca", productos));
     }
 

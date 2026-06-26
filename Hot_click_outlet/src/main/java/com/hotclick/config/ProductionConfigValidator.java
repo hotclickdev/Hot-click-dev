@@ -40,6 +40,9 @@ public class ProductionConfigValidator implements ApplicationListener<Applicatio
     @Value("${cors.allowed.origins:http://localhost:3000}")
     private String corsOrigins;
 
+    @Value("${aws.s3.bucket:}")
+    private String s3Bucket;
+
     @Override
     public void onApplicationEvent(@NonNull ApplicationStartedEvent event) {
         boolean isProduction = appUrl != null
@@ -72,6 +75,21 @@ public class ProductionConfigValidator implements ApplicationListener<Applicatio
         // ── CORS sanity in production ─────────────────────────────────────────
         if (isProduction && corsOrigins != null && corsOrigins.contains("localhost")) {
             warnings.add("CORS_ALLOWED_ORIGINS contains 'localhost' in a production environment: " + corsOrigins);
+        }
+
+        // ── AWS Rekognition (moderación de imágenes) ──────────────────────────
+        if (isProduction && (s3Bucket == null || s3Bucket.isBlank())) {
+            criticals.add("AWS_S3_BUCKET no configurado — moderación de imágenes con Rekognition no funcionará");
+        } else if (isProduction) {
+            try {
+                software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider provider =
+                    software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider.create();
+                provider.resolveCredentials();
+                log.info("[SECURITY CONFIG] Instance Profile IAM credentials disponibles para Rekognition.");
+            } catch (Exception e) {
+                criticals.add("IAM Instance Profile no disponible — AWS Rekognition (moderación de imágenes) no funcionará. " +
+                    "Verificar que la instancia EC2 tenga hotclick-ec2-role asignado y que incluya rekognition:DetectModerationLabels");
+            }
         }
 
         // ── Log results ───────────────────────────────────────────────────────
