@@ -76,10 +76,12 @@ export default function MultiImagePicker({ imagenes = [], onChange }) {
 
       {imagenes.length < MAX_FOTOS && (
         <div
+          role="button" tabIndex={0}
           onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}
           onClick={() => uploadingCount === 0 && inputRef.current?.click()}
+          onKeyDown={(e) => e.key === 'Enter' && uploadingCount === 0 && inputRef.current?.click()}
           className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed cursor-pointer transition-all min-h-[90px] ${
             dragging ? 'border-[#4f7cff] bg-[#4f7cff]/10' : 'border-white/15 bg-white/3 hover:border-[#4f7cff]/50 hover:bg-white/5'
           }`}

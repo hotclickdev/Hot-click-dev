@@ -483,8 +483,9 @@ export default function AdminPagos() {
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
           onClick={() => setImgModal(null)}
+          onKeyDown={(e) => e.key === 'Escape' && setImgModal(null)}
         >
-          <div className="relative max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
+          <div className="relative max-w-2xl w-full" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
             <button
               onClick={() => setImgModal(null)}
               className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-[#111114] border border-white/15 text-[#8e8e9a] hover:text-white flex items-center justify-center z-10 transition-colors"

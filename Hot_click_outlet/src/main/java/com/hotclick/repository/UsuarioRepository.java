@@ -79,6 +79,11 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     List<Usuario> findAllByOrderByIdDesc();
 
+    List<Usuario> findTop500ByOrderByIdDesc();
+
+    @Query("SELECT u FROM Usuario u WHERE u.empresa.id = :empresaId ORDER BY u.id DESC LIMIT 500")
+    List<Usuario> findTop500ByEmpresaIdOrderByIdDesc(@Param("empresaId") Long empresaId);
+
     /** Para listados admin — carga roles en JOIN para evitar N+1 con roles LAZY. */
     @Query("SELECT DISTINCT u FROM Usuario u LEFT JOIN FETCH u.roles ORDER BY u.id DESC")
     List<Usuario> findAllWithRolesOrderByIdDesc();

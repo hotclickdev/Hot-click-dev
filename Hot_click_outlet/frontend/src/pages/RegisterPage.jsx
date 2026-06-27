@@ -45,7 +45,7 @@ function EmprendimientoCloud({ onRegistrar }) {
       <div className="relative p-6">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold mb-5 w-fit"
           style={{ background: EMPR.bg, border: `1px solid ${EMPR.ring}`, color: EMPR.color }}>
-          <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: EMPR.color }} />
+          <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: EMPR.color }}></span>
           ¿Tenés un negocio?
         </div>
         <h2 className="font-black leading-[1.02] tracking-tight mb-3"
@@ -67,7 +67,7 @@ function EmprendimientoCloud({ onRegistrar }) {
         <button onClick={onRegistrar}
           className="group inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl font-bold text-sm text-white w-full transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
           style={{ background: EMPR.color, boxShadow: `0 0 32px ${EMPR.ring}` }}>
-          Registrá tu negocio
+          <span>Registrá tu negocio</span>
           <span className="inline-block group-hover:translate-x-1 transition-transform duration-200">→</span>
         </button>
         <div className="flex gap-5 mt-5 pt-5 border-t" style={{ borderColor: 'var(--hc-border)' }}>
@@ -173,7 +173,7 @@ function EmprendimientoForm({ onVolver }) {
       <div className="flex items-center gap-3 mb-5">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold"
           style={{ background: 'rgba(231,59,51,0.08)', border: '1px solid rgba(231,59,51,0.22)', color: 'var(--hc-primary)', letterSpacing: '0.06em' }}>
-          <span className="w-1.5 h-1.5 rounded-full bg-[var(--hc-primary)] animate-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--hc-primary)] animate-pulse"></span>
           Registro de emprendimiento
         </div>
       </div>
@@ -465,7 +465,7 @@ export default function RegisterPage() {
 
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold mb-5 w-fit"
             style={{ background: BUYER.bg, border: `1px solid ${BUYER.ring}`, color: BUYER.color }}>
-            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: BUYER.color }} />
+            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: BUYER.color }}></span>
             Verificación de cuenta
           </div>
 
@@ -594,7 +594,7 @@ export default function RegisterPage() {
                     className="flex items-center gap-3 mb-5">
                     <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold"
                       style={{ background: BUYER.bg, border: `1px solid ${BUYER.ring}`, color: BUYER.color, letterSpacing: '0.06em' }}>
-                      <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: BUYER.color }} />
+                      <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: BUYER.color }}></span>
                       Creá tu cuenta gratis
                     </div>
                     <div className="h-px flex-1 max-w-[60px]" style={{ background: `linear-gradient(90deg, ${BUYER.ring}, transparent)` }} />

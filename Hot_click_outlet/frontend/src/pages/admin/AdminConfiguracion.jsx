@@ -625,7 +625,7 @@ function Panel2FA({ enabled, loading, toast, onEnabled, onDisabled }) {
   }
   const handlePaste = (e) => {
     const text = e.clipboardData.getData('text').replace(/\D/g,'').slice(0,6)
-    if (text.length) setCode(text.split('').concat(Array(6).fill('')).slice(0,6))
+    if (text.length) setCode(text.split('').concat(new Array(6).fill('')).slice(0,6))
   }
   const resetCode = () => setCode(['','','','','',''])
 
@@ -1144,7 +1144,7 @@ function SeccionDatos({ toast, isEmprendedor = false }) {
     const keys   = Object.keys(rows[0])
     const header = keys.join(',')
     const body   = rows.map(r => keys.map(k => {
-      const v = String(r[k] ?? '').replace(/"/g, '""')
+      const v = String(r[k] ?? '').replaceAll('"', '""')
       return v.includes(',') || v.includes('\n') || v.includes('"') ? `"${v}"` : v
     }).join(','))
     const blob = new Blob(['﻿' + [header, ...body].join('\n')], { type: 'text/csv;charset=utf-8;' })

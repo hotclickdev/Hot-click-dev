@@ -27,7 +27,7 @@ public class BccrService {
 
     private final AtomicInteger cachedTc = new AtomicInteger(0);
     private final AtomicLong cacheTime = new AtomicLong(0);
-    private static final long CACHE_TTL_MS = 60 * 60 * 1000; // 1 hora
+    private static final long CACHE_TTL_MS = 60 * 60 * 1000L; // 1 hora
 
     public int getTipoCambioVenta() {
         long now = System.currentTimeMillis();

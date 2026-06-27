@@ -370,7 +370,7 @@ export default function AdminEmpresas() {
       {/* Drawer detalle — tabbed */}
       {selected && (
         <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setSelected(null)} />
+          <div className="absolute inset-0 bg-black/60" onClick={() => setSelected(null)} onKeyDown={(e) => e.key === 'Escape' && setSelected(null)} />
           <div className="relative z-10 w-full max-w-2xl flex flex-col" style={{ backgroundColor: 'var(--hc-surface)', borderLeft: '1px solid var(--hc-border)' }}>
 
             {/* Header */}

@@ -4,6 +4,8 @@ import com.hotclick.model.ConsentimientoLog;
 import com.hotclick.repository.ConsentimientoLogRepository;
 import com.hotclick.security.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +16,7 @@ import java.util.Set;
 @RequestMapping("/api/consentimiento")
 public class ConsentimientoController {
 
+    private static final Logger log = LoggerFactory.getLogger(ConsentimientoController.class);
     private static final Set<String> TIPOS_VALIDOS = Set.of("REGISTRO", "CHECKOUT", "VENDEDOR");
 
     private final ConsentimientoLogRepository repo;
@@ -40,7 +43,7 @@ public class ConsentimientoController {
             try {
                 String token = authHeader.substring(7);
                 usuarioId = jwt.extractUserId(token);
-            } catch (Exception ignored) {}
+            } catch (Exception e) { log.warn("token error: {}", e.getMessage()); }
         }
 
         String ip        = obtenerIp(request);

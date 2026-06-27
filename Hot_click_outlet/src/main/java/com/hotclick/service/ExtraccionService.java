@@ -15,6 +15,8 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -57,10 +59,22 @@ public class ExtraccionService {
             "https://www.newegg.com/p/pl?d=" + query
         );
 
-        for (String url : urlsBusqueda) {
-            PrecioExtraido precio = extraerPrecioDeResultados(url, resultado.tcUsado);
-            if (precio != null) resultado.precios.add(precio);
+        // Lanzar las 4 URLs en paralelo; timeout global 12s (vs 40s secuencial)
+        List<CompletableFuture<PrecioExtraido>> futures = urlsBusqueda.stream()
+            .map(url -> CompletableFuture.supplyAsync(
+                () -> extraerPrecioDeResultados(url, resultado.tcUsado)))
+            .toList();
+        try {
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                .get(12, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.warn("Extraccion parcial o timeout: {}", e.getMessage());
         }
+        futures.stream()
+            .filter(f -> f.isDone() && !f.isCompletedExceptionally())
+            .map(f -> f.join())
+            .filter(Objects::nonNull)
+            .forEach(resultado.precios::add);
 
         if (!resultado.precios.isEmpty()) {
             resultado.promedioCrc = calcularPromedio(resultado.precios);
@@ -515,7 +529,7 @@ public class ExtraccionService {
                     int i = href.indexOf("uddg=") + 5;
                     int end = href.indexOf("&", i);
                     href = URLDecoder.decode(end > i ? href.substring(i, end) : href.substring(i), StandardCharsets.UTF_8);
-                } catch (Exception ignored) {}
+                } catch (Exception e) { log.debug("url decode error: {}", e.getMessage()); }
             }
             if (href.startsWith("http") && !href.contains("duckduckgo.com") && !esPaginaDeResultados(href)) {
                 urls.add(href);
@@ -536,7 +550,7 @@ public class ExtraccionService {
                 } else {
                     aplicarSchema(root, d);
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception e) { log.debug("json-ld parse error: {}", e.getMessage()); }
         }
     }
 

@@ -33,10 +33,10 @@ function Modal({ convenio, onSave, onClose }) {
     <div style={{
       position: 'fixed', inset: 0, zIndex: 999,
       background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-    }} onClick={onClose}>
+    }} onClick={onClose} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-        onClick={e => e.stopPropagation()}
+        onClick={e => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}
         style={{
           background: 'var(--hc-surface)', borderRadius: 16, padding: 28,
           width: '100%', maxWidth: 480, boxShadow: '0 24px 80px rgba(0,0,0,0.3)',

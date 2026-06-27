@@ -102,9 +102,9 @@ export default function BlogPostPage() {
         <title>{seoTitle}</title>
         <meta name="description" content={seoDesc} />
         <link rel="canonical" href={canonicalUrl} />
-        <link rel="alternate" hreflang="es-CR" href={canonicalUrl} />
-        <link rel="alternate" hreflang="es"    href={canonicalUrl} />
-        <link rel="alternate" hreflang="x-default" href={`${SITE_URL}/`} />
+        <link rel="alternate" hrefLang="es-CR" href={canonicalUrl} />
+        <link rel="alternate" hrefLang="es"    href={canonicalUrl} />
+        <link rel="alternate" hrefLang="x-default" href={`${SITE_URL}/`} />
         <meta property="og:type" content="article" />
         <meta property="og:title" content={seoTitle} />
         <meta property="og:description" content={seoDesc} />

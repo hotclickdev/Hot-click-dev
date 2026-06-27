@@ -58,7 +58,7 @@ public class PluginController {
     public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         Long empresaId = TenantContext.get();
         Optional<Plugin> opt = pluginRepository.findById(id);
-        if (opt.isEmpty() || !Objects.equals(opt.get().getEmpresa().getId(), empresaId)) {
+        if (opt.isEmpty() || opt.get().getEmpresa() == null || !Objects.equals(opt.get().getEmpresa().getId(), empresaId)) {
             return ResponseEntity.status(403).body(Map.of("error", "No autorizado"));
         }
         Plugin p = opt.get();
@@ -72,7 +72,7 @@ public class PluginController {
     public ResponseEntity<?> eliminar(@PathVariable Long id) {
         Long empresaId = TenantContext.get();
         Optional<Plugin> opt = pluginRepository.findById(id);
-        if (opt.isEmpty() || !Objects.equals(opt.get().getEmpresa().getId(), empresaId)) {
+        if (opt.isEmpty() || opt.get().getEmpresa() == null || !Objects.equals(opt.get().getEmpresa().getId(), empresaId)) {
             return ResponseEntity.status(403).body(Map.of("error", "No autorizado"));
         }
         opt.get().setActivo(false);
@@ -86,7 +86,7 @@ public class PluginController {
     public ResponseEntity<?> test(@PathVariable Long id) {
         Long empresaId = TenantContext.get();
         Optional<Plugin> opt = pluginRepository.findById(id);
-        if (opt.isEmpty() || !Objects.equals(opt.get().getEmpresa().getId(), empresaId)) {
+        if (opt.isEmpty() || opt.get().getEmpresa() == null || !Objects.equals(opt.get().getEmpresa().getId(), empresaId)) {
             return ResponseEntity.status(403).body(Map.of("error", "No autorizado"));
         }
         dispatcher.dispatch(empresaId, "plugin.test", Map.of(
@@ -101,7 +101,7 @@ public class PluginController {
     public ResponseEntity<?> eventos(@PathVariable Long id) {
         Long empresaId = TenantContext.get();
         Optional<Plugin> opt = pluginRepository.findById(id);
-        if (opt.isEmpty() || !Objects.equals(opt.get().getEmpresa().getId(), empresaId)) {
+        if (opt.isEmpty() || opt.get().getEmpresa() == null || !Objects.equals(opt.get().getEmpresa().getId(), empresaId)) {
             return ResponseEntity.status(403).body(Map.of("error", "No autorizado"));
         }
         var page = pluginEventoRepository.findByPluginIdOrderByFechaEnvioDesc(id, PageRequest.of(0, 50));

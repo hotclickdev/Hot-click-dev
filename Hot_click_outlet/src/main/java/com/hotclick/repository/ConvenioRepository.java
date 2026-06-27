@@ -9,4 +9,5 @@ import java.util.List;
 public interface ConvenioRepository extends JpaRepository<Convenio, Long> {
     List<Convenio> findByActivoTrueAndEstadoOrderByNombreAsc(Integer estado);
     List<Convenio> findAllByOrderByFechaRegistroDesc();
+    List<Convenio> findTop100ByOrderByFechaRegistroDesc();
 }

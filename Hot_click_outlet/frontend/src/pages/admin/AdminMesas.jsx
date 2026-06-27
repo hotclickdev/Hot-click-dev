@@ -38,10 +38,10 @@ function QrModal({ mesa, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
-      onClick={onClose}>
+      onClick={onClose} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
       <div className="rounded-2xl p-6 max-w-sm w-full flex flex-col items-center gap-4"
         style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
-        onClick={e => e.stopPropagation()}>
+        onClick={e => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
         <h3 className="text-lg font-bold" style={{ color: 'var(--hc-text)' }}>{mesa.nombre}</h3>
         <div ref={svgRef} className="p-4 rounded-xl bg-white">
           <QRCode value={url} size={220} />

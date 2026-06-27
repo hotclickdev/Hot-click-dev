@@ -11,6 +11,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.concurrent.Executor;
@@ -22,6 +24,8 @@ import java.util.Map;
 @RequestMapping("/api/admin/executive")
 @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN_IT','ADMIN_CLIENTE')")
 public class ExecutiveController {
+
+    private static final Logger log = LoggerFactory.getLogger(ExecutiveController.class);
 
     @Autowired private ExecutiveDashboardService executiveService;
     @Autowired private AiCopilotService          aiCopilotService;
@@ -42,7 +46,7 @@ public class ExecutiveController {
         if (!aiQuotaService.puedeUsarAi(empresaId)) {
             SseEmitter e = new SseEmitter(0L);
             try { e.send(SseEmitter.event().name("error").data("{\"error\":\"Cuota AI agotada\"}")); e.complete(); }
-            catch (Exception ignored) {}
+            catch (Exception ex) { log.debug("SSE error: {}", ex.getMessage()); }
             return e;
         }
 

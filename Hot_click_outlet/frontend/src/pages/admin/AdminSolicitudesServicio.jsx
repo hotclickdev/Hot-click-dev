@@ -168,7 +168,7 @@ export default function AdminSolicitudesServicio() {
                         {fotos.length > 0 && <span>📸 {t('adminSolicitudes.photos', { count: fotos.length })}</span>}
                       </div>
                     </div>
-                    <div className="flex flex-col gap-2 shrink-0" onClick={e => e.stopPropagation()}>
+                    <div className="flex flex-col gap-2 shrink-0" onClick={e => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
                       {wa && (
                         <a href={wa} target="_blank" rel="noopener noreferrer"
                           className="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap"
@@ -248,7 +248,9 @@ export default function AdminSolicitudesServicio() {
                             <img src={url} alt=""
                               className="w-24 h-24 rounded-xl object-cover cursor-zoom-in"
                               style={{ border: '1px solid var(--hc-border)' }}
-                              onClick={() => setFotoModal(url)} />
+                              role="button" tabIndex={0}
+                              onClick={() => setFotoModal(url)}
+                              onKeyDown={(e) => e.key === 'Enter' && setFotoModal(url)} />
                             <a
                               href={`https://lens.google.com/uploadbyurl?url=${encodeURIComponent(url)}`}
                               target="_blank" rel="noopener noreferrer"

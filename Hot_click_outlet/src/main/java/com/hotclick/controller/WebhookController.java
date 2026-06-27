@@ -40,8 +40,8 @@ public class WebhookController {
             @RequestParam(required = false) String alertType,
             @RequestParam(required = false) String alertDetails) {
 
-        if (!uptimeWebhookSecret.isBlank() && !uptimeWebhookSecret.equals(secret)) {
-            log.warn("Webhook UptimeRobot: secret invalido");
+        if (uptimeWebhookSecret.isBlank() || !uptimeWebhookSecret.equals(secret)) {
+            log.warn("Webhook UptimeRobot: secret invalido o no configurado");
             return ResponseEntity.status(401).body(Map.of("error", "unauthorized"));
         }
 
@@ -64,8 +64,8 @@ public class WebhookController {
             @RequestParam(required = false) String secret,
             @RequestBody(required = false) Map<String, Object> body) {
 
-        if (!sentryWebhookSecret.isBlank() && !sentryWebhookSecret.equals(secret)) {
-            log.warn("Webhook Sentry: secret invalido");
+        if (sentryWebhookSecret.isBlank() || !sentryWebhookSecret.equals(secret)) {
+            log.warn("Webhook Sentry: secret invalido o no configurado");
             return ResponseEntity.status(401).body(Map.of("error", "unauthorized"));
         }
 

@@ -92,9 +92,9 @@ export default function BlogPage() {
         <title>Blog HotClick — Consejos de tecnología y emprendimiento en Costa Rica</title>
         <meta name="description" content="Artículos y tips sobre tecnología, compras online y emprendimiento costarricense. El blog oficial de HotClick Marketplace." />
         <link rel="canonical" href="https://hotclick.lat/blog" />
-        <link rel="alternate" hreflang="es-CR" href="https://hotclick.lat/blog" />
-        <link rel="alternate" hreflang="es"    href="https://hotclick.lat/blog" />
-        <link rel="alternate" hreflang="x-default" href="https://hotclick.lat/" />
+        <link rel="alternate" hrefLang="es-CR" href="https://hotclick.lat/blog" />
+        <link rel="alternate" hrefLang="es"    href="https://hotclick.lat/blog" />
+        <link rel="alternate" hrefLang="x-default" href="https://hotclick.lat/" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Blog HotClick — Consejos para compradores y emprendedores en Costa Rica" />
         <meta property="og:description" content="Artículos de tecnología, moda, emprendimiento y novedades de HotClick. Todo lo que necesitás para comprar y vender mejor en Costa Rica." />

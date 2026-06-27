@@ -177,7 +177,7 @@ public class PaymentService {
         pedido.setAplicaImpuesto(false);
         if (subtotal > 0) {
             pedido.setMargenGananciaPedido(
-                BigDecimal.valueOf(subtotal - costoTotal)
+                BigDecimal.valueOf((long) subtotal - costoTotal)
                     .divide(BigDecimal.valueOf(subtotal), 4, RoundingMode.HALF_UP)
                     .multiply(BigDecimal.valueOf(100)));
         }

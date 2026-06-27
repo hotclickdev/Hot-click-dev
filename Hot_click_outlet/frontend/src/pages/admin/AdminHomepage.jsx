@@ -165,7 +165,7 @@ export default function AdminHomepage() {
 
         {loadingCats ? (
           <div className="flex gap-2 flex-wrap">
-            {[...Array(8)].map((_, i) => (
+            {[...new Array(8)].map((_, i) => (
               <div key={i} className="h-8 w-24 rounded-full animate-pulse" style={{ background: 'var(--hc-border)' }} />
             ))}
           </div>

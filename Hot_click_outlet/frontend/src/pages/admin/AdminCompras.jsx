@@ -199,7 +199,9 @@ export default function AdminCompras() {
               style={{ backgroundColor: 'var(--hc-surface)', borderColor: 'rgba(255,255,255,0.07)' }}>
               {/* Fila principal */}
               <div className="flex items-center gap-4 p-4 cursor-pointer"
-                onClick={() => setExpanded(expanded === orden.id ? null : orden.id)}>
+                role="button" tabIndex={0}
+                onClick={() => setExpanded(expanded === orden.id ? null : orden.id)}
+                onKeyDown={(e) => e.key === 'Enter' && setExpanded(expanded === orden.id ? null : orden.id)}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 flex-wrap">
                     <span className="font-mono text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
@@ -225,7 +227,7 @@ export default function AdminCompras() {
                   )}
                 </div>
                 {/* Acciones */}
-                <div className="flex gap-2 shrink-0" onClick={e => e.stopPropagation()}>
+                <div className="flex gap-2 shrink-0" onClick={e => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
                   {(orden.estado === 'PENDIENTE' || orden.estado === 'PARCIAL') && (
                     <button onClick={() => setRecibirOrden(orden)}
                       className="px-3 py-1.5 text-xs rounded-lg font-medium transition-opacity hover:opacity-80"

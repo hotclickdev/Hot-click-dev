@@ -176,7 +176,7 @@ function StepApertura({ onAbrir, loading }) {
             style={{ backgroundColor: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.2)', color: '#34d399' }}>
             <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-black"
               style={{ backgroundColor: 'rgba(52,211,153,0.2)' }}>1</span>
-            Paso 1 de 3
+            <span>Paso 1 de 3</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black" style={{ color: '#fff' }}>Abrí el turno</h1>
           <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
@@ -774,7 +774,7 @@ export default function AdminPOS() {
       if (!bodegaId) {
         try {
           const res  = await posService.getBodegas()
-          const lista = (res?.data ?? []).filter(b => b.estado === 1)
+          const lista = (Array.isArray(res) ? res : (res?.data ?? [])).filter(b => b.estado === 1)
           if (lista.length === 1) setBodega(lista[0].id, lista[0].nombreBodega)
           // Si lista.length > 1 → bodegaId sigue null → BodegaSelectorModal se muestra
         } catch { /* no bloquea el inicio del POS */ }

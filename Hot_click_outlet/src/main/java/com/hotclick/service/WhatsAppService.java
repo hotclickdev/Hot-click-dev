@@ -39,6 +39,14 @@ public class WhatsAppService {
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final NumberFormat CRC = NumberFormat.getInstance(Locale.forLanguageTag("es-CR"));
 
+    private static RestTemplate httpClient() {
+        org.springframework.http.client.SimpleClientHttpRequestFactory f =
+            new org.springframework.http.client.SimpleClientHttpRequestFactory();
+        f.setConnectTimeout(5_000);
+        f.setReadTimeout(10_000);
+        return new RestTemplate(f);
+    }
+
     @Value("${whatsapp.phone-id:}")
     private String phoneId;
 
@@ -242,11 +250,13 @@ public class WhatsAppService {
             headers.setContentType(MediaType.APPLICATION_JSON);
             String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey;
 
-            ResponseEntity<Map> resp = new RestTemplate().exchange(
+            ResponseEntity<Map> resp = httpClient().exchange(
                 url, HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
 
+            Map<?, ?> respBody = resp.getBody();
+            if (respBody == null) return null;
             @SuppressWarnings("unchecked")
-            List<?> candidates = (List<?>) resp.getBody().get("candidates");
+            List<?> candidates = (List<?>) respBody.get("candidates");
             if (candidates == null || candidates.isEmpty()) return null;
             @SuppressWarnings("unchecked")
             Map<?, ?> content = (Map<?, ?>) ((Map<?, ?>) candidates.get(0)).get("content");
@@ -274,7 +284,7 @@ public class WhatsAppService {
         headers.setBearerAuth(token);
 
         String url = String.format(META_URL, phoneId);
-        ResponseEntity<String> resp = new RestTemplate().exchange(
+        ResponseEntity<String> resp = httpClient().exchange(
             url, HttpMethod.POST, new HttpEntity<>(body, headers), String.class);
 
         if (!resp.getStatusCode().is2xxSuccessful())
@@ -285,7 +295,7 @@ public class WhatsAppService {
             JsonNode msgs = node.path("messages");
             if (msgs.isArray() && msgs.size() > 0)
                 return msgs.get(0).path("id").asText("");
-        } catch (Exception ignored) {}
+        } catch (Exception e) { log.debug("meta response parse error: {}", e.getMessage()); }
         return "ok";
     }
 

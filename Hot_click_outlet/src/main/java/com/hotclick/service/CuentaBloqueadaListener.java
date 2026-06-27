@@ -1,5 +1,7 @@
 package com.hotclick.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -14,6 +16,8 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Component
 public class CuentaBloqueadaListener {
 
+    private static final Logger log = LoggerFactory.getLogger(CuentaBloqueadaListener.class);
+
     @Autowired
     private PasswordResetService passwordResetService;
 
@@ -21,8 +25,8 @@ public class CuentaBloqueadaListener {
     public void onCuentaBloqueada(CuentaBloqueadaEvent event) {
         try {
             passwordResetService.enviarCodigo(event.getCorreo());
-        } catch (Exception ignored) {
-            // no interrumpe el flujo si falla el email
+        } catch (Exception e) {
+            log.warn("email desbloqueo fallido para {}: {}", event.getCorreo(), e.getMessage());
         }
     }
 }

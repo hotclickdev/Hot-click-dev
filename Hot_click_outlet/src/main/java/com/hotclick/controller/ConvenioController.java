@@ -28,7 +28,7 @@ public class ConvenioController {
     @GetMapping
     public ResponseEntity<ResponseDTO> listarTodos() {
         return ResponseEntity.ok(ResponseDTO.success("Convenios",
-            repo.findAllByOrderByFechaRegistroDesc()));
+            repo.findTop100ByOrderByFechaRegistroDesc()));
     }
 
     @PostMapping

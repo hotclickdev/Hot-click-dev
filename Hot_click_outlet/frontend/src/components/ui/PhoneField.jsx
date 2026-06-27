@@ -121,7 +121,7 @@ const COUNTRIES = ORDERED_ISO2.map(iso2 => iso2Map[iso2]).filter(Boolean)
 function emojiFlag(iso2) {
   if (!iso2) return '🌐'
   return String.fromCodePoint(
-    ...iso2.toUpperCase().split('').map(c => 0x1F1A5 + c.charCodeAt(0))
+    ...iso2.toUpperCase().split('').map(c => 0x1F1A5 + c.codePointAt(0))
   )
 }
 

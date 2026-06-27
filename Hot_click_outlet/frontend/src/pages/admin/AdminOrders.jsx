@@ -263,7 +263,8 @@ function CrearPedidoModal({ onClose, onCreated }) {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-end"
       style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}
-      onClick={e => e.target === e.currentTarget && onClose()}>
+      onClick={e => e.target === e.currentTarget && onClose()}
+      onKeyDown={(e) => e.key === 'Escape' && onClose()}>
 
       <div className="h-full w-full max-w-lg flex flex-col overflow-hidden"
         style={{ backgroundColor: 'var(--hc-surface)', borderLeft: '1px solid var(--hc-border)' }}>

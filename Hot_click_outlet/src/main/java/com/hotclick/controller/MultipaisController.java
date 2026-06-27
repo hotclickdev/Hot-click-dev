@@ -3,6 +3,8 @@ package com.hotclick.controller;
 import com.hotclick.model.Empresa;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.security.TenantContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -17,6 +19,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admin/multipais")
 public class MultipaisController {
+
+    private static final Logger log = LoggerFactory.getLogger(MultipaisController.class);
 
     // Supported LATAM countries/currencies
     private static final List<Map<String, String>> PAISES = List.of(
@@ -71,7 +75,7 @@ public class MultipaisController {
         if (body.containsKey("monedaFacturacion"))  empresa.setMonedaFacturacion(str(body, "monedaFacturacion"));
         if (body.containsKey("localeCodigo"))       empresa.setLocaleCodigo(str(body, "localeCodigo"));
         if (body.containsKey("taxRatePct")) {
-            try { empresa.setTaxRatePct(new BigDecimal(body.get("taxRatePct").toString())); } catch (Exception ignored) {}
+            try { empresa.setTaxRatePct(new BigDecimal(body.get("taxRatePct").toString())); } catch (Exception e) { log.warn("taxRatePct parse error: {}", e.getMessage()); }
         }
         empresaRepository.save(empresa);
         return ResponseEntity.ok(toConfigMap(empresa));

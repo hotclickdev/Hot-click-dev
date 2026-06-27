@@ -6,6 +6,8 @@ import com.hotclick.model.CarritoAbandonado;
 import com.hotclick.security.JwtUtil;
 import com.hotclick.service.CarritoAbandonadoService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +18,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/cart")
 public class CarritoAbandonadoController {
+
+    private static final Logger log = LoggerFactory.getLogger(CarritoAbandonadoController.class);
 
     @Autowired private CarritoAbandonadoService service;
     @Autowired private JwtUtil jwtUtil;
@@ -109,7 +113,7 @@ public class CarritoAbandonadoController {
             if (header != null && header.startsWith("Bearer ")) {
                 return jwtUtil.extractUserId(header.substring(7));
             }
-        } catch (Exception ignored) { }
+        } catch (Exception e) { log.warn("error: {}", e.getMessage()); }
         return null;
     }
 }

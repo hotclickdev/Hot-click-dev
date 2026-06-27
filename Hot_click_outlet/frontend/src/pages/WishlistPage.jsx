@@ -93,8 +93,10 @@ export default function WishlistPage() {
               >
                 {/* Image */}
                 <div
+                  role="button" tabIndex={0}
                   className="relative h-40 bg-[#1a1a1f] flex items-center justify-center overflow-hidden cursor-pointer"
                   onClick={() => navigate(`/productos/${product.id}`)}
+                  onKeyDown={(e) => e.key === 'Enter' && navigate(`/productos/${product.id}`)}
                 >
                   {product.imagenUrl ? (
                     <img
@@ -120,8 +122,10 @@ export default function WishlistPage() {
 
                 {/* Info */}
                 <div
+                  role="button" tabIndex={0}
                   className="p-3 cursor-pointer"
                   onClick={() => navigate(`/productos/${product.id}`)}
+                  onKeyDown={(e) => e.key === 'Enter' && navigate(`/productos/${product.id}`)}
                 >
                   <h3 className="font-medium text-xs leading-snug line-clamp-2 mb-1.5" style={{ color: 'var(--hc-text)' }}>
                     {product.nombre}

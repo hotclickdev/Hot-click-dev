@@ -117,9 +117,9 @@ export default function PrivacidadPage() {
         <title>Política de Privacidad — HotClick Costa Rica</title>
         <meta name="description" content="Política de privacidad de HotClick. Protección de datos personales conforme a la Ley N.° 8968 de Costa Rica. Conocé cómo usamos tu información." />
         <link rel="canonical" href={`${SITE_URL}/privacidad`} />
-        <link rel="alternate" hreflang="es-CR" href={`${SITE_URL}/privacidad`} />
-        <link rel="alternate" hreflang="es" href={`${SITE_URL}/privacidad`} />
-        <link rel="alternate" hreflang="x-default" href={`${SITE_URL}/`} />
+        <link rel="alternate" hrefLang="es-CR" href={`${SITE_URL}/privacidad`} />
+        <link rel="alternate" hrefLang="es" href={`${SITE_URL}/privacidad`} />
+        <link rel="alternate" hrefLang="x-default" href={`${SITE_URL}/`} />
         <meta name="robots" content="noindex, follow" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Política de Privacidad — HotClick" />

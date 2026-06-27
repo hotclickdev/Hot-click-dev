@@ -184,7 +184,7 @@ public class PublicChatService {
                 emitter.send(SseEmitter.event().name("error")
                     .data("{\"error\":\"Error al buscar productos\"}"));
                 emitter.complete();
-            } catch (Exception ignored) {}
+            } catch (Exception ae) { log.debug("SSE error: {}", ae.getMessage()); }
         }
     }
 
@@ -388,14 +388,14 @@ public class PublicChatService {
                                                 .data(objectMapper.writeValueAsString(Map.of("text", text))));
                                         }
                                     }
-                                } catch (Exception ignored) {}
+                                } catch (Exception e) { log.debug("SSE delta error: {}", e.getMessage()); }
                             }
                         });
                         emitter.send(SseEmitter.event().name("done").data("{}"));
                         emitter.complete();
                     } catch (Exception e) {
                         log.error("[Chat] Stream processing error: {}", e.getMessage());
-                        try { emitter.complete(); } catch (Exception ignored) {}
+                        try { emitter.complete(); } catch (Exception ae) { log.debug("SSE complete error: {}", ae.getMessage()); }
                     }
                 })
                 .exceptionally(ex -> {
@@ -406,13 +406,13 @@ public class PublicChatService {
                             .data(objectMapper.writeValueAsString(Map.of("text", fallback))));
                         emitter.send(SseEmitter.event().name("done").data("{}"));
                         emitter.complete();
-                    } catch (Exception ignored) {}
+                    } catch (Exception e) { log.debug("SSE fallback error: {}", e.getMessage()); }
                     return null;
                 });
 
         } catch (Exception e) {
             log.error("[Chat] Build request error: {}", e.getMessage());
-            try { emitter.complete(); } catch (Exception ignored) {}
+            try { emitter.complete(); } catch (Exception ae) { log.debug("SSE complete error: {}", ae.getMessage()); }
         }
     }
 

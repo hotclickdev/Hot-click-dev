@@ -288,7 +288,7 @@ export default function LoginPage() {
             className="flex items-center gap-3 mb-5">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold"
               style={{ background: A.bg, border: `1px solid ${A.ring}`, color: A.color, letterSpacing: '0.06em' }}>
-              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: A.color }} />
+              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: A.color }}></span>
               COSTA RICA · E-COMMERCE
             </div>
             <div className="h-px flex-1 max-w-[60px]" style={{ background: `linear-gradient(90deg, ${A.ring}, transparent)` }} />

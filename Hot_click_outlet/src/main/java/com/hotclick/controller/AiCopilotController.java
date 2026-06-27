@@ -4,6 +4,8 @@ import com.hotclick.security.RateLimiter;
 import com.hotclick.security.TenantContext;
 import com.hotclick.service.AiCopilotService;
 import com.hotclick.service.AiQuotaService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
@@ -19,6 +21,8 @@ import java.util.concurrent.Executor;
 @RequestMapping("/api/admin/ai")
 @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN_IT','ADMIN_CLIENTE')")
 public class AiCopilotController {
+
+    private static final Logger log = LoggerFactory.getLogger(AiCopilotController.class);
 
     // Per-empresa burst limit: 10 calls per 5 minutes.
     // Prevents a single tenant from flooding the AI even within monthly quota.
@@ -93,7 +97,7 @@ public class AiCopilotController {
             emitter.send(SseEmitter.event().name("error")
                 .data("{\"error\":\"" + msg + "\"}"));
             emitter.complete();
-        } catch (Exception ignored) {}
+        } catch (Exception e) { log.warn("SSE error: {}", e.getMessage()); }
         return emitter;
     }
 }

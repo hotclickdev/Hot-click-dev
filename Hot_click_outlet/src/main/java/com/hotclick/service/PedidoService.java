@@ -302,7 +302,7 @@ public class PedidoService {
             m.put("notificaciones", objectMapper.readValue(
                 (rawN != null && !rawN.isBlank()) ? rawN : "[]",
                 new TypeReference<List<Map<String, Object>>>() {}));
-        } catch (Exception ignored) { m.put("notificaciones", List.of()); }
+        } catch (Exception e) { log.warn("notificaciones parse error: {}", e.getMessage()); m.put("notificaciones", List.of()); }
         m.put("clienteId",     p.getUsuarioFinal() != null ? p.getUsuarioFinal().getId()       : null);
         m.put("nombreCliente", p.getUsuarioFinal() != null ? p.getUsuarioFinal().getNombre()   : "—");
         m.put("clienteCorreo", p.getUsuarioFinal() != null ? p.getUsuarioFinal().getCorreo()   : "—");

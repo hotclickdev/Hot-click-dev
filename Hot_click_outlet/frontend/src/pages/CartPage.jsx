@@ -190,8 +190,10 @@ export default function CartPage() {
                     style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
                   >
                     <div
+                      role="button" tabIndex={0}
                       className="h-28 bg-[#1a1a1f] flex items-center justify-center overflow-hidden cursor-pointer"
                       onClick={() => navigate(`/productos/${product.id}`)}
+                      onKeyDown={(e) => e.key === 'Enter' && navigate(`/productos/${product.id}`)}
                     >
                       {product.imagenUrl ? (
                         <img
@@ -206,9 +208,11 @@ export default function CartPage() {
                     </div>
                     <div className="p-3">
                       <p
+                        role="button" tabIndex={0}
                         className="text-xs font-medium line-clamp-2 mb-1.5 cursor-pointer"
                         style={{ color: 'var(--hc-text)' }}
                         onClick={() => navigate(`/productos/${product.id}`)}
+                        onKeyDown={(e) => e.key === 'Enter' && navigate(`/productos/${product.id}`)}
                       >
                         {product.nombre}
                       </p>
@@ -408,8 +412,10 @@ export default function CartPage() {
                   style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
                 >
                   <div
+                    role="button" tabIndex={0}
                     className="h-28 bg-[#1a1a1f] flex items-center justify-center overflow-hidden cursor-pointer"
                     onClick={() => navigate(`/productos/${product.id}`)}
+                    onKeyDown={(e) => e.key === 'Enter' && navigate(`/productos/${product.id}`)}
                   >
                     {product.imagenUrl ? (
                       <img
@@ -424,9 +430,11 @@ export default function CartPage() {
                   </div>
                   <div className="p-3">
                     <p
+                      role="button" tabIndex={0}
                       className="text-xs font-medium line-clamp-2 mb-1.5 cursor-pointer"
                       style={{ color: 'var(--hc-text)' }}
                       onClick={() => navigate(`/productos/${product.id}`)}
+                      onKeyDown={(e) => e.key === 'Enter' && navigate(`/productos/${product.id}`)}
                     >
                       {product.nombre}
                     </p>

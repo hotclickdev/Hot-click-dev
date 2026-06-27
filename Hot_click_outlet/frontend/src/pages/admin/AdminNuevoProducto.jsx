@@ -109,7 +109,9 @@ function MultiUploadZone({ files, previews, onAddFiles, onRemove }) {
       )}
 
       {previews.length === 0 && (
-        <div onClick={() => inputRef.current?.click()}
+        <div role="button" tabIndex={0}
+          onClick={() => inputRef.current?.click()}
+          onKeyDown={(e) => e.key === 'Enter' && inputRef.current?.click()}
           onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}
@@ -281,7 +283,9 @@ function MarcaCombobox({ marcas, value, onChange, showNuevaMarca, setShowNuevaMa
 
   return (
     <div ref={ref} className="relative">
-      <div onClick={() => { setOpen(o => !o); setSearch('') }}
+      <div role="button" tabIndex={0}
+        onClick={() => { setOpen(o => !o); setSearch('') }}
+        onKeyDown={(e) => e.key === 'Enter' && (setOpen(o => !o), setSearch(''))}
         className={`${inp} flex items-center justify-between cursor-pointer`}>
         <span className={selected ? 'text-[#e8e8ed]' : 'text-[#8e8e9a]/40'}>
           {selected ? selected.nombreMarca : '-- Sin marca --'}
@@ -1167,7 +1171,7 @@ export default function AdminNuevoProducto() {
                   <Label required>Categoría</Label>
                   {loadingCatalog ? (
                     <div className={`${sel} flex items-center gap-2 text-[#8e8e9a]`}>
-                      <span className="w-3 h-3 border-2 border-[#8e8e9a]/30 border-t-[#8e8e9a] rounded-full animate-spin shrink-0" />
+                      <span className="w-3 h-3 border-2 border-[#8e8e9a]/30 border-t-[#8e8e9a] rounded-full animate-spin shrink-0"></span>
                       Cargando…
                     </div>
                   ) : categories.length === 0 ? (
@@ -1185,7 +1189,7 @@ export default function AdminNuevoProducto() {
                   <Label required={bodegas.length > 0}>Ubicación / Bodega</Label>
                   {loadingCatalog ? (
                     <div className={`${sel} flex items-center gap-2 text-[#8e8e9a]`}>
-                      <span className="w-3 h-3 border-2 border-[#8e8e9a]/30 border-t-[#8e8e9a] rounded-full animate-spin shrink-0" />
+                      <span className="w-3 h-3 border-2 border-[#8e8e9a]/30 border-t-[#8e8e9a] rounded-full animate-spin shrink-0"></span>
                       Cargando…
                     </div>
                   ) : bodegas.length === 0 ? (

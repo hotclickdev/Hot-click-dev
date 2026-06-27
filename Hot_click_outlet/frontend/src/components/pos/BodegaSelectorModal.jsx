@@ -20,7 +20,7 @@ export default function BodegaSelectorModal({ onSelect }) {
     setError(null)
     try {
       const res  = await posService.getBodegas()
-      const lista = (res?.data ?? []).filter(b => b.estado === 1)
+      const lista = (Array.isArray(res) ? res : (res?.data ?? [])).filter(b => b.estado === 1)
       setBodegas(lista)
       if (lista.length === 1) {
         // Safety net: si llegó una sola, auto-selecciona sin mostrar la pantalla

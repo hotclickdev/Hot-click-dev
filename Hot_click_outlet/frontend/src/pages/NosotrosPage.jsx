@@ -52,9 +52,9 @@ export default function NosotrosPage() {
         <title>Sobre nosotros — HotClick Marketplace Costa Rica</title>
         <meta name="description" content="Conocé la historia y misión de HotClick, el marketplace 100% costarricense que conecta emprendedores con compradores de todo el país." />
         <link rel="canonical" href={`${SITE_URL}/nosotros`} />
-        <link rel="alternate" hreflang="es-CR" href={`${SITE_URL}/nosotros`} />
-        <link rel="alternate" hreflang="es"    href={`${SITE_URL}/nosotros`} />
-        <link rel="alternate" hreflang="x-default" href={`${SITE_URL}/`} />
+        <link rel="alternate" hrefLang="es-CR" href={`${SITE_URL}/nosotros`} />
+        <link rel="alternate" hrefLang="es"    href={`${SITE_URL}/nosotros`} />
+        <link rel="alternate" hrefLang="x-default" href={`${SITE_URL}/`} />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Sobre nosotros — HotClick Marketplace Costa Rica" />
         <meta property="og:description" content="Conocé la historia y misión de HotClick, el marketplace 100% costarricense." />

@@ -10,5 +10,6 @@ import java.util.Optional;
 public interface BlogEntradaRepository extends JpaRepository<BlogEntrada, Long> {
     List<BlogEntrada> findByPublicadoTrueAndEstadoOrderByFechaPublicacionDesc(Integer estado);
     List<BlogEntrada> findAllByOrderByFechaCreacionDesc();
+    List<BlogEntrada> findTop100ByOrderByFechaCreacionDesc();
     Optional<BlogEntrada> findBySlug(String slug);
 }

@@ -396,8 +396,8 @@ public class AuthController {
         Optional<Usuario> usuarioOpt = usuarioService.buscarPorCorreo(request.getCorreo());
         if (usuarioOpt.isEmpty()) {
             // Anti-enumeration: same response as wrong password
-            try { securityAuditService.logLoginFailed(request.getCorreo(), httpRequest, "user_not_found"); } catch (Exception ignored) {}
-            try { securityDetectionService.recordFailedLogin(securityAuditService.getIp(httpRequest), request.getCorreo()); } catch (Exception ignored) {}
+            try { securityAuditService.logLoginFailed(request.getCorreo(), httpRequest, "user_not_found"); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
+            try { securityDetectionService.recordFailedLogin(securityAuditService.getIp(httpRequest), request.getCorreo()); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
             return ResponseEntity.status(401).body(ResponseDTO.error("Credenciales inválidas"));
         }
 
@@ -406,15 +406,15 @@ public class AuthController {
         // [FIX-1] Verificar bloqueo por intentos fallidos antes de validar contraseña
         if (usuario.getBloqueadoHasta() != null && LocalDateTime.now(Constants.ZONA_CR).isBefore(usuario.getBloqueadoHasta())) {
             log.warn("Login bloqueado para {}: cuenta bloqueada hasta {}", request.getCorreo(), usuario.getBloqueadoHasta());
-            try { securityAuditService.logLoginBlocked(request.getCorreo(), httpRequest); } catch (Exception ignored) {}
+            try { securityAuditService.logLoginBlocked(request.getCorreo(), httpRequest); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
             return ResponseEntity.status(403).body(ResponseDTO.error(
                 "Cuenta temporalmente bloqueada por múltiples intentos fallidos. Revisá tu correo para recuperar el acceso."));
         }
 
         if (!passwordEncoder.matches(request.getContrasena(), usuario.getContrasenaHash())) {
             usuarioService.incrementarIntentosFallidos(usuario.getId());
-            try { securityAuditService.logLoginFailed(request.getCorreo(), httpRequest, "wrong_password"); } catch (Exception ignored) {}
-            try { securityDetectionService.recordFailedLogin(securityAuditService.getIp(httpRequest), request.getCorreo()); } catch (Exception ignored) {}
+            try { securityAuditService.logLoginFailed(request.getCorreo(), httpRequest, "wrong_password"); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
+            try { securityDetectionService.recordFailedLogin(securityAuditService.getIp(httpRequest), request.getCorreo()); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
             return ResponseEntity.status(401).body(ResponseDTO.error("Credenciales inválidas"));
         }
 
@@ -433,7 +433,7 @@ public class AuthController {
 
         usuarioService.resetearIntentosFallidos(usuario.getId());
         usuarioService.actualizarUltimoAcceso(usuario.getId());
-        try { securityAuditService.logLoginSuccess(usuario.getId(), usuario.getCorreo(), httpRequest); } catch (Exception ignored) {}
+        try { securityAuditService.logLoginSuccess(usuario.getId(), usuario.getCorreo(), httpRequest); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
 
         boolean esAdminIT = usuario.getRoles().stream()
             .anyMatch(r -> Constants.ROL_ADMIN_IT.equals(r.getNombreRol()));
@@ -545,7 +545,7 @@ public class AuthController {
         if (tokenStr != null && !tokenStr.isBlank()) {
             refreshTokenService.revocar(tokenStr);
         }
-        try { securityAuditService.logLogout(null, null, httpRequest); } catch (Exception ignored) {}
+        try { securityAuditService.logLogout(null, null, httpRequest); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
         return ResponseEntity.ok(ResponseDTO.success("Sesión cerrada correctamente", null));
     }
 
@@ -569,7 +569,7 @@ public class AuthController {
             usuarioService.guardar(usuario);
             // Revocar todos los refresh tokens para forzar re-login en otros dispositivos
             refreshTokenService.revocar(body.getOrDefault("refreshToken", ""));
-            try { securityAuditService.logPasswordChanged(usuario.getId(), usuario.getCorreo(), request); } catch (Exception ignored) {}
+            try { securityAuditService.logPasswordChanged(usuario.getId(), usuario.getCorreo(), request); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
             return ResponseEntity.ok(ResponseDTO.success("Contraseña actualizada correctamente", null));
         } catch (SecurityException e) {
             return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
@@ -620,7 +620,7 @@ public class AuthController {
                 if (matchIdx < 0) {
                     usuarioService.incrementarIntentosFallidos(usuario.getId());
                     log.warn("[2FA] Código de recuperación inválido para userId={}", usuario.getId());
-                    try { securityAuditService.log2FAFailed(usuario.getId(), usuario.getCorreo(), httpRequest, "RECOVERY_CODE"); } catch (Exception ignored) {}
+                    try { securityAuditService.log2FAFailed(usuario.getId(), usuario.getCorreo(), httpRequest, "RECOVERY_CODE"); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
                     return ResponseEntity.status(401).body(ResponseDTO.error("Código de recuperación inválido"));
                 }
                 stored.remove(matchIdx);
@@ -628,7 +628,7 @@ public class AuthController {
                 usuarioService.guardar(usuario);
                 usuarioService.resetearIntentosFallidos(usuario.getId());
                 log.info("[2FA] Login por recovery code userId={}. Restantes: {}", usuario.getId(), stored.size());
-                try { securityAuditService.log2FASuccess(usuario.getId(), usuario.getCorreo(), httpRequest, "RECOVERY_CODE"); } catch (Exception ignored) {}
+                try { securityAuditService.log2FASuccess(usuario.getId(), usuario.getCorreo(), httpRequest, "RECOVERY_CODE"); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
                 return ResponseEntity.ok(buildAuthResponse(usuario));
             }
 
@@ -645,11 +645,11 @@ public class AuthController {
                     otpService.marcarUsado(otp);
                     usuarioService.resetearIntentosFallidos(usuario.getId());
                     log.info("[2FA] Login por EMAIL_OTP exitoso userId={}", usuario.getId());
-                    try { securityAuditService.log2FASuccess(usuario.getId(), usuario.getCorreo(), httpRequest, "EMAIL_OTP"); } catch (Exception ignored) {}
+                    try { securityAuditService.log2FASuccess(usuario.getId(), usuario.getCorreo(), httpRequest, "EMAIL_OTP"); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
                     return ResponseEntity.ok(buildAuthResponse(usuario));
                 } catch (RuntimeException e) {
                     usuarioService.incrementarIntentosFallidos(usuario.getId());
-                    try { securityAuditService.log2FAFailed(usuario.getId(), usuario.getCorreo(), httpRequest, "EMAIL_OTP"); } catch (Exception ignored) {}
+                    try { securityAuditService.log2FAFailed(usuario.getId(), usuario.getCorreo(), httpRequest, "EMAIL_OTP"); } catch (Exception ae) { log.warn("audit error: {}", ae.getMessage()); }
                     return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
                 }
             }
@@ -658,13 +658,13 @@ public class AuthController {
             if (!twoFactorService.verifyCodeWithReplayProtection(usuario, code)) {
                 usuarioService.incrementarIntentosFallidos(usuario.getId());
                 log.warn("[2FA] TOTP incorrecto o replay para userId={}", usuario.getId());
-                try { securityAuditService.log2FAFailed(usuario.getId(), usuario.getCorreo(), httpRequest, "TOTP"); } catch (Exception ignored) {}
+                try { securityAuditService.log2FAFailed(usuario.getId(), usuario.getCorreo(), httpRequest, "TOTP"); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
                 return ResponseEntity.status(401).body(ResponseDTO.error("Código incorrecto o expirado"));
             }
 
             usuarioService.resetearIntentosFallidos(usuario.getId());
             log.info("[2FA] TOTP login exitoso userId={}", usuario.getId());
-            try { securityAuditService.log2FASuccess(usuario.getId(), usuario.getCorreo(), httpRequest, "TOTP"); } catch (Exception ignored) {}
+            try { securityAuditService.log2FASuccess(usuario.getId(), usuario.getCorreo(), httpRequest, "TOTP"); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
             return ResponseEntity.ok(buildAuthResponse(usuario));
 
         } catch (Exception e) {

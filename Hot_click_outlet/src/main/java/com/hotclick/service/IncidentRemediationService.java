@@ -165,7 +165,7 @@ public class IncidentRemediationService {
             try {
                 String contenido = gitHubService.obtenerArchivo(candidato);
                 if (contenido != null) return candidato;
-            } catch (Exception ignored) { /* continuar */ }
+            } catch (Exception e) { log.debug("candidato no accesible: {}", e.getMessage()); }
         }
         return null;
     }

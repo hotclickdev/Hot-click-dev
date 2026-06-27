@@ -4,6 +4,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -19,6 +21,8 @@ import java.io.IOException;
  * en el thread pool de Tomcat.
  */
 public class TenantFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(TenantFilter.class);
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -41,8 +45,8 @@ public class TenantFilter extends OncePerRequestFilter {
                         if (empresaId != null) {
                             TenantContext.set(empresaId);
                         }
-                    } catch (Exception ignored) {
-                        // Token inválido o expirado — JwtRequestFilter ya lo manejó
+                    } catch (Exception e) {
+                        log.debug("tenant filter jwt error: {}", e.getMessage());
                     }
                 }
             }

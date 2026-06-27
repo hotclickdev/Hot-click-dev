@@ -119,7 +119,7 @@ export default function TiendaHomePage() {
       {/* Grid de productos */}
       {loading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {[...Array(8)].map((_, i) => (
+          {[...new Array(8)].map((_, i) => (
             <div key={i} className="rounded-xl bg-gray-100 animate-pulse aspect-[3/4]" />
           ))}
         </div>

@@ -597,9 +597,9 @@ export default function ServiciosHotPage() {
         <title>Servicios HotClick — Búsqueda de productos y garantías en Costa Rica</title>
         <meta name="description" content="Solicitá búsqueda de cualquier producto o gestioná la garantía de tu compra. Servicios gratuitos para clientes de HotClick en Costa Rica." />
         <link rel="canonical" href={`${SITE_URL}/servicios`} />
-        <link rel="alternate" hreflang="es-CR" href={`${SITE_URL}/servicios`} />
-        <link rel="alternate" hreflang="es"    href={`${SITE_URL}/servicios`} />
-        <link rel="alternate" hreflang="x-default" href={`${SITE_URL}/`} />
+        <link rel="alternate" hrefLang="es-CR" href={`${SITE_URL}/servicios`} />
+        <link rel="alternate" hrefLang="es"    href={`${SITE_URL}/servicios`} />
+        <link rel="alternate" hrefLang="x-default" href={`${SITE_URL}/`} />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Servicios HotClick — Búsqueda y garantías en Costa Rica" />
         <meta property="og:description" content="Te buscamos el producto que necesitás y gestionamos garantías. Gratis para todos los clientes de HotClick." />

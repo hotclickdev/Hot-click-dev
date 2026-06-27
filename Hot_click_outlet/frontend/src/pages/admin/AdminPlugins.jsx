@@ -47,10 +47,10 @@ function LogModal({ plugin, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.7)' }} onClick={onClose}>
+      style={{ backgroundColor: 'rgba(0,0,0,0.7)' }} onClick={onClose} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
       <div className="rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden"
         style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
-        onClick={e => e.stopPropagation()}>
+        onClick={e => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
         <div className="px-5 py-4 flex items-center justify-between"
           style={{ borderBottom: '1px solid var(--hc-border)' }}>
           <h3 className="font-bold text-sm" style={{ color: 'var(--hc-text)' }}>

@@ -18,9 +18,9 @@ export default function Seo({ title, description, image, url, type = 'website', 
       <link rel="canonical" href={canonical} />
       {noindex && <meta name="robots" content="noindex, follow" />}
 
-      <link rel="alternate" hreflang="es-CR" href={canonical} />
-      <link rel="alternate" hreflang="es"    href={canonical} />
-      <link rel="alternate" hreflang="x-default" href={SITE_URL + '/'} />
+      <link rel="alternate" hrefLang="es-CR" href={canonical} />
+      <link rel="alternate" hrefLang="es"    href={canonical} />
+      <link rel="alternate" hrefLang="x-default" href={SITE_URL + '/'} />
 
       <meta property="og:site_name" content={SITE_NAME} />
       <meta property="og:title" content={title} />

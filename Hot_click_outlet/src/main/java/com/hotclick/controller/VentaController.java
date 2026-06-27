@@ -63,8 +63,8 @@ public class VentaController {
     public ResponseEntity<ResponseDTO> buscarClientes(@RequestParam(required = false) String q) {
         Long empresaId = companyScope.getCurrentEmpresaId();
         List<Usuario> todos = empresaId != null
-            ? usuarioRepository.findByEmpresaIdOrderByIdDesc(empresaId)
-            : usuarioRepository.findAllByOrderByIdDesc();
+            ? usuarioRepository.findTop500ByEmpresaIdOrderByIdDesc(empresaId)
+            : usuarioRepository.findTop500ByOrderByIdDesc();
         if (q != null && !q.isBlank()) {
             String lower = q.toLowerCase();
             todos = todos.stream().filter(u ->

@@ -1849,9 +1849,9 @@ export default function ProductsPage() {
         <title>{seoTitle}</title>
         <meta name="description" content={seoDesc} />
         <link rel="canonical" href={canonicalUrl} />
-        <link rel="alternate" hreflang="es-CR" href={canonicalUrl} />
-        <link rel="alternate" hreflang="es"    href={canonicalUrl} />
-        <link rel="alternate" hreflang="x-default" href="https://hotclick.lat/" />
+        <link rel="alternate" hrefLang="es-CR" href={canonicalUrl} />
+        <link rel="alternate" hrefLang="es"    href={canonicalUrl} />
+        <link rel="alternate" hrefLang="x-default" href="https://hotclick.lat/" />
         {shouldNoIndex && <meta name="robots" content="noindex, follow" />}
         <meta property="og:title" content={seoTitle} />
         <meta property="og:description" content={seoDesc} />

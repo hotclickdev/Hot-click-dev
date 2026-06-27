@@ -5,7 +5,7 @@ import { persist } from 'zustand/middleware'
 function parseJwtClaims(token) {
   try {
     const payload = token.split('.')[1]
-    return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
+    return JSON.parse(atob(payload.replaceAll('-', '+').replaceAll('_', '/')))
   } catch {
     return {}
   }

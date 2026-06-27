@@ -78,10 +78,10 @@ export default function ClienteDetailModal({ clienteId, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
-      onClick={onClose}>
+      onClick={onClose} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
       <div className="w-full max-w-lg h-full overflow-y-auto flex flex-col"
         style={{ backgroundColor: 'var(--hc-surface)', boxShadow: '-4px 0 32px rgba(0,0,0,0.4)' }}
-        onClick={e => e.stopPropagation()}>
+        onClick={e => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
 
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between p-5 border-b"

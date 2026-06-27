@@ -460,7 +460,9 @@ export default function AdminMiEmpresa() {
                 </div>
               ) : canEdit ? (
                 <div
+                  role="button" tabIndex={0}
                   onClick={() => fileInputRef.current?.click()}
+                  onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()}
                   onDragOver={e => { e.preventDefault(); setDragOver(true) }}
                   onDragLeave={() => setDragOver(false)}
                   onDrop={handleDrop}

@@ -3,6 +3,8 @@ package com.hotclick.controller;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.security.RateLimiter;
 import com.hotclick.service.PublicChatService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
@@ -36,6 +38,7 @@ public class PublicChatController {
 
     // 300 public chat calls per empresa per day — enough for real traffic,
     // blocks runaway bots that would exhaust AI costs.
+    private static final Logger log = LoggerFactory.getLogger(PublicChatController.class);
     private static final int  DAILY_MAX    = 300;
     private static final int  DAILY_WINDOW = 86_400; // 24h
     private static final int  MAX_MSG_CHARS = 500;
@@ -109,7 +112,7 @@ public class PublicChatController {
         try {
             emitter.send(SseEmitter.event().name("done").data("{}"));
             emitter.complete();
-        } catch (Exception ignored) {}
+        } catch (Exception e) { log.debug("SSE error: {}", e.getMessage()); }
         return emitter;
     }
 
@@ -118,7 +121,7 @@ public class PublicChatController {
             emitter.send(SseEmitter.event().name("error")
                 .data("{\"error\":\"" + msg + "\"}"));
             emitter.complete();
-        } catch (Exception ignored) {}
+        } catch (Exception e) { log.debug("SSE error: {}", e.getMessage()); }
         return emitter;
     }
 }

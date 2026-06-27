@@ -185,12 +185,12 @@ export default function AdminForecast() {
             <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--hc-muted)' }}>
               <span className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-sm inline-block opacity-100"
-                  style={{ backgroundColor: tab === 'ingresos' ? 'var(--hc-accent)' : '#34d399' }} />
+                  style={{ backgroundColor: tab === 'ingresos' ? 'var(--hc-accent)' : '#34d399' }}></span>
                 Historial real
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-sm inline-block opacity-65"
-                  style={{ backgroundColor: tab === 'ingresos' ? 'var(--hc-accent)' : '#34d399' }} />
+                  style={{ backgroundColor: tab === 'ingresos' ? 'var(--hc-accent)' : '#34d399' }}></span>
                 Pronóstico
               </span>
             </div>

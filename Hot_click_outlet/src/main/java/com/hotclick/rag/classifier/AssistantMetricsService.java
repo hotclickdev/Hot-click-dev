@@ -1,5 +1,6 @@
 package com.hotclick.rag.classifier;
 
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -67,6 +68,7 @@ public class AssistantMetricsService {
 
     /** Log periódico cada 6 horas para monitoreo sin saturar. */
     @Scheduled(fixedDelay = 6 * 60 * 60 * 1000)
+    @SchedulerLock(name = "assistant-metrics-log-stats", lockAtMostFor = "PT10M", lockAtLeastFor = "PT1M")
     public void logStats() {
         if (total.get() == 0) return;
         log.info("[assistant-metrics] total={} validas={} fuera_dominio={} injection={} ratio_valid={}%",

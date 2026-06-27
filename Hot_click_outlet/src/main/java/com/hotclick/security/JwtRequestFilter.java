@@ -1,5 +1,6 @@
 package com.hotclick.security;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import com.hotclick.service.SecurityAuditService;
 import com.hotclick.service.SecurityDetectionService;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -29,6 +30,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     @Autowired private UserDetailsService     userDetailsService;
     @Autowired private SecurityAuditService   auditService;
     @Autowired private SecurityDetectionService detectionService;
+    @Autowired private Cache<String, UserDetails> userDetailsCache;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
@@ -49,7 +51,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 try {
                     auditService.logTokenExpired(request.getRemoteAddr(),
                         request.getHeader("User-Agent"), request.getServletPath());
-                } catch (Exception ignored) {}
+                } catch (Exception ae) { log.warn("audit error: {}", ae.getMessage()); }
             } catch (JwtException | IllegalArgumentException e) {
                 // Invalid/tampered token
                 log.debug("[JWT] Invalid token from ip={}: {}", request.getRemoteAddr(), e.getMessage());
@@ -60,7 +62,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                         request.getServletPath(),
                         e.getClass().getSimpleName());
                     detectionService.recordInvalidJwt(ip);
-                } catch (Exception ignored) {}
+                } catch (Exception ae) { log.warn("audit error: {}", ae.getMessage()); }
             }
         }
 
@@ -71,7 +73,8 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                     chain.doFilter(request, response);
                     return;
                 }
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                UserDetails userDetails = userDetailsCache.get(username,
+                        k -> userDetailsService.loadUserByUsername(k));
                 if (jwtUtil.validateToken(jwt, username)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails, null, userDetails.getAuthorities());

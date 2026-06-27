@@ -15,7 +15,7 @@ export function exportCSV(rows, filename, columns) {
     if (v == null) return ''
     const s = String(v)
     return s.includes(',') || s.includes('"') || s.includes('\n')
-      ? `"${s.replace(/"/g, '""')}"`
+      ? `"${s.replaceAll('"', '""')}"`
       : s
   }
   const header = cols.join(',')

@@ -1,5 +1,6 @@
 package com.hotclick.sse;
 
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -66,8 +67,9 @@ public class StockSseRegistry {
         log.debug("SSE broadcast — key={} suscriptores={} stockActual={}", key, emitters.size(), stockActual);
     }
 
-    /** Comentario SSE cada 25s — evita que proxies/Render cierren la conexión por inactividad. */
+    /** Comentario SSE cada 25s — evita que proxies cierren la conexión por inactividad. */
     @Scheduled(fixedDelay = 25_000)
+    @SchedulerLock(name = "sse-heartbeat", lockAtMostFor = "PT20S", lockAtLeastFor = "PT10S")
     public void heartbeat() {
         if (registry.isEmpty()) return;
         registry.forEach((key, emitters) -> {

@@ -130,7 +130,9 @@ function ImageUploadZone({ onFile }) {
 
   return (
     <div
+      role="button" tabIndex={0}
       onClick={() => inputRef.current?.click()}
+      onKeyDown={(e) => e.key === 'Enter' && inputRef.current?.click()}
       onDragOver={(e) => { e.preventDefault(); setDrag(true) }}
       onDragLeave={() => setDrag(false)}
       onDrop={handleDrop}

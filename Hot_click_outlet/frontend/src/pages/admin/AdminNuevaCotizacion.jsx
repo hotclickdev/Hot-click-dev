@@ -244,7 +244,7 @@ export default function AdminNuevaCotizacion() {
     try {
       const [listaClientes, listaProd] = await Promise.all([
         cotizacionClienteService.listar(),
-        productService.getAll(0, 200).then(r => r.content ?? r),
+        productService.getAll(0, 200).then(r => r.data?.content ?? r.data ?? []),
       ])
       setClientes(listaClientes)
       setProductos(listaProd)

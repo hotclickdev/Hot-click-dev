@@ -1,11 +1,13 @@
 package com.hotclick.config;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.concurrent.TimeUnit;
 
@@ -101,5 +103,14 @@ public class CacheConfig {
         );
 
         return manager;
+    }
+
+    /** Cache de UserDetails para JwtRequestFilter — evita un query a BD por cada request autenticado. */
+    @Bean
+    public Cache<String, UserDetails> userDetailsCache() {
+        return Caffeine.newBuilder()
+            .maximumSize(1_000)
+            .expireAfterWrite(30, TimeUnit.SECONDS)
+            .build();
     }
 }

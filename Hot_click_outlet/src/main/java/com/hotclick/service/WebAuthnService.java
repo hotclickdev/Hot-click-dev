@@ -11,6 +11,8 @@ import com.yubico.webauthn.*;
 import com.yubico.webauthn.data.*;
 import com.yubico.webauthn.exception.AssertionFailedException;
 import com.yubico.webauthn.exception.RegistrationFailedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class WebAuthnService {
+
+    private static final Logger log = LoggerFactory.getLogger(WebAuthnService.class);
 
     private final RelyingParty rp;
     private final WebAuthnCredentialRepository credRepo;
@@ -98,7 +102,7 @@ public class WebAuthnService {
         cred.setCredentialId(result.getKeyId().getId().getBase64Url());
         cred.setPublicKeyCose(result.getPublicKeyCose().getBase64Url());
         cred.setSignCount(result.getSignatureCount());
-        try { cred.setAaguid(result.getAaguid().getBase64Url()); } catch (Exception ignored) {}
+        try { cred.setAaguid(result.getAaguid().getBase64Url()); } catch (Exception e) { log.warn("aaguid error: {}", e.getMessage()); }
         cred.setTransports(result.getKeyId().getTransports()
             .map(t -> {
                 try { return mapper.writeValueAsString(t); } catch (Exception e) { return null; }

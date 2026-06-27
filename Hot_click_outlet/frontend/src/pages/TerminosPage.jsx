@@ -117,9 +117,9 @@ export default function TerminosPage() {
         <title>Términos y Condiciones — HotClick Costa Rica</title>
         <meta name="description" content="Términos y condiciones de uso de HotClick Marketplace. Condiciones para compradores y vendedores emprendedores costarricenses." />
         <link rel="canonical" href={`${SITE_URL}/terminos`} />
-        <link rel="alternate" hreflang="es-CR" href={`${SITE_URL}/terminos`} />
-        <link rel="alternate" hreflang="es" href={`${SITE_URL}/terminos`} />
-        <link rel="alternate" hreflang="x-default" href={`${SITE_URL}/`} />
+        <link rel="alternate" hrefLang="es-CR" href={`${SITE_URL}/terminos`} />
+        <link rel="alternate" hrefLang="es" href={`${SITE_URL}/terminos`} />
+        <link rel="alternate" hrefLang="x-default" href={`${SITE_URL}/`} />
         <meta name="robots" content="noindex, follow" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Términos y Condiciones — HotClick" />

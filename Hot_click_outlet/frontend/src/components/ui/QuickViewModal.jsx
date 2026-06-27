@@ -74,8 +74,10 @@ export default function QuickViewModal({ product, onClose }) {
           <div className="flex flex-col md:flex-row max-h-[85vh] md:max-h-[520px] overflow-y-auto md:overflow-hidden">
             {/* Image */}
             <div
+              role="button" tabIndex={0}
               className="w-full md:w-56 h-52 md:h-auto bg-[#111114] shrink-0 flex items-center justify-center overflow-hidden cursor-pointer"
               onClick={() => { onClose(); navigate(`/productos/${product.id}`) }}
+              onKeyDown={(e) => e.key === 'Enter' && (onClose(), navigate(`/productos/${product.id}`))}
             >
               {product.imagenUrl ? (
                 <img src={product.imagenUrl} alt={product.nombre} className="w-full h-full object-cover" />

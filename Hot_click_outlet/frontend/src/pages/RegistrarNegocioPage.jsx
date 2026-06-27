@@ -127,7 +127,7 @@ export default function RegistrarNegocioPage() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold mb-5"
               style={{ background: A.bg, border: `1px solid ${A.ring}`, color: A.color, letterSpacing: '0.06em' }}>
-              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: A.color }} />
+              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: A.color }}></span>
               REGISTRÁ TU NEGOCIO
             </div>
 

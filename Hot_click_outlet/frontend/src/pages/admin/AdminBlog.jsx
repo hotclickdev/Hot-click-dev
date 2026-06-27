@@ -34,7 +34,7 @@ function Modal({ entrada, onSave, onClose }) {
       position: 'fixed', inset: 0, zIndex: 999,
       background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: 20, overflowY: 'auto',
-    }} onClick={onClose}>
+    }} onClick={onClose} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
         onClick={e => e.stopPropagation()}

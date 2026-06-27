@@ -36,7 +36,7 @@ public class BlogController {
     /** Admin — todas */
     @GetMapping
     public ResponseEntity<ResponseDTO> listarTodas() {
-        return ResponseEntity.ok(ResponseDTO.success("Blog", repo.findAllByOrderByFechaCreacionDesc()));
+        return ResponseEntity.ok(ResponseDTO.success("Blog", repo.findTop100ByOrderByFechaCreacionDesc()));
     }
 
     @GetMapping("/{id}")
