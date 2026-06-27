@@ -46,7 +46,7 @@ function EmprendimientoCloud({ onRegistrar }) {
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold mb-5 w-fit"
           style={{ background: EMPR.bg, border: `1px solid ${EMPR.ring}`, color: EMPR.color }}>
           <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: EMPR.color }}></span>
-          ¿Tenés un negocio?
+          <span>¿Tenés un negocio?</span>
         </div>
         <h2 className="font-black leading-[1.02] tracking-tight mb-3"
           style={{ fontSize: 'clamp(1.5rem, 5vw, 2rem)', color: 'var(--hc-text)' }}>
@@ -174,7 +174,7 @@ function EmprendimientoForm({ onVolver }) {
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold"
           style={{ background: 'rgba(231,59,51,0.08)', border: '1px solid rgba(231,59,51,0.22)', color: 'var(--hc-primary)', letterSpacing: '0.06em' }}>
           <span className="w-1.5 h-1.5 rounded-full bg-[var(--hc-primary)] animate-pulse"></span>
-          Registro de emprendimiento
+          <span>Registro de emprendimiento</span>
         </div>
       </div>
 
@@ -466,7 +466,7 @@ export default function RegisterPage() {
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold mb-5 w-fit"
             style={{ background: BUYER.bg, border: `1px solid ${BUYER.ring}`, color: BUYER.color }}>
             <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: BUYER.color }}></span>
-            Verificación de cuenta
+            <span>Verificación de cuenta</span>
           </div>
 
           <h1 className="font-black leading-[1.02] tracking-tight mb-2"
@@ -595,7 +595,7 @@ export default function RegisterPage() {
                     <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold"
                       style={{ background: BUYER.bg, border: `1px solid ${BUYER.ring}`, color: BUYER.color, letterSpacing: '0.06em' }}>
                       <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: BUYER.color }}></span>
-                      Creá tu cuenta gratis
+                      <span>Creá tu cuenta gratis</span>
                     </div>
                     <div className="h-px flex-1 max-w-[60px]" style={{ background: `linear-gradient(90deg, ${BUYER.ring}, transparent)` }} />
                   </motion.div>

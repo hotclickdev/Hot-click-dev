@@ -1172,7 +1172,7 @@ export default function AdminNuevoProducto() {
                   {loadingCatalog ? (
                     <div className={`${sel} flex items-center gap-2 text-[#8e8e9a]`}>
                       <span className="w-3 h-3 border-2 border-[#8e8e9a]/30 border-t-[#8e8e9a] rounded-full animate-spin shrink-0"></span>
-                      Cargando…
+                      <span>Cargando…</span>
                     </div>
                   ) : categories.length === 0 ? (
                     <div className={`${sel} text-red-400 text-sm`}>Sin categorías — recargá la página</div>
@@ -1190,7 +1190,7 @@ export default function AdminNuevoProducto() {
                   {loadingCatalog ? (
                     <div className={`${sel} flex items-center gap-2 text-[#8e8e9a]`}>
                       <span className="w-3 h-3 border-2 border-[#8e8e9a]/30 border-t-[#8e8e9a] rounded-full animate-spin shrink-0"></span>
-                      Cargando…
+                      <span>Cargando…</span>
                     </div>
                   ) : bodegas.length === 0 ? (
                     <div className={`${sel} text-amber-400 text-sm`}>Sin bodegas — creá una primero</div>

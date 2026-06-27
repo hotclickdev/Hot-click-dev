@@ -417,7 +417,7 @@ export default function Navbar() {
                               onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--hc-muted)' }}
                             >
                               <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: 'var(--hc-border)' }}></span>
-                              Todos los productos
+                              <span>Todos los productos</span>
                             </Link>
                             {categoriasPadre.map(cat => (
                               <Link key={cat.id}

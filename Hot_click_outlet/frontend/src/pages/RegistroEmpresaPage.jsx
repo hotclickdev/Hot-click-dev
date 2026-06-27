@@ -229,7 +229,7 @@ export default function RegistroEmpresaPage() {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-4"
               style={{ background: 'rgba(231,59,51,0.08)', border: '1px solid rgba(231,59,51,0.22)', color: 'var(--hc-primary)', letterSpacing: '0.06em' }}>
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--hc-primary)] animate-pulse"></span>
-              Registro de emprendimiento
+              <span>Registro de emprendimiento</span>
             </div>
             <h1 style={{ fontFamily: 'var(--hc-font-display)', fontWeight: 800, fontSize: 'clamp(1.9rem, 5vw, 2.8rem)', color: 'var(--hc-text)', lineHeight: 1.05, marginBottom: '0.5rem', letterSpacing: '-0.01em' }}>
               Registrá tu empresa
