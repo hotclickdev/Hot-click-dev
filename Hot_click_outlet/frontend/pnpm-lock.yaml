@@ -29,6 +29,9 @@ importers:
       axios:
         specifier: ^1.16.0
         version: 1.16.1
+      dompurify:
+        specifier: ^3.4.11
+        version: 3.4.11
       framer-motion:
         specifier: ^12.38.0
         version: 12.38.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
