@@ -2,6 +2,7 @@ package com.hotclick.service;
 
 import com.hotclick.model.CodigoOtp;
 import com.hotclick.model.Usuario;
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,7 +25,7 @@ public class EmailVerificationService {
     @Transactional
     public void iniciarRegistro(Usuario usuario) {
         if (usuario.getCorreo() == null || usuario.getCorreo().isBlank()) {
-            throw new RuntimeException("El correo es requerido");
+            throw new IllegalArgumentException("El correo es requerido");
         }
 
         Usuario pendiente = usuarioService.buscarPorCorreo(usuario.getCorreo().trim().toLowerCase())
@@ -34,7 +35,7 @@ public class EmailVerificationService {
             if (pendiente.getEstado() != null && pendiente.getEstado() == Constants.ESTADO_ELIMINADO) {
                 pendiente = null; // cuenta eliminada → permitir nuevo registro con ese correo
             } else if (pendiente.getEstado() != null && pendiente.getEstado() == Constants.ESTADO_ACTIVO) {
-                throw new RuntimeException("El correo ya está registrado");
+                throw new IllegalArgumentException("El correo ya está registrado");
             } else {
                 // Cuenta existe pero está PENDIENTE → reenviar código
                 otpService.enviarOtp(pendiente, Constants.OTP_TIPO_REGISTRO);
@@ -52,10 +53,10 @@ public class EmailVerificationService {
     @Transactional
     public Usuario verificarYRegistrar(String correo, String codigoPlano) {
         Usuario usuario = usuarioService.buscarPorCorreo(correo.trim().toLowerCase())
-                .orElseThrow(() -> new RuntimeException("No se encontró una cuenta para ese correo"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró una cuenta para ese correo"));
 
         if (usuario.getEstado() != null && usuario.getEstado() == Constants.ESTADO_ACTIVO) {
-            throw new RuntimeException("La cuenta ya está verificada. Podés iniciar sesión.");
+            throw new IllegalStateException("La cuenta ya está verificada. Podés iniciar sesión.");
         }
 
         CodigoOtp otp = otpService.verificarOtp(usuario, Constants.OTP_TIPO_REGISTRO, codigoPlano);
@@ -63,6 +64,6 @@ public class EmailVerificationService {
         usuarioService.activarUsuario(usuario.getId());
 
         return usuarioService.buscarPorId(usuario.getId())
-                .orElseThrow(() -> new RuntimeException("Error al recuperar la cuenta activada"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Error al recuperar la cuenta activada"));
     }
 }

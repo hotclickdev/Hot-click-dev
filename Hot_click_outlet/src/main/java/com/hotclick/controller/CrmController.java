@@ -1,4 +1,5 @@
 package com.hotclick.controller;
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.utils.Constants;
 
 import com.hotclick.dto.ResponseDTO;
@@ -64,7 +65,7 @@ public class CrmController {
     @Transactional(readOnly = true)
     public ResponseEntity<?> getById(@PathVariable Long id) {
         Usuario u = usuarioRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Cliente no encontrado"));
         // Tenant check: EMPRENDEDOR solo puede ver clientes que hayan comprado en su empresa
         Long empresaId = companyScope.getCurrentEmpresaId();
         if (empresaId != null) {
@@ -88,7 +89,7 @@ public class CrmController {
     public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         try {
             Usuario u = usuarioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Cliente no encontrado"));
             Long empresaId = companyScope.getCurrentEmpresaId();
             if (empresaId != null && !pedidoRepository.existsByUsuarioFinalIdAndEmpresaId(id, empresaId))
                 return ResponseEntity.status(403).body(ResponseDTO.error("Cliente no pertenece a esta empresa"));
@@ -120,7 +121,7 @@ public class CrmController {
                 return ResponseEntity.status(403).body(ResponseDTO.error("Cliente no pertenece a esta empresa"));
             int delta = Integer.parseInt(body.getOrDefault("delta", "0").toString());
             Usuario u = usuarioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Cliente no encontrado"));
             int nuevos = Math.max(0, u.getPuntosFidelidad() + delta);
             u.setPuntosFidelidad(nuevos);
             usuarioRepository.save(u);
@@ -145,7 +146,7 @@ public class CrmController {
             @RequestBody Map<String, Object> body) {
         try {
             Usuario u = usuarioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Cliente no encontrado"));
             Long empresaId = companyScope.getCurrentEmpresaId();
             if (empresaId != null && !pedidoRepository.existsByUsuarioFinalIdAndEmpresaId(id, empresaId))
                 return ResponseEntity.status(403).body(ResponseDTO.error("Cliente no pertenece a esta empresa"));

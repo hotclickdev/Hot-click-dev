@@ -7,6 +7,7 @@ import com.hotclick.model.Usuario;
 import com.hotclick.repository.GiroRuletaRepository;
 import com.hotclick.repository.PremioRepository;
 import com.hotclick.repository.ResultadoRuletaRepository;
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -43,15 +44,15 @@ public class PremioService {
     @Transactional
     public ResultadoRuleta girar(Long giroId, Usuario usuario) {
         GiroRuleta giro = giroRuletaRepository.findById(giroId)
-            .orElseThrow(() -> new RuntimeException("Giro no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Giro no encontrado"));
 
         if (giro.getUsado()) {
-            throw new RuntimeException("Este giro ya fue utilizado");
+            throw new IllegalStateException("Este giro ya fue utilizado");
         }
 
         List<Premio> premios = premioRepository.findByActivoTrueAndEstado(Constants.ESTADO_ACTIVO);
         if (premios.isEmpty()) {
-            throw new RuntimeException("No hay premios configurados");
+            throw new IllegalStateException("No hay premios configurados");
         }
 
         Premio premioGanado = sortearPremio(premios);
@@ -75,7 +76,7 @@ public class PremioService {
 
     private Premio sortearPremio(List<Premio> premios) {
         if (premios == null || premios.isEmpty()) {
-            throw new RuntimeException("No hay premios disponibles para sorteo");
+            throw new IllegalStateException("No hay premios disponibles para sorteo");
         }
         double aleatorio = new Random().nextDouble() * 100;
         double acumulado = 0;

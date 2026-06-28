@@ -251,7 +251,7 @@ function ProductDecos({ productos }) {
     <>
       {cards.map((c, i) => {
         const img = productos?.[c.idx]?.imagenUrl ?? productos?.[i % (productos?.length || 1)]?.imagenUrl
-        const pos = c.left !== undefined ? { top: c.top, left: c.left } : { top: c.top, right: c.right }
+        const pos = c.left === undefined ? { top: c.top, right: c.right } : { top: c.top, left: c.left }
         return (
           <motion.div
             key={i}
@@ -299,7 +299,7 @@ function BusinessDecos({ convenios, accent }) {
   return (
     <>
       {circles.map((c, i) => {
-        const pos = c.left !== undefined ? { top: c.top, left: c.left } : { top: c.top, right: c.right }
+        const pos = c.left === undefined ? { top: c.top, right: c.right } : { top: c.top, left: c.left }
         return (
           <motion.div
             key={i}
@@ -309,15 +309,16 @@ function BusinessDecos({ convenios, accent }) {
             className="absolute flex select-none pointer-events-none items-center justify-center overflow-hidden"
             style={{ width: vs(c.size), height: vs(c.size), borderRadius: '50%', background: c.color, ...pos }}
           >
-            {c.logo ? (
+            {c.logo && (
               <img src={c.logo} alt={c.nombre}
                 className="w-3/5 h-3/5 object-contain"
                 onError={(e) => { e.target.style.display = 'none' }} />
-            ) : c.nombre ? (
+            )}
+            {!c.logo && c.nombre && (
               <span className="text-2xl font-black" style={{ color: accent, opacity: 0.5 }}>
                 {c.nombre[0].toUpperCase()}
               </span>
-            ) : null}
+            )}
           </motion.div>
         )
       })}
@@ -629,7 +630,9 @@ function PhaseBar({ phases, currentIdx, progress, onSelect }) {
       {phases.map((p, i) => {
         const active = i === currentIdx
         const done = i < currentIdx
-        const fill = active ? progress : done ? 100 : 0
+        let fill = 0
+        if (active) fill = progress
+        else if (done) fill = 100
         const dashOffset = CIRCUMFERENCE * (1 - fill / 100)
         return (
           <button
@@ -657,7 +660,7 @@ function PhaseBar({ phases, currentIdx, progress, onSelect }) {
               className="relative rounded-full"
               animate={{ width: active ? 10 : 6, height: active ? 10 : 6, opacity: active || done ? 1 : 0.35 }}
               transition={{ duration: 0.3 }}
-              style={{ backgroundColor: active ? p.accent : done ? p.accent : 'var(--hc-muted)' }}
+              style={{ backgroundColor: active || done ? p.accent : 'var(--hc-muted)' }}
             />
           </button>
         )
@@ -773,15 +776,16 @@ export default function HeroRotator({ destacados }) {
     const step = 80
     const increment = (step / phase.duration) * 100
 
+    const advancePhase = () => {
+      clearInterval(progressRef.current)
+      setTimeout(() => setPhaseIdx((i) => (i + 1) % PHASES.length), 0)
+    }
+
     progressRef.current = setInterval(() => {
-      if (pausedRef.current) return          // pausado mientras escribe
+      if (pausedRef.current) return
       setProgress((p) => {
         const next = p + increment
-        if (next >= 100) {
-          clearInterval(progressRef.current)
-          setTimeout(() => setPhaseIdx((i) => (i + 1) % PHASES.length), 0)
-          return 100
-        }
+        if (next >= 100) { advancePhase(); return 100 }
         return next
       })
     }, step)

@@ -1,4 +1,5 @@
 package com.hotclick.service;
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.utils.Constants;
 
 import com.hotclick.model.Cupon;
@@ -41,7 +42,7 @@ public class CuponService {
         Empresa empresa = null;
         if (empresaId != null) {
             empresa = empresaRepository.findById(empresaId)
-                .orElseThrow(() -> new RuntimeException("Empresa no encontrada: " + empresaId));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Empresa", empresaId));
         }
 
         String codigo = generarCodigo(empresaId);
@@ -114,7 +115,7 @@ public class CuponService {
             }
             codigo = sb.toString();
             intentos++;
-            if (intentos > 20) throw new RuntimeException("No se pudo generar código único");
+            if (intentos > 20) throw new IllegalStateException("No se pudo generar código único");
             boolean existe = empresaId != null
                 ? cuponRepository.findByCodigoAndEmpresaId(codigo, empresaId).isPresent()
                 : cuponRepository.findByCodigo(codigo).isPresent();

@@ -55,7 +55,6 @@ export default function LoginPage() {
   const refs2FA             = useRef([])
   // Multi-method 2FA
   const [twoFaMethods,       setTwoFaMethods]      = useState([])   // available methods
-  const [, setSelectedMethod]    = useState('TOTP')
   const [resendCooldown,     setResendCooldown]    = useState(0)    // seconds until resend allowed
 
   const handleLogin = async (e) => {
@@ -70,12 +69,10 @@ export default function LoginPage() {
         // Multiple methods → show picker
         if (data.methods && data.methods.length > 1) {
           setTwoFaMethods(data.methods)
-          setSelectedMethod(data.methods[0])
           setStep('picker')
         } else {
           // Single method already determined
           const method = data.method || 'TOTP'
-          setSelectedMethod(method)
           setTwoFaMethods([method])
           if (method === 'EMAIL_OTP') {
             // Auto-send OTP email then show input
@@ -138,7 +135,6 @@ export default function LoginPage() {
   }
 
   const handlePickMethod = async (method) => {
-    setSelectedMethod(method)
     setError('')
     if (method === 'EMAIL_OTP') {
       await sendEmailOtp()
@@ -164,8 +160,8 @@ export default function LoginPage() {
       handleLoginSuccess(data)
     } catch {
       setError(useRecovery ? t('login.invalidRecoveryCode') : t('login.error'))
-      if (!useRecovery) { setCode2FA(['', '', '', '', '', '']); refs2FA.current[0]?.focus() }
-      else setRecoveryInput('')
+      if (useRecovery) { setRecoveryInput('') }
+      else { setCode2FA(['', '', '', '', '', '']); refs2FA.current[0]?.focus() }
     } finally { setLoading(false) }
   }
 
@@ -246,6 +242,7 @@ export default function LoginPage() {
     const text = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
     if (text.length === 6) { setCode2FA(text.split('')); refs2FA.current[5]?.focus() }
   }
+  const verifyLabel = useRecovery ? 'Usar código de recuperación' : t('login.verify')
 
   return (
     <div className="relative min-h-screen flex flex-col overflow-hidden" style={{ background: 'var(--hc-bg)' }}>
@@ -547,7 +544,17 @@ export default function LoginPage() {
                   <div className="h-[3px]" style={{ background: `linear-gradient(90deg, transparent, ${A.color}, transparent)` }} />
                   <div className="p-6 sm:p-7">
                     <form onSubmit={handle2FA} className="flex flex-col gap-4">
-                      {!useRecovery ? (
+                      {useRecovery ? (
+                        <div>
+                          <label htmlFor="login-recovery-code" className="hc-input-label block mb-2">{t('login.recoveryCodeLabel')}</label>
+                          <input id="login-recovery-code" type="text" value={recoveryInput}
+                            onChange={e => setRecoveryInput(e.target.value.toUpperCase())}
+                            placeholder="XXXXX-XXXXX" autoFocus
+                            className="hc-input w-full text-center"
+                            style={{ fontFamily: 'monospace', letterSpacing: '0.2em' }} />
+                          <p className="text-xs mt-1.5 text-center" style={{ color: 'var(--hc-muted)' }}>{t('login.emergencyCodeHint')}</p>
+                        </div>
+                      ) : (
                         <div>
                           <p className="text-xs font-semibold uppercase tracking-wider text-center mb-4"
                             style={{ color: 'var(--hc-muted)' }}>Código de 6 dígitos</p>
@@ -564,16 +571,6 @@ export default function LoginPage() {
                             ))}
                           </div>
                         </div>
-                      ) : (
-                        <div>
-                          <label htmlFor="login-recovery-code" className="hc-input-label block mb-2">{t('login.recoveryCodeLabel')}</label>
-                          <input id="login-recovery-code" type="text" value={recoveryInput}
-                            onChange={e => setRecoveryInput(e.target.value.toUpperCase())}
-                            placeholder="XXXXX-XXXXX" autoFocus
-                            className="hc-input w-full text-center"
-                            style={{ fontFamily: 'monospace', letterSpacing: '0.2em' }} />
-                          <p className="text-xs mt-1.5 text-center" style={{ color: 'var(--hc-muted)' }}>{t('login.emergencyCodeHint')}</p>
-                        </div>
                       )}
 
                       {error && (
@@ -586,7 +583,7 @@ export default function LoginPage() {
                       <button type="submit" disabled={loading}
                         className="inline-flex items-center justify-center h-11 px-6 rounded-xl font-bold text-sm text-white w-full transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-60"
                         style={{ background: A.color, boxShadow: `0 0 32px ${A.ring}` }}>
-                        {loading ? 'Verificando…' : (useRecovery ? 'Usar código de recuperación' : t('login.verify'))}
+                        {loading ? 'Verificando…' : verifyLabel}
                       </button>
                       <button type="button" className="hc-btn hc-btn-outline hc-btn-lg w-full"
                         onClick={() => { setUseRecovery(p => !p); setError(''); setRecoveryInput(''); setCode2FA(['', '', '', '', '', '']) }}>

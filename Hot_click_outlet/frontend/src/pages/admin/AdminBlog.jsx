@@ -28,13 +28,14 @@ function Modal({ entrada, onSave, onClose }) {
     border: '1.5px solid var(--hc-border)', background: 'var(--hc-surface-2)',
     color: 'var(--hc-text)', fontSize: 13,
   }
+  const submitLabel = form.publicado ? 'Guardar y publicar' : 'Guardar borrador'
 
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 999,
       background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: 20, overflowY: 'auto',
-    }} onClick={onClose} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
+    }} role="presentation" onClick={onClose} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
         onClick={e => e.stopPropagation()}
@@ -80,7 +81,7 @@ function Modal({ entrada, onSave, onClose }) {
               border: 'none', fontSize: 13, fontWeight: 700,
               cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1,
             }}>
-              {saving ? 'Guardando...' : form.publicado ? 'Guardar y publicar' : 'Guardar borrador'}
+              {saving ? 'Guardando...' : submitLabel}
             </button>
           </div>
         </form>
@@ -108,7 +109,7 @@ export default function AdminBlog() {
     finally { setLoading(false) }
   }
 
-  useEffect(() => { fetchLista() }, []) // eslint-disable-line
+  useEffect(() => { fetchLista() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSave(form) {
     if (form.id) {
@@ -132,7 +133,7 @@ export default function AdminBlog() {
     try {
       await api.put(`/blog/${e.id}`, { ...e, publicado: !e.publicado })
       setLista(prev => prev.map(x => x.id === e.id ? { ...x, publicado: !x.publicado } : x))
-      showToast(!e.publicado ? 'Publicado' : 'Movido a borrador', 'success')
+      showToast(e.publicado ? 'Movido a borrador' : 'Publicado', 'success')
     } catch { showToast('Error', 'error') }
   }
 
@@ -144,7 +145,7 @@ export default function AdminBlog() {
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--hc-text)', margin: 0 }}>Blog</h1>
           <p style={{ fontSize: 13, color: 'var(--hc-muted)', margin: '4px 0 0' }}>
-            {publicados} publicado{publicados !== 1 ? 's' : ''} · {lista.length - publicados} borrador{lista.length - publicados !== 1 ? 'es' : ''}
+            {publicados} publicado{publicados === 1 ? '' : 's'} · {lista.length - publicados} borrador{lista.length - publicados === 1 ? '' : 'es'}
           </p>
         </div>
         <button onClick={() => setModal('new')} style={{
@@ -156,14 +157,16 @@ export default function AdminBlog() {
         </button>
       </div>
 
-      {loading ? (
+      {loading && (
         <p style={{ color: 'var(--hc-muted)', textAlign: 'center', padding: 48 }}>Cargando...</p>
-      ) : lista.length === 0 ? (
+      )}
+      {!loading && lista.length === 0 && (
         <div style={{ textAlign: 'center', padding: 64, color: 'var(--hc-muted)' }}>
           <p style={{ fontSize: 40, margin: '0 0 12px' }}>📝</p>
           <p style={{ fontSize: 15, fontWeight: 600 }}>Sin entradas aún</p>
         </div>
-      ) : (
+      )}
+      {!loading && lista.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {lista.map(e => (
             <motion.div key={e.id}

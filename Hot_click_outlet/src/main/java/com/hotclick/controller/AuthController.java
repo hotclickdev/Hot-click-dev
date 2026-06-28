@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.dto.AuthResponse;
 import com.hotclick.dto.JwtRequest;
 import com.hotclick.dto.RegisterRequest;
@@ -187,7 +188,7 @@ public class AuthController {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Correo y código son requeridos"));
         try {
             Usuario usuario = usuarioService.buscarPorCorreo(correo.trim().toLowerCase())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
             com.hotclick.model.CodigoOtp otp = otpService.verificarOtp(usuario, Constants.OTP_TIPO_REGISTRO, codigo.trim());
             otpService.marcarUsado(otp);
             return ResponseEntity.ok(ResponseDTO.success("Correo verificado correctamente", null));
@@ -212,7 +213,7 @@ public class AuthController {
             if (membresia == null)
                 return ResponseEntity.status(403).body(ResponseDTO.error("No tenés acceso a ese negocio"));
             Empresa empresa = empresaRepository.findById(empresaId)
-                .orElseThrow(() -> new RuntimeException("Negocio no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Negocio no encontrado"));
             String rol = membresia.getRolEnEmpresa() != null && !membresia.getRolEnEmpresa().isBlank()
                 ? membresia.getRolEnEmpresa()
                 : (currentUser.getRoles().isEmpty() ? "USUARIO_FINAL" : currentUser.getRoles().get(0).getNombreRol());
@@ -274,14 +275,14 @@ public class AuthController {
             Long userId    = jwtUtil.extractUserId(tempToken);
             Long empresaId = Long.parseLong(empresaIdRaw.toString());
             Usuario usuario = usuarioService.buscarPorId(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
             MiembroEmpresa membresia = miembroEmpresaRepository
                 .findByUsuarioIdAndEmpresaIdAndEstado(userId, empresaId, 1)
                 .orElse(null);
             if (membresia == null)
                 return ResponseEntity.status(403).body(ResponseDTO.error("No tenés acceso a ese negocio"));
             Empresa empresa = empresaRepository.findById(empresaId)
-                .orElseThrow(() -> new RuntimeException("Negocio no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Negocio no encontrado"));
             // Generar JWT apuntando a la empresa seleccionada, con el rol QUE TIENE
             // en esa empresa (no el rol global de la cuenta)
             String rol          = membresia.getRolEnEmpresa() != null && !membresia.getRolEnEmpresa().isBlank()

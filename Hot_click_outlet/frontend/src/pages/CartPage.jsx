@@ -469,7 +469,7 @@ export default function CartPage() {
                 <div>
                   <p className="text-xs font-semibold mb-0.5" style={{ color: 'var(--hc-text)' }}>HotClick AI</p>
                   <p className="text-sm leading-snug" style={{ color: 'var(--hc-muted)' }}>
-                    Llevás un rato aquí con {items.length} producto{items.length !== 1 ? 's' : ''} en el carrito.
+                    Llevás un rato aquí con {items.length} producto{items.length === 1 ? '' : 's'} en el carrito.
                     {' '}¿Continuamos la compra por WhatsApp o preferís seguir en la tienda?
                   </p>
                 </div>

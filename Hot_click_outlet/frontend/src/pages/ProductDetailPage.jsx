@@ -57,28 +57,31 @@ export default function ProductDetailPage() {
         analytics.productView(p)
         if (p.especificaciones?.trim()) setActiveTab('especificaciones')
         else if (p.comoUsar?.trim()) setActiveTab('como-usar')
-        // Cargar galería de imágenes adicionales
-        productService.getImagenes(p.id)
-          .then((r) => {
-            const imgs = (r.data?.data ?? r.data ?? [])
-            const urls = imgs
-              .sort((a, b) => (a.posicion ?? 0) - (b.posicion ?? 0))
-              .map((i) => i.urlImagen)
-              .filter(Boolean)
-            // Si hay imágenes extra, construir galería completa
-            if (urls.length > 0) {
-              const todas = p.imagenUrl ? [p.imagenUrl, ...urls.filter((u) => u !== p.imagenUrl)] : urls
-              setGaleria(todas)
-            } else {
-              setGaleria(p.imagenUrl ? [p.imagenUrl] : [])
-            }
-          })
-          .catch(() => { setGaleria(p.imagenUrl ? [p.imagenUrl] : []) })
       })
       .catch((err) => { if (err.name !== 'CanceledError') navigate('/productos') })
       .finally(() => { if (!controller.signal.aborted) setLoading(false) })
     return () => controller.abort()
   }, [id])
+
+  useEffect(() => {
+    if (!product?.id) return
+    productService.getImagenes(product.id)
+      .then((r) => {
+        const imgs = (r.data?.data ?? r.data ?? [])
+        const urls = imgs
+          .sort((a, b) => (a.posicion ?? 0) - (b.posicion ?? 0))
+          .map((i) => i.urlImagen)
+          .filter(Boolean)
+        if (urls.length > 0) {
+          const main = product.imagenUrl
+          const todas = main ? [main, ...urls.filter((u) => u !== main)] : urls
+          setGaleria(todas)
+        } else {
+          setGaleria(product.imagenUrl ? [product.imagenUrl] : [])
+        }
+      })
+      .catch(() => { setGaleria(product.imagenUrl ? [product.imagenUrl] : []) })
+  }, [product?.id])
 
   // Fetch same-category recommendations
   useEffect(() => {
@@ -110,7 +113,7 @@ export default function ProductDetailPage() {
     const el = mainCTARef.current
     if (!el) return
     const observer = new IntersectionObserver(
-      ([entry]) => setShowSticky(!entry.isIntersecting),
+      ([entry]) => setShowSticky(entry.isIntersecting === false),
       { threshold: 0.1 }
     )
     observer.observe(el)
@@ -135,12 +138,12 @@ export default function ProductDetailPage() {
     product.comoUsar?.trim()        ? { id: 'como-usar',        label: t('product.howToUseTab') } : null,
   ].filter(Boolean)
 
-  const stockBadge = product.stock === 0 ? 'danger' : product.stock <= 3 ? 'warning' : 'success'
-  const stockLabel = product.stock === 0
-    ? t('product.outOfStock')
-    : product.stock <= 3
-    ? t('product.lowStock', { count: product.stock })
-    : t('product.inStock')
+  let stockBadge = 'success'
+  if (product.stock === 0) stockBadge = 'danger'
+  else if (product.stock <= 3) stockBadge = 'warning'
+  let stockLabel = t('product.inStock')
+  if (product.stock === 0) stockLabel = t('product.outOfStock')
+  else if (product.stock <= 3) stockLabel = t('product.lowStock', { count: product.stock })
 
   const handleDecrease = () => setQuantity((q) => Math.max(1, q - 1))
 
@@ -158,8 +161,9 @@ export default function ProductDetailPage() {
   const handleAdd = () => {
     if (!inStock || justAdded) return
     addItem(normalizeProduct(product), quantity)
+    const qtyPrefix = quantity > 1 ? `${quantity}× ` : ''
     toast({
-      message: t('product.added', { name: `${quantity > 1 ? `${quantity}× ` : ''}${product.nombre}` }),
+      message: t('product.added', { name: `${qtyPrefix}${product.nombre}` }),
       type: 'success',
     })
     setJustAdded(true)
@@ -811,7 +815,7 @@ export default function ProductDetailPage() {
         )}
 
         {/* ── VISTO RECIENTEMENTE — Grid 2 columnas compacto ── */}
-        {recentlyViewed.filter((p) => p.id !== product.id).length > 0 && (
+        {recentlyViewed.some((p) => p.id !== product.id) && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}

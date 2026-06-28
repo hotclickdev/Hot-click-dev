@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Categoria;
 import com.hotclick.repository.CategoriaRepository;
@@ -70,7 +71,7 @@ public class CategoriaController {
             cat.setEmpresa(empresa);
             cat.setAdminCliente(
                 usuarioRepository.findByCorreo(ud.getUsername())
-                    .orElseThrow(() -> new RuntimeException("Admin no encontrado"))
+                    .orElseThrow(() -> new RecursoNoEncontradoException("Admin no encontrado"))
             );
             String padreIdStr = body.get("padreId");
             if (padreIdStr != null && !padreIdStr.isBlank()) {
@@ -91,7 +92,7 @@ public class CategoriaController {
             @RequestBody List<Map<String, String>> items,
             @AuthenticationPrincipal UserDetails ud) {
         var admin = usuarioRepository.findByCorreo(ud.getUsername())
-            .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Admin no encontrado"));
         Long eid2 = companyScope.getCurrentEmpresaIdOrOwn();
         var empresa = eid2 != null ? empresaRepository.findById(eid2).orElse(null) : null;
         List<Categoria> batch = new ArrayList<>();
@@ -118,7 +119,7 @@ public class CategoriaController {
             @RequestBody Map<String, String> body) {
         try {
             Categoria cat = categoriaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Categoría no encontrada"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Categoría no encontrada"));
             companyScope.assertCanAccessNullable(cat.getEmpresaId());
             if (body.get("nombreCategoria") != null && !body.get("nombreCategoria").isBlank())
                 cat.setNombreCategoria(sanitizer.cleanWithLimit(body.get("nombreCategoria"), 150));
@@ -132,7 +133,7 @@ public class CategoriaController {
                     cat.setCategoriaPadre(null);
                 } else {
                     Categoria padre = categoriaRepository.findById(Long.parseLong(padreIdStr))
-                        .orElseThrow(() -> new RuntimeException("Categoría padre no encontrada"));
+                        .orElseThrow(() -> new RecursoNoEncontradoException("Categoría padre no encontrada"));
                     // Tenant isolation: padre y hijo deben pertenecer a la misma empresa
                     if (padre.getEmpresaId() != null && !padre.getEmpresaId().equals(cat.getEmpresaId())) {
                         throw new SecurityException("La categoría padre pertenece a otra empresa");
@@ -152,7 +153,7 @@ public class CategoriaController {
     public ResponseEntity<ResponseDTO> eliminar(@PathVariable Long id) {
         try {
             Categoria cat = categoriaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Categoría no encontrada"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Categoría no encontrada"));
             companyScope.assertCanAccessNullable(cat.getEmpresaId());
             cat.setEstado(Constants.ESTADO_INACTIVO);
             categoriaRepository.save(cat);

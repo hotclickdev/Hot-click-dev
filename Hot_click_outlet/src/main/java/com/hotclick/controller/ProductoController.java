@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.dto.ProductoRequestDTO;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Empresa;
@@ -105,7 +106,7 @@ public class ProductoController {
     public ResponseEntity<ResponseDTO> kardex(@PathVariable Long id) {
         try {
             var producto = productoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Producto no encontrado"));
             companyScope.assertCanAccessNullable(producto.getEmpresaId());
             var movimientos = stockService.historialPorProducto(id);
             return ResponseEntity.ok(ResponseDTO.success("OK", movimientos));
@@ -140,7 +141,7 @@ public class ProductoController {
             Integer orden = (ordenObj instanceof Number n) ? n.intValue() : null;
             if (valor == null) return ResponseEntity.badRequest().body(ResponseDTO.error("Campo enCarrusel requerido"));
             var existente = productoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Producto no encontrado"));
             companyScope.assertCanAccessNullable(existente.getEmpresaId());
             var producto = productoService.toggleCarrusel(id, valor, orden);
             return ResponseEntity.ok(ResponseDTO.success("Carrusel actualizado", producto));
@@ -159,7 +160,7 @@ public class ProductoController {
             Boolean valor = body.get("destacado");
             if (valor == null) return ResponseEntity.badRequest().body(ResponseDTO.error("Campo destacado requerido"));
             var existente = productoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Producto no encontrado"));
             companyScope.assertCanAccessNullable(existente.getEmpresaId());
             var producto = productoService.toggleDestacado(id, valor);
             return ResponseEntity.ok(ResponseDTO.success("Destacado actualizado", producto));
@@ -250,7 +251,7 @@ public class ProductoController {
             @RequestBody ProductoRequestDTO dto) {
         try {
             var existente = productoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Producto no encontrado"));
             companyScope.assertCanAccessNullable(existente.getEmpresaId());
             var textMod = textModerationService.moderar(
                 dto.getNombreProducto(), dto.getDescripcionCorta(),
@@ -371,7 +372,7 @@ public class ProductoController {
     public ResponseEntity<ResponseDTO> eliminarProducto(@PathVariable Long id) {
         try {
             var existente = productoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Producto no encontrado"));
             companyScope.assertCanAccessNullable(existente.getEmpresaId());
             productoService.eliminarProducto(id);
             return ResponseEntity.ok(ResponseDTO.success("Producto eliminado", null));
@@ -386,7 +387,7 @@ public class ProductoController {
                                                       @RequestBody Map<String, Object> body) {
         try {
             Producto p = productoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Producto no encontrado"));
             companyScope.assertCanAccessNullable(p.getEmpresaId());
             boolean enOferta = Boolean.TRUE.equals(body.get("enOferta"));
             p.setEnOferta(enOferta);

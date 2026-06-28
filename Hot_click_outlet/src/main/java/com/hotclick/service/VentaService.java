@@ -1,6 +1,7 @@
 package com.hotclick.service;
 
 import com.hotclick.dto.VentaRequestDTO;
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
@@ -66,7 +67,7 @@ public class VentaService {
             // SELECT FOR UPDATE: bloquea la fila en PostgreSQL hasta el COMMIT.
             // Si otra transacción concurrente intenta modificar el mismo producto, espera aquí.
             Producto producto = productoRepository.findByIdForUpdate(itemDto.getProductoId())
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + itemDto.getProductoId()));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Producto", itemDto.getProductoId()));
 
             int cantidad = itemDto.getCantidad() != null ? itemDto.getCantidad() : 1;
 
@@ -129,10 +130,10 @@ public class VentaService {
 
     private void validarProductoParaVenta(Producto producto, int cantidad, boolean desdeCarrito) {
         if (producto.getEstado() != Constants.ESTADO_ACTIVO) {
-            throw new RuntimeException("Producto no disponible: " + producto.getNombreProducto());
+            throw new IllegalStateException("Producto no disponible: " + producto.getNombreProducto());
         }
         if (Boolean.TRUE.equals(producto.getEsUnico()) && Boolean.TRUE.equals(producto.getVendido())) {
-            throw new RuntimeException("El artículo único '" + producto.getNombreProducto() + "' ya fue vendido");
+            throw new IllegalStateException("El artículo único '" + producto.getNombreProducto() + "' ya fue vendido");
         }
         if (cantidad <= 0) {
             throw new IllegalArgumentException("La cantidad debe ser mayor a 0");
@@ -174,10 +175,10 @@ public class VentaService {
     private Usuario resolverUsuario(VentaRequestDTO dto, String correoOperador) {
         if (dto.getClienteId() != null) {
             return usuarioRepository.findById(dto.getClienteId())
-                .orElseThrow(() -> new RuntimeException("Cliente no encontrado: id=" + dto.getClienteId()));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Cliente no encontrado: id=" + dto.getClienteId()));
         }
         return usuarioRepository.findByCorreo(correoOperador)
-            .orElseThrow(() -> new RuntimeException("Usuario operador no encontrado: " + correoOperador));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Usuario operador no encontrado: " + correoOperador));
     }
 
     private String resolverMetodoEnvio(VentaRequestDTO dto) {
@@ -189,11 +190,11 @@ public class VentaService {
     private Bodega resolverBodega(VentaRequestDTO dto) {
         if (dto.getBodegaId() != null) {
             return bodegaRepository.findById(dto.getBodegaId())
-                .orElseThrow(() -> new RuntimeException("Bodega no encontrada: id=" + dto.getBodegaId()));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Bodega no encontrada: id=" + dto.getBodegaId()));
         }
         List<Bodega> bodegas = bodegaRepository.findByEstado(Constants.ESTADO_ACTIVO);
         if (bodegas.isEmpty()) {
-            throw new RuntimeException("No hay bodegas activas configuradas en el sistema");
+            throw new IllegalStateException("No hay bodegas activas configuradas en el sistema");
         }
         return bodegas.get(0);
     }

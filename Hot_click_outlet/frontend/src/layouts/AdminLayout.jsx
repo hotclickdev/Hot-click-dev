@@ -239,12 +239,13 @@ function NegocioSwitcher({ empresaNombre, empresaId }) {
           <div className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>
             Cambiar negocio
           </div>
-          {loading ? (
+          {loading && (
             <div className="px-3 py-3 text-xs text-center" style={{ color: 'var(--hc-muted)' }}>Cargando…</div>
-          ) : negocios.length === 0 ? (
+          )}
+          {!loading && negocios.length === 0 && (
             <div className="px-3 py-3 text-xs text-center" style={{ color: 'var(--hc-muted)' }}>Sin otros negocios</div>
-          ) : (
-            negocios.map(n => (
+          )}
+          {!loading && negocios.length > 0 && negocios.map(n => (
               <button key={n.id} onClick={() => cambiar(n)} disabled={switching !== null}
                 className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left text-xs transition-colors hover:bg-[var(--hc-surface-2)] disabled:opacity-50"
                 style={{ color: n.id === empresaId ? 'var(--hc-accent)' : 'var(--hc-text)' }}
@@ -272,8 +273,7 @@ function NegocioSwitcher({ empresaNombre, empresaId }) {
                     style={{ borderColor: 'var(--hc-border)', borderTopColor: 'var(--hc-accent)' }} />
                 )}
               </button>
-            ))
-          )}
+          ))}
         </div>
       )}
     </div>

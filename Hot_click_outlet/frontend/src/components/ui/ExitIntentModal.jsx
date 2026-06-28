@@ -84,9 +84,11 @@ export default function ExitIntentModal() {
     }
   }, [cartItems.length, wishItems.length])
 
-  const hasCart  = cartItems.length > 0
-  const preview  = hasCart ? cartItems : wishItems
-  const total    = hasCart ? cartTotal() : null
+  const hasCart    = cartItems.length > 0
+  const preview    = hasCart ? cartItems : wishItems
+  const total      = hasCart ? cartTotal() : null
+  const cartSuffix = cartItems.length === 1 ? '' : 's'
+  const wishSuffix = wishItems.length === 1 ? '' : 's'
 
   return (
     <AnimatePresence>
@@ -127,8 +129,8 @@ export default function ExitIntentModal() {
                 </h2>
                 <p className="text-xs mt-1" style={{ color: 'var(--hc-muted)' }}>
                   {hasCart
-                    ? `${cartItems.length} producto${cartItems.length > 1 ? 's' : ''} · ${formatPrice(total)}`
-                    : `${wishItems.length} producto${wishItems.length > 1 ? 's' : ''} guardados`}
+                    ? `${cartItems.length} producto${cartSuffix} · ${formatPrice(total)}`
+                    : `${wishItems.length} producto${wishSuffix} guardados`}
                 </p>
               </div>
 

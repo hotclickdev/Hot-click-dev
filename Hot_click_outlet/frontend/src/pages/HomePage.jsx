@@ -187,7 +187,7 @@ function CategoryBrowse({ products, categories }) {
               <div className="px-4 py-3">
                 <span className="text-xs font-semibold transition-opacity group-hover:opacity-60"
                   style={{ color: 'var(--hc-accent)' }}>
-                  Ver {group.products.length} producto{group.products.length !== 1 ? 's' : ''} →
+                  Ver {group.products.length} producto{group.products.length === 1 ? '' : 's'} →
                 </span>
               </div>
             </Link>
@@ -745,7 +745,7 @@ export default function HomePage() {
                   initial={{ opacity: 0, y: 10 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: 0.20 }}
+                  transition={{ delay: 0.2 }}
                 >
                   <p className="text-base leading-relaxed mb-1.5" style={{ color: 'var(--hc-muted)' }}>
                     {t('home.servicesNotFound')}{' '}
@@ -809,7 +809,7 @@ export default function HomePage() {
                       initial={{ opacity: 0, x: 28 }}
                       whileInView={{ opacity: 1, x: 0 }}
                       viewport={{ once: true }}
-                      transition={{ delay: 0.18 + i * 0.10, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                      transition={{ delay: 0.18 + i * 0.1, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
                       whileHover={{ y: -3, transition: { duration: 0.2 } }}
                       className="flex items-center gap-4 p-4 rounded-2xl relative z-10"
                       style={{

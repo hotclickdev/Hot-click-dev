@@ -8,8 +8,12 @@ import { useToast } from '@/components/ui/Toast'
 import { formatPrice, conditionLabel } from '@/utils/format'
 import OptimizedImage from '@/components/ui/OptimizedImage'
 
-// hotTag: etiqueta promocional roja («HOT», «-33%») — único rojo permitido dentro
-// de la tarjeta (Brand Book cap. 3.5). La usa la vista de Ofertas.
+const CONDICION_STYLES = {
+  NUEVO:     { background: 'var(--hc-success-bg)', color: 'var(--hc-success)', border: '1px solid color-mix(in srgb, var(--hc-success) 30%, transparent)' },
+  COMO_NUEVO:{ background: 'var(--hc-info-bg)',    color: 'var(--hc-info)',    border: '1px solid color-mix(in srgb, var(--hc-info) 30%, transparent)' },
+}
+const CONDICION_DEFAULT = { background: 'var(--hc-warning-bg)', color: 'var(--hc-warning)', border: '1px solid color-mix(in srgb, var(--hc-warning) 30%, transparent)' }
+
 function ProductCard({ product, priority = false, index = 0, hotTag = null }) {
   const navigate = useNavigate()
   const { toggle: toggleWishlist, isLiked } = useWishlistStore()
@@ -20,6 +24,13 @@ function ProductCard({ product, priority = false, index = 0, hotTag = null }) {
   const [added, setAdded] = useState(false)
 
   const liked = isLiked(product.id)
+  const condicionStyle = CONDICION_STYLES[product.condicion] ?? CONDICION_DEFAULT
+  let stockColor = 'var(--hc-success)'
+  if (product.stock === 0) stockColor = 'var(--hc-danger)'
+  else if (product.stock <= 3) stockColor = 'var(--hc-warning)'
+  let stockText = t('products.inStock')
+  if (product.stock === 0) stockText = t('products.outOfStock')
+  else if (product.stock <= 3) stockText = t('products.lowStock', { count: product.stock })
 
   const handleAddToCart = (e) => {
     e.stopPropagation()
@@ -93,13 +104,7 @@ function ProductCard({ product, priority = false, index = 0, hotTag = null }) {
           {product.condicion && (
             <span
               className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
-              style={
-                product.condicion === 'NUEVO'
-                  ? { background: 'var(--hc-success-bg)', color: 'var(--hc-success)', border: '1px solid color-mix(in srgb, var(--hc-success) 30%, transparent)' }
-                  : product.condicion === 'COMO_NUEVO'
-                  ? { background: 'var(--hc-info-bg)', color: 'var(--hc-info)', border: '1px solid color-mix(in srgb, var(--hc-info) 30%, transparent)' }
-                  : { background: 'var(--hc-warning-bg)', color: 'var(--hc-warning)', border: '1px solid color-mix(in srgb, var(--hc-warning) 30%, transparent)' }
-              }
+              style={condicionStyle}
             >
               {conditionLabel(product.condicion)}
             </span>
@@ -153,17 +158,13 @@ function ProductCard({ product, priority = false, index = 0, hotTag = null }) {
           <div className="flex items-center gap-1.5 shrink-0 pb-0.5">
             <span
               className="w-1.5 h-1.5 rounded-full shrink-0"
-              style={{ background: product.stock === 0 ? 'var(--hc-danger)' : product.stock <= 3 ? 'var(--hc-warning)' : 'var(--hc-success)' }}
+              style={{ background: stockColor }}
             />
             <span
               className="text-[10px] font-semibold"
-              style={{ color: product.stock === 0 ? 'var(--hc-danger)' : product.stock <= 3 ? 'var(--hc-warning)' : 'var(--hc-success)' }}
+              style={{ color: stockColor }}
             >
-              {product.stock === 0
-                ? t('products.outOfStock')
-                : product.stock <= 3
-                ? t('products.lowStock', { count: product.stock })
-                : t('products.inStock')}
+              {stockText}
             </span>
           </div>
         </div>

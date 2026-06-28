@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Marca;
 import com.hotclick.repository.MarcaRepository;
@@ -77,7 +78,7 @@ public class MarcaController {
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El nombre de la marca contiene contenido no permitido"));
 
             var admin = usuarioRepository.findByCorreo(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
             Long _eid = companyScope.getCurrentEmpresaIdOrOwn();
             var empresa = _eid != null ? empresaRepository.findById(_eid).orElse(null) : null;
             Long empresaId = empresa != null ? empresa.getId() : null;
@@ -107,7 +108,7 @@ public class MarcaController {
             @RequestBody Map<String, String> body) {
         try {
             Marca m = marcaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Marca no encontrada"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Marca no encontrada"));
             companyScope.assertCanAccessNullable(m.getEmpresaId());
             if (body.containsKey("nombreMarca") && !body.get("nombreMarca").isBlank()) {
                 var textMod = textModerationService.moderar(body.get("nombreMarca"));
@@ -136,7 +137,7 @@ public class MarcaController {
             @RequestBody List<Map<String, String>> items,
             @AuthenticationPrincipal UserDetails userDetails) {
         var admin = usuarioRepository.findByCorreo(userDetails.getUsername())
-            .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Admin no encontrado"));
         Long _eid2 = companyScope.getCurrentEmpresaIdOrOwn();
         var empresa = _eid2 != null ? empresaRepository.findById(_eid2).orElse(null) : null;
         Long empresaId = empresa != null ? empresa.getId() : null;
@@ -183,7 +184,7 @@ public class MarcaController {
     public ResponseEntity<ResponseDTO> eliminar(@PathVariable Long id) {
         try {
             Marca m = marcaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Marca no encontrada"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Marca no encontrada"));
             companyScope.assertCanAccessNullable(m.getEmpresaId());
             m.setEstado(Constants.ESTADO_INACTIVO);
             marcaRepository.save(m);

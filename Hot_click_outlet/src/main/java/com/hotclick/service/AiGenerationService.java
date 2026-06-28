@@ -3,6 +3,7 @@ package com.hotclick.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.dto.AiProductoGeneradoDTO;
+import com.hotclick.exception.IntegracionExternaException;
 import com.hotclick.exception.PlanLimitException;
 import com.hotclick.utils.InputSanitizer;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -116,7 +117,8 @@ public class AiGenerationService {
             throw e;
         } catch (Exception e) {
             log.error("[ai-gen] Error empresa={}: {}", empresaId, e.getMessage(), e);
-            throw new RuntimeException("Error al generar la ficha con IA. Intentá de nuevo en unos momentos.");
+            throw new IntegracionExternaException("claude", IntegracionExternaException.Tipo.IO_ERROR,
+                "Error al generar la ficha con IA. Intentá de nuevo en unos momentos.", e);
         }
     }
 
@@ -239,9 +241,8 @@ public class AiGenerationService {
         }
 
         if (titulo.isBlank()) {
-            throw new RuntimeException(
-                "La IA no pudo identificar el producto en la imagen. " +
-                "Intentá con una foto más clara y bien iluminada.");
+            throw new IntegracionExternaException("claude", IntegracionExternaException.Tipo.RESPUESTA_INVALIDA,
+                "La IA no pudo identificar el producto en la imagen. Intentá con una foto más clara y bien iluminada.");
         }
 
         // Créditos restantes para que el frontend actualice el contador sin un request extra

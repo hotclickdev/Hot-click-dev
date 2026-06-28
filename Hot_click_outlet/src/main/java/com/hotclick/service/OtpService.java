@@ -5,6 +5,7 @@ import com.hotclick.model.TipoOtp;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.CodigoOtpRepository;
 import com.hotclick.repository.TipoOtpRepository;
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,12 +32,12 @@ public class OtpService {
     @Transactional
     public void enviarOtp(Usuario usuario, String tipoNombre) {
         TipoOtp tipo = tipoOtpRepository.findByNombre(tipoNombre)
-                .orElseThrow(() -> new RuntimeException("Tipo de OTP no configurado: " + tipoNombre));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Tipo de OTP no configurado: " + tipoNombre));
 
         LocalDateTime ventana = LocalDateTime.now(Constants.ZONA_CR).minusMinutes(Constants.OTP_VENTANA_REENVIO_MIN);
         long recientes = codigoOtpRepository.countRecentOtps(usuario, tipoNombre, ventana);
         if (recientes >= Constants.OTP_MAX_REENVIOS) {
-            throw new RuntimeException(
+            throw new IllegalStateException(
                 "Demasiadas solicitudes. Esperá " + Constants.OTP_VENTANA_REENVIO_MIN + " minutos antes de pedir otro código.");
         }
 
@@ -66,11 +67,11 @@ public class OtpService {
     public CodigoOtp verificarOtp(Usuario usuario, String tipoNombre, String codigoPlano) {
         CodigoOtp otp = codigoOtpRepository
                 .findTopByUsuarioAndTipoOtpNombreAndActiveFlagTrueOrderByIdOtpCodeDesc(usuario, tipoNombre)
-                .orElseThrow(() -> new RuntimeException("No hay un código activo. Solicitá uno nuevo."));
+                .orElseThrow(() -> new IllegalStateException("No hay un código activo. Solicitá uno nuevo."));
 
         if (otp.isExpired()) {
             codigoOtpRepository.invalidar(otp.getIdOtpCode());
-            throw new RuntimeException("El código ha expirado. Solicitá uno nuevo.");
+            throw new IllegalStateException("El código ha expirado. Solicitá uno nuevo.");
         }
 
         codigoOtpRepository.incrementarAttempts(otp.getIdOtpCode());
@@ -80,9 +81,9 @@ public class OtpService {
             int restantes = Constants.OTP_MAX_INTENTOS - intentosUsados;
             if (intentosUsados >= Constants.OTP_MAX_INTENTOS) {
                 codigoOtpRepository.invalidar(otp.getIdOtpCode());
-                throw new RuntimeException("Demasiados intentos fallidos. Solicitá un código nuevo.");
+                throw new IllegalArgumentException("Demasiados intentos fallidos. Solicitá un código nuevo.");
             }
-            throw new RuntimeException("Código incorrecto. " + restantes + " intento(s) restante(s).");
+            throw new IllegalArgumentException("Código incorrecto. " + restantes + " intento(s) restante(s).");
         }
 
         return otp;

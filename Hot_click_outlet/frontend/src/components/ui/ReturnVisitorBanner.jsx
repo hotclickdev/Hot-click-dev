@@ -45,11 +45,9 @@ export default function ReturnVisitorBanner() {
   if (!info) return null
 
   const days = info.daysSince
-  const greeting = days === 0
-    ? '¡Bienvenido de vuelta!'
-    : days === 1
-    ? '¡Volviste! Te extrañamos.'
-    : `¡Volviste después de ${days} días!`
+  let greeting = `¡Volviste después de ${days} días!`
+  if (days === 0) greeting = '¡Bienvenido de vuelta!'
+  else if (days === 1) greeting = '¡Volviste! Te extrañamos.'
 
   return (
     <AnimatePresence>

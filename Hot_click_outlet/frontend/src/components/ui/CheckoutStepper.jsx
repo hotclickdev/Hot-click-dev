@@ -20,6 +20,7 @@ export default function CheckoutStepper({ activeStep = 'checkout' }) {
         const active  = i === activeIdx
         const pending = i > activeIdx
         const label   = t(`checkoutStepper.${step.id}`)
+        const labelColor = active ? 'var(--hc-accent)' : done ? 'var(--hc-muted)' : 'color-mix(in srgb, var(--hc-muted) 40%, transparent)'
 
         return (
           <div key={step.id} className="flex items-center">
@@ -33,7 +34,7 @@ export default function CheckoutStepper({ activeStep = 'checkout' }) {
               )}
               <span
                 className="text-[10px] font-medium hidden sm:block transition-colors duration-300"
-                style={{ color: active ? 'var(--hc-accent)' : done ? 'var(--hc-muted)' : 'color-mix(in srgb, var(--hc-muted) 40%, transparent)' }}
+                style={{ color: labelColor }}
                 aria-current={active ? 'step' : undefined}
               >
                 {label}
@@ -54,17 +55,16 @@ export default function CheckoutStepper({ activeStep = 'checkout' }) {
 }
 
 function StepCircle({ done, active, pending, index }) {
+  let circleStyle = { background: 'color-mix(in srgb, var(--hc-surface) 60%, transparent)', color: 'color-mix(in srgb, var(--hc-muted) 40%, transparent)', border: '1px solid var(--hc-border)' }
+  if (done) circleStyle = { background: '#10b981', color: '#fff', boxShadow: '0 0 12px rgba(16,185,129,0.4)' }
+  else if (active) circleStyle = { background: 'var(--hc-accent)', color: '#fff', boxShadow: '0 0 16px color-mix(in srgb, var(--hc-accent) 50%, transparent)' }
   return (
     <motion.div
       initial={false}
       animate={active ? { scale: [1, 1.1, 1] } : { scale: 1 }}
       transition={{ duration: 0.35, ease: 'easeOut' }}
       className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300"
-      style={
-        done    ? { background: '#10b981', color: '#fff', boxShadow: '0 0 12px rgba(16,185,129,0.4)' } :
-        active  ? { background: 'var(--hc-accent)', color: '#fff', boxShadow: '0 0 16px color-mix(in srgb, var(--hc-accent) 50%, transparent)' } :
-                  { background: 'color-mix(in srgb, var(--hc-surface) 60%, transparent)', color: 'color-mix(in srgb, var(--hc-muted) 40%, transparent)', border: '1px solid var(--hc-border)' }
-      }
+      style={circleStyle}
     >
       {done ? (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">

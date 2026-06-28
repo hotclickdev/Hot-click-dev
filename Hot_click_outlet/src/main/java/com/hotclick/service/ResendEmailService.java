@@ -1,5 +1,6 @@
 package com.hotclick.service;
 
+import com.hotclick.exception.IntegracionExternaException;
 import com.sendgrid.Method;
 import com.sendgrid.Request;
 import com.sendgrid.Response;
@@ -38,12 +39,14 @@ public class ResendEmailService {
             request.setBody(mail.build());
             Response response = sg.api(request);
             if (response.getStatusCode() < 200 || response.getStatusCode() >= 300) {
-                throw new RuntimeException("SendGrid respondió " + response.getStatusCode() + ": " + response.getBody());
+                throw new IntegracionExternaException("sendgrid", IntegracionExternaException.Tipo.IO_ERROR,
+                    "SendGrid respondió " + response.getStatusCode() + ": " + response.getBody());
             }
-        } catch (RuntimeException e) {
+        } catch (IntegracionExternaException e) {
             throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Error al enviar el correo. Intentá de nuevo en unos minutos.", e);
+            throw new IntegracionExternaException("sendgrid", IntegracionExternaException.Tipo.IO_ERROR,
+                "Error al enviar el correo. Intentá de nuevo en unos minutos.", e);
         }
     }
 }

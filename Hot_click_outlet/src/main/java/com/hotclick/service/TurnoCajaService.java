@@ -1,4 +1,5 @@
 package com.hotclick.service;
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.utils.Constants;
 
 import com.hotclick.model.Empresa;
@@ -30,9 +31,9 @@ public class TurnoCajaService {
         }
 
         Usuario usuario = usuarioRepository.findById(usuarioId)
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Usuario", usuarioId));
         Empresa empresa = empresaRepository.findById(empresaId)
-            .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Empresa", empresaId));
 
         TurnoCaja turno = new TurnoCaja();
         turno.setUsuario(usuario);
@@ -46,7 +47,7 @@ public class TurnoCajaService {
     @Transactional
     public TurnoCaja cerrarTurno(Long turnoId, Integer montoDeclarado, String notas) {
         TurnoCaja turno = turnoCajaRepository.findById(turnoId)
-            .orElseThrow(() -> new RuntimeException("Turno no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Turno no encontrado"));
         if (!"ABIERTO".equals(turno.getEstado())) {
             throw new IllegalStateException("El turno ya está cerrado");
         }
@@ -75,7 +76,7 @@ public class TurnoCajaService {
     public void actualizarTotales(Long turnoId, String metodoPago, Integer monto) {
         if (metodoPago == null || metodoPago.isBlank() || monto == null || monto <= 0) return;
         TurnoCaja turno = turnoCajaRepository.findById(turnoId)
-            .orElseThrow(() -> new RuntimeException("Turno no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Turno no encontrado"));
 
         switch (metodoPago.toUpperCase()) {
             case "EFECTIVO"      -> turno.setTotalEfectivo(turno.getTotalEfectivo() + monto);

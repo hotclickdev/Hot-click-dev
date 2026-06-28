@@ -296,7 +296,7 @@ public class PaymentService {
 
         for (PedidoItem item : pedido.getItems()) {
             Producto producto = productoRepository.findByIdForUpdate(item.getProducto().getId())
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado al confirmar pago"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Producto no encontrado al confirmar pago"));
 
             int cantidad   = item.getCantidad();
             int nuevoStock = producto.getStockActual() - cantidad;
@@ -384,7 +384,7 @@ public class PaymentService {
     @Transactional
     public void cancelarPorUsuario(String numeroPedido, String correoUsuario) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
-            .orElseThrow(() -> new RuntimeException("Pedido no encontrado: " + numeroPedido));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
 
         if (!pedido.getUsuarioFinal().getCorreo().equals(correoUsuario)) {
             throw new SecurityException("No tienes permiso para cancelar este pedido");
@@ -395,7 +395,7 @@ public class PaymentService {
         }
 
         Pago pago = pagoRepository.findTopByPedidoId(pedido.getId())
-            .orElseThrow(() -> new RuntimeException("Pago no encontrado para pedido: " + numeroPedido));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Pago no encontrado para pedido: " + numeroPedido));
 
         // Si el webhook ya confirmó o capturó el pago, no cancelar
         if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
@@ -412,9 +412,9 @@ public class PaymentService {
     @Transactional(readOnly = true)
     public PaymentStatusResponse consultarEstado(String numeroPedido) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
-            .orElseThrow(() -> new RuntimeException("Pedido no encontrado: " + numeroPedido));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
         Pago pago = pagoRepository.findTopByPedidoId(pedido.getId())
-            .orElseThrow(() -> new RuntimeException("Pago no encontrado para pedido: " + numeroPedido));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Pago no encontrado para pedido: " + numeroPedido));
         return buildStatusResponse(pago);
     }
 
@@ -447,7 +447,7 @@ public class PaymentService {
     @Transactional
     public PaymentStatusResponse confirmarSinpe(Long pagoId) {
         Pago pago = pagoRepository.findById(pagoId)
-            .orElseThrow(() -> new RuntimeException("Pago no encontrado: " + pagoId));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Pago", pagoId));
 
         if (!Constants.PROVEEDOR_SINPE.equals(pago.getProveedor())) {
             throw new IllegalArgumentException("El pago no es de tipo SINPE");
@@ -474,7 +474,7 @@ public class PaymentService {
     @Transactional
     public void rechazarSinpe(Long pagoId, String motivo) {
         Pago pago = pagoRepository.findById(pagoId)
-            .orElseThrow(() -> new RuntimeException("Pago no encontrado: " + pagoId));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Pago", pagoId));
 
         if (!Constants.PROVEEDOR_SINPE.equals(pago.getProveedor())) {
             throw new IllegalArgumentException("El pago no es de tipo SINPE");
@@ -538,14 +538,14 @@ public class PaymentService {
     @Transactional
     public void cancelarAnon(String numeroPedido) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
-            .orElseThrow(() -> new RuntimeException("Pedido no encontrado: " + numeroPedido));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
 
         if (!Constants.PEDIDO_PENDIENTE.equals(pedido.getEstadoPedido())) {
             throw new IllegalStateException("El pedido ya fue procesado y no puede cancelarse");
         }
 
         Pago pago = pagoRepository.findTopByPedidoId(pedido.getId())
-            .orElseThrow(() -> new RuntimeException("Pago no encontrado para pedido: " + numeroPedido));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Pago no encontrado para pedido: " + numeroPedido));
 
         if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
             throw new IllegalStateException("El pago ya fue confirmado y no puede cancelarse");

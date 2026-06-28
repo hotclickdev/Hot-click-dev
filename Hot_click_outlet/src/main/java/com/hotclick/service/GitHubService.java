@@ -1,5 +1,6 @@
 package com.hotclick.service;
 
+import com.hotclick.exception.IntegracionExternaException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -74,7 +75,8 @@ public class GitHubService {
                 "sha", sha));
         HttpRequest req = buildPost(url, body);
         HttpResponse<String> res = HTTP.send(req, HttpResponse.BodyHandlers.ofString());
-        if (res.statusCode() != 201) throw new RuntimeException("No se pudo crear branch: " + res.body());
+        if (res.statusCode() != 201) throw new IntegracionExternaException("github", IntegracionExternaException.Tipo.IO_ERROR,
+                "No se pudo crear branch: " + res.body());
         log.info("GitHub: branch creado — {}", branchName);
     }
 
@@ -88,7 +90,8 @@ public class GitHubService {
         HttpRequest req = buildPut(url, objectMapper.writeValueAsString(payload));
         HttpResponse<String> res = HTTP.send(req, HttpResponse.BodyHandlers.ofString());
         if (res.statusCode() != 200 && res.statusCode() != 201)
-            throw new RuntimeException("No se pudo actualizar archivo: " + res.body());
+            throw new IntegracionExternaException("github", IntegracionExternaException.Tipo.IO_ERROR,
+                "No se pudo actualizar archivo: " + res.body());
         log.info("GitHub: archivo actualizado — {}", filePath);
     }
 
@@ -102,7 +105,8 @@ public class GitHubService {
                 "base", "master"));
         HttpRequest req = buildPost(url, body);
         HttpResponse<String> res = HTTP.send(req, HttpResponse.BodyHandlers.ofString());
-        if (res.statusCode() != 201) throw new RuntimeException("No se pudo abrir PR: " + res.body());
+        if (res.statusCode() != 201) throw new IntegracionExternaException("github", IntegracionExternaException.Tipo.IO_ERROR,
+                "No se pudo abrir PR: " + res.body());
         String prUrl = objectMapper.readTree(res.body()).path("html_url").asText();
         log.info("GitHub: PR abierto — {}", prUrl);
         return prUrl;

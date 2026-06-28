@@ -78,7 +78,7 @@ export default function ClienteDetailModal({ clienteId, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
-      onClick={onClose} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
+      role="presentation" onClick={onClose} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
       <div className="w-full max-w-lg h-full overflow-y-auto flex flex-col"
         style={{ backgroundColor: 'var(--hc-surface)', boxShadow: '-4px 0 32px rgba(0,0,0,0.4)' }}
         onClick={e => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>

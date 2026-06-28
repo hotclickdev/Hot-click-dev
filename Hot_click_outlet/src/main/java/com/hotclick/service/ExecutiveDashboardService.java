@@ -1,4 +1,5 @@
 package com.hotclick.service;
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.utils.Constants;
 
 import com.hotclick.model.Empresa;
@@ -71,7 +72,8 @@ public class ExecutiveDashboardService {
 
     @Transactional
     public Reporte guardarResumenAi(Long empresaId, String periodo, String resumen) {
-        Empresa empresa = empresaRepository.findById(empresaId).orElseThrow();
+        Empresa empresa = empresaRepository.findById(empresaId)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Empresa", empresaId));
         Reporte r = reporteRepository.findByEmpresaIdAndTipoAndPeriodo(empresaId, "EJECUTIVO_MENSUAL", periodo)
             .orElseGet(() -> { Reporte nr = new Reporte(); nr.setEmpresa(empresa); nr.setTipo("EJECUTIVO_MENSUAL"); nr.setPeriodo(periodo); return nr; });
         r.setResumenAi(resumen);

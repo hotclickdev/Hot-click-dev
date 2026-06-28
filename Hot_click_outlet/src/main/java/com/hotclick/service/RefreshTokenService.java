@@ -35,7 +35,7 @@ public class RefreshTokenService {
     public RefreshToken validar(String tokenStr) {
         return repo.findByToken(tokenStr)
                 .filter(RefreshToken::isValid)
-                .orElseThrow(() -> new RuntimeException("Sesión expirada. Iniciá sesión de nuevo."));
+                .orElseThrow(() -> new IllegalStateException("Sesión expirada. Iniciá sesión de nuevo."));
     }
 
     @Transactional

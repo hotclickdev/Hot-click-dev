@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Carrito;
 import com.hotclick.model.Usuario;
@@ -40,7 +41,7 @@ public class CarritoController {
                 return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));
             }
             Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
             Carrito carrito = carritoService.obtenerCarritoActivo(usuario);
             return ResponseEntity.ok(ResponseDTO.success("Carrito obtenido", carrito));
         } catch (SecurityException e) {
@@ -59,7 +60,7 @@ public class CarritoController {
         try {
             Long userId = extractUserId(request);
             Carrito carrito = carritoRepository.findById(carritoId)
-                .orElseThrow(() -> new RuntimeException("Carrito no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Carrito no encontrado"));
             if (!carrito.getUsuarioFinal().getId().equals(userId)) {
                 return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));
             }
@@ -78,7 +79,7 @@ public class CarritoController {
         try {
             Long userId = extractUserId(request);
             Carrito carrito = carritoRepository.findById(carritoId)
-                .orElseThrow(() -> new RuntimeException("Carrito no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Carrito no encontrado"));
             if (!carrito.getUsuarioFinal().getId().equals(userId)) {
                 return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));
             }

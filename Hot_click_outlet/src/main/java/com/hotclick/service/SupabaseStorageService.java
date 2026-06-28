@@ -1,5 +1,6 @@
 package com.hotclick.service;
 
+import com.hotclick.exception.IntegracionExternaException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import net.coobird.thumbnailator.Thumbnails;
@@ -180,11 +181,13 @@ public class SupabaseStorageService {
 
     private String subirCertificadoFallback(MultipartFile file, Long empresaId, Throwable t) {
         log.error("[s3-circuit] OPEN subirCertificado empresa={}: {}", empresaId, t.getMessage());
-        throw new RuntimeException("Servicio de almacenamiento no disponible temporalmente");
+        throw new IntegracionExternaException("s3", IntegracionExternaException.Tipo.IO_ERROR,
+            "Servicio de almacenamiento no disponible temporalmente");
     }
 
     private String subirImagenFallback(MultipartFile file, String carpeta, Throwable t) {
         log.error("[s3-circuit] OPEN subirImagen carpeta={}: {}", carpeta, t.getMessage());
-        throw new RuntimeException("Servicio de almacenamiento no disponible temporalmente");
+        throw new IntegracionExternaException("s3", IntegracionExternaException.Tipo.IO_ERROR,
+            "Servicio de almacenamiento no disponible temporalmente");
     }
 }

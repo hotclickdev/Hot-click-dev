@@ -1,4 +1,5 @@
 package com.hotclick.service;
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.utils.Constants;
 
 import com.hotclick.model.*;
@@ -72,7 +73,7 @@ public class SuscripcionService {
         Plan planPro = planRepo.findByNombre("PRO")
             .orElseGet(() -> planRepo.findAll().stream()
                 .filter(p -> !"FREE".equals(p.getNombre())).findFirst()
-                .orElseThrow());
+                .orElseThrow(() -> new RecursoNoEncontradoException("Plan no-FREE no configurado")));
 
         LocalDate trialEnd = LocalDate.now(Constants.ZONA_CR).plusDays(14);
 
@@ -131,8 +132,10 @@ public class SuscripcionService {
 
     @Transactional
     public Long guardarClienteYSuscripcion(Long empresaId, Long planId, String customerId, String priceId) {
-        Empresa empresa = empresaRepo.findById(empresaId).orElseThrow();
-        Plan    plan    = planRepo.findById(planId).orElseThrow();
+        Empresa empresa = empresaRepo.findById(empresaId)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Empresa", empresaId));
+        Plan    plan    = planRepo.findById(planId)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Plan", planId));
         if (!customerId.equals(empresa.getStripeCustomerId())) {
             empresa.setStripeCustomerId(customerId);
             empresaRepo.save(empresa);
@@ -175,7 +178,8 @@ public class SuscripcionService {
 
     @Transactional
     public void aplicarCancelacion(Long empresaId, boolean inmediata) {
-        Suscripcion sub = suscripcionRepo.findActivaByEmpresaId(empresaId).orElseThrow();
+        Suscripcion sub = suscripcionRepo.findActivaByEmpresaId(empresaId)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Suscripción activa para empresa " + empresaId + " no encontrada"));
         if (inmediata) {
             sub.setEstado("CANCELADO");
             sub.setFechaCancelacion(LocalDate.now(Constants.ZONA_CR));

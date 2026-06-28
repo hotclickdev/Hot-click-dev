@@ -35,10 +35,15 @@ export default function QuickViewModal({ product, onClose }) {
   const handleAdd = () => {
     if (!inStock || justAdded) return
     for (let i = 0; i < quantity; i++) addItem(product)
-    toast({ message: `${quantity > 1 ? `${quantity}× ` : ''}${product.nombre} ${t('quickView.addedToast')}`, type: 'success' })
+    const qtyPrefix = quantity > 1 ? `${quantity}× ` : ''
+    toast({ message: `${qtyPrefix}${product.nombre} ${t('quickView.addedToast')}`, type: 'success' })
     setJustAdded(true)
     addTimeout.current = setTimeout(() => setJustAdded(false), 1400)
   }
+
+  let addBtnCls = 'bg-[#4f7cff] hover:bg-[#3d6ee0] text-white'
+  if (!inStock) addBtnCls = 'bg-white/5 text-[#8e8e9a] cursor-not-allowed'
+  else if (justAdded) addBtnCls = 'bg-emerald-500 text-white'
 
   return (
     <>
@@ -49,6 +54,7 @@ export default function QuickViewModal({ product, onClose }) {
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
         className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+        role="presentation"
         onClick={onClose}
       />
 
@@ -172,13 +178,7 @@ export default function QuickViewModal({ product, onClose }) {
                   onClick={handleAdd}
                   disabled={!inStock}
                   whileTap={inStock && !justAdded ? { scale: 0.97 } : {}}
-                  className={`flex-1 h-11 rounded-xl font-semibold text-sm transition-all duration-300 overflow-hidden ${
-                    !inStock
-                      ? 'bg-white/5 text-[#8e8e9a] cursor-not-allowed'
-                      : justAdded
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-[#4f7cff] hover:bg-[#3d6ee0] text-white'
-                  }`}
+                  className={`flex-1 h-11 rounded-xl font-semibold text-sm transition-all duration-300 overflow-hidden ${addBtnCls}`}
                 >
                   <AnimatePresence mode="wait" initial={false}>
                     {justAdded ? (

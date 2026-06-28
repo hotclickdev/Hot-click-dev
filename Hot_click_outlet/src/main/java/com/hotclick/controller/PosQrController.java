@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
@@ -133,7 +134,7 @@ public class PosQrController {
 
     private Long extractEmpresaId(HttpServletRequest req) {
         Long id = jwtUtil.extractEmpresaId(req.getHeader("Authorization").substring(7));
-        if (id == null) throw new RuntimeException("No hay empresa en el token");
+        if (id == null) throw new IllegalStateException("No hay empresa en el token");
         return id;
     }
 }

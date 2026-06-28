@@ -35,7 +35,7 @@ public class HotClickCredentialRepository implements CredentialRepository {
                         .id(ByteArray.fromBase64Url(c.getCredentialId()))
                         .build();
                 } catch (Exception e) {
-                    throw new RuntimeException("credentialId inválido: " + c.getCredentialId(), e);
+                    throw new IllegalStateException("credentialId inválido: " + c.getCredentialId(), e);
                 }
             })
             .collect(Collectors.toSet());
@@ -65,7 +65,7 @@ public class HotClickCredentialRepository implements CredentialRepository {
                         .signatureCount(c.getSignCount())
                         .build();
                 } catch (Exception e) {
-                    throw new RuntimeException("Credencial WebAuthn corrupta", e);
+                    throw new IllegalStateException("Credencial WebAuthn corrupta", e);
                 }
             });
     }
@@ -82,7 +82,7 @@ public class HotClickCredentialRepository implements CredentialRepository {
                         .signatureCount(c.getSignCount())
                         .build();
                 } catch (Exception e) {
-                    throw new RuntimeException("Credencial WebAuthn corrupta", e);
+                    throw new IllegalStateException("Credencial WebAuthn corrupta", e);
                 }
             })
             .map(Set::of)

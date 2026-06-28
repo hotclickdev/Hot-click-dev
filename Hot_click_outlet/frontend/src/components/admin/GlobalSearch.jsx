@@ -156,7 +156,7 @@ export default function GlobalSearch({ open, onClose }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-start justify-center pt-20 px-4"
       style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
-      onClick={onClose} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
+      role="presentation" onClick={onClose} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
       <div className="w-full max-w-xl rounded-2xl overflow-hidden shadow-2xl"
         style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid rgba(255,255,255,0.1)' }}
         onClick={e => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>

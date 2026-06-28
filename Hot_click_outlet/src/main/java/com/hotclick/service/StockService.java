@@ -1,5 +1,6 @@
 package com.hotclick.service;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.model.MovimientoStock;
 import com.hotclick.model.Producto;
@@ -151,9 +152,9 @@ public class StockService {
     @Transactional
     public void ajustarEntrada(Long productoId, int cantidad, String notas, String operadorCorreo) {
         Producto producto = productoRepository.findByIdForUpdate(productoId)
-            .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + productoId));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
         if (producto.getEstado() != Constants.ESTADO_ACTIVO) {
-            throw new RuntimeException("Producto no activo");
+            throw new IllegalStateException("Producto no activo");
         }
         int actAntes   = producto.getStockActual();
         int actDespues = actAntes + cantidad;

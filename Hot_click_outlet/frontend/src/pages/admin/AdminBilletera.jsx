@@ -21,7 +21,7 @@ const ESTADO_BADGE = {
   RECHAZADO:  'bg-red-500/15 text-red-300',
 }
 
-function KPI({ label, value, color = '#4ade80', sub }) {
+function KpiBox({ label, value, color = '#4ade80', sub }) {
   return (
     <div className="bg-[#111114] border border-white/8 rounded-2xl p-5">
       <p className="text-xs text-[#8e8e9a] mb-1">{label}</p>
@@ -193,10 +193,10 @@ export default function AdminBilletera() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KPI label="Saldo disponible"   value={wallet?.saldoDisponible}  color="#4ade80" sub="Listo para retirar" />
-        <KPI label="Retenido"           value={wallet?.saldoRetenido}    color="#facc15" sub="Retiro en proceso" />
-        <KPI label="Total acreditado"   value={wallet?.totalAcreditado}  color="#60a5fa" sub="Ventas históricas netas" />
-        <KPI label="Total retirado"     value={wallet?.totalRetirado}    color="#c084fc" sub="Pagos procesados" />
+        <KpiBox label="Saldo disponible"   value={wallet?.saldoDisponible}  color="#4ade80" sub="Listo para retirar" />
+        <KpiBox label="Retenido"           value={wallet?.saldoRetenido}    color="#facc15" sub="Retiro en proceso" />
+        <KpiBox label="Total acreditado"   value={wallet?.totalAcreditado}  color="#60a5fa" sub="Ventas históricas netas" />
+        <KpiBox label="Total retirado"     value={wallet?.totalRetirado}    color="#c084fc" sub="Pagos procesados" />
       </div>
 
       {/* Desglose de comisiones */}

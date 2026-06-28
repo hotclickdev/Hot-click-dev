@@ -157,7 +157,7 @@ public class NotificacionEmailService {
     public void enviarSeguimientoEstadoSync(Pedido pedido, String nota) {
         Usuario cliente = pedido.getUsuarioFinal();
         if (cliente == null || cliente.getCorreo() == null)
-            throw new RuntimeException("El pedido no tiene correo de cliente registrado");
+            throw new IllegalStateException("El pedido no tiene correo de cliente registrado");
         resendEmailService.send(
             cliente.getCorreo(),
             "Actualización de tu pedido — " + pedido.getNumeroPedido(),

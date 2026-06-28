@@ -18,9 +18,8 @@ export function ToastProvider({ children }) {
     const id = ++toastId
     setToasts((prev) => [...prev, { id, message, type }].slice(-3))
     if (type !== 'error') {
-      setTimeout(() => {
-        setToasts((prev) => prev.filter((t) => t.id !== id))
-      }, duration)
+      const filterOut = (prev) => prev.filter((t) => t.id !== id)
+      setTimeout(() => setToasts(filterOut), duration)
     }
   }, [])
 

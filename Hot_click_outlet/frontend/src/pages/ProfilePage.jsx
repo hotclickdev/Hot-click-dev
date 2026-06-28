@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
@@ -9,13 +9,12 @@ import Spinner from '@/components/ui/Spinner'
 import Input from '@/components/ui/Input'
 import Modal from '@/components/ui/Modal'
 import useAuthStore from '@/store/authStore'
-import { Link } from 'react-router-dom'
 import { useToast } from '@/components/ui/Toast'
 import { orderService } from '@/services/orderService'
 import { authService } from '@/services/authService'
 import AdminWebAuthnSetup from '@/components/admin/AdminWebAuthnSetup'
 import { testimonioService } from '@/services/testimonioService'
-import { formatDate, formatPrice } from '@/utils/format'
+import { formatDate } from '@/utils/format'
 
 // ── Utilidades locales ────────────────────────────────────────────────────────
 
@@ -23,7 +22,7 @@ function garantiaDias(fechaPedido) {
   if (!fechaPedido) return null
   const limite = new Date(fechaPedido)
   limite.setDate(limite.getDate() + 40)
-  return Math.ceil((limite - new Date()) / 86400000)
+  return Math.ceil((limite - Date.now()) / 86400000)
 }
 
 function primerProducto(order) {
@@ -161,13 +160,15 @@ export default function ProfilePage() {
             </button>
           </div>
 
-          {loading ? (
+          {loading && (
             <div className="flex justify-center py-6"><Spinner /></div>
-          ) : recentOrders.length === 0 ? (
+          )}
+          {!loading && recentOrders.length === 0 && (
             <div className="px-5 py-5 text-center">
               <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>{t('profile.ordersNone')}</p>
             </div>
-          ) : (
+          )}
+          {!loading && recentOrders.length > 0 && (
             <div className="divide-y" style={{ borderColor: 'var(--hc-border)' }}>
               {recentOrders.map((order) => {
                 const dias = garantiaDias(order.fechaPedido)
@@ -181,17 +182,18 @@ export default function ProfilePage() {
                         {formatDate(order.fechaPedido)}
                       </p>
                     </div>
-                    {dias !== null && dias > 0 ? (
+                    {dias !== null && dias > 0 && (
                       <span className="text-[11px] font-semibold px-2 py-1 rounded-lg shrink-0"
                         style={{ backgroundColor: 'rgba(5,150,105,0.1)', color: '#059669' }}>
                         🛡 {t('profile.warrantyDays', { count: dias })}
                       </span>
-                    ) : dias !== null ? (
+                    )}
+                    {dias !== null && dias <= 0 && (
                       <span className="text-[11px] px-2 py-1 rounded-lg shrink-0"
                         style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>
                         {t('profile.warrantyExpired')}
                       </span>
-                    ) : null}
+                    )}
                   </div>
                 )
               })}

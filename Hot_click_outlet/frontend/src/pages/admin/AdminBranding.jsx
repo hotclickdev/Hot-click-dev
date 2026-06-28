@@ -124,7 +124,7 @@ export default function AdminBranding() {
             style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
             <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>Tipografía</p>
             <div className="space-y-1.5">
-              <label className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>Fuente principal</label>
+              <p className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>Fuente principal</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {FONTS.map(f => (
                   <button key={f} type="button"

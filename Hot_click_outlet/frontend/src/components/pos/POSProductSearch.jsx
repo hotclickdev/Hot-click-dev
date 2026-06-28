@@ -207,11 +207,17 @@ function ProductGrid({ items, onAdd }) {
       {items.map(p => {
         const stock   = p.stockActual ?? p.stock ?? 0
         const agotado = stock <= 0
-        const bajo    = !agotado && stock <= (p.stockMinimo ?? 5)
-        const borderColor = agotado ? 'rgba(239,68,68,0.2)' : bajo ? 'rgba(251,191,36,0.25)' : 'rgba(255,255,255,0.07)'
+        const bajo    = stock > 0 && stock <= (p.stockMinimo ?? 5)
+        let borderColor = 'rgba(255,255,255,0.07)'
+        if (agotado) borderColor = 'rgba(239,68,68,0.2)'
+        else if (bajo) borderColor = 'rgba(251,191,36,0.25)'
+        let stockCls = 'text-[10px] font-medium'
+        if (agotado) stockCls += ' text-red-400'
+        else if (bajo) stockCls += ' text-yellow-400'
+        const stockStyle = agotado || bajo ? {} : { color: 'var(--hc-muted)' }
         return (
           <button key={p.id ?? p.idProducto}
-            onClick={() => !agotado && onAdd(p)}
+            onClick={() => agotado || onAdd(p)}
             disabled={agotado}
             className="flex flex-col rounded-2xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
@@ -239,8 +245,7 @@ function ProductGrid({ items, onAdd }) {
               <p className="text-sm font-bold" style={{ color: 'var(--hc-accent)' }}>
                 ₡{fmt(p.precioEfectivo ?? p.precioVenta ?? p.precio)}
               </p>
-              <p className={`text-[10px] font-medium ${agotado ? 'text-red-400' : bajo ? 'text-yellow-400' : ''}`}
-                style={!agotado && !bajo ? { color: 'var(--hc-muted)' } : {}}>
+              <p className={stockCls} style={stockStyle}>
                 {agotado ? 'Agotado' : `Stock: ${stock}`}
               </p>
             </div>

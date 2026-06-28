@@ -49,6 +49,8 @@ if (typeof document !== 'undefined' && !document.getElementById(MSG_CSS_ID)) {
   document.head.appendChild(s)
 }
 
+const removeMsg = (msg) => (list) => list.filter(x => x !== msg)
+
 // Botones de feedback (thumbs up / thumbs down) por mensaje
 function FeedbackButtons({ msgIndex, sesionId }) {
   const [voted, setVoted] = useState(null) // 1 | -1 | null

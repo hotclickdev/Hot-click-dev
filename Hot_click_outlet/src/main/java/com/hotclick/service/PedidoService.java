@@ -12,6 +12,7 @@ import com.hotclick.repository.BodegaRepository;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,11 +72,11 @@ public class PedidoService {
     @Transactional
     public Pedido crearPedidoManual(ManualPedidoDTO dto, com.hotclick.model.Empresa empresa) {
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + dto.getUsuarioId()));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado: " + dto.getUsuarioId()));
 
         Long bodegaId = dto.getBodegaId() != null ? dto.getBodegaId() : 1L;
         Bodega bodega = bodegaRepository.findById(bodegaId)
-            .orElseThrow(() -> new RuntimeException("Bodega no encontrada"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Bodega no encontrada"));
 
         Pedido pedido = new Pedido();
         pedido.setNumeroPedido(Constants.generarNumeroPedido("ORD-"));
@@ -105,7 +106,7 @@ public class PedidoService {
 
         for (ManualPedidoDTO.ItemDTO itemDto : dto.getItems()) {
             Producto producto = productoMap.get(itemDto.getProductoId());
-            if (producto == null) throw new RuntimeException("Producto no encontrado: " + itemDto.getProductoId());
+            if (producto == null) throw new RecursoNoEncontradoException("Producto", itemDto.getProductoId());
 
             int precio   = itemDto.getPrecioUnitario() != null ? itemDto.getPrecioUnitario() : producto.getPrecioVenta();
             int costo    = producto.getPrecioCompra();
@@ -146,7 +147,7 @@ public class PedidoService {
     @Transactional
     public Pedido cambiarEstado(Long id, String nuevoEstado, String nota) {
         Pedido pedido = pedidoRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
         pedido.setEstadoPedido(nuevoEstado);
         if (nota != null && !nota.isBlank()) {
             appendNotificacion(pedido, nuevoEstado, nota);
@@ -186,7 +187,7 @@ public class PedidoService {
     @Transactional(readOnly = true)
     public Pedido buscarPorId(Long id) {
         return pedidoRepository.findByIdWithDetails(id)
-            .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
     }
 
     @Transactional(readOnly = true)
@@ -208,7 +209,7 @@ public class PedidoService {
     @Transactional
     public Pedido asignarGuia(Long id, String numeroGuia) {
         Pedido pedido = pedidoRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
         pedido.setNumeroGuia(numeroGuia);
         pedido.setUrlTracking("https://rastreo.correos.go.cr/?codigo=" + numeroGuia);
         pedido.setFechaEnvio(LocalDateTime.now(Constants.ZONA_CR));
@@ -224,7 +225,7 @@ public class PedidoService {
     @Transactional
     public Pedido procesarEnvio(Long id, String guia, Integer costoEnvio) {
         Pedido pedido = pedidoRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
         pedido.setNumeroGuia(guia);
         pedido.setUrlTracking("https://rastreo.correos.go.cr/?codigo=" + guia);
         pedido.setFechaEnvio(LocalDateTime.now(Constants.ZONA_CR));
@@ -241,7 +242,7 @@ public class PedidoService {
     @Transactional
     public void eliminarPedido(Long id) {
         Pedido pedido = pedidoRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
         pedidoRepository.delete(pedido);
     }
 

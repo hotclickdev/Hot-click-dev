@@ -196,7 +196,7 @@ function GarantiaCard({ g, onReportado }) {
           </div>
           <p className="text-xs font-medium" style={{ color: activa ? barColor : '#6b7280' }}>
             {activa
-              ? `${dias} día${dias !== 1 ? 's' : ''} restante${dias !== 1 ? 's' : ''} · vence ${fechaVenc}`
+              ? `${dias} día${dias === 1 ? '' : 's'} restante${dias === 1 ? '' : 's'} · vence ${fechaVenc}`
               : `Venció el ${fechaVenc}`}
           </p>
         </div>
@@ -287,7 +287,7 @@ function StarPicker({ value, onChange }) {
           onMouseEnter={() => setHovered(s)}
           onMouseLeave={() => setHovered(0)}
           className="transition-transform hover:scale-110 active:scale-95 focus:outline-none"
-          aria-label={`${s} estrella${s !== 1 ? 's' : ''}`}
+          aria-label={`${s} estrella${s === 1 ? '' : 's'}`}
         >
           <svg className={`w-8 h-8 transition-colors duration-100 ${s <= active ? 'text-amber-400' : ''}`}
             viewBox="0 0 20 20"
@@ -560,7 +560,7 @@ export default function ServiciosHotPage() {
   const handleFotoChange = async (e) => {
     const files = Array.from(e.target.files).slice(0, 3 - fotos.length)
     if (!files.length) return
-    if (files.find(f => f.size > 5 * 1024 * 1024)) { setError('Cada foto debe pesar menos de 5 MB.'); e.target.value = ''; return }
+    if (files.some(f => f.size > 5 * 1024 * 1024)) { setError('Cada foto debe pesar menos de 5 MB.'); e.target.value = ''; return }
     setUploading(true); setError('')
     try {
       const nuevas = await Promise.all(files.map(async (file) => {
@@ -1034,13 +1034,13 @@ export default function ServiciosHotPage() {
                         <div className="flex-1 text-center p-3 rounded-2xl"
                           style={{ backgroundColor: 'rgba(23,71,168,0.08)', border: '1px solid rgba(23,71,168,0.2)' }}>
                           <p className="text-2xl font-black" style={{ color: 'var(--hc-accent)' }}>{activas}</p>
-                          <p className="text-xs font-semibold" style={{ color: 'var(--hc-accent)' }}>Activa{activas !== 1 ? 's' : ''}</p>
+                          <p className="text-xs font-semibold" style={{ color: 'var(--hc-accent)' }}>Activa{activas === 1 ? '' : 's'}</p>
                         </div>
                         {vencidas > 0 && (
                           <div className="flex-1 text-center p-3 rounded-2xl"
                             style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
                             <p className="text-2xl font-black" style={{ color: 'var(--hc-muted)' }}>{vencidas}</p>
-                            <p className="text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>Vencida{vencidas !== 1 ? 's' : ''}</p>
+                            <p className="text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>Vencida{vencidas === 1 ? '' : 's'}</p>
                           </div>
                         )}
                       </div>
@@ -1128,7 +1128,7 @@ export default function ServiciosHotPage() {
                     const pendientes = productosResenar.filter(p => !p.yaReseno).length
                     return pendientes > 0 && (
                       <p className="text-sm font-semibold px-1 mb-1" style={{ color: 'var(--hc-muted)' }}>
-                        {pendientes} producto{pendientes !== 1 ? 's' : ''} pendiente{pendientes !== 1 ? 's' : ''} de reseña
+                        {pendientes} producto{pendientes === 1 ? '' : 's'} pendiente{pendientes === 1 ? '' : 's'} de reseña
                       </p>
                     )
                   })()}

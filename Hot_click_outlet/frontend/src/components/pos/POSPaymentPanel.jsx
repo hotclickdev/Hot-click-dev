@@ -98,7 +98,8 @@ export default function POSPaymentPanel({ total, onConfirm, onClose, loading }) 
                 title={m.disabled ? 'Próximamente' : m.desc}
                 className="flex flex-col items-start px-3 py-2.5 rounded-xl text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                 style={(() => {
-                  const borderColor = metodoPago === m.id ? 'var(--hc-accent)' : m.disabled ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.08)'
+                  const disabledColor = m.disabled ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.08)'
+                  const borderColor = metodoPago === m.id ? 'var(--hc-accent)' : disabledColor
                   return {
                     backgroundColor: metodoPago === m.id ? 'var(--hc-accent)' : 'rgba(255,255,255,0.05)',
                     color: metodoPago === m.id ? '#fff' : 'var(--hc-muted)',

@@ -33,7 +33,7 @@ export default function BodegaSelectorModal({ onSelect }) {
     }
   }
 
-  useEffect(() => { cargar() }, []) // eslint-disable-line
+  useEffect(() => { cargar() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleConfirmar = () => {
     const b = bodegas.find(b => b.id === selected)

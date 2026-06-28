@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Bodega;
 import com.hotclick.repository.BodegaRepository;
@@ -82,7 +83,7 @@ public class BodegaController {
             b.setEmpresa(empresa);
             b.setAdminCliente(
                 usuarioRepository.findByCorreo(ud.getUsername())
-                    .orElseThrow(() -> new RuntimeException("Admin no encontrado"))
+                    .orElseThrow(() -> new RecursoNoEncontradoException("Admin no encontrado"))
             );
             return ResponseEntity.ok(ResponseDTO.success("Bodega creada", bodegaRepository.save(b)));
         } catch (Exception e) {
@@ -95,7 +96,7 @@ public class BodegaController {
             @RequestBody List<Map<String, String>> items,
             @AuthenticationPrincipal UserDetails ud) {
         var admin = usuarioRepository.findByCorreo(ud.getUsername())
-            .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Admin no encontrado"));
         Long eid2 = companyScope.getCurrentEmpresaIdOrOwn();
         // Verifica que el lote completo quepa dentro del plan antes de procesar (HTTP 403 si no)
         if (eid2 != null) tenantService.verificarLimiteBodegasBulk(eid2, items.size());
@@ -133,7 +134,7 @@ public class BodegaController {
             @RequestBody Map<String, String> body) {
         try {
             Bodega b = bodegaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Bodega no encontrada"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Bodega no encontrada"));
             companyScope.assertCanAccessNullable(b.getEmpresaId());
             if (body.get("nombreBodega") != null && !body.get("nombreBodega").isBlank())
                 b.setNombreBodega(body.get("nombreBodega").trim());
@@ -159,7 +160,7 @@ public class BodegaController {
     public ResponseEntity<ResponseDTO> eliminar(@PathVariable Long id) {
         try {
             Bodega b = bodegaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Bodega no encontrada"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Bodega no encontrada"));
             companyScope.assertCanAccessNullable(b.getEmpresaId());
             b.setEstado(Constants.ESTADO_INACTIVO);
             bodegaRepository.save(b);

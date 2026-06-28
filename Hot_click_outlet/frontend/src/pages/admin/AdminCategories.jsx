@@ -212,7 +212,8 @@ export default function AdminCategories() {
   function padreLabel(c) {
     if (!c.padreId) return c.nombreCategoria
     const padre = cats.find((x) => String(x.id) === String(c.padreId))
-    return `↳ ${c.nombreCategoria}${padre ? ` (en ${padre.nombreCategoria})` : ''}`
+    const parentSuffix = padre ? ` (en ${padre.nombreCategoria})` : ''
+    return `↳ ${c.nombreCategoria}${parentSuffix}`
   }
 
   return (

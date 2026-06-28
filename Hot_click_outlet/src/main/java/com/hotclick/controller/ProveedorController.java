@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Proveedor;
 import com.hotclick.repository.EmpresaRepository;
@@ -62,7 +63,7 @@ public class ProveedorController {
     public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         try {
             Proveedor p = proveedorRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Proveedor no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Proveedor no encontrado"));
 
             if (body.containsKey("nombre"))   p.setNombre(body.get("nombre").toString().trim());
             if (body.containsKey("contacto")) p.setContacto((String) body.get("contacto"));
@@ -83,7 +84,7 @@ public class ProveedorController {
     public ResponseEntity<?> eliminar(@PathVariable Long id) {
         try {
             Proveedor p = proveedorRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Proveedor no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Proveedor no encontrado"));
             p.setEstado(Constants.ESTADO_INACTIVO);
             proveedorRepository.save(p);
             return ResponseEntity.ok(ResponseDTO.success("Proveedor eliminado", null));

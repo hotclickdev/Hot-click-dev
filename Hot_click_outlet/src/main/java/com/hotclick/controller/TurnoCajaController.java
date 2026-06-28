@@ -83,7 +83,7 @@ public class TurnoCajaController {
 
     private Long extractEmpresaId(HttpServletRequest request) {
         Long id = jwtUtil.extractEmpresaId(request.getHeader("Authorization").substring(7));
-        if (id == null) throw new RuntimeException("No hay empresa en el contexto del token");
+        if (id == null) throw new IllegalStateException("No hay empresa en el contexto del token");
         return id;
     }
 }

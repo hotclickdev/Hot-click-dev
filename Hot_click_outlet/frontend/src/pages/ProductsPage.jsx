@@ -382,7 +382,7 @@ function BrandDropdown({ marcas, marcasFilter, toggleMarca, clearMarcas, marcaPr
               className="flex-1 h-9 rounded-xl text-xs font-bold text-white transition-opacity hover:opacity-90"
               style={{ background: 'var(--hc-accent)' }}
             >
-              Ver {filteredCount} resultado{filteredCount !== 1 ? 's' : ''}
+              Ver {filteredCount} resultado{filteredCount === 1 ? '' : 's'}
             </button>
           </div>
         </div>
@@ -484,7 +484,7 @@ function MoreFiltersDropdown({
           <button onClick={close}
             className="w-full h-9 rounded-xl font-bold text-xs text-white transition-opacity hover:opacity-90"
             style={{ background: 'var(--hc-accent)' }}>
-            Ver {filteredCount} resultado{filteredCount !== 1 ? 's' : ''}
+            Ver {filteredCount} resultado{filteredCount === 1 ? '' : 's'}
           </button>
         </div>
       )}
@@ -803,7 +803,7 @@ function BrandShowcase({ marcas, visibleMarcaIds, marcasCountInScope = {}, marca
           <h2 className="text-base font-black tracking-tight" style={{ color: 'var(--hc-text)' }}>{title}</h2>
           {visibleMarcaIds && (
             <p className="text-[11px] mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-              {visible.length} marca{visible.length !== 1 ? 's' : ''} disponible{visible.length !== 1 ? 's' : ''}
+              {visible.length} marca{visible.length === 1 ? '' : 's'} disponible{visible.length === 1 ? '' : 's'}
             </p>
           )}
         </div>
@@ -934,7 +934,7 @@ function SubcategoryGrid({ subcats, onSelect, productCountByCat }) {
               </span>
               {count > 0 && (
                 <span className="text-[11px] font-medium" style={{ color: c.icon }}>
-                  {count} producto{count !== 1 ? 's' : ''}
+                  {count} producto{count === 1 ? '' : 's'}
                 </span>
               )}
               <svg
@@ -1956,7 +1956,7 @@ export default function ProductsPage() {
                 <div className="flex items-center gap-2 mt-3">
                   <div className="w-2 h-2 rounded-full" style={{ background: 'var(--hc-accent)' }} />
                   <span className="text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>
-                    {filtered.length} producto{filtered.length !== 1 ? 's' : ''} disponible{filtered.length !== 1 ? 's' : ''}
+                    {filtered.length} producto{filtered.length === 1 ? '' : 's'} disponible{filtered.length === 1 ? '' : 's'}
                   </span>
                 </div>
               </div>
@@ -2089,7 +2089,7 @@ export default function ProductsPage() {
                         >
                           {search && (
                             <p className="text-xs mb-3 font-medium" style={{ color: 'var(--hc-muted)' }}>
-                              {filtered.length} resultado{filtered.length !== 1 ? 's' : ''} para <span style={{ color: 'var(--hc-text)' }}>"{search}"</span>
+                              {filtered.length} resultado{filtered.length === 1 ? '' : 's'} para <span style={{ color: 'var(--hc-text)' }}>"{search}"</span>
                             </p>
                           )}
                           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">

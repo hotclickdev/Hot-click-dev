@@ -3,6 +3,7 @@ package com.hotclick.service;
 import com.hotclick.model.CodigoOtp;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,7 +29,7 @@ public class PasswordResetService {
 
         Usuario usuario = usuarioOpt.get();
         if (usuario.getEstado() != null && usuario.getEstado() == Constants.ESTADO_PENDIENTE) {
-            throw new RuntimeException("La cuenta no ha sido verificada. Completá el registro primero.");
+            throw new IllegalStateException("La cuenta no ha sido verificada. Completá el registro primero.");
         }
 
         otpService.enviarOtp(usuario, Constants.OTP_TIPO_RESET_PASSWORD);
@@ -41,7 +42,7 @@ public class PasswordResetService {
     @Transactional
     public void verificarCodigo(String correo, String codigoPlano) {
         Usuario usuario = usuarioRepository.findByCorreo(correo.trim().toLowerCase())
-                .orElseThrow(() -> new RuntimeException("Correo no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Correo no encontrado"));
 
         CodigoOtp otp = otpService.verificarOtp(usuario, Constants.OTP_TIPO_RESET_PASSWORD, codigoPlano);
         otpService.marcarUsado(otp);

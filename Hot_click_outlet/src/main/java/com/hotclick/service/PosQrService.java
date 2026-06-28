@@ -2,6 +2,9 @@ package com.hotclick.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hotclick.exception.IntegracionExternaException;
+import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
 import com.hotclick.utils.Constants;
@@ -54,9 +57,9 @@ public class PosQrService {
         }
 
         Usuario usuario  = usuarioRepo.findById(usuarioId)
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Usuario", usuarioId));
         Empresa empresa  = empresaRepo.findById(empresaId)
-            .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Empresa", empresaId));
 
         int total = items.stream()
             .mapToInt(i -> ((Number) i.getOrDefault("precioUnitario", 0)).intValue()
@@ -81,7 +84,7 @@ public class PosQrService {
         try {
             sesion.setItemsJson(mapper.writeValueAsString(items));
         } catch (Exception e) {
-            throw new RuntimeException("Error serializando items");
+            throw new IllegalStateException("Error serializando items", e);
         }
 
         PosQrSesion saved = posQrRepo.save(sesion);
@@ -150,7 +153,8 @@ public class PosQrService {
             return checkoutUrl;
         } catch (Exception e) {
             log.error("[POS-QR] Error creando Stripe checkout para token={}: {}", token, e.getMessage());
-            throw new RuntimeException("Error al crear sesión de pago: " + e.getMessage());
+            throw new IntegracionExternaException("stripe", IntegracionExternaException.Tipo.IO_ERROR,
+                "Error al crear sesión de pago: " + e.getMessage(), e);
         }
     }
 
@@ -256,9 +260,9 @@ public class PosQrService {
             String correo    = sesion.getUsuario().getCorreo();
 
             Usuario cliente  = usuarioRepo.findById(999L)
-                .orElseThrow(() -> new RuntimeException("Usuario mostrador no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario mostrador no encontrado"));
             Bodega bodega    = bodegaRepo.findByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO).stream().findFirst()
-                .orElseThrow(() -> new RuntimeException("No hay bodega configurada"));
+                .orElseThrow(() -> new IllegalStateException("No hay bodega configurada"));
 
             Pedido pedido = new Pedido();
             pedido.setNumeroPedido(Constants.generarNumeroPedido("POS-QR-"));
@@ -286,10 +290,11 @@ public class PosQrService {
                 int precio      = ((Number) itemMap.getOrDefault("precioUnitario", 0)).intValue();
 
                 Producto producto = productoRepo.findByIdForUpdate(productoId)
-                    .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + productoId));
+                    .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
 
                 if (producto.getStockDisponible() < cantidad) {
-                    throw new RuntimeException("Stock insuficiente para " + producto.getNombreProducto());
+                    throw new StockInsuficienteException(producto.getNombreProducto(),
+                        producto.getStockDisponible(), cantidad);
                 }
 
                 stockService.descontarPorVentaPOS(producto, cantidad, pedido.getNumeroPedido(), correo);
@@ -341,9 +346,12 @@ public class PosQrService {
 
             log.info("[POS-QR] Venta {} registrada — método={} total={}", saved.getNumeroPedido(), metodoPago, totalPedido);
 
+        } catch (RuntimeException e) {
+            log.error("[POS-QR] Error creando pedido POS: {}", e.getMessage(), e);
+            throw e;
         } catch (Exception e) {
             log.error("[POS-QR] Error creando pedido POS: {}", e.getMessage(), e);
-            throw new RuntimeException("Error al registrar la venta: " + e.getMessage());
+            throw new IllegalStateException("Error al registrar la venta: " + e.getMessage(), e);
         }
     }
 }

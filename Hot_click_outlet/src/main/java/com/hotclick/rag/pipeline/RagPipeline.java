@@ -2,6 +2,7 @@ package com.hotclick.rag.pipeline;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hotclick.exception.IntegracionExternaException;
 import com.hotclick.rag.dto.ProductoContexto;
 import com.hotclick.rag.service.VectorSearchService;
 import com.hotclick.repository.CategoriaRepository;
@@ -151,8 +152,8 @@ public class RagPipeline {
             HttpResponse<String> response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() != 200) {
-                throw new RuntimeException("Claude API HTTP " + response.statusCode() +
-                    ": " + response.body());
+                throw new IntegracionExternaException("claude", IntegracionExternaException.Tipo.IO_ERROR,
+                    "Claude API HTTP " + response.statusCode() + ": " + response.body());
             }
 
             JsonNode json    = objectMapper.readTree(response.body());
@@ -205,11 +206,13 @@ public class RagPipeline {
 
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("Llamada a Claude interrumpida", ie);
-        } catch (RuntimeException re) {
+            throw new IntegracionExternaException("claude", IntegracionExternaException.Tipo.IO_ERROR,
+                "Llamada a Claude interrumpida", ie);
+        } catch (IntegracionExternaException re) {
             throw re;
         } catch (Exception e) {
-            throw new RuntimeException("Error llamando a Claude: " + e.getMessage(), e);
+            throw new IntegracionExternaException("claude", IntegracionExternaException.Tipo.IO_ERROR,
+                "Error llamando a Claude: " + e.getMessage(), e);
         }
     }
 

@@ -91,10 +91,10 @@ export default function POSPaymentPanel({ onClose }) {
       items:          items.map(i => ({ productoId: i.id, cantidad: i.cantidad })),
       codigoCupon:    null,
       codigoGiftCard: null,
-      ...(!token ? {
+      ...(token ? {} : {
         guestEmail: email.trim() || null,
         guestPhone: telefono || null,
-      } : {}),
+      }),
     }, !token, metodo === 'SINPE')
   }
 

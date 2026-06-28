@@ -90,6 +90,9 @@ export default function RegistroEmpresaPage() {
   }
 
   /* ─── JSX ─────────────────────────────────────────────────── */
+  const stepTitles = ['Requisito previo', 'Tu empresa', 'Tu cuenta de acceso']
+  const stepDescs  = ['Verificamos que puedas emitir facturas electrónicas.', 'Datos básicos de tu negocio.', 'Con estos datos iniciás sesión en el panel.']
+
   return (
     <>
     <Seo
@@ -152,7 +155,7 @@ export default function RegistroEmpresaPage() {
             {['Emprendé.', 'Crecé.', 'Brillá.'].map((line, i) => (
               <motion.div key={line} {...stagger(2 + i)} style={{
                 fontFamily: 'var(--hc-font-display)', fontWeight: 800,
-                fontSize: 'clamp(2.4rem, 3.8vw, 3.4rem)', lineHeight: 1.0,
+                fontSize: 'clamp(2.4rem, 3.8vw, 3.4rem)', lineHeight: 1,
                 letterSpacing: '-0.025em',
                 color: i === 2 ? '#F0524A' : '#FFFFFF',
                 
@@ -257,23 +260,27 @@ export default function RegistroEmpresaPage() {
 
                 <div className="mb-6">
                   <h2 style={{ fontFamily: 'var(--hc-font-display)', fontWeight: 800, fontSize: '1.7rem', color: 'var(--hc-text)', lineHeight: 1.1, letterSpacing: '-0.01em' }}>
-                    {step === 0 ? 'Requisito previo' : step === 1 ? 'Tu empresa' : 'Tu cuenta de acceso'}
+                    {stepTitles[step]}
                   </h2>
                   <p style={{ color: 'var(--hc-muted)', fontSize: '0.85rem', marginTop: '0.3rem' }}>
-                    {step === 0 ? 'Verificamos que puedas emitir facturas electrónicas.' : step === 1 ? 'Datos básicos de tu negocio.' : 'Con estos datos iniciás sesión en el panel.'}
+                    {stepDescs[step]}
                   </p>
                 </div>
 
                 {/* Progreso */}
                 <div className="flex items-center gap-3 mb-6">
-                  {['Tributación', 'Tu empresa', 'Tu cuenta'].map((label, i) => (
+                  {['Tributación', 'Tu empresa', 'Tu cuenta'].map((label, i) => {
+                    const hasDanger = tributacion === false && i === 0
+                    const completedSt = { background: 'var(--hc-success, #22c55e)', color: '#fff' }
+                    const activeSt = { background: hasDanger ? 'var(--hc-danger)' : 'var(--hc-primary)', color: '#fff', boxShadow: hasDanger ? '0 0 12px rgba(239,68,68,0.4)' : '0 0 12px rgba(231,59,51,0.4)' }
+                    const inactiveSt = { background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }
+                    let stepSt = inactiveSt
+                    if (i < step) stepSt = completedSt
+                    else if (i === step) stepSt = activeSt
+                    return (
                     <div key={i} className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300"
-                        style={i < step
-                          ? { background: 'var(--hc-success, #22c55e)', color: '#fff' }
-                          : i === step
-                          ? { background: tributacion === false && i === 0 ? 'var(--hc-danger)' : 'var(--hc-primary)', color: '#fff', boxShadow: tributacion === false && i === 0 ? '0 0 12px rgba(239,68,68,0.4)' : '0 0 12px rgba(231,59,51,0.4)' }
-                          : { background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
+                        style={stepSt}>
                         {i < step
                           ? <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><polyline points="20 6 9 17 4 12"/></svg>
                           : i + 1}
@@ -281,7 +288,8 @@ export default function RegistroEmpresaPage() {
                       <span className="text-xs font-medium" style={{ color: i === step ? 'var(--hc-text)' : 'var(--hc-muted)' }}>{label}</span>
                       {i < 2 && <div className="h-px w-6 mx-1 rounded transition-all duration-500" style={{ background: step > i ? 'var(--hc-primary)' : 'var(--hc-border)' }} />}
                     </div>
-                  ))}
+                  )
+                  })}
                 </div>
 
                 <AnimatePresence mode="wait">

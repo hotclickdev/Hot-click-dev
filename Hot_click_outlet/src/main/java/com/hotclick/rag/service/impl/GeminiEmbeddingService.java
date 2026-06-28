@@ -1,5 +1,6 @@
 package com.hotclick.rag.service.impl;
 
+import com.hotclick.exception.IntegracionExternaException;
 import com.hotclick.rag.service.EmbeddingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,12 +56,13 @@ public class GeminiEmbeddingService implements EmbeddingService {
                         Thread.sleep(RETRY_DELAY_MS);
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
-                        throw new RuntimeException("Interrumpido durante reintento de embedding", ie);
+                        throw new IntegracionExternaException("gemini", IntegracionExternaException.Tipo.IO_ERROR,
+                            "Interrumpido durante reintento de embedding", ie);
                     }
                 }
             }
         }
-        throw new RuntimeException(
+        throw new IntegracionExternaException("gemini", IntegracionExternaException.Tipo.IO_ERROR,
             "Gemini embedding falló tras " + MAX_RETRIES + " intentos", lastException);
     }
 
@@ -87,14 +89,17 @@ public class GeminiEmbeddingService implements EmbeddingService {
 
         Map<String, Object> responseBody = resp.getBody();
         if (responseBody == null)
-            throw new RuntimeException("Gemini devolvió cuerpo vacío");
+            throw new IntegracionExternaException("gemini", IntegracionExternaException.Tipo.RESPUESTA_INVALIDA,
+                "Gemini devolvió cuerpo vacío");
 
         // Pattern matching (Java 16+) — sin cast explícito, sin unchecked warning
         if (!(responseBody.get("embedding") instanceof Map<?, ?> embeddingNode))
-            throw new RuntimeException("Campo 'embedding' ausente en respuesta de Gemini");
+            throw new IntegracionExternaException("gemini", IntegracionExternaException.Tipo.RESPUESTA_INVALIDA,
+                "Campo 'embedding' ausente en respuesta de Gemini");
 
         if (!(embeddingNode.get("values") instanceof List<?> values) || values.isEmpty())
-            throw new RuntimeException("Campo 'values' vacío en respuesta de Gemini");
+            throw new IntegracionExternaException("gemini", IntegracionExternaException.Tipo.RESPUESTA_INVALIDA,
+                "Campo 'values' vacío en respuesta de Gemini");
 
         float[] result = new float[values.size()];
         for (int i = 0; i < values.size(); i++) {

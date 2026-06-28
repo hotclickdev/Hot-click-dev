@@ -1,4 +1,5 @@
 package com.hotclick.service;
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.utils.Constants;
 
 import com.hotclick.model.Producto;
@@ -35,7 +36,7 @@ public class PublicacionFacebookService {
     @Transactional
     public PublicacionFacebook crearOActualizar(Long productoId, String notasAdmin) {
         Producto p = productoRepo.findById(productoId)
-            .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + productoId));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
 
         PublicacionFacebook pub = pubRepo.findFirstByProductoIdOrderByFechaCreacionDesc(productoId)
             .orElse(new PublicacionFacebook());
@@ -55,7 +56,7 @@ public class PublicacionFacebookService {
     @Transactional
     public PublicacionFacebook marcarPublicado(Long id) {
         PublicacionFacebook pub = pubRepo.findById(id)
-            .orElseThrow(() -> new RuntimeException("Publicación no encontrada: " + id));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Publicación", id));
         pub.setEstadoPublicacion("PUBLICADO");
         pub.setFechaPublicacion(LocalDateTime.now(Constants.ZONA_CR));
         return pubRepo.save(pub);

@@ -1,4 +1,5 @@
 package com.hotclick.controller;
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.utils.Constants;
 
 import com.hotclick.dto.ResponseDTO;
@@ -69,7 +70,7 @@ public class BlogController {
         if (!textMod.safe())
             return ResponseEntity.badRequest().body(ResponseDTO.error("El contenido de la publicación no está permitido en la plataforma"));
         sanitizarEntrada(datos);
-        BlogEntrada e = repo.findById(id).orElseThrow(() -> new RuntimeException("No encontrado"));
+        BlogEntrada e = repo.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("No encontrado"));
         e.setTitulo(datos.getTitulo());
         if (datos.getSlug() != null && !datos.getSlug().isBlank()) {
             e.setSlug(sanitizer.cleanSlug(datos.getSlug()));
@@ -95,7 +96,7 @@ public class BlogController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseDTO> eliminar(@PathVariable Long id) {
-        BlogEntrada e = repo.findById(id).orElseThrow(() -> new RuntimeException("No encontrado"));
+        BlogEntrada e = repo.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("No encontrado"));
         e.setEstado(0);
         repo.save(e);
         return ResponseEntity.ok(ResponseDTO.success("Eliminado", null));

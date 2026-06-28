@@ -1,4 +1,5 @@
 package com.hotclick.service;
+import com.hotclick.exception.IntegracionExternaException;
 import com.hotclick.utils.Constants;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -170,7 +171,7 @@ public class WhatsAppService {
      */
     public String enviarDesdecrm(Usuario u, Long empresaId, String escenario,
                                   Map<String, String> ctxExtra) {
-        if (u.getTelefono() == null) throw new RuntimeException("El cliente no tiene teléfono registrado");
+        if (u.getTelefono() == null) throw new IllegalStateException("El cliente no tiene teléfono registrado");
 
         Map<String, String> ctx = new LinkedHashMap<>();
         ctx.put("nombre",   u.getNombre());
@@ -288,7 +289,8 @@ public class WhatsAppService {
             url, HttpMethod.POST, new HttpEntity<>(body, headers), String.class);
 
         if (!resp.getStatusCode().is2xxSuccessful())
-            throw new RuntimeException("Meta API status " + resp.getStatusCode());
+            throw new IntegracionExternaException("meta-whatsapp", IntegracionExternaException.Tipo.IO_ERROR,
+                "Meta API status " + resp.getStatusCode());
 
         try {
             JsonNode node = JSON.readTree(resp.getBody());

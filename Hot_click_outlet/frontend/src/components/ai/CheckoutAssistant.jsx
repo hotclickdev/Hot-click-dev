@@ -3,6 +3,11 @@ import { motion } from 'framer-motion'
 import { shoppingAssistantService } from '@/services/shoppingAssistantService'
 import { getOrCreateVisitorId } from '@/utils/visitorId'
 
+function clasificarError(code) {
+  const leve = ['card_declined', 'insufficient_funds', 'expired_card', 'incorrect_cvc', 'do_not_honor']
+  return leve.some(e => code?.toLowerCase().includes(e)) ? 'leve' : 'sistema'
+}
+
 function TypingDots() {
   return (
     <span className="inline-flex items-center gap-[3px]">
@@ -51,12 +56,6 @@ export default function CheckoutAssistant({
     ? `PAGO_EXITO:${metodoPago}:${numeroPedido}`
     : `PAGO_FALLO:${errorCode}`
 
-  // Clasificar el error para el mensaje inicial
-  function clasificarError(code) {
-    const leve = ['card_declined', 'insufficient_funds', 'expired_card', 'incorrect_cvc', 'do_not_honor']
-    return leve.some(e => code?.toLowerCase().includes(e)) ? 'leve' : 'sistema'
-  }
-
   useEffect(() => {
     if (initialized.current) return
     initialized.current = true
@@ -82,7 +81,8 @@ export default function CheckoutAssistant({
         autoQuery = 'Tuve un problema al pagar. ¿Qué opciones tengo?'
       } else {
         mensajeInicial = 'Ocurrió un inconveniente en el proceso. Tu pedido quedó registrado como pendiente y nos pondremos en contacto.'
-        autoQuery = `Tuve un problema al completar mi pedido${numeroPedido ? ` #${numeroPedido}` : ''}. ¿Qué sigue?`
+        const numPedidoStr = numeroPedido ? ` #${numeroPedido}` : ''
+        autoQuery = `Tuve un problema al completar mi pedido${numPedidoStr}. ¿Qué sigue?`
       }
     }
 

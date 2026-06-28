@@ -8,6 +8,7 @@ import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.MiembroEmpresaRepository;
 import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.utils.Constants;
 import com.hotclick.utils.InputSanitizer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,7 +101,7 @@ public class EmprendedorRegistroService {
         usuario.setEmpresa(empresa);
 
         var rolEmprendedor = rolRepository.findByNombreRol(Constants.ROL_EMPRENDEDOR)
-            .orElseThrow(() -> new RuntimeException("Rol EMPRENDEDOR no configurado en la base de datos"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Rol EMPRENDEDOR no configurado en la base de datos"));
         usuario.getRoles().add(rolEmprendedor);
 
         Usuario saved = usuarioRepository.save(usuario);
@@ -178,7 +179,7 @@ public class EmprendedorRegistroService {
 
         // 2. Cambiar rol a EMPRENDEDOR
         var rolEmprendedor = rolRepository.findByNombreRol(Constants.ROL_EMPRENDEDOR)
-            .orElseThrow(() -> new RuntimeException("Rol EMPRENDEDOR no configurado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Rol EMPRENDEDOR no configurado"));
         usuario.getRoles().removeIf(r -> "USUARIO_FINAL".equals(r.getNombreRol()));
         if (usuario.getRoles().stream().noneMatch(r -> Constants.ROL_EMPRENDEDOR.equals(r.getNombreRol()))) {
             usuario.getRoles().add(rolEmprendedor);

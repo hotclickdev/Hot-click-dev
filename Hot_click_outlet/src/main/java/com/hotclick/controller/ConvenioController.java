@@ -1,4 +1,5 @@
 package com.hotclick.controller;
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.utils.Constants;
 
 import com.hotclick.dto.ResponseDTO;
@@ -41,7 +42,7 @@ public class ConvenioController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ResponseDTO> actualizar(@PathVariable Long id, @RequestBody Convenio datos) {
-        Convenio c = repo.findById(id).orElseThrow(() -> new RuntimeException("No encontrado"));
+        Convenio c = repo.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("No encontrado"));
         sanitizarConvenio(datos);
         c.setNombre(datos.getNombre());
         c.setDescripcion(datos.getDescripcion());
@@ -60,7 +61,7 @@ public class ConvenioController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseDTO> eliminar(@PathVariable Long id) {
-        Convenio c = repo.findById(id).orElseThrow(() -> new RuntimeException("No encontrado"));
+        Convenio c = repo.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("No encontrado"));
         c.setEstado(0);
         c.setActivo(false);
         repo.save(c);

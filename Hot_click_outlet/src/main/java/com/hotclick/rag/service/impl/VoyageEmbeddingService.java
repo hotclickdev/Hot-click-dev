@@ -1,5 +1,6 @@
 package com.hotclick.rag.service.impl;
 
+import com.hotclick.exception.IntegracionExternaException;
 import com.hotclick.rag.service.EmbeddingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +40,7 @@ public class VoyageEmbeddingService implements EmbeddingService {
     @Override
     public float[] generarEmbedding(String texto) {
         if (apiKey == null || apiKey.isBlank()) {
-            throw new RuntimeException("voyage.api-key no configurada — embeddings deshabilitados");
+            throw new IllegalStateException("voyage.api-key no configurada — embeddings deshabilitados");
         }
 
         Exception lastException = null;
@@ -55,12 +56,14 @@ public class VoyageEmbeddingService implements EmbeddingService {
                         Thread.sleep(RETRY_DELAY_MS);
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
-                        throw new RuntimeException("Interrumpido durante reintento de embedding", ie);
+                        throw new IntegracionExternaException("voyage", IntegracionExternaException.Tipo.IO_ERROR,
+                            "Interrumpido durante reintento de embedding", ie);
                     }
                 }
             }
         }
-        throw new RuntimeException("Voyage embedding falló tras " + MAX_RETRIES + " intentos", lastException);
+        throw new IntegracionExternaException("voyage", IntegracionExternaException.Tipo.IO_ERROR,
+            "Voyage embedding falló tras " + MAX_RETRIES + " intentos", lastException);
     }
 
     private float[] llamarApi(String texto) {
@@ -83,16 +86,20 @@ public class VoyageEmbeddingService implements EmbeddingService {
 
         Map<String, Object> responseBody = resp.getBody();
         if (responseBody == null)
-            throw new RuntimeException("Voyage devolvió cuerpo vacío");
+            throw new IntegracionExternaException("voyage", IntegracionExternaException.Tipo.RESPUESTA_INVALIDA,
+                "Voyage devolvió cuerpo vacío");
 
         if (!(responseBody.get("data") instanceof List<?> data) || data.isEmpty())
-            throw new RuntimeException("Campo 'data' vacío en respuesta de Voyage");
+            throw new IntegracionExternaException("voyage", IntegracionExternaException.Tipo.RESPUESTA_INVALIDA,
+                "Campo 'data' vacío en respuesta de Voyage");
 
         if (!(data.get(0) instanceof Map<?, ?> firstItem))
-            throw new RuntimeException("Formato inesperado en data[0] de Voyage");
+            throw new IntegracionExternaException("voyage", IntegracionExternaException.Tipo.RESPUESTA_INVALIDA,
+                "Formato inesperado en data[0] de Voyage");
 
         if (!(firstItem.get("embedding") instanceof List<?> values) || values.isEmpty())
-            throw new RuntimeException("Campo 'embedding' vacío en respuesta de Voyage");
+            throw new IntegracionExternaException("voyage", IntegracionExternaException.Tipo.RESPUESTA_INVALIDA,
+                "Campo 'embedding' vacío en respuesta de Voyage");
 
         float[] result = new float[values.size()];
         for (int i = 0; i < values.size(); i++) {

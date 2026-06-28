@@ -1,5 +1,6 @@
 package com.hotclick.service;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Producto;
 import com.hotclick.model.ProductoImagen;
 import com.hotclick.repository.ProductoImagenRepository;
@@ -23,7 +24,7 @@ public class ProductoImagenService {
     @Transactional
     public ProductoImagen agregar(Long productoId, String urlImagen, int posicion, boolean esPrincipal) {
         Producto producto = productoRepository.findById(productoId)
-            .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
 
         ProductoImagen img = new ProductoImagen();
         img.setProducto(producto);
@@ -42,9 +43,9 @@ public class ProductoImagenService {
     @Transactional
     public void eliminar(Long imagenId, Long productoId) {
         ProductoImagen img = imagenRepository.findById(imagenId)
-            .orElseThrow(() -> new RuntimeException("Imagen no encontrada"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Imagen", imagenId));
         if (!img.getProducto().getId().equals(productoId)) {
-            throw new RuntimeException("La imagen no pertenece a este producto");
+            throw new IllegalArgumentException("La imagen no pertenece a este producto");
         }
         imagenRepository.delete(img);
     }
@@ -56,7 +57,7 @@ public class ProductoImagenService {
     @Transactional
     public List<ProductoImagen> sincronizar(Long productoId, List<String> urls) {
         Producto producto = productoRepository.findById(productoId)
-            .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
 
         imagenRepository.deleteAll(imagenRepository.findByProductoIdOrderByPosicionAsc(productoId));
 

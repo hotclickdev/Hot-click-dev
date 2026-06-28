@@ -191,8 +191,8 @@ function AgregarProductos({ items, onChange }) {
 
   const agregar = (prod) => {
     setQ(''); setRes([])
-    const existe = items.find(i => i.productoId === prod.id)
-    if (existe) {
+    const yaExiste = items.some(i => i.productoId === prod.id)
+    if (yaExiste) {
       onChange(items.map(i => i.productoId === prod.id ? { ...i, cantidad: i.cantidad + 1 } : i))
     } else {
       onChange([...items, {
@@ -363,7 +363,15 @@ export default function AdminAsignarProducto() {
 
       {/* Stepper */}
       <div className="flex items-center gap-2">
-        {PASOS.map((label, i) => (
+        {PASOS.map((label, i) => {
+          const done = i < paso
+          const active = i === paso
+          let circleBg = 'var(--hc-surface-2)'
+          let circleColor = 'var(--hc-muted)'
+          let circleBorder = 'var(--hc-border)'
+          if (done) { circleBg = 'rgba(16,185,129,0.15)'; circleColor = '#10b981'; circleBorder = 'rgba(16,185,129,0.3)' }
+          else if (active) { circleBg = 'var(--hc-accent)'; circleColor = '#fff'; circleBorder = 'var(--hc-accent)' }
+          return (
           <div key={i} className="flex items-center gap-2 flex-1 last:flex-none">
             <button
               onClick={() => { if (i < paso) setPaso(i) }}
@@ -372,25 +380,26 @@ export default function AdminAsignarProducto() {
             >
               <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors"
                 style={{
-                  backgroundColor: i < paso ? 'rgba(16,185,129,0.15)' : i === paso ? 'var(--hc-accent)' : 'var(--hc-surface-2)',
-                  color: i < paso ? '#10b981' : i === paso ? '#fff' : 'var(--hc-muted)',
-                  border: `1px solid ${i < paso ? 'rgba(16,185,129,0.3)' : i === paso ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
+                  backgroundColor: circleBg,
+                  color: circleColor,
+                  border: `1px solid ${circleBorder}`,
                 }}>
-                {i < paso ? (
+                {done ? (
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                     <polyline points="20 6 9 17 4 12"/>
                   </svg>
                 ) : i + 1}
               </div>
-              <span className="text-xs font-medium hidden sm:block" style={{ color: i === paso ? 'var(--hc-text)' : 'var(--hc-muted)' }}>
+              <span className="text-xs font-medium hidden sm:block" style={{ color: active ? 'var(--hc-text)' : 'var(--hc-muted)' }}>
                 {label}
               </span>
             </button>
             {i < PASOS.length - 1 && (
-              <div className="flex-1 h-px" style={{ backgroundColor: i < paso ? 'rgba(16,185,129,0.3)' : 'var(--hc-border)' }} />
+              <div className="flex-1 h-px" style={{ backgroundColor: done ? 'rgba(16,185,129,0.3)' : 'var(--hc-border)' }} />
             )}
           </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* Panel del paso activo */}
@@ -450,8 +459,9 @@ export default function AdminAsignarProducto() {
 
               {/* Método de pago */}
               <div className="space-y-1">
-                <label className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>Método de pago</label>
+                <label htmlFor="asignar-metodo-pago" className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>Método de pago</label>
                 <select
+                  id="asignar-metodo-pago"
                   value={metodoPago}
                   onChange={(e) => setMp(e.target.value)}
                   className="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
@@ -465,8 +475,9 @@ export default function AdminAsignarProducto() {
 
               {/* Notas */}
               <div className="space-y-1">
-                <label className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>Notas internas (opcional)</label>
+                <label htmlFor="asignar-notas" className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>Notas internas (opcional)</label>
                 <textarea
+                  id="asignar-notas"
                   value={notas}
                   onChange={(e) => setNotas(e.target.value)}
                   rows={2}

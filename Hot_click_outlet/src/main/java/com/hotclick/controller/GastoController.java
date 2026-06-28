@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Gasto;
 import com.hotclick.repository.EmpresaRepository;
@@ -72,7 +73,7 @@ public class GastoController {
     public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         try {
             Gasto g = gastoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Gasto no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Gasto no encontrado"));
             Long empresaId = companyScope.getCurrentEmpresaId();
             if (empresaId != null && (g.getEmpresa() == null || !empresaId.equals(g.getEmpresa().getId())))
                 return ResponseEntity.status(403).body(ResponseDTO.error("Gasto no pertenece a esta empresa"));

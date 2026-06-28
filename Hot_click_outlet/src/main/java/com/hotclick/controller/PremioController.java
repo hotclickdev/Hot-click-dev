@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.GiroRuleta;
 import com.hotclick.model.Premio;
@@ -46,7 +47,7 @@ public class PremioController {
             @PathVariable Long usuarioId) {
         try {
             Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
             ResultadoRuleta resultado = premioService.girar(giroId, usuario);
             return ResponseEntity.ok(ResponseDTO.success("Premio obtenido", resultado));
         } catch (Exception e) {
@@ -66,7 +67,7 @@ public class PremioController {
             @RequestParam String tipoOrigen) {
         try {
             Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
             GiroRuleta giro = premioService.asignarGiro(usuario, tipoOrigen);
             return ResponseEntity.ok(ResponseDTO.success("Giro asignado", giro));
         } catch (Exception e) {

@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.dto.PosVentaDTO;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.*;
@@ -59,16 +60,16 @@ public class PosController {
             Long clienteId = dto.getClienteId() != null ? dto.getClienteId() : 999L;
             Usuario cliente = usuarioRepository.findById(clienteId)
                 .orElseGet(() -> usuarioRepository.findById(999L)
-                    .orElseThrow(() -> new RuntimeException("Usuario mostrador (id=999) no encontrado")));
+                    .orElseThrow(() -> new RecursoNoEncontradoException("Usuario mostrador (id=999) no encontrado")));
 
             // ── Resolver bodega ───────────────────────────────────────────
             Long bodegaId = dto.getBodegaId() != null ? dto.getBodegaId() : 1L;
             Bodega bodega = bodegaRepository.findById(bodegaId)
-                .orElseThrow(() -> new RuntimeException("Bodega no encontrada: " + bodegaId));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Bodega", bodegaId));
 
             // ── Resolver empresa ──────────────────────────────────────────
             Empresa empresa = empresaRepository.findById(empresaId)
-                .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Empresa no encontrada"));
 
             // ── Construir pedido ──────────────────────────────────────────
             Pedido pedido = new Pedido();
@@ -95,7 +96,7 @@ public class PosController {
 
             for (PosVentaDTO.Item itemDto : dto.getItems()) {
                 Producto producto = productoRepository.findByIdForUpdate(itemDto.getProductoId())
-                    .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + itemDto.getProductoId()));
+                    .orElseThrow(() -> new RecursoNoEncontradoException("Producto", itemDto.getProductoId()));
 
                 int cantidad = itemDto.getCantidad() != null ? itemDto.getCantidad() : 1;
                 int precio   = itemDto.getPrecioUnitario() != null
@@ -197,7 +198,7 @@ public class PosController {
 
     private Long extractEmpresaId(HttpServletRequest request) {
         Long id = jwtUtil.extractEmpresaId(request.getHeader("Authorization").substring(7));
-        if (id == null) throw new RuntimeException("No hay empresa en el token");
+        if (id == null) throw new IllegalStateException("No hay empresa en el token");
         return id;
     }
 }

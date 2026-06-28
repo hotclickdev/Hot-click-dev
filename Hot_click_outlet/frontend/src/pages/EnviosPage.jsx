@@ -573,28 +573,34 @@ export default function EnviosPage() {
           <div className="faq-section">
             <p className="section-label">Preguntas frecuentes</p>
             <div className="faq-grid">
-              {faqItems.map((item, i) => (
+              {faqItems.map((item, i) => {
+                let answer = item.a
+                if (item.q.includes('rastrear')) {
+                  answer = (
+                    <>
+                      Ingresá a{' '}
+                      <Link to="/mis-pedidos" style={{ color: 'var(--hc-accent)' }}>Mis Pedidos</Link>{' '}
+                      para ver el estado en tiempo real. Si tu envío es por Correos de Costa Rica, recibirás un número de guía para rastrear en{' '}
+                      <a href="https://www.correos.go.cr" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--hc-accent)' }}>correos.go.cr</a>.
+                    </>
+                  )
+                } else if (item.q.includes('problema')) {
+                  answer = (
+                    <>
+                      Escribinos a{' '}
+                      <a href="mailto:hotclick.cr@gmail.com" style={{ color: 'var(--hc-accent)' }}>hotclick.cr@gmail.com</a>{' '}
+                      con el número de pedido. También podés consultar nuestra{' '}
+                      <Link to="/devoluciones" style={{ color: 'var(--hc-accent)' }}>Política de Devoluciones</Link>.
+                    </>
+                  )
+                }
+                return (
                 <div key={i} className="faq-item">
                   <p className="faq-q">{item.q}</p>
-                  <p className="faq-a">
-                    {item.q.includes('rastrear') ? (
-                      <>
-                        Ingresá a{' '}
-                        <Link to="/mis-pedidos" style={{ color: 'var(--hc-accent)' }}>Mis Pedidos</Link>{' '}
-                        para ver el estado en tiempo real. Si tu envío es por Correos de Costa Rica, recibirás un número de guía para rastrear en{' '}
-                        <a href="https://www.correos.go.cr" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--hc-accent)' }}>correos.go.cr</a>.
-                      </>
-                    ) : item.q.includes('problema') ? (
-                      <>
-                        Escribinos a{' '}
-                        <a href="mailto:hotclick.cr@gmail.com" style={{ color: 'var(--hc-accent)' }}>hotclick.cr@gmail.com</a>{' '}
-                        con el número de pedido. También podés consultar nuestra{' '}
-                        <Link to="/devoluciones" style={{ color: 'var(--hc-accent)' }}>Política de Devoluciones</Link>.
-                      </>
-                    ) : item.a}
-                  </p>
+                  <p className="faq-a">{answer}</p>
                 </div>
-              ))}
+                )
+              })}
             </div>
           </div>
 

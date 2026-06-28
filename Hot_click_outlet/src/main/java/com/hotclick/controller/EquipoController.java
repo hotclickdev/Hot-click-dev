@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.MiembroEmpresa;
@@ -95,7 +96,7 @@ public class EquipoController {
         }
 
         var rolAdminCliente = rolRepository.findByNombreRol(Constants.ROL_ADMIN_CLIENTE)
-            .orElseThrow(() -> new RuntimeException("Rol ADMIN_CLIENTE no configurado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Rol ADMIN_CLIENTE no configurado"));
 
         Optional<Usuario> existenteOpt = usuarioRepository.findByCorreo(correoNorm);
         if (existenteOpt.isPresent()) {

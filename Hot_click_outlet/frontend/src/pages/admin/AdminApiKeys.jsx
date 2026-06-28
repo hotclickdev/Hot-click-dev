@@ -1,11 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import api from '@/services/api'
 
 const fmt = (ts) => ts ? ts.slice(0, 16).replace('T', ' ') : '—'
 
 function KeyRevealModal({ keyData, onClose }) {
   const [copiado, setCopiado] = useState(false)
-  const inputRef = useRef(null)
 
   function copiar() {
     navigator.clipboard.writeText(keyData.plaintextKey).then(() => {
@@ -125,7 +124,7 @@ export default function AdminApiKeys() {
       <div className="rounded-2xl p-4 space-y-2"
         style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
         <p className="text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>Uso básico</p>
-        <pre className="text-xs overflow-x-auto" style={{ color: 'var(--hc-text)' }}>{`curl https://tu-dominio.com/api/productos \\
+        <pre className="text-xs overflow-x-auto" style={{ color: 'var(--hc-text)' }}>{String.raw`curl https://tu-dominio.com/api/productos \
   -H "Authorization: Bearer hck_live_XXXXXXXXXX..."`}</pre>
         <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
           Las claves <code>hck_live_...</code> acceden a producción.
@@ -176,18 +175,20 @@ export default function AdminApiKeys() {
       )}
 
       {/* Tabla */}
-      {cargando ? (
+      {cargando && (
         <div className="flex justify-center py-12">
           <div className="w-8 h-8 border-2 rounded-full animate-spin"
             style={{ borderColor: 'var(--hc-border)', borderTopColor: 'var(--hc-accent)' }} />
         </div>
-      ) : keys.length === 0 ? (
+      )}
+      {!cargando && keys.length === 0 && (
         <div className="text-center py-16" style={{ color: 'var(--hc-muted)' }}>
           <div className="text-4xl mb-3">🔑</div>
           <p className="font-medium">Sin API keys</p>
           <p className="text-sm mt-1">Crea una clave para dar acceso programático a la API</p>
         </div>
-      ) : (
+      )}
+      {!cargando && keys.length > 0 && (
         <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
           <div className="overflow-x-auto">
           <table className="w-full min-w-[680px] text-sm">

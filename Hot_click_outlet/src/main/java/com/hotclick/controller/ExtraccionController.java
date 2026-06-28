@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Producto;
 import com.hotclick.repository.ProductoRepository;
@@ -86,7 +87,7 @@ public class ExtraccionController {
 
             if (productoId != null) {
                 Producto producto = productoRepo.findById(productoId)
-                    .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + productoId));
+                    .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
                 precioService.guardarPrecios(producto, resultado);
                 publicacionService.crearOActualizar(productoId, null);
             }
@@ -113,7 +114,7 @@ public class ExtraccionController {
 
             if (productoId != null) {
                 var producto = productoRepo.findById(productoId)
-                    .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                    .orElseThrow(() -> new RecursoNoEncontradoException("Producto no encontrado"));
                 precioService.guardarPrecios(producto, resultado);
                 publicacionService.crearOActualizar(productoId, null);
             }

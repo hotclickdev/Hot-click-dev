@@ -140,7 +140,7 @@ public class ApiKeyService {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             return HexFormat.of().formatHex(md.digest(input.getBytes(StandardCharsets.UTF_8)));
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException("SHA-256 no disponible", e);
         }
     }
 

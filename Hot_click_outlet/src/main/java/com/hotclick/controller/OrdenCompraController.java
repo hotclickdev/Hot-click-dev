@@ -1,4 +1,5 @@
 package com.hotclick.controller;
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.utils.Constants;
 
 import com.hotclick.dto.OrdenCompraDTO;
@@ -81,7 +82,7 @@ public class OrdenCompraController {
             int total = 0;
             for (OrdenCompraDTO.Item itemDto : dto.getItems()) {
                 Producto producto = productoRepository.findById(itemDto.getProductoId())
-                    .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + itemDto.getProductoId()));
+                    .orElseThrow(() -> new RecursoNoEncontradoException("Producto", itemDto.getProductoId()));
 
                 int cant  = itemDto.getCantidad() != null ? itemDto.getCantidad() : 1;
                 int precio = itemDto.getPrecioUnitario() != null ? itemDto.getPrecioUnitario() : 0;
@@ -115,7 +116,7 @@ public class OrdenCompraController {
                                                HttpServletRequest request) {
         try {
             OrdenCompra orden = ordenCompraRepository.findByIdConDetalles(id)
-                .orElseThrow(() -> new RuntimeException("Orden no encontrada"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Orden no encontrada"));
             if ("RECIBIDA".equals(orden.getEstado()) || "CANCELADA".equals(orden.getEstado()))
                 return ResponseEntity.badRequest().body(ResponseDTO.error("La orden ya está " + orden.getEstado().toLowerCase()));
 
@@ -165,7 +166,7 @@ public class OrdenCompraController {
 
                 Producto producto = productosPorId.get(item.getProducto().getId());
                 if (producto == null)
-                    throw new RuntimeException("Producto no encontrado: " + item.getProducto().getId());
+                    throw new RecursoNoEncontradoException("Producto", item.getProducto().getId());
                 stockService.ajustarEntrada(producto.getId(), delta,
                     "Recepción OC " + orden.getNumeroOrden(), correo);
             }
@@ -190,7 +191,7 @@ public class OrdenCompraController {
     public ResponseEntity<?> cancelar(@PathVariable Long id) {
         try {
             OrdenCompra orden = ordenCompraRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Orden no encontrada"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Orden no encontrada"));
             if ("RECIBIDA".equals(orden.getEstado()))
                 return ResponseEntity.badRequest().body(ResponseDTO.error("No se puede cancelar una orden ya recibida"));
             orden.setEstado("CANCELADA");

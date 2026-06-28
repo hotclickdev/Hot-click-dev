@@ -10,6 +10,7 @@ import com.hotclick.repository.CategoriaRepository;
 import com.hotclick.repository.MarcaRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.utils.Constants;
 import com.hotclick.utils.InputSanitizer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,11 +76,11 @@ public class ProductoService {
             p.setSku("HC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         }
         p.setCategoria(categoriaRepository.findById(dto.getCategoriaId())
-            .orElseThrow(() -> new RuntimeException("Categoría no encontrada")));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Categoría", dto.getCategoriaId())));
 
         if (dto.getBodegaId() != null) {
             p.setBodega(bodegaRepository.findById(dto.getBodegaId())
-                .orElseThrow(() -> new RuntimeException("Bodega no encontrada")));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Bodega", dto.getBodegaId())));
         } else if (empresa != null) {
             List<Bodega> bodsEmpresa = bodegaRepository
                 .findByEmpresaIdAndEstadoOrderByFechaCreacionAsc(empresa.getId(), Constants.ESTADO_ACTIVO);
@@ -90,7 +91,7 @@ public class ProductoService {
             throw new IllegalArgumentException("Debe seleccionar una bodega");
         }
         p.setAdminCliente(usuarioRepository.findByCorreo(adminCorreo)
-            .orElseThrow(() -> new RuntimeException("Admin no encontrado")));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Admin", adminCorreo)));
         p.setEmpresa(empresa);
         Producto saved = productoRepository.save(p);
         eventPublisher.publishEvent(new ProductoGuardadoEvent(
@@ -115,15 +116,15 @@ public class ProductoService {
         while (true) {
             try {
                 Producto p = productoRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                    .orElseThrow(() -> new RecursoNoEncontradoException("Producto", id));
                 mapDtoToProducto(dto, p);
                 if (dto.getCategoriaId() != null) {
                     p.setCategoria(categoriaRepository.findById(dto.getCategoriaId())
-                        .orElseThrow(() -> new RuntimeException("Categoría no encontrada")));
+                        .orElseThrow(() -> new RecursoNoEncontradoException("Categoría", dto.getCategoriaId())));
                 }
                 if (dto.getBodegaId() != null) {
                     p.setBodega(bodegaRepository.findById(dto.getBodegaId())
-                        .orElseThrow(() -> new RuntimeException("Bodega no encontrada")));
+                        .orElseThrow(() -> new RecursoNoEncontradoException("Bodega", dto.getBodegaId())));
                 }
                 Producto saved = productoRepository.save(p);
                 evictDashboard(empresaId);
@@ -142,11 +143,11 @@ public class ProductoService {
                 return saved;
             } catch (org.springframework.orm.ObjectOptimisticLockingFailureException e) {
                 if (++intentos >= 3) {
-                    throw new RuntimeException("Conflicto de concurrencia al actualizar producto. Intentá de nuevo.");
+                    throw new IllegalStateException("Conflicto de concurrencia al actualizar producto. Intentá de nuevo.");
                 }
                 try { Thread.sleep(50L * intentos); } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
-                    throw new RuntimeException(ie);
+                    throw new IllegalStateException("Interrumpido actualizando producto", ie);
                 }
             }
         }
@@ -185,7 +186,7 @@ public class ProductoService {
         Long mid = dto.getMarcaId();
         if (mid != null) {
             p.setMarca(marcaRepository.findById(mid)
-                .orElseThrow(() -> new RuntimeException("Marca no encontrada")));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Marca", mid)));
         }
     }
 
@@ -238,7 +239,7 @@ public class ProductoService {
     @Transactional
     public void eliminarProducto(Long id) {
         Producto p = productoRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Producto", id));
         p.setEstado(Constants.ESTADO_INACTIVO);
         productoRepository.save(p);
         evictProductosPublicos();
@@ -247,7 +248,7 @@ public class ProductoService {
     @Transactional
     public Producto toggleDestacado(Long id, Boolean valor) {
         Producto p = productoRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Producto", id));
         p.setDestacado(valor);
         Producto saved = productoRepository.save(p);
         evictProductosPublicos();
@@ -257,7 +258,7 @@ public class ProductoService {
     @Transactional
     public Producto marcarComoVendido(Long id) {
         Producto p = productoRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Producto", id));
         p.setVendido(true);
         p.setStockActual(0);
         Producto saved = productoRepository.save(p);
@@ -268,7 +269,7 @@ public class ProductoService {
     @Transactional(readOnly = true)
     public Producto buscarPorId(Long id) {
         return productoRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Producto", id));
     }
 
     @Transactional(readOnly = true)
@@ -304,7 +305,7 @@ public class ProductoService {
     @Transactional
     public Producto toggleCarrusel(Long id, Boolean valor, Integer orden) {
         Producto p = productoRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Producto", id));
         p.setEnCarrusel(valor);
         if (orden != null) p.setOrdenCarrusel(orden);
         Producto saved = productoRepository.save(p);

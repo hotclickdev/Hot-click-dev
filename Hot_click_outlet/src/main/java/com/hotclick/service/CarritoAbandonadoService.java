@@ -34,7 +34,7 @@ public class CarritoAbandonadoService {
         try {
             carrito.setItems(objectMapper.writeValueAsString(dto.getItems()));
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Error serializing cart items", e);
+            throw new IllegalStateException("Error serializing cart items", e);
         }
         carrito.setSessionId(dto.getSessionId());
         carrito.setUserId(userId);

@@ -98,9 +98,10 @@ export default function CartAssistant({ cartItems, cartTotal }) {
   useEffect(() => {
     if (abierto && !initialized.current) {
       initialized.current = true
+      const itemSuffix = cartItems.length === 1 ? '' : 's'
       const greeting = busquedasPrevias
         ? `Vi que preguntaste por: "${busquedasPrevias}". Basándome en tu carrito, déjame sugerirte qué más podría interesarte...`
-        : `Tenés ${cartItems.length} producto${cartItems.length !== 1 ? 's' : ''} en tu carrito. ¿Puedo sugerirte algo que complemente tu compra?`
+        : `Tenés ${cartItems.length} producto${itemSuffix} en tu carrito. ¿Puedo sugerirte algo que complemente tu compra?`
 
       setMensajes([{ rol: 'assistant', texto: greeting }])
 

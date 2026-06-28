@@ -75,8 +75,7 @@ export default function AdminAprobaciones() {
   }
 
   return (
-    <>
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Header */}
         <div>
           <h1 className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>Solicitudes pendientes</h1>
@@ -100,9 +99,10 @@ export default function AdminAprobaciones() {
         </div>
 
         {/* Lista */}
-        {loading ? (
+        {loading && (
           <div className="py-12 text-center text-sm" style={{ color: 'var(--hc-muted)' }}>Cargando solicitudes…</div>
-        ) : solicitudes.length === 0 ? (
+        )}
+        {!loading && solicitudes.length === 0 && (
           <div className="py-12 text-center rounded-xl" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
             <div className="w-12 h-12 rounded-2xl mx-auto mb-3 flex items-center justify-center" style={{ backgroundColor: 'rgba(34,197,94,0.1)' }}>
               <svg className="w-6 h-6" style={{ color: '#22c55e' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><polyline points="20 6 9 17 4 12"/></svg>
@@ -110,7 +110,8 @@ export default function AdminAprobaciones() {
             <p className="font-semibold" style={{ color: 'var(--hc-text)' }}>Sin pendientes</p>
             <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>Todas las solicitudes están al día.</p>
           </div>
-        ) : (
+        )}
+        {!loading && solicitudes.length > 0 && (
           <div className="space-y-3">
             {solicitudes.map(sol => (
               <div key={sol.id} className="rounded-xl p-5"
@@ -154,7 +155,7 @@ export default function AdminAprobaciones() {
                             className="flex-1 px-2 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50"
                             style={{ backgroundColor: confirm.action === 'aprobar' ? '#22c55e' : '#ef4444', color: '#fff' }}
                           >
-                            {saving !== null ? '…' : 'Sí, confirmar'}
+                            {saving === null ? 'Sí, confirmar' : '…'}
                           </button>
                           <button
                             onClick={() => setConfirm(null)}
@@ -193,8 +194,6 @@ export default function AdminAprobaciones() {
           </div>
         )}
       </div>
-
-    </>
   )
 }
 
