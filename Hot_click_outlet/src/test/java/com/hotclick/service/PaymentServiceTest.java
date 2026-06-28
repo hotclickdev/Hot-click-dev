@@ -7,6 +7,7 @@ import com.hotclick.payment.PaymentProvider;
 import com.hotclick.payment.PaymentProviderFactory;
 import com.hotclick.payment.PaymentSession;
 import com.hotclick.repository.*;
+import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -140,7 +141,7 @@ class PaymentServiceTest {
     // ── checkout — errores de stock ───────────────────────────────────────────
 
     @Test
-    @DisplayName("checkout → stock insuficiente lanza IllegalStateException")
+    @DisplayName("checkout → stock insuficiente lanza StockInsuficienteException")
     void checkout_insufficientStock_throws() {
         testProducto.setStockActual(5);
         testProducto.setStockReservado(4); // disponible = 1
@@ -150,7 +151,7 @@ class PaymentServiceTest {
         when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(testProducto));
 
         assertThatThrownBy(() -> service.checkout(buildRequest(3), CORREO))
-            .isInstanceOf(IllegalStateException.class)
+            .isInstanceOf(StockInsuficienteException.class)
             .hasMessageContaining("Stock insuficiente");
     }
 

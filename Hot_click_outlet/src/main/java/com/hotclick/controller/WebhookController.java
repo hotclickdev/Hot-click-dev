@@ -5,6 +5,7 @@ import com.hotclick.service.IncidentRemediationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -57,6 +58,11 @@ public class WebhookController {
         telegramService.enviar(mensaje);
         log.info("Webhook UptimeRobot: alerta tipo={} monitor={}", alertType, monitorFriendlyName);
         return ResponseEntity.ok(Map.of("status", "ok"));
+    }
+
+    @PostMapping("/payxpert")
+    public ResponseEntity<Void> payxpertWebhookArchivado(@RequestBody(required = false) String body) {
+        return ResponseEntity.status(HttpStatus.GONE).build();
     }
 
     @PostMapping("/sentry")
