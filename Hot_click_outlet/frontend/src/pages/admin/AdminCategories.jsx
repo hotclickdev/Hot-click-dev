@@ -138,6 +138,7 @@ export default function AdminCategories() {
     setLoading(true)
     api.get('/categorias')
       .then(({ data }) => setCats(Array.isArray(data) ? data : []))
+      .catch(() => {})
       .finally(() => setLoading(false))
   }
 

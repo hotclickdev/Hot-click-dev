@@ -64,7 +64,7 @@ public class DataSeeder implements ApplicationRunner {
         String correo = "admin@hotclick.com";
         String defaultPassword = System.getenv().getOrDefault("ADMIN_DEFAULT_PASSWORD", "Admin1234!"); // NOSONAR — contraseña de seed, nunca usada en producción con valor por defecto
         if (usuarioRepository.existsByCorreo(correo)) {
-            Usuario admin = usuarioRepository.findByCorreo(correo).get();
+            Usuario admin = usuarioRepository.findByCorreo(correo).orElseThrow();
             // Siempre garantizar contraseña correcta, campos obligatorios y rol
             admin.setContrasenaHash(passwordEncoder.encode(defaultPassword));
             if (admin.getIdentificacion() == null) admin.setIdentificacion("0000000001");

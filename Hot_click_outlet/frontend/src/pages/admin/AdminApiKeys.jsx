@@ -10,7 +10,7 @@ function KeyRevealModal({ keyData, onClose }) {
     navigator.clipboard.writeText(keyData.plaintextKey).then(() => {
       setCopiado(true)
       setTimeout(() => setCopiado(false), 2500)
-    })
+    }).catch(() => {})
   }
 
   return (

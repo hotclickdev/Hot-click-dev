@@ -1,5 +1,6 @@
 package com.hotclick;
 
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration;
@@ -20,6 +21,6 @@ public class HotclickApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(HotclickApplication.class, args);
-        System.out.println("HOT_CLICK Outlet iniciado en http://localhost:8080");
+        LoggerFactory.getLogger(HotclickApplication.class).info("HOT_CLICK Outlet iniciado en http://localhost:8080");
     }
 }

@@ -346,6 +346,7 @@ export default function AdminFinanzas() {
         const all = Array.isArray(raw) ? raw : raw?.content ?? []
         setPedidos(all.filter(p => ESTADOS_COMPLETADOS.has(p.estado ?? p.estadoPedido)))
       })
+      .catch(() => {})
       .finally(() => setLoadingP(false))
   }, [])
 

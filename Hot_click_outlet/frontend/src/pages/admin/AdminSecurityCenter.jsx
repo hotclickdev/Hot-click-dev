@@ -692,6 +692,7 @@ function EventosTab() {
         a.download = `security-log-${exportPeriod}.csv`
         a.click()
       })
+      .catch(() => {})
   }
 
   return (

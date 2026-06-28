@@ -72,6 +72,7 @@ export default function AdminReportes() {
           const items = res?.data?.content ?? res?.data ?? []
           setProductos(Array.isArray(items) ? items : [])
         })
+        .catch(() => {})
         .finally(() => setLoadingP(false))
     }
     if (activeTab === 'pos' && posVentas.length === 0) {

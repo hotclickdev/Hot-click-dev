@@ -42,6 +42,7 @@ function LogModal({ plugin, onClose }) {
   useEffect(() => {
     api.get(`/admin/plugins/${plugin.id}/eventos`)
       .then(({ data }) => setLogs(Array.isArray(data) ? data : []))
+      .catch(() => {})
       .finally(() => setCargando(false))
   }, [plugin.id])
 
