@@ -139,8 +139,8 @@ export default function ContactoPage() {
                 <Input label={`${t('contacto.name')} *`} value={form.nombre} onChange={set('nombre')} required maxLength={120} />
                 <Input label={`${t('contacto.email')} *`} type="email" value={form.correo} onChange={set('correo')} required maxLength={254} />
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-[#e8e8ed]">{t('contacto.message')} *</label>
-                  <textarea
+                  <label htmlFor="contacto-mensaje" className="text-sm font-medium text-[#e8e8ed]">{t('contacto.message')} *</label>
+                  <textarea id="contacto-mensaje"
                     value={form.mensaje}
                     onChange={set('mensaje')}
                     required

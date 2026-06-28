@@ -5,7 +5,7 @@ import { HotClickMark } from '@/components/ui/BrandLogo'
 const fmt = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
 
 function StarRating({ rating, total }) {
-  const value = parseFloat(rating) || 0
+  const value = Number.parseFloat(rating) || 0
   if (value === 0 && !total) return null
   return (
     <div className="flex items-center gap-1.5">

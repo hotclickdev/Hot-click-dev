@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import useChatStore from '@/store/chatStore'
+import { isBrowser } from '@/utils/browser'
 import useCartStore from '@/store/cartStore'
 import AIChat from './AIChat'
 import POSPaymentPanel from './POSPaymentPanel'
@@ -44,11 +45,11 @@ export default function ChatModal() {
         else close()
       }
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    globalThis.addEventListener('keydown', onKey)
+    return () => globalThis.removeEventListener('keydown', onKey)
   }, [isOpen, checkoutMode, close])
 
-  const histHeight = typeof window !== 'undefined' ? Math.max(300, window.innerHeight - 200) : 500
+  const histHeight = isBrowser ? Math.max(300, globalThis.innerHeight - 200) : 500
 
   // En mobile (<640px) ocupa pantalla completa; en desktop, drawer fijo 420px desde la izquierda
   const drawerVariants = {

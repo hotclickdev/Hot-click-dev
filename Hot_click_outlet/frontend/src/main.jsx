@@ -29,20 +29,15 @@ if ('serviceWorker' in navigator) {
   registerSW({
     onNeedRefresh() {
       // Despacha un evento custom que App.jsx puede escuchar para mostrar el toast
-      window.dispatchEvent(new CustomEvent('sw-update-available'))
+      globalThis.dispatchEvent(new CustomEvent('sw-update-available'))
     },
-    onOfflineReady() {
-      console.info('[SW] App lista para uso offline')
-    },
+    onOfflineReady() {},
     onRegistered(swRegistration) {
       if (swRegistration) {
-        // Verificar actualizaciones cada hora en background
         setInterval(() => { swRegistration.update() }, 60 * 60 * 1000)
       }
     },
-    onRegisterError(error) {
-      console.warn('[SW] Error al registrar Service Worker:', error)
-    },
+    onRegisterError() {},
   })
 }
 

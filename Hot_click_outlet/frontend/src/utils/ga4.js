@@ -15,10 +15,10 @@ function injectGtag(id) {
   script.async = true
   document.head.appendChild(script)
 
-  window.dataLayer = window.dataLayer || []
-  window.gtag = function () { window.dataLayer.push(arguments) }
-  window.gtag('js', new Date())
-  window.gtag('config', id, { send_page_view: false })
+  globalThis.dataLayer = globalThis.dataLayer ?? []
+  globalThis.gtag = function () { globalThis.dataLayer.push(arguments) }
+  globalThis.gtag('js', new Date())
+  globalThis.gtag('config', id, { send_page_view: false })
 }
 
 // Event name mapping: internal HC name → GA4 recommended event name
@@ -64,12 +64,12 @@ export function initGA4() {
 
   addAdapter((event, data) => {
     const ga4Event = GA4_EVENT_MAP[event] ?? event
-    window.gtag?.('event', ga4Event, hcPayloadToGA4(event, data))
+    globalThis.gtag?.('event', ga4Event, hcPayloadToGA4(event, data))
   })
 }
 
 // Page view tracker — call on every route change
 export function trackPageView(path) {
-  if (!GA4_ID || !window.gtag) return
-  window.gtag('event', 'page_view', { page_path: path })
+  if (!GA4_ID || !globalThis.gtag) return
+  globalThis.gtag('event', 'page_view', { page_path: path })
 }

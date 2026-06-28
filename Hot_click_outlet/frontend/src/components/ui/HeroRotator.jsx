@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { formatPrice } from '@/utils/format'
 import AIChat from '@/components/ai/AIChat'
+import { isBrowser } from '@/utils/browser'
 
 const CHAT_CHIPS = [
   '¿Qué tenés en oferta?',
@@ -721,7 +722,7 @@ function InlineChat({ initialQuery, accent, onClose }) {
           chips={CHAT_CHIPS}
           placeholder="¿Qué estás buscando?"
           autoQuery={initialQuery || undefined}
-          maxHistoryHeight={Math.max(320, (typeof window !== 'undefined' ? window.innerHeight : 800) - 280)}
+          maxHistoryHeight={Math.max(320, (isBrowser ? globalThis.innerHeight : 800) - 280)}
         />
       </div>
     </motion.div>

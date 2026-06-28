@@ -7,6 +7,8 @@ import { adminService, ventaService } from '@/services/orderService'
 import { formatPrice } from '@/utils/format'
 import useAuthStore from '@/store/authStore'
 
+const ROLES_NEGOCIO = new Set(['EMPRENDEDOR', 'ADMIN_CLIENTE'])
+
 const stagger = {
   container: { show: { transition: { staggerChildren: 0.07 } } },
   item: { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.3 } } },
@@ -214,7 +216,7 @@ export default function AdminDashboard() {
           <button
             onClick={() => {
               localStorage.removeItem('hc-admin-tour-v2-done')
-              window.dispatchEvent(new Event('hc-open-tour'))
+              globalThis.dispatchEvent(new Event('hc-open-tour'))
             }}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all hover:opacity-80 shrink-0"
             style={{ backgroundColor: 'rgba(23,71,168,0.1)', border: '1px solid rgba(23,71,168,0.25)', color: 'var(--hc-blue-300)' }}
@@ -224,7 +226,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Banner: Primeros pasos — solo para negocios nuevos sin productos */}
-        {!loading && !setupDismissed && (stats?.totalProductos === 0 || stats?.totalProductos == null) && ['EMPRENDEDOR', 'ADMIN_CLIENTE'].includes(userRole) && (
+        {!loading && !setupDismissed && (stats?.totalProductos === 0 || stats?.totalProductos == null) && ROLES_NEGOCIO.has(userRole) && (
           <div className="rounded-2xl p-5" style={{ backgroundColor: 'rgba(23,71,168,0.06)', border: '1px solid rgba(23,71,168,0.2)' }}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">

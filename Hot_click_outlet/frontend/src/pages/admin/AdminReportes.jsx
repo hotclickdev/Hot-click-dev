@@ -8,6 +8,8 @@ import { posService } from '@/services/posService'
 import { formatPrice, formatDate } from '@/utils/format'
 import ImportExportBar from '@/components/admin/ImportExportBar'
 
+const ESTADOS_COMPLETADOS = new Set(['COMPLETADO', 'ENTREGADO'])
+
 const fmt       = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
 const TABLE_SIZE = 25
 
@@ -107,7 +109,7 @@ export default function AdminReportes() {
     })
   }, [ventas, desde, hasta, metodoPago, estado, search])
 
-  const completadas   = filtered.filter(v => ['COMPLETADO','ENTREGADO'].includes(v.estado))
+  const completadas   = filtered.filter(v => ESTADOS_COMPLETADOS.has(v.estado))
   const totalIngresos = completadas.reduce((s, v) => s + (v.total ?? v.totalPedido ?? 0), 0)
   const totalEnvios   = completadas.reduce((s, v) => s + (v.costoEnvio ?? 0), 0)
   const totalProductos= totalIngresos - totalEnvios
@@ -169,7 +171,7 @@ export default function AdminReportes() {
       (v.fechaCreacion ?? '').slice(0, 10)
     ].join(','))
     const a = document.createElement('a')
-    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent([h, ...rows].join('\n'))
+    a.href = `data:text/csv;charset=utf-8,${encodeURIComponent([h, ...rows].join('\n'))}`
     a.download = `ventas-${toISO(new Date())}.csv`; a.click()
   }
 
@@ -177,7 +179,7 @@ export default function AdminReportes() {
     const h = 'Producto,Unidades,Ingreso,Costo,Utilidad,Margen%'
     const rows = topProductos.map(p => [p.nombre, p.cantidad, p.ingreso, p.costo, p.utilidad, p.margen].join(','))
     const a = document.createElement('a')
-    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent([h, ...rows].join('\n'))
+    a.href = `data:text/csv;charset=utf-8,${encodeURIComponent([h, ...rows].join('\n'))}`
     a.download = `top-productos-${toISO(new Date())}.csv`; a.click()
   }
 
@@ -306,7 +308,7 @@ export default function AdminReportes() {
                               <td className="px-4 py-3 text-[#8e8e9a] text-xs">{v.metodoPago ?? '—'}</td>
                               <td className="px-4 py-3 text-[#8e8e9a] text-xs">{formatDate(v.fechaCreacion ?? v.fechaPedido)}</td>
                               <td className="px-4 py-3">
-                                <Badge variant={['COMPLETADO','ENTREGADO'].includes(v.estado) ? 'success' : 'warning'}>
+                                <Badge variant={ESTADOS_COMPLETADOS.has(v.estado) ? 'success' : 'warning'}>
                                   {v.estado ?? '—'}
                                 </Badge>
                               </td>
@@ -367,7 +369,7 @@ export default function AdminReportes() {
                             <td className="px-4 py-3 font-semibold text-emerald-400">{formatPrice(p.ingreso)}</td>
                             <td className="px-4 py-3 font-semibold text-[#4f7cff]">{formatPrice(p.utilidad)}</td>
                             <td className="px-4 py-3">
-                              <span className={`font-semibold text-sm ${parseFloat(p.margen) >= 30 ? 'text-emerald-400' : parseFloat(p.margen) >= 10 ? 'text-amber-400' : 'text-red-400'}`}>
+                              <span className={`font-semibold text-sm ${Number.parseFloat(p.margen) >= 30 ? 'text-emerald-400' : Number.parseFloat(p.margen) >= 10 ? 'text-amber-400' : 'text-red-400'}`}>
                                 {p.margen}%
                               </span>
                             </td>

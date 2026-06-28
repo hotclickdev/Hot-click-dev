@@ -1,11 +1,11 @@
-import { memo, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import useWishlistStore from '@/store/wishlistStore'
 import useCartStore from '@/store/cartStore'
 import { useToast } from '@/components/ui/Toast'
-import { formatPrice, conditionLabel, conditionVariant } from '@/utils/format'
+import { formatPrice, conditionLabel } from '@/utils/format'
 import OptimizedImage from '@/components/ui/OptimizedImage'
 
 // hotTag: etiqueta promocional roja («HOT», «-33%») — único rojo permitido dentro

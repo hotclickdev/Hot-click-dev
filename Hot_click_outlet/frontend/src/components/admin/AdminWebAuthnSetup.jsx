@@ -58,10 +58,11 @@ export default function AdminWebAuthnSetup() {
       {!hasKey && (
         <div className="space-y-3">
           <div>
-            <label className="text-sm font-medium text-neutral-700 block mb-1">
+            <label htmlFor="webauthn-device-name" className="text-sm font-medium text-neutral-700 block mb-1">
               Nombre del dispositivo
             </label>
             <input
+              id="webauthn-device-name"
               type="text"
               value={deviceName}
               onChange={e => setDeviceName(e.target.value)}

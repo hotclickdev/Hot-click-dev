@@ -333,8 +333,8 @@ export default function AdminCategories() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-[#e8e8ed]">Grupo al que pertenece (opcional)</label>
-            <select
+            <label htmlFor="cat-padre" className="text-sm font-medium text-[#e8e8ed]">Grupo al que pertenece (opcional)</label>
+            <select id="cat-padre"
               value={form.padreId}
               onChange={set('padreId')}
               className="h-11 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60"

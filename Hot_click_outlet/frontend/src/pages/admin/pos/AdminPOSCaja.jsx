@@ -23,10 +23,10 @@ function ConteoEfectivo({ label, onTotal }) {
   const setQty = (v, val) => {
     const next = { ...qtys, [v]: val }
     setQtys(next)
-    onTotal(DENOM.reduce((s, d) => s + (parseInt(next[d.v]) || 0) * d.v, 0))
+    onTotal(DENOM.reduce((s, d) => s + (Number.parseInt(next[d.v]) || 0) * d.v, 0))
   }
 
-  const total = DENOM.reduce((s, d) => s + (parseInt(qtys[d.v]) || 0) * d.v, 0)
+  const total = DENOM.reduce((s, d) => s + (Number.parseInt(qtys[d.v]) || 0) * d.v, 0)
 
   return (
     <div>
@@ -37,7 +37,7 @@ function ConteoEfectivo({ label, onTotal }) {
       <div className="rounded-2xl overflow-hidden border" style={{ borderColor: 'rgba(255,255,255,0.06)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
         {DENOM.map(d => {
           const qty = qtys[d.v]
-          const sub = (parseInt(qty) || 0) * d.v
+          const sub = (Number.parseInt(qty) || 0) * d.v
           return (
             <div key={d.v} className="flex items-center gap-3 px-3 py-2 border-b last:border-0"
               style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
@@ -46,16 +46,16 @@ function ConteoEfectivo({ label, onTotal }) {
                 {d.label}
               </span>
               <div className="flex items-center gap-1 shrink-0">
-                <button onClick={() => setQty(d.v, Math.max(0, (parseInt(qty) || 0) - 1))}
+                <button onClick={() => setQty(d.v, Math.max(0, (Number.parseInt(qty) || 0) - 1))}
                   className="w-7 h-7 rounded-lg font-bold text-base flex items-center justify-center hover:bg-white/10"
                   style={{ color: 'var(--hc-muted)' }}>−</button>
                 <input
                   type="number" min={0} value={qty}
-                  onChange={e => setQty(d.v, Math.max(0, parseInt(e.target.value) || 0))}
+                  onChange={e => setQty(d.v, Math.max(0, Number.parseInt(e.target.value) || 0))}
                   className="w-14 text-center text-sm font-bold rounded-lg outline-none py-1.5"
                   style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--hc-text)' }}
                 />
-                <button onClick={() => setQty(d.v, (parseInt(qty) || 0) + 1)}
+                <button onClick={() => setQty(d.v, (Number.parseInt(qty) || 0) + 1)}
                   className="w-7 h-7 rounded-lg font-bold text-base flex items-center justify-center hover:bg-white/10"
                   style={{ color: 'var(--hc-muted)' }}>+</button>
               </div>

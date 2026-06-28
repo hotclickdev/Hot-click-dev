@@ -4,6 +4,7 @@ import { useToast } from '@/components/ui/Toast'
 
 const PLANES = ['GRATUITO', 'BASICO', 'PRO', 'ENTERPRISE']
 const ESTADOS = ['ACTIVO', 'SUSPENDIDO', 'INACTIVO']
+const PLANES_PRO = new Set(['PRO', 'ENTERPRISE'])
 
 const ESTADO_LABEL_USUARIO = { 1: 'Activo', 2: 'Inactivo', 3: 'Eliminado', 4: 'Suspendido' }
 const ESTADO_COLOR_USUARIO = {
@@ -67,7 +68,7 @@ function fmt(n) {
 }
 function fmtMoney(n) {
   if (!n) return '₡0'
-  return '₡' + new Intl.NumberFormat('es-CR').format(n)
+  return `₡${new Intl.NumberFormat('es-CR').format(n)}`
 }
 function fmtDate(d) {
   if (!d) return '—'
@@ -117,7 +118,7 @@ export default function AdminEmpresas() {
     try {
       const { data } = await api.get(`/admin/empresas/${emp.id}`)
       setDetail(data?.id ? data : (data?.data ?? data))
-    } catch {}
+    } catch { /* detail panel shows empty gracefully */ }
   }
 
   const cargarTab = useCallback(async (t, id) => {
@@ -192,7 +193,7 @@ export default function AdminEmpresas() {
     total:     empresas.length,
     activas:   empresas.filter(e => e.estadoEmpresa === 'ACTIVO').length,
     suspendidas: empresas.filter(e => e.estadoEmpresa === 'SUSPENDIDO').length,
-    pro:       empresas.filter(e => ['PRO','ENTERPRISE'].includes(e.planSaas)).length,
+    pro:       empresas.filter(e => PLANES_PRO.has(e.planSaas)).length,
   }
 
   return (

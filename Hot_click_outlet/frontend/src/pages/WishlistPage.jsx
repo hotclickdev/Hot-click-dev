@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
@@ -92,26 +92,26 @@ export default function WishlistPage() {
                 style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
               >
                 {/* Image */}
-                <div
-                  role="button" tabIndex={0}
-                  className="relative h-40 bg-[#1a1a1f] flex items-center justify-center overflow-hidden cursor-pointer"
-                  onClick={() => navigate(`/productos/${product.id}`)}
-                  onKeyDown={(e) => e.key === 'Enter' && navigate(`/productos/${product.id}`)}
-                >
-                  {product.imagenUrl ? (
-                    <img
-                      src={product.imagenUrl}
-                      alt={product.nombre}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <span className="text-4xl opacity-25">📦</span>
-                  )}
+                <div className="relative h-40 bg-[#1a1a1f] overflow-hidden">
+                  <Link
+                    to={`/productos/${product.id}`}
+                    className="flex items-center justify-center w-full h-full"
+                  >
+                    {product.imagenUrl ? (
+                      <img
+                        src={product.imagenUrl}
+                        alt={product.nombre}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="text-4xl opacity-25">📦</span>
+                    )}
+                  </Link>
                   {/* Remove heart */}
                   <button
                     onClick={(e) => { e.stopPropagation(); remove(product.id) }}
-                    className="absolute top-2 right-2 w-7 h-7 rounded-lg flex items-center justify-center bg-black/45 hover:bg-red-500/30 transition-colors border border-white/10"
+                    className="absolute top-2 right-2 z-10 w-7 h-7 rounded-lg flex items-center justify-center bg-black/45 hover:bg-red-500/30 transition-colors border border-white/10"
                     aria-label={t('wishlist.remove')}
                   >
                     <svg className="w-3.5 h-3.5 text-red-400" viewBox="0 0 24 24" fill="currentColor">
@@ -121,17 +121,15 @@ export default function WishlistPage() {
                 </div>
 
                 {/* Info */}
-                <div
-                  role="button" tabIndex={0}
-                  className="p-3 cursor-pointer"
-                  onClick={() => navigate(`/productos/${product.id}`)}
-                  onKeyDown={(e) => e.key === 'Enter' && navigate(`/productos/${product.id}`)}
+                <Link
+                  to={`/productos/${product.id}`}
+                  className="p-3 block"
                 >
                   <h3 className="font-medium text-xs leading-snug line-clamp-2 mb-1.5" style={{ color: 'var(--hc-text)' }}>
                     {product.nombre}
                   </h3>
                   <span className="font-bold text-sm text-[#4f7cff]">{formatPrice(product.precio)}</span>
-                </div>
+                </Link>
 
                 {/* Add to cart */}
                 <div className="px-3 pb-3">

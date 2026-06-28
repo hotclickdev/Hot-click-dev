@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import api from '@/services/api'
 
-const GOOGLE_FONTS_SAFE = ['Inter', 'Poppins', 'Roboto', 'Nunito', 'Montserrat', 'Raleway', 'Lato', 'Open Sans']
+const GOOGLE_FONTS_SAFE = new Set(['Inter', 'Poppins', 'Roboto', 'Nunito', 'Montserrat', 'Raleway', 'Lato', 'Open Sans'])
 
 let cached = null
 
@@ -36,7 +36,7 @@ export function applyBranding(b) {
   if (b.colorPrimario)   root.style.setProperty('--hc-accent-store',     b.colorPrimario)
 
   // Font family — only allow safe list to prevent CSS injection
-  const font = GOOGLE_FONTS_SAFE.includes(b.fontFamilia) ? b.fontFamilia : 'Inter'
+  const font = GOOGLE_FONTS_SAFE.has(b.fontFamilia) ? b.fontFamilia : 'Inter'
   loadGoogleFont(font)
   root.style.setProperty('--hc-font', `'${font}', system-ui, sans-serif`)
 

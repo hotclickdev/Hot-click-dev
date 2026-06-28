@@ -145,15 +145,15 @@ export default function AdminApiKeys() {
           <p className="font-semibold text-sm" style={{ color: 'var(--hc-text)' }}>Nueva API key</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Nombre (para identificarla) *</label>
-              <input required value={form.nombre} onChange={e => setForm(p => ({ ...p, nombre: e.target.value }))}
+              <label htmlFor="api-nombre" className="text-xs" style={{ color: 'var(--hc-muted)' }}>Nombre (para identificarla) *</label>
+              <input id="api-nombre" required value={form.nombre} onChange={e => setForm(p => ({ ...p, nombre: e.target.value }))}
                 placeholder="Mi aplicación móvil"
                 className="w-full px-3 py-2 rounded-xl text-sm outline-none"
                 style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }} />
             </div>
             <div className="space-y-1">
-              <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Entorno</label>
-              <select value={form.entorno} onChange={e => setForm(p => ({ ...p, entorno: e.target.value }))}
+              <label htmlFor="api-entorno" className="text-xs" style={{ color: 'var(--hc-muted)' }}>Entorno</label>
+              <select id="api-entorno" value={form.entorno} onChange={e => setForm(p => ({ ...p, entorno: e.target.value }))}
                 className="w-full px-3 py-2 rounded-xl text-sm outline-none"
                 style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}>
                 <option value="live">live (producción)</option>

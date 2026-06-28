@@ -62,11 +62,10 @@ export default function SocialLoginButtons({ mode = 'signIn' }) {
     try {
       await client.authenticateWithRedirect({
         strategy: `oauth_${providerId}`,
-        redirectUrl:         `${window.location.origin}/sso-callback`,
-        redirectUrlComplete: `${window.location.origin}/sso-complete`,
+        redirectUrl:         `${globalThis.location.origin}/sso-callback`,
+        redirectUrlComplete: `${globalThis.location.origin}/sso-complete`,
       })
     } catch (err) {
-      console.error('[social-login]', err)
       const msg = err?.errors?.[0]?.message || err?.message || 'Error al conectar con Google. Intentá de nuevo.'
       setError(msg)
       setLoading(null)

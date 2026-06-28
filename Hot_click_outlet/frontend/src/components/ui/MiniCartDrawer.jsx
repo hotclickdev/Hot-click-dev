@@ -8,11 +8,12 @@ import useUiStore from '@/store/uiStore'
 import ShippingProgress from '@/components/ui/ShippingProgress'
 import { formatPrice } from '@/utils/format'
 import { analytics } from '@/utils/analytics'
+import { isBrowser } from '@/utils/browser'
 
 function useIsDesktop() {
-  const [v, setV] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 768)
+  const [v, setV] = useState(() => isBrowser && globalThis.innerWidth >= 768)
   useEffect(() => {
-    const mq = window.matchMedia('(min-width: 768px)')
+    const mq = globalThis.matchMedia('(min-width: 768px)')
     const fn = (e) => setV(e.matches)
     mq.addEventListener('change', fn)
     return () => mq.removeEventListener('change', fn)
@@ -23,8 +24,7 @@ function useIsDesktop() {
 export default function MiniCartDrawer() {
   const { t } = useTranslation()
   const { items, removeItem, updateQuantity, total } = useCartStore()
-  const { token } = useAuthStore()
-  const { cartDrawerOpen, setCartDrawerOpen, setAuthPromptOpen } = useUiStore()
+  const { cartDrawerOpen, setCartDrawerOpen } = useUiStore()
   const navigate = useNavigate()
   const location = useLocation()
   const isDesktop = useIsDesktop()

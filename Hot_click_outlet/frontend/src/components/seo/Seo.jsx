@@ -1,4 +1,5 @@
 import { Helmet } from 'react-helmet-async'
+import { isBrowser } from '@/utils/browser'
 
 const SITE_NAME = 'HOTCLICK'
 const SITE_URL = 'https://hotclick.lat'
@@ -6,7 +7,7 @@ const DEFAULT_IMAGE = '/assets/og-default.png'
 
 export default function Seo({ title, description, image, url, type = 'website', noindex = false }) {
   const fullImage = image || DEFAULT_IMAGE
-  const fullUrl = url || (typeof window !== 'undefined' ? window.location.href : '')
+  const fullUrl = url || (isBrowser ? globalThis.location.href : '')
   const canonical = url || fullUrl
   const isAbsolute = fullImage.startsWith('http')
   const secureImage = isAbsolute ? fullImage : `${SITE_URL}${fullImage}`
@@ -20,7 +21,7 @@ export default function Seo({ title, description, image, url, type = 'website', 
 
       <link rel="alternate" hrefLang="es-CR" href={canonical} />
       <link rel="alternate" hrefLang="es"    href={canonical} />
-      <link rel="alternate" hrefLang="x-default" href={SITE_URL + '/'} />
+      <link rel="alternate" hrefLang="x-default" href={`${SITE_URL}/`} />
 
       <meta property="og:site_name" content={SITE_NAME} />
       <meta property="og:title" content={title} />

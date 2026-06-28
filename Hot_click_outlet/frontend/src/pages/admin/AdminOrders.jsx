@@ -212,8 +212,8 @@ function CrearPedidoModal({ onClose, onCreated }) {
   const updateItem = (id, field, val) =>
     setForm(f => ({ ...f, items: f.items.map(i => i.productoId === id ? { ...i, [field]: val } : i) }))
 
-  const costoEnvioNum = form.metodoEnvio === 'ENVIO_A_DOMICILIO' ? (parseInt(form.costoEnvio) || 0) : 0
-  const subtotal      = form.items.reduce((s, i) => s + (parseInt(i.precioUnitario) || 0) * (parseInt(i.cantidad) || 0), 0)
+  const costoEnvioNum = form.metodoEnvio === 'ENVIO_A_DOMICILIO' ? (Number.parseInt(form.costoEnvio) || 0) : 0
+  const subtotal      = form.items.reduce((s, i) => s + (Number.parseInt(i.precioUnitario) || 0) * (Number.parseInt(i.cantidad) || 0), 0)
   const total         = subtotal + costoEnvioNum
 
   const filteredUsers = users.filter(u =>
@@ -244,8 +244,8 @@ function CrearPedidoModal({ onClose, onCreated }) {
         notas:        form.notas || null,
         items: form.items.map(i => ({
           productoId:     i.productoId,
-          cantidad:       parseInt(i.cantidad) || 1,
-          precioUnitario: parseInt(i.precioUnitario) || i.precio,
+          cantidad:       Number.parseInt(i.cantidad) || 1,
+          precioUnitario: Number.parseInt(i.precioUnitario) || i.precio,
         })),
       }
       const res    = await orderService.createManual(payload)
@@ -389,7 +389,7 @@ function CrearPedidoModal({ onClose, onCreated }) {
                           />
                         </div>
                         <span className="text-xs text-[#8e8e9a] self-center shrink-0">
-                          = {formatPrice((parseInt(item.precioUnitario) || 0) * (parseInt(item.cantidad) || 0))}
+                          = {formatPrice((Number.parseInt(item.precioUnitario) || 0) * (Number.parseInt(item.cantidad) || 0))}
                         </span>
                       </div>
                     </div>
@@ -535,7 +535,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
       if (!guia.trim()) { toast({ message: t('adminOrders.enterGuia'), type: 'error' }); return }
       setSaving(true)
       try {
-        const costoNum = costo ? parseInt(costo, 10) : null
+        const costoNum = costo ? Number.parseInt(costo, 10) : null
         await orderService.procesarEnvio(order.id, guia.trim(), costoNum)
         toast({ message: t('adminOrders.sentNotified'), type: 'success' })
         onUpdate(order.id, { estado: 'ENVIADO', numeroGuia: guia.trim(), costoEnvio: costoNum ?? order.costoEnvio })

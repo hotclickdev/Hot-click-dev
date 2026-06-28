@@ -26,10 +26,6 @@ export default function AccessibilityPanel() {
   const [open, setOpen] = useState(false)
 
   const chatOpen = useChatStore(s => s.isOpen)
-
-  if (pathname.startsWith('/checkout') || pathname.startsWith('/pago')) return null
-  if (chatOpen) return null
-
   const {
     theme, setTheme,
     language, setLanguage,
@@ -38,6 +34,9 @@ export default function AccessibilityPanel() {
     reduceMotion, toggleReduceMotion,
     colorFilter, setColorFilter,
   } = useUiStore()
+
+  if (pathname.startsWith('/checkout') || pathname.startsWith('/pago')) return null
+  if (chatOpen) return null
 
   const isDark = theme === 'dark'
 

@@ -8,6 +8,8 @@ import Spinner from '@/components/ui/Spinner'
 import useAuthStore from '@/store/authStore'
 import { orderService } from '@/services/orderService'
 
+const ESTADOS_SIN_ACCION = new Set(['CANCELADO', 'PENDIENTE'])
+
 const STATUS_ICONS = {
   PENDIENTE:      '🕐',
   PAGADO:         '✅',
@@ -325,7 +327,7 @@ function OrderCard({ order }) {
                     </div>
                   )}
 
-                  {!['CANCELADO', 'PENDIENTE'].includes(estado) && (
+                  {!ESTADOS_SIN_ACCION.has(estado) && (
                     <GarantiaBar fechaPedido={order.fechaPedido} />
                   )}
                 </div>

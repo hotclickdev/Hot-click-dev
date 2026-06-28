@@ -41,11 +41,11 @@ export function useOffline() {
     const onOnline  = () => { setIsOnline(true);  syncAhora() }
     const onOffline = () => setIsOnline(false)
 
-    window.addEventListener('online',  onOnline)
-    window.addEventListener('offline', onOffline)
+    globalThis.addEventListener('online',  onOnline)
+    globalThis.addEventListener('offline', onOffline)
     return () => {
-      window.removeEventListener('online',  onOnline)
-      window.removeEventListener('offline', onOffline)
+      globalThis.removeEventListener('online',  onOnline)
+      globalThis.removeEventListener('offline', onOffline)
     }
   }, [syncAhora])
 
@@ -53,8 +53,8 @@ export function useOffline() {
   useEffect(() => {
     recargarConteo()
     const onFocus = () => recargarConteo()
-    window.addEventListener('focus', onFocus)
-    return () => window.removeEventListener('focus', onFocus)
+    globalThis.addEventListener('focus', onFocus)
+    return () => globalThis.removeEventListener('focus', onFocus)
   }, [recargarConteo])
 
   // Intentar sync al montar si hay conexión

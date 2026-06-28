@@ -341,7 +341,7 @@ function ImagenPicker({ preview, uploading, onRemove, onFile }) {
   const ref = useRef(null)
   return (
     <div>
-      <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--hc-muted)' }}>
+      <label htmlFor="profile-foto" className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--hc-muted)' }}>
         Foto <span style={{ color: 'var(--hc-muted)', fontWeight: 400 }}>(opcional)</span>
       </label>
       {preview ? (
@@ -361,7 +361,7 @@ function ImagenPicker({ preview, uploading, onRemove, onFile }) {
           📷 Agregar foto
         </button>
       )}
-      <input ref={ref} type="file" accept="image/*" className="hidden" onChange={onFile} />
+      <input id="profile-foto" ref={ref} type="file" accept="image/*" className="hidden" onChange={onFile} />
     </div>
   )
 }
@@ -458,10 +458,10 @@ function TestimonioForm() {
       </p>
 
       <div>
-        <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--hc-muted)' }}>
+        <label htmlFor="profile-comentario" className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--hc-muted)' }}>
           Tu comentario <span style={{ color: 'var(--hc-accent)' }}>*</span>
         </label>
-        <textarea value={comentario} onChange={e => setComentario(e.target.value)}
+        <textarea id="profile-comentario" value={comentario} onChange={e => setComentario(e.target.value)}
           maxLength={500} rows={4}
           placeholder="¿Qué te pareció nuestra tienda? ¿Cómo fue tu experiencia?"
           required
@@ -574,10 +574,10 @@ function ResenaForm({ orders = [], ordersLoading = false }) {
 
       {/* Selector de producto */}
       <div>
-        <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--hc-muted)' }}>
+        <label htmlFor="profile-producto" className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--hc-muted)' }}>
           Producto <span style={{ color: 'var(--hc-accent)' }}>*</span>
         </label>
-        <select value={productoId} onChange={e => { setProductoId(e.target.value); setCalificacion(0) }}
+        <select id="profile-producto" value={productoId} onChange={e => { setProductoId(e.target.value); setCalificacion(0) }}
           required
           className="w-full rounded-xl px-3 py-2.5 text-sm"
           style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)',
@@ -631,10 +631,10 @@ function ResenaForm({ orders = [], ordersLoading = false }) {
 
           {/* Comentario */}
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--hc-muted)' }}>
+            <label htmlFor="profile-resena" className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--hc-muted)' }}>
               Tu reseña <span style={{ color: 'var(--hc-accent)' }}>*</span>
             </label>
-            <textarea value={comentario} onChange={e => setComentario(e.target.value)}
+            <textarea id="profile-resena" value={comentario} onChange={e => setComentario(e.target.value)}
               maxLength={500} rows={3}
               placeholder="¿Qué te pareció el producto? Tu experiencia ayuda a otros compradores…"
               required

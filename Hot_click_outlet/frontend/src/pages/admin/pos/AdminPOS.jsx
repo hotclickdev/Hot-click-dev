@@ -56,10 +56,10 @@ function ConteoEfectivo({ label, onTotal }) {
   const setQty = (v, val) => {
     const next = { ...qtys, [v]: val }
     setQtys(next)
-    onTotal(DENOM.reduce((s, d) => s + (parseInt(next[d.v]) || 0) * d.v, 0))
+    onTotal(DENOM.reduce((s, d) => s + (Number.parseInt(next[d.v]) || 0) * d.v, 0))
   }
 
-  const total = DENOM.reduce((s, d) => s + (parseInt(qtys[d.v]) || 0) * d.v, 0)
+  const total = DENOM.reduce((s, d) => s + (Number.parseInt(qtys[d.v]) || 0) * d.v, 0)
 
   return (
     <div>
@@ -70,7 +70,7 @@ function ConteoEfectivo({ label, onTotal }) {
       <div className="rounded-2xl overflow-hidden border" style={{ borderColor: 'rgba(255,255,255,0.06)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
         {DENOM.map(d => {
           const qty = qtys[d.v]
-          const sub = (parseInt(qty) || 0) * d.v
+          const sub = (Number.parseInt(qty) || 0) * d.v
           return (
             <div key={d.v} className="flex items-center gap-2 sm:gap-3 px-3 py-2 border-b last:border-0"
               style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
@@ -79,16 +79,16 @@ function ConteoEfectivo({ label, onTotal }) {
                 {d.label}
               </span>
               <div className="flex items-center gap-1 shrink-0">
-                <button onClick={() => setQty(d.v, Math.max(0, (parseInt(qty) || 0) - 1))}
+                <button onClick={() => setQty(d.v, Math.max(0, (Number.parseInt(qty) || 0) - 1))}
                   className="w-7 h-7 rounded-lg font-bold text-base flex items-center justify-center transition-colors hover:bg-white/10"
                   style={{ color: 'var(--hc-muted)' }}>−</button>
                 <input
                   type="number" min={0} value={qty}
-                  onChange={e => setQty(d.v, Math.max(0, parseInt(e.target.value) || 0))}
+                  onChange={e => setQty(d.v, Math.max(0, Number.parseInt(e.target.value) || 0))}
                   className="w-14 text-center text-sm font-bold rounded-lg outline-none py-1.5"
                   style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--hc-text)' }}
                 />
-                <button onClick={() => setQty(d.v, (parseInt(qty) || 0) + 1)}
+                <button onClick={() => setQty(d.v, (Number.parseInt(qty) || 0) + 1)}
                   className="w-7 h-7 rounded-lg font-bold text-base flex items-center justify-center transition-colors hover:bg-white/10"
                   style={{ color: 'var(--hc-muted)' }}>+</button>
               </div>
@@ -344,7 +344,7 @@ function StepVenta({ cartItems, onAdd, onSetCantidad, onSetPrecio, onRemove, des
             <div className="flex items-center gap-3">
               <span className="text-xs shrink-0" style={{ color: 'rgba(255,255,255,0.35)' }}>Descuento ₡</span>
               <input type="number" min={0} value={descuento || ''} placeholder="0"
-                onChange={e => onSetDescuento(Math.max(0, parseInt(e.target.value || '0')))}
+                onChange={e => onSetDescuento(Math.max(0, Number.parseInt(e.target.value || '0')))}
                 className="flex-1 text-right px-3 py-2 rounded-xl text-sm font-bold outline-none"
                 style={{
                   backgroundColor: descuento > 0 ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.04)',
@@ -403,7 +403,7 @@ function StepCobro({ total, cartItems, descuento, onBack, onConfirmar, loading }
 
   useEffect(() => { setTimeout(() => inputRef.current?.focus(), 100) }, [metodo])
 
-  const recibidoNum = parseInt(String(recibido).replace(/\D/g, '') || '0')
+  const recibidoNum = Number.parseInt(String(recibido).replace(/\D/g, '') || '0')
   const vuelto = metodo === 'EFECTIVO' && recibidoNum > total ? recibidoNum - total : 0
   const faltante = metodo === 'EFECTIVO' && recibidoNum > 0 && recibidoNum < total
   const puedeConfirmar = metodo !== 'EFECTIVO' || (recibidoNum >= total && recibidoNum > 0)
@@ -584,7 +584,7 @@ function StepCobro({ total, cartItems, descuento, onBack, onConfirmar, loading }
 /* ── QR ────────────────────────────────────────────── */
 function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConfirm }) {
   const { token, metodoPago, total, sinpeNumero } = qrData
-  const qrUrl = `${window.location.origin}/pos/pago/${token}`
+  const qrUrl = `${globalThis.location.origin}/pos/pago/${token}`
   const pollRef = useRef(null)
   const [paid, setPaid] = useState(false)
 
@@ -595,7 +595,7 @@ function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConfirm }) {
         const res = await posService.estadoQrSesion(token)
         if (res?.estado === 'PAGADO') { clearInterval(pollRef.current); setPaid(true) }
         else if (res?.estado === 'EXPIRADO' || res?.estado === 'CANCELADO') clearInterval(pollRef.current)
-      } catch {}
+      } catch { /* transient poll failure — retries on next tick */ }
     }, 3000)
     return () => clearInterval(pollRef.current)
   }, [token, metodoPago])
@@ -678,7 +678,7 @@ function StepRecibo({ venta, userName, onNueva }) {
     s.id = '__pos-print'
     s.textContent = `@media print { body > * { display:none!important } #pos-ticket { display:block!important; width:80mm; background:#fff!important; color:#000!important } }`
     document.head.appendChild(s)
-    window.print()
+    globalThis.print()
     setTimeout(() => document.getElementById('__pos-print')?.remove(), 800)
   }
 
@@ -686,7 +686,7 @@ function StepRecibo({ venta, userName, onNueva }) {
     const items = (venta?.items ?? [])
       .map(i => `• ${i.producto?.nombreProducto ?? i.nombre ?? 'Producto'} ×${i.cantidad} = ₡${fmt(i.subtotalItem)}`)
       .join('\n')
-    window.open(`https://wa.me/?text=${encodeURIComponent(`*Recibo HotClick*\nTicket: ${venta?.numeroPedido ?? '—'}\n\n${items}\n\n*Total: ₡${fmt(venta?.totalPedido)}*\n¡Gracias!`)}`, '_blank')
+    globalThis.open(`https://wa.me/?text=${encodeURIComponent(`*Recibo HotClick*\nTicket: ${venta?.numeroPedido ?? '—'}\n\n${items}\n\n*Total: ₡${fmt(venta?.totalPedido)}*\n¡Gracias!`)}`, '_blank')
   }
 
   return (
@@ -809,13 +809,13 @@ export default function AdminPOS() {
   }, [])
 
   const setCantidad = (id, val) => {
-    const n = Math.max(1, parseInt(val) || 1)
+    const n = Math.max(1, Number.parseInt(val) || 1)
     setCartItems(prev => prev.map(i => i.id === id ? { ...i, cantidad: n } : i))
   }
 
   const setPrecio = (id, val) => {
-    const n = parseInt(String(val).replace(/\D/g, ''))
-    if (!isNaN(n)) setCartItems(prev => prev.map(i => i.id === id ? { ...i, precio: n } : i))
+    const n = Number.parseInt(String(val).replace(/\D/g, ''))
+    if (!Number.isNaN(n)) setCartItems(prev => prev.map(i => i.id === id ? { ...i, precio: n } : i))
   }
 
   const quitarItem = (id) => setCartItems(prev => prev.filter(i => i.id !== id))
@@ -930,7 +930,7 @@ export default function AdminPOS() {
 
   const handleQrCancelar = async () => {
     if (qrData?.token) {
-      try { await posService.cancelarQrSesion(qrData.token) } catch {}
+      try { await posService.cancelarQrSesion(qrData.token) } catch { /* best-effort cleanup */ }
     }
     setQrData(null)
     setStep('cobro')

@@ -1,11 +1,12 @@
 import { Suspense, lazy, useEffect, useState, Component } from 'react'
+import * as Sentry from '@sentry/react'
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { HelmetProvider } from 'react-helmet-async'
 import { ToastProvider } from '@/components/ui/Toast'
 import { PageLoader } from '@/components/ui/Spinner'
 import PageProgressBar from '@/components/ui/PageProgressBar'
-import useAuthStore from '@/store/authStore'
+import useAuthStore, { ADMIN_ROLES } from '@/store/authStore'
 import useUiStore from '@/store/uiStore'
 import AccessibilityPanel from '@/components/ui/AccessibilityPanel'
 import WhatsAppFab from '@/components/ui/WhatsAppFab'
@@ -149,7 +150,7 @@ class AdminErrorBoundary extends Component {
   state = { hasError: false }
   static getDerivedStateFromError() { return { hasError: true } }
   componentDidCatch(error, info) {
-    console.error('[AdminErrorBoundary]', error?.message ?? error, info?.componentStack?.slice(0, 300))
+    Sentry.captureException(error, { extra: { componentStack: info?.componentStack?.slice(0, 300) } })
   }
   render() {
     if (!this.state.hasError) return this.props.children
@@ -167,7 +168,7 @@ class AdminErrorBoundary extends Component {
             Algo salió mal en el panel. Si el problema persiste, contactá soporte.
           </p>
           <button
-            onClick={() => { this.setState({ hasError: false }); window.location.reload() }}
+            onClick={() => { this.setState({ hasError: false }); globalThis.location.reload() }}
             className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
             style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
           >
@@ -182,7 +183,7 @@ class AdminErrorBoundary extends Component {
 function AdminRoute({ children, itOnly = false }) {
   const { token, userRole } = useAuthStore()
   if (!isTokenAlive(token)) return <Navigate to="/login" replace />
-  const isAdmin = ['ADMIN_IT', 'ADMIN_CLIENTE', 'EMPRENDEDOR'].includes(userRole)
+  const isAdmin = ADMIN_ROLES.has(userRole)
   if (!isAdmin) return <Navigate to="/" replace />
   if (itOnly && userRole !== 'ADMIN_IT') return <Navigate to="/admin" replace />
   return children
@@ -194,13 +195,13 @@ function ITOnlyGuard() {
   return <Outlet />
 }
 
-const POS_ROLES = ['CAJERO', 'GERENTE', 'SUPERVISOR']
+const POS_ROLES = new Set(['CAJERO', 'GERENTE', 'SUPERVISOR'])
 
 function AdminShell() {
   const { token, userRole } = useAuthStore()
   if (!isTokenAlive(token)) return <Navigate to="/login" replace />
-  const isAdmin = ['ADMIN_IT', 'ADMIN_CLIENTE', 'EMPRENDEDOR'].includes(userRole)
-  const isPOS   = POS_ROLES.includes(userRole)
+  const isAdmin = ADMIN_ROLES.has(userRole)
+  const isPOS   = POS_ROLES.has(userRole)
   if (!isAdmin && !isPOS) return <Navigate to="/" replace />
   return (
     <AdminErrorBoundary>
@@ -268,12 +269,12 @@ function HtmlClassManager() {
 const EXCLUDED_PREFIXES = ['/admin', '/carrito', '/checkout', '/pago']
 
 // El botón de WhatsApp no aparece en checkout/pago (Brand Book §15.4) ni en flujos de auth
-const WAB_HIDDEN_PATHS = ['/login', '/registro', '/carrito', '/checkout']
+const WAB_HIDDEN_PATHS = new Set(['/login', '/registro', '/carrito', '/checkout'])
 
 function ScrollToTop() {
   const { pathname } = useLocation()
   useEffect(() => {
-    window.scrollTo(0, 0)
+    globalThis.scrollTo(0, 0)
     trackPageView(pathname)
   }, [pathname])
   return null
@@ -292,7 +293,7 @@ function PageFade({ children }) {
 
 function ConditionalWhatsAppFab() {
   const { pathname } = useLocation()
-  if (WAB_HIDDEN_PATHS.includes(pathname)) return null
+  if (WAB_HIDDEN_PATHS.has(pathname)) return null
   if (pathname.startsWith('/admin') || pathname.startsWith('/checkout') || pathname.startsWith('/pago')) return null
   return <WhatsAppFab />
 }
@@ -314,7 +315,7 @@ function SocialProofController() {
   const userRole = useAuthStore((s) => s.userRole)
   const [products, setProducts] = useState([])
 
-  const isAdmin    = ['ADMIN_IT', 'ADMIN_CLIENTE', 'EMPRENDEDOR'].includes(userRole)
+  const isAdmin    = ADMIN_ROLES.has(userRole)
   const isExcluded = EXCLUDED_PREFIXES.some((p) => pathname.startsWith(p))
 
   useEffect(() => {

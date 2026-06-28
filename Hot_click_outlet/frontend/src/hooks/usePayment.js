@@ -48,7 +48,7 @@ export function usePayment() {
           )
           setEstado('failed')
         }, 12000)
-        window.location.href = data.redirectUrl
+        globalThis.location.href = data.redirectUrl
       }
     } catch (err) {
       const msg =

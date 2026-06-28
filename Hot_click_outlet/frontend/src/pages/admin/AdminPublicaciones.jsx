@@ -129,15 +129,14 @@ function ImageUploadZone({ onFile }) {
   }, [onFile])
 
   return (
-    <div
-      role="button" tabIndex={0}
+    <button
+      type="button"
       onClick={() => inputRef.current?.click()}
-      onKeyDown={(e) => e.key === 'Enter' && inputRef.current?.click()}
       onDragOver={(e) => { e.preventDefault(); setDrag(true) }}
       onDragLeave={() => setDrag(false)}
       onDrop={handleDrop}
       className={`
-        cursor-pointer border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-200
+        w-full border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-200
         ${drag
           ? 'border-[#4f7cff] bg-[#4f7cff]/5'
           : 'border-white/15 hover:border-[#4f7cff]/50 hover:bg-white/3'
@@ -156,7 +155,7 @@ function ImageUploadZone({ onFile }) {
       </svg>
       <p className="text-sm font-medium text-[#e8e8ed]">Arrastra la foto del producto aquí</p>
       <p className="text-xs text-[#8e8e9a] mt-1">o haz clic para seleccionar · JPG, PNG, WEBP</p>
-    </div>
+    </button>
   )
 }
 
@@ -376,7 +375,6 @@ export default function AdminPublicaciones() {
         exitosos++
       } catch (err) {
         fallidos.push(id)
-        console.error(`Error generando publicación para producto ${id}:`, err?.response?.data?.message ?? err?.message)
       }
     }
     if (exitosos > 0) toast({ message: `${exitosos} publicación${exitosos !== 1 ? 'es' : ''} generada${exitosos !== 1 ? 's' : ''}`, type: 'success' })

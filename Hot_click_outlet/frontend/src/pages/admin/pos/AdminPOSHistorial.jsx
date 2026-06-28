@@ -55,7 +55,7 @@ export default function AdminPOSHistorial() {
     ]
     const csv = rows.map(r => r.join(',')).join('\n')
     const a = document.createElement('a')
-    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv)
+    a.href = `data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`
     a.download = `ventas-pos-${filtro}.csv`
     a.click()
   }

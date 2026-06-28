@@ -61,7 +61,7 @@ export default function ClienteDetailModal({ clienteId, onClose }) {
   }
 
   const handleAjustarPuntos = async (sign) => {
-    const delta = parseInt(deltaPoints || '0') * sign
+    const delta = Number.parseInt(deltaPoints || '0') * sign
     if (!delta) return
     try {
       await crmService.ajustarPuntos(clienteId, delta)
@@ -145,7 +145,7 @@ export default function ClienteDetailModal({ clienteId, onClose }) {
                   <p className="text-xs mb-1" style={{ color: 'var(--hc-muted)' }}>{k.label}</p>
                   {k.label === 'Puntos' && editMode ? (
                     <input type="number" value={form.puntosFidelidad}
-                      onChange={e => setForm(f => ({ ...f, puntosFidelidad: parseInt(e.target.value) || 0 }))}
+                      onChange={e => setForm(f => ({ ...f, puntosFidelidad: Number.parseInt(e.target.value) || 0 }))}
                       className="w-full text-center text-sm font-bold outline-none rounded-lg py-0.5"
                       style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.2)' }}/>
                   ) : (
@@ -179,9 +179,9 @@ export default function ClienteDetailModal({ clienteId, onClose }) {
             {/* Crédito */}
             {editMode && (
               <div>
-                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--hc-muted)' }}>Límite de crédito (₡)</label>
-                <input type="number" min={0} value={form.limiteCredito}
-                  onChange={e => setForm(f => ({ ...f, limiteCredito: parseInt(e.target.value) || 0 }))}
+                <label htmlFor="cliente-limite-credito" className="block text-xs font-medium mb-1" style={{ color: 'var(--hc-muted)' }}>Límite de crédito (₡)</label>
+                <input id="cliente-limite-credito" type="number" min={0} value={form.limiteCredito}
+                  onChange={e => setForm(f => ({ ...f, limiteCredito: Number.parseInt(e.target.value) || 0 }))}
                   className="w-full px-3 py-2 rounded-xl text-sm outline-none"
                   style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--hc-text)' }}/>
               </div>

@@ -117,7 +117,7 @@ export default function AdminPlanes() {
     try {
       const { data } = await billingService.crearCheckout(planId)
       if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl
+        globalThis.location.href = data.checkoutUrl
       }
     } catch (e) {
       setError(e.response?.data?.error || 'Error al iniciar el pago')

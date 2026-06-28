@@ -43,7 +43,7 @@ export default function AdminCopilot() {
       ])
       setMensajes(Array.isArray(hist) ? hist : [])
       setUso(u)
-    } catch {}
+    } catch { /* non-critical — UI handles empty state */ }
   }
 
   useEffect(() => { cargarHistorial() }, [])
@@ -104,7 +104,7 @@ export default function AdminCopilot() {
                 setMensajes(prev => [...prev, { rol: 'assistant', contenido: `⚠️ ${parsed.error}` }])
                 setStreamText('')
               }
-            } catch {}
+            } catch { /* non-critical — UI handles empty state */ }
           } else if (line.startsWith('event: done')) {
             // response complete
           }
@@ -117,7 +117,7 @@ export default function AdminCopilot() {
       }
 
       // Refresh usage
-      try { const { data: u } = await api.get('/admin/ai/uso'); setUso(u) } catch {}
+      try { const { data: u } = await api.get('/admin/ai/uso'); setUso(u) } catch { /* non-critical — UI handles empty state */ }
 
     } catch (err) {
       setMensajes(prev => [...prev, { rol: 'assistant', contenido: `⚠️ Error: ${err.message}` }])
@@ -130,7 +130,7 @@ export default function AdminCopilot() {
 
   async function limpiar() {
     if (!confirm('¿Limpiar el historial de conversación?')) return
-    try { await api.delete('/admin/ai/historial'); setMensajes([]) } catch {}
+    try { await api.delete('/admin/ai/historial'); setMensajes([]) } catch { /* non-critical — UI handles empty state */ }
   }
 
   function onKeyDown(e) {

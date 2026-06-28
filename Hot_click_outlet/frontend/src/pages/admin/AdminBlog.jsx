@@ -49,20 +49,20 @@ function Modal({ entrada, onSave, onClose }) {
         </h2>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--hc-muted)', display: 'block', marginBottom: 5 }}>Título *</label>
-            <input style={INPUT} value={form.titulo} onChange={set('titulo')} placeholder="Título del artículo" />
+            <label htmlFor="blog-titulo" style={{ fontSize: 12, fontWeight: 600, color: 'var(--hc-muted)', display: 'block', marginBottom: 5 }}>Título *</label>
+            <input id="blog-titulo" style={INPUT} value={form.titulo} onChange={set('titulo')} placeholder="Título del artículo" />
           </div>
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--hc-muted)', display: 'block', marginBottom: 5 }}>Resumen</label>
-            <textarea style={{ ...INPUT, height: 70, resize: 'vertical' }} value={form.resumen ?? ''} onChange={set('resumen')} placeholder="Breve descripción (aparece en listado)..." />
+            <label htmlFor="blog-resumen" style={{ fontSize: 12, fontWeight: 600, color: 'var(--hc-muted)', display: 'block', marginBottom: 5 }}>Resumen</label>
+            <textarea id="blog-resumen" style={{ ...INPUT, height: 70, resize: 'vertical' }} value={form.resumen ?? ''} onChange={set('resumen')} placeholder="Breve descripción (aparece en listado)..." />
           </div>
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--hc-muted)', display: 'block', marginBottom: 5 }}>Contenido</label>
-            <textarea style={{ ...INPUT, height: 200, resize: 'vertical' }} value={form.contenido ?? ''} onChange={set('contenido')} placeholder="Contenido completo del artículo..." />
+            <label htmlFor="blog-contenido" style={{ fontSize: 12, fontWeight: 600, color: 'var(--hc-muted)', display: 'block', marginBottom: 5 }}>Contenido</label>
+            <textarea id="blog-contenido" style={{ ...INPUT, height: 200, resize: 'vertical' }} value={form.contenido ?? ''} onChange={set('contenido')} placeholder="Contenido completo del artículo..." />
           </div>
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--hc-muted)', display: 'block', marginBottom: 5 }}>URL de imagen de portada</label>
-            <input style={INPUT} value={form.imagenUrl ?? ''} onChange={set('imagenUrl')} placeholder="https://..." />
+            <label htmlFor="blog-imagen" style={{ fontSize: 12, fontWeight: 600, color: 'var(--hc-muted)', display: 'block', marginBottom: 5 }}>URL de imagen de portada</label>
+            <input id="blog-imagen" style={INPUT} value={form.imagenUrl ?? ''} onChange={set('imagenUrl')} placeholder="https://..." />
           </div>
           <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
             <input type="checkbox" checked={!!form.publicado} onChange={e => setForm(f => ({ ...f, publicado: e.target.checked }))} />

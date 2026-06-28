@@ -1,8 +1,8 @@
 export const formatPrice = (price) =>
-  '₡' + new Intl.NumberFormat('es-CR', {
+  `₡${new Intl.NumberFormat('es-CR', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(price ?? 0)
+  }).format(price ?? 0)}`
 
 export const formatDate = (date) =>
   new Intl.DateTimeFormat('es-CR', {

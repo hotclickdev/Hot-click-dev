@@ -16,7 +16,7 @@ function EstadoBadge({ estado }) {
   const { label, color } = ESTADO_LABEL[estado] ?? { label: estado, color: '#9ca3af' }
   return (
     <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
-      style={{ backgroundColor: color + '22', color }}>
+      style={{ backgroundColor: `${color}22`, color }}>
       {label}
     </span>
   )
@@ -66,7 +66,7 @@ export default function AdminSuscripcion() {
     setAbriendo(true)
     try {
       const { data } = await billingService.crearPortal()
-      if (data.portalUrl) window.open(data.portalUrl, '_blank')
+      if (data.portalUrl) globalThis.open(data.portalUrl, '_blank')
     } catch {
       setError('No se pudo abrir el portal de pagos')
     } finally {

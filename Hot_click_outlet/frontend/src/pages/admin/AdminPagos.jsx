@@ -102,7 +102,7 @@ export default function AdminPagos() {
   useEffect(() => { if (tab === 'comprobantes') fetchComprobantes() }, [tab, fetchComprobantes])
 
   const handleConfirmarSinpe = async (pagoId) => {
-    if (!window.confirm('¿Confirmar este pago SINPE? Se marcará como CAPTURADO y se procesará el pedido.')) return
+    if (!globalThis.confirm('¿Confirmar este pago SINPE? Se marcará como CAPTURADO y se procesará el pedido.')) return
     setActionLoading(pagoId)
     try {
       await paymentService.confirmarSinpe(pagoId)
@@ -116,7 +116,7 @@ export default function AdminPagos() {
   }
 
   const handleRechazarSinpe = async (pagoId) => {
-    if (!window.confirm('¿Rechazar este pago SINPE? Se liberará el stock reservado y se notificará al cliente.')) return
+    if (!globalThis.confirm('¿Rechazar este pago SINPE? Se liberará el stock reservado y se notificará al cliente.')) return
     setActionLoading(pagoId)
     try {
       await paymentService.rechazarSinpe(pagoId)

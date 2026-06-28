@@ -12,6 +12,7 @@ import { paymentService } from '@/services/paymentService'
 import { formatPrice } from '@/utils/format'
 import { analytics } from '@/utils/analytics'
 import PhoneField from '@/components/ui/PhoneField'
+import { isValidEmail } from '@/utils/validators'
 
 const BODEGA_DEFAULT = 1
 const WHATSAPP = '50686667888'
@@ -87,9 +88,8 @@ function SmartField({ label, id, value, onChange, onBlur, error, success, placeh
 }
 
 export default function CheckoutPage() {
-  const { items, total, clearCart, toWhatsAppMessage } = useCartStore()
+  const { items, total, toWhatsAppMessage } = useCartStore()
   const { token }                    = useAuthStore()
-  const navigate                     = useNavigate()
   const { estado, pagoData, error, intentos, maxIntentos, iniciarPago } = usePayment()
   const errorBannerRef = useRef(null)
   const { t } = useTranslation()
@@ -240,7 +240,7 @@ export default function CheckoutPage() {
 
   function validateGuestEmail(v) {
     if (!v.trim()) return t('checkout.guestEmailRequired')
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())) return t('checkout.guestEmailInvalid')
+    if (!isValidEmail(v)) return t('checkout.guestEmailInvalid')
     return ''
   }
 
@@ -252,14 +252,14 @@ export default function CheckoutPage() {
 
   // Scroll al inicio al llegar desde /carrito (React Router no lo hace automáticamente)
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' })
+    globalThis.scrollTo({ top: 0, behavior: 'instant' })
   }, [])
 
   // Scroll al inicio solo cuando se cambia a una PANTALLA COMPLETA diferente.
   // Para 'failed' el usuario permanece en el formulario — desplazamos al banner de error.
   useEffect(() => {
     if (estado === 'sinpe_pendiente' || estado === 'gift_card_paid') {
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      globalThis.scrollTo({ top: 0, behavior: 'smooth' })
     } else if (estado === 'failed') {
       // Llevar el foco al banner de error, no al inicio de la página
       errorBannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -381,7 +381,7 @@ export default function CheckoutPage() {
   }
 
   const handleSinpeWhatsApp = () => {
-    const productos = (pagoData?._itemsSnapshot || []).map((i) => `• ${i.nombre} x${i.cantidad}`).join('\n') || '(ver pedido)'
+    const productos = (pagoData?._itemsSnapshot ?? []).map((i) => `• ${i.nombre} x${i.cantidad}`).join('\n') || '(ver pedido)'
     const numeroPedido = pagoData?.numeroPedido ?? ''
     const msg = encodeURIComponent(
       `Hola HotClick 👋\n\n*Comprobante SINPE Móvil*\n\n` +
@@ -392,7 +392,7 @@ export default function CheckoutPage() {
       `Monto: ${formatPrice(totalFinal)}\n\n` +
       `_Ya subí el comprobante en la web. ¡Gracias!_`
     )
-    window.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank')
+    globalThis.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank')
   }
 
   const handleSubirComprobante = async () => {
@@ -427,7 +427,7 @@ export default function CheckoutPage() {
   const handleWhatsApp = () => {
     analytics.checkoutStart(totalFinal, items.reduce((s, i) => s + i.cantidad, 0))
     const msg = toWhatsAppMessage()
-    window.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank')
+    globalThis.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank')
   }
 
   if (items.length === 0) {
@@ -1024,8 +1024,9 @@ export default function CheckoutPage() {
 
                         {/* Nombre completo */}
                         <div className="space-y-1">
-                          <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Nombre completo <span className="text-red-400">*</span></label>
+                          <label htmlFor="sinpe-nombre" className="text-xs" style={{ color: 'var(--hc-muted)' }}>Nombre completo <span className="text-red-400">*</span></label>
                           <input
+                            id="sinpe-nombre"
                             type="text"
                             value={sinpeNombre}
                             onChange={(e) => { setSinpeNombre(e.target.value); if (sinpeNombreErr) setSinpeNombreErr('') }}
@@ -1038,8 +1039,9 @@ export default function CheckoutPage() {
 
                         {/* Cédula */}
                         <div className="space-y-1">
-                          <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Número de cédula <span className="text-red-400">*</span></label>
+                          <label htmlFor="sinpe-cedula" className="text-xs" style={{ color: 'var(--hc-muted)' }}>Número de cédula <span className="text-red-400">*</span></label>
                           <input
+                            id="sinpe-cedula"
                             type="text"
                             value={sinpeCedula}
                             onChange={(e) => { setSinpeCedula(e.target.value.replace(/\D/g, '')); if (sinpeCedulaErr) setSinpeCedulaErr('') }}
@@ -1053,8 +1055,9 @@ export default function CheckoutPage() {
 
                         {/* Teléfono del remitente */}
                         <div className="space-y-1">
-                          <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Teléfono del SINPE</label>
+                          <label htmlFor="sinpe-telefono" className="text-xs" style={{ color: 'var(--hc-muted)' }}>Teléfono del SINPE</label>
                           <input
+                            id="sinpe-telefono"
                             type="tel"
                             value={sinpeTelefono}
                             onChange={(e) => setSinpeTelefono(e.target.value.replace(/\D/g, '').slice(0, 8))}
@@ -1068,8 +1071,9 @@ export default function CheckoutPage() {
                         {/* Correo (siempre requerido para SINPE, incluso autenticado) */}
                         {!token && (
                           <div className="space-y-1">
-                            <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Correo electrónico</label>
+                            <label htmlFor="sinpe-email" className="text-xs" style={{ color: 'var(--hc-muted)' }}>Correo electrónico</label>
                             <input
+                              id="sinpe-email"
                               type="email"
                               value={sinpeEmail}
                               onChange={(e) => setSinpeEmail(e.target.value)}
@@ -1378,9 +1382,9 @@ export default function CheckoutPage() {
                 />
                 <span style={{ fontSize: 11.5, color: 'var(--hc-muted)', lineHeight: 1.6 }}>
                   Autorizo el tratamiento de mis datos y su transferencia al vendedor con el único fin de coordinar la entrega del pedido, conforme a la{' '}
-                  <Link to="/privacidad" target="_blank" style={{ color: 'var(--hc-accent)', textDecoration: 'none' }}>Política de Privacidad</Link>
+                  <Link to="/privacidad" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--hc-accent)', textDecoration: 'none' }}>Política de Privacidad</Link>
                   {' '}y la{' '}
-                  <Link to="/cookies" target="_blank" style={{ color: 'var(--hc-accent)', textDecoration: 'none' }}>Política de Cookies</Link>.
+                  <Link to="/cookies" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--hc-accent)', textDecoration: 'none' }}>Política de Cookies</Link>.
                 </span>
               </label>
 

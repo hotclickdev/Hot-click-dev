@@ -34,7 +34,7 @@ export default function AdminGiftCards() {
     setCreando(true); setError(null)
     try {
       await giftCardService.crear({
-        monto:            parseInt(form.monto, 10),
+        monto:            Number.parseInt(form.monto, 10),
         fechaVencimiento: form.fechaVencimiento || null,
         codigo:           form.codigo.trim().toUpperCase() || null,
       })
@@ -83,16 +83,16 @@ export default function AdminGiftCards() {
           <p className="font-semibold text-sm" style={{ color: 'var(--hc-text)' }}>Nueva gift card</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-1">
-              <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Monto (₡) *</label>
-              <input required type="number" min="1000" placeholder="ej: 10000"
+              <label htmlFor="gc-monto" className="text-xs" style={{ color: 'var(--hc-muted)' }}>Monto (₡) *</label>
+              <input id="gc-monto" required type="number" min="1000" placeholder="ej: 10000"
                 value={form.monto}
                 onChange={e => setForm(p => ({ ...p, monto: e.target.value }))}
                 className="w-full px-3 py-2 rounded-xl text-sm outline-none"
                 style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }} />
             </div>
             <div className="space-y-1">
-              <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Código (dejar vacío = auto)</label>
-              <input type="text" placeholder="GC-XXXX (opcional)"
+              <label htmlFor="gc-codigo" className="text-xs" style={{ color: 'var(--hc-muted)' }}>Código (dejar vacío = auto)</label>
+              <input id="gc-codigo" type="text" placeholder="GC-XXXX (opcional)"
                 value={form.codigo} maxLength={30}
                 onChange={e => setForm(p => ({ ...p, codigo: e.target.value.toUpperCase() }))}
                 className="w-full px-3 py-2 rounded-xl text-sm outline-none"

@@ -20,7 +20,7 @@ export function exportCSV(rows, filename, columns) {
   }
   const header = cols.join(',')
   const body   = rows.map((r) => cols.map((c) => escape(r[c])).join(',')).join('\n')
-  const blob   = new Blob(['﻿' + header + '\n' + body], { type: 'text/csv;charset=utf-8;' })
+  const blob   = new Blob([`﻿${header}\n${body}`], { type: 'text/csv;charset=utf-8;' })
   triggerDownload(blob, `${filename}.csv`)
 }
 

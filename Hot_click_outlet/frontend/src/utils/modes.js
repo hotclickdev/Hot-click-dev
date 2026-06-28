@@ -1,17 +1,10 @@
-/**
- * Devuelve los modos de acceso disponibles para el usuario autenticado.
- * Cada modo tiene: id, label, sub, path, icon.
- *
- * Reglas:
- *   - CAJERO                      → solo POS
- *   - USUARIO_FINAL               → solo tienda
- *   - ADMIN_IT/ADMIN_CLIENTE/EMPRENDEDOR → Admin + Tienda (+ POS si tiene permiso)
- *   - GERENTE/SUPERVISOR          → Admin + POS
- */
+const POS_ROLES       = new Set(['CAJERO','GERENTE','SUPERVISOR'])
+const ALL_ADMIN_ROLES = new Set(['ADMIN_IT','ADMIN_CLIENTE','EMPRENDEDOR','GERENTE','SUPERVISOR'])
+const STORE_ROLES     = new Set(['ADMIN_IT','ADMIN_CLIENTE','EMPRENDEDOR'])
+
 export function getAvailableModes(rol, permissions = []) {
-  const hasPos   = permissions.includes('pos.usar') ||
-                   ['CAJERO','GERENTE','SUPERVISOR'].includes(rol)
-  const isAdmin  = ['ADMIN_IT','ADMIN_CLIENTE','EMPRENDEDOR','GERENTE','SUPERVISOR'].includes(rol)
+  const hasPos   = permissions.includes('pos.usar') || POS_ROLES.has(rol)
+  const isAdmin  = ALL_ADMIN_ROLES.has(rol)
   const isCajero = rol === 'CAJERO'
 
   const modes = []
@@ -36,7 +29,7 @@ export function getAvailableModes(rol, permissions = []) {
     })
   }
 
-  if (['ADMIN_IT','ADMIN_CLIENTE','EMPRENDEDOR'].includes(rol)) {
+  if (STORE_ROLES.has(rol)) {
     modes.push({
       id:    'store',
       label: 'Ver la tienda',

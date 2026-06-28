@@ -10,13 +10,13 @@ export const finanzasReporteService = {
       params: { fechaInicio, fechaFin, download: true },
       responseType: 'blob',
     })
-    const url  = window.URL.createObjectURL(new Blob([response.data], { type: 'text/csv;charset=utf-8' }))
+    const url  = URL.createObjectURL(new Blob([response.data], { type: 'text/csv;charset=utf-8' }))
     const link = document.createElement('a')
     link.href = url
     link.setAttribute('download', `reporte_contador_${fechaInicio || 'inicio'}_a_${fechaFin || 'hoy'}.csv`)
     document.body.appendChild(link)
     link.click()
     link.remove()
-    window.URL.revokeObjectURL(url)
+    URL.revokeObjectURL(url)
   },
 }

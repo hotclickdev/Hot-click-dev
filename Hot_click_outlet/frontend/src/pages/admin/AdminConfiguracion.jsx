@@ -640,7 +640,6 @@ function Panel2FA({ enabled, loading, toast, onEnabled, onDisabled }) {
       setStep('setup')
       resetCode()
     } catch (err) {
-      console.error('[2FA setup]', err)
       const msg = err.response?.data?.message ?? err.message ?? t('adminConfig.tfaErrorInit')
       toast({ message: msg, type: 'error' })
     } finally { setWorking(false) }
@@ -1021,7 +1020,7 @@ function SeccionTienda({ toast }) {
     e.preventDefault()
     localStorage.setItem(STORE_KEY, JSON.stringify(form))
     setSaved(true)
-    toast({ message: t('adminConfig.saveBtn') + ' ✓', type: 'success' })
+    toast({ message: `${t('adminConfig.saveBtn')} ✓`, type: 'success' })
     setTimeout(() => setSaved(false), 2500)
   }
 
@@ -1209,8 +1208,8 @@ function SeccionDatos({ toast, isEmprendedor = false }) {
   }
 
   const aplicarAjustePrecio = async () => {
-    const num = parseFloat(pct)
-    if (isNaN(num) || num === 0) { toast({ message: 'Ingresá un porcentaje válido (ej: 10 o -5)', type: 'error' }); return }
+    const num = Number.parseFloat(pct)
+    if (Number.isNaN(num) || num === 0) { toast({ message: 'Ingresá un porcentaje válido (ej: 10 o -5)', type: 'error' }); return }
     if (!confirm(`¿Aplicar ${num > 0 ? '+' : ''}${num}% a todos los precios activos?`)) return
     setApplyingPct(true)
     try {
@@ -1303,9 +1302,9 @@ function SeccionDatos({ toast, isEmprendedor = false }) {
             {t('adminConfig.datosBulkBtn')}
           </button>
         </div>
-        {pct && !isNaN(parseFloat(pct)) && (
-          <p style={{ fontSize: '12px', color: parseFloat(pct) >= 0 ? '#4ade80' : '#f87171', marginTop: '8px', fontFamily: F.body }}>
-            {parseFloat(pct) >= 0 ? '↑' : '↓'} Todos los precios {parseFloat(pct) >= 0 ? 'subirán' : 'bajarán'} un {Math.abs(parseFloat(pct))}%
+        {pct && !Number.isNaN(Number.parseFloat(pct)) && (
+          <p style={{ fontSize: '12px', color: Number.parseFloat(pct) >= 0 ? '#4ade80' : '#f87171', marginTop: '8px', fontFamily: F.body }}>
+            {Number.parseFloat(pct) >= 0 ? '↑' : '↓'} Todos los precios {Number.parseFloat(pct) >= 0 ? 'subirán' : 'bajarán'} un {Math.abs(Number.parseFloat(pct))}%
           </p>
         )}
       </Block>
@@ -1647,8 +1646,8 @@ function SeccionSistema({ toast }) {
               </div>
             </div>
             <div style={{ padding: '0 24px 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label className="cfg-label">{t('adminConfig.sysResetInputLabel')}</label>
-              <StyledInput value={resetInput} onChange={e => setResetInput(e.target.value)} placeholder="ELIMINAR" autoFocus
+              <label htmlFor="cfg-reset-confirm" className="cfg-label">{t('adminConfig.sysResetInputLabel')}</label>
+              <StyledInput id="cfg-reset-confirm" value={resetInput} onChange={e => setResetInput(e.target.value)} placeholder="ELIMINAR" autoFocus
                 onKeyDown={e => { if (e.key === 'Enter' && resetInput === 'ELIMINAR') handleReset() }}
                 style={{ textTransform: 'uppercase', letterSpacing: '0.08em', borderColor: resetInput === 'ELIMINAR' ? 'rgba(239,68,68,0.5)' : undefined }} />
             </div>
@@ -1693,11 +1692,11 @@ function Block({ label, sublabel, children }) {
   )
 }
 
-function FormGroup({ label, hint, children }) {
+function FormGroup({ label, hint, fieldId, children }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <label className="cfg-label">{label}</label>
+        <label htmlFor={fieldId} className="cfg-label">{label}</label>
         {hint && <span style={{ fontSize: '10px', color: 'var(--hc-muted)', fontFamily: F.body, opacity: 0.7 }}>{hint}</span>}
       </div>
       {children}

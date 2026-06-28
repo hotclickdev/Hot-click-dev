@@ -76,7 +76,6 @@ export default function SSOComplete() {
           throw new Error(json.message || 'Error al sincronizar cuenta')
         }
       } catch (err) {
-        console.error('[sso-complete]', err)
         try { await signOut() } catch { /* ignore */ }
         const msg = err?.message || 'Error al conectar tu cuenta social. Intentá de nuevo.'
         toast({ message: msg, type: 'error' })

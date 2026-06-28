@@ -72,11 +72,6 @@ export default function ProductDetailAssistant({ product }) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [mensajes])
 
-  const addCartItem = useCallback((p) => {
-    addItem({ id: p.id, nombre: p.nombre, sku: p.sku ?? '', precio: p.precio,
-      precioVenta: p.precio, imagenPrincipalUrl: p.imagenUrl ?? null, stock: 99 }, 1)
-  }, [addItem])
-
   async function enviar(mensajeDirecto) {
     const msg = (mensajeDirecto ?? input).trim()
     if (!msg || cargRef.current) return

@@ -24,7 +24,7 @@ export default function POSPaymentPanel({ total, onConfirm, onClose, loading }) 
   const [buscando, setBuscando]           = useState(false)
   const timerRef = useRef(null)
 
-  const montoRecibidoNum = parseInt(montoRecibido.replace(/\D/g, '') || '0')
+  const montoRecibidoNum = Number.parseInt(montoRecibido.replace(/\D/g, '') || '0')
   const vuelto = metodoPago === 'EFECTIVO' && montoRecibidoNum > 0
     ? montoRecibidoNum - total
     : null
@@ -36,7 +36,7 @@ export default function POSPaymentPanel({ total, onConfirm, onClose, loading }) 
       clienteId: clienteId ?? null,
       metodoPago,
       montoRecibido: metodoPago === 'EFECTIVO'
-        ? parseInt(montoRecibido.replace(/\D/g, '') || '0') : null,
+        ? Number.parseInt(montoRecibido.replace(/\D/g, '') || '0') : null,
       confirmacionSinpe: metodoPago === 'SINPE' ? confirmSinpe : null,
     })
   }
@@ -114,8 +114,8 @@ export default function POSPaymentPanel({ total, onConfirm, onClose, loading }) 
         {/* Campo específico por método */}
         {metodoPago === 'EFECTIVO' && (
           <div>
-            <label className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>Monto recibido (₡)</label>
-            <input type="text" autoFocus value={montoRecibido}
+            <label htmlFor="pos-monto" className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>Monto recibido (₡)</label>
+            <input id="pos-monto" type="text" autoFocus value={montoRecibido}
               onChange={e => setMontoRecibido(e.target.value)} placeholder="0"
               className="w-full mt-1.5 px-3 py-2.5 rounded-xl text-sm outline-none"
               style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--hc-text)' }}/>
@@ -130,8 +130,8 @@ export default function POSPaymentPanel({ total, onConfirm, onClose, loading }) 
 
         {metodoPago === 'SINPE' && (
           <div>
-            <label className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>Confirmación SINPE (opcional)</label>
-            <input type="text" value={confirmSinpe} onChange={e => setConfirmSinpe(e.target.value)}
+            <label htmlFor="pos-sinpe-confirm" className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>Confirmación SINPE (opcional)</label>
+            <input id="pos-sinpe-confirm" type="text" value={confirmSinpe} onChange={e => setConfirmSinpe(e.target.value)}
               placeholder="Número de confirmación"
               className="w-full mt-1.5 px-3 py-2.5 rounded-xl text-sm outline-none"
               style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--hc-text)' }}/>

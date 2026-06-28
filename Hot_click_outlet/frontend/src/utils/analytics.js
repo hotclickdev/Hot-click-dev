@@ -36,14 +36,6 @@ function track(event, payload = {}) {
   })
 }
 
-// Dev adapter — logs to console grouped by event name
-if (import.meta.env.DEV) {
-  addAdapter((event, data) => {
-    console.groupCollapsed(`%c[HC Analytics] ${event}`, 'color:#4f7cff;font-weight:bold;font-size:11px')
-    console.log(data)
-    console.groupEnd()
-  })
-}
 
 export const analytics = {
   productView:    (p)        => track('product_view',    { id: p.id, name: p.nombre, price: p.precio, category: p.categoriaNombre }),

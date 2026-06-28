@@ -7,7 +7,6 @@ import { useTranslation } from 'react-i18next'
 import Modal from '@/components/ui/Modal'
 import Input from '@/components/ui/Input'
 import { authService } from '@/services/authService'
-import { webAuthnService } from '@/services/webAuthnService'
 import useAuthStore from '@/store/authStore'
 import useCartStore from '@/store/cartStore'
 import { useToast } from '@/components/ui/Toast'
@@ -56,7 +55,7 @@ export default function LoginPage() {
   const refs2FA             = useRef([])
   // Multi-method 2FA
   const [twoFaMethods,       setTwoFaMethods]      = useState([])   // available methods
-  const [selectedMethod,     setSelectedMethod]    = useState('TOTP')
+  const [, setSelectedMethod]    = useState('TOTP')
   const [resendCooldown,     setResendCooldown]    = useState(0)    // seconds until resend allowed
 
   const handleLogin = async (e) => {
@@ -567,8 +566,8 @@ export default function LoginPage() {
                         </div>
                       ) : (
                         <div>
-                          <label className="hc-input-label block mb-2">{t('login.recoveryCodeLabel')}</label>
-                          <input type="text" value={recoveryInput}
+                          <label htmlFor="login-recovery-code" className="hc-input-label block mb-2">{t('login.recoveryCodeLabel')}</label>
+                          <input id="login-recovery-code" type="text" value={recoveryInput}
                             onChange={e => setRecoveryInput(e.target.value.toUpperCase())}
                             placeholder="XXXXX-XXXXX" autoFocus
                             className="hc-input w-full text-center"

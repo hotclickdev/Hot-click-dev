@@ -4,7 +4,7 @@ import api from '@/services/api'
 
 const TIPOS = ['MESA', 'KIOSK', 'ESTANTE', 'MOSTRADOR', 'ZONA']
 
-const APP_URL = window.location.origin
+const APP_URL = globalThis.location?.origin ?? ''
 
 function qrUrl(token) {
   return `${APP_URL}/checkout/qr/${token}`
@@ -20,7 +20,7 @@ function QrModal({ mesa, onClose }) {
     const svgData = new XMLSerializer().serializeToString(svgEl)
     const blob = new Blob([svgData], { type: 'image/svg+xml' })
     const url2 = URL.createObjectURL(blob)
-    const win = window.open('', '_blank')
+    const win = globalThis.open('', '_blank')
     win.document.write(`
       <html><head><title>QR ${mesa.nombre}</title>
       <style>body{margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;background:#fff}

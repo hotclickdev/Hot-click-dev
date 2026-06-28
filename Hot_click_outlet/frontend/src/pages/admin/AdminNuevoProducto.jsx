@@ -109,13 +109,12 @@ function MultiUploadZone({ files, previews, onAddFiles, onRemove }) {
       )}
 
       {previews.length === 0 && (
-        <div role="button" tabIndex={0}
+        <button type="button"
           onClick={() => inputRef.current?.click()}
-          onKeyDown={(e) => e.key === 'Enter' && inputRef.current?.click()}
           onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}
-          className={`cursor-pointer border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-200 ${
+          className={`w-full border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-200 ${
             dragging ? 'border-[#4f7cff] bg-[#4f7cff]/5' : 'border-white/15 hover:border-[#4f7cff]/50 hover:bg-white/3'
           }`}>
           <svg className="w-12 h-12 mx-auto mb-4 text-[#4f7cff]/60" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
@@ -124,7 +123,7 @@ function MultiUploadZone({ files, previews, onAddFiles, onRemove }) {
           <p className="text-base font-semibold text-[#e8e8ed]">Arrastrá las fotos del producto aquí</p>
           <p className="text-sm text-[#8e8e9a] mt-1">o hacé clic para seleccionar · hasta {MAX_FOTOS} fotos</p>
           <p className="text-xs text-[#8e8e9a]/50 mt-0.5">JPG, PNG, WebP — máx 5 MB c/u</p>
-        </div>
+        </button>
       )}
 
       <input ref={inputRef} type="file" accept="image/*" multiple className="hidden"
@@ -283,10 +282,9 @@ function MarcaCombobox({ marcas, value, onChange, showNuevaMarca, setShowNuevaMa
 
   return (
     <div ref={ref} className="relative">
-      <div role="button" tabIndex={0}
+      <button type="button"
         onClick={() => { setOpen(o => !o); setSearch('') }}
-        onKeyDown={(e) => e.key === 'Enter' && (setOpen(o => !o), setSearch(''))}
-        className={`${inp} flex items-center justify-between cursor-pointer`}>
+        className={`${inp} flex items-center justify-between w-full text-left`}>
         <span className={selected ? 'text-[#e8e8ed]' : 'text-[#8e8e9a]/40'}>
           {selected ? selected.nombreMarca : '-- Sin marca --'}
         </span>
@@ -294,7 +292,7 @@ function MarcaCombobox({ marcas, value, onChange, showNuevaMarca, setShowNuevaMa
           fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
           <polyline points="6 9 12 15 18 9"/>
         </svg>
-      </div>
+      </button>
       {open && (
         <div className="absolute z-50 top-full mt-1 w-full rounded-xl bg-[#1a1a1f] border border-white/15 shadow-xl overflow-hidden">
           <div className="p-2 border-b border-white/8">
@@ -1219,7 +1217,7 @@ export default function AdminNuevoProducto() {
                     <span className="text-sm text-[#8e8e9a]">Subir fotos <span className="text-[#4f7cff]">(opcional)</span></span>
                     <input type="file" accept="image/*" multiple className="hidden"
                       onChange={async (e) => {
-                        const files = Array.from(e.target.files || []).slice(0, MAX_FOTOS)
+                        const files = Array.from(e.target.files ?? []).slice(0, MAX_FOTOS)
                         e.target.value = ''
                         if (!files.length) return
                         const results = await Promise.allSettled(files.map(async f => {

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Helmet } from 'react-helmet-async'
+import DOMPurify from 'dompurify'
 import MainLayout from '@/layouts/MainLayout'
 import api from '@/services/api'
 
@@ -183,7 +184,7 @@ export default function BlogPostPage() {
                 lineHeight: 1.8,
                 fontSize: 16,
               }}
-              dangerouslySetInnerHTML={{ __html: post.contenido }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.contenido) }}
             />
           )}
 

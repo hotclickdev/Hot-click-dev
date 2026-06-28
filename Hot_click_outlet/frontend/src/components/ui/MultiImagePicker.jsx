@@ -75,14 +75,13 @@ export default function MultiImagePicker({ imagenes = [], onChange }) {
       )}
 
       {imagenes.length < MAX_FOTOS && (
-        <div
-          role="button" tabIndex={0}
+        <button
+          type="button"
           onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}
           onClick={() => uploadingCount === 0 && inputRef.current?.click()}
-          onKeyDown={(e) => e.key === 'Enter' && uploadingCount === 0 && inputRef.current?.click()}
-          className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed cursor-pointer transition-all min-h-[90px] ${
+          className={`w-full flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed transition-all min-h-[90px] ${
             dragging ? 'border-[#4f7cff] bg-[#4f7cff]/10' : 'border-white/15 bg-white/3 hover:border-[#4f7cff]/50 hover:bg-white/5'
           }`}
         >
@@ -97,7 +96,7 @@ export default function MultiImagePicker({ imagenes = [], onChange }) {
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
               </svg>
               <p className="text-sm text-[#8e8e9a]">
-                {imagenes.length === 0 ? t('multiImagePicker.dropZone') : t('multiImagePicker.addMore') + ' — '}
+                {imagenes.length === 0 ? t('multiImagePicker.dropZone') : `${t('multiImagePicker.addMore')} — `}
                 {' '}<span className="text-[#4f7cff]">{t('multiImagePicker.browse')}</span>
               </p>
               <p className="text-xs text-[#8e8e9a]/60">{t('multiImagePicker.dropzoneHint', { max: MAX_FOTOS })}</p>
@@ -105,7 +104,7 @@ export default function MultiImagePicker({ imagenes = [], onChange }) {
           )}
           <input ref={inputRef} type="file" accept="image/*" multiple className="hidden"
             onChange={(e) => { processFiles(e.target.files); e.target.value = '' }} />
-        </div>
+        </button>
       )}
 
       {error && <p className="text-xs text-red-400">{error}</p>}

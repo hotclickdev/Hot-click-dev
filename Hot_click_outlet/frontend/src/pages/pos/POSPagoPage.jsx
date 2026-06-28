@@ -33,7 +33,7 @@ export default function POSPagoPage() {
           clearInterval(pollRef.current)
           setEstado('PAGADO')
         }
-      } catch {}
+      } catch { /* transient poll failure — retries on next tick */ }
     }, 2000)
     return () => clearInterval(pollRef.current)
   }, [resultado, token])
@@ -42,7 +42,7 @@ export default function POSPagoPage() {
     setPaying(true)
     try {
       const res = await posService.iniciarStripeQr(token)
-      if (res?.checkoutUrl) window.location.href = res.checkoutUrl
+      if (res?.checkoutUrl) globalThis.location.href = res.checkoutUrl
     } catch {
       setPaying(false)
     }

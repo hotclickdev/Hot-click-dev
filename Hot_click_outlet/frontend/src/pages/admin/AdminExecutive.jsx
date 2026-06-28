@@ -90,7 +90,7 @@ export default function AdminExecutive() {
             try {
               const parsed = JSON.parse(line.slice(5).trim())
               if (parsed.text) { assembled += parsed.text; setAiText(assembled) }
-            } catch {}
+            } catch { /* malformed SSE chunk — skip */ }
           }
         }
       }
@@ -107,7 +107,7 @@ export default function AdminExecutive() {
       await api.post('/admin/executive/guardar-resumen', { periodo, resumen: aiText })
       setGuardado(true)
       setTimeout(() => setGuardado(false), 3000)
-    } catch {}
+    } catch { /* save is best-effort, not critical */ }
   }
 
   function imprimir() {
@@ -126,7 +126,7 @@ export default function AdminExecutive() {
     `
     document.head.appendChild(style)
     printRef.current?.classList.add('executive-print-content')
-    window.print()
+    globalThis.print()
     setTimeout(() => {
       document.getElementById('__executive-print-style')?.remove()
       printRef.current?.classList.remove('executive-print-content')

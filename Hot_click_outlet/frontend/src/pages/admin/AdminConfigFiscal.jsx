@@ -165,10 +165,10 @@ export default function AdminConfigFiscal() {
 
         {/* Ambiente */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="fiscal-ambiente" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Ambiente Hacienda
           </label>
-          <select
+          <select id="fiscal-ambiente"
             value={form.ambienteHacienda}
             onChange={e => set('ambienteHacienda', e.target.value)}
             className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
@@ -184,8 +184,8 @@ export default function AdminConfigFiscal() {
         {/* Cédula */}
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo cédula</label>
-            <select
+            <label htmlFor="fiscal-tipo-cedula" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo cédula</label>
+            <select id="fiscal-tipo-cedula"
               value={form.tipoCedula}
               onChange={e => set('tipoCedula', e.target.value)}
               className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
@@ -194,8 +194,8 @@ export default function AdminConfigFiscal() {
             </select>
           </div>
           <div className="col-span-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Número de cédula / RUC</label>
-            <input
+            <label htmlFor="fiscal-cedula" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Número de cédula / RUC</label>
+            <input id="fiscal-cedula"
               value={form.cedulaJuridica}
               onChange={e => set('cedulaJuridica', e.target.value)}
               placeholder="3-101-123456"
@@ -206,10 +206,10 @@ export default function AdminConfigFiscal() {
 
         {/* Actividad económica */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="fiscal-actividad" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Código actividad económica (CIIU)
           </label>
-          <input
+          <input id="fiscal-actividad"
             value={form.actividadEconomica}
             onChange={e => set('actividadEconomica', e.target.value)}
             placeholder="ej. 4791"
@@ -219,10 +219,10 @@ export default function AdminConfigFiscal() {
 
         {/* Nombre comercial */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="fiscal-nombre-comercial" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Nombre comercial (en el comprobante)
           </label>
-          <input
+          <input id="fiscal-nombre-comercial"
             value={form.nombreComercialFe}
             onChange={e => set('nombreComercialFe', e.target.value)}
             placeholder="Nombre que aparece en la factura"
@@ -236,8 +236,8 @@ export default function AdminConfigFiscal() {
         {/* Usuario y clave Hacienda */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Usuario ATV</label>
-            <input
+            <label htmlFor="fiscal-usuario-atv" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Usuario ATV</label>
+            <input id="fiscal-usuario-atv"
               value={form.usuarioHacienda}
               onChange={e => set('usuarioHacienda', e.target.value)}
               placeholder="usuario@empresa.com"
@@ -245,13 +245,13 @@ export default function AdminConfigFiscal() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label htmlFor="fiscal-clave-atv" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Clave ATV
               {certInfo.tieneClaveHacienda && (
                 <span className="ml-2 text-xs text-green-600 dark:text-green-400 font-normal">✓ configurada</span>
               )}
             </label>
-            <input
+            <input id="fiscal-clave-atv"
               type="password"
               value={form.claveHacienda}
               onChange={e => set('claveHacienda', e.target.value)}
@@ -263,13 +263,13 @@ export default function AdminConfigFiscal() {
 
         {/* Certificado P12 */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="fiscal-cert-p12" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Certificado PKCS#12 (.p12)
             {certInfo.tieneCertP12 && (
               <span className="ml-2 text-xs text-green-600 dark:text-green-400 font-normal">✓ cargado</span>
             )}
           </label>
-          <input
+          <input id="fiscal-cert-p12"
             type="file"
             accept=".p12,.pfx"
             onChange={e => setP12File(e.target.files?.[0] ?? null)}

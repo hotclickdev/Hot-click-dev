@@ -489,10 +489,10 @@ export default function HomePage() {
       />
       <Helmet>
         <script type="application/ld+json">
-          {JSON.stringify(generateWebsiteJsonLd(window.location.origin))}
+          {JSON.stringify(generateWebsiteJsonLd(globalThis.location.origin))}
         </script>
         <script type="application/ld+json">
-          {JSON.stringify(generateOrganizationJsonLd(window.location.origin, [
+          {JSON.stringify(generateOrganizationJsonLd(globalThis.location.origin, [
             'https://www.facebook.com/hotclickcr',
             'https://www.instagram.com/hotclickcr',
             'https://wa.me/50686667888',
@@ -504,7 +504,7 @@ export default function HomePage() {
         </script>
         {destacados.length > 0 && (
           <script type="application/ld+json">
-            {JSON.stringify(generateItemListJsonLd(destacados, window.location.origin))}
+            {JSON.stringify(generateItemListJsonLd(destacados, globalThis.location.origin))}
           </script>
         )}
       </Helmet>
@@ -971,7 +971,7 @@ function TestimonialsCarousel() {
               <button key={i} onClick={() => setIdx(i)} aria-label={`Ver testimonio ${i + 1}`} className="p-2.5 flex items-center justify-center" style={{ background: 'transparent', border: 'none' }}>
                 <span className="block rounded-full transition-all" style={{
                   width: i === idx ? 16 : 10,
-                  height: i === idx ? 10 : 10,
+                  height: 10,
                   backgroundColor: i === idx ? 'var(--hc-accent)' : 'var(--hc-border-strong)',
                 }} />
               </button>

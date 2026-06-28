@@ -44,14 +44,14 @@ export default function AdminNuevaCompra() {
   }
 
   const total = items.reduce((s, it) => {
-    const n = parseInt(it.cantidad) || 0
-    const p = parseInt(it.precioUnitario) || 0
+    const n = Number.parseInt(it.cantidad) || 0
+    const p = Number.parseInt(it.precioUnitario) || 0
     return s + n * p
   }, 0)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    const validItems = items.filter(it => it.productoId && String(it.productoId).trim() !== '' && parseInt(it.cantidad) > 0)
+    const validItems = items.filter(it => it.productoId && String(it.productoId).trim() !== '' && Number.parseInt(it.cantidad) > 0)
     if (validItems.length === 0) { showToast('Seleccioná al menos un producto válido con cantidad mayor a 0', 'error'); return }
 
     setSaving(true)
@@ -61,8 +61,8 @@ export default function AdminNuevaCompra() {
         notas: notas || null,
         items: validItems.map(it => ({
           productoId:    Number(it.productoId),
-          cantidad:      parseInt(it.cantidad),
-          precioUnitario: parseInt(it.precioUnitario) || 0,
+          cantidad:      Number.parseInt(it.cantidad),
+          precioUnitario: Number.parseInt(it.precioUnitario) || 0,
         })),
       })
       showToast('Orden de compra creada', 'success')
@@ -134,7 +134,7 @@ export default function AdminNuevaCompra() {
         </div>
 
         {items.map((item, i) => {
-          const sub = (parseInt(item.cantidad) || 0) * (parseInt(item.precioUnitario) || 0)
+          const sub = (Number.parseInt(item.cantidad) || 0) * (Number.parseInt(item.precioUnitario) || 0)
           return (
             <div key={i} className="grid grid-cols-12 gap-2 items-center">
               <div className="col-span-5">
@@ -149,12 +149,12 @@ export default function AdminNuevaCompra() {
               <div className="col-span-2">
                 <input type="number" min={1} value={item.cantidad}
                   onChange={e => updateItem(i, 'cantidad', e.target.value)}
-                  className={inp + ' text-center'} style={inpStyle} required/>
+                  className={`${inp} text-center`} style={inpStyle} required/>
               </div>
               <div className="col-span-3">
                 <input type="number" min={0} value={item.precioUnitario}
                   onChange={e => updateItem(i, 'precioUnitario', e.target.value)}
-                  className={inp + ' text-right'} style={inpStyle}/>
+                  className={`${inp} text-right`} style={inpStyle}/>
               </div>
               <div className="col-span-1 text-right text-xs font-medium" style={{ color: 'var(--hc-accent)' }}>
                 {fmt(sub)}

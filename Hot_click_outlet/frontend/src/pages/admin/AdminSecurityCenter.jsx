@@ -143,7 +143,7 @@ function DashboardTab({ period, onPeriodChange }) {
       ])
       setDash(data)
       setSesiones(ses)
-    } catch {}
+    } catch { /* show nothing on fetch failure — loading state reset in finally */ }
     finally { setLoading(false) }
   }, [period])
 
@@ -152,7 +152,7 @@ function DashboardTab({ period, onPeriodChange }) {
   const handleResolve = async (id) => {
     setResolving(id)
     try { await securityService.resolveAlert(id); await load() }
-    catch {} finally { setResolving(null) }
+    catch { /* show nothing on fetch failure — loading state reset in finally */ } finally { setResolving(null) }
   }
 
   if (loading) return <div className="flex justify-center py-16"><Spinner /></div>
@@ -294,7 +294,7 @@ function UsuariosTab() {
   const load = useCallback(async (p = 0) => {
     setLoading(true)
     try { const { data: d } = await securityService.getUsuarios({ page: p }); setData(d); setPage(p) }
-    catch {} finally { setLoading(false) }
+    catch { /* show nothing on fetch failure — loading state reset in finally */ } finally { setLoading(false) }
   }, [])
 
   useEffect(() => { load() }, [load])
@@ -302,7 +302,7 @@ function UsuariosTab() {
   const verDetalle = async (u) => {
     setSelected(u); setDetalle(null); setLoadingDet(true)
     try { const { data: d } = await securityService.getEventosPorUsuario(u.correo); setDetalle(d) }
-    catch {} finally { setLoadingDet(false) }
+    catch { /* show nothing on fetch failure — loading state reset in finally */ } finally { setLoadingDet(false) }
   }
 
   const usuarios = data?.content ?? []
@@ -323,7 +323,7 @@ function UsuariosTab() {
             <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>{selected.correo}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {(selected.roles || []).map(r => (
+            {(selected.roles ?? []).map(r => (
               <span key={r} className="px-2 py-0.5 rounded text-xs font-mono"
                 style={{ backgroundColor: 'var(--hc-border)', color: 'var(--hc-text)' }}>{r}</span>
             ))}
@@ -359,7 +359,7 @@ function UsuariosTab() {
             <Card className="p-4 space-y-2">
               <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>IPs usadas ({detalle.ips?.length ?? 0})</p>
               <div className="flex flex-wrap gap-2">
-                {(detalle.ips || []).map(ip => (
+                {(detalle.ips ?? []).map(ip => (
                   <span key={ip} className="px-2 py-0.5 rounded font-mono text-xs"
                     style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}>{ip}</span>
                 ))}
@@ -368,7 +368,7 @@ function UsuariosTab() {
             <Card className="p-4 space-y-2">
               <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>Eventos por tipo</p>
               <div className="space-y-1">
-                {Object.entries(detalle.porTipo || {}).slice(0, 8).map(([tipo, cnt]) => (
+                {Object.entries(detalle.porTipo ?? {}).slice(0, 8).map(([tipo, cnt]) => (
                   <div key={tipo} className="flex items-center justify-between text-xs">
                     <span style={{ color: 'var(--hc-muted)' }}>{EVENT_LABEL[tipo] || tipo}</span>
                     <span className="font-bold tabular-nums" style={{ color: 'var(--hc-text)' }}>{cnt}</span>
@@ -382,7 +382,7 @@ function UsuariosTab() {
               <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>Últimos 50 eventos</p>
             </div>
             <div className="divide-y overflow-x-auto" style={{ borderColor: 'var(--hc-border)' }}>
-              {(detalle.eventos || []).map(ev => (
+              {(detalle.eventos ?? []).map(ev => (
                 <div key={ev.id} className="px-5 py-2.5 flex items-center gap-4 text-xs min-w-[560px]">
                   <span className="w-28 shrink-0 font-mono" style={{ color: 'var(--hc-muted)' }}>{timeAgo(ev.timestamp)}</span>
                   <SeverityBadge severity={ev.severity} />
@@ -498,9 +498,9 @@ function IpsTab() {
         securityService.getIpsSospechosas(period),
         securityService.getIpsBloqueadas(),
       ])
-      setSospechosas(sosp || [])
-      setBloqueadas(bloq || [])
-    } catch {} finally { setLoading(false) }
+      setSospechosas(sosp ?? [])
+      setBloqueadas(bloq ?? [])
+    } catch { /* show nothing on fetch failure — loading state reset in finally */ } finally { setLoading(false) }
   }, [period])
 
   useEffect(() => { load() }, [load])
@@ -508,13 +508,13 @@ function IpsTab() {
   const bloquear = async (ip, motivo = 'Bloqueada manualmente') => {
     setBlocking(ip)
     try { await securityService.bloquearIp(ip, motivo); await load() }
-    catch {} finally { setBlocking(null) }
+    catch { /* show nothing on fetch failure — loading state reset in finally */ } finally { setBlocking(null) }
   }
 
   const desbloquear = async (ip) => {
     setBlocking(ip)
     try { await securityService.desbloquearIp(ip); await load() }
-    catch {} finally { setBlocking(null) }
+    catch { /* show nothing on fetch failure — loading state reset in finally */ } finally { setBlocking(null) }
   }
 
   const bloquearManual = async () => {
@@ -676,7 +676,7 @@ function EventosTab() {
     try {
       const { data } = await securityService.getEvents({ page: p, size: 20, type: evType || undefined, severity: evSev || undefined, period: '7d' })
       setEvData(data); setEvPage(p)
-    } catch {} finally { setEvLoading(false) }
+    } catch { /* show nothing on fetch failure — loading state reset in finally */ } finally { setEvLoading(false) }
   }, [evType, evSev])
 
   useEffect(() => { load(0) }, [load])
@@ -786,7 +786,7 @@ function AlertasTab() {
   const load = useCallback(async () => {
     setLoading(true)
     try { const { data } = await securityService.getAlerts(resolved); setAlerts(data) }
-    catch {} finally { setLoading(false) }
+    catch { /* show nothing on fetch failure — loading state reset in finally */ } finally { setLoading(false) }
   }, [resolved])
 
   useEffect(() => { load() }, [load])
@@ -794,7 +794,7 @@ function AlertasTab() {
   const handleResolve = async (id) => {
     setResolving(id)
     try { await securityService.resolveAlert(id); await load() }
-    catch {} finally { setResolving(null) }
+    catch { /* show nothing on fetch failure — loading state reset in finally */ } finally { setResolving(null) }
   }
 
   return (

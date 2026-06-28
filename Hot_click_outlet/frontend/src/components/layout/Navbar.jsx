@@ -16,7 +16,7 @@ export default function Navbar() {
   const { token, userName, logout, isAdmin } = useAuthStore()
   const cartCount = useCartStore((s) => s.count())
   const wishlistCount = useWishlistStore((s) => s.count())
-  const { setCartDrawerOpen, setSearchOpen } = useUiStore()
+  const { setSearchOpen } = useUiStore()
   const [scrolled, setScrolled] = useState(false)
   const [scrollProgress, setScrollProgress] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -44,13 +44,6 @@ export default function Navbar() {
     { href: '/contacto', label: t('nav.contacto') },
   ]
 
-  const mobileSecondaryLinks = [
-    { href: '/servicios', label: `✦ ${t('nav.servicios')}`, highlight: true },
-    { href: '/informacion', label: t('nav.informacion') },
-    { href: '/nosotros', label: t('nav.nosotros') },
-    { href: '/contacto', label: t('nav.contacto') },
-  ]
-
   useEffect(() => {
     if (cartCount > prevCartCount.current) {
       setCartBounce(true)
@@ -64,16 +57,16 @@ export default function Navbar() {
     const onScroll = () => {
       if (rafId) return
       rafId = requestAnimationFrame(() => {
-        const y = window.scrollY
+        const y = globalThis.scrollY
         setScrolled(y > 20)
-        const docH = document.documentElement.scrollHeight - window.innerHeight
+        const docH = document.documentElement.scrollHeight - globalThis.innerHeight
         setScrollProgress(docH > 0 ? Math.min(y / docH, 1) : 0)
         rafId = null
       })
     }
-    window.addEventListener('scroll', onScroll, { passive: true })
+    globalThis.addEventListener('scroll', onScroll, { passive: true })
     return () => {
-      window.removeEventListener('scroll', onScroll)
+      globalThis.removeEventListener('scroll', onScroll)
       if (rafId) cancelAnimationFrame(rafId)
     }
   }, [])

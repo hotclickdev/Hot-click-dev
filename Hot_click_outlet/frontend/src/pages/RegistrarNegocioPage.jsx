@@ -279,7 +279,7 @@ export default function RegistrarNegocioPage() {
                     />
                     <span style={{ fontSize: 12, color: 'var(--hc-muted)', lineHeight: 1.6 }}>
                       He leído y acepto el{' '}
-                      <Link to="/acuerdo-vendedores" target="_blank" style={{ color: A.color, textDecoration: 'none' }}>Acuerdo de Vendedores</Link>
+                      <Link to="/acuerdo-vendedores" target="_blank" rel="noopener noreferrer" style={{ color: A.color, textDecoration: 'none' }}>Acuerdo de Vendedores</Link>
                       , reconozco mi rol como <strong style={{ color: 'var(--hc-text)' }}>Encargado de Tratamiento</strong> de datos de clientes conforme a la Ley N.° 8968 y acepto las obligaciones de confidencialidad e indemnidad estipuladas.
                     </span>
                   </label>

@@ -96,8 +96,6 @@ export default function POSProductSearch({ onAdd }) {
     onAdd(producto)
   }
 
-  const displayList = query ? searchResults : productos
-
   return (
     <div className="flex flex-col gap-3 h-full">
       {/* Búsqueda */}

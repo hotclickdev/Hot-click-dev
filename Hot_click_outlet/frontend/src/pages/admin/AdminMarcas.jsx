@@ -240,14 +240,13 @@ export default function AdminMarcas() {
                 </div>
               </div>
             ) : (
-              <div
-                role="button" tabIndex={0}
+              <button
+                type="button"
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
                 onDragLeave={() => setDragOver(false)}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()}
-                className="relative flex flex-col items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed cursor-pointer transition-colors"
+                className="relative flex flex-col items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed w-full transition-colors"
                 style={{
                   borderColor: dragOver ? 'var(--hc-accent)' : 'var(--hc-border-strong)',
                   backgroundColor: dragOver ? 'rgba(23,71,168,0.08)' : 'var(--hc-surface-2)',
@@ -259,7 +258,7 @@ export default function AdminMarcas() {
                   <>
                     <UploadIcon />
                     <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
-                      <span className="font-medium" style={{ color: 'var(--hc-text)' }}>Hacé clic</span> o arrastrá una imagen
+                      <span className="font-medium" style={{ color: 'var(--hc-text)' }}>Hacé clic</span>{' '}o arrastrá una imagen
                     </p>
                     <p className="text-xs" style={{ color: 'var(--hc-muted)', opacity: 0.6 }}>PNG, JPG, SVG · máx. 5 MB</p>
                   </>
@@ -271,7 +270,7 @@ export default function AdminMarcas() {
                   className="hidden"
                   onChange={(e) => handleFile(e.target.files?.[0])}
                 />
-              </div>
+              </button>
             )}
           </div>
 

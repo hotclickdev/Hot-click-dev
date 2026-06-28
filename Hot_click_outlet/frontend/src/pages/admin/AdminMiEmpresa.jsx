@@ -191,8 +191,8 @@ export default function AdminMiEmpresa() {
   useEffect(() => {
     if (!isDirty) return
     const handler = (e) => { e.preventDefault(); e.returnValue = '' }
-    window.addEventListener('beforeunload', handler)
-    return () => window.removeEventListener('beforeunload', handler)
+    globalThis.addEventListener('beforeunload', handler)
+    return () => globalThis.removeEventListener('beforeunload', handler)
   }, [isDirty])
 
   const canEdit = userRole === 'EMPRENDEDOR' || userRole === 'ADMIN_IT'
@@ -459,14 +459,13 @@ export default function AdminMiEmpresa() {
                   </div>
                 </div>
               ) : canEdit ? (
-                <div
-                  role="button" tabIndex={0}
+                <button
+                  type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()}
                   onDragOver={e => { e.preventDefault(); setDragOver(true) }}
                   onDragLeave={() => setDragOver(false)}
                   onDrop={handleDrop}
-                  className="cursor-pointer rounded-xl p-6 text-center transition-colors"
+                  className="w-full rounded-xl p-6 text-center transition-colors"
                   style={{
                     border: `2px dashed ${dragOver ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
                     backgroundColor: dragOver ? 'var(--hc-accent)/5' : 'var(--hc-surface-2)',
@@ -487,7 +486,7 @@ export default function AdminMiEmpresa() {
                       </p>
                     </>
                   )}
-                </div>
+                </button>
               ) : (
                 <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>Sin logo configurado</p>
               )}

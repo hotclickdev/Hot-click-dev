@@ -2,6 +2,7 @@
 import api from '@/services/api'
 import { useToast } from '@/components/ui/Toast'
 import PhoneField from '@/components/ui/PhoneField'
+import { isValidEmail } from '@/utils/validators'
 
 const ESTADO_LABEL = { 1: 'Activo', 2: 'Inactivo', 3: 'Eliminado', 4: 'Suspendido', 5: 'Pendiente' }
 const ESTADO_COLOR = {
@@ -59,7 +60,7 @@ export default function AdminEquipo() {
   function validate() {
     const e = {}
     if (!form.nombre.trim()) e.nombre = 'Nombre requerido'
-    if (!form.correo.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo)) e.correo = 'Correo inválido'
+    if (!isValidEmail(form.correo)) e.correo = 'Correo inválido'
     if (form.password.length < 6) e.password = 'Mínimo 6 caracteres'
     return e
   }

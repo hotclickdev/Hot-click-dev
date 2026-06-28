@@ -135,7 +135,7 @@ export default function AIChat({
 
   useEffect(() => {
     const toSave = mensajes.filter(m => !m.typing && !m.failed).slice(-30)
-    try { localStorage.setItem(storageKey, JSON.stringify(toSave)) } catch {}
+    try { localStorage.setItem(storageKey, JSON.stringify(toSave)) } catch { /* quota or private mode */ }
   }, [mensajes, storageKey])
 
   useEffect(() => {

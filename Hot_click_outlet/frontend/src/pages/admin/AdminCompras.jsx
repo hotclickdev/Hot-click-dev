@@ -31,7 +31,7 @@ function RecibirModal({ orden, onClose, onDone }) {
 
   const handleConfirmar = async () => {
     const items = Object.entries(cantidades)
-      .map(([itemId, cantidadRecibida]) => ({ itemId: Number(itemId), cantidadRecibida: parseInt(cantidadRecibida) || 0 }))
+      .map(([itemId, cantidadRecibida]) => ({ itemId: Number(itemId), cantidadRecibida: Number.parseInt(cantidadRecibida) || 0 }))
       .filter(it => it.cantidadRecibida > 0)
 
     if (items.length === 0) { showToast('Ingresá al menos una cantidad', 'error'); return }
@@ -79,7 +79,7 @@ function RecibirModal({ orden, onClose, onDone }) {
                   <input
                     type="number" min={0} max={pendiente}
                     value={cantidades[item.id] ?? 0}
-                    onChange={e => { const v = Math.max(0, Math.min(pendiente, parseInt(e.target.value) || 0)); setCantidades(c => ({ ...c, [item.id]: v })) }}
+                    onChange={e => { const v = Math.max(0, Math.min(pendiente, Number.parseInt(e.target.value) || 0)); setCantidades(c => ({ ...c, [item.id]: v })) }}
                     disabled={pendiente <= 0}
                     className="w-full px-2 py-1.5 rounded-lg text-sm text-center outline-none"
                     style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--hc-text)' }}
@@ -136,7 +136,7 @@ export default function AdminCompras() {
     : ordenes.filter(o => o.estado === filtro)
 
   const handleCancelar = async (id) => {
-    if (!window.confirm('¿Cancelar esta orden?')) return
+    if (!globalThis.confirm('¿Cancelar esta orden?')) return
     try {
       await compraService.cancelar(id)
       showToast('Orden cancelada', 'success')
@@ -198,10 +198,8 @@ export default function AdminCompras() {
             <div key={orden.id} className="rounded-2xl overflow-hidden border"
               style={{ backgroundColor: 'var(--hc-surface)', borderColor: 'rgba(255,255,255,0.07)' }}>
               {/* Fila principal */}
-              <div className="flex items-center gap-4 p-4 cursor-pointer"
-                role="button" tabIndex={0}
-                onClick={() => setExpanded(expanded === orden.id ? null : orden.id)}
-                onKeyDown={(e) => e.key === 'Enter' && setExpanded(expanded === orden.id ? null : orden.id)}>
+              <button type="button" className="flex items-center gap-4 p-4 w-full text-left"
+                onClick={() => setExpanded(expanded === orden.id ? null : orden.id)}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 flex-wrap">
                     <span className="font-mono text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
@@ -248,7 +246,7 @@ export default function AdminCompras() {
                   style={{ color: 'var(--hc-muted)' }}>
                   <path d="M6 9l6 6 6-6"/>
                 </svg>
-              </div>
+              </button>
 
               {/* Detalle expandible */}
               {expanded === orden.id && (

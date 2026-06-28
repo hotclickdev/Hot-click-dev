@@ -87,8 +87,8 @@ export default function GlobalSearch({ open, onClose }) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); onClose() }
       if (e.key === 'Escape' && open) onClose()
     }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
+    globalThis.addEventListener('keydown', handler)
+    return () => globalThis.removeEventListener('keydown', handler)
   }, [open, onClose])
 
   const buscar = useCallback((query) => {

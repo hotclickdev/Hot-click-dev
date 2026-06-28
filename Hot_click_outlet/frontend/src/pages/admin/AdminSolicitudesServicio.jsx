@@ -245,12 +245,11 @@ export default function AdminSolicitudesServicio() {
                       <div className="flex flex-wrap gap-3">
                         {urls.map((url, i) => (
                           <div key={i} className="flex flex-col items-center gap-1.5">
-                            <img src={url} alt=""
-                              className="w-24 h-24 rounded-xl object-cover cursor-zoom-in"
-                              style={{ border: '1px solid var(--hc-border)' }}
-                              role="button" tabIndex={0}
-                              onClick={() => setFotoModal(url)}
-                              onKeyDown={(e) => e.key === 'Enter' && setFotoModal(url)} />
+                            <button type="button" onClick={() => setFotoModal(url)} className="p-0 border-0 bg-transparent block">
+                              <img src={url} alt=""
+                                className="w-24 h-24 rounded-xl object-cover cursor-zoom-in"
+                                style={{ border: '1px solid var(--hc-border)' }} />
+                            </button>
                             <a
                               href={`https://lens.google.com/uploadbyurl?url=${encodeURIComponent(url)}`}
                               target="_blank" rel="noopener noreferrer"

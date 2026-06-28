@@ -68,7 +68,7 @@ export default function AdminCotizaciones() {
   }
 
   async function handleEliminar(id) {
-    if (!window.confirm('¿Eliminar esta cotización?')) return
+    if (!globalThis.confirm('¿Eliminar esta cotización?')) return
     try {
       await cotizacionService.eliminar(id)
       toast('Cotización eliminada', 'success')
@@ -201,7 +201,7 @@ export default function AdminCotizaciones() {
 
                     {/* Enlace público */}
                     <button
-                      onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/cotizacion/${c.tokenPublico}`); toast('Enlace copiado', 'success') }}
+                      onClick={() => { navigator.clipboard.writeText(`${globalThis.location.origin}/cotizacion/${c.tokenPublico}`); toast('Enlace copiado', 'success') }}
                       title="Copiar enlace público"
                       className="p-1.5 rounded-lg transition-colors hover:bg-black/10 dark:hover:bg-white/10"
                       style={{ color: 'var(--hc-muted)' }}>
@@ -212,7 +212,7 @@ export default function AdminCotizaciones() {
                     </button>
 
                     {/* WhatsApp */}
-                    <a href={`https://wa.me/${c.cliente?.telefono?.replace(/\D/g,'')}?text=${encodeURIComponent(`Estimado/a, adjunto cotización ${c.numeroCotizacion}: ${window.location.origin}/cotizacion/${c.tokenPublico}`)}`}
+                    <a href={`https://wa.me/${c.cliente?.telefono?.replace(/\D/g,'')}?text=${encodeURIComponent(`Estimado/a, adjunto cotización ${c.numeroCotizacion}: ${globalThis.location.origin}/cotizacion/${c.tokenPublico}`)}`}
                       target="_blank" rel="noreferrer"
                       title="WhatsApp"
                       className="p-1.5 rounded-lg transition-colors hover:bg-black/10 dark:hover:bg-white/10"

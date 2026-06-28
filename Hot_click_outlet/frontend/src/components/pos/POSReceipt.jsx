@@ -7,7 +7,7 @@ export default function POSReceipt({ venta, onNuevaVenta }) {
   const userName    = useAuthStore(s => s.userName)
   const printRef    = useRef(null)
 
-  const handlePrint = () => window.print()
+  const handlePrint = () => globalThis.print()
 
   const handleWhatsApp = () => {
     if (!venta) return
@@ -23,7 +23,7 @@ export default function POSReceipt({ venta, onNuevaVenta }) {
       `Método: ${venta.metodoPago}\n` +
       `¡Gracias por su compra!`
     )
-    window.open(`https://wa.me/?text=${msg}`, '_blank')
+    globalThis.open(`https://wa.me/?text=${msg}`, '_blank')
   }
 
   if (!venta) return null

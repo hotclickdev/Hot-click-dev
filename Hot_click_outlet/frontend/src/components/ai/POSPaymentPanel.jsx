@@ -3,12 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import useCartStore from '@/store/cartStore'
 import useAuthStore from '@/store/authStore'
 import { usePayment } from '@/hooks/usePayment'
-import { formatPrice } from '@/utils/format'
-
 const BODEGA_DEFAULT  = 1
 const SINPE_NUMERO    = '8666-7888'
 const SINPE_TITULAR   = 'Andrés Zúñiga (HotClick)'
 const WHATSAPP        = '50686667888'
+
+const ESTADOS_SUBMITTING = new Set(['loading', 'redirecting'])
+const ESTADOS_PENDING    = new Set(['sinpe_pendiente', 'polling'])
 
 const fmt = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
 
@@ -41,7 +42,7 @@ function Field({ label, value, onChange, placeholder, type = 'text', required })
  * Solo SINPE y EFECTIVO: métodos sin redirección externa.
  */
 export default function POSPaymentPanel({ onClose }) {
-  const { items, total, clearCart } = useCartStore()
+  const { items, total } = useCartStore()
   const { token } = useAuthStore()
   const { estado, pagoData, error: payError, iniciarPago } = usePayment()
 
@@ -57,8 +58,8 @@ export default function POSPaymentPanel({ onClose }) {
   const shipping = entrega === 'RETIRO_EN_TIENDA' ? 0 : 2500
   const totalFinal = total + shipping
 
-  const isSubmitting = ['loading', 'redirecting'].includes(estado)
-  const isPending    = ['sinpe_pendiente', 'polling'].includes(estado)
+  const isSubmitting = ESTADOS_SUBMITTING.has(estado)
+  const isPending    = ESTADOS_PENDING.has(estado)
   const isSuccess    = estado === 'success'
   const isFailed     = estado === 'failed'
 
@@ -109,7 +110,7 @@ export default function POSPaymentPanel({ onClose }) {
       `Monto: ₡${fmt(totalFinal)}\n\nProductos:\n${lineas}\n\n` +
       `_Comprobante adjunto. ¡Gracias!_`
     )
-    window.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank')
+    globalThis.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank')
   }
 
   // ── Pantalla de instrucciones SINPE / confirmación EFECTIVO ──────────────

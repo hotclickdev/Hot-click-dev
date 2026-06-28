@@ -47,20 +47,20 @@ function Modal({ convenio, onSave, onClose }) {
         </h2>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--hc-muted)', display: 'block', marginBottom: 5 }}>Nombre *</label>
-            <input style={INPUT} value={form.nombre} onChange={set('nombre')} placeholder="Nombre del emprendimiento" />
+            <label htmlFor="conv-nombre" style={{ fontSize: 12, fontWeight: 600, color: 'var(--hc-muted)', display: 'block', marginBottom: 5 }}>Nombre *</label>
+            <input id="conv-nombre" style={INPUT} value={form.nombre} onChange={set('nombre')} placeholder="Nombre del emprendimiento" />
           </div>
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--hc-muted)', display: 'block', marginBottom: 5 }}>Descripción</label>
-            <textarea style={{ ...INPUT, height: 80, resize: 'vertical' }} value={form.descripcion ?? ''} onChange={set('descripcion')} placeholder="Breve descripción del convenio..." />
+            <label htmlFor="conv-descripcion" style={{ fontSize: 12, fontWeight: 600, color: 'var(--hc-muted)', display: 'block', marginBottom: 5 }}>Descripción</label>
+            <textarea id="conv-descripcion" style={{ ...INPUT, height: 80, resize: 'vertical' }} value={form.descripcion ?? ''} onChange={set('descripcion')} placeholder="Breve descripción del convenio..." />
           </div>
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--hc-muted)', display: 'block', marginBottom: 5 }}>URL del logo</label>
-            <input style={INPUT} value={form.logoUrl ?? ''} onChange={set('logoUrl')} placeholder="https://..." />
+            <label htmlFor="conv-logo" style={{ fontSize: 12, fontWeight: 600, color: 'var(--hc-muted)', display: 'block', marginBottom: 5 }}>URL del logo</label>
+            <input id="conv-logo" style={INPUT} value={form.logoUrl ?? ''} onChange={set('logoUrl')} placeholder="https://..." />
           </div>
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--hc-muted)', display: 'block', marginBottom: 5 }}>Sitio web</label>
-            <input style={INPUT} value={form.urlWeb ?? ''} onChange={set('urlWeb')} placeholder="https://..." />
+            <label htmlFor="conv-web" style={{ fontSize: 12, fontWeight: 600, color: 'var(--hc-muted)', display: 'block', marginBottom: 5 }}>Sitio web</label>
+            <input id="conv-web" style={INPUT} value={form.urlWeb ?? ''} onChange={set('urlWeb')} placeholder="https://..." />
           </div>
           <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
             <input type="checkbox" checked={form.activo} onChange={e => setForm(f => ({ ...f, activo: e.target.checked }))} />

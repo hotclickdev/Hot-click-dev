@@ -137,7 +137,7 @@ export default function PaymentStatusPage() {
 
   // Scroll al inicio al regresar de la pasarela de pago
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' })
+    globalThis.scrollTo({ top: 0, behavior: 'instant' })
   }, [])
 
   // Limpiar carrito cuando el pago se confirma (independiente del proveedor)

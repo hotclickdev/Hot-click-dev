@@ -73,23 +73,23 @@ function PayoutModal({ onClose, onSaved }) {
       <div className="bg-[#16161a] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
         <h2 className="text-lg font-semibold mb-5">Solicitar retiro</h2>
 
-        <label className="block text-xs text-[#8e8e9a] mb-1">Monto (₡)</label>
-        <input
+        <label htmlFor="bil-monto" className="block text-xs text-[#8e8e9a] mb-1">Monto (₡)</label>
+        <input id="bil-monto"
           type="number" min="1" className="input-base w-full mb-4"
           placeholder="Ej: 50000"
           value={form.monto} onChange={set('monto')}
         />
 
-        <label className="block text-xs text-[#8e8e9a] mb-1">Método de pago</label>
-        <select className="input-base w-full mb-4" value={form.metodo} onChange={set('metodo')}>
+        <label htmlFor="bil-metodo" className="block text-xs text-[#8e8e9a] mb-1">Método de pago</label>
+        <select id="bil-metodo" className="input-base w-full mb-4" value={form.metodo} onChange={set('metodo')}>
           <option value="SINPE">SINPE Móvil</option>
           <option value="TRANSFERENCIA">Transferencia bancaria</option>
         </select>
 
         {form.metodo === 'SINPE' && (
           <>
-            <label className="block text-xs text-[#8e8e9a] mb-1">Número SINPE (8 dígitos)</label>
-            <input
+            <label htmlFor="bil-sinpe" className="block text-xs text-[#8e8e9a] mb-1">Número SINPE (8 dígitos)</label>
+            <input id="bil-sinpe"
               type="tel" maxLength={8} className="input-base w-full mb-4"
               placeholder="88001234"
               value={form.destinoSinpe} onChange={set('destinoSinpe')}
@@ -99,20 +99,20 @@ function PayoutModal({ onClose, onSaved }) {
 
         {form.metodo === 'TRANSFERENCIA' && (
           <>
-            <label className="block text-xs text-[#8e8e9a] mb-1">IBAN</label>
-            <input className="input-base w-full mb-3" placeholder="CR21 0152 0200 1026 2840 66"
+            <label htmlFor="bil-iban" className="block text-xs text-[#8e8e9a] mb-1">IBAN</label>
+            <input id="bil-iban" className="input-base w-full mb-3" placeholder="CR21 0152 0200 1026 2840 66"
               value={form.destinoIban} onChange={set('destinoIban')} />
-            <label className="block text-xs text-[#8e8e9a] mb-1">Nombre del titular</label>
-            <input className="input-base w-full mb-3"
+            <label htmlFor="bil-titular" className="block text-xs text-[#8e8e9a] mb-1">Nombre del titular</label>
+            <input id="bil-titular" className="input-base w-full mb-3"
               value={form.nombreTitular} onChange={set('nombreTitular')} />
-            <label className="block text-xs text-[#8e8e9a] mb-1">Banco</label>
-            <input className="input-base w-full mb-3"
+            <label htmlFor="bil-banco" className="block text-xs text-[#8e8e9a] mb-1">Banco</label>
+            <input id="bil-banco" className="input-base w-full mb-3"
               value={form.bancoDestino} onChange={set('bancoDestino')} />
           </>
         )}
 
-        <label className="block text-xs text-[#8e8e9a] mb-1">Notas (opcional)</label>
-        <textarea className="input-base w-full mb-5 resize-none" rows={2}
+        <label htmlFor="bil-notas" className="block text-xs text-[#8e8e9a] mb-1">Notas (opcional)</label>
+        <textarea id="bil-notas" className="input-base w-full mb-5 resize-none" rows={2}
           value={form.notas} onChange={set('notas')} />
 
         <div className="flex gap-3 justify-end">
@@ -217,7 +217,7 @@ export default function AdminBilletera() {
           </div>
         </div>
         <p className="text-xs text-[#8e8e9a] mt-3">
-          Tu saldo neto = <span className="text-green-400 font-medium">95%</span> del total bruto de cada venta.
+          Tu saldo neto ={' '}<span className="text-green-400 font-medium">95%</span>{' '}del total bruto de cada venta.
           El IVA (13%) ya está incluido en el precio de tus productos y es tu obligación declararlo a Hacienda.
           Tus comprobantes electrónicos se generan automáticamente.
         </p>

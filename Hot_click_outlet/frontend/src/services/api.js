@@ -58,7 +58,7 @@ api.interceptors.response.use(
       localStorage.removeItem('hotclick-auth')
       // Solo redirigir a login si el usuario tenía una sesión activa que expiró
       if (hadSession) {
-        window.location.href = '/login'
+        globalThis.location.href = '/login'
       }
     }
 

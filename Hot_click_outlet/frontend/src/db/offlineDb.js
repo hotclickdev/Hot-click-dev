@@ -1,6 +1,7 @@
 import { openDB } from 'idb'
 
 const DB_NAME = 'hotclick-offline'
+const ESTADOS_PENDIENTES = new Set(['PENDIENTE', 'ERROR', 'CONFLICTO'])
 const DB_VERSION = 1
 
 /**
@@ -66,7 +67,7 @@ export async function getColaCompleta() {
 export async function contarPendientes() {
   const db = await getDb()
   const todos = await db.getAll('syncQueue')
-  return todos.filter(i => ['PENDIENTE', 'ERROR', 'CONFLICTO'].includes(i.estado)).length
+  return todos.filter(i => ESTADOS_PENDIENTES.has(i.estado)).length
 }
 
 export async function actualizarEstado(id, estado, errorDetalle = null) {

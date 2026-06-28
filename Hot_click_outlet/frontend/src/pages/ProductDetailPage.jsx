@@ -190,14 +190,14 @@ export default function ProductDetailPage() {
       />
       <Helmet>
         <script type="application/ld+json">
-          {JSON.stringify(generateProductJsonLd(product, window.location.origin))}
+          {JSON.stringify(generateProductJsonLd(product, globalThis.location.origin))}
         </script>
         <script type="application/ld+json">
           {JSON.stringify(generateBreadcrumbJsonLd([
-            { name: 'HotClick', url: window.location.origin + '/' },
-            { name: 'Productos', url: window.location.origin + '/productos' },
-            ...(product.marcaNombre ? [{ name: product.marcaNombre, url: `${window.location.origin}/productos?marcaId=${product.marcaId}` }] : []),
-            { name: product.titulo || product.nombre, url: window.location.href },
+            { name: 'HotClick', url: `${globalThis.location.origin}/` },
+            { name: 'Productos', url: `${globalThis.location.origin}/productos` },
+            ...(product.marcaNombre ? [{ name: product.marcaNombre, url: `${globalThis.location.origin}/productos?marcaId=${product.marcaId}` }] : []),
+            { name: product.titulo || product.nombre, url: globalThis.location.href },
           ]))}
         </script>
       </Helmet>
@@ -257,7 +257,7 @@ export default function ProductDetailPage() {
                   {galeria[activeImg] ? (
                     <OptimizedImage
                       src={galeria[activeImg]}
-                      alt={`${product.titulo || product.nombre}${product.marcaNombre ? ' — ' + product.marcaNombre : ''} | Disponible en Costa Rica`}
+                      alt={`${product.titulo || product.nombre}${product.marcaNombre ? ` — ${product.marcaNombre}` : ''} | Disponible en Costa Rica`}
                       width={800}
                       height={800}
                       className="w-full h-full object-cover"

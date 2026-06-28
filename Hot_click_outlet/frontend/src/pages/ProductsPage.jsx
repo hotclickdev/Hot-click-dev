@@ -116,9 +116,9 @@ function Dropdown({ trigger, children, align = 'left', width = 320 }) {
     setOpen(v => !v)
   }
 
-  const top = rect ? rect.bottom + window.scrollY + 8 : 0
-  const left = rect && align !== 'right' ? rect.left + window.scrollX : undefined
-  const right = rect && align === 'right' ? window.innerWidth - rect.right : undefined
+  const top = rect ? rect.bottom + globalThis.scrollY + 8 : 0
+  const left = rect && align !== 'right' ? rect.left + globalThis.scrollX : undefined
+  const right = rect && align === 'right' ? globalThis.innerWidth - rect.right : undefined
 
   return (
     <div className="relative shrink-0" ref={ref}>
@@ -179,27 +179,29 @@ function CategoryDropdown({ categories, category, setCategory }) {
   const pillActive = { ...pillBase, background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', borderColor: 'color-mix(in srgb, var(--hc-accent) 35%, transparent)' }
   const pillInactive = { ...pillBase, background: 'var(--hc-surface-2)', color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }
 
+  const renderTrigger = useCallback((open, toggle) => (
+    <button
+      onClick={toggle}
+      className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap"
+      style={isActive || open
+        ? { background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', border: '1.5px solid color-mix(in srgb, var(--hc-accent) 30%, transparent)' }
+        : { background: 'var(--hc-surface)', color: 'var(--hc-text)', border: '1.5px solid var(--hc-border)' }
+      }
+    >
+      <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h8m-8 6h16" />
+      </svg>
+      <span className="max-w-[110px] truncate">{label}</span>
+      <svg className="w-3 h-3 shrink-0 opacity-50" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
+  ), [isActive, label])
+
   return (
     <Dropdown
       width={560}
-      trigger={(open, toggle) => (
-        <button
-          onClick={toggle}
-          className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap"
-          style={isActive || open
-            ? { background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', border: '1.5px solid color-mix(in srgb, var(--hc-accent) 30%, transparent)' }
-            : { background: 'var(--hc-surface)', color: 'var(--hc-text)', border: '1.5px solid var(--hc-border)' }
-          }
-        >
-          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h8m-8 6h16" />
-          </svg>
-          <span className="max-w-[110px] truncate">{label}</span>
-          <svg className="w-3 h-3 shrink-0 opacity-50" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-      )}
+      trigger={renderTrigger}
     >
       {(close) => (
         <div className="p-4 space-y-4">
@@ -278,31 +280,33 @@ function BrandDropdown({ marcas, marcasFilter, toggleMarca, clearMarcas, marcaPr
       ? marcas.find(m => marcasFilter.has(String(m.id)))?.nombreMarca ?? 'Marca'
       : `${marcasFilter.size} marcas`
 
+  const renderTrigger = useCallback((open, toggle) => (
+    <button
+      onClick={toggle}
+      className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap"
+      style={isActive || open
+        ? { background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', border: '1.5px solid color-mix(in srgb, var(--hc-accent) 30%, transparent)' }
+        : { background: 'var(--hc-surface)', color: 'var(--hc-text)', border: '1.5px solid var(--hc-border)' }
+      }
+    >
+      <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+      </svg>
+      <span className="max-w-[100px] truncate">{label}</span>
+      {isActive && (
+        <span className="w-4 h-4 rounded-full text-[9px] font-black flex items-center justify-center text-white shrink-0"
+          style={{ background: 'var(--hc-accent)' }}>{marcasFilter.size}</span>
+      )}
+      <svg className="w-3 h-3 shrink-0 opacity-50" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
+  ), [isActive, label, marcasFilter])
+
   return (
     <Dropdown
       width={340}
-      trigger={(open, toggle) => (
-        <button
-          onClick={toggle}
-          className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap"
-          style={isActive || open
-            ? { background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', border: '1.5px solid color-mix(in srgb, var(--hc-accent) 30%, transparent)' }
-            : { background: 'var(--hc-surface)', color: 'var(--hc-text)', border: '1.5px solid var(--hc-border)' }
-          }
-        >
-          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-          </svg>
-          <span className="max-w-[100px] truncate">{label}</span>
-          {isActive && (
-            <span className="w-4 h-4 rounded-full text-[9px] font-black flex items-center justify-center text-white shrink-0"
-              style={{ background: 'var(--hc-accent)' }}>{marcasFilter.size}</span>
-          )}
-          <svg className="w-3 h-3 shrink-0 opacity-50" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-      )}
+      trigger={renderTrigger}
     >
       {(close) => (
         <div className="p-3 space-y-3">
@@ -400,31 +404,33 @@ function MoreFiltersDropdown({
     setFilterCond(''); setFilterStock(''); setPriceMin(''); setPriceMax('')
   }
 
+  const renderTrigger = useCallback((open, toggle) => (
+    <button
+      onClick={toggle}
+      className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap"
+      style={extraCount > 0 || open
+        ? { background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', border: '1.5px solid color-mix(in srgb, var(--hc-accent) 30%, transparent)' }
+        : { background: 'var(--hc-surface)', color: 'var(--hc-text)', border: '1.5px solid var(--hc-border)' }
+      }
+    >
+      <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+        <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+        <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+        <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
+      </svg>
+      <span>Filtros</span>
+      {extraCount > 0 && (
+        <span className="w-4 h-4 rounded-full text-[9px] font-black flex items-center justify-center text-white shrink-0"
+          style={{ background: 'var(--hc-accent)' }}>{extraCount}</span>
+      )}
+    </button>
+  ), [extraCount])
+
   return (
     <Dropdown
       width={280}
-      trigger={(open, toggle) => (
-        <button
-          onClick={toggle}
-          className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap"
-          style={extraCount > 0 || open
-            ? { background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', border: '1.5px solid color-mix(in srgb, var(--hc-accent) 30%, transparent)' }
-            : { background: 'var(--hc-surface)', color: 'var(--hc-text)', border: '1.5px solid var(--hc-border)' }
-          }
-        >
-          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
-            <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
-            <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
-            <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
-          </svg>
-          <span>Filtros</span>
-          {extraCount > 0 && (
-            <span className="w-4 h-4 rounded-full text-[9px] font-black flex items-center justify-center text-white shrink-0"
-              style={{ background: 'var(--hc-accent)' }}>{extraCount}</span>
-          )}
-        </button>
-      )}
+      trigger={renderTrigger}
     >
       {(close) => (
         <div className="p-4 space-y-4">
@@ -1516,8 +1522,8 @@ export default function ProductsPage() {
   const [marcas,    setMarcas]    = useState([])
   const [loading,   setLoading]   = useState(true)
   const [page,      setPage]      = useState(() => {
-    const p = parseInt(searchParams.get('page') ?? '0', 10)
-    return isNaN(p) || p < 0 ? 0 : p
+    const p = Number.parseInt(searchParams.get('page') ?? '0', 10)
+    return Number.isNaN(p) || p < 0 ? 0 : p
   })
   const [totalPages, setTotalPages] = useState(1)
   const [viewMode,  setViewMode]  = useState('all')
@@ -1638,7 +1644,7 @@ export default function ProductsPage() {
     const minPrice = priceMin !== '' ? Number(priceMin) : null
     const maxPrice = priceMax !== '' ? Number(priceMax) : null
     return products
-      .filter(p => viewMode !== 'ofertas' || p.enOferta === true)
+      .filter(p => viewMode !== 'ofertas' || p.enOferta)
       .filter(p => viewMode !== 'emprendimientos' || convenioMarcaNames.has(p.marcaNombre?.toLowerCase()))
       .filter(p => !search || p.nombre?.toLowerCase().includes(search.toLowerCase()) || p.marcaNombre?.toLowerCase().includes(search.toLowerCase()))
       .filter(p => !categoryScope || categoryScope.has(String(p.categoriaId)))
@@ -1790,11 +1796,11 @@ export default function ProductsPage() {
   })()
 
   const seoDesc = (() => {
-    if (viewMode === 'ofertas') return `${filtered.length > 0 ? filtered.length + ' productos con ' : ''}Ofertas y descuentos especiales de emprendedores costarricenses. Precios directos, envío a todo Costa Rica.`
+    if (viewMode === 'ofertas') return `${filtered.length > 0 ? `${filtered.length} productos con ` : ''}Ofertas y descuentos especiales de emprendedores costarricenses. Precios directos, envío a todo Costa Rica.`
     if (viewMode === 'emprendimientos') return 'Apoyá el comercio local. Descubrí emprendimientos costarricenses y comprá productos únicos con envío a todo el país.'
     if (activeCatName) return `Explorá los mejores productos de ${activeCatName} de emprendedores en Costa Rica. Envío a todo el país, precios directos y pagos seguros.`
     if (activeMarcaName) return `Todos los productos de ${activeMarcaName} disponibles en HotClick Costa Rica. Entrega a domicilio, pagos con SINPE Móvil y tarjeta.`
-    return `Explorá más de ${products.length > 0 ? products.length + ' ' : ''}productos únicos de emprendedores costarricenses. Tecnología, ropa, accesorios y más con envío a todo Costa Rica.`
+    return `Explorá más de ${products.length > 0 ? `${products.length} ` : ''}productos únicos de emprendedores costarricenses. Tecnología, ropa, accesorios y más con envío a todo Costa Rica.`
   })()
 
   const canonicalUrl = 'https://hotclick.lat/productos'
@@ -2040,7 +2046,7 @@ export default function ProductsPage() {
                   {showSubcatGrid && (
                     <SubcategoryGrid
                       subcats={selectedParentNode.children}
-                      onSelect={(id) => { setCategory(id); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                      onSelect={(id) => { setCategory(id); globalThis.scrollTo({ top: 0, behavior: 'smooth' }) }}
                       productCountByCat={productCountByCat}
                     />
                   )}
@@ -2099,7 +2105,7 @@ export default function ProductsPage() {
                         products={products}
                         categories={categories}
                         convenioMarcaNames={convenioMarcaNames}
-                        onVerMas={(catId) => { setCategory(String(catId)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                        onVerMas={(catId) => { setCategory(String(catId)); globalThis.scrollTo({ top: 0, behavior: 'smooth' }) }}
                         onVerEmprendimientos={() => { setViewMode('emprendimientos'); clearFilters() }}
                         onQuickView={setQuickView}
                         page={page}
@@ -2110,7 +2116,7 @@ export default function ProductsPage() {
                     {filteredPages > 1 && hasFilters && (
                       <nav aria-label="Paginación" className="flex items-center justify-center gap-1.5 mt-8 flex-wrap">
                         <button
-                          onClick={() => { setFilterViewPage(p => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                          onClick={() => { setFilterViewPage(p => p - 1); globalThis.scrollTo({ top: 0, behavior: 'smooth' }) }}
                           disabled={filterViewPage === 0}
                           className="hc-btn hc-btn-outline hc-btn-sm disabled:opacity-30 disabled:cursor-not-allowed">
                           Anterior
@@ -2128,7 +2134,7 @@ export default function ProductsPage() {
                             ) : (
                               <button
                                 key={i}
-                                onClick={() => { setFilterViewPage(i); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                                onClick={() => { setFilterViewPage(i); globalThis.scrollTo({ top: 0, behavior: 'smooth' }) }}
                                 aria-label={`Página ${i + 1}`}
                                 aria-current={i === filterViewPage ? 'page' : undefined}
                                 className="w-8 h-8 rounded-lg text-sm font-semibold transition-colors"
@@ -2141,7 +2147,7 @@ export default function ProductsPage() {
                             )
                           )}
                         <button
-                          onClick={() => { setFilterViewPage(p => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                          onClick={() => { setFilterViewPage(p => p + 1); globalThis.scrollTo({ top: 0, behavior: 'smooth' }) }}
                           disabled={filterViewPage >= filteredPages - 1}
                           className="hc-btn hc-btn-outline hc-btn-sm disabled:opacity-30 disabled:cursor-not-allowed">
                           Siguiente

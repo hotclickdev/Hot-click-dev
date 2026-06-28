@@ -6,6 +6,8 @@ import { orderService } from '@/services/orderService'
 import { gastoService } from '@/services/gastoService'
 import { formatPrice, formatDate } from '@/utils/format'
 import ImportExportBar from '@/components/admin/ImportExportBar'
+
+const ESTADOS_COMPLETADOS = new Set(['ENTREGADO', 'COMPLETADO'])
 import { useToast } from '@/components/ui/Toast'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 
@@ -39,10 +41,10 @@ function GastoModal({ editing, onClose, onSaved }) {
 
   const handleSave = async () => {
     if (!form.concepto.trim()) { showToast('El concepto es requerido', 'error'); return }
-    if (!form.monto || parseInt(form.monto) <= 0) { showToast('El monto debe ser mayor a 0', 'error'); return }
+    if (!form.monto || Number.parseInt(form.monto) <= 0) { showToast('El monto debe ser mayor a 0', 'error'); return }
     setSaving(true)
     try {
-      const dto = { ...form, monto: parseInt(form.monto) }
+      const dto = { ...form, monto: Number.parseInt(form.monto) }
       if (editing?.id) await gastoService.actualizar(editing.id, dto)
       else await gastoService.crear(dto)
       showToast(editing?.id ? 'Gasto actualizado' : 'Gasto registrado', 'success')
@@ -68,35 +70,35 @@ function GastoModal({ editing, onClose, onSaved }) {
         </div>
 
         <div>
-          <label className="block text-xs font-medium mb-1" style={{ color: 'var(--hc-muted)' }}>Concepto *</label>
-          <input type="text" value={form.concepto} onChange={e => set('concepto')(e.target.value)}
+          <label htmlFor="fin-concepto" className="block text-xs font-medium mb-1" style={{ color: 'var(--hc-muted)' }}>Concepto *</label>
+          <input id="fin-concepto" type="text" value={form.concepto} onChange={e => set('concepto')(e.target.value)}
             placeholder="Ej: Pago de alquiler" className={inp} style={style}/>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--hc-muted)' }}>Monto (₡) *</label>
-            <input type="number" min={1} value={form.monto} onChange={e => set('monto')(e.target.value)}
+            <label htmlFor="fin-monto" className="block text-xs font-medium mb-1" style={{ color: 'var(--hc-muted)' }}>Monto (₡) *</label>
+            <input id="fin-monto" type="number" min={1} value={form.monto} onChange={e => set('monto')(e.target.value)}
               placeholder="0" className={inp} style={style}/>
           </div>
           <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--hc-muted)' }}>Fecha</label>
-            <input type="date" value={form.fecha} onChange={e => set('fecha')(e.target.value)}
+            <label htmlFor="fin-fecha" className="block text-xs font-medium mb-1" style={{ color: 'var(--hc-muted)' }}>Fecha</label>
+            <input id="fin-fecha" type="date" value={form.fecha} onChange={e => set('fecha')(e.target.value)}
               className={inp} style={style}/>
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-medium mb-1" style={{ color: 'var(--hc-muted)' }}>Categoría</label>
-          <select value={form.categoria} onChange={e => set('categoria')(e.target.value)}
+          <label htmlFor="fin-categoria" className="block text-xs font-medium mb-1" style={{ color: 'var(--hc-muted)' }}>Categoría</label>
+          <select id="fin-categoria" value={form.categoria} onChange={e => set('categoria')(e.target.value)}
             className={inp} style={style}>
             {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
 
         <div>
-          <label className="block text-xs font-medium mb-1" style={{ color: 'var(--hc-muted)' }}>Notas</label>
-          <textarea value={form.notas} onChange={e => set('notas')(e.target.value)} rows={2}
+          <label htmlFor="fin-notas" className="block text-xs font-medium mb-1" style={{ color: 'var(--hc-muted)' }}>Notas</label>
+          <textarea id="fin-notas" value={form.notas} onChange={e => set('notas')(e.target.value)} rows={2}
             placeholder="Observaciones opcionales…"
             className={`${inp} resize-none`} style={style}/>
         </div>
@@ -107,7 +109,7 @@ function GastoModal({ editing, onClose, onSaved }) {
             style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>
             Cancelar
           </button>
-          <button onClick={handleSave} disabled={saving || !form.concepto.trim() || !form.monto || parseInt(form.monto) <= 0}
+          <button onClick={handleSave} disabled={saving || !form.concepto.trim() || !form.monto || Number.parseInt(form.monto) <= 0}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-80 disabled:opacity-40"
             style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
             {saving ? 'Guardando…' : 'Guardar'}
@@ -342,7 +344,7 @@ export default function AdminFinanzas() {
       .then(({ data }) => {
         const raw = data?.data ?? data
         const all = Array.isArray(raw) ? raw : raw?.content ?? []
-        setPedidos(all.filter(p => ['ENTREGADO','COMPLETADO'].includes(p.estado ?? p.estadoPedido)))
+        setPedidos(all.filter(p => ESTADOS_COMPLETADOS.has(p.estado ?? p.estadoPedido)))
       })
       .finally(() => setLoadingP(false))
   }, [])

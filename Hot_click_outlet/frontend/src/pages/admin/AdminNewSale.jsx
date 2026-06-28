@@ -199,7 +199,7 @@ export default function AdminNewSale() {
     body.push(`*Total estimado: ${formatPrice(total)}*`)
     if (cotNota) body.push('', `Nota: ${cotNota}`)
     body.push('', '¿Pueden confirmar disponibilidad, tiempo de entrega y métodos de pago? Gracias.')
-    window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(body.join('\n'))}`, '_blank')
+    globalThis.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(body.join('\n'))}`, '_blank')
   }
 
   if (loading) return <><div className="flex justify-center py-20"><Spinner size="lg" /></div></>

@@ -158,7 +158,7 @@ function EmprendimientoForm({ onVolver }) {
       await authService.reenviarCodigoNegocio()
       setOtpFalló(false)
       setCodigoVerif('')
-      toast({ message: 'Código reenviado a ' + correoReg, type: 'success' })
+      toast({ message: `Código reenviado a ${correoReg}`, type: 'success' })
     } catch (err) {
       const msg = err.response?.data?.message
       toast({ message: typeof msg === 'string' && msg ? msg : 'Error al reenviar el código', type: 'error' })
@@ -257,9 +257,9 @@ function EmprendimientoForm({ onVolver }) {
                   />
                   <span style={{ fontSize: 12, color: 'var(--hc-muted)', lineHeight: 1.6 }}>
                     Al marcar esta casilla, manifiesto de forma libre, expresa, voluntaria e inequívoca que he leído y acepto la{' '}
-                    <Link to="/privacidad" style={{ color: 'var(--hc-accent)', textDecoration: 'underline' }} target="_blank">Política de Privacidad</Link>{' '}
+                    <Link to="/privacidad" style={{ color: 'var(--hc-accent)', textDecoration: 'underline' }} target="_blank" rel="noopener noreferrer">Política de Privacidad</Link>{' '}
                     y los{' '}
-                    <Link to="/terminos" style={{ color: 'var(--hc-accent)', textDecoration: 'underline' }} target="_blank">Términos y Condiciones</Link>{' '}
+                    <Link to="/terminos" style={{ color: 'var(--hc-accent)', textDecoration: 'underline' }} target="_blank" rel="noopener noreferrer">Términos y Condiciones</Link>{' '}
                     de HotClick. Autorizo el tratamiento de mis datos personales y su transferencia al comercio vendedor para coordinar la entrega. Conozco mis derechos ARCO en <a href="mailto:hotclick.cr@gmail.com" style={{ color: 'var(--hc-accent)' }}>hotclick.cr@gmail.com</a>.
                   </span>
                 </label>
@@ -298,10 +298,10 @@ function EmprendimientoForm({ onVolver }) {
                   </div>
                 ) : (
                   <div>
-                    <label className="hc-input-label block mb-2" style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--hc-muted)' }}>
+                    <label htmlFor="reg-codigo-verif" className="hc-input-label block mb-2" style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--hc-muted)' }}>
                       Código de verificación
                     </label>
-                    <input
+                    <input id="reg-codigo-verif"
                       type="text" inputMode="numeric" pattern="[0-9]*" maxLength={6}
                       placeholder="000000" autoFocus
                       value={codigoVerif}
@@ -488,14 +488,14 @@ export default function RegisterPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
                 <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-warning)' }}>
-                  <span className="font-semibold">Este código es solo para verificar tu cuenta.</span> No lo compartas con nadie.
+                  <span className="font-semibold">Este código es solo para verificar tu cuenta.</span>{' '}No lo compartas con nadie.
                 </p>
               </div>
 
               <form onSubmit={handleVerify} className="flex flex-col gap-4">
                 <div>
-                  <label className="hc-input-label block mb-2">{t('register.verificationCode')}</label>
-                  <input type="text" inputMode="numeric" pattern="[0-9]*" maxLength={6}
+                  <label htmlFor="reg-codigo-email" className="hc-input-label block mb-2">{t('register.verificationCode')}</label>
+                  <input id="reg-codigo-email" type="text" inputMode="numeric" pattern="[0-9]*" maxLength={6}
                     value={codigo} onChange={(e) => setCodigo(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     placeholder="000000" autoFocus className="hc-input w-full text-center"
                     style={{ fontSize: 32, fontWeight: 900, letterSpacing: '0.55em', height: 64, padding: '0 12px' }} />

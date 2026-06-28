@@ -4,16 +4,17 @@ import { applyBranding, invalidateBrandingCache } from '@/hooks/useBranding'
 
 const FONTS = ['Inter', 'Poppins', 'Roboto', 'Nunito', 'Montserrat', 'Raleway', 'Lato', 'Open Sans']
 
-function ColorField({ label, value, onChange }) {
+function ColorField({ label, value, onChange, fieldId }) {
+  const textId = fieldId ? `${fieldId}-hex` : undefined
   return (
     <div className="space-y-1.5">
-      <label className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>{label}</label>
+      <label htmlFor={textId} className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>{label}</label>
       <div className="flex items-center gap-2">
         <input type="color" value={value || '#000000'}
           onChange={e => onChange(e.target.value)}
           className="w-10 h-10 rounded-lg border-0 cursor-pointer bg-transparent p-0.5"
           style={{ border: '1px solid var(--hc-border)' }} />
-        <input type="text" value={value || ''}
+        <input id={textId} type="text" value={value || ''}
           onChange={e => onChange(e.target.value)}
           maxLength={7}
           placeholder="#E73B33"
@@ -24,12 +25,12 @@ function ColorField({ label, value, onChange }) {
   )
 }
 
-function TextField({ label, value, onChange, placeholder, multiline }) {
+function TextField({ label, value, onChange, placeholder, multiline, fieldId }) {
   const Tag = multiline ? 'textarea' : 'input'
   return (
     <div className="space-y-1.5">
-      <label className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>{label}</label>
-      <Tag rows={multiline ? 3 : undefined}
+      <label htmlFor={fieldId} className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>{label}</label>
+      <Tag id={fieldId} rows={multiline ? 3 : undefined}
         value={value || ''}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
@@ -96,14 +97,14 @@ export default function AdminBranding() {
             style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
             <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>Identidad</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <TextField label="Nombre comercial" value={form.nombreComercial}
+              <TextField label="Nombre comercial" fieldId="brand-nombre" value={form.nombreComercial}
                 onChange={set('nombreComercial')} placeholder="Mi Tienda" />
-              <TextField label="Tagline" value={form.tagline}
+              <TextField label="Tagline" fieldId="brand-tagline" value={form.tagline}
                 onChange={set('tagline')} placeholder="Tu eslogan aquí" />
             </div>
-            <TextField label="Descripción" value={form.descripcion}
+            <TextField label="Descripción" fieldId="brand-descripcion" value={form.descripcion}
               onChange={set('descripcion')} placeholder="Descripción breve de tu negocio..." multiline />
-            <TextField label="Texto del footer" value={form.footerTexto}
+            <TextField label="Texto del footer" fieldId="brand-footer" value={form.footerTexto}
               onChange={set('footerTexto')} placeholder="© 2026 Mi Tienda · Todos los derechos reservados" />
           </section>
 
@@ -112,9 +113,9 @@ export default function AdminBranding() {
             style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
             <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>Paleta de colores</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <ColorField label="Color primario (botones, CTAs)" value={form.colorPrimario} onChange={set('colorPrimario')} />
-              <ColorField label="Color secundario (fondo cards)" value={form.colorSecundario} onChange={set('colorSecundario')} />
-              <ColorField label="Color acento (links, highlights)" value={form.colorAcento} onChange={set('colorAcento')} />
+              <ColorField label="Color primario (botones, CTAs)" fieldId="brand-color-primario" value={form.colorPrimario} onChange={set('colorPrimario')} />
+              <ColorField label="Color secundario (fondo cards)" fieldId="brand-color-secundario" value={form.colorSecundario} onChange={set('colorSecundario')} />
+              <ColorField label="Color acento (links, highlights)" fieldId="brand-color-acento" value={form.colorAcento} onChange={set('colorAcento')} />
             </div>
           </section>
 

@@ -7,7 +7,6 @@ import Button from '@/components/ui/Button'
 import ShippingProgress from '@/components/ui/ShippingProgress'
 import useCartStore from '@/store/cartStore'
 import useAuthStore from '@/store/authStore'
-import useUiStore from '@/store/uiStore'
 import { productService, normalizeProduct } from '@/services/productService'
 import { formatPrice } from '@/utils/format'
 import { useToast } from '@/components/ui/Toast'
@@ -21,7 +20,6 @@ const WA_PROMPT_DELAY_MS    = 180_000  // 3 minutos
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart, total, toWhatsAppMessage, addItem } = useCartStore()
   const { token, user } = useAuthStore()
-  const { setAuthPromptOpen } = useUiStore()
   const navigate  = useNavigate()
   const toast     = useToast()
   const { t } = useTranslation()
@@ -99,19 +97,7 @@ export default function CartPage() {
   const handleWhatsApp = () => {
     if (items.length === 0) return
     const msg = toWhatsAppMessage()
-    window.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank')
-  }
-
-  const handleCotizacion = () => {
-    if (items.length === 0) return
-    const lines = items.map((i) => `  • ${i.nombre} ×${i.cantidad} — ${formatPrice(i.precio * i.cantidad)}`)
-    const text = encodeURIComponent(
-      `Hola Andrés! 👋 Quisiera una *cotización* para los siguientes productos:\n\n` +
-      lines.join('\n') +
-      `\n\n💰 Total estimado: *${formatPrice(total())}*\n\n` +
-      `¿Me podés confirmar disponibilidad, tiempo de entrega y formas de pago? Gracias 😊`
-    )
-    window.open(`https://wa.me/${WHATSAPP}?text=${text}`, '_blank')
+    globalThis.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank')
   }
 
   const handleRemove = (item) => {
@@ -189,11 +175,9 @@ export default function CartPage() {
                     className="group rounded-2xl overflow-hidden"
                     style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
                   >
-                    <div
-                      role="button" tabIndex={0}
-                      className="h-28 bg-[#1a1a1f] flex items-center justify-center overflow-hidden cursor-pointer"
-                      onClick={() => navigate(`/productos/${product.id}`)}
-                      onKeyDown={(e) => e.key === 'Enter' && navigate(`/productos/${product.id}`)}
+                    <Link
+                      to={`/productos/${product.id}`}
+                      className="h-28 bg-[#1a1a1f] flex items-center justify-center overflow-hidden block"
                     >
                       {product.imagenUrl ? (
                         <img
@@ -205,17 +189,15 @@ export default function CartPage() {
                       ) : (
                         <span className="text-3xl opacity-20">📦</span>
                       )}
-                    </div>
+                    </Link>
                     <div className="p-3">
-                      <p
-                        role="button" tabIndex={0}
-                        className="text-xs font-medium line-clamp-2 mb-1.5 cursor-pointer"
+                      <Link
+                        to={`/productos/${product.id}`}
+                        className="text-xs font-medium line-clamp-2 mb-1.5 block"
                         style={{ color: 'var(--hc-text)' }}
-                        onClick={() => navigate(`/productos/${product.id}`)}
-                        onKeyDown={(e) => e.key === 'Enter' && navigate(`/productos/${product.id}`)}
                       >
                         {product.nombre}
-                      </p>
+                      </Link>
                       <p className="text-sm font-bold text-[#4f7cff] mb-2">{formatPrice(product.precio)}</p>
                       <button
                         onClick={() => handleCrossAdd(product)}
@@ -411,11 +393,9 @@ export default function CartPage() {
                   className="group rounded-2xl overflow-hidden"
                   style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
                 >
-                  <div
-                    role="button" tabIndex={0}
-                    className="h-28 bg-[#1a1a1f] flex items-center justify-center overflow-hidden cursor-pointer"
-                    onClick={() => navigate(`/productos/${product.id}`)}
-                    onKeyDown={(e) => e.key === 'Enter' && navigate(`/productos/${product.id}`)}
+                  <Link
+                    to={`/productos/${product.id}`}
+                    className="h-28 bg-[#1a1a1f] flex items-center justify-center overflow-hidden block"
                   >
                     {product.imagenUrl ? (
                       <img
@@ -427,17 +407,15 @@ export default function CartPage() {
                     ) : (
                       <span className="text-3xl opacity-20">📦</span>
                     )}
-                  </div>
+                  </Link>
                   <div className="p-3">
-                    <p
-                      role="button" tabIndex={0}
-                      className="text-xs font-medium line-clamp-2 mb-1.5 cursor-pointer"
+                    <Link
+                      to={`/productos/${product.id}`}
+                      className="text-xs font-medium line-clamp-2 mb-1.5 block"
                       style={{ color: 'var(--hc-text)' }}
-                      onClick={() => navigate(`/productos/${product.id}`)}
-                      onKeyDown={(e) => e.key === 'Enter' && navigate(`/productos/${product.id}`)}
                     >
                       {product.nombre}
-                    </p>
+                    </Link>
                     <p className="text-sm font-bold text-[#4f7cff] mb-2">{formatPrice(product.precio)}</p>
                     <button
                       onClick={() => handleCrossAdd(product)}

@@ -47,7 +47,7 @@ export default function AdminAprobaciones() {
   }
 
   async function aprobar(id) {
-    setSaving(id + '_aprobar')
+    setSaving(`${id}_aprobar`)
     try {
       await api.put(`/admin/solicitudes-aprobacion/${id}/aprobar`)
       toast({ message: 'Negocio aprobado correctamente', type: 'success' })
@@ -61,7 +61,7 @@ export default function AdminAprobaciones() {
   }
 
   async function rechazar(id) {
-    setSaving(id + '_rechazar')
+    setSaving(`${id}_rechazar`)
     try {
       await api.put(`/admin/solicitudes-aprobacion/${id}/rechazar`)
       toast({ message: 'Solicitud rechazada', type: 'success' })

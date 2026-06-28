@@ -179,7 +179,7 @@ export default function AppTour() {
     const el = document.createElement('style')
     el.textContent = TOUR_CSS
     document.head.appendChild(el)
-    return () => document.head.removeChild(el)
+    return () => el.remove()
   }, [])
 
   // Sidebar spotlight class
@@ -191,8 +191,8 @@ export default function AppTour() {
   // Manual trigger via window event
   useEffect(() => {
     const handler = () => { setStep(0); setShow(true) }
-    window.addEventListener('hc-open-tour', handler)
-    return () => window.removeEventListener('hc-open-tour', handler)
+    globalThis.addEventListener('hc-open-tour', handler)
+    return () => globalThis.removeEventListener('hc-open-tour', handler)
   }, [setShow])
 
   const dismiss = useCallback(() => {
