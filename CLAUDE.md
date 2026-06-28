@@ -204,6 +204,41 @@ El botón "WhatsApp cliente" en AdminOrders genera un link `wa.me` con los produ
 
 Un pedido aparece en finanzas automáticamente al marcarlo como ENTREGADO.
 
+## Gestión de secretos — regla obligatoria
+
+**Nunca hardcodear una API key, contraseña o secreto en el código fuente.**
+
+### Arquitectura de secretos
+
+| Capa | Mecanismo |
+|------|-----------|
+| **Local (backend)** | `Hot_click_outlet/.env` — en `.gitignore`, NUNCA a git |
+| **Local (frontend)** | `Hot_click_outlet/frontend/.env.local` — excluido por `*.local` |
+| **Templates** | `.env.example` y `frontend/.env.example` — SÍ van a git, sin valores reales |
+| **Producción (EC2)** | `/home/ec2-user/app/.env` en el servidor, fuera del repo |
+| **`application.properties`** | Solo referencias `${ENV_VAR:default}`, nunca valores reales |
+| **Pre-commit hook** | `.git/hooks/pre-commit` bloquea automáticamente commits con secretos |
+
+### Reglas concretas
+
+1. **Agregar nueva variable** → agregarla en `.env` (local) + `.env.example` (template sin valor) + documentarla en esta sección si es crítica.
+2. **Nunca poner secrets en el frontend** — las variables `VITE_*` quedan expuestas en el bundle del navegador. Solo van ahí claves *publishable* (Clerk, GA4, Sentry DSN, PostHog token). Claves secretas solo en el backend.
+3. **Rotación de API key comprometida** → cambiar en el servicio origen primero, luego actualizar `.env` en EC2 (`nano /home/ec2-user/app/.env && docker restart hotclick`).
+4. **El hook pre-commit** escanea patrones `sk-ant-api`, `sb_secret_`, `SG.`, `sk_live_`, `sk_test_`, `whsec_`, `phc_`, `pk_live_`. Si un commit falla por esto, mover la credencial a `.env`.
+
+### Servicios y dónde rotar sus keys
+
+| Servicio | Dónde rotar |
+|----------|-------------|
+| Anthropic (Claude) | console.anthropic.com → API Keys |
+| Supabase | supabase.com → Project → Settings → API |
+| SendGrid | app.sendgrid.com → Settings → API Keys |
+| Stripe | dashboard.stripe.com → Developers → API Keys |
+| Clerk | dashboard.clerk.com → API Keys |
+| PostHog | us.posthog.com → Project Settings |
+| GitHub Token | github.com → Settings → Developer settings → PAT |
+| Gmail App Password | myaccount.google.com → Security → App passwords |
+
 ## Convenciones
 
 - Los controladores REST se ubican en `com.hotclick.controller` y usan `@RestController` con `@RequestMapping("/api")` como prefijo de ruta.

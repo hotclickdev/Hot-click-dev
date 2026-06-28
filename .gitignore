@@ -28,8 +28,17 @@ logs/
 application-local.properties
 application-local.yml
 
-# Environment
+# Environment — NUNCA commitear archivos con credenciales reales
 .env
+.env.local
+.env.development
+.env.production
+.env.staging
+.env.test
+.env.*.local
+# Excepción: los templates SÍ se commitean
+!.env.example
+!.env.*.example
 start-local.ps1
 
 # Reportes internos — no subir a git
