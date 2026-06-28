@@ -102,7 +102,7 @@ function GarantiaBar({ fechaPedido }) {
 
   const limite = new Date(fechaPedido)
   limite.setDate(limite.getDate() + 40)
-  const diasRestantes = Math.ceil((limite - new Date()) / 86400000)
+  const diasRestantes = Math.ceil((limite - Date.now()) / 86400000)
   const vence = limite.toLocaleDateString('es-CR', { day: '2-digit', month: 'short', year: 'numeric' })
 
   if (diasRestantes > 0) {
@@ -386,9 +386,8 @@ export default function MisPedidosPage() {
           <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>{t('orders.subtitle')}</p>
         </motion.div>
 
-        {loading ? (
-          <div className="flex justify-center py-16"><Spinner /></div>
-        ) : orders.length === 0 ? (
+        {loading && <div className="flex justify-center py-16"><Spinner /></div>}
+        {!loading && orders.length === 0 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             className="text-center py-16 rounded-2xl border"
             style={{ backgroundColor: 'var(--hc-surface)', borderColor: 'var(--hc-border)' }}>
@@ -397,7 +396,8 @@ export default function MisPedidosPage() {
             <p className="text-sm mt-1 mb-6" style={{ color: 'var(--hc-muted)' }}>{t('orders.emptySub')}</p>
             <Button onClick={() => navigate('/productos')}>{t('orders.viewProducts')}</Button>
           </motion.div>
-        ) : (
+        )}
+        {!loading && orders.length > 0 && (
           <div className="space-y-3">
             {orders.map((order, i) => (
               <motion.div key={order.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>

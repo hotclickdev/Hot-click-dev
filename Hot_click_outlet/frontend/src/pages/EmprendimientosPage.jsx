@@ -45,12 +45,13 @@ export default function EmprendimientosPage() {
 
         {/* Grid */}
         <div className="max-w-7xl mx-auto px-5 sm:px-8" style={{ paddingTop: 48, paddingBottom: 64 }}>
-          {loading ? (
+          {loading && (
             <div style={{ textAlign: 'center', padding: 80, color: 'var(--hc-muted)' }}>
               <div style={{ width: 36, height: 36, borderRadius: '50%', border: '3px solid var(--hc-border)', borderTopColor: 'var(--hc-accent)', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
               Cargando...
             </div>
-          ) : lista.length === 0 ? (
+          )}
+          {!loading && lista.length === 0 && (
             <div style={{ textAlign: 'center', padding: 80 }}>
               <p style={{ fontSize: 48, margin: '0 0 16px' }}>🤝</p>
               <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--hc-text)', margin: 0 }}>Próximamente</p>
@@ -58,7 +59,8 @@ export default function EmprendimientosPage() {
                 Estamos cerrando convenios con emprendimientos de Costa Rica.
               </p>
             </div>
-          ) : (
+          )}
+          {!loading && lista.length > 0 && (
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',

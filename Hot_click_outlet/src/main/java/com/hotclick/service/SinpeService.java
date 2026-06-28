@@ -4,6 +4,9 @@ import com.hotclick.dto.PaymentCheckoutRequest;
 import com.hotclick.dto.PaymentCheckoutResponse;
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
+import com.hotclick.exception.IntegracionExternaException;
+import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,22 +71,19 @@ public class SinpeService {
 
         Long bodegaId = req.getBodegaId() != null ? req.getBodegaId() : 1L;
         Bodega bodega = bodegaRepository.findById(bodegaId)
-            .orElseThrow(() -> new RuntimeException("Bodega no encontrada: " + bodegaId));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Bodega", bodegaId));
 
         int subtotal   = 0;
         int costoTotal = 0;
         for (PaymentCheckoutRequest.ItemDTO item : req.getItems()) {
             Producto p = productoRepository.findByIdForUpdate(item.getProductoId())
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + item.getProductoId()));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Producto", item.getProductoId()));
 
             if (!Boolean.TRUE.equals(p.getVisibleCatalogo()) || Boolean.TRUE.equals(p.getVendido())) {
                 throw new IllegalStateException("Producto no disponible: " + p.getNombreProducto());
             }
             if (p.getStockDisponible() < item.getCantidad()) {
-                throw new IllegalStateException(
-                    "Stock insuficiente para \"" + p.getNombreProducto() + "\""
-                    + " (disponible: " + p.getStockDisponible()
-                    + ", solicitado: " + item.getCantidad() + ")");
+                throw new StockInsuficienteException(p.getNombreProducto(), p.getStockDisponible(), item.getCantidad());
             }
             p.setStockReservado(p.getStockReservado() + item.getCantidad());
             productoRepository.save(p);
@@ -135,7 +135,8 @@ public class SinpeService {
         pedidoRepository.save(pedido);
 
         for (PaymentCheckoutRequest.ItemDTO item : req.getItems()) {
-            Producto p = productoRepository.findById(item.getProductoId()).orElseThrow();
+            Producto p = productoRepository.findById(item.getProductoId())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Producto", item.getProductoId()));
             PedidoItem pi = new PedidoItem();
             pi.setCantidad(item.getCantidad());
             pi.setPrecioUnitarioMomento(p.getPrecioVenta());
@@ -180,7 +181,7 @@ public class SinpeService {
                                  String nombreRemitente, String cedulaRemitente,
                                  String telefonoRemitente, String correoUsuario) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
-            .orElseThrow(() -> new RuntimeException("Pedido no encontrado: " + numeroPedido));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
 
         if (!pedido.getUsuarioFinal().getCorreo().equals(correoUsuario)) {
             throw new SecurityException("No tienes permiso para modificar este pedido");
@@ -201,7 +202,8 @@ public class SinpeService {
         try {
             url = storageService.subirImagen(archivo, "comprobantes-sinpe");
         } catch (IOException e) {
-            throw new RuntimeException("Error al subir el comprobante: " + e.getMessage(), e);
+            throw new IntegracionExternaException("storage", IntegracionExternaException.Tipo.IO_ERROR,
+                "Error al subir el comprobante: " + e.getMessage(), e);
         }
 
         ComprobanteSinpe comprobante = new ComprobanteSinpe();
@@ -227,7 +229,7 @@ public class SinpeService {
     @Transactional
     public void aprobar(Long comprobanteId, String adminEmail, Long adminId) {
         ComprobanteSinpe comprobante = comprobanteRepository.findById(comprobanteId)
-            .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + comprobanteId));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Comprobante", comprobanteId));
 
         if (!Constants.COMPROBANTE_PENDIENTE.equals(comprobante.getEstado())) {
             throw new IllegalStateException("El comprobante ya fue procesado: " + comprobante.getEstado());
@@ -239,7 +241,7 @@ public class SinpeService {
         }
 
         Pago pago = pagoRepository.findTopByPedidoId(pedido.getId())
-            .orElseThrow(() -> new RuntimeException("Pago SINPE no encontrado para pedido: " + pedido.getNumeroPedido()));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Pago SINPE no encontrado para pedido: " + pedido.getNumeroPedido()));
 
         pago.setEstadoPago(Constants.PAGO_CAPTURADO);
         pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
@@ -266,7 +268,7 @@ public class SinpeService {
     @Transactional
     public void rechazar(Long comprobanteId, String motivo, String adminEmail, Long adminId) {
         ComprobanteSinpe comprobante = comprobanteRepository.findById(comprobanteId)
-            .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + comprobanteId));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Comprobante", comprobanteId));
 
         if (!Constants.COMPROBANTE_PENDIENTE.equals(comprobante.getEstado())) {
             throw new IllegalStateException("El comprobante ya fue procesado: " + comprobante.getEstado());

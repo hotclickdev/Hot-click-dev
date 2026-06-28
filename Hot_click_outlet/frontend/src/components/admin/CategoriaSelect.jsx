@@ -31,14 +31,14 @@ export default function CategoriaSelect({ categories = [], value, onChange, requ
   }, [value])
 
   function handleSelect(level, selectedId) {
-    if (!selectedId) {
-      const newPath = path.slice(0, level)
-      setPath(newPath)
-      onChange(newPath[newPath.length - 1] || '')
-    } else {
+    if (selectedId) {
       const newPath = [...path.slice(0, level), selectedId]
       setPath(newPath)
       onChange(selectedId)
+    } else {
+      const newPath = path.slice(0, level)
+      setPath(newPath)
+      onChange(newPath[newPath.length - 1] || '')
     }
   }
 

@@ -70,7 +70,7 @@ export default function ContactoPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
-      if (!res.ok) throw new Error()
+      if (!res.ok) throw new Error(res.statusText || 'Error al enviar el formulario')
       setSent(true)
       toast({ message: t('contacto.successToast'), type: 'success' })
     } catch {

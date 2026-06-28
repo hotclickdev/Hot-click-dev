@@ -4,7 +4,7 @@ export function useStickyState(key, defaultValue) {
   const [state, setState] = useState(() => {
     try {
       const stored = sessionStorage.getItem(key)
-      return stored !== null ? JSON.parse(stored) : defaultValue
+      return stored === null ? defaultValue : JSON.parse(stored)
     } catch { return defaultValue }
   })
 

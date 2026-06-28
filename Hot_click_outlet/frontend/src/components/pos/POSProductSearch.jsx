@@ -125,10 +125,41 @@ export default function POSProductSearch({ onAdd }) {
       </div>
 
       {/* Vista: categorías o productos */}
-      {!query ? (
+      {query ? (
+        /* ── Resultados de búsqueda ──────────────────────── */
+        <div className="flex-1 overflow-y-auto">
+          {searchResults.length === 0 && !searchLoading ? (
+            <div className="flex items-center justify-center h-32">
+              <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>Sin resultados para "{query}"</p>
+            </div>
+          ) : (
+            <ProductGrid items={searchResults} onAdd={handleAdd} />
+          )}
+        </div>
+      ) : (
         /* ── Categorías ─────────────────────────────────── */
         <>
-          {!catSel ? (
+          {catSel ? (
+            /* ── Productos de la categoría ──────────────── */
+            <>
+              <div className="flex items-center gap-2">
+                <button onClick={() => { setCatSel(null); setProductos([]) }}
+                  className="p-1.5 rounded-lg hover:bg-white/8 transition-colors"
+                  style={{ color: 'var(--hc-muted)' }}>
+                  ← Volver
+                </button>
+                <span className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
+                  {catSel.nombreCategoria}
+                </span>
+                <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+                  ({productos.length} productos)
+                </span>
+              </div>
+              <div className="flex-1 overflow-y-auto">
+                <ProductGrid items={productos} onAdd={handleAdd} />
+              </div>
+            </>
+          ) : (
             <div className="flex-1 overflow-y-auto">
               {loadingCat ? (
                 <div className="flex justify-center py-8">
@@ -156,39 +187,8 @@ export default function POSProductSearch({ onAdd }) {
                 </div>
               )}
             </div>
-          ) : (
-            /* ── Productos de la categoría ──────────────── */
-            <>
-              <div className="flex items-center gap-2">
-                <button onClick={() => { setCatSel(null); setProductos([]) }}
-                  className="p-1.5 rounded-lg hover:bg-white/8 transition-colors"
-                  style={{ color: 'var(--hc-muted)' }}>
-                  ← Volver
-                </button>
-                <span className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
-                  {catSel.nombreCategoria}
-                </span>
-                <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-                  ({productos.length} productos)
-                </span>
-              </div>
-              <div className="flex-1 overflow-y-auto">
-                <ProductGrid items={productos} onAdd={handleAdd} />
-              </div>
-            </>
           )}
         </>
-      ) : (
-        /* ── Resultados de búsqueda ──────────────────────── */
-        <div className="flex-1 overflow-y-auto">
-          {searchResults.length === 0 && !searchLoading ? (
-            <div className="flex items-center justify-center h-32">
-              <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>Sin resultados para "{query}"</p>
-            </div>
-          ) : (
-            <ProductGrid items={searchResults} onAdd={handleAdd} />
-          )}
-        </div>
       )}
     </div>
   )
@@ -208,6 +208,7 @@ function ProductGrid({ items, onAdd }) {
         const stock   = p.stockActual ?? p.stock ?? 0
         const agotado = stock <= 0
         const bajo    = !agotado && stock <= (p.stockMinimo ?? 5)
+        const borderColor = agotado ? 'rgba(239,68,68,0.2)' : bajo ? 'rgba(251,191,36,0.25)' : 'rgba(255,255,255,0.07)'
         return (
           <button key={p.id ?? p.idProducto}
             onClick={() => !agotado && onAdd(p)}
@@ -215,7 +216,7 @@ function ProductGrid({ items, onAdd }) {
             className="flex flex-col rounded-2xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
               backgroundColor: 'var(--hc-surface)',
-              border: `1.5px solid ${agotado ? 'rgba(239,68,68,0.2)' : bajo ? 'rgba(251,191,36,0.25)' : 'rgba(255,255,255,0.07)'}`,
+              border: `1.5px solid ${borderColor}`,
             }}>
             {/* Imagen */}
             <div className="w-full aspect-square overflow-hidden"

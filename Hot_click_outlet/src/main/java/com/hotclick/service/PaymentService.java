@@ -8,6 +8,9 @@ import com.hotclick.payment.PaymentProviderFactory;
 import com.hotclick.payment.PaymentSession;
 import com.hotclick.repository.*;
 import com.hotclick.sse.StockCambioEvent;
+import com.hotclick.exception.IntegracionExternaException;
+import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.utils.Constants;
 import com.hotclick.service.AggregatorService;
 import org.slf4j.Logger;
@@ -84,7 +87,7 @@ public class PaymentService {
 
         Long bodegaId = req.getBodegaId() != null ? req.getBodegaId() : 1L;
         Bodega bodega = bodegaRepository.findById(bodegaId)
-            .orElseThrow(() -> new RuntimeException("Bodega no encontrada: " + bodegaId));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Bodega", bodegaId));
 
         // Tenant assertion: la bodega del checkout debe pertenecer al negocio activo
         // (slug de la tienda pública). Evita que un pedido de la Empresa A se asiente
@@ -109,17 +112,14 @@ public class PaymentService {
         for (PaymentCheckoutRequest.ItemDTO item : req.getItems()) {
             // SELECT FOR UPDATE — previene race conditions al reservar
             Producto p = productoRepository.findByIdForUpdate(item.getProductoId())
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + item.getProductoId()));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Producto", item.getProductoId()));
 
             if (!Boolean.TRUE.equals(p.getVisibleCatalogo()) || Boolean.TRUE.equals(p.getVendido())) {
                 throw new IllegalStateException("Producto no disponible: " + p.getNombreProducto());
             }
             // Validar contra stockDisponible (stockActual - stockReservado)
             if (p.getStockDisponible() < item.getCantidad()) {
-                throw new IllegalStateException(
-                    "Stock insuficiente para \"" + p.getNombreProducto() + "\""
-                    + " (disponible: " + p.getStockDisponible()
-                    + ", solicitado: " + item.getCantidad() + ")");
+                throw new StockInsuficienteException(p.getNombreProducto(), p.getStockDisponible(), item.getCantidad());
             }
             // Reservar unidades — se libera en cancelación/fallo, se consume en confirmación
             p.setStockReservado(p.getStockReservado() + item.getCantidad());
@@ -211,7 +211,8 @@ public class PaymentService {
         // ── Gift card cubre el 100%: marcar PAGADO sin pasar por proveedor ──
         if (pagoGC) {
             for (PedidoItem item : pedido.getItems()) {
-                Producto p = productoRepository.findByIdForUpdate(item.getProducto().getId()).orElseThrow();
+                Producto p = productoRepository.findByIdForUpdate(item.getProducto().getId())
+                    .orElseThrow(() -> new RecursoNoEncontradoException("Producto", item.getProducto().getId()));
                 p.setStockActual(Math.max(0, p.getStockActual() - item.getCantidad()));
                 p.setStockReservado(Math.max(0, p.getStockReservado() - item.getCantidad()));
                 if (Boolean.TRUE.equals(p.getEsUnico())) { p.setVendido(true); p.setVisibleCatalogo(false); }
@@ -238,7 +239,8 @@ public class PaymentService {
             throw e;
         } catch (Exception e) {
             liberarReservas(pedido);
-            throw new RuntimeException("Error iniciando sesión de pago: " + e.getMessage(), e);
+            throw new IntegracionExternaException(provider, IntegracionExternaException.Tipo.IO_ERROR,
+                "Error iniciando sesión de pago: " + e.getMessage(), e);
         }
 
         // ── Crear registro Pago ─────────────────────────────────────────

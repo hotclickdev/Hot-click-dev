@@ -1,6 +1,5 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import useCartStore from '@/store/cartStore'
 import { shoppingAssistantService } from '@/services/shoppingAssistantService'
 import { getOrCreateVisitorId } from '@/utils/visitorId'
 
@@ -37,7 +36,6 @@ const PREGUNTAS_RAPIDAS = [
  * @param {object} product - El producto actual de la página.
  */
 export default function ProductDetailAssistant({ product }) {
-  const addItem = useCartStore(s => s.addItem)
   const [abierto,  setAbierto]  = useState(false)
   const [mensajes, setMensajes] = useState([])
   const [input,    setInput]    = useState('')

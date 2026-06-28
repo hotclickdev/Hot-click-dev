@@ -55,6 +55,22 @@ export default function AIProductCard({ producto, similarity, onAdd }) {
   const precioFinal = producto.precioOferta ?? producto.precio
   const enOferta    = producto.precioOferta != null && producto.precioOferta < producto.precio
 
+  const lowStockStyle = producto.stock <= 5
+    ? { background: 'rgba(245,158,11,0.10)', color: '#B45309' }
+    : { background: 'rgba(34,197,94,0.10)', color: '#178A50' }
+  const stockBadgeStyle = producto.stock === 0
+    ? { background: 'rgba(239,68,68,0.10)', color: '#DC2626' }
+    : lowStockStyle
+  const stockText = producto.stock === 0 ? 'Sin stock' : (producto.stock <= 5 ? `Últimas ${producto.stock}` : 'Disponible')
+
+  const availableBtnStyle = producto.stock === 0
+    ? { background: '#F3F4F6', color: '#9CA3AF', border: '1px solid #E5E7EB', cursor: 'not-allowed' }
+    : { background: '#E73B33', color: '#fff', border: 'none' }
+  const btnStyle = added
+    ? { background: 'rgba(34,197,94,0.10)', color: '#178A50', border: '1px solid rgba(34,197,94,0.25)' }
+    : availableBtnStyle
+  const addLabel = added ? 'Agregado al carrito' : (producto.stock === 0 ? 'Sin stock' : 'Agregar al carrito')
+
   return (
     <div
       className="rounded-2xl overflow-hidden"
@@ -105,15 +121,9 @@ export default function AIProductCard({ producto, similarity, onAdd }) {
             {producto.stock != null && (
               <span
                 className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-                style={
-                  producto.stock === 0
-                    ? { background: 'rgba(239,68,68,0.10)', color: '#DC2626' }
-                    : producto.stock <= 5
-                    ? { background: 'rgba(245,158,11,0.10)', color: '#B45309' }
-                    : { background: 'rgba(34,197,94,0.10)', color: '#178A50' }
-                }
+                style={stockBadgeStyle}
               >
-                {producto.stock === 0 ? 'Sin stock' : producto.stock <= 5 ? `Últimas ${producto.stock}` : 'Disponible'}
+                {stockText}
               </span>
             )}
           </div>
@@ -138,15 +148,9 @@ export default function AIProductCard({ producto, similarity, onAdd }) {
           onClick={handleAdd}
           disabled={producto.stock === 0}
           className="flex-1 py-2 rounded-xl text-xs font-bold transition-all active:scale-95"
-          style={
-            added
-              ? { background: 'rgba(34,197,94,0.10)', color: '#178A50', border: '1px solid rgba(34,197,94,0.25)' }
-              : producto.stock === 0
-              ? { background: '#F3F4F6', color: '#9CA3AF', border: '1px solid #E5E7EB', cursor: 'not-allowed' }
-              : { background: '#E73B33', color: '#fff', border: 'none' }
-          }
+          style={btnStyle}
         >
-          {added ? 'Agregado al carrito' : producto.stock === 0 ? 'Sin stock' : 'Agregar al carrito'}
+          {addLabel}
         </button>
 
         <Link

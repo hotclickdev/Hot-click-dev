@@ -107,12 +107,10 @@ const sections = [
     id: 'envio-devolucion',
     title: '6. Costos de Envío en Devoluciones',
     content: (
-      <>
-        <ul>
-          <li><strong>Producto defectuoso o incorrecto:</strong> el emprendedor asume el costo del envío de devolución y del reenvío.</li>
-          <li><strong>Cambio por talla, color u otra razón del comprador:</strong> el costo de envío de ida y vuelta es responsabilidad del comprador, salvo acuerdo diferente con el emprendedor.</li>
-        </ul>
-      </>
+      <ul>
+        <li><strong>Producto defectuoso o incorrecto:</strong> el emprendedor asume el costo del envío de devolución y del reenvío.</li>
+        <li><strong>Cambio por talla, color u otra razón del comprador:</strong> el costo de envío de ida y vuelta es responsabilidad del comprador, salvo acuerdo diferente con el emprendedor.</li>
+      </ul>
     ),
   },
   {

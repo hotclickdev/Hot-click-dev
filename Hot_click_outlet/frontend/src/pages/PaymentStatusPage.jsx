@@ -42,6 +42,9 @@ function PaymentLoadingScreen({ estado, stripeApproved }) {
   }, [])
 
   const benefit = BENEFITS[benefitIdx]
+  const paymentStatusMsg = stripeApproved
+    ? 'Pago aprobado — registrando en el sistema…'
+    : 'Verificando el pago con el banco…'
 
   return (
     <MainLayout>
@@ -65,11 +68,7 @@ function PaymentLoadingScreen({ estado, stripeApproved }) {
             ¡Gracias por tu compra!
           </h2>
           <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
-            {estado === 'capturing'
-              ? 'Confirmando tu pago…'
-              : stripeApproved
-                ? 'Pago aprobado — registrando en el sistema…'
-                : 'Verificando el pago con el banco…'}
+            {estado === 'capturing' ? 'Confirmando tu pago…' : paymentStatusMsg}
           </p>
         </div>
 

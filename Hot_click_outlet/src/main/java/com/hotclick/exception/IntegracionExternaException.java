@@ -23,6 +23,14 @@ public class IntegracionExternaException extends RuntimeException {
         this.tenantId = tenantId;
     }
 
+    public IntegracionExternaException(String integracion, Tipo tipo, String message, Throwable cause) {
+        this(integracion, tipo, null, message, cause);
+    }
+
+    public IntegracionExternaException(String integracion, Tipo tipo, String message) {
+        this(integracion, tipo, null, message, null);
+    }
+
     public String getIntegracion() { return integracion; }
     public Tipo getTipo() { return tipo; }
     public Long getTenantId() { return tenantId; }

@@ -1,4 +1,5 @@
 package com.hotclick.service;
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.utils.Constants;
 
 import com.hotclick.model.Testimonio;
@@ -37,10 +38,10 @@ public class TestimonioService {
     @CacheEvict(value = "testimonios-publicos", allEntries = true)
     public Testimonio crearTestimonio(String correo, String comentario, String imagenUrl, Integer calificacion) {
         var usuario = usuarioRepo.findByCorreo(correo)
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
 
         if (calificacion != null && (calificacion < 1 || calificacion > 5))
-            throw new RuntimeException("La calificación debe ser entre 1 y 5 estrellas");
+            throw new IllegalArgumentException("La calificación debe ser entre 1 y 5 estrellas");
 
         Testimonio t = new Testimonio();
         t.setUsuario(usuario);
@@ -60,26 +61,26 @@ public class TestimonioService {
     @CacheEvict(value = "testimonios-publicos", allEntries = true)
     public Testimonio crearResena(String correo, String comentario, String imagenUrl, Long productoId, Integer calificacion) {
         var usuario = usuarioRepo.findByCorreo(correo)
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
 
         if (productoId == null)
-            throw new RuntimeException("Debes seleccionar el producto que compraste");
+            throw new IllegalArgumentException("Debes seleccionar el producto que compraste");
 
         var producto = productoRepo.findById(productoId)
-            .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Producto no encontrado"));
 
         Long compras = repo.countCompra(productoId, usuario.getId());
         if (compras == null || compras == 0)
-            throw new RuntimeException("Solo puedes reseñar productos que hayas comprado");
+            throw new IllegalArgumentException("Solo puedes reseñar productos que hayas comprado");
 
         long resenasPrevias = repo.countByUsuarioIdAndProductoIdAndTipo(usuario.getId(), productoId, "RESENA");
         if (resenasPrevias >= MAX_RESENAS_POR_PRODUCTO)
-            throw new RuntimeException("Ya alcanzaste el límite de " + MAX_RESENAS_POR_PRODUCTO + " reseñas para este producto");
+            throw new IllegalArgumentException("Ya alcanzaste el límite de " + MAX_RESENAS_POR_PRODUCTO + " reseñas para este producto");
 
         if (calificacion == null)
-            throw new RuntimeException("La calificación es obligatoria");
+            throw new IllegalArgumentException("La calificación es obligatoria");
         if (calificacion < 1 || calificacion > 5)
-            throw new RuntimeException("La calificación debe ser entre 1 y 5 estrellas");
+            throw new IllegalArgumentException("La calificación debe ser entre 1 y 5 estrellas");
 
         Testimonio t = new Testimonio();
         t.setUsuario(usuario);
@@ -122,7 +123,7 @@ public class TestimonioService {
     /** Testimonios y reseñas del usuario autenticado. */
     public List<Map<String, Object>> listarPorUsuario(String correo) {
         var usuario = usuarioRepo.findByCorreo(correo)
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
         return repo.findByUsuarioIdOrderByFechaCreacionDesc(usuario.getId())
             .stream()
             .map(t -> {
@@ -145,7 +146,7 @@ public class TestimonioService {
      */
     public List<Map<String, Object>> productosParaResenar(String correo) {
         var usuario = usuarioRepo.findByCorreo(correo)
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
 
         var pedidos = pedidoRepo.findEntregadosConItemsByUsuarioId(usuario.getId());
 
@@ -172,7 +173,7 @@ public class TestimonioService {
     @CacheEvict(value = "testimonios-publicos", allEntries = true)
     public Testimonio aprobar(Long id) {
         Testimonio t = repo.findById(id)
-            .orElseThrow(() -> new RuntimeException("Testimonio no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Testimonio no encontrado"));
         t.setEstado("APROBADO");
         t.setFechaAprobacion(LocalDateTime.now(Constants.ZONA_CR));
         return repo.save(t);
@@ -181,7 +182,7 @@ public class TestimonioService {
     @CacheEvict(value = "testimonios-publicos", allEntries = true)
     public Testimonio rechazar(Long id) {
         Testimonio t = repo.findById(id)
-            .orElseThrow(() -> new RuntimeException("Testimonio no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Testimonio no encontrado"));
         t.setEstado("RECHAZADO");
         return repo.save(t);
     }

@@ -43,9 +43,11 @@ export default function KardexDrawer({ producto, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-      onClick={onClose} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
+      role="button" tabIndex={0}
+      onClick={onClose} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.currentTarget.click(); else if (e.key === 'Escape') onClose() }}>
       <div className="w-full max-w-2xl h-full overflow-y-auto flex flex-col"
         style={{ backgroundColor: 'var(--hc-surface)', boxShadow: '-4px 0 32px rgba(0,0,0,0.4)' }}
+        role="button" tabIndex={0}
         onClick={e => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
 
         {/* Header */}
@@ -74,16 +76,23 @@ export default function KardexDrawer({ producto, onClose }) {
 
         {/* Contenido */}
         <div className="flex-1 p-4">
-          {loading ? (
-            <div className="flex justify-center py-16">
-              <div className="w-8 h-8 border-2 rounded-full animate-spin"
-                style={{ borderColor: 'var(--hc-accent)', borderTopColor: 'transparent' }}/>
-            </div>
-          ) : movimientos.length === 0 ? (
-            <div className="text-center py-16" style={{ color: 'var(--hc-muted)' }}>
-              <p className="text-sm">Sin movimientos de stock registrados</p>
-            </div>
-          ) : (
+          {(() => {
+            if (loading) {
+              return (
+                <div className="flex justify-center py-16">
+                  <div className="w-8 h-8 border-2 rounded-full animate-spin"
+                    style={{ borderColor: 'var(--hc-accent)', borderTopColor: 'transparent' }}/>
+                </div>
+              )
+            }
+            if (movimientos.length === 0) {
+              return (
+                <div className="text-center py-16" style={{ color: 'var(--hc-muted)' }}>
+                  <p className="text-sm">Sin movimientos de stock registrados</p>
+                </div>
+              )
+            }
+            return (
             <div className="space-y-2">
               {movimientos.map((m, i) => (
                 <div key={m.id ?? i} className="rounded-xl p-3 flex items-center gap-3"
@@ -130,7 +139,8 @@ export default function KardexDrawer({ producto, onClose }) {
                 </div>
               ))}
             </div>
-          )}
+            )
+          })()}
         </div>
       </div>
     </div>

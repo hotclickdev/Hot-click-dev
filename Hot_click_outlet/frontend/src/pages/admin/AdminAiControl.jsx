@@ -21,7 +21,8 @@ function Toggle({ activo, onChange, disabled }) {
 }
 
 function PctBar({ pct, limite }) {
-  const color = pct >= 90 ? '#f87171' : pct >= 70 ? '#fbbf24' : '#34d399'
+  const midColor = pct >= 70 ? '#fbbf24' : '#34d399'
+  const color = pct >= 90 ? '#f87171' : midColor
   if (limite === 0) return <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>N/A</span>
   return (
     <div className="flex items-center gap-2">
@@ -94,7 +95,7 @@ export default function AdminAiControl() {
     </div>
   )
 
-  const { empresas = [], alertas = [], costoTotal = 0, totalLlamadas = 0, mes = '' } = data ?? {}
+  const { empresas = [], alertas = [], costoTotal = 0, totalLlamadas = 0 } = data ?? {}
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">

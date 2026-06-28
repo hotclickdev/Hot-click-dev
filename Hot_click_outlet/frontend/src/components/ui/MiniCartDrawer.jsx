@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import useCartStore from '@/store/cartStore'
-import useAuthStore from '@/store/authStore'
 import useUiStore from '@/store/uiStore'
 import ShippingProgress from '@/components/ui/ShippingProgress'
 import { formatPrice } from '@/utils/format'
@@ -84,7 +83,7 @@ export default function MiniCartDrawer() {
               md:inset-x-auto md:right-0 md:top-0 md:bottom-auto md:w-96 md:h-full md:max-h-none md:rounded-none"
             style={{
               background: 'var(--hc-surface)',
-              borderTop: !isDesktop ? '1px solid var(--hc-border)' : undefined,
+              borderTop: isDesktop ? undefined : '1px solid var(--hc-border)',
               borderLeft: isDesktop ? '1px solid var(--hc-border)' : undefined,
               boxShadow: isDesktop ? '-8px 0 48px rgba(0,0,0,0.3)' : '0 -8px 48px rgba(0,0,0,0.3)',
             }}

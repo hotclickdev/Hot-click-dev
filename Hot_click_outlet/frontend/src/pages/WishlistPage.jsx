@@ -80,7 +80,20 @@ export default function WishlistPage() {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           <AnimatePresence>
-            {items.map((product, i) => (
+            {items.map((product, i) => {
+              const activeClass = recentlyAdded.has(product.id)
+                ? 'bg-emerald-500 text-white'
+                : 'bg-[#4f7cff] hover:bg-[#3d6ee0] text-white'
+              const btnClass = product.stock === 0
+                ? 'bg-white/5 text-[#8e8e9a] cursor-not-allowed'
+                : activeClass
+              const activeLabel = recentlyAdded.has(product.id)
+                ? t('wishlist.addedFeedback')
+                : t('wishlist.addToCart')
+              const btnLabel = product.stock === 0
+                ? t('wishlist.outOfStock')
+                : activeLabel
+              return (
               <motion.div
                 key={product.id}
                 layout
@@ -136,23 +149,14 @@ export default function WishlistPage() {
                   <button
                     onClick={() => handleAddToCart(product)}
                     disabled={product.stock === 0}
-                    className={`w-full h-8 rounded-xl text-xs font-semibold transition-all duration-200 ${
-                      product.stock === 0
-                        ? 'bg-white/5 text-[#8e8e9a] cursor-not-allowed'
-                        : recentlyAdded.has(product.id)
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-[#4f7cff] hover:bg-[#3d6ee0] text-white'
-                    }`}
+                    className={`w-full h-8 rounded-xl text-xs font-semibold transition-all duration-200 ${btnClass}`}
                   >
-                    {product.stock === 0
-                      ? t('wishlist.outOfStock')
-                      : recentlyAdded.has(product.id)
-                      ? t('wishlist.addedFeedback')
-                      : t('wishlist.addToCart')}
+                    {btnLabel}
                   </button>
                 </div>
               </motion.div>
-            ))}
+              )
+            })}
           </AnimatePresence>
         </div>
       </div>

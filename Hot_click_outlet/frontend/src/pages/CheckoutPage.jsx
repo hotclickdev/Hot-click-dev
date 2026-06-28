@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
@@ -27,9 +27,15 @@ function formatPhone(v) {
 // ── SmartField component ────────────────────────────────────────────────────
 function SmartField({ label, id, value, onChange, onBlur, error, success, placeholder, type = 'text', maxLength, multiline, rows = 3, helpText }) {
   const Tag = multiline ? 'textarea' : 'input'
+  const labelSuccessColor = success ? '#34d399' : 'var(--hc-muted)'
+  const labelColor = error ? '#f87171' : labelSuccessColor
+  const autoCompleteForEmail = type === 'email' ? 'email' : 'off'
+  const autoCompleteValue = type === 'tel' ? 'tel' : autoCompleteForEmail
+  const borderSuccess = success ? '1.5px solid #34d399' : '1.5px solid var(--hc-border)'
+  const borderColor = error ? '1.5px solid #f87171' : borderSuccess
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className="text-xs font-medium" style={{ color: error ? '#f87171' : success ? '#34d399' : 'var(--hc-muted)' }}>
+      <label htmlFor={id} className="text-xs font-medium" style={{ color: labelColor }}>
         {label}
       </label>
       <div className="relative">
@@ -42,13 +48,11 @@ function SmartField({ label, id, value, onChange, onBlur, error, success, placeh
           placeholder={placeholder}
           maxLength={maxLength}
           rows={multiline ? rows : undefined}
-          autoComplete={type === 'tel' ? 'tel' : type === 'email' ? 'email' : 'off'}
+          autoComplete={autoCompleteValue}
           className="w-full rounded-xl px-4 py-3 text-sm bg-white/5 outline-none transition-all duration-200 resize-none"
           style={{
             color: 'var(--hc-text)',
-            border: error   ? '1.5px solid #f87171' :
-                    success ? '1.5px solid #34d399' :
-                              '1.5px solid var(--hc-border)',
+            border: borderColor,
           }}
           onFocus={(e) => { e.target.style.borderColor = error ? '#f87171' : 'var(--hc-accent)'; e.target.style.boxShadow = error ? '0 0 0 3px rgba(248,113,113,0.1)' : '0 0 0 3px rgba(23,71,168,0.12)' }}
           onBlurCapture={(e) => { e.target.style.boxShadow = '' }}
@@ -342,16 +346,16 @@ export default function CheckoutPage() {
     // Validar datos requeridos para SINPE
     if (metodoPago === 'SINPE') {
       let valid = true
-      if (!sinpeNombre.trim()) { setSinpeNombreErr('El nombre completo es requerido'); valid = false }
-      else setSinpeNombreErr('')
-      if (!sinpeCedula.trim()) { setSinpeCedulaErr('El número de cédula es requerido'); valid = false }
-      else setSinpeCedulaErr('')
+      if (sinpeNombre.trim()) { setSinpeNombreErr('') }
+      else { setSinpeNombreErr('El nombre completo es requerido'); valid = false }
+      if (sinpeCedula.trim()) { setSinpeCedulaErr('') }
+      else { setSinpeCedulaErr('El número de cédula es requerido'); valid = false }
       if (!valid) return
     }
 
     registrarConsentimiento('CHECKOUT')
 
-    const phoneEfectivo = !token ? guestPhone : telefono
+    const phoneEfectivo = token ? telefono : guestPhone
     const opEnvio = SHIPPING_OPTIONS.find(o => o.value === metodoEnvio)
     const notasFull = [
       notas.trim(),
@@ -381,7 +385,6 @@ export default function CheckoutPage() {
   }
 
   const handleSinpeWhatsApp = () => {
-    const productos = (pagoData?._itemsSnapshot ?? []).map((i) => `• ${i.nombre} x${i.cantidad}`).join('\n') || '(ver pedido)'
     const numeroPedido = pagoData?.numeroPedido ?? ''
     const msg = encodeURIComponent(
       `Hola HotClick 👋\n\n*Comprobante SINPE Móvil*\n\n` +
@@ -721,6 +724,16 @@ export default function CheckoutPage() {
     )
   }
 
+  const gcInvalidBorder = gcEstado === 'invalid' ? '#f87171' : 'var(--hc-border)'
+  const gcBorderColor = gcEstado === 'valid' ? '#10b981' : gcInvalidBorder
+  const cuponInvalidBorder = cuponEstado === 'invalid' ? '#f87171' : 'var(--hc-border)'
+  const cuponBorderColor = cuponEstado === 'valid' ? '#10b981' : cuponInvalidBorder
+  const payMethodIconFallback = metodoPago === 'EFECTIVO' ? <EfectivoIcon selected /> : <LockIcon />
+  const payMethodIcon = metodoPago === 'SINPE' ? <SinpeIcon selected /> : payMethodIconFallback
+  const payEfectivoLabel = `Confirmar pedido · ${formatPrice(totalFinal)} en efectivo`
+  const payLabelFallback = metodoPago === 'EFECTIVO' ? payEfectivoLabel : `Pagá ${formatPrice(totalFinal)}`
+  const payLabel = metodoPago === 'SINPE' ? `Pagá con SINPE · ${formatPrice(totalFinal)}` : payLabelFallback
+
   return (
     <MainLayout>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
@@ -873,7 +886,7 @@ export default function CheckoutPage() {
                       <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>{op.sub}</p>
                     </div>
                     <span className={`font-semibold text-sm shrink-0 ${op.precio === 0 ? 'text-[#4f7cff]' : ''}`}
-                      style={op.precio !== 0 ? { color: 'var(--hc-text)' } : {}}>
+                      style={op.precio === 0 ? {} : { color: 'var(--hc-text)' }}>
                       {op.precio === 0 ? 'Gratis' : formatPrice(op.precio)}
                     </span>
                   </label>
@@ -1136,7 +1149,7 @@ export default function CheckoutPage() {
               const errorStr = typeof error === 'string' ? error : JSON.stringify(error)
               const isStockError = /stock insuficiente|stock\s*=\s*0|disponible=0/i.test(errorStr)
               // Extrae nombre del producto del mensaje "Stock insuficiente para 'X': ..."
-              const stockMatch = errorStr.match(/para\s+'([^']+)'/)
+              const stockMatch = /para\s+'([^']+)'/.exec(errorStr)
               const productoBloqueado = stockMatch?.[1] ?? null
               return (
                 <motion.div
@@ -1248,7 +1261,7 @@ export default function CheckoutPage() {
                       className="flex-1 px-3 py-2 rounded-xl text-xs outline-none transition-all"
                       style={{
                         background: 'var(--hc-bg)',
-                        border: `1.5px solid ${gcEstado === 'valid' ? '#10b981' : gcEstado === 'invalid' ? '#f87171' : 'var(--hc-border)'}`,
+                        border: `1.5px solid ${gcBorderColor}`,
                         color: 'var(--hc-text)',
                         letterSpacing: '0.04em',
                       }}
@@ -1295,7 +1308,7 @@ export default function CheckoutPage() {
                     className="flex-1 px-3 py-2 rounded-xl text-xs outline-none transition-all"
                     style={{
                       background: 'var(--hc-bg)',
-                      border: `1.5px solid ${cuponEstado === 'valid' ? '#10b981' : cuponEstado === 'invalid' ? '#f87171' : 'var(--hc-border)'}`,
+                      border: `1.5px solid ${cuponBorderColor}`,
                       color: 'var(--hc-text)',
                       letterSpacing: '0.05em',
                     }}
@@ -1394,13 +1407,8 @@ export default function CheckoutPage() {
                 disabled={!aceptaDatos || estado === 'loading' || estado === 'redirecting' || intentos >= maxIntentos}
                 className="hc-btn hc-btn-primary w-full !h-12 text-[15px] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {metodoPago === 'SINPE' ? <SinpeIcon selected /> : metodoPago === 'EFECTIVO' ? <EfectivoIcon selected /> : <LockIcon />}
-                {metodoPago === 'SINPE'
-                  ? `Pagá con SINPE · ${formatPrice(totalFinal)}`
-                  : metodoPago === 'EFECTIVO'
-                    ? `Confirmar pedido · ${formatPrice(totalFinal)} en efectivo`
-                    : `Pagá ${formatPrice(totalFinal)}`
-                }
+                {payMethodIcon}
+                {payLabel}
               </button>
 
               <p className="text-[10px] text-center leading-relaxed flex items-center justify-center gap-1" style={{ color: 'var(--hc-muted)' }}>

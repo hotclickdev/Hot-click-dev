@@ -76,6 +76,13 @@ export default function ImportExportBar({
   // Cuando se muestra preview de import, usar las columnas reales del archivo, no las del export
   const visibleCols = preview.length > 0 ? Object.keys(preview[0]) : (columns ?? [])
 
+  const importStatusMsg = importOk
+    ? <p className="text-[#4ade80] text-xs flex-1">{t('importExport.success')}</p>
+    : <p className="text-[#8e8e9a] text-xs flex-1">{t('importExport.previewNote')}</p>
+  const confirmLabel = importOk
+    ? t('importExport.ready')
+    : t('importExport.confirmImport', { count: preview.length })
+
   return (
     <>
       {/* ─── Botones ─────────────────────────────────── */}
@@ -204,13 +211,7 @@ export default function ImportExportBar({
             <div className="p-4 border-t border-white/8 flex items-center justify-between gap-3">
               {importErr ? (
                 <p className="text-red-400 text-xs flex-1">{importErr}</p>
-              ) : importOk ? (
-                <p className="text-[#4ade80] text-xs flex-1">{t('importExport.success')}</p>
-              ) : (
-                <p className="text-[#8e8e9a] text-xs flex-1">
-                  {t('importExport.previewNote')}
-                </p>
-              )}
+              ) : importStatusMsg}
               <div className="flex gap-2">
                 <button
                   onClick={() => { setModal(false); setImportErr('') }}
@@ -223,7 +224,7 @@ export default function ImportExportBar({
                   disabled={importing || importOk || !onImport}
                   className="px-4 py-2 rounded-lg bg-[#4f7cff] hover:bg-[#3d6ae8] text-white text-sm font-medium transition-colors disabled:opacity-50"
                 >
-                  {importing ? t('importExport.importing') : importOk ? t('importExport.ready') : t('importExport.confirmImport', { count: preview.length })}
+                  {importing ? t('importExport.importing') : confirmLabel}
                 </button>
               </div>
             </div>

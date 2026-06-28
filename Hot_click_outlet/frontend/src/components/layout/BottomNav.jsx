@@ -12,10 +12,11 @@ export default function BottomNav() {
 
   if (location.pathname.startsWith('/admin')) return null
 
+  const cartBadge = cartCount > 9 ? '9+' : `${cartCount}`
   const items = [
     { href: '/', label: t('bnav.inicio'), exact: true, icon: HomeIcon },
     { href: '/productos', label: t('bnav.tienda'), icon: ShopIcon },
-    { href: '/carrito', label: t('bnav.carrito'), icon: CartNavIcon, badge: cartCount > 0 ? (cartCount > 9 ? '9+' : String(cartCount)) : null },
+    { href: '/carrito', label: t('bnav.carrito'), icon: CartNavIcon, badge: cartCount > 0 ? cartBadge : null },
     { href: token ? '/perfil' : '/login', label: t('bnav.cuenta'), icon: AccountIcon },
   ]
 

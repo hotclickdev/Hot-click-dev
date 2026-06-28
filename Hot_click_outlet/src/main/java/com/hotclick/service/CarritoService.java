@@ -1,5 +1,6 @@
 package com.hotclick.service;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.model.Carrito;
 import com.hotclick.model.CarritoItem;
@@ -53,13 +54,13 @@ public class CarritoService {
 
         // SELECT FOR UPDATE: evita doble-reserva concurrente del mismo producto
         Producto producto = productoRepository.findByIdForUpdate(productoId)
-            .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
 
         if (producto.getEstado() != Constants.ESTADO_ACTIVO) {
-            throw new RuntimeException("Producto no disponible");
+            throw new IllegalStateException("Producto no disponible");
         }
         if (Boolean.TRUE.equals(producto.getEsUnico()) && Boolean.TRUE.equals(producto.getVendido())) {
-            throw new RuntimeException("Este artículo único ya fue vendido");
+            throw new IllegalStateException("Este artículo único ya fue vendido");
         }
 
         // Reservar stock (valida stockDisponible = stockActual - stockReservado >= cantidad)
@@ -106,7 +107,7 @@ public class CarritoService {
 
     private Carrito crearCarrito(Usuario usuario, Long empresaId) {
         Empresa empresa = empresaRepository.findById(empresaId)
-            .orElseThrow(() -> new RuntimeException("Empresa no encontrada: " + empresaId));
+            .orElseThrow(() -> new RecursoNoEncontradoException("Empresa", empresaId));
         Carrito carrito = new Carrito();
         carrito.setUsuarioFinal(usuario);
         carrito.setEmpresa(empresa);

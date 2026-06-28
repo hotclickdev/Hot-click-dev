@@ -135,18 +135,20 @@ export default function BlogPage() {
 
         {/* Contenido */}
         <div className="max-w-7xl mx-auto px-5 sm:px-8" style={{ paddingTop: 48, paddingBottom: 64 }}>
-          {loading ? (
+          {loading && (
             <div style={{ textAlign: 'center', padding: 80, color: 'var(--hc-muted)' }}>
               <div style={{ width: 36, height: 36, borderRadius: '50%', border: '3px solid var(--hc-border)', borderTopColor: 'var(--hc-accent)', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
               Cargando artículos...
             </div>
-          ) : entradas.length === 0 ? (
+          )}
+          {!loading && entradas.length === 0 && (
             <div style={{ textAlign: 'center', padding: 80 }}>
               <p style={{ fontSize: 48, margin: '0 0 16px' }}>📝</p>
               <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--hc-text)', margin: 0 }}>Próximamente</p>
               <p style={{ fontSize: 14, color: 'var(--hc-muted)', marginTop: 8 }}>Estamos preparando contenido para vos.</p>
             </div>
-          ) : (
+          )}
+          {!loading && entradas.length > 0 && (
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
