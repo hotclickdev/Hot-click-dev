@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.SolicitudServicio;
 import com.hotclick.repository.SolicitudServicioRepository;
@@ -78,7 +79,7 @@ public class SolicitudServicioController {
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
             var usuario = usuarioRepo.findByCorreo(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
             List<SolicitudServicio> lista = solicitudRepo.findByUsuarioIdOrderByFechaCreacionDesc(usuario.getId());
             return ResponseEntity.ok(ResponseDTO.success("Solicitudes obtenidas", lista));
         } catch (Exception e) {
@@ -100,7 +101,7 @@ public class SolicitudServicioController {
             @RequestBody Map<String, String> body) {
         try {
             SolicitudServicio s = solicitudRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Solicitud", id));
             String nuevoEstado = body.get("estado");
             if (nuevoEstado == null || nuevoEstado.isBlank())
                 return ResponseEntity.badRequest().body(ResponseDTO.error("Estado requerido"));

@@ -300,7 +300,7 @@ export default function AIChat({
                           {m.failed && (
                             <button
                               onClick={() => {
-                                setMensajes(prev => prev.filter(x => x !== m))
+                                setMensajes(removeMsg(m))
                                 enviar(m.failedQuery)
                               }}
                               className="flex items-center gap-1 mt-2 text-[11px] font-medium transition-opacity hover:opacity-80"

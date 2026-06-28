@@ -5,6 +5,8 @@ import { productService, normalizeProduct } from '@/services/productService'
 import { useToast } from '@/components/ui/Toast'
 import { formatPrice } from '@/utils/format'
 
+const findById = (list, id) => list.find(i => i.id === id)
+
 const LOW_STOCK = 3
 const CHECK_KEY = 'hc-wishlist-alert-ts'
 const INTERVAL_MS = 4 * 60 * 60 * 1000  // re-check every 4 h
@@ -48,9 +50,9 @@ export function useWishlistAlert() {
         }
 
         // ── Bajada de precio ──
-        fresh.forEach((current) => {
-          const saved = items.find((i) => i.id === current.id)
-          if (!saved || !current.precio) return
+        for (const current of fresh) {
+          const saved = findById(items, current.id)
+          if (!saved || !current.precio) continue
           const drop = saved.precio - current.precio
           if (drop >= 1000) {
             toast({
@@ -60,7 +62,7 @@ export function useWishlistAlert() {
             })
             updatePrice(current.id, current.precio)
           }
-        })
+        }
       })
       .catch(() => {})
   }, []) // run once on mount — interval guards re-checking

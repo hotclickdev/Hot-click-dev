@@ -8,6 +8,32 @@ function clasificarError(code) {
   return leve.some(e => code?.toLowerCase().includes(e)) ? 'leve' : 'sistema'
 }
 
+function buildInitialMessages(tipo, numeroPedido, metodoPago, errorCode, usuarioDatos) {
+  if (tipo === 'success') {
+    const datosConocidos = []
+    if (usuarioDatos.nombre)    datosConocidos.push(`nombre: ${usuarioDatos.nombre}`)
+    if (usuarioDatos.telefono)  datosConocidos.push(`teléfono: ${usuarioDatos.telefono}`)
+    if (usuarioDatos.direccion) datosConocidos.push(`dirección: ${usuarioDatos.direccion}`)
+    const mensajeInicial = '¡Tu compra fue exitosa! 🎉 Para coordinar la entrega, necesito confirmar algunos datos tuyos.'
+    const autoQuery = datosConocidos.length > 0
+      ? `Mi pedido es el #${numeroPedido}. Mis datos son: ${datosConocidos.join(', ')}. ¿Están correctos y qué sigue?`
+      : `Mi pedido es el #${numeroPedido} pagado con ${metodoPago}. ¿Qué datos necesitás para la entrega?`
+    return { mensajeInicial, autoQuery }
+  }
+  const tipoError = clasificarError(errorCode)
+  if (tipoError === 'leve') {
+    return {
+      mensajeInicial: 'Hubo un problema con tu método de pago. No te preocupés, tu carrito sigue intacto.',
+      autoQuery: 'Tuve un problema al pagar. ¿Qué opciones tengo?',
+    }
+  }
+  const numPedidoStr = numeroPedido ? ` #${numeroPedido}` : ''
+  return {
+    mensajeInicial: 'Ocurrió un inconveniente en el proceso. Tu pedido quedó registrado como pendiente y nos pondremos en contacto.',
+    autoQuery: `Tuve un problema al completar mi pedido${numPedidoStr}. ¿Qué sigue?`,
+  }
+}
+
 function TypingDots() {
   return (
     <span className="inline-flex items-center gap-[3px]">
@@ -59,33 +85,7 @@ export default function CheckoutAssistant({
   useEffect(() => {
     if (initialized.current) return
     initialized.current = true
-
-    let mensajeInicial = ''
-    let autoQuery = ''
-
-    if (tipo === 'success') {
-      mensajeInicial = '¡Tu compra fue exitosa! 🎉 Para coordinar la entrega, necesito confirmar algunos datos tuyos.'
-      // Construir auto-query con datos ya conocidos
-      const datosConocidos = []
-      if (usuarioDatos.nombre)    datosConocidos.push(`nombre: ${usuarioDatos.nombre}`)
-      if (usuarioDatos.telefono)  datosConocidos.push(`teléfono: ${usuarioDatos.telefono}`)
-      if (usuarioDatos.direccion) datosConocidos.push(`dirección: ${usuarioDatos.direccion}`)
-
-      autoQuery = datosConocidos.length > 0
-        ? `Mi pedido es el #${numeroPedido}. Mis datos son: ${datosConocidos.join(', ')}. ¿Están correctos y qué sigue?`
-        : `Mi pedido es el #${numeroPedido} pagado con ${metodoPago}. ¿Qué datos necesitás para la entrega?`
-    } else {
-      const tipoError = clasificarError(errorCode)
-      if (tipoError === 'leve') {
-        mensajeInicial = 'Hubo un problema con tu método de pago. No te preocupés, tu carrito sigue intacto.'
-        autoQuery = 'Tuve un problema al pagar. ¿Qué opciones tengo?'
-      } else {
-        mensajeInicial = 'Ocurrió un inconveniente en el proceso. Tu pedido quedó registrado como pendiente y nos pondremos en contacto.'
-        const numPedidoStr = numeroPedido ? ` #${numeroPedido}` : ''
-        autoQuery = `Tuve un problema al completar mi pedido${numPedidoStr}. ¿Qué sigue?`
-      }
-    }
-
+    const { mensajeInicial, autoQuery } = buildInitialMessages(tipo, numeroPedido, metodoPago, errorCode, usuarioDatos)
     setMensajes([{ rol: 'assistant', texto: mensajeInicial }])
     setTimeout(() => enviarDirecto(autoQuery), 450)
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -155,6 +155,9 @@ export default function CheckoutAssistant({
 
   const isSuccess = tipo === 'success'
   const accentColor = isSuccess ? '#22c55e' : 'var(--hc-accent)'
+  const subtitleText = isSuccess
+    ? 'Confirmá tus datos para que podamos contactarte.'
+    : 'Te ayudamos a resolver el problema.'
 
   return (
     <motion.div
@@ -181,9 +184,7 @@ export default function CheckoutAssistant({
             {isSuccess ? 'Coordiná tu entrega' : 'Asistente de soporte'}
           </p>
           <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-            {cargando ? 'Procesando...' : isSuccess
-              ? 'Confirmá tus datos para que podamos contactarte.'
-              : 'Te ayudamos a resolver el problema.'}
+            {cargando ? 'Procesando...' : subtitleText}
           </p>
         </div>
       </div>

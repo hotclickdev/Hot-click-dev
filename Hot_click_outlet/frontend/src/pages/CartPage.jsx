@@ -69,20 +69,19 @@ export default function CartPage() {
 
   useEffect(() => {
     const cartIds = new Set(items.map((i) => i.id))
-    productService.getDestacados()
-      .then(({ data }) => {
+    const notInCart = (p) => !cartIds.has(p.id) && p.stock > 0
+    async function loadCrossSell() {
+      try {
+        const { data } = await productService.getDestacados()
         const all = (Array.isArray(data) ? data : data?.content ?? []).map(normalizeProduct)
-        const filtered = all.filter((p) => !cartIds.has(p.id) && p.stock > 0).slice(0, 4)
-        if (filtered.length > 0) {
-          setCrossSell(filtered)
-        } else {
-          return productService.getAll(0, 12).then(({ data: d }) => {
-            const fallback = (d.content ?? d ?? []).map(normalizeProduct)
-            setCrossSell(fallback.filter((p) => !cartIds.has(p.id) && p.stock > 0).slice(0, 4))
-          })
-        }
-      })
-      .catch(() => {})
+        const filtered = all.filter(notInCart).slice(0, 4)
+        if (filtered.length > 0) { setCrossSell(filtered); return }
+        const { data: d } = await productService.getAll(0, 12)
+        const fallback = (d.content ?? d ?? []).map(normalizeProduct)
+        setCrossSell(fallback.filter(notInCart).slice(0, 4))
+      } catch {}
+    }
+    loadCrossSell()
   }, [])
 
   const handleCrossAdd = (product) => {
