@@ -120,7 +120,7 @@
             <version>1.17.2</version>
         </dependency>
 
-        <!-- Clerk — verificación de JWTs OAuth (Google, Apple, Microsoft) via JWKS -->
+<!-- Clerk — verificación de JWTs OAuth (Google, Apple, Microsoft) via JWKS -->
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-oauth2-jose</artifactId>
