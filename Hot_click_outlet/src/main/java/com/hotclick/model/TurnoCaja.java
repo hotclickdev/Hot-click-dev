@@ -68,11 +68,9 @@ public class TurnoCaja {
 
     public Usuario getUsuario() { return usuario; }
     public void setUsuario(Usuario usuario) { this.usuario = usuario; }
-    public Long getUsuarioId() { return usuario != null ? usuario.getId() : null; }
 
     public Empresa getEmpresa() { return empresa; }
     public void setEmpresa(Empresa empresa) { this.empresa = empresa; }
-    public Long getEmpresaId() { return empresa != null ? empresa.getId() : null; }
 
     public LocalDateTime getFechaApertura() { return fechaApertura; }
     public void setFechaApertura(LocalDateTime fechaApertura) { this.fechaApertura = fechaApertura; }

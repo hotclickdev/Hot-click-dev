@@ -55,7 +55,6 @@ public class Proveedor {
 
     public Empresa getEmpresa() { return empresa; }
     public void setEmpresa(Empresa empresa) { this.empresa = empresa; }
-    public Long getEmpresaId() { return empresa != null ? empresa.getId() : null; }
 
     public Integer getEstado() { return estado; }
     public void setEstado(Integer estado) { this.estado = estado; }
