@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,7 +44,7 @@ public class SecurityDetectionService {
     private static final Logger log = LoggerFactory.getLogger(SecurityDetectionService.class);
 
     @Autowired private SecurityAlertRepository alertRepo;
-    @Autowired private SecurityAuditService    auditService;
+    @Lazy @Autowired private SecurityAuditService    auditService;
     @Autowired private ResendEmailService      emailService;
 
     @Value("${security.alert.email:hotclick.cr@gmail.com}")
