@@ -94,8 +94,11 @@ public class ImageModerationService {
             return new ModerationResult(true, null);
 
         } catch (InvalidImageFormatException e) {
-            log.warn("[Moderación] Imagen inválida para Rekognition: {}", e.getMessage());
-            return new ModerationResult(false, "La imagen no pudo ser procesada");
+            // Rekognition solo soporta JPEG/PNG. Formatos como WebP/AVIF/HEIC son válidos
+            // para el marketplace (ver SupabaseStorageService) pero Rekognition no puede leerlos:
+            // fail-open igual que la rama de abajo, la defensa primaria son los magic bytes.
+            log.warn("[Moderación] Rekognition no soporta el formato de esta imagen, fail-open: {}", e.getMessage());
+            return new ModerationResult(true, null);
         } catch (Exception e) {
             log.warn("[Moderación] Rekognition no disponible, fail-open: {}", e.getMessage());
             return new ModerationResult(true, null);

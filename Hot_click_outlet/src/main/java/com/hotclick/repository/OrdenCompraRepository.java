@@ -10,12 +10,12 @@ import java.util.Optional;
 public interface OrdenCompraRepository extends JpaRepository<OrdenCompra, Long> {
 
     @Query("SELECT o FROM OrdenCompra o LEFT JOIN FETCH o.items i LEFT JOIN FETCH i.producto " +
-           "LEFT JOIN FETCH o.proveedor LEFT JOIN FETCH o.usuario " +
+           "LEFT JOIN FETCH o.proveedor LEFT JOIN FETCH o.usuario u LEFT JOIN FETCH u.roles " +
            "WHERE o.empresa.id = :empresaId ORDER BY o.fechaOrden DESC")
     List<OrdenCompra> findByEmpresaIdConDetalles(@Param("empresaId") Long empresaId);
 
     @Query("SELECT o FROM OrdenCompra o LEFT JOIN FETCH o.items i LEFT JOIN FETCH i.producto " +
-           "LEFT JOIN FETCH o.proveedor LEFT JOIN FETCH o.usuario WHERE o.id = :id")
+           "LEFT JOIN FETCH o.proveedor LEFT JOIN FETCH o.usuario u LEFT JOIN FETCH u.roles WHERE o.id = :id")
     Optional<OrdenCompra> findByIdConDetalles(@Param("id") Long id);
 
     /** Total de compras a proveedor RECIBIDAS en el período — para contraste de COGS en reportes. */

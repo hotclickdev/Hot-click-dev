@@ -1,5 +1,6 @@
 package com.hotclick.model;
 import com.hotclick.utils.Constants;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -13,10 +14,12 @@ public class TurnoCaja {
     @Column(name = "id_turno")
     private Long id;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_id_usuario", nullable = false)
     private Usuario usuario;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_id_empresa", nullable = false)
     private Empresa empresa;
@@ -65,9 +68,11 @@ public class TurnoCaja {
 
     public Usuario getUsuario() { return usuario; }
     public void setUsuario(Usuario usuario) { this.usuario = usuario; }
+    public Long getUsuarioId() { return usuario != null ? usuario.getId() : null; }
 
     public Empresa getEmpresa() { return empresa; }
     public void setEmpresa(Empresa empresa) { this.empresa = empresa; }
+    public Long getEmpresaId() { return empresa != null ? empresa.getId() : null; }
 
     public LocalDateTime getFechaApertura() { return fechaApertura; }
     public void setFechaApertura(LocalDateTime fechaApertura) { this.fechaApertura = fechaApertura; }
