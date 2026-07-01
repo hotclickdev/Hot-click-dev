@@ -93,6 +93,23 @@ public class DataSeeder implements ApplicationRunner {
                 .ifPresent(rol -> admin.getRoles().add(rol));
             usuarioRepository.save(admin);
         }
+
+        // Garantizar rol ADMIN a cuenta secundaria configurada por env var
+        String correoExtra = System.getenv("ADMIN_EMAIL");
+        if (correoExtra != null && !correoExtra.isBlank()) {
+            usuarioRepository.findByCorreo(correoExtra.trim().toLowerCase()).ifPresent(u -> {
+                u.setEstado(Constants.ESTADO_ACTIVO);
+                u.setIntentosFallidos(0);
+                u.setBloqueadoHasta(null);
+                boolean tieneAdmin = u.getRoles().stream()
+                    .anyMatch(r -> r.getNombreRol().equals(Constants.ROL_ADMIN));
+                if (!tieneAdmin) {
+                    rolRepository.findByNombreRol(Constants.ROL_ADMIN)
+                        .ifPresent(rol -> u.getRoles().add(rol));
+                }
+                usuarioRepository.save(u);
+            });
+        }
     }
 
     private void seedBodegaDefault() {
