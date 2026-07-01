@@ -109,7 +109,7 @@ function Burbuja({ msg, onAdd, onCategoryFilter }) {
             className={`px-3 py-2 rounded-2xl text-xs leading-relaxed ${isUser ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}
             style={isUser
               ? { backgroundColor: 'var(--hc-accent)', color: '#fff' }
-              : { backgroundColor: 'rgba(255,255,255,0.09)', color: '#e2e2e8' }}
+              : { backgroundColor: 'rgba(255,255,255,0.12)', color: '#F0F2F5', fontWeight: 400 }}
           >
             {msg.texto}
           </div>

@@ -153,8 +153,8 @@ export default function ChatModal() {
               </button>
             </div>
 
-            {/* Cuerpo */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 min-h-0">
+            {/* Cuerpo — sin scroll propio; AIChat maneja su layout interno */}
+            <div className="flex-1 min-h-0 overflow-hidden">
               <AnimatePresence mode="wait">
                 {checkoutMode ? (
                   <motion.div
@@ -163,6 +163,7 @@ export default function ChatModal() {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -24 }}
                     transition={{ duration: 0.18 }}
+                    className="h-full overflow-y-auto px-4 py-4"
                   >
                     <POSPaymentPanel onClose={close} />
                   </motion.div>
@@ -173,6 +174,7 @@ export default function ChatModal() {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 24 }}
                     transition={{ duration: 0.18 }}
+                    className="h-full"
                   >
                     <AIChat
                       context="GENERAL"
@@ -180,7 +182,7 @@ export default function ChatModal() {
                       chips={CHIPS}
                       placeholder="¿Qué estás buscando?"
                       autoQuery={pendingMessage || undefined}
-                      maxHistoryHeight={histHeight}
+                      fullHeight
                     />
                   </motion.div>
                 )}
