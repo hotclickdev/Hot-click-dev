@@ -150,6 +150,9 @@ export default function CheckoutPage() {
     },
   ]
 
+  const [metodoEnvio,  setMetodoEnvio]  = useState('RETIRO_EN_TIENDA')
+  const [metodoPago,   setMetodoPago]   = useState('SINPE')
+
   // SINPE Móvil siempre primero, con su beneficio explícito (Brand Book §15.4)
   const METODOS_PAGO = [
     {
@@ -195,8 +198,6 @@ export default function CheckoutPage() {
     return ''
   }
 
-  const [metodoEnvio,  setMetodoEnvio]  = useState('RETIRO_EN_TIENDA')
-  const [metodoPago,   setMetodoPago]   = useState('SINPE')
   const [notas,        setNotas]        = useState('')
 
   // SINPE — datos del remitente (se capturan ANTES del pago)

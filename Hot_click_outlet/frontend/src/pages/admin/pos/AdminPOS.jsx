@@ -6,7 +6,6 @@ import { posService } from '@/services/posService'
 import { useToast } from '@/components/ui/Toast'
 import useAuthStore from '@/store/authStore'
 import usePosStore from '@/store/posStore'
-import BodegaSelectorModal from '@/components/pos/BodegaSelectorModal'
 
 const fmt = n => new Intl.NumberFormat('es-CR').format(Math.round(n ?? 0))
 
@@ -104,7 +103,7 @@ function ConteoEfectivo({ label, onTotal }) {
 }
 
 /* ── Header ────────────────────────────────────────── */
-function POSHeader({ userName, turno, step, bodegaNombre, onCambiarBodega }) {
+function POSHeader({ userName, turno, step, onCerrarTurno }) {
   const labels = { apertura: 'Paso 1 — Abrir turno', venta: 'Paso 2 — Pedido', cobro: 'Paso 3 — Cobrar', qr: 'Esperando pago', recibo: 'Venta lista' }
   return (
     <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 shrink-0 border-b border-white/5"
@@ -130,17 +129,15 @@ function POSHeader({ userName, turno, step, bodegaNombre, onCambiarBodega }) {
         </div>
       )}
 
-      {bodegaNombre && (
-        <button onClick={onCambiarBodega}
-          title="Cambiar bodega de operación"
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all hover:brightness-125"
-          style={{ backgroundColor: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)' }}>
-          <span className="text-xs" style={{ color: '#fbbf24' }}>🏭</span>
-          <span className="text-xs font-bold max-w-[120px] truncate" style={{ color: '#fbbf24' }}>{bodegaNombre}</span>
+      <div className="flex-1" />
+
+      {turno && (
+        <button onClick={onCerrarTurno}
+          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all hover:brightness-125"
+          style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
+          Cerrar turno
         </button>
       )}
-
-      <div className="flex-1" />
 
       <Link to="/admin/pos/caja"
         className="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all hover:brightness-125"
@@ -266,7 +263,7 @@ function CartItem({ item, onSetCantidad, onSetPrecio, onRemove }) {
 }
 
 /* ── PASO 2: Venta ─────────────────────────────────── */
-function StepVenta({ cartItems, onAdd, onSetCantidad, onSetPrecio, onRemove, descuento, onSetDescuento, subtotal, total, onNueva, onCobrar }) {
+function StepVenta({ cartItems, onAdd, onSetCantidad, onSetPrecio, onRemove, descuento, onSetDescuento, subtotal, total, onNueva, onCobrar, onQrCliente, loadingQr }) {
   const [mobileTab, setMobileTab] = useState('productos')
   const numItems = cartItems.reduce((s, i) => s + i.cantidad, 0)
 
@@ -388,6 +385,22 @@ function StepVenta({ cartItems, onAdd, onSetCantidad, onSetPrecio, onRemove, des
               }}>
               {cartItems.length === 0 ? 'Agregá productos primero' : `COBRAR  ·  ₡${fmt(total)}  →`}
             </button>
+
+            {cartItems.length > 0 && (
+              <button onClick={onQrCliente} disabled={loadingQr}
+                className="w-full py-3 rounded-2xl font-semibold text-sm transition-all disabled:opacity-40 flex items-center justify-center gap-2"
+                style={{
+                  backgroundColor: 'rgba(122,163,255,0.08)',
+                  border: '1px solid rgba(122,163,255,0.25)',
+                  color: '#7aa3ff',
+                }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                  <path d="M14 14h1v1h-1z M17 14h1v1h-1z M20 14h1v1h-1z M14 17h1v1h-1z M17 17h1v1h-1z M20 17h1v1h-1z M14 20h1v1h-1z M17 20h1v1h-1z M20 20h1v1h-1z"/>
+                </svg>
+                {loadingQr ? 'Generando QR…' : 'QR pago con tarjeta (cliente)'}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -755,7 +768,7 @@ function StepRecibo({ venta, userName, onNueva }) {
 export default function AdminPOS() {
   const { showToast } = useToast()
   const userName = useAuthStore(s => s.userName)
-  const { bodegaId, bodegaNombre, setBodega, clearBodega } = usePosStore()
+  const { bodegaId } = usePosStore()
 
   const [step, setStep]   = useState('loading')
   const [turno, setTurno] = useState(null)
@@ -767,24 +780,18 @@ export default function AdminPOS() {
   const [qrData, setQrData]         = useState(null)
   const [loadingVenta, setLoadingVenta]     = useState(false)
   const [loadingConfirm, setLoadingConfirm] = useState(false)
+  const [showCierre, setShowCierre]         = useState(false)
+  const [montoFinalCierre, setMontoFinalCierre] = useState(0)
 
   useEffect(() => {
     const init = async () => {
-      // Plan Inicio Ferial (1 bodega) → auto-selección silenciosa sin mostrar modal
-      if (!bodegaId) {
-        try {
-          const res  = await posService.getBodegas()
-          const lista = (Array.isArray(res) ? res : (res?.data ?? [])).filter(b => b.estado === 1)
-          if (lista.length === 1) setBodega(lista[0].id, lista[0].nombreBodega)
-          // Si lista.length > 1 → bodegaId sigue null → BodegaSelectorModal se muestra
-        } catch { /* no bloquea el inicio del POS */ }
-      }
       try {
-        const res = await posService.getCajaActiva()
-        const t   = res?.data ?? null
-        setTurno(t)
+        // posService ya hace .then(r => r.data), así que res ES el turno directamente
+        const t = await posService.getCajaActiva()
+        setTurno(t ?? null)
         setStep(t ? 'venta' : 'apertura')
       } catch {
+        // 404 = no hay turno activo; otros errores muestran apertura igual
         setStep('apertura')
       }
     }
@@ -834,14 +841,65 @@ export default function AdminPOS() {
   const handleAbrir = async (montoInicial) => {
     setSaving(true)
     try {
-      const res = await posService.abrirCaja({ montoInicial })
-      setTurno(res.data)
+      // posService ya hace .then(r => r.data)
+      const turnoData = await posService.abrirCaja({ montoInicial })
+      setTurno(turnoData)
       setStep('venta')
       showToast('Turno abierto — ¡a vender!', 'success')
     } catch (err) {
-      showToast(err?.response?.data?.message ?? 'Error al abrir turno', 'error')
+      const msg = err?.response?.data?.message ?? ''
+      // Si ya existe un turno abierto, obtenerlo en vez de bloquearse
+      if (msg.toLowerCase().includes('turno') || msg.toLowerCase().includes('caja') || err?.response?.status === 409) {
+        try {
+          const t = await posService.getCajaActiva()
+          if (t) { setTurno(t); setStep('venta'); showToast('Turno existente recuperado', 'info'); return }
+        } catch { /* ignore */ }
+      }
+      showToast(msg || 'Error al abrir turno', 'error')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleCerrarTurno = async () => {
+    if (!turno?.id) return
+    setSaving(true)
+    try {
+      await posService.cerrarCaja(turno.id, { montoFinal: montoFinalCierre })
+      setTurno(null)
+      setShowCierre(false)
+      setMontoFinalCierre(0)
+      setCartItems([])
+      setDescuento(0)
+      setStep('apertura')
+      showToast('Turno cerrado correctamente', 'success')
+    } catch (err) {
+      showToast(err?.response?.data?.message ?? 'Error al cerrar turno', 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleQrCliente = async () => {
+    if (cartItems.length === 0) return
+    setLoadingVenta(true)
+    try {
+      const data = await posService.crearQrSesion({
+        metodoPago: 'TARJETA',
+        bodegaId,
+        items: cartItems.map(i => ({ productoId: i.id, cantidad: i.cantidad, precioUnitario: i.precio, nombre: i.nombre })),
+      })
+      setQrData({
+        token:      data.token,
+        metodoPago: data.metodoPago ?? 'TARJETA',
+        total:      data.total ?? total,
+        sinpeNumero: data.sinpeNumero ?? '8666-7888',
+      })
+      setStep('qr')
+    } catch (err) {
+      showToast(err?.response?.data?.message ?? 'Error al generar QR', 'error')
+    } finally {
+      setLoadingVenta(false)
     }
   }
 
@@ -849,12 +907,11 @@ export default function AdminPOS() {
     if (payload.metodoPago === 'SINPE' || payload.metodoPago === 'TARJETA') {
       setLoadingVenta(true)
       try {
-        const res = await posService.crearQrSesion({
+        const data = await posService.crearQrSesion({
           metodoPago: payload.metodoPago,
           bodegaId,
           items: cartItems.map(i => ({ productoId: i.id, cantidad: i.cantidad, precioUnitario: i.precio, nombre: i.nombre })),
         })
-        const data = res.data ?? res
         setQrData({
           token:       data.token,
           metodoPago:  data.metodoPago,
@@ -872,13 +929,13 @@ export default function AdminPOS() {
 
     setLoadingVenta(true)
     try {
-      const res = await posService.crearVenta({
+      const ventaData = await posService.crearVenta({
         ...payload,
         descuentoGlobal: descuento,
         bodegaId,
         items: cartItems.map(i => ({ productoId: i.id, cantidad: i.cantidad, precioUnitario: i.precio })),
       })
-      setReceipt(res.data ?? res)
+      setReceipt(ventaData)
       setCartItems([])
       setDescuento(0)
       setStep('recibo')
@@ -945,16 +1002,35 @@ export default function AdminPOS() {
     )
   }
 
-  /* Plan Pro+: exige seleccionar bodega antes de operar */
-  if (!bodegaId) {
-    return <BodegaSelectorModal onSelect={setBodega} />
-  }
-
   return (
     <div className="flex flex-col h-screen overflow-hidden"
       style={{ backgroundColor: '#08080c', fontFamily: "'JetBrains Mono','Fira Code','Consolas',monospace" }}>
-      <POSHeader userName={userName} turno={turno} step={step}
-        bodegaNombre={bodegaNombre} onCambiarBodega={clearBodega} />
+      <POSHeader userName={userName} turno={turno} step={step} onCerrarTurno={() => setShowCierre(true)} />
+
+      {/* Modal cerrar turno */}
+      {showCierre && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}>
+          <div className="w-full max-w-md rounded-2xl p-6 space-y-5" style={{ backgroundColor: '#0c0c12', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div>
+              <h2 className="text-xl font-black mb-1" style={{ color: '#fff' }}>Cerrar turno</h2>
+              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>Contá el efectivo final de la caja antes de cerrar</p>
+            </div>
+            <ConteoEfectivo label="Efectivo en caja al cierre" onTotal={setMontoFinalCierre} />
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={() => setShowCierre(false)}
+                className="py-3 rounded-xl text-sm font-semibold"
+                style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                Cancelar
+              </button>
+              <button onClick={handleCerrarTurno} disabled={saving}
+                className="py-3 rounded-xl text-sm font-black disabled:opacity-40 transition-all"
+                style={{ background: 'linear-gradient(135deg,#ef4444,#dc2626)', color: '#fff' }}>
+                {saving ? 'Cerrando…' : 'Cerrar turno'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {step === 'apertura' && <StepApertura onAbrir={handleAbrir} loading={saving} />}
 
@@ -971,6 +1047,8 @@ export default function AdminPOS() {
           total={total}
           onNueva={nuevaVenta}
           onCobrar={() => setStep('cobro')}
+          onQrCliente={handleQrCliente}
+          loadingQr={loadingVenta}
         />
       )}
 

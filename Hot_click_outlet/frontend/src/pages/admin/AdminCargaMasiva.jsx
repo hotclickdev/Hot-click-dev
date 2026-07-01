@@ -77,11 +77,6 @@ function StepSubida({ onContinuar, limit }) {
   const [drafts, setDrafts] = useState([])
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef()
-  const draftsRef = useRef([])
-  useEffect(() => { draftsRef.current = drafts }, [drafts])
-  useEffect(() => {
-    return () => draftsRef.current.forEach(d => URL.revokeObjectURL(d.mainPreview))
-  }, [])
 
   const addFiles = useCallback((fileList) => {
     const remaining = limit - drafts.length

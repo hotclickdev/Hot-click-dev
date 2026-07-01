@@ -55,7 +55,7 @@ function ImgPreview({ url }) {
 
 // ── Componente principal ──────────────────────────────────────────────────────
 export default function AdminImportar() {
-  const { addToast } = useToast()
+  const { showToast: addToast } = useToast()
   const navigate = useNavigate()
 
   const [paso, setPaso] = useState(1)

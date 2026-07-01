@@ -248,19 +248,9 @@ function CategorySidebar({
           style={{ color: 'var(--hc-muted)' }}>Categorías</p>
         <div className="space-y-0.5">
           {drilledNode ? (
-            /* ── Modo drill-down: muestra solo la categoría padre + sus hijos ── */
+            /* ── Modo drill-down: muestra padre + hijos + otras categorías padre ── */
             <>
-              <button
-                onClick={() => handleCatSelect('')}
-                className="w-full text-left px-3 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 mb-1"
-                style={{ color: 'var(--hc-muted)' }}
-              >
-                <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/>
-                </svg>
-                Todas las categorías
-              </button>
-              {/* Padre */}
+              {/* Padre activo + hijos */}
               <button
                 onClick={() => handleCatSelect(String(drilledNode.id))}
                 className="w-full text-left px-3 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2"
@@ -270,7 +260,10 @@ function CategorySidebar({
                 }
               >
                 {drilledNode.icono && <span className="text-base leading-none">{drilledNode.icono}</span>}
-                <span className="truncate">{drilledNode.nombreCategoria ?? drilledNode.nombre}</span>
+                <span className="truncate flex-1">{drilledNode.nombreCategoria ?? drilledNode.nombre}</span>
+                <span className="text-[10px] font-bold opacity-50 shrink-0">
+                  {categoryTotalCount?.[drilledNode.id] ?? 0}
+                </span>
               </button>
               {/* Hijos */}
               <div className="pl-3 mt-0.5 space-y-0.5">
@@ -294,6 +287,48 @@ function CategorySidebar({
                     )
                   })}
               </div>
+
+              {/* Separador + otras categorías padre */}
+              {tree.filter(c => String(c.id) !== String(drilledNode.id)).length > 0 && (
+                <>
+                  <div className="my-3 mx-1 border-t" style={{ borderColor: 'var(--hc-border)' }} />
+                  <button
+                    onClick={() => handleCatSelect('')}
+                    className="w-full text-left px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 mb-1"
+                    style={!category
+                      ? { background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)' }
+                      : { color: 'var(--hc-muted)' }
+                    }
+                  >
+                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                    </svg>
+                    Todos los productos
+                  </button>
+                  {tree
+                    .filter(c => String(c.id) !== String(drilledNode.id) && (categoryTotalCount?.[c.id] ?? 0) > 0)
+                    .map(cat => (
+                      <button
+                        key={cat.id}
+                        onClick={() => handleCatSelect(String(cat.id))}
+                        className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 group"
+                        style={{ color: 'var(--hc-text)' }}
+                      >
+                        {cat.icono && <span className="text-base leading-none shrink-0">{cat.icono}</span>}
+                        <span className="truncate flex-1">{cat.nombreCategoria ?? cat.nombre}</span>
+                        <span className="text-[10px] font-bold opacity-50 shrink-0 ml-auto">
+                          {categoryTotalCount?.[cat.id] ?? 0}
+                        </span>
+                        {cat.children?.length > 0 && (
+                          <svg className="w-3.5 h-3.5 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity"
+                            fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                </>
+              )}
             </>
           ) : (
             /* ── Vista normal: todas las categorías ── */

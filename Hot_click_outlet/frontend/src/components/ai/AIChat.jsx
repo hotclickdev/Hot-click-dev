@@ -589,7 +589,7 @@ export default function AIChat({
         disabled={cargando}
         maxLength={500}
         className="flex-1 px-4 py-3 text-sm outline-none bg-transparent disabled:opacity-50"
-        style={{ color: 'var(--hc-text)', caretColor: accent }}
+        style={{ color: '#111827', caretColor: accent }}
         onFocus={e => { e.currentTarget.closest('div').style.borderColor = accent }}
         onBlur={e => { e.currentTarget.closest('div').style.borderColor = '#E5E7EB' }}
       />

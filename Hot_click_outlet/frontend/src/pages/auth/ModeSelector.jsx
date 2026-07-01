@@ -29,6 +29,12 @@ function ModeIcon({ icon, size = 28 }) {
           <path d="M16 10a4 4 0 01-8 0"/>
         </svg>
       )
+    case 'security':
+      return (
+        <svg width={s} height={s} fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      )
     default:
       return null
   }
@@ -83,7 +89,11 @@ export default function ModeSelector() {
       </div>
 
       {/* Tarjetas de modo */}
-      <div className={`w-full max-w-lg grid gap-4 ${modes.length === 2 ? 'grid-cols-2' : 'grid-cols-1 max-w-sm'}`}>
+      <div className={`w-full grid gap-4 ${
+        modes.length === 2 ? 'max-w-lg grid-cols-2'
+        : modes.length >= 3 ? 'max-w-2xl grid-cols-2 sm:grid-cols-3'
+        : 'max-w-sm grid-cols-1'
+      }`}>
         {modes.map(mode => (
           <button
             key={mode.id}

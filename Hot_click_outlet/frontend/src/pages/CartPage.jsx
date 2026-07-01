@@ -254,8 +254,8 @@ export default function CartPage() {
                 >
                   {/* Image */}
                   <div className="w-20 h-20 rounded-xl bg-[#1a1a1f] flex items-center justify-center shrink-0 overflow-hidden">
-                    {item.imagenUrl ? (
-                      <img src={item.imagenUrl} alt={item.nombre} className="w-full h-full object-cover" />
+                    {(item.imagenUrl ?? item.imagenPrincipalUrl) ? (
+                      <img src={item.imagenUrl ?? item.imagenPrincipalUrl} alt={item.nombre} className="w-full h-full object-cover" />
                     ) : (
                       <span className="text-2xl opacity-30">📦</span>
                     )}
@@ -317,7 +317,7 @@ export default function CartPage() {
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              className="sticky top-24 bg-[#111114] border border-white/8 rounded-2xl p-4 pr-16 sm:p-6 sm:pr-6 space-y-3 sm:space-y-4"
+              className="sticky top-24 bg-[#111114] border border-white/8 rounded-2xl p-4 sm:p-6 space-y-3 sm:space-y-4"
             >
               <h2 className="font-semibold text-[#e8e8ed]">{t('cart.summary')}</h2>
 

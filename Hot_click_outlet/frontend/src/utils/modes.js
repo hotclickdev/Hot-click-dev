@@ -29,7 +29,17 @@ export function getAvailableModes(rol, permissions = []) {
     })
   }
 
-  if (STORE_ROLES.has(rol)) {
+  if (rol === 'ADMIN') {
+    modes.push({
+      id:    'security',
+      label: 'Seguridad',
+      sub:   'Centro de seguridad y auditoría',
+      path:  '/admin/security',
+      icon:  'security',
+    })
+  }
+
+  if (STORE_ROLES.has(rol) && rol !== 'ADMIN') {
     modes.push({
       id:    'store',
       label: 'Ver la tienda',

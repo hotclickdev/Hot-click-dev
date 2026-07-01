@@ -38,7 +38,7 @@ public class ImportController {
     // ── Paso 1: Extraer productos ─────────────────────────────────────────────
 
     @PostMapping("/url")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> extraerDeUrl(@RequestBody Map<String, String> body) {
         try {
             String url = body.getOrDefault("url", "").trim();
@@ -54,7 +54,7 @@ public class ImportController {
     }
 
     @PostMapping("/pdf")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> extraerDePdf(@RequestParam("archivo") MultipartFile archivo) {
         try {
             List<ProductoExtraidoDto> productos = importService.extraerDePdf(archivo);
@@ -69,7 +69,7 @@ public class ImportController {
     }
 
     @PostMapping("/csv")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> extraerDeCsv(@RequestParam("archivo") MultipartFile archivo) {
         try {
             List<ProductoExtraidoDto> productos = importService.extraerDeCsv(archivo);
@@ -86,7 +86,7 @@ public class ImportController {
     // ── Paso 2: Confirmar importación ─────────────────────────────────────────
 
     @PostMapping("/confirmar")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> confirmarImportacion(
             @RequestBody List<ProductoExtraidoDto> productos) {
         try {
