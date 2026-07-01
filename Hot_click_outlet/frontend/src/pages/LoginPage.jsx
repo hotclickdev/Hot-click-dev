@@ -13,8 +13,10 @@ import { useToast } from '@/components/ui/Toast'
 import { abandonedCartService } from '@/services/abandonedCartService'
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons'
 import WebAuthnStep from '@/components/auth/WebAuthnStep'
+import { Turnstile } from '@marsidev/react-turnstile'
 
 const CLERK_ENABLED = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY
 
 /* accent del sitio — usa la variable CSS para respetar light/dark mode */
 const A = {
@@ -53,6 +55,8 @@ export default function LoginPage() {
   const [needsPasswordReset, setNeedsPasswordReset] = useState(false)
   const [resendLoading,      setResendLoading]      = useState(false)
   const refs2FA             = useRef([])
+  const turnstileRef        = useRef(null)
+  const [turnstileToken,    setTurnstileToken]     = useState('')
   // Multi-method 2FA
   const [twoFaMethods,       setTwoFaMethods]      = useState([])   // available methods
   const [resendCooldown,     setResendCooldown]    = useState(0)    // seconds until resend allowed
@@ -60,7 +64,7 @@ export default function LoginPage() {
   const handleLogin = async (e) => {
     e.preventDefault(); setError(''); setLoading(true)
     try {
-      const { data } = await authService.login(correo, contrasena)
+      const { data } = await authService.login(correo, contrasena, turnstileToken)
       if (data.requiresWebauthn) {
         setTempToken(data.tempToken)
         setStep('webauthn')
@@ -102,6 +106,8 @@ export default function LoginPage() {
         setNeedsVerification(false); setNeedsPasswordReset(false)
         setError(typeof msg === 'string' ? msg : t('login.error'))
       }
+      turnstileRef.current?.reset()
+      setTurnstileToken('')
     } finally { setLoading(false) }
   }
 
@@ -359,7 +365,18 @@ export default function LoginPage() {
                         </motion.div>
                       )}
 
-                      <button type="submit" disabled={loading}
+                      {TURNSTILE_SITE_KEY && (
+                        <Turnstile
+                          ref={turnstileRef}
+                          siteKey={TURNSTILE_SITE_KEY}
+                          onSuccess={setTurnstileToken}
+                          onError={() => setTurnstileToken('')}
+                          onExpire={() => setTurnstileToken('')}
+                          options={{ appearance: 'invisible' }}
+                        />
+                      )}
+
+                      <button type="submit" disabled={loading || (!!TURNSTILE_SITE_KEY && !turnstileToken)}
                         className="inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl font-bold text-sm text-white w-full transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60"
                         style={{ background: A.color, boxShadow: `0 0 32px ${A.ring}` }}>
                         {loading ? (

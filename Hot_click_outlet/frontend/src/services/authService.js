@@ -1,8 +1,8 @@
 import api from './api'
 
 export const authService = {
-  login: (correo, contrasena) =>
-    api.post('/auth/login', { correo, contrasena }),
+  login: (correo, contrasena, turnstileToken) =>
+    api.post('/auth/login', { correo, contrasena, ...(turnstileToken ? { turnstileToken } : {}) }),
 
   refresh: (refreshToken) =>
     api.post('/auth/refresh', { refreshToken }),

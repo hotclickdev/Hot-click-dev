@@ -3,7 +3,7 @@ import api from '@/services/api'
 import useAuthStore from '@/store/authStore'
 
 const TIPOS_CEDULA = [{ v: '01', l: 'Física' }, { v: '02', l: 'Jurídica' }, { v: '03', l: 'DIMEX' }, { v: '04', l: 'NITE' }]
-const AMBIENTES    = [{ v: 'STAG', l: 'Sandbox (pruebas)' }, { v: 'PROD', l: 'Producción (Hacienda real) — solo ADMIN_IT' }]
+const AMBIENTES    = [{ v: 'STAG', l: 'Sandbox (pruebas)' }, { v: 'PROD', l: 'Producción (Hacienda real) — solo ADMIN' }]
 // draft key incluye empresaId para que cambiar de negocio no muestre datos ajenos
 const draftKey = (id) => `hotclick-fiscal-draft-${id ?? 'anon'}`
 
@@ -20,7 +20,7 @@ const EMPTY_FORM = {
 
 export default function AdminConfigFiscal() {
   const { empresaId, userRole } = useAuthStore()
-  const isAdmin = userRole === 'ADMIN_IT'
+  const isAdmin = userRole === 'ADMIN'
   const KEY = draftKey(empresaId)
 
   const [form, setForm]             = useState(EMPTY_FORM)

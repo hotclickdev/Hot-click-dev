@@ -831,7 +831,7 @@ export default function ProductDetailPage() {
               {recentlyViewed
                 .filter((p) => p.id !== product.id)
                 .slice(0, 4)
-                .map((p, i) => (
+                .map((p) => (
                   <motion.button
                     key={p.id}
                     whileHover={{ scale: 1.02 }}
@@ -900,80 +900,6 @@ function detectVideo(url) {
   if (igMatch) return { type: 'instagram', embedUrl: `https://www.instagram.com/${igMatch[1]}/${igMatch[2]}/embed/` }
 
   return null
-}
-
-// ── Spotlight Recommendations ─────────────────────────────────────────────────
-function SpotlightRecommendations({ recommendations, navigate, getOptimizedUrl, formatPrice, label }) {
-  const [active, setActive] = useState(0)
-  const rec = recommendations[active]
-
-  return (
-    <div>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] mb-4" style={{ color: 'var(--hc-muted)' }}>
-        {label}
-      </p>
-      <div className="flex gap-4 items-start">
-        {/* Imagen grande spotlight */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={rec.id}
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            onClick={() => navigate(`/productos/${rec.id}`)}
-            className="shrink-0 cursor-pointer relative rounded-2xl overflow-hidden"
-            style={{ width: 180, height: 180, background: 'var(--hc-surface-2)' }}
-          >
-            {rec.imagenUrl ? (
-              <img
-                src={getOptimizedUrl(rec.imagenUrl, { width: 180 })}
-                alt={rec.nombre}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span className="flex items-center justify-center w-full h-full text-5xl opacity-10">📦</span>
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-            <div className="absolute bottom-3 left-3 right-3">
-              <p className="text-white text-xs font-semibold line-clamp-2 leading-snug mb-1">{rec.nombre}</p>
-              <span
-                className="text-xs font-extrabold px-2 py-0.5 rounded-full"
-                style={{ background: 'var(--hc-accent)', color: '#fff' }}
-              >
-                {formatPrice(rec.precio)}
-              </span>
-            </div>
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Tira vertical de thumbs */}
-        <div className="flex flex-col gap-2 overflow-y-auto" style={{ maxHeight: 180 }}>
-          {recommendations.map((r, i) => (
-            <motion.button
-              key={r.id}
-              whileHover={{ scale: 1.05 }}
-              onClick={() => setActive(i)}
-              className="shrink-0 rounded-xl overflow-hidden transition-all duration-200"
-              style={{
-                width: 52, height: 52,
-                background: 'var(--hc-surface-2)',
-                outline: i === active ? '2px solid var(--hc-accent)' : '2px solid transparent',
-                outlineOffset: '2px',
-                opacity: i === active ? 1 : 0.55,
-              }}
-            >
-              {r.imagenUrl ? (
-                <img src={getOptimizedUrl(r.imagenUrl, { width: 52 })} alt={r.nombre} className="w-full h-full object-cover" loading="lazy" />
-              ) : (
-                <span className="flex items-center justify-center w-full h-full text-lg opacity-20">📦</span>
-              )}
-            </motion.button>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
 }
 
 // ── Sticky Cart Bar ───────────────────────────────────────────────────────────

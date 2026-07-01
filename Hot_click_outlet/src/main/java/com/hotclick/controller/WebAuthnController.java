@@ -36,10 +36,10 @@ public class WebAuthnController {
         this.permisoRepository   = permisoRepository;
     }
 
-    // ── Registro (requiere estar autenticado como ADMIN_IT) ─────────────────
+    // ── Registro (requiere estar autenticado como ADMIN) ─────────────────
 
     @PostMapping("/register/start")
-    @PreAuthorize("hasRole('ADMIN_IT')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> registerStart(
             @RequestBody Map<String, String> body,
             @RequestAttribute("authenticatedEmail") String email) {
@@ -53,7 +53,7 @@ public class WebAuthnController {
     }
 
     @PostMapping("/register/finish")
-    @PreAuthorize("hasRole('ADMIN_IT')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> registerFinish(
             @RequestBody Map<String, String> body,
             @RequestAttribute("authenticatedEmail") String email) {
@@ -67,7 +67,7 @@ public class WebAuthnController {
         }
     }
 
-    // ── Autenticación (público — paso 2 del login para ADMIN_IT) ───────────
+    // ── Autenticación (público — paso 2 del login para ADMIN) ───────────
 
     @PostMapping("/login/start")
     public ResponseEntity<?> loginStart(@RequestBody Map<String, String> body) {
@@ -115,7 +115,7 @@ public class WebAuthnController {
     // ── Consultar si el usuario tiene credenciales registradas ──────────────
 
     @GetMapping("/credentials")
-    @PreAuthorize("hasRole('ADMIN_IT')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> listCredentials(@RequestAttribute("authenticatedEmail") String email) {
         boolean tiene = webAuthnService.tieneCredenciales(email);
         return ResponseEntity.ok(Map.of("hasCredentials", tiene));

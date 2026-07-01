@@ -19,7 +19,7 @@ import java.util.Map;
  * Controla el consumo mensual de créditos de IA por empresa.
  *
  * Límites leídos directamente de Plan.maxCreditosAi:
- *   -1 = ilimitado   (Comercio Expansión / Personalizado / ADMIN_IT)
+ *   -1 = ilimitado   (Comercio Expansión / Personalizado / ADMIN)
  *    0 = sin acceso  (Inicio Ferial)
  *   25 = 25/mes      (Emprendedor Pro)
  *
@@ -122,13 +122,13 @@ public class AiQuotaService {
     /**
      * Resuelve el límite de créditos de IA para la empresa.
      * Prioridad:
-     *   1. planSaas == "ADMIN_IT"           → -1 (ilimitado, bypass total)
+     *   1. planSaas == "ADMIN"           → -1 (ilimitado, bypass total)
      *   2. empresa.getPlan().maxCreditosAi  → valor del Plan entity
      *   3. Fallback legacy por planSaas     → para empresas sin plan asignado
      */
     private int resolverLimite(Empresa empresa) {
-        // ADMIN_IT siempre es ilimitado independientemente del plan
-        if ("ADMIN_IT".equals(empresa.getPlanSaas())) return -1;
+        // ADMIN siempre es ilimitado independientemente del plan
+        if ("ADMIN".equals(empresa.getPlanSaas())) return -1;
 
         Plan plan = empresa.getPlan();
         if (plan != null) return plan.getMaxCreditosAi();

@@ -88,7 +88,7 @@ export default function AdminSolicitudesGarantia() {
           {pendientes > 0 && (
             <span className="px-3 py-1.5 rounded-full text-sm font-bold"
               style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
-              {pendientes} pendiente{pendientes !== 1 ? 's' : ''}
+              {pendientes} pendiente{pendientes === 1 ? '' : 's'}
             </span>
           )}
         </div>

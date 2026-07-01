@@ -12,13 +12,13 @@ import java.time.LocalDate;
 import java.util.*;
 
 /**
- * ADMIN_IT only — AI control panel.
+ * ADMIN only — AI control panel.
  *
  * GET  /api/security/ai/dashboard  — usage per empresa + flag state + alerts
  */
 @RestController
 @RequestMapping("/api/security/ai")
-@PreAuthorize("hasRole('ADMIN_IT')")
+@PreAuthorize("hasRole('ADMIN')")
 public class AiControlController {
 
     @Autowired private JdbcTemplate       jdbc;

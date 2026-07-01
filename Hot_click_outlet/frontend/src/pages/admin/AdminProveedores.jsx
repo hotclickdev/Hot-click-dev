@@ -85,7 +85,7 @@ export default function AdminProveedores() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>Proveedores</h1>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>{proveedores.length} proveedor{proveedores.length !== 1 ? 'es' : ''} activo{proveedores.length !== 1 ? 's' : ''}</p>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>{proveedores.length} proveedor{proveedores.length === 1 ? '' : 'es'} activo{proveedores.length === 1 ? '' : 's'}</p>
         </div>
         <button onClick={openNew}
           className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"

@@ -16,7 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Generación de fichas de producto con IA a partir de una foto.
- * Protegido por SecurityConfig: /api/admin/** requiere ADMIN_IT, EMPRENDEDOR o ADMIN_CLIENTE.
+ * Protegido por SecurityConfig: /api/admin/** requiere ADMIN, EMPRENDEDOR.
  */
 @RestController
 @RequestMapping("/api/admin/productos")

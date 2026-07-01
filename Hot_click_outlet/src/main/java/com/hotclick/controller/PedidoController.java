@@ -33,7 +33,7 @@ public class PedidoController {
     @Autowired private InputSanitizer            sanitizer;
 
     @PostMapping("/manual")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE') or hasAuthority('SCOPE_write:pedidos')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> crearPedidoManual(@Valid @RequestBody ManualPedidoDTO dto) {
         try {
             Long eid = companyScope.getCurrentEmpresaIdOrOwn();
@@ -64,7 +64,7 @@ public class PedidoController {
             if (!isAdmin()) {
                 Long empresaId = companyScope.getCurrentEmpresaId();
                 if (empresaId != null) {
-                    // EMPRENDEDOR / ADMIN_CLIENTE — debe ser dueño del pedido
+                    // EMPRENDEDOR — debe ser dueño del pedido
                     Long pedidoEmpresaId = pedido.getEmpresa() != null ? pedido.getEmpresa().getId() : null;
                     if (!empresaId.equals(pedidoEmpresaId)) {
                         return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));
@@ -160,7 +160,7 @@ public class PedidoController {
     }
 
     @GetMapping("/pendientes")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE') or hasAuthority('SCOPE_read:pedidos')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> listarPendientes() {
         Long empresaId = companyScope.getCurrentEmpresaId();
         return ResponseEntity.ok(ResponseDTO.success("Pedidos pendientes",
@@ -168,7 +168,7 @@ public class PedidoController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE') or hasAuthority('SCOPE_read:pedidos')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> listarTodos() {
         try {
             Long empresaId = companyScope.getCurrentEmpresaId();
@@ -218,14 +218,14 @@ public class PedidoController {
     }
 
     /**
-     * Solo ADMIN_IT (staff de la plataforma) se salta el chequeo de companyScope.
-     * EMPRENDEDOR y ADMIN_CLIENTE son roles por-tenant — deben pasar por la
+     * Solo ADMIN (staff de la plataforma) se salta el chequeo de companyScope.
+     * EMPRENDEDOR es rol por-tenant — deben pasar por la
      * validación de empresaId más abajo, o un tenant podría leer pedidos de otro.
      */
     private boolean isAdmin() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null) return false;
         return auth.getAuthorities().stream()
-            .anyMatch(a -> a.getAuthority().equals("ROLE_" + Constants.ROL_ADMIN_IT));
+            .anyMatch(a -> a.getAuthority().equals("ROLE_" + Constants.ROL_ADMIN));
     }
 }

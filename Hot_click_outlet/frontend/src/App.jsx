@@ -60,6 +60,8 @@ const AdminReporteContador = lazy(() => import('@/pages/admin/AdminReporteContad
 const AdminReportes       = lazy(() => import('@/pages/admin/AdminReportes'))
 const AdminPublicaciones  = lazy(() => import('@/pages/admin/AdminPublicaciones'))
 const AdminNuevoProducto  = lazy(() => import('@/pages/admin/AdminNuevoProducto'))
+const AdminCargaMasiva    = lazy(() => import('@/pages/admin/AdminCargaMasiva'))
+const AdminImportar       = lazy(() => import('@/pages/admin/AdminImportar'))
 const AdminPagos          = lazy(() => import('@/pages/admin/AdminPagos'))
 const AdminMarcas         = lazy(() => import('@/pages/admin/AdminMarcas'))
 const AdminConfiguracion  = lazy(() => import('@/pages/admin/AdminConfiguracion'))
@@ -109,7 +111,6 @@ const AdminCupones              = lazy(() => import('@/pages/admin/AdminCupones'
 const AdminBranding             = lazy(() => import('@/pages/admin/AdminBranding'))
 const AdminHomepage             = lazy(() => import('@/pages/admin/AdminHomepage'))
 const AdminPlugins              = lazy(() => import('@/pages/admin/AdminPlugins'))
-const AdminApiKeys              = lazy(() => import('@/pages/admin/AdminApiKeys'))
 const AdminInventario           = lazy(() => import('@/pages/admin/AdminInventario'))
 const AdminCopilot              = lazy(() => import('@/pages/admin/AdminCopilot'))
 const AdminForecast             = lazy(() => import('@/pages/admin/AdminForecast'))
@@ -185,13 +186,13 @@ function AdminRoute({ children, itOnly = false }) {
   if (!isTokenAlive(token)) return <Navigate to="/login" replace />
   const isAdmin = ADMIN_ROLES.has(userRole)
   if (!isAdmin) return <Navigate to="/" replace />
-  if (itOnly && userRole !== 'ADMIN_IT') return <Navigate to="/admin" replace />
+  if (itOnly && userRole !== 'ADMIN') return <Navigate to="/admin" replace />
   return children
 }
 
 function ITOnlyGuard() {
   const userRole = useAuthStore((s) => s.userRole)
-  if (userRole !== 'ADMIN_IT') return <Navigate to="/admin" replace />
+  if (userRole !== 'ADMIN') return <Navigate to="/admin" replace />
   return <Outlet />
 }
 
@@ -418,6 +419,8 @@ export default function App() {
                 <Route path="/admin/reportes" element={<AdminReportes />} />
                 <Route path="/admin/publicaciones" element={<AdminPublicaciones />} />
                 <Route path="/admin/nuevo-producto" element={<AdminNuevoProducto />} />
+                <Route path="/admin/productos/carga-masiva" element={<AdminCargaMasiva />} />
+                <Route path="/admin/productos/importar" element={<AdminImportar />} />
                 <Route path="/admin/marcas" element={<AdminMarcas />} />
                 <Route path="/admin/configuracion" element={<AdminConfiguracion />} />
                 <Route path="/admin/garantias" element={<AdminSolicitudesGarantia />} />
@@ -445,7 +448,6 @@ export default function App() {
                   <Route path="/admin/branding"            element={<AdminBranding />} />
                 <Route path="/admin/homepage"           element={<AdminHomepage />} />
                   <Route path="/admin/plugins"             element={<AdminPlugins />} />
-                  <Route path="/admin/api-keys"            element={<AdminApiKeys />} />
                   <Route path="/admin/inventario"          element={<AdminInventario />} />
                   <Route path="/admin/copilot"             element={<AdminCopilot />} />
                   <Route path="/admin/forecast"            element={<AdminForecast />} />

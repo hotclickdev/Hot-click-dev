@@ -84,7 +84,7 @@ public class FeatureFlagService {
     }
 
     /**
-     * Estado de todos los flags para una empresa (para el panel ADMIN_IT).
+     * Estado de todos los flags para una empresa (para el panel ADMIN).
      * No cacheado — solo se llama desde el panel de gestión.
      */
     @Transactional(readOnly = true)
@@ -105,7 +105,7 @@ public class FeatureFlagService {
     }
 
     /**
-     * Lista todos los flags del registro (para ADMIN_IT).
+     * Lista todos los flags del registro (para ADMIN).
      */
     @Transactional(readOnly = true)
     public List<Map<String, Object>> listarTodos() {

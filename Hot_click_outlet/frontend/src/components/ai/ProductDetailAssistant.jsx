@@ -3,8 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { shoppingAssistantService } from '@/services/shoppingAssistantService'
 import { getOrCreateVisitorId } from '@/utils/visitorId'
 
-const fmt = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
-
 function TypingDots() {
   return (
     <span className="inline-flex items-center gap-[3px]">

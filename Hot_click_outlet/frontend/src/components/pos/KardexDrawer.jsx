@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { productService } from '@/services/productService'
 
-const fmt    = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
 const fmtDate = (d) => d ? new Date(d).toLocaleString('es-CR', { dateStyle: 'short', timeStyle: 'short' }) : '—'
 
 const TIPO_COLORS = {

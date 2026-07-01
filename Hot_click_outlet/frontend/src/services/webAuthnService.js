@@ -22,7 +22,7 @@ export const webAuthnService = {
     })
   },
 
-  // ── Autenticación (paso 2 del login ADMIN_IT) ─────────────────────────────
+  // ── Autenticación (paso 2 del login ADMIN) ─────────────────────────────
 
   async authenticate(email) {
     // 1. Obtener challenge del servidor

@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Endpoints de gestión de feature flags — solo ADMIN_IT.
+ * Endpoints de gestión de feature flags — solo ADMIN.
  *
  * GET  /api/admin/flags                        — todos los flags del registro
  * GET  /api/admin/flags/{empresaId}            — estado de flags para una empresa
@@ -18,7 +18,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/admin/flags")
-@PreAuthorize("hasRole('ADMIN_IT')")
+@PreAuthorize("hasRole('ADMIN')")
 public class FeatureFlagController {
 
     private final FeatureFlagService flagService;

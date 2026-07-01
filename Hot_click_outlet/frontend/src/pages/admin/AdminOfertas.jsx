@@ -129,7 +129,7 @@ export default function AdminOfertas() {
     } finally {
       setLoading(false)
     }
-  }, []) // eslint-disable-line
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -182,7 +182,7 @@ export default function AdminOfertas() {
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--hc-text)', margin: 0 }}>Gestión de Ofertas</h1>
           <p style={{ fontSize: 13, color: 'var(--hc-muted)', margin: '4px 0 0' }}>
-            {enOfertaCount} producto{enOfertaCount !== 1 ? 's' : ''} con oferta activa
+            {enOfertaCount} producto{enOfertaCount === 1 ? '' : 's'} con oferta activa
           </p>
         </div>
         <div style={{

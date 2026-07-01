@@ -66,4 +66,8 @@ public class RegistroEmpresaDTO {
     public void setTelefonoAdmin(String v)         { this.telefonoAdmin = v; }
     public Boolean getInscritoTributacion()   { return inscritoTributacion; }
     public void setInscritoTributacion(Boolean v)  { this.inscritoTributacion = v; }
+
+    private String turnstileToken;
+    public String getTurnstileToken() { return turnstileToken; }
+    public void setTurnstileToken(String v) { this.turnstileToken = v; }
 }

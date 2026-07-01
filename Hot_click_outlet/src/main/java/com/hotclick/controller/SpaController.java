@@ -142,7 +142,6 @@ public class SpaController {
         "/admin/gift-cards",
         "/admin/branding",
         "/admin/plugins",
-        "/admin/api-keys",
         "/admin/inventario",
         "/admin/copilot",
         "/admin/forecast",

@@ -164,18 +164,6 @@ export default function AdminReportes() {
   const posTx         = posFiltradas.length
   const posTicket     = posTx > 0 ? Math.round(posTotal / posTx) : 0
 
-  const exportVentas = () => {
-    const h = 'ID,Cliente,Productos,Envío,Total,Método,Estado,Fecha'
-    const rows = filtered.map(v => [
-      v.id, v.nombreCliente ?? '', (v.total ?? 0) - (v.costoEnvio ?? 0),
-      v.costoEnvio ?? 0, v.total ?? 0, v.metodoPago ?? '', v.estado ?? '',
-      (v.fechaCreacion ?? '').slice(0, 10)
-    ].join(','))
-    const a = document.createElement('a')
-    a.href = `data:text/csv;charset=utf-8,${encodeURIComponent([h, ...rows].join('\n'))}`
-    a.download = `ventas-${toISO(new Date())}.csv`; a.click()
-  }
-
   const exportTopProductos = () => {
     const h = 'Producto,Unidades,Ingreso,Costo,Utilidad,Margen%'
     const rows = topProductos.map(p => [p.nombre, p.cantidad, p.ingreso, p.costo, p.utilidad, p.margen].join(','))

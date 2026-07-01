@@ -11,7 +11,7 @@ import java.util.Map;
 
 /**
  * Gestión admin de mesas/puntos de autoservicio.
- * Requiere rol EMPRENDEDOR o ADMIN_IT.
+ * Requiere rol EMPRENDEDOR o ADMIN.
  * Rutas bajo /api/admin/mesas.
  */
 @RestController
@@ -25,7 +25,7 @@ public class MesaController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN_IT', 'ADMIN_CLIENTE')")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
     public ResponseEntity<List<Map<String, Object>>> listar() {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
@@ -33,7 +33,7 @@ public class MesaController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN_IT', 'ADMIN_CLIENTE')")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> crear(@RequestBody Map<String, String> body) {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
@@ -45,7 +45,7 @@ public class MesaController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN_IT', 'ADMIN_CLIENTE')")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> actualizar(
             @PathVariable Long id, @RequestBody Map<String, Object> body) {
         Long empresaId = TenantContext.get();
@@ -61,7 +61,7 @@ public class MesaController {
     }
 
     @PostMapping("/{id}/regenerar-token")
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN_IT', 'ADMIN_CLIENTE')")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> regenerarToken(@PathVariable Long id) {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
@@ -69,7 +69,7 @@ public class MesaController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN_IT', 'ADMIN_CLIENTE')")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
     public ResponseEntity<Map<String, String>> eliminar(@PathVariable Long id) {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();

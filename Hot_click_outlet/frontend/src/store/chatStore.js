@@ -1,7 +1,6 @@
 import { create } from 'zustand'
-import { shoppingAssistantService } from '@/services/shoppingAssistantService'
 
-const INACTIVITY_MS = 10 * 60 * 1000  // 10 minutos — system prompt requirement
+const INACTIVITY_MS = 10 * 60 * 1000  // 10 minutos
 let _interval = null
 
 const useChatStore = create((set, get) => ({
@@ -30,10 +29,8 @@ const useChatStore = create((set, get) => ({
   resetSession: () => set({ mensajes: [], sesionId: null, lastActivity: null }),
 
   checkExpiry: () => {
-    const { lastActivity, mensajes, sesionId } = get()
+    const { lastActivity, mensajes } = get()
     if (mensajes.length > 0 && lastActivity && Date.now() - lastActivity > INACTIVITY_MS) {
-      // Limpia el backend en background antes de resetear el estado local
-      if (sesionId) shoppingAssistantService.expireSession(sesionId)
       set({ mensajes: [], sesionId: null, lastActivity: null })
     }
   },

@@ -107,7 +107,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     @Query("SELECT COUNT(u) FROM Usuario u WHERE u.twoFactorEnabled = true AND u.estado = 1")
     long countWith2FAEnabled();
 
-    /** Clientes con rol USUARIO_FINAL — para CRM global (ADMIN_IT). */
+    /** Clientes con rol USUARIO_FINAL — para CRM global (ADMIN). */
     @Query("SELECT DISTINCT u FROM Usuario u JOIN u.roles r " +
            "WHERE r.nombreRol = 'USUARIO_FINAL' AND u.estado = 1 ORDER BY u.id DESC")
     List<Usuario> findClientes();

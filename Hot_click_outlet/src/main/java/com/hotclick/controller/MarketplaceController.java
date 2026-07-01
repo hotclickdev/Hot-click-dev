@@ -64,7 +64,7 @@ public class MarketplaceController {
     // algún vendedor lo suba (ej: preparar el catálogo con fotos oficiales).
     //
     @PostMapping("/admin/marketplace/catalogo")
-    @PreAuthorize("hasRole('ADMIN_IT')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CatalogoMaestro> crear(@RequestBody CatalogoMaestro body) {
         return ResponseEntity.ok(marketplaceService.guardar(body));
     }
@@ -75,7 +75,7 @@ public class MarketplaceController {
     // Solo actualiza los campos que vengan en el body (patch semántico).
     //
     @PutMapping("/admin/marketplace/catalogo/{id}")
-    @PreAuthorize("hasRole('ADMIN_IT')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CatalogoMaestro> actualizar(
             @PathVariable Long id,
             @RequestBody CatalogoMaestro body) {

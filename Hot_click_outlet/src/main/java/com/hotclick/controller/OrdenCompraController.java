@@ -36,7 +36,7 @@ public class OrdenCompraController {
     @Autowired private JwtUtil               jwtUtil;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE','INVENTARIO','CONTABILIDAD')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','INVENTARIO','CONTABILIDAD')")
     public ResponseEntity<?> listar() {
         Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
         if (empresaId == null)
@@ -46,7 +46,7 @@ public class OrdenCompraController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE','INVENTARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','INVENTARIO')")
     public ResponseEntity<?> getById(@PathVariable Long id) {
         return ordenCompraRepository.findByIdConDetalles(id)
             .map(o -> ResponseEntity.ok(ResponseDTO.success("OK", o)))
@@ -54,7 +54,7 @@ public class OrdenCompraController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE','INVENTARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','INVENTARIO')")
     @Transactional
     public ResponseEntity<?> crear(@RequestBody OrdenCompraDTO dto, HttpServletRequest request) {
         try {
@@ -109,7 +109,7 @@ public class OrdenCompraController {
     }
 
     @PutMapping("/{id}/recibir")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE','INVENTARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','INVENTARIO')")
     @Transactional
     public ResponseEntity<?> recibirMercancia(@PathVariable Long id,
                                                @RequestBody Map<String, Object> body,
@@ -186,7 +186,7 @@ public class OrdenCompraController {
     }
 
     @PutMapping("/{id}/cancelar")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE')")
     @Transactional
     public ResponseEntity<?> cancelar(@PathVariable Long id) {
         try {

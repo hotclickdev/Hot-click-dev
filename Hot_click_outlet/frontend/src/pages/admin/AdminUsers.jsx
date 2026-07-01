@@ -15,12 +15,12 @@ const ESTADO_INT = { ACTIVO: 1, INACTIVO: 2 }
 
 const ROLES = [
   { value: 'USUARIO_FINAL', label: 'Cliente' },
-  { value: 'ADMIN_CLIENTE', label: 'Admin Cliente' },
-  { value: 'ADMIN_IT',      label: 'Admin IT' },
+  { value: 'EMPRENDEDOR',   label: 'Emprendedor' },
+  { value: 'ADMIN',         label: 'Admin' },
 ]
 
-const ROLE_COLORS = { ADMIN_IT: 'danger', ADMIN_CLIENTE: 'purple', USUARIO_FINAL: 'default' }
-const ROLE_LABELS = { ADMIN_IT: 'Admin IT', ADMIN_CLIENTE: 'Admin Cliente', USUARIO_FINAL: 'Cliente' }
+const ROLE_COLORS = { ADMIN: 'danger', EMPRENDEDOR: 'purple', USUARIO_FINAL: 'default' }
+const ROLE_LABELS = { ADMIN: 'Admin', EMPRENDEDOR: 'Emprendedor', USUARIO_FINAL: 'Cliente' }
 
 const ESTADO_BADGE = {
   ACTIVO:     'success',

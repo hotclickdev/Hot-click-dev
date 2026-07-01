@@ -22,7 +22,7 @@ public class GiftCardController {
 
     // ── Admin: listar gift cards de la empresa ────────────────────────────────
     @GetMapping("/admin/gift-cards")
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN_IT','ADMIN_CLIENTE')")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN')")
     public ResponseEntity<?> listar() {
         Long empresaId = TenantContext.get();
         if (empresaId == null) {
@@ -35,7 +35,7 @@ public class GiftCardController {
 
     // ── Admin: crear gift card ────────────────────────────────────────────────
     @PostMapping("/admin/gift-cards")
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN_IT')")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN')")
     public ResponseEntity<?> crear(@RequestBody Map<String, Object> body) {
         try {
             Long empresaId = TenantContext.get();
@@ -53,7 +53,7 @@ public class GiftCardController {
 
     // ── Admin: cancelar gift card ─────────────────────────────────────────────
     @DeleteMapping("/admin/gift-cards/{id}")
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN_IT')")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN')")
     public ResponseEntity<?> cancelar(@PathVariable Long id) {
         try {
             giftCardService.cancelar(id, TenantContext.get());

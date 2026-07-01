@@ -49,9 +49,8 @@ export function ToastProvider({ children }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 24, scale: 0.97 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              onClick={() => remove(t.id)}
               role={t.type === 'error' ? 'alert' : 'status'}
-              className="pointer-events-auto cursor-pointer flex items-start gap-3 px-4 py-3 max-w-sm"
+              className="pointer-events-auto flex items-start gap-3 px-4 py-3 max-w-sm"
               style={{
                 background: 'var(--hc-n-900)',
                 color: '#FFFFFF',
@@ -66,7 +65,17 @@ export function ToastProvider({ children }) {
               >
                 {ICON[t.type] || ICON.info}
               </span>
-              <p className="text-sm leading-snug">{t.message}</p>
+              <p className="text-sm leading-snug flex-1">{t.message}</p>
+              <button
+                onClick={() => remove(t.id)}
+                aria-label="Cerrar notificación"
+                className="shrink-0 flex items-center justify-center rounded opacity-60 hover:opacity-100 transition-opacity"
+                style={{ width: 18, height: 18, marginTop: 1 }}
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/>
+                </svg>
+              </button>
             </motion.div>
           ))}
         </AnimatePresence>

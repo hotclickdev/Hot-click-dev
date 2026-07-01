@@ -201,7 +201,7 @@ export default function AdminHomepage() {
         {config.visibleCategoryIds.length > 0 && (
           <div className="flex items-center justify-between pt-1">
             <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-              {config.visibleCategoryIds.length} categoría{config.visibleCategoryIds.length !== 1 ? 's' : ''} seleccionada{config.visibleCategoryIds.length !== 1 ? 's' : ''}
+              {config.visibleCategoryIds.length} categoría{config.visibleCategoryIds.length === 1 ? '' : 's'} seleccionada{config.visibleCategoryIds.length === 1 ? '' : 's'}
             </p>
             <button
               onClick={() => setConfig(prev => ({ ...prev, visibleCategoryIds: [] }))}

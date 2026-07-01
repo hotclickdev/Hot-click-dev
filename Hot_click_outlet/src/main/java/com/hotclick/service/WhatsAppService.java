@@ -162,7 +162,7 @@ public class WhatsAppService {
             ctx.put("nombreCliente", "Invitado");
 
         enviarANumero(telefonoAdminIT, pedido.getEmpresaId(), pedido.getNumeroPedido(),
-            WaPlantilla.varianteAleatoria("NUEVO_PEDIDO_ADMIN_IT"), ctx);
+            WaPlantilla.varianteAleatoria("NUEVO_PEDIDO_ADMIN"), ctx);
     }
 
     /**

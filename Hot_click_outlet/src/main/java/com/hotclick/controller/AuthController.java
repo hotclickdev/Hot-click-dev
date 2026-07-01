@@ -70,6 +70,7 @@ public class AuthController {
     @Autowired private SecurityAuditService              securityAuditService;
     @Autowired private SecurityDetectionService          securityDetectionService;
     @Autowired private com.hotclick.service.TelegramService telegramService;
+    @Autowired private com.hotclick.service.TurnstileService turnstileService;
 
     // ── Registro ──────────────────────────────────────────────────────────────
 
@@ -129,7 +130,11 @@ public class AuthController {
     }
 
     @PostMapping("/registro-empresa")
-    public ResponseEntity<ResponseDTO> registroEmpresa(@RequestBody RegistroEmpresaDTO dto) {
+    public ResponseEntity<ResponseDTO> registroEmpresa(@RequestBody RegistroEmpresaDTO dto,
+                                                        HttpServletRequest httpRequest) {
+        if (!turnstileService.verify(dto.getTurnstileToken(), securityAuditService.getIp(httpRequest))) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error("Verificación anti-bot fallida. Intentá de nuevo."));
+        }
         try {
             Usuario emprendedor = emprendedorRegistroService.registrar(dto);
             // OTP fuera de la transacción para no marcar rollback-only
@@ -394,6 +399,9 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody JwtRequest request, HttpServletRequest httpRequest) {
+        if (!turnstileService.verify(request.getTurnstileToken(), securityAuditService.getIp(httpRequest))) {
+            return ResponseEntity.status(400).body(ResponseDTO.error("Verificación anti-bot fallida. Intentá de nuevo."));
+        }
         Optional<Usuario> usuarioOpt = usuarioService.buscarPorCorreo(request.getCorreo());
         if (usuarioOpt.isEmpty()) {
             // Anti-enumeration: same response as wrong password
@@ -437,9 +445,9 @@ public class AuthController {
         try { securityAuditService.logLoginSuccess(usuario.getId(), usuario.getCorreo(), httpRequest); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
 
         boolean esAdminIT = usuario.getRoles().stream()
-            .anyMatch(r -> Constants.ROL_ADMIN_IT.equals(r.getNombreRol()));
+            .anyMatch(r -> Constants.ROL_ADMIN.equals(r.getNombreRol()));
 
-        // ADMIN_IT con llave WebAuthn registrada → requerir autenticación WebAuthn como 2do factor
+        // ADMIN con llave WebAuthn registrada → requerir autenticación WebAuthn como 2do factor
         if (esAdminIT && webAuthnService.tieneCredenciales(usuario.getCorreo())) {
             String tempToken = jwtUtil.generateTempToken(usuario.getCorreo(), usuario.getId());
             return ResponseEntity.ok(Map.of(

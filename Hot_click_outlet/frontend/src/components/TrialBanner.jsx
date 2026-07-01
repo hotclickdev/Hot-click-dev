@@ -2,14 +2,14 @@ import { useNavigate } from 'react-router-dom'
 import useTenantStore from '@/store/tenantStore'
 import useAuthStore from '@/store/authStore'
 
-const BANNER_ROLES = new Set(['EMPRENDEDOR', 'ADMIN_IT'])
+const BANNER_ROLES = new Set(['EMPRENDEDOR', 'ADMIN'])
 
 /**
  * Banner de trial / plan vencido.
  * Se muestra en AdminLayout cuando:
  *   - estadoPlan === 'TRIAL' y quedan ≤ 7 días
  *   - estadoPlan === 'VENCIDO' o 'PAST_DUE'
- * Solo visible para roles EMPRENDEDOR y ADMIN_IT.
+ * Solo visible para roles EMPRENDEDOR y ADMIN.
  */
 export default function TrialBanner() {
   const { estadoPlan, trialDias, planNombre } = useTenantStore()

@@ -84,6 +84,16 @@
       "name": "adminit.telefono",
       "type": "java.lang.String",
       "description": "Número WhatsApp del equipo ADMIN_IT (formato 506XXXXXXXX) para recibir notificaciones de nuevos pedidos. Configurar como variable de entorno ADMINIT_TELEFONO. Vacío = sin WhatsApp a admin."
+    },
+    {
+      "name": "abuseipdb.api.key",
+      "type": "java.lang.String",
+      "description": "AbuseIPDB API key para verificar reputación de IPs en cada login. Gratis: 1,000 req/día. Registro en https://abuseipdb.com. Vacío = verificación deshabilitada."
+    },
+    {
+      "name": "turnstile.secret.key",
+      "type": "java.lang.String",
+      "description": "Cloudflare Turnstile secret key para validar tokens anti-bot en login y registro. Obtener en dash.cloudflare.com → Turnstile. Vacío = validación deshabilitada (dev)."
     }
   ]
 }

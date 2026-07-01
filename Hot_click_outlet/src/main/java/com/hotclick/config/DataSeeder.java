@@ -24,9 +24,9 @@ public class DataSeeder implements ApplicationRunner {
     @Transactional
     public void run(ApplicationArguments args) {
         seedEstados();
-        seedRol(Constants.ROL_ADMIN_IT,      "Administrador del sistema", 100);
-        seedRol(Constants.ROL_ADMIN_CLIENTE,  "Administrador de negocio",  50);
-        seedRol(Constants.ROL_USUARIO_FINAL,  "Cliente final",              1);
+        seedRol(Constants.ROL_ADMIN,         "Administrador del sistema HotClick", 100);
+        seedRol(Constants.ROL_EMPRENDEDOR,   "Dueño de empresa",                   7);
+        seedRol(Constants.ROL_USUARIO_FINAL, "Cliente final",                       1);
         seedAdminUser();
     }
 
@@ -73,9 +73,9 @@ public class DataSeeder implements ApplicationRunner {
             admin.setIntentosFallidos(0);
             admin.setBloqueadoHasta(null);
             boolean tieneAdmin = admin.getRoles().stream()
-                .anyMatch(r -> r.getNombreRol().equals(Constants.ROL_ADMIN_IT));
+                .anyMatch(r -> r.getNombreRol().equals(Constants.ROL_ADMIN));
             if (!tieneAdmin) {
-                rolRepository.findByNombreRol(Constants.ROL_ADMIN_IT)
+                rolRepository.findByNombreRol(Constants.ROL_ADMIN)
                     .ifPresent(rol -> admin.getRoles().add(rol));
             }
             usuarioRepository.save(admin);
@@ -89,7 +89,7 @@ public class DataSeeder implements ApplicationRunner {
             admin.setContrasenaHash(passwordEncoder.encode(defaultPassword));
             admin.setEstado(Constants.ESTADO_ACTIVO);
             admin.setIntentosFallidos(0);
-            rolRepository.findByNombreRol(Constants.ROL_ADMIN_IT)
+            rolRepository.findByNombreRol(Constants.ROL_ADMIN)
                 .ifPresent(rol -> admin.getRoles().add(rol));
             usuarioRepository.save(admin);
         }

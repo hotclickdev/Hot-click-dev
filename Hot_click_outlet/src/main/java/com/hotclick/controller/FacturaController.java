@@ -37,7 +37,7 @@ public class FacturaController {
      * Default: "04" (Tiquete Electrónico — no requiere datos del receptor)
      */
     @PostMapping("/emitir/{pedidoId}")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','CONTABILIDAD')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','CONTABILIDAD')")
     public ResponseEntity<ComprobanteFiscal> emitir(
             @PathVariable Long pedidoId,
             @RequestBody(required = false) Map<String, String> body) {
@@ -51,7 +51,7 @@ public class FacturaController {
      * Lista comprobantes de la empresa autenticada con paginación.
      */
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','CONTABILIDAD')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','CONTABILIDAD')")
     public ResponseEntity<Page<ComprobanteFiscal>> listar(
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -68,7 +68,7 @@ public class FacturaController {
      * Detalle de un comprobante por ID — verifica que pertenece al tenant.
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','CONTABILIDAD')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','CONTABILIDAD')")
     public ResponseEntity<ComprobanteFiscal> detalle(@PathVariable Long id) {
         ComprobanteFiscal cf = comprobanteRepo.findById(id)
             .orElseThrow(() -> new java.util.NoSuchElementException("Comprobante no encontrado: " + id));
@@ -80,7 +80,7 @@ public class FacturaController {
      * Estado actual del comprobante (para polling del frontend).
      */
     @GetMapping("/{id}/estado")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','CONTABILIDAD')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','CONTABILIDAD')")
     public ResponseEntity<Map<String, Object>> estado(@PathVariable Long id) {
         ComprobanteFiscal cf = comprobanteRepo.findById(id)
             .orElseThrow(() -> new java.util.NoSuchElementException("Comprobante no encontrado: " + id));

@@ -195,7 +195,7 @@ export default function AdminMiEmpresa() {
     return () => globalThis.removeEventListener('beforeunload', handler)
   }, [isDirty])
 
-  const canEdit = userRole === 'EMPRENDEDOR' || userRole === 'ADMIN_IT'
+  const canEdit = userRole === 'EMPRENDEDOR' || userRole === 'ADMIN'
 
   if (loading) {
     return (

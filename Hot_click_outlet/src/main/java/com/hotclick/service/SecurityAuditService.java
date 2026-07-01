@@ -10,7 +10,6 @@ import com.hotclick.security.SecurityEventType;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,8 +34,17 @@ public class SecurityAuditService {
 
     private static final Logger log = LoggerFactory.getLogger(SecurityAuditService.class);
 
-    @Autowired private SecurityAuditLogRepository auditRepo;
-    @Autowired private ObjectMapper objectMapper;
+    private final SecurityAuditLogRepository auditRepo;
+    private final ObjectMapper               objectMapper;
+    private final GeoIpService               geoIpService;
+
+    public SecurityAuditService(SecurityAuditLogRepository auditRepo,
+                                ObjectMapper objectMapper,
+                                GeoIpService geoIpService) {
+        this.auditRepo     = auditRepo;
+        this.objectMapper  = objectMapper;
+        this.geoIpService  = geoIpService;
+    }
 
     // ── Main log entry point ──────────────────────────────────────────────────
 
@@ -78,8 +86,10 @@ public class SecurityAuditService {
     // ── Convenience methods ───────────────────────────────────────────────────
 
     public void logLoginSuccess(Long userId, String email, HttpServletRequest request) {
+        String ip = getIp(request);
         log(SecurityEventType.LOGIN_SUCCESS, SecurityEventSeverity.LOW,
-            userId, email, getIp(request), getUa(request), "/api/auth/login", null);
+            userId, email, ip, getUa(request), "/api/auth/login", null);
+        geoIpService.checkAsync(ip, userId, email);
     }
 
     public void logLoginFailed(String email, HttpServletRequest request, String reason) {

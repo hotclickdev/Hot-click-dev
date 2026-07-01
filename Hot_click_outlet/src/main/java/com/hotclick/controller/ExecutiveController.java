@@ -22,7 +22,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/executive")
-@PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN_IT','ADMIN_CLIENTE')")
+@PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN')")
 public class ExecutiveController {
 
     private static final Logger log = LoggerFactory.getLogger(ExecutiveController.class);
@@ -76,7 +76,7 @@ public class ExecutiveController {
 
     /** Saves the AI summary for the given period. */
     @PostMapping("/guardar-resumen")
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN_IT')")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN')")
     public ResponseEntity<?> guardarResumen(@RequestBody Map<String, String> body) {
         String periodo = body.getOrDefault("periodo", LocalDate.now(Constants.ZONA_CR).toString().substring(0, 7));
         String resumen = body.getOrDefault("resumen", "");

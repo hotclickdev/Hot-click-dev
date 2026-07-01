@@ -27,7 +27,6 @@ const SECCIONES = [
   { label: 'Emprendimientos',       path: '/emprendimientos',      icon: '🏢', keys: ['emprendimientos','emprendimiento','negocios','negocio','pymes','pyme','empresas'] },
   { label: 'Equipo',                path: '/admin/equipo',         icon: '👤', keys: ['equipo','empleados','empleado','staff','trabajadores','colaboradores','miembros'] },
   { label: 'Gift Cards',            path: '/admin/gift-cards',     icon: '🎁', keys: ['gift cards','tarjetas regalo','regalos','regalo','vouchers','voucher','cupon','cupón'] },
-  { label: 'API Keys',              path: '/admin/api-keys',       icon: '🔑', keys: ['api','api keys','integraciones','llaves','keys','acceso externo'] },
   { label: 'Configuración',         path: '/admin/configuracion',  icon: '⚙', keys: ['configuracion','configuración','ajustes','settings','config','preferencias'] },
   { label: 'Seguridad',             path: '/admin/seguridad',      icon: '🔒', keys: ['seguridad','security','accesos','permisos','auditoria','logs'] },
   { label: 'Mi Empresa',            path: '/admin/mi-empresa',     icon: '🏠', keys: ['mi empresa','empresa','datos empresa','perfil negocio','negocio','branding'] },

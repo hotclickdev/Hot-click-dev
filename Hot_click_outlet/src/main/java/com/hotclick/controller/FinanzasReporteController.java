@@ -37,7 +37,7 @@ public class FinanzasReporteController {
     @Autowired private OrdenCompraRepository ordenCompraRepository;
 
     @GetMapping("/reporte-iva")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE','CONTABILIDAD')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','CONTABILIDAD')")
     public ResponseEntity<?> reporteIva(
             @RequestParam(required = false) String fechaInicio,
             @RequestParam(required = false) String fechaFin,

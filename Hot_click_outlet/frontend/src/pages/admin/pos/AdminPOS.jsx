@@ -600,7 +600,7 @@ function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConfirm }) {
     return () => clearInterval(pollRef.current)
   }, [token, metodoPago])
 
-  useEffect(() => { if (paid) onConfirmSinpe(null, true) }, [paid]) // eslint-disable-line
+  useEffect(() => { if (paid) onConfirmSinpe(null, true) }, [paid]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="flex-1 flex items-center justify-center p-4 overflow-y-auto">
@@ -789,7 +789,7 @@ export default function AdminPOS() {
       }
     }
     init()
-  }, []) // eslint-disable-line
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const agregarProducto = useCallback((producto) => {
     setCartItems(prev => {

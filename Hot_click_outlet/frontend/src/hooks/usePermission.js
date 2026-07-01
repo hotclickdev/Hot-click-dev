@@ -10,7 +10,7 @@ export function usePermission(perm) {
 
 /**
  * Devuelve true si el usuario tiene al menos uno de los roles indicados.
- * Uso: const esAdmin = useHasAnyRole('ADMIN_IT', 'GERENTE')
+ * Uso: const esAdmin = useHasAnyRole('ADMIN', 'GERENTE')
  */
 export function useHasAnyRole(...roles) {
   return useAuthStore(s => roles.some(r => s.roles.includes(r)))

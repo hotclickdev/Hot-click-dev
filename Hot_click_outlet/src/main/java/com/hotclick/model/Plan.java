@@ -58,6 +58,14 @@ public class Plan {
     @Column(name = "max_creditos_ai", nullable = false)
     private Integer maxCreditosAi = 0;
 
+    /** Precio en USD/mes. 0 = gratis. */
+    @Column(name = "precio_usd", nullable = false, precision = 8, scale = 2)
+    private java.math.BigDecimal precioUsd = java.math.BigDecimal.ZERO;
+
+    /** Comisión que cobra HotClick sobre cada venta (%). Solo aplica al plan EMPRENDEDOR. */
+    @Column(name = "comision_porcentaje", nullable = false, precision = 5, scale = 2)
+    private java.math.BigDecimal comisionPorcentaje = java.math.BigDecimal.ZERO;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -105,6 +113,12 @@ public class Plan {
 
     public Integer getMaxCreditosAi() { return maxCreditosAi; }
     public void setMaxCreditosAi(Integer maxCreditosAi) { this.maxCreditosAi = maxCreditosAi; }
+
+    public java.math.BigDecimal getPrecioUsd() { return precioUsd; }
+    public void setPrecioUsd(java.math.BigDecimal v) { this.precioUsd = v; }
+
+    public java.math.BigDecimal getComisionPorcentaje() { return comisionPorcentaje; }
+    public void setComisionPorcentaje(java.math.BigDecimal v) { this.comisionPorcentaje = v; }
 
     /** Conveniencia para verificar si un límite es ilimitado (-1) */
     public boolean estaEnLimite(int uso, int limite) {

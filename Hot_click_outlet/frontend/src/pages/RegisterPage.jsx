@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import BrandLogo from '@/components/ui/BrandLogo'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -6,6 +6,7 @@ import SocialLoginButtons from '@/components/auth/SocialLoginButtons'
 import { registrarConsentimiento } from '@/services/api'
 
 const CLERK_ENABLED = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY
 import { useTranslation } from 'react-i18next'
 import PhoneField from '@/components/ui/PhoneField'
 import Input from '@/components/ui/Input'
@@ -15,6 +16,7 @@ import useAuthStore from '@/store/authStore'
 import useCartStore from '@/store/cartStore'
 import Modal from '@/components/ui/Modal'
 import { abandonedCartService } from '@/services/abandonedCartService'
+import { Turnstile } from '@marsidev/react-turnstile'
 
 const BUYER = {
   color: 'var(--hc-accent)',
@@ -97,6 +99,8 @@ function EmprendimientoForm({ onVolver }) {
   const [codigoVerif, setCodigoVerif] = useState('')
   const [correoReg,   setCorreoReg]   = useState('')
   const [aceptaTerminos, setAceptaTerminos] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const turnstileRef = useRef(null)
   const [form, setForm] = useState({
     nombreEmpresa: '', correoEmpresa: '', telefonoEmpresa: '',
     nombreAdmin: '', correoAdmin: '', passwordAdmin: '', telefonoAdmin: '',
@@ -124,6 +128,7 @@ function EmprendimientoForm({ onVolver }) {
         correoAdmin:     form.correoAdmin.trim().toLowerCase(),
         passwordAdmin:   form.passwordAdmin,
         telefonoAdmin:   form.telefonoAdmin.trim() || undefined,
+        ...(turnstileToken ? { turnstileToken } : {}),
       })
       const authData = data?.data ?? data
       if (authData?.accessToken) {
@@ -135,6 +140,8 @@ function EmprendimientoForm({ onVolver }) {
     } catch (err) {
       const msg = err.response?.data?.message
       setError(typeof msg === 'string' && msg ? msg : 'Error al registrar. Intentá de nuevo.')
+      turnstileRef.current?.reset()
+      setTurnstileToken('')
     } finally { setLoading(false) }
   }
 
@@ -269,9 +276,20 @@ function EmprendimientoForm({ onVolver }) {
                   </span>
                 </label>
 
+                {TURNSTILE_SITE_KEY && (
+                  <Turnstile
+                    ref={turnstileRef}
+                    siteKey={TURNSTILE_SITE_KEY}
+                    onSuccess={setTurnstileToken}
+                    onError={() => setTurnstileToken('')}
+                    onExpire={() => setTurnstileToken('')}
+                    options={{ appearance: 'invisible' }}
+                  />
+                )}
+
                 <div className="flex gap-2.5">
                   <button type="button" onClick={() => { setStep(0); setError('') }} className="hc-btn hc-btn-outline px-4">← Atrás</button>
-                  <button type="submit" disabled={loading || !aceptaTerminos}
+                  <button type="submit" disabled={loading || !aceptaTerminos || (!!TURNSTILE_SITE_KEY && !turnstileToken)}
                     className="hc-btn hc-btn-primary hc-btn-lg flex-1 disabled:opacity-60"
                     style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px rgba(231,59,51,0.3)' }}>
                     {loading

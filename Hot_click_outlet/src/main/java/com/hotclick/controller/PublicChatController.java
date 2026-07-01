@@ -99,12 +99,15 @@ public class PublicChatController {
             .limit(12)
             .collect(Collectors.toList());
 
+        String context = body.containsKey("context") ? String.valueOf(body.get("context")) : "GENERAL";
+
         final Long eid = empresaId;
         final String finalMessage = message;
         final List<Map<String, Object>> finalHistory = history;
+        final String finalContext = context;
         emitter.onCompletion(emitter::complete);
         emitter.onTimeout(emitter::complete);
-        sseExecutor.execute(() -> chatService.chat(eid, finalMessage, offset, finalHistory, emitter));
+        sseExecutor.execute(() -> chatService.chat(eid, finalMessage, offset, finalHistory, finalContext, emitter));
         return emitter;
     }
 

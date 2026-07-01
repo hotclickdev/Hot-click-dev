@@ -1,8 +1,6 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { createPortal } from 'react-dom'
+﻿import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useTranslation } from 'react-i18next'
 import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
 import { productService, normalizeProduct } from '@/services/productService'
@@ -92,428 +90,12 @@ function CatIcon({ name, className = 'w-3.5 h-3.5 shrink-0' }) {
   )
 }
 
-// ── Dropdown base con cierre al click afuera ──────────────────────────────────
-function Dropdown({ trigger, children, align = 'left', width = 320 }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-  const panelRef = useRef(null)
-  const [rect, setRect] = useState(null)
-
-  useEffect(() => {
-    if (!open) return
-    const fn = (e) => {
-      if (
-        ref.current && !ref.current.contains(e.target) &&
-        panelRef.current && !panelRef.current.contains(e.target)
-      ) setOpen(false)
-    }
-    document.addEventListener('mousedown', fn)
-    return () => document.removeEventListener('mousedown', fn)
-  }, [open])
-
-  const handleToggle = () => {
-    if (ref.current) setRect(ref.current.getBoundingClientRect())
-    setOpen(v => !v)
-  }
-
-  const top = rect ? rect.bottom + globalThis.scrollY + 8 : 0
-  const left = rect && align !== 'right' ? rect.left + globalThis.scrollX : undefined
-  const right = rect && align === 'right' ? globalThis.innerWidth - rect.right : undefined
-
-  return (
-    <div className="relative shrink-0" ref={ref}>
-      {trigger(open, handleToggle)}
-      {createPortal(
-        <AnimatePresence>
-          {open && rect && (
-            <motion.div
-              ref={panelRef}
-              initial={{ opacity: 0, y: 6, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 6, scale: 0.97 }}
-              transition={{ duration: 0.14 }}
-              style={{
-                position: 'absolute',
-                top,
-                ...(left !== undefined ? { left } : {}),
-                ...(right !== undefined ? { right } : {}),
-                background: 'var(--hc-surface)',
-                border: '1px solid var(--hc-border)',
-                zIndex: 9999,
-                width,
-                maxWidth: 'calc(100vw - 1.5rem)',
-                borderRadius: '1rem',
-                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-                overflow: 'hidden',
-              }}
-            >
-              {children(() => setOpen(false))}
-            </motion.div>
-          )}
-        </AnimatePresence>,
-        document.body
-      )}
-    </div>
-  )
-}
-
-// ── Dropdown de categorías — pills horizontales ───────────────────────────────
-function CategoryDropdown({ categories, category, setCategory }) {
-  const [expandedParent, setExpandedParent] = useState(null)
-  const tree = useMemo(() => buildCategoryTree(categories), [categories])
-
-  const activeCat = categories.find(c => String(c.id) === String(category))
-  const label = activeCat ? (activeCat.nombreCategoria ?? activeCat.nombre) : 'Categoría'
-  const isActive = !!category
-
-  const pillBase = {
-    border: '1.5px solid var(--hc-border)',
-    borderRadius: '999px',
-    padding: '5px 14px',
-    fontSize: 13,
-    fontWeight: 600,
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-    transition: 'all 0.15s',
-  }
-  const pillActive = { ...pillBase, background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', borderColor: 'color-mix(in srgb, var(--hc-accent) 35%, transparent)' }
-  const pillInactive = { ...pillBase, background: 'var(--hc-surface-2)', color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }
-
-  const renderTrigger = useCallback((open, toggle) => (
-    <button
-      onClick={toggle}
-      className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap"
-      style={isActive || open
-        ? { background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', border: '1.5px solid color-mix(in srgb, var(--hc-accent) 30%, transparent)' }
-        : { background: 'var(--hc-surface)', color: 'var(--hc-text)', border: '1.5px solid var(--hc-border)' }
-      }
-    >
-      <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h8m-8 6h16" />
-      </svg>
-      <span className="max-w-[110px] truncate">{label}</span>
-      <svg className="w-3 h-3 shrink-0 opacity-50" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-      </svg>
-    </button>
-  ), [isActive, label])
-
-  return (
-    <Dropdown
-      width={560}
-      trigger={renderTrigger}
-    >
-      {(close) => (
-        <div className="p-4 space-y-4">
-          {/* Row de categorías padre */}
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider mb-2.5" style={{ color: 'var(--hc-muted)' }}>Categorías</p>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => { setCategory(''); setExpandedParent(null); close() }}
-                style={!category ? pillActive : pillInactive}
-              >
-                Todas
-              </button>
-              {tree.map(cat => (
-                <button
-                  key={cat.id}
-                  onClick={() => {
-                    if (cat.children.length > 0) {
-                      setExpandedParent(expandedParent === cat.id ? null : cat.id)
-                    } else {
-                      setCategory(cat.id); setExpandedParent(null); close()
-                    }
-                  }}
-                  style={String(category) === String(cat.id) || expandedParent === cat.id ? pillActive : pillInactive}
-                >
-                  {cat.nombreCategoria ?? cat.nombre}
-                  {cat.children.length > 0 && <span className="ml-1 opacity-60">›</span>}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Subcategorías del padre expandido */}
-          {expandedParent && (() => {
-            const subs = tree.find(c => c.id === expandedParent)?.children ?? []
-            if (!subs.length) return null
-            return (
-              <div>
-                <div className="h-px mb-3" style={{ background: 'var(--hc-border)' }} />
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-2.5" style={{ color: 'var(--hc-muted)' }}>
-                  {tree.find(c => c.id === expandedParent)?.nombreCategoria ?? 'Subcategorías'}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {subs.map(sub => (
-                    <button
-                      key={sub.id}
-                      onClick={() => { setCategory(sub.id); setExpandedParent(null); close() }}
-                      style={String(category) === String(sub.id) ? pillActive : pillInactive}
-                    >
-                      {sub.nombreCategoria ?? sub.nombre}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )
-          })()}
-        </div>
-      )}
-    </Dropdown>
-  )
-}
-
-// ── Dropdown de marcas con logos + búsqueda + multi-select ────────────────────
-function BrandDropdown({ marcas, marcasFilter, toggleMarca, clearMarcas, marcaProductCount, filteredCount }) {
-  const [search, setSearch] = useState('')
-  const inputRef = useRef(null)
-
-  const visible = search
-    ? marcas.filter(m => m.nombreMarca?.toLowerCase().includes(search.toLowerCase()))
-    : marcas
-
-  const isActive = marcasFilter.size > 0
-  const label = marcasFilter.size === 0
-    ? 'Marca'
-    : marcasFilter.size === 1
-      ? marcas.find(m => marcasFilter.has(String(m.id)))?.nombreMarca ?? 'Marca'
-      : `${marcasFilter.size} marcas`
-
-  const renderTrigger = useCallback((open, toggle) => (
-    <button
-      onClick={toggle}
-      className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap"
-      style={isActive || open
-        ? { background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', border: '1.5px solid color-mix(in srgb, var(--hc-accent) 30%, transparent)' }
-        : { background: 'var(--hc-surface)', color: 'var(--hc-text)', border: '1.5px solid var(--hc-border)' }
-      }
-    >
-      <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-      </svg>
-      <span className="max-w-[100px] truncate">{label}</span>
-      {isActive && (
-        <span className="w-4 h-4 rounded-full text-[9px] font-black flex items-center justify-center text-white shrink-0"
-          style={{ background: 'var(--hc-accent)' }}>{marcasFilter.size}</span>
-      )}
-      <svg className="w-3 h-3 shrink-0 opacity-50" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-      </svg>
-    </button>
-  ), [isActive, label, marcasFilter])
-
-  return (
-    <Dropdown
-      width={340}
-      trigger={renderTrigger}
-    >
-      {(close) => (
-        <div className="p-3 space-y-3">
-          {/* Búsqueda */}
-          <div className="relative">
-            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <input
-              ref={inputRef}
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Buscar marca..."
-              className="w-full h-8 rounded-lg pl-8 pr-3 text-xs outline-none"
-              style={{ background: 'color-mix(in srgb, var(--hc-text) 6%, transparent)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
-            />
-          </div>
-
-          {/* Grid de marcas */}
-          <div className="grid grid-cols-2 gap-1.5 max-h-56 overflow-y-auto pr-0.5" style={{ scrollbarWidth: 'thin' }}>
-            {visible.map(m => {
-              const sel = marcasFilter.has(String(m.id))
-              return (
-                <button
-                  key={m.id}
-                  onClick={() => toggleMarca(String(m.id))}
-                  className="flex items-center gap-2 px-2.5 py-2 rounded-xl text-left transition-all"
-                  style={sel
-                    ? { background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', border: '1.5px solid color-mix(in srgb, var(--hc-accent) 35%, transparent)' }
-                    : { background: 'color-mix(in srgb, var(--hc-text) 4%, transparent)', border: '1.5px solid transparent' }
-                  }
-                >
-                  {/* Checkbox */}
-                  <span className="w-4 h-4 rounded-md shrink-0 flex items-center justify-center border transition-all"
-                    style={sel
-                      ? { background: 'var(--hc-accent)', borderColor: 'var(--hc-accent)' }
-                      : { borderColor: 'var(--hc-border)' }
-                    }
-                  >
-                    {sel && <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
-                  </span>
-                  {/* Logo */}
-                  {m.logoUrl
-                    ? <img src={m.logoUrl} alt="" className="w-6 h-6 object-contain rounded-md shrink-0" onError={e => e.target.style.display='none'} />
-                    : <span className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-black shrink-0"
-                        style={{ background: 'color-mix(in srgb, var(--hc-accent) 15%, transparent)', color: 'var(--hc-accent)' }}>
-                        {m.nombreMarca?.[0]}
-                      </span>
-                  }
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold truncate" style={{ color: 'var(--hc-text)' }}>{m.nombreMarca}</p>
-                    {marcaProductCount[m.id] > 0 && (
-                      <p className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>{marcaProductCount[m.id]} productos</p>
-                    )}
-                  </div>
-                </button>
-              )
-            })}
-            {visible.length === 0 && (
-              <p className="col-span-2 text-center text-xs py-4" style={{ color: 'var(--hc-muted)' }}>Sin resultados</p>
-            )}
-          </div>
-
-          {/* Footer */}
-          <div className="flex items-center gap-2 pt-1 border-t" style={{ borderColor: 'var(--hc-border)' }}>
-            {marcasFilter.size > 0 && (
-              <button onClick={clearMarcas} className="text-xs font-semibold hover:opacity-70 transition-opacity" style={{ color: 'var(--hc-muted)' }}>
-                Limpiar
-              </button>
-            )}
-            <button
-              onClick={close}
-              className="flex-1 h-9 rounded-xl text-xs font-bold text-white transition-opacity hover:opacity-90"
-              style={{ background: 'var(--hc-accent)' }}
-            >
-              Ver {filteredCount} resultado{filteredCount === 1 ? '' : 's'}
-            </button>
-          </div>
-        </div>
-      )}
-    </Dropdown>
-  )
-}
-
-// ── Dropdown de filtros extra ─────────────────────────────────────────────────
-function MoreFiltersDropdown({
-  filterCond, setFilterCond, filterStock, setFilterStock,
-  priceMin, setPriceMin, priceMax, setPriceMax,
-  COND_OPTIONS, STOCK_OPTIONS, filteredCount,
-}) {
-  const extraCount = [filterCond, filterStock, priceMin, priceMax]
-    .filter(v => v !== '' && v != null).length
-
-  const clearExtra = () => {
-    setFilterCond(''); setFilterStock(''); setPriceMin(''); setPriceMax('')
-  }
-
-  const renderTrigger = useCallback((open, toggle) => (
-    <button
-      onClick={toggle}
-      className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap"
-      style={extraCount > 0 || open
-        ? { background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', border: '1.5px solid color-mix(in srgb, var(--hc-accent) 30%, transparent)' }
-        : { background: 'var(--hc-surface)', color: 'var(--hc-text)', border: '1.5px solid var(--hc-border)' }
-      }
-    >
-      <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-        <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
-        <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
-        <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
-        <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
-      </svg>
-      <span>Filtros</span>
-      {extraCount > 0 && (
-        <span className="w-4 h-4 rounded-full text-[9px] font-black flex items-center justify-center text-white shrink-0"
-          style={{ background: 'var(--hc-accent)' }}>{extraCount}</span>
-      )}
-    </button>
-  ), [extraCount])
-
-  return (
-    <Dropdown
-      width={280}
-      trigger={renderTrigger}
-    >
-      {(close) => (
-        <div className="p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-bold" style={{ color: 'var(--hc-text)' }}>Filtros</span>
-            {extraCount > 0 && (
-              <button onClick={clearExtra} className="text-xs font-semibold hover:opacity-70" style={{ color: 'var(--hc-accent)' }}>Limpiar</button>
-            )}
-          </div>
-
-          {/* Condición */}
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--hc-muted)' }}>Condición</p>
-            <div className="flex flex-wrap gap-1.5">
-              {COND_OPTIONS.map(({ value, label }) => (
-                <FPill key={value} active={filterCond === value} onClick={() => setFilterCond(value)}>{label}</FPill>
-              ))}
-            </div>
-          </div>
-
-          {/* Disponibilidad */}
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--hc-muted)' }}>Disponibilidad</p>
-            <div className="flex flex-wrap gap-1.5">
-              {STOCK_OPTIONS.map(({ value, label }) => (
-                <FPill key={value} active={filterStock === value} onClick={() => setFilterStock(value)}>{label}</FPill>
-              ))}
-            </div>
-          </div>
-
-          {/* Precio */}
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--hc-muted)' }}>Precio</p>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs pointer-events-none" style={{ color: 'var(--hc-muted)' }}>₡</span>
-                <input type="number" placeholder="Mín" value={priceMin} onChange={e => setPriceMin(e.target.value)}
-                  className="w-full h-9 rounded-xl pl-7 pr-2 text-xs outline-none"
-                  style={{ background: 'color-mix(in srgb, var(--hc-text) 5%, transparent)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }} />
-              </div>
-              <span className="self-center text-xs" style={{ color: 'var(--hc-muted)' }}>—</span>
-              <div className="relative flex-1">
-                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs pointer-events-none" style={{ color: 'var(--hc-muted)' }}>₡</span>
-                <input type="number" placeholder="Máx" value={priceMax} onChange={e => setPriceMax(e.target.value)}
-                  className="w-full h-9 rounded-xl pl-7 pr-2 text-xs outline-none"
-                  style={{ background: 'color-mix(in srgb, var(--hc-text) 5%, transparent)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }} />
-              </div>
-            </div>
-          </div>
-
-          <button onClick={close}
-            className="w-full h-9 rounded-xl font-bold text-xs text-white transition-opacity hover:opacity-90"
-            style={{ background: 'var(--hc-accent)' }}>
-            Ver {filteredCount} resultado{filteredCount === 1 ? '' : 's'}
-          </button>
-        </div>
-      )}
-    </Dropdown>
-  )
-}
-
-function FPill({ active, onClick, children }) {
-  return (
-    <button onClick={onClick}
-      className="px-2.5 py-1 rounded-lg text-xs font-medium border transition-all"
-      style={active
-        ? { background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', borderColor: 'color-mix(in srgb, var(--hc-accent) 30%, transparent)' }
-        : { color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }
-      }
-    >{children}</button>
-  )
-}
-
 // ── Barra de filtros completa ─────────────────────────────────────────────────
 function CatalogFilterBar({
-  search, setSearch, sort, setSort,
-  categories, marcas, marcaProductCount,
-  categoryTotalCount,
+  search, setSearch,
+  categories, categoryTotalCount,
   category, setCategory,
-  marcasFilter, toggleMarca, clearMarcas,
-  filterCond, setFilterCond, filterStock, setFilterStock,
-  priceMin, setPriceMin, priceMax, setPriceMax,
-  hasFilters, clearFilters, COND_OPTIONS, STOCK_OPTIONS, SORT_OPTIONS, filteredCount,
+  hasFilters, clearFilters,
   onOpenSidebar,
 }) {
   const tree = useMemo(
@@ -633,7 +215,6 @@ function CatalogFilterBar({
 // ── Sidebar de categorías y marcas ───────────────────────────────────────────
 function CategorySidebar({
   categories, category, setCategory,
-  marcas, marcasFilter, toggleMarca, clearMarcas, marcaProductCount,
   categoryTotalCount,
   onCategorySelect,
 }) {
@@ -1078,43 +659,6 @@ function EmprendimientosRow({ products, onVerEmprendimientos }) {
   )
 }
 
-// ── Banner Emprendimientos dentro del catálogo ────────────────────────────────
-function EmprendimientosBanner({ onClick }) {
-  return (
-    <motion.div
-      className="col-span-full rounded-2xl overflow-hidden cursor-pointer group"
-      onClick={onClick}
-      whileHover={{ scale: 1.005 }}
-      transition={{ duration: 0.15 }}
-      style={{
-        background: 'linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.03) 100%)',
-        border: '1.5px solid rgba(16,185,129,0.22)',
-      }}
-    >
-      <div className="flex items-center gap-4 p-4 sm:p-5">
-        <span className="text-4xl shrink-0" style={{ filter: 'drop-shadow(0 0 8px rgba(16,185,129,0.35))' }}>🤝</span>
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-sm sm:text-base" style={{ color: '#10b981' }}>
-            Emprendimientos Costarricenses
-          </p>
-          <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--hc-muted)' }}>
-            Apoyá el comercio local — productos únicos de emprendedores CR
-          </p>
-        </div>
-        <div
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all group-hover:gap-2.5"
-          style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981' }}
-        >
-          Ver emprendimientos
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
-          </svg>
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
 // ── Ofertas HOT — usa la ProductCard compartida con tag roja (una sola tarjeta en todo el sitio)
 function OfertasView({ products, loading }) {
   return (
@@ -1492,8 +1036,6 @@ function CategoryRowsView({ products, categories, convenioMarcaNames, onVerMas, 
 // ── Página principal ──────────────────────────────────────────────────────────
 export default function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const navigate = useNavigate()
-  const { t } = useTranslation()
 
   const SORT_OPTIONS = [
     { value: 'default',    label: 'Relevancia' },
@@ -1525,7 +1067,7 @@ export default function ProductsPage() {
     const p = Number.parseInt(searchParams.get('page') ?? '0', 10)
     return Number.isNaN(p) || p < 0 ? 0 : p
   })
-  const [totalPages, setTotalPages] = useState(1)
+  const [, setTotalPages] = useState(1)
   const [viewMode,  setViewMode]  = useState('all')
   const [convenios, setConvenios] = useState([])
 
@@ -1735,7 +1277,9 @@ export default function ProductsPage() {
     ropa.sort((a, b) => {
       const ia = ORDER.indexOf(a.toUpperCase()), ib = ORDER.indexOf(b.toUpperCase())
       if (ia >= 0 && ib >= 0) return ia - ib
-      return ia >= 0 ? -1 : ib >= 0 ? 1 : a.localeCompare(b)
+      if (ia >= 0) return -1
+      if (ib >= 0) return 1
+      return a.localeCompare(b)
     })
     return { zapatos, ropa }
   }, [products])

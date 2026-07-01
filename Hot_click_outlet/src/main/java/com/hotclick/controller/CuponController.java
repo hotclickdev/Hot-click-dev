@@ -65,9 +65,9 @@ public class CuponController {
         ));
     }
 
-    /** Lista todos los cupones — solo ADMIN_IT. */
+    /** Lista todos los cupones — solo ADMIN. */
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN_IT')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> listar(
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "50") int size,
@@ -83,9 +83,9 @@ public class CuponController {
         )));
     }
 
-    /** Estadísticas de cupones — solo ADMIN_IT. */
+    /** Estadísticas de cupones — solo ADMIN. */
     @GetMapping("/estadisticas")
-    @PreAuthorize("hasRole('ADMIN_IT')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> estadisticas() {
         long total      = cuponRepository.count();
         long usados     = cuponRepository.countByUsado(true);

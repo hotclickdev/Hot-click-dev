@@ -19,7 +19,7 @@ import java.util.concurrent.Executor;
 
 @RestController
 @RequestMapping("/api/admin/ai")
-@PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN_IT','ADMIN_CLIENTE')")
+@PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN')")
 public class AiCopilotController {
 
     private static final Logger log = LoggerFactory.getLogger(AiCopilotController.class);
@@ -86,7 +86,7 @@ public class AiCopilotController {
 
     /** Clear conversation history. */
     @DeleteMapping("/historial")
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN_IT')")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN')")
     public ResponseEntity<?> limpiar() {
         aiCopilotService.limpiarHistorial(TenantContext.get());
         return ResponseEntity.ok(Map.of("ok", true));

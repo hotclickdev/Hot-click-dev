@@ -101,43 +101,6 @@ function StepTracker({ estado, esRetiro, onStep, saving }) {
   )
 }
 
-function getNextStep(estado, esRetiro) {
-  if (estado === 'PAGADO')         return { type: 'btn', next: 'EN_PREPARACION', labelKey: 'adminOrders.markPrep' }
-  if (estado === 'EN_PREPARACION') return esRetiro
-    ? { type: 'btn', next: 'LISTO_RETIRO', labelKey: 'adminOrders.readyPickup' }
-    : { type: 'envio' }
-  if (estado === 'LISTO_RETIRO')   return { type: 'btn', next: 'ENTREGADO', labelKey: 'adminOrders.markDelivered' }
-  if (estado === 'ENVIADO')        return { type: 'btn', next: 'ENTREGADO', labelKey: 'adminOrders.markDelivered' }
-  if (estado === 'ENTREGADO')      return { type: 'btn', next: 'COMPLETADO', labelKey: 'adminOrders.markCompleted' }
-  return null
-}
-
-function buildWaMessage(order) {
-  const estado = order.estado ?? 'PENDIENTE'
-  const items = (order.items ?? [])
-    .map(i => `  • ${i.nombreProducto ?? 'Producto'} ×${i.cantidad} — ₡${((i.precioUnitario ?? 0) * i.cantidad).toLocaleString('es-CR')}`)
-    .join('\n')
-  const esRetiro = order.metodoEnvio !== 'ENVIO_A_DOMICILIO'
-  let extra = ''
-  if (order.numeroGuia) {
-    const isCorreos = !order.urlTracking || order.urlTracking.includes('correos.go.cr')
-    const trackUrl  = order.urlTracking ?? `https://rastreo.correos.go.cr/?codigo=${order.numeroGuia}`
-    const courier   = isCorreos ? '🟡 Correos de Costa Rica' : '🛵 Entrega directa por HotClick'
-    extra = `\n\n📦 *Envío:* ${courier}\n*Guía:* ${order.numeroGuia}\n🔍 Rastrear: ${trackUrl}`
-  } else if (esRetiro && (estado === 'LISTO_RETIRO' || estado === 'EN_PREPARACION')) {
-    extra = `\n\n📍 *Retiro en tienda:* Cuando esté listo te avisamos.\nhttps://waze.com/ul?ll=9.9342,-84.0877&navigate=yes`
-  }
-  return encodeURIComponent(
-    `Hola ${order.nombreCliente ?? 'Cliente'}! 👋 Te escribimos desde HotClick con una actualización de tu pedido.\n\n` +
-    `📋 *Pedido #${order.numeroPedido ?? order.id}*\n` +
-    `Estado: *${estado}*\n\n` +
-    `${items}\n\n` +
-    `💰 *Total: ₡${(order.total ?? 0).toLocaleString('es-CR')}*` +
-    extra +
-    `\n\n¿Tenés alguna duda? Estamos para ayudarte 😊`
-  )
-}
-
 const METODOS_PAGO  = ['SINPE', 'EFECTIVO', 'CONTRA_ENTREGA', 'TRANSFERENCIA']
 const METODOS_ENVIO = [
   { value: 'RETIRO_EN_TIENDA',   labelKey: 'adminOrders.pickupStoreLabel' },

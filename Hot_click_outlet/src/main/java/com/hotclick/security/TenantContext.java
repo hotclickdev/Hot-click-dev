@@ -4,7 +4,7 @@ package com.hotclick.security;
  * Almacena el empresaId del tenant activo en el thread actual.
  *
  * Uso:
- *   TenantContext.get()   → Long empresaId (null si ADMIN_IT o sin auth)
+ *   TenantContext.get()   → Long empresaId (null si ADMIN o sin auth)
  *   TenantContext.set(id) → lo llama TenantFilter en cada request
  *   TenantContext.clear() → lo llama TenantFilter en afterCompletion
  *

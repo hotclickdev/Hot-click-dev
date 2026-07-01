@@ -320,7 +320,7 @@ export default function AdminPagos() {
               </button>
               {filtComp === 'PENDIENTE' && comprobantes.length > 0 && (
                 <span className="ml-auto px-2.5 py-1 rounded-full text-[11px] font-semibold bg-yellow-500/15 text-yellow-400 border border-yellow-500/30">
-                  {comprobantes.length} pendiente{comprobantes.length !== 1 ? 's' : ''} de verificar
+                  {comprobantes.length} pendiente{comprobantes.length === 1 ? '' : 's'} de verificar
                 </span>
               )}
             </div>

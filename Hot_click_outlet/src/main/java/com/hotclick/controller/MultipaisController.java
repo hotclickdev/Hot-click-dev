@@ -54,7 +54,7 @@ public class MultipaisController {
 
     /** Gets current LATAM config for the empresa. */
     @GetMapping("/config")
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN_IT','ADMIN_CLIENTE')")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN')")
     public ResponseEntity<?> getConfig() {
         Long empresaId = TenantContext.get();
         Empresa empresa = empresaRepository.findById(empresaId).orElse(null);
@@ -64,7 +64,7 @@ public class MultipaisController {
 
     /** Updates LATAM config for the empresa. */
     @PutMapping("/config")
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN_IT')")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN')")
     public ResponseEntity<?> updateConfig(@RequestBody Map<String, Object> body) {
         Long empresaId = TenantContext.get();
         Empresa empresa = empresaRepository.findById(empresaId).orElse(null);

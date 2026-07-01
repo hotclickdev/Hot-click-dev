@@ -11,7 +11,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/forecast")
-@PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN_IT','ADMIN_CLIENTE')")
+@PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN')")
 public class ForecastController {
 
     @Autowired private DemandForecastService forecastService;
@@ -22,7 +22,7 @@ public class ForecastController {
     }
 
     @PostMapping("/generar")
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN_IT')")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN')")
     public ResponseEntity<?> generar() {
         forecastService.generarForecast(TenantContext.get());
         return ResponseEntity.ok(Map.of("ok", true, "mensaje", "Pronóstico generado"));

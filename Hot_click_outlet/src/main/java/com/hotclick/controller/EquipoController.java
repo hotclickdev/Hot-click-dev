@@ -95,8 +95,8 @@ public class EquipoController {
             tenantService.verificarLimiteUsuariosEquipo(empresaId);
         }
 
-        var rolAdminCliente = rolRepository.findByNombreRol(Constants.ROL_ADMIN_CLIENTE)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Rol ADMIN_CLIENTE no configurado"));
+        var rolMiembro = rolRepository.findByNombreRol(Constants.ROL_EMPRENDEDOR)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Rol EMPRENDEDOR no configurado"));
 
         Optional<Usuario> existenteOpt = usuarioRepository.findByCorreo(correoNorm);
         if (existenteOpt.isPresent()) {
@@ -108,8 +108,8 @@ public class EquipoController {
             if (miembroEmpresaRepository.countEmpresasByUsuarioId(u.getId()) >= MAX_EMPRESAS_POR_USUARIO)
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El usuario ya pertenece al máximo de " + MAX_EMPRESAS_POR_USUARIO + " negocios permitidos"));
 
-            boolean tieneRol = u.getRoles().stream().anyMatch(r -> Constants.ROL_ADMIN_CLIENTE.equals(r.getNombreRol()));
-            if (!tieneRol) { u.getRoles().add(rolAdminCliente); usuarioRepository.save(u); }
+            boolean tieneRol = u.getRoles().stream().anyMatch(r -> Constants.ROL_EMPRENDEDOR.equals(r.getNombreRol()));
+            if (!tieneRol) { u.getRoles().add(rolMiembro); usuarioRepository.save(u); }
 
             // Reactivar membresía eliminada si existe, o crear nueva
             Optional<MiembroEmpresa> previo = miembroEmpresaRepository.findByUsuarioIdAndEmpresaId(u.getId(), empresa.getId());
@@ -142,7 +142,7 @@ public class EquipoController {
         nuevo.setIntentosFallidos(0);
         nuevo.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
         nuevo.setEmpresa(empresa);
-        nuevo.getRoles().add(rolAdminCliente);
+        nuevo.getRoles().add(rolMiembro);
         Usuario saved = usuarioRepository.save(nuevo);
 
         miembroEmpresaRepository.save(new MiembroEmpresa(saved, empresa, rolEnEmpresa));

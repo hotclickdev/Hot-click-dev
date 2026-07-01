@@ -28,7 +28,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Security Center REST API — ADMIN_IT only.
+ * Security Center REST API — ADMIN only.
  *
  * Endpoints:
  *   GET  /api/security/dashboard?period=24h|7d|30d   — KPIs + recent events + alerts
@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/security")
-@PreAuthorize("hasRole('ADMIN_IT')")
+@PreAuthorize("hasRole('ADMIN')")
 public class SecurityController {
 
     private static final Logger log = LoggerFactory.getLogger(SecurityController.class);

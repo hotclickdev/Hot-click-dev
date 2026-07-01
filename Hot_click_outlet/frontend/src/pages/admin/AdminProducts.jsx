@@ -11,7 +11,7 @@ import Input from '@/components/ui/Input'
 import Modal from '@/components/ui/Modal'
 import Badge from '@/components/ui/Badge'
 import Spinner from '@/components/ui/Spinner'
-import { productService, denormalizeProduct, normalizeProduct } from '@/services/productService'
+import { productService, denormalizeProduct } from '@/services/productService'
 import KardexDrawer from '@/components/pos/KardexDrawer'
 import { warehouseService } from '@/services/orderService'
 import { marcaService } from '@/services/marcaService'
@@ -45,22 +45,25 @@ function SeoStatusIcon({ product }) {
   const hasDesc = !!(product.metaDescription)
   const both = hasTitle && hasDesc
   const none = !hasTitle && !hasDesc
-  const tip = both
-    ? `Título: ${product.metaTitle}\nDescripción: ${product.metaDescription}`
-    : none
-    ? 'Sin título ni descripción SEO'
-    : hasTitle
-    ? `Título: ${product.metaTitle}\nFalta meta descripción`
-    : `Falta título SEO\nDescripción: ${product.metaDescription}`
+  let tip = `Falta título SEO\nDescripción: ${product.metaDescription}`
+  if (both) tip = `Título: ${product.metaTitle}\nDescripción: ${product.metaDescription}`
+  else if (none) tip = 'Sin título ni descripción SEO'
+  else if (hasTitle) tip = `Título: ${product.metaTitle}\nFalta meta descripción`
+  let icon = '⚠️'
+  if (both) icon = '✅'
+  else if (none) icon = '❌'
   return (
     <span title={tip} className="text-base cursor-default select-none">
-      {both ? '✅' : none ? '❌' : '⚠️'}
+      {icon}
     </span>
   )
 }
 
 function CharCounter({ current, max, min = 0 }) {
-  const color = current === 0 ? 'text-[#5e5e6e]' : current < min ? 'text-amber-400' : current > max ? 'text-red-400' : 'text-emerald-400'
+  let color = 'text-emerald-400'
+  if (current === 0) color = 'text-[#5e5e6e]'
+  else if (current < min) color = 'text-amber-400'
+  else if (current > max) color = 'text-red-400'
   return <span className={`text-xs tabular-nums ${color}`}>{current}/{max}</span>
 }
 
@@ -440,6 +443,16 @@ export default function AdminProducts() {
                 load(0)
               }}
             />
+            <Link
+              to="/admin/productos/carga-masiva"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-white/8"
+              style={{ border: '1px solid rgba(255,255,255,0.12)', color: 'var(--hc-text)' }}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+              </svg>
+              Carga masiva
+            </Link>
             <Button onClick={openNew}>+ {t('admin.products.new')}</Button>
           </div>
         </div>

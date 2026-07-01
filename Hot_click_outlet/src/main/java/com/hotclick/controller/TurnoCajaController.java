@@ -20,7 +20,7 @@ public class TurnoCajaController {
     @Autowired private JwtUtil          jwtUtil;
 
     @PostMapping("/abrir")
-    @PreAuthorize("hasAuthority('pos.caja.abrir') or hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE')")
+    @PreAuthorize("hasAuthority('pos.caja.abrir') or hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> abrir(@RequestBody Map<String, Object> body, HttpServletRequest request) {
         try {
             Long usuarioId  = extractUserId(request);
@@ -37,7 +37,7 @@ public class TurnoCajaController {
     }
 
     @PutMapping("/{id}/cerrar")
-    @PreAuthorize("hasAuthority('pos.caja.cerrar') or hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE')")
+    @PreAuthorize("hasAuthority('pos.caja.cerrar') or hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> cerrar(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         try {
             Integer montoDeclarado = body.containsKey("montoDeclarado")
@@ -53,7 +53,7 @@ public class TurnoCajaController {
     }
 
     @GetMapping("/activo")
-    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE')")
+    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> getActivo(HttpServletRequest request) {
         try {
             Long usuarioId = extractUserId(request);
@@ -66,7 +66,7 @@ public class TurnoCajaController {
     }
 
     @GetMapping("/historial")
-    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE')")
+    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> getHistorial(HttpServletRequest request) {
         try {
             Long empresaId = extractEmpresaId(request);

@@ -377,8 +377,8 @@ export default function AdminPublicaciones() {
         fallidos.push(id)
       }
     }
-    if (exitosos > 0) toast({ message: `${exitosos} publicación${exitosos !== 1 ? 'es' : ''} generada${exitosos !== 1 ? 's' : ''}`, type: 'success' })
-    if (fallidos.length > 0) toast({ message: `${fallidos.length} producto${fallidos.length !== 1 ? 's' : ''} no se pudo${fallidos.length !== 1 ? 'ieron' : ''} generar`, type: 'error' })
+    if (exitosos > 0) toast({ message: `${exitosos} publicación${exitosos === 1 ? '' : 'es'} generada${exitosos === 1 ? '' : 's'}`, type: 'success' })
+    if (fallidos.length > 0) toast({ message: `${fallidos.length} producto${fallidos.length === 1 ? '' : 's'} no se pudo${fallidos.length === 1 ? '' : 'ieron'} generar`, type: 'error' })
     setSeleccionados(new Set())
     setModalProductos(false)
     setSearchProd('')
@@ -681,7 +681,7 @@ export default function AdminPublicaciones() {
                 {/* Footer modal */}
                 <div className="px-5 py-4 border-t border-white/8 shrink-0 flex items-center justify-between gap-3">
                   <span className="text-sm text-[#8e8e9a]">
-                    {seleccionados.size > 0 ? `${seleccionados.size} seleccionado${seleccionados.size !== 1 ? 's' : ''}` : 'Ninguno seleccionado'}
+                    {seleccionados.size > 0 ? `${seleccionados.size} seleccionado${seleccionados.size === 1 ? '' : 's'}` : 'Ninguno seleccionado'}
                   </span>
                   <div className="flex gap-2">
                     <button onClick={() => setModalProductos(false)}

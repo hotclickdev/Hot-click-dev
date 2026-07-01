@@ -11,7 +11,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/inventario")
-@PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN_IT','ADMIN_CLIENTE')")
+@PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN')")
 public class InventarioController {
 
     @Autowired private InventoryForecastService forecastService;
@@ -24,7 +24,7 @@ public class InventarioController {
 
     /** Trigger immediate ABC analysis for the current empresa (admin action). */
     @PostMapping("/analizar")
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN_IT')")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN')")
     public ResponseEntity<?> analizar() {
         forecastService.actualizarAnalisisEmpresa(TenantContext.get());
         return ResponseEntity.ok(Map.of("ok", true, "mensaje", "Análisis completado"));

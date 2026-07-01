@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 /**
- * F28 — Observability dashboard endpoint (ADMIN_IT only).
+ * F28 — Observability dashboard endpoint (ADMIN only).
  *
  * GET /api/admin/observabilidad
  *
@@ -37,7 +37,7 @@ import java.util.*;
  */
 @RestController
 @RequestMapping("/api/admin/observabilidad")
-@PreAuthorize("hasRole('ADMIN_IT')")
+@PreAuthorize("hasRole('ADMIN')")
 public class ObservabilityController {
 
     private static final Logger log = LoggerFactory.getLogger(ObservabilityController.class);

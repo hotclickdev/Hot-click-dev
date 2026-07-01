@@ -10,5 +10,5 @@ public record AiProductoGeneradoDTO(
     String tituloComericial,
     String descripcionOptimizadaSeo,
     List<String> etiquetasBusqueda,
-    int creditosRestantes   // -1 = ilimitado (plan Enterprise/ADMIN_IT)
+    int creditosRestantes   // -1 = ilimitado (plan Enterprise/ADMIN)
 ) {}

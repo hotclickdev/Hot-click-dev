@@ -23,7 +23,7 @@ public class ProveedorController {
     @Autowired private CompanyScope        companyScope;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE','INVENTARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','INVENTARIO')")
     public ResponseEntity<?> listar() {
         Long empresaId = companyScope.getCurrentEmpresaId();
         var lista = empresaId != null
@@ -33,7 +33,7 @@ public class ProveedorController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE')")
     public ResponseEntity<?> crear(@RequestBody Map<String, Object> body) {
         try {
             Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
@@ -59,7 +59,7 @@ public class ProveedorController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE')")
     public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         try {
             Proveedor p = proveedorRepository.findById(id)
@@ -80,7 +80,7 @@ public class ProveedorController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE')")
     public ResponseEntity<?> eliminar(@PathVariable Long id) {
         try {
             Proveedor p = proveedorRepository.findById(id)

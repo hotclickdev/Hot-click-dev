@@ -152,7 +152,7 @@ export default function AdminCompras() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>Órdenes de compra</h1>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>{ordenesFiltradas.length} orden{ordenesFiltradas.length !== 1 ? 'es' : ''}</p>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>{ordenesFiltradas.length} orden{ordenesFiltradas.length === 1 ? '' : 'es'}</p>
         </div>
         <div className="flex items-center gap-2">
           {/* Filtros */}
@@ -214,7 +214,7 @@ export default function AdminCompras() {
                   </div>
                   <div className="flex items-center gap-4 mt-1 text-xs" style={{ color: 'var(--hc-muted)' }}>
                     <span>{fmtDate(orden.fechaOrden)}</span>
-                    <span>{(orden.items ?? []).length} ítem{(orden.items ?? []).length !== 1 ? 's' : ''}</span>
+                    <span>{(orden.items ?? []).length} ítem{(orden.items ?? []).length === 1 ? '' : 's'}</span>
                     {orden.usuario && <span>por {orden.usuario.nombre}</span>}
                   </div>
                 </div>

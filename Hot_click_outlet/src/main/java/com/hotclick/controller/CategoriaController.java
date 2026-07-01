@@ -51,7 +51,7 @@ public class CategoriaController {
         return ResponseEntity.ok(ResponseDTO.success("Categorías", cats));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     @CacheEvict(value = {"categorias", "categorias-publicas"}, allEntries = true)
     @PostMapping
     public ResponseEntity<ResponseDTO> crear(
@@ -84,7 +84,7 @@ public class CategoriaController {
         }
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     @Transactional
     @CacheEvict(value = {"categorias", "categorias-publicas"}, allEntries = true)
     @PostMapping("/bulk")
@@ -111,7 +111,7 @@ public class CategoriaController {
         return ResponseEntity.ok(ResponseDTO.success("Importadas: " + batch.size() + " categorías", Map.of("ok", batch.size())));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     @CacheEvict(value = {"categorias", "categorias-publicas"}, allEntries = true)
     @PutMapping("/{id}")
     public ResponseEntity<ResponseDTO> actualizar(
@@ -147,7 +147,7 @@ public class CategoriaController {
         }
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     @CacheEvict(value = {"categorias", "categorias-publicas"}, allEntries = true)
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseDTO> eliminar(@PathVariable Long id) {

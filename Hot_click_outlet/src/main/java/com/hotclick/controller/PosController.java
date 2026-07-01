@@ -44,7 +44,7 @@ public class PosController {
     @Autowired private CacheManager       cacheManager;
 
     @PostMapping("/venta")
-    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE')")
+    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR')")
     @Transactional
     public ResponseEntity<?> crearVenta(@RequestBody PosVentaDTO dto, HttpServletRequest request) {
         try {
@@ -169,7 +169,7 @@ public class PosController {
     }
 
     @GetMapping("/historial")
-    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE')")
+    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> historialVentas(HttpServletRequest request) {
         try {
             Long empresaId = extractEmpresaId(request);

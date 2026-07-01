@@ -169,8 +169,8 @@ public enum WaPlantilla {
 
     // ── 6. NUEVO PEDIDO — ADMIN IT ───────────────────────────────────────────
 
-    ADMIN_IT_ALERTA(
-        "NUEVO_PEDIDO_ADMIN_IT",
+    ADMIN_ALERTA(
+        "NUEVO_PEDIDO_ADMIN",
         """
         Sos el sistema interno de HOTCLICK.
         Escribí un WhatsApp CORTO (máx 200 caracteres) notificando al equipo de admin que llegó un nuevo pedido.

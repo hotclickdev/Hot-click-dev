@@ -101,7 +101,7 @@ export default function AdminConvenios() {
     finally { setLoading(false) }
   }
 
-  useEffect(() => { fetchLista() }, []) // eslint-disable-line
+  useEffect(() => { fetchLista() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSave(form) {
     if (form.id) {

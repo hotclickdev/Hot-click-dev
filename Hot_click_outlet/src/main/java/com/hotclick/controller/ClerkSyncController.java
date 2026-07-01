@@ -130,9 +130,8 @@ public class ClerkSyncController {
             // for any email could supply an admin's email in the body and take over the account.
             boolean hasElevatedRole = u.getRoles().stream()
                 .map(Rol::getNombreRol)
-                .anyMatch(r -> Constants.ROL_ADMIN_IT.equals(r)
-                            || Constants.ROL_EMPRENDEDOR.equals(r)
-                            || Constants.ROL_ADMIN_CLIENTE.equals(r));
+                .anyMatch(r -> Constants.ROL_ADMIN.equals(r)
+                            || Constants.ROL_EMPRENDEDOR.equals(r));
             if (hasElevatedRole && u.getClerkUserId() == null) {
                 log.warn("[clerk-sync] Blocked Clerk merge for elevated account email={} clerkId={}", email, clerkUserId);
                 throw new SecurityException("Esta cuenta requiere verificación adicional para vincular login social. Usá tu contraseña.");

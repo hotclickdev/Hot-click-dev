@@ -1,6 +1,5 @@
 package com.hotclick.config;
 
-import com.hotclick.security.ApiKeyAuthFilter;
 import com.hotclick.security.BlockedIpFilter;
 import com.hotclick.security.InternalSecretFilter;
 import com.hotclick.security.JwtRequestFilter;
@@ -27,7 +26,6 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
-import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.security.web.csrf.CsrfFilter;
 import static org.springframework.http.HttpMethod.*;
 
@@ -58,9 +56,6 @@ public class SecurityConfig {
 
     @Bean
     TenantFilter tenantFilter() { return new TenantFilter(); }
-
-    @Bean
-    ApiKeyAuthFilter apiKeyAuthFilter() { return new ApiKeyAuthFilter(); }
 
     @Bean
     InternalSecretFilter internalSecretFilter() { return new InternalSecretFilter(); }
@@ -99,15 +94,14 @@ public class SecurityConfig {
             JwtRequestFilter jwtRequestFilter,
             RateLimitingFilter rateLimitingFilter,
             TenantFilter tenantFilter,
-            ApiKeyAuthFilter apiKeyAuthFilter,
             InternalSecretFilter internalSecretFilter,
             BlockedIpFilter blockedIpFilter) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                // Actuator — locked to ADMIN_IT only
-                .requestMatchers("/actuator/**").hasRole("ADMIN_IT")
+                // Actuator — locked to ADMIN only
+                .requestMatchers("/actuator/**").hasRole("ADMIN")
                 // Auth: 2FA verify y envío de EMAIL OTP durante login son públicos (validan tempToken internamente)
                 .requestMatchers(POST, "/api/auth/2fa/verify").permitAll()
                 .requestMatchers(POST, "/api/auth/2fa/email/send").permitAll()
@@ -153,10 +147,10 @@ public class SecurityConfig {
                 // Stock en tiempo real (SSE) — público; el tenant se infiere del producto, no del caller
                 .requestMatchers(GET, "/api/marketplace/productos/*/stock-stream").permitAll()
                 // Gestión de productos — roles de empresa + API keys con scope write:productos
-                .requestMatchers(POST,   "/api/productos").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
-                .requestMatchers(PUT,    "/api/productos/*").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
-                .requestMatchers(DELETE, "/api/productos/*").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
-                .requestMatchers(POST,   "/api/productos/**").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
+                .requestMatchers(POST,   "/api/productos").hasAnyRole("ADMIN", "EMPRENDEDOR")
+                .requestMatchers(PUT,    "/api/productos/*").hasAnyRole("ADMIN", "EMPRENDEDOR")
+                .requestMatchers(DELETE, "/api/productos/*").hasAnyRole("ADMIN", "EMPRENDEDOR")
+                .requestMatchers(POST,   "/api/productos/**").hasAnyRole("ADMIN", "EMPRENDEDOR")
                 .requestMatchers(GET, "/api/categorias").permitAll()
                 .requestMatchers(GET, "/api/categorias/**").permitAll()
                 .requestMatchers(GET, "/api/convenios/publicos").permitAll()
@@ -174,7 +168,6 @@ public class SecurityConfig {
                 .requestMatchers("/api/admin/branding").authenticated()
                 // Marketplace de plugins y API keys
                 .requestMatchers("/api/admin/plugins/**").authenticated()
-                .requestMatchers("/api/admin/api-keys/**").authenticated()
                 // LATAM multi-país
                 .requestMatchers(GET, "/api/admin/multipais/paises").permitAll()
                 .requestMatchers("/api/admin/multipais/**").authenticated()
@@ -186,25 +179,25 @@ public class SecurityConfig {
                 .requestMatchers("/api/tenant/**").authenticated()
                 .requestMatchers(GET, "/api/ruleta/premios").permitAll()
                 .requestMatchers(POST, "/api/contacto").permitAll()
-                // Servicios HOT — fotos y solicitudes son públicas; gestión requiere ADMIN_IT
+                // Servicios HOT — fotos y solicitudes son públicas; gestión requiere ADMIN
                 .requestMatchers(POST, "/api/servicios/fotos").permitAll()
                 .requestMatchers(POST, "/api/servicios").permitAll()
-                .requestMatchers(GET,    "/api/servicios").hasRole("ADMIN_IT")
-                .requestMatchers(PUT,    "/api/servicios/*/estado").hasRole("ADMIN_IT")
-                .requestMatchers(DELETE, "/api/servicios/*").hasRole("ADMIN_IT")
-                // Garantías — mis-garantias y mis-solicitudes: auth; admin: ADMIN_IT
+                .requestMatchers(GET,    "/api/servicios").hasRole("ADMIN")
+                .requestMatchers(PUT,    "/api/servicios/*/estado").hasRole("ADMIN")
+                .requestMatchers(DELETE, "/api/servicios/*").hasRole("ADMIN")
+                // Garantías — mis-garantias y mis-solicitudes: auth; admin: ADMIN
                 .requestMatchers(GET, "/api/garantias/solicitudes/mis-solicitudes").authenticated()
-                .requestMatchers(GET, "/api/garantias/solicitudes").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
-                .requestMatchers(PUT, "/api/garantias/solicitudes/*/estado").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
+                .requestMatchers(GET, "/api/garantias/solicitudes").hasAnyRole("ADMIN", "EMPRENDEDOR")
+                .requestMatchers(PUT, "/api/garantias/solicitudes/*/estado").hasAnyRole("ADMIN", "EMPRENDEDOR")
                 // Testimonios — público: GET aprobados; auth: crear + subir imagen; admin: listar todos + moderar
                 .requestMatchers(GET, "/api/testimonios/publicos").permitAll()
                 .requestMatchers(GET, "/api/testimonios/producto/*/rating").permitAll()
                 // Blog — público: listado y detalle de publicaciones publicadas
                 .requestMatchers(GET, "/api/blog/publico").permitAll()
                 .requestMatchers(GET, "/api/blog/publico/*").permitAll()
-                .requestMatchers(GET, "/api/testimonios/admin").hasRole("ADMIN_IT")
-                .requestMatchers(PUT, "/api/testimonios/*/aprobar").hasRole("ADMIN_IT")
-                .requestMatchers(PUT, "/api/testimonios/*/rechazar").hasRole("ADMIN_IT")
+                .requestMatchers(GET, "/api/testimonios/admin").hasRole("ADMIN")
+                .requestMatchers(PUT, "/api/testimonios/*/aprobar").hasRole("ADMIN")
+                .requestMatchers(PUT, "/api/testimonios/*/rechazar").hasRole("ADMIN")
                 // Carrito abandonado — público (incluye DELETE; el controller valida sessionId)
                 .requestMatchers(POST, "/api/cart/abandoned").permitAll()
                 .requestMatchers(GET,  "/api/cart/abandoned/recover/**").permitAll()
@@ -220,41 +213,41 @@ public class SecurityConfig {
                 .requestMatchers(GET, "/api/public/**").permitAll()
                 .requestMatchers(GET, "/sitemap.xml").permitAll()
                 // Perfil de empresa — solo lectura para todos los roles de la empresa; escritura solo EMPRENDEDOR
-                .requestMatchers(GET,  "/api/empresa/perfil").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
-                .requestMatchers(PUT,  "/api/empresa/perfil").hasAnyRole("EMPRENDEDOR", "ADMIN_IT")
-                .requestMatchers(PUT,  "/api/empresa/perfil/visibilidad").hasAnyRole("EMPRENDEDOR", "ADMIN_IT")
-                .requestMatchers(PUT,  "/api/empresa/perfil/fiscal").hasAnyRole("EMPRENDEDOR", "ADMIN_IT")
-                .requestMatchers(POST, "/api/empresa/perfil/cert-p12").hasAnyRole("EMPRENDEDOR", "ADMIN_IT")
-                .requestMatchers(POST, "/api/empresa/perfil/logo").hasAnyRole("EMPRENDEDOR", "ADMIN_IT")
-                // Gestión de equipo — accesible para EMPRENDEDOR y ADMIN_CLIENTE de la misma empresa
-                .requestMatchers(GET,    "/api/empresa/equipo").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
+                .requestMatchers(GET,  "/api/empresa/perfil").hasAnyRole("ADMIN", "EMPRENDEDOR")
+                .requestMatchers(PUT,  "/api/empresa/perfil").hasAnyRole("EMPRENDEDOR", "ADMIN")
+                .requestMatchers(PUT,  "/api/empresa/perfil/visibilidad").hasAnyRole("EMPRENDEDOR", "ADMIN")
+                .requestMatchers(PUT,  "/api/empresa/perfil/fiscal").hasAnyRole("EMPRENDEDOR", "ADMIN")
+                .requestMatchers(POST, "/api/empresa/perfil/cert-p12").hasAnyRole("EMPRENDEDOR", "ADMIN")
+                .requestMatchers(POST, "/api/empresa/perfil/logo").hasAnyRole("EMPRENDEDOR", "ADMIN")
+                // Gestión de equipo — accesible para EMPRENDEDOR de la misma empresa
+                .requestMatchers(GET,    "/api/empresa/equipo").hasAnyRole("ADMIN", "EMPRENDEDOR")
                 .requestMatchers(POST,   "/api/empresa/equipo").hasRole("EMPRENDEDOR")
                 .requestMatchers(PUT,    "/api/empresa/equipo/*/rol").hasRole("EMPRENDEDOR")
                 .requestMatchers(DELETE, "/api/empresa/equipo/*").hasRole("EMPRENDEDOR")
-                // Security Center — ADMIN_IT only
-                .requestMatchers("/api/security/**").hasRole("ADMIN_IT")
-                // Observabilidad — ADMIN_IT only
-                .requestMatchers("/api/admin/observabilidad/**").hasRole("ADMIN_IT")
-                // Admin-only routes — ADMIN_IT only (superadmin exclusivos)
-                .requestMatchers("/api/admin/empresas/**").hasRole("ADMIN_IT")
+                // Security Center — ADMIN only
+                .requestMatchers("/api/security/**").hasRole("ADMIN")
+                // Observabilidad — ADMIN only
+                .requestMatchers("/api/admin/observabilidad/**").hasRole("ADMIN")
+                // Admin-only routes — ADMIN only (superadmin exclusivos)
+                .requestMatchers("/api/admin/empresas/**").hasRole("ADMIN")
                 .requestMatchers("/api/auth/seleccionar-empresa").permitAll()
                 .requestMatchers("/api/auth/mis-negocios").authenticated()
                 .requestMatchers("/api/auth/cambiar-negocio").authenticated()
                 .requestMatchers("/api/auth/nuevo-negocio").authenticated()
-                // Dashboard y KPIs — ADMIN_IT, EMPRENDEDOR y ADMIN_CLIENTE
-                .requestMatchers("/api/admin/**").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE")
-                // Pedidos admin — ADMIN_IT, EMPRENDEDOR y ADMIN_CLIENTE
+                // Dashboard y KPIs — ADMIN, EMPRENDEDOR
+                .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "EMPRENDEDOR")
+                // Pedidos admin — ADMIN, EMPRENDEDOR
                 // Pedidos — roles de empresa + API keys con scope read:pedidos o write:pedidos
-                .requestMatchers(GET,    "/api/pedidos").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
-                .requestMatchers(GET,    "/api/pedidos/pendientes").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
-                .requestMatchers(POST,   "/api/pedidos/manual").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
-                .requestMatchers(PUT,    "/api/pedidos/*/estado").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
-                .requestMatchers(PUT,    "/api/pedidos/*/guia").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
-                .requestMatchers(PUT,    "/api/pedidos/*/envio").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
-                .requestMatchers(DELETE, "/api/pedidos/*").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
-                .requestMatchers(POST,   "/api/pedidos/*/notificar").hasAnyRole("ADMIN_IT", "EMPRENDEDOR", "ADMIN_CLIENTE", "API_CLIENT")
+                .requestMatchers(GET,    "/api/pedidos").hasAnyRole("ADMIN", "EMPRENDEDOR")
+                .requestMatchers(GET,    "/api/pedidos/pendientes").hasAnyRole("ADMIN", "EMPRENDEDOR")
+                .requestMatchers(POST,   "/api/pedidos/manual").hasAnyRole("ADMIN", "EMPRENDEDOR")
+                .requestMatchers(PUT,    "/api/pedidos/*/estado").hasAnyRole("ADMIN", "EMPRENDEDOR")
+                .requestMatchers(PUT,    "/api/pedidos/*/guia").hasAnyRole("ADMIN", "EMPRENDEDOR")
+                .requestMatchers(PUT,    "/api/pedidos/*/envio").hasAnyRole("ADMIN", "EMPRENDEDOR")
+                .requestMatchers(DELETE, "/api/pedidos/*").hasAnyRole("ADMIN", "EMPRENDEDOR")
+                .requestMatchers(POST,   "/api/pedidos/*/notificar").hasAnyRole("ADMIN", "EMPRENDEDOR")
                 // Lista de usuarios — solo admin (perfil propio y actualización siguen autenticados)
-                .requestMatchers(GET, "/api/usuarios").hasRole("ADMIN_IT")
+                .requestMatchers(GET, "/api/usuarios").hasRole("ADMIN")
                 // Todas las demás rutas /api/** requieren autenticación
                 .requestMatchers("/api/**").authenticated()
                 // Rutas del SPA React (frontend)
@@ -311,11 +304,10 @@ public class SecurityConfig {
         http.exceptionHandling(ex -> ex
             .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
         );
-        // Orden: BlockedIp(~300) → Internal(~400) → RateLimiting(~500) → ApiKey(~600) → Jwt(~700) → Tenant(~900)
+        // Orden: BlockedIp(~300) → Internal(~400) → RateLimiting(~500) → Jwt(~700) → Tenant(~900)
         http.addFilterBefore(blockedIpFilter, CsrfFilter.class);
         http.addFilterBefore(internalSecretFilter, CsrfFilter.class);
         http.addFilterBefore(rateLimitingFilter, CsrfFilter.class);
-        http.addFilterBefore(apiKeyAuthFilter, LogoutFilter.class);
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterAfter(tenantFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

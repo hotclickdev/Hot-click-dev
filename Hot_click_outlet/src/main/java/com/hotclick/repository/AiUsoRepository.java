@@ -13,7 +13,7 @@ public interface AiUsoRepository extends JpaRepository<AiUso, Long> {
 
     Optional<AiUso> findByEmpresaIdAndAnioAndMes(Long empresaId, int anio, int mes);
 
-    /** Total de tokens consumidos en la plataforma para un mes dado (ADMIN_IT — observabilidad). */
+    /** Total de tokens consumidos en la plataforma para un mes dado (ADMIN — observabilidad). */
     @Query("SELECT COALESCE(SUM(u.tokensEntrada + u.tokensSalida), 0) FROM AiUso u WHERE u.anio = :anio AND u.mes = :mes")
     long sumTokensGlobales(@Param("anio") int anio, @Param("mes") int mes);
 

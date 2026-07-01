@@ -28,7 +28,7 @@ public class GastoController {
     @Autowired private JwtUtil           jwtUtil;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE','CONTABILIDAD')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','CONTABILIDAD')")
     public ResponseEntity<?> listar(@RequestParam(required = false) String desde,
                                     @RequestParam(required = false) String hasta) {
         Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
@@ -41,7 +41,7 @@ public class GastoController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE','CONTABILIDAD')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','CONTABILIDAD')")
     public ResponseEntity<?> crear(@RequestBody Map<String, Object> body, HttpServletRequest request) {
         try {
             Long empresaId = companyScope.getCurrentEmpresaId();
@@ -69,7 +69,7 @@ public class GastoController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE','CONTABILIDAD')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','CONTABILIDAD')")
     public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         try {
             Gasto g = gastoRepository.findById(id)
@@ -91,7 +91,7 @@ public class GastoController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE')")
     public ResponseEntity<?> eliminar(@PathVariable Long id) {
         try {
             Gasto g = gastoRepository.findById(id).orElse(null);

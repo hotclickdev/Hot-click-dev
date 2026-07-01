@@ -56,7 +56,7 @@ public class ProductoController {
         Long empresaId = companyScope.getCurrentEmpresaId();
         var pageable  = PageRequest.of(Math.max(0, page), Math.min(size, MAX_PAGE_SIZE_PUBLIC));
         // Si hay empresaId en el JWT (contexto admin de ese negocio) → mostrar sus propios productos
-        // Si es público (sin empresa, incluye ADMIN_IT sin empresa) → catálogo filtrado (negocios aprobados y visibles)
+        // Si es público (sin empresa, incluye ADMIN sin empresa) → catálogo filtrado (negocios aprobados y visibles)
         var productos = empresaId != null
             ? productoRepository.findByEmpresaIdAndEstado(empresaId, com.hotclick.utils.Constants.ESTADO_ACTIVO, pageable)
             : productoService.listarTodosActivos(pageable);
@@ -192,7 +192,7 @@ public class ProductoController {
     public ResponseEntity<ResponseDTO> obtenerProducto(@PathVariable Long id) {
         try {
             Producto producto = productoService.buscarPorId(id);
-            // Tenant check: EMPRENDEDOR/ADMIN_CLIENTE solo ven sus propios productos en el panel admin.
+            // Tenant check: EMPRENDEDOR solo ve sus propios productos en el panel admin.
             // Acceso público (cliente final, anónimo) pasa sin restricción.
             Long empresaId = companyScope.getCurrentEmpresaId();
             if (empresaId != null) {
@@ -208,7 +208,7 @@ public class ProductoController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE') or hasAuthority('SCOPE_write:productos')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> crearProducto(
             @RequestBody @Valid ProductoRequestDTO dto,
             @RequestHeader(value = "X-Idempotency-Key", required = false) String idempotencyKey) {
@@ -245,7 +245,7 @@ public class ProductoController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE') or hasAuthority('SCOPE_write:productos')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> actualizarProducto(
             @PathVariable Long id,
             @RequestBody ProductoRequestDTO dto) {
@@ -368,7 +368,7 @@ public class ProductoController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE') or hasAuthority('SCOPE_write:productos')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> eliminarProducto(@PathVariable Long id) {
         try {
             var existente = productoRepository.findById(id)

@@ -24,7 +24,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/admin/asignar")
-@PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE')")
+@PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
 public class AdminAsignarController {
 
     @Autowired private UsuarioRepository usuarioRepository;

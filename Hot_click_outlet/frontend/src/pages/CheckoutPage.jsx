@@ -1149,7 +1149,7 @@ export default function CheckoutPage() {
               const errorStr = typeof error === 'string' ? error : JSON.stringify(error)
               const isStockError = /stock insuficiente|stock\s*=\s*0|disponible=0/i.test(errorStr)
               // Extrae nombre del producto del mensaje "Stock insuficiente para 'X': ..."
-              const stockMatch = /para\s+'([^']+)'/.exec(errorStr)
+              const stockMatch = errorStr.match(/para\s+'([^']+)'/)
               const productoBloqueado = stockMatch?.[1] ?? null
               return (
                 <motion.div

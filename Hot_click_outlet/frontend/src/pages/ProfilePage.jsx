@@ -64,7 +64,7 @@ export default function ProfilePage() {
     navigate('/')
   }
 
-  const roleLabel = { ADMIN_IT: 'Admin IT', ADMIN_CLIENTE: 'Admin Cliente', EMPRENDEDOR: 'Emprendedor', USUARIO_FINAL: 'Cliente' }
+  const roleLabel = { ADMIN: 'Admin', EMPRENDEDOR: 'Emprendedor', USUARIO_FINAL: 'Cliente' }
   const { empresaNombre, empresaSlug } = useAuthStore()
   const recentOrders = orders.slice(0, 3)
 
@@ -104,7 +104,7 @@ export default function ProfilePage() {
         </motion.div>
 
         {/* Tarjeta empresa — solo para emprendedores */}
-        {(userRole === 'EMPRENDEDOR' || userRole === 'ADMIN_CLIENTE') && empresaNombre && (
+        {(userRole === 'EMPRENDEDOR') && empresaNombre && (
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -249,8 +249,8 @@ export default function ProfilePage() {
           )}
         </div>
 
-        {/* Llave de seguridad WebAuthn — solo ADMIN_IT */}
-        {userRole === 'ADMIN_IT' && <AdminWebAuthnSetup />}
+        {/* Llave de seguridad WebAuthn — solo ADMIN */}
+        {userRole === 'ADMIN' && <AdminWebAuthnSetup />}
 
         {/* Testimonios y Reseñas */}
         <OpinionesSection orders={orders} ordersLoading={loading} />
@@ -291,7 +291,7 @@ function StarPicker({ value, onChange }) {
         <button key={s} type="button" onClick={() => onChange(s)}
           onMouseEnter={() => setHovered(s)} onMouseLeave={() => setHovered(0)}
           className="transition-transform hover:scale-110 active:scale-95 focus:outline-none"
-          aria-label={`${s} estrella${s !== 1 ? 's' : ''}`}>
+          aria-label={`${s} estrella${s === 1 ? '' : 's'}`}>
           <svg className="w-8 h-8 transition-colors duration-100" viewBox="0 0 20 20"
             fill={s <= active ? 'currentColor' : 'none'} stroke="currentColor"
             strokeWidth={s <= active ? 0 : 1.5}

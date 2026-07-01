@@ -85,7 +85,7 @@ export default function AdminObservabilidad() {
             Observabilidad — Plataforma HotClick
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Métricas en tiempo real del SaaS multi-tenant. Solo visible para ADMIN_IT.
+            Métricas en tiempo real del SaaS multi-tenant. Solo visible para ADMIN.
           </p>
         </div>
         <div className="flex items-center gap-3">

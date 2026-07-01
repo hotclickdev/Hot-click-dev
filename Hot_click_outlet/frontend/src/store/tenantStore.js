@@ -82,7 +82,7 @@ const useTenantStore = create((set, get) => ({
    */
   hasFeature: (feature) => {
     const { features, planNombre } = get()
-    if (planNombre === 'ADMIN_IT') return true
+    if (planNombre === 'ADMIN') return true
     return !!features[feature]
   },
 

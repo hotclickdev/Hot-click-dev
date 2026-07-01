@@ -15,7 +15,7 @@ import java.util.*;
 
 /**
  * API de billing para el panel admin.
- * Rutas bajo /api/billing — requieren rol EMPRENDEDOR o ADMIN_IT.
+ * Rutas bajo /api/billing — requieren rol EMPRENDEDOR o ADMIN.
  */
 @RestController
 @RequestMapping("/api/billing")
@@ -59,7 +59,7 @@ public class SuscripcionController {
 
     /** Estado de suscripción activa de la empresa del tenant. */
     @GetMapping("/suscripcion")
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN_IT', 'ADMIN_CLIENTE')")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> getSuscripcion() {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
@@ -68,7 +68,7 @@ public class SuscripcionController {
 
     /** Historial de facturas SaaS de la empresa. */
     @GetMapping("/facturas")
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN_IT')")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
     public ResponseEntity<List<Map<String, Object>>> getFacturas(
             @RequestParam(defaultValue = "0") int pagina) {
         Long empresaId = TenantContext.get();
@@ -78,7 +78,7 @@ public class SuscripcionController {
 
     /** Inicia trial de 14 días para la empresa (solo si no tiene suscripción activa). */
     @PostMapping("/trial")
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN_IT')")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> iniciarTrial() {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
@@ -88,7 +88,7 @@ public class SuscripcionController {
 
     /** Genera URL de Stripe Checkout para suscribirse a un plan. */
     @PostMapping("/checkout/{planId}")
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN_IT')")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> crearCheckout(@PathVariable Long planId) {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
@@ -105,7 +105,7 @@ public class SuscripcionController {
 
     /** Genera URL del Customer Portal de Stripe (auto-gestión de pago/facturación). */
     @PostMapping("/portal")
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN_IT')")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> crearPortal() {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();

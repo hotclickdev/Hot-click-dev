@@ -70,7 +70,7 @@ export default function AdminTestimonios() {
           {pendienteCount > 0 && (
             <span className="text-sm font-bold px-3 py-1.5 rounded-full"
               style={{ backgroundColor: 'rgba(217,119,6,0.15)', color: '#d97706' }}>
-              {pendienteCount} pendiente{pendienteCount !== 1 ? 's' : ''}
+              {pendienteCount} pendiente{pendienteCount === 1 ? '' : 's'}
             </span>
           )}
         </div>

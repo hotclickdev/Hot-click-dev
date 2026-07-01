@@ -38,7 +38,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     @Query("SELECT DISTINCT p FROM Pedido p LEFT JOIN FETCH p.items LEFT JOIN FETCH p.usuarioFinal LEFT JOIN FETCH p.bodega WHERE p.empresa.id = :empresaId AND p.estadoPedido = :estadoPedido AND p.estado = :estado")
     List<Pedido> findByEmpresaIdAndEstadoPedidoWithItems(@Param("empresaId") Long empresaId, @Param("estadoPedido") String estadoPedido, @Param("estado") Integer estado);
 
-    /** Con items + usuarioFinal + bodega precargados — variante ADMIN_IT (todas las empresas) de findByEmpresaIdAndEstadoPedidoWithItems. */
+    /** Con items + usuarioFinal + bodega precargados — variante ADMIN (todas las empresas) de findByEmpresaIdAndEstadoPedidoWithItems. */
     @Query("SELECT DISTINCT p FROM Pedido p LEFT JOIN FETCH p.items LEFT JOIN FETCH p.usuarioFinal LEFT JOIN FETCH p.bodega WHERE p.estadoPedido = :estadoPedido AND p.estado = :estado")
     List<Pedido> findByEstadoPedidoAndEstado(@Param("estadoPedido") String estadoPedido, @Param("estado") Integer estado);
 

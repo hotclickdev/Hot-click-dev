@@ -41,5 +41,8 @@ public enum SecurityEventType {
     CREDENTIAL_STUFFING_DETECTED,
     // ── Registro ─────────────────────────────────────────────────────────────
     REGISTRATION_SUCCESS,
-    REGISTRATION_FAILED
+    REGISTRATION_FAILED,
+    // ── Geolocalización de riesgo ─────────────────────────────────────────────
+    PRISON_IP_DETECTED,
+    ABUSIVE_IP_DETECTED
 }

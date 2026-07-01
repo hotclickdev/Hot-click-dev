@@ -95,7 +95,7 @@ public class SinpeController {
     }
 
     // ── Admin: listar comprobantes ─────────────────────────────────────────────
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     @GetMapping("/admin/comprobantes")
     public ResponseEntity<ResponseDTO> listarComprobantes(
             @RequestParam(required = false)            String estado,
@@ -112,7 +112,7 @@ public class SinpeController {
     }
 
     // ── Admin: aprobar comprobante ─────────────────────────────────────────────
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     @PostMapping("/admin/comprobantes/{id}/aprobar")
     public ResponseEntity<ResponseDTO> aprobar(@PathVariable Long id) {
         try {
@@ -127,7 +127,7 @@ public class SinpeController {
     }
 
     // ── Admin: rechazar comprobante ────────────────────────────────────────────
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     @PostMapping("/admin/comprobantes/{id}/rechazar")
     public ResponseEntity<ResponseDTO> rechazar(
             @PathVariable Long id,

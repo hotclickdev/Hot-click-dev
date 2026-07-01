@@ -15,22 +15,27 @@ import AppTour from '@/components/ui/AppTour'
 
 // Devuelve los links del sidebar con secciones según el rol activo
 function buildSidebarLinks(t, userRole) {
-  if (userRole === 'ADMIN_IT') {
+  if (userRole === 'ADMIN') {
     return [
       { to: '/admin', label: 'Inicio', icon: 'home', exact: true},
       { section: 'Catálogo' },
-      { to: '/admin/productos',    label: t('admin.sidebar.productos'),  icon: 'box'      },
-      { to: '/admin/categorias',   label: t('admin.sidebar.categorias'), icon: 'tag'      },
-      { to: '/admin/marcas',       label: 'Marcas',                      icon: 'marca'    },
-      { to: '/admin/bodegas',      label: t('admin.sidebar.bodegas'),    icon: 'building' },
-      { to: '/admin/garantias',    label: 'Garantías',                   icon: 'shield'   },
-      { to: '/admin/compras',      label: 'Compras',                     icon: 'compra'   },
-      { to: '/admin/proveedores',  label: 'Proveedores',                 icon: 'proveedor'},
+      { to: '/admin/productos',          label: t('admin.sidebar.productos'),  icon: 'box'      },
+      { to: '/admin/productos/carga-masiva', label: 'Carga masiva',           icon: 'upload'   },
+      { to: '/admin/productos/importar',    label: 'Importar catálogo IA',    icon: 'import'   },
+      { to: '/admin/categorias',         label: t('admin.sidebar.categorias'), icon: 'tag'      },
+      { to: '/admin/marcas',             label: 'Marcas',                      icon: 'marca'    },
+      { to: '/admin/bodegas',            label: t('admin.sidebar.bodegas'),    icon: 'building' },
+      { to: '/admin/garantias',          label: 'Garantías',                   icon: 'shield'   },
+      { to: '/admin/compras',            label: 'Compras',                     icon: 'compra'   },
+      { to: '/admin/proveedores',        label: 'Proveedores',                 icon: 'proveedor'},
+      { section: 'Punto de Venta' },
+      { to: '/admin/pos',           label: 'Caja registradora', icon: 'pos'       },
+      { to: '/admin/pos/caja',      label: 'Cuadre de caja',    icon: 'chart'     },
+      { to: '/admin/pos/historial', label: 'Historial ventas',  icon: 'clipboard' },
       { section: 'Ventas' },
       { to: '/admin/pedidos',        label: t('admin.sidebar.pedidos'),    icon: 'clipboard' },
       { to: '/admin/ventas',         label: t('admin.sidebar.nuevaVenta'), icon: 'plus'     },
       { to: '/admin/asignar-compra', label: 'Registrar compra externa',   icon: 'assign'   },
-      { to: '/admin/pos',            label: 'Caja POS',                    icon: 'pos'      },
       // { to: '/admin/mesas',        label: 'Mesas / QR',                  icon: 'qr'       },  // futuro
       { to: '/admin/cotizaciones',  label: 'Cotizaciones B2B',            icon: 'doc'      },
       { to: '/admin/gift-cards',   label: 'Gift Cards',                  icon: 'gift'     },
@@ -54,7 +59,6 @@ function buildSidebarLinks(t, userRole) {
       { to: '/admin/branding',     label: 'Branding / White Label',      icon: 'brand'    },
       { to: '/admin/multipais',    label: 'LATAM Multi-país',            icon: 'globe'    },
       { to: '/admin/plugins',      label: 'Plugins / Integraciones',     icon: 'plugin'   },
-      { to: '/admin/api-keys',     label: 'API Keys',                    icon: 'key'      },
       { to: '/admin/pagos',        label: 'Pagos / Webhooks',            icon: 'card'     },
       { to: '/admin/usuarios',     label: t('admin.sidebar.usuarios'),   icon: 'users'    },
       { to: '/admin/empresas',     label: 'Empresas',                    icon: 'empresa'  },
@@ -74,18 +78,23 @@ function buildSidebarLinks(t, userRole) {
     return [
       { to: '/admin', label: 'Inicio', icon: 'home', exact: true},
       { section: 'Catálogo' },
-      { to: '/admin/productos',      label: t('admin.sidebar.productos'),  icon: 'box'      },
-      { to: '/admin/categorias',     label: t('admin.sidebar.categorias'), icon: 'tag'      },
-      { to: '/admin/marcas',         label: 'Marcas',                      icon: 'marca'    },
-      { to: '/admin/bodegas',        label: t('admin.sidebar.bodegas'),    icon: 'building' },
-      { to: '/admin/garantias',      label: 'Garantías',                   icon: 'shield'   },
-      { to: '/admin/compras',        label: 'Compras',                     icon: 'compra'   },
-      { to: '/admin/proveedores',    label: 'Proveedores',                 icon: 'proveedor'},
+      { to: '/admin/productos',              label: t('admin.sidebar.productos'),  icon: 'box'      },
+      { to: '/admin/productos/carga-masiva', label: 'Carga masiva',           icon: 'upload'   },
+      { to: '/admin/productos/importar',     label: 'Importar catálogo IA',   icon: 'import'   },
+      { to: '/admin/categorias',             label: t('admin.sidebar.categorias'), icon: 'tag'  },
+      { to: '/admin/marcas',                 label: 'Marcas',                  icon: 'marca'    },
+      { to: '/admin/bodegas',                label: t('admin.sidebar.bodegas'), icon: 'building'},
+      { to: '/admin/garantias',              label: 'Garantías',               icon: 'shield'   },
+      { to: '/admin/compras',                label: 'Compras',                 icon: 'compra'   },
+      { to: '/admin/proveedores',            label: 'Proveedores',             icon: 'proveedor'},
+      { section: 'Punto de Venta' },
+      { to: '/admin/pos',           label: 'Caja registradora', icon: 'pos'       },
+      { to: '/admin/pos/caja',      label: 'Cuadre de caja',    icon: 'chart'     },
+      { to: '/admin/pos/historial', label: 'Historial ventas',  icon: 'clipboard' },
       { section: 'Ventas' },
       { to: '/admin/pedidos',        label: t('admin.sidebar.pedidos'),    icon: 'clipboard' },
       { to: '/admin/ventas',         label: t('admin.sidebar.nuevaVenta'), icon: 'plus'     },
       { to: '/admin/asignar-compra', label: 'Registrar compra externa',   icon: 'assign'   },
-      { to: '/admin/pos',            label: 'Caja POS',                    icon: 'pos'      },
       // { to: '/admin/mesas',          label: 'Mesas / QR',                  icon: 'qr'       },  // futuro
       { to: '/admin/cotizaciones',   label: 'Cotizaciones B2B',            icon: 'doc'      },
       { to: '/admin/gift-cards',     label: 'Gift Cards',                  icon: 'gift'     },
@@ -108,7 +117,6 @@ function buildSidebarLinks(t, userRole) {
       { to: '/admin/branding',          label: 'Branding / White Label', icon: 'brand'  },
       { to: '/admin/multipais',         label: 'LATAM / Multi-país',   icon: 'globe'   },
       { to: '/admin/plugins',           label: 'Plugins',              icon: 'plugin'  },
-      { to: '/admin/api-keys',          label: 'API Keys',             icon: 'key'     },
       { to: '/admin/equipo',            label: 'Mi equipo',            icon: 'users'   },
       { to: '/admin/billing/planes',    label: 'Mi suscripción',      icon: 'card'     },
       { to: '/admin/offline/cola',      label: 'Cola offline',        icon: 'sync'     },
@@ -141,18 +149,20 @@ function buildSidebarLinks(t, userRole) {
     ]
   }
 
-  // ADMIN_CLIENTE
+  // EMPRENDEDOR
   return [
     { to: '/admin',              label: 'Inicio',                        icon: 'home', exact: true },
-    { section: 'Punto de venta' },
+    { section: 'Punto de Venta' },
     { to: '/admin/pos',          label: 'Caja registradora',             icon: 'pos'       },
     { to: '/admin/pos/caja',     label: 'Cuadre de caja',                icon: 'chart'     },
     { to: '/admin/pos/historial', label: 'Historial ventas',             icon: 'clipboard' },
     // { to: '/admin/mesas',        label: 'Mesas / QR',                    icon: 'qr'        },  // futuro
     { section: 'Catálogo e inventario' },
-    { to: '/admin/productos',    label: t('admin.sidebar.productos'),    icon: 'box'       },
-    { to: '/admin/nuevo-producto', label: 'Generar producto rápido',     icon: 'camera'    },
-    { to: '/admin/categorias',   label: t('admin.sidebar.categorias'),   icon: 'tag'       },
+    { to: '/admin/productos',              label: t('admin.sidebar.productos'),    icon: 'box'    },
+    { to: '/admin/productos/carga-masiva', label: 'Carga masiva',                icon: 'upload' },
+    { to: '/admin/productos/importar',     label: 'Importar catálogo IA',        icon: 'import' },
+    { to: '/admin/nuevo-producto',         label: 'Generar producto rápido',      icon: 'camera' },
+    { to: '/admin/categorias',             label: t('admin.sidebar.categorias'),  icon: 'tag'    },
     { to: '/admin/marcas',       label: 'Marcas',                        icon: 'marca'     },
     { to: '/admin/bodegas',      label: t('admin.sidebar.bodegas'),      icon: 'building'  },
     { to: '/admin/inventario',   label: 'Inventario IA',                 icon: 'ai'        },
@@ -175,7 +185,7 @@ function buildSidebarLinks(t, userRole) {
   ]
 }
 
-/* ── Switcher de negocio (solo EMPRENDEDOR / ADMIN_CLIENTE) ── */
+/* ── Switcher de negocio (solo EMPRENDEDOR ── */
 function NegocioSwitcher({ empresaNombre, empresaId }) {
   const [open, setOpen]       = useState(false)
   const [negocios, setNegocios] = useState([])
@@ -314,10 +324,10 @@ const SECTION_COLORS = {
   'Catálogo':              'var(--hc-primary)',
   'Catálogo e inventario': 'var(--hc-primary)',
   'Ventas':                'var(--hc-link)',
-  'POS':                   'var(--hc-link)',
-  'Punto de venta':        'var(--hc-link)',
+  'POS':                   '#10b981',
+  'Punto de Venta':        '#10b981',
   'Marketing':             '#f59e0b',
-  'Sistema':               'var(--hc-link)',
+  'Sistema':               'var(--hc-muted)',
   'Mi negocio':            'var(--hc-link)',
 }
 
@@ -398,8 +408,8 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
         </span>
       </div>
 
-      {/* Negocio switcher — solo EMPRENDEDOR y ADMIN_CLIENTE */}
-      {(userRole === 'EMPRENDEDOR' || userRole === 'ADMIN_CLIENTE') && (
+      {/* Negocio switcher — solo EMPRENDEDOR */}
+      {(userRole === 'EMPRENDEDOR') && (
         <NegocioSwitcher empresaNombre={empresaNombre} empresaId={empresaId} />
       )}
 
@@ -620,7 +630,7 @@ export default function AdminLayout({ children }) {
 
   // Cargar estado de empresa para mostrar banners de aprobación / visibilidad
   useEffect(() => {
-    if (userRole !== 'EMPRENDEDOR' && userRole !== 'ADMIN_CLIENTE') return
+    if (userRole !== 'EMPRENDEDOR') return
     import('@/services/api').then(({ default: api }) => {
       api.get('/empresa/perfil')
         .then(({ data }) => {
@@ -632,9 +642,9 @@ export default function AdminLayout({ children }) {
   }, [userRole, empresaId])
 
   const roleBadge = {
-    ADMIN_IT:      { label: 'IT Admin',      color: 'bg-red-500/20 text-red-400' },
+    ADMIN:      { label: 'IT Admin',      color: 'bg-red-500/20 text-red-400' },
     EMPRENDEDOR:   { label: 'Emprendedor',   color: 'bg-amber-500/20 text-amber-400' },
-    ADMIN_CLIENTE: { label: 'Admin',         color: 'bg-blue-500/20 text-blue-400' },
+    EMPRENDEDOR: { label: 'Admin',         color: 'bg-blue-500/20 text-blue-400' },
   }[userRole] ?? { label: userRole, color: 'bg-gray-500/20 text-gray-400' }
 
   const sidebarProps = { sidebarLinks, roleBadge, t, userName, empresaNombre, empresaId, userRole, handleLogout, onSearch: () => setSearchOpen(true) }
@@ -819,6 +829,8 @@ const SIDEBAR_ICONS = {
   qr:        <svg className={ic} {...s}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="5" y="5" width="3" height="3"/><rect x="16" y="5" width="3" height="3"/><rect x="5" y="16" width="3" height="3"/><path d="M14 14h3v3h-3zM17 17h3v3h-3zM14 20h3"/></svg>,
   sync:      <svg className={ic} {...s}><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>,
   assign:    <svg className={ic} {...s}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>,
+  upload:    <svg className={ic} {...s}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
+  import:    <svg className={ic} {...s}><path d="M12 3v12M8 11l4 4 4-4"/><path d="M20 21H4a2 2 0 01-2-2V5a2 2 0 012-2h10l6 6v10a2 2 0 01-2 2z"/></svg>,
 }
 
 function SidebarIcon({ name }) {

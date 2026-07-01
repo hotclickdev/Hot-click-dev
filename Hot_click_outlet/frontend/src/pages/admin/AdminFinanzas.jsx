@@ -1,6 +1,5 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
 import Spinner from '@/components/ui/Spinner'
 import { orderService } from '@/services/orderService'
 import { gastoService } from '@/services/gastoService'
@@ -135,7 +134,6 @@ function SaleDetailModal({ pedidoId, onClose }) {
       .finally(() => setLoading(false))
   }, [pedidoId])
 
-  const inp = 'w-full rounded-xl text-sm outline-none'
   const subtotal = data
     ? (data.subtotal ?? ((data.total ?? data.totalPedido ?? 0) - (data.costoEnvio ?? 0)))
     : 0
@@ -303,7 +301,6 @@ function ProgressBar({ value, total, color }) {
 
 /* ════════════════════════════════════════════════════════════ */
 export default function AdminFinanzas() {
-  const { t } = useTranslation()
   const { showToast } = useToast()
 
   const [tab, setTab]       = useState('ingresos')
@@ -576,7 +573,7 @@ export default function AdminFinanzas() {
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <KPI label="Total egresos" value={totalEgresos}
-                  sub={`${gastos.length} gasto${gastos.length !== 1 ? 's' : ''} registrado${gastos.length !== 1 ? 's' : ''}`}
+                  sub={`${gastos.length} gasto${gastos.length === 1 ? '' : 's'} registrado${gastos.length === 1 ? '' : 's'}`}
                   color="#f87171" negative/>
                 <KPI label="Promedio por gasto" value={gastos.length > 0 ? Math.round(totalEgresos / gastos.length) : 0}
                   sub="en el período" color="#f87171"/>

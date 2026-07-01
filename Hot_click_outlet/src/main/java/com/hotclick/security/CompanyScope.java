@@ -15,7 +15,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  * Punto central de control de aislamiento por empresa (tenant).
  *
  * Uso típico en un controller:
- *   Long empresaId = companyScope.getCurrentEmpresaId();   // null si ADMIN_IT
+ *   Long empresaId = companyScope.getCurrentEmpresaId();   // null si ADMIN
  *   companyScope.assertCanAccess(recurso.getEmpresa().getId());  // 403 si no es su empresa
  */
 @Component
@@ -30,7 +30,7 @@ public class CompanyScope {
     /**
      * Retorna el empresa_id del usuario autenticado.
      * Lee primero del JWT (claim empresaId) para soportar multi-negocio.
-     * Retorna null si es ADMIN_IT (puede ver todo).
+     * Retorna null si es ADMIN (puede ver todo).
      */
     public Long getCurrentEmpresaId() {
         Usuario user = getCurrentUser();
@@ -60,7 +60,7 @@ public class CompanyScope {
 
     /**
      * Verifica que el usuario autenticado puede acceder al recurso de la empresa indicada.
-     * ADMIN_IT pasa siempre. Cualquier otro rol lanza 403 si la empresa no coincide.
+     * ADMIN pasa siempre. Cualquier otro rol lanza 403 si la empresa no coincide.
      */
     public void assertCanAccess(Long resourceEmpresaId) {
         if (isAdminIT()) return;
@@ -74,7 +74,7 @@ public class CompanyScope {
 
     /**
      * Like assertCanAccess but handles nullable resourceEmpresaId.
-     * Resources with no empresa (null) are only accessible to ADMIN_IT;
+     * Resources with no empresa (null) are only accessible to ADMIN;
      * any other role is denied to prevent orphaned-resource access.
      */
     public void assertCanAccessNullable(Long resourceEmpresaId) {
@@ -121,7 +121,7 @@ public class CompanyScope {
     }
 
     /**
-     * Like getCurrentEmpresaId() but for ADMIN_IT falls back to their own fk_id_empresa.
+     * Like getCurrentEmpresaId() but for ADMIN falls back to their own fk_id_empresa.
      * Use when creating resources that require a non-null fk_id_empresa.
      */
     public Long getCurrentEmpresaIdOrOwn() {
@@ -133,6 +133,6 @@ public class CompanyScope {
 
     private boolean isAdminIT(Usuario user) {
         return user.getRoles().stream()
-            .anyMatch(r -> "ADMIN_IT".equals(r.getNombreRol()));
+            .anyMatch(r -> "ADMIN".equals(r.getNombreRol()));
     }
 }

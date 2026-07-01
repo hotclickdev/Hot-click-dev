@@ -1126,7 +1126,7 @@ function SeccionDatos({ toast, isEmprendedor = false }) {
   const [applyingPct, setApplyingPct] = useState(false)
 
   useEffect(() => {
-    // EMPRENDEDOR usa /admin/todos para productos de su empresa; ADMIN_IT usa el catálogo global
+    // EMPRENDEDOR usa /admin/todos para productos de su empresa; ADMIN usa el catálogo global
     const prodEndpoint = isEmprendedor ? '/productos/admin/todos?size=1&page=0' : '/productos?size=1&page=0'
     Promise.allSettled([
       api.get(prodEndpoint),
@@ -1155,7 +1155,7 @@ function SeccionDatos({ toast, isEmprendedor = false }) {
   const exportProductos = async () => {
     setExpProd(true)
     try {
-      // EMPRENDEDOR: solo sus productos; ADMIN_IT: todos
+      // EMPRENDEDOR: solo sus productos; ADMIN: todos
       const endpoint = isEmprendedor ? '/productos/admin/todos?size=9999&page=0' : '/productos?size=9999&page=0'
       const { data } = await api.get(endpoint)
       const list = data?.data?.content ?? data?.content ?? data?.data ?? []

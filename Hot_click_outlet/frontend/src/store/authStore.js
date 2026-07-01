@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-export const ADMIN_ROLES = new Set(['ADMIN_IT', 'ADMIN_CLIENTE', 'EMPRENDEDOR'])
+export const ADMIN_ROLES = new Set(['ADMIN', 'EMPRENDEDOR'])
 
 // Extrae los claims del JWT sin verificar firma (solo lectura en cliente)
 function parseJwtClaims(token) {
@@ -31,9 +31,7 @@ const useAuthStore = create(
 
       isAuthenticated: () => !!get().token,
       isAdmin:         () => ADMIN_ROLES.has(get().userRole),
-      isAdminIT:       () => get().userRole === 'ADMIN_IT',
       isEmprendedor:   () => get().userRole === 'EMPRENDEDOR',
-      isAdminCliente:  () => get().userRole === 'ADMIN_CLIENTE',
       isUsuarioFinal:  () => get().userRole === 'USUARIO_FINAL',
       hasPermission:   (perm) => get().permissions.includes(perm),
       hasAnyRole:      (...rols) => rols.some(r => get().roles.includes(r)),

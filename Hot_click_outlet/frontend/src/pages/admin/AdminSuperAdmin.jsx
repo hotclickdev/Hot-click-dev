@@ -9,7 +9,6 @@ const FLAG_LABELS = {
   self_checkout:           'Self-Checkout QR',
   split_payments:          'Pagos divididos / Gift Cards',
   marketplace_plugins:     'Marketplace de Plugins',
-  api_keys:                'API Keys y Webhooks',
   white_label:             'White Label (branding custom)',
 }
 
@@ -60,7 +59,7 @@ export default function AdminSuperAdmin() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Super Admin</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          Panel exclusivo ADMIN_IT — gestión de planes y feature flags por empresa.
+          Panel exclusivo ADMIN — gestión de planes y feature flags por empresa.
         </p>
       </div>
 

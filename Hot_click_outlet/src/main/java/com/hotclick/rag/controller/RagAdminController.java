@@ -15,7 +15,7 @@ import java.util.Map;
  * Operaciones admin del pipeline RAG.
  *
  * Estas acciones son potencialmente costosas (llamadas a Gemini) y están
- * protegidas con {@code ADMIN} / {@code ADMIN_IT}.
+ * protegidas con {@code ADMIN} / {@code ADMIN}.
  */
 @RestController
 @RequestMapping("/api/admin/rag")
@@ -40,7 +40,7 @@ public class RagAdminController {
      * en los logs del servidor ({@code [embedding] ...}).
      */
     @PostMapping("/indexar")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ADMIN_IT')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> indexarAhora() {
         log.info("[rag-admin] Indexación manual disparada por admin");
         Thread.ofVirtual()

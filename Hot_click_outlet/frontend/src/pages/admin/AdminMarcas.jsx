@@ -112,7 +112,7 @@ export default function AdminMarcas() {
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold" style={{ color: 'var(--hc-text)' }}>{t('admin.marcas.title')}</h1>
-            <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>{marcas.length} marca{marcas.length !== 1 ? 's' : ''} registrada{marcas.length !== 1 ? 's' : ''}</p>
+            <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>{marcas.length} marca{marcas.length === 1 ? '' : 's'} registrada{marcas.length === 1 ? '' : 's'}</p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             <ImportExportBar

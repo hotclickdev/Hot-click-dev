@@ -31,9 +31,9 @@ public class CrmController {
     @Autowired private CompanyScope         companyScope;
     @Autowired private WhatsAppService      whatsAppService;
 
-    /** Lista clientes (USUARIO_FINAL) que han comprado en esta empresa. ADMIN_IT ve todos. */
+    /** Lista clientes (USUARIO_FINAL) que han comprado en esta empresa. ADMIN ve todos. */
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE','SOPORTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','SOPORTE')")
     @Transactional(readOnly = true)
     public ResponseEntity<?> listar() {
         Long empresaId = companyScope.getCurrentEmpresaId();
@@ -46,7 +46,7 @@ public class CrmController {
 
     /** Búsqueda por nombre, correo o teléfono — acotada a la empresa del caller. */
     @GetMapping("/buscar")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE','CAJERO','SUPERVISOR','SOPORTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','CAJERO','SUPERVISOR','SOPORTE')")
     @Transactional(readOnly = true)
     public ResponseEntity<?> buscar(@RequestParam String q) {
         if (q == null || q.trim().length() < 2)
@@ -61,7 +61,7 @@ public class CrmController {
 
     /** Detalle de un cliente — valida que haya comprado en la empresa del caller. */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE','SOPORTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','SOPORTE')")
     @Transactional(readOnly = true)
     public ResponseEntity<?> getById(@PathVariable Long id) {
         Usuario u = usuarioRepository.findById(id)
@@ -84,7 +84,7 @@ public class CrmController {
 
     /** Actualiza campos CRM — valida que el cliente pertenezca a la empresa. */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE')")
     @Transactional
     public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         try {
@@ -112,7 +112,7 @@ public class CrmController {
 
     /** Suma o resta puntos de fidelidad — valida que el cliente sea de la empresa. */
     @PostMapping("/{id}/puntos")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE')")
     @Transactional
     public ResponseEntity<?> ajustarPuntos(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         try {
@@ -139,7 +139,7 @@ public class CrmController {
      * Body: { "escenario": "CONFIRMACION_PEDIDO"|"REACTIVACION"|..., "ctx": {...} }
      */
     @PostMapping("/{id}/wa")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE')")
     @Transactional(readOnly = true)
     public ResponseEntity<?> enviarWhatsApp(
             @PathVariable Long id,
@@ -165,7 +165,7 @@ public class CrmController {
 
     /** Historial de mensajes WA enviados a un cliente — para el timeline del CRM. */
     @GetMapping("/{id}/wa/historial")
-    @PreAuthorize("hasAnyRole('ADMIN_IT','EMPRENDEDOR','ADMIN_CLIENTE','GERENTE','SOPORTE')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','SOPORTE')")
     @Transactional(readOnly = true)
     public ResponseEntity<?> historialWa(@PathVariable Long id) {
         Long empresaId = companyScope.getCurrentEmpresaId();

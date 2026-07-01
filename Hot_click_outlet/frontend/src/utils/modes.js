@@ -1,6 +1,6 @@
 const POS_ROLES       = new Set(['CAJERO','GERENTE','SUPERVISOR'])
-const ALL_ADMIN_ROLES = new Set(['ADMIN_IT','ADMIN_CLIENTE','EMPRENDEDOR','GERENTE','SUPERVISOR'])
-const STORE_ROLES     = new Set(['ADMIN_IT','ADMIN_CLIENTE','EMPRENDEDOR'])
+const ALL_ADMIN_ROLES = new Set(['ADMIN','EMPRENDEDOR','GERENTE','SUPERVISOR'])
+const STORE_ROLES     = new Set(['ADMIN','EMPRENDEDOR'])
 
 export function getAvailableModes(rol, permissions = []) {
   const hasPos   = permissions.includes('pos.usar') || POS_ROLES.has(rol)

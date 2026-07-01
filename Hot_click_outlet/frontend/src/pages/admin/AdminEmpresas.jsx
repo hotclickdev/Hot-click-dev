@@ -327,7 +327,7 @@ export default function AdminEmpresas() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between pt-1">
             <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-              {filtered.length} empresa{filtered.length !== 1 ? 's' : ''} · página {page + 1} de {totalPages}
+              {filtered.length} empresa{filtered.length === 1 ? '' : 's'} · página {page + 1} de {totalPages}
             </span>
             <div className="flex gap-1">
               <button

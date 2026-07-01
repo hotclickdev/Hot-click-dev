@@ -30,7 +30,7 @@ public class TenantController {
     public ResponseEntity<Map<String, Object>> tenantInfo() {
         Long empresaId = TenantContext.get();
         if (empresaId == null) {
-            return ResponseEntity.ok(Map.of("planNombre", "ADMIN_IT", "features", Map.of()));
+            return ResponseEntity.ok(Map.of("planNombre", "ADMIN", "features", Map.of()));
         }
         return ResponseEntity.ok(tenantService.getTenantInfo(empresaId));
     }

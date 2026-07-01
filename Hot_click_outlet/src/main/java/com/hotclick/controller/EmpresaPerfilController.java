@@ -81,9 +81,9 @@ public class EmpresaPerfilController {
         if (body.containsKey("ambienteHacienda")) {
             String a = body.get("ambienteHacienda");
             if (!AMBIENTES_VALIDOS.contains(a)) return ResponseEntity.badRequest().body(ResponseDTO.error("Ambiente inválido"));
-            // Solo ADMIN_IT puede cambiar a PROD
+            // Solo ADMIN puede cambiar a PROD
             if ("PROD".equals(a) && !companyScope.isAdminIT())
-                return ResponseEntity.status(403).body(ResponseDTO.error("Solo ADMIN_IT puede activar ambiente PROD"));
+                return ResponseEntity.status(403).body(ResponseDTO.error("Solo ADMIN puede activar ambiente PROD"));
             e.setAmbienteHacienda(a);
         }
         // Clave Hacienda: solo actualizar si se envió y no está vacía

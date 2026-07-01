@@ -52,7 +52,7 @@ export default function AdminFacturas() {
             Comprobantes Electrónicos
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {total} comprobante{total !== 1 ? 's' : ''} emitidos
+            {total} comprobante{total === 1 ? '' : 's'} emitidos
           </p>
         </div>
       </div>

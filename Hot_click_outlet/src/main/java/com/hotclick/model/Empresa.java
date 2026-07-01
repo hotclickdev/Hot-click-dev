@@ -101,7 +101,7 @@ public class Empresa {
     @Column(name = "pin_cert_enc")
     private String pinCertEnc;
 
-    /** STAG (sandbox) o PROD — solo ADMIN_IT puede cambiar a PROD */
+    /** STAG (sandbox) o PROD — solo ADMIN puede cambiar a PROD */
     @Column(name = "ambiente_hacienda", length = 4)
     private String ambienteHacienda = "STAG";
 

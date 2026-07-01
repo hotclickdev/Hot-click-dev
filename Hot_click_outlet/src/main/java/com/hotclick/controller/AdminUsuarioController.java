@@ -19,7 +19,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/admin/usuarios")
-@PreAuthorize("hasRole('ADMIN_IT')")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminUsuarioController {
 
     @Autowired private UsuarioRepository usuarioRepository;
@@ -42,7 +42,7 @@ public class AdminUsuarioController {
 
     /**
      * Aprueba un usuario: activa la cuenta y asigna el rol indicado.
-     * Body: { "rol": "USUARIO_FINAL" | "ADMIN_IT" | "ADMIN_CLIENTE" }
+     * Body: { "rol": "USUARIO_FINAL" | "ADMIN" | "EMPRENDEDOR" }
      */
     @PutMapping("/{id}/aprobar")
     public ResponseEntity<ResponseDTO> aprobar(@PathVariable Long id,
@@ -54,7 +54,7 @@ public class AdminUsuarioController {
         Usuario usuario = opt.get();
 
         String rolNombre = body.getOrDefault("rol", Constants.ROL_USUARIO_FINAL).trim();
-        if (!List.of(Constants.ROL_USUARIO_FINAL, Constants.ROL_ADMIN_IT, Constants.ROL_ADMIN_CLIENTE)
+        if (!List.of(Constants.ROL_USUARIO_FINAL, Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
                 .contains(rolNombre)) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Rol inválido: " + rolNombre));
         }
@@ -91,7 +91,7 @@ public class AdminUsuarioController {
 
     /**
      * Cambia el rol de cualquier usuario existente.
-     * Body: { "rol": "USUARIO_FINAL" | "ADMIN_IT" | "ADMIN_CLIENTE" }
+     * Body: { "rol": "USUARIO_FINAL" | "ADMIN" | "EMPRENDEDOR" }
      */
     @PutMapping("/{id}/rol")
     public ResponseEntity<ResponseDTO> cambiarRol(@PathVariable Long id,

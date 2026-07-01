@@ -38,7 +38,7 @@ public class EmpresaController {
         return ResponseDTO.success("Empresas", result);
     }
 
-    // companyScope.assertCanAccess(id) es no-op para ADMIN_IT (rol único permitido
+    // companyScope.assertCanAccess(id) es no-op para ADMIN (rol único permitido
     // por SecurityConfig en esta ruta) y bloquea con 403 cualquier otro rol que
     // llegara a tener acceso al endpoint por un cambio futuro de configuración.
     @GetMapping("/{id}")

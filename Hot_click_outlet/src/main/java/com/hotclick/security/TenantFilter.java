@@ -32,22 +32,16 @@ public class TenantFilter extends OncePerRequestFilter {
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain chain) throws ServletException, IOException {
         try {
-            // API key authentication sets empresaId as request attribute
-            Object apiKeyEmpresaId = request.getAttribute(ApiKeyAuthFilter.ATTR_EMPRESA_ID);
-            if (apiKeyEmpresaId instanceof Long eid) {
-                TenantContext.set(eid);
-            } else {
-                String header = request.getHeader("Authorization");
-                if (header != null && header.startsWith("Bearer ")) {
-                    String token = header.substring(7);
-                    try {
-                        Long empresaId = jwtUtil.extractEmpresaId(token);
-                        if (empresaId != null) {
-                            TenantContext.set(empresaId);
-                        }
-                    } catch (Exception e) {
-                        log.debug("tenant filter jwt error: {}", e.getMessage());
+            String header = request.getHeader("Authorization");
+            if (header != null && header.startsWith("Bearer ")) {
+                String token = header.substring(7);
+                try {
+                    Long empresaId = jwtUtil.extractEmpresaId(token);
+                    if (empresaId != null) {
+                        TenantContext.set(empresaId);
                     }
+                } catch (Exception e) {
+                    log.debug("tenant filter jwt error: {}", e.getMessage());
                 }
             }
             chain.doFilter(request, response);

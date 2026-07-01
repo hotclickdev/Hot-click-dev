@@ -122,7 +122,7 @@ public class AiCopilotService {
         try {
             // Build messages array for Claude
             List<Map<String, Object>> messages = buildMessages(empresaId, userMessage);
-            String systemPrompt = buildSystemPrompt(empresaId);
+            String systemPrompt = buildSystemPrompt(empresaId, userMessage);
             String requestBody  = buildRequestBody(systemPrompt, messages, tenantId);
 
             HttpRequest request = HttpRequest.newBuilder()
@@ -278,19 +278,180 @@ public class AiCopilotService {
         }
     }
 
-    private String buildSystemPrompt(Long empresaId) {
-        String kpis = getKpiContext(empresaId);
-        return """
-            Eres el Copilot de HOTCLICK, asistente de negocio para emprendedores costarricenses.
-            Respondes en español, de forma concisa y accionable. Usas datos reales del negocio.
+    // ── Clasificador de intención ─────────────────────────────────────────────
 
-            CONTEXTO DEL NEGOCIO:
+    private enum Intent { VENTAS, INVENTARIO, CONTENIDO, OPERATIVO, GENERAL }
+
+    private Intent detectIntent(String msg) {
+        String lower = msg.toLowerCase();
+        if (lower.matches(".*\\b(vend|ingres|factur|cobr|gananci|cuanto.*vendí|revenue|venta|compr.*cliente|mejor.*client).*")) return Intent.VENTAS;
+        if (lower.matches(".*\\b(stock|inventari|bajo.*stock|precio|rebaj|oferta|actualiz.*product|catalog|producto).*")) return Intent.INVENTARIO;
+        if (lower.matches(".*\\b(descri|instagram|whatsapp|post|redact|escrib|contenido|caption|anuncio|publicaci|seo|titul).*")) return Intent.CONTENIDO;
+        if (lower.matches(".*\\b(pendiente|entreg|envi|pedido|orden|cliente.*espera|despachar|guia).*")) return Intent.OPERATIVO;
+        return Intent.GENERAL;
+    }
+
+    // ── System prompt dinámico por intención ──────────────────────────────────
+
+    private String buildSystemPrompt(Long empresaId, String userMessage) {
+        Intent intent = detectIntent(userMessage);
+        String kpis   = getKpiContext(empresaId);
+        String extra  = getDynamicData(empresaId, intent);
+
+        String rolDescription = switch (intent) {
+            case VENTAS     -> "Analizás ventas, ingresos y comportamiento de clientes. Identificás tendencias y oportunidades.";
+            case INVENTARIO -> "Gestionás inventario y catálogo. Identificás productos con stock crítico y oportunidades de precio.";
+            case CONTENIDO  -> "Generás contenido de venta persuasivo, optimizado para Costa Rica. Dominás el tono casual y efectivo del mercado local.";
+            case OPERATIVO  -> "Revisás pedidos y operaciones. Priorizás por urgencia y ayudás a resolver cuellos de botella.";
+            case GENERAL    -> "Asesorás sobre cualquier aspecto del negocio con base en los datos reales disponibles.";
+        };
+
+        return """
+            Sos el Copilot de HOTCLICK, asistente de negocio para emprendedores costarricenses.
+            Respondés en español con el vos costarricense. Sos directo, concreto y accionable.
             %s
 
-            Ayudas con: análisis de ventas, gestión de inventario, estrategias de marketing,
-            interpretación de reportes, y optimización del negocio. No ejecutas acciones,
-            solo analizas y recomiendas. Si no tienes datos suficientes, lo dices.
-            """.formatted(kpis);
+            KPIs GENERALES DEL NEGOCIO:
+            %s
+
+            DATOS ESPECÍFICOS PARA ESTA CONSULTA:
+            %s
+
+            REGLAS:
+            - Usá los datos inyectados arriba; nunca inventés cifras
+            - Cuando generes contenido (posts, descripciones), sé persuasivo y natural, no corporativo
+            - Si los datos muestran un problema, señalalo y proponé una acción concreta
+            - Respondés solo sobre este negocio; si la pregunta es ajena, redirigís amablemente
+            - Máximo 400 palabras por respuesta salvo que se pida contenido largo
+            """.formatted(rolDescription, kpis, extra);
+    }
+
+    private String getDynamicData(Long empresaId, Intent intent) {
+        try {
+            return switch (intent) {
+                case VENTAS     -> getVentasData(empresaId);
+                case INVENTARIO -> getInventarioData(empresaId);
+                case CONTENIDO  -> getCatalogoData(empresaId);
+                case OPERATIVO  -> getPedidosPendientesData(empresaId);
+                case GENERAL    -> "";
+            };
+        } catch (DataAccessException e) {
+            log.warn("[AI-Copilot] empresaId={} intent={} datos no disponibles: {}", empresaId, intent, e.getMessage());
+            return "- Datos específicos no disponibles en este momento";
+        }
+    }
+
+    private String getVentasData(Long empresaId) {
+        String sqlHoy = """
+            SELECT COUNT(*) as pedidos, COALESCE(SUM(total_pedido),0) as ingresos
+            FROM hot_click_pedido_tb
+            WHERE fk_id_empresa = ? AND DATE(fecha_pedido) = CURRENT_DATE
+              AND estado_pedido IN ('PAGADO','ENTREGADO')
+            """;
+        String sql30d = """
+            SELECT COUNT(*) as pedidos, COALESCE(SUM(total_pedido),0) as ingresos
+            FROM hot_click_pedido_tb
+            WHERE fk_id_empresa = ? AND fecha_pedido >= NOW() - INTERVAL '30 days'
+              AND estado_pedido IN ('PAGADO','ENTREGADO')
+            """;
+        String sqlTopProds = """
+            SELECT p.nombre_producto, COUNT(dp.id_detalle) as veces, SUM(dp.subtotal) as total
+            FROM hot_click_detalle_pedido_tb dp
+            JOIN hot_click_pedido_tb ped ON dp.fk_id_pedido = ped.id_pedido
+            JOIN hot_click_producto_tb p ON dp.fk_id_producto = p.id_producto
+            WHERE ped.fk_id_empresa = ? AND ped.fecha_pedido >= NOW() - INTERVAL '30 days'
+              AND ped.estado_pedido IN ('PAGADO','ENTREGADO')
+            GROUP BY p.nombre_producto ORDER BY veces DESC LIMIT 5
+            """;
+        var hoy  = jdbc.queryForMap(sqlHoy,  empresaId);
+        var m30  = jdbc.queryForMap(sql30d, empresaId);
+        var top  = jdbc.queryForList(sqlTopProds, empresaId);
+        java.text.DecimalFormat fmt = new java.text.DecimalFormat("#,###");
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("Hoy: %s pedidos / ₡%s ingresos%n",
+            hoy.get("pedidos"), fmt.format(hoy.get("ingresos"))));
+        sb.append(String.format("Últimos 30 días: %s pedidos / ₡%s ingresos%n",
+            m30.get("pedidos"), fmt.format(m30.get("ingresos"))));
+        if (!top.isEmpty()) {
+            sb.append("Top productos más vendidos (30d):\n");
+            top.forEach(p -> sb.append(String.format("  - %s: %s ventas / ₡%s%n",
+                p.get("nombre_producto"), p.get("veces"), fmt.format(p.get("total")))));
+        }
+        return sb.toString();
+    }
+
+    private String getInventarioData(Long empresaId) {
+        String sqlBajo = """
+            SELECT nombre_producto, stock_actual, stock_minimo, precio_venta, precio_oferta
+            FROM hot_click_producto_tb
+            WHERE fk_id_empresa = ? AND fk_id_estado = 1 AND visible_catalogo = TRUE AND vendido = FALSE
+              AND stock_actual <= COALESCE(stock_minimo, 3)
+            ORDER BY stock_actual ASC LIMIT 10
+            """;
+        String sqlTotal = """
+            SELECT COUNT(*) as total, SUM(stock_actual) as unidades
+            FROM hot_click_producto_tb
+            WHERE fk_id_empresa = ? AND fk_id_estado = 1 AND visible_catalogo = TRUE AND vendido = FALSE
+            """;
+        var bajo  = jdbc.queryForList(sqlBajo, empresaId);
+        var total = jdbc.queryForMap(sqlTotal, empresaId);
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("Catálogo activo: %s productos / %s unidades en stock%n",
+            total.get("total"), total.get("unidades")));
+        if (!bajo.isEmpty()) {
+            sb.append("Productos con stock crítico:\n");
+            bajo.forEach(p -> sb.append(String.format("  - %s: %s unidades (mínimo: %s) — ₡%s%n",
+                p.get("nombre_producto"), p.get("stock_actual"),
+                p.get("stock_minimo"), p.get("precio_venta"))));
+        } else {
+            sb.append("No hay productos con stock crítico.\n");
+        }
+        return sb.toString();
+    }
+
+    private String getCatalogoData(Long empresaId) {
+        String sql = """
+            SELECT nombre_producto, descripcion_corta, precio_venta, precio_oferta,
+                   stock_actual, tags
+            FROM hot_click_producto_tb
+            WHERE fk_id_empresa = ? AND fk_id_estado = 1
+              AND visible_catalogo = TRUE AND vendido = FALSE AND stock_actual > 0
+            ORDER BY id_producto DESC LIMIT 20
+            """;
+        var prods = jdbc.queryForList(sql, empresaId);
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("Catálogo disponible (%d productos):%n", prods.size()));
+        prods.forEach(p -> {
+            String oferta = p.get("precio_oferta") != null ? " (oferta: ₡" + p.get("precio_oferta") + ")" : "";
+            sb.append(String.format("  - %s — ₡%s%s | Stock: %s%n",
+                p.get("nombre_producto"), p.get("precio_venta"), oferta, p.get("stock_actual")));
+            if (p.get("descripcion_corta") != null && !p.get("descripcion_corta").toString().isBlank()) {
+                sb.append(String.format("    Desc: %s%n", p.get("descripcion_corta")));
+            }
+        });
+        return sb.toString();
+    }
+
+    private String getPedidosPendientesData(Long empresaId) {
+        String sql = """
+            SELECT p.id_pedido, p.estado_pedido, p.total_pedido, p.fecha_pedido,
+                   u.nombre_usuario, u.email_usuario
+            FROM hot_click_pedido_tb p
+            LEFT JOIN hot_click_usuario_tb u ON p.fk_id_usuario = u.id_usuario
+            WHERE p.fk_id_empresa = ?
+              AND p.estado_pedido IN ('PAGADO','PROCESANDO','PREPARANDO')
+            ORDER BY p.fecha_pedido ASC LIMIT 15
+            """;
+        var pedidos = jdbc.queryForList(sql, empresaId);
+        if (pedidos.isEmpty()) return "No hay pedidos pendientes en este momento.\n";
+        java.text.DecimalFormat fmt = new java.text.DecimalFormat("#,###");
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("%d pedidos pendientes de despachar:%n", pedidos.size()));
+        pedidos.forEach(p -> sb.append(String.format("  #%s [%s] ₡%s — %s (%s)%n",
+            p.get("id_pedido"), p.get("estado_pedido"),
+            fmt.format(p.get("total_pedido")),
+            p.get("nombre_usuario"), p.get("email_usuario"))));
+        return sb.toString();
     }
 
     private String getKpiContext(Long empresaId) {
@@ -303,33 +464,12 @@ public class AiCopilotService {
                   AND estado_pedido IN ('PAGADO','ENTREGADO')
                 """;
             Map<String, Object> kpis = jdbc.queryForMap(sqlKpis, empresaId);
-
-            String sqlProductos = """
-                SELECT nombre_producto, stock_actual, stock_minimo
-                FROM hot_click_producto_tb
-                WHERE fk_id_empresa = ? AND fk_id_estado = 1
-                  AND visible_catalogo = TRUE AND vendido = FALSE
-                  AND stock_actual <= stock_minimo
-                ORDER BY stock_actual ASC LIMIT 5
-                """;
-            List<Map<String, Object>> bajoStock = jdbc.queryForList(sqlProductos, empresaId);
-
-            StringBuilder sb = new StringBuilder();
-            sb.append(String.format("- Pedidos últimos 7 días: %s\n", kpis.get("pedidos_7d")));
-            sb.append(String.format("- Ingresos últimos 7 días: ₡%s\n",
-                new java.text.DecimalFormat("#,###").format(kpis.get("ingresos_7d"))));
-            if (!bajoStock.isEmpty()) {
-                sb.append("- Productos con stock bajo: ");
-                bajoStock.forEach(p -> sb.append(p.get("nombre_producto")).append(
-                    " (stock: ").append(p.get("stock_actual")).append("), "));
-            }
-            return sb.toString();
+            java.text.DecimalFormat fmt = new java.text.DecimalFormat("#,###");
+            return String.format("Pedidos últimos 7 días: %s | Ingresos: ₡%s",
+                kpis.get("pedidos_7d"), fmt.format(kpis.get("ingresos_7d")));
         } catch (DataAccessException e) {
-            // Degradación intencional: el copilot puede responder sin KPIs si la
-            // consulta falla, pero el fallo en sí debe quedar visible — antes se
-            // perdía por completo y un problema de esquema/conexión pasaba desapercibido.
-            log.warn("[AI] empresaId={} no se pudo obtener contexto KPI: {}", empresaId, e.getMessage());
-            return "- Datos no disponibles";
+            log.warn("[AI] empresaId={} KPI no disponible: {}", empresaId, e.getMessage());
+            return "Datos no disponibles";
         }
     }
 

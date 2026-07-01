@@ -42,7 +42,7 @@ public class TestimonioController {
 
     /** Admin — devuelve todos */
     @GetMapping("/admin")
-    @PreAuthorize("hasRole('ADMIN_IT')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> listarAdmin() {
         return ResponseEntity.ok(ResponseDTO.success("Testimonios", testimonioService.listarTodosAdmin()));
     }
@@ -161,7 +161,7 @@ public class TestimonioController {
     }
 
     @PutMapping("/{id}/aprobar")
-    @PreAuthorize("hasRole('ADMIN_IT')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> aprobar(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(ResponseDTO.success("Aprobado", testimonioService.aprobar(id)));
@@ -171,7 +171,7 @@ public class TestimonioController {
     }
 
     @PutMapping("/{id}/rechazar")
-    @PreAuthorize("hasRole('ADMIN_IT')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> rechazar(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(ResponseDTO.success("Rechazado", testimonioService.rechazar(id)));
