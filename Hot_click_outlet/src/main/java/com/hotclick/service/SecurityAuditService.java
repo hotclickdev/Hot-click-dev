@@ -10,6 +10,8 @@ import com.hotclick.security.SecurityEventType;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,14 +38,12 @@ public class SecurityAuditService {
 
     private final SecurityAuditLogRepository auditRepo;
     private final ObjectMapper               objectMapper;
-    private final GeoIpService               geoIpService;
+    @Lazy @Autowired private GeoIpService    geoIpService;
 
     public SecurityAuditService(SecurityAuditLogRepository auditRepo,
-                                ObjectMapper objectMapper,
-                                GeoIpService geoIpService) {
-        this.auditRepo     = auditRepo;
-        this.objectMapper  = objectMapper;
-        this.geoIpService  = geoIpService;
+                                ObjectMapper objectMapper) {
+        this.auditRepo    = auditRepo;
+        this.objectMapper = objectMapper;
     }
 
     // ── Main log entry point ──────────────────────────────────────────────────
