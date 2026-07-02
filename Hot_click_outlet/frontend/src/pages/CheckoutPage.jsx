@@ -177,12 +177,11 @@ export default function CheckoutPage() {
     {
       id: 'STRIPE',
       label: 'Visa / Mastercard',
-      descripcion: 'Pagos con tarjeta · Próximamente disponible',
-      badge: 'Próximamente',
+      descripcion: 'Pagos con tarjeta · Seguro con Stripe',
+      badge: 'Nuevo',
       badgeColor: 'bg-[var(--hc-blue-500)]/20 text-[var(--hc-blue-400)] border-[var(--hc-blue-500)]/30',
       icon: CardIcon,
-      disabled: true,
-      disabledReason: 'Disponible próximamente',
+      disabled: false,
     },
   ]
 
