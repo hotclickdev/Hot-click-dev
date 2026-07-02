@@ -8,6 +8,7 @@ import com.hotclick.repository.ConvenioRepository;
 import com.hotclick.utils.InputSanitizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 
@@ -27,12 +28,14 @@ public class ConvenioController {
 
     /** Admin — todos */
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> listarTodos() {
         return ResponseEntity.ok(ResponseDTO.success("Convenios",
             repo.findTop100ByOrderByFechaRegistroDesc()));
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> crear(@RequestBody Convenio convenio) {
         sanitizarConvenio(convenio);
         convenio.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
@@ -41,6 +44,7 @@ public class ConvenioController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> actualizar(@PathVariable Long id, @RequestBody Convenio datos) {
         Convenio c = repo.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("No encontrado"));
         sanitizarConvenio(datos);
@@ -60,6 +64,7 @@ public class ConvenioController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> eliminar(@PathVariable Long id) {
         Convenio c = repo.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("No encontrado"));
         c.setEstado(0);

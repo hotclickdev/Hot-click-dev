@@ -4,6 +4,7 @@ import com.hotclick.dto.ResponseDTO;
 import com.hotclick.service.PublicacionFacebookService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -11,6 +12,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/publicaciones-fb")
+@PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
 public class PublicacionFbController {
 
     @Autowired private PublicacionFacebookService service;

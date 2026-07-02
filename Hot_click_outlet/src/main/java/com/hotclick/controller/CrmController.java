@@ -3,18 +3,23 @@ import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.utils.Constants;
 
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.model.Empresa;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.Usuario;
 import com.hotclick.model.WaMensajeLog;
+import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.PedidoRepository;
+import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.repository.WaMensajeLogRepository;
 import com.hotclick.security.CompanyScope;
+import com.hotclick.service.TenantService;
 import com.hotclick.service.WhatsAppService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,7 +34,25 @@ public class CrmController {
     @Autowired private PedidoRepository    pedidoRepository;
     @Autowired private WaMensajeLogRepository waLogRepository;
     @Autowired private CompanyScope         companyScope;
+    @Autowired private TenantService        tenantService;
     @Autowired private WhatsAppService      whatsAppService;
+    @Autowired private EmpresaRepository    empresaRepository;
+    @Autowired private RolRepository        rolRepository;
+    @Autowired private PasswordEncoder      passwordEncoder;
+
+    private static final String MSG_REQUIERE_CRM =
+        "El CRM de clientes requiere el plan NEGOCIO_PLUS. Ve a Configuración → Suscripción para mejorar tu plan.";
+
+    private boolean sinAccesoCrm() {
+        return !companyScope.isAdminIT() && !tenantService.tieneFeature("crm");
+    }
+
+    /** Un cliente "pertenece" a la empresa si compró ahí, o si la empresa lo registró manualmente (CRM). */
+    private boolean clientePerteneceAEmpresa(Usuario u, Long empresaId) {
+        if (empresaId == null) return true;
+        if (u.getEmpresaRegistro() != null && empresaId.equals(u.getEmpresaRegistro().getId())) return true;
+        return pedidoRepository.existsByUsuarioFinalIdAndEmpresaId(u.getId(), empresaId);
+    }
 
     /** Lista clientes (USUARIO_FINAL) que han comprado en esta empresa. ADMIN ve todos. */
     @GetMapping
@@ -42,6 +65,43 @@ public class CrmController {
             : usuarioRepository.findClientes();
         return ResponseEntity.ok(ResponseDTO.success("OK",
             clientes.stream().map(this::toClienteMap).toList()));
+    }
+
+    /**
+     * Registra manualmente un cliente (contacto) — nombre y teléfono son lo mínimo requerido.
+     * No requiere plan pago: es la libreta de contactos básica, distinta al CRM avanzado.
+     */
+    @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','CAJERO')")
+    @Transactional
+    public ResponseEntity<?> crear(@RequestBody Map<String, String> body) {
+        String nombre   = body.get("nombre");
+        String telefono = body.get("telefono");
+        String correo   = body.get("correo");
+        if (nombre == null || nombre.isBlank())
+            return ResponseEntity.badRequest().body(ResponseDTO.error("El nombre es requerido"));
+
+        Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
+        Empresa empresa = empresaId != null ? empresaRepository.findById(empresaId).orElse(null) : null;
+
+        String[] partes = nombre.trim().split("\\s+", 2);
+        Usuario u = new Usuario();
+        u.setNombre(partes[0]);
+        u.setApellidoPaterno(partes.length > 1 ? partes[1] : "");
+        u.setIdentificacion("CLI-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12));
+        u.setCorreo(correo != null && !correo.isBlank()
+            ? correo.trim().toLowerCase()
+            : "cliente-" + UUID.randomUUID() + "@sinemail.hotclick.lat");
+        u.setContrasenaHash(passwordEncoder.encode(UUID.randomUUID().toString()));
+        u.setTelefono(telefono != null && !telefono.isBlank() ? telefono.trim() : "00000000");
+        u.setEstado(Constants.ESTADO_ACTIVO);
+        u.setIntentosFallidos(0);
+        u.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
+        u.setEmpresaRegistro(empresa);
+        rolRepository.findByNombreRol(Constants.ROL_USUARIO_FINAL).ifPresent(rol -> u.getRoles().add(rol));
+
+        Usuario saved = usuarioRepository.save(u);
+        return ResponseEntity.ok(ResponseDTO.success("Cliente registrado", toClienteMapSimple(saved)));
     }
 
     /** Búsqueda por nombre, correo o teléfono — acotada a la empresa del caller. */
@@ -66,14 +126,10 @@ public class CrmController {
     public ResponseEntity<?> getById(@PathVariable Long id) {
         Usuario u = usuarioRepository.findById(id)
             .orElseThrow(() -> new RecursoNoEncontradoException("Cliente no encontrado"));
-        // Tenant check: EMPRENDEDOR solo puede ver clientes que hayan comprado en su empresa
+        // Tenant check: EMPRENDEDOR solo puede ver clientes que hayan comprado o que él registró
         Long empresaId = companyScope.getCurrentEmpresaId();
-        if (empresaId != null) {
-            boolean esClienteDeEmpresa = pedidoRepository
-                .existsByUsuarioFinalIdAndEmpresaId(id, empresaId);
-            if (!esClienteDeEmpresa)
-                return ResponseEntity.status(403).body(ResponseDTO.error("Cliente no pertenece a esta empresa"));
-        }
+        if (!clientePerteneceAEmpresa(u, empresaId))
+            return ResponseEntity.status(403).body(ResponseDTO.error("Cliente no pertenece a esta empresa"));
         Map<String, Object> data = toClienteMap(u);
         List<Pedido> pedidos = pedidoRepository
             .findByUsuarioFinalIdOrderByFechaPedidoDesc(id, PageRequest.of(0, 10))
@@ -87,11 +143,12 @@ public class CrmController {
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE')")
     @Transactional
     public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        if (sinAccesoCrm()) return ResponseEntity.status(403).body(ResponseDTO.error(MSG_REQUIERE_CRM));
         try {
             Usuario u = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Cliente no encontrado"));
             Long empresaId = companyScope.getCurrentEmpresaId();
-            if (empresaId != null && !pedidoRepository.existsByUsuarioFinalIdAndEmpresaId(id, empresaId))
+            if (!clientePerteneceAEmpresa(u, empresaId))
                 return ResponseEntity.status(403).body(ResponseDTO.error("Cliente no pertenece a esta empresa"));
 
             if (body.containsKey("segmento"))
@@ -115,13 +172,14 @@ public class CrmController {
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE')")
     @Transactional
     public ResponseEntity<?> ajustarPuntos(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        if (sinAccesoCrm()) return ResponseEntity.status(403).body(ResponseDTO.error(MSG_REQUIERE_CRM));
         try {
             Long empresaId = companyScope.getCurrentEmpresaId();
-            if (empresaId != null && !pedidoRepository.existsByUsuarioFinalIdAndEmpresaId(id, empresaId))
-                return ResponseEntity.status(403).body(ResponseDTO.error("Cliente no pertenece a esta empresa"));
-            int delta = Integer.parseInt(body.getOrDefault("delta", "0").toString());
             Usuario u = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Cliente no encontrado"));
+            if (!clientePerteneceAEmpresa(u, empresaId))
+                return ResponseEntity.status(403).body(ResponseDTO.error("Cliente no pertenece a esta empresa"));
+            int delta = Integer.parseInt(body.getOrDefault("delta", "0").toString());
             int nuevos = Math.max(0, u.getPuntosFidelidad() + delta);
             u.setPuntosFidelidad(nuevos);
             usuarioRepository.save(u);
@@ -144,11 +202,12 @@ public class CrmController {
     public ResponseEntity<?> enviarWhatsApp(
             @PathVariable Long id,
             @RequestBody Map<String, Object> body) {
+        if (sinAccesoCrm()) return ResponseEntity.status(403).body(ResponseDTO.error(MSG_REQUIERE_CRM));
         try {
             Usuario u = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Cliente no encontrado"));
             Long empresaId = companyScope.getCurrentEmpresaId();
-            if (empresaId != null && !pedidoRepository.existsByUsuarioFinalIdAndEmpresaId(id, empresaId))
+            if (!clientePerteneceAEmpresa(u, empresaId))
                 return ResponseEntity.status(403).body(ResponseDTO.error("Cliente no pertenece a esta empresa"));
 
             String escenario = (String) body.getOrDefault("escenario", "REACTIVACION");
@@ -168,6 +227,7 @@ public class CrmController {
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','SOPORTE')")
     @Transactional(readOnly = true)
     public ResponseEntity<?> historialWa(@PathVariable Long id) {
+        if (sinAccesoCrm()) return ResponseEntity.status(403).body(ResponseDTO.error(MSG_REQUIERE_CRM));
         Long empresaId = companyScope.getCurrentEmpresaId();
         if (empresaId != null && !pedidoRepository.existsByUsuarioFinalIdAndEmpresaId(id, empresaId))
             return ResponseEntity.status(403).body(ResponseDTO.error("Cliente no pertenece a esta empresa"));

@@ -682,7 +682,9 @@ export default function AdminNuevoProducto() {
         metaDescriptionFr: sl.fr?.description  || '',
       })
       const res = await productService.create(dto, { headers: { 'X-Idempotency-Key': idempotencyKey.current } })
-      const productoId = res.data?.data?.id ?? res.data?.id
+      const productoCreadoData = res.data?.data ?? res.data
+      const productoId = productoCreadoData?.id
+      const pendienteAprobacion = productoCreadoData?.visibleCatalogo === false
 
       if (productoId && form.imagenes.length > 0) {
         try {
@@ -694,7 +696,7 @@ export default function AdminNuevoProducto() {
 
       try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignorar */ }
       setTieneBorrador(false)
-      setProductoCreado({ id: productoId, nombre: form.nombre, imagen: imagenUrl })
+      setProductoCreado({ id: productoId, nombre: form.nombre, imagen: imagenUrl, pendienteAprobacion })
       setDone(true)
 
       const seoTitle = sl.es?.title || form.metaTitle || ''
@@ -1131,14 +1133,27 @@ export default function AdminNuevoProducto() {
   if (done) {
     return (
       <div className="space-y-6 text-center py-8 max-w-xs mx-auto">
-        <div className="w-16 h-16 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto">
-          <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
-          </svg>
+        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto ${productoCreado?.pendienteAprobacion ? 'bg-amber-500/15 border border-amber-500/30' : 'bg-emerald-500/15 border border-emerald-500/30'}`}>
+          {productoCreado?.pendienteAprobacion ? (
+            <svg className="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+              <circle cx="12" cy="12" r="9"/><path strokeLinecap="round" strokeLinejoin="round" d="M12 7v5l3 3"/>
+            </svg>
+          ) : (
+            <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+          )}
         </div>
         <div>
-          <h2 className="text-xl font-bold text-[#e8e8ed]">¡Producto publicado!</h2>
+          <h2 className="text-xl font-bold text-[#e8e8ed]">
+            {productoCreado?.pendienteAprobacion ? 'Producto enviado a revisión' : '¡Producto publicado!'}
+          </h2>
           <p className="text-sm text-[#8e8e9a] mt-1">{productoCreado?.nombre}</p>
+          {productoCreado?.pendienteAprobacion && (
+            <p className="text-xs text-amber-400/90 mt-2">
+              Un admin lo va a revisar antes de que aparezca en el catálogo público. Te avisamos cuando esté aprobado.
+            </p>
+          )}
         </div>
         {productoCreado?.imagen && (
           <img src={productoCreado.imagen} alt=""

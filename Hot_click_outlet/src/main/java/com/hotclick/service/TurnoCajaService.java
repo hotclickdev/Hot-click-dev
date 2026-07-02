@@ -25,7 +25,7 @@ public class TurnoCajaService {
 
     @Transactional
     public TurnoCaja abrirTurno(Long usuarioId, Long empresaId, Integer montoInicial) {
-        Optional<TurnoCaja> turnoExistente = turnoCajaRepository.findByUsuarioIdAndEstado(usuarioId, "ABIERTO");
+        Optional<TurnoCaja> turnoExistente = turnoCajaRepository.findByUsuario_IdAndEstado(usuarioId, "ABIERTO");
         if (turnoExistente.isPresent()) {
             throw new IllegalStateException("Ya tienes un turno abierto. Cerralo antes de abrir uno nuevo.");
         }
@@ -69,7 +69,7 @@ public class TurnoCajaService {
 
     @Transactional(readOnly = true)
     public Optional<TurnoCaja> getTurnoActivo(Long usuarioId) {
-        return turnoCajaRepository.findByUsuarioIdAndEstado(usuarioId, "ABIERTO");
+        return turnoCajaRepository.findByUsuario_IdAndEstado(usuarioId, "ABIERTO");
     }
 
     @Transactional

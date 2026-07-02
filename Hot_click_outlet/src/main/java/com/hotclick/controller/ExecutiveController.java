@@ -1,10 +1,13 @@
 package com.hotclick.controller;
 import com.hotclick.utils.Constants;
 
+import com.hotclick.dto.ResponseDTO;
+import com.hotclick.security.CompanyScope;
 import com.hotclick.security.TenantContext;
 import com.hotclick.service.AiCopilotService;
 import com.hotclick.service.AiQuotaService;
 import com.hotclick.service.ExecutiveDashboardService;
+import com.hotclick.service.TenantService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
@@ -30,10 +33,15 @@ public class ExecutiveController {
     @Autowired private ExecutiveDashboardService executiveService;
     @Autowired private AiCopilotService          aiCopilotService;
     @Autowired private AiQuotaService            aiQuotaService;
+    @Autowired private CompanyScope              companyScope;
+    @Autowired private TenantService             tenantService;
     @Autowired @Qualifier("sseExecutor") private Executor sseExecutor;
 
     @GetMapping("/dashboard")
     public ResponseEntity<?> dashboard() {
+        if (!companyScope.isAdminIT() && !tenantService.tieneFeature("reportes"))
+            return ResponseEntity.status(403).body(ResponseDTO.error(
+                "Executive BI requiere un plan PYME o superior. Ve a Configuración → Suscripción para mejorar tu plan."));
         return ResponseEntity.ok(executiveService.getDashboard(TenantContext.get()));
     }
 

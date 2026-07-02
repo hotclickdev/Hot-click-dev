@@ -360,9 +360,9 @@ export default function AdminAiControl() {
           💡 Recomendaciones
         </p>
         <ul className="space-y-2 text-xs" style={{ color: 'var(--hc-muted)' }}>
-          <li>• Desactivar el chat público en cuentas GRATUITAS reduce el riesgo de abuso sin costo.</li>
-          <li>• Cuentas PRO con 0 llamadas al copilot pueden recibir un email de onboarding para activar la feature.</li>
-          <li>• Cuentas cerca del límite (≥80%) son candidatas a upgrade a ENTERPRISE.</li>
+          <li>• Desactivar el chat público en cuentas EMPRENDEDOR reduce el riesgo de abuso sin costo.</li>
+          <li>• Cuentas PYME con 0 llamadas al copilot pueden recibir un email de onboarding para activar la feature.</li>
+          <li>• Cuentas cerca del límite (≥80%) son candidatas a upgrade a NEGOCIO PLUS.</li>
           <li>• El costo estimado usa Haiku 4.5: $0.80/M tokens entrada + $4.00/M tokens salida.</li>
         </ul>
       </div>

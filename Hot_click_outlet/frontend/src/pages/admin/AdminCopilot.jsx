@@ -29,6 +29,10 @@ export default function AdminCopilot() {
   const [input, setInput]         = useState('')
   const [enviando, setEnviando]   = useState(false)
   const [uso, setUso]             = useState(null)
+  const [sugerencias, setSugerencias] = useState([])
+  const [accionables, setAccionables] = useState([])
+  const [confirmandoId, setConfirmandoId] = useState(null)
+  const [aplicandoId, setAplicandoId]     = useState(null)
   const [streamText, setStreamText] = useState('')
   const bottomRef = useRef(null)
   const textareaRef = useRef(null)
@@ -44,6 +48,32 @@ export default function AdminCopilot() {
       setMensajes(Array.isArray(hist) ? hist : [])
       setUso(u)
     } catch { /* non-critical — UI handles empty state */ }
+
+    try {
+      const { data: s } = await api.get('/admin/ai/sugerencias')
+      setSugerencias(Array.isArray(s) ? s : [])
+    } catch { /* non-critical — chips simplemente no aparecen */ }
+
+    try {
+      const { data: a } = await api.get('/admin/ai/productos-sin-venta')
+      setAccionables(Array.isArray(a) ? a : [])
+    } catch { /* non-critical — panel de acciones simplemente no aparece */ }
+  }
+
+  async function aplicarDescuento(producto) {
+    setAplicandoId(producto.id)
+    try {
+      await api.patch(`/productos/${producto.id}/oferta`, {
+        enOferta: true,
+        porcentajeDescuento: producto.descuentoSugeridoPct,
+      })
+      setAccionables(prev => prev.filter(p => p.id !== producto.id))
+      setConfirmandoId(null)
+    } catch {
+      alert('No se pudo aplicar el descuento. Intentá de nuevo desde Ofertas.')
+    } finally {
+      setAplicandoId(null)
+    }
   }
 
   useEffect(() => { cargarHistorial() }, [])
@@ -181,8 +211,48 @@ export default function AdminCopilot() {
           style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
           <p className="text-sm font-semibold text-red-400">AI Copilot no disponible en tu plan actual</p>
           <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-            Actualiza a PRO (50 consultas/mes) o ENTERPRISE (500 consultas/mes)
+            Actualiza a PYME (80 consultas/mes) o NEGOCIO PLUS (consultas ilimitadas)
           </p>
+        </div>
+      )}
+
+      {/* Acciones sugeridas — solo lectura hasta que el dueño o ADMIN confirma */}
+      {accionables.length > 0 && (
+        <div className="rounded-2xl p-4 mb-3 space-y-2"
+          style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+          <p className="text-xs font-semibold" style={{ color: 'var(--hc-text)' }}>
+            Productos sin ventas recientes — acción sugerida
+          </p>
+          {accionables.map(p => (
+            <div key={p.id} className="flex items-center justify-between gap-3 text-xs py-1.5"
+              style={{ borderTop: '1px solid var(--hc-border)' }}>
+              <div className="min-w-0">
+                <p className="truncate font-medium" style={{ color: 'var(--hc-text)' }}>{p.nombre}</p>
+                <p style={{ color: 'var(--hc-muted)' }}>Stock {p.stock} · última venta hace {p.diasSinVenta}</p>
+              </div>
+              {confirmandoId === p.id ? (
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span style={{ color: 'var(--hc-muted)' }}>¿Aplicar {p.descuentoSugeridoPct}% de descuento?</span>
+                  <button onClick={() => aplicarDescuento(p)} disabled={aplicandoId === p.id}
+                    className="px-2 py-1 rounded-lg font-semibold disabled:opacity-50"
+                    style={{ backgroundColor: 'rgba(52,211,153,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.3)' }}>
+                    {aplicandoId === p.id ? '...' : 'Confirmar'}
+                  </button>
+                  <button onClick={() => setConfirmandoId(null)} disabled={aplicandoId === p.id}
+                    className="px-2 py-1 rounded-lg disabled:opacity-50"
+                    style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
+                    Cancelar
+                  </button>
+                </div>
+              ) : (
+                <button onClick={() => setConfirmandoId(p.id)}
+                  className="shrink-0 px-2 py-1 rounded-lg hover:opacity-80"
+                  style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}>
+                  Aplicar {p.descuentoSugeridoPct}% descuento
+                </button>
+              )}
+            </div>
+          ))}
         </div>
       )}
 
@@ -197,12 +267,7 @@ export default function AdminCopilot() {
               Tengo acceso en tiempo real a tus datos.
             </p>
             <div className="flex flex-wrap gap-2 justify-center pt-2">
-              {[
-                '¿Cómo van las ventas esta semana?',
-                '¿Qué productos tienen stock bajo?',
-                '¿Cuáles son mis productos más vendidos?',
-                'Dame un resumen de mi negocio',
-              ].map(s => (
+              {sugerencias.map(s => (
                 <button key={s} onClick={() => setInput(s)}
                   className="text-xs px-3 py-1.5 rounded-xl hover:opacity-80"
                   style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>

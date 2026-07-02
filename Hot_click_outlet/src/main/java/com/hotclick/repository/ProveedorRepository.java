@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface ProveedorRepository extends JpaRepository<Proveedor, Long> {
 
-    List<Proveedor> findByEmpresaIdAndEstadoOrderByNombreAsc(Long empresaId, Integer estado);
+    List<Proveedor> findByEmpresa_IdAndEstadoOrderByNombreAsc(Long empresaId, Integer estado);
 
     List<Proveedor> findByEstadoOrderByNombreAsc(Integer estado);
 }

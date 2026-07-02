@@ -34,10 +34,16 @@ public class OrdenCompraController {
     @Autowired private StockService          stockService;
     @Autowired private CompanyScope          companyScope;
     @Autowired private JwtUtil               jwtUtil;
+    @Autowired private com.hotclick.service.TenantService tenantService;
+
+    private static final String MSG_REQUIERE_COMPRAS =
+        "El módulo de Compras requiere un plan PYME o superior. Ve a Configuración → Suscripción para mejorar tu plan.";
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','INVENTARIO','CONTABILIDAD')")
     public ResponseEntity<?> listar() {
+        if (!companyScope.isAdminIT() && !tenantService.tieneFeature("compras"))
+            return ResponseEntity.status(403).body(ResponseDTO.error(MSG_REQUIERE_COMPRAS));
         Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
         if (empresaId == null)
             return ResponseEntity.badRequest().body(ResponseDTO.error("Empresa requerida"));
@@ -49,7 +55,10 @@ public class OrdenCompraController {
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','INVENTARIO')")
     public ResponseEntity<?> getById(@PathVariable Long id) {
         return ordenCompraRepository.findByIdConDetalles(id)
-            .map(o -> ResponseEntity.ok(ResponseDTO.success("OK", o)))
+            .map(o -> {
+                companyScope.assertCanAccessNullable(o.getEmpresa() != null ? o.getEmpresa().getId() : null);
+                return ResponseEntity.ok(ResponseDTO.success("OK", o));
+            })
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
@@ -57,6 +66,8 @@ public class OrdenCompraController {
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','INVENTARIO')")
     @Transactional
     public ResponseEntity<?> crear(@RequestBody OrdenCompraDTO dto, HttpServletRequest request) {
+        if (!companyScope.isAdminIT() && !tenantService.tieneFeature("compras"))
+            return ResponseEntity.status(403).body(ResponseDTO.error(MSG_REQUIERE_COMPRAS));
         try {
             Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
             if (empresaId == null)
@@ -117,6 +128,7 @@ public class OrdenCompraController {
         try {
             OrdenCompra orden = ordenCompraRepository.findByIdConDetalles(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Orden no encontrada"));
+            companyScope.assertCanAccessNullable(orden.getEmpresa() != null ? orden.getEmpresa().getId() : null);
             if ("RECIBIDA".equals(orden.getEstado()) || "CANCELADA".equals(orden.getEstado()))
                 return ResponseEntity.badRequest().body(ResponseDTO.error("La orden ya está " + orden.getEstado().toLowerCase()));
 
@@ -178,6 +190,8 @@ public class OrdenCompraController {
 
             OrdenCompra saved = ordenCompraRepository.save(orden);
             return ResponseEntity.ok(ResponseDTO.success("Recepción registrada", saved));
+        } catch (com.hotclick.exception.TenantAccessDeniedException e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
@@ -192,10 +206,13 @@ public class OrdenCompraController {
         try {
             OrdenCompra orden = ordenCompraRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Orden no encontrada"));
+            companyScope.assertCanAccessNullable(orden.getEmpresa() != null ? orden.getEmpresa().getId() : null);
             if ("RECIBIDA".equals(orden.getEstado()))
                 return ResponseEntity.badRequest().body(ResponseDTO.error("No se puede cancelar una orden ya recibida"));
             orden.setEstado("CANCELADA");
             return ResponseEntity.ok(ResponseDTO.success("Orden cancelada", ordenCompraRepository.save(orden)));
+        } catch (com.hotclick.exception.TenantAccessDeniedException e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }

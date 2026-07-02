@@ -678,6 +678,17 @@ html.dark .hc-input:focus {
   background-color: var(--hc-bg) !important;
 }
 
+/* — Drawers/paneles flotantes: el reset genérico "html.dark aside" (más abajo)
+   pone background-color: unset !important en CUALQUIER <aside>, incluidos los
+   que ya traen su propio fondo inline (ChatModal, filtros de ProductsPage).
+   Estas clases ganan por especificidad y devuelven el fondo en ambos modos. — */
+:root .hc-drawer-surface {
+  background-color: var(--hc-surface) !important;
+}
+:root .hc-ai-panel {
+  background-color: #13131f !important;
+}
+
 /* — Forms + select — */
 :root input:not([type="checkbox"]):not([type="radio"]),
 :root textarea,

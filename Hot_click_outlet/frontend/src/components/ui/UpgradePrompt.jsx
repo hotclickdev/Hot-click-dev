@@ -14,10 +14,10 @@ const FEATURE_LABELS = {
  *
  * Props:
  *   feature       string  — clave de la feature bloqueada
- *   planRequerido string  — 'PRO' | 'ENTERPRISE'
+ *   planRequerido string  — 'PYME' | 'NEGOCIO_PLUS'
  *   compact       bool    — versión reducida para usar inline
  */
-export default function UpgradePrompt({ feature, planRequerido = 'PRO', compact = false }) {
+export default function UpgradePrompt({ feature, planRequerido = 'PYME', compact = false }) {
   const navigate    = useNavigate()
   const featureLabel = FEATURE_LABELS[feature] ?? feature
 

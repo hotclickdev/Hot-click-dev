@@ -78,7 +78,6 @@ public class PublicChatService {
         "historia","geografía","capital","país","continente",
         "filosofía","religión","dios","ciencia","universo",
         "traduci","idioma","inglés","francés","alemán",
-        "deporte","fútbol","béisbol","basketball","equipo",
         "noticias","noticia","periódico","suceso"
     );
 
@@ -102,6 +101,40 @@ public class PublicChatService {
                 || lower.startsWith(g + "!") || lower.startsWith(g + "?")) return true;
         }
         return lower.length() < 8 && lower.matches("[a-záéíóúüñ!¡]+");
+    }
+
+    /** Strips accents and lowercases, for loose matching of canned quick-reply chips. */
+    private String normalize(String s) {
+        String n = java.text.Normalizer.normalize(s.toLowerCase(), java.text.Normalizer.Form.NFD);
+        return n.replaceAll("\\p{M}", "");
+    }
+
+    /** Matches the "¿Qué es HOTCLICK?" chip and similar business-info questions. */
+    private boolean isBusinessInfoQuery(String message) {
+        String n = normalize(message);
+        boolean mentionsStore = n.contains("hotclick") || n.contains("la tienda") || n.contains("the store");
+        boolean asksWhatWho = n.contains("que es") || n.contains("what is") || n.contains("quienes son")
+            || n.contains("sobre ustedes") || n.contains("about you") || n.contains("informacion de");
+        return mentionsStore && asksWhatWho;
+    }
+
+    /** Matches the "Contactar por WhatsApp" chip. */
+    private boolean isWhatsappContactQuery(String message) {
+        return normalize(message).contains("whatsapp");
+    }
+
+    /** Matches "Ver todos los productos" / "Ver productos populares" / "Show popular products" chips. */
+    private boolean isShowAllOrPopularQuery(String message) {
+        String n = normalize(message);
+        return n.contains("todos los productos") || n.contains("productos populares")
+            || n.contains("lo mas popular") || n.contains("mas popular")
+            || n.contains("popular products") || n.contains("all products");
+    }
+
+    /** Matches "¿Qué hay en oferta?" / "What's on sale?" chips. */
+    private boolean isOfferQuery(String message) {
+        String n = normalize(message);
+        return n.contains("en oferta") || n.contains("ofertas") || n.contains("on sale") || n.contains("descuento");
     }
 
     // ── Signal extraction ─────────────────────────────────────────────────────
@@ -239,6 +272,38 @@ public class PublicChatService {
                 return;
             }
 
+            // 0c. Business info — asked directly or via the "¿Qué es HOTCLICK?" chip
+            if (isBusinessInfoQuery(userMessage)) {
+                boolean en = isEnglish(userMessage);
+                emitter.send(SseEmitter.event().name("products")
+                    .data(objectMapper.writeValueAsString(Map.of("productos", List.of(), "hasMore", false, "query", userMessage))));
+                emitter.send(SseEmitter.event().name("delta")
+                    .data(objectMapper.writeValueAsString(Map.of("text", businessInfoText(empresaId, en)))));
+                List<String> infoOpts = en
+                    ? List.of("Show me popular products", "What's on sale?", "Contact us on WhatsApp")
+                    : List.of("Ver productos populares", "¿Qué hay en oferta?", "Contactar por WhatsApp");
+                emitter.send(SseEmitter.event().name("done")
+                    .data(objectMapper.writeValueAsString(Map.of("opts", infoOpts))));
+                emitter.complete();
+                return;
+            }
+
+            // 0d. Direct WhatsApp contact request — asked directly or via chip
+            if (isWhatsappContactQuery(userMessage)) {
+                boolean en = isEnglish(userMessage);
+                emitter.send(SseEmitter.event().name("products")
+                    .data(objectMapper.writeValueAsString(Map.of("productos", List.of(), "hasMore", false, "query", userMessage))));
+                emitter.send(SseEmitter.event().name("delta")
+                    .data(objectMapper.writeValueAsString(Map.of("text", whatsappContactText(empresaId, en)))));
+                List<String> waOpts = en
+                    ? List.of("Show me popular products", "What's on sale?", "What is HOTCLICK?")
+                    : List.of("Ver productos populares", "¿Qué hay en oferta?", "¿Qué es HOTCLICK?");
+                emitter.send(SseEmitter.event().name("done")
+                    .data(objectMapper.writeValueAsString(Map.of("opts", waOpts))));
+                emitter.complete();
+                return;
+            }
+
             // 1. Extract signals
             boolean isEnglish = isEnglish(userMessage);
             Long maxBudget    = extractMaxBudget(userMessage);
@@ -248,8 +313,14 @@ public class PublicChatService {
             String intent     = classifyIntent(userMessage, isGift, maxBudget);
 
             // 2. Find relevant products
-            String tsQuery = buildTsQuery(userMessage);
-            List<Map<String, Object>> productos = buscarProductos(empresaId, tsQuery, userMessage, offset, maxBudget, negations);
+            boolean showAll    = isShowAllOrPopularQuery(userMessage);
+            boolean showOffers = !showAll && isOfferQuery(userMessage);
+            String tsQuery = (showAll || showOffers) ? "" : buildTsQuery(userMessage);
+            List<Map<String, Object>> productos = showAll
+                ? buscarPopulares(empresaId, offset)
+                : showOffers
+                    ? buscarEnOferta(empresaId, offset)
+                    : buscarProductos(empresaId, tsQuery, userMessage, offset, maxBudget, negations);
             boolean hasMore = productos.size() > PAGE;
             List<Map<String, Object>> page = productos.stream().limit(PAGE).collect(Collectors.toList());
 
@@ -346,6 +417,41 @@ public class PublicChatService {
     }
 
     // ── Búsqueda en BD ────────────────────────────────────────────────────────
+
+    /** "Ver todos los productos" / "Ver productos populares" — ignora texto, prioriza destacados. */
+    private List<Map<String, Object>> buscarPopulares(Long empresaId, int offset) {
+        String sql = """
+            SELECT id_producto, nombre_producto, descripcion_corta,
+                   precio_venta, precio_oferta, imagen_principal_url, sku, stock_actual
+            FROM hot_click_producto_tb
+            WHERE fk_id_empresa = ?
+              AND fk_id_estado = 1
+              AND visible_catalogo = TRUE
+              AND vendido = FALSE
+              AND stock_actual > 0
+            ORDER BY destacado DESC, en_carrusel DESC, id_producto DESC
+            LIMIT ? OFFSET ?
+            """;
+        return jdbc.queryForList(sql, empresaId, PAGE + 1, offset);
+    }
+
+    /** "¿Qué hay en oferta?" — productos con en_oferta = TRUE. */
+    private List<Map<String, Object>> buscarEnOferta(Long empresaId, int offset) {
+        String sql = """
+            SELECT id_producto, nombre_producto, descripcion_corta,
+                   precio_venta, precio_oferta, imagen_principal_url, sku, stock_actual
+            FROM hot_click_producto_tb
+            WHERE fk_id_empresa = ?
+              AND fk_id_estado = 1
+              AND visible_catalogo = TRUE
+              AND vendido = FALSE
+              AND stock_actual > 0
+              AND en_oferta = TRUE
+            ORDER BY id_producto DESC
+            LIMIT ? OFFSET ?
+            """;
+        return jdbc.queryForList(sql, empresaId, PAGE + 1, offset);
+    }
 
     private List<Map<String, Object>> buscarProductos(Long empresaId, String tsQuery,
                                                         String raw, int offset,
@@ -519,6 +625,29 @@ public class PublicChatService {
         } catch (Exception e) {
             return "50686667888";
         }
+    }
+
+    /** Canned answer for the "¿Qué es HOTCLICK?" chip / business-info questions. */
+    private String businessInfoText(Long empresaId, boolean isEnglish) {
+        String wa = getEmpresaWhatsapp(empresaId);
+        if (isEnglish) {
+            return "HOTCLICK is an online store in Costa Rica. We ship nationwide via Correos de Costa Rica "
+                + "(2-5 business days) and offer direct delivery in the GAM (1-2 days). You can pay with SINPE "
+                + "Móvil, debit/credit card, or bank transfer, and every product has a 30-day factory-defect "
+                + "warranty. Anything I can help you find?";
+        }
+        return "HOTCLICK es una tienda online en Costa Rica. Enviamos a todo el país con Correos de Costa Rica "
+            + "(2-5 días hábiles) y hacemos entrega directa en el GAM (1-2 días). Podés pagar con SINPE Móvil, "
+            + "tarjeta de débito/crédito o transferencia bancaria, y todos los productos tienen garantía de 30 "
+            + "días por defectos de fábrica. ¿Qué estás buscando?";
+    }
+
+    /** Canned answer for the "Contactar por WhatsApp" chip. */
+    private String whatsappContactText(Long empresaId, boolean isEnglish) {
+        String wa = getEmpresaWhatsapp(empresaId);
+        return isEnglish
+            ? "You can reach our team directly on WhatsApp: https://wa.me/" + wa
+            : "Podés escribirnos directo por WhatsApp: https://wa.me/" + wa;
     }
 
     private String buildSalesSystemPrompt(Long empresaId, String context,

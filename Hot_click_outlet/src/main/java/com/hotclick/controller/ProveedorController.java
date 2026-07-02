@@ -27,7 +27,7 @@ public class ProveedorController {
     public ResponseEntity<?> listar() {
         Long empresaId = companyScope.getCurrentEmpresaId();
         var lista = empresaId != null
-            ? proveedorRepository.findByEmpresaIdAndEstadoOrderByNombreAsc(empresaId, Constants.ESTADO_ACTIVO)
+            ? proveedorRepository.findByEmpresa_IdAndEstadoOrderByNombreAsc(empresaId, Constants.ESTADO_ACTIVO)
             : proveedorRepository.findByEstadoOrderByNombreAsc(Constants.ESTADO_ACTIVO);
         return ResponseEntity.ok(ResponseDTO.success("OK", lista));
     }
@@ -64,6 +64,7 @@ public class ProveedorController {
         try {
             Proveedor p = proveedorRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Proveedor no encontrado"));
+            companyScope.assertCanAccessNullable(p.getEmpresa() != null ? p.getEmpresa().getId() : null);
 
             if (body.containsKey("nombre"))   p.setNombre(body.get("nombre").toString().trim());
             if (body.containsKey("contacto")) p.setContacto((String) body.get("contacto"));
@@ -72,6 +73,8 @@ public class ProveedorController {
             if (body.containsKey("notas"))    p.setNotas((String) body.get("notas"));
 
             return ResponseEntity.ok(ResponseDTO.success("Proveedor actualizado", proveedorRepository.save(p)));
+        } catch (com.hotclick.exception.TenantAccessDeniedException e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
@@ -85,9 +88,12 @@ public class ProveedorController {
         try {
             Proveedor p = proveedorRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Proveedor no encontrado"));
+            companyScope.assertCanAccessNullable(p.getEmpresa() != null ? p.getEmpresa().getId() : null);
             p.setEstado(Constants.ESTADO_INACTIVO);
             proveedorRepository.save(p);
             return ResponseEntity.ok(ResponseDTO.success("Proveedor eliminado", null));
+        } catch (com.hotclick.exception.TenantAccessDeniedException e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }

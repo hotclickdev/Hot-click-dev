@@ -10,6 +10,7 @@ import com.hotclick.model.Empresa;
 import com.hotclick.repository.AiMensajeRepository;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.security.TenantContext;
+import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,8 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.CompletionException;
 
@@ -61,11 +64,12 @@ public class AiCopilotService {
     @Value("${anthropic.model:claude-haiku-4-5-20251001}")
     private String model;
 
-    @Autowired private AiMensajeRepository aiMensajeRepository;
-    @Autowired private AiQuotaService      aiQuotaService;
-    @Autowired private EmpresaRepository   empresaRepository;
-    @Autowired private ObjectMapper        objectMapper;
-    @Autowired private JdbcTemplate        jdbc;
+    @Autowired private AiMensajeRepository     aiMensajeRepository;
+    @Autowired private AiQuotaService          aiQuotaService;
+    @Autowired private EmpresaRepository       empresaRepository;
+    @Autowired private ObjectMapper            objectMapper;
+    @Autowired private JdbcTemplate            jdbc;
+    @Autowired private InventoryForecastService inventoryForecastService;
 
     // ── Public API ────────────────────────────────────────────────────────────
 
@@ -88,6 +92,82 @@ public class AiCopilotService {
     @Transactional
     public void limpiarHistorial(Long empresaId) {
         aiMensajeRepository.deleteByEmpresaId(empresaId);
+    }
+
+    private static final int DESCUENTO_SUGERIDO_PCT = 15;
+
+    /**
+     * Productos sin ventas en 60+ días, con la acción que el Copilot puede sugerir
+     * (aplicar descuento). Es solo lectura — la ejecución real pasa por el endpoint
+     * existente PATCH /api/productos/{id}/oferta, que el dueño o ADMIN debe confirmar
+     * explícitamente desde la UI. El Copilot nunca aplica cambios por sí mismo.
+     */
+    public List<Map<String, Object>> getProductosSinVentaAccionables(Long empresaId) {
+        return inventoryForecastService.productosLentosMovimiento(empresaId).stream()
+            .limit(8)
+            .map(p -> {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("id",             p.get("id_producto"));
+                m.put("nombre",         p.get("nombre_producto"));
+                m.put("stock",          p.get("stock_actual"));
+                m.put("diasSinVenta",   diasDesde(p.get("fecha_ultima_venta")));
+                m.put("descuentoSugeridoPct", DESCUENTO_SUGERIDO_PCT);
+                return m;
+            })
+            .collect(java.util.stream.Collectors.toList());
+    }
+
+    private static final List<String> SUGERENCIAS_EVERGREEN = List.of(
+        "¿Cómo van mis ventas esta semana?",
+        "¿Cuáles son mis productos más vendidos?",
+        "¿Qué cliente me compra más un producto específico?",
+        "Dame un resumen de mi negocio"
+    );
+
+    /**
+     * Preguntas sugeridas para el chat: primero las que reflejan un hallazgo real
+     * del negocio (stock crítico, productos sin venta, pedidos pendientes), después
+     * se completa con preguntas genéricas hasta un máximo de 4.
+     * Nunca lanza — si los datos no están disponibles, cae a las genéricas.
+     */
+    public List<String> getSugerencias(Long empresaId) {
+        List<String> chips = new ArrayList<>();
+        try {
+            int lentos = inventoryForecastService.productosLentosMovimiento(empresaId).size();
+            if (lentos > 0) {
+                chips.add(String.format("Tengo %d producto%s sin ventas en 60+ días, ¿cuáles son y qué hago?",
+                    lentos, lentos == 1 ? "" : "s"));
+            }
+
+            int enRiesgo = inventoryForecastService.productosEnRiesgo(empresaId).size();
+            if (enRiesgo > 0) {
+                chips.add(String.format("Tengo %d producto%s con stock crítico, ¿cuáles son?",
+                    enRiesgo, enRiesgo == 1 ? "" : "s"));
+            }
+
+            int pendientes = countPedidosPendientes(empresaId);
+            if (pendientes > 0) {
+                chips.add(String.format("Tengo %d pedido%s pendiente%s de despachar, ¿cuáles priorizo?",
+                    pendientes, pendientes == 1 ? "" : "s", pendientes == 1 ? "" : "s"));
+            }
+        } catch (DataAccessException e) {
+            log.warn("[AI-Copilot] empresaId={} sugerencias dinámicas no disponibles: {}", empresaId, e.getMessage());
+        }
+
+        for (String s : SUGERENCIAS_EVERGREEN) {
+            if (chips.size() >= 4) break;
+            chips.add(s);
+        }
+        return chips;
+    }
+
+    private int countPedidosPendientes(Long empresaId) {
+        String sql = """
+            SELECT COUNT(*) FROM hot_click_pedido_tb
+            WHERE fk_id_empresa = ? AND estado_pedido IN ('PAGADO','PROCESANDO','PREPARANDO')
+            """;
+        Integer count = jdbc.queryForObject(sql, Integer.class, empresaId);
+        return count != null ? count : 0;
     }
 
     /**
@@ -284,7 +364,7 @@ public class AiCopilotService {
 
     private Intent detectIntent(String msg) {
         String lower = msg.toLowerCase();
-        if (lower.matches(".*\\b(vend|ingres|factur|cobr|gananci|cuanto.*vendí|revenue|venta|compr.*cliente|mejor.*client).*")) return Intent.VENTAS;
+        if (lower.matches(".*\\b(vend|ingres|factur|cobr|gananci|cuanto.*vendí|revenue|venta|compr.*client|client.*compr|mejor.*client).*")) return Intent.VENTAS;
         if (lower.matches(".*\\b(stock|inventari|bajo.*stock|precio|rebaj|oferta|actualiz.*product|catalog|producto).*")) return Intent.INVENTARIO;
         if (lower.matches(".*\\b(descri|instagram|whatsapp|post|redact|escrib|contenido|caption|anuncio|publicaci|seo|titul).*")) return Intent.CONTENIDO;
         if (lower.matches(".*\\b(pendiente|entreg|envi|pedido|orden|cliente.*espera|despachar|guia).*")) return Intent.OPERATIVO;
@@ -377,6 +457,69 @@ public class AiCopilotService {
             top.forEach(p -> sb.append(String.format("  - %s: %s ventas / ₡%s%n",
                 p.get("nombre_producto"), p.get("veces"), fmt.format(p.get("total")))));
         }
+        sb.append(getProductosSinVentaData(empresaId));
+        sb.append(getClientesPorProductoData(empresaId));
+        return sb.toString();
+    }
+
+    /** Productos activos sin ventas en 60+ días — reutiliza el cálculo de InventoryForecastService (F21). */
+    private String getProductosSinVentaData(Long empresaId) {
+        var lentos = inventoryForecastService.productosLentosMovimiento(empresaId);
+        if (lentos.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder("\nProductos sin ventas recientes (60+ días):\n");
+        lentos.stream().limit(8).forEach(p -> sb.append(String.format("  - %s: stock %s, última venta hace %s%n",
+            p.get("nombre_producto"), p.get("stock_actual"), diasDesde(p.get("fecha_ultima_venta")))));
+        return sb.toString();
+    }
+
+    private String diasDesde(Object fecha) {
+        LocalDateTime momento;
+        if (fecha instanceof java.sql.Timestamp ts)   momento = ts.toLocalDateTime();
+        else if (fecha instanceof LocalDateTime ldt)   momento = ldt;
+        else return "nunca registrada";
+        return ChronoUnit.DAYS.between(momento, LocalDateTime.now(Constants.ZONA_CR)) + " días";
+    }
+
+    /** Top 3 clientes por cada uno de los productos más vendidos (90d) — responde "quién me compra tal producto". */
+    private String getClientesPorProductoData(Long empresaId) {
+        String sql = """
+            WITH ventas AS (
+                SELECT p.nombre_producto, u.nombre_usuario,
+                       COUNT(*) AS veces,
+                       ROW_NUMBER() OVER (PARTITION BY p.nombre_producto ORDER BY COUNT(*) DESC) AS rn
+                FROM hot_click_detalle_pedido_tb dp
+                JOIN hot_click_pedido_tb ped ON dp.fk_id_pedido = ped.id_pedido
+                JOIN hot_click_producto_tb p ON dp.fk_id_producto = p.id_producto
+                LEFT JOIN hot_click_usuario_tb u ON ped.fk_id_usuario = u.id_usuario
+                WHERE ped.fk_id_empresa = ? AND ped.fecha_pedido >= NOW() - INTERVAL '90 days'
+                  AND ped.estado_pedido IN ('PAGADO','ENTREGADO')
+                GROUP BY p.nombre_producto, u.nombre_usuario, u.id_usuario
+            ),
+            top_productos AS (
+                SELECT nombre_producto, SUM(veces) AS total_veces
+                FROM ventas GROUP BY nombre_producto ORDER BY total_veces DESC LIMIT 6
+            )
+            SELECT v.nombre_producto, v.nombre_usuario, v.veces
+            FROM ventas v
+            JOIN top_productos tp ON tp.nombre_producto = v.nombre_producto
+            WHERE v.rn <= 3
+            ORDER BY tp.total_veces DESC, v.nombre_producto, v.veces DESC
+            """;
+        var filas = jdbc.queryForList(sql, empresaId);
+        if (filas.isEmpty()) return "";
+
+        StringBuilder sb = new StringBuilder("\nClientes recurrentes por producto (90d):\n");
+        String productoActual = null;
+        for (var f : filas) {
+            String nombreProducto = (String) f.get("nombre_producto");
+            if (!nombreProducto.equals(productoActual)) {
+                sb.append(String.format("  %s:%n", nombreProducto));
+                productoActual = nombreProducto;
+            }
+            Object cliente = f.get("nombre_usuario");
+            sb.append(String.format("    - %s (%s compras)%n",
+                cliente != null ? cliente : "Cliente sin cuenta", f.get("veces")));
+        }
         return sb.toString();
     }
 
@@ -433,9 +576,11 @@ public class AiCopilotService {
     }
 
     private String getPedidosPendientesData(Long empresaId) {
+        // Solo nombre_usuario — el email es PII innecesaria para que el LLM
+        // aconseje sobre despachos y no debe salir hacia la API de Claude.
         String sql = """
             SELECT p.id_pedido, p.estado_pedido, p.total_pedido, p.fecha_pedido,
-                   u.nombre_usuario, u.email_usuario
+                   u.nombre_usuario
             FROM hot_click_pedido_tb p
             LEFT JOIN hot_click_usuario_tb u ON p.fk_id_usuario = u.id_usuario
             WHERE p.fk_id_empresa = ?
@@ -447,10 +592,10 @@ public class AiCopilotService {
         java.text.DecimalFormat fmt = new java.text.DecimalFormat("#,###");
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("%d pedidos pendientes de despachar:%n", pedidos.size()));
-        pedidos.forEach(p -> sb.append(String.format("  #%s [%s] ₡%s — %s (%s)%n",
+        pedidos.forEach(p -> sb.append(String.format("  #%s [%s] ₡%s — %s%n",
             p.get("id_pedido"), p.get("estado_pedido"),
             fmt.format(p.get("total_pedido")),
-            p.get("nombre_usuario"), p.get("email_usuario"))));
+            p.get("nombre_usuario"))));
         return sb.toString();
     }
 

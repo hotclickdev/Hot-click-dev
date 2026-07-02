@@ -2,7 +2,9 @@ package com.hotclick.controller;
 
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.TurnoCaja;
+import com.hotclick.security.CompanyScope;
 import com.hotclick.security.JwtUtil;
+import com.hotclick.service.TenantService;
 import com.hotclick.service.TurnoCajaService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,10 +20,17 @@ public class TurnoCajaController {
 
     @Autowired private TurnoCajaService turnoCajaService;
     @Autowired private JwtUtil          jwtUtil;
+    @Autowired private CompanyScope     companyScope;
+    @Autowired private TenantService    tenantService;
+
+    private static final String MSG_REQUIERE_POS =
+        "El punto de venta requiere un plan PYME o superior. Ve a Configuración → Suscripción para mejorar tu plan.";
 
     @PostMapping("/abrir")
     @PreAuthorize("hasAuthority('pos.caja.abrir') or hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> abrir(@RequestBody Map<String, Object> body, HttpServletRequest request) {
+        if (!companyScope.isAdminIT() && !tenantService.tieneFeature("pos"))
+            return ResponseEntity.status(403).body(ResponseDTO.error(MSG_REQUIERE_POS));
         try {
             Long usuarioId  = extractUserId(request);
             Long empresaId  = extractEmpresaId(request);
@@ -39,6 +48,8 @@ public class TurnoCajaController {
     @PutMapping("/{id}/cerrar")
     @PreAuthorize("hasAuthority('pos.caja.cerrar') or hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> cerrar(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        if (!companyScope.isAdminIT() && !tenantService.tieneFeature("pos"))
+            return ResponseEntity.status(403).body(ResponseDTO.error(MSG_REQUIERE_POS));
         try {
             Integer montoDeclarado = body.containsKey("montoDeclarado")
                 ? Integer.valueOf(body.get("montoDeclarado").toString()) : 0;

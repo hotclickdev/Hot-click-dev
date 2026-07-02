@@ -85,7 +85,7 @@ export default function ChatModal() {
             animate="visible"
             exit="exit"
             transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-            className="fixed left-0 top-0 bottom-0 z-50 flex flex-col"
+            className="hc-drawer-surface fixed left-0 top-0 bottom-0 z-50 flex flex-col"
             style={{
               width: 'min(440px, 100vw)',
               background: 'var(--hc-surface)',

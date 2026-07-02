@@ -7,16 +7,16 @@ import UpgradePrompt from './UpgradePrompt'
  *
  * Props:
  *   feature       string   — 'pos' | 'crm' | 'compras' | 'reportes' | 'ai' | 'api'
- *   planRequerido string   — 'PRO' | 'ENTERPRISE' (para el mensaje del prompt)
+ *   planRequerido string   — 'PYME' | 'NEGOCIO_PLUS' (para el mensaje del prompt)
  *   fallback      node     — override del fallback (si no se pasa usa UpgradePrompt)
  *   silent        bool     — si true, renderiza null en vez de UpgradePrompt
  *
  * Ejemplo:
- *   <PlanGate feature="pos" planRequerido="PRO">
+ *   <PlanGate feature="pos" planRequerido="PYME">
  *     <AdminPOS />
  *   </PlanGate>
  */
-export default function PlanGate({ feature, planRequerido = 'PRO', fallback, silent = false, children }) {
+export default function PlanGate({ feature, planRequerido = 'PYME', fallback, silent = false, children }) {
   const hasFeature = useTenantStore(s => s.hasFeature)
   const loaded     = useTenantStore(s => s.loaded)
 

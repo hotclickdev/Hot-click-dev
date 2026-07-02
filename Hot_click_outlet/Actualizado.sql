@@ -3114,3 +3114,22 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_marca_nombre_global_activo
     ON hot_click_marca_tb (nombre_marca)
     WHERE fk_id_estado = 1
       AND fk_id_empresa IS NULL;
+
+-- V91: Otorga créditos de IA limitados al plan EMPRENDEDOR (gratuito).
+-- Antes tenía max_creditos_ai = 0 (V89) — el Copilot no era usable en el plan gratuito.
+-- Decisión: darle acceso limitado por ahora; el día que se quiera reservar el
+-- Copilot solo para planes pagos, basta con desactivar el feature flag
+-- 'copilot_emprendedor' (V47) — AiQuotaService.resolverLimite() lo respeta
+-- sin necesidad de un nuevo deploy.
+UPDATE hot_click_plan_tb
+SET max_creditos_ai = 10
+WHERE nombre = 'EMPRENDEDOR';
+
+-- V92: permite que un emprendedor registre manualmente un cliente (contacto)
+-- sin que exista todavía un pedido que lo vincule a la empresa.
+ALTER TABLE hot_click_usuario_tb
+    ADD COLUMN IF NOT EXISTS fk_id_empresa_registro BIGINT NULL
+    REFERENCES hot_click_empresa_tb(id_empresa);
+
+CREATE INDEX IF NOT EXISTS idx_usuario_empresa_registro
+    ON hot_click_usuario_tb (fk_id_empresa_registro);

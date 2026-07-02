@@ -109,7 +109,9 @@ public class EquipoController {
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El usuario ya pertenece al máximo de " + MAX_EMPRESAS_POR_USUARIO + " negocios permitidos"));
 
             boolean tieneRol = u.getRoles().stream().anyMatch(r -> Constants.ROL_EMPRENDEDOR.equals(r.getNombreRol()));
-            if (!tieneRol) { u.getRoles().add(rolMiembro); usuarioRepository.save(u); }
+            if (!tieneRol) { u.getRoles().add(rolMiembro); }
+            if (u.getEmpresa() == null) { u.setEmpresa(empresa); }
+            usuarioRepository.save(u);
 
             // Reactivar membresía eliminada si existe, o crear nueva
             Optional<MiembroEmpresa> previo = miembroEmpresaRepository.findByUsuarioIdAndEmpresaId(u.getId(), empresa.getId());

@@ -19,9 +19,9 @@ import java.util.Map;
  * Controla el consumo mensual de créditos de IA por empresa.
  *
  * Límites leídos directamente de Plan.maxCreditosAi:
- *   -1 = ilimitado   (Comercio Expansión / Personalizado / ADMIN)
- *    0 = sin acceso  (Inicio Ferial)
- *   25 = 25/mes      (Emprendedor Pro)
+ *   -1 = ilimitado   (NEGOCIO_PLUS / ADMIN)
+ *   10 = 10/mes      (EMPRENDEDOR — gateado además por el flag 'copilot_emprendedor')
+ *   80 = 80/mes      (PYME)
  *
  * El flujo atómico correcto es:
  *   1. verificarYReservar()  — decrementa el slot ANTES del call HTTP a Claude
@@ -31,8 +31,9 @@ import java.util.Map;
 @Service
 public class AiQuotaService {
 
-    @Autowired private AiUsoRepository   aiUsoRepository;
-    @Autowired private EmpresaRepository empresaRepository;
+    @Autowired private AiUsoRepository     aiUsoRepository;
+    @Autowired private EmpresaRepository   empresaRepository;
+    @Autowired private FeatureFlagService  featureFlagService;
 
     // ── API pública ───────────────────────────────────────────────────────────
 
@@ -131,7 +132,17 @@ public class AiQuotaService {
         if ("ADMIN".equals(empresa.getPlanSaas())) return -1;
 
         Plan plan = empresa.getPlan();
-        if (plan != null) return plan.getMaxCreditosAi();
+        if (plan != null) {
+            int limite = plan.getMaxCreditosAi();
+            // EMPRENDEDOR es plan gratuito — su acceso al Copilot es temporal y vive
+            // detrás del flag 'copilot_emprendedor' (activo por defecto, V47) para poder
+            // cortarlo sin deploy cuando se decida reservar la IA solo para planes pagos.
+            if (limite != 0 && "EMPRENDEDOR".equals(plan.getNombre())
+                    && !featureFlagService.isEnabled("copilot_emprendedor", empresa.getId())) {
+                return 0;
+            }
+            return limite;
+        }
 
         // Fallback para empresas que aún no tienen plan FK asignado
         return switch (empresa.getPlanSaas().toUpperCase()) {

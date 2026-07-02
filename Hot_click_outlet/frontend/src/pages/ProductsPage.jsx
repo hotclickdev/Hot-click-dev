@@ -1753,7 +1753,7 @@ export default function ProductsPage() {
                       key="sidebar-drawer"
                       initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
                       transition={{ type: 'spring', damping: 26, stiffness: 260 }}
-                      className="fixed left-0 top-0 bottom-0 z-50 overflow-y-auto lg:hidden"
+                      className="hc-drawer-surface fixed left-0 top-0 bottom-0 z-50 overflow-y-auto lg:hidden"
                       style={{
                         width: 'min(300px, 90vw)',
                         background: 'var(--hc-surface)',

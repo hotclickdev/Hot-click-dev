@@ -45,6 +45,7 @@ public class ProductoController {
     @Autowired private com.hotclick.service.TextModerationService  textModerationService;
     @Autowired private com.hotclick.service.TenantService          tenantService;
     @Autowired private org.springframework.cache.CacheManager      cacheManager;
+    @Autowired private com.hotclick.repository.SolicitudAprobacionRepository solicitudAprobacionRepository;
 
     private static final int MAX_PAGE_SIZE        = 100;
     private static final int MAX_PAGE_SIZE_PUBLIC =  50;
@@ -238,7 +239,21 @@ public class ProductoController {
                 var idempCache = cacheManager.getCache("idempotency-keys");
                 if (idempCache != null) idempCache.put(idempotencyKey, Boolean.TRUE);
             }
-            return ResponseEntity.ok(ResponseDTO.success("Producto creado", producto));
+            String mensaje = "Producto creado";
+            if (empresa != null && !companyScope.isAdminIT()) {
+                producto.setVisibleCatalogo(false);
+                producto = productoRepository.save(producto);
+
+                var solicitud = new com.hotclick.model.SolicitudAprobacion();
+                solicitud.setTipoEntidad("PRODUCTO");
+                solicitud.setAccionSolicitada("PUBLISH");
+                solicitud.setIdEntidad(producto.getId());
+                solicitud.setEmpresa(empresa);
+                solicitud.setUsuarioPide(companyScope.getCurrentUser());
+                solicitudAprobacionRepository.save(solicitud);
+                mensaje = "Producto creado — pendiente de aprobación del admin para publicarse en el catálogo";
+            }
+            return ResponseEntity.ok(ResponseDTO.success(mensaje, producto));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(mensajeAmigable(e)));
         }

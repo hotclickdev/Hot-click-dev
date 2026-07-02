@@ -10,9 +10,9 @@ import java.util.Optional;
 
 public interface TurnoCajaRepository extends JpaRepository<TurnoCaja, Long> {
 
-    Optional<TurnoCaja> findByUsuarioIdAndEstado(Long usuarioId, String estado);
+    Optional<TurnoCaja> findByUsuario_IdAndEstado(Long usuarioId, String estado);
 
-    List<TurnoCaja> findByEmpresaIdAndFechaAperturaAfterOrderByFechaAperturaDesc(
+    List<TurnoCaja> findByEmpresa_IdAndFechaAperturaAfterOrderByFechaAperturaDesc(
             Long empresaId, LocalDateTime desde);
 
     @Query("SELECT t FROM TurnoCaja t WHERE t.empresa.id = :empresaId ORDER BY t.fechaApertura DESC")

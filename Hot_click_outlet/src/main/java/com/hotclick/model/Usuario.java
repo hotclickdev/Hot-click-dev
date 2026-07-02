@@ -93,6 +93,12 @@ public class Usuario extends BaseEntity {
     @JoinColumn(name = "fk_id_empresa")
     private Empresa empresa;
 
+    /** Empresa que registró manualmente este contacto como cliente (CRM). Null si el usuario se registró solo. */
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fk_id_empresa_registro")
+    private Empresa empresaRegistro;
+
     // ── CRM / Fidelidad ───────────────────────────────────────────────────────
     @Column(name = "puntos_fidelidad", nullable = false)
     private Integer puntosFidelidad = 0;
@@ -172,6 +178,9 @@ public class Usuario extends BaseEntity {
     public void setEmpresa(Empresa empresa) { this.empresa = empresa; }
 
     public Long getEmpresaId() { return empresa != null ? empresa.getId() : null; }
+
+    public Empresa getEmpresaRegistro() { return empresaRegistro; }
+    public void setEmpresaRegistro(Empresa empresaRegistro) { this.empresaRegistro = empresaRegistro; }
 
     public Integer getPuntosFidelidad() { return puntosFidelidad; }
     public void setPuntosFidelidad(Integer p) { this.puntosFidelidad = p; }

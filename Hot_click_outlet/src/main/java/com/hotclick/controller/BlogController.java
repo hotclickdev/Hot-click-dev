@@ -8,6 +8,7 @@ import com.hotclick.repository.BlogEntradaRepository;
 import com.hotclick.utils.InputSanitizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 
@@ -34,13 +35,15 @@ public class BlogController {
             .orElse(ResponseEntity.status(404).body(ResponseDTO.error("No encontrado")));
     }
 
-    /** Admin — todas */
+    /** Admin — todas, incluye borradores */
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> listarTodas() {
         return ResponseEntity.ok(ResponseDTO.success("Blog", repo.findTop100ByOrderByFechaCreacionDesc()));
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> obtener(@PathVariable Long id) {
         return repo.findById(id)
             .map(e -> ResponseEntity.ok(ResponseDTO.success("Entrada", e)))
@@ -48,6 +51,7 @@ public class BlogController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> crear(@RequestBody BlogEntrada entrada) {
         var textMod = textModerationService.moderar(entrada.getTitulo(), entrada.getResumen(), entrada.getContenido());
         if (!textMod.safe())
@@ -65,6 +69,7 @@ public class BlogController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> actualizar(@PathVariable Long id, @RequestBody BlogEntrada datos) {
         var textMod = textModerationService.moderar(datos.getTitulo(), datos.getResumen(), datos.getContenido());
         if (!textMod.safe())
@@ -95,6 +100,7 @@ public class BlogController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> eliminar(@PathVariable Long id) {
         BlogEntrada e = repo.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("No encontrado"));
         e.setEstado(0);

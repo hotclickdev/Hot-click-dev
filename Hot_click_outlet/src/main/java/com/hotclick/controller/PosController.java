@@ -42,11 +42,16 @@ public class PosController {
     @Autowired private StockService       stockService;
     @Autowired private TurnoCajaService   turnoCajaService;
     @Autowired private CacheManager       cacheManager;
+    @Autowired private com.hotclick.security.CompanyScope companyScope;
+    @Autowired private com.hotclick.service.TenantService tenantService;
 
     @PostMapping("/venta")
     @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR')")
     @Transactional
     public ResponseEntity<?> crearVenta(@RequestBody PosVentaDTO dto, HttpServletRequest request) {
+        if (!companyScope.isAdminIT() && !tenantService.tieneFeature("pos"))
+            return ResponseEntity.status(403).body(ResponseDTO.error(
+                "El punto de venta requiere un plan PYME o superior. Ve a Configuración → Suscripción para mejorar tu plan."));
         try {
             Long usuarioId = extractUserId(request);
             Long empresaId = extractEmpresaId(request);

@@ -112,10 +112,11 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
            "WHERE r.nombreRol = 'USUARIO_FINAL' AND u.estado = 1 ORDER BY u.id DESC")
     List<Usuario> findClientes();
 
-    /** F29 — Clientes que han comprado en una empresa específica (tenant-scoped CRM). */
+    /** F29 — Clientes que han comprado en una empresa específica, o que la empresa registró manualmente (CRM). */
     @Query("SELECT DISTINCT u FROM Usuario u JOIN u.roles r " +
            "WHERE r.nombreRol = 'USUARIO_FINAL' AND u.estado = 1 " +
-           "AND EXISTS (SELECT p FROM Pedido p WHERE p.usuarioFinal = u AND p.empresa.id = :empresaId) " +
+           "AND (EXISTS (SELECT p FROM Pedido p WHERE p.usuarioFinal = u AND p.empresa.id = :empresaId) " +
+           "     OR u.empresaRegistro.id = :empresaId) " +
            "ORDER BY u.id DESC")
     List<Usuario> findClientesByEmpresa(@Param("empresaId") Long empresaId);
 
@@ -126,10 +127,11 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
            "u.telefono LIKE CONCAT('%',:q,'%')) ORDER BY u.nombre ASC")
     List<Usuario> buscarClientes(@Param("q") String q);
 
-    /** F29 — Búsqueda de clientes acotada a una empresa (tenant-scoped CRM). */
+    /** F29 — Búsqueda de clientes acotada a una empresa (tenant-scoped CRM), incluye registrados manualmente. */
     @Query("SELECT DISTINCT u FROM Usuario u JOIN u.roles r " +
            "WHERE r.nombreRol = 'USUARIO_FINAL' AND u.estado = 1 " +
-           "AND EXISTS (SELECT p FROM Pedido p WHERE p.usuarioFinal = u AND p.empresa.id = :empresaId) " +
+           "AND (EXISTS (SELECT p FROM Pedido p WHERE p.usuarioFinal = u AND p.empresa.id = :empresaId) " +
+           "     OR u.empresaRegistro.id = :empresaId) " +
            "AND (LOWER(u.nombre) LIKE LOWER(CONCAT('%',:q,'%')) " +
            " OR LOWER(u.correo) LIKE LOWER(CONCAT('%',:q,'%')) " +
            " OR u.telefono LIKE CONCAT('%',:q,'%')) ORDER BY u.nombre ASC")

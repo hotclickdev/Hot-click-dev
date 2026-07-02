@@ -58,6 +58,7 @@ public class EmpresaController {
     @PutMapping("/{id}/estado")
     public ResponseEntity<ResponseDTO> cambiarEstado(@PathVariable Long id,
                                                      @RequestBody Map<String, String> body) {
+        companyScope.assertCanAccess(id);
         Optional<Empresa> opt = empresaRepository.findById(id);
         if (opt.isEmpty()) return ResponseEntity.status(404).body(ResponseDTO.error("Empresa no encontrada"));
         String nuevoEstado = body.get("estadoEmpresa");
@@ -72,6 +73,7 @@ public class EmpresaController {
     @PutMapping("/{id}/plan")
     public ResponseEntity<ResponseDTO> cambiarPlan(@PathVariable Long id,
                                                    @RequestBody Map<String, String> body) {
+        companyScope.assertCanAccess(id);
         Optional<Empresa> opt = empresaRepository.findById(id);
         if (opt.isEmpty()) return ResponseEntity.status(404).body(ResponseDTO.error("Empresa no encontrada"));
         String plan = body.get("planSaas");
@@ -86,6 +88,7 @@ public class EmpresaController {
     @PutMapping("/{id}/visibilidad")
     public ResponseEntity<ResponseDTO> cambiarVisibilidad(@PathVariable Long id,
                                                           @RequestBody Map<String, Object> body) {
+        companyScope.assertCanAccess(id);
         Optional<Empresa> opt = empresaRepository.findById(id);
         if (opt.isEmpty()) return ResponseEntity.status(404).body(ResponseDTO.error("Empresa no encontrada"));
         Object val = body.get("visibilidadPublica");
@@ -100,6 +103,7 @@ public class EmpresaController {
 
     @GetMapping("/{id}/productos")
     public ResponseEntity<ResponseDTO> productos(@PathVariable Long id) {
+        companyScope.assertCanAccess(id);
         if (empresaRepository.findById(id).isEmpty())
             return ResponseEntity.status(404).body(ResponseDTO.error("Empresa no encontrada"));
         var page = productoRepository.findByEmpresaIdAndEstado(id, Constants.ESTADO_ACTIVO, PageRequest.of(0, 30));
@@ -119,6 +123,7 @@ public class EmpresaController {
 
     @GetMapping("/{id}/pedidos")
     public ResponseEntity<ResponseDTO> pedidos(@PathVariable Long id) {
+        companyScope.assertCanAccess(id);
         if (empresaRepository.findById(id).isEmpty())
             return ResponseEntity.status(404).body(ResponseDTO.error("Empresa no encontrada"));
         var lista = pedidoRepository.findUltimosByEmpresaId(id, PageRequest.of(0, 15));
@@ -139,6 +144,7 @@ public class EmpresaController {
 
     @GetMapping("/{id}/equipo")
     public ResponseEntity<ResponseDTO> equipo(@PathVariable Long id) {
+        companyScope.assertCanAccess(id);
         if (empresaRepository.findById(id).isEmpty())
             return ResponseEntity.status(404).body(ResponseDTO.error("Empresa no encontrada"));
         var miembros = miembroEmpresaRepository.findByEmpresaIdAndEstado(id, 1);

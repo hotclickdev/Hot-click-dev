@@ -35,6 +35,7 @@ function buildSidebarLinks(t, userRole) {
       { section: 'Ventas' },
       { to: '/admin/pedidos',        label: t('admin.sidebar.pedidos'),    icon: 'clipboard' },
       { to: '/admin/ventas',         label: t('admin.sidebar.nuevaVenta'), icon: 'plus'     },
+      { to: '/admin/clientes',       label: 'Mis Clientes',                icon: 'users'    },
       { to: '/admin/asignar-compra', label: 'Registrar compra externa',   icon: 'assign'   },
       // { to: '/admin/mesas',        label: 'Mesas / QR',                  icon: 'qr'       },  // futuro
       { to: '/admin/cotizaciones',  label: 'Cotizaciones B2B',            icon: 'doc'      },
@@ -85,26 +86,27 @@ function buildSidebarLinks(t, userRole) {
       { to: '/admin/marcas',                 label: 'Marcas',                  icon: 'marca'    },
       { to: '/admin/bodegas',                label: t('admin.sidebar.bodegas'), icon: 'building'},
       { to: '/admin/garantias',              label: 'Garantías',               icon: 'shield'   },
-      { to: '/admin/compras',                label: 'Compras',                 icon: 'compra'   },
+      { to: '/admin/compras',                label: 'Compras',                 icon: 'compra',  feature: 'compras' },
       { to: '/admin/proveedores',            label: 'Proveedores',             icon: 'proveedor'},
       { section: 'Punto de Venta' },
-      { to: '/admin/pos',           label: 'Caja registradora', icon: 'pos'       },
-      { to: '/admin/pos/caja',      label: 'Cuadre de caja',    icon: 'chart'     },
-      { to: '/admin/pos/historial', label: 'Historial ventas',  icon: 'clipboard' },
+      { to: '/admin/pos',           label: 'Caja registradora', icon: 'pos',       feature: 'pos' },
+      { to: '/admin/pos/caja',      label: 'Cuadre de caja',    icon: 'chart',     feature: 'pos' },
+      { to: '/admin/pos/historial', label: 'Historial ventas',  icon: 'clipboard', feature: 'pos' },
       { section: 'Ventas' },
       { to: '/admin/pedidos',        label: t('admin.sidebar.pedidos'),    icon: 'clipboard' },
       { to: '/admin/ventas',         label: t('admin.sidebar.nuevaVenta'), icon: 'plus'     },
+      { to: '/admin/clientes',       label: 'Mis Clientes',                icon: 'users'    },
       { to: '/admin/asignar-compra', label: 'Registrar compra externa',   icon: 'assign'   },
       // { to: '/admin/mesas',          label: 'Mesas / QR',                  icon: 'qr'       },  // futuro
       { to: '/admin/cotizaciones',   label: 'Cotizaciones B2B',            icon: 'doc'      },
       { to: '/admin/gift-cards',     label: 'Gift Cards',                  icon: 'gift'     },
-      { to: '/admin/inventario',     label: 'AI Inventario',               icon: 'ai'       },
-      { to: '/admin/copilot',        label: 'AI Copilot',                  icon: 'copilot'  },
-      { to: '/admin/forecast',       label: 'AI Forecast',                 icon: 'forecast' },
-      { to: '/admin/executive',      label: 'Executive BI',                icon: 'exec'     },
+      { to: '/admin/inventario',     label: 'AI Inventario',               icon: 'ai',      feature: 'ai' },
+      { to: '/admin/copilot',        label: 'AI Copilot',                  icon: 'copilot' },
+      { to: '/admin/forecast',       label: 'AI Forecast',                 icon: 'forecast',feature: 'ai' },
+      { to: '/admin/executive',      label: 'Executive BI',                icon: 'exec',    feature: 'reportes' },
       { to: '/admin/finanzas',       label: t('admin.sidebar.finanzas'),   icon: 'chart'    },
       { to: '/admin/billetera',      label: 'Mi Billetera',                icon: 'wallet'   },
-      { to: '/admin/reportes',       label: t('admin.sidebar.reportes'),   icon: 'bar'      },
+      { to: '/admin/reportes',       label: t('admin.sidebar.reportes'),   icon: 'bar',     feature: 'reportes' },
       { section: 'Marketing' },
       { to: '/admin/ofertas',        label: 'Ofertas',                     icon: 'tag'      },
       { to: '/admin/cupones',        label: 'Descuentos',                  icon: 'coupon'   },
@@ -337,6 +339,8 @@ function getSectionColor(section) {
 
 function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, empresaId, userRole, handleLogout, onSearch }) {
   const navRef = useRef(null)
+  const hasFeature   = useTenantStore(s => s.hasFeature)
+  const tenantLoaded = useTenantStore(s => s.loaded)
 
   const [collapsed, setCollapsed] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem('hc-sidebar-collapsed') || '[]')) }
@@ -518,11 +522,18 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
 
                               {/* Label */}
                               <motion.span
-                                className="relative flex-1 text-[13px] font-medium leading-tight"
+                                className="relative flex-1 text-[13px] font-medium leading-tight flex items-center gap-1.5"
                                 whileHover={{ x: 2 }}
                                 transition={{ duration: 0.15 }}
                               >
                                 {link.label}
+                                {link.feature && tenantLoaded && !hasFeature(link.feature) && (
+                                  <svg className="w-3 h-3 shrink-0" style={{ color: 'rgba(255,255,255,0.32)' }}
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                    <rect x="4" y="10" width="16" height="10" rx="2"/>
+                                    <path strokeLinecap="round" d="M8 10V7a4 4 0 118 0v3"/>
+                                  </svg>
+                                )}
                               </motion.span>
 
                               {/* Dot activo animado */}
@@ -642,9 +653,8 @@ export default function AdminLayout({ children }) {
   }, [userRole, empresaId])
 
   const roleBadge = {
-    ADMIN:      { label: 'IT Admin',      color: 'bg-red-500/20 text-red-400' },
-    EMPRENDEDOR:   { label: 'Emprendedor',   color: 'bg-amber-500/20 text-amber-400' },
-    EMPRENDEDOR: { label: 'Admin',         color: 'bg-blue-500/20 text-blue-400' },
+    ADMIN:       { label: 'IT Admin',    color: 'bg-red-500/20 text-red-400' },
+    EMPRENDEDOR: { label: 'Emprendedor', color: 'bg-amber-500/20 text-amber-400' },
   }[userRole] ?? { label: userRole, color: 'bg-gray-500/20 text-gray-400' }
 
   const sidebarProps = { sidebarLinks, roleBadge, t, userName, empresaNombre, empresaId, userRole, handleLogout, onSearch: () => setSearchOpen(true) }

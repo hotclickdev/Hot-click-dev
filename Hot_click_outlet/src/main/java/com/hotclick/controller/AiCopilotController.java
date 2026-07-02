@@ -84,6 +84,22 @@ public class AiCopilotController {
         return ResponseEntity.ok(aiCopilotService.getHistorial(TenantContext.get()));
     }
 
+    /** Preguntas sugeridas dinámicas — priorizan hallazgos reales del negocio del tenant. */
+    @GetMapping("/sugerencias")
+    public ResponseEntity<?> sugerencias() {
+        return ResponseEntity.ok(aiCopilotService.getSugerencias(TenantContext.get()));
+    }
+
+    /**
+     * Productos sin ventas recientes con la acción sugerida (solo lectura).
+     * La aplicación real del descuento pasa por PATCH /api/productos/{id}/oferta,
+     * que el dueño de la empresa o ADMIN debe confirmar explícitamente desde la UI.
+     */
+    @GetMapping("/productos-sin-venta")
+    public ResponseEntity<?> productosSinVenta() {
+        return ResponseEntity.ok(aiCopilotService.getProductosSinVentaAccionables(TenantContext.get()));
+    }
+
     /** Clear conversation history. */
     @DeleteMapping("/historial")
     @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN')")

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import useCartStore from '@/store/cartStore'
@@ -255,7 +256,7 @@ export default function ProductsAssistantPanel({ isOpen, onClose, initialQuery =
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() }
   }
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
@@ -275,9 +276,9 @@ export default function ProductsAssistantPanel({ isOpen, onClose, initialQuery =
             animate={{ x: 0 }}
             exit={{ x: -380 }}
             transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-            className="fixed left-0 top-0 h-full z-50 flex flex-col"
+            className="hc-ai-panel fixed left-0 top-0 h-full z-50 flex flex-col"
             style={{
-              width: 'min(360px, 88vw)',
+              width: 'min(360px, 100vw)',
               backgroundColor: '#13131f',
               borderRight: '1px solid rgba(255,255,255,0.1)',
               boxShadow: '8px 0 40px rgba(0,0,0,0.45)',
@@ -393,6 +394,7 @@ export default function ProductsAssistantPanel({ isOpen, onClose, initialQuery =
           </motion.aside>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   )
 }
