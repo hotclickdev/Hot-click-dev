@@ -18,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -190,6 +191,7 @@ public class SecurityController {
     // ── Usuarios con perfil de seguridad ─────────────────────────────────────
 
     @GetMapping("/usuarios/lista")
+    @Transactional(readOnly = true)
     public ResponseEntity<Map<String, Object>> getUsuariosSeguridadLista(
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "20") int size) {

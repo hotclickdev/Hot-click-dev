@@ -286,7 +286,7 @@ export default function AdminImportar() {
                   ? <p className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>{archivo.name}</p>
                   : <>
                       <p className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Arrastrá o hacé clic para subir</p>
-                      <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>{tab === 'pdf' ? 'PDF hasta 20 MB' : 'CSV hasta 5 MB'}</p>
+                      <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>{tab === 'pdf' ? 'PDF hasta 30 MB' : 'CSV hasta 5 MB'}</p>
                     </>
                 }
               </div>
