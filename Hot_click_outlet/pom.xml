@@ -120,6 +120,13 @@
             <version>1.17.2</version>
         </dependency>
 
+        <!-- PDFBox — extracción de texto de catálogos PDF (import IA) -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>3.0.3</version>
+        </dependency>
+
 <!-- Clerk — verificación de JWTs OAuth (Google, Apple, Microsoft) via JWKS -->
         <dependency>
             <groupId>org.springframework.security</groupId>

@@ -3,6 +3,9 @@ package com.hotclick.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.dto.ProductoExtraidoDto;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.safety.Safelist;
@@ -78,9 +81,16 @@ public class CatalogoImportService {
 
     public List<ProductoExtraidoDto> extraerDePdf(MultipartFile archivo) throws Exception {
         validarPdf(archivo);
-        // PDF text extraction temporarily disabled — use CSV or URL import instead.
-        throw new UnsupportedOperationException(
-            "La importación por PDF no está disponible en este momento. Usá el modo URL o CSV.");
+        log.info("[import-pdf] procesando {}", archivo.getOriginalFilename());
+
+        String texto;
+        byte[] pdfBytes = archivo.getBytes();
+        try (PDDocument pdf = Loader.loadPDF(pdfBytes)) {
+            PDFTextStripper stripper = new PDFTextStripper();
+            texto = stripper.getText(pdf);
+        }
+
+        return extraerConClaude(truncar(texto.trim()), "catálogo PDF");
     }
 
     // ── CSV ──────────────────────────────────────────────────────────────────
@@ -194,8 +204,8 @@ public class CatalogoImportService {
         if (archivo == null || archivo.isEmpty()) {
             throw new IllegalArgumentException("Seleccioná un archivo PDF.");
         }
-        if (archivo.getSize() > 20 * 1024 * 1024) {
-            throw new IllegalArgumentException("El PDF no puede superar 20 MB.");
+        if (archivo.getSize() > 30 * 1024 * 1024) {
+            throw new IllegalArgumentException("El PDF no puede superar 30 MB.");
         }
         String ct = archivo.getContentType();
         if (ct == null || !ct.contains("pdf")) {
