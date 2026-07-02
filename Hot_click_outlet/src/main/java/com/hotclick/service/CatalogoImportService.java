@@ -9,6 +9,9 @@ import org.apache.pdfbox.text.PDFTextStripper;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.safety.Safelist;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,7 +22,9 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.Semaphore;
 import java.util.regex.Pattern;
 
 /**
@@ -47,6 +52,22 @@ public class CatalogoImportService {
     @Value("${anthropic.model:claude-haiku-4-5-20251001}")
     private String model;
 
+    // Navegador headless — fallback para sitios JS/SPA (Next.js, React, etc.) que
+    // Jsoup no puede leer porque el contenido se arma con JavaScript en el navegador.
+    // Vacío por defecto: en entornos sin Chromium instalado (ej. dev local en Windows)
+    // el fallback simplemente se salta en vez de romper el import por URL.
+    @Value("${chrome.bin:}")
+    private String chromeBin;
+
+    @Value("${chromedriver.path:}")
+    private String chromeDriverPath;
+
+    // Solo una instancia de Chromium a la vez — el servidor (t3.small) tiene RAM justa
+    // y esta es una feature de uso ocasional (admin), no necesita paralelismo.
+    private static final Semaphore NAVEGADOR_LOCK = new Semaphore(1);
+    private static final int  TEXTO_MINIMO_SUFICIENTE = 300; // chars — por debajo, se asume shell vacío de SPA
+    private static final Duration TIMEOUT_NAVEGADOR = Duration.ofSeconds(20);
+
     private final RestTemplate rest;
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -63,18 +84,91 @@ public class CatalogoImportService {
         validarUrl(rawUrl);
         log.info("[import-url] descargando {}", rawUrl);
 
+        String texto = limpiarHtml(descargarHtml(rawUrl));
+
+        if (texto.length() < TEXTO_MINIMO_SUFICIENTE && navegadorDisponible()) {
+            log.info("[import-url] contenido insuficiente ({} chars) — probablemente un sitio JS/SPA, " +
+                "reintentando con navegador headless", texto.length());
+            try {
+                String htmlRenderizado = renderizarConNavegador(rawUrl);
+                String textoRenderizado = limpiarHtml(htmlRenderizado);
+                if (textoRenderizado.length() > texto.length()) {
+                    texto = textoRenderizado;
+                }
+            } catch (Exception e) {
+                log.warn("[import-url] fallback con navegador headless falló: {}", e.getMessage());
+                // Seguimos con lo que Jsoup logró extraer — mejor algo que un 500.
+            }
+        }
+
+        return extraerConClaude(truncar(texto), "página web");
+    }
+
+    private String descargarHtml(String rawUrl) throws Exception {
         Document doc = Jsoup.connect(rawUrl)
             .userAgent("Mozilla/5.0 (compatible; HotClickBot/1.0)")
             .timeout(12_000)
             .get();
+        return doc.html();
+    }
 
+    private String limpiarHtml(String html) {
+        Document doc = Jsoup.parse(html);
         // Eliminar nodos que no aportan contenido textual
         doc.select("script, style, noscript, svg, iframe, header, footer, nav").remove();
-
         String texto = Jsoup.clean(doc.body().html(), Safelist.none());
-        texto = texto.replaceAll("\\s{3,}", "\n").trim();
+        return texto.replaceAll("\\s{3,}", "\n").trim();
+    }
 
-        return extraerConClaude(truncar(texto), "página web");
+    private boolean navegadorDisponible() {
+        return chromeBin != null && !chromeBin.isBlank()
+            && chromeDriverPath != null && !chromeDriverPath.isBlank();
+    }
+
+    /**
+     * Renderiza la página con Chromium headless (Alpine) para sitios que arman el
+     * contenido con JavaScript (Next.js, React, Vue). Un solo navegador a la vez
+     * (NAVEGADOR_LOCK) y cierre garantizado en el finally — evita procesos zombis
+     * comiendo RAM en el servidor si algo falla a mitad de camino.
+     */
+    private String renderizarConNavegador(String url) throws InterruptedException {
+        if (!NAVEGADOR_LOCK.tryAcquire(TIMEOUT_NAVEGADOR.getSeconds(), java.util.concurrent.TimeUnit.SECONDS)) {
+            throw new IllegalStateException("El navegador headless está ocupado con otra importación, intentá de nuevo en un momento.");
+        }
+        System.setProperty("webdriver.chrome.driver", chromeDriverPath);
+
+        ChromeOptions options = new ChromeOptions();
+        options.setBinary(chromeBin);
+        options.addArguments(
+            "--headless=new",
+            "--no-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--window-size=1920,1080",
+            "--user-agent=Mozilla/5.0 (compatible; HotClickBot/1.0)"
+        );
+        // EAGER: no esperar a que el evento "load" dispare (algunos sitios nunca lo
+        // hacen del todo por analytics/beacons en segundo plano — se probó en vivo
+        // contra un sitio real y con NORMAL el navegador quedaba colgado indefinidamente).
+        // Con EAGER alcanza con que el DOM esté listo; la hidratación de React/Next
+        // se cubre con el sleep de abajo.
+        options.setPageLoadStrategy(org.openqa.selenium.PageLoadStrategy.EAGER);
+
+        WebDriver driver = null;
+        try {
+            driver = new ChromeDriver(options);
+            driver.manage().timeouts().pageLoadTimeout(TIMEOUT_NAVEGADOR);
+            driver.get(url);
+            // Margen para que termine la hidratación de React/Next y cualquier fetch
+            // de datos inicial tras el DOM ready.
+            Thread.sleep(4_000);
+            return driver.getPageSource();
+        } finally {
+            if (driver != null) {
+                try { driver.quit(); } catch (Exception ignored) { /* best-effort cleanup */ }
+            }
+            NAVEGADOR_LOCK.release();
+        }
     }
 
     // ── PDF ──────────────────────────────────────────────────────────────────

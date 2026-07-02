@@ -8,6 +8,13 @@ COPY src ./src
 RUN mvn clean package -DskipTests -q
 
 FROM eclipse-temurin:21-jre-alpine
+# Chromium empaquetado para Alpine (musl) — usado por CatalogoImportService como
+# fallback headless cuando el scraping simple (Jsoup) no alcanza (sitios JS/SPA).
+# Chromium y chromium-chromedriver vienen versionados juntos por Alpine, evita
+# el problema de incompatibilidad que tendría el binario que descarga Selenium/Playwright.
+RUN apk add --no-cache chromium chromium-chromedriver
+ENV CHROME_BIN=/usr/bin/chromium-browser \
+    CHROMEDRIVER_PATH=/usr/bin/chromedriver
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 WORKDIR /app
 COPY --from=builder /build/target/*.jar app.jar

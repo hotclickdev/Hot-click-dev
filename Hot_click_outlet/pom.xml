@@ -127,6 +127,14 @@
             <version>3.0.3</version>
         </dependency>
 
+        <!-- Selenium — fallback headless para sitios JS/SPA que Jsoup no puede leer (import por URL).
+             Usa el Chromium/chromedriver instalados vía apk en el Dockerfile, no descarga binarios propios. -->
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-java</artifactId>
+            <version>4.27.0</version>
+        </dependency>
+
 <!-- Clerk — verificación de JWTs OAuth (Google, Apple, Microsoft) via JWKS -->
         <dependency>
             <groupId>org.springframework.security</groupId>
