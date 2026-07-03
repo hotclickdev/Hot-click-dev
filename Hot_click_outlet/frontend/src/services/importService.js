@@ -19,5 +19,6 @@ export const importService = {
   },
 
   confirmar: (productos) =>
-    api.post('/admin/importar/confirmar', productos),
+    // Timeout extendido — cada producto puede implicar descargar y resubir su imagen a S3.
+    api.post('/admin/importar/confirmar', productos, { timeout: 120000 }),
 }

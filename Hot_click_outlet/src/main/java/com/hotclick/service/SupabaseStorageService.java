@@ -107,6 +107,63 @@ public class SupabaseStorageService {
     }
 
     /**
+     * Sube una imagen descargada de una URL externa (ej. el CDN del sitio de origen en un
+     * import de catálogo) — a diferencia de subirImagenBytes(), estos bytes SÍ pasan por la
+     * validación completa (magic bytes + re-encode) porque vienen de una fuente no confiable,
+     * igual que un upload de usuario. Reubicar la imagen en nuestro S3 evita depender de que
+     * el sitio de origen la siga sirviendo y evita que el navegador la bloquee por CSP
+     * (img-src solo permite una lista fija de dominios conocidos).
+     */
+    @CircuitBreaker(name = "s3", fallbackMethod = "subirImagenDescargadaFallback")
+    @Retry(name = "s3")
+    public String subirImagenDescargada(byte[] bytes, String urlOrigen, String contentTypeHint, String carpeta) throws IOException {
+        if (bytes == null || bytes.length == 0) throw new IllegalArgumentException("La imagen está vacía");
+        if (bytes.length > 10 * 1024 * 1024) throw new IllegalArgumentException("La imagen no puede superar 10 MB");
+
+        String ext = obtenerExtension(urlOrigen);
+        if (!ALLOWED_EXTENSIONS.containsKey(ext)) ext = extensionDesdeContentType(contentTypeHint);
+        if (ext == null || !ALLOWED_EXTENSIONS.containsKey(ext))
+            throw new IllegalArgumentException("No se pudo determinar el formato de la imagen");
+        if (!tienesMagicBytesValidos(ext, bytes))
+            throw new IllegalArgumentException("El contenido del archivo no coincide con su extensión");
+
+        bytes = sanitizarImagen(bytes, ext);
+        String contentType = ALLOWED_EXTENSIONS.get(ext);
+        String path = carpeta + "/" + UUID.randomUUID() + "." + ext;
+
+        s3Client.putObject(
+                PutObjectRequest.builder()
+                        .bucket(bucket)
+                        .key(path)
+                        .contentType(contentType)
+                        .acl(ObjectCannedACL.PUBLIC_READ)
+                        .build(),
+                RequestBody.fromBytes(bytes)
+        );
+
+        return publicUrl + "/" + path;
+    }
+
+    private String extensionDesdeContentType(String contentType) {
+        if (contentType == null) return null;
+        String base = contentType.toLowerCase().split(";")[0].trim();
+        return switch (base) {
+            case "image/jpeg" -> "jpg";
+            case "image/png"  -> "png";
+            case "image/webp" -> "webp";
+            case "image/gif"  -> "gif";
+            case "image/avif" -> "avif";
+            default -> null;
+        };
+    }
+
+    private String subirImagenDescargadaFallback(byte[] bytes, String urlOrigen, String contentTypeHint, String carpeta, Throwable t) {
+        log.error("[s3-circuit] OPEN subirImagenDescargada carpeta={}: {}", carpeta, t.getMessage());
+        throw new IntegracionExternaException("s3", IntegracionExternaException.Tipo.IO_ERROR,
+            "Servicio de almacenamiento no disponible temporalmente");
+    }
+
+    /**
      * Sube bytes de imagen generados internamente (ej. páginas de PDF rasterizadas) sin pasar
      * por MultipartFile. A diferencia de subirImagen(), no valida magic bytes ni re-encodea —
      * los bytes ya vienen de un encoder propio (ImageIO/Thumbnailator), no de un upload externo.

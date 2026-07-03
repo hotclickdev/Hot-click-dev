@@ -127,7 +127,9 @@ public class ImportController {
                     dto.setBodegaId(ext.getBodegaId());
                     dto.setMarcaId(ext.getMarcaId());
                     dto.setMarcaTexto(ext.getMarcaTexto());
-                    dto.setImagenPrincipalUrl(ext.getImagenPrincipalUrl());
+                    // Reubica la imagen en nuestro S3 en vez de enlazar al CDN del sitio de origen —
+                    // evita que quede bloqueada por CSP y que dependa de que ese sitio siga vivo.
+                    dto.setImagenPrincipalUrl(importService.reubicarImagenEnS3(ext.getImagenPrincipalUrl()));
                     dto.setVisibleCatalogo(true);
                     dto.setCondicion("NUEVO");
 

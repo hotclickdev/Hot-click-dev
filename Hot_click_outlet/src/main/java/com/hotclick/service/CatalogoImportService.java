@@ -78,6 +78,11 @@ public class CatalogoImportService {
     @Value("${anthropic.model:claude-haiku-4-5-20251001}")
     private String model;
 
+    @Value("${aws.s3.public-url:}")
+    private String s3PublicUrl;
+
+    private static final long MAX_IMAGEN_DESCARGA_BYTES = 8L * 1024 * 1024;
+
     // Navegador headless — fallback para sitios JS/SPA (Next.js, React, etc.) que
     // Jsoup no puede leer porque el contenido se arma con JavaScript en el navegador.
     // Vacío por defecto: en entornos sin Chromium instalado (ej. dev local en Windows)
@@ -404,6 +409,43 @@ public class CatalogoImportService {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         Thumbnails.of(img).scale(1.0).outputQuality(0.85).outputFormat("jpg").toOutputStream(out);
         return out.toByteArray();
+    }
+
+    // ── Imágenes de productos importados ────────────────────────────────────────
+
+    /**
+     * Descarga la imagen de producto desde el sitio de origen y la sube a nuestro S3.
+     * Se llama al confirmar el import (no en la extracción/preview) para no gastar
+     * ancho de banda ni storage en productos que el admin termina descartando.
+     * Si falla por cualquier motivo, devuelve null en vez de tirar abajo el producto —
+     * la URL externa igual quedaría bloqueada por CSP en el navegador, así que null
+     * (sin imagen, editable a mano después) es mejor que dejar una URL rota.
+     */
+    public String reubicarImagenEnS3(String urlOrigen) {
+        if (urlOrigen == null || urlOrigen.isBlank()) return null;
+        if (!s3PublicUrl.isBlank() && urlOrigen.startsWith(s3PublicUrl)) return urlOrigen; // ya es nuestra
+
+        try {
+            validarUrl(urlOrigen);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("User-Agent", "Mozilla/5.0 (compatible; HotClickBot/1.0)");
+            ResponseEntity<byte[]> resp = rest.exchange(
+                urlOrigen, HttpMethod.GET, new HttpEntity<>(headers), byte[].class);
+
+            byte[] bytes = resp.getBody();
+            if (bytes == null || bytes.length == 0 || bytes.length > MAX_IMAGEN_DESCARGA_BYTES) {
+                return null;
+            }
+
+            String contentType = resp.getHeaders().getContentType() != null
+                ? resp.getHeaders().getContentType().toString() : null;
+
+            return storageService.subirImagenDescargada(bytes, urlOrigen, contentType, "productos/import");
+        } catch (Exception e) {
+            log.warn("[import] no se pudo reubicar imagen {} en S3: {}", urlOrigen, e.getMessage());
+            return null;
+        }
     }
 
     // ── CSV ──────────────────────────────────────────────────────────────────

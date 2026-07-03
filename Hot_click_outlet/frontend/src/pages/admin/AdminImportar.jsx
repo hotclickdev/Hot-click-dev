@@ -76,6 +76,10 @@ export default function AdminImportar() {
   // Selectores globales (aplican a todos los productos)
   const [bodegaGlobal,    setBodegaGlobal]    = useState('')
   const [catGlobal,       setCatGlobal]       = useState('')   // para "aplicar a todos"
+  const [marcaGlobal,     setMarcaGlobal]     = useState('')
+  const [condicionGlobal, setCondicionGlobal] = useState('NUEVO')
+  const [stockGlobal,     setStockGlobal]     = useState('')
+  const [margenGlobal,    setMargenGlobal]    = useState('10')
 
   // ── Paso 1: extraer ───────────────────────────────────────────────────────
 
@@ -152,6 +156,35 @@ export default function AdminImportar() {
     if (!catGlobal) return
     setProductos(prev => prev.map(p => p._sel ? { ...p, categoriaId: Number(catGlobal) } : p))
     addToast('Categoría aplicada a todos los seleccionados', 'success')
+  }
+
+  function aplicarMarcaATodos() {
+    if (!marcaGlobal) return
+    setProductos(prev => prev.map(p => p._sel ? { ...p, marcaId: Number(marcaGlobal) } : p))
+    addToast('Marca aplicada a todos los seleccionados', 'success')
+  }
+
+  function aplicarCondicionATodos() {
+    setProductos(prev => prev.map(p => p._sel ? { ...p, condicion: condicionGlobal } : p))
+    addToast('Condición aplicada a todos los seleccionados', 'success')
+  }
+
+  function aplicarStockATodos() {
+    const valor = Math.max(0, parseInt(stockGlobal, 10) || 0)
+    setProductos(prev => prev.map(p => p._sel ? { ...p, stockActual: valor } : p))
+    addToast('Stock aplicado a todos los seleccionados', 'success')
+  }
+
+  // Calcula precioVenta = precioCompra + margen% para todos los seleccionados con costo cargado
+  function aplicarMargenATodos() {
+    const pct = parseFloat(margenGlobal)
+    if (isNaN(pct)) return
+    setProductos(prev => prev.map(p => {
+      if (!p._sel || !p.precioCompra) return p
+      const venta = Math.round(p.precioCompra * (1 + pct / 100))
+      return { ...p, precioVenta: venta, _ventaFmt: fmtColones(venta) }
+    }))
+    addToast(`Precio de venta recalculado (costo + ${pct}%) en los seleccionados`, 'success')
   }
 
   const seleccionados  = productos.filter(p => p._sel)
@@ -312,6 +345,27 @@ export default function AdminImportar() {
             <div className="flex flex-wrap items-center gap-3 px-4 py-3 rounded-xl"
               style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
 
+              {/* Aplicar margen (% sobre costo) a todos */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium whitespace-nowrap" style={{ color: 'var(--hc-muted)' }}>Margen sobre costo</span>
+                <div className="flex items-center gap-1">
+                  <input type="number" value={margenGlobal} onChange={e => setMargenGlobal(e.target.value)}
+                    placeholder="10"
+                    className="w-14 text-xs px-2 py-1.5 rounded-lg outline-none text-center"
+                    style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }} />
+                  <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>%</span>
+                </div>
+                <button onClick={aplicarMargenATodos} disabled={margenGlobal === ''}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-40"
+                  style={{ backgroundColor: margenGlobal !== '' ? 'var(--hc-accent)' : 'var(--hc-surface-2)', color: margenGlobal !== '' ? '#fff' : 'var(--hc-muted)' }}
+                  title="Calcula precio de venta = precio de costo + %">
+                  <IconApply /> Aplicar a todos
+                </button>
+              </div>
+
+              {/* Separador */}
+              <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'var(--hc-border)' }} />
+
               {/* Bodega global */}
               <div className="flex items-center gap-2">
                 <span className="text-xs font-medium whitespace-nowrap" style={{ color: 'var(--hc-muted)' }}>Bodega</span>
@@ -338,6 +392,60 @@ export default function AdminImportar() {
                 <button onClick={aplicarCategoriaATodos} disabled={!catGlobal}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-40"
                   style={{ backgroundColor: catGlobal ? 'var(--hc-accent)' : 'var(--hc-surface-2)', color: catGlobal ? '#fff' : 'var(--hc-muted)' }}>
+                  <IconApply /> Aplicar a todos
+                </button>
+              </div>
+
+              {/* Separador */}
+              <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'var(--hc-border)' }} />
+
+              {/* Aplicar marca a todos */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium whitespace-nowrap" style={{ color: 'var(--hc-muted)' }}>Marca global</span>
+                <select value={marcaGlobal} onChange={e => setMarcaGlobal(e.target.value)}
+                  className="text-xs px-2 py-1.5 rounded-lg outline-none"
+                  style={{ backgroundColor: 'var(--hc-surface-2)', color: marcaGlobal ? 'var(--hc-text)' : 'var(--hc-muted)', border: '1px solid var(--hc-border)' }}>
+                  <option value="">Seleccionar…</option>
+                  {marcas.map(m => <option key={m.id} value={m.id}>{m.nombreMarca}</option>)}
+                </select>
+                <button onClick={aplicarMarcaATodos} disabled={!marcaGlobal}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-40"
+                  style={{ backgroundColor: marcaGlobal ? 'var(--hc-accent)' : 'var(--hc-surface-2)', color: marcaGlobal ? '#fff' : 'var(--hc-muted)' }}>
+                  <IconApply /> Aplicar a todos
+                </button>
+              </div>
+
+              {/* Separador */}
+              <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'var(--hc-border)' }} />
+
+              {/* Aplicar condición a todos */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium whitespace-nowrap" style={{ color: 'var(--hc-muted)' }}>Condición global</span>
+                <select value={condicionGlobal} onChange={e => setCondicionGlobal(e.target.value)}
+                  className="text-xs px-2 py-1.5 rounded-lg outline-none"
+                  style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
+                  {CONDICIONES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                </select>
+                <button onClick={aplicarCondicionATodos}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                  style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
+                  <IconApply /> Aplicar a todos
+                </button>
+              </div>
+
+              {/* Separador */}
+              <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'var(--hc-border)' }} />
+
+              {/* Aplicar stock a todos */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium whitespace-nowrap" style={{ color: 'var(--hc-muted)' }}>Stock global</span>
+                <input type="number" min="0" value={stockGlobal} onChange={e => setStockGlobal(e.target.value)}
+                  placeholder="0"
+                  className="w-16 text-xs px-2 py-1.5 rounded-lg outline-none text-center"
+                  style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }} />
+                <button onClick={aplicarStockATodos} disabled={stockGlobal === ''}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-40"
+                  style={{ backgroundColor: stockGlobal !== '' ? 'var(--hc-accent)' : 'var(--hc-surface-2)', color: stockGlobal !== '' ? '#fff' : 'var(--hc-muted)' }}>
                   <IconApply /> Aplicar a todos
                 </button>
               </div>

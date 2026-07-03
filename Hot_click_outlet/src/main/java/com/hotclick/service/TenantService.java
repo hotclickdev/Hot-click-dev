@@ -201,6 +201,9 @@ public class TenantService {
      * @param cantidad    cuántos ítems adicionales se quieren crear
      */
     private void ejecutarVerificacion(Long empresaId, String entidad, long usoActual, int cantidad) {
+        // IT Admin y otras cuentas de plataforma no están atadas a una empresa —
+        // sin tenant no hay plan que verificar, no bloquear la operación.
+        if (empresaId == null) return;
         Empresa empresa = empresaRepo.findById(empresaId).orElse(null);
         if (empresa == null || empresa.getPlan() == null) return;
 
