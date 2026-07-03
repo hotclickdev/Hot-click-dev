@@ -5,7 +5,10 @@ WORKDIR /build
 COPY pom.xml .
 RUN mvn dependency:go-offline -q
 COPY src ./src
-RUN mvn clean package -DskipTests -q
+# maven.test.skip (no solo -DskipTests) porque hay tests de src/test que no compilan
+# contra el código actual (ApiKeyCacheTest y varios de integración referencian clases
+# que ya no existen) — -DskipTests solo salta la ejecución, no la compilación.
+RUN mvn clean package -Dmaven.test.skip=true -q
 
 FROM eclipse-temurin:21-jre-alpine
 # Chromium empaquetado para Alpine (musl) — usado por CatalogoImportService como

@@ -7,7 +7,9 @@ export const importService = {
   extraerDePdf: (archivo) => {
     const fd = new FormData()
     fd.append('archivo', archivo)
-    return api.post('/admin/importar/pdf', fd, { headers: { 'Content-Type': undefined } })
+    // Timeout extendido (default global: 15s) — catálogos escaneados sin texto se procesan
+    // con visión en varios lotes de páginas, puede tomar más de un minuto.
+    return api.post('/admin/importar/pdf', fd, { headers: { 'Content-Type': undefined }, timeout: 240000 })
   },
 
   extraerDeCsv: (archivo) => {

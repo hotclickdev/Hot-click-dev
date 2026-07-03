@@ -295,7 +295,9 @@ export default function AdminImportar() {
             <button onClick={extraer} disabled={cargando}
               className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-60"
               style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-              {cargando ? <><IconSpinner /> Analizando con IA…</> : 'Extraer productos'}
+              {cargando
+                ? <><IconSpinner /> {tab === 'pdf' ? 'Analizando con IA… (puede tardar unos minutos en PDFs escaneados)' : 'Analizando con IA…'}</>
+                : 'Extraer productos'}
             </button>
           </motion.div>
         )}

@@ -127,6 +127,18 @@
             <version>3.0.3</version>
         </dependency>
 
+        <!-- Plugin ImageIO para JPEG2000 — muchos catálogos PDF escaneados/exportados desde
+             herramientas de diseño (Canva, InDesign) comprimen las páginas con JPX. Sin esto,
+             PDFRenderer y PDImageXObject.getImage() devuelven páginas en blanco (probado: sin
+             el plugin, CUALQUIER página con una imagen JPX renderiza vacía, sin excepción visible
+             más que un log SEVERE). Puro Java (jj2000), sin binario nativo — se registra solo
+             vía ImageIO SPI apenas está en el classpath, no requiere cambios de código en PDFBox. -->
+        <dependency>
+            <groupId>com.github.jai-imageio</groupId>
+            <artifactId>jai-imageio-jpeg2000</artifactId>
+            <version>1.4.0</version>
+        </dependency>
+
         <!-- Selenium — fallback headless para sitios JS/SPA que Jsoup no puede leer (import por URL).
              Usa el Chromium/chromedriver instalados vía apk en el Dockerfile, no descarga binarios propios. -->
         <dependency>

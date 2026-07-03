@@ -106,6 +106,37 @@ public class SupabaseStorageService {
         return publicUrl + "/" + path;
     }
 
+    /**
+     * Sube bytes de imagen generados internamente (ej. páginas de PDF rasterizadas) sin pasar
+     * por MultipartFile. A diferencia de subirImagen(), no valida magic bytes ni re-encodea —
+     * los bytes ya vienen de un encoder propio (ImageIO/Thumbnailator), no de un upload externo.
+     */
+    @CircuitBreaker(name = "s3", fallbackMethod = "subirImagenBytesFallback")
+    @Retry(name = "s3")
+    public String subirImagenBytes(byte[] bytes, String extension, String carpeta) {
+        String contentType = ALLOWED_EXTENSIONS.get(extension);
+        if (contentType == null) throw new IllegalArgumentException("Formato no permitido: " + extension);
+
+        String path = carpeta + "/" + UUID.randomUUID() + "." + extension;
+        s3Client.putObject(
+                PutObjectRequest.builder()
+                        .bucket(bucket)
+                        .key(path)
+                        .contentType(contentType)
+                        .acl(ObjectCannedACL.PUBLIC_READ)
+                        .build(),
+                RequestBody.fromBytes(bytes)
+        );
+
+        return publicUrl + "/" + path;
+    }
+
+    private String subirImagenBytesFallback(byte[] bytes, String extension, String carpeta, Throwable t) {
+        log.error("[s3-circuit] OPEN subirImagenBytes carpeta={}: {}", carpeta, t.getMessage());
+        throw new IntegracionExternaException("s3", IntegracionExternaException.Tipo.IO_ERROR,
+            "Servicio de almacenamiento no disponible temporalmente");
+    }
+
     private byte[] validarArchivo(MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) throw new IllegalArgumentException("El archivo está vacío");
         if (file.getSize() > 10 * 1024 * 1024) throw new IllegalArgumentException("La imagen no puede superar 10 MB");
