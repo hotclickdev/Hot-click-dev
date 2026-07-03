@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { importService } from '@/services/importService'
@@ -7,6 +7,7 @@ import { marcaService } from '@/services/marcaService'
 import { useToast } from '@/components/ui/Toast'
 import api from '@/services/api'
 import useAuthStore from '@/store/authStore'
+import { detectarColor } from '@/utils/colorDetector'
 
 // ── Iconos ────────────────────────────────────────────────────────────────────
 const s = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }
@@ -22,6 +23,7 @@ function IconArrow()   { return <svg viewBox="0 0 24 24" className="w-4 h-4" {..
 function IconImg()     { return <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" {...s}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> }
 function IconEye()     { return <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" {...s}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> }
 function IconApply()   { return <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" {...s}><path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg> }
+function IconChevron() { return <svg viewBox="0 0 24 24" className="w-4 h-4" {...s}><polyline points="6 9 12 15 18 9"/></svg> }
 
 const TABS = [
   { id: 'url', label: 'URL del sitio', icon: <IconGlobe /> },
@@ -51,6 +53,169 @@ function ImgPreview({ url }) {
       className="w-10 h-10 rounded-lg object-cover shrink-0"
       style={{ border: '1px solid var(--hc-border)' }}
     />
+  )
+}
+
+// Fila de detalle de un producto individual (una variante/color específico).
+// Se usa tanto para productos sin variantes de color como para el detalle expandido de un grupo.
+function FilaProducto({ p, isLast, categorias, marcas, updateRow }) {
+  const faltaNombre    = !p.nombreProducto?.trim()
+  const faltaCategoria = !p.categoriaId
+  const precioZero     = p._sel && (p.precioVenta ?? 0) === 0
+  const tieneAlerta    = p._sel && (faltaNombre || faltaCategoria || precioZero)
+
+  return (
+    <div
+      className="grid items-start px-3 py-3 gap-x-2 min-w-[990px]"
+      style={{
+        gridTemplateColumns: '28px 1fr 95px 95px 125px 105px 90px 60px 28px',
+        borderBottom: isLast ? 'none' : '1px solid var(--hc-border)',
+        backgroundColor: tieneAlerta ? 'rgba(245,158,11,0.04)' : 'transparent',
+        opacity: p._sel ? 1 : 0.4,
+      }}>
+
+      {/* Checkbox */}
+      <div className="pt-1.5 flex justify-center">
+        <input type="checkbox" checked={p._sel}
+          onChange={e => updateRow(p._id, '_sel', e.target.checked)}
+          className="w-4 h-4 cursor-pointer accent-[var(--hc-accent)]" />
+      </div>
+
+      {/* Nombre + descripción + imagen */}
+      <div className="space-y-1 min-w-0">
+        {p._colorLabel && (
+          <div className="flex items-center gap-1.5 text-[10px] font-medium" style={{ color: 'var(--hc-muted)' }}>
+            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: p._colorHex ?? '#999', border: '1px solid var(--hc-border)' }} />
+            {p._colorLabel}
+          </div>
+        )}
+        <input
+          value={p.nombreProducto ?? ''}
+          onChange={e => updateRow(p._id, 'nombreProducto', e.target.value)}
+          placeholder="Nombre del producto"
+          className="w-full text-sm font-medium px-2 py-1 rounded-lg outline-none"
+          style={{
+            backgroundColor: faltaNombre && p._sel ? 'rgba(239,68,68,0.08)' : 'var(--hc-surface-2)',
+            border: `1px solid ${faltaNombre && p._sel ? 'rgba(239,68,68,0.4)' : 'transparent'}`,
+            color: 'var(--hc-text)',
+          }} />
+        <input
+          value={p.descripcionCorta ?? ''}
+          onChange={e => updateRow(p._id, 'descripcionCorta', e.target.value)}
+          placeholder="Descripción breve…"
+          className="w-full text-xs px-2 py-1 rounded-lg outline-none"
+          style={{ backgroundColor: 'transparent', color: 'var(--hc-muted)' }} />
+
+        {/* Imagen URL editable + preview inline */}
+        <div className="flex items-center gap-1.5">
+          {/* Thumbnail inline */}
+          <ImgPreview url={p.imagenPrincipalUrl} />
+
+          <div className="flex-1 flex items-center gap-1">
+            <span style={{ color: 'var(--hc-muted)' }}><IconImg /></span>
+            <input
+              value={p.imagenPrincipalUrl ?? ''}
+              onChange={e => updateRow(p._id, 'imagenPrincipalUrl', e.target.value || null)}
+              placeholder="https://... (URL imagen)"
+              className="flex-1 text-[11px] px-2 py-0.5 rounded-lg outline-none"
+              style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)', border: '1px solid transparent' }} />
+            {p.imagenPrincipalUrl && (
+              <a href={p.imagenPrincipalUrl} target="_blank" rel="noopener noreferrer"
+                className="shrink-0 hover:opacity-70 transition-opacity"
+                style={{ color: 'var(--hc-muted)' }} title="Ver imagen">
+                <IconEye />
+              </a>
+            )}
+          </div>
+        </div>
+
+        {tieneAlerta && (
+          <div className="flex items-center gap-1 text-[10px] text-amber-400">
+            <IconWarn />
+            {faltaNombre ? 'Nombre requerido' : faltaCategoria ? 'Seleccioná una categoría' : 'Precio de venta en ₡0'}
+          </div>
+        )}
+      </div>
+
+      {/* Precio venta */}
+      <div>
+        <input
+          value={p._ventaFmt ?? ''}
+          onChange={e => { updateRow(p._id, 'precioVenta', parseColones(e.target.value)); updateRow(p._id, '_ventaFmt', e.target.value) }}
+          onBlur={() => updateRow(p._id, '_ventaFmt', fmtColones(p.precioVenta))}
+          placeholder="0"
+          className="w-full text-sm px-2 py-1.5 rounded-lg outline-none text-right"
+          style={{
+            backgroundColor: precioZero ? 'rgba(245,158,11,0.08)' : 'var(--hc-surface-2)',
+            border: `1px solid ${precioZero ? 'rgba(245,158,11,0.4)' : 'transparent'}`,
+            color: 'var(--hc-text)',
+          }} />
+        <p className="text-[9px] text-right mt-0.5" style={{ color: 'var(--hc-muted)' }}>₡ venta</p>
+      </div>
+
+      {/* Precio costo */}
+      <div>
+        <input
+          value={p._costoFmt ?? ''}
+          onChange={e => { updateRow(p._id, 'precioCompra', parseColones(e.target.value)); updateRow(p._id, '_costoFmt', e.target.value) }}
+          onBlur={() => updateRow(p._id, '_costoFmt', fmtColones(p.precioCompra))}
+          placeholder="0"
+          className="w-full text-sm px-2 py-1.5 rounded-lg outline-none text-right"
+          style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid transparent' }} />
+        <p className="text-[9px] text-right mt-0.5" style={{ color: 'var(--hc-muted)' }}>₡ costo</p>
+      </div>
+
+      {/* Categoría */}
+      <div>
+        <select
+          value={p.categoriaId ?? ''}
+          onChange={e => updateRow(p._id, 'categoriaId', e.target.value ? Number(e.target.value) : null)}
+          className="w-full text-xs px-2 py-1.5 rounded-lg outline-none"
+          style={{
+            backgroundColor: faltaCategoria && p._sel ? 'rgba(239,68,68,0.08)' : 'var(--hc-surface-2)',
+            border: `1px solid ${faltaCategoria && p._sel ? 'rgba(239,68,68,0.4)' : 'transparent'}`,
+            color: p.categoriaId ? 'var(--hc-text)' : 'var(--hc-muted)',
+          }}>
+          <option value="">Sin categoría</option>
+          {categorias.map(c => <option key={c.id} value={c.id}>{c.nombreCategoria}</option>)}
+        </select>
+      </div>
+
+      {/* Marca */}
+      <div>
+        <select
+          value={p.marcaId ?? ''}
+          onChange={e => updateRow(p._id, 'marcaId', e.target.value ? Number(e.target.value) : null)}
+          className="w-full text-xs px-2 py-1.5 rounded-lg outline-none"
+          style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid transparent' }}>
+          <option value="">{p.marcaTexto || 'Sin marca'}</option>
+          {marcas.map(m => <option key={m.id} value={m.id}>{m.nombreMarca}</option>)}
+        </select>
+      </div>
+
+      {/* Condición */}
+      <div>
+        <select
+          value={p.condicion ?? 'NUEVO'}
+          onChange={e => updateRow(p._id, 'condicion', e.target.value)}
+          className="w-full text-xs px-2 py-1.5 rounded-lg outline-none"
+          style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid transparent' }}>
+          {CONDICIONES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+        </select>
+      </div>
+
+      {/* Stock */}
+      <div>
+        <input type="number" min="0"
+          value={p.stockActual ?? 0}
+          onChange={e => updateRow(p._id, 'stockActual', Math.max(0, parseInt(e.target.value, 10) || 0))}
+          className="w-full text-sm px-2 py-1.5 rounded-lg outline-none text-center"
+          style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid transparent' }} />
+      </div>
+
+      {/* Espaciador (columna de expandir, solo existe en la cabecera del grupo) */}
+      <span />
+    </div>
   )
 }
 
@@ -209,7 +374,9 @@ export default function AdminImportar() {
     const pct = parseFloat(margenGlobal)
     if (isNaN(pct)) return
     setProductos(prev => prev.map(p => {
-      if (!p._sel || !p.precioCompra) return p
+      // ojo: precioCompra puede ser legítimamente 0 — no usar "!p.precioCompra"
+      // (eso trata 0 como "sin costo" y el botón queda como no-op para todo el import)
+      if (!p._sel || p.precioCompra == null) return p
       const venta = Math.round(p.precioCompra * (1 + pct / 100))
       return { ...p, precioVenta: venta, _ventaFmt: fmtColones(venta) }
     }))
@@ -219,6 +386,50 @@ export default function AdminImportar() {
   const seleccionados  = productos.filter(p => p._sel)
   const todosSelec     = seleccionados.length === productos.length && productos.length > 0
   const algunoInvalido = seleccionados.some(p => !p.nombreProducto?.trim() || !p.categoriaId)
+
+  // ── Agrupación por producto base (mismas variantes de color) ──────────────
+  // Muchos PDFs de catálogo repiten el mismo modelo una vez por color disponible.
+  // Se agrupan por nombre-sin-color para no repetir imagen/categoría/marca por cada color.
+
+  const [gruposExpandidos, setGruposExpandidos] = useState(() => new Set())
+  const toggleGrupoExpandido = (key) => setGruposExpandidos(prev => {
+    const next = new Set(prev)
+    if (next.has(key)) next.delete(key); else next.add(key)
+    return next
+  })
+
+  const grupos = useMemo(() => {
+    const mapa = new Map()
+    productos.forEach(p => {
+      const { label, hex, nombreSinColor } = detectarColor(p.nombreProducto)
+      const key = (nombreSinColor || p.nombreProducto || '').toLowerCase()
+      if (!mapa.has(key)) mapa.set(key, { key, nombreBase: nombreSinColor || p.nombreProducto || '(sin nombre)', items: [] })
+      mapa.get(key).items.push({ ...p, _colorLabel: label, _colorHex: hex })
+    })
+    return [...mapa.values()]
+  }, [productos])
+
+  const estadoSeleccionGrupo = (items) => {
+    const n = items.filter(i => i._sel).length
+    if (n === 0) return 'none'
+    return n === items.length ? 'all' : 'partial'
+  }
+
+  // Valor de un campo si es igual en todos los ítems del grupo; undefined si difiere entre colores
+  const valorComunGrupo = (items, field) => {
+    const primero = items[0]?.[field] ?? null
+    return items.every(i => (i[field] ?? null) === primero) ? primero : undefined
+  }
+
+  const toggleSeleccionGrupo = (items, value) => {
+    const ids = new Set(items.map(i => i._id))
+    setProductos(prev => prev.map(p => ids.has(p._id) ? { ...p, _sel: value } : p))
+  }
+
+  const actualizarCampoGrupo = (items, field, value) => {
+    const ids = new Set(items.map(i => i._id))
+    setProductos(prev => prev.map(p => ids.has(p._id) ? { ...p, [field]: value } : p))
+  }
 
   // ── Confirmar importación ─────────────────────────────────────────────────
 
@@ -524,9 +735,9 @@ export default function AdminImportar() {
             <div className="rounded-2xl overflow-x-auto" style={{ border: '1px solid var(--hc-border)' }}>
 
               {/* Encabezado */}
-              <div className="grid text-[10px] font-semibold uppercase tracking-wider px-3 py-3 min-w-[960px]"
+              <div className="grid text-[10px] font-semibold uppercase tracking-wider px-3 py-3 min-w-[990px]"
                 style={{
-                  gridTemplateColumns: '28px 1fr 95px 95px 125px 105px 90px 60px',
+                  gridTemplateColumns: '28px 1fr 95px 95px 125px 105px 90px 60px 28px',
                   backgroundColor: 'var(--hc-surface-2)',
                   color: 'var(--hc-muted)',
                   borderBottom: '1px solid var(--hc-border)',
@@ -539,158 +750,150 @@ export default function AdminImportar() {
                 <span>Marca</span>
                 <span>Condición</span>
                 <span className="text-center">Stock</span>
+                <span />
               </div>
 
-              {/* Filas */}
+              {/* Filas — agrupadas por producto base cuando hay varias variantes de color */}
               <div style={{ backgroundColor: 'var(--hc-surface)' }}>
-                {productos.map((p, idx) => {
-                  const faltaNombre    = !p.nombreProducto?.trim()
-                  const faltaCategoria = !p.categoriaId
-                  const precioZero     = p._sel && (p.precioVenta ?? 0) === 0
-                  const tieneAlerta    = p._sel && (faltaNombre || faltaCategoria || precioZero)
+                {grupos.map((grupo, gIdx) => {
+                  const { key, nombreBase, items } = grupo
+                  const esUltimoGrupo = gIdx === grupos.length - 1
+
+                  // Sin variantes de color detectadas: fila normal, sin cabecera de grupo
+                  if (items.length === 1) {
+                    return <FilaProducto key={items[0]._id} p={items[0]} isLast={esUltimoGrupo}
+                      categorias={categorias} marcas={marcas} updateRow={updateRow} />
+                  }
+
+                  const expandido    = gruposExpandidos.has(key)
+                  const estadoSel    = estadoSeleccionGrupo(items)
+                  const catComun     = valorComunGrupo(items, 'categoriaId')
+                  const marcaComun   = valorComunGrupo(items, 'marcaId')
+                  const condComun    = valorComunGrupo(items, 'condicion')
+                  const ventas       = items.map(i => i.precioVenta ?? 0)
+                  const costos       = items.map(i => i.precioCompra ?? 0)
+                  const stockTotal   = items.reduce((acc, i) => acc + (parseInt(i.stockActual, 10) || 0), 0)
+                  const rangoVenta   = Math.min(...ventas) === Math.max(...ventas)
+                    ? fmtColones(ventas[0]) : `${fmtColones(Math.min(...ventas))}–${fmtColones(Math.max(...ventas))}`
+                  const rangoCosto   = Math.min(...costos) === Math.max(...costos)
+                    ? fmtColones(costos[0]) : `${fmtColones(Math.min(...costos))}–${fmtColones(Math.max(...costos))}`
+                  const algunaAlerta = items.some(p => p._sel && (!p.nombreProducto?.trim() || !p.categoriaId || (p.precioVenta ?? 0) === 0))
 
                   return (
-                    <div key={p._id}
-                      className="grid items-start px-3 py-3 gap-x-2 min-w-[960px]"
-                      style={{
-                        gridTemplateColumns: '28px 1fr 95px 95px 125px 105px 90px 60px',
-                        borderBottom: idx < productos.length - 1 ? '1px solid var(--hc-border)' : 'none',
-                        backgroundColor: tieneAlerta ? 'rgba(245,158,11,0.04)' : 'transparent',
-                        opacity: p._sel ? 1 : 0.4,
-                      }}>
+                    <div key={key} style={{ borderBottom: esUltimoGrupo ? 'none' : '1px solid var(--hc-border)' }}>
 
-                      {/* Checkbox */}
-                      <div className="pt-1.5 flex justify-center">
-                        <input type="checkbox" checked={p._sel}
-                          onChange={e => updateRow(p._id, '_sel', e.target.checked)}
-                          className="w-4 h-4 cursor-pointer accent-[var(--hc-accent)]" />
-                      </div>
+                      {/* Cabecera del grupo */}
+                      <div className="grid items-center px-3 py-2.5 gap-x-2 min-w-[990px]"
+                        style={{
+                          gridTemplateColumns: '28px 1fr 95px 95px 125px 105px 90px 60px 28px',
+                          backgroundColor: algunaAlerta ? 'rgba(245,158,11,0.06)' : 'var(--hc-surface-2)',
+                        }}>
 
-                      {/* Nombre + descripción + imagen */}
-                      <div className="space-y-1 min-w-0">
-                        <input
-                          value={p.nombreProducto ?? ''}
-                          onChange={e => updateRow(p._id, 'nombreProducto', e.target.value)}
-                          placeholder="Nombre del producto"
-                          className="w-full text-sm font-medium px-2 py-1 rounded-lg outline-none"
-                          style={{
-                            backgroundColor: faltaNombre && p._sel ? 'rgba(239,68,68,0.08)' : 'var(--hc-surface-2)',
-                            border: `1px solid ${faltaNombre && p._sel ? 'rgba(239,68,68,0.4)' : 'transparent'}`,
-                            color: 'var(--hc-text)',
-                          }} />
-                        <input
-                          value={p.descripcionCorta ?? ''}
-                          onChange={e => updateRow(p._id, 'descripcionCorta', e.target.value)}
-                          placeholder="Descripción breve…"
-                          className="w-full text-xs px-2 py-1 rounded-lg outline-none"
-                          style={{ backgroundColor: 'transparent', color: 'var(--hc-muted)' }} />
+                        {/* Checkbox tri-estado (todo/algo/nada seleccionado en el grupo) */}
+                        <div className="flex justify-center">
+                          <input type="checkbox"
+                            checked={estadoSel === 'all'}
+                            ref={el => { if (el) el.indeterminate = estadoSel === 'partial' }}
+                            onChange={e => toggleSeleccionGrupo(items, e.target.checked)}
+                            className="w-4 h-4 cursor-pointer accent-[var(--hc-accent)]" />
+                        </div>
 
-                        {/* Imagen URL editable + preview inline */}
-                        <div className="flex items-center gap-1.5">
-                          {/* Thumbnail inline */}
-                          <ImgPreview url={p.imagenPrincipalUrl} />
-
-                          <div className="flex-1 flex items-center gap-1">
-                            <span style={{ color: 'var(--hc-muted)' }}><IconImg /></span>
-                            <input
-                              value={p.imagenPrincipalUrl ?? ''}
-                              onChange={e => updateRow(p._id, 'imagenPrincipalUrl', e.target.value || null)}
-                              placeholder="https://... (URL imagen)"
-                              className="flex-1 text-[11px] px-2 py-0.5 rounded-lg outline-none"
-                              style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)', border: '1px solid transparent' }} />
-                            {p.imagenPrincipalUrl && (
-                              <a href={p.imagenPrincipalUrl} target="_blank" rel="noopener noreferrer"
-                                className="shrink-0 hover:opacity-70 transition-opacity"
-                                style={{ color: 'var(--hc-muted)' }} title="Ver imagen">
-                                <IconEye />
-                              </a>
-                            )}
+                        {/* Imagen representativa + nombre base + círculos de color */}
+                        <div className="min-w-0 flex items-center gap-2">
+                          <ImgPreview url={items[0].imagenPrincipalUrl} />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold truncate" style={{ color: 'var(--hc-text)' }}>
+                              {nombreBase}
+                              <span className="ml-1.5 font-normal text-xs" style={{ color: 'var(--hc-muted)' }}>
+                                ({items.length} colores)
+                              </span>
+                            </p>
+                            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                              {items.map(it => (
+                                <button key={it._id} type="button"
+                                  onClick={() => updateRow(it._id, '_sel', !it._sel)}
+                                  title={`${it._colorLabel ?? it.nombreProducto} · ${fmtColones(it.precioVenta) || '₡0'}`}
+                                  className="w-5 h-5 rounded-full shrink-0 transition-all"
+                                  style={{
+                                    background: it._colorHex ?? 'conic-gradient(from 90deg, #dc2626, #eab308, #16a34a, #2563eb, #7c3aed, #dc2626)',
+                                    border: it._sel ? '2px solid var(--hc-accent)' : '1px solid var(--hc-border)',
+                                    opacity: it._sel ? 1 : 0.35,
+                                  }} />
+                              ))}
+                            </div>
                           </div>
                         </div>
 
-                        {tieneAlerta && (
-                          <div className="flex items-center gap-1 text-[10px] text-amber-400">
-                            <IconWarn />
-                            {faltaNombre ? 'Nombre requerido' : faltaCategoria ? 'Seleccioná una categoría' : 'Precio de venta en ₡0'}
-                          </div>
-                        )}
+                        {/* Precio venta (rango entre colores) */}
+                        <div className="text-right text-xs" style={{ color: 'var(--hc-muted)' }}>
+                          ₡{rangoVenta}
+                        </div>
+
+                        {/* Precio costo (rango entre colores) */}
+                        <div className="text-right text-xs" style={{ color: 'var(--hc-muted)' }}>
+                          ₡{rangoCosto}
+                        </div>
+
+                        {/* Categoría — aplica a todos los colores del grupo */}
+                        <div>
+                          <select
+                            value={catComun ?? ''}
+                            onChange={e => actualizarCampoGrupo(items, 'categoriaId', e.target.value ? Number(e.target.value) : null)}
+                            className="w-full text-xs px-2 py-1.5 rounded-lg outline-none"
+                            style={{
+                              backgroundColor: !catComun ? 'rgba(239,68,68,0.08)' : 'var(--hc-surface)',
+                              border: `1px solid ${!catComun ? 'rgba(239,68,68,0.4)' : 'transparent'}`,
+                              color: catComun ? 'var(--hc-text)' : 'var(--hc-muted)',
+                            }}>
+                            <option value="">{catComun === undefined ? 'Varias…' : 'Sin categoría'}</option>
+                            {categorias.map(c => <option key={c.id} value={c.id}>{c.nombreCategoria}</option>)}
+                          </select>
+                        </div>
+
+                        {/* Marca — aplica a todos los colores del grupo */}
+                        <div>
+                          <select
+                            value={marcaComun ?? ''}
+                            onChange={e => actualizarCampoGrupo(items, 'marcaId', e.target.value ? Number(e.target.value) : null)}
+                            className="w-full text-xs px-2 py-1.5 rounded-lg outline-none"
+                            style={{ backgroundColor: 'var(--hc-surface)', color: marcaComun ? 'var(--hc-text)' : 'var(--hc-muted)', border: '1px solid transparent' }}>
+                            <option value="">{marcaComun === undefined ? 'Varias…' : (items[0].marcaTexto || 'Sin marca')}</option>
+                            {marcas.map(m => <option key={m.id} value={m.id}>{m.nombreMarca}</option>)}
+                          </select>
+                        </div>
+
+                        {/* Condición — aplica a todos los colores del grupo */}
+                        <div>
+                          <select
+                            value={condComun ?? 'NUEVO'}
+                            onChange={e => actualizarCampoGrupo(items, 'condicion', e.target.value)}
+                            className="w-full text-xs px-2 py-1.5 rounded-lg outline-none"
+                            style={{ backgroundColor: 'var(--hc-surface)', color: 'var(--hc-text)', border: '1px solid transparent' }}>
+                            {CONDICIONES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                          </select>
+                        </div>
+
+                        {/* Stock total del grupo */}
+                        <div className="text-center text-xs" style={{ color: 'var(--hc-muted)' }}>
+                          {stockTotal}
+                        </div>
+
+                        {/* Expandir/contraer detalle por color */}
+                        <div className="flex justify-center">
+                          <button type="button" onClick={() => toggleGrupoExpandido(key)}
+                            className="p-1 rounded-lg transition-transform"
+                            style={{ color: 'var(--hc-muted)', transform: expandido ? 'rotate(180deg)' : 'none' }}
+                            title={expandido ? 'Contraer' : 'Ver detalle de cada color'}>
+                            <IconChevron />
+                          </button>
+                        </div>
                       </div>
 
-                      {/* Precio venta */}
-                      <div>
-                        <input
-                          value={p._ventaFmt ?? ''}
-                          onChange={e => { updateRow(p._id, 'precioVenta', parseColones(e.target.value)); updateRow(p._id, '_ventaFmt', e.target.value) }}
-                          onBlur={() => updateRow(p._id, '_ventaFmt', fmtColones(p.precioVenta))}
-                          placeholder="0"
-                          className="w-full text-sm px-2 py-1.5 rounded-lg outline-none text-right"
-                          style={{
-                            backgroundColor: precioZero ? 'rgba(245,158,11,0.08)' : 'var(--hc-surface-2)',
-                            border: `1px solid ${precioZero ? 'rgba(245,158,11,0.4)' : 'transparent'}`,
-                            color: 'var(--hc-text)',
-                          }} />
-                        <p className="text-[9px] text-right mt-0.5" style={{ color: 'var(--hc-muted)' }}>₡ venta</p>
-                      </div>
-
-                      {/* Precio costo */}
-                      <div>
-                        <input
-                          value={p._costoFmt ?? ''}
-                          onChange={e => { updateRow(p._id, 'precioCompra', parseColones(e.target.value)); updateRow(p._id, '_costoFmt', e.target.value) }}
-                          onBlur={() => updateRow(p._id, '_costoFmt', fmtColones(p.precioCompra))}
-                          placeholder="0"
-                          className="w-full text-sm px-2 py-1.5 rounded-lg outline-none text-right"
-                          style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid transparent' }} />
-                        <p className="text-[9px] text-right mt-0.5" style={{ color: 'var(--hc-muted)' }}>₡ costo</p>
-                      </div>
-
-                      {/* Categoría */}
-                      <div>
-                        <select
-                          value={p.categoriaId ?? ''}
-                          onChange={e => updateRow(p._id, 'categoriaId', e.target.value ? Number(e.target.value) : null)}
-                          className="w-full text-xs px-2 py-1.5 rounded-lg outline-none"
-                          style={{
-                            backgroundColor: faltaCategoria && p._sel ? 'rgba(239,68,68,0.08)' : 'var(--hc-surface-2)',
-                            border: `1px solid ${faltaCategoria && p._sel ? 'rgba(239,68,68,0.4)' : 'transparent'}`,
-                            color: p.categoriaId ? 'var(--hc-text)' : 'var(--hc-muted)',
-                          }}>
-                          <option value="">Sin categoría</option>
-                          {categorias.map(c => <option key={c.id} value={c.id}>{c.nombreCategoria}</option>)}
-                        </select>
-                      </div>
-
-                      {/* Marca */}
-                      <div>
-                        <select
-                          value={p.marcaId ?? ''}
-                          onChange={e => updateRow(p._id, 'marcaId', e.target.value ? Number(e.target.value) : null)}
-                          className="w-full text-xs px-2 py-1.5 rounded-lg outline-none"
-                          style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid transparent' }}>
-                          <option value="">{p.marcaTexto || 'Sin marca'}</option>
-                          {marcas.map(m => <option key={m.id} value={m.id}>{m.nombreMarca}</option>)}
-                        </select>
-                      </div>
-
-                      {/* Condición */}
-                      <div>
-                        <select
-                          value={p.condicion ?? 'NUEVO'}
-                          onChange={e => updateRow(p._id, 'condicion', e.target.value)}
-                          className="w-full text-xs px-2 py-1.5 rounded-lg outline-none"
-                          style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid transparent' }}>
-                          {CONDICIONES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                        </select>
-                      </div>
-
-                      {/* Stock */}
-                      <div>
-                        <input type="number" min="0"
-                          value={p.stockActual ?? 0}
-                          onChange={e => updateRow(p._id, 'stockActual', Math.max(0, parseInt(e.target.value, 10) || 0))}
-                          className="w-full text-sm px-2 py-1.5 rounded-lg outline-none text-center"
-                          style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid transparent' }} />
-                      </div>
+                      {/* Detalle expandido: una fila editable por cada color */}
+                      {expandido && items.map((p, idx) => (
+                        <FilaProducto key={p._id} p={p} isLast={idx === items.length - 1}
+                          categorias={categorias} marcas={marcas} updateRow={updateRow} />
+                      ))}
                     </div>
                   )
                 })}

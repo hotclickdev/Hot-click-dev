@@ -526,8 +526,12 @@ public class CatalogoImportService {
 
             ProductoExtraidoDto dto = new ProductoExtraidoDto();
             dto.setNombreProducto(nombre.length() > 200 ? nombre.substring(0, 200) : nombre);
-            dto.setPrecioVenta(Math.max(0, item.path("precioVenta").asInt(0)));
-            dto.setPrecioCompra(0);
+            int precio = Math.max(0, item.path("precioVenta").asInt(0));
+            dto.setPrecioVenta(precio);
+            // El precio extraído es el de la fuente (sitio/catálogo del proveedor) — se usa
+            // también como costo inicial para que "aplicar margen a todos" tenga con qué
+            // calcular. Si no se toca, venta = costo (0% margen); el admin ajusta desde ahí.
+            dto.setPrecioCompra(precio);
             String desc = item.path("descripcionCorta").asText("").trim();
             dto.setDescripcionCorta(desc.length() > 300 ? desc.substring(0, 300) : desc);
             String img = item.path("imagenPrincipalUrl").asText("").trim();
