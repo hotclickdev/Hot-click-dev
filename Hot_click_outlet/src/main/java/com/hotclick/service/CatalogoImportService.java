@@ -65,7 +65,6 @@ public class CatalogoImportService {
     // Solo una instancia de Chromium a la vez — el servidor (t3.small) tiene RAM justa
     // y esta es una feature de uso ocasional (admin), no necesita paralelismo.
     private static final Semaphore NAVEGADOR_LOCK = new Semaphore(1);
-    private static final int  TEXTO_MINIMO_SUFICIENTE = 300; // chars — por debajo, se asume shell vacío de SPA
     private static final Duration TIMEOUT_NAVEGADOR = Duration.ofSeconds(20);
 
     private final RestTemplate rest;
@@ -85,23 +84,32 @@ public class CatalogoImportService {
         log.info("[import-url] descargando {}", rawUrl);
 
         String texto = limpiarHtml(descargarHtml(rawUrl));
+        log.info("[import-url] texto extraído con Jsoup: {} chars", texto.length());
 
-        if (texto.length() < TEXTO_MINIMO_SUFICIENTE && navegadorDisponible()) {
-            log.info("[import-url] contenido insuficiente ({} chars) — probablemente un sitio JS/SPA, " +
-                "reintentando con navegador headless", texto.length());
+        List<ProductoExtraidoDto> productos = extraerConClaude(truncar(texto), "página web");
+
+        // El largo del texto NO es buen indicador de "hay productos" — un shell vacío de SPA
+        // puede tener 300+ chars de solo menú/categorías. La señal confiable es que Claude
+        // no haya encontrado nada: ahí vale la pena pagar el costo de renderizar con navegador.
+        if (productos.isEmpty() && navegadorDisponible()) {
+            log.info("[import-url] 0 productos con la versión simple — probablemente un sitio JS/SPA, " +
+                "reintentando con navegador headless");
             try {
                 String htmlRenderizado = renderizarConNavegador(rawUrl);
                 String textoRenderizado = limpiarHtml(htmlRenderizado);
-                if (textoRenderizado.length() > texto.length()) {
-                    texto = textoRenderizado;
+                log.info("[import-url] texto extraído con navegador: {} chars", textoRenderizado.length());
+                List<ProductoExtraidoDto> productosRenderizado =
+                    extraerConClaude(truncar(textoRenderizado), "página web (renderizada con navegador)");
+                if (!productosRenderizado.isEmpty()) {
+                    productos = productosRenderizado;
                 }
             } catch (Exception e) {
                 log.warn("[import-url] fallback con navegador headless falló: {}", e.getMessage());
-                // Seguimos con lo que Jsoup logró extraer — mejor algo que un 500.
+                // Seguimos con lo que ya teníamos — mejor algo (o nada limpio) que un 500.
             }
         }
 
-        return extraerConClaude(truncar(texto), "página web");
+        return productos;
     }
 
     private String descargarHtml(String rawUrl) throws Exception {
@@ -178,13 +186,25 @@ public class CatalogoImportService {
         log.info("[import-pdf] procesando {}", archivo.getOriginalFilename());
 
         String texto;
+        int numPaginas;
         byte[] pdfBytes = archivo.getBytes();
         try (PDDocument pdf = Loader.loadPDF(pdfBytes)) {
+            numPaginas = pdf.getNumberOfPages();
             PDFTextStripper stripper = new PDFTextStripper();
-            texto = stripper.getText(pdf);
+            texto = stripper.getText(pdf).trim();
         }
 
-        return extraerConClaude(truncar(texto.trim()), "catálogo PDF");
+        log.info("[import-pdf] {} páginas, {} chars de texto extraído. Preview: {}",
+            numPaginas, texto.length(),
+            texto.substring(0, Math.min(200, texto.length())).replace("\n", " "));
+
+        if (texto.isBlank()) {
+            throw new IllegalArgumentException(
+                "El PDF no tiene texto que se pueda leer — probablemente son páginas escaneadas o imágenes. " +
+                "Probá con el modo URL o CSV, o convertí el PDF a un formato con texto real.");
+        }
+
+        return extraerConClaude(truncar(texto), "catálogo PDF");
     }
 
     // ── CSV ──────────────────────────────────────────────────────────────────
