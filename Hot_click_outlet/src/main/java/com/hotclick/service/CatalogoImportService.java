@@ -83,7 +83,7 @@ public class CatalogoImportService {
         validarUrl(rawUrl);
         log.info("[import-url] descargando {}", rawUrl);
 
-        String texto = limpiarHtml(descargarHtml(rawUrl));
+        String texto = limpiarHtml(descargarHtml(rawUrl), rawUrl);
         log.info("[import-url] texto extraído con Jsoup: {} chars", texto.length());
 
         List<ProductoExtraidoDto> productos = extraerConClaude(truncar(texto), "página web");
@@ -96,7 +96,7 @@ public class CatalogoImportService {
                 "reintentando con navegador headless");
             try {
                 String htmlRenderizado = renderizarConNavegador(rawUrl);
-                String textoRenderizado = limpiarHtml(htmlRenderizado);
+                String textoRenderizado = limpiarHtml(htmlRenderizado, rawUrl);
                 log.info("[import-url] texto extraído con navegador: {} chars", textoRenderizado.length());
                 List<ProductoExtraidoDto> productosRenderizado =
                     extraerConClaude(truncar(textoRenderizado), "página web (renderizada con navegador)");
@@ -120,10 +120,21 @@ public class CatalogoImportService {
         return doc.html();
     }
 
-    private String limpiarHtml(String html) {
-        Document doc = Jsoup.parse(html);
+    private String limpiarHtml(String html, String baseUri) {
+        Document doc = Jsoup.parse(html, baseUri);
         // Eliminar nodos que no aportan contenido textual
         doc.select("script, style, noscript, svg, iframe, header, footer, nav").remove();
+
+        // Safelist.none() de abajo borra TODAS las etiquetas, incluyendo <img> — sin esto
+        // Claude nunca ve las URLs de imagen y por eso no las puede incluir en el resultado.
+        // Se deja como marcador de texto junto al producto para que Claude asocie ambos.
+        for (org.jsoup.nodes.Element img : doc.select("img[src], img[data-src]")) {
+            String src = !img.attr("src").isBlank() ? img.absUrl("src") : img.absUrl("data-src");
+            if (!src.isBlank()) {
+                img.after("\n[IMAGEN_PRODUCTO: " + src + "]\n");
+            }
+        }
+
         String texto = Jsoup.clean(doc.body().html(), Safelist.none());
         return texto.replaceAll("\\s{3,}", "\n").trim();
     }
@@ -372,6 +383,10 @@ public class CatalogoImportService {
 
         Reglas obligatorias:
         - precioVenta debe ser un entero en colones costarricenses (₡). Si el precio está en dólares, multiplicá por 550. Si no hay precio, poné 0.
+        - El texto puede tener marcadores "[IMAGEN_PRODUCTO: https://...]" pegados junto al nombre/precio de
+          un producto — esa es la URL de su imagen principal. Usá el marcador más cercano al producto (el que
+          está inmediatamente antes o después de su nombre/precio) como su imagenPrincipalUrl. No inventes URLs
+          de imagen que no vengan de un marcador.
         - Si no hay imagen, sku o marca, poné null (no una cadena vacía).
         - Eliminá duplicados.
         - Extraé un máximo de 100 productos.
