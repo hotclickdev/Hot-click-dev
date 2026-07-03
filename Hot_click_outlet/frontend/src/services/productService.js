@@ -43,6 +43,8 @@ export function normalizeProduct(p) {
     videoUrl: p.videoUrl ?? null,
     talla: p.talla ?? null,
     garantiaDias: p.garantiaDias ?? 0,
+    grupoVarianteId: p.grupoVarianteId ?? null,
+    colorVariante: p.colorVariante ?? null,
   }
 }
 
@@ -110,6 +112,10 @@ export const productService = {
   getByMarca: (marcaId, page = 0, size = 12) =>
     api.get(`/productos/marca/${marcaId}`, { params: { page, size } })
        .then((r) => ({ ...r, data: normalizeList(r.data) })),
+
+  getVariantes: (id, config = {}) =>
+    api.get(`/productos/${id}/variantes`, config)
+       .then((r) => r.data?.data ?? r.data ?? []),
 
   create: (data, config = {}) =>
     api.post('/productos', data, config),

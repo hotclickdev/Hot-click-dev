@@ -13,6 +13,8 @@ public class ProductoExtraidoDto {
     private Long marcaId;
     private Long bodegaId;
     private Integer stockActual;
+    private String grupoVarianteId;
+    private String colorVariante;
 
     public ProductoExtraidoDto() {}
 
@@ -48,4 +50,10 @@ public class ProductoExtraidoDto {
 
     public Integer getStockActual()         { return stockActual; }
     public void    setStockActual(Integer v){ this.stockActual = v; }
+
+    public String getGrupoVarianteId()          { return grupoVarianteId; }
+    public void   setGrupoVarianteId(String v)  { this.grupoVarianteId = v; }
+
+    public String getColorVariante()            { return colorVariante; }
+    public void   setColorVariante(String v)    { this.colorVariante = v; }
 }

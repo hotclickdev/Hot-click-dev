@@ -315,17 +315,40 @@ export default function AdminImportar() {
         return
       }
 
-      setProductos(data.map((p, i) => ({
-        ...p,
-        _id:          i,
-        _sel:         true,
-        _ventaFmt:    fmtColones(p.precioVenta  ?? 0),
-        _costoFmt:    fmtColones(p.precioCompra ?? 0),
-        precioVenta:  p.precioVenta  ?? 0,
-        precioCompra: p.precioCompra ?? 0,
-        stockActual:  0,
-        condicion:    'NUEVO',
-      })))
+      // Agrupa como variantes los productos que comparten nombre base (sin el color) —
+      // ej. "Renegado marron oscuro hombre" y "Renegado camel hombre" -> mismo grupo.
+      // Un "grupo" de 1 solo elemento no cuenta como variante, se deja sin agrupar.
+      const detectados = data.map((p) => detectarColor(p.nombreProducto || ''))
+      const conteoPorClave = new Map()
+      detectados.forEach(({ label, nombreSinColor }) => {
+        if (!label) return
+        const clave = nombreSinColor.toLowerCase()
+        conteoPorClave.set(clave, (conteoPorClave.get(clave) ?? 0) + 1)
+      })
+      const idPorClave = new Map()
+
+      setProductos(data.map((p, i) => {
+        const { label, nombreSinColor } = detectados[i]
+        const clave = nombreSinColor.toLowerCase()
+        let grupoVarianteId = null
+        if (label && conteoPorClave.get(clave) >= 2) {
+          if (!idPorClave.has(clave)) idPorClave.set(clave, crypto.randomUUID())
+          grupoVarianteId = idPorClave.get(clave)
+        }
+        return {
+          ...p,
+          _id:          i,
+          _sel:         true,
+          _ventaFmt:    fmtColones(p.precioVenta  ?? 0),
+          _costoFmt:    fmtColones(p.precioCompra ?? 0),
+          precioVenta:  p.precioVenta  ?? 0,
+          precioCompra: p.precioCompra ?? 0,
+          stockActual:  0,
+          condicion:    'NUEVO',
+          colorVariante: label,
+          grupoVarianteId,
+        }
+      }))
 
       await cargarDatosFormulario()
       setPaso(2)
@@ -457,6 +480,8 @@ export default function AdminImportar() {
         bodegaId:           p.bodegaId   ?? bodegaId,
         stockActual:        parseInt(p.stockActual ?? 0, 10),
         condicion:          p.condicion  ?? 'NUEVO',
+        grupoVarianteId:    p.grupoVarianteId ?? null,
+        colorVariante:      p.colorVariante   ?? null,
       }))
 
       const res = await importService.confirmar(payload, esAdminIT ? Number(empresaSeleccionada) : null)

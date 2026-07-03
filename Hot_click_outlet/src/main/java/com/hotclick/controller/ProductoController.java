@@ -208,6 +208,28 @@ public class ProductoController {
         }
     }
 
+    /** Otros colores/variantes de la misma pieza — para el selector de swatches en el detalle. */
+    @GetMapping("/{id}/variantes")
+    public ResponseEntity<ResponseDTO> obtenerVariantes(@PathVariable Long id) {
+        Producto base = productoService.buscarPorId(id);
+        if (base.getGrupoVarianteId() == null) {
+            return ResponseEntity.ok(ResponseDTO.success("Sin variantes", java.util.List.of()));
+        }
+        var hermanos = productoRepository.findByGrupoVarianteIdAndEstadoAndVisibleCatalogo(
+                base.getGrupoVarianteId(), Constants.ESTADO_ACTIVO, true)
+            .stream()
+            .map(p -> java.util.Map.of(
+                "id", p.getId(),
+                "nombreProducto", p.getNombreProducto(),
+                "colorVariante", p.getColorVariante() != null ? p.getColorVariante() : "",
+                "imagenPrincipalUrl", p.getImagenPrincipalUrl() != null ? p.getImagenPrincipalUrl() : "",
+                "precioVenta", p.getPrecioVenta(),
+                "stock", p.getStock()
+            ))
+            .toList();
+        return ResponseEntity.ok(ResponseDTO.success("Variantes", hermanos));
+    }
+
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> crearProducto(

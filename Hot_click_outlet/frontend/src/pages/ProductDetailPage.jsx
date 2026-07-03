@@ -13,6 +13,7 @@ import useCartStore from '@/store/cartStore'
 import useWishlistStore from '@/store/wishlistStore'
 import useRecentlyViewedStore from '@/store/recentlyViewedStore'
 import { useToast } from '@/components/ui/Toast'
+import { detectarColor } from '@/utils/colorDetector'
 import { formatPrice, conditionLabel, conditionVariant } from '@/utils/format'
 import { analytics } from '@/utils/analytics'
 import SocialProof from '@/components/ui/SocialProof'
@@ -37,6 +38,7 @@ export default function ProductDetailPage() {
   const [brandProducts, setBrandProducts] = useState([])
   const [galeria, setGaleria] = useState([])
   const [activeImg, setActiveImg] = useState(0)
+  const [variantes, setVariantes] = useState([])
   const addTimeout = useRef(null)
   const mainCTARef = useRef(null)
   const { toggle: toggleWishlist, isLiked } = useWishlistStore()
@@ -105,6 +107,16 @@ export default function ProductDetailPage() {
       .catch(() => {})
     return () => controller.abort()
   }, [product?.marcaId, product?.id])
+
+  // Otros colores de la misma pieza (swatches)
+  useEffect(() => {
+    if (!product?.grupoVarianteId) { setVariantes([]); return }
+    const controller = new AbortController()
+    productService.getVariantes(product.id, { signal: controller.signal })
+      .then((vs) => setVariantes(vs.filter((v) => v.id !== product.id)))
+      .catch(() => {})
+    return () => controller.abort()
+  }, [product?.grupoVarianteId, product?.id])
 
   useEffect(() => () => clearTimeout(addTimeout.current), [])
 
@@ -336,12 +348,25 @@ export default function ProductDetailPage() {
               )}
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant={stockBadge}>{stockLabel}</Badge>
-                {product.talla && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/8 border border-white/15 text-[#e8e8ed] text-xs font-semibold">
-                    {/^\d/.test(product.talla) ? '👟' : '👕'} Talla {product.talla}
-                  </span>
-                )}
               </div>
+              {variantes.length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-[#8e8e9a]">{t('product.otherColors', 'Otros colores')}:</span>
+                  <button type="button" onClick={() => {}} disabled
+                    className="w-7 h-7 rounded-full ring-2 ring-offset-2 ring-offset-[#0d0d12] ring-[#e8e8ed] shrink-0"
+                    style={{ backgroundColor: (product.colorVariante && detectarColor(product.colorVariante).hex) || '#3a3a42' }}
+                    title={product.colorVariante || product.nombre} />
+                  {variantes.map((v) => {
+                    const hex = (v.colorVariante && detectarColor(v.colorVariante).hex) || '#3a3a42'
+                    return (
+                      <button key={v.id} type="button" onClick={() => navigate(`/productos/${v.id}`)}
+                        className="w-7 h-7 rounded-full border border-white/20 shrink-0 hover:scale-110 transition-transform"
+                        style={{ backgroundColor: hex }}
+                        title={v.colorVariante || v.nombreProducto} />
+                    )
+                  })}
+                </div>
+              )}
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-medium">
                 ✓ {t('socialProof.warranty')}
               </span>

@@ -198,6 +198,14 @@ public class Producto extends BaseEntity {
     @Column(name = "talla", length = 20)
     private String talla;
 
+    /** Tag compartido entre filas de producto que son la misma pieza en distinto color/talla. */
+    @Column(name = "grupo_variante_id", length = 64)
+    private String grupoVarianteId;
+
+    /** Nombre del color de esta variante puntual (ej. "Marrón oscuro"), para mostrar como swatch. */
+    @Column(name = "color_variante", length = 50)
+    private String colorVariante;
+
     @Column(name = "garantia_dias", columnDefinition = "INTEGER DEFAULT 0")
     private Integer garantiaDias = 0;
 
@@ -415,6 +423,12 @@ public class Producto extends BaseEntity {
 
     public String getTalla() { return talla; }
     public void setTalla(String talla) { this.talla = talla; }
+
+    public String getGrupoVarianteId() { return grupoVarianteId; }
+    public void setGrupoVarianteId(String grupoVarianteId) { this.grupoVarianteId = grupoVarianteId; }
+
+    public String getColorVariante() { return colorVariante; }
+    public void setColorVariante(String colorVariante) { this.colorVariante = colorVariante; }
 
     public Integer getGarantiaDias() { return garantiaDias != null ? garantiaDias : 0; }
     public void setGarantiaDias(Integer garantiaDias) { this.garantiaDias = garantiaDias; }

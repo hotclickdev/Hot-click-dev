@@ -95,6 +95,12 @@ public class ProductoRequestDTO {
     @Size(max = 50, message = "La talla no puede superar 50 caracteres")
     private String talla;
 
+    @Size(max = 64, message = "El grupo de variante no puede superar 64 caracteres")
+    private String grupoVarianteId;
+
+    @Size(max = 50, message = "El color de variante no puede superar 50 caracteres")
+    private String colorVariante;
+
     @Size(max = 500, message = "Los tags no pueden superar 500 caracteres")
     private String tags;
 
@@ -158,6 +164,10 @@ public class ProductoRequestDTO {
     public void setVideoUrl(String v) { this.videoUrl = v; }
     public String getTalla() { return talla; }
     public void setTalla(String v) { this.talla = v; }
+    public String getGrupoVarianteId() { return grupoVarianteId; }
+    public void setGrupoVarianteId(String v) { this.grupoVarianteId = v; }
+    public String getColorVariante() { return colorVariante; }
+    public void setColorVariante(String v) { this.colorVariante = v; }
     public String getTags() { return tags; }
     public void setTags(String v) { this.tags = v; }
 }

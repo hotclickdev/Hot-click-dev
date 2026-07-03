@@ -145,6 +145,8 @@ public class ImportController {
                     dto.setImagenPrincipalUrl(importService.reubicarImagenEnS3(ext.getImagenPrincipalUrl()));
                     dto.setVisibleCatalogo(true);
                     dto.setCondicion("NUEVO");
+                    dto.setGrupoVarianteId(ext.getGrupoVarianteId());
+                    dto.setColorVariante(ext.getColorVariante());
 
                     productoService.crearProducto(dto, adminCorreo, empresa);
                     ok++;

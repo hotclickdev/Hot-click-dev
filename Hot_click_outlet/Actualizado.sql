@@ -3133,3 +3133,10 @@ ALTER TABLE hot_click_usuario_tb
 
 CREATE INDEX IF NOT EXISTS idx_usuario_empresa_registro
     ON hot_click_usuario_tb (fk_id_empresa_registro);
+
+-- V93: agrupa productos que son la misma pieza en distinto color/talla (ej. una
+-- sandalia en 4 colores = 4 filas de producto, mismo grupo_variante_id).
+ALTER TABLE hot_click_producto_tb ADD COLUMN IF NOT EXISTS grupo_variante_id VARCHAR(64);
+ALTER TABLE hot_click_producto_tb ADD COLUMN IF NOT EXISTS color_variante VARCHAR(50);
+
+CREATE INDEX IF NOT EXISTS idx_producto_grupo_variante ON hot_click_producto_tb(grupo_variante_id) WHERE grupo_variante_id IS NOT NULL;
