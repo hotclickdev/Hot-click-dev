@@ -18,7 +18,10 @@ export const importService = {
     return api.post('/admin/importar/csv', fd, { headers: { 'Content-Type': undefined } })
   },
 
-  confirmar: (productos) =>
+  confirmar: (productos, empresaId) =>
     // Timeout extendido — cada producto puede implicar descargar y resubir su imagen a S3.
-    api.post('/admin/importar/confirmar', productos, { timeout: 120000 }),
+    api.post('/admin/importar/confirmar', productos, {
+      timeout: 120000,
+      params: empresaId ? { empresaId } : undefined,
+    }),
 }

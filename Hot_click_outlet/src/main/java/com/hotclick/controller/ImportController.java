@@ -88,6 +88,7 @@ public class ImportController {
     @PostMapping("/confirmar")
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> confirmarImportacion(
+            @RequestParam(required = false) Long empresaId,
             @RequestBody List<ProductoExtraidoDto> productos) {
         try {
             if (productos == null || productos.isEmpty()) {
@@ -97,12 +98,24 @@ public class ImportController {
                 return ResponseEntity.badRequest().body(ResponseDTO.error("Máximo 100 productos por importación."));
             }
 
-            Long empresaId = companyScope.getCurrentEmpresaId();
-            Empresa empresa = empresaId != null
-                ? empresaRepository.findById(empresaId).orElse(null)
-                : null;
+            Long empresaIdEfectivo = companyScope.getCurrentEmpresaId();
+            if (empresaIdEfectivo == null && companyScope.isAdminIT()) {
+                // IT Admin no tiene empresa propia — tiene que elegir a quién asignar el import.
+                if (empresaId == null) {
+                    return ResponseEntity.badRequest().body(ResponseDTO.error(
+                        "Elegí la empresa a la que se van a asignar los productos."));
+                }
+                empresaIdEfectivo = empresaId;
+            }
 
-            tenantService.verificarLimiteProductosBulk(empresaId, productos.size());
+            Empresa empresa = empresaIdEfectivo != null
+                ? empresaRepository.findById(empresaIdEfectivo).orElse(null)
+                : null;
+            if (empresaIdEfectivo != null && empresa == null) {
+                return ResponseEntity.badRequest().body(ResponseDTO.error("Empresa no encontrada."));
+            }
+
+            tenantService.verificarLimiteProductosBulk(empresaIdEfectivo, productos.size());
 
             String adminCorreo = currentUserName();
             int ok = 0;

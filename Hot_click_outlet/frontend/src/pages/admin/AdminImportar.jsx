@@ -6,6 +6,7 @@ import { productService } from '@/services/productService'
 import { marcaService } from '@/services/marcaService'
 import { useToast } from '@/components/ui/Toast'
 import api from '@/services/api'
+import useAuthStore from '@/store/authStore'
 
 // ── Iconos ────────────────────────────────────────────────────────────────────
 const s = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }
@@ -57,6 +58,7 @@ function ImgPreview({ url }) {
 export default function AdminImportar() {
   const { showToast: addToast } = useToast()
   const navigate = useNavigate()
+  const esAdminIT = useAuthStore(st => st.userRole === 'ADMIN')
 
   const [paso, setPaso] = useState(1)
   const [tab,  setTab]  = useState('url')
@@ -73,6 +75,10 @@ export default function AdminImportar() {
   const [marcas,       setMarcas]       = useState([])
   const [bodegas,      setBodegas]      = useState([])
 
+  // Solo para IT Admin (sin empresa propia) — a qué empresa se le asignan los productos
+  const [empresas,            setEmpresas]            = useState([])
+  const [empresaSeleccionada, setEmpresaSeleccionada] = useState('')
+
   // Selectores globales (aplican a todos los productos)
   const [bodegaGlobal,    setBodegaGlobal]    = useState('')
   const [catGlobal,       setCatGlobal]       = useState('')   // para "aplicar a todos"
@@ -85,19 +91,42 @@ export default function AdminImportar() {
 
   async function cargarDatosFormulario() {
     try {
-      const [catRes, marcRes, bodRes] = await Promise.all([
-        productService.getCategories(),
-        marcaService.getAll(),
-        api.get('/bodegas'),
-      ])
+      const llamadas = [productService.getCategories(), marcaService.getAll()]
+      // IT Admin no tiene empresa propia: las bodegas dependen de qué empresa elija,
+      // así que no se cargan todavía (quedarían mezcladas entre todos los tenants).
+      if (!esAdminIT) llamadas.push(api.get('/bodegas'))
+      else llamadas.push(api.get('/admin/empresas'))
+
+      const [catRes, marcRes, terceraRes] = await Promise.all(llamadas)
       const cats = catRes.data?.data ?? catRes.data ?? []
       const mars = marcRes.data?.data ?? marcRes.data ?? []
-      const bods = bodRes.data?.data  ?? bodRes.data  ?? []
       setCategorias(cats)
       setMarcas(mars)
+
+      if (esAdminIT) {
+        setEmpresas(terceraRes.data?.data ?? [])
+      } else {
+        const bods = terceraRes.data?.data ?? terceraRes.data ?? []
+        setBodegas(bods)
+        if (bods.length > 0) setBodegaGlobal(String(bods[0].id))
+      }
+    } catch { /* silencioso */ }
+  }
+
+  // Solo IT Admin: al elegir la empresa destino, recarga las bodegas de ESA empresa
+  // (antes de elegir, no hay forma de saber a cuál bodega debería ir el stock).
+  async function onCambiarEmpresa(id) {
+    setEmpresaSeleccionada(id)
+    setBodegaGlobal('')
+    if (!id) { setBodegas([]); return }
+    try {
+      const bodRes = await api.get('/bodegas', { params: { empresaId: id } })
+      const bods = bodRes.data?.data ?? bodRes.data ?? []
       setBodegas(bods)
       if (bods.length > 0) setBodegaGlobal(String(bods[0].id))
-    } catch { /* silencioso */ }
+    } catch {
+      addToast('No se pudieron cargar las bodegas de esa empresa', 'error')
+    }
   }
 
   async function extraer() {
@@ -196,6 +225,10 @@ export default function AdminImportar() {
   async function confirmar() {
     if (seleccionados.length === 0) { addToast('Seleccioná al menos un producto', 'error'); return }
     if (algunoInvalido)             { addToast('Completá nombre y categoría en todos los seleccionados', 'error'); return }
+    if (esAdminIT && !empresaSeleccionada) {
+      addToast('Elegí la empresa a la que se van a asignar los productos', 'error')
+      return
+    }
 
     setGuardando(true)
     try {
@@ -215,7 +248,7 @@ export default function AdminImportar() {
         condicion:          p.condicion  ?? 'NUEVO',
       }))
 
-      const res = await importService.confirmar(payload)
+      const res = await importService.confirmar(payload, esAdminIT ? Number(empresaSeleccionada) : null)
       const { ok, errores } = res.data?.data ?? {}
       addToast(`${ok} producto(s) importado(s) correctamente`, 'success')
       if (errores?.length) addToast(`${errores.length} con errores`, 'warning')
@@ -345,6 +378,26 @@ export default function AdminImportar() {
             <div className="flex flex-wrap items-center gap-3 px-4 py-3 rounded-xl"
               style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
 
+              {/* Empresa destino — solo IT Admin, que no tiene empresa propia */}
+              {esAdminIT && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium whitespace-nowrap" style={{ color: 'var(--hc-muted)' }}>Empresa *</span>
+                    <select value={empresaSeleccionada} onChange={e => onCambiarEmpresa(e.target.value)}
+                      className="text-xs px-2 py-1.5 rounded-lg outline-none"
+                      style={{
+                        backgroundColor: 'var(--hc-surface-2)',
+                        color: empresaSeleccionada ? 'var(--hc-text)' : 'var(--hc-muted)',
+                        border: `1px solid ${empresaSeleccionada ? 'var(--hc-border)' : 'rgba(239,68,68,0.4)'}`,
+                      }}>
+                      <option value="">Seleccionar…</option>
+                      {empresas.map(e => <option key={e.id} value={e.id}>{e.nombreComercial || e.nombreEmpresa}</option>)}
+                    </select>
+                  </div>
+                  <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'var(--hc-border)' }} />
+                </>
+              )}
+
               {/* Aplicar margen (% sobre costo) a todos */}
               <div className="flex items-center gap-2">
                 <span className="text-xs font-medium whitespace-nowrap" style={{ color: 'var(--hc-muted)' }}>Margen sobre costo</span>
@@ -372,7 +425,9 @@ export default function AdminImportar() {
                 <select value={bodegaGlobal} onChange={e => setBodegaGlobal(e.target.value)}
                   className="text-xs px-2 py-1.5 rounded-lg outline-none"
                   style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
-                  {bodegas.length === 0 && <option value="">Sin bodegas</option>}
+                  {bodegas.length === 0 && (
+                    <option value="">{esAdminIT && !empresaSeleccionada ? 'Elegí una empresa primero' : 'Sin bodegas'}</option>
+                  )}
                   {bodegas.map(b => <option key={b.id} value={b.id}>{b.nombre ?? b.nombreBodega}</option>)}
                 </select>
               </div>

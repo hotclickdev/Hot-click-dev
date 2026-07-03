@@ -31,10 +31,16 @@ public class BodegaController {
 
     @Transactional(readOnly = true)
     @GetMapping
-    public ResponseEntity<ResponseDTO> listar() {
-        Long empresaId = companyScope.getCurrentEmpresaId();
-        var bodegas = empresaId != null
-            ? bodegaRepository.findByEmpresaIdOrNoEmpresaAndEstado(empresaId, Constants.ESTADO_ACTIVO)
+    public ResponseEntity<ResponseDTO> listar(@RequestParam(required = false) Long empresaId) {
+        Long scopeEmpresaId = companyScope.getCurrentEmpresaId();
+        // IT Admin no tiene empresa propia (scopeEmpresaId null) — puede pedir explícitamente
+        // las bodegas de una empresa puntual (ej. al elegir a quién asignar un import).
+        // Para cualquier otro rol el query param se ignora: siempre manda su propio scope.
+        Long efectivo = scopeEmpresaId != null
+            ? scopeEmpresaId
+            : (companyScope.isAdminIT() ? empresaId : null);
+        var bodegas = efectivo != null
+            ? bodegaRepository.findByEmpresaIdOrNoEmpresaAndEstado(efectivo, Constants.ESTADO_ACTIVO)
             : bodegaRepository.findByEstado(Constants.ESTADO_ACTIVO);
         var dtos = bodegas.stream().map(b -> {
             var m = new java.util.LinkedHashMap<String, Object>();
