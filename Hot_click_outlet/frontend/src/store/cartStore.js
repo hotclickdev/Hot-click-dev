@@ -55,7 +55,7 @@ const useCartStore = create(
       toWhatsAppMessage: () => {
         const { items, total } = get()
         const lines = items.map(
-          (i) => `  • ${i.nombre ?? i.nombreProducto} x${i.cantidad} — ₡${((i.precio ?? i.precioVenta ?? 0) * i.cantidad).toLocaleString('es-CR')}`
+          (i) => `  • ${i.nombre ?? i.nombreProducto}${i.tallaSeleccionada ? ` (Talla ${i.tallaSeleccionada})` : ''} x${i.cantidad} — ₡${((i.precio ?? i.precioVenta ?? 0) * i.cantidad).toLocaleString('es-CR')}`
         )
         return encodeURIComponent(
           `Hola Andrés! 👋 Me interesa hacer el siguiente pedido:\n\n` +

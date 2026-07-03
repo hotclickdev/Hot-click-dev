@@ -21,6 +21,13 @@ import OptimizedImage from '@/components/ui/OptimizedImage'
 import { getOptimizedUrl } from '@/utils/imageUtils'
 import AIProductSection from '@/components/ai/AIProductSection'
 
+// "talla" guarda las tallas disponibles como texto libre (ej. "37-38-39", "S,M,L") —
+// se parsea en opciones individuales para que el cliente pueda elegir la suya.
+function parseTallas(talla) {
+  if (!talla) return []
+  return talla.split(/[-,/]/).map((s) => s.trim()).filter(Boolean)
+}
+
 export default function ProductDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -39,6 +46,7 @@ export default function ProductDetailPage() {
   const [galeria, setGaleria] = useState([])
   const [activeImg, setActiveImg] = useState(0)
   const [variantes, setVariantes] = useState([])
+  const [tallaSeleccionada, setTallaSeleccionada] = useState(null)
   const addTimeout = useRef(null)
   const mainCTARef = useRef(null)
   const { toggle: toggleWishlist, isLiked } = useWishlistStore()
@@ -55,6 +63,7 @@ export default function ProductDetailPage() {
       .then(({ data }) => {
         const p = normalizeProduct(data)
         setProduct(p)
+        setTallaSeleccionada(parseTallas(p.talla)[0] ?? null)
         addRecentlyViewed(p)
         analytics.productView(p)
         if (p.especificaciones?.trim()) setActiveTab('especificaciones')
@@ -172,7 +181,7 @@ export default function ProductDetailPage() {
 
   const handleAdd = () => {
     if (!inStock || justAdded) return
-    addItem(normalizeProduct(product), quantity)
+    addItem({ ...normalizeProduct(product), tallaSeleccionada }, quantity)
     const qtyPrefix = quantity > 1 ? `${quantity}× ` : ''
     toast({
       message: t('product.added', { name: `${qtyPrefix}${product.nombre}` }),
@@ -365,6 +374,20 @@ export default function ProductDetailPage() {
                         title={v.colorVariante || v.nombreProducto} />
                     )
                   })}
+                </div>
+              )}
+              {parseTallas(product.talla).length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-[#8e8e9a]">{t('product.size', 'Talla')}:</span>
+                  {parseTallas(product.talla).map((tOpt) => (
+                    <button key={tOpt} type="button" onClick={() => setTallaSeleccionada(tOpt)}
+                      className="min-w-[2.25rem] h-9 px-2 rounded-lg border text-sm font-medium transition-colors"
+                      style={tallaSeleccionada === tOpt
+                        ? { backgroundColor: '#e8e8ed', color: '#0d0d12', borderColor: '#e8e8ed' }
+                        : { backgroundColor: 'transparent', color: '#e8e8ed', borderColor: 'rgba(255,255,255,0.2)' }}>
+                      {tOpt}
+                    </button>
+                  ))}
                 </div>
               )}
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-medium">
