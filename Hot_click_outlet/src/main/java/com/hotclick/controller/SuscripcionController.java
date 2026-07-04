@@ -41,7 +41,11 @@ public class SuscripcionController {
             m.put("id", p.getId());
             m.put("nombre", p.getNombre());
             m.put("descripcion", p.getDescripcion());
+            // precioMensual es un campo legado en colones que quedó en 0 para los 3 planes
+            // actuales (V89); el precio real que se cobra vía Stripe es precioUsd.
             m.put("precioMensual", p.getPrecioMensual());
+            m.put("precioUsd", p.getPrecioUsd());
+            m.put("comisionPorcentaje", p.getComisionPorcentaje());
             m.put("maxUsuarios", p.getMaxUsuarios());
             m.put("maxProductos", p.getMaxProductos());
             m.put("maxBodegas", p.getMaxBodegas());

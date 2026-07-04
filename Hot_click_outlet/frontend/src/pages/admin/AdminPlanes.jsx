@@ -24,8 +24,8 @@ function Feature({ ok, label }) {
 }
 
 function PlanCard({ plan, esCurrent, loading, onSelect }) {
-  const esEnterprise = plan.nombre === 'ENTERPRISE'
-  const esFree = plan.nombre === 'FREE'
+  const esEnterprise = plan.nombre === 'NEGOCIO_PLUS'
+  const esFree = plan.nombre === 'EMPRENDEDOR'
 
   return (
     <div
@@ -55,9 +55,9 @@ function PlanCard({ plan, esCurrent, loading, onSelect }) {
         <p className="text-xs font-semibold uppercase tracking-wider opacity-70">{plan.nombre}</p>
         <div className="flex items-end gap-1 mt-1">
           <span className="text-3xl font-bold">
-            {plan.precioMensual === 0 ? 'Gratis' : `$${(plan.precioMensual / 100).toFixed(0)}`}
+            {Number(plan.precioUsd) === 0 ? 'Gratis' : `$${Number(plan.precioUsd).toFixed(2)}`}
           </span>
-          {plan.precioMensual > 0 && (
+          {Number(plan.precioUsd) > 0 && (
             <span className="text-sm opacity-60 mb-1">/mes</span>
           )}
         </div>
