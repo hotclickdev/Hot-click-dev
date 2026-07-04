@@ -37,7 +37,7 @@ import java.util.*;
 import java.util.concurrent.CompletionException;
 
 /**
- * AI Copilot powered by Claude API.
+ * AI Copilot powered by NVIDIA NIM (OpenAI-compatible chat completions API).
  *
  * Uses Java 21 HttpClient — no external SDK required.
  * Streams the response via SSE to avoid connection timeouts.
@@ -54,14 +54,15 @@ public class AiCopilotService {
     private static final Logger log = LoggerFactory.getLogger(AiCopilotService.class);
     private static final int    HISTORY_TURNS      = 8;      // last N messages sent as context — bounds input tokens
     private static final int    MAX_RESPONSE_CHARS = 8_000;  // hard cap — stops runaway stream output loops
+    private static final String NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
     private static final HttpClient HTTP = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(15))
         .build();
 
-    @Value("${anthropic.api-key:}")
+    @Value("${nvidia.api-key:}")
     private String apiKey;
 
-    @Value("${anthropic.model:claude-haiku-4-5-20251001}")
+    @Value("${nvidia.model:meta/llama-3.3-70b-instruct}")
     private String model;
 
     @Autowired private AiMensajeRepository     aiMensajeRepository;
@@ -172,10 +173,10 @@ public class AiCopilotService {
 
     /**
      * Main streaming endpoint.
-     * Saves the user message, streams Claude's reply via SSE,
+     * Saves the user message, streams NVIDIA's reply via SSE,
      * then saves the assistant message and updates quota.
      */
-    @CircuitBreaker(name = "claude", fallbackMethod = "chatStreamFallback")
+    @CircuitBreaker(name = "nvidia", fallbackMethod = "chatStreamFallback")
     public void chatStream(Long empresaId, String userMessage, SseEmitter emitter) {
         // TenantContext sobrevive el salto a sseExecutor (TenantAwareTaskDecorator),
         // pero NO sobrevive al callback de HttpClient.sendAsync más abajo — ese corre
@@ -194,34 +195,36 @@ public class AiCopilotService {
 
         if (!isEnabled()) {
             // Mock mode for development
-            streamMock(emitter, "*(modo desarrollo — configura ANTHROPIC_API_KEY para respuestas reales)*\n\nHola, soy tu copilot de HOTCLICK. ¿En qué te puedo ayudar con tu negocio?");
+            streamMock(emitter, "*(modo desarrollo — configura NVIDIA_API_KEY para respuestas reales)*\n\nHola, soy tu copilot de HOTCLICK. ¿En qué te puedo ayudar con tu negocio?");
             saveMsg(empresa, "assistant", "Mock response", 0);
             return;
         }
 
         try {
-            // Build messages array for Claude
+            Intent intent = detectIntent(userMessage);
+
+            // Build messages array para NVIDIA (formato OpenAI chat completions)
             List<Map<String, Object>> messages = buildMessages(empresaId, userMessage);
-            String systemPrompt = buildSystemPrompt(empresaId, userMessage);
+            String systemPrompt = buildSystemPrompt(empresaId, intent);
             String requestBody  = buildRequestBody(systemPrompt, messages, tenantId);
 
             HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://api.anthropic.com/v1/messages"))
+                .uri(URI.create(NVIDIA_URL))
                 .timeout(Duration.ofSeconds(60))
                 .header("Content-Type", "application/json")
-                .header("x-api-key", apiKey)
-                .header("anthropic-version", "2023-06-01")
+                .header("Authorization", "Bearer " + apiKey)
+                .header("Accept", "text/event-stream")
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
                 .build();
 
             HTTP.sendAsync(request, HttpResponse.BodyHandlers.ofLines())
                 .thenAccept(response -> processStream(response, emitter, empresa, empresaId))
                 .exceptionally(ex -> {
-                    reportClaudeFailure(unwrap(ex), tenantId, emitter);
+                    reportNvidiaFailure(unwrap(ex), tenantId, emitter);
                     return null;
                 });
         } catch (IntegracionExternaException e) {
-            reportClaudeFailure(e, tenantId, emitter);
+            reportNvidiaFailure(e, tenantId, emitter);
         }
     }
 
@@ -239,7 +242,7 @@ public class AiCopilotService {
      * (lo que Grafana/Datadog scrapean) + un evento "error" explícito por SSE —
      * no el manejador @ExceptionHandler, que aquí es inalcanzable.
      */
-    private void reportClaudeFailure(Throwable cause, Long tenantId, SseEmitter emitter) {
+    private void reportNvidiaFailure(Throwable cause, Long tenantId, SseEmitter emitter) {
         IntegracionExternaException integrationEx;
         if (cause instanceof IntegracionExternaException iee) {
             integrationEx = iee;
@@ -253,7 +256,7 @@ public class AiCopilotService {
                 tipo = IntegracionExternaException.Tipo.DESCONOCIDO;
             }
             integrationEx = new IntegracionExternaException(
-                "claude-api", tipo, tenantId, "Fallo llamando a Claude API", cause);
+                "nvidia-api", tipo, tenantId, "Fallo llamando a NVIDIA API", cause);
         }
 
         log.error("[AI] tenantId={} integracion={} tipo={} msg={}",
@@ -266,9 +269,9 @@ public class AiCopilotService {
     private void chatStreamFallback(Long empresaId, String userMessage, SseEmitter emitter, Throwable t) {
         Long tenantId = TenantContext.get();
         IntegracionExternaException integrationEx = new IntegracionExternaException(
-            "claude-api", IntegracionExternaException.Tipo.RATE_LIMIT, tenantId,
-            "Circuit breaker abierto para Claude API", t);
-        log.error("[claude-circuit] OPEN tenantId={} msg={}", tenantId, integrationEx.getMessage(), integrationEx);
+            "nvidia-api", IntegracionExternaException.Tipo.RATE_LIMIT, tenantId,
+            "Circuit breaker abierto para NVIDIA API", t);
+        log.error("[nvidia-circuit] OPEN tenantId={} msg={}", tenantId, integrationEx.getMessage(), integrationEx);
         sendError(emitter, "El asistente AI no está disponible temporalmente. Intente en unos minutos.");
     }
 
@@ -286,32 +289,33 @@ public class AiCopilotService {
                     if ("[DONE]".equals(json)) return;
                     try {
                         JsonNode node = objectMapper.readTree(json);
-                        String type = node.path("type").asText();
 
-                        if ("content_block_delta".equals(type)) {
-                            String text = node.path("delta").path("text").asText();
-                            if (!text.isEmpty()) {
-                                // Hard cap: kill stream if response grows unreasonably large (loop guard)
-                                if (fullText.length() >= MAX_RESPONSE_CHARS) return;
-                                fullText.append(text);
-                                try {
-                                    emitter.send(SseEmitter.event().name("delta")
-                                        .data(objectMapper.writeValueAsString(Map.of("text", text))));
-                                } catch (IOException e) {
-                                    // Cliente cerró la pestaña/conexión a mitad del stream — esperado, no es
-                                    // un fallo de la integración con Claude. No se loguea como error.
-                                    log.debug("[AI] empresaId={} cliente desconectado durante stream: {}", empresaId, e.getMessage());
-                                }
+                        // El chunk final (stream_options.include_usage=true) trae "usage" con
+                        // choices vacío o ausente — se lee independiente del texto de este chunk.
+                        JsonNode usage = node.path("usage");
+                        if (usage.isObject()) {
+                            tokenCount[0] = usage.path("prompt_tokens").asInt(tokenCount[0]);
+                            tokenCount[1] = usage.path("completion_tokens").asInt(tokenCount[1]);
+                        }
+
+                        String text = node.path("choices").path(0).path("delta").path("content").asText("");
+                        if (!text.isEmpty()) {
+                            // Hard cap: kill stream if response grows unreasonably large (loop guard)
+                            if (fullText.length() >= MAX_RESPONSE_CHARS) return;
+                            fullText.append(text);
+                            try {
+                                emitter.send(SseEmitter.event().name("delta")
+                                    .data(objectMapper.writeValueAsString(Map.of("text", text))));
+                            } catch (IOException e) {
+                                // Cliente cerró la pestaña/conexión a mitad del stream — esperado, no es
+                                // un fallo de la integración con NVIDIA. No se loguea como error.
+                                log.debug("[AI] empresaId={} cliente desconectado durante stream: {}", empresaId, e.getMessage());
                             }
-                        } else if ("message_delta".equals(type)) {
-                            tokenCount[1] = node.path("usage").path("output_tokens").asInt(0);
-                        } else if ("message_start".equals(type)) {
-                            tokenCount[0] = node.path("message").path("usage").path("input_tokens").asInt(0);
                         }
                     } catch (JsonProcessingException e) {
-                        // Un chunk SSE individual de Claude vino malformado — se descarta ese chunk
-                        // y se sigue con el stream, pero queda visible si el payload de Claude cambió.
-                        log.warn("[AI] empresaId={} chunk SSE de Claude no se pudo parsear: {}", empresaId, e.getMessage());
+                        // Un chunk SSE individual de NVIDIA vino malformado — se descarta ese chunk
+                        // y se sigue con el stream, pero queda visible si el payload de NVIDIA cambió.
+                        log.warn("[AI] empresaId={} chunk SSE de NVIDIA no se pudo parsear: {}", empresaId, e.getMessage());
                     }
                 }
             });
@@ -324,7 +328,7 @@ public class AiCopilotService {
             aiQuotaService.actualizarTokens(empresaId, tokenCount[0], tokenCount[1]);
 
         } catch (IOException e) {
-            log.error("[AI] empresaId={} error de E/S procesando stream de Claude: {}", empresaId, e.getMessage(), e);
+            log.error("[AI] empresaId={} error de E/S procesando stream de NVIDIA: {}", empresaId, e.getMessage(), e);
             sendError(emitter, "Error procesando respuesta del AI");
         }
     }
@@ -373,8 +377,7 @@ public class AiCopilotService {
 
     // ── System prompt dinámico por intención ──────────────────────────────────
 
-    private String buildSystemPrompt(Long empresaId, String userMessage) {
-        Intent intent = detectIntent(userMessage);
+    private String buildSystemPrompt(Long empresaId, Intent intent) {
         String kpis   = getKpiContext(empresaId);
         String extra  = getDynamicData(empresaId, intent);
 
@@ -577,7 +580,7 @@ public class AiCopilotService {
 
     private String getPedidosPendientesData(Long empresaId) {
         // Solo nombre_usuario — el email es PII innecesaria para que el LLM
-        // aconseje sobre despachos y no debe salir hacia la API de Claude.
+        // aconseje sobre despachos y no debe salir hacia la API de NVIDIA.
         String sql = """
             SELECT p.id_pedido, p.estado_pedido, p.total_pedido, p.fecha_pedido,
                    u.nombre_usuario
@@ -633,19 +636,25 @@ public class AiCopilotService {
 
     private String buildRequestBody(String systemPrompt, List<Map<String, Object>> messages, Long tenantId) {
         try {
+            // Formato OpenAI chat completions: el system prompt va como mensaje, no como
+            // campo top-level separado (a diferencia de la Messages API de Claude).
+            List<Map<String, Object>> chatMessages = new ArrayList<>();
+            chatMessages.add(Map.of("role", "system", "content", systemPrompt));
+            chatMessages.addAll(messages);
+
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("model",      model);
             body.put("max_tokens", 1024);
             body.put("stream",     true);
-            body.put("system",     systemPrompt);
-            body.put("messages",   messages);
+            body.put("stream_options", Map.of("include_usage", true));
+            body.put("messages",   chatMessages);
             // Stop sequences prevent prompt injection: if a reply tries to impersonate
-            // "Human:" or "User:", Claude stops immediately instead of continuing the loop.
-            body.put("stop_sequences", List.of("\n\nHuman:", "\n\nUser:", "Human:", "User:"));
+            // "Human:" or "User:", NVIDIA stops immediately instead of continuing the loop.
+            body.put("stop", List.of("\n\nHuman:", "\n\nUser:", "Human:", "User:"));
             return objectMapper.writeValueAsString(body);
         } catch (JsonProcessingException e) {
-            throw new IntegracionExternaException("claude-api", IntegracionExternaException.Tipo.RESPUESTA_INVALIDA,
-                tenantId, "No se pudo serializar el request a Claude API", e);
+            throw new IntegracionExternaException("nvidia-api", IntegracionExternaException.Tipo.RESPUESTA_INVALIDA,
+                tenantId, "No se pudo serializar el request a NVIDIA API", e);
         }
     }
 

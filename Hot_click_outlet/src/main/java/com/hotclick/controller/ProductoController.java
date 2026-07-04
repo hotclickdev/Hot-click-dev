@@ -132,6 +132,7 @@ public class ProductoController {
                 .body(ResponseDTO.success("Carrusel obtenido", productoService.listarCarrusel()));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/carrusel")
     public ResponseEntity<ResponseDTO> toggleCarrusel(
             @PathVariable Long id,

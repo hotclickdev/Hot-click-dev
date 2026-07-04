@@ -21,6 +21,7 @@ import CategoriaSelect from '@/components/admin/CategoriaSelect'
 import MultiImagePicker from '@/components/ui/MultiImagePicker'
 import { useToast } from '@/components/ui/Toast'
 import { formatPrice, conditionLabel, conditionVariant } from '@/utils/format'
+import useAuthStore from '@/store/authStore'
 
 const EMPTY_FORM = {
   nombre: '', titulo: '', descripcion: '',
@@ -79,6 +80,8 @@ const ta = 'w-full px-4 py-3 rounded-xl text-sm resize-y transition-all focus:ou
 export default function AdminProducts() {
   const { t } = useTranslation()
   const toast = useToast()
+  const userRole = useAuthStore((s) => s.userRole)
+  const isAdmin = userRole === 'ADMIN'
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [bodegas, setBodegas] = useState([])
@@ -457,7 +460,8 @@ export default function AdminProducts() {
           </div>
         </div>
 
-        {/* ── Carrusel del inicio ── */}
+        {/* ── Carrusel del inicio — solo ADMIN ── */}
+        {isAdmin && (
         <div className="rounded-2xl border border-white/8 overflow-hidden" style={{ background: 'var(--hc-surface)' }}>
           <button
             onClick={() => setCarruselOpen((o) => !o)}
@@ -539,6 +543,7 @@ export default function AdminProducts() {
             </div>
           )}
         </div>
+        )}
 
         {/* Mobile: búsqueda + filtros rápidos */}
         <div className="md:hidden space-y-2">
@@ -675,7 +680,7 @@ export default function AdminProducts() {
                   <table className="w-full min-w-[900px] text-sm">
                     <thead>
                       <tr className="border-b border-white/8">
-                        {['★', 'Pos.', 'ID', t('admin.products.name'), t('admin.products.price'), t('admin.products.stock'), 'SKU / Barcode', t('admin.products.category'), 'SEO', t('admin.products.actions')].map((h) => (
+                        {['★', ...(isAdmin ? ['Pos.'] : []), 'ID', t('admin.products.name'), t('admin.products.price'), t('admin.products.stock'), 'SKU / Barcode', t('admin.products.category'), 'SEO', t('admin.products.actions')].map((h) => (
                           <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">{h}</th>
                         ))}
                       </tr>
@@ -696,6 +701,7 @@ export default function AdminProducts() {
                               <StarIcon filled={p.destacado} />
                             </button>
                           </td>
+                          {isAdmin && (
                           <td className="px-4 py-3">
                             <button
                               onClick={() => handleToggleCarrusel(p)}
@@ -717,6 +723,7 @@ export default function AdminProducts() {
                               )}
                             </button>
                           </td>
+                          )}
                           <td className="px-4 py-3 text-[#8e8e9a] text-xs">#{p.id}</td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">

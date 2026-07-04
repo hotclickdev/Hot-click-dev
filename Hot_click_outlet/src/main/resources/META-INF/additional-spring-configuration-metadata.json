@@ -23,12 +23,22 @@
     {
       "name": "anthropic.api-key",
       "type": "java.lang.String",
-      "description": "Anthropic Claude API key (sk-ant-...). Vacío = AI Copilot deshabilitado."
+      "description": "Anthropic Claude API key (sk-ant-...). Usado por generación de descripciones, import de catálogo y RAG (no el AI Copilot)."
     },
     {
       "name": "anthropic.model",
       "type": "java.lang.String",
-      "description": "Claude model ID a usar en el copilot. Default: claude-haiku-4-5-20251001."
+      "description": "Claude model ID para esos servicios. Default: claude-haiku-4-5-20251001."
+    },
+    {
+      "name": "nvidia.api-key",
+      "type": "java.lang.String",
+      "description": "NVIDIA NIM API key (integrate.api.nvidia.com). Vacío = AI Copilot deshabilitado."
+    },
+    {
+      "name": "nvidia.model",
+      "type": "java.lang.String",
+      "description": "Modelo NVIDIA para el AI Copilot. Default: meta/llama-3.3-70b-instruct."
     },
     {
       "name": "whatsapp.phone-id",
