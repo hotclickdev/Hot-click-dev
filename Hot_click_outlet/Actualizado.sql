@@ -3140,3 +3140,8 @@ ALTER TABLE hot_click_producto_tb ADD COLUMN IF NOT EXISTS grupo_variante_id VAR
 ALTER TABLE hot_click_producto_tb ADD COLUMN IF NOT EXISTS color_variante VARCHAR(50);
 
 CREATE INDEX IF NOT EXISTS idx_producto_grupo_variante ON hot_click_producto_tb(grupo_variante_id) WHERE grupo_variante_id IS NOT NULL;
+
+-- V94: las categorías pasan a ser gestión exclusiva de ADMIN. Las que crea ADMIN
+-- quedan globales (fk_id_empresa = NULL) para que las vea y use todo negocio.
+ALTER TABLE hot_click_categoria_tb
+    ALTER COLUMN fk_id_empresa DROP NOT NULL;
