@@ -56,7 +56,11 @@ public class PedidoController {
         }
     }
 
-    @Transactional(readOnly = true)
+    // noRollbackFor: si el pedido no existe, buscarPorId lanza RecursoNoEncontradoException.
+    // Sin esto, la excepción marca la transacción readOnly como rollback-only y, aunque el
+    // catch devuelva 404, el commit falla con UnexpectedRollbackException → 500 en vez de 404.
+    @Transactional(readOnly = true,
+        noRollbackFor = com.hotclick.exception.RecursoNoEncontradoException.class)
     @GetMapping("/{id}")
     public ResponseEntity<ResponseDTO> obtenerPedido(@PathVariable Long id, HttpServletRequest request) {
         try {

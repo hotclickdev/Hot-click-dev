@@ -121,6 +121,7 @@ const AdminMultipais            = lazy(() => import('@/pages/admin/AdminMultipai
 // const SelfCheckoutPage          = lazy(() => import('@/pages/SelfCheckoutPage'))  // futuro (QR mesas)
 const POSPagoPage               = lazy(() => import('@/pages/pos/POSPagoPage'))
 const RegistrarNegocioPage      = lazy(() => import('@/pages/RegistrarNegocioPage'))
+const RegistroEmpresaPage       = lazy(() => import('@/pages/RegistroEmpresaPage'))
 
 // ── Tienda pública por slug (/tienda/{slug}/...) ─────────────────────────────
 const TiendaLayout       = lazy(() => import('@/pages/tienda/TiendaLayout'))
@@ -381,6 +382,7 @@ export default function App() {
                   <Route path="/registro" element={<RegisterPage />} />
                 </>
               )}
+              <Route path="/registro-empresa" element={<RegistroEmpresaPage />} />
               <Route path="/registrar-negocio" element={<ProtectedRoute><RegistrarNegocioPage /></ProtectedRoute>} />
               <Route path="/mode-select" element={<ModeSelector />} />
               <Route path="/seleccionar-negocio" element={<EmpresaSelectionPage />} />

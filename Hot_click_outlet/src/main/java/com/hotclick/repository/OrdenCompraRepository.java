@@ -9,13 +9,16 @@ import java.util.Optional;
 
 public interface OrdenCompraRepository extends JpaRepository<OrdenCompra, Long> {
 
+    // No se hace fetch de u.roles junto con o.items: Hibernate no permite traer
+    // dos colecciones tipo bag (List) en la misma consulta → MultipleBagFetchException.
+    // La usuario se trae por su id/nombre; sus roles no se necesitan para la orden.
     @Query("SELECT o FROM OrdenCompra o LEFT JOIN FETCH o.items i LEFT JOIN FETCH i.producto " +
-           "LEFT JOIN FETCH o.proveedor LEFT JOIN FETCH o.usuario u LEFT JOIN FETCH u.roles " +
+           "LEFT JOIN FETCH o.proveedor LEFT JOIN FETCH o.usuario u " +
            "WHERE o.empresa.id = :empresaId ORDER BY o.fechaOrden DESC")
     List<OrdenCompra> findByEmpresaIdConDetalles(@Param("empresaId") Long empresaId);
 
     @Query("SELECT o FROM OrdenCompra o LEFT JOIN FETCH o.items i LEFT JOIN FETCH i.producto " +
-           "LEFT JOIN FETCH o.proveedor LEFT JOIN FETCH o.usuario u LEFT JOIN FETCH u.roles WHERE o.id = :id")
+           "LEFT JOIN FETCH o.proveedor LEFT JOIN FETCH o.usuario u WHERE o.id = :id")
     Optional<OrdenCompra> findByIdConDetalles(@Param("id") Long id);
 
     /** Total de compras a proveedor RECIBIDAS en el período — para contraste de COGS en reportes. */

@@ -75,7 +75,7 @@ public class CustomErrorController implements ErrorController {
             <body>
               <div class="card">
                 <div class="icon">🔍</div>
-                <h1>%s</h1>
+                <h1>__ERROR_MESSAGE__</h1>
                 <p>La página que buscás no existe o no está disponible.</p>
                 <a href="javascript:history.back()">
                   <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -86,6 +86,6 @@ public class CustomErrorController implements ErrorController {
               </div>
             </body>
             </html>
-            """.formatted(message);
+            """.replace("__ERROR_MESSAGE__", message);
     }
 }

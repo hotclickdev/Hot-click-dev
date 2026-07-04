@@ -75,6 +75,9 @@ public class CrmController {
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','CAJERO')")
     @Transactional
     public ResponseEntity<?> crear(@RequestBody Map<String, String> body) {
+        // El CRM es una feature de plan: crear clientes debe estar bloqueado igual que
+        // actualizar/ajustar puntos, no solo esas operaciones (antes crear quedaba abierto).
+        if (sinAccesoCrm()) return ResponseEntity.status(403).body(ResponseDTO.error(MSG_REQUIERE_CRM));
         String nombre   = body.get("nombre");
         String telefono = body.get("telefono");
         String correo   = body.get("correo");

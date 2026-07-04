@@ -119,6 +119,7 @@ public class SpaController {
         "/sso-complete",
         "/mode-select",
         "/registro",
+        "/registro-empresa",
         "/perfil",
         "/checkout",
         "/mis-pedidos",

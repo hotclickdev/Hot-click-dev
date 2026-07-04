@@ -166,7 +166,9 @@ public class EmpresaPerfilController {
         if (body.containsKey("logoUrl"))          e.setLogoUrl(body.get("logoUrl"));
 
         empresaRepository.save(e);
-        return ResponseEntity.ok(ResponseDTO.success("Perfil actualizado", e));
+        // Devolver toSafeMap y no la entidad cruda: serializar Empresa directamente
+        // arrastra el proxy lazy de plan (Plan) fuera de sesión → HttpMessageNotWritable → 500.
+        return ResponseEntity.ok(ResponseDTO.success("Perfil actualizado", toSafeMap(e)));
     }
 
     /** Emprendedor puede pausar/activar la visibilidad pública de su tienda */
