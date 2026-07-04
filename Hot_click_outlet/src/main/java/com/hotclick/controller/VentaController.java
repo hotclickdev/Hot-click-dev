@@ -48,7 +48,8 @@ public class VentaController {
             @RequestBody VentaRequestDTO dto,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            Pedido nuevo = ventaService.crearVenta(dto, userDetails.getUsername());
+            Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
+            Pedido nuevo = ventaService.crearVenta(dto, userDetails.getUsername(), empresaId);
             return ResponseEntity.ok(ResponseDTO.success("Venta creada exitosamente", nuevo.getId()));
         } catch (StockInsuficienteException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));

@@ -36,6 +36,9 @@ export default function AccessibilityPanel() {
   } = useUiStore()
 
   if (pathname.startsWith('/checkout') || pathname.startsWith('/pago')) return null
+  // El widget es para clientes de la tienda (idioma, tamaño de letra, filtros de color);
+  // en el panel admin flotaba encima de botones y texto de las herramientas internas.
+  if (pathname.startsWith('/admin')) return null
   if (chatOpen) return null
 
   const isDark = theme === 'dark'

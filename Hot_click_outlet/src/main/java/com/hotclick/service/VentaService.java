@@ -30,6 +30,7 @@ public class VentaService {
     @Autowired private UsuarioRepository           usuarioRepository;
     @Autowired private CarritoRepository           carritoRepository;
     @Autowired private MovimientoStockRepository   movimientoStockRepository;
+    @Autowired private EmpresaRepository           empresaRepository;
 
     /**
      * Crea una venta validando y descontando stock con bloqueo pesimista (SELECT FOR UPDATE).
@@ -38,16 +39,22 @@ public class VentaService {
      * y lo marca como CONVERTIDO — todo dentro de la misma transacción.
      */
     @Transactional
-    public Pedido crearVenta(VentaRequestDTO dto, String correoOperador) {
+    public Pedido crearVenta(VentaRequestDTO dto, String correoOperador, Long empresaId) {
         if (dto.getItems() == null || dto.getItems().isEmpty()) {
             throw new IllegalArgumentException("Debe agregar al menos un producto");
         }
+        if (empresaId == null) {
+            throw new IllegalStateException("No se pudo determinar la empresa del usuario actual");
+        }
+        Empresa empresa = empresaRepository.findById(empresaId)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Empresa no encontrada: id=" + empresaId));
 
         boolean desdeCarrito = dto.getCarritoId() != null;
         Usuario usuario      = resolverUsuario(dto, correoOperador);
-        Bodega  bodega       = resolverBodega(dto);
+        Bodega  bodega       = resolverBodega(dto, empresaId);
 
         Pedido pedido = new Pedido();
+        pedido.setEmpresa(empresa);
         pedido.setUsuarioFinal(usuario);
         pedido.setBodega(bodega);
         pedido.setMetodoPago(dto.getMetodoPago() != null ? dto.getMetodoPago() : "EFECTIVO");
@@ -187,14 +194,22 @@ public class VentaService {
         return Constants.ENVIO_RETIRO;
     }
 
-    private Bodega resolverBodega(VentaRequestDTO dto) {
+    private Bodega resolverBodega(VentaRequestDTO dto, Long empresaId) {
         if (dto.getBodegaId() != null) {
-            return bodegaRepository.findById(dto.getBodegaId())
+            Bodega bodega = bodegaRepository.findById(dto.getBodegaId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Bodega no encontrada: id=" + dto.getBodegaId()));
+            // Evita que una empresa registre una venta contra la bodega de otra empresa.
+            if (bodega.getEmpresa() != null && !empresaId.equals(bodega.getEmpresa().getId())) {
+                throw new IllegalArgumentException("La bodega indicada no pertenece a tu empresa");
+            }
+            return bodega;
         }
-        List<Bodega> bodegas = bodegaRepository.findByEstado(Constants.ESTADO_ACTIVO);
+        // Antes caía a la PRIMERA bodega activa de TODO el sistema (fuga entre empresas).
+        // Ahora se limita a las bodegas de la empresa actual.
+        List<Bodega> bodegas = bodegaRepository
+            .findByEmpresaIdAndEstadoOrderByFechaCreacionAsc(empresaId, Constants.ESTADO_ACTIVO);
         if (bodegas.isEmpty()) {
-            throw new IllegalStateException("No hay bodegas activas configuradas en el sistema");
+            throw new IllegalStateException("No tenés bodegas activas configuradas. Creá una bodega antes de registrar una venta.");
         }
         return bodegas.get(0);
     }
