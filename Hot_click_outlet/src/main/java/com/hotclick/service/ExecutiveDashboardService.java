@@ -36,6 +36,9 @@ public class ExecutiveDashboardService {
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private ReporteRepository reporteRepository;
 
+    // getEmpresaInfo() resuelve e.getPlan().getNombre() (relación LAZY); con
+    // open-in-view=false hace falta una transacción activa para inicializar el proxy.
+    @Transactional(readOnly = true)
     public Map<String, Object> getDashboard(Long empresaId) {
         LocalDate hoy   = LocalDate.now(Constants.ZONA_CR);
         LocalDate mes1  = hoy.withDayOfMonth(1);

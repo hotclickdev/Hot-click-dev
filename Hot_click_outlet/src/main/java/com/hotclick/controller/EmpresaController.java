@@ -14,6 +14,7 @@ import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -33,6 +34,9 @@ public class EmpresaController {
     @Autowired private PlanRepository           planRepository;
     @Autowired private CompanyScope             companyScope;
 
+    // @Transactional: toMap() ahora resuelve e.getPlan().getNombre() (relación LAZY);
+    // con open-in-view=false, sin transacción activa esto lanza LazyInitializationException.
+    @Transactional(readOnly = true)
     @GetMapping
     public ResponseDTO listar(@RequestParam(defaultValue = "0") int page,
                                @RequestParam(defaultValue = "100") int size) {
@@ -44,6 +48,7 @@ public class EmpresaController {
     // companyScope.assertCanAccess(id) es no-op para ADMIN (rol único permitido
     // por SecurityConfig en esta ruta) y bloquea con 403 cualquier otro rol que
     // llegara a tener acceso al endpoint por un cambio futuro de configuración.
+    @Transactional(readOnly = true)
     @GetMapping("/{id}")
     public ResponseEntity<ResponseDTO> detalle(@PathVariable Long id) {
         companyScope.assertCanAccess(id);

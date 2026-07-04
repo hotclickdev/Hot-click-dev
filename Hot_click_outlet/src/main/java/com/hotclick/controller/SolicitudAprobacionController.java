@@ -14,6 +14,7 @@ import com.hotclick.security.CompanyScope;
 import com.hotclick.service.NotificacionEmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -33,6 +34,9 @@ public class SolicitudAprobacionController {
     @Autowired private NotificacionEmailService notificacionEmailService;
     @Autowired private CompanyScope             companyScope;
 
+    // toMap() resuelve e.getPlan().getNombre() (relación LAZY); con open-in-view=false
+    // hace falta una transacción activa para que el proxy se pueda inicializar.
+    @Transactional(readOnly = true)
     @GetMapping
     public ResponseDTO listar() {
         List<Empresa> pendientes = empresaRepository
