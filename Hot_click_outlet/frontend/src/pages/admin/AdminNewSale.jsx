@@ -208,24 +208,66 @@ export default function AdminNewSale() {
     } finally { setSaving(false) }
   }
 
-  const handleCotizacion = () => {
-    if (items.length === 0) { toast({ message: 'Agrega al menos un producto', type: 'error' }); return }
+  const buildCotizacionTemplates = () => {
     const lines = items.map((i) => `• ${i.nombre} ×${i.cantidad} — ${formatPrice(i.precio * i.cantidad)}`)
-    let header = 'Hola HotClick, solicito una *cotización formal*'
-    if (cotNombre) header += ` para *${cotNombre}*`
-    if (cotTelefono) header += ` (${cotTelefono})`
-    const body = [
-      header + ':',
-      '',
-      ...lines,
+    const quien = cotNombre ? ` para *${cotNombre}*` : ''
+    const tel = cotTelefono ? ` (${cotTelefono})` : ''
+    const totales = [
       '',
       `Subtotal: ${formatPrice(subtotal)}`,
+      ...(envioNum > 0 ? [`Envío: ${formatPrice(envioNum)}`] : []),
+      `*Total estimado: ${formatPrice(total)}*`,
+      ...(cotNota ? ['', `Nota: ${cotNota}`] : []),
     ]
-    if (envioNum > 0) body.push(`Envío: ${formatPrice(envioNum)}`)
-    body.push(`*Total estimado: ${formatPrice(total)}*`)
-    if (cotNota) body.push('', `Nota: ${cotNota}`)
-    body.push('', '¿Pueden confirmar disponibilidad, tiempo de entrega y métodos de pago? Gracias.')
-    globalThis.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(body.join('\n'))}`, '_blank')
+
+    const formal = [
+      `Hola HotClick, solicito una *cotización formal*${quien}${tel}:`,
+      '', ...lines, ...totales,
+      '', '¿Pueden confirmar disponibilidad, tiempo de entrega y métodos de pago? Gracias.',
+    ].join('\n')
+
+    const breve = [
+      `Hola, quiero cotizar${quien}${tel}:`,
+      '', ...lines, ...totales,
+      '', '¿Disponible? Gracias.',
+    ].join('\n')
+
+    const urgencia = [
+      `Hola HotClick, necesito esta cotización con *urgencia*${quien}${tel}:`,
+      '', ...lines, ...totales,
+      '', '¿Me pueden confirmar disponibilidad hoy mismo? Es para entrega pronta. Gracias.',
+    ].join('\n')
+
+    const personalizada = [
+      `Hola HotClick${quien}${tel}, `,
+      '', ...lines, ...totales,
+    ].join('\n')
+
+    return { formal, breve, urgencia, personalizada }
+  }
+
+  const [waPreviewOpen, setWaPreviewOpen] = useState(false)
+  const [waTab, setWaTab] = useState('formal')
+  const [waTexts, setWaTexts] = useState(null)
+
+  const WA_TABS = [
+    { key: 'formal',        label: 'Formal' },
+    { key: 'breve',         label: 'Breve' },
+    { key: 'urgencia',      label: 'Con urgencia' },
+    { key: 'personalizada', label: 'Personalizada' },
+  ]
+
+  const openCotizacionPreview = () => {
+    if (items.length === 0) { toast({ message: 'Agrega al menos un producto', type: 'error' }); return }
+    setWaTexts(buildCotizacionTemplates())
+    setWaTab('formal')
+    setWaPreviewOpen(true)
+  }
+
+  const enviarCotizacionWhatsapp = () => {
+    const texto = waTexts?.[waTab] ?? ''
+    globalThis.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(texto)}`, '_blank')
+    setWaPreviewOpen(false)
   }
 
   if (loading) return <><div className="flex justify-center py-20"><Spinner size="lg" /></div></>
@@ -594,7 +636,7 @@ export default function AdminNewSale() {
                 size="lg"
                 className="w-full bg-[#25D366] hover:bg-[#1da851] shadow-[0_0_20px_rgba(37,211,102,0.25)]"
                 disabled={items.length === 0}
-                onClick={handleCotizacion}
+                onClick={openCotizacionPreview}
               >
                 <WhatsAppIcon />
                 Enviar Cotización por WhatsApp
@@ -603,6 +645,52 @@ export default function AdminNewSale() {
           </div>
         </div>
       </div>
+
+      {waPreviewOpen && waTexts && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
+          <div className="w-full max-w-lg rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+            <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--hc-border)' }}>
+              <h3 className="font-bold text-[15px]" style={{ color: 'var(--hc-text)' }}>Previsualizar mensaje</h3>
+              <button onClick={() => setWaPreviewOpen(false)} className="p-1.5 rounded-lg hover:opacity-70" style={{ color: 'var(--hc-muted)' }}>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <div className="p-5 space-y-3">
+              <div className="flex gap-1.5 flex-wrap">
+                {WA_TABS.map((tabDef) => (
+                  <button
+                    key={tabDef.key}
+                    onClick={() => setWaTab(tabDef.key)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                    style={{
+                      backgroundColor: waTab === tabDef.key ? '#25D366' : 'var(--hc-surface-2)',
+                      color: waTab === tabDef.key ? '#fff' : 'var(--hc-muted)',
+                    }}
+                  >
+                    {tabDef.label}
+                  </button>
+                ))}
+              </div>
+              <textarea
+                value={waTexts[waTab]}
+                onChange={(e) => setWaTexts((prev) => ({ ...prev, [waTab]: e.target.value }))}
+                rows={10}
+                className="w-full rounded-xl p-3 text-sm resize-none outline-none"
+                style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
+              />
+              <Button
+                type="button"
+                size="lg"
+                className="w-full bg-[#25D366] hover:bg-[#1da851]"
+                onClick={enviarCotizacionWhatsapp}
+              >
+                <WhatsAppIcon />
+                Enviar por WhatsApp
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
