@@ -167,6 +167,7 @@ public class SolicitudAprobacionController {
         m.put("slug",            e.getSlug());
         m.put("correoEmpresa",   e.getCorreoEmpresa());
         m.put("telefonoEmpresa", e.getTelefonoEmpresa());
+        m.put("plan",            e.getPlan() != null ? e.getPlan().getNombre() : e.getPlanSaas());
         m.put("planSaas",        e.getPlanSaas());
         m.put("estadoEmpresa",   e.getEstadoEmpresa());
         m.put("fechaRegistro",   e.getFechaRegistro());

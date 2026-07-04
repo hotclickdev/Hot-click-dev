@@ -2,9 +2,11 @@ package com.hotclick.controller;
 
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Empresa;
+import com.hotclick.model.Plan;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.MiembroEmpresaRepository;
 import com.hotclick.repository.PedidoRepository;
+import com.hotclick.repository.PlanRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.security.CompanyScope;
@@ -28,6 +30,7 @@ public class EmpresaController {
     @Autowired private ProductoRepository       productoRepository;
     @Autowired private PedidoRepository         pedidoRepository;
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
+    @Autowired private PlanRepository           planRepository;
     @Autowired private CompanyScope             companyScope;
 
     @GetMapping
@@ -70,19 +73,26 @@ public class EmpresaController {
         return ResponseEntity.ok(ResponseDTO.success("Estado actualizado", null));
     }
 
+    // Nombres reales de Plan (hot_click_plan_tb) — ver V89__restructura_roles_planes.sql.
+    // El campo legado planSaas (GRATUITO/BASICO/PRO/ENTERPRISE) ya no controla nada:
+    // las features (POS, CRM, Compras, IA, límites) se resuelven contra empresa.plan (fk_id_plan).
+    private static final List<String> PLANES_VALIDOS = List.of("EMPRENDEDOR", "PYME", "NEGOCIO_PLUS");
+
     @PutMapping("/{id}/plan")
     public ResponseEntity<ResponseDTO> cambiarPlan(@PathVariable Long id,
                                                    @RequestBody Map<String, String> body) {
         companyScope.assertCanAccess(id);
         Optional<Empresa> opt = empresaRepository.findById(id);
         if (opt.isEmpty()) return ResponseEntity.status(404).body(ResponseDTO.error("Empresa no encontrada"));
-        String plan = body.get("planSaas");
-        if (plan == null || !List.of("GRATUITO", "BASICO", "PRO", "ENTERPRISE").contains(plan))
-            return ResponseEntity.badRequest().body(ResponseDTO.error("Plan inválido"));
+        String nombrePlan = body.get("plan");
+        if (nombrePlan == null || !PLANES_VALIDOS.contains(nombrePlan))
+            return ResponseEntity.badRequest().body(ResponseDTO.error("Plan inválido. Valores permitidos: " + PLANES_VALIDOS));
+        Plan plan = planRepository.findByNombre(nombrePlan)
+            .orElseThrow(() -> new IllegalStateException("Plan " + nombrePlan + " no configurado en hot_click_plan_tb"));
         Empresa empresa = opt.get();
-        empresa.setPlanSaas(plan);
+        empresa.setPlan(plan);
         empresaRepository.save(empresa);
-        return ResponseEntity.ok(ResponseDTO.success("Plan actualizado a " + plan, null));
+        return ResponseEntity.ok(ResponseDTO.success("Plan actualizado a " + nombrePlan, null));
     }
 
     @PutMapping("/{id}/visibilidad")
@@ -171,6 +181,9 @@ public class EmpresaController {
         m.put("slug",              e.getSlug());
         m.put("correoEmpresa",     e.getCorreoEmpresa());
         m.put("telefonoEmpresa",   e.getTelefonoEmpresa());
+        // "plan" es el nombre real que gatilla features (fk_id_plan); planSaas queda
+        // solo por compatibilidad con lectores legacy y no debe usarse para mostrar el plan.
+        m.put("plan",              e.getPlan() != null ? e.getPlan().getNombre() : null);
         m.put("planSaas",          e.getPlanSaas());
         m.put("estadoEmpresa",     e.getEstadoEmpresa());
         m.put("visibilidadPublica", Boolean.TRUE.equals(e.getVisibilidadPublica()));

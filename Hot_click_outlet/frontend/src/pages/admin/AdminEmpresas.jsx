@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback } from 'react'
 import api from '@/services/api'
 import { useToast } from '@/components/ui/Toast'
 
-const PLANES = ['GRATUITO', 'BASICO', 'PRO', 'ENTERPRISE']
+const PLANES = ['EMPRENDEDOR', 'PYME', 'NEGOCIO_PLUS']
 const ESTADOS = ['ACTIVO', 'SUSPENDIDO', 'INACTIVO']
-const PLANES_PRO = new Set(['PRO', 'ENTERPRISE'])
+const PLANES_PRO = new Set(['PYME', 'NEGOCIO_PLUS'])
 
 const ESTADO_LABEL_USUARIO = { 1: 'Activo', 2: 'Inactivo', 3: 'Eliminado', 4: 'Suspendido' }
 const ESTADO_COLOR_USUARIO = {
@@ -51,10 +51,9 @@ function TabEmpty({ text }) {
 }
 
 const PLAN_COLOR = {
-  GRATUITO:   'bg-gray-500/15 text-gray-400',
-  BASICO:     'bg-blue-500/15 text-blue-400',
-  PRO:        'bg-[var(--hc-blue-500)]/15 text-[var(--hc-blue-400)]',
-  ENTERPRISE: 'bg-amber-500/15 text-amber-400',
+  EMPRENDEDOR:  'bg-gray-500/15 text-gray-400',
+  PYME:         'bg-[var(--hc-blue-500)]/15 text-[var(--hc-blue-400)]',
+  NEGOCIO_PLUS: 'bg-amber-500/15 text-amber-400',
 }
 const ESTADO_COLOR = {
   ACTIVO:    'bg-green-500/15 text-green-400',
@@ -151,13 +150,13 @@ export default function AdminEmpresas() {
     }
   }
 
-  async function cambiarPlan(id, planSaas) {
+  async function cambiarPlan(id, plan) {
     setSaving(true)
     try {
-      await api.put(`/admin/empresas/${id}/plan`, { planSaas })
-      toast({ message: `Plan actualizado a ${planSaas}`, type: 'success' })
+      await api.put(`/admin/empresas/${id}/plan`, { plan })
+      toast({ message: `Plan actualizado a ${plan}`, type: 'success' })
       cargar()
-      if (selected?.id === id) setSelected(s => ({ ...s, planSaas }))
+      if (selected?.id === id) setSelected(s => ({ ...s, plan }))
     } catch {
       toast({ message: 'Error al actualizar plan', type: 'error' })
     } finally {
@@ -183,7 +182,7 @@ export default function AdminEmpresas() {
     const q = search.toLowerCase()
     const matchQ = !q || e.nombreEmpresa?.toLowerCase().includes(q) || e.slug?.toLowerCase().includes(q) || e.correoEmpresa?.toLowerCase().includes(q)
     const matchE = filtroEstado === 'ALL' || e.estadoEmpresa === filtroEstado
-    const matchP = filtroPlan   === 'ALL' || e.planSaas     === filtroPlan
+    const matchP = filtroPlan   === 'ALL' || e.plan         === filtroPlan
     return matchQ && matchE && matchP
   })
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
@@ -193,7 +192,7 @@ export default function AdminEmpresas() {
     total:     empresas.length,
     activas:   empresas.filter(e => e.estadoEmpresa === 'ACTIVO').length,
     suspendidas: empresas.filter(e => e.estadoEmpresa === 'SUSPENDIDO').length,
-    pro:       empresas.filter(e => PLANES_PRO.has(e.planSaas)).length,
+    pro:       empresas.filter(e => PLANES_PRO.has(e.plan)).length,
   }
 
   return (
@@ -276,9 +275,9 @@ export default function AdminEmpresas() {
                     <td className="px-4 py-3">
                       <span
                         title="Modificar desde Ver detalle"
-                        className={`text-xs font-semibold px-2 py-1 rounded-full cursor-default select-none ${PLAN_COLOR[emp.planSaas] ?? ''}`}
+                        className={`text-xs font-semibold px-2 py-1 rounded-full cursor-default select-none ${PLAN_COLOR[emp.plan] ?? ''}`}
                       >
-                        {emp.planSaas}
+                        {emp.plan || 'Sin plan'}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -383,7 +382,7 @@ export default function AdminEmpresas() {
                   </h2>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <span className="font-mono text-xs" style={{ color: 'var(--hc-muted)' }}>{selected.slug}</span>
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${PLAN_COLOR[selected.planSaas]}`}>{selected.planSaas}</span>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${PLAN_COLOR[selected.plan] ?? ''}`}>{selected.plan || 'Sin plan'}</span>
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${ESTADO_COLOR[selected.estadoEmpresa] ?? ''}`}>{selected.estadoEmpresa}</span>
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${selected.visibilidadPublica ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'}`}>
                       {selected.visibilidadPublica ? '👁 Visible' : '🙈 Oculto'}
@@ -465,8 +464,8 @@ export default function AdminEmpresas() {
                     <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>Cambiar plan</p>
                     <div className="flex flex-wrap gap-2">
                       {PLANES.map(p => (
-                        <button key={p} onClick={() => cambiarPlan(selected.id, p)} disabled={saving || selected.planSaas === p}
-                          className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-opacity disabled:opacity-40 ${selected.planSaas === p ? 'ring-2 ring-offset-1 ring-[var(--hc-accent)]' : ''} ${PLAN_COLOR[p]}`}>
+                        <button key={p} onClick={() => cambiarPlan(selected.id, p)} disabled={saving || selected.plan === p}
+                          className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-opacity disabled:opacity-40 ${selected.plan === p ? 'ring-2 ring-offset-1 ring-[var(--hc-accent)]' : ''} ${PLAN_COLOR[p]}`}>
                           {p}
                         </button>
                       ))}

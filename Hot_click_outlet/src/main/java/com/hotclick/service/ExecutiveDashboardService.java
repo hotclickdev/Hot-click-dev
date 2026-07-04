@@ -150,7 +150,7 @@ public class ExecutiveDashboardService {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("nombre",  e.getNombreComercial() != null ? e.getNombreComercial() : e.getNombreEmpresa());
             m.put("logo",    e.getLogoUrl());
-            m.put("plan",    e.getPlanSaas());
+            m.put("plan",    e.getPlan() != null ? e.getPlan().getNombre() : e.getPlanSaas());
             return m;
         }).orElse(Map.of());
     }
