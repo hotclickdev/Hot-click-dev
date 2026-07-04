@@ -411,7 +411,6 @@ export default function App() {
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/productos" element={<AdminProducts />} />
                 <Route path="/admin/pedidos" element={<AdminOrders />} />
-                <Route path="/admin/categorias" element={<AdminCategories />} />
                 <Route path="/admin/bodegas" element={<AdminWarehouses />} />
                 <Route path="/admin/ventas" element={<AdminNewSale />} />
                 <Route path="/admin/clientes" element={<AdminClientes />} />
@@ -433,6 +432,7 @@ export default function App() {
                 <Route path="/admin/mi-empresa" element={<AdminMiEmpresa />} />
                 {/* Solo ADMIN (superadmin de la plataforma) — no son por-empresa */}
                 <Route element={<ITOnlyGuard />}>
+                  <Route path="/admin/categorias" element={<AdminCategories />} />
                   <Route path="/admin/usuarios" element={<AdminUsers />} />
                   <Route path="/admin/pagos" element={<AdminPagos />} />
                   <Route path="/admin/servicios" element={<AdminSolicitudesServicio />} />

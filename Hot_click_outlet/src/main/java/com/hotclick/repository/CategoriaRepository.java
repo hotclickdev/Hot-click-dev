@@ -28,4 +28,9 @@ public interface CategoriaRepository extends JpaRepository<Categoria, Long> {
 
     @Query("SELECT c FROM Categoria c WHERE c.empresa.id = :empresaId AND c.estado = :estado")
     List<Categoria> findByEmpresaIdAndEstado(@Param("empresaId") Long empresaId, @Param("estado") Integer estado);
+
+    // Categorías son ahora exclusivas de ADMIN y se crean globales (empresa = NULL) para que
+    // las vea todo negocio; se conservan también las creadas antes por cada empresa (legado).
+    @Query("SELECT c FROM Categoria c WHERE c.estado = :estado AND (c.empresa.id = :empresaId OR c.empresa IS NULL)")
+    List<Categoria> findByEmpresaIdOrNoEmpresaAndEstado(@Param("empresaId") Long empresaId, @Param("estado") Integer estado);
 }

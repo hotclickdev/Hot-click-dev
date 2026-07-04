@@ -4,7 +4,6 @@ import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Categoria;
 import com.hotclick.repository.CategoriaRepository;
-import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.utils.Constants;
@@ -28,7 +27,6 @@ import java.util.Map;
 public class CategoriaController {
 
     @Autowired private CategoriaRepository categoriaRepository;
-    @Autowired private EmpresaRepository   empresaRepository;
     @Autowired private UsuarioRepository   usuarioRepository;
     @Autowired private CompanyScope        companyScope;
     @Autowired private InputSanitizer      sanitizer;
@@ -38,8 +36,10 @@ public class CategoriaController {
     @GetMapping
     public ResponseEntity<ResponseDTO> listar() {
         Long empresaId = companyScope.getCurrentEmpresaId();
+        // Incluye las categorías propias del negocio (legado, de antes de que la creación
+        // pasara a ser exclusiva de ADMIN) más las globales (empresa = NULL) creadas por ADMIN.
         var cats = empresaId != null
-            ? categoriaRepository.findByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO)
+            ? categoriaRepository.findByEmpresaIdOrNoEmpresaAndEstado(empresaId, Constants.ESTADO_ACTIVO)
             : categoriaRepository.findPublicasByEstado(Constants.ESTADO_ACTIVO);
         return ResponseEntity.ok(ResponseDTO.success("Categorías", cats));
     }
@@ -51,7 +51,7 @@ public class CategoriaController {
         return ResponseEntity.ok(ResponseDTO.success("Categorías", cats));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    @PreAuthorize("hasRole('ADMIN')")
     @CacheEvict(value = {"categorias", "categorias-publicas"}, allEntries = true)
     @PostMapping
     public ResponseEntity<ResponseDTO> crear(
@@ -61,14 +61,14 @@ public class CategoriaController {
             if (body.get("nombreCategoria") == null || body.get("nombreCategoria").isBlank())
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El nombre es obligatorio"));
 
-            Long eid = companyScope.getCurrentEmpresaIdOrOwn();
-            var empresa = eid != null ? empresaRepository.findById(eid).orElse(null) : null;
             Categoria cat = new Categoria();
             cat.setNombreCategoria(sanitizer.cleanWithLimit(body.get("nombreCategoria"), 150));
             cat.setDescripcion(sanitizer.cleanWithLimit(body.getOrDefault("descripcion", ""), 500));
             if (body.get("icono") != null) cat.setIcono(sanitizer.cleanWithLimit(body.get("icono"), 20));
             cat.setEstado(Constants.ESTADO_ACTIVO);
-            cat.setEmpresa(empresa);
+            // Solo ADMIN llega hasta acá: la categoría queda global (sin empresa) para que
+            // la vean y usen todos los negocios, no atada a la empresa propia del admin.
+            cat.setEmpresa(null);
             cat.setAdminCliente(
                 usuarioRepository.findByCorreo(ud.getUsername())
                     .orElseThrow(() -> new RecursoNoEncontradoException("Admin no encontrado"))
@@ -84,7 +84,7 @@ public class CategoriaController {
         }
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     @CacheEvict(value = {"categorias", "categorias-publicas"}, allEntries = true)
     @PostMapping("/bulk")
@@ -93,8 +93,6 @@ public class CategoriaController {
             @AuthenticationPrincipal UserDetails ud) {
         var admin = usuarioRepository.findByCorreo(ud.getUsername())
             .orElseThrow(() -> new RecursoNoEncontradoException("Admin no encontrado"));
-        Long eid2 = companyScope.getCurrentEmpresaIdOrOwn();
-        var empresa = eid2 != null ? empresaRepository.findById(eid2).orElse(null) : null;
         List<Categoria> batch = new ArrayList<>();
         for (Map<String, String> item : items) {
             String nombre = item.get("nombreCategoria");
@@ -103,7 +101,8 @@ public class CategoriaController {
             cat.setNombreCategoria(sanitizer.cleanWithLimit(nombre, 150));
             cat.setDescripcion(sanitizer.cleanWithLimit(item.getOrDefault("descripcion", ""), 500));
             cat.setEstado(Constants.ESTADO_ACTIVO);
-            cat.setEmpresa(empresa);
+            // Global (sin empresa) — ver comentario en crear().
+            cat.setEmpresa(null);
             cat.setAdminCliente(admin);
             batch.add(cat);
         }
@@ -111,7 +110,7 @@ public class CategoriaController {
         return ResponseEntity.ok(ResponseDTO.success("Importadas: " + batch.size() + " categorías", Map.of("ok", batch.size())));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    @PreAuthorize("hasRole('ADMIN')")
     @CacheEvict(value = {"categorias", "categorias-publicas"}, allEntries = true)
     @PutMapping("/{id}")
     public ResponseEntity<ResponseDTO> actualizar(
@@ -147,7 +146,7 @@ public class CategoriaController {
         }
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    @PreAuthorize("hasRole('ADMIN')")
     @CacheEvict(value = {"categorias", "categorias-publicas"}, allEntries = true)
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseDTO> eliminar(@PathVariable Long id) {
