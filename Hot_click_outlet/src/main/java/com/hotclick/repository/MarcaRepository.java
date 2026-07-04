@@ -34,4 +34,7 @@ public interface MarcaRepository extends JpaRepository<Marca, Long> {
 
     @Query("SELECT CASE WHEN (COUNT(m) > 0) THEN true ELSE false END FROM Marca m WHERE m.nombreMarca = :nombre AND m.empresa.id = :empresaId AND m.estado = :estado AND m.id <> :id")
     boolean existsByNombreMarcaAndEmpresaIdAndEstadoAndIdNot(@Param("nombre") String nombreMarca, @Param("empresaId") Long empresaId, @Param("estado") Integer estado, @Param("id") Long id);
+
+    @Query("SELECT COUNT(m) FROM Marca m WHERE m.empresa.id = :empresaId AND m.estado = :estado")
+    long countByEmpresaIdAndEstado(@Param("empresaId") Long empresaId, @Param("estado") Integer estado);
 }

@@ -83,6 +83,13 @@ public class MarcaController {
             var empresa = _eid != null ? empresaRepository.findById(_eid).orElse(null) : null;
             Long empresaId = empresa != null ? empresa.getId() : null;
 
+            // Límite de producto: máximo 1 marca activa por negocio, en todo plan.
+            if (empresaId != null && !companyScope.isAdminIT()
+                    && marcaRepository.countByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO) >= 1) {
+                return ResponseEntity.badRequest().body(ResponseDTO.error(
+                    "Tu negocio ya tiene una marca creada. Solo se permite 1 marca por negocio."));
+            }
+
             boolean duplicado = empresaId != null
                 ? marcaRepository.existsByNombreMarcaAndEmpresaIdAndEstado(nombre.trim(), empresaId, Constants.ESTADO_ACTIVO)
                 : marcaRepository.existsByNombreMarcaAndEstado(nombre.trim(), Constants.ESTADO_ACTIVO);
@@ -141,8 +148,12 @@ public class MarcaController {
         Long _eid2 = companyScope.getCurrentEmpresaIdOrOwn();
         var empresa = _eid2 != null ? empresaRepository.findById(_eid2).orElse(null) : null;
         Long empresaId = empresa != null ? empresa.getId() : null;
+        // Límite de producto: máximo 1 marca activa por negocio, en todo plan.
+        boolean limitado = empresaId != null && !companyScope.isAdminIT();
+        long yaCreadas = limitado ? marcaRepository.countByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO) : 0;
         int ok = 0; int duplicates = 0;
         for (Map<String, String> item : items) {
+            if (limitado && yaCreadas + ok >= 1) break;
             String nombre = item.get("nombreMarca");
             if (nombre == null || nombre.isBlank()) continue;
             boolean dup = empresaId != null
