@@ -109,6 +109,14 @@ public class GiftCardService {
         GiftCard gc = giftCardRepository.findByCodigoForUpdate(codigo.toUpperCase())
             .orElseThrow(() -> new IllegalStateException("Gift card no encontrada: " + codigo));
 
+        // Defensa en profundidad: aunque hoy los dos callers ya validan el tenant
+        // antes de llegar acá (ver PaymentService), el canje en sí no debe confiar
+        // en eso — una gift card jamás debe poder cubrir el pedido de otra empresa.
+        Long empresaPedido = pedido.getEmpresa() != null ? pedido.getEmpresa().getId() : null;
+        if (empresaPedido == null || !empresaPedido.equals(gc.getEmpresa().getId())) {
+            throw new SecurityException("La gift card no pertenece a la empresa de este pedido");
+        }
+
         if (!"ACTIVA".equals(gc.getEstado())) {
             throw new IllegalStateException("Gift card no activa (estado=" + gc.getEstado() + ")");
         }
