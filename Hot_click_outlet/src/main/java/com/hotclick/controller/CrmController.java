@@ -69,15 +69,14 @@ public class CrmController {
 
     /**
      * Registra manualmente un cliente (contacto) — nombre y teléfono son lo mínimo requerido.
-     * No requiere plan pago: es la libreta de contactos básica, distinta al CRM avanzado.
+     * Decisión de producto: crear cliente es gratis en todo plan (parte del flujo básico de
+     * venta); lo que queda exclusivo de NEGOCIO_PLUS son las funciones avanzadas del CRM
+     * (segmentación, puntos, IA de comportamiento).
      */
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','CAJERO')")
     @Transactional
     public ResponseEntity<?> crear(@RequestBody Map<String, String> body) {
-        // El CRM es una feature de plan: crear clientes debe estar bloqueado igual que
-        // actualizar/ajustar puntos, no solo esas operaciones (antes crear quedaba abierto).
-        if (sinAccesoCrm()) return ResponseEntity.status(403).body(ResponseDTO.error(MSG_REQUIERE_CRM));
         String nombre   = body.get("nombre");
         String telefono = body.get("telefono");
         String correo   = body.get("correo");
@@ -146,7 +145,6 @@ public class CrmController {
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE')")
     @Transactional
     public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody Map<String, Object> body) {
-        if (sinAccesoCrm()) return ResponseEntity.status(403).body(ResponseDTO.error(MSG_REQUIERE_CRM));
         try {
             Usuario u = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Cliente no encontrado"));
@@ -175,7 +173,6 @@ public class CrmController {
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE')")
     @Transactional
     public ResponseEntity<?> ajustarPuntos(@PathVariable Long id, @RequestBody Map<String, Object> body) {
-        if (sinAccesoCrm()) return ResponseEntity.status(403).body(ResponseDTO.error(MSG_REQUIERE_CRM));
         try {
             Long empresaId = companyScope.getCurrentEmpresaId();
             Usuario u = usuarioRepository.findById(id)
