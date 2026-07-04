@@ -23,7 +23,7 @@ const SEO_LANGS = [
 const EMPTY_FORM = {
   nombre: '', titulo: '', descripcion: '', descripcionLarga: '',
   especificaciones: '', comoUsar: '', marcaId: '',
-  precioVenta: '', precioCompra: '', stock: '1', talla: '', garantiaDias: '0',
+  precioVenta: '', precioCompra: '', stock: '1', talla: '', tallasCantidad: [], garantiaDias: '0',
   condicion: 'NUEVO', categoriaId: '', bodegaId: '', imagenUrl: '', imagenes: [],
   sku: '', barcode: '',
   metaTitle: '', metaDescription: '', metaKeywords: '',
@@ -681,16 +681,37 @@ export default function AdminNuevoProducto() {
         metaDescriptionPt: sl.pt?.description  || '',
         metaDescriptionFr: sl.fr?.description  || '',
       })
-      const res = await productService.create(dto, { headers: { 'X-Idempotency-Key': idempotencyKey.current } })
-      const productoCreadoData = res.data?.data ?? res.data
-      const productoId = productoCreadoData?.id
-      const pendienteAprobacion = productoCreadoData?.visibleCatalogo === false
+      // 2+ tallas marcadas -> mismo producto en varias filas (una por talla), agrupadas
+      // como variantes (mismo mecanismo que ya se usa para colores en el import).
+      const paresTalla = (form.tallasCantidad || []).filter(x => x.talla && Number(x.cantidad) > 0)
+      let productoId, pendienteAprobacion
 
-      if (productoId && form.imagenes.length > 0) {
-        try {
-          await productService.sincronizarImagenes(productoId, form.imagenes)
-        } catch {
-          toast({ message: 'Producto creado pero hubo un error al guardar las fotos. Editá el producto para agregarlas.', type: 'warning' })
+      if (paresTalla.length > 1) {
+        const grupoVarianteId = crypto.randomUUID()
+        for (const par of paresTalla) {
+          const dtoTalla = { ...dto, talla: par.talla, stockActual: Number(par.cantidad), grupoVarianteId }
+          const res = await productService.create(dtoTalla, { headers: { 'X-Idempotency-Key': crypto.randomUUID() } })
+          const creado = res.data?.data ?? res.data
+          if (creado?.id && form.imagenes.length > 0) {
+            try { await productService.sincronizarImagenes(creado.id, form.imagenes) } catch { /* se avisa una sola vez abajo */ }
+          }
+          if (!productoId) { productoId = creado?.id; pendienteAprobacion = creado?.visibleCatalogo === false }
+        }
+      } else {
+        const dtoFinal = paresTalla.length === 1
+          ? { ...dto, talla: paresTalla[0].talla, stockActual: Number(paresTalla[0].cantidad) }
+          : dto
+        const res = await productService.create(dtoFinal, { headers: { 'X-Idempotency-Key': idempotencyKey.current } })
+        const productoCreadoData = res.data?.data ?? res.data
+        productoId = productoCreadoData?.id
+        pendienteAprobacion = productoCreadoData?.visibleCatalogo === false
+
+        if (productoId && form.imagenes.length > 0) {
+          try {
+            await productService.sincronizarImagenes(productoId, form.imagenes)
+          } catch {
+            toast({ message: 'Producto creado pero hubo un error al guardar las fotos. Editá el producto para agregarlas.', type: 'warning' })
+          }
         }
       }
 
@@ -973,27 +994,42 @@ export default function AdminNuevoProducto() {
     if (id === 'detalles') return (
       <div className="space-y-5">
         <div>
-          <Label>Talla <span className="text-[#8e8e9a] font-normal">(dejá vacío si no aplica)</span></Label>
+          <Label>Talla <span className="text-[#8e8e9a] font-normal">(marcá las que tengas en stock y cuántas — dejá todo vacío si no aplica)</span></Label>
           <div className="flex flex-wrap gap-2 mb-2">
-            {['XS','S','M','L','XL','XXL','XXXL'].map(t => (
-              <button key={t} type="button" onClick={() => setForm(p => ({ ...p, talla: p.talla === t ? '' : t }))}
-                className={`px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all min-h-[44px] min-w-[44px] ${
-                  form.talla === t
-                    ? 'bg-[#4f7cff]/20 border-[#4f7cff]/60 text-[#4f7cff]'
-                    : 'bg-white/4 border-white/10 text-[#8e8e9a] hover:border-white/25 hover:text-white'
-                }`}>{t}</button>
-            ))}
-            <span className="text-[#8e8e9a]/30 self-center text-xs">|</span>
-            {['35','36','37','38','39','40','41','42','43','44','45'].map(t => (
-              <button key={t} type="button" onClick={() => setForm(p => ({ ...p, talla: p.talla === t ? '' : t }))}
-                className={`px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all min-h-[44px] min-w-[44px] ${
-                  form.talla === t
-                    ? 'bg-[#4f7cff]/20 border-[#4f7cff]/60 text-[#4f7cff]'
-                    : 'bg-white/4 border-white/10 text-[#8e8e9a] hover:border-white/25 hover:text-white'
-                }`}>{t}</button>
-            ))}
+            {['XS','S','M','L','XL','XXL','XXXL','35','36','37','38','39','40','41','42','43','44','45'].map(t => {
+              const par = (form.tallasCantidad || []).find(x => x.talla === t)
+              return (
+                <div key={t} className="flex items-center gap-1">
+                  <button type="button"
+                    onClick={() => setForm(p => {
+                      const actuales = p.tallasCantidad || []
+                      const yaEsta = actuales.some(x => x.talla === t)
+                      return { ...p, tallasCantidad: yaEsta ? actuales.filter(x => x.talla !== t) : [...actuales, { talla: t, cantidad: 1 }] }
+                    })}
+                    className={`px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all min-h-[44px] min-w-[44px] ${
+                      par
+                        ? 'bg-[#4f7cff]/20 border-[#4f7cff]/60 text-[#4f7cff]'
+                        : 'bg-white/4 border-white/10 text-[#8e8e9a] hover:border-white/25 hover:text-white'
+                    }`}>{t}</button>
+                  {par && (
+                    <input type="number" min="0" value={par.cantidad}
+                      onChange={e => setForm(p => ({
+                        ...p,
+                        tallasCantidad: (p.tallasCantidad || []).map(x => x.talla === t ? { ...x, cantidad: e.target.value } : x),
+                      }))}
+                      className={`${inp} w-16 text-center`} title={`Cantidad en talla ${t}`} />
+                  )}
+                </div>
+              )
+            })}
           </div>
-          <input className={`${inp} w-28`} value={form.talla} onChange={set('talla')} placeholder="Otra…" maxLength={20} />
+          <input className={`${inp} w-28`} value={form.talla} onChange={set('talla')} placeholder="Otra talla (una sola)…"
+            maxLength={20} disabled={(form.tallasCantidad || []).length > 0} />
+          {(form.tallasCantidad || []).length > 1 && (
+            <p className="text-xs text-[#8e8e9a] mt-2">
+              Se van a crear {form.tallasCantidad.length} productos (mismo nombre, foto y precio), uno por cada talla marcada.
+            </p>
+          )}
         </div>
         <div>
           <Label>Días de garantía <span className="text-[#8e8e9a] font-normal">(0 = sin garantía)</span></Label>

@@ -14,6 +14,19 @@ import useCartStore from '@/store/cartStore'
 import { generateItemListJsonLd } from '@/utils/jsonLd'
 import ProductsAssistantPanel from '@/components/ai/ProductsAssistantPanel'
 
+// Un mismo modelo en varios colores comparte grupoVarianteId — se muestra 1 sola
+// card por grupo (la primera) para no repetir el mismo producto varias veces en
+// la grilla. El cliente elige el color desde la ficha de detalle.
+function colapsarGruposVariante(lista) {
+  const vistos = new Set()
+  return lista.filter((p) => {
+    if (!p.grupoVarianteId) return true
+    if (vistos.has(p.grupoVarianteId)) return false
+    vistos.add(p.grupoVarianteId)
+    return true
+  })
+}
+
 const PAGE_SIZE = 24
 
 // ── Utilidad: construir árbol de categorías ───────────────────────────────────
@@ -1148,7 +1161,7 @@ export default function ProductsPage() {
     setLoading(true)
     try {
       const { data } = await productService.getAll(p, PAGE_SIZE)
-      const content = (data.content ?? data ?? []).map(normalizeProduct)
+      const content = colapsarGruposVariante((data.content ?? data ?? []).map(normalizeProduct))
       // Calcular totalPages desde totalElements para mayor precisión
       const safeTotal = data.totalElements != null
         ? Math.ceil(data.totalElements / PAGE_SIZE)
@@ -1159,7 +1172,7 @@ export default function ProductsPage() {
         // Página fantasma: el backend reportó más páginas de las que existen con contenido
         // Volver a página 0 automáticamente
         const { data: d0 } = await productService.getAll(0, PAGE_SIZE)
-        const c0 = (d0.content ?? d0 ?? []).map(normalizeProduct)
+        const c0 = colapsarGruposVariante((d0.content ?? d0 ?? []).map(normalizeProduct))
         setProducts(c0)
         setTotalPages(clampedTotal)
         setPage(0)

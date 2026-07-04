@@ -358,14 +358,14 @@ export default function ProductDetailPage() {
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant={stockBadge}>{stockLabel}</Badge>
               </div>
-              {variantes.length > 0 && (
+              {(product.colorVariante || variantes.some((v) => v.colorVariante)) && (
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs text-[#8e8e9a]">{t('product.otherColors', 'Otros colores')}:</span>
                   <button type="button" onClick={() => {}} disabled
                     className="w-7 h-7 rounded-full ring-2 ring-offset-2 ring-offset-[#0d0d12] ring-[#e8e8ed] shrink-0"
                     style={{ backgroundColor: (product.colorVariante && detectarColor(product.colorVariante).hex) || '#3a3a42' }}
                     title={product.colorVariante || product.nombre} />
-                  {variantes.map((v) => {
+                  {variantes.filter((v) => v.colorVariante).map((v) => {
                     const hex = (v.colorVariante && detectarColor(v.colorVariante).hex) || '#3a3a42'
                     return (
                       <button key={v.id} type="button" onClick={() => navigate(`/productos/${v.id}`)}
@@ -376,20 +376,38 @@ export default function ProductDetailPage() {
                   })}
                 </div>
               )}
-              {parseTallas(product.talla).length > 0 && (
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs text-[#8e8e9a]">{t('product.size', 'Talla')}:</span>
-                  {parseTallas(product.talla).map((tOpt) => (
-                    <button key={tOpt} type="button" onClick={() => setTallaSeleccionada(tOpt)}
-                      className="min-w-[2.25rem] h-9 px-2 rounded-lg border text-sm font-medium transition-colors"
-                      style={tallaSeleccionada === tOpt
-                        ? { backgroundColor: '#e8e8ed', color: '#0d0d12', borderColor: '#e8e8ed' }
-                        : { backgroundColor: 'transparent', color: '#e8e8ed', borderColor: 'rgba(255,255,255,0.2)' }}>
-                      {tOpt}
-                    </button>
-                  ))}
-                </div>
-              )}
+              {(() => {
+                // Tallas propias del producto (texto libre, ej. "37-38-39") + tallas de
+                // variantes hermanas (una talla por fila, mismo mecanismo que el color).
+                // Elegir una talla hermana navega a esa fila; elegir una propia solo
+                // marca la selección local (no hay fila separada para ella).
+                const tallasPropias = parseTallas(product.talla)
+                const hermanasPorTalla = new Map()
+                variantes.forEach((v) => { if (v.talla && !hermanasPorTalla.has(v.talla)) hermanasPorTalla.set(v.talla, v) })
+                tallasPropias.forEach((tOpt) => hermanasPorTalla.delete(tOpt))
+                if (tallasPropias.length === 0 && hermanasPorTalla.size === 0) return null
+                return (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs text-[#8e8e9a]">{t('product.size', 'Talla')}:</span>
+                    {tallasPropias.map((tOpt) => (
+                      <button key={tOpt} type="button" onClick={() => setTallaSeleccionada(tOpt)}
+                        className="min-w-[2.25rem] h-9 px-2 rounded-lg border text-sm font-medium transition-colors"
+                        style={tallaSeleccionada === tOpt
+                          ? { backgroundColor: '#e8e8ed', color: '#0d0d12', borderColor: '#e8e8ed' }
+                          : { backgroundColor: 'transparent', color: '#e8e8ed', borderColor: 'rgba(255,255,255,0.2)' }}>
+                        {tOpt}
+                      </button>
+                    ))}
+                    {[...hermanasPorTalla.entries()].map(([tOpt, v]) => (
+                      <button key={v.id} type="button" onClick={() => navigate(`/productos/${v.id}`)}
+                        className="min-w-[2.25rem] h-9 px-2 rounded-lg border text-sm font-medium transition-colors"
+                        style={{ backgroundColor: 'transparent', color: '#e8e8ed', borderColor: 'rgba(255,255,255,0.2)' }}>
+                        {tOpt}
+                      </button>
+                    ))}
+                  </div>
+                )
+              })()}
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-medium">
                 ✓ {t('socialProof.warranty')}
               </span>

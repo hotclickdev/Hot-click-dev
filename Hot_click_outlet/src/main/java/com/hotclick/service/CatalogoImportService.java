@@ -170,15 +170,34 @@ public class CatalogoImportService {
         // Safelist.none() de abajo borra TODAS las etiquetas, incluyendo <img> — sin esto
         // Claude nunca ve las URLs de imagen y por eso no las puede incluir en el resultado.
         // Se deja como marcador de texto junto al producto para que Claude asocie ambos.
+        // Filtrar logos/íconos/miniaturas de "también te puede interesar" antes de marcar:
+        // con muchas imágenes candidatas cerca en el texto, Claude termina asociando la
+        // imagen de OTRO producto parecido en vez de la real — mejor que falten marcadores
+        // a que sobren y confundan.
         for (org.jsoup.nodes.Element img : doc.select("img[src], img[data-src]")) {
             String src = !img.attr("src").isBlank() ? img.absUrl("src") : img.absUrl("data-src");
-            if (!src.isBlank()) {
-                img.after("\n[IMAGEN_PRODUCTO: " + src + "]\n");
-            }
+            if (src.isBlank() || src.startsWith("data:") || pareceIconoODecorativa(img, src)) continue;
+            img.after("\n[IMAGEN_PRODUCTO: " + src + "]\n");
         }
 
         String texto = Jsoup.clean(doc.body().html(), Safelist.none());
         return texto.replaceAll("\\s{3,}", "\n").trim();
+    }
+
+    private static final Pattern PATRON_ICONO = Pattern.compile(
+        "(icon|logo|sprite|spinner|loading|placeholder|badge|payment|pixel|tracking|avatar|flag-)",
+        Pattern.CASE_INSENSITIVE);
+
+    /** Filtra imágenes chicas (íconos) o con nombre/atributos que delatan que no son la foto del producto. */
+    private boolean pareceIconoODecorativa(org.jsoup.nodes.Element img, String src) {
+        if (PATRON_ICONO.matcher(src).find()) return true;
+        String widthAttr = img.attr("width");
+        String heightAttr = img.attr("height");
+        try {
+            if (!widthAttr.isBlank() && Integer.parseInt(widthAttr) <= 32) return true;
+            if (!heightAttr.isBlank() && Integer.parseInt(heightAttr) <= 32) return true;
+        } catch (NumberFormatException ignored) { /* atributo no numérico, no descarta por tamaño */ }
+        return false;
     }
 
     /**
@@ -636,7 +655,9 @@ public class CatalogoImportService {
         - El texto puede tener marcadores "[IMAGEN_PRODUCTO: https://...]" pegados junto al nombre/precio de
           un producto — esa es la URL de su imagen principal. Usá el marcador más cercano al producto (el que
           está inmediatamente antes o después de su nombre/precio) como su imagenPrincipalUrl. No inventes URLs
-          de imagen que no vengan de un marcador.
+          de imagen que no vengan de un marcador. Es preferible imagenPrincipalUrl: null a asignar la imagen de
+          OTRO producto — si hay varios marcadores cerca y no está claro cuál corresponde a este producto
+          puntual (ej. una grilla con varios productos y fotos intercaladas), dejalo en null en vez de adivinar.
         - Si no hay imagen, sku o marca, poné null (no una cadena vacía).
         - Eliminá duplicados.
         - Extraé un máximo de 100 productos.

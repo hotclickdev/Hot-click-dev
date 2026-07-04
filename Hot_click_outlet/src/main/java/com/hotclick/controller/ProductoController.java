@@ -222,6 +222,7 @@ public class ProductoController {
                 "id", p.getId(),
                 "nombreProducto", p.getNombreProducto(),
                 "colorVariante", p.getColorVariante() != null ? p.getColorVariante() : "",
+                "talla", p.getTalla() != null ? p.getTalla() : "",
                 "imagenPrincipalUrl", p.getImagenPrincipalUrl() != null ? p.getImagenPrincipalUrl() : "",
                 "precioVenta", p.getPrecioVenta(),
                 "stock", p.getStock()
