@@ -7,6 +7,7 @@ import PhoneField from '@/components/ui/PhoneField'
 import Spinner from '@/components/ui/Spinner'
 import { productService } from '@/services/productService'
 import { ventaService } from '@/services/orderService'
+import { crmService } from '@/services/crmService'
 import { useToast } from '@/components/ui/Toast'
 import { formatPrice } from '@/utils/format'
 
@@ -96,6 +97,10 @@ export default function AdminNewSale() {
   // Tab 1 – Venta con Cliente
   const [clientId, setClientId] = useState('')
   const [clientName, setClientName] = useState('')
+  const [showNewClient, setShowNewClient] = useState(false)
+  const [newClientName, setNewClientName] = useState('')
+  const [newClientPhone, setNewClientPhone] = useState('')
+  const [creatingClient, setCreatingClient] = useState(false)
 
   // Tab 3 – Cotización
   const [cotNombre, setCotNombre] = useState('')
@@ -123,6 +128,27 @@ export default function AdminNewSale() {
 
   // Reset items when switching tabs
   const switchTab = (id) => { setTab(id); setItems([]); setCostoEnvio(''); setTipoEntrega('LOCAL'); setEstadoInicial('COMPLETADO') }
+
+  const handleCreateClient = async () => {
+    if (!newClientName.trim()) {
+      toast({ message: 'Indica el nombre del cliente', type: 'error' }); return
+    }
+    setCreatingClient(true)
+    try {
+      const nuevo = await crmService.crearCliente({ nombre: newClientName.trim(), telefono: newClientPhone })
+      setClients((prev) => [nuevo, ...prev])
+      setClientId(String(nuevo.id))
+      setClientName('')
+      setShowNewClient(false)
+      setNewClientName('')
+      setNewClientPhone('')
+      toast({ message: 'Cliente creado', type: 'success' })
+    } catch {
+      toast({ message: 'No se pudo crear el cliente', type: 'error' })
+    } finally {
+      setCreatingClient(false)
+    }
+  }
 
   const filteredProducts = products.filter((p) =>
     p.stock > 0 && (!search || p.nombre?.toLowerCase().includes(search.toLowerCase()))
@@ -333,17 +359,42 @@ export default function AdminNewSale() {
               <>
                 <h2 className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">{t('admin.sales.client')}</h2>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-[#e8e8ed]">Cliente registrado</label>
-                  <select
-                    value={clientId}
-                    onChange={(e) => { setClientId(e.target.value); setClientName('') }}
-                    className="h-11 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60"
-                  >
-                    <option value="">— Sin cliente registrado —</option>
-                    {clients.map((c) => <option key={c.id} value={c.id}>{c.nombre ?? c.correo}</option>)}
-                  </select>
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-[#e8e8ed]">Cliente registrado</label>
+                    <button
+                      type="button"
+                      onClick={() => setShowNewClient((v) => !v)}
+                      className="text-xs font-medium text-[#4f7cff] hover:text-[#7c9cff] transition-colors"
+                    >
+                      {showNewClient ? 'Cancelar' : '+ Nuevo cliente'}
+                    </button>
+                  </div>
+                  {!showNewClient && (
+                    <select
+                      value={clientId}
+                      onChange={(e) => { setClientId(e.target.value); setClientName('') }}
+                      className="h-11 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60"
+                    >
+                      <option value="">— Sin cliente registrado —</option>
+                      {clients.map((c) => <option key={c.id} value={c.id}>{c.nombre ?? c.correo}</option>)}
+                    </select>
+                  )}
                 </div>
-                {!clientId && (
+                {showNewClient && (
+                  <div className="flex flex-col gap-3 bg-white/5 border border-white/10 rounded-xl p-3">
+                    <Input
+                      label="Nombre del cliente"
+                      value={newClientName}
+                      onChange={(e) => setNewClientName(e.target.value)}
+                      placeholder="Nombre completo"
+                    />
+                    <PhoneField label="Teléfono (opcional)" value={newClientPhone} onChange={setNewClientPhone} />
+                    <Button onClick={handleCreateClient} disabled={creatingClient} size="sm">
+                      {creatingClient ? 'Creando…' : 'Crear cliente'}
+                    </Button>
+                  </div>
+                )}
+                {!showNewClient && !clientId && (
                   <Input
                     label="Nombre del cliente"
                     value={clientName}
