@@ -1,6 +1,7 @@
 package com.hotclick.controller;
 
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.security.CompanyScope;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -10,93 +11,112 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Restablece los datos de negocio de la empresa del caller (pedidos, productos,
+ * marcas, categorías, carritos, cotizaciones, órdenes de compra, testimonios,
+ * publicaciones, forecasts/reportes). Se conservan usuarios, roles y la propia
+ * empresa/cuenta.
+ *
+ * Reemplaza una implementación anterior que hacía TRUNCATE global (sin filtrar
+ * por empresa — hubiera borrado los datos de TODOS los negocios de la
+ * plataforma) sobre nombres de tabla en mayúsculas que no existen en el
+ * esquema actual (por eso el botón nunca funcionó).
+ */
 @RestController
 @RequestMapping("/api/admin")
-@PreAuthorize("hasRole('ADMIN')")
 public class AdminResetController {
 
-    @Autowired
-    private JdbcTemplate jdbc;
+    @Autowired private JdbcTemplate  jdbc;
+    @Autowired private CompanyScope  companyScope;
 
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     @PostMapping("/reset-datos")
     @Transactional
     public ResponseEntity<ResponseDTO> resetearDatos() {
-        // Elimina datos de negocio en orden (respeta FKs con CASCADE).
-        // Se preservan: usuarios, roles, permisos, estados, países y tablas de configuración.
-        jdbc.execute("""
-            TRUNCATE TABLE
-                "HOT_CLICK_PEDIDO_HISTORIAL_ESTADO_TB",
-                "HOT_CLICK_PEDIDO_ITEM_TB",
-                "HOT_CLICK_FACTURA_DETALLE_TB",
-                "HOT_CLICK_FACTURA_TB",
-                "HOT_CLICK_PEDIDO_TB",
-                "hot_click_pago_tb",
-                "hot_click_transaccion_pago_tb",
-                "hot_click_webhook_event_tb",
-                "hot_click_payment_log_tb",
-                "HOT_CLICK_CARRITO_DESCUENTO_TB",
-                "HOT_CLICK_CARRITO_ITEM_TB",
-                "HOT_CLICK_CARRITO_TB",
-                "hot_click_carrito_abandonado_tb",
-                "HOT_CLICK_COTIZACION_DETALLE_TB",
-                "HOT_CLICK_COTIZACION_TB",
-                "HOT_CLICK_CLIENTE_COTIZACION_TB",
-                "HOT_CLICK_PRODUCTO_ATRIBUTO_ASIGNACION_TB",
-                "HOT_CLICK_PRODUCTO_VARIANTE_ATRIBUTO_TB",
-                "HOT_CLICK_PRODUCTO_VARIANTE_TB",
-                "HOT_CLICK_PRODUCTO_IMAGEN_TB",
-                "HOT_CLICK_PRODUCTO_VIDEO_TB",
-                "HOT_CLICK_PRODUCTO_ETIQUETA_TB",
-                "HOT_CLICK_MOVIMIENTO_INVENTARIO_TB",
-                "HOT_CLICK_INVENTARIO_PRODUCTO_PERIODICO_TB",
-                "HOT_CLICK_INVENTARIO_PERIODICO_TB",
-                "HOT_CLICK_ANALISIS_PRODUCTO_TB",
-                "HOT_CLICK_PRODUCTO_METRICA_TB",
-                "HOT_CLICK_SUGERENCIA_COMPRA_TB",
-                "HOT_CLICK_SUGERENCIA_CLIENTE_TB",
-                "HOT_CLICK_HISTORIAL_CLIENTE_TB",
-                "HOT_CLICK_PRODUCTO_PROVEEDOR_TB",
-                "HOT_CLICK_PRODUCTO_ATRIBUTO_VALOR_TB",
-                "HOT_CLICK_PRODUCTO_ATRIBUTO_TB",
-                "HOT_CLICK_GARANTIA_PRODUCTO_TB",
-                "HOT_CLICK_GARANTIA_TB",
-                "HOT_CLICK_IMPUESTO_EXENTO_PRODUCTO_TB",
-                "HOT_CLICK_PRODUCTO_TB",
-                "HOT_CLICK_CATEGORIA_EXENTA_TB",
-                "HOT_CLICK_CATEGORIA_ETIQUETA_TB",
-                "HOT_CLICK_ETIQUETA_TB",
-                "HOT_CLICK_CATEGORIA_TB",
-                "hot_click_marca_tb",
-                "HOT_CLICK_BODEGA_HISTORIAL_TB",
-                "HOT_CLICK_BODEGA_USUARIO_TB",
-                "HOT_CLICK_BODEGA_UBICACION_TB",
-                "HOT_CLICK_BODEGA_TB",
-                "HOT_CLICK_PROVEEDOR_TB",
-                "HOT_CLICK_GIRO_RULETA_TB",
-                "HOT_CLICK_RESULTADO_RULETA_TB",
-                "HOT_CLICK_PREMIO_TB",
-                "HOT_CLICK_REFERIDO_DETALLE_TB",
-                "HOT_CLICK_REFERIDO_TB",
-                "HOT_CLICK_TESTIMONIO_TB",
-                "HOT_CLICK_WHATSAPP_ENVIO_TB",
-                "HOT_CLICK_PLANTILLA_WHATSAPP_TB",
-                "hot_click_publicacion_fb_tb",
-                "HOT_CLICK_SOLICITUD_SERVICIO_TB",
-                "HOT_CLICK_ALERTA_TB",
-                "HOT_CLICK_ALERTA_NEGOCIO_TB",
-                "HOT_CLICK_FINANZA_PRODUCTO_TB",
-                "HOT_CLICK_FINANZA_GLOBAL_TB",
-                "HOT_CLICK_GASTO_OPERATIVO_TB",
-                "HOT_CLICK_METRICA_VENTA_TB",
-                "HOT_CLICK_DASHBOARD_KPI_TB",
-                "HOT_CLICK_AUDITORIA_TB",
-                "HOT_CLICK_LOG_ERROR_TB",
-                "HOT_CLICK_LOG_CONEXION_TB",
-                "HOT_CLICK_FILTRO_ADMIN_TB",
-                "hot_click_precio_sugerido_tb"
-            RESTART IDENTITY CASCADE
-            """);
+        Long empresaId = companyScope.getCurrentEmpresaId();
+        if (empresaId == null) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(
+                "Esta acción requiere estar dentro del contexto de un negocio."));
+        }
 
-        return ResponseEntity.ok(ResponseDTO.success("Datos eliminados correctamente", null));
+        // Hijos de pedido
+        jdbc.update("DELETE FROM hot_click_pago_tb WHERE fk_id_pedido IN " +
+            "(SELECT id_pedido FROM hot_click_pedido_tb WHERE fk_id_empresa = ?)", empresaId);
+        jdbc.update("DELETE FROM hot_click_split_pago_tb WHERE fk_id_pedido IN " +
+            "(SELECT id_pedido FROM hot_click_pedido_tb WHERE fk_id_empresa = ?)", empresaId);
+        jdbc.update("DELETE FROM hot_click_comprobante_sinpe_tb WHERE fk_id_pedido IN " +
+            "(SELECT id_pedido FROM hot_click_pedido_tb WHERE fk_id_empresa = ?)", empresaId);
+        jdbc.update("DELETE FROM hot_click_giro_ruleta_tb WHERE fk_id_pedido IN " +
+            "(SELECT id_pedido FROM hot_click_pedido_tb WHERE fk_id_empresa = ?)", empresaId);
+        jdbc.update("DELETE FROM hot_click_solicitud_garantia_tb WHERE fk_id_pedido IN " +
+            "(SELECT id_pedido FROM hot_click_pedido_tb WHERE fk_id_empresa = ?)", empresaId);
+        jdbc.update("DELETE FROM hot_click_pedido_item_tb WHERE fk_id_pedido IN " +
+            "(SELECT id_pedido FROM hot_click_pedido_tb WHERE fk_id_empresa = ?)", empresaId);
+        jdbc.update("DELETE FROM hot_click_comprobante_fiscal_tb WHERE fk_id_empresa = ?", empresaId);
+
+        // Hijos de producto
+        jdbc.update("DELETE FROM hot_click_solicitud_garantia_tb WHERE fk_id_producto IN " +
+            "(SELECT id_producto FROM hot_click_producto_tb WHERE fk_id_empresa = ?)", empresaId);
+        jdbc.update("DELETE FROM hot_click_testimonio_tb WHERE fk_id_producto IN " +
+            "(SELECT id_producto FROM hot_click_producto_tb WHERE fk_id_empresa = ?)", empresaId);
+        jdbc.update("DELETE FROM hot_click_producto_imagen_tb WHERE fk_id_producto IN " +
+            "(SELECT id_producto FROM hot_click_producto_tb WHERE fk_id_empresa = ?)", empresaId);
+        jdbc.update("DELETE FROM hot_click_publicacion_fb_tb WHERE fk_id_producto IN " +
+            "(SELECT id_producto FROM hot_click_producto_tb WHERE fk_id_empresa = ?)", empresaId);
+        jdbc.update("DELETE FROM hot_click_movimiento_stock_tb WHERE fk_id_producto IN " +
+            "(SELECT id_producto FROM hot_click_producto_tb WHERE fk_id_empresa = ?)", empresaId);
+        jdbc.update("DELETE FROM hot_click_precio_sugerido_tb WHERE fk_id_producto IN " +
+            "(SELECT id_producto FROM hot_click_producto_tb WHERE fk_id_empresa = ?)", empresaId);
+        jdbc.update("DELETE FROM hot_click_premio_tb WHERE fk_id_producto_premio IN " +
+            "(SELECT id_producto FROM hot_click_producto_tb WHERE fk_id_empresa = ?)", empresaId);
+        jdbc.update("DELETE FROM hot_click_forecast_tb WHERE fk_id_empresa = ?", empresaId);
+        jdbc.update("DELETE FROM hot_click_reporte_tb WHERE fk_id_empresa = ?", empresaId);
+
+        // Pedidos
+        jdbc.update("DELETE FROM hot_click_pedido_tb WHERE fk_id_empresa = ?", empresaId);
+
+        // Compras
+        jdbc.update("DELETE FROM hot_click_orden_compra_item_tb WHERE fk_id_orden IN " +
+            "(SELECT id_orden FROM hot_click_orden_compra_tb WHERE fk_id_empresa = ?)", empresaId);
+        jdbc.update("DELETE FROM hot_click_orden_compra_tb WHERE fk_id_empresa = ?", empresaId);
+        jdbc.update("DELETE FROM hot_click_proveedor_tb WHERE fk_id_empresa = ?", empresaId);
+
+        // Cotizaciones (B2B)
+        jdbc.update("DELETE FROM hot_click_cotizacion_item_tb WHERE cotizacion_id IN " +
+            "(SELECT id_cotizacion FROM hot_click_cotizacion_tb WHERE empresa_id = ?)", empresaId);
+        jdbc.update("DELETE FROM hot_click_cotizacion_tb WHERE empresa_id = ?", empresaId);
+        jdbc.update("DELETE FROM hot_click_cotizacion_cliente_tb WHERE empresa_id = ?", empresaId);
+
+        // Carritos
+        jdbc.update("DELETE FROM hot_click_carrito_item_tb WHERE fk_id_carrito IN " +
+            "(SELECT id_carrito FROM hot_click_carrito_tb WHERE fk_id_empresa = ?)", empresaId);
+        jdbc.update("DELETE FROM hot_click_carrito_tb WHERE fk_id_empresa = ?", empresaId);
+        jdbc.update("DELETE FROM hot_click_carrito_abandonado_tb WHERE fk_id_empresa = ?", empresaId);
+
+        // Catálogo
+        jdbc.update("DELETE FROM hot_click_producto_tb WHERE fk_id_empresa = ?", empresaId);
+        jdbc.update("DELETE FROM hot_click_categoria_tb WHERE fk_id_empresa = ?", empresaId);
+        jdbc.update("DELETE FROM hot_click_marca_tb WHERE fk_id_empresa = ?", empresaId);
+        jdbc.update("DELETE FROM hot_click_bodega_tb WHERE fk_id_empresa = ?", empresaId);
+
+        // Operación diaria
+        jdbc.update("DELETE FROM hot_click_turno_caja_tb WHERE fk_id_empresa = ?", empresaId);
+        jdbc.update("DELETE FROM hot_click_mesa_tb WHERE fk_id_empresa = ?", empresaId);
+        jdbc.update("DELETE FROM hot_click_gasto_tb WHERE fk_id_empresa = ?", empresaId);
+        jdbc.update("DELETE FROM hot_click_cupon_tb WHERE fk_id_empresa = ?", empresaId);
+        jdbc.update("DELETE FROM hot_click_gift_card_tb WHERE fk_id_empresa = ?", empresaId);
+        jdbc.update("DELETE FROM hot_click_solicitud_aprobacion_tb WHERE fk_id_empresa = ?", empresaId);
+        jdbc.update("DELETE FROM hot_click_solicitud_especial_tb WHERE fk_id_empresa = ?", empresaId);
+        jdbc.update("DELETE FROM hot_click_solicitud_servicio_tb WHERE fk_id_empresa = ?", empresaId);
+        jdbc.update("DELETE FROM hot_click_pos_qr_sesion_tb WHERE fk_id_empresa = ?", empresaId);
+
+        // IA / chat / historial
+        jdbc.update("DELETE FROM hot_click_ai_mensaje_tb WHERE fk_id_empresa = ?", empresaId);
+        jdbc.update("DELETE FROM hot_click_ai_uso_tb WHERE fk_id_empresa = ?", empresaId);
+        jdbc.update("DELETE FROM hot_click_chat_mensaje_shopping_tb WHERE fk_id_empresa = ?", empresaId);
+        jdbc.update("DELETE FROM hot_click_chat_sesion_tb WHERE fk_id_empresa = ?", empresaId);
+        jdbc.update("UPDATE hot_click_wa_log_tb SET fk_id_empresa = NULL WHERE fk_id_empresa = ?", empresaId);
+
+        return ResponseEntity.ok(ResponseDTO.success("Datos del negocio eliminados correctamente", null));
     }
 }
