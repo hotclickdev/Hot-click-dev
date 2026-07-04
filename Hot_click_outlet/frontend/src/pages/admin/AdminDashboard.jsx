@@ -215,7 +215,7 @@ export default function AdminDashboard() {
           </div>
           <button
             onClick={() => {
-              localStorage.removeItem('hc-admin-tour-v2-done')
+              localStorage.removeItem('hc-admin-tour-v4-done')
               globalThis.dispatchEvent(new Event('hc-open-tour'))
             }}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all hover:opacity-80 shrink-0"
