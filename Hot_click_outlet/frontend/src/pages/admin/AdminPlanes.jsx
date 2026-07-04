@@ -68,7 +68,9 @@ function PlanCard({ plan, esCurrent, loading, onSelect }) {
         <Feature ok label={`${plan.maxProductos === -1 ? 'Ilimitados' : plan.maxProductos} productos`} />
         <Feature ok label={`${plan.maxUsuarios} usuario${plan.maxUsuarios > 1 ? 's' : ''}`} />
         <Feature ok={plan.tienePos}      label="POS / Caja registradora" />
-        <Feature ok={plan.tieneCrm}      label="CRM / Clientes" />
+        {/* CRM básico es gratis en todo plan; tieneCrm del plan ahora solo refleja
+            la futura función de IA de comportamiento, no el acceso al CRM en sí. */}
+        <Feature ok label="CRM / Clientes" />
         <Feature ok={plan.tieneCompras}  label="Módulo de compras" />
         <Feature ok={plan.tieneReportes} label="Reportes avanzados" />
         <Feature ok={plan.tieneAi}       label="AI Copilot" />
