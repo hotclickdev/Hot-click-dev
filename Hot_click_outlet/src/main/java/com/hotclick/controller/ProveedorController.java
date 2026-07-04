@@ -2,25 +2,32 @@ package com.hotclick.controller;
 
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.model.OrdenCompra;
 import com.hotclick.model.Proveedor;
 import com.hotclick.repository.EmpresaRepository;
+import com.hotclick.repository.OrdenCompraRepository;
 import com.hotclick.repository.ProveedorRepository;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/proveedores")
 public class ProveedorController {
 
-    @Autowired private ProveedorRepository proveedorRepository;
-    @Autowired private EmpresaRepository   empresaRepository;
-    @Autowired private CompanyScope        companyScope;
+    @Autowired private ProveedorRepository   proveedorRepository;
+    @Autowired private EmpresaRepository     empresaRepository;
+    @Autowired private OrdenCompraRepository ordenCompraRepository;
+    @Autowired private CompanyScope          companyScope;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','INVENTARIO')")
@@ -47,6 +54,8 @@ public class ProveedorController {
             p.setTelefono((String) body.get("telefono"));
             p.setCorreo((String) body.get("correo"));
             p.setNotas((String) body.get("notas"));
+            Object tipo = body.get("tipo");
+            if ("MATERIA_PRIMA".equals(tipo)) p.setTipo("MATERIA_PRIMA");
             p.setEstado(Constants.ESTADO_ACTIVO);
 
             if (empresaId != null) {
@@ -71,6 +80,7 @@ public class ProveedorController {
             if (body.containsKey("telefono")) p.setTelefono((String) body.get("telefono"));
             if (body.containsKey("correo"))   p.setCorreo((String) body.get("correo"));
             if (body.containsKey("notas"))    p.setNotas((String) body.get("notas"));
+            if (body.containsKey("tipo"))     p.setTipo("MATERIA_PRIMA".equals(body.get("tipo")) ? "MATERIA_PRIMA" : "PRODUCTO_TERMINADO");
 
             return ResponseEntity.ok(ResponseDTO.success("Proveedor actualizado", proveedorRepository.save(p)));
         } catch (com.hotclick.exception.TenantAccessDeniedException e) {
@@ -80,6 +90,31 @@ public class ProveedorController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(ResponseDTO.error("Error al actualizar"));
         }
+    }
+
+    /** Historial de precios pagados a este proveedor, a partir de sus órdenes de compra recibidas/pendientes. */
+    @GetMapping("/{id}/historial-costos")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','INVENTARIO')")
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> historialCostos(@PathVariable Long id) {
+        Proveedor p = proveedorRepository.findById(id)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Proveedor no encontrado"));
+        companyScope.assertCanAccessNullable(p.getEmpresa() != null ? p.getEmpresa().getId() : null);
+
+        List<OrdenCompra> ordenes = ordenCompraRepository.findByProveedorIdConDetalles(id);
+        List<Map<String, Object>> filas = ordenes.stream()
+            .flatMap(o -> o.getItems().stream().map(item -> {
+                Map<String, Object> fila = new LinkedHashMap<>();
+                fila.put("numeroOrden",  o.getNumeroOrden());
+                fila.put("fechaOrden",   o.getFechaOrden());
+                fila.put("estadoOrden",  o.getEstado());
+                fila.put("producto",     item.getProducto().getNombreProducto());
+                fila.put("cantidad",     item.getCantidad());
+                fila.put("precioUnitario", item.getPrecioUnitario());
+                return fila;
+            }))
+            .collect(Collectors.toList());
+        return ResponseEntity.ok(ResponseDTO.success("OK", filas));
     }
 
     @DeleteMapping("/{id}")

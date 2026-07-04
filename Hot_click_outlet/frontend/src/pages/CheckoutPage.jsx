@@ -175,9 +175,9 @@ export default function CheckoutPage() {
       disabledReason: 'El envío rápido requiere pago previo',
     },
     {
-      id: 'STRIPE',
+      id: 'ONVO',
       label: 'Visa / Mastercard',
-      descripcion: 'Pagos con tarjeta · Seguro con Stripe',
+      descripcion: 'Pagos con tarjeta · 100% seguro',
       badge: 'Nuevo',
       badgeColor: 'bg-[var(--hc-blue-500)]/20 text-[var(--hc-blue-400)] border-[var(--hc-blue-500)]/30',
       icon: CardIcon,

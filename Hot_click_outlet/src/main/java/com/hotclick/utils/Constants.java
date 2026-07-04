@@ -71,6 +71,7 @@ public class Constants {
     // Proveedores de pago
     public static final String PROVEEDOR_STRIPE = "STRIPE";
     public static final String PROVEEDOR_SINPE  = "SINPE";
+    public static final String PROVEEDOR_ONVO   = "ONVO";
 
     // Estados de pedido SINPE
     public static final String PEDIDO_PENDIENTE_COMPROBANTE = "PENDIENTE_COMPROBANTE";

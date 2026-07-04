@@ -4,7 +4,7 @@ import api from '@/services/api'
 import ImportExportBar from '@/components/admin/ImportExportBar'
 import { paymentService } from '@/services/paymentService'
 
-const PROVEEDORES  = ['', 'STRIPE', 'SINPE']
+const PROVEEDORES  = ['', 'ONVO', 'STRIPE', 'SINPE']
 const ESTADOS_PAGO = ['', 'CAPTURADO', 'PENDIENTE', 'FALLIDO', 'CANCELADO']
 const ESTADOS_COMPROBANTE = ['', 'PENDIENTE', 'APROBADO', 'RECHAZADO']
 

@@ -3145,3 +3145,8 @@ CREATE INDEX IF NOT EXISTS idx_producto_grupo_variante ON hot_click_producto_tb(
 -- quedan globales (fk_id_empresa = NULL) para que las vea y use todo negocio.
 ALTER TABLE hot_click_categoria_tb
     ALTER COLUMN fk_id_empresa DROP NOT NULL;
+
+-- V95: tipo de proveedor — distingue proveedores de materia prima de los de
+-- producto terminado. Default PRODUCTO_TERMINADO preserva el comportamiento
+-- actual de los proveedores existentes.
+ALTER TABLE hot_click_proveedor_tb ADD COLUMN IF NOT EXISTS tipo VARCHAR(20) NOT NULL DEFAULT 'PRODUCTO_TERMINADO';

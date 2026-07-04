@@ -13,4 +13,5 @@ export const compraService = {
   crearProveedor:      (dto)  => api.post('/proveedores', dto).then(r => r.data),
   actualizarProveedor: (id, dto) => api.put(`/proveedores/${id}`, dto).then(r => r.data),
   eliminarProveedor:   (id)   => api.delete(`/proveedores/${id}`).then(r => r.data),
+  historialCostosProveedor: (id) => api.get(`/proveedores/${id}/historial-costos`).then(r => r.data?.data ?? r.data ?? []),
 }

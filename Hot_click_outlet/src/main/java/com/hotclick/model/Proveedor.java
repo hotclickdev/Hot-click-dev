@@ -27,6 +27,10 @@ public class Proveedor {
     @Column(name = "notas", columnDefinition = "TEXT")
     private String notas;
 
+    /** MATERIA_PRIMA o PRODUCTO_TERMINADO. */
+    @Column(name = "tipo", nullable = false, length = 20)
+    private String tipo = "PRODUCTO_TERMINADO";
+
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_id_empresa")
@@ -52,6 +56,9 @@ public class Proveedor {
 
     public String getNotas() { return notas; }
     public void setNotas(String notas) { this.notas = notas; }
+
+    public String getTipo() { return tipo; }
+    public void setTipo(String tipo) { this.tipo = tipo; }
 
     public Empresa getEmpresa() { return empresa; }
     public void setEmpresa(Empresa empresa) { this.empresa = empresa; }

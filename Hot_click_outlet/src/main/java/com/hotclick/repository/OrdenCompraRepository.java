@@ -21,6 +21,11 @@ public interface OrdenCompraRepository extends JpaRepository<OrdenCompra, Long> 
            "LEFT JOIN FETCH o.proveedor LEFT JOIN FETCH o.usuario u WHERE o.id = :id")
     Optional<OrdenCompra> findByIdConDetalles(@Param("id") Long id);
 
+    /** Historial de precios pagados a un proveedor — para la pestaña de costos en su ficha. */
+    @Query("SELECT o FROM OrdenCompra o LEFT JOIN FETCH o.items i LEFT JOIN FETCH i.producto " +
+           "WHERE o.proveedor.id = :proveedorId ORDER BY o.fechaOrden DESC")
+    List<OrdenCompra> findByProveedorIdConDetalles(@Param("proveedorId") Long proveedorId);
+
     /** Total de compras a proveedor RECIBIDAS en el período — para contraste de COGS en reportes. */
     @Query(value =
         "SELECT COALESCE(SUM(oc.total), 0) " +
