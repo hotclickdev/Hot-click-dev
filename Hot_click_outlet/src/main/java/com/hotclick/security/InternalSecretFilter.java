@@ -31,8 +31,11 @@ public class InternalSecretFilter extends OncePerRequestFilter {
 
     // Endpoints que SOLO pueden llamarse con el header secreto.
     // Formato: "METHOD /ruta/exacta"
+    // reset-datos NO va aquí: es un botón del propio panel admin (EMPRENDEDOR
+    // restablece los datos de SU negocio), autenticado con JWT normal — el
+    // control de acceso es @PreAuthorize + aislamiento por empresa en el
+    // controller, no un secreto server-to-server que el frontend nunca envía.
     private static final Set<String> PROTECTED = Set.of(
-        "POST /api/admin/reset-datos",
         "POST /api/admin/seed-demo"        // por si se agrega en el futuro
     );
 
