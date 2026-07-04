@@ -91,7 +91,8 @@ public class AdminResetController {
         jdbc.update("DELETE FROM hot_click_carrito_item_tb WHERE fk_id_carrito IN " +
             "(SELECT id_carrito FROM hot_click_carrito_tb WHERE fk_id_empresa = ?)", empresaId);
         jdbc.update("DELETE FROM hot_click_carrito_tb WHERE fk_id_empresa = ?", empresaId);
-        jdbc.update("DELETE FROM hot_click_carrito_abandonado_tb WHERE fk_id_empresa = ?", empresaId);
+        // hot_click_carrito_abandonado_tb no tiene fk_id_empresa (se limpia por
+        // DataRetentionScheduler globalmente, no está scoped por negocio).
 
         // Catálogo
         jdbc.update("DELETE FROM hot_click_producto_tb WHERE fk_id_empresa = ?", empresaId);
