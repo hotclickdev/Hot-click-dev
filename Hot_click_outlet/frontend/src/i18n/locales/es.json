@@ -843,7 +843,8 @@
     "bannerTitle": "¿No sabés qué buscar?",
     "bannerSub": "Deslizá productos y encontrá lo que te gusta en un minuto.",
     "bannerCta": "Probar Descubrí",
-    "deEmprendimiento": "De {{nombre}}"
+    "deEmprendimiento": "De {{nombre}}",
+    "learnHint": "El mazo aprende de vos: más de lo que te gusta, y lo que descartás queda de último"
   },
   "wishlist": {
     "title": "Wishlist",

@@ -843,7 +843,8 @@
     "bannerTitle": "Não sabe o que procurar?",
     "bannerSub": "Deslize pelos produtos e encontre o que você gosta em um minuto.",
     "bannerCta": "Experimentar Descubra",
-    "deEmprendimiento": "De {{nombre}}"
+    "deEmprendimiento": "De {{nombre}}",
+    "learnHint": "O baralho aprende com você: mais do que você gosta, e o que você descarta fica por último"
   },
   "wishlist": {
     "title": "Wishlist",

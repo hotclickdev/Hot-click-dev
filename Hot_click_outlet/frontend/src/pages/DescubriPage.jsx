@@ -196,7 +196,10 @@ export default function DescubriPage() {
               </Link>
             </div>
 
-            <p className="hidden sm:block text-center text-[11px] mt-4" style={{ color: 'var(--hc-muted)' }}>
+            <p className="text-center text-[11px] mt-4" style={{ color: 'var(--hc-muted)' }}>
+              {t('descubri.learnHint')}
+            </p>
+            <p className="hidden sm:block text-center text-[11px] mt-1" style={{ color: 'var(--hc-muted)' }}>
               {t('descubri.keyboardHint')}
             </p>
           </>
