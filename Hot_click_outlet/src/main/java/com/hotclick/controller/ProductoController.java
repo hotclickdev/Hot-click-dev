@@ -361,6 +361,7 @@ public class ProductoController {
         }
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/ajustar-precios")
     @Transactional
     public ResponseEntity<ResponseDTO> ajustarPrecios(@RequestBody Map<String, Double> body) {

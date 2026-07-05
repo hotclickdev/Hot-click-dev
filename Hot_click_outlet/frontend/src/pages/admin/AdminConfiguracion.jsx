@@ -1286,7 +1286,8 @@ function SeccionDatos({ toast, isEmprendedor = false }) {
         </div>
       </Block>
 
-      {/* Bulk price */}
+      {/* Bulk price — solo ADMIN, afecta precios de toda la tienda */}
+      {!isEmprendedor && (
       <Block label={t('adminConfig.datosBulkTitle')} sublabel={t('adminConfig.datosBulkDesc')}>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
           <div style={{ flex: 1 }}>
@@ -1308,6 +1309,7 @@ function SeccionDatos({ toast, isEmprendedor = false }) {
           </p>
         )}
       </Block>
+      )}
 
       {/* Cleanup */}
       <Block label={t('adminConfig.datosCleanTitle')}>
