@@ -844,7 +844,8 @@
     "bannerSub": "Deslizá productos y encontrá lo que te gusta en un minuto.",
     "bannerCta": "Probar Descubrí",
     "deEmprendimiento": "De {{nombre}}",
-    "learnHint": "El mazo aprende de vos: más de lo que te gusta, y lo que descartás queda de último"
+    "learnHint": "El mazo aprende de vos: más de lo que te gusta, y lo que descartás queda de último",
+    "catalogByTaste": "Ver productos según tus gustos"
   },
   "wishlist": {
     "title": "Wishlist",

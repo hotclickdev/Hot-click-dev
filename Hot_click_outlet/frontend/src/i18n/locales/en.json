@@ -844,7 +844,8 @@
     "bannerSub": "Swipe through products and find what you like in a minute.",
     "bannerCta": "Try Discover",
     "deEmprendimiento": "By {{nombre}}",
-    "learnHint": "The deck learns from you: more of what you like, and what you pass on goes last"
+    "learnHint": "The deck learns from you: more of what you like, and what you pass on goes last",
+    "catalogByTaste": "See products sorted by your taste"
   },
   "wishlist": {
     "title": "Wishlist",

@@ -253,16 +253,20 @@ export default function DescubriPage() {
                   {t('descubri.addAll')}
                 </button>
               )}
+              <Link
+                to="/productos?sort=para_vos"
+                className="w-full py-3 rounded-xl text-sm font-semibold text-center"
+                style={{ background: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}
+              >
+                {t('descubri.catalogByTaste')}
+              </Link>
               <button
                 onClick={deck.restart}
-                className="w-full py-3 rounded-xl text-sm font-semibold"
-                style={{ background: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}
+                className="text-xs mt-1"
+                style={{ color: 'var(--hc-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
               >
                 {t('descubri.restart')}
               </button>
-              <Link to="/productos" className="text-xs mt-1" style={{ color: 'var(--hc-muted)' }}>
-                {t('descubri.backToCatalog')}
-              </Link>
             </div>
           </motion.div>
         )}

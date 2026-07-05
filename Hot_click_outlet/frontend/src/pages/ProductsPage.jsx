@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
+import { loadGustos, affinityOf } from '@/utils/gustos'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
@@ -1099,6 +1100,7 @@ export default function ProductsPage() {
 
   const SORT_OPTIONS = [
     { value: 'default',    label: 'Relevancia' },
+    { value: 'para_vos',   label: 'Según tus gustos' },
     { value: 'featured',   label: 'Destacados' },
     { value: 'price_asc',  label: 'Menor precio' },
     { value: 'price_desc', label: 'Mayor precio' },
@@ -1138,7 +1140,13 @@ export default function ProductsPage() {
     const raw = searchParams.get('marcas') ?? searchParams.get('marcaId') ?? ''
     return new Set(raw ? raw.split(',').filter(Boolean) : [])
   })
-  const [sort, setSort] = useState(() => localStorage.getItem('hc-products-sort') ?? 'default')
+  const [sort, setSort] = useState(() =>
+    searchParams.get('sort') ?? localStorage.getItem('hc-products-sort') ?? 'default')
+  // Perfil de gustos aprendido en Descubrí — para el orden "Según tus gustos"
+  const gustosScores = useMemo(
+    () => (sort === 'para_vos' ? loadGustos().scores : null),
+    [sort]
+  )
   const [filterStock, setFilterStock] = useState('')
   const [filterCond,  setFilterCond]  = useState('')
   const [filterTalla, setFilterTalla] = useState('')
@@ -1166,8 +1174,9 @@ export default function ProductsPage() {
     if (category)           params.cat = category
     if (marcasFilter.size)  params.marcas = [...marcasFilter].join(',')
     if (page > 0)           params.page = String(page)
+    if (sort && sort !== 'default') params.sort = sort
     setSearchParams(params, { replace: true })
-  }, [search, category, marcasFilter, page, setSearchParams])
+  }, [search, category, marcasFilter, page, sort, setSearchParams])
 
   const fetchProducts = useCallback(async (p = 0) => {
     setLoading(true)
@@ -1261,13 +1270,15 @@ export default function ProductsPage() {
       .filter(p => !filterTalla || p.talla    === filterTalla)
       .filter(p => (minPrice === null || p.precio >= minPrice) && (maxPrice === null || p.precio <= maxPrice))
       .sort((a, b) => {
+        if (sort === 'para_vos' && gustosScores)
+          return affinityOf(b, gustosScores) - affinityOf(a, gustosScores)
         if (sort === 'featured')   return (b.destacado ? 1 : 0) - (a.destacado ? 1 : 0)
         if (sort === 'price_asc')  return a.precio - b.precio
         if (sort === 'price_desc') return b.precio - a.precio
         if (sort === 'name')       return a.nombre?.localeCompare(b.nombre)
         return 0
       })
-  }, [products, search, categoryScope, marcasFilter, sort, filterStock, filterCond, priceMin, priceMax, viewMode, convenioMarcaNames, filterTalla])
+  }, [products, search, categoryScope, marcasFilter, sort, gustosScores, filterStock, filterCond, priceMin, priceMax, viewMode, convenioMarcaNames, filterTalla])
 
   const marcaProductCount = useMemo(() =>
     Object.fromEntries(marcas.map(m => [m.id, products.filter(p => String(p.marcaId) === String(m.id)).length]))
@@ -1345,6 +1356,8 @@ export default function ProductsPage() {
   }, [products])
 
   const hasFilters = !!(category || marcasFilter.size || filterStock || filterCond || filterTalla || priceMin || priceMax || search)
+  // El orden "según tus gustos" necesita la cuadrícula plana (las filas por categoría ignoran el orden)
+  const flatGrid = hasFilters || sort === 'para_vos'
 
   // Muestra cuadrícula de subcategorías cuando: hay categoría padre con hijos y ningún otro filtro activo
   const showSubcatGrid = !!(
@@ -1683,7 +1696,7 @@ export default function ProductsPage() {
                           </button>
                         )}
                       </div>
-                    ) : hasFilters ? (
+                    ) : flatGrid ? (
                       /* ── Modo búsqueda / filtros: grid flat reactivo ── */
                       <AnimatePresence mode="wait">
                         <motion.div
@@ -1717,7 +1730,7 @@ export default function ProductsPage() {
                     )}
 
                     {/* Paginación local — basada en los resultados filtrados, no en páginas del backend */}
-                    {filteredPages > 1 && hasFilters && (
+                    {filteredPages > 1 && flatGrid && (
                       <nav aria-label="Paginación" className="flex items-center justify-center gap-1.5 mt-8 flex-wrap">
                         <button
                           onClick={() => { setFilterViewPage(p => p - 1); globalThis.scrollTo({ top: 0, behavior: 'smooth' }) }}
