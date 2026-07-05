@@ -39,6 +39,10 @@ public class ProductoService {
     @Autowired private InputSanitizer sanitizer;
     @Autowired private ApplicationEventPublisher eventPublisher;
 
+    /** La tienda principal no lleva badge de emprendimiento en el catálogo público. */
+    @org.springframework.beans.factory.annotation.Value("${EMPRESA_PRINCIPAL_ID:1}")
+    private Long empresaPrincipalId;
+
     @SuppressWarnings("null")
     private void evictDashboard(Long empresaId) {
         Cache c = cacheManager.getCache("dashboard-metricas");
@@ -296,6 +300,7 @@ public class ProductoService {
     private void poblarBadgeEmpresa(Producto p) {
         var e = p.getEmpresa();
         if (e == null || !Boolean.TRUE.equals(e.getVisibilidadPublica()) || e.getSlug() == null) return;
+        if (e.getId().equals(empresaPrincipalId)) return;
         var nombre = e.getNombreComercial() != null ? e.getNombreComercial() : e.getNombreEmpresa();
         p.setEmpresaNombre(nombre);
         p.setEmpresaSlug(e.getSlug());
