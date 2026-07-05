@@ -19,7 +19,7 @@ import java.util.NoSuchElementException;
 @SuppressWarnings("null")
 @RestController
 @RequestMapping("/api/cotizaciones/clientes")
-@PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+@PreAuthorize("hasRole('ADMIN')")
 public class CotizacionClienteController {
 
     @Autowired private CotizacionClienteRepository clienteRepository;

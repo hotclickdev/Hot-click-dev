@@ -22,7 +22,7 @@ public class CotizacionController {
     // ── Endpoints protegidos (admin empresa) ─────────────────────────────────────
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> listar(
             @RequestParam(required = false) String estado) {
         Long empresaId = TenantContext.get();
@@ -31,28 +31,28 @@ public class CotizacionController {
     }
 
     @GetMapping("/kpis")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> kpis() {
         return ResponseEntity.ok(ResponseDTO.success("ok",
             cotizacionService.kpis(TenantContext.get())));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> detalle(@PathVariable Long id) {
         return ResponseEntity.ok(ResponseDTO.success("ok",
             cotizacionService.buscarPorId(id, TenantContext.get())));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> crear(@Valid @RequestBody CotizacionB2BRequestDTO dto) {
         Cotizacion c = cotizacionService.crear(dto, TenantContext.get());
         return ResponseEntity.ok(ResponseDTO.success("Cotización creada", c));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> actualizar(
             @PathVariable Long id,
             @RequestBody CotizacionB2BRequestDTO dto) {
@@ -61,7 +61,7 @@ public class CotizacionController {
     }
 
     @PutMapping("/{id}/estado")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> cambiarEstado(
             @PathVariable Long id,
             @RequestParam String estado) {
@@ -70,14 +70,14 @@ public class CotizacionController {
     }
 
     @PostMapping("/{id}/duplicar")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> duplicar(@PathVariable Long id) {
         return ResponseEntity.ok(ResponseDTO.success("Cotización duplicada",
             cotizacionService.duplicar(id, TenantContext.get())));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> eliminar(@PathVariable Long id) {
         cotizacionService.eliminar(id, TenantContext.get());
         return ResponseEntity.ok(ResponseDTO.success("Eliminada", null));
