@@ -283,7 +283,22 @@ public class ProductoService {
     @Transactional(readOnly = true)
     public Page<Producto> listarTodosActivos(Pageable pageable) {
         // Solo negocios aprobados visibles en catálogo público
-        return productoRepository.findByEstadoAndEmpresaAprobada(Constants.ESTADO_ACTIVO, pageable);
+        var page = productoRepository.findByEstadoAndEmpresaAprobada(Constants.ESTADO_ACTIVO, pageable);
+        page.forEach(this::poblarBadgeEmpresa);
+        return page;
+    }
+
+    /**
+     * Copia nombre y slug de la empresa a campos transient del producto,
+     * dentro de la transacción (open-in-view=false impide hacerlo al serializar).
+     * Los productos de la tienda principal (empresa null) no llevan badge.
+     */
+    private void poblarBadgeEmpresa(Producto p) {
+        var e = p.getEmpresa();
+        if (e == null || !Boolean.TRUE.equals(e.getVisibilidadPublica()) || e.getSlug() == null) return;
+        var nombre = e.getNombreComercial() != null ? e.getNombreComercial() : e.getNombreEmpresa();
+        p.setEmpresaNombre(nombre);
+        p.setEmpresaSlug(e.getSlug());
     }
 
     @Cacheable(value = "productos-publicos", key = "'cat-' + #categoriaId + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")

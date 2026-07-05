@@ -842,7 +842,8 @@
     "addedAll_other": "{{count}} produtos adicionados ao carrinho",
     "bannerTitle": "Não sabe o que procurar?",
     "bannerSub": "Deslize pelos produtos e encontre o que você gosta em um minuto.",
-    "bannerCta": "Experimentar Descubra"
+    "bannerCta": "Experimentar Descubra",
+    "deEmprendimiento": "De {{nombre}}"
   },
   "wishlist": {
     "title": "Wishlist",

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { motion, useMotionValue, useTransform } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { formatPrice } from '@/utils/format'
@@ -67,6 +68,18 @@ export default function SwipeCard({ product, isTop, stackIndex, onSwipe }) {
           draggable={false}
           loading={stackIndex === 0 ? 'eager' : 'lazy'}
         />
+
+        {/* Badge de emprendimiento → lleva a su tienda pública */}
+        {product.empresaSlug && (
+          <Link
+            to={`/tienda/${product.empresaSlug}`}
+            onPointerDownCapture={(e) => e.stopPropagation()}
+            className="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg text-[11px] font-semibold max-w-[70%] truncate"
+            style={{ background: 'var(--hc-accent)', color: 'white' }}
+          >
+            {t('descubri.deEmprendimiento', { nombre: product.empresaNombre })}
+          </Link>
+        )}
 
         {product.enOferta && product.porcentajeDescuento > 0 && (
           <span

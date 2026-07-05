@@ -842,7 +842,8 @@
     "addedAll_other": "{{count}} productos agregados al carrito",
     "bannerTitle": "¿No sabés qué buscar?",
     "bannerSub": "Deslizá productos y encontrá lo que te gusta en un minuto.",
-    "bannerCta": "Probar Descubrí"
+    "bannerCta": "Probar Descubrí",
+    "deEmprendimiento": "De {{nombre}}"
   },
   "wishlist": {
     "title": "Wishlist",

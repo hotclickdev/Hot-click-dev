@@ -842,7 +842,8 @@
     "addedAll_other": "{{count}} products added to cart",
     "bannerTitle": "Not sure what you're looking for?",
     "bannerSub": "Swipe through products and find what you like in a minute.",
-    "bannerCta": "Try Discover"
+    "bannerCta": "Try Discover",
+    "deEmprendimiento": "By {{nombre}}"
   },
   "wishlist": {
     "title": "Wishlist",

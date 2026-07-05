@@ -113,6 +113,15 @@ public class Producto extends BaseEntity {
     @JoinColumn(name = "fk_id_empresa")
     private Empresa empresa;
 
+    // Poblados en ProductoService para el catálogo público (open-in-view=false
+    // impide leer la relación lazy durante la serialización JSON).
+    // Solo se llenan si el producto pertenece a un emprendimiento visible.
+    @Transient
+    private String empresaNombre;
+
+    @Transient
+    private String empresaSlug;
+
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 
@@ -342,6 +351,12 @@ public class Producto extends BaseEntity {
     public Empresa getEmpresa() { return empresa; }
     public void setEmpresa(Empresa empresa) { this.empresa = empresa; }
     public Long getEmpresaId() { return empresa != null ? empresa.getId() : null; }
+
+    public String getEmpresaNombre() { return empresaNombre; }
+    public void setEmpresaNombre(String empresaNombre) { this.empresaNombre = empresaNombre; }
+
+    public String getEmpresaSlug() { return empresaSlug; }
+    public void setEmpresaSlug(String empresaSlug) { this.empresaSlug = empresaSlug; }
 
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }

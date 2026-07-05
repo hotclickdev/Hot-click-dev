@@ -44,6 +44,8 @@ export function normalizeProduct(p) {
     metaDescriptionPt: p.metaDescriptionPt ?? null,
     metaDescriptionFr: p.metaDescriptionFr ?? null,
     videoUrl: p.videoUrl ?? null,
+    empresaNombre: p.empresaNombre ?? null,
+    empresaSlug: p.empresaSlug ?? null,
     talla: p.talla ?? null,
     garantiaDias: p.garantiaDias ?? 0,
     grupoVarianteId: p.grupoVarianteId ?? null,
