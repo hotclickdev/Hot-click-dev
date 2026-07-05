@@ -165,9 +165,6 @@ public class EquipoController {
         if (empresaId == null)
             return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada"));
 
-        if (id.equals(companyScope.getCurrentUserId()))
-            return ResponseEntity.badRequest().body(ResponseDTO.error("No puedes cambiar tu propio rol"));
-
         String nuevoRol = body.get("rolEnEmpresa");
         if (nuevoRol == null || !ROLES_PERMITIDOS.contains(nuevoRol))
             return ResponseEntity.badRequest().body(ResponseDTO.error("Rol inválido. Valores aceptados: EDITOR, LECTOR"));
