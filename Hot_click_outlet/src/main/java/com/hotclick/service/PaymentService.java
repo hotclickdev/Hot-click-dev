@@ -130,6 +130,19 @@ public class PaymentService {
             costoTotal += p.getPrecioCompra() * item.getCantidad();
         }
 
+        // ── Retiro en tienda: solo si la bodega lo habilita y el carrito completo
+        //    pertenece a esa única bodega (evita "retiro gratis" en carritos multi-negocio).
+        if (Constants.ENVIO_RETIRO.equals(req.getMetodoEnvio())) {
+            if (!Boolean.TRUE.equals(bodega.getPermiteRetiroCliente())) {
+                throw new IllegalStateException("Esta bodega no tiene habilitado el retiro en tienda");
+            }
+            boolean todosMismaBodega = productosMap.values().stream()
+                .allMatch(p -> p.getBodega() != null && bodegaId.equals(p.getBodega().getId()));
+            if (!todosMismaBodega) {
+                throw new IllegalStateException("El retiro en tienda solo aplica cuando todos los productos son de la misma bodega");
+            }
+        }
+
         int costoEnvio = calcularCostoEnvio(req.getMetodoEnvio());
 
         // ── Validar y aplicar cupón de descuento ────────────────────────

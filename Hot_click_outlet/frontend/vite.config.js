@@ -89,7 +89,8 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        // VITE_API_PROXY permite apuntar el dev server a otra API (ej. producción)
+        target: process.env.VITE_API_PROXY || 'http://localhost:8080',
         changeOrigin: true,
       },
     },

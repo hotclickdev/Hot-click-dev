@@ -101,13 +101,25 @@ public class PublicChatController {
 
         String context = body.containsKey("context") ? String.valueOf(body.get("context")) : "GENERAL";
 
+        // Ids de los productos ya mostrados en el turno anterior — evita que un follow-up (FAQ)
+        // dispare una búsqueda nueva que muestre un producto distinto sin que el usuario lo pida.
+        @SuppressWarnings("unchecked")
+        List<Object> rawFocusIds = body.containsKey("focusIds")
+            ? (List<Object>) body.get("focusIds")
+            : List.of();
+        List<Long> focusIds = rawFocusIds.stream()
+            .filter(o -> o instanceof Number)
+            .map(o -> ((Number) o).longValue())
+            .limit(5)
+            .collect(Collectors.toList());
+
         final Long eid = empresaId;
         final String finalMessage = message;
         final List<Map<String, Object>> finalHistory = history;
         final String finalContext = context;
         emitter.onCompletion(emitter::complete);
         emitter.onTimeout(emitter::complete);
-        sseExecutor.execute(() -> chatService.chat(eid, finalMessage, offset, finalHistory, finalContext, emitter));
+        sseExecutor.execute(() -> chatService.chat(eid, finalMessage, offset, finalHistory, finalContext, focusIds, emitter));
         return emitter;
     }
 

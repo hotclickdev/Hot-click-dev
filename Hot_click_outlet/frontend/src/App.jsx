@@ -33,6 +33,7 @@ const SSOComplete   = CLERK_ENABLED ? lazy(() => import('@/pages/SSOComplete')) 
 
 const HomePage = lazy(() => import('@/pages/HomePage'))
 const ProductsPage = lazy(() => import('@/pages/ProductsPage'))
+const DescubriPage = lazy(() => import('@/pages/DescubriPage'))
 const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage'))
 const CartPage = lazy(() => import('@/pages/CartPage'))
 const LoginPage = lazy(() => import('@/pages/LoginPage'))
@@ -366,6 +367,7 @@ export default function App() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/productos" element={<ProductsPage />} />
+              <Route path="/descubri" element={<DescubriPage />} />
               <Route path="/productos/:id" element={<ProductDetailPage />} />
               <Route path="/carrito" element={<CartPage />} />
               {/* Rutas de auth: ClerkShell se lazy-carga aquí, no en el bundle inicial */}

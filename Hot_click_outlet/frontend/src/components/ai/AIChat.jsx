@@ -225,18 +225,25 @@ export default function AIChat({
     if (!msg?.trim() || cargRef.current) return
     setLoading(true)
     setMensajes(prev => [...prev, { rol: 'assistant', typing: true, texto: '', productos: [] }])
-    await streamChat(msg.trim(), [])
+    await streamChat(msg.trim(), [], [])
     setLoading(false)
   }
 
-  async function streamChat(msg, history) {
+  /** IDs de los productos del último mensaje que mostró alguno — permite que un follow-up
+   *  (FAQ de stock/envío/pago) reutilice el mismo producto en vez de disparar una búsqueda nueva. */
+  function lastShownProductIds() {
+    const last = [...mensajes].reverse().find(m => m.productos?.length > 0)
+    return last ? last.productos.map(p => p.id).filter(Boolean) : []
+  }
+
+  async function streamChat(msg, history, focusIds = []) {
     let assembled = ''
     let productos = []
     try {
       const response = await fetch(`/api/public/chat?slug=${encodeURIComponent(empresaSlug)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msg, offset: 0, history, context }),
+        body: JSON.stringify({ message: msg, offset: 0, history, context, focusIds }),
       })
       if (!response.ok) throw new Error(response.status === 429 ? '429' : 'err')
 
@@ -319,11 +326,12 @@ export default function AIChat({
       .filter(m => !m.typing && !m.failed && m.texto)
       .slice(-10)
       .map(m => ({ rol: m.rol, texto: m.texto }))
+    const focusIds = lastShownProductIds()
     setMensajes(prev => [...prev,
       { rol: 'user', texto: msg },
       { rol: 'assistant', typing: true, texto: '', productos: [] },
     ])
-    await streamChat(msg, history)
+    await streamChat(msg, history, focusIds)
     setLoading(false)
     setTimeout(() => inputRef.current?.focus(), 80)
   }

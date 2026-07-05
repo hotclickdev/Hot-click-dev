@@ -137,6 +137,27 @@ public class PublicChatService {
         return n.contains("en oferta") || n.contains("ofertas") || n.contains("on sale") || n.contains("descuento");
     }
 
+    /**
+     * Matches FAQ follow-ups (stock, envío, garantía, pago) sobre el producto que ya se mostró —
+     * estas preguntas NUNCA deben disparar una nueva búsqueda de productos, solo reutilizar
+     * los productos ya mostrados (focusIds). Cubre los chips generados en generateOpts().
+     */
+    private static final List<String> FAQ_FOLLOWUP_PHRASES = List.of(
+        "unidades quedan", "cuantas unidades", "units left",
+        "stock queda", "cuanto stock",
+        "tarda el envio", "how long does shipping", "shipping take", "envio funciona", "does shipping work",
+        "tienen garantia", "warranty",
+        "como lo recibo", "how do i receive",
+        "como pago", "how do i pay", "pay by card",
+        "aceptan transferencia", "aceptan tarjeta", "ayuda con el pago",
+        "hora abren", "dejo mi pedido"
+    );
+
+    private boolean isProductFaqFollowUp(String message) {
+        String n = normalize(message);
+        return FAQ_FOLLOWUP_PHRASES.stream().anyMatch(n::contains);
+    }
+
     // ── Signal extraction ─────────────────────────────────────────────────────
 
     /** Detects if user writes in English (2+ English function words = treat as English). */
@@ -229,7 +250,8 @@ public class PublicChatService {
     // ── Public API ────────────────────────────────────────────────────────────
 
     public void chat(Long empresaId, String userMessage, int offset,
-                     List<Map<String, Object>> history, String context, SseEmitter emitter) {
+                     List<Map<String, Object>> history, String context,
+                     List<Long> focusIds, SseEmitter emitter) {
         try {
             String msg = sanitizer.cleanWithLimit(userMessage == null ? "" : userMessage, MAX_MSG_LENGTH);
             if (msg.isBlank()) {
@@ -315,12 +337,20 @@ public class PublicChatService {
             // 2. Find relevant products
             boolean showAll    = isShowAllOrPopularQuery(userMessage);
             boolean showOffers = !showAll && isOfferQuery(userMessage);
-            String tsQuery = (showAll || showOffers) ? "" : buildTsQuery(userMessage);
-            List<Map<String, Object>> productos = showAll
-                ? buscarPopulares(empresaId, offset)
-                : showOffers
-                    ? buscarEnOferta(empresaId, offset)
-                    : buscarProductos(empresaId, tsQuery, userMessage, offset, maxBudget, negations);
+            boolean isFaqFollowUp = !showAll && !showOffers && !history.isEmpty()
+                && focusIds != null && !focusIds.isEmpty() && isProductFaqFollowUp(userMessage);
+            String tsQuery = (showAll || showOffers || isFaqFollowUp) ? "" : buildTsQuery(userMessage);
+            List<Map<String, Object>> productos = isFaqFollowUp
+                ? buscarPorIds(empresaId, focusIds)
+                : showAll
+                    ? buscarPopulares(empresaId, offset)
+                    : showOffers
+                        ? buscarEnOferta(empresaId, offset)
+                        : buscarProductos(empresaId, tsQuery, userMessage, offset, maxBudget, negations);
+            if (isFaqFollowUp && productos.isEmpty()) {
+                // Los productos ya mostrados ya no están disponibles (agotados/ocultos) — cae a búsqueda normal.
+                productos = buscarProductos(empresaId, buildTsQuery(userMessage), userMessage, offset, maxBudget, negations);
+            }
             boolean hasMore = productos.size() > PAGE;
             List<Map<String, Object>> page = productos.stream().limit(PAGE).collect(Collectors.toList());
 
@@ -451,6 +481,24 @@ public class PublicChatService {
             LIMIT ? OFFSET ?
             """;
         return jdbc.queryForList(sql, empresaId, PAGE + 1, offset);
+    }
+
+    /** Re-obtiene exactamente los productos ya mostrados — usado para FAQ follow-ups que no deben re-buscar. */
+    private List<Map<String, Object>> buscarPorIds(Long empresaId, List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        String placeholders = ids.stream().map(id -> "?").collect(Collectors.joining(","));
+        List<Object> params = new ArrayList<>();
+        params.add(empresaId);
+        params.addAll(ids);
+        String sql = """
+            SELECT id_producto, nombre_producto, descripcion_corta,
+                   precio_venta, precio_oferta, imagen_principal_url, sku, stock_actual
+            FROM hot_click_producto_tb
+            WHERE fk_id_empresa = ?
+              AND fk_id_estado = 1
+              AND id_producto IN (%s)
+            """.formatted(placeholders);
+        return jdbc.queryForList(sql, params.toArray());
     }
 
     private List<Map<String, Object>> buscarProductos(Long empresaId, String tsQuery,

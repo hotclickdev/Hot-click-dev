@@ -106,15 +106,28 @@ export default function CheckoutPage() {
     ENVIO_RAPIDO:        5000,
   }
 
+  // "Retiro en tienda" solo se ofrece cuando el carrito completo pertenece a
+  // una única bodega y ese negocio habilitó retiro de clientes — evita
+  // prometer un punto de entrega cuando el pedido mezcla varios negocios.
+  const bodegasEnCarrito = [...new Set(items.map((i) => i.bodegaId).filter((id) => id !== null && id !== undefined && id !== ''))]
+  const bodegaRetiro = bodegasEnCarrito.length === 1 && items.length > 0 && items.every((i) => i.bodegaPermiteRetiro)
+    ? {
+        id: bodegasEnCarrito[0],
+        nombre: items[0].bodegaNombre || 'la tienda',
+        direccion: items[0].bodegaDireccion,
+        telefono: items[0].bodegaTelefono,
+      }
+    : null
+
   const SHIPPING_OPTIONS = [
-    {
+    ...(bodegaRetiro ? [{
       value: 'RETIRO_EN_TIENDA',
-      label: 'Retiro en punto HotClick',
-      sub: 'Gratis · Coordinamos el punto de entrega',
+      label: `Retiro en ${bodegaRetiro.nombre}`,
+      sub: [bodegaRetiro.direccion, bodegaRetiro.telefono].filter(Boolean).join(' · ') || 'Gratis · Coordinamos el punto de entrega',
       precio: 0,
       badge: null,
       needsAddress: false,
-    },
+    }] : []),
     {
       value: 'ENCOMIENDA_PROPIA',
       label: 'Tu encomienda preferida',
@@ -150,8 +163,18 @@ export default function CheckoutPage() {
     },
   ]
 
-  const [metodoEnvio,  setMetodoEnvio]  = useState('RETIRO_EN_TIENDA')
+  const [metodoEnvio,  setMetodoEnvio]  = useState(bodegaRetiro ? 'RETIRO_EN_TIENDA' : 'ENVIO_NORMAL_GAM')
   const [metodoPago,   setMetodoPago]   = useState('SINPE')
+
+  // Si el carrito cambia (se agrega un producto de otro negocio, se quita el
+  // único ítem, etc.) y el método elegido deja de estar disponible, recae en
+  // la primera opción restante.
+  useEffect(() => {
+    if (!SHIPPING_OPTIONS.some((o) => o.value === metodoEnvio)) {
+      setMetodoEnvio(SHIPPING_OPTIONS[0]?.value ?? 'ENVIO_NORMAL_GAM')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items])
 
   // SINPE Móvil siempre primero, con su beneficio explícito (Brand Book §15.4)
   const METODOS_PAGO = [
@@ -368,7 +391,7 @@ export default function CheckoutPage() {
     const isManual = metodoPago === 'SINPE' || metodoPago === 'EFECTIVO'
     analytics.checkoutStart(totalFinal, items.reduce((s, i) => s + i.cantidad, 0))
     iniciarPago({
-      bodegaId:    BODEGA_DEFAULT,
+      bodegaId:    metodoEnvio === 'RETIRO_EN_TIENDA' && bodegaRetiro ? bodegaRetiro.id : BODEGA_DEFAULT,
       metodoEnvio,
       notas:       notasFull || null,
       provider:    metodoPago,

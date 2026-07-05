@@ -11,7 +11,7 @@ import { useToast } from '@/components/ui/Toast'
 import ImportExportBar from '@/components/admin/ImportExportBar'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 
-const EMPTY = { nombreBodega: '', direccionExacta: '', telefono: '', correoContacto: '', encargadoNombre: '' }
+const EMPTY = { nombreBodega: '', direccionExacta: '', telefono: '', correoContacto: '', encargadoNombre: '', permiteRetiroCliente: false }
 
 export default function AdminWarehouses() {
   const { t } = useTranslation()
@@ -43,6 +43,7 @@ export default function AdminWarehouses() {
       telefono: w.telefono ?? '',
       correoContacto: w.correoContacto ?? '',
       encargadoNombre: w.encargadoNombre ?? '',
+      permiteRetiroCliente: w.permiteRetiroCliente ?? false,
     })
     setModalOpen(true)
   }
@@ -151,6 +152,9 @@ export default function AdminWarehouses() {
                   {w.correoContacto && <div>✉ {w.correoContacto}</div>}
                   {w.encargadoNombre && <div>👤 {w.encargadoNombre}</div>}
                 </div>
+                {w.permiteRetiroCliente && (
+                  <Badge variant="success">Permite retiro de clientes</Badge>
+                )}
               </div>
             ))}
             {warehouses.length === 0 && (
@@ -169,6 +173,17 @@ export default function AdminWarehouses() {
             <Input label="Correo contacto" value={form.correoContacto} onChange={set('correoContacto')} type="email" placeholder="Opcional" />
             <Input label="Encargado" value={form.encargadoNombre} onChange={set('encargadoNombre')} placeholder="Opcional" />
           </div>
+          <label className="flex items-center gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.permiteRetiroCliente}
+              onChange={(e) => setForm((p) => ({ ...p, permiteRetiroCliente: e.target.checked }))}
+            />
+            <span className="text-sm" style={{ color: 'var(--hc-text)' }}>Permite retiro de clientes en este local</span>
+          </label>
+          <p className="text-xs -mt-2" style={{ color: 'var(--hc-muted)' }}>
+            Solo se ofrece "Retiro en tienda" en el checkout cuando todos los productos del carrito son de esta bodega.
+          </p>
           <div className="flex gap-3 pt-1">
             <Button type="submit" loading={saving} className="flex-1">{editing ? t('common.save') : t('admin.warehouses.new')}</Button>
             <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>{t('common.cancel')}</Button>

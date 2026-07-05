@@ -46,4 +46,8 @@ export const analytics = {
   quickViewOpen:  (p)        => track('quick_view_open', { id: p.id, name: p.nombre }),
   searchQuery:    (q, count) => track('search_query',    { query: q, results: count }),
   checkoutStart:  (total, n) => track('checkout_start',  { total, item_count: n }),
+  descubriStart:  (deckSize)     => track('descubri_start',  { deck_size: deckSize }),
+  descubriSwipe:  (p, dir)       => track('descubri_swipe',  { id: p.id, name: p.nombre, price: p.precio, category: p.categoriaNombre, dir }),
+  descubriFinish: (likes, seen)  => track('descubri_finish', { likes, seen }),
+  descubriAddAll: (n, value)     => track('descubri_add_all', { item_count: n, value }),
 }
