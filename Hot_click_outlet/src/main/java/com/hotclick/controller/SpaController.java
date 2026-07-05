@@ -112,6 +112,7 @@ public class SpaController {
     @GetMapping(value = {
         "/",
         "/productos",
+        "/descubri",
         "/carrito",
         "/login",
         "/registrar-negocio",
