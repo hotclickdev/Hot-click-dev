@@ -28,14 +28,14 @@ public class ConvenioController {
 
     /** Admin — todos */
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> listarTodos() {
         return ResponseEntity.ok(ResponseDTO.success("Convenios",
             repo.findTop100ByOrderByFechaRegistroDesc()));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> crear(@RequestBody Convenio convenio) {
         sanitizarConvenio(convenio);
         convenio.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
@@ -44,7 +44,7 @@ public class ConvenioController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> actualizar(@PathVariable Long id, @RequestBody Convenio datos) {
         Convenio c = repo.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("No encontrado"));
         sanitizarConvenio(datos);
@@ -64,7 +64,7 @@ public class ConvenioController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> eliminar(@PathVariable Long id) {
         Convenio c = repo.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("No encontrado"));
         c.setEstado(0);

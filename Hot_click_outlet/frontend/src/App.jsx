@@ -418,7 +418,6 @@ export default function App() {
                 <Route path="/admin/finanzas/reporte-contador" element={<AdminReporteContador />} />
                 <Route path="/admin/billetera" element={<AdminBilletera />} />
                 <Route path="/admin/reportes" element={<PlanGate feature="reportes" planRequerido="PYME"><AdminReportes /></PlanGate>} />
-                <Route path="/admin/publicaciones" element={<AdminPublicaciones />} />
                 <Route path="/admin/nuevo-producto" element={<AdminNuevoProducto />} />
                 <Route path="/admin/productos/carga-masiva" element={<AdminCargaMasiva />} />
                 <Route path="/admin/productos/importar" element={<AdminImportar />} />
@@ -449,24 +448,25 @@ export default function App() {
                   {/* <Route path="/admin/mesas"               element={<AdminMesas />} /> */}{/* futuro */}
                   <Route path="/admin/homepage"           element={<AdminHomepage />} />
                   <Route path="/admin/cupones"            element={<AdminCupones />} />
+                  <Route path="/admin/publicaciones" element={<AdminPublicaciones />} />
+                  <Route path="/admin/branding"            element={<AdminBranding />} />
+                  <Route path="/admin/plugins"             element={<AdminPlugins />} />
+                  <Route path="/admin/multipais"           element={<AdminMultipais />} />
+                  <Route path="/admin/convenios"     element={<AdminConvenios />} />
                 </Route>
                 {/* ADMIN + EMPRENDEDOR (por-empresa) — algunas requieren plan PYME/NEGOCIO_PLUS */}
                 <Route path="/admin/billing/planes"      element={<AdminPlanes />} />
                 <Route path="/admin/offline/cola"        element={<AdminOfflineCola />} />
                 <Route path="/admin/gift-cards"          element={<AdminGiftCards />} />
-                <Route path="/admin/branding"            element={<AdminBranding />} />
-                <Route path="/admin/plugins"             element={<AdminPlugins />} />
                 <Route path="/admin/inventario"          element={<PlanGate feature="ai" planRequerido="PYME"><AdminInventario /></PlanGate>} />
                 {/* Copilot NO se bloquea por plan — el plan gratis tiene 10 créditos/mes
                     (V91) + flag 'copilot_emprendedor'; lo hace cumplir AiQuotaService. */}
                 <Route path="/admin/copilot"             element={<AdminCopilot />} />
                 <Route path="/admin/forecast"            element={<PlanGate feature="ai" planRequerido="PYME"><AdminForecast /></PlanGate>} />
                 <Route path="/admin/executive"           element={<PlanGate feature="reportes" planRequerido="PYME"><AdminExecutive /></PlanGate>} />
-                <Route path="/admin/multipais"           element={<AdminMultipais />} />
                 <Route path="/admin/asignar-compra" element={<AdminAsignarProducto />} />
                 <Route path="/admin/ofertas"       element={<AdminOfertas />} />
                 <Route path="/admin/blog"          element={<AdminBlog />} />
-                <Route path="/admin/convenios"     element={<AdminConvenios />} />
                 <Route path="/admin/pos"           element={<PlanGate feature="pos" planRequerido="PYME"><AdminPOS /></PlanGate>} />
                 <Route path="/admin/pos/caja"      element={<PlanGate feature="pos" planRequerido="PYME"><AdminPOSCaja /></PlanGate>} />
                 <Route path="/admin/pos/historial" element={<PlanGate feature="pos" planRequerido="PYME"><AdminPOSHistorial /></PlanGate>} />

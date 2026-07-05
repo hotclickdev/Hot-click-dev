@@ -41,7 +41,7 @@ public class BrandingController {
 
     // ── Admin — get current empresa branding ──────────────────────────────────
     @GetMapping("/admin/branding")
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getBranding() {
         Long empresaId = TenantContext.get();
         return empresaRepository.findById(empresaId)
@@ -51,7 +51,7 @@ public class BrandingController {
 
     // ── Admin — update branding ────────────────────────────────────────────────
     @PutMapping("/admin/branding")
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateBranding(@RequestBody Map<String, Object> body) {
         Long empresaId = TenantContext.get();
         Empresa empresa = empresaRepository.findById(empresaId)

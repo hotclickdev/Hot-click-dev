@@ -12,7 +12,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/publicaciones-fb")
-@PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+@PreAuthorize("hasRole('ADMIN')")
 public class PublicacionFbController {
 
     @Autowired private PublicacionFacebookService service;

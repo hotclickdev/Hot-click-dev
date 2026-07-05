@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin/plugins")
-@PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN')")
+@PreAuthorize("hasRole('ADMIN')")
 public class PluginController {
 
     @Autowired private PluginRepository       pluginRepository;
@@ -36,7 +36,7 @@ public class PluginController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> crear(@RequestBody Map<String, Object> body) {
         try {
             Long empresaId = TenantContext.get();
@@ -54,7 +54,7 @@ public class PluginController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         Long empresaId = TenantContext.get();
         Optional<Plugin> opt = pluginRepository.findById(id);
@@ -68,7 +68,7 @@ public class PluginController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> eliminar(@PathVariable Long id) {
         Long empresaId = TenantContext.get();
         Optional<Plugin> opt = pluginRepository.findById(id);
@@ -82,7 +82,7 @@ public class PluginController {
 
     /** Sends a test webhook immediately (synchronous, returns result). */
     @PostMapping("/{id}/test")
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> test(@PathVariable Long id) {
         Long empresaId = TenantContext.get();
         Optional<Plugin> opt = pluginRepository.findById(id);
