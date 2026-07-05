@@ -11,6 +11,13 @@ import { warehouseService } from '@/services/orderService'
 import { marcaService } from '@/services/marcaService'
 import EmpresaProfileCard from '@/components/admin/EmpresaProfileCard'
 import useAuthStore from '@/store/authStore'
+import {
+  HomeIcon, HomeModernIcon, FireIcon, MoonIcon, SparklesIcon, SunIcon, BriefcaseIcon,
+  CakeIcon, TruckIcon, Cog6ToothIcon, RectangleGroupIcon, PaintBrushIcon, LightBulbIcon,
+  SwatchIcon, BoltIcon, WrenchScrewdriverIcon, PhotoIcon, ArchiveBoxIcon,
+  Square3Stack3DIcon, Squares2X2Icon, BuildingLibraryIcon, CloudIcon, GlobeAltIcon,
+  FaceSmileIcon, HeartIcon, UserIcon, UserGroupIcon, TagIcon,
+} from '@heroicons/react/24/outline'
 
 const MAX_FOTOS = 10
 
@@ -212,6 +219,19 @@ const TAG_GROUPS = [
   { label: 'Para quién', tags: ['niños','mascotas','adultos','familia','pareja','soltero','oficina en casa'] },
 ]
 
+const TAG_ICONS = {
+  sala: HomeIcon, cocina: FireIcon, dormitorio: MoonIcon, baño: SparklesIcon,
+  jardín: SunIcon, oficina: BriefcaseIcon, comedor: CakeIcon, terraza: HomeModernIcon,
+  garaje: TruckIcon, lavandería: Cog6ToothIcon,
+  mueble: RectangleGroupIcon, decoración: PaintBrushIcon, iluminación: LightBulbIcon,
+  textil: SwatchIcon, electrodoméstico: BoltIcon, herramienta: WrenchScrewdriverIcon,
+  arte: PhotoIcon, almacenamiento: ArchiveBoxIcon, colchón: Square3Stack3DIcon, espejo: Squares2X2Icon,
+  moderno: SparklesIcon, rústico: FireIcon, minimalista: Square3Stack3DIcon, clásico: BuildingLibraryIcon,
+  industrial: Cog6ToothIcon, bohemio: GlobeAltIcon, escandinavo: CloudIcon, tropical: SunIcon,
+  niños: FaceSmileIcon, mascotas: HeartIcon, adultos: UserIcon, familia: UserGroupIcon,
+  pareja: HeartIcon, soltero: UserIcon, 'oficina en casa': BriefcaseIcon,
+}
+
 function TagSelector({ value, onChange }) {
   const selected = new Set((value || '').split(',').map(t => t.trim().toLowerCase()).filter(Boolean))
   function toggle(tag) {
@@ -235,14 +255,16 @@ function TagSelector({ value, onChange }) {
           <div className="flex flex-wrap gap-1.5">
             {group.tags.map(tag => {
               const active = selected.has(tag)
+              const Icon = TAG_ICONS[tag] || TagIcon
               return (
                 <button key={tag} type="button" onClick={() => toggle(tag)}
-                  className="px-3 py-2 rounded-full text-xs font-medium transition-all min-h-[36px]"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all min-h-[36px]"
                   style={{
                     backgroundColor: active ? 'var(--hc-accent, #4f7cff)' : 'rgba(255,255,255,0.07)',
                     color: active ? '#fff' : '#A7B0BC',
                     border: active ? '1px solid transparent' : '1px solid rgba(255,255,255,0.12)',
                   }}>
+                  <Icon className="w-3.5 h-3.5 shrink-0" />
                   {tag}
                 </button>
               )
