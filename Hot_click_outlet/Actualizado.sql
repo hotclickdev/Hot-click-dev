@@ -3150,3 +3150,8 @@ ALTER TABLE hot_click_categoria_tb
 -- producto terminado. Default PRODUCTO_TERMINADO preserva el comportamiento
 -- actual de los proveedores existentes.
 ALTER TABLE hot_click_proveedor_tb ADD COLUMN IF NOT EXISTS tipo VARCHAR(20) NOT NULL DEFAULT 'PRODUCTO_TERMINADO';
+
+-- V96: permite que un negocio marque una bodega como punto de retiro para
+-- clientes finales. El checkout solo ofrece "Retiro en tienda" cuando el
+-- carrito completo pertenece a una única bodega con este flag en true.
+ALTER TABLE hot_click_bodega_tb ADD COLUMN IF NOT EXISTS permite_retiro_cliente BOOLEAN NOT NULL DEFAULT false;

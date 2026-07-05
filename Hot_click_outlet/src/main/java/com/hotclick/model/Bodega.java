@@ -51,6 +51,10 @@ public class Bodega extends BaseEntity {
     @Column(name = "canton", length = 100)
     private String canton;
 
+    /** Si el negocio habilita esta bodega como punto de retiro para clientes finales. */
+    @Column(name = "permite_retiro_cliente", nullable = false)
+    private Boolean permiteRetiroCliente = false;
+
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_id_admin_cliente", nullable = false)
@@ -102,6 +106,9 @@ public class Bodega extends BaseEntity {
 
     public String getCanton() { return canton; }
     public void setCanton(String canton) { this.canton = canton; }
+
+    public Boolean getPermiteRetiroCliente() { return permiteRetiroCliente != null ? permiteRetiroCliente : false; }
+    public void setPermiteRetiroCliente(Boolean permiteRetiroCliente) { this.permiteRetiroCliente = permiteRetiroCliente; }
 
     public Usuario getAdminCliente() { return adminCliente; }
     public void setAdminCliente(Usuario adminCliente) { this.adminCliente = adminCliente; }

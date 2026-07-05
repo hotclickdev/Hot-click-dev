@@ -50,6 +50,7 @@ public class BodegaController {
             m.put("telefono", b.getTelefono());
             m.put("correoContacto", b.getCorreoContacto());
             m.put("encargadoNombre", b.getEncargadoNombre());
+            m.put("permiteRetiroCliente", b.getPermiteRetiroCliente());
             m.put("estado", b.getEstado());
             if (b.getEmpresa() != null) {
                 m.put("empresaId", b.getEmpresa().getId());
@@ -85,6 +86,7 @@ public class BodegaController {
             b.setEncargadoNombre(body.getOrDefault("encargadoNombre", ""));
             b.setProvincia(sanitizer.normalizeGeo(body.get("provincia")));
             b.setCanton(sanitizer.normalizeGeo(body.get("canton")));
+            b.setPermiteRetiroCliente(Boolean.parseBoolean(body.get("permiteRetiroCliente")));
             b.setEstado(Constants.ESTADO_ACTIVO);
             b.setEmpresa(empresa);
             b.setAdminCliente(
@@ -156,6 +158,8 @@ public class BodegaController {
                 b.setProvincia(sanitizer.normalizeGeo(body.get("provincia")));
             if (body.containsKey("canton"))
                 b.setCanton(sanitizer.normalizeGeo(body.get("canton")));
+            if (body.containsKey("permiteRetiroCliente"))
+                b.setPermiteRetiroCliente(Boolean.parseBoolean(body.get("permiteRetiroCliente")));
             return ResponseEntity.ok(ResponseDTO.success("Bodega actualizada", bodegaRepository.save(b)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));

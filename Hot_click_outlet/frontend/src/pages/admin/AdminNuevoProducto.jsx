@@ -10,6 +10,7 @@ import { productService, denormalizeProduct } from '@/services/productService'
 import { warehouseService } from '@/services/orderService'
 import { marcaService } from '@/services/marcaService'
 import EmpresaProfileCard from '@/components/admin/EmpresaProfileCard'
+import useAuthStore from '@/store/authStore'
 
 const MAX_FOTOS = 10
 
@@ -36,7 +37,7 @@ const EMPTY_FORM = {
   },
 }
 
-const STEPS = [
+const ALL_STEPS = [
   { id: 'fotos',         title: 'Fotos del producto',           subtitle: 'Subí fotos para que la IA complete los datos automáticamente', optional: true },
   { id: 'nombre',        title: '¿Cómo se llama el producto?',  subtitle: null, validate: f => !!f.nombre.trim(), validateMsg: 'El nombre es obligatorio' },
   { id: 'descripcion',   title: 'Describí el producto',         subtitle: 'Una frase corta que verán los clientes en la tienda', optional: true },
@@ -400,6 +401,8 @@ export default function AdminNuevoProducto() {
   const { t } = useTranslation()
   const toast = useToast()
   const navigate = useNavigate()
+  const isAdmin = useAuthStore((s) => s.userRole) === 'ADMIN'
+  const STEPS = isAdmin ? ALL_STEPS : ALL_STEPS.filter(s => s.id !== 'seo')
 
   const [wizardStep, setWizardStep] = useState(0)
   const [done, setDone] = useState(false)

@@ -154,6 +154,7 @@ public class ProductoController {
         }
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/destacado")
     public ResponseEntity<ResponseDTO> toggleDestacado(
             @PathVariable Long id,
@@ -171,6 +172,25 @@ public class ProductoController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
+    }
+
+    /**
+     * destacado y los campos SEO (meta title/description/keywords, todas las
+     * variantes de idioma) son solo-ADMIN — si el caller no es ADMIN, se
+     * ignoran silenciosamente los valores que haya mandado el frontend.
+     */
+    private void restringirCamposSoloAdmin(ProductoRequestDTO dto) {
+        if (companyScope.hasRole("ADMIN")) return;
+        dto.setDestacado(null);
+        dto.setMetaTitle(null);
+        dto.setMetaDescription(null);
+        dto.setMetaKeywords(null);
+        dto.setMetaTitleEn(null);
+        dto.setMetaTitlePt(null);
+        dto.setMetaTitleFr(null);
+        dto.setMetaDescriptionEn(null);
+        dto.setMetaDescriptionPt(null);
+        dto.setMetaDescriptionFr(null);
     }
 
     @GetMapping("/{id}/recomendaciones")
@@ -249,6 +269,7 @@ public class ProductoController {
         Long eid = companyScope.getCurrentEmpresaIdOrOwn();
         if (eid != null) tenantService.verificarLimiteProductos(eid);
 
+        restringirCamposSoloAdmin(dto);
         try {
             var textMod = textModerationService.moderar(
                 dto.getNombreProducto(), dto.getDescripcionCorta(),
@@ -292,6 +313,7 @@ public class ProductoController {
             var existente = productoRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Producto no encontrado"));
             companyScope.assertCanAccessNullable(existente.getEmpresaId());
+            restringirCamposSoloAdmin(dto);
             var textMod = textModerationService.moderar(
                 dto.getNombreProducto(), dto.getDescripcionCorta(),
                 dto.getTituloProducto(), dto.getDescripcionLarga(),

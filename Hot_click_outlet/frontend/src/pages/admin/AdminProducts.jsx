@@ -680,7 +680,7 @@ export default function AdminProducts() {
                   <table className="w-full min-w-[900px] text-sm">
                     <thead>
                       <tr className="border-b border-white/8">
-                        {['★', ...(isAdmin ? ['Pos.'] : []), 'ID', t('admin.products.name'), t('admin.products.price'), t('admin.products.stock'), 'SKU / Barcode', t('admin.products.category'), 'SEO', t('admin.products.actions')].map((h) => (
+                        {[...(isAdmin ? ['★', 'Pos.'] : []), 'ID', t('admin.products.name'), t('admin.products.price'), t('admin.products.stock'), 'SKU / Barcode', t('admin.products.category'), ...(isAdmin ? ['SEO'] : []), t('admin.products.actions')].map((h) => (
                           <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">{h}</th>
                         ))}
                       </tr>
@@ -688,6 +688,7 @@ export default function AdminProducts() {
                     <tbody className="divide-y divide-white/5">
                       {filtered.map((p) => (
                         <motion.tr key={p.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="hover:bg-white/3 transition-colors">
+                          {isAdmin && (
                           <td className="px-4 py-3">
                             <button
                               onClick={() => handleToggleDestacado(p)}
@@ -701,6 +702,7 @@ export default function AdminProducts() {
                               <StarIcon filled={p.destacado} />
                             </button>
                           </td>
+                          )}
                           {isAdmin && (
                           <td className="px-4 py-3">
                             <button
@@ -759,9 +761,11 @@ export default function AdminProducts() {
                           <td className="px-4 py-3">
                             <Badge variant={conditionVariant(p.condicion)}>{conditionLabel(p.condicion)}</Badge>
                           </td>
+                          {isAdmin && (
                           <td className="px-4 py-3 text-center">
                             <SeoStatusIcon product={p} />
                           </td>
+                          )}
                           <td className="px-4 py-3">
                             <div className="flex gap-2">
                               <button onClick={() => openEdit(p)} className="px-3 py-1 text-xs rounded-lg bg-white/5 hover:bg-white/10 text-[#8e8e9a] hover:text-white transition-colors">{t('admin.products.edit')}</button>
