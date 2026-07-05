@@ -448,12 +448,12 @@ export default function App() {
                   <Route path="/admin/billing/suscripcion" element={<AdminSuscripcion />} />
                   {/* <Route path="/admin/mesas"               element={<AdminMesas />} /> */}{/* futuro */}
                   <Route path="/admin/homepage"           element={<AdminHomepage />} />
+                  <Route path="/admin/cupones"            element={<AdminCupones />} />
                 </Route>
                 {/* ADMIN + EMPRENDEDOR (por-empresa) — algunas requieren plan PYME/NEGOCIO_PLUS */}
                 <Route path="/admin/billing/planes"      element={<AdminPlanes />} />
                 <Route path="/admin/offline/cola"        element={<AdminOfflineCola />} />
                 <Route path="/admin/gift-cards"          element={<AdminGiftCards />} />
-                <Route path="/admin/cupones"             element={<AdminCupones />} />
                 <Route path="/admin/branding"            element={<AdminBranding />} />
                 <Route path="/admin/plugins"             element={<AdminPlugins />} />
                 <Route path="/admin/inventario"          element={<PlanGate feature="ai" planRequerido="PYME"><AdminInventario /></PlanGate>} />

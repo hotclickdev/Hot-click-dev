@@ -108,7 +108,6 @@ function buildSidebarLinks(t, userRole) {
       { to: '/admin/reportes',       label: t('admin.sidebar.reportes'),   icon: 'bar',     feature: 'reportes' },
       { section: 'Marketing' },
       { to: '/admin/ofertas',        label: 'Ofertas',                     icon: 'tag'      },
-      { to: '/admin/cupones',        label: 'Descuentos',                  icon: 'coupon'   },
       { to: '/admin/nuevo-producto', label: t('admin.sidebar.crearIA'),    icon: 'camera'   },
       { to: '/admin/publicaciones',  label: t('admin.sidebar.publicarFB'), icon: 'share'    },
       { to: '/admin/blog',           label: 'Blog',                        icon: 'blog'     },
