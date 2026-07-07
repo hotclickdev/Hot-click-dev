@@ -65,8 +65,11 @@ public class DataSeeder implements ApplicationRunner {
         String defaultPassword = System.getenv().getOrDefault("ADMIN_DEFAULT_PASSWORD", "Admin1234!"); // NOSONAR — contraseña de seed, nunca usada en producción con valor por defecto
         if (usuarioRepository.existsByCorreo(correo)) {
             Usuario admin = usuarioRepository.findByCorreo(correo).orElseThrow();
-            // Siempre garantizar contraseña correcta, campos obligatorios y rol
-            admin.setContrasenaHash(passwordEncoder.encode(defaultPassword));
+            // La contraseña solo se re-escribe con ADMIN_RESET_PASSWORD=true (mecanismo
+            // de recuperación); sin el flag, un cambio hecho desde la app sobrevive reinicios
+            if ("true".equalsIgnoreCase(System.getenv("ADMIN_RESET_PASSWORD"))) {
+                admin.setContrasenaHash(passwordEncoder.encode(defaultPassword));
+            }
             if (admin.getIdentificacion() == null) admin.setIdentificacion("0000000001");
             if (admin.getTelefono() == null)       admin.setTelefono("0000000000");
             admin.setEstado(Constants.ESTADO_ACTIVO);
