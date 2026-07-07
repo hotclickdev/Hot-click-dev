@@ -172,6 +172,39 @@ public class StockService {
         log.info("Ajuste entrada — producto id={}: actual {} → {}", productoId, actAntes, actDespues);
     }
 
+    /**
+     * Fija stockActual a la existencia física contada (chequeo de inventario).
+     * Registra AJUSTE_ENTRADA o AJUSTE_SALIDA según el delta contra el sistema.
+     * Usado por el chequeo semanal del bot de Telegram.
+     */
+    @Transactional
+    public void ajustarAExistencia(Long productoId, int cantidadReal, String referencia, String operadorCorreo) {
+        Producto producto = productoRepository.findByIdForUpdate(productoId)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
+        if (producto.getEstado() != Constants.ESTADO_ACTIVO) {
+            throw new IllegalStateException("Producto no activo");
+        }
+        int actAntes = producto.getStockActual();
+        if (actAntes == cantidadReal) return;
+
+        int delta = cantidadReal - actAntes;
+        producto.setStockActual(cantidadReal);
+        productoRepository.save(producto);
+
+        MovimientoStock m = buildMovimiento(producto,
+            delta > 0 ? MovimientoStock.AJUSTE_ENTRADA : MovimientoStock.AJUSTE_SALIDA,
+            Math.abs(delta),
+            actAntes, cantidadReal,
+            producto.getStockReservado(), producto.getStockReservado(),
+            referencia, operadorCorreo);
+        m.setNotas("Conteo físico de inventario");
+        movimientoStockRepository.save(m);
+
+        publicarCambioStock(producto, cantidadReal);
+
+        log.info("Ajuste a existencia — producto id={}: actual {} → {}", productoId, actAntes, cantidadReal);
+    }
+
     // ── Consulta de auditoría ────────────────────────────────────────────────────
 
     public java.util.List<MovimientoStock> historialPorProducto(Long productoId) {

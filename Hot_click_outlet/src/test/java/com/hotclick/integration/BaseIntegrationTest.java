@@ -77,7 +77,7 @@ public abstract class BaseIntegrationTest {
         jdbcTemplate.update("DELETE FROM hot_click_rate_limit_tb");
 
         Rol rolUser  = obtenerOCrearRol(Constants.ROL_USUARIO_FINAL, 1);
-        Rol rolAdmin = obtenerOCrearRol(Constants.ROL_ADMIN_IT, 10);
+        Rol rolAdmin = obtenerOCrearRol(Constants.ROL_ADMIN, 10);
 
         testUser  = crearUsuario("testuser@hotclick.cr",  "Test User",  rolUser);
         adminUser = crearUsuario("adminit@hotclick.cr",   "Admin IT",   rolAdmin);
@@ -85,7 +85,7 @@ public abstract class BaseIntegrationTest {
         userToken  = "Bearer " + jwtUtil.generateToken(
             testUser.getCorreo(),  testUser.getId(),  Constants.ROL_USUARIO_FINAL);
         adminToken = "Bearer " + jwtUtil.generateToken(
-            adminUser.getCorreo(), adminUser.getId(), Constants.ROL_ADMIN_IT);
+            adminUser.getCorreo(), adminUser.getId(), Constants.ROL_ADMIN);
     }
 
     @AfterEach

@@ -36,7 +36,7 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
     @BeforeEach
     void setUp() {
         Rol rolEmp   = obtenerOCrearRol(Constants.ROL_EMPRENDEDOR,    5);
-        Rol rolAdmin = obtenerOCrearRol(Constants.ROL_ADMIN_CLIENTE,   3);
+        Rol rolAdmin = obtenerOCrearRol(Constants.ROL_EMPRENDEDOR,   3);
 
         empresa      = crearEmpresa("Equipo Empresa", "equipo-empresa-test", "equipo@test.cr");
         emprendedor  = crearConEmpresa("empr-eq@test.cr",  "Empr Eq", rolEmp,   empresa);
@@ -49,7 +49,7 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
         miembroEmpresaRepository.save(new MiembroEmpresa(adminCliente, empresa, "EDITOR"));
 
         tokenEmp         = "Bearer " + jwtUtil.generateToken(emprendedor.getCorreo(),  emprendedor.getId(),  Constants.ROL_EMPRENDEDOR);
-        tokenAdminCliente = "Bearer " + jwtUtil.generateToken(adminCliente.getCorreo(), adminCliente.getId(), Constants.ROL_ADMIN_CLIENTE);
+        tokenAdminCliente = "Bearer " + jwtUtil.generateToken(adminCliente.getCorreo(), adminCliente.getId(), Constants.ROL_EMPRENDEDOR);
     }
 
     @AfterEach
@@ -126,6 +126,10 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
     }
 
     // ── T-EQ-007: ADMIN_CLIENTE no puede invitar miembros → 403 ──────────────
+    // El rol ADMIN_CLIENTE fue eliminado en V89 (migrado a EMPRENDEDOR), que sí
+    // puede invitar — la premisa del test ya no existe. Requiere redefinir la
+    // matriz de permisos del equipo antes de reactivarlo.
+    @org.junit.jupiter.api.Disabled("Rol ADMIN_CLIENTE eliminado en V89 — premisa obsoleta")
     @Test
     @DisplayName("T-EQ-007 | BÁSICO — ADMIN_CLIENTE no puede invitar miembros → 403")
     void adminCliente_cannotInvitar_403() throws Exception {
@@ -211,6 +215,8 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
     }
 
     // ── T-EQ-014: ADMIN_CLIENTE no puede eliminar miembros → 403 ─────────────
+    // Ver nota en T-EQ-007: rol eliminado en V89, premisa obsoleta.
+    @org.junit.jupiter.api.Disabled("Rol ADMIN_CLIENTE eliminado en V89 — premisa obsoleta")
     @Test
     @DisplayName("T-EQ-014 | BÁSICO — ADMIN_CLIENTE no puede eliminar miembros → 403")
     void adminCliente_cannotEliminar_403() throws Exception {
@@ -283,7 +289,7 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
         Usuario nuevo = usuarioRepository.findByCorreo(correo)
             .orElseThrow(() -> new AssertionError("Usuario no encontrado"));
         boolean tieneRol = nuevo.getRoles().stream()
-            .anyMatch(r -> Constants.ROL_ADMIN_CLIENTE.equals(r.getNombreRol()));
+            .anyMatch(r -> Constants.ROL_EMPRENDEDOR.equals(r.getNombreRol()));
         org.junit.jupiter.api.Assertions.assertTrue(tieneRol,
             "El miembro invitado debe tener rol ADMIN_CLIENTE");
     }

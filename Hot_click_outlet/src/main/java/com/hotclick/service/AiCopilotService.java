@@ -228,6 +228,69 @@ public class AiCopilotService {
         }
     }
 
+    /**
+     * Variante síncrona (sin SSE) para canales que necesitan la respuesta completa
+     * en un solo string — hoy la usa el bot de Telegram. Nunca lanza: cualquier
+     * fallo se devuelve como mensaje amigable para el chat.
+     *
+     * Reserva cuota igual que chatStream (verificarYReservar antes del call).
+     */
+    public String chatSync(Long empresaId, String userMessage) {
+        if (!aiQuotaService.verificarYReservar(empresaId)) {
+            return "Se agotó la cuota mensual de consultas con IA de tu plan. Podés seguir usando los botones del menú (/menu), que no consumen cuota.";
+        }
+
+        Empresa empresa = empresaRepository.findById(empresaId).orElse(null);
+        saveMsg(empresa, "user", userMessage, 0);
+
+        if (!isEnabled()) {
+            String mock = "(modo desarrollo — configurá NVIDIA_API_KEY para respuestas reales)\n\nHola, soy tu copilot de HotClick. ¿En qué te ayudo con tu negocio?";
+            saveMsg(empresa, "assistant", mock, 0);
+            return mock;
+        }
+
+        try {
+            Intent intent = detectIntent(userMessage);
+            List<Map<String, Object>> messages = buildMessages(empresaId, userMessage);
+            String systemPrompt = buildSystemPrompt(empresaId, intent);
+            String requestBody  = buildRequestBody(systemPrompt, messages, empresaId, false);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(NVIDIA_URL))
+                .timeout(Duration.ofSeconds(60))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + apiKey)
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
+                .build();
+
+            HttpResponse<String> response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                log.error("[AI-sync] empresaId={} NVIDIA respondió {} — {}", empresaId, response.statusCode(), response.body());
+                return "El asistente de IA no está disponible en este momento. Intentá de nuevo en unos minutos.";
+            }
+
+            JsonNode node = objectMapper.readTree(response.body());
+            String texto = node.path("choices").path(0).path("message").path("content").asText("");
+            if (texto.isBlank()) {
+                return "No pude generar una respuesta. Probá reformular la pregunta.";
+            }
+            if (texto.length() > MAX_RESPONSE_CHARS) texto = texto.substring(0, MAX_RESPONSE_CHARS);
+
+            int tokensIn  = node.path("usage").path("prompt_tokens").asInt(0);
+            int tokensOut = node.path("usage").path("completion_tokens").asInt(0);
+            saveMsg(empresa, "assistant", texto, tokensOut);
+            aiQuotaService.actualizarTokens(empresaId, tokensIn, tokensOut);
+            return texto;
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return "El asistente de IA no está disponible en este momento. Intentá de nuevo en unos minutos.";
+        } catch (Exception e) {
+            log.error("[AI-sync] empresaId={} fallo llamando a NVIDIA — {}", empresaId, e.getMessage());
+            return "El asistente de IA no está disponible en este momento. Intentá de nuevo en unos minutos.";
+        }
+    }
+
     private static Throwable unwrap(Throwable ex) {
         return ex instanceof CompletionException && ex.getCause() != null ? ex.getCause() : ex;
     }
@@ -635,6 +698,10 @@ public class AiCopilotService {
     }
 
     private String buildRequestBody(String systemPrompt, List<Map<String, Object>> messages, Long tenantId) {
+        return buildRequestBody(systemPrompt, messages, tenantId, true);
+    }
+
+    private String buildRequestBody(String systemPrompt, List<Map<String, Object>> messages, Long tenantId, boolean stream) {
         try {
             // Formato OpenAI chat completions: el system prompt va como mensaje, no como
             // campo top-level separado (a diferencia de la Messages API de Claude).
@@ -645,8 +712,8 @@ public class AiCopilotService {
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("model",      model);
             body.put("max_tokens", 1024);
-            body.put("stream",     true);
-            body.put("stream_options", Map.of("include_usage", true));
+            body.put("stream",     stream);
+            if (stream) body.put("stream_options", Map.of("include_usage", true));
             body.put("messages",   chatMessages);
             // Stop sequences prevent prompt injection: if a reply tries to impersonate
             // "Human:" or "User:", NVIDIA stops immediately instead of continuing the loop.

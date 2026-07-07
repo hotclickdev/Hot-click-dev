@@ -45,6 +45,7 @@ public class PedidoService {
     @Autowired private ProductoRepository productoRepository;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private TelegramService telegramService;
+    @Autowired private TelegramNotificacionClienteService telegramNotificacionClienteService;
 
     @CacheEvict(value = "dashboard-metricas",
         key = "#pedido.empresa != null ? #pedido.empresa.id.toString() : 'global'")
@@ -65,6 +66,10 @@ public class PedidoService {
                 "🛒 *NUEVA COMPRA*\n\n*Cliente:* %s\n*Pedido:* %s\n*Total:* ₡%,d\n*Pago:* %s\n*Estado:* %s",
                 cliente, saved.getNumeroPedido(), saved.getTotalPedido() != null ? saved.getTotalPedido() : 0,
                 metodo, saved.getEstadoPedido()));
+        if (saved.getEmpresa() != null) {
+            telegramNotificacionClienteService.notificarVenta(saved.getEmpresa().getId(),
+                saved.getNumeroPedido(), saved.getTotalPedido(), metodo, cliente, saved.getOrigen());
+        }
         return saved;
     }
 

@@ -37,6 +37,7 @@ public class PosQrService {
     @Autowired private StockService            stockService;
     @Autowired private TurnoCajaService        turnoCajaService;
     @Autowired private StripeService           stripeService;
+    @Autowired private TelegramNotificacionClienteService telegramNotificacionClienteService;
 
     @Value("${app.url:http://localhost:3000}")
     private String appUrl;
@@ -345,6 +346,9 @@ public class PosQrService {
             }
 
             log.info("[POS-QR] Venta {} registrada — método={} total={}", saved.getNumeroPedido(), metodoPago, totalPedido);
+
+            telegramNotificacionClienteService.notificarVenta(empresaId, saved.getNumeroPedido(),
+                totalPedido, metodoPago, null, "POS");
 
         } catch (RuntimeException e) {
             log.error("[POS-QR] Error creando pedido POS: {}", e.getMessage(), e);

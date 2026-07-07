@@ -35,14 +35,14 @@ class EmprendedorPerfilTest extends BaseIntegrationTest {
     @BeforeEach
     void setUp() {
         Rol rolEmp   = obtenerOCrearRol(Constants.ROL_EMPRENDEDOR,  5);
-        Rol rolAdmin = obtenerOCrearRol(Constants.ROL_ADMIN_CLIENTE, 3);
+        Rol rolAdmin = obtenerOCrearRol(Constants.ROL_EMPRENDEDOR, 3);
 
         empresa      = crearEmpresa("Perfil Empresa Test", "perfil-empresa-test", "perfil@test.cr");
         emprendedor  = crearConEmpresa("empr-pf@test.cr",  "Empr Pf",  rolEmp,   empresa);
         adminCliente = crearConEmpresa("admin-pf@test.cr", "Admin Pf", rolAdmin, empresa);
 
         tokenEmp         = "Bearer " + jwtUtil.generateToken(emprendedor.getCorreo(),  emprendedor.getId(),  Constants.ROL_EMPRENDEDOR);
-        tokenAdminCliente = "Bearer " + jwtUtil.generateToken(adminCliente.getCorreo(), adminCliente.getId(), Constants.ROL_ADMIN_CLIENTE);
+        tokenAdminCliente = "Bearer " + jwtUtil.generateToken(adminCliente.getCorreo(), adminCliente.getId(), Constants.ROL_EMPRENDEDOR);
     }
 
     @AfterEach
@@ -140,6 +140,9 @@ class EmprendedorPerfilTest extends BaseIntegrationTest {
     }
 
     // ── T-PF-009: ADMIN_CLIENTE no puede actualizar perfil → 403 ─────────────
+    // El rol ADMIN_CLIENTE fue eliminado en V89 (migrado a EMPRENDEDOR), que sí
+    // puede actualizar el perfil — la premisa del test ya no existe.
+    @org.junit.jupiter.api.Disabled("Rol ADMIN_CLIENTE eliminado en V89 — premisa obsoleta")
     @Test
     @DisplayName("T-PF-009 | LEVE — ADMIN_CLIENTE no puede actualizar perfil de empresa → 403")
     void adminCliente_cannotUpdatePerfil_403() throws Exception {

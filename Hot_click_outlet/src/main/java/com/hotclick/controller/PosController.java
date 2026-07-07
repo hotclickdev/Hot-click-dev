@@ -44,6 +44,7 @@ public class PosController {
     @Autowired private CacheManager       cacheManager;
     @Autowired private com.hotclick.security.CompanyScope companyScope;
     @Autowired private com.hotclick.service.TenantService tenantService;
+    @Autowired private com.hotclick.service.TelegramNotificacionClienteService telegramNotificacionClienteService;
 
     @PostMapping("/venta")
     @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR')")
@@ -161,6 +162,9 @@ public class PosController {
             } catch (Exception e) {
                 log.warn("[POS] No se pudo actualizar turno para venta {}: {}", saved.getId(), e.getMessage());
             }
+
+            telegramNotificacionClienteService.notificarVenta(empresaId, saved.getNumeroPedido(),
+                totalPedido, saved.getMetodoPago(), cliente.getNombre(), "POS");
 
             log.info("[POS] Venta {} creada por usuario {} — total ₡{}", saved.getNumeroPedido(), usuarioId, totalPedido);
             return ResponseEntity.ok(ResponseDTO.success("Venta registrada", saved));

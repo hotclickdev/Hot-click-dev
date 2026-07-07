@@ -45,7 +45,7 @@ class IDORCrosstenantAttackTest extends BaseIntegrationTest {
     @BeforeEach
     void setUp() {
         Rol rolEmp        = obtenerOCrearRol(Constants.ROL_EMPRENDEDOR,   5);
-        Rol rolAdminCliente = obtenerOCrearRol(Constants.ROL_ADMIN_CLIENTE, 2);
+        Rol rolAdminCliente = obtenerOCrearRol(Constants.ROL_EMPRENDEDOR, 2);
 
         empresaA = crearEmpresa("IDOR-Alpha", "idor-alpha-" + System.nanoTime());
         empresaB = crearEmpresa("IDOR-Beta",  "idor-beta-"  + System.nanoTime());
