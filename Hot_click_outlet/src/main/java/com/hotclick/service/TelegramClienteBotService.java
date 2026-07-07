@@ -97,6 +97,16 @@ public class TelegramClienteBotService {
         }
     }
 
+    /** Muestra "escribiendo…" en el chat mientras un proceso lento (la IA) trabaja. */
+    public void enviarAccionEscribiendo(Long chatId) {
+        if (!isConfigured() || chatId == null) return;
+        try {
+            post("sendChatAction", Map.of("chat_id", chatId, "action", "typing"));
+        } catch (Exception e) {
+            log.debug("[telegram-cliente] sendChatAction falló — {}", e.getMessage());
+        }
+    }
+
     /** Ack del botón presionado — quita el reloj de espera en el cliente de Telegram. */
     public void responderCallback(String callbackQueryId) {
         if (!isConfigured() || callbackQueryId == null) return;

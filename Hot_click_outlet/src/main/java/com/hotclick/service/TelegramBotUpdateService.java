@@ -61,6 +61,10 @@ public class TelegramBotUpdateService {
     @Autowired private StockService                  stockService;
     @Autowired private JdbcTemplate                  jdbc;
 
+    /** Self-proxy: @Async no aplica en llamadas internas (this.responderConIa saltearía el proxy). */
+    @Autowired @org.springframework.context.annotation.Lazy
+    private TelegramBotUpdateService self;
+
     // ── Entrada única desde el webhook ────────────────────────────────────────
 
     @Transactional
@@ -130,11 +134,57 @@ public class TelegramBotUpdateService {
             return;
         }
 
-        // Texto libre → AI Copilot
+        // Texto libre → AI Copilot, en hilo aparte: la IA puede tardar hasta 25s y
+        // este método corre en el hilo del webhook — si se bloquea, Telegram corta
+        // por timeout y reintenta el update, congelando todo el bot ("Read timeout
+        // expired"). Se responde 200 ya y la respuesta llega cuando esté.
         Long empresaId = empresaValidada(v);
         if (empresaId == null) return;
-        String respuesta = aiCopilotService.chatSync(empresaId, texto);
-        bot.enviarMensaje(chatId, respuesta, null, false);
+        bot.enviarAccionEscribiendo(chatId);
+        self.responderConIa(chatId, empresaId, texto);
+    }
+
+    /**
+     * Responde un texto libre fuera del hilo del webhook. Si el proveedor de IA
+     * está caído (chatSync → null), degrada a los datos estructurados según la
+     * intención detectada — la conversación nunca queda sin respuesta.
+     */
+    @org.springframework.scheduling.annotation.Async
+    public void responderConIa(Long chatId, Long empresaId, String texto) {
+        try {
+            String respuesta = aiCopilotService.chatSync(empresaId, texto);
+            if (respuesta != null) {
+                bot.enviarMensaje(chatId, respuesta, null, false);
+                return;
+            }
+
+            String lower = texto.toLowerCase();
+            String datos = null;
+            if (contieneAlguna(lower, "vend", "venta", "ingres", "cobr", "pedido")) {
+                datos = mensajeVentasHoy(empresaId);
+            } else if (contieneAlguna(lower, "stock", "inventari", "producto", "agotad")) {
+                datos = mensajeInventario(empresaId);
+            } else if (contieneAlguna(lower, "finanz", "gananc", "utilidad", "ticket")) {
+                datos = mensajeFinanzasMes(empresaId);
+            }
+
+            if (datos != null) {
+                bot.enviarMensaje(chatId, "La IA no está disponible en este momento — esto es lo que te puedo mostrar:\n\n" + datos);
+            } else {
+                bot.enviarMensaje(chatId, "El asistente de IA no está disponible en este momento. Mientras tanto podés consultar tus datos con los botones:");
+                vinculacionActiva(chatId).ifPresent(this::mostrarMenu);
+            }
+        } catch (Exception e) {
+            log.error("[telegram-bot] fallo respondiendo texto libre en chat {} — {}", chatId, e.getMessage());
+            bot.enviarMensaje(chatId, "No pude procesar tu mensaje. Intentá de nuevo en unos minutos o escribí /menu.");
+        }
+    }
+
+    private boolean contieneAlguna(String texto, String... claves) {
+        for (String clave : claves) {
+            if (texto.contains(clave)) return true;
+        }
+        return false;
     }
 
     // ── Callbacks (botones) ───────────────────────────────────────────────────

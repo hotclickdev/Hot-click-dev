@@ -230,10 +230,12 @@ public class AiCopilotService {
 
     /**
      * Variante síncrona (sin SSE) para canales que necesitan la respuesta completa
-     * en un solo string — hoy la usa el bot de Telegram. Nunca lanza: cualquier
-     * fallo se devuelve como mensaje amigable para el chat.
+     * en un solo string — hoy la usa el bot de Telegram.
      *
      * Reserva cuota igual que chatStream (verificarYReservar antes del call).
+     * Retorna {@code null} cuando el PROVEEDOR de IA falló (timeout/HTTP error) —
+     * el caller decide su propio fallback. Cuota agotada y modo-desarrollo sí
+     * devuelven mensaje, porque son respuestas definitivas, no fallos transitorios.
      */
     public String chatSync(Long empresaId, String userMessage) {
         if (!aiQuotaService.verificarYReservar(empresaId)) {
@@ -257,7 +259,9 @@ public class AiCopilotService {
 
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(NVIDIA_URL))
-                .timeout(Duration.ofSeconds(60))
+                // 25s y no 60s: en un chat nadie espera más, y el caller necesita
+                // enterarse rápido del fallo para activar su fallback.
+                .timeout(Duration.ofSeconds(25))
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + apiKey)
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
@@ -266,7 +270,7 @@ public class AiCopilotService {
             HttpResponse<String> response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 log.error("[AI-sync] empresaId={} NVIDIA respondió {} — {}", empresaId, response.statusCode(), response.body());
-                return "El asistente de IA no está disponible en este momento. Intentá de nuevo en unos minutos.";
+                return null;
             }
 
             JsonNode node = objectMapper.readTree(response.body());
@@ -284,10 +288,10 @@ public class AiCopilotService {
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            return "El asistente de IA no está disponible en este momento. Intentá de nuevo en unos minutos.";
+            return null;
         } catch (Exception e) {
             log.error("[AI-sync] empresaId={} fallo llamando a NVIDIA — {}", empresaId, e.getMessage());
-            return "El asistente de IA no está disponible en este momento. Intentá de nuevo en unos minutos.";
+            return null;
         }
     }
 

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
 import com.hotclick.scheduler.TelegramInventarioScheduler;
+import com.hotclick.service.AiCopilotService;
 import com.hotclick.service.TelegramClienteBotService;
 import com.hotclick.service.TelegramNotificacionClienteService;
 import com.hotclick.sse.StockCambioEvent;
@@ -46,6 +47,10 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
     private static final long CHAT_ID = 555_001L;
 
     @MockitoBean protected TelegramClienteBotService bot;
+
+    /** Spy: comportamiento real por defecto; los tests de fallback fuerzan chatSync → null (proveedor caído). */
+    @org.springframework.test.context.bean.override.mockito.MockitoSpyBean
+    protected AiCopilotService aiCopilotService;
 
     @Autowired TelegramVinculacionRepository vinculacionRepository;
     @Autowired EmpresaRepository            empresaRepository;
@@ -299,9 +304,37 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
     void textoLibre_sinCreditos_mensajeDeCuota() throws Exception {
         vincularDirecto(duenno, empresa, CHAT_ID); // empresa GRATUITO sin plan → 0 créditos
 
-        postUpdate(mensajeTexto(CHAT_ID, "¿cuál producto se vende más?"));
+        postUpdate(mensajeTexto(CHAT_ID, "¿qué me recomendás mejorar?")); // sin keywords de fallback
 
-        verify(bot).enviarMensaje(eq(CHAT_ID), contains("cuota"), isNull(), eq(false));
+        // La rama de texto libre es async — el webhook responde 200 al instante
+        verify(bot, timeout(3000)).enviarMensaje(eq(CHAT_ID), contains("cuota"), isNull(), eq(false));
+    }
+
+    @Test
+    @DisplayName("IA caída + pregunta de ventas → fallback con los datos de ventas de hoy")
+    void textoLibre_iaCaida_fallbackVentas() throws Exception {
+        vincularDirecto(duenno, empresa, CHAT_ID);
+        doReturn(null).when(aiCopilotService).chatSync(anyLong(), anyString());
+
+        postUpdate(mensajeTexto(CHAT_ID, "cuanto vendi hoy?"));
+
+        ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+        verify(bot, timeout(3000)).enviarMensaje(eq(CHAT_ID), captor.capture());
+        assertThat(captor.getValue())
+            .contains("La IA no está disponible")
+            .contains("Ventas de hoy");
+    }
+
+    @Test
+    @DisplayName("IA caída + texto sin intención clara → aviso + menú de botones")
+    void textoLibre_iaCaida_sinIntencion_muestraMenu() throws Exception {
+        vincularDirecto(duenno, empresa, CHAT_ID);
+        doReturn(null).when(aiCopilotService).chatSync(anyLong(), anyString());
+
+        postUpdate(mensajeTexto(CHAT_ID, "hola que tal"));
+
+        verify(bot, timeout(3000)).enviarMensaje(eq(CHAT_ID), contains("no está disponible"));
+        verify(bot, timeout(3000)).enviarMensaje(eq(CHAT_ID), anyString(), anyList()); // menú con botones
     }
 
     // ── Notificaciones ────────────────────────────────────────────────────────
