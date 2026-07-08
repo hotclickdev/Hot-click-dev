@@ -39,8 +39,6 @@ public class EmprendedorRegistroService {
         if (dto.getNombreAdmin()     != null) dto.setNombreAdmin(sanitizer.cleanWithLimit(dto.getNombreAdmin(), 100));
 
         // Validaciones básicas
-        if (!Boolean.TRUE.equals(dto.getInscritoTributacion()))
-            throw new IllegalArgumentException("Debés estar inscrito en Tributación Directa (ATV) para vender en HotClick");
         if (dto.getNombreEmpresa() == null || dto.getNombreEmpresa().isBlank())
             throw new IllegalArgumentException("El nombre de la empresa es requerido");
         if (dto.getCorreoAdmin() == null || dto.getCorreoAdmin().isBlank())

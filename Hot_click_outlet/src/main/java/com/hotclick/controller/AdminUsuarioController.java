@@ -44,10 +44,11 @@ public class AdminUsuarioController {
      * Aprueba un usuario: activa la cuenta y asigna el rol indicado.
      * Body: { "rol": "USUARIO_FINAL" | "ADMIN" | "EMPRENDEDOR" }
      */
+    @Transactional
     @PutMapping("/{id}/aprobar")
     public ResponseEntity<ResponseDTO> aprobar(@PathVariable Long id,
                                                 @RequestBody Map<String, String> body) {
-        Optional<Usuario> opt = usuarioRepository.findById(id);
+        Optional<Usuario> opt = usuarioRepository.findByIdWithRoles(id);
         if (opt.isEmpty()) {
             return ResponseEntity.status(404).body(ResponseDTO.error("Usuario no encontrado"));
         }
@@ -93,6 +94,7 @@ public class AdminUsuarioController {
      * Cambia el rol de cualquier usuario existente.
      * Body: { "rol": "USUARIO_FINAL" | "ADMIN" | "EMPRENDEDOR" }
      */
+    @Transactional
     @PutMapping("/{id}/rol")
     public ResponseEntity<ResponseDTO> cambiarRol(@PathVariable Long id,
                                                    @RequestBody Map<String, String> body) {
@@ -101,7 +103,7 @@ public class AdminUsuarioController {
             return ResponseEntity.badRequest().body(ResponseDTO.error("El campo 'rol' es requerido"));
         }
 
-        Optional<Usuario> opt = usuarioRepository.findById(id);
+        Optional<Usuario> opt = usuarioRepository.findByIdWithRoles(id);
         if (opt.isEmpty()) {
             return ResponseEntity.status(404).body(ResponseDTO.error("Usuario no encontrado"));
         }

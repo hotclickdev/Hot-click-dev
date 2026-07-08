@@ -22,6 +22,10 @@ const ROLES = [
 const ROLE_COLORS = { ADMIN: 'danger', EMPRENDEDOR: 'purple', USUARIO_FINAL: 'default' }
 const ROLE_LABELS = { ADMIN: 'Admin', EMPRENDEDOR: 'Emprendedor', USUARIO_FINAL: 'Cliente' }
 
+const PLANES = ['EMPRENDEDOR', 'PYME', 'NEGOCIO_PLUS']
+const PLAN_LABELS = { EMPRENDEDOR: 'Emprendedor', PYME: 'Pyme', NEGOCIO_PLUS: 'Negocio Plus' }
+const PLAN_COLORS = { EMPRENDEDOR: 'default', PYME: 'accent', NEGOCIO_PLUS: 'warning' }
+
 const ESTADO_BADGE = {
   ACTIVO:     'success',
   PENDIENTE:  'warning',
@@ -38,6 +42,7 @@ export default function AdminUsers() {
   const toast = useToast()
   const [users, setUsers] = useState([])
   const [pending, setPending] = useState([])
+  const [empresasPlan, setEmpresasPlan] = useState({}) // { [empresaId]: plan }
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
@@ -46,6 +51,7 @@ export default function AdminUsers() {
   const [editUser, setEditUser] = useState(null)
   const [editRol, setEditRol] = useState('')
   const [editEstado, setEditEstado] = useState('')
+  const [editPlan, setEditPlan] = useState('')
   const [saving, setSaving] = useState(false)
 
   // CRM
@@ -64,12 +70,15 @@ export default function AdminUsers() {
   const load = async () => {
     setLoading(true)
     try {
-      const [{ data: all }, { data: pend }] = await Promise.all([
+      const [{ data: all }, { data: pend }, { data: empresas }] = await Promise.all([
         adminService.getUsers(),
         adminService.getPendingUsers(),
+        adminService.getEmpresas(),
       ])
       setUsers(Array.isArray(all) ? all : all.content ?? [])
       setPending(Array.isArray(pend) ? pend : pend.content ?? [])
+      const empresasList = Array.isArray(empresas) ? empresas : (empresas?.data ?? empresas?.content ?? [])
+      setEmpresasPlan(Object.fromEntries(empresasList.map((e) => [e.id, e.plan])))
     } finally { setLoading(false) }
   }
 
@@ -156,10 +165,13 @@ export default function AdminUsers() {
     } finally { setActionLoading(false) }
   }
 
+  const getPlanStr = (u) => (u.empresaId ? empresasPlan[u.empresaId] : null)
+
   const openEdit = (u) => {
     setEditUser(u)
     setEditRol(getRolStr(u))
     setEditEstado(getEstadoStr(u))
+    setEditPlan(getPlanStr(u) ?? 'EMPRENDEDOR')
   }
 
   const handleSave = async () => {
@@ -168,6 +180,7 @@ export default function AdminUsers() {
     try {
       const currentRol    = getRolStr(editUser)
       const currentEstado = getEstadoStr(editUser)
+      const currentPlan   = getPlanStr(editUser)
       const promises = []
 
       if (editRol !== currentRol) {
@@ -175,6 +188,9 @@ export default function AdminUsers() {
       }
       if (editEstado !== currentEstado && ESTADO_INT[editEstado] != null) {
         promises.push(adminService.setStatus(editUser.id, ESTADO_INT[editEstado]))
+      }
+      if (editRol === 'EMPRENDEDOR' && editUser.empresaId && editPlan !== currentPlan) {
+        promises.push(adminService.setEmpresaPlan(editUser.empresaId, editPlan))
       }
 
       if (promises.length === 0) { setEditUser(null); return }
@@ -351,6 +367,7 @@ export default function AdminUsers() {
                   {displayed.map((u) => {
                     const estadoStr   = getEstadoStr(u)
                     const rolStr      = getRolStr(u)
+                    const planStr     = getPlanStr(u)
                     const isSuspended = estadoStr === 'SUSPENDIDO'
                     const isDeleted   = estadoStr === 'ELIMINADO'
                     return (
@@ -372,9 +389,16 @@ export default function AdminUsers() {
                         </td>
                         <td className="px-4 py-3 text-[#8e8e9a] text-xs" title={u.correo}><span className="truncate block max-w-[220px]">{u.correo}</span></td>
                         <td className="px-4 py-3">
-                          <Badge variant={ROLE_COLORS[rolStr] ?? 'default'}>
-                            {ROLE_LABELS[rolStr] ?? rolStr}
-                          </Badge>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <Badge variant={ROLE_COLORS[rolStr] ?? 'default'}>
+                              {ROLE_LABELS[rolStr] ?? rolStr}
+                            </Badge>
+                            {rolStr === 'EMPRENDEDOR' && planStr && (
+                              <Badge variant={PLAN_COLORS[planStr] ?? 'default'}>
+                                {PLAN_LABELS[planStr] ?? planStr}
+                              </Badge>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-3">
                           <Badge variant={ESTADO_BADGE[estadoStr] ?? 'default'}>
@@ -619,6 +643,24 @@ export default function AdminUsers() {
                 ))}
               </div>
             </div>
+
+            {editRol === 'EMPRENDEDOR' && editUser.empresaId && (
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">Plan del negocio</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {PLANES.map((value) => (
+                    <button key={value} onClick={() => setEditPlan(value)}
+                      className={`px-2 py-2.5 rounded-xl text-xs font-medium border transition-all ${
+                        editPlan === value
+                          ? 'bg-[#4f7cff]/15 text-white border-[#4f7cff]/40'
+                          : 'text-[#8e8e9a] border-white/10 hover:text-white hover:border-white/20'
+                      }`}>
+                      {PLAN_LABELS[value]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">{t('admin.users.status')}</label>
