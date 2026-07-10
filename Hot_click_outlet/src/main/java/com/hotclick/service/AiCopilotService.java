@@ -38,11 +38,16 @@ import java.util.*;
 import java.util.concurrent.CompletionException;
 
 /**
- * AI Copilot powered by NVIDIA NIM (OpenAI-compatible chat completions API).
+ * AI Copilot — dos proveedores, uno por canal:
+ *   - chatStream (panel admin, SSE) sigue en NVIDIA NIM (OpenAI-compatible).
+ *   - chatSync/crossSellCliente (bot de Telegram) usan Claude (Anthropic Messages
+ *     API): el tier gratuito de NVIDIA demostró ser intermitentemente lento/no
+ *     disponible bajo uso real (ver memoria del proyecto), y Claude ya es
+ *     confiable en producción para el asistente de compras de esta misma app.
  *
  * Uses Java 21 HttpClient — no external SDK required.
- * Streams the response via SSE to avoid connection timeouts.
- * When api-key is blank, returns a mock response (dev mode).
+ * Streams la respuesta del panel via SSE para evitar timeouts de conexión.
+ * Cuando la api-key correspondiente está vacía, devuelve una respuesta mock (dev mode).
  *
  * Context injected into every system prompt:
  *   - Empresa name, plan, country
@@ -75,6 +80,15 @@ public class AiCopilotService {
     @Value("${nvidia.model:meta/llama-3.1-70b-instruct}")
     private String model;
 
+    // ── Claude (Anthropic) — motor del chat del bot de Telegram ────────────────
+    private static final String CLAUDE_URL = "https://api.anthropic.com/v1/messages";
+
+    @Value("${anthropic.api-key:}")
+    private String claudeApiKey;
+
+    @Value("${anthropic.model:claude-haiku-4-5-20251001}")
+    private String claudeModel;
+
     @Autowired private AiMensajeRepository     aiMensajeRepository;
     @Autowired private AiQuotaService          aiQuotaService;
     @Autowired private EmpresaRepository       empresaRepository;
@@ -88,6 +102,10 @@ public class AiCopilotService {
 
     public boolean isEnabled() {
         return apiKey != null && !apiKey.isBlank();
+    }
+
+    private boolean isClaudeEnabled() {
+        return claudeApiKey != null && !claudeApiKey.isBlank();
     }
 
     /** Returns the last HISTORY_TURNS messages for the empresa. */
@@ -262,8 +280,8 @@ public class AiCopilotService {
         Empresa empresa = empresaRepository.findById(empresaId).orElse(null);
         saveMsg(empresa, "user", userMessage, 0);
 
-        if (!isEnabled()) {
-            String mock = "(modo desarrollo — configurá NVIDIA_API_KEY para respuestas reales)\n\nHola, soy tu copilot de HotClick. ¿En qué te ayudo con tu negocio?";
+        if (!isClaudeEnabled()) {
+            String mock = "(modo desarrollo — configurá ANTHROPIC_API_KEY para respuestas reales)\n\nHola, soy tu copilot de HotClick. ¿En qué te ayudo con tu negocio?";
             saveMsg(empresa, "assistant", mock, 0);
             return mock;
         }
@@ -275,26 +293,26 @@ public class AiCopilotService {
 
             int tokensInTotal = 0, tokensOutTotal = 0;
             String texto = null;
-            // NVIDIA es intermitentemente lenta (ver memoria del proyecto): un presupuesto
-            // total evita que varias rondas lentas seguidas dejen al usuario esperando
-            // varios minutos antes de recibir el fallback.
+            // Presupuesto total: evita que varias rondas de tool-calling lentas
+            // seguidas dejen al usuario esperando mucho antes de recibir el fallback.
             long deadline = System.currentTimeMillis() + TOOL_LOOP_BUDGET_MS;
 
             for (int ronda = 0; ronda < MAX_TOOL_ROUNDS; ronda++) {
                 if (System.currentTimeMillis() >= deadline) {
-                    log.warn("[AI-sync] empresaId={} se acabó el presupuesto de tiempo de NVIDIA (ronda {})", empresaId, ronda);
+                    log.warn("[AI-sync] empresaId={} se acabó el presupuesto de tiempo de Claude (ronda {})", empresaId, ronda);
                     return null;
                 }
 
-                String requestBody = buildRequestBodyConTools(systemPrompt, messages, tools, empresaId);
+                String requestBody = buildRequestBodyClaude(systemPrompt, messages, tools);
 
                 HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(nvidiaUrl))
+                    .uri(URI.create(CLAUDE_URL))
                     // 25s y no 60s: en un chat nadie espera más, y el caller necesita
                     // enterarse rápido del fallo para activar su fallback.
                     .timeout(Duration.ofSeconds(25))
                     .header("Content-Type", "application/json")
-                    .header("Authorization", "Bearer " + apiKey)
+                    .header("x-api-key", claudeApiKey)
+                    .header("anthropic-version", "2023-06-01")
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
                     .build();
 
@@ -310,34 +328,45 @@ public class AiCopilotService {
                     response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
                 }
                 if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                    log.error("[AI-sync] empresaId={} NVIDIA respondió {} — {}", empresaId, response.statusCode(), response.body());
+                    log.error("[AI-sync] empresaId={} Claude respondió {} — {}", empresaId, response.statusCode(), response.body());
                     return null;
                 }
 
                 JsonNode node    = objectMapper.readTree(response.body());
-                JsonNode message = node.path("choices").path(0).path("message");
-                tokensInTotal  += node.path("usage").path("prompt_tokens").asInt(0);
-                tokensOutTotal += node.path("usage").path("completion_tokens").asInt(0);
+                JsonNode content = node.path("content");
+                tokensInTotal  += node.path("usage").path("input_tokens").asInt(0);
+                tokensOutTotal += node.path("usage").path("output_tokens").asInt(0);
 
-                JsonNode toolCalls = message.path("tool_calls");
-                if (toolCalls.isArray() && !toolCalls.isEmpty()) {
-                    messages.add(asistenteToolCallMessage(message));
-                    for (JsonNode toolCall : toolCalls) {
-                        String toolCallId = toolCall.path("id").asText();
-                        String toolName   = toolCall.path("function").path("name").asText();
-                        JsonNode args;
-                        try {
-                            args = objectMapper.readTree(toolCall.path("function").path("arguments").asText("{}"));
-                        } catch (JsonProcessingException e) {
-                            args = objectMapper.createObjectNode();
-                        }
-                        String resultado = ejecutarTool(empresaId, toolName, args);
-                        messages.add(toolResultMessage(toolCallId, resultado));
+                if ("tool_use".equals(node.path("stop_reason").asText(""))) {
+                    Map<String, Object> assistantMsg = new LinkedHashMap<>();
+                    assistantMsg.put("role", "assistant");
+                    assistantMsg.put("content", objectMapper.convertValue(content, Object.class));
+                    messages.add(assistantMsg);
+
+                    List<Map<String, Object>> resultados = new ArrayList<>();
+                    for (JsonNode block : content) {
+                        if (!"tool_use".equals(block.path("type").asText())) continue;
+                        String toolUseId = block.path("id").asText();
+                        String toolName  = block.path("name").asText();
+                        String resultado = ejecutarTool(empresaId, toolName, block.path("input"));
+                        Map<String, Object> tr = new LinkedHashMap<>();
+                        tr.put("type", "tool_result");
+                        tr.put("tool_use_id", toolUseId);
+                        tr.put("content", resultado);
+                        resultados.add(tr);
                     }
+                    Map<String, Object> userMsg = new LinkedHashMap<>();
+                    userMsg.put("role", "user");
+                    userMsg.put("content", resultados);
+                    messages.add(userMsg);
                     continue; // deja que el modelo use los resultados en la siguiente ronda
                 }
 
-                texto = message.path("content").asText("");
+                StringBuilder textoSb = new StringBuilder();
+                for (JsonNode block : content) {
+                    if ("text".equals(block.path("type").asText())) textoSb.append(block.path("text").asText(""));
+                }
+                texto = textoSb.toString();
                 break;
             }
 
@@ -370,7 +399,7 @@ public class AiCopilotService {
      * el caller cae a su propio fallback SQL.
      */
     public String crossSellCliente(Long empresaId, Long clienteId) {
-        if (!isEnabled()) return null;
+        if (!isClaudeEnabled()) return null;
 
         List<String> nombreRows = jdbc.queryForList(
             "SELECT nombre FROM hot_click_usuario_tb WHERE id_usuario = ?", String.class, clienteId);
@@ -428,35 +457,37 @@ public class AiCopilotService {
 
         try {
             Map<String, Object> body = new LinkedHashMap<>();
-            body.put("model", model);
+            body.put("model", claudeModel);
             body.put("max_tokens", 300);
-            body.put("stream", false);
-            body.put("messages", List.of(
-                Map.of("role", "system", "content", systemPrompt),
-                Map.of("role", "user", "content", "Generá la sugerencia.")
-            ));
+            body.put("system", systemPrompt);
+            body.put("messages", List.of(Map.of("role", "user", "content", "Generá la sugerencia.")));
 
             HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(nvidiaUrl))
+                .uri(URI.create(CLAUDE_URL))
                 .timeout(Duration.ofSeconds(25))
                 .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + apiKey)
+                .header("x-api-key", claudeApiKey)
+                .header("anthropic-version", "2023-06-01")
                 .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(body), StandardCharsets.UTF_8))
                 .build();
 
             HttpResponse<String> response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                log.error("[AI-crosssell] empresaId={} clienteId={} NVIDIA respondió {}", empresaId, clienteId, response.statusCode());
+                log.error("[AI-crosssell] empresaId={} clienteId={} Claude respondió {}", empresaId, clienteId, response.statusCode());
                 return null;
             }
             JsonNode node = objectMapper.readTree(response.body());
-            String texto = node.path("choices").path(0).path("message").path("content").asText("").trim();
+            StringBuilder textoSb = new StringBuilder();
+            for (JsonNode block : node.path("content")) {
+                if ("text".equals(block.path("type").asText())) textoSb.append(block.path("text").asText(""));
+            }
+            String texto = textoSb.toString().trim();
             return texto.isBlank() ? null : texto;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return null;
         } catch (Exception e) {
-            log.error("[AI-crosssell] empresaId={} clienteId={} fallo llamando a NVIDIA — {}", empresaId, clienteId, e.getMessage());
+            log.error("[AI-crosssell] empresaId={} clienteId={} fallo llamando a Claude — {}", empresaId, clienteId, e.getMessage());
             return null;
         }
     }
@@ -968,14 +999,12 @@ public class AiCopilotService {
         }
     }
 
+    /** Formato de tool de la Messages API de Claude — plano, sin la envoltura {type:"function", function:{...}} de OpenAI. */
     private Map<String, Object> toolDef(String name, String description, Map<String, Object> parameters) {
-        Map<String, Object> function = new LinkedHashMap<>();
-        function.put("name", name);
-        function.put("description", description);
-        function.put("parameters", parameters);
         Map<String, Object> tool = new LinkedHashMap<>();
-        tool.put("type", "function");
-        tool.put("function", function);
+        tool.put("name", name);
+        tool.put("description", description);
+        tool.put("input_schema", parameters);
         return tool;
     }
 
@@ -1041,55 +1070,25 @@ public class AiCopilotService {
                 fmt.format(kpis.get("comprasRecibidas")));
     }
 
-    /** Reconstruye el mensaje "assistant" con tool_calls tal como lo espera NVIDIA en la siguiente ronda del loop. */
-    private Map<String, Object> asistenteToolCallMessage(JsonNode message) {
-        List<Map<String, Object>> toolCallsOut = new ArrayList<>();
-        for (JsonNode tc : message.path("tool_calls")) {
-            Map<String, Object> function = new LinkedHashMap<>();
-            function.put("name", tc.path("function").path("name").asText());
-            function.put("arguments", tc.path("function").path("arguments").asText("{}"));
-            Map<String, Object> tcOut = new LinkedHashMap<>();
-            tcOut.put("id", tc.path("id").asText());
-            tcOut.put("type", "function");
-            tcOut.put("function", function);
-            toolCallsOut.add(tcOut);
-        }
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("role", "assistant");
-        m.put("content", message.path("content").isNull() ? null : message.path("content").asText(null));
-        m.put("tool_calls", toolCallsOut);
-        return m;
-    }
-
-    private Map<String, Object> toolResultMessage(String toolCallId, String contenido) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("role", "tool");
-        m.put("tool_call_id", toolCallId);
-        m.put("content", contenido);
-        return m;
-    }
-
-    private String buildRequestBodyConTools(String systemPrompt, List<Map<String, Object>> messages,
-                                            List<Map<String, Object>> tools, Long tenantId) {
+    /**
+     * Request para la Messages API de Claude — a diferencia de OpenAI/NVIDIA, el
+     * system prompt va en un campo top-level, no como mensaje con role "system".
+     */
+    private String buildRequestBodyClaude(String systemPrompt, List<Map<String, Object>> messages,
+                                          List<Map<String, Object>> tools) {
         try {
-            List<Map<String, Object>> chatMessages = new ArrayList<>();
-            chatMessages.add(Map.of("role", "system", "content", systemPrompt));
-            chatMessages.addAll(messages);
-
             Map<String, Object> body = new LinkedHashMap<>();
-            body.put("model",      model);
+            body.put("model",      claudeModel);
             body.put("max_tokens", 1024);
-            body.put("stream",     false);
-            body.put("messages",   chatMessages);
-            body.put("stop", List.of("\n\nHuman:", "\n\nUser:", "Human:", "User:"));
+            body.put("system",     systemPrompt);
+            body.put("messages",   messages);
             if (!tools.isEmpty()) {
                 body.put("tools", tools);
-                body.put("tool_choice", "auto");
             }
             return objectMapper.writeValueAsString(body);
         } catch (JsonProcessingException e) {
-            throw new IntegracionExternaException("nvidia-api", IntegracionExternaException.Tipo.RESPUESTA_INVALIDA,
-                tenantId, "No se pudo serializar el request a NVIDIA API", e);
+            throw new IntegracionExternaException("claude-api", IntegracionExternaException.Tipo.RESPUESTA_INVALIDA,
+                "No se pudo serializar el request a Claude API", e);
         }
     }
 
