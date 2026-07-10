@@ -7,8 +7,10 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import com.hotclick.exception.IntegracionExternaException;
 import com.hotclick.model.AiMensaje;
 import com.hotclick.model.Empresa;
+import com.hotclick.model.Usuario;
 import com.hotclick.repository.AiMensajeRepository;
 import com.hotclick.repository.EmpresaRepository;
+import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.security.TenantContext;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
@@ -97,6 +99,7 @@ public class AiCopilotService {
     @Autowired private InventoryForecastService inventoryForecastService;
     @Autowired private TenantService           tenantService;
     @Autowired private FinanzasReporteService  finanzasReporteService;
+    @Autowired private UsuarioRepository       usuarioRepository;
 
     // ── Public API ────────────────────────────────────────────────────────────
 
@@ -949,16 +952,26 @@ public class AiCopilotService {
             español con el vos costarricense: directo, concreto y accionable. %s
 
             Tenés herramientas para consultar datos reales del negocio (inventario,
-            ventas, finanzas, recomendaciones) — llamalas cuando la pregunta las
-            necesite, en vez de inventar cifras. Si el dato ya está en la conversación
-            previa, no repitas la misma consulta.
+            ventas, finanzas, clientes, recomendaciones) — llamalas SOLO cuando la
+            pregunta realmente las necesite, nunca para inventar cifras. Si el dato
+            ya está en la conversación previa, no repitas la misma consulta.
 
-            KPIs GENERALES (últimos 7 días):
+            ESTILO DE RESPUESTA (muy importante, seguilo siempre):
+            - Respondé EXACTAMENTE lo que se te pregunta, ni más ni menos. Un saludo
+              ("hola", "buenas", "qué tal") se responde con un saludo corto y una
+              pregunta de qué necesita — nunca dispares un reporte del negocio sin
+              que te lo pidan.
+            - Por defecto sé breve: 2 a 4 líneas alcanza para la mayoría de
+              preguntas puntuales. Solo das una lista larga, tabla o desglose
+              completo si te piden explícitamente un resumen, reporte, o "todo".
+            - No llamés una herramienta si la pregunta no la necesita (un saludo
+              o una pregunta general de negocio no ameritan consultar datos).
+
+            KPIs GENERALES (últimos 7 días, contexto tuyo — no los repitas salvo que pregunten):
             %s
 
             REGLAS:
             - Nunca inventés cifras: si no tenés el dato, usá la herramienta correspondiente
-            - Máximo 400 palabras por respuesta
             - Respondés solo sobre este negocio; si la pregunta es ajena, redirigís amablemente
             """.formatted(nombreNegocio, saludo, kpis);
     }
@@ -973,6 +986,9 @@ public class AiCopilotService {
             Map.of("type", "object", "properties", Map.of())));
         tools.add(toolDef("recomendaciones",
             "Devuelve acciones recomendadas para el negocio: productos con stock crítico a reabastecer, y productos sin ventas en 60+ días candidatos a descuento.",
+            Map.of("type", "object", "properties", Map.of())));
+        tools.add(toolDef("consultar_clientes",
+            "Consulta la lista de clientes del negocio: cuántos son y sus nombres. Usar cuando pregunten cuáles/cuántos son sus clientes.",
             Map.of("type", "object", "properties", Map.of())));
 
         if (tieneFeatureReportes(empresaId)) {
@@ -1014,6 +1030,7 @@ public class AiCopilotService {
                 case "consultar_inventario" -> getInventarioData(empresaId);
                 case "consultar_ventas"     -> getVentasData(empresaId);
                 case "recomendaciones"      -> getRecomendacionesData(empresaId);
+                case "consultar_clientes"   -> getClientesData(empresaId);
                 case "consultar_finanzas"   -> getFinanzasData(empresaId, args);
                 default -> "Herramienta desconocida: " + nombre;
             };
@@ -1040,6 +1057,20 @@ public class AiCopilotService {
         if (sb.isEmpty()) {
             sb.append("No hay recomendaciones urgentes en este momento — el negocio está en buen estado.");
         }
+        return sb.toString();
+    }
+
+    /** Lista de clientes del negocio (compraron al menos una vez, o se registraron con esta empresa). */
+    private String getClientesData(Long empresaId) {
+        List<Usuario> clientes = usuarioRepository.findClientesByEmpresa(empresaId);
+        if (clientes.isEmpty()) return "Todavía no hay clientes registrados en este negocio.";
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("Tenés %d cliente%s:%n", clientes.size(), clientes.size() == 1 ? "" : "s"));
+        clientes.stream().limit(20).forEach(c -> sb.append("  - ")
+            .append(c.getNombre() != null && !c.getNombre().isBlank() ? c.getNombre() : "Cliente sin nombre")
+            .append("\n"));
+        if (clientes.size() > 20) sb.append("  ... y ").append(clientes.size() - 20).append(" más\n");
         return sb.toString();
     }
 
