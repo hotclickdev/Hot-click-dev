@@ -86,7 +86,7 @@ public class TelegramBotUpdateService {
         if (chatId == 0 || !"private".equals(msg.path("chat").path("type").asText(""))) return;
         if (!permitidoPorRateLimit(chatId)) return;
 
-        if (msg.has("photo")) {
+        if (msg.has("photo") || esDocumentoImagen(msg)) {
             if (manejarFotoEntrante(chatId, msg)) return;
             bot.enviarMensaje(chatId, "Por seguridad solo acepto mensajes de texto y botones. No puedo procesar archivos, fotos ni audios.");
             return;
@@ -575,6 +575,12 @@ public class TelegramBotUpdateService {
             mostrarSelectorEmpresa(v);
         }
         return null;
+    }
+
+    /** true si el mensaje es un documento cuyo mime_type es una imagen (envío sin comprimir desde Telegram Desktop). */
+    private boolean esDocumentoImagen(JsonNode msg) {
+        if (!msg.has("document")) return false;
+        return msg.path("document").path("mime_type").asText("").startsWith("image/");
     }
 
     /** true si la foto se consumió como paso del alta de producto (TelegramFlujoService); false si no aplica. */

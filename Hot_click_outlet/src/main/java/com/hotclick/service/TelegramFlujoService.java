@@ -125,8 +125,11 @@ public class TelegramFlujoService {
     }
 
     /**
-     * Foto entrante. @return true si se consumió (estábamos en el paso FOTOS del
-     * alta de producto); false para que el router aplique el rechazo estándar.
+     * Foto entrante — como foto comprimida (`photo`) o como archivo/documento de
+     * imagen (`document` con mime_type image/*, común al mandar desde Telegram
+     * Desktop sin comprimir). @return true si se consumió (estábamos en el paso
+     * FOTOS del alta de producto); false para que el router aplique el rechazo
+     * estándar.
      */
     public boolean manejarFoto(TelegramVinculacion v, Long empresaId, JsonNode msg) {
         // Chequeo barato sin lock: ¿hay un borrador de producto esperando fotos?
@@ -154,12 +157,19 @@ public class TelegramFlujoService {
         }
 
         // El array photo viene ordenado de menor a mayor resolución — se toma la
-        // más grande que respete el límite de tamaño.
+        // más grande que respete el límite de tamaño. Si vino como documento
+        // (imagen sin comprimir), se usa directo su file_id/file_size.
         String fileId = null;
-        JsonNode sizes = msg.path("photo");
-        for (int i = sizes.size() - 1; i >= 0; i--) {
-            long fs = sizes.get(i).path("file_size").asLong(Long.MAX_VALUE);
-            if (fs <= MAX_FOTO_BYTES) { fileId = sizes.get(i).path("file_id").asText(null); break; }
+        if (msg.has("photo")) {
+            JsonNode sizes = msg.path("photo");
+            for (int i = sizes.size() - 1; i >= 0; i--) {
+                long fs = sizes.get(i).path("file_size").asLong(Long.MAX_VALUE);
+                if (fs <= MAX_FOTO_BYTES) { fileId = sizes.get(i).path("file_id").asText(null); break; }
+            }
+        } else if (msg.has("document")) {
+            JsonNode doc = msg.path("document");
+            long fs = doc.path("file_size").asLong(Long.MAX_VALUE);
+            if (fs <= MAX_FOTO_BYTES) fileId = doc.path("file_id").asText(null);
         }
         if (fileId == null) {
             bot.enviarMensaje(vl.getChatId(), "Esa foto es demasiado pesada (máx 10 MB). Probá con otra.");

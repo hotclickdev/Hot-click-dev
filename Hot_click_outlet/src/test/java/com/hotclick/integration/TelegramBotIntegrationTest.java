@@ -2,6 +2,7 @@ package com.hotclick.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hotclick.dto.TelegramFlujoEstado;
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
 import com.hotclick.scheduler.TelegramInventarioScheduler;
@@ -60,6 +61,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
     @Autowired MovimientoStockRepository    movimientoStockRepository;
     @Autowired TelegramInventarioScheduler  scheduler;
     @Autowired TelegramNotificacionClienteService notificacionService;
+    @Autowired ObjectMapper                 objectMapper;
 
     private final ObjectMapper json = new ObjectMapper();
 
@@ -219,6 +221,51 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
         String update = """
             {"message":{"chat":{"id":%d,"type":"private"},"from":{"username":"x"},
              "photo":[{"file_id":"abc"}],"caption":"analiza esto"}}
+            """.formatted(CHAT_ID);
+        postUpdate(update);
+
+        verify(bot).enviarMensaje(eq(CHAT_ID), contains("solo acepto mensajes de texto"));
+    }
+
+    @Test
+    @DisplayName("Foto comprimida durante el paso FOTOS del alta de producto → se acepta, no se rechaza")
+    void mensaje_fotoEnPasoFotos_seAcepta() throws Exception {
+        TelegramVinculacion v = vincularDirecto(duenno, empresa, CHAT_ID);
+        guardarBorradorEnPasoFotos(v);
+
+        String update = """
+            {"message":{"chat":{"id":%d,"type":"private"},"from":{"username":"x"},
+             "photo":[{"file_id":"abc","file_size":1000}]}}
+            """.formatted(CHAT_ID);
+        postUpdate(update);
+
+        verify(bot, never()).enviarMensaje(eq(CHAT_ID), contains("solo acepto mensajes de texto"));
+    }
+
+    @Test
+    @DisplayName("Imagen mandada como documento (sin comprimir) durante el paso FOTOS → también se acepta")
+    void mensaje_documentoImagenEnPasoFotos_seAcepta() throws Exception {
+        TelegramVinculacion v = vincularDirecto(duenno, empresa, CHAT_ID);
+        guardarBorradorEnPasoFotos(v);
+
+        String update = """
+            {"message":{"chat":{"id":%d,"type":"private"},"from":{"username":"x"},
+             "document":{"file_id":"doc-abc","file_size":16583,"mime_type":"image/jpeg","file_name":"images.jpg"}}}
+            """.formatted(CHAT_ID);
+        postUpdate(update);
+
+        verify(bot, never()).enviarMensaje(eq(CHAT_ID), contains("solo acepto mensajes de texto"));
+    }
+
+    @Test
+    @DisplayName("Documento que NO es imagen (ej. PDF) → sigue rechazado")
+    void mensaje_documentoNoImagen_rechazado() throws Exception {
+        TelegramVinculacion v = vincularDirecto(duenno, empresa, CHAT_ID);
+        guardarBorradorEnPasoFotos(v);
+
+        String update = """
+            {"message":{"chat":{"id":%d,"type":"private"},"from":{"username":"x"},
+             "document":{"file_id":"doc-pdf","file_size":5000,"mime_type":"application/pdf","file_name":"factura.pdf"}}}
             """.formatted(CHAT_ID);
         postUpdate(update);
 
@@ -420,6 +467,14 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
         return """
             {"callback_query":{"id":"cb-1","data":"%s","message":{"chat":{"id":%d,"type":"private"}}}}
             """.formatted(data, chatId);
+    }
+
+    /** Deja el borrador de alta de producto (FLUJO_PRODUCTO) parado justo en el paso FOTOS. */
+    private void guardarBorradorEnPasoFotos(TelegramVinculacion v) {
+        TelegramFlujoEstado estado = TelegramFlujoEstado.nuevoProducto(LocalDateTime.now(Constants.ZONA_CR));
+        estado.setP(TelegramFlujoEstado.P_PRD_FOTOS);
+        v.setContexto(estado.serializar(objectMapper));
+        vinculacionRepository.saveAndFlush(v);
     }
 
     private TelegramVinculacion vincularDirecto(Usuario u, Empresa e, long chatId) {
