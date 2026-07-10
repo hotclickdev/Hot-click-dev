@@ -46,10 +46,17 @@ public class TelegramClienteBotService {
 
     private final RestTemplate restTemplate;
 
+    /** Cliente aparte para bajar archivos: una foto puede tardar más que los 10s del compartido. */
+    private final RestTemplate descargaTemplate;
+
     public TelegramClienteBotService(RestTemplateBuilder builder) {
         this.restTemplate = builder
                 .connectTimeout(Duration.ofSeconds(5))
                 .readTimeout(Duration.ofSeconds(10))
+                .build();
+        this.descargaTemplate = builder
+                .connectTimeout(Duration.ofSeconds(5))
+                .readTimeout(Duration.ofSeconds(20))
                 .build();
     }
 
@@ -129,6 +136,43 @@ public class TelegramClienteBotService {
                 "drop_pending_updates", true
         );
         return post("setWebhook", body);
+    }
+
+    /**
+     * Descarga un archivo enviado al bot (getFile → file_path → GET del binario).
+     *
+     * Seguridad:
+     *  - Se valida file_size ANTES de descargar; si excede maxBytes se aborta.
+     *  - file_path se rechaza si intenta escapar de la ruta del bot ("..", ruta absoluta).
+     *  - Nunca lanza: devuelve null si algo falla y el caller decide el mensaje al usuario.
+     */
+    public byte[] descargarArchivo(String fileId, long maxBytes) {
+        if (!isConfigured() || fileId == null || fileId.isBlank()) return null;
+        try {
+            String respuesta = post("getFile", Map.of("file_id", fileId));
+            com.fasterxml.jackson.databind.JsonNode nodo =
+                    new com.fasterxml.jackson.databind.ObjectMapper().readTree(respuesta);
+            if (!nodo.path("ok").asBoolean(false)) return null;
+
+            long fileSize   = nodo.path("result").path("file_size").asLong(Long.MAX_VALUE);
+            String filePath = nodo.path("result").path("file_path").asText("");
+            if (fileSize > maxBytes) {
+                log.warn("[telegram-cliente] archivo {} excede el límite ({} > {} bytes)", fileId, fileSize, maxBytes);
+                return null;
+            }
+            if (filePath.isBlank() || filePath.contains("..") || filePath.startsWith("/")) {
+                log.warn("[telegram-cliente] file_path sospechoso para {}: '{}'", fileId, filePath);
+                return null;
+            }
+
+            byte[] bytes = descargaTemplate.getForObject(
+                    "https://api.telegram.org/file/bot" + botToken + "/" + filePath, byte[].class);
+            if (bytes != null && bytes.length > maxBytes) return null;
+            return bytes;
+        } catch (Exception e) {
+            log.error("[telegram-cliente] error descargando archivo {} — {}", fileId, e.getMessage());
+            return null;
+        }
     }
 
     private String post(String metodo, Map<String, Object> body) {

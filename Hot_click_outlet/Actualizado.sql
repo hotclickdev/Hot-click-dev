@@ -3178,3 +3178,6 @@ CREATE TABLE IF NOT EXISTS hot_click_telegram_vinculacion_tb (
 CREATE INDEX IF NOT EXISTS idx_tg_vinc_chat    ON hot_click_telegram_vinculacion_tb(chat_id);
 CREATE INDEX IF NOT EXISTS idx_tg_vinc_codigo  ON hot_click_telegram_vinculacion_tb(codigo);
 CREATE INDEX IF NOT EXISTS idx_tg_vinc_empresa ON hot_click_telegram_vinculacion_tb(fk_id_empresa_activa);
+
+-- ═══ V98: contexto de Telegram a TEXT (borradores JSON de flujos multi-paso del bot) ═══
+ALTER TABLE hot_click_telegram_vinculacion_tb ALTER COLUMN contexto TYPE TEXT;

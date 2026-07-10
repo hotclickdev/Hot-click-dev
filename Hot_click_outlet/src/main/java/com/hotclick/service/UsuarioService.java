@@ -1,5 +1,6 @@
 package com.hotclick.service;
 
+import com.hotclick.model.Empresa;
 import com.hotclick.model.Usuario;
 import com.hotclick.model.Rol;
 import com.hotclick.utils.Constants;
@@ -8,10 +9,12 @@ import com.hotclick.repository.RolRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class UsuarioService {
@@ -31,6 +34,37 @@ public class UsuarioService {
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    /**
+     * Registra un contacto/cliente manual del CRM (rol USUARIO_FINAL) con lo mínimo:
+     * nombre y, opcionalmente, teléfono y correo. Lo usan CrmController (panel) y el
+     * bot de Telegram (venta rápida con cliente nuevo).
+     */
+    @Transactional
+    public Usuario crearClienteRapido(String nombre, String telefono, String correo, Empresa empresa) {
+        if (nombre == null || nombre.isBlank()) {
+            throw new IllegalArgumentException("El nombre es requerido");
+        }
+        String[] partes = nombre.trim().split("\\s+", 2);
+        Usuario u = new Usuario();
+        u.setNombre(partes[0]);
+        u.setApellidoPaterno(partes.length > 1 ? partes[1] : "");
+        u.setIdentificacion("CLI-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12));
+        u.setCorreo(correo != null && !correo.isBlank()
+            ? correo.trim().toLowerCase()
+            : "cliente-" + UUID.randomUUID() + "@sinemail.hotclick.lat");
+        u.setContrasenaHash(passwordEncoder.encode(UUID.randomUUID().toString()));
+        u.setTelefono(telefono != null && !telefono.isBlank() ? telefono.trim() : "00000000");
+        u.setEstado(Constants.ESTADO_ACTIVO);
+        u.setIntentosFallidos(0);
+        u.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
+        u.setEmpresaRegistro(empresa);
+        rolRepository.findByNombreRol(Constants.ROL_USUARIO_FINAL).ifPresent(rol -> u.getRoles().add(rol));
+        return usuarioRepository.save(u);
+    }
 
     @Transactional
     public Usuario registrarUsuario(Usuario usuario) {

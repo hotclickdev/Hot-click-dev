@@ -1,9 +1,9 @@
 package com.hotclick.controller;
 
 import com.hotclick.dto.ResponseDTO;
-import com.hotclick.repository.OrdenCompraRepository;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.security.CompanyScope;
+import com.hotclick.service.FinanzasReporteService;
 import com.hotclick.service.TenantService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,10 +31,10 @@ import java.util.Map;
 @RequestMapping("/api/admin/finanzas")
 public class FinanzasReporteController {
 
-    @Autowired private CompanyScope          companyScope;
-    @Autowired private TenantService         tenantService;
-    @Autowired private PedidoRepository      pedidoRepository;
-    @Autowired private OrdenCompraRepository ordenCompraRepository;
+    @Autowired private CompanyScope           companyScope;
+    @Autowired private TenantService          tenantService;
+    @Autowired private PedidoRepository       pedidoRepository;
+    @Autowired private FinanzasReporteService finanzasReporteService;
 
     @GetMapping("/reporte-iva")
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','CONTABILIDAD')")
@@ -72,43 +72,7 @@ public class FinanzasReporteController {
             return null;
         }
 
-        return ResponseEntity.ok(ResponseDTO.success("OK", calcularKpis(empresaId, desde, hasta)));
-    }
-
-    // ── KPIs agregados ───────────────────────────────────────────────────────
-
-    private Map<String, Object> calcularKpis(Long empresaId, String desde, String hasta) {
-        List<Object[]> kpisRows = pedidoRepository.reporteIvaKpis(empresaId, desde, hasta);
-        Object[] row = (kpisRows != null && !kpisRows.isEmpty()) ? kpisRows.get(0) : new Object[8];
-
-        long cantidadVentas  = toLong(row[0]);
-        long ventasTotales   = toLong(row[1]);
-        long subtotal        = toLong(row[2]);
-        long costoEnvio      = toLong(row[3]);
-        long cmv             = toLong(row[4]);
-        long utilidadBruta   = toLong(row[5]);
-        long ivaConfirmado   = toLong(row[6]);
-        long ivaEstimado     = toLong(row[7]);
-
-        long comprasRecibidas = ordenCompraRepository.sumComprasRecibidasEnPeriodo(empresaId, desde, hasta);
-        long gananciaNeta = ventasTotales - cmv - costoEnvio;
-        double margenPct = ventasTotales > 0
-            ? Math.round((gananciaNeta * 1000.0) / ventasTotales) / 10.0
-            : 0.0;
-
-        Map<String, Object> kpis = new LinkedHashMap<>();
-        kpis.put("cantidadVentas",    cantidadVentas);
-        kpis.put("ventasTotales",     ventasTotales);
-        kpis.put("subtotalProductos", subtotal);
-        kpis.put("costoEnvio",        costoEnvio);
-        kpis.put("cmv",               cmv);
-        kpis.put("utilidadBruta",     utilidadBruta);
-        kpis.put("gananciaNeta",      gananciaNeta);
-        kpis.put("margenPct",         margenPct);
-        kpis.put("ivaRecaudado",      ivaConfirmado);
-        kpis.put("ivaEstimado",       ivaEstimado);
-        kpis.put("comprasRecibidas",  comprasRecibidas);
-        return kpis;
+        return ResponseEntity.ok(ResponseDTO.success("OK", finanzasReporteService.calcularKpis(empresaId, desde, hasta)));
     }
 
     // ── Export CSV (control contable) ───────────────────────────────────────
@@ -150,11 +114,5 @@ public class FinanzasReporteController {
         if (v == null) return "";
         String s = v.toString().replace("\"", "\"\"");
         return (s.contains(",") || s.contains("\"") || s.contains("\n")) ? "\"" + s + "\"" : s;
-    }
-
-    private long toLong(Object v) {
-        if (v == null) return 0L;
-        if (v instanceof Number n) return n.longValue();
-        return Long.parseLong(v.toString());
     }
 }

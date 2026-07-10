@@ -31,6 +31,7 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -54,15 +55,24 @@ public class AiCopilotService {
     private static final Logger log = LoggerFactory.getLogger(AiCopilotService.class);
     private static final int    HISTORY_TURNS      = 8;      // last N messages sent as context — bounds input tokens
     private static final int    MAX_RESPONSE_CHARS = 8_000;  // hard cap — stops runaway stream output loops
-    private static final String NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
+    private static final int    MAX_TOOL_ROUNDS    = 4;      // tope de idas-y-vueltas tool-calling — evita loops infinitos
+    private static final long   TOOL_LOOP_BUDGET_MS = 40_000; // presupuesto total del loop — NVIDIA es intermitentemente lenta
     private static final HttpClient HTTP = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(15))
         .build();
 
+    // Apunta directo a NVIDIA NIM por defecto. Para pasar por el sidecar de
+    // NeMo Guardrails (security-tools/guardrails/), setear NVIDIA_BASE_URL=
+    // http://guardrails:8001/v1/ — ver security-tools/guardrails/README.md.
+    @Value("${nvidia.base-url}chat/completions")
+    private String nvidiaUrl;
+
     @Value("${nvidia.api-key:}")
     private String apiKey;
 
-    @Value("${nvidia.model:meta/llama-3.3-70b-instruct}")
+    // llama-3.3-70b figura DEGRADED en NVIDIA NIM (400 "DEGRADED function cannot
+    // be invoked") — 3.1-70b es el reemplazo verificado que responde 200.
+    @Value("${nvidia.model:meta/llama-3.1-70b-instruct}")
     private String model;
 
     @Autowired private AiMensajeRepository     aiMensajeRepository;
@@ -71,6 +81,8 @@ public class AiCopilotService {
     @Autowired private ObjectMapper            objectMapper;
     @Autowired private JdbcTemplate            jdbc;
     @Autowired private InventoryForecastService inventoryForecastService;
+    @Autowired private TenantService           tenantService;
+    @Autowired private FinanzasReporteService  finanzasReporteService;
 
     // ── Public API ────────────────────────────────────────────────────────────
 
@@ -209,7 +221,7 @@ public class AiCopilotService {
             String requestBody  = buildRequestBody(systemPrompt, messages, tenantId);
 
             HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(NVIDIA_URL))
+                .uri(URI.create(nvidiaUrl))
                 .timeout(Duration.ofSeconds(60))
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + apiKey)
@@ -238,6 +250,11 @@ public class AiCopilotService {
      * devuelven mensaje, porque son respuestas definitivas, no fallos transitorios.
      */
     public String chatSync(Long empresaId, String userMessage) {
+        return chatSync(empresaId, userMessage, null);
+    }
+
+    /** Variante con el nombre del usuario que escribe (Telegram) para personalizar el saludo/tono. */
+    public String chatSync(Long empresaId, String userMessage, String nombreUsuario) {
         if (!aiQuotaService.verificarYReservar(empresaId)) {
             return "Se agotó la cuota mensual de consultas con IA de tu plan. Podés seguir usando los botones del menú (/menu), que no consumen cuota.";
         }
@@ -252,38 +269,85 @@ public class AiCopilotService {
         }
 
         try {
-            Intent intent = detectIntent(userMessage);
             List<Map<String, Object>> messages = buildMessages(empresaId, userMessage);
-            String systemPrompt = buildSystemPrompt(empresaId, intent);
-            String requestBody  = buildRequestBody(systemPrompt, messages, empresaId, false);
+            String systemPrompt = buildSystemPromptConTools(empresaId, empresa, nombreUsuario);
+            List<Map<String, Object>> tools = buildTools(empresaId);
 
-            HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(NVIDIA_URL))
-                // 25s y no 60s: en un chat nadie espera más, y el caller necesita
-                // enterarse rápido del fallo para activar su fallback.
-                .timeout(Duration.ofSeconds(25))
-                .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + apiKey)
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
-                .build();
+            int tokensInTotal = 0, tokensOutTotal = 0;
+            String texto = null;
+            // NVIDIA es intermitentemente lenta (ver memoria del proyecto): un presupuesto
+            // total evita que varias rondas lentas seguidas dejen al usuario esperando
+            // varios minutos antes de recibir el fallback.
+            long deadline = System.currentTimeMillis() + TOOL_LOOP_BUDGET_MS;
 
-            HttpResponse<String> response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                log.error("[AI-sync] empresaId={} NVIDIA respondió {} — {}", empresaId, response.statusCode(), response.body());
-                return null;
+            for (int ronda = 0; ronda < MAX_TOOL_ROUNDS; ronda++) {
+                if (System.currentTimeMillis() >= deadline) {
+                    log.warn("[AI-sync] empresaId={} se acabó el presupuesto de tiempo de NVIDIA (ronda {})", empresaId, ronda);
+                    return null;
+                }
+
+                String requestBody = buildRequestBodyConTools(systemPrompt, messages, tools, empresaId);
+
+                HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(nvidiaUrl))
+                    // 25s y no 60s: en un chat nadie espera más, y el caller necesita
+                    // enterarse rápido del fallo para activar su fallback.
+                    .timeout(Duration.ofSeconds(25))
+                    .header("Content-Type", "application/json")
+                    .header("Authorization", "Bearer " + apiKey)
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
+                    .build();
+
+                HttpResponse<String> response;
+                try {
+                    response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
+                } catch (HttpTimeoutException e) {
+                    if (System.currentTimeMillis() >= deadline) {
+                        log.warn("[AI-sync] empresaId={} timeout en ronda {} y sin presupuesto para reintentar", empresaId, ronda);
+                        return null;
+                    }
+                    log.warn("[AI-sync] empresaId={} timeout en ronda {} — reintentando una vez", empresaId, ronda);
+                    response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
+                }
+                if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                    log.error("[AI-sync] empresaId={} NVIDIA respondió {} — {}", empresaId, response.statusCode(), response.body());
+                    return null;
+                }
+
+                JsonNode node    = objectMapper.readTree(response.body());
+                JsonNode message = node.path("choices").path(0).path("message");
+                tokensInTotal  += node.path("usage").path("prompt_tokens").asInt(0);
+                tokensOutTotal += node.path("usage").path("completion_tokens").asInt(0);
+
+                JsonNode toolCalls = message.path("tool_calls");
+                if (toolCalls.isArray() && !toolCalls.isEmpty()) {
+                    messages.add(asistenteToolCallMessage(message));
+                    for (JsonNode toolCall : toolCalls) {
+                        String toolCallId = toolCall.path("id").asText();
+                        String toolName   = toolCall.path("function").path("name").asText();
+                        JsonNode args;
+                        try {
+                            args = objectMapper.readTree(toolCall.path("function").path("arguments").asText("{}"));
+                        } catch (JsonProcessingException e) {
+                            args = objectMapper.createObjectNode();
+                        }
+                        String resultado = ejecutarTool(empresaId, toolName, args);
+                        messages.add(toolResultMessage(toolCallId, resultado));
+                    }
+                    continue; // deja que el modelo use los resultados en la siguiente ronda
+                }
+
+                texto = message.path("content").asText("");
+                break;
             }
 
-            JsonNode node = objectMapper.readTree(response.body());
-            String texto = node.path("choices").path(0).path("message").path("content").asText("");
-            if (texto.isBlank()) {
+            if (texto == null || texto.isBlank()) {
                 return "No pude generar una respuesta. Probá reformular la pregunta.";
             }
             if (texto.length() > MAX_RESPONSE_CHARS) texto = texto.substring(0, MAX_RESPONSE_CHARS);
 
-            int tokensIn  = node.path("usage").path("prompt_tokens").asInt(0);
-            int tokensOut = node.path("usage").path("completion_tokens").asInt(0);
-            saveMsg(empresa, "assistant", texto, tokensOut);
-            aiQuotaService.actualizarTokens(empresaId, tokensIn, tokensOut);
+            saveMsg(empresa, "assistant", texto, tokensOutTotal);
+            aiQuotaService.actualizarTokens(empresaId, tokensInTotal, tokensOutTotal);
             return texto;
 
         } catch (InterruptedException e) {
@@ -291,6 +355,108 @@ public class AiCopilotService {
             return null;
         } catch (Exception e) {
             log.error("[AI-sync] empresaId={} fallo llamando a NVIDIA — {}", empresaId, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Sugerencia de cross-sell para un cliente puntual — la usa el flujo de
+     * "Clientes" del bot de Telegram (TelegramFlujoService.sugerirCrossSellAsync)
+     * para redactar 2-3 productos que ofrecerle según lo que ya compró.
+     *
+     * Es una llamada puntual, no una conversación: no consume el historial de
+     * hot_click_ai_mensaje_tb ni escribe en él. Retorna {@code null} si la IA
+     * no está disponible o no hay suficiente historial/candidatos para sugerir —
+     * el caller cae a su propio fallback SQL.
+     */
+    public String crossSellCliente(Long empresaId, Long clienteId) {
+        if (!isEnabled()) return null;
+
+        List<String> nombreRows = jdbc.queryForList(
+            "SELECT nombre FROM hot_click_usuario_tb WHERE id_usuario = ?", String.class, clienteId);
+        String nombreCliente = nombreRows.isEmpty() ? "el cliente" : nombreRows.get(0);
+
+        List<String> comprados = jdbc.queryForList("""
+            SELECT DISTINCT p.nombre_producto
+            FROM hot_click_pedido_item_tb pi
+            JOIN hot_click_pedido_tb ped ON pi.fk_id_pedido = ped.id_pedido
+            JOIN hot_click_producto_tb p ON pi.fk_id_producto = p.id_producto
+            WHERE ped.fk_id_usuario_final = ? AND ped.fk_id_empresa = ?
+            ORDER BY p.nombre_producto LIMIT 15
+            """, String.class, clienteId, empresaId);
+        if (comprados.isEmpty()) return null; // sin historial, no hay base para sugerir
+
+        var candidatos = jdbc.queryForList("""
+            SELECT pr.nombre_producto, pr.precio_venta
+            FROM hot_click_producto_tb pr
+            WHERE pr.fk_id_empresa = ? AND pr.fk_id_estado = 1 AND pr.visible_catalogo = TRUE
+              AND (pr.stock_actual - COALESCE(pr.stock_reservado, 0)) > 0
+              AND pr.fk_id_categoria IN (
+                  SELECT DISTINCT pr2.fk_id_categoria
+                  FROM hot_click_pedido_item_tb pi
+                  JOIN hot_click_pedido_tb p ON pi.fk_id_pedido = p.id_pedido
+                  JOIN hot_click_producto_tb pr2 ON pi.fk_id_producto = pr2.id_producto
+                  WHERE p.fk_id_usuario_final = ? AND p.fk_id_empresa = ?)
+              AND pr.id_producto NOT IN (
+                  SELECT pi.fk_id_producto
+                  FROM hot_click_pedido_item_tb pi
+                  JOIN hot_click_pedido_tb p ON pi.fk_id_pedido = p.id_pedido
+                  WHERE p.fk_id_usuario_final = ? AND p.fk_id_empresa = ?)
+            ORDER BY pr.id_producto DESC
+            LIMIT 10
+            """, empresaId, clienteId, empresaId, clienteId, empresaId);
+        if (candidatos.isEmpty()) return null;
+
+        java.text.DecimalFormat fmt = new java.text.DecimalFormat("#,###");
+        StringBuilder datos = new StringBuilder();
+        datos.append("Cliente: ").append(nombreCliente).append("\n");
+        datos.append("Ya compró: ").append(String.join(", ", comprados)).append("\n\n");
+        datos.append("Productos disponibles que aún no compró (mismas categorías de interés):\n");
+        candidatos.forEach(p -> datos.append(String.format("  - %s — ₡%s%n",
+            p.get("nombre_producto"), fmt.format(p.get("precio_venta")))));
+
+        String systemPrompt = """
+            Sos el Copilot de HOTCLICK. Vas a redactar una sugerencia breve de cross-sell
+            para que el dueño del negocio se la envíe a un cliente puntual por WhatsApp.
+            Tono costarricense, cercano, natural — nunca corporativo. Elegí 2 o 3 productos
+            como máximo de la lista de candidatos, explicá brevemente por qué le podrían
+            interesar según lo que ya compró. Máximo 80 palabras. No inventés productos
+            fuera de la lista.
+
+            %s
+            """.formatted(datos);
+
+        try {
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("model", model);
+            body.put("max_tokens", 300);
+            body.put("stream", false);
+            body.put("messages", List.of(
+                Map.of("role", "system", "content", systemPrompt),
+                Map.of("role", "user", "content", "Generá la sugerencia.")
+            ));
+
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(nvidiaUrl))
+                .timeout(Duration.ofSeconds(25))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + apiKey)
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(body), StandardCharsets.UTF_8))
+                .build();
+
+            HttpResponse<String> response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                log.error("[AI-crosssell] empresaId={} clienteId={} NVIDIA respondió {}", empresaId, clienteId, response.statusCode());
+                return null;
+            }
+            JsonNode node = objectMapper.readTree(response.body());
+            String texto = node.path("choices").path(0).path("message").path("content").asText("").trim();
+            return texto.isBlank() ? null : texto;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        } catch (Exception e) {
+            log.error("[AI-crosssell] empresaId={} clienteId={} fallo llamando a NVIDIA — {}", empresaId, clienteId, e.getMessage());
             return null;
         }
     }
@@ -505,10 +671,10 @@ public class AiCopilotService {
               AND estado_pedido IN ('PAGADO','ENTREGADO')
             """;
         String sqlTopProds = """
-            SELECT p.nombre_producto, COUNT(dp.id_detalle) as veces, SUM(dp.subtotal) as total
-            FROM hot_click_detalle_pedido_tb dp
-            JOIN hot_click_pedido_tb ped ON dp.fk_id_pedido = ped.id_pedido
-            JOIN hot_click_producto_tb p ON dp.fk_id_producto = p.id_producto
+            SELECT p.nombre_producto, SUM(pi.cantidad) as veces, SUM(pi.subtotal_item) as total
+            FROM hot_click_pedido_item_tb pi
+            JOIN hot_click_pedido_tb ped ON pi.fk_id_pedido = ped.id_pedido
+            JOIN hot_click_producto_tb p ON pi.fk_id_producto = p.id_producto
             WHERE ped.fk_id_empresa = ? AND ped.fecha_pedido >= NOW() - INTERVAL '30 days'
               AND ped.estado_pedido IN ('PAGADO','ENTREGADO')
             GROUP BY p.nombre_producto ORDER BY veces DESC LIMIT 5
@@ -554,16 +720,16 @@ public class AiCopilotService {
     private String getClientesPorProductoData(Long empresaId) {
         String sql = """
             WITH ventas AS (
-                SELECT p.nombre_producto, u.nombre_usuario,
+                SELECT p.nombre_producto, u.nombre AS nombre_usuario,
                        COUNT(*) AS veces,
                        ROW_NUMBER() OVER (PARTITION BY p.nombre_producto ORDER BY COUNT(*) DESC) AS rn
-                FROM hot_click_detalle_pedido_tb dp
-                JOIN hot_click_pedido_tb ped ON dp.fk_id_pedido = ped.id_pedido
-                JOIN hot_click_producto_tb p ON dp.fk_id_producto = p.id_producto
-                LEFT JOIN hot_click_usuario_tb u ON ped.fk_id_usuario = u.id_usuario
+                FROM hot_click_pedido_item_tb pi
+                JOIN hot_click_pedido_tb ped ON pi.fk_id_pedido = ped.id_pedido
+                JOIN hot_click_producto_tb p ON pi.fk_id_producto = p.id_producto
+                LEFT JOIN hot_click_usuario_tb u ON ped.fk_id_usuario_final = u.id_usuario
                 WHERE ped.fk_id_empresa = ? AND ped.fecha_pedido >= NOW() - INTERVAL '90 days'
                   AND ped.estado_pedido IN ('PAGADO','ENTREGADO')
-                GROUP BY p.nombre_producto, u.nombre_usuario, u.id_usuario
+                GROUP BY p.nombre_producto, u.nombre, u.id_usuario
             ),
             top_productos AS (
                 SELECT nombre_producto, SUM(veces) AS total_veces
@@ -646,13 +812,13 @@ public class AiCopilotService {
     }
 
     private String getPedidosPendientesData(Long empresaId) {
-        // Solo nombre_usuario — el email es PII innecesaria para que el LLM
+        // Solo el nombre — el email es PII innecesaria para que el LLM
         // aconseje sobre despachos y no debe salir hacia la API de NVIDIA.
         String sql = """
             SELECT p.id_pedido, p.estado_pedido, p.total_pedido, p.fecha_pedido,
-                   u.nombre_usuario
+                   u.nombre AS nombre_usuario
             FROM hot_click_pedido_tb p
-            LEFT JOIN hot_click_usuario_tb u ON p.fk_id_usuario = u.id_usuario
+            LEFT JOIN hot_click_usuario_tb u ON p.fk_id_usuario_final = u.id_usuario
             WHERE p.fk_id_empresa = ?
               AND p.estado_pedido IN ('PAGADO','PROCESANDO','PREPARANDO')
             ORDER BY p.fecha_pedido ASC LIMIT 15
@@ -722,6 +888,204 @@ public class AiCopilotService {
             // Stop sequences prevent prompt injection: if a reply tries to impersonate
             // "Human:" or "User:", NVIDIA stops immediately instead of continuing the loop.
             body.put("stop", List.of("\n\nHuman:", "\n\nUser:", "Human:", "User:"));
+            return objectMapper.writeValueAsString(body);
+        } catch (JsonProcessingException e) {
+            throw new IntegracionExternaException("nvidia-api", IntegracionExternaException.Tipo.RESPUESTA_INVALIDA,
+                tenantId, "No se pudo serializar el request a NVIDIA API", e);
+        }
+    }
+
+    // ── Tool-calling real (solo chatSync / bot de Telegram) ────────────────────
+    //
+    // A diferencia de chatStream (panel admin), que sigue con el patrón de
+    // inyectar un bloque de datos fijo según intención detectada por regex,
+    // chatSync expone herramientas reales (tools) que el modelo NVIDIA decide
+    // cuándo invocar — confirmado que meta/llama-3.1-70b-instruct soporta el
+    // mismo formato de function-calling que OpenAI (ver memoria del proyecto).
+    // chatStream no se toca: mismo comportamiento de siempre para el panel.
+
+    private String buildSystemPromptConTools(Long empresaId, Empresa empresa, String nombreUsuario) {
+        String nombreNegocio = empresa != null && empresa.getNombreComercial() != null && !empresa.getNombreComercial().isBlank()
+            ? empresa.getNombreComercial()
+            : (empresa != null && empresa.getNombreEmpresa() != null ? empresa.getNombreEmpresa() : "tu negocio");
+        String kpis = getKpiContext(empresaId);
+        String saludo = nombreUsuario != null && !nombreUsuario.isBlank()
+            ? "Le hablás a " + nombreUsuario.trim() + ", dueño/a o encargado/a del negocio."
+            : "";
+
+        return """
+            Sos el Copilot de HOTCLICK, el asistente de negocio de "%s". Respondés en
+            español con el vos costarricense: directo, concreto y accionable. %s
+
+            Tenés herramientas para consultar datos reales del negocio (inventario,
+            ventas, finanzas, recomendaciones) — llamalas cuando la pregunta las
+            necesite, en vez de inventar cifras. Si el dato ya está en la conversación
+            previa, no repitas la misma consulta.
+
+            KPIs GENERALES (últimos 7 días):
+            %s
+
+            REGLAS:
+            - Nunca inventés cifras: si no tenés el dato, usá la herramienta correspondiente
+            - Máximo 400 palabras por respuesta
+            - Respondés solo sobre este negocio; si la pregunta es ajena, redirigís amablemente
+            """.formatted(nombreNegocio, saludo, kpis);
+    }
+
+    private List<Map<String, Object>> buildTools(Long empresaId) {
+        List<Map<String, Object>> tools = new ArrayList<>();
+        tools.add(toolDef("consultar_inventario",
+            "Consulta el estado del catálogo: cuántos productos activos y unidades en stock hay, y cuáles productos tienen stock crítico (bajo el mínimo).",
+            Map.of("type", "object", "properties", Map.of())));
+        tools.add(toolDef("consultar_ventas",
+            "Consulta ventas: pedidos e ingresos de hoy y de los últimos 30 días, productos más vendidos, productos sin ventas recientes, y clientes recurrentes por producto.",
+            Map.of("type", "object", "properties", Map.of())));
+        tools.add(toolDef("recomendaciones",
+            "Devuelve acciones recomendadas para el negocio: productos con stock crítico a reabastecer, y productos sin ventas en 60+ días candidatos a descuento.",
+            Map.of("type", "object", "properties", Map.of())));
+
+        if (tieneFeatureReportes(empresaId)) {
+            tools.add(toolDef("consultar_finanzas",
+                "Consulta KPIs financieros del negocio para un período: ventas totales, costo de mercadería vendida (CMV), ganancia neta, margen, IVA.",
+                Map.of("type", "object",
+                    "properties", Map.of("periodo", Map.of(
+                        "type", "string",
+                        "enum", List.of("hoy", "semana", "mes", "todo"),
+                        "description", "Período a consultar — por defecto 'mes' (mes actual)")),
+                    "required", List.of())));
+        }
+        return tools;
+    }
+
+    /** Verifica el feature "reportes" sin depender del TenantContext ambiente — el webhook de Telegram es público y no lo setea. */
+    private boolean tieneFeatureReportes(Long empresaId) {
+        Long previo = TenantContext.get();
+        try {
+            TenantContext.set(empresaId);
+            return tenantService.tieneFeature("reportes");
+        } finally {
+            if (previo != null) TenantContext.set(previo); else TenantContext.clear();
+        }
+    }
+
+    private Map<String, Object> toolDef(String name, String description, Map<String, Object> parameters) {
+        Map<String, Object> function = new LinkedHashMap<>();
+        function.put("name", name);
+        function.put("description", description);
+        function.put("parameters", parameters);
+        Map<String, Object> tool = new LinkedHashMap<>();
+        tool.put("type", "function");
+        tool.put("function", function);
+        return tool;
+    }
+
+    private String ejecutarTool(Long empresaId, String nombre, JsonNode args) {
+        try {
+            return switch (nombre) {
+                case "consultar_inventario" -> getInventarioData(empresaId);
+                case "consultar_ventas"     -> getVentasData(empresaId);
+                case "recomendaciones"      -> getRecomendacionesData(empresaId);
+                case "consultar_finanzas"   -> getFinanzasData(empresaId, args);
+                default -> "Herramienta desconocida: " + nombre;
+            };
+        } catch (DataAccessException e) {
+            log.warn("[AI-tool] empresaId={} tool={} datos no disponibles: {}", empresaId, nombre, e.getMessage());
+            return "No se pudo obtener el dato en este momento.";
+        }
+    }
+
+    private String getRecomendacionesData(Long empresaId) {
+        StringBuilder sb = new StringBuilder();
+        var enRiesgo = inventoryForecastService.productosEnRiesgo(empresaId);
+        if (!enRiesgo.isEmpty()) {
+            sb.append("Productos con stock en riesgo (reabastecer pronto):\n");
+            enRiesgo.stream().limit(8).forEach(p -> sb.append(String.format("  - %s: stock %s (mínimo %s)%n",
+                p.get("nombre_producto"), p.get("stock_actual"), p.get("stock_minimo"))));
+        }
+        var lentos = getProductosSinVentaAccionables(empresaId);
+        if (!lentos.isEmpty()) {
+            sb.append("\nProductos candidatos a descuento (sin ventas en 60+ días):\n");
+            lentos.forEach(p -> sb.append(String.format("  - %s: stock %s, sin venta hace %s, descuento sugerido %s%%%n",
+                p.get("nombre"), p.get("stock"), p.get("diasSinVenta"), p.get("descuentoSugeridoPct"))));
+        }
+        if (sb.isEmpty()) {
+            sb.append("No hay recomendaciones urgentes en este momento — el negocio está en buen estado.");
+        }
+        return sb.toString();
+    }
+
+    private String getFinanzasData(Long empresaId, JsonNode args) {
+        String periodo = args != null && args.hasNonNull("periodo") ? args.get("periodo").asText() : "mes";
+        LocalDate hoy = LocalDate.now(Constants.ZONA_CR);
+        String desde = switch (periodo) {
+            case "hoy"    -> hoy.toString();
+            case "semana" -> hoy.minusDays(7).toString();
+            case "todo"   -> null;
+            default       -> hoy.withDayOfMonth(1).toString(); // "mes"
+        };
+
+        Map<String, Object> kpis = finanzasReporteService.calcularKpis(empresaId, desde, null);
+        java.text.DecimalFormat fmt = new java.text.DecimalFormat("#,###");
+        return """
+            Período: %s
+            Ventas: %s / ₡%s
+            Costo de mercadería vendida (CMV): ₡%s
+            Costo de envío: ₡%s
+            Ganancia neta: ₡%s (margen %s%%)
+            IVA recaudado: ₡%s | IVA estimado: ₡%s
+            Compras a proveedor recibidas en el período: ₡%s
+            """.formatted(periodo, kpis.get("cantidadVentas"), fmt.format(kpis.get("ventasTotales")),
+                fmt.format(kpis.get("cmv")), fmt.format(kpis.get("costoEnvio")),
+                fmt.format(kpis.get("gananciaNeta")), kpis.get("margenPct"),
+                fmt.format(kpis.get("ivaRecaudado")), fmt.format(kpis.get("ivaEstimado")),
+                fmt.format(kpis.get("comprasRecibidas")));
+    }
+
+    /** Reconstruye el mensaje "assistant" con tool_calls tal como lo espera NVIDIA en la siguiente ronda del loop. */
+    private Map<String, Object> asistenteToolCallMessage(JsonNode message) {
+        List<Map<String, Object>> toolCallsOut = new ArrayList<>();
+        for (JsonNode tc : message.path("tool_calls")) {
+            Map<String, Object> function = new LinkedHashMap<>();
+            function.put("name", tc.path("function").path("name").asText());
+            function.put("arguments", tc.path("function").path("arguments").asText("{}"));
+            Map<String, Object> tcOut = new LinkedHashMap<>();
+            tcOut.put("id", tc.path("id").asText());
+            tcOut.put("type", "function");
+            tcOut.put("function", function);
+            toolCallsOut.add(tcOut);
+        }
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("role", "assistant");
+        m.put("content", message.path("content").isNull() ? null : message.path("content").asText(null));
+        m.put("tool_calls", toolCallsOut);
+        return m;
+    }
+
+    private Map<String, Object> toolResultMessage(String toolCallId, String contenido) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("role", "tool");
+        m.put("tool_call_id", toolCallId);
+        m.put("content", contenido);
+        return m;
+    }
+
+    private String buildRequestBodyConTools(String systemPrompt, List<Map<String, Object>> messages,
+                                            List<Map<String, Object>> tools, Long tenantId) {
+        try {
+            List<Map<String, Object>> chatMessages = new ArrayList<>();
+            chatMessages.add(Map.of("role", "system", "content", systemPrompt));
+            chatMessages.addAll(messages);
+
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("model",      model);
+            body.put("max_tokens", 1024);
+            body.put("stream",     false);
+            body.put("messages",   chatMessages);
+            body.put("stop", List.of("\n\nHuman:", "\n\nUser:", "Human:", "User:"));
+            if (!tools.isEmpty()) {
+                body.put("tools", tools);
+                body.put("tool_choice", "auto");
+            }
             return objectMapper.writeValueAsString(body);
         } catch (JsonProcessingException e) {
             throw new IntegracionExternaException("nvidia-api", IntegracionExternaException.Tipo.RESPUESTA_INVALIDA,

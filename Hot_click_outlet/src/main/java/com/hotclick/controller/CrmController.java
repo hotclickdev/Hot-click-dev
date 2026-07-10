@@ -9,17 +9,16 @@ import com.hotclick.model.Usuario;
 import com.hotclick.model.WaMensajeLog;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.PedidoRepository;
-import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.repository.WaMensajeLogRepository;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.service.TenantService;
+import com.hotclick.service.UsuarioService;
 import com.hotclick.service.WhatsAppService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,8 +36,7 @@ public class CrmController {
     @Autowired private TenantService        tenantService;
     @Autowired private WhatsAppService      whatsAppService;
     @Autowired private EmpresaRepository    empresaRepository;
-    @Autowired private RolRepository        rolRepository;
-    @Autowired private PasswordEncoder      passwordEncoder;
+    @Autowired private UsuarioService       usuarioService;
 
     private static final String MSG_REQUIERE_CRM =
         "El CRM de clientes requiere el plan NEGOCIO_PLUS. Ve a Configuración → Suscripción para mejorar tu plan.";
@@ -86,23 +84,7 @@ public class CrmController {
         Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
         Empresa empresa = empresaId != null ? empresaRepository.findById(empresaId).orElse(null) : null;
 
-        String[] partes = nombre.trim().split("\\s+", 2);
-        Usuario u = new Usuario();
-        u.setNombre(partes[0]);
-        u.setApellidoPaterno(partes.length > 1 ? partes[1] : "");
-        u.setIdentificacion("CLI-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12));
-        u.setCorreo(correo != null && !correo.isBlank()
-            ? correo.trim().toLowerCase()
-            : "cliente-" + UUID.randomUUID() + "@sinemail.hotclick.lat");
-        u.setContrasenaHash(passwordEncoder.encode(UUID.randomUUID().toString()));
-        u.setTelefono(telefono != null && !telefono.isBlank() ? telefono.trim() : "00000000");
-        u.setEstado(Constants.ESTADO_ACTIVO);
-        u.setIntentosFallidos(0);
-        u.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
-        u.setEmpresaRegistro(empresa);
-        rolRepository.findByNombreRol(Constants.ROL_USUARIO_FINAL).ifPresent(rol -> u.getRoles().add(rol));
-
-        Usuario saved = usuarioRepository.save(u);
+        Usuario saved = usuarioService.crearClienteRapido(nombre, telefono, correo, empresa);
         return ResponseEntity.ok(ResponseDTO.success("Cliente registrado", toClienteMapSimple(saved)));
     }
 

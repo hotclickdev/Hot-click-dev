@@ -32,7 +32,7 @@ TELEGRAM_CLIENT_BOT_TOKEN=1234567:AAF...        # token de BotFather
 TELEGRAM_CLIENT_BOT_USERNAME=HotClickCRBot      # username SIN @
 TELEGRAM_CLIENT_WEBHOOK_SECRET=<hex aleatorio>  # openssl rand -hex 32
 ```
-
+8010044286:AAGYIw9pAwehtqdR2xtLYkPEVUmzXIH3sqI
 ```bash
 docker restart hotclick
 ```

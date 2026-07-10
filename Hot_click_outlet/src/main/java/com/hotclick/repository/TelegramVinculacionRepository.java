@@ -1,8 +1,10 @@
 package com.hotclick.repository;
 
 import com.hotclick.model.TelegramVinculacion;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -20,6 +22,15 @@ public interface TelegramVinculacionRepository extends JpaRepository<TelegramVin
 
     @EntityGraph(attributePaths = {"usuario"})
     Optional<TelegramVinculacion> findByChatIdAndEstado(Long chatId, String estado);
+
+    /**
+     * Igual que findByChatIdAndEstado pero con row lock (SELECT ... FOR UPDATE).
+     * Se usa solo al recibir fotos: un álbum de Telegram llega como varios updates
+     * casi simultáneos y sin lock los appends al borrador JSON se pisarían entre sí.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT v FROM TelegramVinculacion v JOIN FETCH v.usuario WHERE v.chatId = :chatId AND v.estado = :estado")
+    Optional<TelegramVinculacion> findWithLockByChatIdAndEstado(@Param("chatId") Long chatId, @Param("estado") String estado);
 
     List<TelegramVinculacion> findByChatIdAndEstadoAndUsuarioIdNot(Long chatId, String estado, Long usuarioId);
 

@@ -59,6 +59,7 @@ public class TelegramBotUpdateService {
     @Autowired private RateLimiter                   rateLimiter;
     @Autowired private AiCopilotService              aiCopilotService;
     @Autowired private StockService                  stockService;
+    @Autowired private TelegramFlujoService          telegramFlujoService;
     @Autowired private JdbcTemplate                  jdbc;
 
     /** Self-proxy: @Async no aplica en llamadas internas (this.responderConIa saltearía el proxy). */
@@ -84,6 +85,12 @@ public class TelegramBotUpdateService {
         long chatId = msg.path("chat").path("id").asLong(0);
         if (chatId == 0 || !"private".equals(msg.path("chat").path("type").asText(""))) return;
         if (!permitidoPorRateLimit(chatId)) return;
+
+        if (msg.has("photo")) {
+            if (manejarFotoEntrante(chatId, msg)) return;
+            bot.enviarMensaje(chatId, "Por seguridad solo acepto mensajes de texto y botones. No puedo procesar archivos, fotos ni audios.");
+            return;
+        }
 
         for (String campo : CAMPOS_NO_TEXTO) {
             if (msg.has(campo)) {
@@ -134,6 +141,13 @@ public class TelegramBotUpdateService {
             return;
         }
 
+        // Borrador JSON de un flujo guiado (venta rápida / alta de producto) esperando texto
+        if (v.getContexto() != null && v.getContexto().startsWith("{")) {
+            Long empresaIdFlujo = empresaValidada(v);
+            if (empresaIdFlujo != null) telegramFlujoService.manejarTexto(v, empresaIdFlujo, texto);
+            return;
+        }
+
         // Texto libre → AI Copilot, en hilo aparte: la IA puede tardar hasta 25s y
         // este método corre en el hilo del webhook — si se bloquea, Telegram corta
         // por timeout y reintenta el update, congelando todo el bot ("Read timeout
@@ -141,7 +155,8 @@ public class TelegramBotUpdateService {
         Long empresaId = empresaValidada(v);
         if (empresaId == null) return;
         bot.enviarAccionEscribiendo(chatId);
-        self.responderConIa(chatId, empresaId, texto);
+        String nombreUsuario = v.getUsuario() != null ? v.getUsuario().getNombre() : null;
+        self.responderConIa(chatId, empresaId, texto, nombreUsuario);
     }
 
     /**
@@ -150,9 +165,9 @@ public class TelegramBotUpdateService {
      * intención detectada — la conversación nunca queda sin respuesta.
      */
     @org.springframework.scheduling.annotation.Async
-    public void responderConIa(Long chatId, Long empresaId, String texto) {
+    public void responderConIa(Long chatId, Long empresaId, String texto, String nombreUsuario) {
         try {
-            String respuesta = aiCopilotService.chatSync(empresaId, texto);
+            String respuesta = aiCopilotService.chatSync(empresaId, texto, nombreUsuario);
             if (respuesta != null) {
                 bot.enviarMensaje(chatId, respuesta, null, false);
                 return;
@@ -205,6 +220,13 @@ public class TelegramBotUpdateService {
 
         if (data.startsWith("emp:")) { seleccionarEmpresa(v, data.substring(4)); return; }
         if (data.startsWith("chk:")) { iniciarAjuste(v, data.substring(4)); return; }
+
+        // Flujos guiados (venta rápida, alta de producto, clientes) — TelegramFlujoService
+        if (data.startsWith("vta:") || data.startsWith("prd:") || data.startsWith("cli:") || "flx:x".equals(data)) {
+            Long empresaIdFlujo = empresaValidada(v);
+            if (empresaIdFlujo != null) telegramFlujoService.manejarCallback(v, empresaIdFlujo, data);
+            return;
+        }
 
         switch (data) {
             case "menu"     -> mostrarMenu(v);
@@ -339,6 +361,10 @@ public class TelegramBotUpdateService {
             TelegramClienteBotService.boton("📦 Inventario", "inv"),
             TelegramClienteBotService.boton("💰 Ventas de hoy", "ventas")));
         teclado.add(List.of(TelegramClienteBotService.boton("📊 Finanzas del mes", "fin")));
+        teclado.add(List.of(
+            TelegramClienteBotService.boton("🛒 Nueva venta", "vta:new"),
+            TelegramClienteBotService.boton("➕ Nuevo producto", "prd:new")));
+        teclado.add(List.of(TelegramClienteBotService.boton("👥 Clientes", "cli:pg:0")));
         if (miembroEmpresaRepository.countEmpresasByUsuarioId(v.getUsuario().getId()) > 1) {
             teclado.add(List.of(TelegramClienteBotService.boton("🔄 Cambiar negocio", "selector")));
         }
@@ -549,6 +575,16 @@ public class TelegramBotUpdateService {
             mostrarSelectorEmpresa(v);
         }
         return null;
+    }
+
+    /** true si la foto se consumió como paso del alta de producto (TelegramFlujoService); false si no aplica. */
+    private boolean manejarFotoEntrante(long chatId, JsonNode msg) {
+        Optional<TelegramVinculacion> opt = vinculacionActiva(chatId);
+        if (opt.isEmpty()) return false;
+        TelegramVinculacion v = opt.get();
+        Long empresaId = empresaValidada(v);
+        if (empresaId == null) return false;
+        return telegramFlujoService.manejarFoto(v, empresaId, msg);
     }
 
     private boolean permitidoPorRateLimit(long chatId) {

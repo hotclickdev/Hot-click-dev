@@ -11,8 +11,9 @@ import java.time.LocalDateTime;
  *   ACTIVA    — el bot recibió /start CODIGO y guardó el chat_id
  *   REVOCADA  — el usuario (o el propietario del negocio) cortó el acceso
  *
- * contexto guarda el estado conversacional pendiente (ej: "AJUSTE:123" cuando el
- * bot espera la cantidad real de un producto del chequeo semanal).
+ * contexto guarda el estado conversacional pendiente: "AJUSTE:123" cuando el bot
+ * espera la cantidad real de un producto del chequeo semanal, o un borrador JSON
+ * (empieza con "{") de los flujos multi-paso de venta rápida / alta de producto.
  */
 @Entity
 @Table(name = "hot_click_telegram_vinculacion_tb")
@@ -46,7 +47,7 @@ public class TelegramVinculacion {
     @Column(name = "codigo_expira")
     private LocalDateTime codigoExpira;
 
-    @Column(name = "contexto", length = 64)
+    @Column(name = "contexto", columnDefinition = "TEXT")
     private String contexto;
 
     @Column(name = "estado", nullable = false, length = 20)

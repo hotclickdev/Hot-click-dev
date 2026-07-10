@@ -314,7 +314,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
     @DisplayName("IA caída + pregunta de ventas → fallback con los datos de ventas de hoy")
     void textoLibre_iaCaida_fallbackVentas() throws Exception {
         vincularDirecto(duenno, empresa, CHAT_ID);
-        doReturn(null).when(aiCopilotService).chatSync(anyLong(), anyString());
+        doReturn(null).when(aiCopilotService).chatSync(anyLong(), anyString(), anyString());
 
         postUpdate(mensajeTexto(CHAT_ID, "cuanto vendi hoy?"));
 
@@ -329,7 +329,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
     @DisplayName("IA caída + texto sin intención clara → aviso + menú de botones")
     void textoLibre_iaCaida_sinIntencion_muestraMenu() throws Exception {
         vincularDirecto(duenno, empresa, CHAT_ID);
-        doReturn(null).when(aiCopilotService).chatSync(anyLong(), anyString());
+        doReturn(null).when(aiCopilotService).chatSync(anyLong(), anyString(), anyString());
 
         postUpdate(mensajeTexto(CHAT_ID, "hola que tal"));
 
