@@ -50,4 +50,9 @@ export const analytics = {
   descubriSwipe:  (p, dir)       => track('descubri_swipe',  { id: p.id, name: p.nombre, price: p.precio, category: p.categoriaNombre, dir }),
   descubriFinish: (likes, seen)  => track('descubri_finish', { likes, seen }),
   descubriAddAll: (n, value)     => track('descubri_add_all', { item_count: n, value }),
+  descubriInfoView:    (variant)      => track('descubri_info_view',    { variant }),
+  descubriInfoTap:     (variant, cta) => track('descubri_info_tap',     { variant, cta }),
+  descubriEmpresaView: (slug)         => track('descubri_empresa_view', { slug }),
+  descubriEmpresaTap:  (slug)         => track('descubri_empresa_tap',  { slug }),
+  descubriUndo:        ()             => track('descubri_undo', {}),
 }

@@ -16,6 +16,7 @@ export default function BottomNav() {
   const items = [
     { href: '/', label: t('bnav.inicio'), exact: true, icon: HomeIcon },
     { href: '/productos', label: t('bnav.tienda'), icon: ShopIcon },
+    { href: '/descubri', label: t('bnav.descubri'), icon: DescubriIcon },
     { href: '/carrito', label: t('bnav.carrito'), icon: CartNavIcon, badge: cartCount > 0 ? cartBadge : null },
     { href: token ? '/perfil' : '/login', label: t('bnav.cuenta'), icon: AccountIcon },
   ]
@@ -98,6 +99,21 @@ function ShopIcon({ active }) {
   ) : (
     <svg className="w-[22px] h-[22px]" style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
       <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+    </svg>
+  )
+}
+
+function DescubriIcon({ active }) {
+  // Dos cartas apiladas (mazo de swipe): la trasera rotada, la frontal recta
+  return active ? (
+    <svg className="w-[22px] h-[22px]" style={{ color: 'var(--hc-accent)' }} viewBox="0 0 24 24" fill="currentColor">
+      <rect x="8.2" y="2.6" width="11" height="15" rx="2.5" transform="rotate(9 13.7 10.1)" opacity="0.45" />
+      <rect x="4.5" y="6" width="11.5" height="15.5" rx="2.5" />
+    </svg>
+  ) : (
+    <svg className="w-[22px] h-[22px]" style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="8.2" y="2.6" width="11" height="15" rx="2.5" transform="rotate(9 13.7 10.1)" />
+      <rect x="4.5" y="6" width="11.5" height="15.5" rx="2.5" />
     </svg>
   )
 }

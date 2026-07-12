@@ -1,63 +1,21 @@
 import { Link } from 'react-router-dom'
-import { motion, useMotionValue, useTransform } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { formatPrice } from '@/utils/format'
-
-const SWIPE_THRESHOLD = 90
-
-// Variants de salida: la dirección llega via `custom` desde AnimatePresence
-const cardVariants = {
-  enter: { scale: 0.96, y: 14, opacity: 0 },
-  center: { scale: 1, y: 0, opacity: 1 },
-  exit: (dir) => ({
-    x: dir === 'like' ? 480 : -480,
-    rotate: dir === 'like' ? 14 : -14,
-    opacity: 0,
-    transition: { duration: 0.28, ease: [0.32, 0.72, 0, 1] },
-  }),
-}
+import SwipeShell from './SwipeShell'
 
 export default function SwipeCard({ product, isTop, stackIndex, onSwipe }) {
   const { t } = useTranslation()
-  const x = useMotionValue(0)
-  const rotate = useTransform(x, [-220, 220], [-12, 12])
-  const likeOpacity = useTransform(x, [30, 120], [0, 1])
-  const skipOpacity = useTransform(x, [-30, -120], [0, 1])
-
-  const handleDragEnd = (_e, info) => {
-    const power = info.offset.x + info.velocity.x * 0.25
-    if (power > SWIPE_THRESHOLD) onSwipe('like')
-    else if (power < -SWIPE_THRESHOLD) onSwipe('skip')
-  }
 
   const precioFinal = product.enOferta && product.precioOferta
     ? product.precioOferta
     : product.precio
 
   return (
-    <motion.article
-      variants={cardVariants}
-      initial="enter"
-      animate={{
-        scale: 1 - stackIndex * 0.04,
-        y: stackIndex * 12,
-        opacity: stackIndex > 1 ? 0 : 1,
-      }}
-      exit="exit"
-      drag={isTop ? 'x' : false}
-      dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0.9}
-      onDragEnd={isTop ? handleDragEnd : undefined}
-      style={{
-        x,
-        rotate: isTop ? rotate : 0,
-        zIndex: 10 - stackIndex,
-        background: 'var(--hc-surface)',
-        border: '1px solid var(--hc-border)',
-        boxShadow: isTop ? '0 12px 32px var(--hc-shadow)' : 'none',
-      }}
-      className="absolute inset-0 rounded-2xl overflow-hidden flex flex-col select-none touch-none cursor-grab active:cursor-grabbing"
-      aria-hidden={!isTop}
+    <SwipeShell
+      isTop={isTop}
+      stackIndex={stackIndex}
+      onSwipe={onSwipe}
+      stamps={{ like: t('descubri.stampLike'), skip: t('descubri.stampSkip') }}
     >
       {/* Zona de imagen: fondo blanco fijo — las fotos de catálogo son fondo blanco */}
       <div className="relative flex-1 min-h-0 bg-white flex items-center justify-center p-6">
@@ -88,24 +46,6 @@ export default function SwipeCard({ product, isTop, stackIndex, onSwipe }) {
           >
             -{product.porcentajeDescuento}%
           </span>
-        )}
-
-        {/* Sellos de decisión durante el arrastre */}
-        {isTop && (
-          <>
-            <motion.span
-              style={{ opacity: likeOpacity, borderColor: 'var(--hc-success)', color: 'var(--hc-success)' }}
-              className="absolute top-5 left-5 px-3 py-1.5 rounded-xl border-2 text-sm font-bold uppercase tracking-wider -rotate-12 bg-white/85"
-            >
-              {t('descubri.stampLike')}
-            </motion.span>
-            <motion.span
-              style={{ opacity: skipOpacity, borderColor: 'var(--hc-muted)', color: 'var(--hc-muted)' }}
-              className="absolute top-5 right-5 px-3 py-1.5 rounded-xl border-2 text-sm font-bold uppercase tracking-wider rotate-12 bg-white/85"
-            >
-              {t('descubri.stampSkip')}
-            </motion.span>
-          </>
         )}
       </div>
 
@@ -142,6 +82,6 @@ export default function SwipeCard({ product, isTop, stackIndex, onSwipe }) {
           )}
         </div>
       </div>
-    </motion.article>
+    </SwipeShell>
   )
 }

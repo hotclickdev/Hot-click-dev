@@ -18,6 +18,7 @@
   "bnav": {
     "inicio": "Início",
     "tienda": "Loja",
+    "descubri": "Descubra",
     "carrito": "Carrinho",
     "cuenta": "Conta"
   },
@@ -845,7 +846,23 @@
     "bannerCta": "Experimentar Descubra",
     "deEmprendimiento": "De {{nombre}}",
     "learnHint": "O baralho aprende com você: mais do que você gosta, e o que você descarta fica por último",
-    "catalogByTaste": "Ver produtos segundo seu gosto"
+    "catalogByTaste": "Ver produtos segundo seu gosto",
+    "continueHint": "Deslize para continuar",
+    "infoAboutKicker": "Conheça a HOTCLICK",
+    "infoAboutTitle": "Outlet verificado, preços reais",
+    "infoAboutBody": "Compramos, validamos e vendemos produtos outlet e de alta demanda a preços acessíveis. Cada item é revisado antes de ser oferecido.",
+    "infoAboutCta": "Saiba mais sobre nós",
+    "infoEnviosKicker": "Envios",
+    "infoEnviosTitle": "Chegamos a toda a Costa Rica",
+    "infoEnviosBody": "Enviamos por Correos de Costa Rica para todo o país. Precisa agora? Coordenamos entrega expressa via Uber Flash.",
+    "infoPagoKicker": "Compra segura",
+    "infoPagoTitle": "Pague como preferir",
+    "infoPagoBody": "Vários métodos de pagamento e acompanhamento em todo o processo. Qualquer dúvida, fale direto conosco.",
+    "infoPagoCta": "Fale conosco no WhatsApp",
+    "empresaKicker": "Empreendimento parceiro",
+    "empresaBody": "{{nombre}} vende dentro da HOTCLICK. Seus produtos passam pela nossa validação antes de serem publicados.",
+    "empresaCta": "Visitar a loja",
+    "empresaHint": "Os produtos deles vêm nas próximas cartas"
   },
   "wishlist": {
     "title": "Wishlist",

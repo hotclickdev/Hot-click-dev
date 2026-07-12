@@ -11,6 +11,7 @@ import { analytics } from '@/utils/analytics'
 import { formatPrice } from '@/utils/format'
 import useDescubriDeck from '@/components/descubri/useDescubriDeck'
 import SwipeCard from '@/components/descubri/SwipeCard'
+import SpecialCard from '@/components/descubri/SpecialCard'
 
 const IconX = (props) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" {...props}>
@@ -58,10 +59,22 @@ export default function DescubriPage() {
     const top = deck.remaining[0]
     if (!top) return
     setLastDir(dir)
+    // Carta especial (info/empresa): solo se descarta — sin wishlist ni
+    // analytics de producto (su evento _view ya se disparó al ser top).
+    if (top._tipo) {
+      deck.swipe(dir)
+      return
+    }
     if (dir === 'like' && !isLiked(top.id)) toggle(top)
     analytics.descubriSwipe(top, dir)
     deck.swipe(dir)
   }, [deck, isLiked, toggle])
+
+  const handleUndo = useCallback(() => {
+    if (!deck.canUndo) return
+    analytics.descubriUndo()
+    deck.undo()
+  }, [deck])
 
   // Teclado en PC: ← paso, → me gusta, Z deshacer
   useEffect(() => {
@@ -70,11 +83,21 @@ export default function DescubriPage() {
       if (e.target.closest('input, textarea, select')) return
       if (e.key === 'ArrowRight') handleSwipe('like')
       else if (e.key === 'ArrowLeft') handleSwipe('skip')
-      else if (e.key.toLowerCase() === 'z') deck.undo()
+      else if (e.key.toLowerCase() === 'z') handleUndo()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [deck.status, handleSwipe, deck])
+  }, [deck.status, handleSwipe, handleUndo])
+
+  // Destino del botón "detalle" según la carta en el top del mazo
+  const top = deck.remaining[0]
+  const detailTo = !top
+    ? '/productos'
+    : top._tipo === 'info'
+      ? '/nosotros'
+      : top._tipo === 'empresa'
+        ? `/tienda/${top.slug}`
+        : `/productos/${top.id}`
 
   const handleAddAll = () => {
     const disponibles = deck.liked.filter((p) => p.stock > 0)
@@ -143,15 +166,25 @@ export default function DescubriPage() {
           <>
             <div className="relative h-[min(58vh,500px)] min-h-[360px]">
               <AnimatePresence custom={lastDir}>
-                {deck.remaining.slice(0, 3).map((p, i) => (
-                  <SwipeCard
-                    key={p.id}
-                    product={p}
-                    isTop={i === 0}
-                    stackIndex={i}
-                    onSwipe={handleSwipe}
-                  />
-                ))}
+                {deck.remaining.slice(0, 3).map((p, i) =>
+                  p._tipo ? (
+                    <SpecialCard
+                      key={p.id}
+                      card={p}
+                      isTop={i === 0}
+                      stackIndex={i}
+                      onSwipe={handleSwipe}
+                    />
+                  ) : (
+                    <SwipeCard
+                      key={p.id}
+                      product={p}
+                      isTop={i === 0}
+                      stackIndex={i}
+                      onSwipe={handleSwipe}
+                    />
+                  )
+                )}
               </AnimatePresence>
             </div>
 
@@ -159,7 +192,7 @@ export default function DescubriPage() {
             {/* pr en móvil: deja libre la esquina de los botones flotantes (carrito/WhatsApp) */}
             <div className="flex items-center justify-center gap-4 sm:gap-5 mt-5 pr-12 sm:pr-0">
               <button
-                onClick={deck.undo}
+                onClick={handleUndo}
                 disabled={!deck.canUndo}
                 aria-label={t('descubri.undo')}
                 className="w-11 h-11 rounded-full flex items-center justify-center transition-opacity disabled:opacity-30"
@@ -184,7 +217,7 @@ export default function DescubriPage() {
                 <IconHeart className="w-6 h-6" />
               </button>
               <Link
-                to={deck.remaining[0] ? `/productos/${deck.remaining[0].id}` : '/productos'}
+                to={detailTo}
                 aria-label={t('descubri.detail')}
                 className="w-11 h-11 rounded-full flex items-center justify-center"
                 style={{ background: 'var(--hc-surface-2)', color: 'var(--hc-muted)', border: '1px solid var(--hc-border)' }}

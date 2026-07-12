@@ -18,6 +18,7 @@
   "bnav": {
     "inicio": "Home",
     "tienda": "Shop",
+    "descubri": "Discover",
     "carrito": "Cart",
     "cuenta": "Account"
   },
@@ -845,7 +846,23 @@
     "bannerCta": "Try Discover",
     "deEmprendimiento": "By {{nombre}}",
     "learnHint": "The deck learns from you: more of what you like, and what you pass on goes last",
-    "catalogByTaste": "See products sorted by your taste"
+    "catalogByTaste": "See products sorted by your taste",
+    "continueHint": "Swipe to continue",
+    "infoAboutKicker": "Meet HOTCLICK",
+    "infoAboutTitle": "Verified outlet, real prices",
+    "infoAboutBody": "We buy, validate and sell outlet and high-demand products at accessible prices. Every item is checked before it goes on sale.",
+    "infoAboutCta": "Learn more about us",
+    "infoEnviosKicker": "Shipping",
+    "infoEnviosTitle": "We reach all of Costa Rica",
+    "infoEnviosBody": "We ship nationwide with Correos de Costa Rica. Need it now? We coordinate express delivery via Uber Flash.",
+    "infoPagoKicker": "Safe shopping",
+    "infoPagoTitle": "Pay your way",
+    "infoPagoBody": "Multiple payment methods and support throughout the process. Any questions, message us directly.",
+    "infoPagoCta": "Message us on WhatsApp",
+    "empresaKicker": "Partner business",
+    "empresaBody": "{{nombre}} sells within HOTCLICK. Their products go through our validation before being published.",
+    "empresaCta": "Visit their store",
+    "empresaHint": "Their products are coming up in the next cards"
   },
   "wishlist": {
     "title": "Wishlist",
