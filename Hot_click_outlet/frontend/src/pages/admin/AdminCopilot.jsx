@@ -10,13 +10,13 @@ function Msg({ rol, contenido, streaming }) {
       <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-sm font-bold"
         style={isUser
           ? { backgroundColor: 'var(--hc-accent)', color: '#fff' }
-          : { backgroundColor: 'rgba(255,255,255,0.08)', color: 'var(--hc-text)' }}>
+          : { backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)' }}>
         {isUser ? 'Tú' : '🤖'}
       </div>
       <div className={`max-w-[78%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${isUser ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}
         style={isUser
           ? { backgroundColor: 'var(--hc-accent)', color: '#fff' }
-          : { backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
+          : { backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
         {contenido}
         {streaming && <span className="inline-block w-1.5 h-4 ml-0.5 align-middle animate-pulse rounded-sm bg-current opacity-70" />}
       </div>
@@ -209,7 +209,7 @@ export default function AdminCopilot() {
       {uso && !uso.habilitado && (
         <div className="rounded-2xl p-5 text-center mb-3 space-y-2"
           style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
-          <p className="text-sm font-semibold text-red-400">AI Copilot no disponible en tu plan actual</p>
+          <p className="text-sm font-semibold" style={{ color: '#a8291f' }}>AI Copilot no disponible en tu plan actual</p>
           <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
             Actualiza a PYME (80 consultas/mes) o NEGOCIO PLUS (consultas ilimitadas)
           </p>

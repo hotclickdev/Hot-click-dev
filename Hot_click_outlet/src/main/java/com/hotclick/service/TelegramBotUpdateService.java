@@ -156,20 +156,29 @@ public class TelegramBotUpdateService {
         if (empresaId == null) return;
         bot.enviarAccionEscribiendo(chatId);
         String nombreUsuario = v.getUsuario() != null ? v.getUsuario().getNombre() : null;
-        self.responderConIa(chatId, empresaId, texto, nombreUsuario);
+        boolean puedeGestionar = telegramFlujoService.esPropietarioOAdmin(v.getUsuario(), empresaId);
+        self.responderConIa(chatId, empresaId, texto, nombreUsuario, puedeGestionar);
     }
 
     /**
      * Responde un texto libre fuera del hilo del webhook. Si el proveedor de IA
-     * está caído (chatSync → null), degrada a los datos estructurados según la
-     * intención detectada — la conversación nunca queda sin respuesta.
+     * está caído (chatSyncConAcciones → null), degrada a los datos estructurados
+     * según la intención detectada — la conversación nunca queda sin respuesta.
+     * Si el modelo propuso una mutación (solo posible cuando puedeGestionar=true),
+     * la registra como borrador pendiente con botones Confirmar/Cancelar — nunca
+     * la ejecuta acá.
      */
     @org.springframework.scheduling.annotation.Async
-    public void responderConIa(Long chatId, Long empresaId, String texto, String nombreUsuario) {
+    public void responderConIa(Long chatId, Long empresaId, String texto, String nombreUsuario, boolean puedeGestionar) {
         try {
-            String respuesta = aiCopilotService.chatSync(empresaId, texto, nombreUsuario);
-            if (respuesta != null) {
-                bot.enviarMensaje(chatId, respuesta, null, false);
+            AiCopilotService.ChatConAccionesResultado resultado =
+                aiCopilotService.chatSyncConAcciones(empresaId, texto, nombreUsuario, puedeGestionar);
+            if (resultado != null) {
+                boolean hayAccionPendiente = resultado.accionPropuesta() != null;
+                bot.enviarMensaje(chatId, resultado.texto(), hayAccionPendiente ? null : tecladoRespuestaIa(), false);
+                if (hayAccionPendiente) {
+                    vinculacionActiva(chatId).ifPresent(v -> telegramFlujoService.proponerAccion(v, resultado.accionPropuesta()));
+                }
                 return;
             }
 
@@ -184,7 +193,7 @@ public class TelegramBotUpdateService {
             }
 
             if (datos != null) {
-                bot.enviarMensaje(chatId, "La IA no está disponible en este momento — esto es lo que te puedo mostrar:\n\n" + datos);
+                bot.enviarMensaje(chatId, "La IA no está disponible en este momento — esto es lo que te puedo mostrar:\n\n" + datos, tecladoRespuestaIa());
             } else {
                 bot.enviarMensaje(chatId, "El asistente de IA no está disponible en este momento. Mientras tanto podés consultar tus datos con los botones:");
                 vinculacionActiva(chatId).ifPresent(this::mostrarMenu);
@@ -221,8 +230,10 @@ public class TelegramBotUpdateService {
         if (data.startsWith("emp:")) { seleccionarEmpresa(v, data.substring(4)); return; }
         if (data.startsWith("chk:")) { iniciarAjuste(v, data.substring(4)); return; }
 
-        // Flujos guiados (venta rápida, alta de producto, clientes) — TelegramFlujoService
-        if (data.startsWith("vta:") || data.startsWith("prd:") || data.startsWith("cli:") || "flx:x".equals(data)) {
+        // Flujos guiados (venta rápida, alta de producto, clientes, confirmación de
+        // acción propuesta por la IA) — TelegramFlujoService
+        if (data.startsWith("vta:") || data.startsWith("prd:") || data.startsWith("cli:")
+                || data.startsWith("acn:") || "flx:x".equals(data)) {
             Long empresaIdFlujo = empresaValidada(v);
             if (empresaIdFlujo != null) telegramFlujoService.manejarCallback(v, empresaIdFlujo, data);
             return;
@@ -372,6 +383,20 @@ public class TelegramBotUpdateService {
             "*" + esc(nombre) + "*\n¿Qué querés ver? También podés escribirme una pregunta libre "
             + "(ej: _¿cuál producto se vende más?_) y te respondo con los datos reales del negocio.",
             teclado);
+    }
+
+    /** Botones rápidos tras cada respuesta libre de la IA — cubren los seguimientos
+     *  más comunes sin obligar a escribir de nuevo. Mismos códigos que el menú
+     *  principal, para no duplicar rutas de callback. */
+    private List<List<Map<String, Object>>> tecladoRespuestaIa() {
+        List<List<Map<String, Object>>> teclado = new ArrayList<>();
+        teclado.add(List.of(
+            TelegramClienteBotService.boton("📦 Inventario", "inv"),
+            TelegramClienteBotService.boton("💰 Ventas de hoy", "ventas")));
+        teclado.add(List.of(
+            TelegramClienteBotService.boton("🛒 Nueva venta", "vta:new"),
+            TelegramClienteBotService.boton("➕ Nuevo producto", "prd:new")));
+        return teclado;
     }
 
     // ── Consultas de datos (parametrizadas, siempre por empresa validada) ────

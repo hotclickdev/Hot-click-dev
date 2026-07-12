@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Spinner from '@/components/ui/Spinner'
 import Badge from '@/components/ui/Badge'
@@ -7,11 +8,20 @@ import { productService } from '@/services/productService'
 import { posService } from '@/services/posService'
 import { formatPrice, formatDate } from '@/utils/format'
 import ImportExportBar from '@/components/admin/ImportExportBar'
+import useTenantStore from '@/store/tenantStore'
 
 const ESTADOS_COMPLETADOS = new Set(['COMPLETADO', 'ENTREGADO'])
 
 const fmt       = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
 const TABLE_SIZE = 25
+
+// Colores semánticos pensados para tarjetas/tablas sobre fondo claro
+// (los tonos "neón" originales estaban pensados para fondo oscuro y
+// pierden contraste sobre var(--hc-surface)).
+const SUCCESS = '#1E7F4F'
+const WARNING = '#8a5a00'
+const DANGER  = '#a8291f'
+const INFO    = 'var(--hc-accent)'
 
 const QUICK = [
   { label: 'Hoy', days: 0 },
@@ -23,20 +33,28 @@ const QUICK = [
 
 function toISO(date) { return date.toISOString().slice(0, 10) }
 
-function StatCard({ label, value, sub, color = '#F4F6F9' }) {
+function StatCard({ label, value, sub, color }) {
   return (
-    <div className="bg-[#111114] border border-white/8 rounded-2xl p-4">
-      <p className="text-xs text-[#8e8e9a] mb-1">{label}</p>
-      <p className="text-xl font-bold" style={{ color }}>{value}</p>
-      {sub && <p className="text-xs text-[#8e8e9a] mt-1">{sub}</p>}
+    <div className="rounded-2xl p-4" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+      <p className="text-xs mb-1" style={{ color: 'var(--hc-muted)' }}>{label}</p>
+      <p className="text-xl font-bold" style={{ fontFamily: 'var(--font-display)', color: color ?? 'var(--hc-text)' }}>{value}</p>
+      {sub && <p className="text-xs mt-1" style={{ color: 'var(--hc-muted)' }}>{sub}</p>}
     </div>
   )
 }
+
+const inputCls = 'h-9 px-3 rounded-xl text-sm focus:outline-none'
+const inputStyle = { backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }
+const cardStyle = { backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }
 
 /* ════════════════════════════════════════════════════════════ */
 export default function AdminReportes() {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState('ventas')
+
+  const hasFeature = useTenantStore((s) => s.hasFeature)
+  const tenantLoaded = useTenantStore((s) => s.loaded)
+  const vistaPrevia = tenantLoaded && !hasFeature('reportes')
 
   // Datos
   const [ventas,    setVentas]    = useState([])
@@ -186,8 +204,8 @@ export default function AdminReportes() {
         {/* Header */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.reportes.title')}</h1>
-            <p className="text-sm text-[#8e8e9a] mt-1">{t('admin.reportes.generate')}</p>
+            <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>{t('admin.reportes.title')}</h1>
+            <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>{t('admin.reportes.generate')}</p>
           </div>
           <div className="flex gap-2">
             {activeTab === 'ventas' && (
@@ -200,20 +218,36 @@ export default function AdminReportes() {
             {activeTab === 'productos' && topProductos.length > 0 && (
               <button onClick={exportTopProductos}
                 className="px-4 py-2 rounded-xl text-xs font-semibold transition-opacity hover:opacity-80"
-                style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>
+                style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>
                 Exportar CSV
               </button>
             )}
           </div>
         </div>
 
+        {/* Vista previa — plan sin la feature de reportes */}
+        {vistaPrevia && (
+          <div className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ backgroundColor: 'rgba(23,71,168,0.08)' }}>
+            <svg className="w-5 h-5 shrink-0" style={{ color: 'var(--hc-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <rect x="4" y="10" width="16" height="10" rx="2"/><path strokeLinecap="round" d="M8 10V7a4 4 0 118 0v3"/>
+            </svg>
+            <p className="text-sm" style={{ color: 'var(--hc-text)' }}>
+              <strong>Estás viendo una vista previa</strong> con tus datos actuales. Con el plan PYME, estos reportes
+              se actualizan con más historial y detalle todos los días.
+            </p>
+          </div>
+        )}
+
         {/* Tabs */}
-        <div className="flex gap-1 bg-white/3 border border-white/8 rounded-xl p-1 w-fit flex-wrap">
+        <div className="flex gap-1 rounded-xl p-1 w-fit flex-wrap" style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
           {TABS.map(({ key, label }) => (
             <button key={key} onClick={() => setActiveTab(key)}
-              className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                activeTab === key ? 'bg-[#4f7cff] text-white' : 'text-[#8e8e9a] hover:text-white'
-              }`}>{label}</button>
+              className="px-4 py-1.5 rounded-lg text-xs font-medium transition-all"
+              style={activeTab === key
+                ? { backgroundColor: 'var(--hc-accent)', color: '#fff' }
+                : { color: 'var(--hc-muted)' }}>
+              {label}
+            </button>
           ))}
         </div>
 
@@ -221,14 +255,17 @@ export default function AdminReportes() {
         <div className="flex flex-wrap gap-2">
           {QUICK.map(q => (
             <button key={q.days} onClick={() => applyQuick(q.days)}
-              className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
-                quick === q.days ? 'bg-[#4f7cff] text-white' : 'bg-white/5 border border-white/10 text-[#8e8e9a] hover:text-white'
-              }`}>{q.label}</button>
+              className="px-3 py-1.5 rounded-lg text-sm transition-all"
+              style={quick === q.days
+                ? { backgroundColor: 'var(--hc-accent)', color: '#fff' }
+                : { backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
+              {q.label}
+            </button>
           ))}
           <input type="date" value={desde} onChange={e => { setDesde(e.target.value); setQuick(-1) }}
-            className="h-9 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none"/>
+            className={inputCls} style={inputStyle}/>
           <input type="date" value={hasta} onChange={e => { setHasta(e.target.value); setQuick(-1) }}
-            className="h-9 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none"/>
+            className={inputCls} style={inputStyle}/>
         </div>
 
         {/* ══ TAB: VENTAS ═════════════════════════════════════════ */}
@@ -237,23 +274,23 @@ export default function AdminReportes() {
             {/* Filtros avanzados */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="flex flex-col gap-1 col-span-2">
-                <label className="text-xs text-[#8e8e9a]">Buscar</label>
+                <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Buscar</label>
                 <input type="text" placeholder="Cliente, ID…" value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="h-9 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none"/>
+                  className={inputCls} style={inputStyle}/>
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-[#8e8e9a]">{t('admin.reportes.type')}</label>
+                <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>{t('admin.reportes.type')}</label>
                 <select value={metodoPago} onChange={e => setMetodoPago(e.target.value)}
-                  className="h-9 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none">
+                  className={inputCls} style={inputStyle}>
                   <option value="">Todos</option>
                   {metodos.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-[#8e8e9a]">{t('admin.orders.status')}</label>
+                <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>{t('admin.orders.status')}</label>
                 <select value={estado} onChange={e => setEstado(e.target.value)}
-                  className="h-9 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none">
+                  className={inputCls} style={inputStyle}>
                   <option value="">Todos</option>
                   {estados.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
@@ -263,39 +300,39 @@ export default function AdminReportes() {
             {/* KPIs */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <StatCard label="Ventas en período" value={filtered.length}/>
-              <StatCard label="Ingresos (completadas)" value={formatPrice(totalIngresos)} color="#4ade80"
+              <StatCard label="Ingresos (completadas)" value={formatPrice(totalIngresos)} color={SUCCESS}
                 sub={totalEnvios > 0 ? `Productos: ${formatPrice(totalProductos)}` : undefined}/>
-              <StatCard label="Completadas" value={completadas.length} color="#4f7cff"/>
-              <StatCard label="Ticket promedio" value={formatPrice(ticketPromedio)} color="var(--hc-blue-400)"/>
+              <StatCard label="Completadas" value={completadas.length} color={INFO}/>
+              <StatCard label="Ticket promedio" value={formatPrice(ticketPromedio)} color={INFO}/>
             </div>
 
             {/* Tabla */}
             {loading ? <div className="flex justify-center py-16"><Spinner size="lg"/></div> : (
-              <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
+              <div className="rounded-2xl overflow-hidden" style={cardStyle}>
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[700px] text-sm">
                     <thead>
-                      <tr className="border-b border-white/8">
+                      <tr style={{ borderBottom: '1px solid var(--hc-border)' }}>
                         {['#','Cliente','Productos','Envío','Total','Método','Fecha','Estado'].map(h => (
-                          <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">{h}</th>
+                          <th key={h} className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody>
                       {filtered.length === 0
-                        ? <tr><td colSpan={8} className="px-4 py-12 text-center text-[#8e8e9a]">{t('common.noData')}</td></tr>
+                        ? <tr><td colSpan={8} className="px-4 py-12 text-center" style={{ color: 'var(--hc-muted)' }}>{t('common.noData')}</td></tr>
                         : paginated.map(v => {
                           const envio = v.costoEnvio ?? 0
                           const prods = (v.total ?? 0) - envio
                           return (
-                            <tr key={v.id} className="hover:bg-white/3 transition-colors">
-                              <td className="px-4 py-3 text-[#8e8e9a] text-xs font-mono">#{v.id}</td>
-                              <td className="px-4 py-3 text-[#e8e8ed] max-w-[140px] truncate">{v.nombreCliente ?? v.usuarioFinal?.nombre ?? '—'}</td>
-                              <td className="px-4 py-3 font-semibold text-[#e8e8ed]">{formatPrice(prods)}</td>
-                              <td className="px-4 py-3 text-xs">{envio > 0 ? <span className="text-amber-400">{formatPrice(envio)}</span> : <span className="text-[#8e8e9a]">—</span>}</td>
-                              <td className="px-4 py-3 font-semibold text-emerald-400">{formatPrice(v.total ?? 0)}</td>
-                              <td className="px-4 py-3 text-[#8e8e9a] text-xs">{v.metodoPago ?? '—'}</td>
-                              <td className="px-4 py-3 text-[#8e8e9a] text-xs">{formatDate(v.fechaCreacion ?? v.fechaPedido)}</td>
+                            <tr key={v.id} className="transition-colors hover:bg-[var(--hc-surface-2)]" style={{ borderTop: '1px solid var(--hc-border)' }}>
+                              <td className="px-4 py-3 text-xs font-mono" style={{ color: 'var(--hc-muted)' }}>#{v.id}</td>
+                              <td className="px-4 py-3 max-w-[140px] truncate" style={{ color: 'var(--hc-text)' }}>{v.nombreCliente ?? v.usuarioFinal?.nombre ?? '—'}</td>
+                              <td className="px-4 py-3 font-semibold" style={{ color: 'var(--hc-text)' }}>{formatPrice(prods)}</td>
+                              <td className="px-4 py-3 text-xs">{envio > 0 ? <span style={{ color: WARNING }}>{formatPrice(envio)}</span> : <span style={{ color: 'var(--hc-muted)' }}>—</span>}</td>
+                              <td className="px-4 py-3 font-semibold" style={{ color: SUCCESS }}>{formatPrice(v.total ?? 0)}</td>
+                              <td className="px-4 py-3 text-xs" style={{ color: 'var(--hc-muted)' }}>{v.metodoPago ?? '—'}</td>
+                              <td className="px-4 py-3 text-xs" style={{ color: 'var(--hc-muted)' }}>{formatDate(v.fechaCreacion ?? v.fechaPedido)}</td>
                               <td className="px-4 py-3">
                                 <Badge variant={ESTADOS_COMPLETADOS.has(v.estado) ? 'success' : 'warning'}>
                                   {v.estado ?? '—'}
@@ -308,14 +345,14 @@ export default function AdminReportes() {
                   </table>
                 </div>
                 {filtered.length > TABLE_SIZE && (
-                  <div className="px-4 py-3 border-t border-white/8 flex items-center justify-between text-xs text-[#8e8e9a]">
+                  <div className="px-4 py-3 flex items-center justify-between text-xs" style={{ borderTop: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
                     <span>{filtered.length} resultados</span>
                     <div className="flex items-center gap-2">
                       <button onClick={() => setTablePage(p => Math.max(0, p-1))} disabled={tablePage === 0}
-                        className="px-2 py-1 rounded-lg bg-white/5 border border-white/10 disabled:opacity-30">←</button>
+                        className="px-2 py-1 rounded-lg disabled:opacity-30" style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>←</button>
                       <span>{tablePage + 1} / {totalPages}</span>
                       <button onClick={() => setTablePage(p => Math.min(totalPages-1, p+1))} disabled={tablePage >= totalPages-1}
-                        className="px-2 py-1 rounded-lg bg-white/5 border border-white/10 disabled:opacity-30">→</button>
+                        className="px-2 py-1 rounded-lg disabled:opacity-30" style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>→</button>
                     </div>
                   </div>
                 )}
@@ -328,37 +365,37 @@ export default function AdminReportes() {
         {activeTab === 'productos' && (
           loading ? <div className="flex justify-center py-16"><Spinner size="lg"/></div> : (
             topProductos.length === 0 ? (
-              <div className="bg-[#111114] border border-white/8 rounded-2xl p-10 text-center">
-                <p className="text-[#8e8e9a]">Sin datos de productos para este período.</p>
-                <p className="text-xs text-[#8e8e9a] mt-1">Los ítems aparecen cuando los pedidos tienen líneas detalladas.</p>
+              <div className="rounded-2xl p-10 text-center" style={cardStyle}>
+                <p style={{ color: 'var(--hc-muted)' }}>Sin datos de productos para este período.</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--hc-muted)' }}>Los ítems aparecen cuando los pedidos tienen líneas detalladas.</p>
               </div>
             ) : (
               <>
                 <div className="grid grid-cols-3 gap-3">
-                  <StatCard label="Productos únicos" value={topProductos.length} color="#F4F6F9"/>
-                  <StatCard label="Unidades vendidas" value={fmt(topProductos.reduce((s,p) => s + p.cantidad, 0))} color="#4ade80"/>
-                  <StatCard label="Ingreso total" value={formatPrice(topProductos.reduce((s,p) => s + p.ingreso, 0))} color="#4f7cff"/>
+                  <StatCard label="Productos únicos" value={topProductos.length}/>
+                  <StatCard label="Unidades vendidas" value={fmt(topProductos.reduce((s,p) => s + p.cantidad, 0))} color={SUCCESS}/>
+                  <StatCard label="Ingreso total" value={formatPrice(topProductos.reduce((s,p) => s + p.ingreso, 0))} color={INFO}/>
                 </div>
-                <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
+                <div className="rounded-2xl overflow-hidden" style={cardStyle}>
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[600px] text-sm">
                       <thead>
-                        <tr className="border-b border-white/8">
+                        <tr style={{ borderBottom: '1px solid var(--hc-border)' }}>
                           {['#','Producto','Unidades','Ingreso','Utilidad','Margen'].map(h => (
-                            <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">{h}</th>
+                            <th key={h} className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-white/5">
+                      <tbody>
                         {topProductos.map((p, i) => (
-                          <tr key={p.id} className="hover:bg-white/3 transition-colors">
-                            <td className="px-4 py-3 text-xs text-[#8e8e9a]">{i + 1}</td>
-                            <td className="px-4 py-3 font-medium text-[#e8e8ed] max-w-[200px] truncate">{p.nombre}</td>
-                            <td className="px-4 py-3 text-[#e8e8ed]">{p.cantidad}</td>
-                            <td className="px-4 py-3 font-semibold text-emerald-400">{formatPrice(p.ingreso)}</td>
-                            <td className="px-4 py-3 font-semibold text-[#4f7cff]">{formatPrice(p.utilidad)}</td>
+                          <tr key={p.id} className="transition-colors hover:bg-[var(--hc-surface-2)]" style={{ borderTop: '1px solid var(--hc-border)' }}>
+                            <td className="px-4 py-3 text-xs" style={{ color: 'var(--hc-muted)' }}>{i + 1}</td>
+                            <td className="px-4 py-3 font-medium max-w-[200px] truncate" style={{ color: 'var(--hc-text)' }}>{p.nombre}</td>
+                            <td className="px-4 py-3" style={{ color: 'var(--hc-text)' }}>{p.cantidad}</td>
+                            <td className="px-4 py-3 font-semibold" style={{ color: SUCCESS }}>{formatPrice(p.ingreso)}</td>
+                            <td className="px-4 py-3 font-semibold" style={{ color: INFO }}>{formatPrice(p.utilidad)}</td>
                             <td className="px-4 py-3">
-                              <span className={`font-semibold text-sm ${Number.parseFloat(p.margen) >= 30 ? 'text-emerald-400' : Number.parseFloat(p.margen) >= 10 ? 'text-amber-400' : 'text-red-400'}`}>
+                              <span className="font-semibold text-sm" style={{ color: Number.parseFloat(p.margen) >= 30 ? SUCCESS : Number.parseFloat(p.margen) >= 10 ? WARNING : DANGER }}>
                                 {p.margen}%
                               </span>
                             </td>
@@ -378,37 +415,37 @@ export default function AdminReportes() {
           loadingPOS ? <div className="flex justify-center py-16"><Spinner size="lg"/></div> : (
             <>
               <div className="grid grid-cols-3 gap-3">
-                <StatCard label="Ventas POS" value={posTx} color="#F4F6F9"/>
-                <StatCard label="Total facturado" value={formatPrice(posTotal)} color="#34d399"/>
-                <StatCard label="Ticket promedio" value={formatPrice(posTicket)} color="var(--hc-blue-300)"/>
+                <StatCard label="Ventas POS" value={posTx}/>
+                <StatCard label="Total facturado" value={formatPrice(posTotal)} color={SUCCESS}/>
+                <StatCard label="Ticket promedio" value={formatPrice(posTicket)} color={INFO}/>
               </div>
 
               {posFiltradas.length === 0 ? (
-                <div className="bg-[#111114] border border-white/8 rounded-2xl p-10 text-center">
-                  <p className="text-[#8e8e9a]">Sin ventas POS para este período.</p>
+                <div className="rounded-2xl p-10 text-center" style={cardStyle}>
+                  <p style={{ color: 'var(--hc-muted)' }}>Sin ventas POS para este período.</p>
                 </div>
               ) : (
-                <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
+                <div className="rounded-2xl overflow-hidden" style={cardStyle}>
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[560px] text-sm">
                       <thead>
-                        <tr className="border-b border-white/8">
+                        <tr style={{ borderBottom: '1px solid var(--hc-border)' }}>
                           {['Ticket','Fecha','Cliente','Ítems','Método','Total'].map(h => (
-                            <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">{h}</th>
+                            <th key={h} className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-white/5">
+                      <tbody>
                         {posFiltradas.slice(0, 100).map(v => (
-                          <tr key={v.id} className="hover:bg-white/3 transition-colors">
-                            <td className="px-4 py-3 font-mono text-xs text-[#8e8e9a]">{v.numeroPedido}</td>
-                            <td className="px-4 py-3 text-xs text-[#8e8e9a]">{formatDate(v.fechaPedido)}</td>
-                            <td className="px-4 py-3 text-[#e8e8ed] text-xs">
+                          <tr key={v.id} className="transition-colors hover:bg-[var(--hc-surface-2)]" style={{ borderTop: '1px solid var(--hc-border)' }}>
+                            <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--hc-muted)' }}>{v.numeroPedido}</td>
+                            <td className="px-4 py-3 text-xs" style={{ color: 'var(--hc-muted)' }}>{formatDate(v.fechaPedido)}</td>
+                            <td className="px-4 py-3 text-xs" style={{ color: 'var(--hc-text)' }}>
                               {v.usuarioFinal?.id === 999 ? 'Mostrador' : v.usuarioFinal?.nombre ?? '—'}
                             </td>
-                            <td className="px-4 py-3 text-[#8e8e9a] text-xs">{(v.items ?? []).length}</td>
-                            <td className="px-4 py-3 text-[#8e8e9a] text-xs">{v.metodoPago ?? '—'}</td>
-                            <td className="px-4 py-3 font-semibold text-emerald-400">{formatPrice(v.totalPedido)}</td>
+                            <td className="px-4 py-3 text-xs" style={{ color: 'var(--hc-muted)' }}>{(v.items ?? []).length}</td>
+                            <td className="px-4 py-3 text-xs" style={{ color: 'var(--hc-muted)' }}>{v.metodoPago ?? '—'}</td>
+                            <td className="px-4 py-3 font-semibold" style={{ color: SUCCESS }}>{formatPrice(v.totalPedido)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -425,44 +462,44 @@ export default function AdminReportes() {
           loadingP ? <div className="flex justify-center py-16"><Spinner size="lg"/></div> : (
             <>
               <div className="grid grid-cols-3 gap-3">
-                <StatCard label="Total productos" value={productos.length} color="#F4F6F9"/>
-                <StatCard label="Stock en riesgo" value={stockRiesgo.length} color="#f87171"
+                <StatCard label="Total productos" value={productos.length}/>
+                <StatCard label="Stock en riesgo" value={stockRiesgo.length} color={DANGER}
                   sub="stockActual ≤ stockMínimo"/>
-                <StatCard label="Agotados" value={stockRiesgo.filter(p => (p.stockActual ?? p.stock ?? 0) <= 0).length} color="#f87171"/>
+                <StatCard label="Agotados" value={stockRiesgo.filter(p => (p.stockActual ?? p.stock ?? 0) <= 0).length} color={DANGER}/>
               </div>
 
               {stockRiesgo.length === 0 ? (
-                <div className="bg-[#111114] border border-white/8 rounded-2xl p-10 text-center">
-                  <p className="text-emerald-400 font-medium">¡Todo el inventario está en niveles seguros!</p>
-                  <p className="text-xs text-[#8e8e9a] mt-1">Ningún producto está por debajo de su stock mínimo.</p>
+                <div className="rounded-2xl p-10 text-center" style={cardStyle}>
+                  <p className="font-medium" style={{ color: SUCCESS }}>¡Todo el inventario está en niveles seguros!</p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--hc-muted)' }}>Ningún producto está por debajo de su stock mínimo.</p>
                 </div>
               ) : (
-                <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
+                <div className="rounded-2xl overflow-hidden" style={cardStyle}>
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[560px] text-sm">
                       <thead>
-                        <tr className="border-b border-white/8">
+                        <tr style={{ borderBottom: '1px solid var(--hc-border)' }}>
                           {['Producto','SKU','Stock actual','Stock mínimo','Diferencia','Estado'].map(h => (
-                            <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">{h}</th>
+                            <th key={h} className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-white/5">
+                      <tbody>
                         {stockRiesgo.map(p => {
                           const actual = p.stockActual ?? p.stock ?? 0
                           const minimo = p.stockMinimo ?? 5
                           const diff   = actual - minimo
                           return (
-                            <tr key={p.id} className="hover:bg-white/3 transition-colors">
+                            <tr key={p.id} className="transition-colors hover:bg-[var(--hc-surface-2)]" style={{ borderTop: '1px solid var(--hc-border)' }}>
                               <td className="px-4 py-3">
-                                <p className="font-medium text-[#e8e8ed] max-w-[200px] truncate">{p.nombreProducto ?? p.nombre}</p>
+                                <p className="font-medium max-w-[200px] truncate" style={{ color: 'var(--hc-text)' }}>{p.nombreProducto ?? p.nombre}</p>
                               </td>
-                              <td className="px-4 py-3 font-mono text-xs text-[#8e8e9a]">{p.sku ?? '—'}</td>
+                              <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--hc-muted)' }}>{p.sku ?? '—'}</td>
                               <td className="px-4 py-3">
-                                <span className={`font-bold ${actual <= 0 ? 'text-red-400' : 'text-amber-400'}`}>{actual}</span>
+                                <span className="font-bold" style={{ color: actual <= 0 ? DANGER : WARNING }}>{actual}</span>
                               </td>
-                              <td className="px-4 py-3 text-[#8e8e9a]">{minimo}</td>
-                              <td className="px-4 py-3 font-semibold text-red-400">{diff}</td>
+                              <td className="px-4 py-3" style={{ color: 'var(--hc-muted)' }}>{minimo}</td>
+                              <td className="px-4 py-3 font-semibold" style={{ color: DANGER }}>{diff}</td>
                               <td className="px-4 py-3">
                                 <Badge variant={actual <= 0 ? 'danger' : 'warning'}>
                                   {actual <= 0 ? 'Agotado' : 'Stock bajo'}
@@ -478,6 +515,28 @@ export default function AdminReportes() {
               )}
             </>
           )
+        )}
+
+        {/* Tarjeta de desbloqueo por plan */}
+        {vistaPrevia && (
+          <div className="rounded-2xl p-6 flex items-center gap-5 flex-wrap" style={cardStyle}>
+            <div className="w-12 h-12 rounded-xl shrink-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(23,71,168,0.08)' }}>
+              <svg className="w-6 h-6" style={{ color: 'var(--hc-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <rect x="4" y="10" width="16" height="10" rx="2"/><path strokeLinecap="round" d="M8 10V7a4 4 0 118 0v3"/>
+              </svg>
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <p className="font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>Activá tus reportes reales</p>
+              <p className="text-sm mt-0.5" style={{ color: 'var(--hc-muted)' }}>
+                Tu plan actual es <strong>Emprendedor (gratis)</strong>. Con el plan PYME sumás más historial, filtros y exportación.
+              </p>
+            </div>
+            <Link to="/admin/billing/planes"
+              className="px-5 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-opacity hover:opacity-90"
+              style={{ backgroundColor: 'var(--hc-primary)', color: '#fff' }}>
+              Mejorá tu plan
+            </Link>
+          </div>
         )}
       </div>
     </>

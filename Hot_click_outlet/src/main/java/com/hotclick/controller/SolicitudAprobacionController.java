@@ -33,6 +33,9 @@ public class SolicitudAprobacionController {
     @Autowired private SolicitudAprobacionRepository solicitudAprobacionRepository;
     @Autowired private NotificacionEmailService notificacionEmailService;
     @Autowired private CompanyScope             companyScope;
+    @Autowired private com.hotclick.service.TelegramNotificacionClienteService telegramNotificacionClienteService;
+    @Autowired private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+    @Autowired private com.hotclick.service.ProductoService productoService;
 
     // toMap() resuelve e.getPlan().getNombre() (relación LAZY); con open-in-view=false
     // hace falta una transacción activa para que el proxy se pueda inicializar.
@@ -123,6 +126,10 @@ public class SolicitudAprobacionController {
         sol.setFechaResolucion(LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR));
         sol.setUsuarioResuelve(companyScope.getCurrentUser());
         solicitudAprobacionRepository.save(sol);
+        if (sol.getEmpresa() != null && producto != null) {
+            telegramNotificacionClienteService.notificarSolicitudAprobada(
+                sol.getEmpresa().getId(), "Tu producto", producto.getNombreProducto());
+        }
         return ResponseEntity.ok(ResponseDTO.success("Producto aprobado y publicado en el catálogo", null));
     }
 
@@ -142,7 +149,108 @@ public class SolicitudAprobacionController {
         sol.setFechaResolucion(LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR));
         sol.setUsuarioResuelve(companyScope.getCurrentUser());
         solicitudAprobacionRepository.save(sol);
+        Producto productoRechazado = productoRepository.findById(sol.getIdEntidad()).orElse(null);
+        if (sol.getEmpresa() != null && productoRechazado != null) {
+            telegramNotificacionClienteService.notificarSolicitudRevision(
+                sol.getEmpresa().getId(), "Tu producto", productoRechazado.getNombreProducto(),
+                sol.getComentarioRevisor());
+        }
         return ResponseEntity.ok(ResponseDTO.success("Solicitud rechazada", null));
+    }
+
+    // ── Ofertas (Promociones) ───────────────────────────────────────────────────
+
+    @GetMapping("/ofertas")
+    public ResponseEntity<ResponseDTO> listarOfertas() {
+        if (!companyScope.isAdminIT()) return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));
+        List<SolicitudAprobacion> pendientes = solicitudAprobacionRepository
+            .findByEstadoSolicitudOrderByFechaSolicitudDesc("PENDIENTE").stream()
+            .filter(s -> "OFERTA".equals(s.getTipoEntidad()))
+            .toList();
+        List<Map<String, Object>> result = pendientes.stream().map(this::toMapOferta).toList();
+        return ResponseEntity.ok(ResponseDTO.success("Solicitudes de promoción pendientes", result));
+    }
+
+    @PutMapping("/ofertas/{id}/aprobar")
+    public ResponseEntity<ResponseDTO> aprobarOferta(@PathVariable Long id) {
+        if (!companyScope.isAdminIT()) return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));
+        SolicitudAprobacion sol = solicitudAprobacionRepository.findById(id)
+            .filter(s -> "OFERTA".equals(s.getTipoEntidad()))
+            .orElse(null);
+        if (sol == null) return ResponseEntity.status(404).body(ResponseDTO.error("Solicitud no encontrada"));
+        if (!"PENDIENTE".equals(sol.getEstadoSolicitud()))
+            return ResponseEntity.badRequest().body(ResponseDTO.error("Esta solicitud ya fue resuelta"));
+
+        Producto producto = productoRepository.findById(sol.getIdEntidad()).orElse(null);
+        try {
+            Map<String, Object> snapshot = objectMapper.readValue(sol.getDatosSnapshot(), Map.class);
+            boolean enOferta = Boolean.TRUE.equals(snapshot.get("enOferta"));
+            Integer pct = snapshot.get("porcentajeDescuento") != null
+                ? ((Number) snapshot.get("porcentajeDescuento")).intValue() : null;
+            Integer precio = snapshot.get("precioOferta") != null
+                ? ((Number) snapshot.get("precioOferta")).intValue() : null;
+            if (producto != null) productoService.aplicarOferta(producto.getId(), enOferta, pct, precio);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error("No se pudo aplicar la promoción"));
+        }
+
+        sol.setEstadoSolicitud("APROBADO");
+        sol.setFechaResolucion(LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR));
+        sol.setUsuarioResuelve(companyScope.getCurrentUser());
+        solicitudAprobacionRepository.save(sol);
+        if (sol.getEmpresa() != null && producto != null) {
+            telegramNotificacionClienteService.notificarSolicitudAprobada(
+                sol.getEmpresa().getId(), "Tu promoción", producto.getNombreProducto());
+        }
+        return ResponseEntity.ok(ResponseDTO.success("Promoción aprobada y aplicada", null));
+    }
+
+    @PutMapping("/ofertas/{id}/rechazar")
+    public ResponseEntity<ResponseDTO> rechazarOferta(@PathVariable Long id,
+                                                       @RequestBody(required = false) Map<String, String> body) {
+        if (!companyScope.isAdminIT()) return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));
+        SolicitudAprobacion sol = solicitudAprobacionRepository.findById(id)
+            .filter(s -> "OFERTA".equals(s.getTipoEntidad()))
+            .orElse(null);
+        if (sol == null) return ResponseEntity.status(404).body(ResponseDTO.error("Solicitud no encontrada"));
+        if (!"PENDIENTE".equals(sol.getEstadoSolicitud()))
+            return ResponseEntity.badRequest().body(ResponseDTO.error("Esta solicitud ya fue resuelta"));
+
+        sol.setEstadoSolicitud("RECHAZADO");
+        sol.setComentarioRevisor(body != null ? body.get("comentario") : null);
+        sol.setFechaResolucion(LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR));
+        sol.setUsuarioResuelve(companyScope.getCurrentUser());
+        solicitudAprobacionRepository.save(sol);
+        Producto producto = productoRepository.findById(sol.getIdEntidad()).orElse(null);
+        if (sol.getEmpresa() != null && producto != null) {
+            telegramNotificacionClienteService.notificarSolicitudRevision(
+                sol.getEmpresa().getId(), "Tu promoción", producto.getNombreProducto(),
+                sol.getComentarioRevisor());
+        }
+        return ResponseEntity.ok(ResponseDTO.success("Solicitud rechazada", null));
+    }
+
+    private Map<String, Object> toMapOferta(SolicitudAprobacion sol) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("id",            sol.getId());
+        m.put("fechaSolicitud", sol.getFechaSolicitud());
+        m.put("empresaNombre", sol.getEmpresa() != null
+            ? (sol.getEmpresa().getNombreComercial() != null ? sol.getEmpresa().getNombreComercial() : sol.getEmpresa().getNombreEmpresa())
+            : null);
+        m.put("usuarioPide", sol.getUsuarioPide() != null ? sol.getUsuarioPide().getNombre() : null);
+        try {
+            Map<String, Object> snapshot = objectMapper.readValue(sol.getDatosSnapshot(), Map.class);
+            m.put("enOferta",             snapshot.get("enOferta"));
+            m.put("porcentajeDescuento",  snapshot.get("porcentajeDescuento"));
+            m.put("precioOferta",         snapshot.get("precioOferta"));
+        } catch (Exception ignored) { /* datosSnapshot corrupto o ausente — se omiten los campos de la promo */ }
+        productoRepository.findById(sol.getIdEntidad()).ifPresent(p -> {
+            m.put("productoId",     p.getId());
+            m.put("nombreProducto", p.getNombreProducto());
+            m.put("precioVenta",    p.getPrecioVenta());
+            m.put("imagenUrl",      p.getImagenPrincipalUrl());
+        });
+        return m;
     }
 
     private Map<String, Object> toMapProducto(SolicitudAprobacion sol) {

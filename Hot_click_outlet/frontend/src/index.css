@@ -674,8 +674,36 @@ html.dark .hc-input:focus {
   background-color: var(--hc-n-900) !important;
   border-right-color: var(--hc-n-800) !important;
 }
+/* Sistema (rol EMPRENDEDOR) usa sidebar clara siguiendo el mockup aprobado
+   (Front para cliente EPN/) — debe ganar sobre la regla oscura de arriba. */
+.hc-sistema-theme .hc-admin-sidebar {
+  background-color: var(--hc-surface) !important;
+  border-right-color: var(--hc-border) !important;
+}
 :root .hc-admin-content {
   background-color: var(--hc-bg) !important;
+}
+
+/* "Sistema" (EMPRENDEDOR) es un único prototipo de color — nunca debe
+   heredar modo oscuro / alto contraste (ver bloque equivalente en
+   hotclick-tokens.css para los tokens base). Estos son los alias que solo
+   viven en este archivo. */
+.hc-sistema-theme {
+  --hc-surface-2: #f6f1e9;
+  --hc-surface-3: var(--hc-n-200);
+  --hc-text-2:    var(--hc-n-700);
+  --hc-accent:       var(--hc-link);
+  --hc-accent-hover: var(--hc-blue-700);
+  --hc-shadow: rgba(20, 23, 28, 0.10);
+  --hc-glass-bg: rgba(255, 255, 255, 0.72);
+  --hc-glass-border: rgba(20, 23, 28, 0.08);
+  --hc-glass-strong-bg: rgba(255, 255, 255, 0.86);
+  --hc-glass-strong-border: rgba(20, 23, 28, 0.12);
+  --hc-scrollbar: rgba(20, 23, 28, 0.18);
+  --hc-scrollbar-hover: rgba(20, 23, 28, 0.34);
+  --hc-wordmark-hot: var(--hc-red-500);
+  --hc-wordmark-click: var(--hc-blue-600);
+  color-scheme: light;
 }
 
 /* — Drawers/paneles flotantes: el reset genérico "html.dark aside" (más abajo)

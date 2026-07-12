@@ -25,6 +25,7 @@ public class TelegramFlujoEstado {
 
     public static final String FLUJO_VENTA    = "VENTA";
     public static final String FLUJO_PRODUCTO = "PROD";
+    public static final String FLUJO_ACCION   = "ACCION";
 
     // Pasos del flujo VENTA
     public static final String P_VTA_PRODUCTO       = "PROD";
@@ -47,7 +48,12 @@ public class TelegramFlujoEstado {
     public static final String P_PRD_FOTOS         = "FOTOS";
     public static final String P_PRD_CONFIRMAR     = "CONFIRMAR";
 
+    // Paso del flujo ACCION (siempre esperando confirmación por botón)
+    public static final String P_ACC_CONFIRMAR = "CONFIRMAR";
+
     private static final long TTL_HORAS = 24;
+    /** TTL corto para acciones pendientes de confirmación — una mutación vieja no debería poder confirmarse. */
+    private static final long TTL_MINUTOS_ACCION = 30;
 
     /** Flujo activo: VENTA | PROD */
     private String f;
@@ -68,6 +74,16 @@ public class TelegramFlujoEstado {
 
     // ── Flujo PRODUCTO ───────────────────────────────────────────────────────
     private ProductoBorrador d;
+
+    // ── Flujo ACCION (propuesta de mutación pendiente de confirmación) ─────────
+    /** Tipo de acción: uno de AccionPropuestaTelegram.PEDIDO_ESTADO/PEDIDO_GUIA/STOCK_AJUSTE/PRODUCTO_OFERTA */
+    private String acc;
+    /** Id de la entidad objetivo (pedidoId o productoId, según acc) */
+    private Long eid;
+    /** Parámetros resueltos y validados de la acción */
+    private java.util.Map<String, Object> par;
+    /** Resumen humano en español, mostrado junto a los botones Confirmar/Cancelar */
+    private String res;
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class ItemBorrador {
@@ -139,6 +155,19 @@ public class TelegramFlujoEstado {
         return e;
     }
 
+    public static TelegramFlujoEstado nuevaAccion(LocalDateTime ahora, String acc, Long eid,
+                                                    java.util.Map<String, Object> par, String res) {
+        TelegramFlujoEstado e = new TelegramFlujoEstado();
+        e.f = FLUJO_ACCION;
+        e.p = P_ACC_CONFIRMAR;
+        e.ts = ahora;
+        e.acc = acc;
+        e.eid = eid;
+        e.par = par;
+        e.res = res;
+        return e;
+    }
+
     /** true si el contexto guardado es un borrador de flujo (vs. legado "AJUSTE:..."). */
     public static boolean esBorrador(String contexto) {
         return contexto != null && contexto.startsWith("{");
@@ -170,7 +199,9 @@ public class TelegramFlujoEstado {
     }
 
     public boolean vencido(LocalDateTime ahora) {
-        return ts == null || ts.plusHours(TTL_HORAS).isBefore(ahora);
+        if (ts == null) return true;
+        if (FLUJO_ACCION.equals(f)) return ts.plusMinutes(TTL_MINUTOS_ACCION).isBefore(ahora);
+        return ts.plusHours(TTL_HORAS).isBefore(ahora);
     }
 
     public List<ItemBorrador> getItemsSeguro() {
@@ -201,4 +232,12 @@ public class TelegramFlujoEstado {
     public void setCli(Long cli) { this.cli = cli; }
     public ProductoBorrador getD() { return d; }
     public void setD(ProductoBorrador d) { this.d = d; }
+    public String getAcc() { return acc; }
+    public void setAcc(String acc) { this.acc = acc; }
+    public Long getEid() { return eid; }
+    public void setEid(Long eid) { this.eid = eid; }
+    public java.util.Map<String, Object> getPar() { return par; }
+    public void setPar(java.util.Map<String, Object> par) { this.par = par; }
+    public String getRes() { return res; }
+    public void setRes(String res) { this.res = res; }
 }

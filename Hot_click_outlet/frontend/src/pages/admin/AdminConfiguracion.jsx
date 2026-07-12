@@ -10,6 +10,7 @@ import { telegramService } from '@/services/telegramService'
 import useAuthStore from '@/store/authStore'
 import useUiStore from '@/store/uiStore'
 import QRCode from 'qrcode'
+import AdminPlanes from './AdminPlanes'
 
 const NOTIF_KEY  = 'hotclick-notif-prefs'
 const STORE_KEY  = 'hotclick-store-config'
@@ -51,17 +52,24 @@ export default function AdminConfiguracion() {
   const isEmprendedor = userRole === 'EMPRENDEDOR'
 
   const allNav = [
+    { id: 'plan',           label: 'Plan y cuenta',                    icon: CardIcon,     desc: 'Tu plan y suscripción',      soloEmprendedor: true },
     { id: 'perfil',         label: t('adminConfig.navPerfil'),         icon: UserIcon,     desc: 'Nombre y datos personales' },
     { id: 'tienda',         label: t('adminConfig.navTienda'),         icon: StoreIcon,    desc: 'Contacto y horario',        emprendedor: false },
     { id: 'seguridad',      label: t('adminConfig.navSeguridad'),      icon: ShieldIcon,   desc: 'Contraseña y 2FA',           badge: !twoFAOn ? '!' : null },
-    { id: 'notificaciones', label: t('adminConfig.navNotificaciones'), icon: BellIcon,     desc: 'Alertas y emails' },
+    { id: 'notificaciones', label: t('adminConfig.navNotificaciones'), icon: BellIcon,     desc: 'Alertas y emails',           emprendedor: false },
     { id: 'telegram',       label: 'Telegram',                         icon: SendIcon,     desc: 'Bot y avisos del negocio' },
-    { id: 'datos',          label: t('adminConfig.navDatos'),          icon: DatabaseIcon, desc: 'Exportar información' },
-    { id: 'apariencia',     label: t('adminConfig.navApariencia'),     icon: PaletteIcon,  desc: 'Tema, fuente e idioma' },
-    { id: 'sistema',        label: t('adminConfig.navSistema'),        icon: CogIcon,      desc: 'Servidor y mantenimiento' },
+    { id: 'datos',          label: t('adminConfig.navDatos'),          icon: DatabaseIcon, desc: 'Exportar información',       emprendedor: false },
+    { id: 'apariencia',     label: t('adminConfig.navApariencia'),     icon: PaletteIcon,  desc: 'Tema, fuente e idioma',      emprendedor: false },
+    { id: 'sistema',        label: t('adminConfig.navSistema'),        icon: CogIcon,      desc: 'Servidor y mantenimiento',   emprendedor: false },
   ]
-  // EMPRENDEDOR: ocultar tabs marcados con emprendedor: false
-  const nav = isEmprendedor ? allNav.filter(n => n.emprendedor !== false) : allNav
+  // EMPRENDEDOR: ocultar tabs marcados con emprendedor: false — "notificaciones"
+  // se fusiona dentro de "perfil" (ver SeccionPerfil), "datos"/"apariencia"/
+  // "sistema" no tienen equivalente en el mockup aprobado (Front para cliente
+  // EPN/) y quedan fuera del panel "Sistema". ADMIN: ocultar tabs marcados
+  // soloEmprendedor (ej. "Plan y cuenta" — ADMIN no tiene suscripción).
+  const nav = isEmprendedor
+    ? allNav.filter(n => n.emprendedor !== false)
+    : allNav.filter(n => !n.soloEmprendedor)
 
   const go = (id) => { setSection(id); setAnimKey(k => k + 1) }
 
@@ -218,6 +226,7 @@ export default function AdminConfiguracion() {
           {/* Content area */}
           <div className="flex-1 min-w-0">
             <div key={animKey} className="cfg-in">
+              {section === 'plan'           && <AdminPlanes />}
               {section === 'perfil'         && <SeccionPerfil userId={userId} userEmail={userEmail} userName={userName} setUserName={setUserName} toast={toast} />}
               {section === 'tienda'         && <SeccionTienda toast={toast} />}
               {section === 'seguridad'      && <SeccionSeguridad refreshToken={refreshToken} toast={toast} onTwoFAChange={setTwoFAOn} />}
@@ -442,6 +451,10 @@ function SeccionPerfil({ userId, userEmail, userName, setUserName, toast }) {
           )}
         </Block>
       )}
+
+      {/* Notificaciones fusionadas acá para EMPRENDEDOR — el mockup aprobado
+          (Front para cliente EPN/) no tiene una pestaña propia para esto. */}
+      {isEmprendedor && <SeccionNotificaciones toast={toast} soloVentas />}
     </div>
   )
 }
@@ -762,7 +775,7 @@ function Panel2FA({ enabled, loading, toast, onEnabled, onDisabled }) {
                     </div>
                   </div>
                 </div>
-                <OtpInputs accent="#4f7cff" />
+                <OtpInputs accent="var(--hc-accent)" />
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={activate} disabled={codeStr.length !== 6 || working} className="cfg-btn cfg-btn-primary">{working ? <Spinner size="xs" /> : <CheckIcon style={{ width: '14px', height: '14px' }} />}{t('adminConfig.tfaActivateSubmit')}</button>
                   <button onClick={cancel} className="cfg-btn cfg-btn-ghost">{t('adminConfig.tfaCancel')}</button>
@@ -1036,7 +1049,7 @@ function SeccionTienda({ toast }) {
       {/* Preview card */}
       <Block>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: 'linear-gradient(135deg,#4f7cff,#06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: 800, color: '#fff', fontFamily: F.display, flexShrink: 0, boxShadow: '0 4px 18px rgba(23,71,168,0.3)' }}>
+          <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: 'linear-gradient(135deg,var(--hc-accent),#06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: 800, color: '#fff', fontFamily: F.display, flexShrink: 0, boxShadow: '0 4px 18px rgba(23,71,168,0.3)' }}>
             {initials}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -1271,7 +1284,7 @@ function SeccionDatos({ toast, isEmprendedor = false }) {
 
       {/* Stats */}
       <div className={`grid gap-3 ${isEmprendedor ? 'grid-cols-2' : 'grid-cols-3'}`}>
-        <StatCard label={t('adminConfig.datosStatsProducts')} value={stats?.productos} color="#4f7cff" icon={BoxIcon} />
+        <StatCard label={t('adminConfig.datosStatsProducts')} value={stats?.productos} color="var(--hc-accent)" icon={BoxIcon} />
         <StatCard label={t('adminConfig.datosStatsOrders')}   value={stats?.pedidos}   color="#22c55e" icon={ShoppingIcon} />
         {!isEmprendedor && <StatCard label={t('adminConfig.datosStatsClients')} value={stats?.clientes} color="var(--hc-blue-300)" icon={UserIcon} />}
       </div>
@@ -1279,7 +1292,7 @@ function SeccionDatos({ toast, isEmprendedor = false }) {
       {/* Export */}
       <Block label={t('adminConfig.datosExportTitle')} sublabel={t('adminConfig.datosExportDesc')}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <ExportRow label={t('adminConfig.datosExportProductsLabel')} desc={t('adminConfig.datosExportProductsDesc')} loading={expProd} onExport={exportProductos} color="#4f7cff" />
+          <ExportRow label={t('adminConfig.datosExportProductsLabel')} desc={t('adminConfig.datosExportProductsDesc')} loading={expProd} onExport={exportProductos} color="var(--hc-accent)" />
           <hr className="cfg-divider" />
           <ExportRow label={t('adminConfig.datosExportOrdersLabel')}   desc={t('adminConfig.datosExportOrdersDesc')}   loading={expOrd}  onExport={exportPedidos}  color="#22c55e" />
           {!isEmprendedor && <>

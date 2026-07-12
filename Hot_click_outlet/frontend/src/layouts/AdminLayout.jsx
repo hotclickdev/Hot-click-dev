@@ -6,12 +6,34 @@ import { useTranslation } from 'react-i18next'
 import { Helmet } from 'react-helmet-async'
 import useAuthStore from '@/store/authStore'
 import useTenantStore from '@/store/tenantStore'
-import { authService } from '@/services/authService'
 import GlobalSearch from '@/components/admin/GlobalSearch'
 import { HotClickMark } from '@/components/ui/BrandLogo'
 import TrialBanner from '@/components/TrialBanner'
 import OfflineBanner from '@/components/OfflineBanner'
 import AppTour from '@/components/ui/AppTour'
+
+// Sidebar simplificado del "Sistema" para el dueño de negocio (rol
+// EMPRENDEDOR) — reemplaza el panel admin completo de ~30 ítems por los
+// que de verdad usa a diario, siguiendo el rediseño de
+// `Front para cliente EPN/Sistema - Inicio.dc.html`.
+function buildSistemaLinks(t) {
+  return [
+    { to: '/admin', label: 'Inicio', icon: 'home', exact: true },
+    { section: 'Vender' },
+    { to: '/admin/pedidos', label: 'Ventas y pedidos', icon: 'clipboard' },
+    { section: 'Catálogo' },
+    { to: '/admin/productos', label: t('admin.sidebar.productos'), icon: 'box' },
+    { to: '/admin/ofertas',   label: 'Promociones',                icon: 'tag' },
+    { section: 'Mi negocio' },
+    { to: '/admin/clientes',  label: 'Clientes',                  icon: 'users' },
+    { to: '/admin/blog',      label: 'Posts',                     icon: 'blog'  },
+    { to: '/admin/reportes',  label: t('admin.sidebar.reportes'), icon: 'bar', feature: 'reportes' },
+    { to: '/admin/copilot',   label: 'Consultas con Hot',         icon: 'copilot' },
+    { section: 'Más' },
+    { to: '/admin/configuracion', label: 'Configuración', icon: 'config' },
+    { to: '/admin/ayuda',         label: 'Ayuda',          icon: 'help' },
+  ]
+}
 
 // Devuelve los links del sidebar con secciones según el rol activo
 function buildSidebarLinks(t, userRole) {
@@ -75,48 +97,13 @@ function buildSidebarLinks(t, userRole) {
     ]
   }
 
+  // EMPRENDEDOR ve el sidebar simplificado del "Sistema" (10 ítems, igual
+  // al mockup aprobado). El resto de sus páginas (Bodegas, Compras, Marcas,
+  // Garantías, IA, Mi negocio, etc.) siguen accesibles por URL directa o
+  // desde Configuración — no desaparecen, solo no compiten por espacio en
+  // el menú principal.
   if (userRole === 'EMPRENDEDOR') {
-    return [
-      { to: '/admin', label: 'Inicio', icon: 'home', exact: true},
-      { section: 'Catálogo' },
-      { to: '/admin/productos',              label: t('admin.sidebar.productos'),  icon: 'box'      },
-      { to: '/admin/productos/carga-masiva', label: 'Carga masiva',           icon: 'upload'   },
-      { to: '/admin/productos/importar',     label: 'Importar catálogo IA',   icon: 'import'   },
-      { to: '/admin/categorias',             label: t('admin.sidebar.categorias'), icon: 'tag'  },
-      { to: '/admin/marcas',                 label: 'Marcas',                  icon: 'marca'    },
-      { to: '/admin/bodegas',                label: t('admin.sidebar.bodegas'), icon: 'building'},
-      { to: '/admin/garantias',              label: 'Garantías',               icon: 'shield'   },
-      { to: '/admin/compras',                label: 'Compras',                 icon: 'compra',  feature: 'compras' },
-      { to: '/admin/proveedores',            label: 'Proveedores',             icon: 'proveedor'},
-      { section: 'Punto de Venta' },
-      { to: '/admin/pos',           label: 'Caja registradora', icon: 'pos',       feature: 'pos' },
-      { to: '/admin/pos/caja',      label: 'Cuadre de caja',    icon: 'chart',     feature: 'pos' },
-      { to: '/admin/pos/historial', label: 'Historial ventas',  icon: 'clipboard', feature: 'pos' },
-      { section: 'Ventas' },
-      { to: '/admin/pedidos',        label: t('admin.sidebar.pedidos'),    icon: 'clipboard' },
-      { to: '/admin/ventas',         label: t('admin.sidebar.nuevaVenta'), icon: 'plus'     },
-      { to: '/admin/clientes',       label: 'Mis Clientes',                icon: 'users'    },
-      { to: '/admin/asignar-compra', label: 'Registrar compra externa',   icon: 'assign'   },
-      // { to: '/admin/mesas',          label: 'Mesas / QR',                  icon: 'qr'       },  // futuro
-      { to: '/admin/gift-cards',     label: 'Gift Cards',                  icon: 'gift'     },
-      { to: '/admin/inventario',     label: 'AI Inventario',               icon: 'ai',      feature: 'ai' },
-      { to: '/admin/copilot',        label: 'AI Copilot',                  icon: 'copilot' },
-      { to: '/admin/forecast',       label: 'AI Forecast',                 icon: 'forecast',feature: 'ai' },
-      { to: '/admin/executive',      label: 'Executive BI',                icon: 'exec',    feature: 'reportes' },
-      { to: '/admin/finanzas',       label: t('admin.sidebar.finanzas'),   icon: 'chart'    },
-      { to: '/admin/billetera',      label: 'Mi Billetera',                icon: 'wallet'   },
-      { to: '/admin/reportes',       label: t('admin.sidebar.reportes'),   icon: 'bar',     feature: 'reportes' },
-      { section: 'Marketing' },
-      { to: '/admin/ofertas',        label: 'Ofertas',                     icon: 'tag'      },
-      { to: '/admin/nuevo-producto', label: t('admin.sidebar.crearIA'),    icon: 'camera'   },
-      { to: '/admin/blog',           label: 'Blog',                        icon: 'blog'     },
-      { section: 'Mi negocio' },
-      { to: '/admin/mi-empresa',        label: 'Mi negocio',          icon: 'empresa'  },
-      { to: '/admin/equipo',            label: 'Mi equipo',            icon: 'users'   },
-      { to: '/admin/billing/planes',    label: 'Mi suscripción',      icon: 'card'     },
-      { to: '/admin/offline/cola',      label: 'Cola offline',        icon: 'sync'     },
-      { to: '/admin/configuracion',     label: 'Configuración',       icon: 'config'   },
-    ]
+    return buildSistemaLinks(t)
   }
 
   if (userRole === 'CAJERO') {
@@ -179,111 +166,6 @@ function buildSidebarLinks(t, userRole) {
   ]
 }
 
-/* ── Switcher de negocio (solo EMPRENDEDOR ── */
-function NegocioSwitcher({ empresaNombre, empresaId }) {
-  const [open, setOpen]       = useState(false)
-  const [negocios, setNegocios] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [switching, setSwitching] = useState(null)
-  const ref = useRef(null)
-  const loginStore = useAuthStore((s) => s.login)
-  const navigate   = useNavigate()
-
-  useEffect(() => {
-    if (!open) return
-    setLoading(true)
-    authService.misNegocios()
-      .then(({ data }) => setNegocios(Array.isArray(data) ? data : (data?.data ?? [])))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [open])
-
-  // Cerrar al click fuera
-  useEffect(() => {
-    if (!open) return
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [open])
-
-  async function cambiar(negocio) {
-    if (negocio.id === empresaId) { setOpen(false); return }
-    setSwitching(negocio.id)
-    try {
-      const { data } = await authService.cambiarNegocio(negocio.id)
-      const authData = data?.data ?? data
-      loginStore(authData)
-      setOpen(false)
-      navigate('/admin', { replace: true })
-      globalThis.location.reload()
-    } catch {
-      setSwitching(null)
-    }
-  }
-
-  return (
-    <div ref={ref} className="relative px-3 pb-2">
-      <button
-        onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs transition-all text-left"
-        style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
-      >
-        <svg className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--hc-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-        </svg>
-        <span className="flex-1 truncate font-medium">{empresaNombre || 'Mi negocio'}</span>
-        <svg className={`w-3 h-3 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {open && (
-        <div className="absolute left-3 right-3 top-full mt-1 rounded-xl shadow-xl z-50 overflow-hidden"
-          style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-          <div className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>
-            Cambiar negocio
-          </div>
-          {loading && (
-            <div className="px-3 py-3 text-xs text-center" style={{ color: 'var(--hc-muted)' }}>Cargando…</div>
-          )}
-          {!loading && negocios.length === 0 && (
-            <div className="px-3 py-3 text-xs text-center" style={{ color: 'var(--hc-muted)' }}>Sin otros negocios</div>
-          )}
-          {!loading && negocios.length > 0 && negocios.map(n => (
-              <button key={n.id} onClick={() => cambiar(n)} disabled={switching !== null}
-                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left text-xs transition-colors hover:bg-[var(--hc-surface-2)] disabled:opacity-50"
-                style={{ color: n.id === empresaId ? 'var(--hc-accent)' : 'var(--hc-text)' }}
-              >
-                <div className="w-6 h-6 rounded-lg shrink-0 flex items-center justify-center overflow-hidden"
-                  style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
-                  {n.logoUrl
-                    ? <img src={n.logoUrl} alt="" className="w-full h-full object-cover" />
-                    : <span className="font-bold text-[10px]" style={{ color: 'var(--hc-accent)' }}>{n.nombre?.[0]?.toUpperCase()}</span>
-                  }
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="truncate font-medium">{n.nombre}</div>
-                  {n.estadoEmpresa === 'PENDIENTE_APROBACION' && (
-                    <div className="text-[9px] text-yellow-400">Pendiente aprobación</div>
-                  )}
-                </div>
-                {n.id === empresaId && (
-                  <svg className="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                )}
-                {switching === n.id && (
-                  <div className="w-3.5 h-3.5 border-2 rounded-full animate-spin shrink-0"
-                    style={{ borderColor: 'var(--hc-border)', borderTopColor: 'var(--hc-accent)' }} />
-                )}
-              </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
 // Persiste el scroll del sidebar entre navegaciones (AdminLayout remonta en cada ruta)
 let _sidebarScrollTop = 0
 
@@ -314,6 +196,8 @@ function ModeSwitcherWrapper({ userRole }) {
   )
 }
 
+const PLAN_LABELS = { EMPRENDEDOR: 'Emprendedor', PYME: 'PYME', NEGOCIO_PLUS: 'Negocio Plus' }
+
 const SECTION_COLORS = {
   'Catálogo':              'var(--hc-primary)',
   'Catálogo e inventario': 'var(--hc-primary)',
@@ -329,10 +213,18 @@ function getSectionColor(section) {
   return SECTION_COLORS[section] || 'var(--hc-accent)'
 }
 
-function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, empresaId, userRole, handleLogout, onSearch }) {
+function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, userRole, handleLogout, onSearch, onClose }) {
   const navRef = useRef(null)
   const hasFeature   = useTenantStore(s => s.hasFeature)
   const tenantLoaded = useTenantStore(s => s.loaded)
+  const planNombre   = useTenantStore(s => s.planNombre)
+  // "Sistema" (EMPRENDEDOR) usa sidebar claro siguiendo el mockup aprobado
+  // (Front para cliente EPN); ADMIN/GERENTE/SUPERVISOR mantienen el nav
+  // oscuro n-900 del Brand Book cap. 6.
+  const isLight = userRole === 'EMPRENDEDOR'
+  const muted   = isLight ? 'var(--hc-muted)' : 'rgba(255,255,255,0.45)'
+  const faint   = isLight ? 'var(--hc-muted)' : 'rgba(255,255,255,0.32)'
+  const hoverBg = isLight ? 'var(--hc-surface-2)' : 'rgba(255,255,255,0.04)'
 
   const [collapsed, setCollapsed] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem('hc-sidebar-collapsed') || '[]')) }
@@ -368,45 +260,64 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
 
   return (
     <>
-      {/* Logo sobre nav oscura (§2.4): rojo elevado + «Click» blanco */}
-      <div className="h-16 flex items-center px-5 shrink-0"
-        style={{ borderBottom: '1px solid var(--hc-n-800)', '--hc-wordmark-hot': '#F0524A', '--hc-wordmark-click': '#FFFFFF', '--hc-surface': '#14171C' }}>
-        <div className="flex items-center gap-2.5">
-          <HotClickMark size={26} className="shrink-0" />
-          <div>
+      {/* Logo — nav oscura (§2.4) para ADMIN, clara para Sistema/EMPRENDEDOR
+          siguiendo el mockup aprobado (Front para cliente EPN/Sistema - Inicio.dc.html) */}
+      {isLight ? (
+        <div className="flex items-center justify-between gap-2 px-3 pt-[18px] pb-3 shrink-0">
+          <div className="flex items-center gap-2">
+            <HotClickMark size={22} className="shrink-0" />
             <div className="hc-wordmark text-sm leading-none"><span className="hot">Hot</span><span className="click">Click</span></div>
-            <div className="text-[10px] mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>{t('admin.sidebar.panelAdmin')}</div>
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0" style={{ color: 'var(--hc-link)', backgroundColor: 'rgba(23,71,168,0.08)' }}>
+              Sistema
+            </span>
+          </div>
+          {onClose && (
+            <button onClick={onClose} aria-label="Cerrar menú" className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors hover:bg-[var(--hc-surface-2)]" style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="h-16 flex items-center px-5 shrink-0"
+          style={{ borderBottom: '1px solid var(--hc-n-800)', '--hc-wordmark-hot': '#F0524A', '--hc-wordmark-click': '#FFFFFF', '--hc-surface': '#14171C' }}>
+          <div className="flex items-center gap-2.5">
+            <HotClickMark size={26} className="shrink-0" />
+            <div>
+              <div className="hc-wordmark text-sm leading-none"><span className="hot">Hot</span><span className="click">Click</span></div>
+              <div className="text-[10px] mt-0.5" style={{ color: muted }}>{t('admin.sidebar.panelAdmin')}</div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Buscador rápido */}
-      <div className="px-3 pt-3 pb-1">
-        <motion.button
-          onClick={onSearch}
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.98 }}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs transition-colors hover:bg-white/[0.06]"
-          style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.45)' }}
-        >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-          </svg>
-          <span className="flex-1 text-left">Buscar…</span>
-          <kbd className="px-1.5 py-0.5 rounded text-[9px] font-mono" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>⌘K</kbd>
-        </motion.button>
-      </div>
+      {/* Buscador rápido, rol badge y selector de negocio — solo nav oscura (ADMIN).
+          El sidebar "Sistema" (EMPRENDEDOR) los omite para calcar el mockup aprobado. */}
+      {!isLight && (
+        <>
+          <div className="px-3 pt-3 pb-1">
+            <motion.button
+              onClick={onSearch}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs transition-colors hover:bg-white/[0.06]"
+              style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.45)' }}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+              </svg>
+              <span className="flex-1 text-left">Buscar…</span>
+              <kbd className="px-1.5 py-0.5 rounded text-[9px] font-mono" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>⌘K</kbd>
+            </motion.button>
+          </div>
 
-      {/* Rol badge */}
-      <div className="px-4 pt-2 pb-1">
-        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${roleBadge.color}`}>
-          {roleBadge.label}
-        </span>
-      </div>
-
-      {/* Negocio switcher — solo EMPRENDEDOR */}
-      {(userRole === 'EMPRENDEDOR') && (
-        <NegocioSwitcher empresaNombre={empresaNombre} empresaId={empresaId} />
+          <div className="px-4 pt-2 pb-1">
+            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${roleBadge.color}`}>
+              {roleBadge.label}
+            </span>
+          </div>
+        </>
       )}
 
       {/* Nav */}
@@ -421,8 +332,15 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
 
           return (
             <div key={group.section || `g-${gi}`}>
-              {/* Cabecera de sección */}
-              {group.section && (
+              {/* Cabecera de sección — plana y estática en Sistema (mockup aprobado),
+                  colapsable con barra de color en el nav oscuro (ADMIN) */}
+              {group.section && (isLight ? (
+                <div className="px-2 pt-5 pb-2">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--hc-muted)' }}>
+                    {group.section}
+                  </span>
+                </div>
+              ) : (
                 <button
                   onClick={() => toggleSection(group.section)}
                   className="w-full flex items-center justify-between px-2 pt-5 pb-2 group/sec"
@@ -445,14 +363,14 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
                     animate={{ rotate: isOpen ? 0 : -90 }}
                     transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
                     className="w-3 h-3 shrink-0"
-                    style={{ color: 'rgba(255,255,255,0.22)' }}
+                    style={{ color: faint }}
                     fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"
                     strokeLinecap="round" strokeLinejoin="round"
                   >
                     <path d="M6 9l6 6 6-6"/>
                   </motion.svg>
                 </button>
-              )}
+              ))}
 
               {/* Items de la sección con animación */}
               <AnimatePresence initial={false}>
@@ -475,14 +393,47 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
                         <NavLink
                           to={link.to}
                           end={link.exact}
-                          className="group/item relative flex items-center gap-3 px-3 py-2.5 rounded-xl mb-0.5 transition-colors duration-150"
-                          style={({ isActive }) => ({
-                            color:           isActive ? '#fff' : 'rgba(255,255,255,0.48)',
-                            backgroundColor: isActive ? 'rgba(231,59,51,0.16)' : 'transparent',
-                            border:          '1px solid transparent',
-                          })}
+                          className="group/item relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl mb-0.5 transition-colors duration-150"
+                          style={({ isActive }) => (isLight
+                            ? {
+                                color:           isActive ? 'var(--hc-link)' : 'var(--hc-text)',
+                                fontWeight:      isActive ? 700 : 500,
+                                backgroundColor: isActive ? 'rgba(23,71,168,0.08)' : 'transparent',
+                              }
+                            : {
+                                color:           isActive ? '#fff' : 'rgba(255,255,255,0.48)',
+                                backgroundColor: isActive ? 'rgba(231,59,51,0.16)' : 'transparent',
+                                border:          '1px solid transparent',
+                              })}
                         >
-                          {({ isActive }) => (
+                          {({ isActive }) => isLight ? (
+                            <>
+                              {/* Hover background */}
+                              {!isActive && (
+                                <motion.div
+                                  className="absolute inset-0 rounded-xl opacity-0 group-hover/item:opacity-100 transition-opacity duration-150"
+                                  style={{ backgroundColor: hoverBg }}
+                                />
+                              )}
+
+                              {/* Bullet — como en el mockup aprobado, sin ícono por ítem */}
+                              <span
+                                className="relative w-[7px] h-[7px] rounded-[3px] shrink-0"
+                                style={{ backgroundColor: isActive ? 'var(--hc-link)' : '#cbc2b1' }}
+                              />
+
+                              <span className="relative flex-1 text-sm leading-tight flex items-center gap-1.5">
+                                {link.label}
+                                {link.feature && tenantLoaded && !hasFeature(link.feature) && (
+                                  <svg className="w-3 h-3 shrink-0" style={{ color: muted }}
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                    <rect x="4" y="10" width="16" height="10" rx="2"/>
+                                    <path strokeLinecap="round" d="M8 10V7a4 4 0 118 0v3"/>
+                                  </svg>
+                                )}
+                              </span>
+                            </>
+                          ) : (
                             <>
                               {/* Línea lateral activa */}
                               {isActive && (
@@ -498,7 +449,7 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
                               {!isActive && (
                                 <motion.div
                                   className="absolute inset-0 rounded-xl opacity-0 group-hover/item:opacity-100 transition-opacity duration-150"
-                                  style={{ backgroundColor: 'rgba(255,255,255,0.04)' }}
+                                  style={{ backgroundColor: hoverBg }}
                                 />
                               )}
 
@@ -520,7 +471,7 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
                               >
                                 {link.label}
                                 {link.feature && tenantLoaded && !hasFeature(link.feature) && (
-                                  <svg className="w-3 h-3 shrink-0" style={{ color: 'rgba(255,255,255,0.32)' }}
+                                  <svg className="w-3 h-3 shrink-0" style={{ color: faint }}
                                     fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                     <rect x="4" y="10" width="16" height="10" rx="2"/>
                                     <path strokeLinecap="round" d="M8 10V7a4 4 0 118 0v3"/>
@@ -551,47 +502,68 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, e
       </nav>
 
       {/* User */}
-      <div className="p-3 space-y-1 shrink-0" style={{ borderTop: '1px solid var(--hc-n-800)' }}>
-        <ModeSwitcherWrapper userRole={userRole} />
-        <NavLink
-          to="/"
-          className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors"
-          style={{ color: 'var(--hc-link)', backgroundColor: 'rgba(23,71,168,0.08)', border: '1px solid rgba(23,71,168,0.2)' }}
-        >
-          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-            <polyline points="9 22 9 12 15 12 15 22"/>
-          </svg>
-          Ver tienda como cliente
-        </NavLink>
-        <button
-          onClick={() => globalThis.dispatchEvent(new Event('hc-open-tour'))}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors text-left hover:bg-white/[0.04]"
-          style={{ color: 'rgba(255,255,255,0.45)' }}
-        >
-          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
-          </svg>
-          Tour del panel
-        </button>
-        <motion.button
-          onClick={handleLogout}
-          whileHover={{ backgroundColor: 'rgba(239,68,68,0.06)' }}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-red-400 transition-colors text-left"
-        >
-          {t('admin.sidebar.cerrarSesion')}
-        </motion.button>
+      <div className="p-3 space-y-1 shrink-0" style={{ borderTop: `1px solid ${isLight ? 'var(--hc-border)' : 'var(--hc-n-800)'}` }}>
+        {isLight ? (
+          /* "Ver tienda como cliente", "Tour del panel" y "Cerrar sesión" viven
+             ahora en Configuración → Plan y cuenta (AdminPlanes.jsx), igual que
+             el mockup aprobado ubica "Cerrá sesión" ahí y no en el sidebar. */
+          <NavLink
+            to="/admin/pos"
+            className="flex items-center justify-center px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-[var(--hc-surface-2)]"
+            style={{ color: 'var(--hc-link)', border: '1px solid var(--hc-border)' }}
+          >
+            Ir a la Caja (POS) →
+          </NavLink>
+        ) : (
+          <>
+            <ModeSwitcherWrapper userRole={userRole} />
+            <NavLink
+              to="/"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors"
+              style={{ color: 'var(--hc-link)', backgroundColor: 'rgba(23,71,168,0.08)', border: '1px solid rgba(23,71,168,0.2)' }}
+            >
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+              Ver tienda como cliente
+            </NavLink>
+            <button
+              onClick={() => globalThis.dispatchEvent(new Event('hc-open-tour'))}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors text-left hover:bg-white/[0.04]"
+              style={{ color: muted }}
+            >
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+              </svg>
+              Tour del panel
+            </button>
+            <motion.button
+              onClick={handleLogout}
+              whileHover={{ backgroundColor: 'rgba(239,68,68,0.06)' }}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors text-left"
+              style={{ color: '#f87171' }}
+            >
+              {t('admin.sidebar.cerrarSesion')}
+            </motion.button>
+          </>
+        )}
         <div className="flex items-center gap-2 px-3 py-2">
           <motion.div
             whileHover={{ scale: 1.08 }}
             transition={{ duration: 0.15 }}
-            className="w-7 h-7 rounded-full bg-[#4f7cff]/20 flex items-center justify-center text-xs font-semibold text-[#4f7cff] shrink-0"
+            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
+            style={{ backgroundColor: 'rgba(23,71,168,0.15)', color: 'var(--hc-accent)' }}
           >
             {userName?.[0]?.toUpperCase() || 'A'}
           </motion.div>
           <div className="min-w-0">
-            <div className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.55)' }}>{userName || 'Admin'}</div>
-            {empresaNombre && (
+            <div className="text-xs truncate" style={{ color: isLight ? 'var(--hc-text)' : 'rgba(255,255,255,0.55)' }}>{userName || 'Admin'}</div>
+            {userRole === 'EMPRENDEDOR' && tenantLoaded ? (
+              <div className="text-[10px] truncate" style={{ color: muted }}>
+                Plan {PLAN_LABELS[planNombre] ?? planNombre}
+              </div>
+            ) : empresaNombre && (
               <div className="text-[10px] truncate text-amber-400">{empresaNombre}</div>
             )}
           </div>
@@ -649,58 +621,100 @@ export default function AdminLayout({ children }) {
     EMPRENDEDOR: { label: 'Emprendedor', color: 'bg-amber-500/20 text-amber-400' },
   }[userRole] ?? { label: userRole, color: 'bg-gray-500/20 text-gray-400' }
 
-  const sidebarProps = { sidebarLinks, roleBadge, t, userName, empresaNombre, empresaId, userRole, handleLogout, onSearch: () => setSearchOpen(true) }
+  const sidebarProps = { sidebarLinks, roleBadge, t, userName, empresaNombre, userRole, handleLogout, onSearch: () => setSearchOpen(true) }
+  // Sistema (EMPRENDEDOR) usa sidebar claro siguiendo el mockup aprobado;
+  // ADMIN/GERENTE/SUPERVISOR mantienen el nav oscuro n-900 (Brand Book cap. 6).
+  const isLightSidebar = userRole === 'EMPRENDEDOR'
 
   return (
-    <div className="hc-admin-content min-h-screen" style={{ backgroundColor: 'var(--hc-bg)' }}>
+    <div className={`hc-admin-content min-h-screen ${isLightSidebar ? 'hc-sistema-theme' : ''}`} style={{ backgroundColor: 'var(--hc-bg)' }}>
       <Helmet>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
       {/* ── Desktop sidebar ── */}
-      {/* Nav oscura n-900 con ítem activo rojo (Brand Book cap. 6): el panel se
-          siente «de la casa» sin competir con los datos, en ambos modos. */}
+      {/* Nav oscura n-900 con ítem activo rojo (Brand Book cap. 6) para ADMIN;
+          Sistema (EMPRENDEDOR) usa el sidebar claro del mockup aprobado. */}
       <aside
         className="hc-admin-sidebar w-60 shrink-0 flex-col fixed inset-y-0 left-0 z-20 hidden md:flex"
-        style={{ backgroundColor: 'var(--hc-n-900)', borderRight: '1px solid var(--hc-n-800)' }}
+        style={isLightSidebar
+          ? { backgroundColor: 'var(--hc-surface)', borderRight: '1px solid var(--hc-border)' }
+          : { backgroundColor: 'var(--hc-n-900)', borderRight: '1px solid var(--hc-n-800)' }}
       >
         <SidebarContent {...sidebarProps} />
       </aside>
 
       {/* ── Mobile: top header bar ── */}
-      <header
-        className="md:hidden fixed top-0 left-0 right-0 z-30 h-14 backdrop-blur-xl flex items-center justify-between px-4"
-        style={{ backgroundColor: 'var(--hc-surface)', borderBottom: '1px solid var(--hc-border)' }}
-      >
-        <div className="flex items-center gap-1.5">
-          {/* Botón atrás — visible en sub-páginas, oculto en el dashboard raíz */}
-          {location.pathname !== '/admin' && (
-            <button
-              onClick={() => navigate(-1)}
-              className="p-1.5 rounded-lg hover:bg-[var(--hc-surface-2)] transition-colors mr-0.5"
-              style={{ color: 'var(--hc-text)' }}
-              aria-label="Atrás"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 12H5M12 5l-7 7 7 7"/>
-              </svg>
-            </button>
-          )}
-          <HotClickMark size={26} className="shrink-0" />
-          <div className="hc-wordmark text-sm"><span className="hot">Hot</span><span className="click">Click</span></div>
-          <span className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>Admin</span>
-        </div>
-        <button
-          onClick={() => setDrawerOpen(true)}
-          className="p-2 rounded-lg hover:bg-[var(--hc-surface-2)] transition-colors"
-          style={{ color: 'var(--hc-muted)' }}
-          aria-label={t('nav.menu')}
+      {isLightSidebar ? (
+        /* Sistema (EMPRENDEDOR) sigue el patrón del mockup móvil aprobado:
+           hamburguesa a la izquierda, wordmark + pill "Sistema", acceso
+           directo a la Caja y avatar a la derecha. */
+        <header
+          className="md:hidden fixed top-0 left-0 right-0 z-30 h-14 backdrop-blur-xl flex items-center gap-2.5 px-4"
+          style={{ backgroundColor: 'var(--hc-surface)', borderBottom: '1px solid var(--hc-border)' }}
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-          </svg>
-        </button>
-      </header>
+          <button
+            onClick={() => setDrawerOpen(true)}
+            className="w-9 h-9 rounded-lg flex flex-col items-center justify-center gap-1 shrink-0 transition-colors hover:bg-[var(--hc-surface-2)]"
+            style={{ border: '1px solid var(--hc-border)' }}
+            aria-label={t('nav.menu')}
+          >
+            <span className="w-4 h-0.5 rounded-full" style={{ backgroundColor: 'var(--hc-text)' }} />
+            <span className="w-4 h-0.5 rounded-full" style={{ backgroundColor: 'var(--hc-text)' }} />
+            <span className="w-4 h-0.5 rounded-full" style={{ backgroundColor: 'var(--hc-text)' }} />
+          </button>
+          <HotClickMark size={22} className="shrink-0" />
+          <div className="hc-wordmark text-sm"><span className="hot">Hot</span><span className="click">Click</span></div>
+          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0" style={{ color: 'var(--hc-link)', backgroundColor: 'rgba(23,71,168,0.08)' }}>
+            Sistema
+          </span>
+          <div className="flex-1" />
+          <NavLink to="/admin/pos"
+            className="text-[13px] font-bold px-3 py-1.5 rounded-full whitespace-nowrap shrink-0 transition-colors hover:bg-[var(--hc-surface-2)]"
+            style={{ color: 'var(--hc-link)', border: '1px solid var(--hc-border)' }}
+          >
+            Caja →
+          </NavLink>
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+            style={{ backgroundColor: 'var(--hc-link)', color: '#fff' }}>
+            {userName?.[0]?.toUpperCase() || 'A'}
+          </div>
+        </header>
+      ) : (
+        <header
+          className="md:hidden fixed top-0 left-0 right-0 z-30 h-14 backdrop-blur-xl flex items-center justify-between px-4"
+          style={{ backgroundColor: 'var(--hc-surface)', borderBottom: '1px solid var(--hc-border)' }}
+        >
+          <div className="flex items-center gap-1.5">
+            {/* Botón atrás — visible en sub-páginas, oculto en el dashboard raíz */}
+            {location.pathname !== '/admin' && (
+              <button
+                onClick={() => navigate(-1)}
+                className="p-1.5 rounded-lg hover:bg-[var(--hc-surface-2)] transition-colors mr-0.5"
+                style={{ color: 'var(--hc-text)' }}
+                aria-label="Atrás"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 12H5M12 5l-7 7 7 7"/>
+                </svg>
+              </button>
+            )}
+            <HotClickMark size={26} className="shrink-0" />
+            <div className="hc-wordmark text-sm"><span className="hot">Hot</span><span className="click">Click</span></div>
+            <span className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>Admin</span>
+          </div>
+          <button
+            onClick={() => setDrawerOpen(true)}
+            className="p-2 rounded-lg hover:bg-[var(--hc-surface-2)] transition-colors"
+            style={{ color: 'var(--hc-muted)' }}
+            aria-label={t('nav.menu')}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+        </header>
+      )}
 
       {/* ── Mobile: slide-in drawer ── */}
       <AnimatePresence>
@@ -720,18 +734,24 @@ export default function AdminLayout({ children }) {
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 350, damping: 35 }}
               className="hc-admin-sidebar fixed inset-y-0 left-0 z-50 w-64 flex flex-col md:hidden"
-              style={{ backgroundColor: 'var(--hc-n-900)', borderRight: '1px solid var(--hc-n-800)' }}
+              style={isLightSidebar
+                ? { backgroundColor: 'var(--hc-surface)', borderRight: '1px solid var(--hc-border)' }
+                : { backgroundColor: 'var(--hc-n-900)', borderRight: '1px solid var(--hc-n-800)' }}
             >
-              <button
-                onClick={() => setDrawerOpen(false)}
-                className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-[var(--hc-surface-2)] transition-colors"
-                style={{ color: 'var(--hc-muted)' }}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
-              <SidebarContent {...sidebarProps} />
+              {/* En Sistema (isLight) el botón de cerrar vive junto al wordmark,
+                  dentro de SidebarContent, igual que el mockup móvil aprobado. */}
+              {!isLightSidebar && (
+                <button
+                  onClick={() => setDrawerOpen(false)}
+                  className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-[var(--hc-surface-2)] transition-colors"
+                  style={{ color: 'var(--hc-muted)' }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              )}
+              <SidebarContent {...sidebarProps} onClose={isLightSidebar ? () => setDrawerOpen(false) : undefined} />
             </motion.aside>
           </>
         )}
@@ -833,6 +853,7 @@ const SIDEBAR_ICONS = {
   assign:    <svg className={ic} {...s}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>,
   upload:    <svg className={ic} {...s}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
   import:    <svg className={ic} {...s}><path d="M12 3v12M8 11l4 4 4-4"/><path d="M20 21H4a2 2 0 01-2-2V5a2 2 0 012-2h10l6 6v10a2 2 0 01-2 2z"/></svg>,
+  help:      <svg className={ic} {...s}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
 }
 
 function SidebarIcon({ name }) {

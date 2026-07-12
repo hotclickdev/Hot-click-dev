@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { billingService } from '@/services/billingService'
 import useTenantStore from '@/store/tenantStore'
+import useAuthStore from '@/store/authStore'
 
 const CHECK = (
   <svg className="w-4 h-4 shrink-0" style={{ color: '#22c55e' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,7 +105,13 @@ export default function AdminPlanes() {
   const [loadingPlan, setLoadingPlan] = useState(null)
   const [error, setError] = useState(null)
   const { planNombre, estadoPlan, trialDias } = useTenantStore()
+  const { logout } = useAuthStore()
   const navigate = useNavigate()
+
+  function handleLogout() {
+    logout()
+    navigate('/')
+  }
 
   useEffect(() => {
     billingService.getPlanes()
@@ -176,6 +183,24 @@ export default function AdminPlanes() {
         Los precios están en USD. El cobro se procesa mensualmente mediante Stripe.
         Podés cancelar en cualquier momento desde la sección de suscripción.
       </p>
+
+      {/* Ver tienda / Tour / Cerrar sesión — viven acá y no en el sidebar de
+          Sistema, siguiendo el mockup aprobado (Sistema - Configuracion.dc.html),
+          que ubica "Cerrá sesión" al pie de esta misma pantalla. */}
+      <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm font-semibold pt-2">
+        <Link to="/" className="hover:underline" style={{ color: 'var(--hc-muted)' }}>Ver tienda como cliente</Link>
+        <button
+          type="button"
+          onClick={() => globalThis.dispatchEvent(new Event('hc-open-tour'))}
+          className="hover:underline"
+          style={{ color: 'var(--hc-muted)' }}
+        >
+          Tour del panel
+        </button>
+        <button type="button" onClick={handleLogout} className="hover:underline" style={{ color: 'var(--hc-muted)' }}>
+          Cerrá sesión
+        </button>
+      </div>
     </div>
   )
 }

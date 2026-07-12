@@ -69,69 +69,70 @@ export default function ModeSelector() {
   if (modes.length <= 1) return null
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6"
+    <div className="min-h-screen flex flex-col items-center justify-center gap-9 p-6 sm:p-12"
       style={{ backgroundColor: 'var(--hc-bg)' }}>
 
-      {/* Logo */}
-      <div className="mb-8 text-center">
-        <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center mb-4"
-          style={{ backgroundColor: 'var(--hc-accent)', boxShadow: '0 0 30px rgba(23,71,168,0.3)' }}>
-          <svg width="26" height="26" fill="none" stroke="white" strokeWidth={2} viewBox="0 0 24 24">
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-          </svg>
-        </div>
-        <h1 className="text-2xl font-black" style={{ color: 'var(--hc-text)' }}>
-          Bienvenido{userName ? `, ${userName.split(' ')[0]}` : ''}
+      {/* Logo y saludo */}
+      <div className="flex flex-col items-center gap-3 text-center">
+        <span className="text-sm font-extrabold tracking-tight" style={{ fontFamily: 'var(--font-display, inherit)', color: 'var(--hc-text)' }}>
+          HOTCLICK
+        </span>
+        <h1 className="text-2xl sm:text-[28px] font-bold tracking-tight" style={{ fontFamily: 'var(--font-display, inherit)', color: 'var(--hc-text)' }}>
+          Hola{userName ? `, ${userName.split(' ')[0]}` : ''}. ¿Qué vas a hacer hoy?
         </h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>
-          ¿Cómo querés ingresar hoy?
+        <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
+          Elegí cómo querés entrar. Podés cambiar de modo cuando querás.
         </p>
       </div>
 
-      {/* Tarjetas de modo */}
-      <div className={`w-full grid gap-4 ${
-        modes.length === 2 ? 'max-w-lg grid-cols-2'
-        : modes.length >= 3 ? 'max-w-2xl grid-cols-2 sm:grid-cols-3'
-        : 'max-w-sm grid-cols-1'
-      }`}>
-        {modes.map(mode => (
-          <button
-            key={mode.id}
-            onClick={() => handleSelect(mode)}
-            className="group flex flex-col items-center gap-4 p-6 rounded-2xl text-center transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
-            style={{
-              backgroundColor: 'var(--hc-surface)',
-              border: '1px solid rgba(255,255,255,0.08)',
-            }}
-          >
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center transition-colors"
-              style={{ backgroundColor: 'rgba(23,71,168,0.12)', color: 'var(--hc-accent)' }}>
-              <ModeIcon icon={mode.icon} size={28} />
-            </div>
-            <div>
-              <p className="font-bold text-base" style={{ color: 'var(--hc-text)' }}>{mode.label}</p>
-              {mode.sub && (
-                <p className="text-xs mt-1" style={{ color: 'var(--hc-muted)' }}>{mode.sub}</p>
-              )}
-            </div>
-            <div className="flex items-center gap-1 text-xs font-medium transition-opacity opacity-0 group-hover:opacity-100"
-              style={{ color: 'var(--hc-accent)' }}>
-              Entrar
-              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-              </svg>
-            </div>
-          </button>
-        ))}
+      {/* Tarjetas de modo — Sistema (clara) vs. Caja/POS (oscura), nunca mezcladas */}
+      <div className="w-full flex flex-wrap gap-6 justify-center items-stretch">
+        {modes.map(mode => {
+          const dark = mode.id === 'pos'
+          return (
+            <button
+              key={mode.id}
+              onClick={() => handleSelect(mode)}
+              className="group flex flex-col gap-4.5 text-left rounded-2xl p-7 transition-all duration-200 hover:-translate-y-0.5"
+              style={{
+                width: 360,
+                minHeight: 220,
+                backgroundColor: dark ? '#1a1a1a' : 'var(--hc-surface)',
+                color: dark ? '#ffffff' : 'var(--hc-text)',
+                border: '2px solid transparent',
+                boxShadow: '0 1px 3px rgba(26,26,26,0.06)',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = dark ? '#5d5d5d' : 'var(--hc-accent)'; e.currentTarget.style.boxShadow = dark ? '0 10px 28px rgba(26,26,26,0.25)' : '0 10px 28px rgba(26,26,26,0.10)' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(26,26,26,0.06)' }}
+            >
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: dark ? 'rgba(255,255,255,0.12)' : 'rgba(23,71,168,0.08)', color: dark ? '#ffffff' : 'var(--hc-accent)' }}>
+                <ModeIcon icon={mode.icon} size={24} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <p className="font-bold text-[21px]" style={{ color: dark ? '#ffffff' : 'var(--hc-text)' }}>{mode.label}</p>
+                {mode.sub && (
+                  <p className="text-[15px] leading-relaxed" style={{ color: dark ? '#b8b3ab' : 'var(--hc-muted)' }}>{mode.sub}</p>
+                )}
+              </div>
+              <div className="mt-auto font-bold text-[15px]" style={{ color: dark ? '#ffffff' : 'var(--hc-accent)' }}>
+                {mode.id === 'pos' ? 'Abrí la Caja →' : `Entrá${mode.id === 'admin' ? ' al Sistema' : ''} →`}
+              </div>
+            </button>
+          )
+        })}
       </div>
 
-      {/* No recordar */}
-      <button
-        onClick={() => { localStorage.removeItem(MODE_PREF_KEY) }}
-        className="mt-6 text-xs transition-opacity hover:opacity-70"
-        style={{ color: 'var(--hc-muted)' }}>
-        No recordar mi elección
-      </button>
+      {/* Pie: sesión */}
+      <div className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+        Ingresaste como {userName || 'usuario'} ·{' '}
+        <button
+          onClick={() => { localStorage.removeItem(MODE_PREF_KEY) }}
+          className="font-semibold hover:underline"
+          style={{ color: 'var(--hc-muted)' }}>
+          No recordar mi elección
+        </button>
+      </div>
     </div>
   )
 }

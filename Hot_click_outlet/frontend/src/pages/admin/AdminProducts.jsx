@@ -61,11 +61,11 @@ function SeoStatusIcon({ product }) {
 }
 
 function CharCounter({ current, max, min = 0 }) {
-  let color = 'text-emerald-400'
-  if (current === 0) color = 'text-[#5e5e6e]'
-  else if (current < min) color = 'text-amber-400'
-  else if (current > max) color = 'text-red-400'
-  return <span className={`text-xs tabular-nums ${color}`}>{current}/{max}</span>
+  let color = '#1E7F4F'
+  if (current === 0) color = 'var(--hc-muted)'
+  else if (current < min) color = '#8a5a00'
+  else if (current > max) color = '#a8291f'
+  return <span className="text-xs tabular-nums" style={{ color }}>{current}/{max}</span>
 }
 
 const STOCK_OPTIONS = [
@@ -76,6 +76,7 @@ const STOCK_OPTIONS = [
 ]
 
 const ta = 'w-full px-4 py-3 rounded-xl text-sm resize-y transition-all focus:outline-none'
+const taStyle = { backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }
 
 export default function AdminProducts() {
   const { t } = useTranslation()
@@ -400,11 +401,11 @@ export default function AdminProducts() {
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-4 flex-wrap">
             <div>
-              <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.products.title')}</h1>
-              <p className="text-sm text-[#8e8e9a] mt-1">{filtered.length} de {totalProds} productos</p>
+              <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>{t('admin.products.title')}</h1>
+              <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>{filtered.length} de {totalProds} productos</p>
             </div>
             <div className="flex flex-col items-start gap-0.5">
-              <span className="text-[10px] text-[#8e8e9a]">Cuenta</span>
+              <span className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>Cuenta</span>
               <EmpresaProfileCard totalProductos={totalProds} />
             </div>
           </div>
@@ -448,8 +449,8 @@ export default function AdminProducts() {
             />
             <Link
               to="/admin/productos/carga-masiva"
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-white/8"
-              style={{ border: '1px solid rgba(255,255,255,0.12)', color: 'var(--hc-text)' }}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-[var(--hc-surface-2)]"
+              style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
@@ -462,37 +463,37 @@ export default function AdminProducts() {
 
         {/* ── Carrusel del inicio — solo ADMIN ── */}
         {isAdmin && (
-        <div className="rounded-2xl border border-white/8 overflow-hidden" style={{ background: 'var(--hc-surface)' }}>
+        <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
           <button
             onClick={() => setCarruselOpen((o) => !o)}
-            className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/3 transition-colors"
+            className="w-full flex items-center justify-between px-5 py-4 hover:bg-[var(--hc-surface-2)] transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'rgba(100,144,234,0.15)', border: '1px solid rgba(100,144,234,0.3)' }}>
-                <svg className="w-4 h-4" style={{ color: 'var(--hc-blue-400)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'rgba(23,71,168,0.1)', border: '1px solid rgba(23,71,168,0.25)' }}>
+                <svg className="w-4 h-4" style={{ color: 'var(--hc-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="3"/><path d="M12 3v3m0 12v3M3 12h3m12 0h3m-2.636-6.364-2.122 2.122M8.758 15.242l-2.122 2.122m0-12.728 2.122 2.122m6.364 6.364 2.122 2.122"/>
                 </svg>
               </div>
               <div className="text-left">
-                <p className="text-sm font-semibold text-[#e8e8ed]">Carrusel del inicio</p>
-                <p className="text-xs text-[#8e8e9a]">{carruselSlots.length}/5 productos · se muestran en el hero de la tienda</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>Carrusel del inicio</p>
+                <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>{carruselSlots.length}/5 productos · se muestran en el hero de la tienda</p>
               </div>
             </div>
-            <svg className={`w-4 h-4 text-[#8e8e9a] transition-transform duration-200 ${carruselOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            <svg className={`w-4 h-4 transition-transform duration-200 ${carruselOpen ? 'rotate-180' : ''}`} style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
 
           {carruselOpen && (
-            <div className="border-t border-white/8 px-5 py-4">
+            <div className="px-5 py-4" style={{ borderTop: '1px solid var(--hc-border)' }}>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                 {Array.from({ length: 5 }, (_, i) => {
                   const slot = carruselSlots[i]
-                  const slotColor = ['rgba(23,71,168,0.2)', 'rgba(100,144,234,0.2)', 'rgba(16,185,129,0.2)', 'rgba(245,158,11,0.2)', 'rgba(244,63,94,0.2)'][i]
-                  const slotBorder = ['rgba(23,71,168,0.4)', 'rgba(100,144,234,0.4)', 'rgba(16,185,129,0.4)', 'rgba(245,158,11,0.4)', 'rgba(244,63,94,0.4)'][i]
+                  const slotColor = ['rgba(23,71,168,0.1)', 'rgba(122,163,255,0.1)', 'rgba(30,127,79,0.1)', 'rgba(245,158,11,0.1)', 'rgba(220,38,38,0.08)'][i]
+                  const slotBorder = ['rgba(23,71,168,0.3)', 'rgba(122,163,255,0.3)', 'rgba(30,127,79,0.3)', 'rgba(245,158,11,0.3)', 'rgba(220,38,38,0.25)'][i]
                   return (
                     <div
                       key={i}
                       className="relative rounded-xl overflow-hidden flex flex-col"
-                      style={{ border: `1px solid ${slot ? slotBorder : 'rgba(255,255,255,0.08)'}`, background: slot ? slotColor : 'rgba(255,255,255,0.02)', minHeight: 120 }}
+                      style={{ border: `1px solid ${slot ? slotBorder : 'var(--hc-border)'}`, background: slot ? slotColor : 'var(--hc-surface-2)', minHeight: 120 }}
                     >
                       <div className="absolute top-2 left-2 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: slot ? slotBorder : 'var(--hc-surface-2)', color: 'var(--hc-text)' }}>
                         {i + 1}
@@ -501,33 +502,36 @@ export default function AdminProducts() {
                         <>
                           <div className="flex-1 flex items-center justify-center pt-6 pb-2 px-2">
                             {slot.imagenUrl ? (
-                              <img src={slot.imagenUrl} alt={slot.nombre} className="w-16 h-16 object-contain" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }} />
+                              <img src={slot.imagenUrl} alt={slot.nombre} className="w-16 h-16 object-contain" style={{ filter: 'drop-shadow(0 4px 12px rgba(26,26,26,0.15))' }} />
                             ) : (
                               <span className="text-3xl">📦</span>
                             )}
                           </div>
                           <div className="px-2 pb-2">
-                            <p className="text-[10px] font-medium text-[#e8e8ed] text-center line-clamp-1">{slot.nombre}</p>
+                            <p className="text-[10px] font-medium text-center line-clamp-1" style={{ color: 'var(--hc-text)' }}>{slot.nombre}</p>
                           </div>
                           <div className="flex items-center justify-between px-1.5 pb-1.5 gap-1">
                             <button
                               onClick={() => handleCarruselMover(slot, -1)}
                               disabled={i === 0}
-                              className="flex-1 h-6 rounded-lg text-[10px] text-[#8e8e9a] hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30"
+                              className="flex-1 h-6 rounded-lg text-[10px] transition-colors hover:bg-[var(--hc-surface)] disabled:opacity-30"
+                              style={{ color: 'var(--hc-muted)' }}
                             >←</button>
                             <button
                               onClick={() => handleToggleCarrusel(slot)}
-                              className="h-6 px-1.5 rounded-lg text-[10px] text-red-400 hover:bg-red-500/15 transition-colors"
+                              className="h-6 px-1.5 rounded-lg text-[10px] transition-colors hover:bg-red-500/15"
+                              style={{ color: '#a8291f' }}
                             >✕</button>
                             <button
                               onClick={() => handleCarruselMover(slot, 1)}
                               disabled={i === carruselSlots.length - 1}
-                              className="flex-1 h-6 rounded-lg text-[10px] text-[#8e8e9a] hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30"
+                              className="flex-1 h-6 rounded-lg text-[10px] transition-colors hover:bg-[var(--hc-surface)] disabled:opacity-30"
+                              style={{ color: 'var(--hc-muted)' }}
                             >→</button>
                           </div>
                         </>
                       ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center gap-1 text-[#8e8e9a] py-4">
+                        <div className="flex-1 flex flex-col items-center justify-center gap-1 py-4" style={{ color: 'var(--hc-muted)' }}>
                           <span className="text-2xl opacity-30">+</span>
                           <span className="text-[10px]">Vacío</span>
                           <span className="text-[9px] opacity-60">Usá el botón de carrusel en la tabla</span>
@@ -537,7 +541,7 @@ export default function AdminProducts() {
                   )
                 })}
               </div>
-              <p className="text-[10px] text-[#8e8e9a] mt-3">
+              <p className="text-[10px] mt-3" style={{ color: 'var(--hc-muted)' }}>
                 Para agregar un producto al carrusel, presioná el botón de carrusel en la columna de la tabla. Máximo 5 productos.
               </p>
             </div>
@@ -548,7 +552,7 @@ export default function AdminProducts() {
         {/* Mobile: búsqueda + filtros rápidos */}
         <div className="md:hidden space-y-2">
           <div className="relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8e8e9a]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
             <input
@@ -556,19 +560,21 @@ export default function AdminProducts() {
               placeholder="Buscar producto..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setProdPage(0) }}
-              className="w-full h-10 pl-10 pr-4 rounded-xl bg-[#111114] border border-white/10 text-[#e8e8ed] text-sm placeholder-[#8e8e9a] focus:outline-none focus:border-[#4f7cff]/60"
+              className="w-full h-10 pl-10 pr-4 rounded-xl text-sm focus:outline-none"
+              style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
             />
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
             {hasFilters && (
-              <button onClick={clearFilters} className="shrink-0 px-3 py-1.5 rounded-full text-xs border border-red-500/30 text-red-400">
+              <button onClick={clearFilters} className="shrink-0 px-3 py-1.5 rounded-full text-xs" style={{ border: '1px solid rgba(220,38,38,0.3)', color: '#a8291f' }}>
                 ✕ Limpiar
               </button>
             )}
             <select
               value={filterCat}
               onChange={(e) => setFilterCat(e.target.value)}
-              className="shrink-0 h-8 px-2.5 rounded-full bg-[#111114] border border-white/10 text-[#e8e8ed] text-xs focus:outline-none"
+              className="shrink-0 h-8 px-2.5 rounded-full text-xs focus:outline-none"
+              style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
             >
               <option value="">Categoría</option>
               {categories.map((c) => (
@@ -579,9 +585,10 @@ export default function AdminProducts() {
             </select>
             {[['', 'Condición'], ['NUEVO', 'Nuevo'], ['COMO_NUEVO', 'Como nuevo'], ['USADO', 'Usado']].map(([val, lbl]) => (
               <button key={val} onClick={() => setFilterCond(val)}
-                className={`shrink-0 px-3 py-1.5 rounded-full text-xs border transition-all ${
-                  filterCond === val ? 'bg-[#4f7cff]/15 text-white border-[#4f7cff]/40' : 'text-[#8e8e9a] border-white/10'
-                }`}>{lbl}</button>
+                className="shrink-0 px-3 py-1.5 rounded-full text-xs transition-all"
+                style={filterCond === val
+                  ? { backgroundColor: 'rgba(23,71,168,0.1)', color: 'var(--hc-accent)', border: '1px solid rgba(23,71,168,0.3)' }
+                  : { color: 'var(--hc-muted)', border: '1px solid var(--hc-border)' }}>{lbl}</button>
             ))}
           </div>
         </div>
@@ -598,20 +605,21 @@ export default function AdminProducts() {
         <div className="flex gap-5">
           {/* Left: Filters panel — solo desktop */}
           <aside className="w-52 shrink-0 space-y-5 hidden md:block">
-            <div className="bg-[#111114] border border-white/8 rounded-2xl p-4 space-y-4">
+            <div className="rounded-2xl p-4 space-y-4" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">Filtros</span>
+                <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>Filtros</span>
                 {hasFilters && (
-                  <button onClick={clearFilters} className="text-[10px] text-[#4f7cff] hover:underline">Limpiar</button>
+                  <button onClick={clearFilters} className="text-[10px] hover:underline" style={{ color: 'var(--hc-accent)' }}>Limpiar</button>
                 )}
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs text-[#8e8e9a]">Categoría</label>
+                <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Categoría</label>
                 <select
                   value={filterCat}
                   onChange={(e) => setFilterCat(e.target.value)}
-                  className="w-full h-9 px-2.5 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-xs focus:outline-none focus:border-[#4f7cff]/60"
+                  className="w-full h-9 px-2.5 rounded-xl text-xs focus:outline-none"
+                  style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
                 >
                   <option value="">Todas</option>
                   {categories.map((c) => (
@@ -621,15 +629,16 @@ export default function AdminProducts() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs text-[#8e8e9a]">Condición</label>
+                <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Condición</label>
                 <div className="space-y-1">
                   {[['', 'Todas'], ['NUEVO', 'Nuevo'], ['COMO_NUEVO', 'Como nuevo'], ['USADO', 'Usado']].map(([val, lbl]) => (
                     <button
                       key={val}
                       onClick={() => setFilterCond(val)}
-                      className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all ${
-                        filterCond === val ? 'bg-[#4f7cff]/15 text-white border border-[#4f7cff]/20' : 'text-[#8e8e9a] hover:text-white hover:bg-white/5'
-                      }`}
+                      className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all hover:bg-[var(--hc-surface-2)]"
+                      style={filterCond === val
+                        ? { backgroundColor: 'rgba(23,71,168,0.1)', color: 'var(--hc-accent)', border: '1px solid rgba(23,71,168,0.25)' }
+                        : { color: 'var(--hc-muted)' }}
                     >
                       {lbl}
                     </button>
@@ -638,15 +647,16 @@ export default function AdminProducts() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs text-[#8e8e9a]">Stock</label>
+                <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Stock</label>
                 <div className="space-y-1">
                   {STOCK_OPTIONS.map(({ label: lbl, value: val }) => (
                     <button
                       key={val}
                       onClick={() => setFilterStock(val)}
-                      className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all ${
-                        filterStock === val ? 'bg-[#4f7cff]/15 text-white border border-[#4f7cff]/20' : 'text-[#8e8e9a] hover:text-white hover:bg-white/5'
-                      }`}
+                      className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all hover:bg-[var(--hc-surface-2)]"
+                      style={filterStock === val
+                        ? { backgroundColor: 'rgba(23,71,168,0.1)', color: 'var(--hc-accent)', border: '1px solid rgba(23,71,168,0.25)' }
+                        : { color: 'var(--hc-muted)' }}
                     >
                       {lbl}
                     </button>
@@ -660,7 +670,7 @@ export default function AdminProducts() {
           <div className="flex-1 min-w-0 space-y-4">
             {/* Buscador desktop */}
             <div className="relative hidden md:block">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8e8e9a]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
               </svg>
               <input
@@ -668,36 +678,36 @@ export default function AdminProducts() {
                 placeholder="Buscar por nombre..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setProdPage(0) }}
-                className="w-full h-10 pl-10 pr-4 rounded-xl bg-[#111114] border border-white/10 text-[#e8e8ed] text-sm placeholder-[#8e8e9a] focus:outline-none focus:border-[#4f7cff]/60 transition-colors"
+                className="w-full h-10 pl-10 pr-4 rounded-xl text-sm focus:outline-none transition-colors"
+                style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
               />
             </div>
 
             {loading ? (
               <div className="flex justify-center py-16"><Spinner size="lg" /></div>
             ) : (
-              <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
-                <div className="overflow-x-auto">
+              <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+                <div className="overflow-x-auto hidden md:block">
                   <table className="w-full min-w-[900px] text-sm">
                     <thead>
-                      <tr className="border-b border-white/8">
+                      <tr style={{ borderBottom: '1px solid var(--hc-border)' }}>
                         {[...(isAdmin ? ['★', 'Pos.'] : []), 'ID', t('admin.products.name'), t('admin.products.price'), t('admin.products.stock'), 'SKU / Barcode', t('admin.products.category'), ...(isAdmin ? ['SEO'] : []), t('admin.products.actions')].map((h) => (
-                          <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#8e8e9a] uppercase tracking-wider">{h}</th>
+                          <th key={h} className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody>
                       {filtered.map((p) => (
-                        <motion.tr key={p.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="hover:bg-white/3 transition-colors">
+                        <motion.tr key={p.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="transition-colors hover:bg-[var(--hc-surface-2)]" style={{ borderTop: '1px solid var(--hc-border)' }}>
                           {isAdmin && (
                           <td className="px-4 py-3">
                             <button
                               onClick={() => handleToggleDestacado(p)}
                               title={p.destacado ? 'Quitar destacado' : 'Marcar como destacado'}
-                              className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all ${
-                                p.destacado
-                                  ? 'text-amber-400 bg-amber-500/15 hover:bg-amber-500/25'
-                                  : 'text-[#8e8e9a]/40 hover:text-amber-400 hover:bg-amber-500/10'
-                              }`}
+                              className="w-7 h-7 flex items-center justify-center rounded-lg transition-all"
+                              style={p.destacado
+                                ? { color: '#8a5a00', backgroundColor: '#f7ead2' }
+                                : { color: 'var(--hc-muted)', opacity: 0.5 }}
                             >
                               <StarIcon filled={p.destacado} />
                             </button>
@@ -708,13 +718,12 @@ export default function AdminProducts() {
                             <button
                               onClick={() => handleToggleCarrusel(p)}
                               title={p.enCarrusel ? `Quitar del carrusel (pos. ${p.ordenCarrusel})` : carruselSlots.length >= 5 ? 'Carrusel lleno (5/5)' : 'Agregar al carrusel'}
-                              className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all text-sm ${
-                                p.enCarrusel
-                                  ? 'bg-[var(--hc-blue-500)]/20 border border-[var(--hc-blue-500)]/40 text-[var(--hc-blue-300)]'
-                                  : carruselSlots.length >= 5
-                                  ? 'text-[#8e8e9a]/20 cursor-not-allowed'
-                                  : 'text-[#8e8e9a]/40 hover:text-[var(--hc-blue-400)] hover:bg-[var(--hc-blue-500)]/10'
-                              }`}
+                              className="w-7 h-7 flex items-center justify-center rounded-lg transition-all text-sm"
+                              style={p.enCarrusel
+                                ? { backgroundColor: 'rgba(23,71,168,0.12)', border: '1px solid rgba(23,71,168,0.3)', color: 'var(--hc-accent)' }
+                                : carruselSlots.length >= 5
+                                ? { color: 'var(--hc-muted)', opacity: 0.3, cursor: 'not-allowed' }
+                                : { color: 'var(--hc-muted)', opacity: 0.5 }}
                             >
                               {p.enCarrusel ? (
                                 <span className="text-[10px] font-bold">{p.ordenCarrusel}</span>
@@ -726,28 +735,28 @@ export default function AdminProducts() {
                             </button>
                           </td>
                           )}
-                          <td className="px-4 py-3 text-[#8e8e9a] text-xs">#{p.id}</td>
+                          <td className="px-4 py-3 text-xs" style={{ color: 'var(--hc-muted)' }}>#{p.id}</td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
                               {p.imagenUrl ? (
-                                <img src={p.imagenUrl} alt={p.nombre} className="w-8 h-8 rounded-lg object-cover bg-[#1a1a1f]" />
+                                <img src={p.imagenUrl} alt={p.nombre} className="w-8 h-8 rounded-lg object-cover" style={{ backgroundColor: 'var(--hc-surface-2)' }} />
                               ) : (
-                                <div className="w-8 h-8 rounded-lg bg-[#1a1a1f] flex items-center justify-center">
-                                  <svg className="w-4 h-4 text-[#8e8e9a]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--hc-surface-2)' }}>
+                                  <svg className="w-4 h-4" style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
                                   </svg>
                                 </div>
                               )}
                               <div className="min-w-0">
-                                <span className="font-medium text-[#e8e8ed] truncate block" title={p.nombre}>{p.nombre}</span>
+                                <span className="font-medium truncate block" style={{ color: 'var(--hc-text)' }} title={p.nombre}>{p.nombre}</span>
                                 <div className="flex items-center gap-1.5 mt-0.5">
-                                  {p.categoriaNombre && <span className="text-[10px] text-[#8e8e9a]">{p.categoriaNombre}</span>}
-                                  {p.especificaciones && <span className="text-[9px] text-[#4f7cff]/70 bg-[#4f7cff]/10 px-1.5 py-0.5 rounded-full">con specs</span>}
+                                  {p.categoriaNombre && <span className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>{p.categoriaNombre}</span>}
+                                  {p.especificaciones && <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ color: 'var(--hc-accent)', backgroundColor: 'rgba(23,71,168,0.08)' }}>con specs</span>}
                                 </div>
                               </div>
                             </div>
                           </td>
-                          <td className="px-4 py-3 font-medium text-[#e8e8ed]">{formatPrice(p.precio)}</td>
+                          <td className="px-4 py-3 font-medium" style={{ color: 'var(--hc-text)' }}>{formatPrice(p.precio)}</td>
                           <td className="px-4 py-3">
                             <Badge variant={p.stock === 0 ? 'danger' : p.stock <= 3 ? 'warning' : 'success'}>{p.stock}</Badge>
                           </td>
@@ -755,7 +764,7 @@ export default function AdminProducts() {
                             <div className="space-y-0.5">
                               {p.sku     && <p className="text-[10px] font-mono" style={{ color: 'var(--hc-muted)' }}>SKU: {p.sku}</p>}
                               {p.barcode && <p className="text-[10px] font-mono" style={{ color: 'var(--hc-accent)', opacity: 0.8 }}>BC: {p.barcode}</p>}
-                              {!p.sku && !p.barcode && <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.2)' }}>—</span>}
+                              {!p.sku && !p.barcode && <span className="text-[10px]" style={{ color: 'var(--hc-muted)', opacity: 0.5 }}>—</span>}
                             </div>
                           </td>
                           <td className="px-4 py-3">
@@ -768,33 +777,73 @@ export default function AdminProducts() {
                           )}
                           <td className="px-4 py-3">
                             <div className="flex gap-2">
-                              <button onClick={() => openEdit(p)} className="px-3 py-1 text-xs rounded-lg bg-white/5 hover:bg-white/10 text-[#8e8e9a] hover:text-white transition-colors">{t('admin.products.edit')}</button>
-                              <button onClick={() => setKardexProducto(p)} className="px-3 py-1 text-xs rounded-lg bg-white/5 hover:bg-white/10 text-[#8e8e9a] hover:text-white transition-colors" title="Ver kardex">Kardex</button>
-                              <button onClick={() => handleDelete(p.id, p.nombre)} className="px-3 py-1 text-xs rounded-lg bg-red-500/8 hover:bg-red-500/15 text-red-400 transition-colors">{t('admin.products.delete')}</button>
+                              <button onClick={() => openEdit(p)} className="px-3 py-1 text-xs rounded-lg transition-colors hover:bg-[var(--hc-surface-2)]" style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>{t('admin.products.edit')}</button>
+                              <button onClick={() => setKardexProducto(p)} className="px-3 py-1 text-xs rounded-lg transition-colors hover:bg-[var(--hc-surface-2)]" style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }} title="Ver kardex">Kardex</button>
+                              <button onClick={() => handleDelete(p.id, p.nombre)} className="px-3 py-1 text-xs rounded-lg transition-colors hover:bg-red-500/15" style={{ backgroundColor: 'rgba(220,38,38,0.06)', color: '#a8291f' }}>{t('admin.products.delete')}</button>
                             </div>
                           </td>
                         </motion.tr>
                       ))}
                     </tbody>
                   </table>
+                </div>
+
+                {/* Mobile: tarjetas en vez de tabla (mockup Movil/Sistema - Productos.dc.html) */}
+                <div className="md:hidden divide-y" style={{ borderColor: 'var(--hc-border)' }}>
+                  {filtered.map((p) => (
+                    <div key={p.id} className="p-4 flex flex-col gap-2.5">
+                      <div className="flex items-center gap-3">
+                        {p.imagenUrl ? (
+                          <img src={p.imagenUrl} alt={p.nombre} className="w-12 h-12 rounded-xl object-cover shrink-0" style={{ backgroundColor: 'var(--hc-surface-2)' }} />
+                        ) : (
+                          <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--hc-surface-2)' }}>
+                            <svg className="w-5 h-5" style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+                            </svg>
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate" style={{ color: 'var(--hc-text)' }}>{p.nombre}</p>
+                          <p className="text-xs font-mono truncate" style={{ color: 'var(--hc-muted)' }}>
+                            {p.sku ?? `#${p.id}`}{p.categoriaNombre ? ` · ${p.categoriaNombre}` : ''}
+                          </p>
+                        </div>
+                        <Badge variant={conditionVariant(p.condicion)}>{conditionLabel(p.condicion)}</Badge>
+                      </div>
+                      <div className="flex items-center justify-between pt-2.5" style={{ borderTop: '1px solid var(--hc-border)' }}>
+                        <div className="flex items-center gap-4">
+                          <span className="font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>{formatPrice(p.precio)}</span>
+                          <Badge variant={p.stock === 0 ? 'danger' : p.stock <= 3 ? 'warning' : 'success'}>{p.stock}</Badge>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs font-semibold">
+                          <button onClick={() => openEdit(p)} style={{ color: 'var(--hc-accent)' }}>{t('admin.products.edit')}</button>
+                          <button onClick={() => setKardexProducto(p)} style={{ color: 'var(--hc-muted)' }}>Kardex</button>
+                          <button onClick={() => handleDelete(p.id, p.nombre)} style={{ color: '#a8291f' }}>{t('admin.products.delete')}</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div>
                   {filtered.length === 0 && (
                     <div className="text-center py-14">
                       {search || hasFilters ? (
                         <div className="space-y-2">
-                          <p className="text-[#8e8e9a] text-sm">Sin resultados para los filtros actuales</p>
-                          <button onClick={clearFilters} className="text-xs text-[#4f7cff] hover:underline">Limpiar filtros →</button>
+                          <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>Sin resultados para los filtros actuales</p>
+                          <button onClick={clearFilters} className="text-xs hover:underline" style={{ color: 'var(--hc-accent)' }}>Limpiar filtros →</button>
                         </div>
                       ) : (
                         <div className="space-y-3">
                           <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center" style={{ backgroundColor: 'rgba(23,71,168,0.1)', border: '1px solid rgba(23,71,168,0.15)' }}>
                             <svg className="w-7 h-7" style={{ color: 'var(--hc-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
                           </div>
-                          <p className="font-semibold text-[#e8e8ed]">Sin productos publicados</p>
-                          <p className="text-sm text-[#8e8e9a] max-w-xs mx-auto">Tu catálogo está vacío. Agregá tu primer producto para comenzar a vender.</p>
+                          <p className="font-semibold" style={{ color: 'var(--hc-text)' }}>Sin productos publicados</p>
+                          <p className="text-sm max-w-xs mx-auto" style={{ color: 'var(--hc-muted)' }}>Tu catálogo está vacío. Agregá tu primer producto para comenzar a vender.</p>
                           <button
                             onClick={openNew}
                             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold mt-1 transition-opacity hover:opacity-80"
-                            style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
+                            style={{ backgroundColor: 'var(--hc-primary)', color: '#fff' }}
                           >
                             + Crear primer producto
                           </button>
@@ -804,20 +853,22 @@ export default function AdminProducts() {
                   )}
                 </div>
                 {totalProds > PROD_PAGE_SIZE && (
-                  <div className="px-4 py-3 border-t border-white/8 flex items-center justify-between text-xs text-[#8e8e9a]">
+                  <div className="px-4 py-3 flex items-center justify-between text-xs" style={{ borderTop: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
                     <span>Página {prodPage + 1} · {products.length} de {totalProds} productos</span>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => setProdPage((p) => Math.max(0, p - 1))}
                         disabled={prodPage === 0}
-                        className="px-2 py-1 rounded-lg bg-white/5 border border-white/10 disabled:opacity-30 hover:bg-white/10 transition-colors"
+                        className="px-2 py-1 rounded-lg disabled:opacity-30 transition-colors hover:bg-[var(--hc-surface-2)]"
+                        style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}
                       >
                         ← Anterior
                       </button>
                       <button
                         onClick={() => setProdPage((p) => p + 1)}
                         disabled={(prodPage + 1) * PROD_PAGE_SIZE >= totalProds}
-                        className="px-2 py-1 rounded-lg bg-white/5 border border-white/10 disabled:opacity-30 hover:bg-white/10 transition-colors"
+                        className="px-2 py-1 rounded-lg disabled:opacity-30 transition-colors hover:bg-[var(--hc-surface-2)]"
+                        style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}
                       >
                         Siguiente →
                       </button>
@@ -840,16 +891,16 @@ export default function AdminProducts() {
           <Input label="Descripción corta" value={form.descripcion} onChange={set('descripcion')} />
 
           {/* Precios */}
-          <div className="border-t border-white/8 pt-4">
-            <p className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider mb-3">Precios</p>
+          <div className="pt-4" style={{ borderTop: '1px solid var(--hc-border)' }}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--hc-muted)' }}>Precios</p>
             <div className="grid grid-cols-2 gap-3">
               <Input label="Precio compra (₡) *" type="number" step="1" min="0" value={form.precioCompra} onChange={set('precioCompra')} required hint="Costo de adquisición" />
               <Input label="Precio venta (₡) *" type="number" step="1" min={form.precioCompra || 0} value={form.precioVenta} onChange={set('precioVenta')} required hint="Debe ser ≥ precio de compra" />
             </div>
             {form.precioCompra && form.precioVenta && (
               <div className="flex gap-2 mt-2 text-xs">
-                <span className="text-[#8e8e9a]">Margen:</span>
-                <span className={Number(form.precioVenta) > Number(form.precioCompra) ? 'text-emerald-400 font-medium' : 'text-red-400 font-medium'}>
+                <span style={{ color: 'var(--hc-muted)' }}>Margen:</span>
+                <span className="font-medium" style={{ color: Number(form.precioVenta) > Number(form.precioCompra) ? '#1E7F4F' : '#a8291f' }}>
                   ₡{(Number(form.precioVenta) - Number(form.precioCompra)).toLocaleString('es-CR')}
                   {' '}({Number(form.precioCompra) > 0 ? `${(((Number(form.precioVenta) - Number(form.precioCompra)) / Number(form.precioCompra)) * 100).toFixed(1)}%` : '—'})
                 </span>
@@ -861,8 +912,8 @@ export default function AdminProducts() {
           <div className="grid grid-cols-2 gap-3">
             <Input label="Stock *" type="number" min="0" value={form.stock} onChange={set('stock')} required />
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-[#e8e8ed]">Condición</label>
-              <select value={form.condicion} onChange={set('condicion')} className="h-11 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60">
+              <label className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Condición</label>
+              <select value={form.condicion} onChange={set('condicion')} className="h-11 px-3 rounded-xl text-sm focus:outline-none" style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}>
                 <option value="NUEVO">Nuevo</option>
                 <option value="COMO_NUEVO">Como nuevo</option>
                 <option value="USADO">Usado</option>
@@ -872,7 +923,7 @@ export default function AdminProducts() {
 
           {/* Alerta: sin categorías */}
           {categories.length === 0 && (
-            <div className="flex items-start gap-3 px-4 py-3 rounded-xl text-sm" style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', color: '#f59e0b' }}>
+            <div className="flex items-start gap-3 px-4 py-3 rounded-xl text-sm" style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', color: '#8a5a00' }}>
               <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
               <span>
                 <span className="font-semibold">Sin categorías creadas.</span>{' '}Necesitás crear al menos una antes de publicar un producto.{' '}
@@ -884,7 +935,7 @@ export default function AdminProducts() {
           {/* Categoría + Bodega */}
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-[#e8e8ed]">Categoría *</label>
+              <label className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Categoría *</label>
               <CategoriaSelect
                 categories={categories}
                 value={form.categoriaId}
@@ -893,8 +944,8 @@ export default function AdminProducts() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-[#e8e8ed]">Bodega *</label>
-              <select value={form.bodegaId} onChange={set('bodegaId')} className="h-11 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60" required={bodegas.length > 0}>
+              <label className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Bodega *</label>
+              <select value={form.bodegaId} onChange={set('bodegaId')} className="h-11 px-3 rounded-xl text-sm focus:outline-none" style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }} required={bodegas.length > 0}>
                 <option value="">{bodegas.length === 0 ? '— Sin bodegas —' : 'Selecciona bodega'}</option>
                 {bodegas.map((b) => <option key={b.id} value={b.id}>{b.nombreBodega ?? b.nombre}</option>)}
               </select>
@@ -903,8 +954,8 @@ export default function AdminProducts() {
 
           {/* Marca */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-[#e8e8ed]">Marca</label>
-            <select value={form.marcaId} onChange={set('marcaId')} className="h-11 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60">
+            <label className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Marca</label>
+            <select value={form.marcaId} onChange={set('marcaId')} className="h-11 px-3 rounded-xl text-sm focus:outline-none" style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}>
               <option value="">— Sin marca —</option>
               {marcas.map((m) => (
                 <option key={m.id} value={m.id}>{m.nombreMarca}</option>
@@ -918,31 +969,32 @@ export default function AdminProducts() {
           />
 
           {/* Destacado */}
-          <div className="flex items-center justify-between py-2.5 px-3 rounded-xl bg-white/4 border border-white/8">
+          <div className="flex items-center justify-between py-2.5 px-3 rounded-xl" style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
             <div>
-              <p className="text-sm font-medium text-[#e8e8ed]">Destacado</p>
-              <p className="text-xs text-[#8e8e9a]">Aparece primero en el inicio de la tienda</p>
+              <p className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Destacado</p>
+              <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Aparece primero en el inicio de la tienda</p>
             </div>
             <button
               type="button"
               onClick={() => setField('destacado', !form.destacado)}
-              className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${form.destacado ? 'bg-amber-400' : 'bg-white/15'}`}
+              className="relative w-11 h-6 rounded-full transition-colors duration-200"
+              style={{ backgroundColor: form.destacado ? '#f59e0b' : 'var(--hc-border)' }}
             >
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${form.destacado ? 'translate-x-5' : 'translate-x-0'}`} />
             </button>
           </div>
 
           {/* ── Contenido del producto ── */}
-          <div className="border-t border-white/8 pt-4 space-y-4">
+          <div className="pt-4 space-y-4" style={{ borderTop: '1px solid var(--hc-border)' }}>
             <div className="flex items-center gap-2">
-              <p className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">Contenido del producto</p>
-              <span className="text-[10px] text-emerald-400/80 bg-emerald-500/10 px-2 py-0.5 rounded-full">visible para el cliente</span>
+              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>Contenido del producto</p>
+              <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#1E7F4F', backgroundColor: '#e2f1e8' }}>visible para el cliente</span>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-[#e8e8ed]">
+              <label className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>
                 Especificaciones técnicas
-                {form.especificaciones && <span className="ml-2 text-[10px] text-[#4f7cff] bg-[#4f7cff]/10 px-1.5 py-0.5 rounded-full">✓ con contenido</span>}
+                {form.especificaciones && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full" style={{ color: 'var(--hc-accent)', backgroundColor: 'rgba(23,71,168,0.08)' }}>✓ con contenido</span>}
               </label>
               <textarea
                 value={form.especificaciones}
@@ -950,14 +1002,15 @@ export default function AdminProducts() {
                 rows={5}
                 placeholder={"- Marca: Samsung\n- Modelo: Galaxy A54\n- Color: Negro\n- Almacenamiento: 128GB\n- RAM: 6GB"}
                 className={`${ta} min-h-[110px] font-mono text-xs`}
+                style={taStyle}
               />
-              <p className="text-xs text-[#8e8e9a]">Una línea = un punto. Se muestra como lista al cliente en la ficha del producto.</p>
+              <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Una línea = un punto. Se muestra como lista al cliente en la ficha del producto.</p>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-[#e8e8ed]">
+              <label className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>
                 Cómo usar
-                {form.comoUsar && <span className="ml-2 text-[10px] text-[#4f7cff] bg-[#4f7cff]/10 px-1.5 py-0.5 rounded-full">✓ con contenido</span>}
+                {form.comoUsar && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full" style={{ color: 'var(--hc-accent)', backgroundColor: 'rgba(23,71,168,0.08)' }}>✓ con contenido</span>}
               </label>
               <textarea
                 value={form.comoUsar}
@@ -965,20 +1018,21 @@ export default function AdminProducts() {
                 rows={4}
                 placeholder={"1. Cargue el dispositivo completamente antes de usar\n2. Inserte la tarjeta SIM\n3. Encienda con el botón lateral\n4. Siga las instrucciones en pantalla"}
                 className={`${ta} min-h-[90px]`}
+                style={taStyle}
               />
-              <p className="text-xs text-[#8e8e9a]">Pasos numerados. Ej: "1. Primer paso". Se muestra como lista ordenada al cliente.</p>
+              <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Pasos numerados. Ej: "1. Primer paso". Se muestra como lista ordenada al cliente.</p>
             </div>
 
             {/* ── Video del producto ── */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[#e8e8ed] flex items-center gap-2">
+              <label className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--hc-text)' }}>
                 <span>Video del producto</span>
                 {form.videoUrl && (() => {
                   const u = form.videoUrl
-                  if (/youtube|youtu\.be/.test(u)) return <span className="text-[10px] text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded-full">▶ YouTube</span>
-                  if (/tiktok/.test(u)) return <span className="text-[10px] text-white bg-white/10 px-1.5 py-0.5 rounded-full">▶ TikTok</span>
-                  if (/instagram/.test(u)) return <span className="text-[10px] text-pink-400 bg-pink-500/10 px-1.5 py-0.5 rounded-full">▶ Instagram</span>
-                  return <span className="text-[10px] text-[#8e8e9a] bg-white/5 px-1.5 py-0.5 rounded-full">▶ con video</span>
+                  if (/youtube|youtu\.be/.test(u)) return <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ color: '#a8291f', backgroundColor: 'rgba(220,38,38,0.08)' }}>▶ YouTube</span>
+                  if (/tiktok/.test(u)) return <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ color: 'var(--hc-text)', backgroundColor: 'var(--hc-surface-2)' }}>▶ TikTok</span>
+                  if (/instagram/.test(u)) return <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ color: '#be185d', backgroundColor: 'rgba(219,39,119,0.08)' }}>▶ Instagram</span>
+                  return <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ color: 'var(--hc-muted)', backgroundColor: 'var(--hc-surface-2)' }}>▶ con video</span>
                 })()}
               </label>
               <input
@@ -986,41 +1040,42 @@ export default function AdminProducts() {
                 value={form.videoUrl}
                 onChange={(e) => setField('videoUrl', e.target.value)}
                 placeholder="YouTube, TikTok o Instagram..."
-                className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm placeholder:text-[#8e8e9a]/40 focus:outline-none focus:border-[#4f7cff]/60 focus:ring-2 focus:ring-[#4f7cff]/10 transition-all"
+                className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none transition-all"
+                style={taStyle}
               />
-              <p className="text-xs text-[#8e8e9a]">Pega el link de YouTube, TikTok o Instagram. Se mostrará como video embed en la página de detalle.</p>
+              <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Pega el link de YouTube, TikTok o Instagram. Se mostrará como video embed en la página de detalle.</p>
             </div>
           </div>
 
           {/* ── SEO ── */}
-          <div className="rounded-2xl border border-white/10 overflow-hidden">
+          <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
             <button
               type="button"
               onClick={() => setSeoOpen(o => !o)}
-              className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/3 transition-colors"
+              className="w-full flex items-center justify-between px-4 py-3 hover:bg-[var(--hc-surface-2)] transition-colors"
             >
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-[#e8e8ed]">SEO</span>
+                <span className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>SEO</span>
                 <span className="text-base">🎯</span>
                 {form.metaTitle && form.metaDescription
-                  ? <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Optimizado</span>
-                  : <span className="text-[10px] text-[#8e8e9a] bg-white/5 px-2 py-0.5 rounded-full">Sin configurar</span>
+                  ? <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#1E7F4F', backgroundColor: '#e2f1e8' }}>Optimizado</span>
+                  : <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: 'var(--hc-muted)', backgroundColor: 'var(--hc-surface-2)' }}>Sin configurar</span>
                 }
               </div>
-              <svg className={`w-4 h-4 text-[#8e8e9a] transition-transform duration-200 ${seoOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              <svg className={`w-4 h-4 transition-transform duration-200 ${seoOpen ? 'rotate-180' : ''}`} style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
 
             {seoOpen && (
-              <div className="border-t border-white/10 px-4 py-4 space-y-4">
+              <div className="px-4 py-4 space-y-4" style={{ borderTop: '1px solid var(--hc-border)' }}>
                 {/* Título SEO */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-1.5">
-                      <label className="text-sm font-medium text-[#e8e8ed]">Título SEO</label>
-                      <span title="Aparece en Google. Usa entre 50-60 caracteres, incluye la palabra principal." className="text-[#8e8e9a] cursor-help text-xs">ⓘ</span>
+                      <label className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Título SEO</label>
+                      <span title="Aparece en Google. Usa entre 50-60 caracteres, incluye la palabra principal." className="cursor-help text-xs" style={{ color: 'var(--hc-muted)' }}>ⓘ</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      {seoAutoTitle && <span className="text-[10px] text-[#4f7cff]">auto</span>}
+                      {seoAutoTitle && <span className="text-[10px]" style={{ color: 'var(--hc-accent)' }}>auto</span>}
                       <CharCounter current={(form.metaTitle || '').length} max={60} min={30} />
                     </div>
                   </div>
@@ -1029,7 +1084,8 @@ export default function AdminProducts() {
                     maxLength={60}
                     placeholder="Nombre del producto | HotClick Outlet"
                     onChange={e => { setSeoAutoTitle(false); setField('metaTitle', e.target.value) }}
-                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm placeholder:text-[#8e8e9a]/40 focus:outline-none focus:border-[#4f7cff]/60 transition-all"
+                    className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none transition-all"
+                    style={taStyle}
                   />
                 </div>
 
@@ -1037,11 +1093,11 @@ export default function AdminProducts() {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-1.5">
-                      <label className="text-sm font-medium text-[#e8e8ed]">Meta Descripción</label>
-                      <span title="Aparece debajo del título en Google. Usa entre 120-160 caracteres." className="text-[#8e8e9a] cursor-help text-xs">ⓘ</span>
+                      <label className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Meta Descripción</label>
+                      <span title="Aparece debajo del título en Google. Usa entre 120-160 caracteres." className="cursor-help text-xs" style={{ color: 'var(--hc-muted)' }}>ⓘ</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      {seoAutoDesc && <span className="text-[10px] text-[#4f7cff]">auto</span>}
+                      {seoAutoDesc && <span className="text-[10px]" style={{ color: 'var(--hc-accent)' }}>auto</span>}
                       <CharCounter current={(form.metaDescription || '').length} max={160} min={120} />
                     </div>
                   </div>
@@ -1052,12 +1108,13 @@ export default function AdminProducts() {
                     placeholder="Descripción del producto | Precio: ₡X | Envíos a todo Costa Rica"
                     onChange={e => { setSeoAutoDesc(false); setField('metaDescription', e.target.value) }}
                     className={`${ta} resize-none`}
+                    style={taStyle}
                   />
                 </div>
 
                 {/* Vista previa Google */}
                 <div>
-                  <p className="text-xs text-[#8e8e9a] mb-2">Vista previa en Google</p>
+                  <p className="text-xs mb-2" style={{ color: 'var(--hc-muted)' }}>Vista previa en Google</p>
                   <div className="rounded-xl bg-white px-4 py-3 space-y-0.5">
                     <p className="text-xs text-green-700 truncate">
                       hotclick.com › productos › {form.nombre ? toSlug(form.nombre) : '…'}

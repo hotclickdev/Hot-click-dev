@@ -1,0 +1,15 @@
+title = "HOTCLICK gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Falsos positivos conocidos (build frontend, migraciones seed, templates sin valores reales)"
+paths = [
+  '''Hot_click_outlet/src/main/resources/static/assets/.*''',
+  '''Hot_click_outlet/src/main/resources/static/sw\.js''',
+  '''Hot_click_outlet/src/main/resources/static/workbox-.*\.js''',
+  '''.*/target/.*''',
+  '''.*\.env\.example$''',
+  '''security-tools/.*/\.env\.example$''',
+]

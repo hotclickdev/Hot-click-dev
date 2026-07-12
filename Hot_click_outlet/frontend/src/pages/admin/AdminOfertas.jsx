@@ -125,7 +125,11 @@ export default function AdminOfertas() {
 
   async function handleToggle(id, enOferta, pct) {
     try {
-      await api.patch(`/productos/${id}/oferta`, { enOferta, porcentajeDescuento: pct })
+      const { data } = await api.patch(`/productos/${id}/oferta`, { enOferta, porcentajeDescuento: pct })
+      if (data?.pendiente) {
+        showToast('Promoción enviada — pendiente de aprobación del admin', 'success')
+        return
+      }
       setProductos(prev => prev.map(p => {
         if (p.id !== id) return p
         return {
@@ -136,8 +140,8 @@ export default function AdminOfertas() {
         }
       }))
       showToast(enOferta ? `Oferta aplicada (-${pct}%)` : 'Oferta quitada', 'success')
-    } catch {
-      showToast('Error actualizando oferta', 'error')
+    } catch (err) {
+      showToast(err?.response?.data?.message ?? 'Error actualizando oferta', 'error')
     }
   }
 

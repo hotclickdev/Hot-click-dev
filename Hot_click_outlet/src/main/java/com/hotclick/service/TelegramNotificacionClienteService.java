@@ -60,6 +60,47 @@ public class TelegramNotificacionClienteService {
         }
     }
 
+    // ── Aprobación de productos / promociones ──────────────────────────────────
+
+    @Async
+    public void notificarSolicitudEnviada(Long empresaId, String tipoLabel, String nombreItem) {
+        if (!bot.isConfigured() || empresaId == null) return;
+        try {
+            String texto = "📝 *Solicitud enviada*\n\n"
+                + tipoLabel + " *" + esc(nombreItem) + "* fue enviado a revisión. "
+                + "Te avisamos apenas el equipo de HOTCLICK lo revise.";
+            enviarATodos(empresaId, texto);
+        } catch (Exception e) {
+            log.error("[telegram-notif] fallo notificando solicitud enviada {} — {}", nombreItem, e.getMessage());
+        }
+    }
+
+    @Async
+    public void notificarSolicitudAprobada(Long empresaId, String tipoLabel, String nombreItem) {
+        if (!bot.isConfigured() || empresaId == null) return;
+        try {
+            String texto = "✅ *" + tipoLabel.replaceFirst("^Tu ", "") + " aprobado*\n\n"
+                + "*" + esc(nombreItem) + "* ya está publicado.";
+            enviarATodos(empresaId, texto);
+        } catch (Exception e) {
+            log.error("[telegram-notif] fallo notificando aprobación {} — {}", nombreItem, e.getMessage());
+        }
+    }
+
+    @Async
+    public void notificarSolicitudRevision(Long empresaId, String tipoLabel, String nombreItem, String comentario) {
+        if (!bot.isConfigured() || empresaId == null) return;
+        try {
+            String texto = "🔧 *Se necesitan ajustes*\n\n"
+                + tipoLabel + " *" + esc(nombreItem) + "* necesita algunos cambios antes de publicarse.\n\n"
+                + (comentario != null && !comentario.isBlank() ? esc(comentario) + "\n\n" : "")
+                + "Si tenés dudas, escribinos al *8666-7888*.";
+            enviarATodos(empresaId, texto);
+        } catch (Exception e) {
+            log.error("[telegram-notif] fallo notificando revisión {} — {}", nombreItem, e.getMessage());
+        }
+    }
+
     // ── Stock bajo / agotado (post-commit del cambio de stock) ────────────────
 
     @Async

@@ -261,6 +261,33 @@ public class ProductoService {
         return saved;
     }
 
+    /**
+     * Aplica o quita oferta a un producto. Si enOferta=true, calcula precioOferta
+     * a partir de porcentajeDescuento (o viceversa) según cuál venga informado.
+     */
+    @Transactional
+    public Producto aplicarOferta(Long id, boolean enOferta, Integer porcentajeDescuento, Integer precioOferta) {
+        Producto p = productoRepository.findById(id)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Producto", id));
+        p.setEnOferta(enOferta);
+        if (enOferta) {
+            if (porcentajeDescuento != null && porcentajeDescuento > 0) {
+                p.setPorcentajeDescuento(porcentajeDescuento);
+                p.setPrecioOferta((int) Math.round(p.getPrecioVenta() * (1 - porcentajeDescuento / 100.0)));
+            } else if (precioOferta != null) {
+                p.setPrecioOferta(precioOferta);
+                int diff = p.getPrecioVenta() - precioOferta;
+                p.setPorcentajeDescuento(diff > 0 ? (int) Math.round(diff * 100.0 / p.getPrecioVenta()) : 0);
+            }
+        } else {
+            p.setPrecioOferta(null);
+            p.setPorcentajeDescuento(null);
+        }
+        Producto saved = productoRepository.save(p);
+        evictProductosPublicos();
+        return saved;
+    }
+
     @Transactional
     public Producto marcarComoVendido(Long id) {
         Producto p = productoRepository.findById(id)

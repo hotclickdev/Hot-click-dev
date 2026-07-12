@@ -1,0 +1,21 @@
+services:
+  app:
+    build: .
+    container_name: hotclick
+    env_file: .env
+    ports:
+      - "8080:8080"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    depends_on:
+      - guardrails
+    restart: unless-stopped
+
+  guardrails:
+    build: ../security-tools/guardrails
+    container_name: hotclick-guardrails
+    env_file: .env
+    # Sin "ports": — solo accesible en la red interna de compose (app → guardrails),
+    # nunca expuesto al host/internet.
+    restart: unless-stopped

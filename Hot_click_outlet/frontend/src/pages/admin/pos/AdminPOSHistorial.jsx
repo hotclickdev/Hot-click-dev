@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { posService } from '@/services/posService'
 
 const fmt = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
@@ -64,7 +65,10 @@ export default function AdminPOSHistorial() {
     <div className="p-6 space-y-5 max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>Historial POS</h1>
+        <div>
+          <Link to="/admin/pos" className="text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>← Volver al POS</Link>
+          <h1 className="text-xl font-bold mt-1" style={{ color: 'var(--hc-text)' }}>Historial POS</h1>
+        </div>
         <div className="flex items-center gap-2">
           <div className="flex rounded-xl overflow-hidden border" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
             {FILTROS.map(f => (

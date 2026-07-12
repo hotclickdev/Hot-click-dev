@@ -78,6 +78,10 @@ Migraciones existentes:
 
 ### Deploy en producción
 
+Desde que se agregó el sidecar de NeMo Guardrails (ver "Seguridad del AI Copilot"
+más abajo), el deploy usa `docker compose` con 2 servicios (`app` + `guardrails`)
+en vez de un solo `docker run` manual.
+
 ```bash
 # 1. Conectarse al EC2
 ssh -i "C:\Users\pmdan\Downloads\hotclick-key.pem" ec2-user@18.227.68.15
@@ -85,23 +89,31 @@ ssh -i "C:\Users\pmdan\Downloads\hotclick-key.pem" ec2-user@18.227.68.15
 # 2. Actualizar código
 cd /home/ec2-user/app && git pull origin master
 
-# 3. Rebuild Docker (requiere t3.small — el t3.micro se queda sin RAM)
-docker build -t hotclick .
+# 3. Rebuild y reemplazo de ambos contenedores (requiere t3.small — el t3.micro
+#    se queda sin RAM incluso para el build)
+cd Hot_click_outlet
+docker compose -f docker-compose.prod.yml up -d --build
 
-# 4. Reemplazar contenedor
-docker stop hotclick && docker rm hotclick
-docker run -d --name hotclick --env-file /home/ec2-user/app/.env -p 8080:8080 --restart unless-stopped hotclick
-
-# 5. Verificar logs
+# 4. Verificar logs
 docker logs -f hotclick
+docker logs -f hotclick-guardrails
 ```
 
 ### Variables de entorno en EC2
 
-El archivo `/home/ec2-user/app/.env` contiene todas las variables. Para modificar una variable:
+El archivo `/home/ec2-user/app/Hot_click_outlet/.env` contiene todas las variables
+(ambos servicios de compose lo comparten vía `env_file`). Para modificar una variable:
 ```bash
-nano /home/ec2-user/app/.env
-docker restart hotclick
+nano /home/ec2-user/app/Hot_click_outlet/.env
+docker compose -f docker-compose.prod.yml restart app
+```
+
+**Apagado de emergencia del sidecar de guardrails** (si hay problemas de RAM o
+latencia en el t3.small — son 2 GB, vigilar con `docker stats`):
+```bash
+nano /home/ec2-user/app/Hot_click_outlet/.env
+# → NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1/
+docker compose -f docker-compose.prod.yml restart app
 ```
 
 ## Arquitectura
@@ -217,14 +229,15 @@ Un pedido aparece en finanzas automáticamente al marcarlo como ENTREGADO.
 | **Templates** | `.env.example` y `frontend/.env.example` — SÍ van a git, sin valores reales |
 | **Producción (EC2)** | `/home/ec2-user/app/.env` en el servidor, fuera del repo |
 | **`application.properties`** | Solo referencias `${ENV_VAR:default}`, nunca valores reales |
-| **Pre-commit hook** | `.git/hooks/pre-commit` bloquea automáticamente commits con secretos |
+| **Pre-commit hook local** | `scripts/hooks/pre-commit` (versionado) — instalar una vez por clon con `sh scripts/install-git-hooks.sh` |
+| **CI (gate real)** | `.github/workflows/security.yml` — job `gitleaks`, bloquea el PR si detecta un secreto |
 
 ### Reglas concretas
 
 1. **Agregar nueva variable** → agregarla en `.env` (local) + `.env.example` (template sin valor) + documentarla en esta sección si es crítica.
 2. **Nunca poner secrets en el frontend** — las variables `VITE_*` quedan expuestas en el bundle del navegador. Solo van ahí claves *publishable* (Clerk, GA4, Sentry DSN, PostHog token). Claves secretas solo en el backend.
-3. **Rotación de API key comprometida** → cambiar en el servicio origen primero, luego actualizar `.env` en EC2 (`nano /home/ec2-user/app/.env && docker restart hotclick`).
-4. **El hook pre-commit** escanea patrones `sk-ant-api`, `sb_secret_`, `SG.`, `sk_live_`, `sk_test_`, `whsec_`, `phc_`, `pk_live_`. Si un commit falla por esto, mover la credencial a `.env`.
+3. **Rotación de API key comprometida** → cambiar en el servicio origen primero, luego actualizar `.env` en EC2 (`nano /home/ec2-user/app/Hot_click_outlet/.env && docker compose -f docker-compose.prod.yml restart app`).
+4. **Escaneo de secretos** corre en 2 capas: el hook local (`scripts/hooks/pre-commit`, patrones fijos + `gitleaks protect` si está instalado — feedback rápido, no es el gate real) y el job `gitleaks` en CI (`.github/workflows/security.yml`, ~150 reglas + detección de entropía — este sí bloquea el merge). Si un PR falla por esto, mover la credencial a `.env`. Falsos positivos conocidos van al allowlist de `.gitleaks.toml`, no se desactiva el job.
 
 ### Servicios y dónde rotar sus keys
 
@@ -238,6 +251,31 @@ Un pedido aparece en finanzas automáticamente al marcarlo como ENTREGADO.
 | PostHog | us.posthog.com → Project Settings |
 | GitHub Token | github.com → Settings → Developer settings → PAT |
 | Gmail App Password | myaccount.google.com → Security → App passwords |
+
+## Seguridad del AI Copilot
+
+`AiCopilotService.java` habla con NVIDIA NIM vía la property `nvidia.base-url`
+(`NVIDIA_BASE_URL`, default apunta directo a NVIDIA). Dos piezas separadas,
+ninguna reemplaza a la otra:
+
+- **`security-tools/guardrails/`** — sidecar de NeMo Guardrails que se interpone
+  entre el backend y NVIDIA NIM cuando `NVIDIA_BASE_URL=http://guardrails:8001/v1/`.
+  Filtra jailbreak/prompt injection en el mensaje del usuario **antes** de llamar
+  al modelo. Corre como segundo contenedor en `docker-compose.prod.yml`. Si hay
+  problemas de RAM/latencia en el t3.small, apagarlo es solo volver
+  `NVIDIA_BASE_URL` al valor directo de NVIDIA (ver sección de deploy). No hace
+  output rail (bufferear la respuesta completa rompería el streaming del chat).
+- **`security-tools/deepteam/`** — herramienta de *testing* (red-teaming), corre
+  en dev/CI manualmente, nunca contra tráfico real. Ataca una réplica del system
+  prompt directo contra NVIDIA NIM para medir qué tan vulnerable es a jailbreak/
+  bias/fuga de PII. Sirve para trackear si el sidecar de guardrails mejora esa
+  medición en el tiempo.
+
+Ambas reutilizan `NVIDIA_API_KEY`/`NVIDIA_MODEL` — no gestionan API keys nuevas.
+
+`TextModerationService.java` (blocklist de contenido prohibido) sigue corriendo
+en el backend, antes de llegar al Copilot — cubre un hueco distinto (contenido),
+no jailbreak/inyección.
 
 ## Convenciones
 

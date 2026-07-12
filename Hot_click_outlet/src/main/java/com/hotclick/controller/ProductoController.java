@@ -46,6 +46,8 @@ public class ProductoController {
     @Autowired private com.hotclick.service.TenantService          tenantService;
     @Autowired private org.springframework.cache.CacheManager      cacheManager;
     @Autowired private com.hotclick.repository.SolicitudAprobacionRepository solicitudAprobacionRepository;
+    @Autowired private com.hotclick.service.TelegramNotificacionClienteService telegramNotificacionClienteService;
+    @Autowired private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     private static final int MAX_PAGE_SIZE        = 100;
     private static final int MAX_PAGE_SIZE_PUBLIC =  50;
@@ -297,6 +299,8 @@ public class ProductoController {
                 solicitud.setUsuarioPide(companyScope.getCurrentUser());
                 solicitudAprobacionRepository.save(solicitud);
                 mensaje = "Producto creado — pendiente de aprobación del admin para publicarse en el catálogo";
+                telegramNotificacionClienteService.notificarSolicitudEnviada(
+                    empresa.getId(), "Tu producto", producto.getNombreProducto());
             }
             return ResponseEntity.ok(ResponseDTO.success(mensaje, producto));
         } catch (Exception e) {
@@ -452,25 +456,48 @@ public class ProductoController {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Producto no encontrado"));
             companyScope.assertCanAccessNullable(p.getEmpresaId());
             boolean enOferta = Boolean.TRUE.equals(body.get("enOferta"));
-            p.setEnOferta(enOferta);
-            if (enOferta) {
-                Integer pct = body.get("porcentajeDescuento") != null
-                    ? ((Number) body.get("porcentajeDescuento")).intValue() : null;
-                Integer precio = body.get("precioOferta") != null
-                    ? ((Number) body.get("precioOferta")).intValue() : null;
-                if (pct != null && pct > 0) {
-                    p.setPorcentajeDescuento(pct);
-                    p.setPrecioOferta((int) Math.round(p.getPrecioVenta() * (1 - pct / 100.0)));
-                } else if (precio != null) {
-                    p.setPrecioOferta(precio);
-                    int diff = p.getPrecioVenta() - precio;
-                    p.setPorcentajeDescuento(diff > 0 ? (int) Math.round(diff * 100.0 / p.getPrecioVenta()) : 0);
+            Integer pct = body.get("porcentajeDescuento") != null
+                ? ((Number) body.get("porcentajeDescuento")).intValue() : null;
+            Integer precio = body.get("precioOferta") != null
+                ? ((Number) body.get("precioOferta")).intValue() : null;
+
+            // Solo se modera aplicar una promo nueva; quitarla (enOferta=false) es
+            // reversible y de bajo riesgo, se aplica al instante para cualquier rol.
+            if (enOferta && !companyScope.isAdminIT()) {
+                boolean yaPendiente = solicitudAprobacionRepository
+                    .findByEmpresa_IdOrderByFechaSolicitudDesc(p.getEmpresaId()).stream()
+                    .anyMatch(s -> "OFERTA".equals(s.getTipoEntidad())
+                        && "PENDIENTE".equals(s.getEstadoSolicitud())
+                        && id.equals(s.getIdEntidad()));
+                if (yaPendiente) {
+                    return ResponseEntity.status(409).body(ResponseDTO.error(
+                        "Ya tenés una promoción pendiente de revisión para este producto"));
                 }
-            } else {
-                p.setPrecioOferta(null);
-                p.setPorcentajeDescuento(null);
+                Empresa empresa = empresaRepository.findById(p.getEmpresaId()).orElse(null);
+                Map<String, Object> snapshot = new java.util.HashMap<>();
+                snapshot.put("enOferta", enOferta);
+                snapshot.put("porcentajeDescuento", pct);
+                snapshot.put("precioOferta", precio);
+
+                var solicitud = new com.hotclick.model.SolicitudAprobacion();
+                solicitud.setTipoEntidad("OFERTA");
+                solicitud.setAccionSolicitada("APLICAR");
+                solicitud.setIdEntidad(id);
+                solicitud.setEmpresa(empresa);
+                solicitud.setUsuarioPide(companyScope.getCurrentUser());
+                solicitud.setDatosSnapshot(objectMapper.writeValueAsString(snapshot));
+                solicitudAprobacionRepository.save(solicitud);
+
+                if (empresa != null) {
+                    telegramNotificacionClienteService.notificarSolicitudEnviada(
+                        empresa.getId(), "Tu promoción", p.getNombreProducto());
+                }
+                return ResponseEntity.ok(ResponseDTO.success(
+                    "Promoción enviada — pendiente de aprobación", Map.of("pendiente", true)));
             }
-            return ResponseEntity.ok(ResponseDTO.success("Oferta actualizada", productoRepository.save(p)));
+
+            Producto actualizado = productoService.aplicarOferta(id, enOferta, pct, precio);
+            return ResponseEntity.ok(ResponseDTO.success("Oferta actualizada", actualizado));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }

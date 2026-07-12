@@ -104,7 +104,7 @@ function ConteoEfectivo({ label, onTotal }) {
 }
 
 /* ── Header ────────────────────────────────────────── */
-function POSHeader({ userName, turno, step, onCerrarTurno }) {
+function POSHeader({ userName, turno, step, onCerrarTurno, mostrarVolverSistema }) {
   const labels = { apertura: 'Paso 1 — Abrir turno', venta: 'Paso 2 — Pedido', cobro: 'Paso 3 — Cobrar', qr: 'Esperando pago', recibo: 'Venta lista' }
   return (
     <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 shrink-0 border-b border-white/5"
@@ -114,6 +114,14 @@ function POSHeader({ userName, turno, step, onCerrarTurno }) {
           style={{ background: 'var(--hc-accent)', color: '#fff' }}>HC</div>
         <span className="text-sm font-bold tracking-wider hidden sm:block" style={{ color: '#fff' }}>POS</span>
       </div>
+
+      {mostrarVolverSistema && (
+        <Link to="/admin"
+          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all hover:brightness-125"
+          style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          ← Sistema
+        </Link>
+      )}
 
       {labels[step] && (
         <span className="text-xs px-2.5 py-1 rounded-full font-medium"
@@ -898,6 +906,7 @@ function StepRecibo({ venta, userName, onNueva }) {
 export default function AdminPOS() {
   const { showToast } = useToast()
   const userName = useAuthStore(s => s.userName)
+  const userRole = useAuthStore(s => s.userRole)
   const { bodegaId } = usePosStore()
 
   const [step, setStep]   = useState('loading')
@@ -1140,7 +1149,8 @@ export default function AdminPOS() {
   return (
     <div className="flex flex-col h-screen overflow-hidden"
       style={{ backgroundColor: '#08080c', fontFamily: "'JetBrains Mono','Fira Code','Consolas',monospace" }}>
-      <POSHeader userName={userName} turno={turno} step={step} onCerrarTurno={() => setShowCierre(true)} />
+      <POSHeader userName={userName} turno={turno} step={step} onCerrarTurno={() => setShowCierre(true)}
+        mostrarVolverSistema={userRole !== 'CAJERO'} />
 
       {/* Modal cerrar turno */}
       {showCierre && (

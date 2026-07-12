@@ -211,11 +211,17 @@ export default function LoginPage() {
       return
     }
 
-    // Múltiples modos: si hay preferencia guardada usar directamente
-    const savedPref = localStorage.getItem(MODE_PREF_KEY)
-    if (savedPref) {
-      const saved = modes.find(m => m.id === savedPref)
-      if (saved) { navigate(saved.path, { replace: true }); return }
+    // Múltiples modos: si hay preferencia guardada usar directamente.
+    // EMPRENDEDOR queda excluido: el rol "dueño de negocio" siempre debe ver
+    // el selector de modo (Sistema/Caja) tras cada login, como en el mockup
+    // aprobado — a diferencia de ADMIN/GERENTE/SUPERVISOR, no tiene un
+    // switcher visible dentro del panel para volver a cambiarlo.
+    if (data.rol !== 'EMPRENDEDOR') {
+      const savedPref = localStorage.getItem(MODE_PREF_KEY)
+      if (savedPref) {
+        const saved = modes.find(m => m.id === savedPref)
+        if (saved) { navigate(saved.path, { replace: true }); return }
+      }
     }
 
     // Mostrar selector de modo

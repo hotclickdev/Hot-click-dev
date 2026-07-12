@@ -92,6 +92,43 @@
   --hc-dur-slow: 320ms;
 }
 
+/* ---------- Panel "Sistema" (rol EMPRENDEDOR) ----------
+   Los mockups aprobados por junta (Front para cliente EPN/) usan una
+   paleta cálida distinta del resto del sitio (Brand Book v1.1, neutros
+   fríos). Se sobreescribe solo dentro de .hc-sistema-theme —aplicada por
+   AdminLayout.jsx únicamente cuando userRole === 'EMPRENDEDOR'— para no
+   afectar el panel ADMIN ni el sitio público. */
+.hc-sistema-theme {
+  --hc-bg:     #ede5da;
+  --hc-border: #e3dacb;
+  --hc-muted:  #6b6459;
+  --hc-text:   #1a1a1a;
+
+  /* El resto de las variables de rol semántico también se fijan acá —
+     "Sistema" es un único prototipo de color, nunca debe heredar
+     html.dark / html.high-contrast (que solo tocan `html`, mientras esta
+     clase vive en un <div> descendiente — sin esto, cualquier variable no
+     redeclarada acá se filtra desde arriba). Mismos valores que el bloque
+     :root de más arriba, nunca los de html.dark. */
+  --hc-surface:        var(--hc-n-0);
+  --hc-surface-raised: var(--hc-n-0);
+  --hc-text-secondary: var(--hc-n-600);
+  --hc-text-disabled:  var(--hc-n-400);
+  --hc-border-strong:  var(--hc-n-300);
+  --hc-primary:        var(--hc-red-500);
+  --hc-primary-hover:  var(--hc-red-600);
+  --hc-primary-press:  var(--hc-red-700);
+  --hc-link:           var(--hc-blue-600);
+  --hc-focus-ring:     var(--hc-blue-500);
+  --hc-success: #178A50;  --hc-success-bg: #E9F7F0;
+  --hc-warning: #9A6700;  --hc-warning-bg: #FDF3DC;
+  --hc-danger:  #D02A23;  --hc-danger-bg:  #FEF2F1;
+  --hc-info:    #1747A8;  --hc-info-bg:    #EFF4FE;
+  --hc-shadow-1: 0 1px 2px rgba(20,23,28,.06);
+  --hc-shadow-2: 0 2px 8px rgba(20,23,28,.08);
+  --hc-shadow-3: 0 12px 32px rgba(20,23,28,.14);
+}
+
 html.dark,
 [data-theme="dark"] {
   --hc-bg:            #0E1116;

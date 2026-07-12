@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#ede5da;-webkit-font-smoothing:antialiased;}
+a{color:#1747A8;text-decoration:none;}
+a:hover{color:#102f6e;text-decoration:underline;}
+</style>
+</helmet>
+<!-- POS · Cierre de caja (cuadre) -->
+<div data-screen-label="POS - Cierre de caja" style="min-height:100vh;display:flex;flex-direction:column;font-family:'Public Sans',sans-serif;color:#1a1a1a">
+
+  <!-- Barra superior del POS -->
+  <header style="background:#1a1a1a;color:#ffffff;display:flex;align-items:center;gap:20px;padding:0 24px;height:60px;box-sizing:border-box;flex:none">
+    <a href="Selector de modo.dc.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit">
+      <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:16px;letter-spacing:-0.4px;color:#ffffff">HOTCLICK</div>
+      <div style="font-size:11px;font-weight:700;color:#1a1a1a;background:#ffffff;padding:3px 8px;border-radius:999px">Caja</div>
+    </a>
+    <div style="flex:1"></div>
+    <div style="font-size:13px;color:#b8b3ab">Cajera: <span style="color:#ffffff;font-weight:600">Daniela</span> · Caja abierta 8:02 a.m.</div>
+    <a href="Sistema - Inicio.dc.html" style="font-size:13px;font-weight:600;color:#b8b3ab;border:1px solid #3a3a3a;border-radius:10px;padding:7px 12px" style-hover="color:#ffffff;text-decoration:none;border-color:#6b6b6b">← Sistema</a>
+  </header>
+
+  <!-- Contenido centrado -->
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:24px">
+    <div style="width:100%;max-width:460px;background:#ffffff;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:20px;box-shadow:0 1px 2px rgba(26,26,26,0.04),0 8px 20px rgba(26,26,26,0.06);">
+
+      <a href="POS - Nueva venta.dc.html" style="font-size:14px;font-weight:600">← Volvé a vender</a>
+
+      <div style="display:flex;flex-direction:column;gap:6px;text-align:center">
+        <h1 style="margin:0;font-family:'Sora',sans-serif;font-weight:700;font-size:21px">Cerrá la caja</h1>
+        <p style="margin:0;font-size:14px;color:#6b6459">Contá el efectivo real y compará con lo que el sistema esperaba.</p>
+      </div>
+
+      <!-- Resumen del turno -->
+      <div style="background:#faf6ef;border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;justify-content:space-between;font-size:14px;color:#6b6459"><span>Efectivo inicial</span><span>₡{{ montoInicial }}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;color:#6b6459"><span>Ventas en efectivo</span><span>₡68.400</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;color:#6b6459"><span>Ventas con tarjeta / SINPE</span><span>₡84.000</span></div>
+        <div style="border-top:1px solid #e9e1d4;margin-top:2px;padding-top:8px;display:flex;justify-content:space-between;font-size:15px;font-weight:700"><span>Efectivo esperado en caja</span><span style="font-family:'Sora',sans-serif">₡118.400</span></div>
+      </div>
+
+      <!-- Conteo real -->
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label style="font-size:14px;font-weight:600">Efectivo contado</label>
+        <div style="display:flex;align-items:center;border:1px solid #d8cfc0;border-radius:10px;overflow:hidden">
+          <span style="padding:14px 0 14px 16px;font-family:'Sora',sans-serif;font-weight:700;font-size:18px;color:#8a8378">₡</span>
+          <input type="text" value="115.900" onChange="{{ cambiarContado }}" style="flex:1;padding:14px 16px 14px 8px;border:none;font-family:'Sora',sans-serif;font-weight:700;font-size:18px;color:#1a1a1a;box-sizing:border-box" style-focus="outline:none">
+        </div>
+      </div>
+
+      <!-- Alerta de diferencia (mensaje de error / advertencia) -->
+      <div style="background:#f7ead2;border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:10px">
+        <div style="width:8px;height:8px;border-radius:999px;background:#8a5a00;margin-top:5px;flex:none"></div>
+        <div style="font-size:14px;color:#5c3d00;line-height:1.5"><strong>Falta ₡2.500</strong> respecto a lo esperado. Revisá el conteo antes de cerrar — igual podés continuar si ya verificaste.</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label style="font-size:14px;font-weight:600">Notas <span style="font-weight:400;color:#8a8378">(opcional)</span></label>
+        <textarea rows="2" placeholder="Ej: Se dio un vuelto de más por error." style="padding:12px 14px;border:1px solid #d8cfc0;border-radius:10px;font-family:'Public Sans',sans-serif;font-size:15px;color:#1a1a1a;resize:vertical;box-sizing:border-box" style-focus="border-color:#1747A8;outline:none"></textarea>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button onClick="{{ cerrarCaja }}" style="display:flex;align-items:center;justify-content:center;height:54px;border:none;border-radius:10px;background:#E73B33;color:#ffffff;font-family:'Sora',sans-serif;font-weight:700;font-size:17px;cursor:pointer" style-hover="background:#d02f27">Confirmá el cierre</button>
+        <a href="POS - Nueva venta.dc.html" style="font-size:14px;font-weight:600;color:#6b6459;text-align:center" style-hover="color:#1a1a1a">Cancelá y volvé a vender</a>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { montoInicial: '50.000', contado: '115.900' };
+
+  componentDidMount() {
+    try {
+      const raw = localStorage.getItem('hotclick_pos_caja');
+      if (raw) {
+        const datos = JSON.parse(raw);
+        if (datos && datos.montoInicial) this.setState({ montoInicial: datos.montoInicial });
+      }
+    } catch (e) {}
+  }
+
+  cerrarCaja() {
+    try {
+      const raw = localStorage.getItem('hotclick_pos_caja');
+      const datos = raw ? JSON.parse(raw) : {};
+      datos.abierta = false;
+      datos.horaCierre = new Date().toISOString();
+      datos.montoContado = this.state.contado;
+      localStorage.setItem('hotclick_pos_caja', JSON.stringify(datos));
+      localStorage.removeItem('hotclick_pos_venta_actual');
+    } catch (e) {}
+    window.location.href = 'Selector de modo.dc.html';
+  }
+
+  renderVals() {
+    return {
+      montoInicial: this.state.montoInicial,
+      cambiarContado: (e) => this.setState({ contado: e.target.value }),
+      cerrarCaja: () => this.cerrarCaja(),
+    };
+  }
+}
+</script>
+</body>
+</html>

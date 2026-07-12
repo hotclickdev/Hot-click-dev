@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#ede5da;-webkit-font-smoothing:antialiased;}
+a{color:#1747A8;text-decoration:none;}
+a:hover{color:#102f6e;text-decoration:underline;}
+</style>
+</helmet>
+<!-- POS · Nueva venta (interfaz aislada, sin menú del Sistema) -->
+<div data-screen-label="POS - Nueva venta" style="min-height:100vh;display:flex;flex-direction:column;font-family:'Public Sans',sans-serif;color:#1a1a1a">
+
+  <!-- Barra superior del POS (oscura: identidad propia de la Caja) -->
+  <header style="background:#1a1a1a;color:#ffffff;display:flex;align-items:center;gap:20px;padding:0 24px;height:60px;box-sizing:border-box;flex:none">
+    <a href="Selector de modo.dc.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit">
+      <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:16px;letter-spacing:-0.4px;color:#ffffff">HOTCLICK</div>
+      <div style="font-size:11px;font-weight:700;color:#1a1a1a;background:#ffffff;padding:3px 8px;border-radius:999px">Caja</div>
+    </a>
+    <div style="flex:1"></div>
+    <div style="font-size:13px;color:#b8b3ab">Cajera: <span style="color:#ffffff;font-weight:600">Daniela</span> · Caja abierta {{ horaApertura }}</div>
+
+    <!-- Menú "Más opciones" (abrir/cerrar caja) -->
+    <div style="position:relative">
+      <button onClick="{{ alternarMenu }}" style="display:flex;align-items:center;gap:6px;background:transparent;border:1px solid #3a3a3a;border-radius:10px;padding:7px 12px;color:#ffffff;font-family:'Public Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer" style-hover="border-color:#6b6b6b">Más opciones ⋯</button>
+      <sc-if value="{{ menuAbierto }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;top:calc(100% + 8px);right:0;background:#ffffff;border-radius:12px;box-shadow:0 12px 28px rgba(0,0,0,0.22);padding:8px;display:flex;flex-direction:column;gap:2px;min-width:200px;z-index:10">
+          <a href="POS - Apertura de caja.dc.html" style="padding:10px 12px;border-radius:8px;color:#1a1a1a;font-size:14px;font-weight:600" style-hover="background:#f6f1e9;text-decoration:none">Abrí la caja</a>
+          <a href="POS - Cierre de caja.dc.html" style="padding:10px 12px;border-radius:8px;color:#1a1a1a;font-size:14px;font-weight:600" style-hover="background:#f6f1e9;text-decoration:none">Cerrá la caja</a>
+          <div style="height:1px;background:#f0e9dd;margin:4px 8px"></div>
+          <a href="#" style="padding:10px 12px;border-radius:8px;color:#1a1a1a;font-size:14px;font-weight:600" style-hover="background:#f6f1e9;text-decoration:none">Historial de ventas</a>
+        </div>
+      </sc-if>
+    </div>
+
+    <a href="Sistema - Inicio.dc.html" style="font-size:13px;font-weight:600;color:#b8b3ab;border:1px solid #3a3a3a;border-radius:10px;padding:7px 12px" style-hover="color:#ffffff;text-decoration:none;border-color:#6b6b6b">← Sistema</a>
+  </header>
+
+  <!-- Alerta de conexión (mensaje de error del sistema) -->
+  <sc-if value="{{ mostrarAlertaConexion }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:none;background:#fbe4e2;border-bottom:1px solid #f3c6c2;display:flex;align-items:center;gap:12px;padding:12px 24px">
+      <div style="width:9px;height:9px;border-radius:999px;background:#a8291f;flex:none"></div>
+      <div style="flex:1;font-size:14px;color:#7a1f18"><strong>Sin conexión a internet.</strong> Podés seguir cobrando — la venta se guarda en este equipo y se sincroniza cuando vuelva la señal.</div>
+      <a href="#" onClick="{{ cerrarAlertaConexion }}" style="font-size:13px;font-weight:700;color:#7a1f18" style-hover="color:#4a120e">Entendido</a>
+    </div>
+  </sc-if>
+
+  <!-- Cuerpo: venta actual arriba, productos abajo -->
+  <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+
+    <!-- Panel de venta actual -->
+    <aside style="width:100%;background:#ffffff;border-bottom:1px solid #e3dacb;display:flex;flex-direction:column;box-sizing:border-box;box-shadow:0 1px 0 rgba(26,26,26,0.02),0 6px 20px rgba(26,26,26,0.04)">
+
+      <!-- ESTADO 1: Carrito y cobro -->
+      <sc-if value="{{ esCobro }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1px solid #f0e9dd">
+          <h2 style="margin:0;font-family:'Sora',sans-serif;font-weight:700;font-size:17px">Venta actual</h2>
+          <sc-if value="{{ hayItems }}" hint-placeholder-val="{{ true }}">
+            <a href="#" style="font-size:13px;font-weight:600;color:#6b6459" style-hover="color:#1a1a1a">Vaciá</a>
+          </sc-if>
+        </div>
+
+        <sc-if value="{{ hayItems }}" hint-placeholder-val="{{ true }}">
+          <div style="flex:1;overflow:auto;padding:8px 22px;display:flex;flex-direction:column">
+            <div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid #f0e9dd">
+              <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                <div style="font-size:15px;font-weight:600">Café molido 500 g</div>
+                <div style="font-size:13px;color:#8a8378">₡4.500 c/u</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <button style="width:34px;height:34px;border-radius:10px;border:1px solid #d8cfc0;background:#ffffff;font-size:17px;font-weight:700;color:#1a1a1a;cursor:pointer" style-hover="border-color:#1747A8;color:#1747A8">−</button>
+                <div style="width:22px;text-align:center;font-family:'Sora',sans-serif;font-weight:700;font-size:15px">2</div>
+                <button style="width:34px;height:34px;border-radius:10px;border:1px solid #d8cfc0;background:#ffffff;font-size:17px;font-weight:700;color:#1a1a1a;cursor:pointer" style-hover="border-color:#1747A8;color:#1747A8">+</button>
+              </div>
+              <div style="width:64px;text-align:right;font-family:'Sora',sans-serif;font-weight:700;font-size:15px">₡9.000</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid #f0e9dd">
+              <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                <div style="font-size:15px;font-weight:600">Jugo natural 1 L</div>
+                <div style="font-size:13px;color:#8a8378">₡1.800 c/u</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <button style="width:34px;height:34px;border-radius:10px;border:1px solid #d8cfc0;background:#ffffff;font-size:17px;font-weight:700;color:#1a1a1a;cursor:pointer" style-hover="border-color:#1747A8;color:#1747A8">−</button>
+                <div style="width:22px;text-align:center;font-family:'Sora',sans-serif;font-weight:700;font-size:15px">1</div>
+                <button style="width:34px;height:34px;border-radius:10px;border:1px solid #d8cfc0;background:#ffffff;font-size:17px;font-weight:700;color:#1a1a1a;cursor:pointer" style-hover="border-color:#1747A8;color:#1747A8">+</button>
+              </div>
+              <div style="width:64px;text-align:right;font-family:'Sora',sans-serif;font-weight:700;font-size:15px">₡1.800</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:14px 0">
+              <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                <div style="font-size:15px;font-weight:600">Galletas artesanales</div>
+                <div style="font-size:13px;color:#8a8378">₡2.100 c/u</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <button style="width:34px;height:34px;border-radius:10px;border:1px solid #d8cfc0;background:#ffffff;font-size:17px;font-weight:700;color:#1a1a1a;cursor:pointer" style-hover="border-color:#1747A8;color:#1747A8">−</button>
+                <div style="width:22px;text-align:center;font-family:'Sora',sans-serif;font-weight:700;font-size:15px">1</div>
+                <button style="width:34px;height:34px;border-radius:10px;border:1px solid #d8cfc0;background:#ffffff;font-size:17px;font-weight:700;color:#1a1a1a;cursor:pointer" style-hover="border-color:#1747A8;color:#1747A8">+</button>
+              </div>
+              <div style="width:64px;text-align:right;font-family:'Sora',sans-serif;font-weight:700;font-size:15px">₡2.100</div>
+            </div>
+          </div>
+
+          <!-- Total y método de pago -->
+          <div style="border-top:1px solid #f0e9dd;padding:18px 22px 22px;display:flex;flex-direction:column;gap:14px">
+            <sc-if value="{{ pideFactura }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;justify-content:space-between;font-size:14px;color:#6b6459"><span>Subtotal</span><span>₡11.416</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:14px;color:#6b6459"><span>IVA 13%</span><span>₡1.484</span></div>
+            </sc-if>
+            <div style="display:flex;justify-content:space-between;align-items:baseline">
+              <span style="font-size:16px;font-weight:700">Total</span>
+              <span style="font-family:'Sora',sans-serif;font-weight:800;font-size:34px;letter-spacing:-0.5px">₡12.900</span>
+            </div>
+
+            <!-- Factura electrónica (opcional, solo si el cliente la pide) -->
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid #f0e9dd;border-bottom:1px solid #f0e9dd">
+              <div style="display:flex;flex-direction:column;gap:1px">
+                <span style="font-size:14px;font-weight:600">¿Pidió factura electrónica?</span>
+                <span style="font-size:12px;color:#8a8378">Mostramos el IVA y guardamos sus datos</span>
+              </div>
+              <button onClick="{{ alternarFactura }}" style="{{ estiloToggleFactura }}"><span style="{{ estiloToggleFacturaKnob }}"></span></button>
+            </div>
+            <sc-if value="{{ pideFactura }}" hint-placeholder-val="{{ false }}">
+              <input type="text" placeholder="Nombre completo o razón social" style="padding:12px 14px;border:1px solid #d8cfc0;border-radius:10px;font-family:'Public Sans',sans-serif;font-size:15px;box-sizing:border-box" style-focus="border-color:#1747A8;outline:none">
+              <input type="text" placeholder="Cédula o número de tributación" style="padding:12px 14px;border:1px solid #d8cfc0;border-radius:10px;font-family:'Public Sans',sans-serif;font-size:15px;box-sizing:border-box" style-focus="border-color:#1747A8;outline:none">
+              <input type="text" placeholder="Correo para enviar la factura" style="padding:12px 14px;border:1px solid #d8cfc0;border-radius:10px;font-family:'Public Sans',sans-serif;font-size:15px;box-sizing:border-box" style-focus="border-color:#1747A8;outline:none">
+            </sc-if>
+
+            <!-- Monto recibido y vuelto (solo en efectivo) -->
+            <sc-if value="{{ esEfectivo }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <label style="font-size:13px;font-weight:600;color:#6b6459">Monto recibido</label>
+                <div style="display:flex;align-items:center;border:1px solid #d8cfc0;border-radius:10px;overflow:hidden">
+                  <span style="padding:12px 0 12px 14px;font-family:'Sora',sans-serif;font-weight:700;font-size:16px;color:#8a8378">₡</span>
+                  <input type="text" inputmode="numeric" value="{{ montoRecibidoTexto }}" onChange="{{ actualizarMonto }}" style="flex:1;padding:12px 14px 12px 6px;border:none;font-family:'Sora',sans-serif;font-weight:700;font-size:16px;color:#1a1a1a;box-sizing:border-box" style-focus="outline:none">
+                </div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;padding:10px 14px;background:{{ colorFondoVuelto }};border-radius:10px">
+                <span style="font-size:14px;font-weight:600;color:{{ colorTextoVuelto }}">{{ etiquetaVuelto }}</span>
+                <span style="font-family:'Sora',sans-serif;font-weight:800;font-size:20px;color:{{ colorTextoVuelto }}">₡{{ vueltoTexto }}</span>
+              </div>
+            </sc-if>
+
+            <!-- Método de pago -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+              <button onClick="{{ elegirEfectivo }}" style="{{ estiloEfectivo }}">Efectivo</button>
+              <button onClick="{{ elegirTarjeta }}" style="{{ estiloTarjeta }}">Tarjeta</button>
+              <button onClick="{{ elegirSinpe }}" style="{{ estiloSinpe }}">SINPE</button>
+            </div>
+            <!-- CTA principal (único rojo de la pantalla) -->
+            <button onClick="{{ cobrar }}" style="height:58px;border:none;border-radius:10px;background:#E73B33;color:#ffffff;font-family:'Sora',sans-serif;font-weight:700;font-size:18px;cursor:pointer" style-hover="background:#d02f27">{{ textoBotonCobrar }}</button>
+          </div>
+        </sc-if>
+
+        <!-- Estado vacío del carrito -->
+        <sc-if value="{{ carritoVacio }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:32px;text-align:center">
+            <div style="width:52px;height:52px;border-radius:12px;background:repeating-linear-gradient(45deg,#f3ede4,#f3ede4 6px,#e9e1d4 6px,#e9e1d4 12px)"></div>
+            <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:16px">Empezá una venta</div>
+            <div style="font-size:14px;color:#6b6459;line-height:1.5;max-width:240px">Tocá un producto o usá el buscador para agregarlo aquí.</div>
+          </div>
+        </sc-if>
+      </sc-if>
+
+      <!-- ESTADO 2: Cobro con QR (Tarjeta / SINPE) -->
+      <sc-if value="{{ esQR }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:10px;padding:20px 22px;border-bottom:1px solid #f0e9dd">
+          <a href="#" onClick="{{ cancelarQR }}" style="font-size:14px;font-weight:600;color:#6b6459" style-hover="color:#1a1a1a">← Cancelá</a>
+        </div>
+
+        <div style="flex:1;overflow:auto;padding:22px;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center">
+
+          <!-- Ventana de error: no se pudo generar el QR -->
+          <sc-if value="{{ mostrarErrorQR }}" hint-placeholder-val="{{ false }}">
+            <div style="width:100%;background:#fbe4e2;border:1px solid #f3c6c2;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px;text-align:left;box-sizing:border-box">
+              <div style="font-size:14px;font-weight:700;color:#7a1f18">No pudimos generar el código QR</div>
+              <div style="font-size:13px;color:#7a1f18;line-height:1.5">Revisá la conexión del local e intentá de nuevo. También podés cobrar en efectivo.</div>
+              <div style="display:flex;gap:14px;margin-top:2px">
+                <a href="#" onClick="{{ reintentarQR }}" style="font-size:13px;font-weight:700;color:#7a1f18" style-hover="color:#4a120e">Intentá de nuevo</a>
+                <a href="#" onClick="{{ elegirEfectivo }}" style="font-size:13px;font-weight:700;color:#7a1f18" style-hover="color:#4a120e">Cobrá en efectivo</a>
+              </div>
+            </div>
+          </sc-if>
+
+          <div style="font-size:14px;font-weight:600;color:#6b6459">{{ metodoNombre }} · Total a cobrar</div>
+          <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:36px;letter-spacing:-0.5px">₡12.900</div>
+
+          <!-- Código QR (marcador) -->
+          <div style="width:220px;height:220px;border-radius:16px;background:repeating-linear-gradient(45deg,#f3ede4,#f3ede4 8px,#e9e1d4 8px,#e9e1d4 16px);display:flex;align-items:center;justify-content:center;border:1px solid #e3dacb">
+            <span style="font-family:monospace;font-size:13px;color:#8a8378;background:#ffffff;padding:6px 12px;border-radius:8px">código QR</span>
+          </div>
+
+          <div style="font-size:14px;color:#6b6459;max-width:260px;line-height:1.5">Pedile al cliente que escanee el código con su app del banco o SINPE Móvil.</div>
+
+          <!-- Resumen breve del carrito -->
+          <div style="width:100%;background:#faf6ef;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;text-align:left;box-sizing:border-box">
+            <div style="display:flex;justify-content:space-between;font-size:13px;color:#6b6459"><span>Café molido ×2</span><span>₡9.000</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;color:#6b6459"><span>Jugo natural ×1</span><span>₡1.800</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;color:#6b6459"><span>Galletas artesanales ×1</span><span>₡2.100</span></div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#8a8378">
+            <div style="width:8px;height:8px;border-radius:999px;background:#c9a227"></div>
+            Esperando el pago…
+          </div>
+        </div>
+
+        <div style="border-top:1px solid #f0e9dd;padding:18px 22px 22px">
+          <button onClick="{{ confirmarPagoQR }}" style="width:100%;height:58px;border:none;border-radius:10px;background:#E73B33;color:#ffffff;font-family:'Sora',sans-serif;font-weight:700;font-size:18px;cursor:pointer" style-hover="background:#d02f27">Ya pagó</button>
+        </div>
+      </sc-if>
+
+      <!-- ESTADO 3: Venta completada -->
+      <sc-if value="{{ esCompletada }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;overflow:auto;padding:28px 24px;display:flex;flex-direction:column;gap:20px">
+
+          <!-- Confirmación -->
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding-bottom:4px">
+            <div style="width:52px;height:52px;border-radius:999px;background:#e2f1e8;display:flex;align-items:center;justify-content:center">
+              <div style="width:22px;height:12px;border-left:3px solid #1E7F4F;border-bottom:3px solid #1E7F4F;transform:rotate(-45deg) translate(1px,-2px)"></div>
+            </div>
+            <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:19px">¡Venta completada!</div>
+            <div style="font-size:14px;color:#6b6459">Pagado con {{ metodoNombre }}</div>
+          </div>
+
+          <!-- Desglose / factura -->
+          <div style="background:#faf6ef;border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:8px">
+            <div style="font-size:12px;font-weight:700;color:#8a8378;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Comprobante #0159</div>
+            <div style="display:flex;justify-content:space-between;font-size:14px"><span>Café molido ×2</span><span>₡9.000</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:14px"><span>Jugo natural ×1</span><span>₡1.800</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:14px"><span>Galletas artesanales ×1</span><span>₡2.100</span></div>
+            <sc-if value="{{ pideFactura }}" hint-placeholder-val="{{ false }}">
+              <div style="border-top:1px solid #e9e1d4;margin-top:4px;padding-top:8px;display:flex;justify-content:space-between;font-size:14px;color:#6b6459"><span>Subtotal</span><span>₡11.416</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:14px;color:#6b6459"><span>IVA 13%</span><span>₡1.484</span></div>
+            </sc-if>
+            <div style="border-top:1px solid #e9e1d4;margin-top:4px;padding-top:8px;display:flex;justify-content:space-between;font-size:15px;font-weight:700"><span>Total</span><span style="font-family:'Sora',sans-serif">₡12.900</span></div>
+            <sc-if value="{{ mostrarVueltoComprobante }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;justify-content:space-between;font-size:14px;color:#1E7F4F;font-weight:600"><span>Vuelto entregado</span><span>₡{{ vueltoTexto }}</span></div>
+            </sc-if>
+          </div>
+
+          <a href="#" style="font-size:14px;font-weight:600;text-align:center">Enviá el comprobante por WhatsApp</a>
+
+          <sc-if value="{{ pideFactura }}" hint-placeholder-val="{{ false }}">
+            <div style="border-top:1px solid #f0e9dd;padding-top:18px;display:flex;align-items:center;gap:10px">
+              <div style="width:8px;height:8px;border-radius:999px;background:#1E7F4F"></div>
+              <div style="font-size:14px;color:#1a1a1a">Guardamos los datos de la factura en tu lista de Clientes.</div>
+            </div>
+          </sc-if>
+
+          <!-- Registro de cliente (opcional, solo si no pidió factura) -->
+          <sc-if value="{{ mostrarFormCliente }}" hint-placeholder-val="{{ true }}">
+            <div style="border-top:1px solid #f0e9dd;padding-top:18px;display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <div style="font-size:15px;font-weight:700">Registrá el cliente <span style="font-weight:400;color:#8a8378">(opcional)</span></div>
+                <div style="font-size:13px;color:#6b6459">Guardalo para verlo en tu lista de Clientes.</div>
+              </div>
+              <input type="text" placeholder="Nombre" style="padding:12px 14px;border:1px solid #d8cfc0;border-radius:10px;font-family:'Public Sans',sans-serif;font-size:15px;box-sizing:border-box" style-focus="border-color:#1747A8;outline:none">
+              <input type="text" placeholder="Teléfono" style="padding:12px 14px;border:1px solid #d8cfc0;border-radius:10px;font-family:'Public Sans',sans-serif;font-size:15px;box-sizing:border-box" style-focus="border-color:#1747A8;outline:none">
+              <div style="display:flex;gap:16px;align-items:center">
+                <button onClick="{{ guardarCliente }}" style="flex:1;padding:12px 0;border-radius:10px;border:1px solid #1747A8;background:rgba(23,71,168,0.08);color:#1747A8;font-family:'Public Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer">Guardá el cliente</button>
+                <a href="#" onClick="{{ omitirCliente }}" style="font-size:14px;font-weight:600;color:#6b6459" style-hover="color:#1a1a1a">Omití</a>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ clienteGuardado }}" hint-placeholder-val="{{ false }}">
+            <div style="border-top:1px solid #f0e9dd;padding-top:18px;display:flex;align-items:center;gap:10px">
+              <div style="width:8px;height:8px;border-radius:999px;background:#1E7F4F"></div>
+              <div style="font-size:14px;color:#1a1a1a">Cliente guardado en tu lista.</div>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="border-top:1px solid #f0e9dd;padding:18px 22px 22px">
+          <button onClick="{{ nuevaVenta }}" style="width:100%;height:58px;border:none;border-radius:10px;background:#E73B33;color:#ffffff;font-family:'Sora',sans-serif;font-weight:700;font-size:18px;cursor:pointer" style-hover="background:#d02f27">Nueva venta</button>
+        </div>
+      </sc-if>
+    </aside>
+
+    <!-- Zona de productos -->
+    <section style="flex:none;padding:24px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:18px">
+
+      <!-- Buscador / scanner -->
+      <input type="text" placeholder="Buscá o escaneá un producto…" style="width:100%;padding:16px 18px;border:1px solid #d8cfc0;border-radius:10px;font-family:'Public Sans',sans-serif;font-size:17px;background:#ffffff;color:#1a1a1a;box-sizing:border-box" style-focus="border-color:#1747A8;outline:none">
+
+      <!-- Categorías -->
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button style="padding:12px 20px;border-radius:10px;border:1px solid #1747A8;background:rgba(23,71,168,0.08);color:#1747A8;font-family:'Public Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer">Todos</button>
+        <button style="padding:12px 20px;border-radius:10px;border:1px solid #d8cfc0;background:#ffffff;color:#1a1a1a;font-family:'Public Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer" style-hover="border-color:#1747A8;color:#1747A8">Bebidas</button>
+        <button style="padding:12px 20px;border-radius:10px;border:1px solid #d8cfc0;background:#ffffff;color:#1a1a1a;font-family:'Public Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer" style-hover="border-color:#1747A8;color:#1747A8">Comidas</button>
+        <button style="padding:12px 20px;border-radius:10px;border:1px solid #d8cfc0;background:#ffffff;color:#1a1a1a;font-family:'Public Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer" style-hover="border-color:#1747A8;color:#1747A8">Snacks</button>
+        <button style="padding:12px 20px;border-radius:10px;border:1px solid #d8cfc0;background:#ffffff;color:#1a1a1a;font-family:'Public Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer" style-hover="border-color:#1747A8;color:#1747A8">Otros</button>
+      </div>
+
+      <!-- Cuadrícula de productos (tocá para agregar) -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;align-content:start">
+        <button style="display:flex;flex-direction:column;gap:10px;background:#ffffff;border:1px solid transparent;border-radius:16px;padding:14px;text-align:left;cursor:pointer;font-family:'Public Sans',sans-serif;box-shadow:0 1px 2px rgba(26,26,26,0.04),0 6px 16px rgba(26,26,26,0.05)" style-hover="border-color:#1747A8">
+          <div style="width:100%;aspect-ratio:4/3;border-radius:12px;background:repeating-linear-gradient(45deg,#f3ede4,#f3ede4 6px,#e9e1d4 6px,#e9e1d4 12px)"></div>
+          <div style="font-size:15px;font-weight:600;color:#1a1a1a">Café molido 500 g</div>
+          <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:16px;color:#1a1a1a">₡4.500</div>
+        </button>
+        <button style="display:flex;flex-direction:column;gap:10px;background:#ffffff;border:1px solid transparent;border-radius:16px;padding:14px;text-align:left;cursor:pointer;font-family:'Public Sans',sans-serif;box-shadow:0 1px 2px rgba(26,26,26,0.04),0 6px 16px rgba(26,26,26,0.05)" style-hover="border-color:#1747A8">
+          <div style="width:100%;aspect-ratio:4/3;border-radius:12px;background:repeating-linear-gradient(45deg,#f3ede4,#f3ede4 6px,#e9e1d4 6px,#e9e1d4 12px)"></div>
+          <div style="font-size:15px;font-weight:600;color:#1a1a1a">Jugo natural 1 L</div>
+          <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:16px;color:#1a1a1a">₡1.800</div>
+        </button>
+        <button style="display:flex;flex-direction:column;gap:10px;background:#ffffff;border:1px solid transparent;border-radius:16px;padding:14px;text-align:left;cursor:pointer;font-family:'Public Sans',sans-serif;box-shadow:0 1px 2px rgba(26,26,26,0.04),0 6px 16px rgba(26,26,26,0.05)" style-hover="border-color:#1747A8">
+          <div style="width:100%;aspect-ratio:4/3;border-radius:12px;background:repeating-linear-gradient(45deg,#f3ede4,#f3ede4 6px,#e9e1d4 6px,#e9e1d4 12px)"></div>
+          <div style="font-size:15px;font-weight:600;color:#1a1a1a">Galletas artesanales</div>
+          <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:16px;color:#1a1a1a">₡2.100</div>
+        </button>
+        <button style="display:flex;flex-direction:column;gap:10px;background:#ffffff;border:1px solid transparent;border-radius:16px;padding:14px;text-align:left;cursor:pointer;font-family:'Public Sans',sans-serif;box-shadow:0 1px 2px rgba(26,26,26,0.04),0 6px 16px rgba(26,26,26,0.05)" style-hover="border-color:#1747A8">
+          <div style="width:100%;aspect-ratio:4/3;border-radius:12px;background:repeating-linear-gradient(45deg,#f3ede4,#f3ede4 6px,#e9e1d4 6px,#e9e1d4 12px)"></div>
+          <div style="font-size:15px;font-weight:600;color:#1a1a1a">Miel de abeja 250 ml</div>
+          <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:16px;color:#1a1a1a">₡3.200</div>
+        </button>
+        <button style="display:flex;flex-direction:column;gap:10px;background:#ffffff;border:1px solid transparent;border-radius:16px;padding:14px;text-align:left;cursor:pointer;font-family:'Public Sans',sans-serif;box-shadow:0 1px 2px rgba(26,26,26,0.04),0 6px 16px rgba(26,26,26,0.05)" style-hover="border-color:#1747A8">
+          <div style="width:100%;aspect-ratio:4/3;border-radius:12px;background:repeating-linear-gradient(45deg,#f3ede4,#f3ede4 6px,#e9e1d4 6px,#e9e1d4 12px)"></div>
+          <div style="font-size:15px;font-weight:600;color:#1a1a1a">Queso Turrialba 400 g</div>
+          <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:16px;color:#1a1a1a">₡3.900</div>
+        </button>
+        <button style="display:flex;flex-direction:column;gap:10px;background:#ffffff;border:1px solid transparent;border-radius:16px;padding:14px;text-align:left;cursor:pointer;font-family:'Public Sans',sans-serif;box-shadow:0 1px 2px rgba(26,26,26,0.04),0 6px 16px rgba(26,26,26,0.05)" style-hover="border-color:#1747A8">
+          <div style="width:100%;aspect-ratio:4/3;border-radius:12px;background:repeating-linear-gradient(45deg,#f3ede4,#f3ede4 6px,#e9e1d4 6px,#e9e1d4 12px)"></div>
+          <div style="font-size:15px;font-weight:600;color:#1a1a1a">Chorreador de madera</div>
+          <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:16px;color:#1a1a1a">₡12.900</div>
+        </button>
+      </div>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;carritoVacio&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Estados&quot;},&quot;mostrarAlertaConexion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Estados&quot;},&quot;mostrarErrorQR&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Estados&quot;}}">
+class Component extends DCLogic {
+  state = {
+    pantalla: 'cobro',
+    metodo: 'efectivo',
+    mostrarFormCliente: true,
+    clienteGuardado: false,
+    alertaConexionCerrada: false,
+    menuAbierto: false,
+    horaApertura: '8:02 a.m.',
+    pideFactura: false,
+    montoRecibido: '12.900',
+  };
+
+  TOTAL_VENTA = 12900;
+
+  componentDidMount() {
+    try {
+      const rawCaja = localStorage.getItem('hotclick_pos_caja');
+      if (!rawCaja) {
+        window.location.href = 'POS - Apertura de caja.dc.html';
+        return;
+      }
+      const caja = JSON.parse(rawCaja);
+      if (!caja.abierta) {
+        window.location.href = 'POS - Apertura de caja.dc.html';
+        return;
+      }
+      if (caja.horaApertura) {
+        const hora = new Date(caja.horaApertura).toLocaleTimeString('es-CR', { hour: 'numeric', minute: '2-digit' });
+        this.setState({ horaApertura: hora });
+      }
+    } catch (e) {}
+
+    // Recuperá una venta en curso por si se cerró la ventana de golpe.
+    try {
+      const rawVenta = localStorage.getItem('hotclick_pos_venta_actual');
+      if (rawVenta) {
+        const venta = JSON.parse(rawVenta);
+        this.setState(venta);
+      }
+    } catch (e) {}
+  }
+
+  guardarProgreso(extra) {
+    try {
+      const datos = {
+        pantalla: extra.pantalla ?? this.state.pantalla,
+        metodo: extra.metodo ?? this.state.metodo,
+        clienteGuardado: extra.clienteGuardado ?? this.state.clienteGuardado,
+        mostrarFormCliente: extra.mostrarFormCliente ?? this.state.mostrarFormCliente,
+      };
+      localStorage.setItem('hotclick_pos_venta_actual', JSON.stringify(datos));
+    } catch (e) {}
+  }
+
+  estiloMetodo(activo) {
+    return activo
+      ? "padding:12px 0;border-radius:10px;border:1px solid #1747A8;background:rgba(23,71,168,0.08);color:#1747A8;font-family:'Public Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer"
+      : "padding:12px 0;border-radius:10px;border:1px solid #d8cfc0;background:#ffffff;color:#1a1a1a;font-family:'Public Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer";
+  }
+
+  parseMonto(texto) {
+    const limpio = String(texto ?? '').replace(/[^0-9]/g, '');
+    return limpio ? parseInt(limpio, 10) : 0;
+  }
+
+  formatearMonto(n) {
+    return Math.abs(n).toLocaleString('es-CR');
+  }
+
+  renderVals() {
+    const vacio = this.props.carritoVacio ?? false;
+    const metodo = this.state.metodo;
+    const metodoNombre = metodo === 'efectivo' ? 'Efectivo' : (metodo === 'tarjeta' ? 'Tarjeta' : 'SINPE');
+
+    const montoRecibidoNum = this.parseMonto(this.state.montoRecibido);
+    const vuelto = montoRecibidoNum - this.TOTAL_VENTA;
+    const alcanza = vuelto >= 0;
+
+    return {
+      pideFactura: this.state.pideFactura,
+      alternarFactura: () => this.setState(s => ({ pideFactura: !s.pideFactura })),
+      estiloToggleFactura: this.state.pideFactura
+        ? "width:44px;height:26px;border-radius:999px;border:none;background:#1747A8;position:relative;cursor:pointer;flex:none"
+        : "width:44px;height:26px;border-radius:999px;border:1px solid #d8cfc0;background:#ffffff;position:relative;cursor:pointer;flex:none",
+      estiloToggleFacturaKnob: this.state.pideFactura
+        ? "position:absolute;top:2px;left:21px;width:20px;height:20px;border-radius:999px;background:#ffffff;display:block;transition:left 0.15s"
+        : "position:absolute;top:1px;left:1px;width:20px;height:20px;border-radius:999px;background:#8a8378;display:block;transition:left 0.15s",
+
+      esEfectivo: metodo === 'efectivo',
+      montoRecibidoTexto: this.state.montoRecibido,
+      actualizarMonto: (e) => {
+        const val = e && e.target ? e.target.value : '';
+        this.setState({ montoRecibido: val });
+      },
+      etiquetaVuelto: alcanza ? 'Vuelto' : 'Falta',
+      vueltoTexto: this.formatearMonto(vuelto),
+      colorFondoVuelto: alcanza ? '#e2f1e8' : '#fbe4e2',
+      colorTextoVuelto: alcanza ? '#1E7F4F' : '#a8291f',
+      mostrarVueltoComprobante: metodo === 'efectivo' && alcanza && vuelto > 0,
+
+      carritoVacio: vacio,
+      hayItems: !vacio,
+      horaApertura: this.state.horaApertura,
+
+      esCobro: this.state.pantalla === 'cobro',
+      esQR: this.state.pantalla === 'qr',
+      esCompletada: this.state.pantalla === 'completada',
+
+      metodoNombre,
+      textoBotonCobrar: metodo === 'efectivo' ? 'Cobrá ₡12.900' : 'Generá el código de pago',
+
+      estiloEfectivo: this.estiloMetodo(metodo === 'efectivo'),
+      estiloTarjeta: this.estiloMetodo(metodo === 'tarjeta'),
+      estiloSinpe: this.estiloMetodo(metodo === 'sinpe'),
+
+      elegirEfectivo: () => { this.setState({ metodo: 'efectivo', pantalla: 'cobro' }); this.guardarProgreso({ metodo: 'efectivo', pantalla: 'cobro' }); },
+      elegirTarjeta: () => { this.setState({ metodo: 'tarjeta' }); this.guardarProgreso({ metodo: 'tarjeta' }); },
+      elegirSinpe: () => { this.setState({ metodo: 'sinpe' }); this.guardarProgreso({ metodo: 'sinpe' }); },
+
+      cobrar: () => {
+        const destino = this.state.metodo === 'efectivo' ? 'completada' : 'qr';
+        this.setState({ pantalla: destino });
+        this.guardarProgreso({ pantalla: destino });
+      },
+      cancelarQR: () => { this.setState({ pantalla: 'cobro' }); this.guardarProgreso({ pantalla: 'cobro' }); },
+      confirmarPagoQR: () => { this.setState({ pantalla: 'completada' }); this.guardarProgreso({ pantalla: 'completada' }); },
+      mostrarErrorQR: this.props.mostrarErrorQR ?? false,
+      reintentarQR: () => {},
+
+      mostrarFormCliente: this.state.mostrarFormCliente && !this.state.clienteGuardado,
+      clienteGuardado: this.state.clienteGuardado,
+      guardarCliente: () => { this.setState({ clienteGuardado: true, mostrarFormCliente: false }); this.guardarProgreso({ clienteGuardado: true, mostrarFormCliente: false }); },
+      omitirCliente: () => { this.setState({ mostrarFormCliente: false }); this.guardarProgreso({ mostrarFormCliente: false }); },
+
+      nuevaVenta: () => {
+        const reset = { pantalla: 'cobro', metodo: 'efectivo', mostrarFormCliente: true, clienteGuardado: false, pideFactura: false, montoRecibido: '12.900' };
+        this.setState(reset);
+        this.guardarProgreso(reset);
+      },
+
+      mostrarAlertaConexion: (this.props.mostrarAlertaConexion ?? false) && !this.state.alertaConexionCerrada,
+      cerrarAlertaConexion: () => this.setState({ alertaConexionCerrada: true }),
+
+      menuAbierto: this.state.menuAbierto,
+      alternarMenu: () => this.setState(s => ({ menuAbierto: !s.menuAbierto })),
+    };
+  }
+}
+</script>
+</body>
+</html>

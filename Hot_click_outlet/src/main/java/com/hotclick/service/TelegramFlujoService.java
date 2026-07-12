@@ -2,9 +2,11 @@ package com.hotclick.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hotclick.dto.AccionPropuestaTelegram;
 import com.hotclick.dto.ProductoRequestDTO;
 import com.hotclick.dto.TelegramFlujoEstado;
 import com.hotclick.dto.VentaRequestDTO;
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
@@ -13,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -68,6 +71,8 @@ public class TelegramFlujoService {
     @Autowired private MiembroEmpresaRepository      miembroEmpresaRepository;
     @Autowired private VentaService                  ventaService;
     @Autowired private ProductoService               productoService;
+    @Autowired private PedidoService                 pedidoService;
+    @Autowired private StockService                  stockService;
     @Autowired private ProductoImagenService         productoImagenService;
     @Autowired private SupabaseStorageService        storageService;
     @Autowired private UsuarioService                usuarioService;
@@ -113,6 +118,7 @@ public class TelegramFlujoService {
         if (data.startsWith("vta:")) { callbackVenta(v, empresaId, data.substring(4));    return true; }
         if (data.startsWith("prd:")) { callbackProducto(v, empresaId, data.substring(4)); return true; }
         if (data.startsWith("cli:")) { callbackClientes(v, empresaId, data.substring(4)); return true; }
+        if (data.startsWith("acn:")) { callbackAccion(v, empresaId, data.substring(4));   return true; }
         return false;
     }
 
@@ -120,8 +126,11 @@ public class TelegramFlujoService {
     public void manejarTexto(TelegramVinculacion v, Long empresaId, String texto) {
         TelegramFlujoEstado e = estadoVigente(v);
         if (e == null) return;
-        if (FLUJO_VENTA.equals(e.getF()))    textoVenta(v, empresaId, e, texto);
-        else                                  textoProducto(v, empresaId, e, texto);
+        if (FLUJO_VENTA.equals(e.getF()))        textoVenta(v, empresaId, e, texto);
+        else if (FLUJO_PRODUCTO.equals(e.getF())) textoProducto(v, empresaId, e, texto);
+        else if (FLUJO_ACCION.equals(e.getF())) {
+            bot.enviarMensaje(v.getChatId(), "Tocá *Confirmar* o *Cancelar* arriba, o escribí /cancelar.");
+        }
     }
 
     /**
@@ -950,6 +959,154 @@ public class TelegramFlujoService {
         return sb.toString();
     }
 
+    // ── FLUJO ACCION (propuesta de mutación del chat de IA, propose→confirm→execute) ──
+
+    /**
+     * Registra una acción propuesta por el chat de IA como el borrador pendiente del
+     * chat (mismo slot único que venta/producto/ajuste) y la muestra con botones
+     * Confirmar/Cancelar. Nunca la ejecuta — eso solo pasa si el usuario confirma.
+     */
+    public void proponerAccion(TelegramVinculacion v, AccionPropuestaTelegram accion) {
+        TelegramFlujoEstado e = TelegramFlujoEstado.nuevaAccion(
+            ahora(), accion.tipo(), accion.entidadId(), accion.params(), accion.resumen());
+        guardar(v, e);
+        bot.enviarMensaje(v.getChatId(), accion.resumen(), List.of(
+            List.of(TelegramClienteBotService.boton("✅ Confirmar", "acn:ok"),
+                    TelegramClienteBotService.boton("❌ Cancelar", "acn:no"))));
+    }
+
+    private void callbackAccion(TelegramVinculacion v, Long empresaId, String sub) {
+        if ("no".equals(sub)) { cancelar(v); return; }
+        if ("ok".equals(sub)) { confirmarAccion(v, empresaId); }
+    }
+
+    private void confirmarAccion(TelegramVinculacion v, Long empresaId) {
+        Optional<TelegramFlujoEstado> opt = TelegramFlujoEstado.deserializar(v.getContexto(), objectMapper);
+        if (opt.isEmpty() || !FLUJO_ACCION.equals(opt.get().getF())) {
+            bot.enviarMensaje(v.getChatId(), "Esa propuesta ya no está vigente. Escribí /menu para empezar de nuevo.");
+            return;
+        }
+        TelegramFlujoEstado e = opt.get();
+        if (e.vencido(ahora())) {
+            limpiar(v);
+            bot.enviarMensaje(v.getChatId(), "Esa propuesta venció. Pedime de nuevo lo que necesitás.");
+            return;
+        }
+        // Defensa en profundidad: re-validar permiso al confirmar, no solo al proponer
+        // (el usuario pudo cambiar de rol o de empresa activa entre medio).
+        if (denegarSiNoGestiona(v, empresaId)) return;
+
+        try {
+            switch (e.getAcc()) {
+                case AccionPropuestaTelegram.PEDIDO_ESTADO   -> confirmarCambiarEstadoPedido(v, empresaId, e);
+                case AccionPropuestaTelegram.PEDIDO_GUIA     -> confirmarAsignarGuia(v, empresaId, e);
+                case AccionPropuestaTelegram.STOCK_AJUSTE    -> confirmarAjustarStock(v, empresaId, e);
+                case AccionPropuestaTelegram.PRODUCTO_OFERTA -> confirmarAplicarOferta(v, empresaId, e);
+                default -> {
+                    limpiar(v);
+                    bot.enviarMensaje(v.getChatId(), "No reconozco esa acción. Escribí /menu.");
+                }
+            }
+        } catch (RecursoNoEncontradoException ex) {
+            limpiar(v);
+            bot.enviarMensaje(v.getChatId(), "Ya no encuentro ese registro — puede que haya cambiado. Pedime de nuevo lo que necesitás.");
+        } catch (OptimisticLockingFailureException ex) {
+            // El borrador NO se limpia — mismo patrón de resiliencia que confirmarProducto:
+            // el usuario solo tiene que volver a tocar Confirmar para reintentar.
+            bot.enviarMensaje(v.getChatId(), "El registro cambió justo ahora. Tocá *Confirmar* de nuevo para reintentar, o *Cancelar*.");
+        } catch (Exception ex) {
+            log.error("[telegram-flujo] fallo confirmando acción en chat {} — {}", v.getChatId(), ex.getMessage());
+            bot.enviarMensaje(v.getChatId(), "No pude aplicar el cambio: " + esc(ex.getMessage()) + "\nReintentá o tocá *Cancelar*.");
+        }
+    }
+
+    private void confirmarCambiarEstadoPedido(TelegramVinculacion v, Long empresaId, TelegramFlujoEstado e) {
+        Pedido pedido = pedidoRepository.findById(e.getEid())
+            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
+        if (pedido.getEmpresa() == null || !empresaId.equals(pedido.getEmpresa().getId())) {
+            limpiar(v);
+            bot.enviarMensaje(v.getChatId(), "Ese pedido ya no pertenece a este negocio.");
+            return;
+        }
+        String nuevoEstado = (String) e.getPar().get("nuevoEstado");
+        String nota = (String) e.getPar().get("nota");
+        Pedido actualizado = self.cambiarEstadoPedidoTx(e.getEid(), nuevoEstado, nota);
+        limpiar(v);
+        bot.enviarMensaje(v.getChatId(), "✅ Pedido *" + esc(actualizado.getNumeroPedido())
+            + "* actualizado a *" + nuevoEstado + "*.");
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Pedido cambiarEstadoPedidoTx(Long pedidoId, String nuevoEstado, String nota) {
+        return pedidoService.cambiarEstado(pedidoId, nuevoEstado, nota);
+    }
+
+    private void confirmarAsignarGuia(TelegramVinculacion v, Long empresaId, TelegramFlujoEstado e) {
+        Pedido pedido = pedidoRepository.findById(e.getEid())
+            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
+        if (pedido.getEmpresa() == null || !empresaId.equals(pedido.getEmpresa().getId())) {
+            limpiar(v);
+            bot.enviarMensaje(v.getChatId(), "Ese pedido ya no pertenece a este negocio.");
+            return;
+        }
+        String numeroGuia = (String) e.getPar().get("numeroGuia");
+        Pedido actualizado = self.asignarGuiaTx(e.getEid(), numeroGuia);
+        limpiar(v);
+        bot.enviarMensaje(v.getChatId(), "✅ Guía *" + esc(numeroGuia) + "* asignada al pedido *"
+            + esc(actualizado.getNumeroPedido()) + "*. Se notificó al cliente por email.");
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Pedido asignarGuiaTx(Long pedidoId, String numeroGuia) {
+        return pedidoService.asignarGuia(pedidoId, numeroGuia);
+    }
+
+    private void confirmarAjustarStock(TelegramVinculacion v, Long empresaId, TelegramFlujoEstado e) {
+        List<Map<String, Object>> filas = jdbc.queryForList(
+            "SELECT nombre_producto FROM hot_click_producto_tb WHERE id_producto = ? AND fk_id_empresa = ?",
+            e.getEid(), empresaId);
+        if (filas.isEmpty()) {
+            limpiar(v);
+            bot.enviarMensaje(v.getChatId(), "Ese producto ya no pertenece a este negocio.");
+            return;
+        }
+        int cantidadReal = ((Number) e.getPar().get("cantidadReal")).intValue();
+        self.ajustarStockTx(e.getEid(), cantidadReal, v.getUsuario().getCorreo());
+        limpiar(v);
+        bot.enviarMensaje(v.getChatId(), "✅ Stock de *" + esc(String.valueOf(filas.get(0).get("nombre_producto")))
+            + "* ajustado a *" + cantidadReal + "* unidades.");
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void ajustarStockTx(Long productoId, int cantidadReal, String operadorCorreo) {
+        stockService.ajustarAExistencia(productoId, cantidadReal, "telegram-ia", operadorCorreo);
+    }
+
+    private void confirmarAplicarOferta(TelegramVinculacion v, Long empresaId, TelegramFlujoEstado e) {
+        List<Map<String, Object>> filas = jdbc.queryForList(
+            "SELECT nombre_producto FROM hot_click_producto_tb WHERE id_producto = ? AND fk_id_empresa = ?",
+            e.getEid(), empresaId);
+        if (filas.isEmpty()) {
+            limpiar(v);
+            bot.enviarMensaje(v.getChatId(), "Ese producto ya no pertenece a este negocio.");
+            return;
+        }
+        Map<String, Object> par = e.getPar();
+        boolean enOferta = Boolean.TRUE.equals(par.get("enOferta"));
+        Integer pct    = par.get("porcentajeDescuento") != null ? ((Number) par.get("porcentajeDescuento")).intValue() : null;
+        Integer precio = par.get("precioOferta") != null ? ((Number) par.get("precioOferta")).intValue() : null;
+        self.aplicarOfertaTx(e.getEid(), enOferta, pct, precio);
+        limpiar(v);
+        bot.enviarMensaje(v.getChatId(), enOferta
+            ? "✅ Oferta aplicada a *" + esc(String.valueOf(filas.get(0).get("nombre_producto"))) + "*."
+            : "✅ Oferta retirada de *" + esc(String.valueOf(filas.get(0).get("nombre_producto"))) + "*.");
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void aplicarOfertaTx(Long productoId, boolean enOferta, Integer porcentajeDescuento, Integer precioOferta) {
+        productoService.aplicarOferta(productoId, enOferta, porcentajeDescuento, precioOferta);
+    }
+
     // ── Helpers comunes ───────────────────────────────────────────────────────
 
     /** true si NO puede gestionar (y ya se le avisó). */
@@ -981,7 +1138,7 @@ public class TelegramFlujoService {
         }
         if (opt.get().vencido(ahora())) {
             limpiar(v);
-            bot.enviarMensaje(v.getChatId(), "Ese borrador venció (más de 24 horas). Escribí /menu para empezar de nuevo.");
+            bot.enviarMensaje(v.getChatId(), "Ese borrador venció. Escribí /menu para empezar de nuevo.");
             return null;
         }
         return opt.get();

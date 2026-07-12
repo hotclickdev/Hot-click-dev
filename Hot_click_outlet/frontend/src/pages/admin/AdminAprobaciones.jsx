@@ -24,8 +24,10 @@ export default function AdminAprobaciones() {
   const [confirm, setConfirm]         = useState(null) // { id, action: 'aprobar' | 'rechazar', nombre }
   const [productos, setProductos]         = useState([])
   const [loadingProductos, setLoadingProductos] = useState(true)
+  const [ofertas, setOfertas]             = useState([])
+  const [loadingOfertas, setLoadingOfertas] = useState(true)
 
-  useEffect(() => { cargar(); cargarProductos() }, [])
+  useEffect(() => { cargar(); cargarProductos(); cargarOfertas() }, [])
 
   async function cargarProductos() {
     try {
@@ -50,14 +52,48 @@ export default function AdminAprobaciones() {
     }
   }
 
-  async function rechazarProducto(id) {
+  async function rechazarProducto(id, comentario) {
     try {
-      await api.put(`/admin/solicitudes-aprobacion/productos/${id}/rechazar`)
+      await api.put(`/admin/solicitudes-aprobacion/productos/${id}/rechazar`, { comentario })
       toast({ message: 'Producto rechazado', type: 'success' })
       cargarProductos()
     } catch {
       toast({ message: 'Error al rechazar el producto', type: 'error' })
       throw new Error('rechazar-producto-failed')
+    }
+  }
+
+  async function cargarOfertas() {
+    try {
+      setLoadingOfertas(true)
+      const { data } = await api.get('/admin/solicitudes-aprobacion/ofertas')
+      setOfertas(Array.isArray(data) ? data : [])
+    } catch {
+      toast({ message: 'Error al cargar promociones pendientes', type: 'error' })
+    } finally {
+      setLoadingOfertas(false)
+    }
+  }
+
+  async function aprobarOferta(id) {
+    try {
+      await api.put(`/admin/solicitudes-aprobacion/ofertas/${id}/aprobar`)
+      toast({ message: 'Promoción aprobada y aplicada', type: 'success' })
+      cargarOfertas()
+    } catch {
+      toast({ message: 'Error al aprobar la promoción', type: 'error' })
+      throw new Error('aprobar-oferta-failed')
+    }
+  }
+
+  async function rechazarOferta(id, comentario) {
+    try {
+      await api.put(`/admin/solicitudes-aprobacion/ofertas/${id}/rechazar`, { comentario })
+      toast({ message: 'Promoción rechazada', type: 'success' })
+      cargarOfertas()
+    } catch {
+      toast({ message: 'Error al rechazar la promoción', type: 'error' })
+      throw new Error('rechazar-oferta-failed')
     }
   }
 
@@ -117,17 +153,18 @@ export default function AdminAprobaciones() {
         <div>
           <h1 className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>Solicitudes pendientes</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>
-            {tab === 'empresas'
-              ? 'Negocios nuevos esperando tu aprobación para activarse en la plataforma'
-              : 'Productos nuevos esperando tu aprobación para publicarse en el catálogo'}
+            {tab === 'empresas' && 'Negocios nuevos esperando tu aprobación para activarse en la plataforma'}
+            {tab === 'productos' && 'Productos nuevos esperando tu aprobación para publicarse en el catálogo'}
+            {tab === 'ofertas' && 'Promociones esperando tu aprobación para aplicarse'}
           </p>
         </div>
 
         {/* Tabs */}
         <div className="flex gap-2 border-b" style={{ borderColor: 'var(--hc-border)' }}>
           {[
-            { id: 'empresas',  label: 'Empresas',  count: stats.pendientes ?? 0 },
-            { id: 'productos', label: 'Productos',  count: productos.length },
+            { id: 'empresas',  label: 'Empresas',    count: stats.pendientes ?? 0 },
+            { id: 'productos', label: 'Productos',    count: productos.length },
+            { id: 'ofertas',   label: 'Promociones',  count: ofertas.length },
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               className="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors"
@@ -146,6 +183,13 @@ export default function AdminAprobaciones() {
             loading={loadingProductos}
             aprobar={aprobarProducto}
             rechazar={rechazarProducto}
+          />
+        ) : tab === 'ofertas' ? (
+          <OfertasPendientes
+            ofertas={ofertas}
+            loading={loadingOfertas}
+            aprobar={aprobarOferta}
+            rechazar={rechazarOferta}
           />
         ) : (
         <>
@@ -267,13 +311,15 @@ export default function AdminAprobaciones() {
 function ProductosPendientes({ productos, loading, aprobar, rechazar }) {
   const [saving, setSaving]   = useState(null)
   const [confirm, setConfirm] = useState(null) // { id, action, nombre }
+  const [comentario, setComentario] = useState('')
 
   async function ejecutar(id, action) {
     setSaving(`${id}_${action}`)
     try {
       if (action === 'aprobar') await aprobar(id)
-      else await rechazar(id)
+      else await rechazar(id, comentario)
       setConfirm(null)
+      setComentario('')
     } catch {
       // el toast de error ya lo mostró el padre; dejamos el confirm abierto para reintentar
     } finally {
@@ -322,6 +368,15 @@ function ProductosPendientes({ productos, loading, aprobar, rechazar }) {
                 <p className="text-xs font-semibold" style={{ color: 'var(--hc-text)' }}>
                   {confirm.action === 'aprobar' ? '¿Publicar producto?' : '¿Rechazar producto?'}
                 </p>
+                {confirm.action === 'rechazar' && (
+                  <textarea
+                    value={comentario} onChange={e => setComentario(e.target.value)}
+                    placeholder="Comentario para el emprendedor (qué ajustar)..."
+                    rows={2}
+                    className="w-full px-2 py-1.5 rounded-lg text-xs resize-none"
+                    style={{ border: '1px solid var(--hc-border)', backgroundColor: 'var(--hc-surface)', color: 'var(--hc-text)' }}
+                  />
+                )}
                 <div className="flex gap-1.5">
                   <button
                     onClick={() => ejecutar(p.id, confirm.action)}
@@ -332,7 +387,7 @@ function ProductosPendientes({ productos, loading, aprobar, rechazar }) {
                     {saving === null ? 'Sí, confirmar' : '…'}
                   </button>
                   <button
-                    onClick={() => setConfirm(null)}
+                    onClick={() => { setConfirm(null); setComentario('') }}
                     disabled={saving !== null}
                     className="px-2 py-1.5 rounded-lg text-xs disabled:opacity-50"
                     style={{ color: 'var(--hc-muted)', backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
@@ -352,7 +407,122 @@ function ProductosPendientes({ productos, loading, aprobar, rechazar }) {
                   Aprobar
                 </button>
                 <button
-                  onClick={() => setConfirm({ id: p.id, action: 'rechazar' })}
+                  onClick={() => { setConfirm({ id: p.id, action: 'rechazar' }); setComentario('') }}
+                  disabled={saving !== null}
+                  className="px-4 py-2 rounded-xl text-sm font-medium disabled:opacity-50 transition-opacity hover:opacity-80"
+                  style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: '#ef4444' }}
+                >
+                  Rechazar
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function OfertasPendientes({ ofertas, loading, aprobar, rechazar }) {
+  const [saving, setSaving]   = useState(null)
+  const [confirm, setConfirm] = useState(null) // { id, action }
+  const [comentario, setComentario] = useState('')
+
+  async function ejecutar(id, action) {
+    setSaving(`${id}_${action}`)
+    try {
+      if (action === 'aprobar') await aprobar(id)
+      else await rechazar(id, comentario)
+      setConfirm(null)
+      setComentario('')
+    } catch {
+      // el toast de error ya lo mostró el padre; dejamos el confirm abierto para reintentar
+    } finally {
+      setSaving(null)
+    }
+  }
+
+  if (loading) {
+    return <div className="py-12 text-center text-sm" style={{ color: 'var(--hc-muted)' }}>Cargando promociones…</div>
+  }
+  if (ofertas.length === 0) {
+    return (
+      <div className="py-12 text-center rounded-xl" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+        <div className="w-12 h-12 rounded-2xl mx-auto mb-3 flex items-center justify-center" style={{ backgroundColor: 'rgba(34,197,94,0.1)' }}>
+          <svg className="w-6 h-6" style={{ color: '#22c55e' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <p className="font-semibold" style={{ color: 'var(--hc-text)' }}>Sin pendientes</p>
+        <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>No hay promociones esperando aprobación.</p>
+      </div>
+    )
+  }
+
+  const fmt = n => new Intl.NumberFormat('es-CR').format(Math.round(n ?? 0))
+
+  return (
+    <div className="space-y-3">
+      {ofertas.map(o => (
+        <div key={o.id} className="rounded-xl p-4 flex items-center gap-4"
+          style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+          <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0" style={{ backgroundColor: 'rgba(255,255,255,0.04)' }}>
+            {o.imagenUrl && <img src={o.imagenUrl} alt={o.nombreProducto} className="w-full h-full object-cover" />}
+          </div>
+          <div className="flex-1 min-w-0 space-y-0.5">
+            <p className="font-semibold truncate" style={{ color: 'var(--hc-text)' }}>{o.nombreProducto ?? '—'}</p>
+            <div className="flex flex-wrap gap-x-4 text-xs" style={{ color: 'var(--hc-muted)' }}>
+              <span>₡{fmt(o.precioVenta)}</span>
+              {o.porcentajeDescuento && <span className="font-semibold" style={{ color: '#ef4444' }}>-{o.porcentajeDescuento}%</span>}
+              <span>{o.empresaNombre}</span>
+              {o.usuarioPide && <span>Por: {o.usuarioPide}</span>}
+            </div>
+          </div>
+          <div className="flex flex-col gap-2 shrink-0">
+            {confirm?.id === o.id ? (
+              <div className="rounded-xl p-3 space-y-2 text-center"
+                style={{ backgroundColor: 'var(--hc-surface-2)', border: `1px solid ${confirm.action === 'aprobar' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}` }}>
+                <p className="text-xs font-semibold" style={{ color: 'var(--hc-text)' }}>
+                  {confirm.action === 'aprobar' ? '¿Aplicar promoción?' : '¿Rechazar promoción?'}
+                </p>
+                {confirm.action === 'rechazar' && (
+                  <textarea
+                    value={comentario} onChange={e => setComentario(e.target.value)}
+                    placeholder="Comentario para el emprendedor (qué ajustar)..."
+                    rows={2}
+                    className="w-full px-2 py-1.5 rounded-lg text-xs resize-none"
+                    style={{ border: '1px solid var(--hc-border)', backgroundColor: 'var(--hc-surface)', color: 'var(--hc-text)' }}
+                  />
+                )}
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={() => ejecutar(o.id, confirm.action)}
+                    disabled={saving !== null}
+                    className="flex-1 px-2 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50"
+                    style={{ backgroundColor: confirm.action === 'aprobar' ? '#22c55e' : '#ef4444', color: '#fff' }}
+                  >
+                    {saving === null ? 'Sí, confirmar' : '…'}
+                  </button>
+                  <button
+                    onClick={() => { setConfirm(null); setComentario('') }}
+                    disabled={saving !== null}
+                    className="px-2 py-1.5 rounded-lg text-xs disabled:opacity-50"
+                    style={{ color: 'var(--hc-muted)', backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={() => setConfirm({ id: o.id, action: 'aprobar' })}
+                  disabled={saving !== null}
+                  className="px-4 py-2 rounded-xl text-sm font-medium disabled:opacity-50 transition-opacity hover:opacity-80"
+                  style={{ backgroundColor: '#22c55e', color: '#fff' }}
+                >
+                  Aprobar
+                </button>
+                <button
+                  onClick={() => { setConfirm({ id: o.id, action: 'rechazar' }); setComentario('') }}
                   disabled={saving !== null}
                   className="px-4 py-2 rounded-xl text-sm font-medium disabled:opacity-50 transition-opacity hover:opacity-80"
                   style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: '#ef4444' }}

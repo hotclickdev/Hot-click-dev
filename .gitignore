@@ -48,3 +48,11 @@ REPORTE_*.md
 repomix-output.txt
 loadtest.py
 reset_admin.py
+
+# security-tools/ (DeepTeam, NeMo Guardrails) — venvs y reportes locales, no código
+security-tools/**/.venv/
+security-tools/**/venv/
+security-tools/**/__pycache__/
+security-tools/**/reports/
+security-tools/**/.env
+!security-tools/**/.env.example

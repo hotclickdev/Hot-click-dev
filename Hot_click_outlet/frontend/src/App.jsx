@@ -20,6 +20,7 @@ import { useAbandonedCart } from '@/hooks/useAbandonedCart'
 import { useWishlistAlert } from '@/hooks/useWishlistAlert'
 import i18n from './i18n'
 import AdminLayout from '@/layouts/AdminLayout'
+import POSShell from '@/layouts/POSShell'
 import { useBranding } from '@/hooks/useBranding'
 import CookieBanner from '@/components/ui/CookieBanner'
 import { setAnalyticsConsent } from '@/utils/analytics'
@@ -50,8 +51,10 @@ const AcuerdoVendedoresPage   = lazy(() => import('@/pages/AcuerdoVendedoresPage
 const CookiesPage             = lazy(() => import('@/pages/CookiesPage'))
 
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'))
+const SistemaInicio  = lazy(() => import('@/pages/admin/SistemaInicio'))
 const AdminProducts = lazy(() => import('@/pages/admin/AdminProducts'))
 const AdminOrders = lazy(() => import('@/pages/admin/AdminOrders'))
+const SistemaVentasPedidos = lazy(() => import('@/pages/admin/SistemaVentasPedidos'))
 const AdminUsers = lazy(() => import('@/pages/admin/AdminUsers'))
 const AdminCategories = lazy(() => import('@/pages/admin/AdminCategories'))
 const AdminWarehouses = lazy(() => import('@/pages/admin/AdminWarehouses'))
@@ -61,6 +64,7 @@ const AdminFinanzas   = lazy(() => import('@/pages/admin/AdminFinanzas'))
 const AdminBilletera  = lazy(() => import('@/pages/admin/AdminBilletera'))
 const AdminReporteContador = lazy(() => import('@/pages/admin/AdminReporteContador'))
 const AdminReportes       = lazy(() => import('@/pages/admin/AdminReportes'))
+const SistemaReportes     = lazy(() => import('@/pages/admin/SistemaReportes'))
 const AdminPublicaciones  = lazy(() => import('@/pages/admin/AdminPublicaciones'))
 const AdminNuevoProducto  = lazy(() => import('@/pages/admin/AdminNuevoProducto'))
 const AdminCargaMasiva    = lazy(() => import('@/pages/admin/AdminCargaMasiva'))
@@ -95,6 +99,7 @@ const BlogPage                  = lazy(() => import('@/pages/BlogPage'))
 const BlogPostPage               = lazy(() => import('@/pages/BlogPostPage'))
 const EmprendimientosPage       = lazy(() => import('@/pages/EmprendimientosPage'))
 const AdminOfertas              = lazy(() => import('@/pages/admin/AdminOfertas'))
+const SistemaPromociones        = lazy(() => import('@/pages/admin/SistemaPromociones'))
 const AdminBlog                 = lazy(() => import('@/pages/admin/AdminBlog'))
 const AdminConvenios            = lazy(() => import('@/pages/admin/AdminConvenios'))
 const AdminPOS                  = lazy(() => import('@/pages/admin/pos/AdminPOS'))
@@ -116,6 +121,7 @@ const AdminHomepage             = lazy(() => import('@/pages/admin/AdminHomepage
 const AdminPlugins              = lazy(() => import('@/pages/admin/AdminPlugins'))
 const AdminInventario           = lazy(() => import('@/pages/admin/AdminInventario'))
 const AdminCopilot              = lazy(() => import('@/pages/admin/AdminCopilot'))
+const AdminAyuda                = lazy(() => import('@/pages/admin/AdminAyuda'))
 const AdminForecast             = lazy(() => import('@/pages/admin/AdminForecast'))
 const AdminExecutive            = lazy(() => import('@/pages/admin/AdminExecutive'))
 const AdminMultipais            = lazy(() => import('@/pages/admin/AdminMultipais'))
@@ -200,14 +206,58 @@ function ITOnlyGuard() {
   return <Outlet />
 }
 
+// El dueño de negocio (EMPRENDEDOR) ve el Inicio simplificado del "Sistema";
+// el resto de roles admin sigue con el dashboard actual sin cambios.
+function AdminHomeRoute() {
+  const userRole = useAuthStore((s) => s.userRole)
+  return userRole === 'EMPRENDEDOR' ? <SistemaInicio /> : <AdminDashboard />
+}
+
+// Mismo criterio: EMPRENDEDOR ve "Ventas y pedidos" con tabs (mockup Sistema
+// - Ventas.dc.html); el resto de roles admin sigue con AdminOrders sin cambios.
+function AdminPedidosRoute() {
+  const userRole = useAuthStore((s) => s.userRole)
+  return userRole === 'EMPRENDEDOR' ? <SistemaVentasPedidos /> : <AdminOrders />
+}
+
+// Mismo criterio: EMPRENDEDOR ve "Reportes" con la estructura Finanzas /
+// Análisis y recomendaciones / Alertas de productos (mockup Sistema -
+// Reportes.dc.html); el resto de roles admin sigue con AdminReportes sin cambios.
+function AdminReportesRoute() {
+  const userRole = useAuthStore((s) => s.userRole)
+  return userRole === 'EMPRENDEDOR' ? <SistemaReportes /> : <AdminReportes />
+}
+
+// Mismo criterio: EMPRENDEDOR ve "Promociones" con solicitud de aprobación
+// + estado de sus solicitudes; el resto de roles admin sigue con AdminOfertas
+// (que aplica la promo al instante) sin cambios.
+function AdminPromocionesRoute() {
+  const userRole = useAuthStore((s) => s.userRole)
+  return userRole === 'EMPRENDEDOR' ? <SistemaPromociones /> : <AdminOfertas />
+}
+
 const POS_ROLES = new Set(['CAJERO', 'GERENTE', 'SUPERVISOR'])
 
 function AdminShell() {
   const { token, userRole } = useAuthStore()
+  const { pathname } = useLocation()
   if (!isTokenAlive(token)) return <Navigate to="/login" replace />
   const isAdmin = ADMIN_ROLES.has(userRole)
   const isPOS   = POS_ROLES.has(userRole)
   if (!isAdmin && !isPOS) return <Navigate to="/" replace />
+
+  // La Caja/POS es una experiencia aparte del panel de Sistema: nunca se
+  // muestra dentro del sidebar/chrome de AdminLayout (ver ModeSelector).
+  if (pathname.startsWith('/admin/pos')) {
+    return (
+      <AdminErrorBoundary>
+        <POSShell>
+          <Outlet />
+        </POSShell>
+      </AdminErrorBoundary>
+    )
+  }
+
   return (
     <AdminErrorBoundary>
       <AdminLayout>
@@ -410,16 +460,19 @@ export default function App() {
               <Route path="/pago/exito"     element={<PaymentStatusPage />} />
               <Route path="/pago/cancelado" element={<PaymentStatusPage />} />
               <Route element={<AdminShell />}>
-                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin" element={<AdminHomeRoute />} />
                 <Route path="/admin/productos" element={<AdminProducts />} />
-                <Route path="/admin/pedidos" element={<AdminOrders />} />
+                <Route path="/admin/pedidos" element={<AdminPedidosRoute />} />
                 <Route path="/admin/bodegas" element={<AdminWarehouses />} />
                 <Route path="/admin/ventas" element={<AdminNewSale />} />
                 <Route path="/admin/clientes" element={<AdminClientes />} />
                 <Route path="/admin/finanzas" element={<AdminFinanzas />} />
                 <Route path="/admin/finanzas/reporte-contador" element={<AdminReporteContador />} />
                 <Route path="/admin/billetera" element={<AdminBilletera />} />
-                <Route path="/admin/reportes" element={<PlanGate feature="reportes" planRequerido="PYME"><AdminReportes /></PlanGate>} />
+                {/* AdminReportes/SistemaReportes manejan su propia vista previa
+                    cuando el plan no incluye 'reportes' (banner + tarjeta de
+                    upgrade) — PlanGate tapaba toda la pantalla antes. */}
+                <Route path="/admin/reportes" element={<AdminReportesRoute />} />
                 <Route path="/admin/nuevo-producto" element={<AdminNuevoProducto />} />
                 <Route path="/admin/productos/carga-masiva" element={<AdminCargaMasiva />} />
                 <Route path="/admin/productos/importar" element={<AdminImportar />} />
@@ -446,7 +499,6 @@ export default function App() {
                   <Route path="/admin/ai-control"   element={<AdminAiControl />} />
                   <Route path="/admin/facturas"     element={<AdminFacturas />} />
                   <Route path="/admin/config-fiscal" element={<AdminConfigFiscal />} />
-                  <Route path="/admin/billing/suscripcion" element={<AdminSuscripcion />} />
                   {/* <Route path="/admin/mesas"               element={<AdminMesas />} /> */}{/* futuro */}
                   <Route path="/admin/homepage"           element={<AdminHomepage />} />
                   <Route path="/admin/cupones"            element={<AdminCupones />} />
@@ -458,16 +510,18 @@ export default function App() {
                 </Route>
                 {/* ADMIN + EMPRENDEDOR (por-empresa) — algunas requieren plan PYME/NEGOCIO_PLUS */}
                 <Route path="/admin/billing/planes"      element={<AdminPlanes />} />
+                <Route path="/admin/billing/suscripcion" element={<AdminSuscripcion />} />
                 <Route path="/admin/offline/cola"        element={<AdminOfflineCola />} />
                 <Route path="/admin/gift-cards"          element={<AdminGiftCards />} />
                 <Route path="/admin/inventario"          element={<PlanGate feature="ai" planRequerido="PYME"><AdminInventario /></PlanGate>} />
                 {/* Copilot NO se bloquea por plan — el plan gratis tiene 10 créditos/mes
                     (V91) + flag 'copilot_emprendedor'; lo hace cumplir AiQuotaService. */}
                 <Route path="/admin/copilot"             element={<AdminCopilot />} />
+                <Route path="/admin/ayuda"               element={<AdminAyuda />} />
                 <Route path="/admin/forecast"            element={<PlanGate feature="ai" planRequerido="PYME"><AdminForecast /></PlanGate>} />
                 <Route path="/admin/executive"           element={<PlanGate feature="reportes" planRequerido="PYME"><AdminExecutive /></PlanGate>} />
                 <Route path="/admin/asignar-compra" element={<AdminAsignarProducto />} />
-                <Route path="/admin/ofertas"       element={<AdminOfertas />} />
+                <Route path="/admin/ofertas"       element={<AdminPromocionesRoute />} />
                 <Route path="/admin/blog"          element={<AdminBlog />} />
                 <Route path="/admin/pos"           element={<PlanGate feature="pos" planRequerido="PYME"><AdminPOS /></PlanGate>} />
                 <Route path="/admin/pos/caja"      element={<PlanGate feature="pos" planRequerido="PYME"><AdminPOSCaja /></PlanGate>} />

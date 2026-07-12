@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import com.hotclick.dto.AccionPropuestaTelegram;
 import com.hotclick.exception.IntegracionExternaException;
 import com.hotclick.model.AiMensaje;
 import com.hotclick.model.Empresa;
@@ -64,6 +65,10 @@ public class AiCopilotService {
     private static final int    MAX_RESPONSE_CHARS = 8_000;  // hard cap — stops runaway stream output loops
     private static final int    MAX_TOOL_ROUNDS    = 4;      // tope de idas-y-vueltas tool-calling — evita loops infinitos
     private static final long   TOOL_LOOP_BUDGET_MS = 40_000; // presupuesto total del loop — NVIDIA es intermitentemente lenta
+    private static final List<String> ESTADOS_PEDIDO_VALIDOS = List.of(
+        Constants.PEDIDO_PENDIENTE, Constants.PEDIDO_CONFIRMADO, Constants.PEDIDO_PAGADO,
+        Constants.PEDIDO_PREPARANDO, Constants.PEDIDO_ENVIADO, Constants.PEDIDO_ENTREGADO,
+        Constants.PEDIDO_CANCELADO, Constants.PEDIDO_COMPLETADO);
     private static final HttpClient HTTP = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(15))
         .build();
@@ -276,8 +281,35 @@ public class AiCopilotService {
 
     /** Variante con el nombre del usuario que escribe (Telegram) para personalizar el saludo/tono. */
     public String chatSync(Long empresaId, String userMessage, String nombreUsuario) {
+        ChatConAccionesResultado r = chatSyncInterno(empresaId, userMessage, nombreUsuario, false);
+        return r != null ? r.texto() : null;
+    }
+
+    /**
+     * Resultado de {@link #chatSyncConAcciones}: el texto de respuesta del modelo, y
+     * — solo si el usuario pidió una mutación soportada y es propietario/admin — una
+     * {@link AccionPropuestaTelegram} pendiente de confirmación explícita del usuario.
+     * Nunca viene ya ejecutada: el caller (TelegramFlujoService) es el único que la
+     * persiste y, tras el botón Confirmar, la ejecuta.
+     */
+    public record ChatConAccionesResultado(String texto, AccionPropuestaTelegram accionPropuesta) {}
+
+    /**
+     * Igual que {@link #chatSync}, pero cuando {@code puedeGestionar} es true expone
+     * además herramientas de mutación (proponer_*) que el modelo puede usar para
+     * proponer una acción — nunca para ejecutarla directamente (ver AccionPropuestaTelegram).
+     */
+    public ChatConAccionesResultado chatSyncConAcciones(Long empresaId, String userMessage,
+                                                         String nombreUsuario, boolean puedeGestionar) {
+        return chatSyncInterno(empresaId, userMessage, nombreUsuario, puedeGestionar);
+    }
+
+    private ChatConAccionesResultado chatSyncInterno(Long empresaId, String userMessage,
+                                                       String nombreUsuario, boolean puedeGestionar) {
         if (!aiQuotaService.verificarYReservar(empresaId)) {
-            return "Se agotó la cuota mensual de consultas con IA de tu plan. Podés seguir usando los botones del menú (/menu), que no consumen cuota.";
+            return new ChatConAccionesResultado(
+                "Se agotó la cuota mensual de consultas con IA de tu plan. Podés seguir usando los botones del menú (/menu), que no consumen cuota.",
+                null);
         }
 
         Empresa empresa = empresaRepository.findById(empresaId).orElse(null);
@@ -286,101 +318,26 @@ public class AiCopilotService {
         if (!isClaudeEnabled()) {
             String mock = "(modo desarrollo — configurá ANTHROPIC_API_KEY para respuestas reales)\n\nHola, soy tu copilot de HotClick. ¿En qué te ayudo con tu negocio?";
             saveMsg(empresa, "assistant", mock, 0);
-            return mock;
+            return new ChatConAccionesResultado(mock, null);
         }
 
         try {
             List<Map<String, Object>> messages = buildMessages(empresaId, userMessage);
-            String systemPrompt = buildSystemPromptConTools(empresaId, empresa, nombreUsuario);
-            List<Map<String, Object>> tools = buildTools(empresaId);
+            String systemPrompt = buildSystemPromptConTools(empresaId, empresa, nombreUsuario, puedeGestionar);
+            List<Map<String, Object>> tools = buildTools(empresaId, puedeGestionar);
 
-            int tokensInTotal = 0, tokensOutTotal = 0;
-            String texto = null;
-            // Presupuesto total: evita que varias rondas de tool-calling lentas
-            // seguidas dejen al usuario esperando mucho antes de recibir el fallback.
-            long deadline = System.currentTimeMillis() + TOOL_LOOP_BUDGET_MS;
+            ResultadoLoopClaude loop = ejecutarLoopClaude(empresaId, systemPrompt, messages, tools);
+            if (loop == null) return null; // fallo de proveedor — el caller decide su fallback
 
-            for (int ronda = 0; ronda < MAX_TOOL_ROUNDS; ronda++) {
-                if (System.currentTimeMillis() >= deadline) {
-                    log.warn("[AI-sync] empresaId={} se acabó el presupuesto de tiempo de Claude (ronda {})", empresaId, ronda);
-                    return null;
-                }
-
-                String requestBody = buildRequestBodyClaude(systemPrompt, messages, tools);
-
-                HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(CLAUDE_URL))
-                    // 25s y no 60s: en un chat nadie espera más, y el caller necesita
-                    // enterarse rápido del fallo para activar su fallback.
-                    .timeout(Duration.ofSeconds(25))
-                    .header("Content-Type", "application/json")
-                    .header("x-api-key", claudeApiKey)
-                    .header("anthropic-version", "2023-06-01")
-                    .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
-                    .build();
-
-                HttpResponse<String> response;
-                try {
-                    response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
-                } catch (HttpTimeoutException e) {
-                    if (System.currentTimeMillis() >= deadline) {
-                        log.warn("[AI-sync] empresaId={} timeout en ronda {} y sin presupuesto para reintentar", empresaId, ronda);
-                        return null;
-                    }
-                    log.warn("[AI-sync] empresaId={} timeout en ronda {} — reintentando una vez", empresaId, ronda);
-                    response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
-                }
-                if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                    log.error("[AI-sync] empresaId={} Claude respondió {} — {}", empresaId, response.statusCode(), response.body());
-                    return null;
-                }
-
-                JsonNode node    = objectMapper.readTree(response.body());
-                JsonNode content = node.path("content");
-                tokensInTotal  += node.path("usage").path("input_tokens").asInt(0);
-                tokensOutTotal += node.path("usage").path("output_tokens").asInt(0);
-
-                if ("tool_use".equals(node.path("stop_reason").asText(""))) {
-                    Map<String, Object> assistantMsg = new LinkedHashMap<>();
-                    assistantMsg.put("role", "assistant");
-                    assistantMsg.put("content", objectMapper.convertValue(content, Object.class));
-                    messages.add(assistantMsg);
-
-                    List<Map<String, Object>> resultados = new ArrayList<>();
-                    for (JsonNode block : content) {
-                        if (!"tool_use".equals(block.path("type").asText())) continue;
-                        String toolUseId = block.path("id").asText();
-                        String toolName  = block.path("name").asText();
-                        String resultado = ejecutarTool(empresaId, toolName, block.path("input"));
-                        Map<String, Object> tr = new LinkedHashMap<>();
-                        tr.put("type", "tool_result");
-                        tr.put("tool_use_id", toolUseId);
-                        tr.put("content", resultado);
-                        resultados.add(tr);
-                    }
-                    Map<String, Object> userMsg = new LinkedHashMap<>();
-                    userMsg.put("role", "user");
-                    userMsg.put("content", resultados);
-                    messages.add(userMsg);
-                    continue; // deja que el modelo use los resultados en la siguiente ronda
-                }
-
-                StringBuilder textoSb = new StringBuilder();
-                for (JsonNode block : content) {
-                    if ("text".equals(block.path("type").asText())) textoSb.append(block.path("text").asText(""));
-                }
-                texto = textoSb.toString();
-                break;
-            }
-
+            String texto = loop.texto();
             if (texto == null || texto.isBlank()) {
-                return "No pude generar una respuesta. Probá reformular la pregunta.";
+                texto = "No pude generar una respuesta. Probá reformular la pregunta.";
             }
             if (texto.length() > MAX_RESPONSE_CHARS) texto = texto.substring(0, MAX_RESPONSE_CHARS);
 
-            saveMsg(empresa, "assistant", texto, tokensOutTotal);
-            aiQuotaService.actualizarTokens(empresaId, tokensInTotal, tokensOutTotal);
-            return texto;
+            saveMsg(empresa, "assistant", texto, loop.tokensOut());
+            aiQuotaService.actualizarTokens(empresaId, loop.tokensIn(), loop.tokensOut());
+            return new ChatConAccionesResultado(texto, loop.accionPropuesta());
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -389,6 +346,102 @@ public class AiCopilotService {
             log.error("[AI-sync] empresaId={} fallo llamando a NVIDIA — {}", empresaId, e.getMessage());
             return null;
         }
+    }
+
+    private record ResultadoLoopClaude(String texto, int tokensIn, int tokensOut, AccionPropuestaTelegram accionPropuesta) {}
+
+    /**
+     * Loop compartido de tool-calling de Claude — usado por chatSync y chatSyncConAcciones.
+     * Retorna {@code null} cuando el proveedor falló (timeout agotado, HTTP no-2xx): el
+     * caller decide su propio fallback, igual que antes de este refactor.
+     */
+    private ResultadoLoopClaude ejecutarLoopClaude(Long empresaId, String systemPrompt,
+            List<Map<String, Object>> messages, List<Map<String, Object>> tools)
+            throws IOException, InterruptedException {
+        int tokensInTotal = 0, tokensOutTotal = 0;
+        String texto = null;
+        // Como máximo una propuesta de acción por turno, aunque el modelo dispare
+        // varias tools de propuesta en paralelo en la misma ronda — defensa en código,
+        // no solo instrucción del prompt.
+        AccionPropuestaTelegram[] accionHolder = new AccionPropuestaTelegram[1];
+        // Presupuesto total: evita que varias rondas de tool-calling lentas
+        // seguidas dejen al usuario esperando mucho antes de recibir el fallback.
+        long deadline = System.currentTimeMillis() + TOOL_LOOP_BUDGET_MS;
+
+        for (int ronda = 0; ronda < MAX_TOOL_ROUNDS; ronda++) {
+            if (System.currentTimeMillis() >= deadline) {
+                log.warn("[AI-sync] empresaId={} se acabó el presupuesto de tiempo de Claude (ronda {})", empresaId, ronda);
+                return null;
+            }
+
+            String requestBody = buildRequestBodyClaude(systemPrompt, messages, tools);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(CLAUDE_URL))
+                // 25s y no 60s: en un chat nadie espera más, y el caller necesita
+                // enterarse rápido del fallo para activar su fallback.
+                .timeout(Duration.ofSeconds(25))
+                .header("Content-Type", "application/json")
+                .header("x-api-key", claudeApiKey)
+                .header("anthropic-version", "2023-06-01")
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
+                .build();
+
+            HttpResponse<String> response;
+            try {
+                response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
+            } catch (HttpTimeoutException e) {
+                if (System.currentTimeMillis() >= deadline) {
+                    log.warn("[AI-sync] empresaId={} timeout en ronda {} y sin presupuesto para reintentar", empresaId, ronda);
+                    return null;
+                }
+                log.warn("[AI-sync] empresaId={} timeout en ronda {} — reintentando una vez", empresaId, ronda);
+                response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
+            }
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                log.error("[AI-sync] empresaId={} Claude respondió {} — {}", empresaId, response.statusCode(), response.body());
+                return null;
+            }
+
+            JsonNode node    = objectMapper.readTree(response.body());
+            JsonNode content = node.path("content");
+            tokensInTotal  += node.path("usage").path("input_tokens").asInt(0);
+            tokensOutTotal += node.path("usage").path("output_tokens").asInt(0);
+
+            if ("tool_use".equals(node.path("stop_reason").asText(""))) {
+                Map<String, Object> assistantMsg = new LinkedHashMap<>();
+                assistantMsg.put("role", "assistant");
+                assistantMsg.put("content", objectMapper.convertValue(content, Object.class));
+                messages.add(assistantMsg);
+
+                List<Map<String, Object>> resultados = new ArrayList<>();
+                for (JsonNode block : content) {
+                    if (!"tool_use".equals(block.path("type").asText())) continue;
+                    String toolUseId = block.path("id").asText();
+                    String toolName  = block.path("name").asText();
+                    String resultado = ejecutarTool(empresaId, toolName, block.path("input"), accionHolder);
+                    Map<String, Object> tr = new LinkedHashMap<>();
+                    tr.put("type", "tool_result");
+                    tr.put("tool_use_id", toolUseId);
+                    tr.put("content", resultado);
+                    resultados.add(tr);
+                }
+                Map<String, Object> userMsg = new LinkedHashMap<>();
+                userMsg.put("role", "user");
+                userMsg.put("content", resultados);
+                messages.add(userMsg);
+                continue; // deja que el modelo use los resultados en la siguiente ronda
+            }
+
+            StringBuilder textoSb = new StringBuilder();
+            for (JsonNode block : content) {
+                if ("text".equals(block.path("type").asText())) textoSb.append(block.path("text").asText(""));
+            }
+            texto = textoSb.toString();
+            break;
+        }
+
+        return new ResultadoLoopClaude(texto, tokensInTotal, tokensOutTotal, accionHolder[0]);
     }
 
     /**
@@ -938,7 +991,7 @@ public class AiCopilotService {
     // mismo formato de function-calling que OpenAI (ver memoria del proyecto).
     // chatStream no se toca: mismo comportamiento de siempre para el panel.
 
-    private String buildSystemPromptConTools(Long empresaId, Empresa empresa, String nombreUsuario) {
+    private String buildSystemPromptConTools(Long empresaId, Empresa empresa, String nombreUsuario, boolean puedeGestionar) {
         String nombreNegocio = empresa != null && empresa.getNombreComercial() != null && !empresa.getNombreComercial().isBlank()
             ? empresa.getNombreComercial()
             : (empresa != null && empresa.getNombreEmpresa() != null ? empresa.getNombreEmpresa() : "tu negocio");
@@ -946,6 +999,50 @@ public class AiCopilotService {
         String saludo = nombreUsuario != null && !nombreUsuario.isBlank()
             ? "Le hablás a " + nombreUsuario.trim() + ", dueño/a o encargado/a del negocio."
             : "";
+
+        String reglaAcciones = puedeGestionar
+            ? """
+              4. El chat NUNCA registra ventas ni da de alta productos — esas dos
+                 acciones se hacen siempre por botón:
+                   - Registrar una venta → botón 🛒 Nueva venta del menú.
+                   - Dar de alta un producto → botón ➕ Nuevo producto del menú.
+                 Eliminar o editar un producto (campos que no sean oferta/stock)
+                 → siempre panel de administración web, nunca por chat.
+
+                 Para estas otras cuatro acciones SÍ tenés herramientas —
+                 usalas en vez de solo explicar cómo hacerlo:
+                   - Cambiar el estado de un pedido → proponer_cambiar_estado_pedido
+                   - Asignar guía de envío a un pedido → proponer_asignar_guia
+                   - Ajustar el stock de un producto a una cantidad exacta → proponer_ajustar_stock
+                   - Aplicar o quitar una oferta/descuento a un producto → proponer_aplicar_oferta
+
+                 Ninguna de estas cuatro acciones queda aplicada al llamar la
+                 herramienta — el usuario todavía tiene que confirmar con un
+                 botón. Por eso, en la MISMA respuesta donde llamás una de estas
+                 herramientas, tu texto final debe ser una frase corta avisando
+                 que mandaste la confirmación (ej: "Te mandé la confirmación
+                 arriba, tocá el botón para aplicarlo"). Nunca digas "listo",
+                 "ya cambié" o "ya se aplicó" en esa respuesta, y nunca repitas
+                 el resumen del cambio en texto — ya se muestra con los botones.
+                 Nunca llamés más de una herramienta `proponer_*` en la misma
+                 respuesta: si el pedido del usuario implica varias acciones,
+                 proponé la primera y decile que confirme esa antes de seguir.
+              """
+            : """
+              4. El chat NUNCA registra ventas, ni elimina/edita/da de alta
+                 productos, ni modifica ningún dato — esas acciones se hacen
+                 siempre por otra vía:
+                   - Registrar una venta → botón 🛒 Nueva venta del menú.
+                   - Dar de alta un producto → botón ➕ Nuevo producto del menú.
+                   - Eliminar o editar un producto → panel de administración web.
+                   - Cambiar estado de un pedido, asignar guía, ajustar stock,
+                     o aplicar una oferta → solo el propietario o un
+                     administrador del negocio puede pedírmelo; avisale eso en
+                     una línea si lo pide.
+                 Ante cualquier pedido de estas acciones, respondé SOLO indicando
+                 la vía correcta, en una línea. Nunca llamés una herramienta de
+                 datos como respuesta a un pedido de acción.
+              """;
 
         return """
             Sos el Copilot de HOTCLICK, el asistente de negocio de "%s". Respondés en
@@ -972,18 +1069,17 @@ public class AiCopilotService {
             3. Si el usuario corrige tu respuesta anterior ("pero solo...", "no
                era eso", "solo quiero X"), respondé ÚNICAMENTE lo que pide ahora.
                No repitas ni un dato de tu respuesta previa.
-            4. El chat NUNCA registra ventas, ni elimina/edita/da de alta
-               productos, ni modifica ningún dato — esas acciones se hacen
-               siempre por otra vía:
-                 - Registrar una venta → botón 🛒 Nueva venta del menú.
-                 - Dar de alta un producto → botón ➕ Nuevo producto del menú.
-                 - Eliminar o editar un producto → panel de administración web.
-               Ante cualquier pedido de estas acciones, respondé SOLO indicando
-               la vía correcta, en una línea. Nunca llamés una herramienta de
-               datos como respuesta a un pedido de acción.
-            5. Por defecto sé breve: 2 a 4 líneas alcanza para la mayoría de
-               preguntas puntuales. Solo das una lista larga, tabla o desglose
-               completo si te piden explícitamente un resumen, reporte, o "todo".
+            %s
+            5. Por defecto sé MUY breve: 1 a 3 líneas (menos de 250 caracteres)
+               alcanza para la gran mayoría de preguntas puntuales — el usuario
+               tiene botones abajo del chat para pedir más si necesita. Si el
+               dato cabe en una sola cifra o frase corta, respondé solo eso, sin
+               contexto ni sugerencias que no se pidieron. Solo das una lista
+               larga, tabla o desglose completo si te piden explícitamente un
+               resumen, reporte, análisis o "todo".
+            6. No repitas en texto las opciones que ya están en los botones
+               (Inventario, Ventas de hoy, Nueva venta, Nuevo producto) salvo que
+               te pregunten explícitamente qué podés hacer.
 
             KPIs GENERALES (últimos 7 días, contexto tuyo — no los repitas salvo que pregunten):
             %s
@@ -991,10 +1087,10 @@ public class AiCopilotService {
             REGLAS:
             - Nunca inventés cifras: si no tenés el dato, usá la herramienta correspondiente
             - Respondés solo sobre este negocio; si la pregunta es ajena, redirigís amablemente
-            """.formatted(nombreNegocio, saludo, kpis);
+            """.formatted(nombreNegocio, saludo, reglaAcciones, kpis);
     }
 
-    private List<Map<String, Object>> buildTools(Long empresaId) {
+    private List<Map<String, Object>> buildTools(Long empresaId, boolean puedeGestionar) {
         List<Map<String, Object>> tools = new ArrayList<>();
         tools.add(toolDef("consultar_inventario",
             "Consulta el estado del catálogo: cuántos productos activos y unidades en stock hay, y cuáles productos tienen stock crítico (bajo el mínimo).",
@@ -1019,6 +1115,45 @@ public class AiCopilotService {
                         "description", "Período a consultar — por defecto 'mes' (mes actual)")),
                     "required", List.of())));
         }
+
+        // Tools de mutación (propose → confirm → execute): solo visibles para
+        // propietario/admin — un miembro sin ese rol nunca las ve en la lista,
+        // así que el modelo estructuralmente no puede llamarlas.
+        if (puedeGestionar) {
+            tools.add(toolDef("proponer_cambiar_estado_pedido",
+                "Llamala cuando el usuario pida explícitamente cambiar el estado de un pedido (ej: marcarlo como entregado, confirmado, cancelado). "
+                + "Nunca la llames solo para consultar el estado de un pedido — para eso usá consultar_ventas.",
+                Map.of("type", "object",
+                    "properties", Map.of(
+                        "numeroPedido", Map.of("type", "string", "description", "Número de pedido (ej: ORD-2026-00123) o su id numérico, tal como lo dio el usuario"),
+                        "nuevoEstado", Map.of("type", "string", "enum", ESTADOS_PEDIDO_VALIDOS, "description", "Nuevo estado del pedido"),
+                        "nota", Map.of("type", "string", "description", "Nota opcional para el cliente, si el usuario la mencionó")),
+                    "required", List.of("numeroPedido", "nuevoEstado"))));
+            tools.add(toolDef("proponer_asignar_guia",
+                "Llamala cuando el usuario pida explícitamente asignar o registrar un número de guía de envío a un pedido.",
+                Map.of("type", "object",
+                    "properties", Map.of(
+                        "numeroPedido", Map.of("type", "string", "description", "Número de pedido o su id numérico"),
+                        "numeroGuia", Map.of("type", "string", "description", "Número de guía de envío")),
+                    "required", List.of("numeroPedido", "numeroGuia"))));
+            tools.add(toolDef("proponer_ajustar_stock",
+                "Llamala cuando el usuario pida explícitamente ajustar o corregir el stock de un producto a una cantidad exacta (conteo físico). "
+                + "Nunca la llames solo para consultar el stock — para eso usá consultar_inventario.",
+                Map.of("type", "object",
+                    "properties", Map.of(
+                        "producto", Map.of("type", "string", "description", "Nombre o parte del nombre del producto"),
+                        "cantidadReal", Map.of("type", "integer", "minimum", 0, "description", "Cantidad real en existencia")),
+                    "required", List.of("producto", "cantidadReal"))));
+            tools.add(toolDef("proponer_aplicar_oferta",
+                "Llamala cuando el usuario pida explícitamente aplicar, cambiar o quitar una oferta/descuento de un producto.",
+                Map.of("type", "object",
+                    "properties", Map.of(
+                        "producto", Map.of("type", "string", "description", "Nombre o parte del nombre del producto"),
+                        "porcentajeDescuento", Map.of("type", "integer", "description", "Porcentaje de descuento (ej: 15). Usar este o precioOferta, no ambos"),
+                        "precioOferta", Map.of("type", "integer", "description", "Precio de oferta en colones. Usar este o porcentajeDescuento, no ambos"),
+                        "quitarOferta", Map.of("type", "boolean", "description", "true si el pedido es QUITAR la oferta existente")),
+                    "required", List.of("producto"))));
+        }
         return tools;
     }
 
@@ -1042,7 +1177,7 @@ public class AiCopilotService {
         return tool;
     }
 
-    private String ejecutarTool(Long empresaId, String nombre, JsonNode args) {
+    private String ejecutarTool(Long empresaId, String nombre, JsonNode args, AccionPropuestaTelegram[] accionHolder) {
         try {
             return switch (nombre) {
                 case "consultar_inventario" -> getInventarioData(empresaId);
@@ -1050,12 +1185,187 @@ public class AiCopilotService {
                 case "recomendaciones"      -> getRecomendacionesData(empresaId);
                 case "consultar_clientes"   -> getClientesData(empresaId);
                 case "consultar_finanzas"   -> getFinanzasData(empresaId, args);
+                case "proponer_cambiar_estado_pedido" -> proponerCambiarEstadoPedido(empresaId, args, accionHolder);
+                case "proponer_asignar_guia"          -> proponerAsignarGuia(empresaId, args, accionHolder);
+                case "proponer_ajustar_stock"         -> proponerAjustarStock(empresaId, args, accionHolder);
+                case "proponer_aplicar_oferta"        -> proponerAplicarOferta(empresaId, args, accionHolder);
                 default -> "Herramienta desconocida: " + nombre;
             };
         } catch (DataAccessException e) {
             log.warn("[AI-tool] empresaId={} tool={} datos no disponibles: {}", empresaId, nombre, e.getMessage());
             return "No se pudo obtener el dato en este momento.";
         }
+    }
+
+    // ── Tools de mutación: resuelven y arman la propuesta, nunca ejecutan ──────
+
+    private record PedidoCandidato(Long id, String numeroPedido, String estadoActual) {}
+    private record ProductoCandidato(Long id, String nombre) {}
+
+    private static final String MSG_PROPUESTA_OK =
+        "Propuesta generada. Decile al usuario en una frase corta que confirme con los botones — "
+        + "no repitas el resumen en texto ni digas que ya se aplicó.";
+    private static final String MSG_YA_HAY_PROPUESTA =
+        "Ya se generó una propuesta en este turno — no se generó una segunda. Seguí solo con la primera.";
+
+    private List<PedidoCandidato> buscarPedidos(Long empresaId, String query) {
+        String q = query.trim();
+        String sql = """
+            SELECT id_pedido, numero_pedido, estado_pedido
+            FROM hot_click_pedido_tb
+            WHERE fk_id_empresa = ? AND (numero_pedido ILIKE ? OR CAST(id_pedido AS TEXT) = ?)
+            ORDER BY fecha_pedido DESC LIMIT 6
+            """;
+        return jdbc.queryForList(sql, empresaId, "%" + q + "%", q).stream()
+            .map(f -> new PedidoCandidato(
+                ((Number) f.get("id_pedido")).longValue(),
+                (String) f.get("numero_pedido"),
+                (String) f.get("estado_pedido")))
+            .toList();
+    }
+
+    private List<ProductoCandidato> buscarProductos(Long empresaId, String query) {
+        String q = query.trim();
+        String sql = """
+            SELECT id_producto, nombre_producto
+            FROM hot_click_producto_tb
+            WHERE fk_id_empresa = ? AND fk_id_estado = 1 AND (nombre_producto ILIKE ? OR CAST(id_producto AS TEXT) = ?)
+            ORDER BY nombre_producto LIMIT 6
+            """;
+        return jdbc.queryForList(sql, empresaId, "%" + q + "%", q).stream()
+            .map(f -> new ProductoCandidato(
+                ((Number) f.get("id_producto")).longValue(),
+                (String) f.get("nombre_producto")))
+            .toList();
+    }
+
+    private String proponerCambiarEstadoPedido(Long empresaId, JsonNode args, AccionPropuestaTelegram[] holder) {
+        String numeroPedido = args.path("numeroPedido").asText("").trim();
+        String nuevoEstado  = args.path("nuevoEstado").asText("").trim().toUpperCase();
+        String nota         = args.hasNonNull("nota") ? args.get("nota").asText("").trim() : null;
+        if (nota != null && nota.length() > 500) nota = nota.substring(0, 500);
+
+        if (numeroPedido.isBlank()) return "Falta el número de pedido — pedile al usuario que lo indique.";
+        if (!ESTADOS_PEDIDO_VALIDOS.contains(nuevoEstado)) {
+            return "Estado inválido. Los estados válidos son: " + String.join(", ", ESTADOS_PEDIDO_VALIDOS) + ".";
+        }
+
+        List<PedidoCandidato> candidatos = buscarPedidos(empresaId, numeroPedido);
+        if (candidatos.isEmpty()) return "No encontré ningún pedido que coincida con \"" + numeroPedido + "\". Pedile al usuario el número exacto.";
+        if (candidatos.size() > 1) {
+            return "Encontré varios pedidos que coinciden: "
+                + candidatos.stream().map(PedidoCandidato::numeroPedido).collect(java.util.stream.Collectors.joining(", "))
+                + ". Pedile al usuario que precise cuál.";
+        }
+        if (holder[0] != null) return MSG_YA_HAY_PROPUESTA;
+
+        PedidoCandidato pedido = candidatos.get(0);
+        if (nuevoEstado.equals(pedido.estadoActual())) {
+            return "El pedido " + pedido.numeroPedido() + " ya está en estado " + nuevoEstado + ".";
+        }
+
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("nuevoEstado", nuevoEstado);
+        if (nota != null && !nota.isBlank()) params.put("nota", nota);
+
+        String resumen = String.format("Cambiar el pedido %s: %s → %s%s",
+            pedido.numeroPedido(), pedido.estadoActual(), nuevoEstado,
+            (nota != null && !nota.isBlank()) ? "\nNota: " + nota : "");
+
+        holder[0] = new AccionPropuestaTelegram(AccionPropuestaTelegram.PEDIDO_ESTADO, pedido.id(), params, resumen);
+        return MSG_PROPUESTA_OK;
+    }
+
+    private String proponerAsignarGuia(Long empresaId, JsonNode args, AccionPropuestaTelegram[] holder) {
+        String numeroPedido = args.path("numeroPedido").asText("").trim();
+        String numeroGuia   = args.path("numeroGuia").asText("").trim();
+        if (numeroPedido.isBlank() || numeroGuia.isBlank()) {
+            return "Faltan datos — pedile al usuario el número de pedido y el número de guía.";
+        }
+        if (numeroGuia.length() > 100) numeroGuia = numeroGuia.substring(0, 100);
+
+        List<PedidoCandidato> candidatos = buscarPedidos(empresaId, numeroPedido);
+        if (candidatos.isEmpty()) return "No encontré ningún pedido que coincida con \"" + numeroPedido + "\". Pedile al usuario el número exacto.";
+        if (candidatos.size() > 1) {
+            return "Encontré varios pedidos que coinciden: "
+                + candidatos.stream().map(PedidoCandidato::numeroPedido).collect(java.util.stream.Collectors.joining(", "))
+                + ". Pedile al usuario que precise cuál.";
+        }
+        if (holder[0] != null) return MSG_YA_HAY_PROPUESTA;
+
+        PedidoCandidato pedido = candidatos.get(0);
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("numeroGuia", numeroGuia);
+
+        String resumen = String.format("Asignar guía %s al pedido %s (pasa a ENVIADO, se notifica al cliente por email)",
+            numeroGuia, pedido.numeroPedido());
+
+        holder[0] = new AccionPropuestaTelegram(AccionPropuestaTelegram.PEDIDO_GUIA, pedido.id(), params, resumen);
+        return MSG_PROPUESTA_OK;
+    }
+
+    private String proponerAjustarStock(Long empresaId, JsonNode args, AccionPropuestaTelegram[] holder) {
+        String producto = args.path("producto").asText("").trim();
+        if (!args.hasNonNull("cantidadReal")) return "Falta la cantidad real de stock — pedile al usuario el número.";
+        int cantidadReal = args.path("cantidadReal").asInt(-1);
+        if (producto.isBlank() || cantidadReal < 0) {
+            return "Faltan datos válidos — pedile al usuario el producto y la cantidad exacta (no puede ser negativa).";
+        }
+
+        List<ProductoCandidato> candidatos = buscarProductos(empresaId, producto);
+        if (candidatos.isEmpty()) return "No encontré ningún producto activo que coincida con \"" + producto + "\". Pedile al usuario el nombre exacto.";
+        if (candidatos.size() > 1) {
+            return "Encontré varios productos que coinciden: "
+                + candidatos.stream().map(ProductoCandidato::nombre).collect(java.util.stream.Collectors.joining(", "))
+                + ". Pedile al usuario que precise cuál.";
+        }
+        if (holder[0] != null) return MSG_YA_HAY_PROPUESTA;
+
+        ProductoCandidato p = candidatos.get(0);
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("cantidadReal", cantidadReal);
+
+        String resumen = String.format("Ajustar el stock de %s a %d unidades (conteo físico)", p.nombre(), cantidadReal);
+
+        holder[0] = new AccionPropuestaTelegram(AccionPropuestaTelegram.STOCK_AJUSTE, p.id(), params, resumen);
+        return MSG_PROPUESTA_OK;
+    }
+
+    private String proponerAplicarOferta(Long empresaId, JsonNode args, AccionPropuestaTelegram[] holder) {
+        String producto = args.path("producto").asText("").trim();
+        boolean quitar = args.path("quitarOferta").asBoolean(false);
+        Integer pct    = args.hasNonNull("porcentajeDescuento") ? args.get("porcentajeDescuento").asInt() : null;
+        Integer precio = args.hasNonNull("precioOferta") ? args.get("precioOferta").asInt() : null;
+
+        if (producto.isBlank()) return "Falta el nombre del producto — pedile al usuario que lo indique.";
+        if (!quitar && pct == null && precio == null) {
+            return "Falta el porcentaje de descuento o el precio de oferta — pedile al usuario uno de los dos.";
+        }
+
+        List<ProductoCandidato> candidatos = buscarProductos(empresaId, producto);
+        if (candidatos.isEmpty()) return "No encontré ningún producto activo que coincida con \"" + producto + "\". Pedile al usuario el nombre exacto.";
+        if (candidatos.size() > 1) {
+            return "Encontré varios productos que coinciden: "
+                + candidatos.stream().map(ProductoCandidato::nombre).collect(java.util.stream.Collectors.joining(", "))
+                + ". Pedile al usuario que precise cuál.";
+        }
+        if (holder[0] != null) return MSG_YA_HAY_PROPUESTA;
+
+        ProductoCandidato p = candidatos.get(0);
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("enOferta", !quitar);
+        if (!quitar) {
+            if (pct != null) params.put("porcentajeDescuento", pct);
+            if (precio != null) params.put("precioOferta", precio);
+        }
+
+        String resumen = quitar
+            ? String.format("Quitar la oferta de %s", p.nombre())
+            : String.format("Aplicar oferta a %s (%s)", p.nombre(),
+                pct != null ? pct + "% de descuento" : "precio de oferta ₡" + precio);
+
+        holder[0] = new AccionPropuestaTelegram(AccionPropuestaTelegram.PRODUCTO_OFERTA, p.id(), params, resumen);
+        return MSG_PROPUESTA_OK;
     }
 
     private String getRecomendacionesData(Long empresaId) {

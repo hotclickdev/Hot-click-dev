@@ -1,0 +1,22 @@
+# Config mínima de NeMo Guardrails para el sidecar del Copilot de HOTCLICK.
+# Solo input rails en v1 (ver README de security-tools/guardrails para el porqué).
+#
+# El engine "openai" apunta a NVIDIA NIM aprovechando que su API es compatible
+# con OpenAI chat completions — evita sumar el paquete langchain-nvidia-ai-endpoints
+# solo para esto. Los valores reales de model/base_url/api_key los inyecta app.py
+# en tiempo de ejecución (ver load_rails_config() en app.py) para no depender de
+# que la interpolación de variables de entorno de nemoguardrails esté disponible
+# en la versión instalada.
+
+models:
+  - type: main
+    engine: openai
+    model: PLACEHOLDER_MODEL
+
+rails:
+  input:
+    flows:
+      - self check input
+      - block jailbreak keywords
+
+streaming: true

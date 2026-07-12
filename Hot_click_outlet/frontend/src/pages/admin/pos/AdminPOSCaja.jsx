@@ -187,9 +187,10 @@ export default function AdminPOSCaja() {
   return (
     <div className="max-w-xl mx-auto px-3 sm:px-6 py-5 space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>Cuadre de caja</h1>
+          <Link to="/admin/pos" className="text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>← Volver al POS</Link>
+          <h1 className="text-xl font-bold mt-1" style={{ color: 'var(--hc-text)' }}>Cuadre de caja</h1>
           <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
             Paso 3 de 3 — Cerrá el turno y contá el efectivo final
           </p>

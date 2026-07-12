@@ -11,22 +11,22 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { RetryBanner } from '@/components/ui/RetryBanner'
 import { useStickyState } from '@/hooks/useStickyState'
 
-const FILTERS = ['Todos', 'PENDIENTE', 'PAGADO', 'EN_PREPARACION', 'LISTO_RETIRO', 'ENVIADO', 'ENTREGADO', 'COMPLETADO', 'CANCELADO']
+export const FILTERS = ['Todos', 'PENDIENTE', 'PAGADO', 'EN_PREPARACION', 'LISTO_RETIRO', 'ENVIADO', 'ENTREGADO', 'COMPLETADO', 'CANCELADO']
 
 const ESTADO_STYLE = {
-  PENDIENTE:      { bg: 'rgba(212,177,6,0.15)',   text: '#d4b106', border: 'rgba(212,177,6,0.35)' },
-  PAGADO:         { bg: 'rgba(23,71,168,0.14)',  text: 'var(--hc-accent)', border: 'rgba(23,71,168,0.35)' },
-  EN_PREPARACION: { bg: 'rgba(245,158,11,0.14)',  text: '#f59e0b', border: 'rgba(245,158,11,0.35)' },
-  LISTO_RETIRO:   { bg: 'rgba(34,197,94,0.14)',   text: '#22c55e', border: 'rgba(34,197,94,0.35)' },
-  ENVIADO:        { bg: 'rgba(96,165,250,0.14)',  text: '#6490EA', border: 'rgba(96,165,250,0.35)' },
-  ENTREGADO:      { bg: 'rgba(74,222,128,0.14)',  text: '#4ade80', border: 'rgba(74,222,128,0.35)' },
-  COMPLETADO:     { bg: 'rgba(63,108,222,0.14)',  text: 'var(--hc-blue-400)', border: 'rgba(63,108,222,0.35)' },
-  CANCELADO:      { bg: 'rgba(248,113,113,0.14)', text: '#f87171', border: 'rgba(248,113,113,0.35)' },
+  PENDIENTE:      { bg: '#f7ead2',                text: '#8a5a00', border: 'rgba(138,90,0,0.3)' },
+  PAGADO:         { bg: 'rgba(23,71,168,0.14)',   text: 'var(--hc-accent)', border: 'rgba(23,71,168,0.35)' },
+  EN_PREPARACION: { bg: '#f7ead2',                text: '#8a5a00', border: 'rgba(138,90,0,0.3)' },
+  LISTO_RETIRO:   { bg: '#e2f1e8',                text: '#1E7F4F', border: 'rgba(30,127,79,0.35)' },
+  ENVIADO:        { bg: 'rgba(23,71,168,0.14)',   text: 'var(--hc-accent)', border: 'rgba(23,71,168,0.35)' },
+  ENTREGADO:      { bg: '#e2f1e8',                text: '#1E7F4F', border: 'rgba(30,127,79,0.35)' },
+  COMPLETADO:     { bg: 'rgba(23,71,168,0.14)',   text: 'var(--hc-accent)', border: 'rgba(23,71,168,0.35)' },
+  CANCELADO:      { bg: 'rgba(220,38,38,0.1)',    text: '#a8291f', border: 'rgba(220,38,38,0.3)' },
 }
 
-function EstadoBadge({ estado }) {
+export function EstadoBadge({ estado }) {
   const { t } = useTranslation()
-  const s = ESTADO_STYLE[estado] ?? { bg: 'rgba(142,142,154,0.14)', text: '#A7B0BC', border: 'rgba(142,142,154,0.35)' }
+  const s = ESTADO_STYLE[estado] ?? { bg: 'var(--hc-surface-2)', text: 'var(--hc-muted)', border: 'var(--hc-border)' }
   return (
     <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
       style={{ backgroundColor: s.bg, color: s.text, border: `1px solid ${s.border}` }}>
@@ -108,7 +108,7 @@ const METODOS_ENVIO = [
 ]
 const ESTADOS_INICIAL = ['PENDIENTE', 'PAGADO', 'EN_PREPARACION']
 
-function CrearPedidoModal({ onClose, onCreated }) {
+export function CrearPedidoModal({ onClose, onCreated }) {
   const { t } = useTranslation()
   const toast         = useToast()
   const [saving, setSaving]           = useState(false)
@@ -235,8 +235,8 @@ function CrearPedidoModal({ onClose, onCreated }) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b shrink-0"
           style={{ borderColor: 'var(--hc-border)' }}>
-          <h2 className="text-base font-bold text-[#e8e8ed]">{t('adminOrders.newOrderTitle')}</h2>
-          <button onClick={onClose} className="text-[#8e8e9a] hover:text-[#e8e8ed] transition-colors text-xl leading-none">✕</button>
+          <h2 className="text-base font-bold text-[var(--hc-text)]">{t('adminOrders.newOrderTitle')}</h2>
+          <button onClick={onClose} className="text-[var(--hc-muted)] hover:text-[var(--hc-text)] transition-colors text-xl leading-none">✕</button>
         </div>
 
         {loadingData ? (
@@ -248,16 +248,16 @@ function CrearPedidoModal({ onClose, onCreated }) {
 
             {/* Cliente */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">{t('adminOrders.clientLabel')}</label>
+              <label className="text-xs font-semibold text-[var(--hc-muted)] uppercase tracking-widest">{t('adminOrders.clientLabel')}</label>
               {selectedUser ? (
                 <div className="flex items-center gap-3 rounded-xl px-3 py-2.5"
                   style={{ backgroundColor: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 30%, transparent)' }}>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-[#e8e8ed]">{selectedUser.nombre}</p>
-                    <p className="text-xs text-[#8e8e9a]">{selectedUser.correo}</p>
+                    <p className="text-sm font-medium text-[var(--hc-text)]">{selectedUser.nombre}</p>
+                    <p className="text-xs text-[var(--hc-muted)]">{selectedUser.correo}</p>
                   </div>
                   <button onClick={() => { set('usuarioId', ''); setUserSearch(''); setShowUserDrop(true) }}
-                    className="text-xs text-[#8e8e9a] hover:text-[#f87171] transition-colors">✕</button>
+                    className="text-xs text-[var(--hc-muted)] hover:text-[#a8291f] transition-colors">✕</button>
                 </div>
               ) : (
                 <div className="relative">
@@ -267,7 +267,7 @@ function CrearPedidoModal({ onClose, onCreated }) {
                     onChange={e => { setUserSearch(e.target.value); setShowUserDrop(true) }}
                     onFocus={() => setShowUserDrop(true)}
                     placeholder={t('adminOrders.clientSearch')}
-                    className="w-full h-10 px-3 rounded-xl text-sm placeholder:text-[#8e8e9a]/50 focus:outline-none"
+                    className="w-full h-10 px-3 rounded-xl text-sm placeholder:text-[var(--hc-muted)] focus:outline-none"
                     style={inp}
                   />
                   {showUserDrop && filteredUsers.length > 0 && (
@@ -276,9 +276,9 @@ function CrearPedidoModal({ onClose, onCreated }) {
                       {filteredUsers.map(u => (
                         <button key={u.id}
                           onMouseDown={() => { set('usuarioId', u.id); setShowUserDrop(false); setUserSearch('') }}
-                          className="w-full text-left px-3 py-2.5 hover:bg-white/5 transition-colors">
-                          <p className="text-sm text-[#e8e8ed]">{u.nombre}</p>
-                          <p className="text-xs text-[#8e8e9a]">{u.correo}</p>
+                          className="w-full text-left px-3 py-2.5 hover:bg-[var(--hc-surface-2)] transition-colors">
+                          <p className="text-sm text-[var(--hc-text)]">{u.nombre}</p>
+                          <p className="text-xs text-[var(--hc-muted)]">{u.correo}</p>
                         </button>
                       ))}
                     </div>
@@ -289,7 +289,7 @@ function CrearPedidoModal({ onClose, onCreated }) {
 
             {/* Productos */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">{t('adminOrders.productsLabel')}</label>
+              <label className="text-xs font-semibold text-[var(--hc-muted)] uppercase tracking-widest">{t('adminOrders.productsLabel')}</label>
               <div className="relative" ref={prodRef}>
                 <input
                   type="text"
@@ -297,7 +297,7 @@ function CrearPedidoModal({ onClose, onCreated }) {
                   onChange={e => { setProdSearch(e.target.value); setShowProdDrop(true) }}
                   onFocus={() => setShowProdDrop(true)}
                   placeholder={t('adminOrders.searchProduct')}
-                  className="w-full h-10 px-3 rounded-xl text-sm placeholder:text-[#8e8e9a]/50 focus:outline-none"
+                  className="w-full h-10 px-3 rounded-xl text-sm placeholder:text-[var(--hc-muted)] focus:outline-none"
                   style={inp}
                 />
                 {showProdDrop && filteredProds.length > 0 && (
@@ -308,11 +308,11 @@ function CrearPedidoModal({ onClose, onCreated }) {
                       return (
                         <button key={id}
                           onMouseDown={() => addProduct(p)}
-                          className="w-full text-left flex items-center gap-3 px-3 py-2 hover:bg-white/5 transition-colors">
+                          className="w-full text-left flex items-center gap-3 px-3 py-2 hover:bg-[var(--hc-surface-2)] transition-colors">
                           {p.imagenUrl && <img src={p.imagenUrl} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0" />}
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm text-[#e8e8ed] truncate">{p.nombre ?? p.nombreProducto}</p>
-                            <p className="text-xs text-[#8e8e9a]">{formatPrice(p.precio ?? p.precioVenta ?? 0)}</p>
+                            <p className="text-sm text-[var(--hc-text)] truncate">{p.nombre ?? p.nombreProducto}</p>
+                            <p className="text-xs text-[var(--hc-muted)]">{formatPrice(p.precio ?? p.precioVenta ?? 0)}</p>
                           </div>
                         </button>
                       )
@@ -328,13 +328,13 @@ function CrearPedidoModal({ onClose, onCreated }) {
                     <div key={item.productoId} className="rounded-xl px-3 py-2.5 space-y-2"
                       style={{ backgroundColor: 'var(--hc-glass-bg)', border: '1px solid var(--hc-border)' }}>
                       <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm text-[#e8e8ed] flex-1 leading-tight">{item.nombre}</p>
+                        <p className="text-sm text-[var(--hc-text)] flex-1 leading-tight">{item.nombre}</p>
                         <button onClick={() => removeItem(item.productoId)}
-                          className="text-[#f87171] text-xs shrink-0 hover:opacity-80">✕</button>
+                          className="text-[#a8291f] text-xs shrink-0 hover:opacity-80">✕</button>
                       </div>
                       <div className="flex gap-2">
                         <div className="flex items-center gap-1">
-                          <span className="text-xs text-[#8e8e9a]">{t('adminOrders.quantity')}</span>
+                          <span className="text-xs text-[var(--hc-muted)]">{t('adminOrders.quantity')}</span>
                           <input type="number" min={1}
                             value={item.cantidad}
                             onChange={e => updateItem(item.productoId, 'cantidad', e.target.value)}
@@ -343,7 +343,7 @@ function CrearPedidoModal({ onClose, onCreated }) {
                           />
                         </div>
                         <div className="flex items-center gap-1 flex-1">
-                          <span className="text-xs text-[#8e8e9a]">₡</span>
+                          <span className="text-xs text-[var(--hc-muted)]">₡</span>
                           <input type="number" min={0}
                             value={item.precioUnitario}
                             onChange={e => updateItem(item.productoId, 'precioUnitario', e.target.value)}
@@ -351,7 +351,7 @@ function CrearPedidoModal({ onClose, onCreated }) {
                             style={inp}
                           />
                         </div>
-                        <span className="text-xs text-[#8e8e9a] self-center shrink-0">
+                        <span className="text-xs text-[var(--hc-muted)] self-center shrink-0">
                           = {formatPrice((Number.parseInt(item.precioUnitario) || 0) * (Number.parseInt(item.cantidad) || 0))}
                         </span>
                       </div>
@@ -364,14 +364,14 @@ function CrearPedidoModal({ onClose, onCreated }) {
             {/* Pago y envío */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">{t('adminOrders.paymentMethod')}</label>
+                <label className="text-xs font-semibold text-[var(--hc-muted)] uppercase tracking-widest">{t('adminOrders.paymentMethod')}</label>
                 <select value={form.metodoPago} onChange={e => set('metodoPago', e.target.value)}
                   className="w-full h-10 px-2 rounded-xl text-sm focus:outline-none" style={inp}>
                   {METODOS_PAGO.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">{t('adminOrders.initialStatus')}</label>
+                <label className="text-xs font-semibold text-[var(--hc-muted)] uppercase tracking-widest">{t('adminOrders.initialStatus')}</label>
                 <select value={form.estadoPedido} onChange={e => set('estadoPedido', e.target.value)}
                   className="w-full h-10 px-2 rounded-xl text-sm focus:outline-none" style={inp}>
                   {ESTADOS_INICIAL.map(s => <option key={s} value={s}>{s}</option>)}
@@ -380,7 +380,7 @@ function CrearPedidoModal({ onClose, onCreated }) {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">{t('adminOrders.shippingMethod')}</label>
+              <label className="text-xs font-semibold text-[var(--hc-muted)] uppercase tracking-widest">{t('adminOrders.shippingMethod')}</label>
               <div className="flex gap-2">
                 {METODOS_ENVIO.map(m => (
                   <button key={m.value}
@@ -400,9 +400,9 @@ function CrearPedidoModal({ onClose, onCreated }) {
             {/* Costo de envío */}
             {form.metodoEnvio === 'ENVIO_A_DOMICILIO' && (
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">{t('adminOrders.shippingCostLabel')}</label>
+                <label className="text-xs font-semibold text-[var(--hc-muted)] uppercase tracking-widest">{t('adminOrders.shippingCostLabel')}</label>
                 <div className="flex items-center gap-2">
-                  <span className="text-[#8e8e9a]">₡</span>
+                  <span className="text-[var(--hc-muted)]">₡</span>
                   <input
                     type="number" min={0} step={500}
                     value={form.costoEnvio}
@@ -417,7 +417,7 @@ function CrearPedidoModal({ onClose, onCreated }) {
 
             {/* Notas */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest">{t('adminOrders.orderNotes')}</label>
+              <label className="text-xs font-semibold text-[var(--hc-muted)] uppercase tracking-widest">{t('adminOrders.orderNotes')}</label>
               <textarea
                 value={form.notas}
                 onChange={e => set('notas', e.target.value)}
@@ -431,18 +431,18 @@ function CrearPedidoModal({ onClose, onCreated }) {
             {/* Resumen */}
             {form.items.length > 0 && (
               <div className="rounded-xl px-4 py-3 space-y-1.5" style={{ backgroundColor: 'var(--hc-glass-bg)', border: '1px solid var(--hc-border)' }}>
-                <p className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-widest mb-2">{t('adminOrders.subtotal')}</p>
-                <div className="flex justify-between text-sm text-[#8e8e9a]">
+                <p className="text-xs font-semibold text-[var(--hc-muted)] uppercase tracking-widest mb-2">{t('adminOrders.subtotal')}</p>
+                <div className="flex justify-between text-sm text-[var(--hc-muted)]">
                   <span>{t('adminOrders.productsLabel')}</span>
                   <span>{formatPrice(subtotal)}</span>
                 </div>
                 {costoEnvioNum > 0 && (
-                  <div className="flex justify-between text-sm text-[#8e8e9a]">
+                  <div className="flex justify-between text-sm text-[var(--hc-muted)]">
                     <span>{t('adminOrders.shippingCost')}</span>
                     <span>{formatPrice(costoEnvioNum)}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-base font-bold text-[#e8e8ed] pt-1 border-t" style={{ borderColor: 'var(--hc-border)' }}>
+                <div className="flex justify-between text-base font-bold text-[var(--hc-text)] pt-1 border-t" style={{ borderColor: 'var(--hc-border)' }}>
                   <span>{t('adminOrders.total')}</span>
                   <span>{formatPrice(total)}</span>
                 </div>
@@ -469,7 +469,7 @@ function CrearPedidoModal({ onClose, onCreated }) {
   )
 }
 
-function OrderCard({ order, onUpdate, onDelete }) {
+export function OrderCard({ order, onUpdate, onDelete }) {
   const { t } = useTranslation()
   const toast = useToast()
   const [open, setOpen]             = useState(false)
@@ -546,27 +546,27 @@ function OrderCard({ order, onUpdate, onDelete }) {
       {/* Fila resumen — siempre visible */}
       <button
         onClick={() => setOpen(v => !v)}
-        className="w-full flex flex-wrap items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-white/3"
+        className="w-full flex flex-wrap items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--hc-surface-2)]"
       >
         {/* Número + fecha */}
         <div className="min-w-[110px]">
-          <p className="text-xs font-mono text-[#8e8e9a]">#{order.id}</p>
-          <p className="text-[11px] text-[#8e8e9a]/60 mt-0.5">
+          <p className="text-xs font-mono text-[var(--hc-muted)]">#{order.id}</p>
+          <p className="text-[11px] text-[var(--hc-muted)] mt-0.5">
             {order.fechaCreacion ? formatDate(order.fechaCreacion) : '—'}
           </p>
         </div>
 
         {/* Cliente */}
         <div className="flex-1 min-w-[140px]">
-          <p className="text-sm font-medium text-[#e8e8ed] truncate" title={order.nombreCliente ?? ''}>
+          <p className="text-sm font-medium text-[var(--hc-text)] truncate" title={order.nombreCliente ?? ''}>
             {order.nombreCliente ?? '—'}
           </p>
-          <p className="text-[11px] text-[#8e8e9a] truncate" title={order.clienteCorreo ?? ''}>{order.clienteCorreo ?? ''}</p>
+          <p className="text-[11px] text-[var(--hc-muted)] truncate" title={order.clienteCorreo ?? ''}>{order.clienteCorreo ?? ''}</p>
         </div>
 
         {/* Tipo entrega + método de pago */}
         <div className="flex items-center gap-1.5 shrink-0">
-          <span className="text-xs text-[#8e8e9a]">
+          <span className="text-xs text-[var(--hc-muted)]">
             {esRetiro ? t('adminOrders.pickupBadge') : t('adminOrders.deliveryBadge')}
           </span>
           {order.metodoPago && (
@@ -578,7 +578,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
         </div>
 
         {/* Total */}
-        <span className="text-sm font-bold text-[#e8e8ed] min-w-[80px] text-right">
+        <span className="text-sm font-bold text-[var(--hc-text)] min-w-[80px] text-right">
           {formatPrice(order.total ?? 0)}
         </span>
 
@@ -608,15 +608,15 @@ function OrderCard({ order, onUpdate, onDelete }) {
               />
               {pendingEstado && pendingEstado !== estado && (
                 <>
-                  <p className="text-[11px] text-[#8e8e9a] text-center -mt-1">
-                    {estado} → <span className="text-[#4f7cff] font-semibold">{pendingEstado}</span>
+                  <p className="text-[11px] text-[var(--hc-muted)] text-center -mt-1">
+                    {estado} → <span className="text-[var(--hc-accent)] font-semibold">{pendingEstado}</span>
                   </p>
                   <textarea
                     value={nota}
                     onChange={e => setNota(e.target.value)}
                     rows={2}
                     placeholder={t('adminOrders.notaPlaceholder')}
-                    className="w-full mt-2 px-3 py-2 rounded-xl text-sm resize-none focus:outline-none placeholder:text-[#8e8e9a]/50"
+                    className="w-full mt-2 px-3 py-2 rounded-xl text-sm resize-none focus:outline-none placeholder:text-[var(--hc-muted)]"
                     style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
                   />
                 </>
@@ -627,24 +627,24 @@ function OrderCard({ order, onUpdate, onDelete }) {
           {/* Formulario envío si el pending es ENVIADO en flujo domicilio */}
           {needsEnvioForm && (
             <div className="space-y-2 rounded-xl p-3" style={{ backgroundColor: 'var(--hc-glass-bg)', border: '1px solid var(--hc-border)' }}>
-              <p className="text-xs font-semibold text-[#e8e8ed]">{t('adminOrders.envioSection')}</p>
+              <p className="text-xs font-semibold text-[var(--hc-text)]">{t('adminOrders.envioSection')}</p>
               <input
                 type="text"
                 value={guia}
                 onChange={e => setGuia(e.target.value)}
                 placeholder={t('adminOrders.guiaInputPh')}
-                className="w-full h-10 px-3 rounded-xl text-sm text-[#e8e8ed] placeholder:text-[#8e8e9a]/50 focus:outline-none font-mono"
+                className="w-full h-10 px-3 rounded-xl text-sm text-[var(--hc-text)] placeholder:text-[var(--hc-muted)] focus:outline-none font-mono"
                 style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
               />
               <div className="flex gap-2 items-center">
-                <span className="text-[#8e8e9a] text-sm shrink-0">₡</span>
+                <span className="text-[var(--hc-muted)] text-sm shrink-0">₡</span>
                 <input
                   type="number"
                   value={costo}
                   onChange={e => setCosto(e.target.value)}
                   placeholder={t('adminOrders.costInputPh')}
                   min={4000} max={20000} step={500}
-                  className="flex-1 h-10 px-3 rounded-xl text-sm text-[#e8e8ed] placeholder:text-[#8e8e9a]/50 focus:outline-none"
+                  className="flex-1 h-10 px-3 rounded-xl text-sm text-[var(--hc-text)] placeholder:text-[var(--hc-muted)] focus:outline-none"
                   style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
                 />
               </div>
@@ -676,7 +676,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
           {/* Productos con imagen */}
           {items.length > 0 && (
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-[#8e8e9a] mb-2">{t('adminOrders.productsSection')}</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-[var(--hc-muted)] mb-2">{t('adminOrders.productsSection')}</p>
               <div className="space-y-2">
                 {items.map((item, i) => (
                   <div key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5"
@@ -689,10 +689,10 @@ function OrderCard({ order, onUpdate, onDelete }) {
                       }
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-[#e8e8ed] truncate">{item.nombreProducto ?? '—'}</p>
-                      <p className="text-xs text-[#8e8e9a]">×{item.cantidad} · {formatPrice(item.precioUnitario ?? 0)} c/u</p>
+                      <p className="text-sm text-[var(--hc-text)] truncate">{item.nombreProducto ?? '—'}</p>
+                      <p className="text-xs text-[var(--hc-muted)]">×{item.cantidad} · {formatPrice(item.precioUnitario ?? 0)} c/u</p>
                     </div>
-                    <span className="text-sm font-medium text-[#e8e8ed] shrink-0">
+                    <span className="text-sm font-medium text-[var(--hc-text)] shrink-0">
                       {formatPrice((item.precioUnitario ?? 0) * item.cantidad)}
                     </span>
                   </div>
@@ -742,10 +742,10 @@ function OrderCard({ order, onUpdate, onDelete }) {
               )
             })()}
             {order.costoEnvio > 0 && (
-              <span className="flex items-center text-xs text-[#8e8e9a] px-2">{t('adminOrders.shippingDisplay', { amount: formatPrice(order.costoEnvio) })}</span>
+              <span className="flex items-center text-xs text-[var(--hc-muted)] px-2">{t('adminOrders.shippingDisplay', { amount: formatPrice(order.costoEnvio) })}</span>
             )}
             {order.notas && (
-              <span className="flex items-center text-xs text-[#8e8e9a] px-2">💬 {order.notas}</span>
+              <span className="flex items-center text-xs text-[var(--hc-muted)] px-2">💬 {order.notas}</span>
             )}
           </div>
 
@@ -753,30 +753,30 @@ function OrderCard({ order, onUpdate, onDelete }) {
           {order.numeroGuia && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs"
               style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)' }}>
-              <span className="text-green-400">{t('adminOrders.guiaSection')}</span>
+              <span className="text-[#1E7F4F]">{t('adminOrders.guiaSection')}</span>
               <a href={`https://rastreo.correos.go.cr/?codigo=${order.numeroGuia}`}
                 target="_blank" rel="noopener noreferrer"
-                className="font-mono font-bold text-green-300 hover:underline flex-1">
+                className="font-mono font-bold hover:underline flex-1" style={{ color: '#1E7F4F' }}>
                 {order.numeroGuia}
               </a>
             </div>
           )}
 
           {estado === 'ENTREGADO' && (
-            <p className="text-center text-sm text-green-400 py-1">{t('adminOrders.orderDelivered')}</p>
+            <p className="text-center text-sm text-[#1E7F4F] py-1">{t('adminOrders.orderDelivered')}</p>
           )}
           {estado === 'COMPLETADO' && (
-            <p className="text-center text-sm py-1" style={{ color: 'var(--hc-blue-400)' }}>{t('adminOrders.orderCompleted')}</p>
+            <p className="text-center text-sm py-1" style={{ color: 'var(--hc-accent)' }}>{t('adminOrders.orderCompleted')}</p>
           )}
           {estado === 'CANCELADO' && (
-            <p className="text-center text-sm text-red-400 py-1">{t('adminOrders.orderCancelled')}</p>
+            <p className="text-center text-sm text-[#a8291f] py-1">{t('adminOrders.orderCancelled')}</p>
           )}
 
           {/* Pie: override manual + eliminar */}
           <div className="pt-2 border-t flex items-start justify-between gap-4" style={{ borderColor: 'var(--hc-border)' }}>
             <div className="flex-1">
               <button onClick={() => setShowOver(v => !v)}
-                className="text-xs text-[#8e8e9a]/50 hover:text-[#8e8e9a] transition-colors">
+                className="text-xs text-[var(--hc-muted)] hover:text-[var(--hc-muted)] transition-colors">
                 {showOver ? '▲' : '▼'} {t('adminOrders.manualCorrection')}
               </button>
               {showOver && (
@@ -784,7 +784,7 @@ function OrderCard({ order, onUpdate, onDelete }) {
                   <select
                     value={override || estado}
                     onChange={e => setOverride(e.target.value)}
-                    className="flex-1 h-9 px-2 rounded-xl text-sm text-[#e8e8ed] focus:outline-none"
+                    className="flex-1 h-9 px-2 rounded-xl text-sm text-[var(--hc-text)] focus:outline-none"
                     style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
                   >
                     {FILTERS.filter(f => f !== 'Todos').map(s => (
@@ -892,8 +892,8 @@ export default function AdminOrders() {
 
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-xl font-bold text-[#e8e8ed]">{t('adminOrders.title')}</h1>
-            <p className="text-sm text-[#8e8e9a] mt-0.5">{filtered.length} pedidos{filter !== 'Todos' ? ` · ${filter}` : ''}</p>
+            <h1 className="text-xl font-bold text-[var(--hc-text)]">{t('adminOrders.title')}</h1>
+            <p className="text-sm text-[var(--hc-muted)] mt-0.5">{filtered.length} pedidos{filter !== 'Todos' ? ` · ${filter}` : ''}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <ImportExportBar
@@ -962,16 +962,16 @@ export default function AdminOrders() {
           <div className="text-center py-14">
             {filter !== 'Todos' ? (
               <div className="space-y-2">
-                <p className="text-[#8e8e9a] text-sm">Sin pedidos con estado <strong className="text-[#e8e8ed]">{filter}</strong></p>
-                <button onClick={() => changeFilter('Todos')} className="text-xs text-[#4f7cff] hover:underline">Ver todos los pedidos →</button>
+                <p className="text-[var(--hc-muted)] text-sm">Sin pedidos con estado <strong className="text-[var(--hc-text)]">{filter}</strong></p>
+                <button onClick={() => changeFilter('Todos')} className="text-xs text-[var(--hc-accent)] hover:underline">Ver todos los pedidos →</button>
               </div>
             ) : (
               <div className="space-y-3">
                 <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center" style={{ backgroundColor: 'rgba(23,71,168,0.08)', border: '1px solid rgba(23,71,168,0.15)' }}>
                   <svg className="w-7 h-7" style={{ color: 'var(--hc-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
                 </div>
-                <p className="font-semibold text-[#e8e8ed]">Sin pedidos todavía</p>
-                <p className="text-sm text-[#8e8e9a] max-w-xs mx-auto">Los pedidos de tus clientes aparecen aquí. También podés registrar uno manual.</p>
+                <p className="font-semibold text-[var(--hc-text)]">Sin pedidos todavía</p>
+                <p className="text-sm text-[var(--hc-muted)] max-w-xs mx-auto">Los pedidos de tus clientes aparecen aquí. También podés registrar uno manual.</p>
                 <button
                   onClick={() => setShowCreate(true)}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold mt-1 transition-opacity hover:opacity-80"

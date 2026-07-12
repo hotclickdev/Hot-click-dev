@@ -2,6 +2,7 @@ package com.hotclick.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hotclick.dto.AccionPropuestaTelegram;
 import com.hotclick.dto.TelegramFlujoEstado;
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
@@ -49,7 +50,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
 
     @MockitoBean protected TelegramClienteBotService bot;
 
-    /** Spy: comportamiento real por defecto; los tests de fallback fuerzan chatSync → null (proveedor caído). */
+    /** Spy: comportamiento real por defecto; los tests de fallback fuerzan chatSyncConAcciones → null (proveedor caído). */
     @org.springframework.test.context.bean.override.mockito.MockitoSpyBean
     protected AiCopilotService aiCopilotService;
 
@@ -59,6 +60,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
     @Autowired CategoriaRepository          categoriaRepository;
     @Autowired BodegaRepository             bodegaRepository;
     @Autowired MovimientoStockRepository    movimientoStockRepository;
+    @Autowired PedidoRepository             pedidoRepository;
     @Autowired TelegramInventarioScheduler  scheduler;
     @Autowired TelegramNotificacionClienteService notificacionService;
     @Autowired ObjectMapper                 objectMapper;
@@ -96,6 +98,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
     @AfterEach
     void tearDown() {
         vinculacionRepository.deleteAll();
+        pedidoRepository.deleteAll();
         movimientoStockRepository.deleteAll();
         productoRepository.deleteAll();
         categoriaRepository.deleteAll();
@@ -361,7 +364,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
     @DisplayName("IA caída + pregunta de ventas → fallback con los datos de ventas de hoy")
     void textoLibre_iaCaida_fallbackVentas() throws Exception {
         vincularDirecto(duenno, empresa, CHAT_ID);
-        doReturn(null).when(aiCopilotService).chatSync(anyLong(), anyString(), anyString());
+        doReturn(null).when(aiCopilotService).chatSyncConAcciones(anyLong(), anyString(), anyString(), anyBoolean());
 
         postUpdate(mensajeTexto(CHAT_ID, "cuanto vendi hoy?"));
 
@@ -376,12 +379,128 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
     @DisplayName("IA caída + texto sin intención clara → aviso + menú de botones")
     void textoLibre_iaCaida_sinIntencion_muestraMenu() throws Exception {
         vincularDirecto(duenno, empresa, CHAT_ID);
-        doReturn(null).when(aiCopilotService).chatSync(anyLong(), anyString(), anyString());
+        doReturn(null).when(aiCopilotService).chatSyncConAcciones(anyLong(), anyString(), anyString(), anyBoolean());
 
         postUpdate(mensajeTexto(CHAT_ID, "hola que tal"));
 
         verify(bot, timeout(3000)).enviarMensaje(eq(CHAT_ID), contains("no está disponible"));
         verify(bot, timeout(3000)).enviarMensaje(eq(CHAT_ID), anyString(), anyList()); // menú con botones
+    }
+
+    // ── Acciones propuestas por la IA (propose → confirm → execute) ─────────────
+
+    @Test
+    @DisplayName("La IA propone cambiar el estado de un pedido → Confirmar lo ejecuta y limpia el borrador")
+    void accion_proponeYConfirma_ejecutaCambioEstado() throws Exception {
+        vincularDirecto(duenno, empresa, CHAT_ID);
+        Pedido pedido = crearPedido("ORD-TEST-1", "PENDIENTE", empresa);
+        doReturn(new AiCopilotService.ChatConAccionesResultado(
+                "Te mandé la confirmación arriba, tocá el botón para aplicarlo.",
+                new AccionPropuestaTelegram(AccionPropuestaTelegram.PEDIDO_ESTADO, pedido.getId(),
+                    Map.of("nuevoEstado", "ENTREGADO"), "Cambiar el pedido ORD-TEST-1: PENDIENTE → ENTREGADO")))
+            .when(aiCopilotService).chatSyncConAcciones(anyLong(), anyString(), anyString(), anyBoolean());
+
+        postUpdate(mensajeTexto(CHAT_ID, "marca el pedido ORD-TEST-1 como entregado"));
+
+        verify(bot, timeout(3000)).enviarMensaje(eq(CHAT_ID), contains("Cambiar el pedido ORD-TEST-1"), anyList());
+        TelegramVinculacion vinculado = vinculacionRepository.findByUsuarioId(duenno.getId()).orElseThrow();
+        assertThat(vinculado.getContexto()).startsWith("{");
+
+        clearInvocations(bot);
+        postUpdate(callback(CHAT_ID, "acn:ok"));
+
+        Pedido actualizado = pedidoRepository.findById(pedido.getId()).orElseThrow();
+        assertThat(actualizado.getEstadoPedido()).isEqualTo("ENTREGADO");
+        assertThat(vinculacionRepository.findByUsuarioId(duenno.getId()).orElseThrow().getContexto()).isNull();
+        verify(bot).enviarMensaje(eq(CHAT_ID), contains("ORD-TEST-1"));
+    }
+
+    @Test
+    @DisplayName("La IA propone una acción → Cancelar no ejecuta nada y limpia el borrador")
+    void accion_proponeYCancela_noEjecuta() throws Exception {
+        vincularDirecto(duenno, empresa, CHAT_ID);
+        Pedido pedido = crearPedido("ORD-TEST-2", "PENDIENTE", empresa);
+        doReturn(new AiCopilotService.ChatConAccionesResultado(
+                "Te mandé la confirmación arriba, tocá el botón para aplicarlo.",
+                new AccionPropuestaTelegram(AccionPropuestaTelegram.PEDIDO_ESTADO, pedido.getId(),
+                    Map.of("nuevoEstado", "ENTREGADO"), "Cambiar el pedido ORD-TEST-2: PENDIENTE → ENTREGADO")))
+            .when(aiCopilotService).chatSyncConAcciones(anyLong(), anyString(), anyString(), anyBoolean());
+
+        postUpdate(mensajeTexto(CHAT_ID, "marca el pedido ORD-TEST-2 como entregado"));
+        verify(bot, timeout(3000)).enviarMensaje(eq(CHAT_ID), contains("Cambiar el pedido ORD-TEST-2"), anyList());
+
+        postUpdate(callback(CHAT_ID, "acn:no"));
+
+        assertThat(pedidoRepository.findById(pedido.getId()).orElseThrow().getEstadoPedido()).isEqualTo("PENDIENTE");
+        assertThat(vinculacionRepository.findByUsuarioId(duenno.getId()).orElseThrow().getContexto()).isNull();
+        verify(bot).enviarMensaje(eq(CHAT_ID), contains("cancelado"));
+    }
+
+    @Test
+    @DisplayName("Miembro sin rol PROPIETARIO/ADMIN nunca recibe tools de mutación (puedeGestionar=false)")
+    void accion_gating_noPropietarioSinTools() throws Exception {
+        Rol rolUser = obtenerOCrearRol(Constants.ROL_USUARIO_FINAL, 1);
+        Usuario empleado = crearUsuario("tg-empleado-ia@test.cr", "Empleado IA TG", rolUser);
+        crearMiembro(empleado, empresa, "MIEMBRO");
+        vincularDirecto(empleado, empresa, 555_005L);
+        doReturn(new AiCopilotService.ChatConAccionesResultado("No puedo hacer eso.", null))
+            .when(aiCopilotService).chatSyncConAcciones(anyLong(), anyString(), anyString(), anyBoolean());
+
+        postUpdate(mensajeTexto(555_005L, "marca el pedido ORD-1 como entregado"));
+
+        ArgumentCaptor<Boolean> puedeGestionar = ArgumentCaptor.forClass(Boolean.class);
+        verify(aiCopilotService, timeout(3000)).chatSyncConAcciones(anyLong(), anyString(), anyString(), puedeGestionar.capture());
+        assertThat(puedeGestionar.getValue()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Confirmar una acción cuyo pedido ya no pertenece a la empresa activa → rechazada, no muta")
+    void accion_confirmar_tenantAjeno_rechazada() throws Exception {
+        TelegramVinculacion v = vincularDirecto(duenno, empresa, CHAT_ID);
+        Pedido pedidoAjeno = crearPedido("ORD-AJENO-1", "PENDIENTE", empresaAjena);
+        guardarAccionPendiente(v, AccionPropuestaTelegram.PEDIDO_ESTADO, pedidoAjeno.getId(),
+            Map.of("nuevoEstado", "ENTREGADO"), "Cambiar el pedido ORD-AJENO-1: PENDIENTE → ENTREGADO",
+            LocalDateTime.now(Constants.ZONA_CR));
+
+        postUpdate(callback(CHAT_ID, "acn:ok"));
+
+        assertThat(pedidoRepository.findById(pedidoAjeno.getId()).orElseThrow().getEstadoPedido()).isEqualTo("PENDIENTE");
+        verify(bot).enviarMensaje(eq(CHAT_ID), contains("ya no pertenece a este negocio"));
+    }
+
+    @Test
+    @DisplayName("Acción propuesta vencida (más de 30 min) → Confirmar no ejecuta nada")
+    void accion_vencida_noEjecuta() throws Exception {
+        TelegramVinculacion v = vincularDirecto(duenno, empresa, CHAT_ID);
+        Pedido pedido = crearPedido("ORD-VIEJO-1", "PENDIENTE", empresa);
+        guardarAccionPendiente(v, AccionPropuestaTelegram.PEDIDO_ESTADO, pedido.getId(),
+            Map.of("nuevoEstado", "ENTREGADO"), "Cambiar el pedido ORD-VIEJO-1: PENDIENTE → ENTREGADO",
+            LocalDateTime.now(Constants.ZONA_CR).minusMinutes(31));
+
+        postUpdate(callback(CHAT_ID, "acn:ok"));
+
+        assertThat(pedidoRepository.findById(pedido.getId()).orElseThrow().getEstadoPedido()).isEqualTo("PENDIENTE");
+        verify(bot).enviarMensaje(eq(CHAT_ID), contains("venció"));
+    }
+
+    @Test
+    @DisplayName("Con una venta guiada en curso, el texto libre no llega a la IA (invariante de un solo borrador activo)")
+    void accion_flujoConcurrente_bloqueaTextoLibre() throws Exception {
+        vincularDirecto(duenno, empresa, CHAT_ID);
+        crearProducto("Producto Venta Activa", 5, 3);
+
+        postUpdate(callback(CHAT_ID, "vta:new"));
+        postUpdate(mensajeTexto(CHAT_ID, "marca el pedido ORD-1 como entregado"));
+
+        verify(aiCopilotService, never()).chatSyncConAcciones(anyLong(), anyString(), anyString(), anyBoolean());
+    }
+
+    /** Siembra directo en BD un borrador FLUJO_ACCION pendiente, como si el usuario ya lo hubiera recibido. */
+    private void guardarAccionPendiente(TelegramVinculacion v, String acc, Long eid,
+                                         Map<String, Object> par, String resumen, LocalDateTime ts) {
+        TelegramFlujoEstado estado = TelegramFlujoEstado.nuevaAccion(ts, acc, eid, par, resumen);
+        v.setContexto(estado.serializar(objectMapper));
+        vinculacionRepository.saveAndFlush(v);
     }
 
     // ── Notificaciones ────────────────────────────────────────────────────────
@@ -522,6 +641,24 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
         b.setEmpresa(empresa);
         b.setEstado(Constants.ESTADO_ACTIVO);
         return bodegaRepository.saveAndFlush(b);
+    }
+
+    private Pedido crearPedido(String numeroPedido, String estado, Empresa e) {
+        Pedido p = new Pedido();
+        p.setNumeroPedido(numeroPedido);
+        p.setFechaPedido(LocalDateTime.now(Constants.ZONA_CR));
+        p.setSubtotal(10_000);
+        p.setTotalPedido(10_000);
+        p.setCostoTotalProductos(6_000);
+        p.setUtilidadBruta(4_000);
+        p.setMetodoPago("SINPE");
+        p.setMetodoEnvio(Constants.ENVIO_RETIRO);
+        p.setEstadoPedido(estado);
+        p.setEstado(Constants.ESTADO_ACTIVO);
+        p.setUsuarioFinal(duenno);
+        p.setBodega(bodega);
+        p.setEmpresa(e);
+        return pedidoRepository.saveAndFlush(p);
     }
 
     private Producto crearProducto(String nombre, int stock, int minimo) {

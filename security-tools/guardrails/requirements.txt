@@ -1,0 +1,5 @@
+nemoguardrails>=0.10.0
+fastapi
+uvicorn[standard]
+httpx
+python-dotenv
