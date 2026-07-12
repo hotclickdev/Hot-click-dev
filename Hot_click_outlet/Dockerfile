@@ -3,7 +3,11 @@
 FROM maven:3.9-eclipse-temurin-21 AS builder
 WORKDIR /build
 COPY pom.xml .
-RUN mvn dependency:go-offline -q
+# dependency:go-offline no respeta las <exclusions> del pom (intenta resolver
+# igual el POM de jackson-dataformat-cbor:2.18.5, con su dep SNAPSHOT rota de
+# jackson-databind) — dependency:resolve sí las respeta y cachea igual las deps
+# en esta capa separada de COPY src, que es lo único que buscábamos acá.
+RUN mvn dependency:resolve dependency:resolve-plugins -q
 COPY src ./src
 # maven.test.skip (no solo -DskipTests) porque hay tests de src/test que no compilan
 # contra el código actual (ApiKeyCacheTest y varios de integración referencian clases
