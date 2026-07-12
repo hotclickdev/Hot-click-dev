@@ -79,8 +79,14 @@ Migraciones existentes:
 ### Deploy en producción
 
 Desde que se agregó el sidecar de NeMo Guardrails (ver "Seguridad del AI Copilot"
-más abajo), el deploy usa `docker compose` con 2 servicios (`app` + `guardrails`)
+más abajo), el deploy usa docker-compose con 2 servicios (`app` + `guardrails`)
 en vez de un solo `docker run` manual.
+
+**Importante:** el EC2 tiene el binario standalone `docker-compose` (con guion,
+`/usr/local/bin/docker-compose`), no el plugin `docker compose` (con espacio) —
+no está instalado. Además el plugin `buildx` de esa instancia es viejo (0.12.1)
+y ese `docker-compose` exige buildx ≥0.17.0 para `--build`, así que hay que
+buildear las imágenes con `docker build` directo antes de levantar con compose:
 
 ```bash
 # 1. Conectarse al EC2
@@ -89,10 +95,12 @@ ssh -i "C:\Users\pmdan\Downloads\hotclick-key.pem" ec2-user@18.227.68.15
 # 2. Actualizar código
 cd /home/ec2-user/app && git pull origin master
 
-# 3. Rebuild y reemplazo de ambos contenedores (requiere t3.small — el t3.micro
-#    se queda sin RAM incluso para el build)
+# 3. Build de ambas imágenes (requiere t3.small — el t3.micro se queda sin RAM
+#    incluso para el build) y reemplazo de los contenedores
 cd Hot_click_outlet
-docker compose -f docker-compose.prod.yml up -d --build
+docker build -t hot_click_outlet-app .
+docker build -t hot_click_outlet-guardrails ../security-tools/guardrails
+docker-compose -f docker-compose.prod.yml up -d
 
 # 4. Verificar logs
 docker logs -f hotclick
@@ -105,7 +113,7 @@ El archivo `/home/ec2-user/app/Hot_click_outlet/.env` contiene todas las variabl
 (ambos servicios de compose lo comparten vía `env_file`). Para modificar una variable:
 ```bash
 nano /home/ec2-user/app/Hot_click_outlet/.env
-docker compose -f docker-compose.prod.yml restart app
+docker-compose -f docker-compose.prod.yml restart app
 ```
 
 **Apagado de emergencia del sidecar de guardrails** (si hay problemas de RAM o
@@ -113,7 +121,7 @@ latencia en el t3.small — son 2 GB, vigilar con `docker stats`):
 ```bash
 nano /home/ec2-user/app/Hot_click_outlet/.env
 # → NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1/
-docker compose -f docker-compose.prod.yml restart app
+docker-compose -f docker-compose.prod.yml restart app
 ```
 
 ## Arquitectura
@@ -236,7 +244,7 @@ Un pedido aparece en finanzas automáticamente al marcarlo como ENTREGADO.
 
 1. **Agregar nueva variable** → agregarla en `.env` (local) + `.env.example` (template sin valor) + documentarla en esta sección si es crítica.
 2. **Nunca poner secrets en el frontend** — las variables `VITE_*` quedan expuestas en el bundle del navegador. Solo van ahí claves *publishable* (Clerk, GA4, Sentry DSN, PostHog token). Claves secretas solo en el backend.
-3. **Rotación de API key comprometida** → cambiar en el servicio origen primero, luego actualizar `.env` en EC2 (`nano /home/ec2-user/app/Hot_click_outlet/.env && docker compose -f docker-compose.prod.yml restart app`).
+3. **Rotación de API key comprometida** → cambiar en el servicio origen primero, luego actualizar `.env` en EC2 (`nano /home/ec2-user/app/Hot_click_outlet/.env && docker-compose -f docker-compose.prod.yml restart app`).
 4. **Escaneo de secretos** corre en 2 capas: el hook local (`scripts/hooks/pre-commit`, patrones fijos + `gitleaks protect` si está instalado — feedback rápido, no es el gate real) y el job `gitleaks` en CI (`.github/workflows/security.yml`, ~150 reglas + detección de entropía — este sí bloquea el merge). Si un PR falla por esto, mover la credencial a `.env`. Falsos positivos conocidos van al allowlist de `.gitleaks.toml`, no se desactiva el job.
 
 ### Servicios y dónde rotar sus keys
