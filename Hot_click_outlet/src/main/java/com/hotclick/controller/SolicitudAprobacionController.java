@@ -1,5 +1,4 @@
 package com.hotclick.controller;
-import com.hotclick.utils.Constants;
 
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Empresa;
@@ -36,6 +35,7 @@ public class SolicitudAprobacionController {
     @Autowired private com.hotclick.service.TelegramNotificacionClienteService telegramNotificacionClienteService;
     @Autowired private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
     @Autowired private com.hotclick.service.ProductoService productoService;
+    @Autowired private com.hotclick.service.EmpresaAprobacionService empresaAprobacionService;
 
     // toMap() resuelve e.getPlan().getNombre() (relación LAZY); con open-in-view=false
     // hace falta una transacción activa para que el proxy se pueda inicializar.
@@ -62,10 +62,10 @@ public class SolicitudAprobacionController {
         if (!companyScope.isAdminIT()) return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));
         Optional<Empresa> opt = empresaRepository.findById(id);
         if (opt.isEmpty()) return ResponseEntity.status(404).body(ResponseDTO.error("Empresa no encontrada"));
-        Empresa e = opt.get();
-        e.setEstadoEmpresa("ACTIVO");
-        e.setFechaAprobacion(LocalDateTime.now(Constants.ZONA_CR));
-        empresaRepository.save(e);
+        // Aprobar = activar + hacer visible + publicar productos, en una transacción.
+        // Setear solo estado_empresa dejaba a la empresa fuera del catálogo público
+        // (visibilidad_publica quedaba en false desde el registro).
+        Empresa e = empresaAprobacionService.aprobarYPublicar(id);
         usuarioRepository.findByEmpresaIdConRoles(e.getId()).stream()
             .filter(u -> u.getRoles().stream().anyMatch(r -> "EMPRENDEDOR".equals(r.getNombreRol())))
             .findFirst()

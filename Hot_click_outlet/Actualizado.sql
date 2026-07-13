@@ -3200,3 +3200,35 @@ CREATE TABLE IF NOT EXISTS hot_click_ticket_soporte_tb (
 );
 
 CREATE INDEX IF NOT EXISTS idx_ticket_soporte_empresa ON hot_click_ticket_soporte_tb(fk_id_empresa);
+
+
+-- ============================================================
+-- V100: marketplace - publicar el catalogo de empresas aprobadas
+-- Incidente 2026-07-12: aprobar una empresa no restauraba
+-- visibilidad_publica y sus productos quedaban fuera de /api/productos.
+-- Idempotente. El orden importa (productos -> empresas -> solicitudes).
+-- ============================================================
+
+UPDATE hot_click_producto_tb p
+   SET visible_catalogo = TRUE
+  FROM hot_click_empresa_tb e
+ WHERE p.fk_id_empresa = e.id_empresa
+   AND e.estado_empresa = 'ACTIVO'
+   AND e.visibilidad_publica = FALSE
+   AND p.fk_id_estado = 1
+   AND p.visible_catalogo = FALSE;
+
+UPDATE hot_click_empresa_tb
+   SET visibilidad_publica = TRUE
+ WHERE estado_empresa = 'ACTIVO'
+   AND visibilidad_publica = FALSE;
+
+UPDATE hot_click_solicitud_aprobacion_tb s
+   SET estado_solicitud = 'APROBADO',
+       fecha_resolucion = NOW(),
+       comentario_revisor = 'Auto-aprobada en V100: la publicacion ahora la controla la aprobacion de la empresa'
+  FROM hot_click_empresa_tb e
+ WHERE s.fk_id_empresa = e.id_empresa
+   AND s.tipo_entidad = 'PRODUCTO'
+   AND s.estado_solicitud = 'PENDIENTE'
+   AND e.estado_empresa = 'ACTIVO';

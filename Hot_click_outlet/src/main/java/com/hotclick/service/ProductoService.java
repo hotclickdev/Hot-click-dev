@@ -55,7 +55,7 @@ public class ProductoService {
     }
 
     @SuppressWarnings("null")
-    private void evictProductosPublicos() {
+    public void evictProductosPublicos() {
         Cache c = cacheManager.getCache("productos-publicos");
         if (c != null) c.clear();
     }

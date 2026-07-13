@@ -287,20 +287,17 @@ public class ProductoController {
                 if (idempCache != null) idempCache.put(idempotencyKey, Boolean.TRUE);
             }
             String mensaje = "Producto creado";
-            if (empresa != null && !companyScope.isAdminIT()) {
+            // Ya no hay aprobación producto por producto: si el negocio está aprobado
+            // y visible, el producto nace publicado (la moderación de texto ya corrió).
+            // Solo queda oculto mientras la empresa espera aprobación; al aprobarla,
+            // EmpresaAprobacionService publica todo su catálogo en bloque.
+            boolean empresaPublicada = empresa != null
+                && "ACTIVO".equals(empresa.getEstadoEmpresa())
+                && Boolean.TRUE.equals(empresa.getVisibilidadPublica());
+            if (empresa != null && !companyScope.isAdminIT() && !empresaPublicada) {
                 producto.setVisibleCatalogo(false);
                 producto = productoRepository.save(producto);
-
-                var solicitud = new com.hotclick.model.SolicitudAprobacion();
-                solicitud.setTipoEntidad("PRODUCTO");
-                solicitud.setAccionSolicitada("PUBLISH");
-                solicitud.setIdEntidad(producto.getId());
-                solicitud.setEmpresa(empresa);
-                solicitud.setUsuarioPide(companyScope.getCurrentUser());
-                solicitudAprobacionRepository.save(solicitud);
-                mensaje = "Producto creado — pendiente de aprobación del admin para publicarse en el catálogo";
-                telegramNotificacionClienteService.notificarSolicitudEnviada(
-                    empresa.getId(), "Tu producto", producto.getNombreProducto());
+                mensaje = "Producto creado — se publicará en el catálogo cuando tu negocio sea aprobado";
             }
             return ResponseEntity.ok(ResponseDTO.success(mensaje, producto));
         } catch (Exception e) {

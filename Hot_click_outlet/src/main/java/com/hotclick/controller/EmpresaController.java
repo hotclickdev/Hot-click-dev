@@ -33,6 +33,7 @@ public class EmpresaController {
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
     @Autowired private PlanRepository           planRepository;
     @Autowired private CompanyScope             companyScope;
+    @Autowired private com.hotclick.service.EmpresaAprobacionService empresaAprobacionService;
 
     // @Transactional: toMap() ahora resuelve e.getPlan().getNombre() (relación LAZY);
     // con open-in-view=false, sin transacción activa esto lanza LazyInitializationException.
@@ -72,9 +73,18 @@ public class EmpresaController {
         String nuevoEstado = body.get("estadoEmpresa");
         if (nuevoEstado == null || !List.of("ACTIVO", "SUSPENDIDO", "INACTIVO").contains(nuevoEstado))
             return ResponseEntity.badRequest().body(ResponseDTO.error("Estado inválido"));
-        Empresa empresa = opt.get();
-        empresa.setEstadoEmpresa(nuevoEstado);
-        empresaRepository.save(empresa);
+        if ("ACTIVO".equals(nuevoEstado)) {
+            // Activar = aprobar: misma ruta que la aprobación formal, para que la
+            // empresa quede visible y sus productos publicados en el catálogo.
+            empresaAprobacionService.aprobarYPublicar(id);
+        } else {
+            // Suspender/inactivar solo cambia estado_empresa: el gate del catálogo
+            // oculta sus productos sin pisar visibilidad_publica ni visible_catalogo,
+            // así la reactivación es reversible.
+            Empresa empresa = opt.get();
+            empresa.setEstadoEmpresa(nuevoEstado);
+            empresaRepository.save(empresa);
+        }
         return ResponseEntity.ok(ResponseDTO.success("Estado actualizado", null));
     }
 

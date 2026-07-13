@@ -84,7 +84,6 @@ public class TelegramFlujoService {
     @Autowired private MarcaRepository               marcaRepository;
     @Autowired private TenantService                 tenantService;
     @Autowired private TextModerationService         textModerationService;
-    @Autowired private SolicitudAprobacionRepository solicitudAprobacionRepository;
     @Autowired private AiCopilotService              aiCopilotService;
     @Autowired private JdbcTemplate                  jdbc;
     @Autowired private ObjectMapper                  objectMapper;
@@ -765,9 +764,12 @@ public class TelegramFlujoService {
             tenantService.verificarLimiteProductos(empresaId);
             Producto producto = self.crearProductoTx(d, empresaId, v.getUsuario());
             limpiar(v);
+            String estadoPublicacion = Boolean.TRUE.equals(producto.getVisibleCatalogo())
+                ? "Ya está *publicado* en el catálogo."
+                : "Se publicará en el catálogo cuando tu negocio sea *aprobado* por el equipo HotClick.";
             bot.enviarMensaje(v.getChatId(), "✅ Producto *" + esc(producto.getNombreProducto()) + "* creado con "
                 + d.getFotos().size() + " foto" + (d.getFotos().size() == 1 ? "" : "s") + ".\n\n"
-                + "Queda *pendiente de aprobación* del equipo HotClick para publicarse en el catálogo — igual que desde el panel.",
+                + estadoPublicacion,
                 List.of(List.of(TelegramClienteBotService.boton("📋 Menú", "menu"))));
         } catch (Exception ex) {
             log.error("[telegram-flujo] fallo creando producto en chat {} — {}", v.getChatId(), ex.getMessage());
@@ -779,18 +781,21 @@ public class TelegramFlujoService {
     }
 
     /**
-     * Crea el producto + imágenes + solicitud de aprobación en una transacción
-     * propia (REQUIRES_NEW): si falla, la transacción del webhook sobrevive para
-     * responder al usuario con el borrador intacto.
+     * Crea el producto + imágenes en una transacción propia (REQUIRES_NEW):
+     * si falla, la transacción del webhook sobrevive para responder al usuario
+     * con el borrador intacto.
      *
-     * Mismo gobierno que el panel (ProductoController.crearProducto): el producto
-     * de un emprendedor nace con visibleCatalogo=false y una SolicitudAprobacion
-     * PUBLISH pendiente.
+     * Mismo gobierno que el panel (ProductoController.crearProducto): si el
+     * negocio ya está aprobado y visible, el producto nace publicado; si sigue
+     * pendiente, queda oculto y EmpresaAprobacionService lo publica en bloque
+     * al aprobar la empresa. Ya no existe aprobación producto por producto.
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Producto crearProductoTx(TelegramFlujoEstado.ProductoBorrador d, Long empresaId, Usuario usuario) {
         Empresa empresa = empresaRepository.findById(empresaId)
             .orElseThrow(() -> new IllegalStateException("Empresa no encontrada"));
+        boolean empresaPublicada = "ACTIVO".equals(empresa.getEstadoEmpresa())
+            && Boolean.TRUE.equals(empresa.getVisibilidadPublica());
 
         ProductoRequestDTO dto = new ProductoRequestDTO();
         dto.setNombreProducto(d.getNom());
@@ -801,19 +806,11 @@ public class TelegramFlujoService {
         dto.setCategoriaId(d.getCat());
         dto.setMarcaId(d.getMarca());
         dto.setMarcaTexto(d.getMarcaTxt());
-        dto.setVisibleCatalogo(false);
+        dto.setVisibleCatalogo(empresaPublicada);
         dto.setImagenPrincipalUrl(d.getFotos().isEmpty() ? null : d.getFotos().get(0));
 
         Producto producto = productoService.crearProducto(dto, usuario.getCorreo(), empresa);
         productoImagenService.sincronizar(producto.getId(), d.getFotos());
-
-        SolicitudAprobacion solicitud = new SolicitudAprobacion();
-        solicitud.setTipoEntidad("PRODUCTO");
-        solicitud.setAccionSolicitada("PUBLISH");
-        solicitud.setIdEntidad(producto.getId());
-        solicitud.setEmpresa(empresa);
-        solicitud.setUsuarioPide(usuario);
-        solicitudAprobacionRepository.save(solicitud);
 
         return producto;
     }

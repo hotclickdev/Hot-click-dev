@@ -158,6 +158,12 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @Query("UPDATE Producto p SET p.estado = 0 WHERE p.fechaAgotado IS NOT NULL AND p.fechaAgotado < :limite AND p.estado = 1")
     int inactivarProductosAgotadosAntesDe(@Param("limite") LocalDateTime limite);
 
+    /** Publica en el catálogo todos los productos activos de una empresa — se usa al aprobar el negocio. */
+    @Modifying
+    @Query("UPDATE Producto p SET p.visibleCatalogo = true " +
+           "WHERE p.empresa.id = :empresaId AND p.estado = 1 AND p.visibleCatalogo = false")
+    int publicarProductosDeEmpresa(@Param("empresaId") Long empresaId);
+
     /** Productos activos con stock > 0 y visibles en catálogo — para el feed de Google Shopping */
     @Query("SELECT p FROM Producto p LEFT JOIN FETCH p.marca WHERE p.estado = 1 AND p.stockActual > 0 AND p.visibleCatalogo = true ORDER BY p.id ASC")
     List<Producto> findParaFeed();
