@@ -776,6 +776,55 @@ html.dark select { background-color: unset !important; color: unset !important; 
 html.dark th, html.dark td { color: unset !important; }
 html.dark tr:hover { background-color: unset !important; }
 
+/* ── El panel "Sistema" (EMPRENDEDOR) es SIEMPRE claro ──
+   Dentro de .hc-sistema-theme vuelven a regir los valores de modo claro
+   aunque <html> tenga la clase dark: sin esto, los resets html.dark de
+   arriba (unset !important en inputs/th/td) hacían que el contenido
+   heredara el texto casi blanco del body sobre el fondo crema del panel
+   → texto invisible. Estas reglas ganan por especificidad y orden. */
+html.dark .hc-sistema-theme [class*="bg-[#0a0a0b]"]   { background-color: var(--hc-bg) !important; }
+html.dark .hc-sistema-theme [class*="bg-[#111114]"]   { background-color: var(--hc-surface) !important; }
+html.dark .hc-sistema-theme [class*="bg-[#1a1a1f]"]   { background-color: var(--hc-surface-2) !important; }
+html.dark .hc-sistema-theme [class*="text-[#e8e8ed]"] { color: var(--hc-text) !important; }
+html.dark .hc-sistema-theme [class*="text-[#8e8e9a]"] { color: var(--hc-muted) !important; }
+html.dark .hc-sistema-theme [class*="text-[#c8c8d4]"] { color: var(--hc-muted) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/2"]  { background-color: rgba(20,23,28,0.02) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/3"]  { background-color: rgba(20,23,28,0.03) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/4"]  { background-color: rgba(20,23,28,0.04) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/5"]  { background-color: rgba(20,23,28,0.05) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/6"]  { background-color: rgba(20,23,28,0.06) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/7"]  { background-color: rgba(20,23,28,0.07) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/8"]  { background-color: rgba(20,23,28,0.08) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/10"] { background-color: rgba(20,23,28,0.10) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/12"] { background-color: rgba(20,23,28,0.12) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/15"] { background-color: rgba(20,23,28,0.15) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/20"] { background-color: rgba(20,23,28,0.20) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/25"] { background-color: rgba(20,23,28,0.25) !important; }
+html.dark .hc-sistema-theme [class~="bg-white/30"] { background-color: rgba(20,23,28,0.30) !important; }
+html.dark .hc-sistema-theme [class*="hover:bg-white/"]:hover { background-color: rgba(20,23,28,0.08) !important; }
+html.dark .hc-sistema-theme [class*="hover:border-white/"]:hover { border-color: var(--hc-border-strong) !important; }
+html.dark .hc-sistema-theme [class*="divide-white/"] > * + * { border-color: var(--hc-border) !important; }
+html.dark .hc-sistema-theme .group:hover [class*="group-hover:text-white"] { color: var(--hc-accent) !important; }
+html.dark .hc-sistema-theme [class*="hover:bg-[#1a1a1f]"]:hover { background-color: var(--hc-surface-2) !important; }
+html.dark .hc-sistema-theme [class*="hover:text-white"]:hover { color: var(--hc-accent) !important; }
+html.dark .hc-sistema-theme header,
+html.dark .hc-sistema-theme aside,
+html.dark .hc-sistema-theme footer {
+  background-color: var(--hc-surface) !important;
+  border-color: var(--hc-border) !important;
+  color: var(--hc-text);
+}
+html.dark .hc-sistema-theme input:not([type="checkbox"]):not([type="radio"]),
+html.dark .hc-sistema-theme textarea,
+html.dark .hc-sistema-theme select {
+  background-color: var(--hc-surface) !important;
+  color: var(--hc-text) !important;
+  border-color: var(--hc-border) !important;
+}
+html.dark .hc-sistema-theme th,
+html.dark .hc-sistema-theme td { color: var(--hc-text) !important; }
+html.dark .hc-sistema-theme tr:hover { background-color: var(--hc-surface-2) !important; }
+
 /* ═══════════════════════════════════════════════════════
    SCROLL PROGRESS BAR — Rojo Hot sólido
    ═══════════════════════════════════════════════════════ */

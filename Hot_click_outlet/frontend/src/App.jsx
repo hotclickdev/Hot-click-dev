@@ -523,9 +523,12 @@ export default function App() {
                 <Route path="/admin/asignar-compra" element={<AdminAsignarProducto />} />
                 <Route path="/admin/ofertas"       element={<AdminPromocionesRoute />} />
                 <Route path="/admin/blog"          element={<AdminBlog />} />
-                <Route path="/admin/pos"           element={<PlanGate feature="pos" planRequerido="PYME"><AdminPOS /></PlanGate>} />
-                <Route path="/admin/pos/caja"      element={<PlanGate feature="pos" planRequerido="PYME"><AdminPOSCaja /></PlanGate>} />
-                <Route path="/admin/pos/historial" element={<PlanGate feature="pos" planRequerido="PYME"><AdminPOSHistorial /></PlanGate>} />
+                {/* El POS está disponible para todos los planes (decisión de
+                    negocio jul 2026) — sin PlanGate. AdminShell ya valida
+                    token y rol antes de llegar acá. */}
+                <Route path="/admin/pos"           element={<AdminPOS />} />
+                <Route path="/admin/pos/caja"      element={<AdminPOSCaja />} />
+                <Route path="/admin/pos/historial" element={<AdminPOSHistorial />} />
                 <Route path="/admin/compras"        element={<PlanGate feature="compras" planRequerido="PYME"><AdminCompras /></PlanGate>} />
                 <Route path="/admin/compras/nueva"  element={<PlanGate feature="compras" planRequerido="PYME"><AdminNuevaCompra /></PlanGate>} />
                 <Route path="/admin/proveedores"    element={<AdminProveedores />} />

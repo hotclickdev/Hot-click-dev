@@ -100,9 +100,15 @@
    afectar el panel ADMIN ni el sitio público. */
 .hc-sistema-theme {
   --hc-bg:     #ede5da;
-  --hc-border: #e3dacb;
+  /* Bordes un par de pasos más oscuros que el #e3dacb del mockup: el dueño
+     pidió divisiones visibles (el original casi no se distingue del fondo). */
+  --hc-border: #d6cbb8;
   --hc-muted:  #6b6459;
   --hc-text:   #1a1a1a;
+  /* Color explícito: si algún reset deja `color` en unset/inherit dentro
+     del panel, debe resolver a este texto oscuro y no al del body (que en
+     html.dark es casi blanco → texto invisible sobre el crema). */
+  color: var(--hc-text);
 
   /* El resto de las variables de rol semántico también se fijan acá —
      "Sistema" es un único prototipo de color, nunca debe heredar
@@ -114,7 +120,7 @@
   --hc-surface-raised: var(--hc-n-0);
   --hc-text-secondary: var(--hc-n-600);
   --hc-text-disabled:  var(--hc-n-400);
-  --hc-border-strong:  var(--hc-n-300);
+  --hc-border-strong:  #b9ad97;
   --hc-primary:        var(--hc-red-500);
   --hc-primary-hover:  var(--hc-red-600);
   --hc-primary-press:  var(--hc-red-700);

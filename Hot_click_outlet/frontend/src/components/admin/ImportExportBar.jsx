@@ -77,8 +77,8 @@ export default function ImportExportBar({
   const visibleCols = preview.length > 0 ? Object.keys(preview[0]) : (columns ?? [])
 
   const importStatusMsg = importOk
-    ? <p className="text-[#4ade80] text-xs flex-1">{t('importExport.success')}</p>
-    : <p className="text-[#8e8e9a] text-xs flex-1">{t('importExport.previewNote')}</p>
+    ? <p className="text-xs flex-1" style={{ color: 'var(--hc-success)' }}>{t('importExport.success')}</p>
+    : <p className="text-xs flex-1" style={{ color: 'var(--hc-muted)' }}>{t('importExport.previewNote')}</p>
   const confirmLabel = importOk
     ? t('importExport.ready')
     : t('importExport.confirmImport', { count: preview.length })
@@ -87,13 +87,14 @@ export default function ImportExportBar({
     <>
       {/* ─── Botones ─────────────────────────────────── */}
       <div className="flex items-center gap-2 flex-wrap">
-        {label && <span className="text-xs text-[#8e8e9a] mr-1">{label}</span>}
+        {label && <span className="text-xs mr-1" style={{ color: 'var(--hc-muted)' }}>{label}</span>}
 
         {!exportOnly && (
           <>
             <button
               onClick={() => fileRef.current?.click()}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/6 hover:bg-white/10 border border-white/10 text-[#e8e8ed] text-xs font-medium transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--hc-surface-2)] hover:bg-[var(--hc-surface-3)] text-xs font-medium transition-colors"
+              style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
               title="Importar CSV o Excel"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,7 +105,8 @@ export default function ImportExportBar({
             </button>
             <button
               onClick={handleTemplate}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/6 hover:bg-white/10 border border-white/10 text-[#8e8e9a] text-xs font-medium transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--hc-surface-2)] hover:bg-[var(--hc-surface-3)] text-xs font-medium transition-colors"
+              style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}
               title="Descargar plantilla Excel"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -123,12 +125,13 @@ export default function ImportExportBar({
           </>
         )}
 
-        <div className="w-px h-4 bg-white/10 mx-0.5" />
+        <div className="w-px h-4 mx-0.5" style={{ backgroundColor: 'var(--hc-border)' }} />
 
         <button
           onClick={handleExportCSV}
           disabled={!data.length}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/6 hover:bg-white/10 border border-white/10 text-[#e8e8ed] text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--hc-surface-2)] hover:bg-[var(--hc-surface-3)] text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
           title="Exportar como CSV"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -159,16 +162,18 @@ export default function ImportExportBar({
       {/* ─── Modal de preview ────────────────────────── */}
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#18181b] border border-white/10 rounded-2xl w-full max-w-3xl max-h-[80vh] flex flex-col shadow-2xl">
+          <div className="rounded-2xl w-full max-w-3xl max-h-[80vh] flex flex-col shadow-2xl"
+            style={{ backgroundColor: 'var(--hc-surface-raised)', border: '1px solid var(--hc-border)' }}>
             {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-white/8">
+            <div className="flex items-center justify-between p-5" style={{ borderBottom: '1px solid var(--hc-border)' }}>
               <div>
-                <h2 className="text-[#e8e8ed] font-semibold text-base">{t('importExport.previewTitle')}</h2>
-                <p className="text-[#8e8e9a] text-xs mt-0.5">{t('importExport.rows', { count: preview.length })}</p>
+                <h2 className="font-semibold text-base" style={{ color: 'var(--hc-text)' }}>{t('importExport.previewTitle')}</h2>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>{t('importExport.rows', { count: preview.length })}</p>
               </div>
               <button
                 onClick={() => { setModal(false); setImportErr('') }}
-                className="text-[#8e8e9a] hover:text-[#e8e8ed] transition-colors p-1"
+                className="hover:opacity-70 transition-opacity p-1"
+                style={{ color: 'var(--hc-muted)' }}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -182,7 +187,8 @@ export default function ImportExportBar({
                 <thead>
                   <tr>
                     {visibleCols.map((c) => (
-                      <th key={c} className="text-left px-3 py-2 text-[#8e8e9a] font-medium bg-white/4 border border-white/6 whitespace-nowrap">
+                      <th key={c} className="text-left px-3 py-2 font-medium whitespace-nowrap"
+                        style={{ color: 'var(--hc-muted)', backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
                         {c}
                       </th>
                     ))}
@@ -190,9 +196,10 @@ export default function ImportExportBar({
                 </thead>
                 <tbody>
                   {preview.slice(0, 50).map((row, i) => (
-                    <tr key={i} className={i % 2 === 0 ? '' : 'bg-white/2'}>
+                    <tr key={i} style={i % 2 === 0 ? undefined : { backgroundColor: 'var(--hc-surface-2)' }}>
                       {visibleCols.map((c) => (
-                        <td key={c} className="px-3 py-1.5 text-[#e8e8ed] border border-white/5 max-w-[200px] truncate">
+                        <td key={c} className="px-3 py-1.5 max-w-[200px] truncate"
+                          style={{ color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
                           {String(row[c] ?? '')}
                         </td>
                       ))}
@@ -201,28 +208,29 @@ export default function ImportExportBar({
                 </tbody>
               </table>
               {preview.length > 50 && (
-                <p className="text-[#8e8e9a] text-xs mt-3 text-center">
+                <p className="text-xs mt-3 text-center" style={{ color: 'var(--hc-muted)' }}>
                   {t('importExport.preview50', { total: preview.length })}
                 </p>
               )}
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t border-white/8 flex items-center justify-between gap-3">
+            <div className="p-4 flex items-center justify-between gap-3" style={{ borderTop: '1px solid var(--hc-border)' }}>
               {importErr ? (
-                <p className="text-red-400 text-xs flex-1">{importErr}</p>
+                <p className="text-xs flex-1" style={{ color: 'var(--hc-danger)' }}>{importErr}</p>
               ) : importStatusMsg}
               <div className="flex gap-2">
                 <button
                   onClick={() => { setModal(false); setImportErr('') }}
-                  className="px-4 py-2 rounded-lg bg-white/6 hover:bg-white/10 text-[#e8e8ed] text-sm transition-colors"
+                  className="px-4 py-2 rounded-lg bg-[var(--hc-surface-2)] hover:bg-[var(--hc-surface-3)] text-sm transition-colors"
+                  style={{ color: 'var(--hc-text)' }}
                 >
                   {t('importExport.cancel')}
                 </button>
                 <button
                   onClick={handleConfirmImport}
                   disabled={importing || importOk || !onImport}
-                  className="px-4 py-2 rounded-lg bg-[#4f7cff] hover:bg-[#3d6ae8] text-white text-sm font-medium transition-colors disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg bg-[var(--hc-accent)] hover:bg-[var(--hc-accent-hover)] text-white text-sm font-medium transition-colors disabled:opacity-50"
                 >
                   {importing ? t('importExport.importing') : confirmLabel}
                 </button>

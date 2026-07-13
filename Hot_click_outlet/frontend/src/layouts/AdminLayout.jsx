@@ -335,7 +335,7 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, u
               {/* Cabecera de sección — plana y estática en Sistema (mockup aprobado),
                   colapsable con barra de color en el nav oscuro (ADMIN) */}
               {group.section && (isLight ? (
-                <div className="px-2 pt-5 pb-2">
+                <div className="px-3 pt-3.5 pb-1">
                   <span className="text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--hc-muted)' }}>
                     {group.section}
                   </span>
@@ -393,7 +393,7 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, u
                         <NavLink
                           to={link.to}
                           end={link.exact}
-                          className="group/item relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl mb-0.5 transition-colors duration-150"
+                          className={`group/item relative flex items-center gap-2.5 px-3 mb-0.5 transition-colors duration-150 ${isLight ? 'py-2 rounded-[10px]' : 'py-2.5 rounded-xl'}`}
                           style={({ isActive }) => (isLight
                             ? {
                                 color:           isActive ? 'var(--hc-link)' : 'var(--hc-text)',
@@ -411,7 +411,7 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, u
                               {/* Hover background */}
                               {!isActive && (
                                 <motion.div
-                                  className="absolute inset-0 rounded-xl opacity-0 group-hover/item:opacity-100 transition-opacity duration-150"
+                                  className="absolute inset-0 rounded-[10px] opacity-0 group-hover/item:opacity-100 transition-opacity duration-150"
                                   style={{ backgroundColor: hoverBg }}
                                 />
                               )}
@@ -504,16 +504,29 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, u
       {/* User */}
       <div className="p-3 space-y-1 shrink-0" style={{ borderTop: `1px solid ${isLight ? 'var(--hc-border)' : 'var(--hc-n-800)'}` }}>
         {isLight ? (
-          /* "Ver tienda como cliente", "Tour del panel" y "Cerrar sesión" viven
-             ahora en Configuración → Plan y cuenta (AdminPlanes.jsx), igual que
-             el mockup aprobado ubica "Cerrá sesión" ahí y no en el sidebar. */
-          <NavLink
-            to="/admin/pos"
-            className="flex items-center justify-center px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-[var(--hc-surface-2)]"
-            style={{ color: 'var(--hc-link)', border: '1px solid var(--hc-border)' }}
-          >
-            Ir a la Caja (POS) →
-          </NavLink>
+          /* "Ver tienda como cliente" y "Tour del panel" viven en Configuración
+             → Plan y cuenta (AdminPlanes.jsx). "Cerrar sesión" también sigue
+             ahí, pero por pedido del dueño hay un acceso directo en el sidebar. */
+          <>
+            <NavLink
+              to="/admin/pos"
+              className="flex items-center justify-center px-3 py-[11px] rounded-[10px] text-sm font-semibold transition-colors hover:bg-[var(--hc-surface-2)]"
+              style={{ color: 'var(--hc-link)', border: '1px solid var(--hc-border)' }}
+            >
+              Ir a la Caja (POS) →
+            </NavLink>
+            <motion.button
+              onClick={handleLogout}
+              whileHover={{ color: '#dc2626', backgroundColor: 'rgba(220,38,38,0.06)' }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[10px] text-sm font-medium transition-colors text-left"
+              style={{ color: 'var(--hc-muted)' }}
+            >
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              {t('admin.sidebar.cerrarSesion')}
+            </motion.button>
+          </>
         ) : (
           <>
             <ModeSwitcherWrapper userRole={userRole} />
@@ -548,19 +561,21 @@ function SidebarContent({ sidebarLinks, roleBadge, t, userName, empresaNombre, u
             </motion.button>
           </>
         )}
-        <div className="flex items-center gap-2 px-3 py-2">
+        <div className={`flex items-center px-3 ${isLight ? 'gap-2.5 pt-3 pb-0.5' : 'gap-2 py-2'}`}>
           <motion.div
             whileHover={{ scale: 1.08 }}
             transition={{ duration: 0.15 }}
-            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
-            style={{ backgroundColor: 'rgba(23,71,168,0.15)', color: 'var(--hc-accent)' }}
+            className={`rounded-full flex items-center justify-center shrink-0 ${isLight ? 'w-[34px] h-[34px] text-[13px] font-bold' : 'w-7 h-7 text-xs font-semibold'}`}
+            style={isLight
+              ? { backgroundColor: 'var(--hc-link)', color: '#fff' }
+              : { backgroundColor: 'rgba(23,71,168,0.15)', color: 'var(--hc-accent)' }}
           >
             {userName?.[0]?.toUpperCase() || 'A'}
           </motion.div>
           <div className="min-w-0">
-            <div className="text-xs truncate" style={{ color: isLight ? 'var(--hc-text)' : 'rgba(255,255,255,0.55)' }}>{userName || 'Admin'}</div>
+            <div className={`truncate ${isLight ? 'text-[13px] font-semibold' : 'text-xs'}`} style={{ color: isLight ? 'var(--hc-text)' : 'rgba(255,255,255,0.55)' }}>{userName || 'Admin'}</div>
             {userRole === 'EMPRENDEDOR' && tenantLoaded ? (
-              <div className="text-[10px] truncate" style={{ color: muted }}>
+              <div className={`truncate ${isLight ? 'text-xs' : 'text-[10px]'}`} style={{ color: muted }}>
                 Plan {PLAN_LABELS[planNombre] ?? planNombre}
               </div>
             ) : empresaNombre && (
@@ -636,7 +651,7 @@ export default function AdminLayout({ children }) {
       {/* Nav oscura n-900 con ítem activo rojo (Brand Book cap. 6) para ADMIN;
           Sistema (EMPRENDEDOR) usa el sidebar claro del mockup aprobado. */}
       <aside
-        className="hc-admin-sidebar w-60 shrink-0 flex-col fixed inset-y-0 left-0 z-20 hidden md:flex"
+        className={`hc-admin-sidebar shrink-0 flex-col fixed inset-y-0 left-0 z-20 hidden md:flex ${isLightSidebar ? 'w-[230px]' : 'w-60'}`}
         style={isLightSidebar
           ? { backgroundColor: 'var(--hc-surface)', borderRight: '1px solid var(--hc-border)' }
           : { backgroundColor: 'var(--hc-n-900)', borderRight: '1px solid var(--hc-n-800)' }}
@@ -733,7 +748,7 @@ export default function AdminLayout({ children }) {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 350, damping: 35 }}
-              className="hc-admin-sidebar fixed inset-y-0 left-0 z-50 w-64 flex flex-col md:hidden"
+              className={`hc-admin-sidebar fixed inset-y-0 left-0 z-50 flex flex-col md:hidden ${isLightSidebar ? 'w-[230px]' : 'w-64'}`}
               style={isLightSidebar
                 ? { backgroundColor: 'var(--hc-surface)', borderRight: '1px solid var(--hc-border)' }
                 : { backgroundColor: 'var(--hc-n-900)', borderRight: '1px solid var(--hc-n-800)' }}
@@ -758,7 +773,7 @@ export default function AdminLayout({ children }) {
       </AnimatePresence>
 
       {/* ── Content ── */}
-      <div className="md:ml-60 h-screen overflow-hidden flex flex-col pt-14 md:pt-0">
+      <div className={`h-screen overflow-hidden flex flex-col pt-14 md:pt-0 ${isLightSidebar ? 'md:ml-[230px]' : 'md:ml-60'}`}>
         <OfflineBanner />
         <TrialBanner />
         <motion.main
