@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -95,7 +95,9 @@ public class WhatsAppService {
         if (u == null || u.getTelefono() == null) return;
 
         long dias = u.getFechaUltimoAcceso() != null
-            ? ChronoUnit.DAYS.between(u.getFechaUltimoAcceso(), LocalDateTime.now(Constants.ZONA_CR))
+            ? ChronoUnit.DAYS.between(
+                u.getFechaUltimoAcceso().atZone(Constants.ZONA_CR),
+                ZonedDateTime.now(Constants.ZONA_CR))
             : 60;
 
         Map<String, String> ctx = new LinkedHashMap<>();
