@@ -75,7 +75,7 @@ public class AuthTotpVerifyHandler {
                 if (matchIdx < 0) {
                     usuarioService.incrementarIntentosFallidos(usuario.getId());
                     log.warn("[2FA] Código de recuperación inválido para userId={}", usuario.getId());
-                    try { securityAuditService.log2FAFailed(usuario.getId(), usuario.getCorreo(), httpRequest, "RECOVERY_CODE"); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
+                    AuthAuditSupport.run(log, () -> securityAuditService.log2FAFailed(usuario.getId(), usuario.getCorreo(), httpRequest, "RECOVERY_CODE"));
                     return ResponseEntity.status(401).body(ResponseDTO.error("Código de recuperación inválido"));
                 }
                 stored.remove(matchIdx);
@@ -83,7 +83,7 @@ public class AuthTotpVerifyHandler {
                 usuarioService.guardar(usuario);
                 usuarioService.resetearIntentosFallidos(usuario.getId());
                 log.info("[2FA] Login por recovery code userId={}. Restantes: {}", usuario.getId(), stored.size());
-                try { securityAuditService.log2FASuccess(usuario.getId(), usuario.getCorreo(), httpRequest, "RECOVERY_CODE"); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
+                AuthAuditSupport.run(log, () -> securityAuditService.log2FASuccess(usuario.getId(), usuario.getCorreo(), httpRequest, "RECOVERY_CODE"));
                 return ResponseEntity.ok(authSupport.buildAuthResponse(usuario));
             }
 
@@ -100,11 +100,11 @@ public class AuthTotpVerifyHandler {
                     otpService.marcarUsado(otp);
                     usuarioService.resetearIntentosFallidos(usuario.getId());
                     log.info("[2FA] Login por EMAIL_OTP exitoso userId={}", usuario.getId());
-                    try { securityAuditService.log2FASuccess(usuario.getId(), usuario.getCorreo(), httpRequest, "EMAIL_OTP"); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
+                    AuthAuditSupport.run(log, () -> securityAuditService.log2FASuccess(usuario.getId(), usuario.getCorreo(), httpRequest, "EMAIL_OTP"));
                     return ResponseEntity.ok(authSupport.buildAuthResponse(usuario));
                 } catch (RuntimeException e) {
                     usuarioService.incrementarIntentosFallidos(usuario.getId());
-                    try { securityAuditService.log2FAFailed(usuario.getId(), usuario.getCorreo(), httpRequest, "EMAIL_OTP"); } catch (Exception ae) { log.warn("audit error: {}", ae.getMessage()); }
+                    AuthAuditSupport.run(log, () -> securityAuditService.log2FAFailed(usuario.getId(), usuario.getCorreo(), httpRequest, "EMAIL_OTP"));
                     return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
                 }
             }
@@ -113,13 +113,13 @@ public class AuthTotpVerifyHandler {
             if (!twoFactorService.verifyCodeWithReplayProtection(usuario, code)) {
                 usuarioService.incrementarIntentosFallidos(usuario.getId());
                 log.warn("[2FA] TOTP incorrecto o replay para userId={}", usuario.getId());
-                try { securityAuditService.log2FAFailed(usuario.getId(), usuario.getCorreo(), httpRequest, "TOTP"); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
+                AuthAuditSupport.run(log, () -> securityAuditService.log2FAFailed(usuario.getId(), usuario.getCorreo(), httpRequest, "TOTP"));
                 return ResponseEntity.status(401).body(ResponseDTO.error("Código incorrecto o expirado"));
             }
 
             usuarioService.resetearIntentosFallidos(usuario.getId());
             log.info("[2FA] TOTP login exitoso userId={}", usuario.getId());
-            try { securityAuditService.log2FASuccess(usuario.getId(), usuario.getCorreo(), httpRequest, "TOTP"); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
+            AuthAuditSupport.run(log, () -> securityAuditService.log2FASuccess(usuario.getId(), usuario.getCorreo(), httpRequest, "TOTP"));
             return ResponseEntity.ok(authSupport.buildAuthResponse(usuario));
 
         } catch (Exception e) {
