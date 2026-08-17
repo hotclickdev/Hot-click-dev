@@ -36,7 +36,7 @@
     "react-helmet-async": "^3.0.0",
     "react-i18next": "^17.0.7",
     "react-international-phone": "^4.8.0",
-    "react-qr-code": "^2.0.21",
+    "react-qr-code": "^2.2.0",
     "react-router-dom": "^7.15.0",
     "workbox-window": "^7.4.1",
     "xlsx": "^0.18.5",
