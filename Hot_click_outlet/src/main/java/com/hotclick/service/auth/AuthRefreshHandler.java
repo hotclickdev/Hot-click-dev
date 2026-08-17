@@ -56,7 +56,7 @@ public class AuthRefreshHandler {
         if (tokenStr != null && !tokenStr.isBlank()) {
             refreshTokenService.revocar(tokenStr);
         }
-        try { securityAuditService.logLogout(null, null, httpRequest); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
+        AuthAuditSupport.run(log, () -> securityAuditService.logLogout(null, null, httpRequest));
         return ResponseEntity.ok(ResponseDTO.success("Sesión cerrada correctamente", null));
     }
 }

@@ -12,6 +12,7 @@ import com.hotclick.repository.MiembroEmpresaRepository;
 import com.hotclick.security.JwtUtil;
 import com.hotclick.service.RefreshTokenService;
 import com.hotclick.service.UsuarioService;
+import com.hotclick.utils.EmpresaNombre;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,9 +50,7 @@ public class AuthTenantSwitchHandler {
                 return ResponseEntity.status(403).body(ResponseDTO.error("No tenés acceso a ese negocio"));
             Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Negocio no encontrado"));
-            String rol = membresia.getRolEnEmpresa() != null && !membresia.getRolEnEmpresa().isBlank()
-                ? membresia.getRolEnEmpresa()
-                : (currentUser.getRoles().isEmpty() ? "USUARIO_FINAL" : currentUser.getRoles().get(0).getNombreRol());
+            String rol = rolDeMembresia(membresia, currentUser);
             String accessToken = jwtUtil.generateToken(currentUser.getCorreo(), currentUser.getId(), rol, empresaId, empresa.getSlug());
             RefreshToken rt = refreshTokenService.crear(currentUser);
             String nombre = currentUser.getNombre() != null ? currentUser.getNombre() : currentUser.getCorreo().split("@")[0];
@@ -76,9 +75,7 @@ public class AuthTenantSwitchHandler {
                 .stream().map(m -> {
                     Map<String, Object> e = new HashMap<>();
                     e.put("id",            m.getEmpresa().getId());
-                    e.put("nombre",        m.getEmpresa().getNombreComercial() != null
-                                               ? m.getEmpresa().getNombreComercial()
-                                               : m.getEmpresa().getNombreEmpresa());
+                    e.put("nombre",        EmpresaNombre.mostrar(m.getEmpresa(), m.getEmpresa().getNombreEmpresa()));
                     e.put("logoUrl",       m.getEmpresa().getLogoUrl());
                     e.put("slug",          m.getEmpresa().getSlug());
                     e.put("estadoEmpresa", m.getEmpresa().getEstadoEmpresa());
@@ -114,9 +111,7 @@ public class AuthTenantSwitchHandler {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Negocio no encontrado"));
             // Generar JWT apuntando a la empresa seleccionada, con el rol QUE TIENE
             // en esa empresa (no el rol global de la cuenta)
-            String rol          = membresia.getRolEnEmpresa() != null && !membresia.getRolEnEmpresa().isBlank()
-                ? membresia.getRolEnEmpresa()
-                : (usuario.getRoles().isEmpty() ? "USUARIO_FINAL" : usuario.getRoles().get(0).getNombreRol());
+            String rol          = rolDeMembresia(membresia, usuario);
             String accessToken = jwtUtil.generateToken(usuario.getCorreo(), userId, rol, empresaId, empresa.getSlug());
             RefreshToken rt    = refreshTokenService.crear(usuario);
             String nombre      = usuario.getNombre() != null ? usuario.getNombre() : usuario.getCorreo().split("@")[0];
@@ -129,5 +124,13 @@ public class AuthTenantSwitchHandler {
             log.error("[seleccionar-empresa] {}", e.getMessage(), e);
             return ResponseEntity.status(401).body(ResponseDTO.error("Token expirado o inválido"));
         }
+    }
+
+    static String rolDeMembresia(MiembroEmpresa membresia, Usuario usuario) {
+        if (membresia.getRolEnEmpresa() != null && !membresia.getRolEnEmpresa().isBlank()) {
+            return membresia.getRolEnEmpresa();
+        }
+        if (usuario.getRoles().isEmpty()) return "USUARIO_FINAL";
+        return usuario.getRoles().get(0).getNombreRol();
     }
 }
