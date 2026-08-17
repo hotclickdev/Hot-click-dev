@@ -30,6 +30,10 @@ import java.util.Optional;
 public class AuthCredentialLoginHandler {
 
     private static final Logger log = LoggerFactory.getLogger(AuthCredentialLoginHandler.class);
+    private static final String MSG_CREDENCIALES = "Credenciales inválidas";
+    private static final String KEY_SUCCESS = "success";
+    private static final String KEY_TEMP_TOKEN = "tempToken";
+    private static final String KEY_MESSAGE = "message";
 
     @Autowired private UsuarioService              usuarioService;
     @Autowired private JwtUtil                     jwtUtil;
@@ -48,9 +52,9 @@ public class AuthCredentialLoginHandler {
         Optional<Usuario> usuarioOpt = usuarioService.buscarPorCorreo(request.getCorreo());
         if (usuarioOpt.isEmpty()) {
             // Anti-enumeration: same response as wrong password
-            try { securityAuditService.logLoginFailed(request.getCorreo(), httpRequest, "user_not_found"); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
-            try { securityDetectionService.recordFailedLogin(securityAuditService.getIp(httpRequest), request.getCorreo()); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
-            return ResponseEntity.status(401).body(ResponseDTO.error("Credenciales inválidas"));
+            AuthAuditSupport.run(log, () -> securityAuditService.logLoginFailed(request.getCorreo(), httpRequest, "user_not_found"));
+            AuthAuditSupport.run(log, () -> securityDetectionService.recordFailedLogin(securityAuditService.getIp(httpRequest), request.getCorreo()));
+            return ResponseEntity.status(401).body(ResponseDTO.error(MSG_CREDENCIALES));
         }
 
         Usuario usuario = usuarioOpt.get();
@@ -58,16 +62,16 @@ public class AuthCredentialLoginHandler {
         // [FIX-1] Verificar bloqueo por intentos fallidos antes de validar contraseña
         if (usuario.getBloqueadoHasta() != null && LocalDateTime.now(Constants.ZONA_CR).isBefore(usuario.getBloqueadoHasta())) {
             log.warn("Login bloqueado para {}: cuenta bloqueada hasta {}", request.getCorreo(), usuario.getBloqueadoHasta());
-            try { securityAuditService.logLoginBlocked(request.getCorreo(), httpRequest); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
+            AuthAuditSupport.run(log, () -> securityAuditService.logLoginBlocked(request.getCorreo(), httpRequest));
             return ResponseEntity.status(403).body(ResponseDTO.error(
                 "Cuenta temporalmente bloqueada por múltiples intentos fallidos. Revisá tu correo para recuperar el acceso."));
         }
 
         if (!passwordEncoder.matches(request.getContrasena(), usuario.getContrasenaHash())) {
             usuarioService.incrementarIntentosFallidos(usuario.getId());
-            try { securityAuditService.logLoginFailed(request.getCorreo(), httpRequest, "wrong_password"); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
-            try { securityDetectionService.recordFailedLogin(securityAuditService.getIp(httpRequest), request.getCorreo()); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
-            return ResponseEntity.status(401).body(ResponseDTO.error("Credenciales inválidas"));
+            AuthAuditSupport.run(log, () -> securityAuditService.logLoginFailed(request.getCorreo(), httpRequest, "wrong_password"));
+            AuthAuditSupport.run(log, () -> securityDetectionService.recordFailedLogin(securityAuditService.getIp(httpRequest), request.getCorreo()));
+            return ResponseEntity.status(401).body(ResponseDTO.error(MSG_CREDENCIALES));
         }
 
         int estado = usuario.getEstado() == null ? 0 : usuario.getEstado();
@@ -80,12 +84,12 @@ public class AuthCredentialLoginHandler {
                 "Tu cuenta no está activa. Contactá al administrador."));
         }
         if (estado == Constants.ESTADO_ELIMINADO) {
-            return ResponseEntity.status(401).body(ResponseDTO.error("Credenciales inválidas"));
+            return ResponseEntity.status(401).body(ResponseDTO.error(MSG_CREDENCIALES));
         }
 
         usuarioService.resetearIntentosFallidos(usuario.getId());
         usuarioService.actualizarUltimoAcceso(usuario.getId());
-        try { securityAuditService.logLoginSuccess(usuario.getId(), usuario.getCorreo(), httpRequest); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
+        AuthAuditSupport.run(log, () -> securityAuditService.logLoginSuccess(usuario.getId(), usuario.getCorreo(), httpRequest));
 
         boolean esAdminIT = usuario.getRoles().stream()
             .anyMatch(r -> Constants.ROL_ADMIN.equals(r.getNombreRol()));
@@ -94,10 +98,10 @@ public class AuthCredentialLoginHandler {
         if (esAdminIT && webAuthnService.tieneCredenciales(usuario.getCorreo())) {
             String tempToken = jwtUtil.generateTempToken(usuario.getCorreo(), usuario.getId());
             return ResponseEntity.ok(Map.of(
-                "success",          true,
+                KEY_SUCCESS,          true,
                 "requiresWebauthn", true,
-                "tempToken",        tempToken,
-                "message",          "Usá tu llave de seguridad para completar el inicio de sesión."
+                KEY_TEMP_TOKEN,        tempToken,
+                KEY_MESSAGE,          "Usá tu llave de seguridad para completar el inicio de sesión."
             ));
         }
 
@@ -116,20 +120,20 @@ public class AuthCredentialLoginHandler {
                     ? "Enviamos un código a tu correo"
                     : "Ingresá el código de tu app de autenticación";
                 return ResponseEntity.ok(Map.of(
-                    "success",     true,
+                    KEY_SUCCESS,     true,
                     "requires2fa", true,
-                    "tempToken",   tempToken,
+                    KEY_TEMP_TOKEN,   tempToken,
                     "method",      method,
-                    "message",     message
+                    KEY_MESSAGE,     message
                 ));
             } else {
                 // Multiple methods — show picker
                 return ResponseEntity.ok(Map.of(
-                    "success",     true,
+                    KEY_SUCCESS,     true,
                     "requires2fa", true,
-                    "tempToken",   tempToken,
+                    KEY_TEMP_TOKEN,   tempToken,
                     "methods",     methods,
-                    "message",     "Seleccioná tu método de verificación"
+                    KEY_MESSAGE,     "Seleccioná tu método de verificación"
                 ));
             }
         }
@@ -154,8 +158,8 @@ public class AuthCredentialLoginHandler {
                 "success",                   true,
                 "requiresEmpresaSelection",  true,
                 "empresas",                  empresas,
-                "tempToken",                 selToken,
-                "message",                   "Seleccioná el negocio al que querés acceder"
+                KEY_TEMP_TOKEN,                 selToken,
+                KEY_MESSAGE,                   "Seleccioná el negocio al que querés acceder"
             ));
         }
 
