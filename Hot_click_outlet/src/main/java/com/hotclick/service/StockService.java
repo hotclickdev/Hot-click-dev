@@ -1,21 +1,18 @@
 package com.hotclick.service;
 
-import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.model.MovimientoStock;
 import com.hotclick.model.Producto;
 import com.hotclick.repository.MovimientoStockRepository;
 import com.hotclick.repository.ProductoRepository;
-import com.hotclick.sse.StockCambioEvent;
-import com.hotclick.utils.Constants;
+import com.hotclick.service.stock.StockAjusteOperations;
+import com.hotclick.service.stock.StockMovimientoSupport;
+import com.hotclick.service.stock.StockVentaOperations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
 
 /**
  * Servicio central de inventario.
@@ -38,7 +35,9 @@ public class StockService {
 
     @Autowired private ProductoRepository         productoRepository;
     @Autowired private MovimientoStockRepository  movimientoStockRepository;
-    @Autowired private ApplicationEventPublisher  eventPublisher;
+    @Autowired private StockMovimientoSupport     movimientoSupport;
+    @Autowired private StockVentaOperations       ventaOperations;
+    @Autowired private StockAjusteOperations      ajusteOperations;
 
     // ── Operaciones públicas ─────────────────────────────────────────────────────
 
@@ -58,7 +57,7 @@ public class StockService {
         producto.setStockReservado(resDespues);
         productoRepository.save(producto);
 
-        registrar(producto, MovimientoStock.RESERVA, cantidad,
+        movimientoSupport.registrar(producto, MovimientoStock.RESERVA, cantidad,
             producto.getStockActual(), producto.getStockActual(),
             resAntes, resDespues,
             referencia, operadorCorreo);
@@ -78,7 +77,7 @@ public class StockService {
         producto.setStockReservado(resDespues);
         productoRepository.save(producto);
 
-        registrar(producto, MovimientoStock.LIBERACION_RESERVA, cantidad,
+        movimientoSupport.registrar(producto, MovimientoStock.LIBERACION_RESERVA, cantidad,
             producto.getStockActual(), producto.getStockActual(),
             resAntes, resDespues,
             referencia, operadorCorreo);
@@ -98,111 +97,24 @@ public class StockService {
     public void descontarPorVenta(Producto producto, int cantidad,
                                   boolean liberarReservaPrevia,
                                   String referencia, String operadorCorreo) {
-        descontarPorVentaConTipo(producto, cantidad, liberarReservaPrevia,
-            MovimientoStock.VENTA, referencia, operadorCorreo);
+        ventaOperations.descontarPorVenta(this, producto, cantidad, liberarReservaPrevia,
+            referencia, operadorCorreo);
     }
 
     @Transactional
     public void descontarPorVentaPOS(Producto producto, int cantidad,
                                       String referencia, String operadorCorreo) {
-        descontarPorVentaConTipo(producto, cantidad, false,
-            MovimientoStock.VENTA_POS, referencia, operadorCorreo);
+        ventaOperations.descontarPorVentaPOS(this, producto, cantidad, referencia, operadorCorreo);
     }
 
-    private void descontarPorVentaConTipo(Producto producto, int cantidad,
-                                           boolean liberarReservaPrevia, String tipo,
-                                           String referencia, String operadorCorreo) {
-        int actAntes  = producto.getStockActual();
-        int actDespues = actAntes - cantidad;
-        producto.setStockActual(actDespues);
-
-        int resAntes   = producto.getStockReservado();
-        int resDespues = liberarReservaPrevia
-            ? Math.max(0, resAntes - cantidad)
-            : resAntes;
-        producto.setStockReservado(resDespues);
-
-        if (Boolean.TRUE.equals(producto.getEsUnico())) {
-            producto.setVendido(true);
-        }
-        if (actDespues <= 0) {
-            producto.setVisibleCatalogo(false);
-            producto.setDestacado(false);
-            if (producto.getFechaAgotado() == null) {
-                producto.setFechaAgotado(LocalDateTime.now(Constants.ZONA_CR));
-            }
-        }
-        productoRepository.save(producto);
-
-        registrar(producto, tipo, cantidad,
-            actAntes, actDespues,
-            resAntes, resDespues,
-            referencia, operadorCorreo);
-
-        publicarCambioStock(producto, actDespues);
-
-        log.info("Venta ({}) — producto id={} '{}': actual {} → {}, reservado {} → {}",
-            tipo, producto.getId(), producto.getNombreProducto(),
-            actAntes, actDespues, resAntes, resDespues);
-    }
-
-    /**
-     * Ajuste manual de entrada (reposición de inventario).
-     */
     @Transactional
     public void ajustarEntrada(Long productoId, int cantidad, String notas, String operadorCorreo) {
-        Producto producto = productoRepository.findByIdForUpdate(productoId)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
-        if (producto.getEstado() != Constants.ESTADO_ACTIVO) {
-            throw new IllegalStateException("Producto no activo");
-        }
-        int actAntes   = producto.getStockActual();
-        int actDespues = actAntes + cantidad;
-        producto.setStockActual(actDespues);
-        productoRepository.save(producto);
-
-        MovimientoStock m = buildMovimiento(producto, MovimientoStock.AJUSTE_ENTRADA, cantidad,
-            actAntes, actDespues, producto.getStockReservado(), producto.getStockReservado(),
-            "ajuste-manual", operadorCorreo);
-        m.setNotas(notas);
-        movimientoStockRepository.save(m);
-
-        publicarCambioStock(producto, actDespues);
-
-        log.info("Ajuste entrada — producto id={}: actual {} → {}", productoId, actAntes, actDespues);
+        ajusteOperations.ajustarEntrada(this, productoId, cantidad, notas, operadorCorreo);
     }
 
-    /**
-     * Fija stockActual a la existencia física contada (chequeo de inventario).
-     * Registra AJUSTE_ENTRADA o AJUSTE_SALIDA según el delta contra el sistema.
-     * Usado por el chequeo semanal del bot de Telegram.
-     */
     @Transactional
     public void ajustarAExistencia(Long productoId, int cantidadReal, String referencia, String operadorCorreo) {
-        Producto producto = productoRepository.findByIdForUpdate(productoId)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
-        if (producto.getEstado() != Constants.ESTADO_ACTIVO) {
-            throw new IllegalStateException("Producto no activo");
-        }
-        int actAntes = producto.getStockActual();
-        if (actAntes == cantidadReal) return;
-
-        int delta = cantidadReal - actAntes;
-        producto.setStockActual(cantidadReal);
-        productoRepository.save(producto);
-
-        MovimientoStock m = buildMovimiento(producto,
-            delta > 0 ? MovimientoStock.AJUSTE_ENTRADA : MovimientoStock.AJUSTE_SALIDA,
-            Math.abs(delta),
-            actAntes, cantidadReal,
-            producto.getStockReservado(), producto.getStockReservado(),
-            referencia, operadorCorreo);
-        m.setNotas("Conteo físico de inventario");
-        movimientoStockRepository.save(m);
-
-        publicarCambioStock(producto, cantidadReal);
-
-        log.info("Ajuste a existencia — producto id={}: actual {} → {}", productoId, actAntes, cantidadReal);
+        ajusteOperations.ajustarAExistencia(this, productoId, cantidadReal, referencia, operadorCorreo);
     }
 
     // ── Consulta de auditoría ────────────────────────────────────────────────────
@@ -210,45 +122,4 @@ public class StockService {
     public java.util.List<MovimientoStock> historialPorProducto(Long productoId) {
         return movimientoStockRepository.findByProductoIdOrderByFechaMovimientoDesc(productoId);
     }
-
-    // ── Helpers internos ─────────────────────────────────────────────────────────
-
-    /**
-     * Publica StockCambioEvent tras un cambio exitoso de stockActual.
-     * El listener lo despacha vía SSE solo después del COMMIT de la transacción actual.
-     */
-    private void publicarCambioStock(Producto producto, int stockActualDespues) {
-        eventPublisher.publishEvent(new StockCambioEvent(
-            this, producto.getId(), producto.getEmpresaId(), stockActualDespues));
-    }
-
-    private void registrar(Producto producto, String tipo, int cantidad,
-                            int actAntes, int actDespues,
-                            int resAntes, int resDespues,
-                            String referencia, String operadorCorreo) {
-        movimientoStockRepository.save(
-            buildMovimiento(producto, tipo, cantidad,
-                actAntes, actDespues, resAntes, resDespues,
-                referencia, operadorCorreo));
-    }
-
-    private MovimientoStock buildMovimiento(Producto producto, String tipo, int cantidad,
-                                            int actAntes, int actDespues,
-                                            int resAntes, int resDespues,
-                                            String referencia, String operadorCorreo) {
-        MovimientoStock m = new MovimientoStock();
-        m.setProducto(producto);
-        m.setTipoMovimiento(tipo);
-        m.setTipo(tipo);
-        m.setCantidad(cantidad);
-        m.setStockActualAntes(actAntes);
-        m.setStockActualDespues(actDespues);
-        m.setStockReservadoAntes(resAntes);
-        m.setStockReservadoDespues(resDespues);
-        m.setReferencia(referencia);
-        m.setOperadorCorreo(operadorCorreo);
-        m.setFechaMovimiento(LocalDateTime.now(Constants.ZONA_CR));
-        return m;
-    }
-
 }

@@ -1,163 +1,21 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { shoppingAssistantService } from '@/services/shoppingAssistantService'
-import { getOrCreateVisitorId } from '@/utils/visitorId'
+import { TypingDots } from './checkoutAssistant/checkoutAssistantHelpers'
+import { useCheckoutAssistant } from './checkoutAssistant/useCheckoutAssistant'
 
-function clasificarError(code) {
-  const leve = ['card_declined', 'insufficient_funds', 'expired_card', 'incorrect_cvc', 'do_not_honor']
-  return leve.some(e => code?.toLowerCase().includes(e)) ? 'leve' : 'sistema'
-}
-
-function buildInitialMessages(tipo, numeroPedido, metodoPago, errorCode, usuarioDatos) {
-  if (tipo === 'success') {
-    const datosConocidos = []
-    if (usuarioDatos.nombre)    datosConocidos.push(`nombre: ${usuarioDatos.nombre}`)
-    if (usuarioDatos.telefono)  datosConocidos.push(`teléfono: ${usuarioDatos.telefono}`)
-    if (usuarioDatos.direccion) datosConocidos.push(`dirección: ${usuarioDatos.direccion}`)
-    const mensajeInicial = '¡Tu compra fue exitosa! 🎉 Para coordinar la entrega, necesito confirmar algunos datos tuyos.'
-    const autoQuery = datosConocidos.length > 0
-      ? `Mi pedido es el #${numeroPedido}. Mis datos son: ${datosConocidos.join(', ')}. ¿Están correctos y qué sigue?`
-      : `Mi pedido es el #${numeroPedido} pagado con ${metodoPago}. ¿Qué datos necesitás para la entrega?`
-    return { mensajeInicial, autoQuery }
-  }
-  const tipoError = clasificarError(errorCode)
-  if (tipoError === 'leve') {
-    return {
-      mensajeInicial: 'Hubo un problema con tu método de pago. No te preocupés, tu carrito sigue intacto.',
-      autoQuery: 'Tuve un problema al pagar. ¿Qué opciones tengo?',
-    }
-  }
-  const numPedidoStr = numeroPedido ? ` #${numeroPedido}` : ''
-  return {
-    mensajeInicial: 'Ocurrió un inconveniente en el proceso. Tu pedido quedó registrado como pendiente y nos pondremos en contacto.',
-    autoQuery: `Tuve un problema al completar mi pedido${numPedidoStr}. ¿Qué sigue?`,
-  }
-}
-
-function TypingDots() {
-  return (
-    <span className="inline-flex items-center gap-[3px]">
-      {[0, 1, 2].map(i => (
-        <span key={i} style={{
-          display: 'inline-block', width: 5, height: 5, borderRadius: '50%',
-          backgroundColor: 'rgba(255,255,255,0.55)',
-          animation: 'hc-dot 1.1s ease-in-out infinite',
-          animationDelay: `${i * 0.18}s`,
-        }} />
-      ))}
-    </span>
-  )
-}
-
-/**
- * Agente embebido para los estados post-pago.
- *
- * @param {'success'|'failed'} tipo  - Tipo de estado de pago.
- * @param {string} numeroPedido      - Número de pedido.
- * @param {string} metodoPago        - Método de pago utilizado.
- * @param {string} errorCode         - Código de error interno (solo para 'failed', no se muestra al usuario).
- * @param {object} usuarioDatos      - Datos ya conocidos del usuario { nombre, telefono, direccion }.
- */
-export default function CheckoutAssistant({
-  tipo,
-  numeroPedido = '',
-  metodoPago = '',
-  errorCode = '',
-  usuarioDatos = {},
-}) {
-  const [mensajes, setMensajes] = useState([])
-  const [input,    setInput]    = useState('')
-  const [cargando, setCargando] = useState(false)
-  const [sesionId, setSesionId] = useState(() => shoppingAssistantService.loadSesionId(`hotclick-checkout-${numeroPedido}`))
-  const visitorId = useMemo(() => getOrCreateVisitorId(), [])
-  const bottomRef  = useRef(null)
-  const inputRef   = useRef(null)
-  const cargRef    = useRef(false)
-  const initialized = useRef(false)
-
-  function setLoading(v) { cargRef.current = v; setCargando(v) }
-
-  // Construir contexto según tipo
-  const contexto = tipo === 'success'
-    ? `PAGO_EXITO:${metodoPago}:${numeroPedido}`
-    : `PAGO_FALLO:${errorCode}`
-
-  useEffect(() => {
-    if (initialized.current) return
-    initialized.current = true
-    const { mensajeInicial, autoQuery } = buildInitialMessages(tipo, numeroPedido, metodoPago, errorCode, usuarioDatos)
-    setMensajes([{ rol: 'assistant', texto: mensajeInicial }])
-    setTimeout(() => enviarDirecto(autoQuery), 450)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [mensajes])
-
-  useEffect(() => {
-    setTimeout(() => inputRef.current?.focus(), 300)
-  }, [])
-
-  async function enviarDirecto(msg) {
-    if (!msg || cargRef.current) return
-    setLoading(true)
-    setMensajes(prev => [...prev, { rol: 'assistant', typing: true }])
-    try {
-      const result = await shoppingAssistantService.chat({
-        empresaSlug: 'hotclick', mensaje: msg, sesionId, contexto, visitorId,
-      })
-      if (result.sesionId && result.sesionId !== sesionId) {
-        setSesionId(result.sesionId)
-        shoppingAssistantService.saveSesionId(`hotclick-checkout-${numeroPedido}`, result.sesionId)
-      }
-      setMensajes(prev => [...prev.slice(0, -1), {
-        rol: 'assistant', texto: result.respuesta, productos: result.productos ?? [],
-      }])
-    } catch {
-      setMensajes(prev => prev.slice(0, -1))
-    } finally { setLoading(false) }
-  }
-
-  async function enviar(mensajeDirecto) {
-    const msg = (mensajeDirecto ?? input).trim()
-    if (!msg || cargRef.current) return
-    setInput('')
-    setLoading(true)
-    setMensajes(prev => [...prev,
-      { rol: 'user', texto: msg },
-      { rol: 'assistant', typing: true },
-    ])
-    try {
-      const result = await shoppingAssistantService.chat({
-        empresaSlug: 'hotclick', mensaje: msg, sesionId, contexto, visitorId,
-      })
-      if (result.sesionId && result.sesionId !== sesionId) {
-        setSesionId(result.sesionId)
-        shoppingAssistantService.saveSesionId(`hotclick-checkout-${numeroPedido}`, result.sesionId)
-      }
-      setMensajes(prev => [...prev.slice(0, -1), {
-        rol: 'assistant', texto: result.respuesta, productos: result.productos ?? [],
-      }])
-    } catch {
-      setMensajes(prev => [...prev.slice(0, -1), {
-        rol: 'assistant', texto: 'No pude conectar. Intentá de nuevo.',
-      }])
-    } finally {
-      setLoading(false)
-      inputRef.current?.focus()
-    }
-  }
-
-  function onKeyDown(e) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() }
-  }
-
-  const isSuccess = tipo === 'success'
-  const accentColor = isSuccess ? '#22c55e' : 'var(--hc-accent)'
-  const subtitleText = isSuccess
-    ? 'Confirmá tus datos para que podamos contactarte.'
-    : 'Te ayudamos a resolver el problema.'
+export default function CheckoutAssistant(props) {
+  const {
+    mensajes,
+    input,
+    setInput,
+    cargando,
+    bottomRef,
+    inputRef,
+    enviar,
+    onKeyDown,
+    isSuccess,
+    accentColor,
+    subtitleText,
+  } = useCheckoutAssistant(props)
 
   return (
     <motion.div
@@ -172,7 +30,6 @@ export default function CheckoutAssistant({
         border: `1px solid ${isSuccess ? 'rgba(34,197,94,0.2)' : 'color-mix(in srgb, var(--hc-accent) 20%, transparent)'}`,
       }}
     >
-      {/* Header del agente */}
       <div className="flex items-center gap-3 px-5 py-4"
         style={{ borderBottom: `1px solid ${isSuccess ? 'rgba(34,197,94,0.12)' : 'color-mix(in srgb, var(--hc-accent) 12%, transparent)'}` }}>
         <div className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold shrink-0"
@@ -189,7 +46,6 @@ export default function CheckoutAssistant({
         </div>
       </div>
 
-      {/* Mensajes */}
       <div className="px-4 py-3 space-y-3 max-h-72 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
         {mensajes.map((m, i) => (
           <div key={i} className={`flex gap-2 ${m.rol === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -218,7 +74,6 @@ export default function CheckoutAssistant({
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
       <div className="px-4 pb-4 pt-2"
         style={{ borderTop: `1px solid ${isSuccess ? 'rgba(34,197,94,0.12)' : 'color-mix(in srgb, var(--hc-accent) 10%, transparent)'}` }}>
         <div className="flex gap-2">

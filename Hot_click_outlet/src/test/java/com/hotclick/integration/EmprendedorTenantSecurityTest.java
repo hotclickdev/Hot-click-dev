@@ -268,26 +268,26 @@ class EmprendedorTenantSecurityTest extends BaseIntegrationTest {
             .andExpect(jsonPath("$.success").value(true));
     }
 
-    // ── T-SEC-019: EmprendedorA puede togglear carrusel de su propio producto ─
+    // ── T-SEC-019: EmprendedorA no puede togglear carrusel (solo ADMIN) ─────
     @Test
-    @DisplayName("T-SEC-019 | CRÍTICO — EmprendedorA puede togglear carrusel de su propio producto → 200")
-    void emprendedorA_canToggleCarrusel_ownProducto() throws Exception {
+    @DisplayName("T-SEC-019 | CRÍTICO — EmprendedorA togglear carrusel → 403 (solo ADMIN)")
+    void emprendedorA_cannotToggleCarrusel_ownProducto() throws Exception {
         mockMvc.perform(patch("/api/productos/" + productoA.getId() + "/carrusel")
                 .header("Authorization", tokenA)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"enCarrusel\":true,\"orden\":1}"))
-            .andExpect(status().isOk());
+            .andExpect(status().isForbidden());
     }
 
-    // ── T-SEC-020: EmprendedorA puede destacar su propio producto ────────────
+    // ── T-SEC-020: EmprendedorA no puede destacar producto (solo ADMIN) ─────
     @Test
-    @DisplayName("T-SEC-020 | CRÍTICO — EmprendedorA puede destacar su propio producto → 200")
-    void emprendedorA_canToggleDestacado_ownProducto() throws Exception {
+    @DisplayName("T-SEC-020 | CRÍTICO — EmprendedorA toggle destacado → 403 (solo ADMIN)")
+    void emprendedorA_cannotToggleDestacado_ownProducto() throws Exception {
         mockMvc.perform(patch("/api/productos/" + productoA.getId() + "/destacado")
                 .header("Authorization", tokenA)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"destacado\":true}"))
-            .andExpect(status().isOk());
+            .andExpect(status().isForbidden());
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

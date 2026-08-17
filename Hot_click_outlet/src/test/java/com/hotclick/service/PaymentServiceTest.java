@@ -8,6 +8,7 @@ import com.hotclick.payment.PaymentProviderFactory;
 import com.hotclick.payment.PaymentSession;
 import com.hotclick.repository.*;
 import com.hotclick.exception.StockInsuficienteException;
+import com.hotclick.service.payment.*;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -54,7 +56,21 @@ class PaymentServiceTest {
     @Mock private PaymentProvider           mockProvider;
     @Mock private ApplicationEventPublisher eventPublisher;
 
-    @InjectMocks private PaymentService service;
+    @InjectMocks private CheckoutValidator              checkoutValidator;
+    @InjectMocks private GuestUserResolver              guestUserResolver;
+    @InjectMocks private StockReservationService        stockReservationService;
+    @InjectMocks private OrderPricingService            orderPricingService;
+    @InjectMocks private CheckoutOrderFactory           checkoutOrderFactory;
+    @InjectMocks private PaymentRecordFactory           paymentRecordFactory;
+    @InjectMocks private PaymentStatusAssembler         paymentStatusAssembler;
+    @InjectMocks private PaymentNotificationsFacade     paymentNotificationsFacade;
+    @InjectMocks private PaymentExpirationCleanupService paymentExpirationCleanupService;
+    @InjectMocks private PaymentOrderConfirmationService orderConfirmationService;
+    @InjectMocks private PaymentFailureHandler            paymentFailureHandler;
+    @InjectMocks private PaymentUserCancellationService   userCancellationService;
+    @InjectMocks private SinpePaymentAdminService         sinpePaymentAdminService;
+
+    private PaymentService service;
 
     private Usuario  testUser;
     private Bodega   testBodega;
@@ -72,6 +88,7 @@ class PaymentServiceTest {
         testBodega = new Bodega();
         testBodega.setId(1L);
         testBodega.setNombreBodega("Bodega Central");
+        testBodega.setPermiteRetiroCliente(true);
 
         testProducto = new Producto();
         testProducto.setId(10L);
@@ -83,11 +100,48 @@ class PaymentServiceTest {
         testProducto.setVisibleCatalogo(true);
         testProducto.setVendido(false);
         testProducto.setEstado(Constants.ESTADO_ACTIVO);
+        testProducto.setBodega(testBodega);
 
         when(providerFactory.soporta("STRIPE")).thenReturn(true);
         when(providerFactory.get("STRIPE")).thenReturn(mockProvider);
         when(mockProvider.crearSesion(any(), any()))
             .thenReturn(new PaymentSession("TXN-123", REDIRECT));
+
+        service = new PaymentService();
+        ReflectionTestUtils.setField(service, "providerFactory", providerFactory);
+        ReflectionTestUtils.setField(service, "pedidoRepository", pedidoRepository);
+        ReflectionTestUtils.setField(service, "pagoRepository", pagoRepository);
+        ReflectionTestUtils.setField(service, "giftCardService", giftCardService);
+        ReflectionTestUtils.setField(service, "eventPublisher", eventPublisher);
+        ReflectionTestUtils.setField(service, "checkoutValidator", checkoutValidator);
+        ReflectionTestUtils.setField(service, "guestUserResolver", guestUserResolver);
+        ReflectionTestUtils.setField(service, "stockReservationService", stockReservationService);
+        ReflectionTestUtils.setField(service, "orderPricingService", orderPricingService);
+        ReflectionTestUtils.setField(service, "checkoutOrderFactory", checkoutOrderFactory);
+        ReflectionTestUtils.setField(service, "paymentRecordFactory", paymentRecordFactory);
+        ReflectionTestUtils.setField(service, "paymentStatusAssembler", paymentStatusAssembler);
+        ReflectionTestUtils.setField(service, "paymentNotificationsFacade", paymentNotificationsFacade);
+        ReflectionTestUtils.setField(service, "orderConfirmationService", orderConfirmationService);
+        ReflectionTestUtils.setField(service, "paymentFailureHandler", paymentFailureHandler);
+        ReflectionTestUtils.setField(service, "userCancellationService", userCancellationService);
+        ReflectionTestUtils.setField(service, "sinpePaymentAdminService", sinpePaymentAdminService);
+        ReflectionTestUtils.setField(orderConfirmationService, "pedidoRepository", pedidoRepository);
+        ReflectionTestUtils.setField(orderConfirmationService, "cuponService", cuponService);
+        ReflectionTestUtils.setField(orderConfirmationService, "giftCardService", giftCardService);
+        ReflectionTestUtils.setField(orderConfirmationService, "stockReservationService", stockReservationService);
+        ReflectionTestUtils.setField(orderConfirmationService, "paymentNotificationsFacade", paymentNotificationsFacade);
+        ReflectionTestUtils.setField(paymentFailureHandler, "pagoRepository", pagoRepository);
+        ReflectionTestUtils.setField(paymentFailureHandler, "pedidoRepository", pedidoRepository);
+        ReflectionTestUtils.setField(paymentFailureHandler, "stockReservationService", stockReservationService);
+        ReflectionTestUtils.setField(paymentFailureHandler, "paymentNotificationsFacade", paymentNotificationsFacade);
+        ReflectionTestUtils.setField(userCancellationService, "pedidoRepository", pedidoRepository);
+        ReflectionTestUtils.setField(userCancellationService, "pagoRepository", pagoRepository);
+        ReflectionTestUtils.setField(userCancellationService, "paymentFailureHandler", paymentFailureHandler);
+        ReflectionTestUtils.setField(sinpePaymentAdminService, "pagoRepository", pagoRepository);
+        ReflectionTestUtils.setField(sinpePaymentAdminService, "orderConfirmationService", orderConfirmationService);
+        ReflectionTestUtils.setField(sinpePaymentAdminService, "paymentFailureHandler", paymentFailureHandler);
+        ReflectionTestUtils.setField(sinpePaymentAdminService, "paymentStatusAssembler", paymentStatusAssembler);
+        ReflectionTestUtils.setField(paymentExpirationCleanupService, "stockReservationService", stockReservationService);
     }
 
     // ── checkout — camino feliz ───────────────────────────────────────────────
@@ -356,7 +410,7 @@ class PaymentServiceTest {
         when(pagoRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
         when(pedidoRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
 
-        service.cancelarExpirados();
+        paymentExpirationCleanupService.cancelarExpirados();
 
         verify(pagoRepository).saveAll(argThat((List<Pago> list) ->
             list.stream().anyMatch(p -> Constants.PAGO_CANCELADO.equals(p.getEstadoPago()))));
@@ -372,7 +426,7 @@ class PaymentServiceTest {
     void cancelarExpirados_noExpired_noOps() {
         when(empresaRepository.findByEstadoEmpresaOrderByFechaRegistroAsc("ACTIVO")).thenReturn(List.of());
 
-        service.cancelarExpirados();
+        paymentExpirationCleanupService.cancelarExpirados();
 
         verify(pedidoRepository, never()).save(any());
         verify(productoRepository, never()).save(any());

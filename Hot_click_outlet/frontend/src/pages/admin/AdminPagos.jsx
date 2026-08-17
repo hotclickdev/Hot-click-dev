@@ -17,6 +17,7 @@ import {
   queryPagos,
   queryWebhooks,
 } from './pagos/pagosHelpers'
+import { useAdminPagosActions } from './pagos/useAdminPagosActions'
 
 export default function AdminPagos() {
   const { t } = useTranslation()
@@ -177,57 +178,21 @@ export default function AdminPagos() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- tab comprobantes
   }, [tab, filtComp, compPage])
 
-  const handleConfirmarSinpe = async (pagoId) => {
-    if (!globalThis.confirm('¿Confirmar este pago SINPE? Se marcará como CAPTURADO y se procesará el pedido.')) return
-    setActionLoading(pagoId)
-    try {
-      await paymentService.confirmarSinpe(pagoId)
-      await fetchPagos()
-      await fetchKpis()
-    } catch (err) {
-      alert(err.response?.data?.message || 'Error confirmando pago SINPE')
-    } finally {
-      setActionLoading(null)
-    }
-  }
-
-  const handleRechazarSinpe = async (pagoId) => {
-    if (!globalThis.confirm('¿Rechazar este pago SINPE? Se liberará el stock reservado y se notificará al cliente.')) return
-    setActionLoading(pagoId)
-    try {
-      await paymentService.rechazarSinpe(pagoId)
-      await fetchPagos()
-      await fetchKpis()
-    } catch (err) {
-      alert(err.response?.data?.message || 'Error rechazando pago SINPE')
-    } finally {
-      setActionLoading(null)
-    }
-  }
-
-  const handleAprobarComprobante = async (id) => {
-    setCompAction(id)
-    try {
-      await paymentService.aprobarComprobante(id)
-      await fetchComprobantes()
-      await fetchKpis()
-    } catch (err) {
-      alert(err.response?.data?.message || 'Error aprobando comprobante SINPE')
-    } finally { setCompAction(null) }
-  }
-
-  const handleRechazarComprobante = async (id) => {
-    setCompAction(id)
-    try {
-      await paymentService.rechazarComprobante(id, motivoTexto || undefined)
-      setMotivoModal(null)
-      setMotivoTexto('')
-      await fetchComprobantes()
-      await fetchKpis()
-    } catch (err) {
-      alert(err.response?.data?.message || 'Error rechazando comprobante SINPE')
-    } finally { setCompAction(null) }
-  }
+  const {
+    handleConfirmarSinpe,
+    handleRechazarSinpe,
+    handleAprobarComprobante,
+    handleRechazarComprobante,
+  } = useAdminPagosActions({
+    motivoTexto,
+    fetchPagos,
+    fetchKpis,
+    fetchComprobantes,
+    setActionLoading,
+    setCompAction,
+    setMotivoModal,
+    setMotivoTexto,
+  })
 
   const exportPagos = tab === 'pagos'
   const exportData = exportPagos ? filasExportPagos(pagos) : filasExportWebhooks(webhooks)

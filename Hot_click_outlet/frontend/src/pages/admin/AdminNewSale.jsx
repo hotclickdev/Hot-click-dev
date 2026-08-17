@@ -5,7 +5,6 @@ import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import { productService } from '@/services/productService'
 import { ventaService } from '@/services/orderService'
-import { crmService } from '@/services/crmService'
 import { useToast } from '@/components/ui/Toast'
 import { formatPrice } from '@/utils/format'
 import CartItems from './nueva-venta/CartItems'
@@ -17,13 +16,7 @@ import TabCotizar from './nueva-venta/TabCotizar'
 import TabVentaCliente from './nueva-venta/TabVentaCliente'
 import TabVentaRapida from './nueva-venta/TabVentaRapida'
 import { BoltIcon, WhatsAppIcon } from './nueva-venta/nuevaVentaIcons'
-import {
-  WHATSAPP,
-  actualizarCantidadCarrito,
-  agregarItemCarrito,
-  buildCotizacionTemplates,
-  filtrarProductosConStock,
-} from './nueva-venta/nuevaVentaHelpers'
+import { useAdminNewSaleActions } from './nueva-venta/useAdminNewSaleActions'
 
 export default function AdminNewSale() {
   const { t } = useTranslation()
@@ -69,93 +62,59 @@ export default function AdminNewSale() {
     }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
-  const switchTab = (id) => { setTab(id); setItems([]); setCostoEnvio(''); setTipoEntrega('LOCAL'); setEstadoInicial('COMPLETADO') }
-
-  const handleCreateClient = async () => {
-    if (!newClientName.trim()) {
-      toast({ message: 'Indica el nombre del cliente', type: 'error' }); return
-    }
-    setCreatingClient(true)
-    try {
-      const nuevo = await crmService.crearCliente({ nombre: newClientName.trim(), telefono: newClientPhone })
-      setClients((prev) => [nuevo, ...prev])
-      setClientId(String(nuevo.id))
-      setClientName('')
-      setShowNewClient(false)
-      setNewClientName('')
-      setNewClientPhone('')
-      toast({ message: 'Cliente creado', type: 'success' })
-    } catch {
-      toast({ message: 'No se pudo crear el cliente', type: 'error' })
-    } finally {
-      setCreatingClient(false)
-    }
-  }
-
-  const filteredProducts = filtrarProductosConStock(products, search)
-  const addProduct = (p) => setItems((prev) => agregarItemCarrito(prev, p))
-  const removeItem = (id) => setItems((prev) => prev.filter((i) => i.id !== id))
-  const updateQty = (id, val) => setItems((prev) => actualizarCantidadCarrito(prev, id, val))
-
   const subtotal = items.reduce((s, i) => s + i.precio * i.cantidad, 0)
   const envioNum = Number(costoEnvio) || 0
   const total = subtotal + envioNum
 
-  const handleSave = async (withClient) => {
-    if (items.length === 0) { toast({ message: 'Agrega al menos un producto', type: 'error' }); return }
-    if (withClient && !clientId && !clientName.trim()) {
-      toast({ message: 'Indica el cliente o su nombre', type: 'error' }); return
-    }
-    setSaving(true)
-    try {
-      const payload = {
-        clienteId: withClient ? (clientId || null) : null,
-        nombreCliente: withClient ? clientName : 'Venta rápida',
-        metodoPago: paymentMethod,
-        tipoEntrega,
-        estadoInicial,
-        items: items.map((i) => ({ productoId: i.id, cantidad: i.cantidad, precioUnitario: i.precio })),
-        costoEnvio: envioNum,
-        total,
-      }
-      await ventaService.create(payload)
-      toast({ message: 'Venta registrada con éxito', type: 'success' })
-      setCreatedOrder({
-        estado: estadoInicial,
-        esRetiro: tipoEntrega === 'LOCAL',
-        nombreCliente: withClient ? clientName || 'Cliente' : 'Venta rápida',
-        metodoPago: paymentMethod,
-        items: [...items],
-        subtotal,
-        costoEnvio: envioNum,
-        total,
-      })
-    } catch (err) {
-      toast({ message: err.response?.data?.message ?? 'Error al registrar venta', type: 'error' })
-    } finally { setSaving(false) }
-  }
-
-  const openCotizacionPreview = () => {
-    if (items.length === 0) { toast({ message: 'Agrega al menos un producto', type: 'error' }); return }
-    setWaTexts(buildCotizacionTemplates({ items, cotNombre, cotTelefono, cotNota, subtotal, envioNum, total }))
-    setWaTab('formal')
-    setWaPreviewOpen(true)
-  }
-
-  const enviarCotizacionWhatsapp = () => {
-    const texto = waTexts?.[waTab] ?? ''
-    globalThis.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(texto)}`, '_blank')
-    setWaPreviewOpen(false)
-  }
-
-  const resetNuevaVenta = () => {
-    setCreatedOrder(null)
-    setItems([])
-    setCostoEnvio('')
-    setClientId('')
-    setClientName('')
-    setTipoEntrega('LOCAL')
-  }
+  const {
+    switchTab,
+    handleCreateClient,
+    filteredProducts,
+    addProduct,
+    removeItem,
+    updateQty,
+    handleSave,
+    openCotizacionPreview,
+    enviarCotizacionWhatsapp,
+    resetNuevaVenta,
+  } = useAdminNewSaleActions({
+    toast,
+    items,
+    clientId,
+    clientName,
+    newClientName,
+    newClientPhone,
+    paymentMethod,
+    tipoEntrega,
+    estadoInicial,
+    envioNum,
+    subtotal,
+    total,
+    cotNombre,
+    cotTelefono,
+    cotNota,
+    waTexts,
+    waTab,
+    products,
+    search,
+    setTab,
+    setClients,
+    setClientId,
+    setClientName,
+    setShowNewClient,
+    setNewClientName,
+    setNewClientPhone,
+    setCreatingClient,
+    setSaving,
+    setCreatedOrder,
+    setItems,
+    setCostoEnvio,
+    setTipoEntrega,
+    setEstadoInicial,
+    setWaTexts,
+    setWaTab,
+    setWaPreviewOpen,
+  })
 
   if (loading) return <><div className="flex justify-center py-20"><Spinner size="lg" /></div></>
 

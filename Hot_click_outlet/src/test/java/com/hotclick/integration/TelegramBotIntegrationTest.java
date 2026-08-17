@@ -357,7 +357,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
         postUpdate(mensajeTexto(CHAT_ID, "¿qué me recomendás mejorar?")); // sin keywords de fallback
 
         // La rama de texto libre es async — el webhook responde 200 al instante
-        verify(bot, timeout(3000)).enviarMensaje(eq(CHAT_ID), contains("cuota"), isNull(), eq(false));
+        verify(bot, timeout(3000)).enviarMensaje(eq(CHAT_ID), contains("cuota"), anyList(), eq(false));
     }
 
     @Test
@@ -369,7 +369,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
         postUpdate(mensajeTexto(CHAT_ID, "cuanto vendi hoy?"));
 
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
-        verify(bot, timeout(3000)).enviarMensaje(eq(CHAT_ID), captor.capture());
+        verify(bot, timeout(3000)).enviarMensaje(eq(CHAT_ID), captor.capture(), anyList());
         assertThat(captor.getValue())
             .contains("La IA no está disponible")
             .contains("Ventas de hoy");

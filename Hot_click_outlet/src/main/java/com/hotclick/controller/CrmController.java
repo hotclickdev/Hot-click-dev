@@ -1,18 +1,16 @@
 package com.hotclick.controller;
 import com.hotclick.exception.RecursoNoEncontradoException;
-import com.hotclick.utils.Constants;
-
+import com.hotclick.controller.crm.CrmAccessGuard;
+import com.hotclick.controller.crm.CrmClienteMapper;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.Usuario;
-import com.hotclick.model.WaMensajeLog;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.repository.WaMensajeLogRepository;
 import com.hotclick.security.CompanyScope;
-import com.hotclick.service.TenantService;
 import com.hotclick.service.UsuarioService;
 import com.hotclick.service.WhatsAppService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +20,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.*;
 
 @RestController
@@ -33,24 +30,14 @@ public class CrmController {
     @Autowired private PedidoRepository    pedidoRepository;
     @Autowired private WaMensajeLogRepository waLogRepository;
     @Autowired private CompanyScope         companyScope;
-    @Autowired private TenantService        tenantService;
     @Autowired private WhatsAppService      whatsAppService;
     @Autowired private EmpresaRepository    empresaRepository;
     @Autowired private UsuarioService       usuarioService;
+    @Autowired private CrmAccessGuard       crmAccessGuard;
+    @Autowired private CrmClienteMapper     crmClienteMapper;
 
     private static final String MSG_REQUIERE_CRM =
         "El CRM de clientes requiere el plan NEGOCIO_PLUS. Ve a Configuración → Suscripción para mejorar tu plan.";
-
-    private boolean sinAccesoCrm() {
-        return !companyScope.isAdminIT() && !tenantService.tieneFeature("crm");
-    }
-
-    /** Un cliente "pertenece" a la empresa si compró ahí, o si la empresa lo registró manualmente (CRM). */
-    private boolean clientePerteneceAEmpresa(Usuario u, Long empresaId) {
-        if (empresaId == null) return true;
-        if (u.getEmpresaRegistro() != null && empresaId.equals(u.getEmpresaRegistro().getId())) return true;
-        return pedidoRepository.existsByUsuarioFinalIdAndEmpresaId(u.getId(), empresaId);
-    }
 
     /** Lista clientes (USUARIO_FINAL) que han comprado en esta empresa. ADMIN ve todos. */
     @GetMapping
@@ -62,7 +49,7 @@ public class CrmController {
             ? usuarioRepository.findClientesByEmpresa(empresaId)
             : usuarioRepository.findClientes();
         return ResponseEntity.ok(ResponseDTO.success("OK",
-            clientes.stream().map(this::toClienteMap).toList()));
+            clientes.stream().map(crmClienteMapper::toClienteMap).toList()));
     }
 
     /**
@@ -85,7 +72,7 @@ public class CrmController {
         Empresa empresa = empresaId != null ? empresaRepository.findById(empresaId).orElse(null) : null;
 
         Usuario saved = usuarioService.crearClienteRapido(nombre, telefono, correo, empresa);
-        return ResponseEntity.ok(ResponseDTO.success("Cliente registrado", toClienteMapSimple(saved)));
+        return ResponseEntity.ok(ResponseDTO.success("Cliente registrado", crmClienteMapper.toClienteMapSimple(saved)));
     }
 
     /** Búsqueda por nombre, correo o teléfono — acotada a la empresa del caller. */
@@ -100,7 +87,7 @@ public class CrmController {
             ? usuarioRepository.buscarClientesByEmpresa(q.trim(), empresaId)
             : usuarioRepository.buscarClientes(q.trim());
         return ResponseEntity.ok(ResponseDTO.success("OK",
-            clientes.stream().limit(20).map(this::toClienteMapSimple).toList()));
+            clientes.stream().limit(20).map(crmClienteMapper::toClienteMapSimple).toList()));
     }
 
     /** Detalle de un cliente — valida que haya comprado en la empresa del caller. */
@@ -112,9 +99,9 @@ public class CrmController {
             .orElseThrow(() -> new RecursoNoEncontradoException("Cliente no encontrado"));
         // Tenant check: EMPRENDEDOR solo puede ver clientes que hayan comprado o que él registró
         Long empresaId = companyScope.getCurrentEmpresaId();
-        if (!clientePerteneceAEmpresa(u, empresaId))
+        if (!crmAccessGuard.clientePerteneceAEmpresa(u, empresaId))
             return ResponseEntity.status(403).body(ResponseDTO.error("Cliente no pertenece a esta empresa"));
-        Map<String, Object> data = toClienteMap(u);
+        Map<String, Object> data = crmClienteMapper.toClienteMap(u);
         List<Pedido> pedidos = pedidoRepository
             .findByUsuarioFinalIdOrderByFechaPedidoDesc(id, PageRequest.of(0, 10))
             .getContent();
@@ -131,7 +118,7 @@ public class CrmController {
             Usuario u = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Cliente no encontrado"));
             Long empresaId = companyScope.getCurrentEmpresaId();
-            if (!clientePerteneceAEmpresa(u, empresaId))
+            if (!crmAccessGuard.clientePerteneceAEmpresa(u, empresaId))
                 return ResponseEntity.status(403).body(ResponseDTO.error("Cliente no pertenece a esta empresa"));
 
             if (body.containsKey("segmento"))
@@ -144,7 +131,7 @@ public class CrmController {
                 u.setPuntosFidelidad(Integer.parseInt(body.get("puntosFidelidad").toString()));
 
             usuarioRepository.save(u);
-            return ResponseEntity.ok(ResponseDTO.success("Cliente actualizado", toClienteMapSimple(u)));
+            return ResponseEntity.ok(ResponseDTO.success("Cliente actualizado", crmClienteMapper.toClienteMapSimple(u)));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
@@ -159,7 +146,7 @@ public class CrmController {
             Long empresaId = companyScope.getCurrentEmpresaId();
             Usuario u = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Cliente no encontrado"));
-            if (!clientePerteneceAEmpresa(u, empresaId))
+            if (!crmAccessGuard.clientePerteneceAEmpresa(u, empresaId))
                 return ResponseEntity.status(403).body(ResponseDTO.error("Cliente no pertenece a esta empresa"));
             int delta = Integer.parseInt(body.getOrDefault("delta", "0").toString());
             int nuevos = Math.max(0, u.getPuntosFidelidad() + delta);
@@ -184,12 +171,12 @@ public class CrmController {
     public ResponseEntity<?> enviarWhatsApp(
             @PathVariable Long id,
             @RequestBody Map<String, Object> body) {
-        if (sinAccesoCrm()) return ResponseEntity.status(403).body(ResponseDTO.error(MSG_REQUIERE_CRM));
+        if (crmAccessGuard.sinAccesoCrm()) return ResponseEntity.status(403).body(ResponseDTO.error(MSG_REQUIERE_CRM));
         try {
             Usuario u = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Cliente no encontrado"));
             Long empresaId = companyScope.getCurrentEmpresaId();
-            if (!clientePerteneceAEmpresa(u, empresaId))
+            if (!crmAccessGuard.clientePerteneceAEmpresa(u, empresaId))
                 return ResponseEntity.status(403).body(ResponseDTO.error("Cliente no pertenece a esta empresa"));
 
             String escenario = (String) body.getOrDefault("escenario", "REACTIVACION");
@@ -209,7 +196,7 @@ public class CrmController {
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR','GERENTE','SOPORTE')")
     @Transactional(readOnly = true)
     public ResponseEntity<?> historialWa(@PathVariable Long id) {
-        if (sinAccesoCrm()) return ResponseEntity.status(403).body(ResponseDTO.error(MSG_REQUIERE_CRM));
+        if (crmAccessGuard.sinAccesoCrm()) return ResponseEntity.status(403).body(ResponseDTO.error(MSG_REQUIERE_CRM));
         Long empresaId = companyScope.getCurrentEmpresaId();
         if (empresaId != null && !pedidoRepository.existsByUsuarioFinalIdAndEmpresaId(id, empresaId))
             return ResponseEntity.status(403).body(ResponseDTO.error("Cliente no pertenece a esta empresa"));
@@ -217,66 +204,5 @@ public class CrmController {
         var historial = waLogRepository.findByUsuarioIdOrderByFechaEnvioDesc(
             id, PageRequest.of(0, 20));
         return ResponseEntity.ok(ResponseDTO.success("OK", historial));
-    }
-
-    // ── Helpers ──────────────────────────────────────────────────────────────
-
-    private Map<String, Object> toClienteMap(Usuario u) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id",               u.getId());
-        m.put("nombre",           u.getNombre());
-        m.put("apellidoPaterno",  u.getApellidoPaterno());
-        m.put("correo",           u.getCorreo());
-        m.put("telefono",         u.getTelefono());
-        m.put("fechaRegistro",    u.getFechaRegistro());
-        m.put("fechaUltimoAcceso",u.getFechaUltimoAcceso());
-        m.put("puntosFidelidad",  u.getPuntosFidelidad());
-        m.put("limiteCredito",    u.getLimiteCredito());
-        m.put("saldoCredito",     u.getSaldoCredito());
-        m.put("notasInternas",    u.getNotasInternas());
-
-        // Calcular stats desde pedidos si no están guardados
-        int numPedidos = u.getNumPedidosHist();
-        int totalCompras = u.getTotalComprasHist();
-        if (numPedidos == 0) {
-            List<Object[]> stats = pedidoRepository.statsPorUsuario(u.getId());
-            if (!stats.isEmpty()) {
-                Object[] row = stats.get(0);
-                numPedidos   = row[0] != null ? ((Number) row[0]).intValue() : 0;
-                totalCompras = row[1] != null ? ((Number) row[1]).intValue() : 0;
-            }
-        }
-        m.put("numPedidosHist",   numPedidos);
-        m.put("totalComprasHist", totalCompras);
-
-        // Segmento auto-calculado si no está asignado
-        String segmento = u.getSegmento();
-        if (segmento == null || segmento.isBlank()) {
-            segmento = calcularSegmento(numPedidos, totalCompras, u.getFechaUltimoAcceso());
-        }
-        m.put("segmento", segmento);
-        return m;
-    }
-
-    private Map<String, Object> toClienteMapSimple(Usuario u) {
-        return Map.of(
-            "id",              u.getId(),
-            "nombre",          u.getNombre() != null ? u.getNombre() : "",
-            "apellidoPaterno", u.getApellidoPaterno() != null ? u.getApellidoPaterno() : "",
-            "correo",          u.getCorreo() != null ? u.getCorreo() : "",
-            "telefono",        u.getTelefono() != null ? u.getTelefono() : "",
-            "puntosFidelidad", u.getPuntosFidelidad(),
-            "segmento",        u.getSegmento() != null ? u.getSegmento() : "NUEVO"
-        );
-    }
-
-    private String calcularSegmento(int numPedidos, int totalCompras, LocalDateTime ultimoAcceso) {
-        if (numPedidos == 0) return "NUEVO";
-        boolean inactivo = ultimoAcceso != null &&
-            ultimoAcceso.isBefore(LocalDateTime.now(Constants.ZONA_CR).minusDays(90));
-        if (inactivo && numPedidos < 5) return "INACTIVO";
-        if (numPedidos >= 10 || totalCompras >= 500_000) return "VIP";
-        if (numPedidos >= 2) return "FRECUENTE";
-        return "NUEVO";
     }
 }

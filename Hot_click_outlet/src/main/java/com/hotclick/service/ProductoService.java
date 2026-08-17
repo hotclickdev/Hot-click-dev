@@ -1,64 +1,30 @@
 package com.hotclick.service;
 
 import com.hotclick.dto.ProductoRequestDTO;
-import com.hotclick.model.Bodega;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Producto;
-import com.hotclick.rag.event.ProductoGuardadoEvent;
-import com.hotclick.repository.BodegaRepository;
-import com.hotclick.repository.CategoriaRepository;
-import com.hotclick.repository.MarcaRepository;
-import com.hotclick.repository.ProductoRepository;
-import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.exception.RecursoNoEncontradoException;
-import com.hotclick.utils.Constants;
-import com.hotclick.utils.InputSanitizer;
+import com.hotclick.repository.ProductoRepository;
+import com.hotclick.service.producto.ProductoCatalogQueries;
+import com.hotclick.service.producto.ProductoCacheEvictor;
+import com.hotclick.service.producto.ProductoUpdater;
+import com.hotclick.service.producto.ProductoWriteOperations;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class ProductoService {
 
     @Autowired private ProductoRepository productoRepository;
-    @Autowired private CategoriaRepository categoriaRepository;
-    @Autowired private BodegaRepository bodegaRepository;
-    @Autowired private UsuarioRepository usuarioRepository;
-    @Autowired private MarcaRepository marcaRepository;
-    @Autowired private CacheManager cacheManager;
-    @Autowired private InputSanitizer sanitizer;
-    @Autowired private ApplicationEventPublisher eventPublisher;
-
-    /** La tienda principal no lleva badge de emprendimiento en el catálogo público. */
-    @org.springframework.beans.factory.annotation.Value("${EMPRESA_PRINCIPAL_ID:1}")
-    private Long empresaPrincipalId;
-
-    @SuppressWarnings("null")
-    private void evictDashboard(Long empresaId) {
-        Cache c = cacheManager.getCache("dashboard-metricas");
-        if (c == null) return;
-        if (empresaId != null) {
-            c.evict(empresaId.toString());
-        } else {
-            c.evict("global");
-        }
-    }
-
-    @SuppressWarnings("null")
-    public void evictProductosPublicos() {
-        Cache c = cacheManager.getCache("productos-publicos");
-        if (c != null) c.clear();
-    }
+    @Autowired private ProductoCatalogQueries catalogQueries;
+    @Autowired private ProductoCacheEvictor cacheEvictor;
+    @Autowired private ProductoWriteOperations writeOperations;
+    @Autowired private ProductoUpdater productoUpdater;
 
     @Transactional
     public Producto crearProducto(ProductoRequestDTO dto, String adminCorreo) {
@@ -69,234 +35,31 @@ public class ProductoService {
         key = "#empresa != null ? #empresa.id.toString() : 'global'")
     @Transactional
     public Producto crearProducto(ProductoRequestDTO dto, String adminCorreo, Empresa empresa) {
-        evictProductosPublicos();
-        if (dto.getCategoriaId() == null)
-            throw new IllegalArgumentException("Debe seleccionar una categoría");
-
-        Producto p = new Producto();
-        mapDtoToProducto(dto, p);
-        p.setEstado(Constants.ESTADO_ACTIVO);
-        if (p.getSku() == null) {
-            p.setSku("HC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        }
-        p.setCategoria(categoriaRepository.findById(dto.getCategoriaId())
-            .orElseThrow(() -> new RecursoNoEncontradoException("Categoría", dto.getCategoriaId())));
-
-        if (dto.getBodegaId() != null) {
-            p.setBodega(bodegaRepository.findById(dto.getBodegaId())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Bodega", dto.getBodegaId())));
-        } else if (empresa != null) {
-            List<Bodega> bodsEmpresa = bodegaRepository
-                .findByEmpresaIdAndEstadoOrderByFechaCreacionAsc(empresa.getId(), Constants.ESTADO_ACTIVO);
-            if (bodsEmpresa.isEmpty())
-                throw new IllegalArgumentException("No tenés bodegas creadas. Creá una bodega antes de publicar.");
-            p.setBodega(bodsEmpresa.get(0));
-        } else {
-            throw new IllegalArgumentException("Debe seleccionar una bodega");
-        }
-        p.setAdminCliente(usuarioRepository.findByCorreo(adminCorreo)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Admin", adminCorreo)));
-        p.setEmpresa(empresa);
-        Producto saved = productoRepository.save(p);
-        eventPublisher.publishEvent(new ProductoGuardadoEvent(
-            this,
-            saved.getId(),
-            empresa != null ? empresa.getId() : null,
-            saved.getNombreProducto(),
-            saved.getDescripcionCorta(),
-            saved.getMarcaTexto(),
-            saved.getSku(),
-            saved.getTags(),
-            saved.getEspecificaciones()
-        ));
-        return saved;
+        return writeOperations.crearProducto(this, dto, adminCorreo, empresa);
     }
 
     public Producto actualizarProducto(Long id, ProductoRequestDTO dto, String adminCorreo) {
-        // Leer empresaId una sola vez antes del loop: evita LazyInitializationException
-        // al acceder a p.getEmpresa() fuera de transacción (open-in-view=false, empresa=LAZY).
-        Long empresaId = productoRepository.findEmpresaIdById(id).orElse(null);
-        int intentos = 0;
-        while (true) {
-            try {
-                Producto p = productoRepository.findById(id)
-                    .orElseThrow(() -> new RecursoNoEncontradoException("Producto", id));
-                mapDtoToProducto(dto, p);
-                if (dto.getCategoriaId() != null) {
-                    p.setCategoria(categoriaRepository.findById(dto.getCategoriaId())
-                        .orElseThrow(() -> new RecursoNoEncontradoException("Categoría", dto.getCategoriaId())));
-                }
-                if (dto.getBodegaId() != null) {
-                    p.setBodega(bodegaRepository.findById(dto.getBodegaId())
-                        .orElseThrow(() -> new RecursoNoEncontradoException("Bodega", dto.getBodegaId())));
-                }
-                Producto saved = productoRepository.save(p);
-                evictDashboard(empresaId);
-                evictProductosPublicos();
-                eventPublisher.publishEvent(new ProductoGuardadoEvent(
-                    this,
-                    saved.getId(),
-                    empresaId,
-                    saved.getNombreProducto(),
-                    saved.getDescripcionCorta(),
-                    saved.getMarcaTexto(),
-                    saved.getSku(),
-                    saved.getTags(),
-                    saved.getEspecificaciones()
-                ));
-                return saved;
-            } catch (org.springframework.orm.ObjectOptimisticLockingFailureException e) {
-                if (++intentos >= 3) {
-                    throw new IllegalStateException("Conflicto de concurrencia al actualizar producto. Intentá de nuevo.");
-                }
-                try { Thread.sleep(50L * intentos); } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    throw new IllegalStateException("Interrumpido actualizando producto", ie);
-                }
-            }
-        }
+        return productoUpdater.actualizarProducto(this, id, dto, adminCorreo);
     }
 
-    private void mapDtoToProducto(ProductoRequestDTO dto, Producto p) {
-        if (dto.getNombreProducto()     != null) p.setNombreProducto(sanitizer.cleanWithLimit(dto.getNombreProducto(), 200));
-        if (dto.getDescripcionCorta()   != null) p.setDescripcionCorta(sanitizer.cleanWithLimit(dto.getDescripcionCorta(), 255));
-        if (dto.getTituloProducto()     != null) p.setTituloProducto(sanitizer.cleanWithLimit(dto.getTituloProducto(), 255));
-        if (dto.getMarcaTexto()         != null) p.setMarcaTexto(sanitizer.cleanWithLimit(dto.getMarcaTexto(), 100));
-        if (dto.getLinkAmazon()         != null) p.setLinkAmazon(sanitizer.cleanWithLimit(dto.getLinkAmazon(), 500));
-        if (dto.getImagenPrincipalUrl() != null) p.setImagenPrincipalUrl(sanitizer.cleanWithLimit(dto.getImagenPrincipalUrl(), 500));
-        if (dto.getCondicion()          != null) p.setCondicion(dto.getCondicion());
-        if (dto.getPrecioCompra()       != null) p.setPrecioCompra(dto.getPrecioCompra());
-        if (dto.getPrecioVenta()        != null) p.setPrecioVenta(dto.getPrecioVenta());
-        if (dto.getStockActual()        != null) p.setStockActual(dto.getStockActual());
-        if (dto.getStockMinimo()        != null) p.setStockMinimo(dto.getStockMinimo());
-        if (dto.getVisibleCatalogo()    != null) p.setVisibleCatalogo(dto.getVisibleCatalogo());
-        if (dto.getDestacado()          != null) p.setDestacado(dto.getDestacado());
-        // Rich text: permite negrita/lista pero bloquea scripts
-        if (dto.getEspecificaciones()   != null) p.setEspecificaciones(sanitizer.cleanRichText(dto.getEspecificaciones()));
-        if (dto.getComoUsar()           != null) p.setComoUsar(sanitizer.cleanRichText(dto.getComoUsar()));
-        if (dto.getDescripcionLarga()   != null) p.setDescripcionLarga(sanitizer.cleanRichText(dto.getDescripcionLarga()));
-        if (dto.getMetaTitle()          != null) p.setMetaTitle(sanitizer.cleanWithLimit(dto.getMetaTitle(), 70));
-        if (dto.getMetaDescription()    != null) p.setMetaDescription(sanitizer.cleanWithLimit(dto.getMetaDescription(), 160));
-        if (dto.getMetaKeywords()       != null) p.setMetaKeywords(sanitizer.cleanWithLimit(dto.getMetaKeywords(), 255));
-        if (dto.getMetaTitleEn()        != null) p.setMetaTitleEn(sanitizer.cleanWithLimit(dto.getMetaTitleEn(), 70));
-        if (dto.getMetaTitlePt()        != null) p.setMetaTitlePt(sanitizer.cleanWithLimit(dto.getMetaTitlePt(), 70));
-        if (dto.getMetaTitleFr()        != null) p.setMetaTitleFr(sanitizer.cleanWithLimit(dto.getMetaTitleFr(), 70));
-        if (dto.getMetaDescriptionEn()  != null) p.setMetaDescriptionEn(sanitizer.cleanWithLimit(dto.getMetaDescriptionEn(), 160));
-        if (dto.getMetaDescriptionPt()  != null) p.setMetaDescriptionPt(sanitizer.cleanWithLimit(dto.getMetaDescriptionPt(), 160));
-        if (dto.getMetaDescriptionFr()  != null) p.setMetaDescriptionFr(sanitizer.cleanWithLimit(dto.getMetaDescriptionFr(), 160));
-        if (dto.getVideoUrl()           != null) p.setVideoUrl(sanitizer.cleanWithLimit(dto.getVideoUrl(), 500));
-        if (dto.getTalla()              != null) p.setTalla(sanitizer.cleanWithLimit(dto.getTalla(), 20));
-        if (dto.getGrupoVarianteId()    != null) p.setGrupoVarianteId(sanitizer.cleanWithLimit(dto.getGrupoVarianteId(), 64));
-        if (dto.getColorVariante()      != null) p.setColorVariante(sanitizer.cleanWithLimit(dto.getColorVariante(), 50));
-        if (dto.getTags()               != null) p.setTags(sanitizer.cleanWithLimit(dto.getTags().toLowerCase(), 500));
-        Long mid = dto.getMarcaId();
-        if (mid != null) {
-            p.setMarca(marcaRepository.findById(mid)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Marca", mid)));
-        }
+    public void evictProductosPublicos() {
+        cacheEvictor.evictProductosPublicos();
     }
 
-    @Cacheable(value = "productos-publicos", key = "'rec-' + #id + '-' + #limit")
-    @Transactional(readOnly = true)
-    public List<Producto> getRecomendaciones(Long id, int limit) {
-        Producto base = productoRepository.findById(id).orElse(null);
-        if (base == null) return List.of();
-
-        List<Producto> result = new java.util.ArrayList<>();
-
-        // Primero intentar misma categoría
-        if (base.getCategoria() != null) {
-            List<Producto> sameCategory = productoRepository
-                .findByCategoriaIdAndEstadoAndStockActualGreaterThan(
-                    base.getCategoria().getId(), Constants.ESTADO_ACTIVO, 0, PageRequest.of(0, limit + 1))
-                .getContent().stream()
-                .filter(p -> !p.getId().equals(id))
-                .limit(limit)
-                .toList();
-            result.addAll(sameCategory);
-        }
-
-        // Rellenar con productos de cualquier categoría si faltan
-        if (result.size() < limit) {
-            int needed = limit - result.size() + 1;
-            java.util.Set<Long> exclude = new java.util.HashSet<>();
-            exclude.add(id);
-            result.forEach(p -> exclude.add(p.getId()));
-            List<Producto> general = productoRepository
-                .findByEstadoAndStockActualGreaterThan(Constants.ESTADO_ACTIVO, 0, PageRequest.of(0, needed * 3))
-                .getContent().stream()
-                .filter(p -> !exclude.contains(p.getId()))
-                .limit(needed)
-                .toList();
-            result.addAll(general);
-        }
-
-        return result.stream().limit(limit).toList();
-    }
-
-    @Cacheable(value = "productos-publicos", key = "'marca-' + #marcaId + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
-    @Transactional(readOnly = true)
-    public Page<Producto> listarPorMarca(Long marcaId, Pageable pageable) {
-        // Solo negocios aprobados y visibles
-        return productoRepository.findByMarcaPublico(marcaId, Constants.ESTADO_ACTIVO, pageable);
-    }
-
-
-    @Transactional
     public void eliminarProducto(Long id) {
-        Producto p = productoRepository.findById(id)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Producto", id));
-        p.setEstado(Constants.ESTADO_INACTIVO);
-        productoRepository.save(p);
-        evictProductosPublicos();
+        writeOperations.eliminarProducto(id);
     }
 
-    @Transactional
     public Producto toggleDestacado(Long id, Boolean valor) {
-        Producto p = productoRepository.findById(id)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Producto", id));
-        p.setDestacado(valor);
-        Producto saved = productoRepository.save(p);
-        evictProductosPublicos();
-        return saved;
+        return writeOperations.toggleDestacado(id, valor);
     }
 
-    /**
-     * Aplica o quita oferta a un producto. Si enOferta=true, calcula precioOferta
-     * a partir de porcentajeDescuento (o viceversa) según cuál venga informado.
-     */
-    @Transactional
     public Producto aplicarOferta(Long id, boolean enOferta, Integer porcentajeDescuento, Integer precioOferta) {
-        Producto p = productoRepository.findById(id)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Producto", id));
-        p.setEnOferta(enOferta);
-        if (enOferta) {
-            if (porcentajeDescuento != null && porcentajeDescuento > 0) {
-                p.setPorcentajeDescuento(porcentajeDescuento);
-                p.setPrecioOferta((int) Math.round(p.getPrecioVenta() * (1 - porcentajeDescuento / 100.0)));
-            } else if (precioOferta != null) {
-                p.setPrecioOferta(precioOferta);
-                int diff = p.getPrecioVenta() - precioOferta;
-                p.setPorcentajeDescuento(diff > 0 ? (int) Math.round(diff * 100.0 / p.getPrecioVenta()) : 0);
-            }
-        } else {
-            p.setPrecioOferta(null);
-            p.setPorcentajeDescuento(null);
-        }
-        Producto saved = productoRepository.save(p);
-        evictProductosPublicos();
-        return saved;
+        return writeOperations.aplicarOferta(id, enOferta, porcentajeDescuento, precioOferta);
     }
 
-    @Transactional
     public Producto marcarComoVendido(Long id) {
-        Producto p = productoRepository.findById(id)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Producto", id));
-        p.setVendido(true);
-        p.setStockActual(0);
-        Producto saved = productoRepository.save(p);
-        evictProductosPublicos();
-        return saved;
+        return writeOperations.marcarComoVendido(id);
     }
 
     @Transactional(readOnly = true)
@@ -305,70 +68,43 @@ public class ProductoService {
             .orElseThrow(() -> new RecursoNoEncontradoException("Producto", id));
     }
 
-    @Transactional(readOnly = true)
-    public Page<Producto> listarProductosDisponibles(Pageable pageable) {
-        return productoRepository.findByEstado(Constants.ESTADO_ACTIVO, pageable);
-    }
-
-    @Cacheable(value = "productos-publicos", key = "'todos-' + #pageable.pageNumber + '-' + #pageable.pageSize")
-    @Transactional(readOnly = true)
-    public Page<Producto> listarTodosActivos(Pageable pageable) {
-        // Solo negocios aprobados visibles en catálogo público
-        var page = productoRepository.findByEstadoAndEmpresaAprobada(Constants.ESTADO_ACTIVO, pageable);
-        page.forEach(this::poblarBadgeEmpresa);
-        return page;
-    }
-
-    /**
-     * Copia nombre y slug de la empresa a campos transient del producto,
-     * dentro de la transacción (open-in-view=false impide hacerlo al serializar).
-     * Los productos de la tienda principal (empresa null) no llevan badge.
-     */
-    private void poblarBadgeEmpresa(Producto p) {
-        var e = p.getEmpresa();
-        if (e == null || !Boolean.TRUE.equals(e.getVisibilidadPublica()) || e.getSlug() == null) return;
-        if (e.getId().equals(empresaPrincipalId)) return;
-        var nombre = e.getNombreComercial() != null ? e.getNombreComercial() : e.getNombreEmpresa();
-        p.setEmpresaNombre(nombre);
-        p.setEmpresaSlug(e.getSlug());
-    }
-
-    @Cacheable(value = "productos-publicos", key = "'cat-' + #categoriaId + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
-    @Transactional(readOnly = true)
-    public Page<Producto> listarPorCategoria(Long categoriaId, Pageable pageable) {
-        return productoRepository.findByCategoriaPublico(categoriaId, Constants.ESTADO_ACTIVO, pageable);
-    }
-
-    @Cacheable(value = "productos-publicos", key = "'destacados'")
-    @Transactional(readOnly = true)
-    public List<Producto> listarDestacados() {
-        return productoRepository.findDestacadosPublicos(Constants.ESTADO_ACTIVO);
-    }
-
-    @Cacheable(value = "productos-publicos", key = "'carrusel'")
-    @Transactional(readOnly = true)
-    public List<Producto> listarCarrusel() {
-        return productoRepository.findCarruselPublico(Constants.ESTADO_ACTIVO);
-    }
-
-    @Transactional
     public Producto toggleCarrusel(Long id, Boolean valor, Integer orden) {
-        Producto p = productoRepository.findById(id)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Producto", id));
-        p.setEnCarrusel(valor);
-        if (orden != null) p.setOrdenCarrusel(orden);
-        Producto saved = productoRepository.save(p);
-        evictProductosPublicos();
-        return saved;
+        return writeOperations.toggleCarrusel(id, valor, orden);
     }
 
-    @Transactional(readOnly = true)
+    public List<Producto> getRecomendaciones(Long id, int limit) {
+        return catalogQueries.getRecomendaciones(id, limit);
+    }
+
+    public Page<Producto> listarPorMarca(Long marcaId, Pageable pageable) {
+        return catalogQueries.listarPorMarca(marcaId, pageable);
+    }
+
+    public Page<Producto> listarProductosDisponibles(Pageable pageable) {
+        return catalogQueries.listarProductosDisponibles(pageable);
+    }
+
+    public Page<Producto> listarTodosActivos(Pageable pageable) {
+        return catalogQueries.listarTodosActivos(pageable);
+    }
+
+    public Page<Producto> listarPorCategoria(Long categoriaId, Pageable pageable) {
+        return catalogQueries.listarPorCategoria(categoriaId, pageable);
+    }
+
+    public List<Producto> listarDestacados() {
+        return catalogQueries.listarDestacados();
+    }
+
+    public List<Producto> listarCarrusel() {
+        return catalogQueries.listarCarrusel();
+    }
+
     public List<Producto> listarArticulosUnicos() {
-        return productoRepository.findByEsUnicoTrueAndVendidoFalseAndEstado(Constants.ESTADO_ACTIVO);
+        return catalogQueries.listarArticulosUnicos();
     }
 
-    @Transactional(readOnly = true)
     public List<Producto> productosConStockBajo() {
-        return productoRepository.findProductosConStockBajo();
+        return catalogQueries.productosConStockBajo();
     }
 }

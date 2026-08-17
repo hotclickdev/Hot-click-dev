@@ -1,80 +1,22 @@
-import { useState, useEffect } from 'react'
-import { crmService } from '@/services/crmService'
-import { useToast } from '@/components/ui/Toast'
-
-const fmt     = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString('es-CR') : '—'
-
-const SEGMENTOS = ['NUEVO', 'FRECUENTE', 'VIP', 'INACTIVO']
-const SEG_META  = {
-  NUEVO:     { bg: 'rgba(96,165,250,0.12)',  text: '#6490EA' },
-  FRECUENTE: { bg: 'rgba(52,211,153,0.12)', text: '#34d399' },
-  VIP:       { bg: 'rgba(251,191,36,0.12)',  text: '#fbbf24' },
-  INACTIVO:  { bg: 'rgba(255,255,255,0.06)', text: 'var(--hc-muted)' },
-}
-
-function SegmentoBadge({ seg }) {
-  const m = SEG_META[seg] ?? SEG_META.NUEVO
-  return (
-    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
-      style={{ backgroundColor: m.bg, color: m.text }}>{seg ?? 'NUEVO'}</span>
-  )
-}
+import { fmt, fmtDate } from './clienteDetail/clienteDetailHelpers'
+import { SegmentoBadge } from './clienteDetail/SegmentoBadge'
+import { useClienteDetailModal } from './clienteDetail/useClienteDetailModal'
 
 export default function ClienteDetailModal({ clienteId, onClose }) {
-  const { showToast } = useToast()
-  const [cliente, setCliente] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [editMode, setEditMode] = useState(false)
-  const [form, setForm] = useState({ segmento: '', notasInternas: '', limiteCredito: 0, puntosFidelidad: 0 })
-  const [saving, setSaving] = useState(false)
-  const [deltaPoints, setDeltaPoints] = useState('')
-
-  useEffect(() => {
-    if (!clienteId) return
-    setLoading(true)
-    crmService.getCliente(clienteId)
-      .then(data => {
-        setCliente(data)
-        setForm({
-          segmento:        data.segmento ?? 'NUEVO',
-          notasInternas:   data.notasInternas ?? '',
-          limiteCredito:   data.limiteCredito ?? 0,
-          puntosFidelidad: data.puntosFidelidad ?? 0,
-        })
-      })
-      .catch(() => showToast('Error al cargar cliente', 'error'))
-      .finally(() => setLoading(false))
-  }, [clienteId]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleSave = async () => {
-    setSaving(true)
-    try {
-      await crmService.actualizarCliente(clienteId, form)
-      showToast('Cliente actualizado', 'success')
-      setEditMode(false)
-      const updated = await crmService.getCliente(clienteId)
-      setCliente(updated)
-    } catch {
-      showToast('Error al guardar', 'error')
-    } finally { setSaving(false) }
-  }
-
-  const handleAjustarPuntos = async (sign) => {
-    const delta = Number.parseInt(deltaPoints || '0') * sign
-    if (!delta) return
-    try {
-      await crmService.ajustarPuntos(clienteId, delta)
-      showToast(`${delta > 0 ? '+' : ''}${delta} puntos aplicados`, 'success')
-      const updated = await crmService.getCliente(clienteId)
-      setCliente(updated)
-      setForm(f => ({ ...f, puntosFidelidad: updated.puntosFidelidad }))
-    } catch {
-      showToast('Error al ajustar puntos', 'error')
-    } finally {
-      setDeltaPoints('')
-    }
-  }
+  const {
+    cliente,
+    loading,
+    editMode,
+    setEditMode,
+    form,
+    setForm,
+    saving,
+    deltaPoints,
+    setDeltaPoints,
+    handleSave,
+    handleAjustarPuntos,
+    SEGMENTOS,
+  } = useClienteDetailModal(clienteId)
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
@@ -83,7 +25,6 @@ export default function ClienteDetailModal({ clienteId, onClose }) {
         style={{ backgroundColor: 'var(--hc-surface)', boxShadow: '-4px 0 32px rgba(0,0,0,0.4)' }}
         onClick={e => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
 
-        {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between p-5 border-b"
           style={{ backgroundColor: 'var(--hc-surface)', borderColor: 'rgba(255,255,255,0.07)' }}>
           <h2 className="font-bold" style={{ color: 'var(--hc-text)' }}>Ficha de cliente</h2>
@@ -105,7 +46,6 @@ export default function ClienteDetailModal({ clienteId, onClose }) {
           </div>
         ) : cliente && (
           <div className="flex-1 p-5 space-y-5">
-            {/* Info básica */}
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-bold shrink-0"
                 style={{ backgroundColor: 'rgba(23,71,168,0.15)', color: 'var(--hc-accent)' }}>
@@ -133,7 +73,6 @@ export default function ClienteDetailModal({ clienteId, onClose }) {
               </div>
             </div>
 
-            {/* KPIs */}
             <div className="grid grid-cols-3 gap-3">
               {[
                 { label: 'Pedidos',     value: cliente.numPedidosHist ?? 0,         color: 'var(--hc-text)' },
@@ -155,7 +94,6 @@ export default function ClienteDetailModal({ clienteId, onClose }) {
               ))}
             </div>
 
-            {/* Ajuste rápido de puntos */}
             {!editMode && (
               <div className="rounded-xl p-4 space-y-2"
                 style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -176,7 +114,6 @@ export default function ClienteDetailModal({ clienteId, onClose }) {
               </div>
             )}
 
-            {/* Crédito */}
             {editMode && (
               <div>
                 <label htmlFor="cliente-limite-credito" className="block text-xs font-medium mb-1" style={{ color: 'var(--hc-muted)' }}>Límite de crédito (₡)</label>
@@ -187,7 +124,6 @@ export default function ClienteDetailModal({ clienteId, onClose }) {
               </div>
             )}
 
-            {/* Notas internas */}
             <div>
               <p className="text-xs font-medium mb-1" style={{ color: 'var(--hc-muted)' }}>Notas internas</p>
               {editMode ? (
@@ -204,7 +140,6 @@ export default function ClienteDetailModal({ clienteId, onClose }) {
               )}
             </div>
 
-            {/* Historial de pedidos */}
             <div>
               <p className="text-xs font-medium mb-2" style={{ color: 'var(--hc-muted)' }}>Últimos pedidos</p>
               {(cliente.pedidos ?? []).length === 0 ? (
@@ -228,7 +163,6 @@ export default function ClienteDetailModal({ clienteId, onClose }) {
               )}
             </div>
 
-            {/* Guardar */}
             {editMode && (
               <button onClick={handleSave} disabled={saving}
                 className="w-full py-3 rounded-xl font-bold text-sm transition-opacity hover:opacity-80 disabled:opacity-40"

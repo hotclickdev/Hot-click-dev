@@ -1,11 +1,11 @@
 package com.hotclick.controller;
 
+import com.hotclick.controller.pedido.PedidoAccessGuard;
 import com.hotclick.dto.ManualPedidoDTO;
 import com.hotclick.dto.ResponseDTO;
 import jakarta.validation.Valid;
 import com.hotclick.model.Pedido;
 import com.hotclick.security.CompanyScope;
-import com.hotclick.security.JwtUtil;
 import com.hotclick.service.NotificacionEmailService;
 import com.hotclick.service.PedidoService;
 import com.hotclick.utils.Constants;
@@ -15,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
@@ -27,10 +26,10 @@ public class PedidoController {
 
     @Autowired private PedidoService             pedidoService;
     @Autowired private NotificacionEmailService  notificacionEmailService;
-    @Autowired private JwtUtil                   jwtUtil;
     @Autowired private CompanyScope              companyScope;
     @Autowired private com.hotclick.repository.EmpresaRepository empresaRepository;
     @Autowired private InputSanitizer            sanitizer;
+    @Autowired private PedidoAccessGuard         pedidoAccessGuard;
 
     @PostMapping("/manual")
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
@@ -65,22 +64,8 @@ public class PedidoController {
     public ResponseEntity<ResponseDTO> obtenerPedido(@PathVariable Long id, HttpServletRequest request) {
         try {
             Pedido pedido = pedidoService.buscarPorId(id);
-            if (!isAdmin()) {
-                Long empresaId = companyScope.getCurrentEmpresaId();
-                if (empresaId != null) {
-                    // EMPRENDEDOR — debe ser dueño del pedido
-                    Long pedidoEmpresaId = pedido.getEmpresa() != null ? pedido.getEmpresa().getId() : null;
-                    if (!empresaId.equals(pedidoEmpresaId)) {
-                        return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));
-                    }
-                } else {
-                    // USUARIO_FINAL — debe ser el cliente del pedido
-                    Long userId = extractUserId(request);
-                    if (pedido.getUsuarioFinal() == null || !userId.equals(pedido.getUsuarioFinal().getId())) {
-                        return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));
-                    }
-                }
-            }
+            ResponseEntity<ResponseDTO> denied = pedidoAccessGuard.denyIfCannotView(pedido, request);
+            if (denied != null) return denied;
             return ResponseEntity.ok(ResponseDTO.success("Pedido encontrado", pedido));
         } catch (SecurityException e) {
             return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
@@ -95,8 +80,8 @@ public class PedidoController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             HttpServletRequest request) {
-        Long userId = extractUserId(request);
-        if (!isAdmin() && !userId.equals(usuarioId)) {
+        Long userId = pedidoAccessGuard.extractUserId(request);
+        if (!pedidoAccessGuard.isAdmin() && !userId.equals(usuarioId)) {
             return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));
         }
         var pedidos = pedidoService.listarPorUsuario(usuarioId, PageRequest.of(page, size));
@@ -211,25 +196,5 @@ public class PedidoController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
-    }
-
-    private Long extractUserId(HttpServletRequest request) {
-        String auth = request.getHeader("Authorization");
-        if (auth == null || !auth.startsWith("Bearer ")) {
-            throw new SecurityException("Token de autenticación requerido");
-        }
-        return jwtUtil.extractUserId(auth.substring(7));
-    }
-
-    /**
-     * Solo ADMIN (staff de la plataforma) se salta el chequeo de companyScope.
-     * EMPRENDEDOR es rol por-tenant — deben pasar por la
-     * validación de empresaId más abajo, o un tenant podría leer pedidos de otro.
-     */
-    private boolean isAdmin() {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null) return false;
-        return auth.getAuthorities().stream()
-            .anyMatch(a -> a.getAuthority().equals("ROLE_" + Constants.ROL_ADMIN));
     }
 }

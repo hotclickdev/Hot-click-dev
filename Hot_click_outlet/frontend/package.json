@@ -9,7 +9,9 @@
     "build": "vite build",
     "build:watch": "vite build --watch",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e": "playwright test",
+    "test:e2e:smoke": "playwright test tests/smoke.spec.js"
   },
   "dependencies": {
     "@clerk/react": "^6.7.2",
@@ -56,6 +58,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/vite": "^4.2.4",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

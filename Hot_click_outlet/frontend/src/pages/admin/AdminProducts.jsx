@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useStickyState } from '@/hooks/useStickyState'
@@ -7,10 +7,7 @@ import { RetryBanner } from '@/components/ui/RetryBanner'
 import { useTranslation } from 'react-i18next'
 import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
-import { productService, denormalizeProduct } from '@/services/productService'
 import KardexDrawer from '@/components/pos/KardexDrawer'
-import { warehouseService } from '@/services/orderService'
-import { marcaService } from '@/services/marcaService'
 import ImportExportBar from '@/components/admin/ImportExportBar'
 import EmpresaProfileCard from '@/components/admin/EmpresaProfileCard'
 import { useToast } from '@/components/ui/Toast'
@@ -19,6 +16,7 @@ import CarruselPanel from './productos/CarruselPanel'
 import ProductoFormModal from './productos/ProductoFormModal'
 import ProductosFilters from './productos/ProductosFilters'
 import ProductosTable from './productos/ProductosTable'
+import { useAdminProductsActions } from './productos/useAdminProductsActions'
 import {
   COLUMNAS_EXPORT,
   COLUMNAS_IMPORT,
@@ -26,7 +24,6 @@ import {
   PROD_PAGE_SIZE,
   filasExportProductos,
   filtrarProductos,
-  formDesdeProducto,
   mapImportRow,
   metaDescriptionAuto,
   metaTitleAuto,
@@ -56,7 +53,6 @@ export default function AdminProducts() {
   const [loadError, setLoadError] = useState(false)
   const [showDiscardModal, setShowDiscardModal] = useState(false)
   const editInitialFormRef = useRef(null)
-  const loadIdRef = useRef(0)
   const debouncedSearch = useDebounce(search, 280)
   const [carruselOpen, setCarruselOpen] = useState(true)
   const [seoOpen, setSeoOpen] = useState(false)
@@ -64,141 +60,52 @@ export default function AdminProducts() {
   const [seoAutoDesc, setSeoAutoDesc] = useState(true)
   const [kardexProducto, setKardexProducto] = useState(null)
 
-  const load = async (page = prodPage) => {
-    const id = ++loadIdRef.current
-    setLoading(true)
-    setLoadError(false)
-    try {
-      const [prodsRes, catsRes, bodsRes, marcsRes] = await Promise.allSettled([
-        productService.adminGetAll(page, PROD_PAGE_SIZE),
-        productService.getCategories(),
-        warehouseService.getAll(),
-        marcaService.getAll(),
-      ])
-      if (id !== loadIdRef.current) return
-      if (prodsRes.status === 'rejected') throw prodsRes.reason
-      const prods = prodsRes.value.data
-      const cats = catsRes.status === 'fulfilled' ? (catsRes.value.data ?? []) : []
-      const bods = bodsRes.status === 'fulfilled' ? (bodsRes.value.data ?? []) : []
-      const marcsR = marcsRes.status === 'fulfilled' ? (marcsRes.value.data ?? []) : []
-      const pageData = prods.content ?? prods ?? []
-      setProducts(pageData)
-      setTotalProds(prods.totalElements ?? pageData.length)
-      setCategories(cats ?? [])
-      setBodegas(Array.isArray(bods) ? bods : bods?.content ?? [])
-      setMarcas(Array.isArray(marcsR) ? marcsR : [])
-    } catch {
-      if (id === loadIdRef.current) setLoadError(true)
-    } finally {
-      if (id === loadIdRef.current) setLoading(false)
-    }
-  }
-
-  useEffect(() => { load(prodPage) }, [prodPage]) // eslint-disable-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- carga paginada
-
-  const openNew = () => {
-    setEditing(null)
-    editInitialFormRef.current = null
-    setSeoAutoTitle(true)
-    setSeoAutoDesc(true)
-    setSeoOpen(false)
-    setForm({ ...EMPTY_FORM, bodegaId: bodegas[0]?.id ?? '' })
-    setModalOpen(true)
-  }
-
-  const openEdit = async (p) => {
-    setEditing(p)
-    setSeoAutoTitle(false)
-    setSeoAutoDesc(false)
-    const inicial = formDesdeProducto(p, bodegas)
-    setForm(inicial)
-    setModalOpen(true)
-    try {
-      const { data: imgs } = await productService.getImagenes(p.id)
-      const urls = (Array.isArray(imgs) ? imgs : []).map((i) => i.urlImagen ?? i)
-      if (urls.length > 0) {
-        setForm((prev) => {
-          const updated = { ...prev, imagenes: urls }
-          editInitialFormRef.current = JSON.stringify(updated)
-          return updated
-        })
-      } else {
-        editInitialFormRef.current = JSON.stringify(inicial)
-      }
-    } catch {
-      editInitialFormRef.current = JSON.stringify(form)
-    }
-  }
-
   const carruselSlots = products
     .filter((p) => p.enCarrusel)
     .sort((a, b) => (a.ordenCarrusel ?? 0) - (b.ordenCarrusel ?? 0))
     .slice(0, 5)
 
-  const handleToggleCarrusel = async (p) => {
-    const yaEsta = p.enCarrusel
-    if (yaEsta) {
-      setProducts((prev) => prev.map((x) => x.id === p.id ? { ...x, enCarrusel: false, ordenCarrusel: 0 } : x))
-      try { await productService.toggleCarrusel(p.id, false, 0) }
-      catch { setProducts((prev) => prev.map((x) => x.id === p.id ? { ...x, enCarrusel: true } : x)) }
-      return
-    }
-    if (carruselSlots.length >= 5) { toast({ message: 'El carrusel ya tiene 5 productos (máximo)', type: 'error' }); return }
-    const existing = [...carruselSlots]
-    const allAssignments = [
-      ...existing.map((s, i) => ({ id: s.id, orden: i + 1 })),
-      { id: p.id, orden: existing.length + 1 },
-    ]
-    setProducts((prev) => prev.map((x) => {
-      const a = allAssignments.find((n) => n.id === x.id)
-      return a ? { ...x, enCarrusel: true, ordenCarrusel: a.orden } : x
-    }))
-    try {
-      await Promise.all(allAssignments.map(({ id, orden }) =>
-        productService.toggleCarrusel(id, true, orden)
-      ))
-    } catch { setProducts((prev) => prev.map((x) => x.id === p.id ? { ...x, enCarrusel: false } : x)) }
-  }
+  const {
+    load,
+    openNew,
+    openEdit,
+    handleToggleCarrusel,
+    handleCarruselMover,
+    handleToggleDestacado,
+    handleSave,
+    handleDelete,
+    confirmDelete,
+    handleModalClose,
+    handleImportBulk,
+  } = useAdminProductsActions({
+    prodPage,
+    bodegas,
+    products,
+    carruselSlots,
+    form,
+    editing,
+    deleteTarget,
+    editInitialFormRef,
+    toast,
+    setProducts,
+    setTotalProds,
+    setCategories,
+    setBodegas,
+    setMarcas,
+    setLoading,
+    setLoadError,
+    setEditing,
+    setForm,
+    setModalOpen,
+    setSaving,
+    setDeleteTarget,
+    setSeoAutoTitle,
+    setSeoAutoDesc,
+    setSeoOpen,
+    setShowDiscardModal,
+  })
 
-  const handleCarruselMover = async (p, dir) => {
-    const sorted = [...products]
-      .filter((x) => x.enCarrusel)
-      .sort((a, b) => (a.ordenCarrusel ?? 0) - (b.ordenCarrusel ?? 0))
-
-    const idx = sorted.findIndex((x) => x.id === p.id)
-    const swapIdx = idx + dir
-    if (swapIdx < 0 || swapIdx >= sorted.length) return
-
-    const reordered = [...sorted]
-    ;[reordered[idx], reordered[swapIdx]] = [reordered[swapIdx], reordered[idx]]
-
-    const assignments = reordered.map((s, i) => ({ id: s.id, orden: i + 1 }))
-
-    setProducts((prev) => prev.map((x) => {
-      const a = assignments.find((n) => n.id === x.id)
-      return a ? { ...x, ordenCarrusel: a.orden } : x
-    }))
-
-    try {
-      await Promise.all(assignments.map(({ id, orden }) =>
-        productService.toggleCarrusel(id, true, orden)
-      ))
-    } catch {
-      toast({ message: 'Error al reordenar el carrusel', type: 'error' })
-      load()
-    }
-  }
-
-  const handleToggleDestacado = async (p) => {
-    const nuevoValor = !p.destacado
-    setProducts((prev) => prev.map((x) => x.id === p.id ? { ...x, destacado: nuevoValor } : x))
-    try {
-      await productService.toggleDestacado(p.id, nuevoValor)
-    } catch {
-      setProducts((prev) => prev.map((x) => x.id === p.id ? { ...x, destacado: p.destacado } : x))
-      toast({ message: 'Error al actualizar destacado', type: 'error' })
-    }
-  }
+  useEffect(() => { load(prodPage) }, [prodPage]) // eslint-disable-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- carga paginada
 
   useEffect(() => {
     if (!seoAutoTitle || !modalOpen) return
@@ -209,66 +116,6 @@ export default function AdminProducts() {
     if (!seoAutoDesc || !modalOpen) return
     setForm((p) => ({ ...p, metaDescription: metaDescriptionAuto(p.descripcion, p.precioVenta) })) // eslint-disable-line react-hooks/set-state-in-effect -- SEO derivado de desc/precio
   }, [form.descripcion, form.precioVenta, seoAutoDesc, modalOpen])
-
-  const handleSave = async (e) => {
-    e.preventDefault()
-    if (!form.categoriaId) {
-      toast({ message: 'Selecciona una categoría', type: 'error' }); return
-    }
-    if (!form.bodegaId && bodegas.length > 0) {
-      toast({ message: 'Selecciona una bodega', type: 'error' }); return
-    }
-    const compra = Number(form.precioCompra)
-    const venta = Number(form.precioVenta)
-    if (compra < 0) {
-      toast({ message: 'El precio de compra no puede ser negativo', type: 'error' }); return
-    }
-    if (venta < 0) {
-      toast({ message: 'El precio de venta no puede ser negativo', type: 'error' }); return
-    }
-    if (venta < compra) {
-      toast({ message: 'El precio de venta no puede ser menor al precio de compra', type: 'error' }); return
-    }
-    setSaving(true)
-    try {
-      const dto = denormalizeProduct(form)
-      if (form.imagenes.length > 0) dto.imagenPrincipalUrl = form.imagenes[0]
-      let productoId
-      if (editing) {
-        await productService.update(editing.id, dto)
-        productoId = editing.id
-        toast({ message: 'Producto actualizado', type: 'success' })
-      } else {
-        const res = await productService.create(dto)
-        productoId = res.data?.id ?? res.data?.data?.id
-        toast({ message: 'Producto creado', type: 'success' })
-      }
-      if (productoId && form.imagenes.length > 0) {
-        await productService.sincronizarImagenes(productoId, form.imagenes)
-      }
-      editInitialFormRef.current = null
-      setModalOpen(false)
-      load()
-    } catch (err) {
-      const msg = err.response?.data?.message ?? 'Error al guardar'
-      toast({ message: msg, type: 'error' })
-    } finally { setSaving(false) }
-  }
-
-  const handleDelete = useCallback((id, nombre) => {
-    setDeleteTarget({ id, nombre })
-  }, [])
-
-  const confirmDelete = async () => {
-    if (!deleteTarget) return
-    const { id } = deleteTarget
-    setDeleteTarget(null)
-    try {
-      await productService.delete(id)
-      toast({ message: 'Producto eliminado', type: 'success' })
-      setProducts((prev) => prev.filter((p) => p.id !== id))
-    } catch { toast({ message: 'Error al eliminar', type: 'error' }) }
-  }
 
   const filtered = useMemo(() => filtrarProductos({
     products,
@@ -281,14 +128,6 @@ export default function AdminProducts() {
 
   const hasFilters = filterCat || filterCond || filterStock || !!search
   const clearFilters = () => { setFilterCat(''); setFilterCond(''); setFilterStock(''); setSearch(''); setProdPage(0) }
-
-  const handleModalClose = () => {
-    const sucio = editing && editInitialFormRef.current
-      ? JSON.stringify(form) !== editInitialFormRef.current
-      : false
-    if (sucio) { setShowDiscardModal(true); return }
-    setModalOpen(false)
-  }
 
   const propsFiltros = {
     search,
@@ -317,10 +156,7 @@ export default function AdminProducts() {
           totalProds={totalProds}
           products={products}
           bodegas={bodegas}
-          onImport={async (rows) => {
-            await productService.importBulk(rows)
-            load(0)
-          }}
+          onImport={handleImportBulk}
           onNuevo={openNew}
         />
 

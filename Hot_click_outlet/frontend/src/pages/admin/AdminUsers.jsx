@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import Spinner from '@/components/ui/Spinner'
-import { adminService } from '@/services/orderService'
 import { useToast } from '@/components/ui/Toast'
 import { crmService } from '@/services/crmService'
 import ClienteDetailModal from '@/components/admin/ClienteDetailModal'
@@ -10,16 +9,8 @@ import UsuariosHeader from './usuarios/UsuariosHeader'
 import UsuariosTable from './usuarios/UsuariosTable'
 import UsuarioEditModal from './usuarios/UsuarioEditModal'
 import UsuariosConfirmModals from './usuarios/UsuariosConfirmModals'
-import { ESTADO_INT, getEstadoStr, getRolStr, usuariosDesdeRespuestas } from './usuarios/usuarioHelpers'
-
-async function obtenerUsuarios() {
-  const [{ data: all }, { data: pend }, { data: empresas }] = await Promise.all([
-    adminService.getUsers(),
-    adminService.getPendingUsers(),
-    adminService.getEmpresas(),
-  ])
-  return usuariosDesdeRespuestas(all, pend, empresas)
-}
+import { getEstadoStr } from './usuarios/usuarioHelpers'
+import { obtenerUsuarios, useAdminUsersActions } from './usuarios/useAdminUsersActions'
 
 export default function AdminUsers() {
   const { t } = useTranslation()
@@ -60,7 +51,6 @@ export default function AdminUsers() {
       .finally(() => setLoading(false))
   }
 
-  // Carga inicial una sola vez (toast no debe re-disparar el fetch).
   useEffect(() => {
     let cancelado = false
     obtenerUsuarios()
@@ -92,134 +82,49 @@ export default function AdminUsers() {
     setTab(key)
   }
 
+  const {
+    getPlanStr,
+    approve,
+    reject,
+    handleDelete,
+    handleBlock,
+    handleUnblock,
+    handleRestore,
+    openEdit,
+    handleSave,
+  } = useAdminUsersActions({
+    toast,
+    empresasPlan,
+    editUser,
+    editRol,
+    editEstado,
+    editPlan,
+    deleteUser,
+    blockUser,
+    unblockUser,
+    restoreUser,
+    setLoading,
+    setUsers,
+    setPending,
+    setEmpresasPlan,
+    setEditUser,
+    setEditRol,
+    setEditEstado,
+    setEditPlan,
+    setSaving,
+    setDeleteUser,
+    setBlockUser,
+    setUnblockUser,
+    setRestoreUser,
+    setActionLoading,
+    load,
+  })
+
   const activeUsers = users.filter((u) => {
     const estado = getEstadoStr(u)
     return estado !== 'ELIMINADO' && estado !== 'PENDIENTE'
   })
   const deletedUsers = users.filter((u) => getEstadoStr(u) === 'ELIMINADO')
-
-  const approve = async (id) => {
-    try {
-      await adminService.approveUser(id, { rol: 'USUARIO_FINAL' })
-      toast({ message: 'Usuario aprobado', type: 'success' })
-      load()
-    } catch {
-      toast({ message: 'Error al aprobar', type: 'error' })
-    }
-  }
-
-  const reject = async (id) => {
-    try {
-      await adminService.rejectUser(id)
-      toast({ message: 'Usuario rechazado', type: 'info' })
-      load()
-    } catch {
-      toast({ message: 'Error al rechazar', type: 'error' })
-    }
-  }
-
-  const handleDelete = async () => {
-    if (!deleteUser) return
-    setActionLoading(true)
-    try {
-      await adminService.deleteUser(deleteUser.id)
-      toast({ message: 'Usuario eliminado', type: 'success' })
-      setDeleteUser(null)
-      load()
-    } catch {
-      toast({ message: 'Error al eliminar', type: 'error' })
-    } finally {
-      setActionLoading(false)
-    }
-  }
-
-  const handleBlock = async () => {
-    if (!blockUser) return
-    setActionLoading(true)
-    try {
-      await adminService.blockUser(blockUser.id)
-      toast({ message: `${blockUser.nombre ?? blockUser.correo} fue bloqueado`, type: 'info' })
-      setBlockUser(null)
-      load()
-    } catch (err) {
-      toast({ message: err.response?.data?.message ?? 'Error al bloquear', type: 'error' })
-    } finally {
-      setActionLoading(false)
-    }
-  }
-
-  const handleUnblock = async () => {
-    if (!unblockUser) return
-    setActionLoading(true)
-    try {
-      await adminService.unblockUser(unblockUser.id)
-      toast({ message: `${unblockUser.nombre ?? unblockUser.correo} fue desbloqueado`, type: 'success' })
-      setUnblockUser(null)
-      load()
-    } catch (err) {
-      toast({ message: err.response?.data?.message ?? 'Error al desbloquear', type: 'error' })
-    } finally {
-      setActionLoading(false)
-    }
-  }
-
-  const handleRestore = async () => {
-    if (!restoreUser) return
-    setActionLoading(true)
-    try {
-      await adminService.restoreUser(restoreUser.id)
-      toast({ message: `${restoreUser.nombre ?? restoreUser.correo} fue restaurado`, type: 'success' })
-      setRestoreUser(null)
-      load()
-    } catch (err) {
-      toast({ message: err.response?.data?.message ?? 'Error al restaurar', type: 'error' })
-    } finally {
-      setActionLoading(false)
-    }
-  }
-
-  const getPlanStr = (u) => (u.empresaId ? empresasPlan[u.empresaId] : null)
-
-  const openEdit = (u) => {
-    setEditUser(u)
-    setEditRol(getRolStr(u))
-    setEditEstado(getEstadoStr(u))
-    setEditPlan(getPlanStr(u) ?? 'EMPRENDEDOR')
-  }
-
-  const handleSave = async () => {
-    if (!editUser) return
-    setSaving(true)
-    try {
-      const currentRol = getRolStr(editUser)
-      const currentEstado = getEstadoStr(editUser)
-      const currentPlan = getPlanStr(editUser)
-      const promises = []
-
-      if (editRol !== currentRol) {
-        promises.push(adminService.setRole(editUser.id, editRol))
-      }
-      if (editEstado !== currentEstado && ESTADO_INT[editEstado] != null) {
-        promises.push(adminService.setStatus(editUser.id, ESTADO_INT[editEstado]))
-      }
-      if (editRol === 'EMPRENDEDOR' && editUser.empresaId && editPlan !== currentPlan) {
-        promises.push(adminService.setEmpresaPlan(editUser.empresaId, editPlan))
-      }
-
-      if (promises.length === 0) {
-        setEditUser(null)
-        return
-      }
-      await Promise.all(promises)
-      toast({ message: 'Usuario actualizado', type: 'success' })
-      setEditUser(null)
-      load()
-    } catch (err) {
-      toast({ message: err.response?.data?.message ?? 'Error al actualizar', type: 'error' })
-    } finally {
-      setSaving(false)
-    }
-  }
 
   const baseForTab = tab === 'pending' ? pending : tab === 'deleted' ? deletedUsers : activeUsers
   const displayed = search

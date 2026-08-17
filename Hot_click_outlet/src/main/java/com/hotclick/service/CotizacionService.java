@@ -3,9 +3,10 @@ package com.hotclick.service;
 import com.hotclick.dto.CotizacionB2BRequestDTO;
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
+import com.hotclick.service.cotizacion.CotizacionConsecutivoGenerator;
+import com.hotclick.service.cotizacion.CotizacionItemMapper;
+import com.hotclick.service.cotizacion.CotizacionTotalsCalculator;
 import com.hotclick.utils.Constants;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,26 +20,16 @@ public class CotizacionService {
 
     @Autowired private CotizacionRepository           cotizacionRepository;
     @Autowired private CotizacionClienteRepository    clienteRepository;
-    @Autowired private ProductoRepository             productoRepository;
     @Autowired private EmpresaRepository              empresaRepository;
-    @PersistenceContext private EntityManager          em;
+    @Autowired private CotizacionConsecutivoGenerator consecutivoGenerator;
+    @Autowired private CotizacionItemMapper           itemMapper;
+    @Autowired private CotizacionTotalsCalculator     totalsCalculator;
 
     // ── Consecutivo PgBouncer-safe ───────────────────────────────────────────────
 
     @Transactional
     public String generarConsecutivo(Long empresaId) {
-        em.createNativeQuery(
-            "INSERT INTO hot_click_cotizacion_consecutivo_tb(empresa_id, ultimo_numero) " +
-            "VALUES (:eid, 1) " +
-            "ON CONFLICT (empresa_id) DO UPDATE " +
-            "SET ultimo_numero = hot_click_cotizacion_consecutivo_tb.ultimo_numero + 1"
-        ).setParameter("eid", empresaId).executeUpdate();
-
-        Number numero = (Number) em.createNativeQuery(
-            "SELECT ultimo_numero FROM hot_click_cotizacion_consecutivo_tb WHERE empresa_id = :eid"
-        ).setParameter("eid", empresaId).getSingleResult();
-
-        return String.format("COT-%06d", numero.longValue());
+        return consecutivoGenerator.generarConsecutivo(empresaId);
     }
 
     // ── CRUD cotizaciones ────────────────────────────────────────────────────────
@@ -70,8 +61,8 @@ public class CotizacionService {
         c.setNombreCliente(cliente.getNombreComercial());
         c.setTelefono(cliente.getTelefono());
 
-        mapearItems(c, dto.getItems());
-        calcularTotales(c);
+        itemMapper.mapearItems(c, dto.getItems());
+        totalsCalculator.calcularTotales(c);
 
         return cotizacionRepository.save(c);
     }
@@ -101,10 +92,10 @@ public class CotizacionService {
 
         if (dto.getItems() != null && !dto.getItems().isEmpty()) {
             c.getItems().clear();
-            mapearItems(c, dto.getItems());
+            itemMapper.mapearItems(c, dto.getItems());
         }
 
-        calcularTotales(c);
+        totalsCalculator.calcularTotales(c);
         return cotizacionRepository.save(c);
     }
 
@@ -155,7 +146,7 @@ public class CotizacionService {
             copia.getItems().add(nuevo);
         }
 
-        calcularTotales(copia);
+        totalsCalculator.calcularTotales(copia);
         return cotizacionRepository.save(copia);
     }
 
@@ -194,73 +185,5 @@ public class CotizacionService {
         k.put("aprobada",  cotizacionRepository.countByEmpresaIdAndEstadoAndEstadoCotizacion(empresaId, 1, Cotizacion.ESTADO_APROBADA));
         k.put("rechazada", cotizacionRepository.countByEmpresaIdAndEstadoAndEstadoCotizacion(empresaId, 1, Cotizacion.ESTADO_RECHAZADA));
         return k;
-    }
-
-    // ── Helpers ──────────────────────────────────────────────────────────────────
-
-    private void mapearItems(Cotizacion cotizacion, List<CotizacionB2BRequestDTO.ItemDTO> dtos) {
-        List<Long> productoIds = dtos.stream()
-            .filter(d -> CotizacionItem.TIPO_CATALOGO.equals(d.getTipo()) && d.getProductoId() != null)
-            .map(CotizacionB2BRequestDTO.ItemDTO::getProductoId)
-            .toList();
-
-        Map<Long, Producto> productoMap = productoIds.isEmpty()
-            ? Collections.emptyMap()
-            : productoRepository.findAllById(productoIds).stream()
-                .collect(java.util.stream.Collectors.toMap(Producto::getId, p -> p));
-
-        int orden = 0;
-        for (CotizacionB2BRequestDTO.ItemDTO dto : dtos) {
-            CotizacionItem item = new CotizacionItem();
-            item.setCotizacion(cotizacion);
-            item.setTipo(dto.getTipo() != null ? dto.getTipo() : CotizacionItem.TIPO_CATALOGO);
-            item.setOrden(orden++);
-            item.setCantidad(dto.getCantidad() != null ? dto.getCantidad() : 1);
-            item.setUnidadMedida(dto.getUnidadMedida() != null ? dto.getUnidadMedida() : "UNIDAD");
-            item.setDescuentoPorcentaje(dto.getDescuentoPorcentaje() != null ? dto.getDescuentoPorcentaje() : 0);
-
-            if (CotizacionItem.TIPO_CATALOGO.equals(item.getTipo()) && dto.getProductoId() != null) {
-                Producto p = productoMap.get(dto.getProductoId());
-                if (p != null) {
-                    item.setProducto(p);
-                    item.setCodigo(dto.getCodigo() != null ? dto.getCodigo() : p.getSku());
-                    item.setNombre(dto.getNombre() != null ? dto.getNombre() : p.getNombreProducto());
-                    item.setDescripcion(dto.getDescripcion() != null ? dto.getDescripcion() : p.getDescripcionCorta());
-                    item.setImagenUrl(dto.getImagenUrl() != null ? dto.getImagenUrl() : p.getImagenPrincipalUrl());
-                    item.setPrecioUnitario(dto.getPrecioUnitario() != null ? dto.getPrecioUnitario() : p.getPrecioVenta());
-                } else {
-                    poblarItemTemporal(item, dto);
-                }
-            } else {
-                poblarItemTemporal(item, dto);
-            }
-
-            int base     = item.getPrecioUnitario() * item.getCantidad();
-            int descuento = base * item.getDescuentoPorcentaje() / 100;
-            item.setSubtotalLinea(base - descuento);
-            cotizacion.getItems().add(item);
-        }
-    }
-
-    private void poblarItemTemporal(CotizacionItem item, CotizacionB2BRequestDTO.ItemDTO dto) {
-        item.setTipo(CotizacionItem.TIPO_TEMPORAL);
-        item.setCodigo(dto.getCodigo());
-        item.setNombre(dto.getNombre() != null ? dto.getNombre() : "Ítem sin nombre");
-        item.setDescripcion(dto.getDescripcion());
-        item.setImagenUrl(dto.getImagenUrl());
-        item.setPrecioUnitario(dto.getPrecioUnitario() != null ? dto.getPrecioUnitario() : 0);
-    }
-
-    private void calcularTotales(Cotizacion c) {
-        int subtotal = c.getItems().stream().mapToInt(CotizacionItem::getSubtotalLinea).sum();
-        c.setSubtotal(subtotal);
-
-        int iva = 0;
-        if (Boolean.TRUE.equals(c.getAplicaIva())) {
-            int pct = c.getPorcentajeIva() != null ? c.getPorcentajeIva() : 13;
-            iva = subtotal * pct / 100;
-        }
-        c.setMontoIva(iva);
-        c.setTotal(subtotal + iva);
     }
 }

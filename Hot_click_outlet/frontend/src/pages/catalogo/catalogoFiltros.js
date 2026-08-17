@@ -98,3 +98,35 @@ export function sortCatalogo(lista, sort, gustosScores, affinityOf) {
     return 0
   })
 }
+
+/**
+ * @param {URLSearchParams} searchParams
+ * @returns {number}
+ */
+export function parsePageFromSearchParams(searchParams) {
+  const p = Number.parseInt(searchParams.get('page') ?? '0', 10)
+  return Number.isNaN(p) || p < 0 ? 0 : p
+}
+
+/**
+ * @param {URLSearchParams} searchParams
+ * @returns {Set<string>}
+ */
+export function parseMarcasFilterFromSearchParams(searchParams) {
+  const raw = searchParams.get('marcas') ?? searchParams.get('marcaId') ?? ''
+  return new Set(raw ? raw.split(',').filter(Boolean) : [])
+}
+
+/**
+ * @param {{ search: string, category: string, marcasFilter: Set<string>, page: number, sort: string }} state
+ * @returns {Record<string, string>}
+ */
+export function catalogoSearchParamsFromState({ search, category, marcasFilter, page, sort }) {
+  const params = {}
+  if (search) params.search = search
+  if (category) params.cat = category
+  if (marcasFilter.size) params.marcas = [...marcasFilter].join(',')
+  if (page > 0) params.page = String(page)
+  if (sort && sort !== 'default') params.sort = sort
+  return params
+}

@@ -3,10 +3,11 @@ import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.utils.Constants;
 
 import com.hotclick.model.Testimonio;
-import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.TestimonioRepository;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.service.testimonio.TestimonioDtoMapper;
+import com.hotclick.service.testimonio.TestimonioResenaSupport;
 import com.hotclick.utils.InputSanitizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -15,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,13 +23,12 @@ import java.util.Map;
 @Service
 public class TestimonioService {
 
-    private static final int MAX_RESENAS_POR_PRODUCTO = 3;
-
     @Autowired private TestimonioRepository repo;
     @Autowired private UsuarioRepository usuarioRepo;
     @Autowired private ProductoRepository productoRepo;
-    @Autowired private PedidoRepository pedidoRepo;
     @Autowired private InputSanitizer sanitizer;
+    @Autowired private TestimonioDtoMapper dtoMapper;
+    @Autowired private TestimonioResenaSupport resenaSupport;
 
     /**
      * Crea un testimonio general sobre la web/servicio.
@@ -74,8 +73,8 @@ public class TestimonioService {
             throw new IllegalArgumentException("Solo puedes reseñar productos que hayas comprado");
 
         long resenasPrevias = repo.countByUsuarioIdAndProductoIdAndTipo(usuario.getId(), productoId, "RESENA");
-        if (resenasPrevias >= MAX_RESENAS_POR_PRODUCTO)
-            throw new IllegalArgumentException("Ya alcanzaste el límite de " + MAX_RESENAS_POR_PRODUCTO + " reseñas para este producto");
+        if (resenasPrevias >= TestimonioResenaSupport.MAX_RESENAS_POR_PRODUCTO)
+            throw new IllegalArgumentException("Ya alcanzaste el límite de " + TestimonioResenaSupport.MAX_RESENAS_POR_PRODUCTO + " reseñas para este producto");
 
         if (calificacion == null)
             throw new IllegalArgumentException("La calificación es obligatoria");
@@ -98,7 +97,7 @@ public class TestimonioService {
     public List<Map<String, Object>> listarAprobadosPublico() {
         return repo.findByEstadoAndTipoOrderByFechaAprobacionDesc("APROBADO", "TESTIMONIO")
             .stream()
-            .map(this::toPublicMap)
+            .map(dtoMapper::toPublicMap)
             .toList();
     }
 
@@ -107,7 +106,7 @@ public class TestimonioService {
     public List<Map<String, Object>> listarResenasProducto(Long productoId) {
         return repo.findResenasByProducto(productoId)
             .stream()
-            .map(this::toPublicMap)
+            .map(dtoMapper::toPublicMap)
             .toList();
     }
 
@@ -116,7 +115,7 @@ public class TestimonioService {
     public List<Map<String, Object>> listarTodosAdmin() {
         return repo.findAllByOrderByFechaCreacionDesc()
             .stream()
-            .map(this::toAdminMap)
+            .map(dtoMapper::toAdminMap)
             .toList();
     }
 
@@ -141,33 +140,10 @@ public class TestimonioService {
             .toList();
     }
 
-    /**
-     * Productos entregados al usuario con cuántas reseñas ya dejó (máx 3).
-     */
     public List<Map<String, Object>> productosParaResenar(String correo) {
         var usuario = usuarioRepo.findByCorreo(correo)
             .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
-
-        var pedidos = pedidoRepo.findEntregadosConItemsByUsuarioId(usuario.getId());
-
-        Map<Long, Map<String, Object>> vistos = new LinkedHashMap<>();
-        for (var pedido : pedidos) {
-            if (pedido.getItems() == null) continue;
-            for (var item : pedido.getItems()) {
-                var p = item.getProducto();
-                if (p == null || vistos.containsKey(p.getId())) continue;
-                long resenasEnviadas = repo.countByUsuarioIdAndProductoIdAndTipo(usuario.getId(), p.getId(), "RESENA");
-                Map<String, Object> m = new LinkedHashMap<>();
-                m.put("productoId", p.getId());
-                m.put("nombre", p.getNombreProducto());
-                m.put("imagenUrl", p.getImagenPrincipalUrl());
-                m.put("pedidoId", pedido.getId());
-                m.put("resenasEnviadas", resenasEnviadas);
-                m.put("puedeResenar", resenasEnviadas < MAX_RESENAS_POR_PRODUCTO);
-                vistos.put(p.getId(), m);
-            }
-        }
-        return new ArrayList<>(vistos.values());
+        return resenaSupport.productosParaResenar(usuario.getId());
     }
 
     @CacheEvict(value = "testimonios-publicos", allEntries = true)
@@ -194,44 +170,5 @@ public class TestimonioService {
         m.put("reviewCount", count == null ? 0 : count);
         m.put("ratingValue",  avg  == null ? null : Math.round(avg * 10.0) / 10.0);
         return m;
-    }
-
-    private Map<String, Object> toPublicMap(Testimonio t) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id", t.getId());
-        m.put("tipo", t.getTipo());
-        m.put("nombreUsuario", nombreCompleto(t));
-        m.put("productoNombre", t.getProducto() != null ? t.getProducto().getNombreProducto() : null);
-        m.put("comentario", t.getComentario());
-        m.put("imagenUrl", t.getImagenUrl());
-        m.put("calificacion", t.getCalificacion());
-        m.put("fechaAprobacion", t.getFechaAprobacion());
-        return m;
-    }
-
-    private Map<String, Object> toAdminMap(Testimonio t) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id", t.getId());
-        m.put("tipo", t.getTipo());
-        m.put("nombreUsuario", nombreCompleto(t));
-        m.put("correoUsuario", t.getUsuario() != null ? t.getUsuario().getCorreo() : null);
-        m.put("productoId", t.getProducto() != null ? t.getProducto().getId() : null);
-        m.put("productoNombre", t.getProducto() != null ? t.getProducto().getNombreProducto() : null);
-        m.put("comentario", t.getComentario());
-        m.put("imagenUrl", t.getImagenUrl());
-        m.put("calificacion", t.getCalificacion());
-        m.put("estado", t.getEstado());
-        m.put("fechaCreacion", t.getFechaCreacion());
-        m.put("fechaAprobacion", t.getFechaAprobacion());
-        return m;
-    }
-
-    private String nombreCompleto(Testimonio t) {
-        if (t.getUsuario() == null) return "Cliente";
-        var u = t.getUsuario();
-        String nombre = u.getNombre() != null ? u.getNombre() : "";
-        String ap = u.getApellidoPaterno() != null ? u.getApellidoPaterno() : "";
-        String full = (nombre + " " + ap).trim();
-        return full.isEmpty() ? "Cliente" : full;
     }
 }

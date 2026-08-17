@@ -2,14 +2,12 @@ package com.hotclick.rag.controller;
 
 import com.hotclick.model.Empresa;
 import com.hotclick.rag.classifier.AssistantMetricsService;
+import com.hotclick.rag.controller.shoppingassistant.ShoppingAssistantImageSearchHandler;
+import com.hotclick.rag.controller.shoppingassistant.ShoppingAssistantTenantGuard;
 import com.hotclick.rag.dto.ChatRequest;
 import com.hotclick.rag.dto.ChatResponse;
 import com.hotclick.rag.dto.FeedbackRequest;
-import com.hotclick.rag.dto.ProductoContexto;
-import com.hotclick.rag.service.ShoppingAssistantService;
-import com.hotclick.rag.service.VectorSearchService;
-import com.hotclick.repository.EmpresaRepository;
-import com.hotclick.service.GoogleVisionService;
+import com.hotclick.service.shoppingassistant.ShoppingAssistantService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,10 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
-import java.util.*;
-import java.util.stream.IntStream;
+
+import java.util.Map;
 
 /**
  * Endpoint público del asistente de compras conversacional con IA.
@@ -45,22 +41,19 @@ public class ShoppingAssistantController {
 
     private static final Logger log = LoggerFactory.getLogger(ShoppingAssistantController.class);
 
-    private final ShoppingAssistantService assistantService;
-    private final EmpresaRepository        empresaRepository;
-    private final AssistantMetricsService  metricsService;
-    private final VectorSearchService      vectorSearchService;
-    private final GoogleVisionService      visionService;
+    private final ShoppingAssistantService           assistantService;
+    private final AssistantMetricsService            metricsService;
+    private final ShoppingAssistantTenantGuard       tenantGuard;
+    private final ShoppingAssistantImageSearchHandler imageSearchHandler;
 
     public ShoppingAssistantController(ShoppingAssistantService assistantService,
-                                       EmpresaRepository empresaRepository,
                                        AssistantMetricsService metricsService,
-                                       VectorSearchService vectorSearchService,
-                                       GoogleVisionService visionService) {
-        this.assistantService   = assistantService;
-        this.empresaRepository  = empresaRepository;
-        this.metricsService     = metricsService;
-        this.vectorSearchService = vectorSearchService;
-        this.visionService      = visionService;
+                                       ShoppingAssistantTenantGuard tenantGuard,
+                                       ShoppingAssistantImageSearchHandler imageSearchHandler) {
+        this.assistantService    = assistantService;
+        this.metricsService      = metricsService;
+        this.tenantGuard         = tenantGuard;
+        this.imageSearchHandler  = imageSearchHandler;
     }
 
     /**
@@ -82,17 +75,9 @@ public class ShoppingAssistantController {
         // ── Aislamiento multi-tenant ──────────────────────────────────────────
         // El slug se resuelve aquí (capa de entrada) para que ninguna capa inferior
         // reciba un empresaSlug sin validar. La empresa debe estar ACTIVA.
-        Empresa empresa = empresaRepository.findBySlug(request.getEmpresaSlug())
-            .filter(e -> "ACTIVO".equals(e.getEstadoEmpresa()))
-            .orElseThrow(() -> {
-                log.warn("[rag-ctrl] Slug no encontrado o inactivo: '{}'", request.getEmpresaSlug());
-                return new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "Tienda no encontrada o inactiva");
-            });
+        Empresa empresa = tenantGuard.requireEmpresaActiva(request.getEmpresaSlug());
 
-        String empresaNombre = empresa.getNombreComercial() != null
-            ? empresa.getNombreComercial()
-            : empresa.getNombreEmpresa();
+        String empresaNombre = ShoppingAssistantTenantGuard.nombreComercial(empresa);
 
         log.debug("[rag-ctrl] Chat empresa={} sesion='{}'",
             empresa.getId(), request.getSesionId());
@@ -123,85 +108,7 @@ public class ShoppingAssistantController {
             @RequestParam MultipartFile image,
             @RequestParam String empresaSlug,
             @RequestParam(required = false) String visitorId) {
-
-        if (image.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La imagen está vacía");
-        }
-        if (image.getSize() > 5 * 1024 * 1024) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La imagen no puede superar 5 MB");
-        }
-        String ct = image.getContentType();
-        if (ct == null || (!ct.startsWith("image/jpeg") && !ct.startsWith("image/png")
-                && !ct.startsWith("image/webp") && !ct.startsWith("image/gif"))) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Formato no permitido. Usá JPG, PNG o WebP");
-        }
-
-        Empresa empresa = empresaRepository.findBySlug(empresaSlug)
-            .filter(e -> "ACTIVO".equals(e.getEstadoEmpresa()))
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tienda no encontrada"));
-
-        GoogleVisionService.VisionResult vision;
-        try {
-            byte[] bytes  = image.getBytes();
-            String base64 = Base64.getEncoder().encodeToString(bytes);
-            vision = visionService.analizar(base64);
-        } catch (Exception e) {
-            log.warn("[img-search] Error leyendo imagen: {}", e.getMessage());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo procesar la imagen");
-        }
-
-        // Construir query de texto a partir de las etiquetas de Vision
-        String etiquetaPrincipal = vision.getEtiquetaPrincipal();
-        String categoriaFisica   = vision.getCategoriaFisica();
-        String query = buildImageQuery(vision);
-
-        List<ProductoContexto> productos = query.isBlank()
-            ? List.of()
-            : vectorSearchService.buscarSimilares(empresa.getId(), query, 5);
-
-        // Asignar porcentajes de similitud decrecientes (sin image embeddings, es estimación)
-        int[] simScores = { 94, 87, 80, 74, 68 };
-        List<Map<String, Object>> productosConSim = IntStream.range(0, productos.size())
-            .mapToObj(i -> {
-                ProductoContexto p = productos.get(i);
-                Map<String, Object> m = new LinkedHashMap<>();
-                m.put("id",              p.id());
-                m.put("nombre",          p.nombre());
-                m.put("sku",             p.sku());
-                m.put("precio",          p.precio());
-                m.put("descripcionCorta", p.descripcionCorta());
-                m.put("imagenUrl",       p.imagenUrl());
-                m.put("similarity",      i < simScores.length ? simScores[i] : 60);
-                return m;
-            })
-            .toList();
-
-        Map<String, Object> analisis = new LinkedHashMap<>();
-        analisis.put("etiquetaPrincipal", etiquetaPrincipal);
-        analisis.put("categoria",         categoriaFisica);
-
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("analisis",   analisis);
-        result.put("productos",  productosConSim);
-        result.put("encontrado", !productosConSim.isEmpty());
-
-        log.debug("[img-search] empresa={} etiqueta='{}' resultados={}",
-            empresa.getId(), etiquetaPrincipal, productosConSim.size());
-
-        return ResponseEntity.ok(result);
-    }
-
-    private String buildImageQuery(GoogleVisionService.VisionResult vision) {
-        List<String> partes = new ArrayList<>();
-        if (!vision.webEntities.isEmpty()) {
-            vision.webEntities.stream().limit(3)
-                .map(e -> e.description)
-                .forEach(partes::add);
-        }
-        if (!vision.labelsFisicos.isEmpty()) {
-            vision.labelsFisicos.stream().limit(2).forEach(partes::add);
-        }
-        return String.join(" ", partes);
+        return imageSearchHandler.searchByImage(image, empresaSlug, visitorId);
     }
 
     /**

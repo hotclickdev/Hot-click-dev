@@ -1,87 +1,24 @@
-import { useState, useEffect } from 'react'
-import { securityService } from '@/services/securityService'
-import { flagService } from '@/services/flagService'
-
-const fmt = (n) => new Intl.NumberFormat('es-CR').format(Math.round(n ?? 0))
-
-const ALERTA_STYLE = {
-  LIMITE:      { bg: 'rgba(239,68,68,0.1)',    color: '#f87171',  icon: '🚨' },
-  ADVERTENCIA: { bg: 'rgba(251,191,36,0.1)',   color: '#fbbf24',  icon: '⚠️' },
-  INFO:        { bg: 'rgba(99,102,241,0.1)',   color: '#818cf8',  icon: '💡' },
-}
-
-function Toggle({ activo, onChange, disabled }) {
-  return (
-    <button type="button" onClick={onChange} disabled={disabled}
-      className="relative inline-flex w-10 h-5 rounded-full transition-colors duration-200 disabled:opacity-40"
-      style={{ backgroundColor: activo ? '#34d399' : 'rgba(255,255,255,0.15)' }}>
-      <span className="inline-block w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 mt-0.5"
-        style={{ transform: activo ? 'translateX(22px)' : 'translateX(2px)' }} />
-    </button>
-  )
-}
-
-function PctBar({ pct, limite }) {
-  const midColor = pct >= 70 ? '#fbbf24' : '#34d399'
-  const color = pct >= 90 ? '#f87171' : midColor
-  if (limite === 0) return <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>N/A</span>
-  return (
-    <div className="flex items-center gap-2">
-      <div className="w-20 h-1.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
-        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
-      </div>
-      <span className="text-xs font-mono" style={{ color }}>{pct}%</span>
-    </div>
-  )
-}
+import { useState } from 'react'
+import { useAiControl } from './aiControl/useAiControl'
+import { fmt, ALERTA_STYLE, MESES } from './aiControl/aiControlHelpers'
+import AiControlControlTab from './aiControl/AiControlControlTab'
+import AiControlConsumoTab from './aiControl/AiControlConsumoTab'
 
 export default function AdminAiControl() {
-  const now = new Date()
-  const [data, setData]         = useState(null)
-  const [cargando, setCargando] = useState(true)
-  const [tab, setTab]           = useState('control')
-  const [toggling, setToggling] = useState(null)
-  const [error, setError]       = useState(null)
-  const [periodoAnio, setPeriodoAnio] = useState(now.getFullYear())
-  const [periodoMes,  setPeriodoMes]  = useState(now.getMonth() + 1)
-
-  async function cargar(anio, mes) {
-    setCargando(true); setError(null)
-    try {
-      const { data: d } = await securityService.getAiDashboard(anio, mes)
-      setData(d)
-    } catch { setError('No se pudo cargar el panel de control de IA') }
-    finally { setCargando(false) }
-  }
-
-  useEffect(() => { cargar(periodoAnio, periodoMes) }, [periodoAnio, periodoMes]) // eslint-disable-line react-hooks/set-state-in-effect -- carga al cambiar período
-
-  async function toggleFlag(empresaId, flag, activo) {
-    const key = `${empresaId}-${flag}`
-    setToggling(key)
-    try {
-      await flagService.set(empresaId, flag, !activo)
-      // Update local state
-      setData(prev => ({
-        ...prev,
-        empresas: prev.empresas.map(e => {
-          if (e.id !== empresaId) return e
-          if (flag === 'chat_publico')        return { ...e, chatActivo: !activo }
-          if (flag === 'copilot_emprendedor') return { ...e, copilotActivo: !activo }
-          return e
-        }),
-      }))
-    } catch { setError('Error al cambiar el flag') }
-    finally { setToggling(null) }
-  }
-
-  async function toggleTodos(flag, activar) {
-    if (!data?.empresas) return
-    for (const e of data.empresas) {
-      await flagService.set(e.id, flag, activar).catch(() => {})
-    }
-    await cargar()
-  }
+  const [tab, setTab] = useState('control')
+  const {
+    now,
+    data,
+    cargando,
+    toggling,
+    error,
+    periodoAnio,
+    setPeriodoAnio,
+    periodoMes,
+    setPeriodoMes,
+    toggleFlag,
+    toggleTodos,
+  } = useAiControl()
 
   if (cargando) return (
     <div className="flex justify-center py-20">
@@ -102,16 +39,15 @@ export default function AdminAiControl() {
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <select value={periodoMes} onChange={e => setPeriodoMes(Number(e.target.value))}
+          <select value={periodoMes} onChange={(e) => setPeriodoMes(Number(e.target.value))}
             className="px-3 py-1.5 rounded-lg text-sm outline-none"
             style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}>
-            {['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
-              .map((m, i) => <option key={i+1} value={i+1}>{m}</option>)}
+            {MESES.map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
           </select>
-          <select value={periodoAnio} onChange={e => setPeriodoAnio(Number(e.target.value))}
+          <select value={periodoAnio} onChange={(e) => setPeriodoAnio(Number(e.target.value))}
             className="px-3 py-1.5 rounded-lg text-sm outline-none"
             style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}>
-            {[now.getFullYear(), now.getFullYear()-1, now.getFullYear()-2].map(y => (
+            {[now.getFullYear(), now.getFullYear() - 1, now.getFullYear() - 2].map((y) => (
               <option key={y} value={y}>{y}</option>
             ))}
           </select>
@@ -124,14 +60,13 @@ export default function AdminAiControl() {
         </div>
       )}
 
-      {/* KPIs globales */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Cuentas activas',      value: empresas.length,                   color: 'var(--hc-text)' },
-          { label: 'Llamadas totales/mes',  value: fmt(totalLlamadas),                color: 'var(--hc-accent)' },
-          { label: 'Costo estimado USD',    value: `$${costoTotal.toFixed(4)}`,       color: '#34d399' },
-          { label: 'Alertas activas',       value: alertas.length,                   color: alertas.length > 0 ? '#f87171' : '#34d399' },
-        ].map(k => (
+          { label: 'Cuentas activas', value: empresas.length, color: 'var(--hc-text)' },
+          { label: 'Llamadas totales/mes', value: fmt(totalLlamadas), color: 'var(--hc-accent)' },
+          { label: 'Costo estimado USD', value: `$${costoTotal.toFixed(4)}`, color: '#34d399' },
+          { label: 'Alertas activas', value: alertas.length, color: alertas.length > 0 ? '#f87171' : '#34d399' },
+        ].map((k) => (
           <div key={k.label} className="rounded-2xl p-4"
             style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
             <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>{k.label}</p>
@@ -140,7 +75,6 @@ export default function AdminAiControl() {
         ))}
       </div>
 
-      {/* Alertas */}
       {alertas.length > 0 && (
         <div className="space-y-2">
           {alertas.map((a, i) => {
@@ -159,12 +93,11 @@ export default function AdminAiControl() {
         </div>
       )}
 
-      {/* Tabs */}
       <div className="flex gap-1 p-1 rounded-xl w-fit" style={{ backgroundColor: 'var(--hc-bg)' }}>
         {[
           { id: 'control', label: '⚙️ Control por cuenta' },
           { id: 'consumo', label: '📊 Consumo IA' },
-        ].map(t => (
+        ].map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
             style={{
@@ -177,178 +110,19 @@ export default function AdminAiControl() {
         ))}
       </div>
 
-      {/* ── Tab Control ── */}
       {tab === 'control' && (
-        <div className="space-y-4">
-          {/* Acciones globales */}
-          <div className="flex flex-wrap gap-3">
-            <div className="rounded-2xl px-4 py-3 flex items-center gap-4"
-              style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-              <div>
-                <p className="text-xs font-semibold" style={{ color: 'var(--hc-text)' }}>
-                  Chat público — todos
-                </p>
-                <p className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>Widget de búsqueda en el storefront</p>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => toggleTodos('chat_publico', true)}
-                  className="text-xs px-2 py-1 rounded-lg hover:opacity-80"
-                  style={{ backgroundColor: 'rgba(52,211,153,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.3)' }}>
-                  Activar todos
-                </button>
-                <button onClick={() => toggleTodos('chat_publico', false)}
-                  className="text-xs px-2 py-1 rounded-lg hover:opacity-80"
-                  style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}>
-                  Desactivar todos
-                </button>
-              </div>
-            </div>
-
-            <div className="rounded-2xl px-4 py-3 flex items-center gap-4"
-              style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-              <div>
-                <p className="text-xs font-semibold" style={{ color: 'var(--hc-text)' }}>
-                  Copilot — todos
-                </p>
-                <p className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>Chat AI en panel admin del emprendedor</p>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => toggleTodos('copilot_emprendedor', true)}
-                  className="text-xs px-2 py-1 rounded-lg hover:opacity-80"
-                  style={{ backgroundColor: 'rgba(52,211,153,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.3)' }}>
-                  Activar todos
-                </button>
-                <button onClick={() => toggleTodos('copilot_emprendedor', false)}
-                  className="text-xs px-2 py-1 rounded-lg hover:opacity-80"
-                  style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}>
-                  Desactivar todos
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Tabla por empresa */}
-          <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
-            <div className="overflow-x-auto">
-            <table className="w-full min-w-[480px] text-sm">
-              <thead>
-                <tr style={{ backgroundColor: 'var(--hc-surface)', borderBottom: '1px solid var(--hc-border)' }}>
-                  {['Cuenta', 'Plan', 'Chat público', 'Copilot admin'].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-medium"
-                      style={{ color: 'var(--hc-muted)' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {empresas.map(e => (
-                  <tr key={e.id} style={{ backgroundColor: 'var(--hc-surface)', borderTop: '1px solid var(--hc-border)' }}>
-                    <td className="px-4 py-3 font-medium text-sm" style={{ color: 'var(--hc-text)' }}>
-                      {e.nombre}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                        style={{ backgroundColor: 'rgba(23,71,168,0.1)', color: 'var(--hc-accent)' }}>
-                        {e.plan}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Toggle
-                          activo={e.chatActivo}
-                          disabled={toggling === `${e.id}-chat_publico`}
-                          onChange={() => toggleFlag(e.id, 'chat_publico', e.chatActivo)}
-                        />
-                        <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-                          {e.chatActivo ? 'Activo' : 'Oculto'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Toggle
-                          activo={e.copilotActivo}
-                          disabled={toggling === `${e.id}-copilot_emprendedor`}
-                          onChange={() => toggleFlag(e.id, 'copilot_emprendedor', e.copilotActivo)}
-                        />
-                        <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-                          {e.copilotActivo ? 'Activo' : 'Oculto'}
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            </div>
-          </div>
-        </div>
+        <AiControlControlTab
+          empresas={empresas}
+          toggling={toggling}
+          onToggleFlag={toggleFlag}
+          onToggleTodos={toggleTodos}
+        />
       )}
 
-      {/* ── Tab Consumo ── */}
       {tab === 'consumo' && (
-        <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
-          <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-sm">
-            <thead>
-              <tr style={{ backgroundColor: 'var(--hc-surface)', borderBottom: '1px solid var(--hc-border)' }}>
-                {['Cuenta','Plan','Llamadas','Uso vs límite','Tokens entrada','Tokens salida','Costo USD'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-medium"
-                    style={{ color: 'var(--hc-muted)' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {empresas.map(e => (
-                <tr key={e.id} style={{ backgroundColor: 'var(--hc-surface)', borderTop: '1px solid var(--hc-border)' }}
-                  className="hover:brightness-110 transition-all">
-                  <td className="px-4 py-3 font-medium text-sm" style={{ color: 'var(--hc-text)' }}>
-                    {e.nombre}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                      style={{ backgroundColor: 'rgba(23,71,168,0.1)', color: 'var(--hc-accent)' }}>
-                      {e.plan}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 font-semibold" style={{ color: 'var(--hc-text)' }}>
-                    {e.llamadas}
-                    {e.limite > 0 && (
-                      <span className="text-xs font-normal ml-1" style={{ color: 'var(--hc-muted)' }}>
-                        / {e.limite}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <PctBar pct={e.pct} limite={e.limite} />
-                  </td>
-                  <td className="px-4 py-3 text-xs font-mono" style={{ color: 'var(--hc-muted)' }}>
-                    {fmt(e.tokensEntrada)}
-                  </td>
-                  <td className="px-4 py-3 text-xs font-mono" style={{ color: 'var(--hc-muted)' }}>
-                    {fmt(e.tokensSalida)}
-                  </td>
-                  <td className="px-4 py-3 text-xs font-mono" style={{ color: e.costoUsd > 0.01 ? '#fbbf24' : 'var(--hc-muted)' }}>
-                    ${e.costoUsd.toFixed(4)}
-                  </td>
-                </tr>
-              ))}
-              {/* Total row */}
-              <tr style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderTop: '2px solid var(--hc-border)' }}>
-                <td colSpan={6} className="px-4 py-3 text-xs font-semibold text-right"
-                  style={{ color: 'var(--hc-muted)' }}>
-                  TOTAL DEL MES
-                </td>
-                <td className="px-4 py-3 text-sm font-bold" style={{ color: '#fbbf24' }}>
-                  ${costoTotal.toFixed(4)} USD
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          </div>
-        </div>
+        <AiControlConsumoTab empresas={empresas} costoTotal={costoTotal} />
       )}
 
-      {/* Recomendaciones */}
       <div className="rounded-2xl p-5 space-y-3"
         style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
         <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>

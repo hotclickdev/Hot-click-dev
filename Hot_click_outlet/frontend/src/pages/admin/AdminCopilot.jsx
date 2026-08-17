@@ -1,175 +1,32 @@
-import { useState, useEffect, useRef } from 'react'
-import { copilotService } from '@/services/copilotService'
-import { ofertaService } from '@/services/ofertaService'
-
-function Msg({ rol, contenido, streaming }) {
-  const isUser = rol === 'user'
-  return (
-    <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
-      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-sm font-bold"
-        style={isUser
-          ? { backgroundColor: 'var(--hc-accent)', color: '#fff' }
-          : { backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)' }}>
-        {isUser ? 'Tú' : '🤖'}
-      </div>
-      <div className={`max-w-[78%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${isUser ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}
-        style={isUser
-          ? { backgroundColor: 'var(--hc-accent)', color: '#fff' }
-          : { backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
-        {contenido}
-        {streaming && <span className="inline-block w-1.5 h-4 ml-0.5 align-middle animate-pulse rounded-sm bg-current opacity-70" />}
-      </div>
-    </div>
-  )
-}
+import CopilotMsg from './copilot/CopilotMsg'
+import { useCopilotChat } from './copilot/useCopilotChat'
 
 export default function AdminCopilot() {
-  const [mensajes, setMensajes]   = useState([])
-  const [input, setInput]         = useState('')
-  const [enviando, setEnviando]   = useState(false)
-  const [uso, setUso]             = useState(null)
-  const [sugerencias, setSugerencias] = useState([])
-  const [accionables, setAccionables] = useState([])
-  const [confirmandoId, setConfirmandoId] = useState(null)
-  const [aplicandoId, setAplicandoId]     = useState(null)
-  const [streamText, setStreamText] = useState('')
-  const bottomRef = useRef(null)
-  const textareaRef = useRef(null)
-
-  function scrollBottom() { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }
-
-  async function cargarHistorial() {
-    try {
-      const [{ data: hist }, { data: u }] = await Promise.all([
-        copilotService.getHistorial(),
-        copilotService.getUso(),
-      ])
-      setMensajes(Array.isArray(hist) ? hist : [])
-      setUso(u)
-    } catch { /* non-critical — UI handles empty state */ }
-
-    try {
-      const { data: s } = await copilotService.getSugerencias()
-      setSugerencias(Array.isArray(s) ? s : [])
-    } catch { /* non-critical — chips simplemente no aparecen */ }
-
-    try {
-      const { data: a } = await copilotService.getProductosSinVenta()
-      setAccionables(Array.isArray(a) ? a : [])
-    } catch { /* non-critical — panel de acciones simplemente no aparece */ }
-  }
-
-  async function aplicarDescuento(producto) {
-    setAplicandoId(producto.id)
-    try {
-      await ofertaService.aplicar(producto.id, true, producto.descuentoSugeridoPct)
-      setAccionables(prev => prev.filter(p => p.id !== producto.id))
-      setConfirmandoId(null)
-    } catch {
-      alert('No se pudo aplicar el descuento. Intentá de nuevo desde Ofertas.')
-    } finally {
-      setAplicandoId(null)
-    }
-  }
-
-  useEffect(() => { cargarHistorial() }, [])
-  useEffect(() => { scrollBottom() }, [mensajes, streamText])
-
-  async function enviar(e) {
-    e?.preventDefault()
-    const msg = input.trim()
-    if (!msg || enviando) return
-
-    setInput('')
-    setEnviando(true)
-    setStreamText('')
-
-    // Optimistic user message
-    setMensajes(prev => [...prev, { rol: 'user', contenido: msg }])
-
-    try {
-      const rawAuth = localStorage.getItem('hotclick-auth')
-      const token = rawAuth ? (JSON.parse(rawAuth)?.state?.token ?? '') : ''
-
-      const response = await fetch('/api/admin/ai/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ message: msg }),
-      })
-
-      if (!response.ok) { throw new Error('Error del servidor') }
-
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ''
-      let assembled = ''
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buffer += decoder.decode(value, { stream: true })
-
-        const lines = buffer.split('\n')
-        buffer = lines.pop() ?? ''
-
-        for (const line of lines) {
-          if (line.startsWith('data:')) {
-            const data = line.slice(5).trim()
-            if (!data) continue
-            try {
-              const parsed = JSON.parse(data)
-              if (parsed.text) {
-                assembled += parsed.text
-                setStreamText(assembled)
-                scrollBottom()
-              }
-              if (parsed.error) {
-                setMensajes(prev => [...prev, { rol: 'assistant', contenido: `⚠️ ${parsed.error}` }])
-                setStreamText('')
-              }
-            } catch { /* non-critical — UI handles empty state */ }
-          } else if (line.startsWith('event: done')) {
-            // response complete
-          }
-        }
-      }
-
-      if (assembled) {
-        setMensajes(prev => [...prev, { rol: 'assistant', contenido: assembled }])
-        setStreamText('')
-      }
-
-      // Refresh usage
-      try { const { data: u } = await copilotService.getUso(); setUso(u) } catch { /* non-critical — UI handles empty state */ }
-
-    } catch (err) {
-      setMensajes(prev => [...prev, { rol: 'assistant', contenido: `⚠️ Error: ${err.message}` }])
-      setStreamText('')
-    } finally {
-      setEnviando(false)
-      textareaRef.current?.focus()
-    }
-  }
-
-  async function limpiar() {
-    if (!confirm('¿Limpiar el historial de conversación?')) return
-    try { await copilotService.deleteHistorial(); setMensajes([]) } catch { /* non-critical — UI handles empty state */ }
-  }
-
-  function onKeyDown(e) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() }
-  }
-
-  const pctUso = uso?.porcentaje ?? 0
-  const pctColor = pctUso >= 90 ? '#f87171' : pctUso >= 70 ? '#fbbf24' : '#34d399'
+  const {
+    mensajes,
+    input,
+    setInput,
+    enviando,
+    uso,
+    sugerencias,
+    accionables,
+    confirmandoId,
+    setConfirmandoId,
+    aplicandoId,
+    streamText,
+    bottomRef,
+    textareaRef,
+    aplicarDescuento,
+    enviar,
+    limpiar,
+    onKeyDown,
+    pctUso,
+    pctColor,
+  } = useCopilotChat()
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] max-w-4xl mx-auto px-4 py-4">
 
-      {/* Header */}
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div>
           <h1 className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>
@@ -201,7 +58,6 @@ export default function AdminCopilot() {
         </div>
       </div>
 
-      {/* Disabled state */}
       {uso && !uso.habilitado && (
         <div className="rounded-2xl p-5 text-center mb-3 space-y-2"
           style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
@@ -212,14 +68,13 @@ export default function AdminCopilot() {
         </div>
       )}
 
-      {/* Acciones sugeridas — solo lectura hasta que el dueño o ADMIN confirma */}
       {accionables.length > 0 && (
         <div className="rounded-2xl p-4 mb-3 space-y-2"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
           <p className="text-xs font-semibold" style={{ color: 'var(--hc-text)' }}>
             Productos sin ventas recientes — acción sugerida
           </p>
-          {accionables.map(p => (
+          {accionables.map((p) => (
             <div key={p.id} className="flex items-center justify-between gap-3 text-xs py-1.5"
               style={{ borderTop: '1px solid var(--hc-border)' }}>
               <div className="min-w-0">
@@ -252,7 +107,6 @@ export default function AdminCopilot() {
         </div>
       )}
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto space-y-4 pb-4 pr-1">
         {mensajes.length === 0 && !streamText && (
           <div className="text-center py-12 space-y-3">
@@ -263,7 +117,7 @@ export default function AdminCopilot() {
               Tengo acceso en tiempo real a tus datos.
             </p>
             <div className="flex flex-wrap gap-2 justify-center pt-2">
-              {sugerencias.map(s => (
+              {sugerencias.map((s) => (
                 <button key={s} onClick={() => setInput(s)}
                   className="text-xs px-3 py-1.5 rounded-xl hover:opacity-80"
                   style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
@@ -275,23 +129,22 @@ export default function AdminCopilot() {
         )}
 
         {mensajes.map((m, i) => (
-          <Msg key={i} rol={m.rol} contenido={m.contenido} />
+          <CopilotMsg key={i} rol={m.rol} contenido={m.contenido} />
         ))}
 
         {streamText && (
-          <Msg rol="assistant" contenido={streamText} streaming />
+          <CopilotMsg rol="assistant" contenido={streamText} streaming />
         )}
 
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
       <div className="pt-3" style={{ borderTop: '1px solid var(--hc-border)' }}>
         <form onSubmit={enviar} className="flex gap-2">
           <textarea
             ref={textareaRef}
             value={input}
-            onChange={e => setInput(e.target.value)}
+            onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
             placeholder={uso?.habilitado === false ? 'AI Copilot no disponible en tu plan' : 'Pregunta sobre tu negocio… (Enter para enviar, Shift+Enter = nueva línea)'}
             disabled={enviando || (uso && !uso.habilitado)}

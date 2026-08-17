@@ -1,165 +1,15 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import useUiStore from '@/store/uiStore'
-import { productService, normalizeProduct } from '@/services/productService'
-import { marcaService } from '@/services/marcaService'
-import { formatPrice } from '@/utils/format'
-import { analytics } from '@/utils/analytics'
-
-const RECENT_KEY = 'hotclick-recent-searches'
-const MAX_RECENT = 6
-
-let _productCache = null
-let _brandCache = null
-
-function getRecent() {
-  try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]') } catch { return [] }
-}
-
-function saveRecent(query) {
-  if (!query.trim()) return
-  const next = [query.trim(), ...getRecent().filter((s) => s !== query.trim())].slice(0, MAX_RECENT)
-  localStorage.setItem(RECENT_KEY, JSON.stringify(next))
-}
-
-function highlight(text, query) {
-  if (!text || !query) return text
-  const idx = text.toLowerCase().indexOf(query.toLowerCase())
-  if (idx === -1) return text
-  return (
-    <>
-      {text.slice(0, idx)}
-      <strong className="text-[#4f7cff] font-semibold">{text.slice(idx, idx + query.length)}</strong>
-      {text.slice(idx + query.length)}
-    </>
-  )
-}
+import { useSearchPanel } from './searchPanel/useSearchPanel'
+import { SearchPanelBody } from './searchPanel/SearchPanelBody'
 
 export default function SearchPanel() {
   const { t } = useTranslation()
-  const searchOpen = useUiStore((s) => s.searchOpen)
-  const setSearchOpen = useUiStore((s) => s.setSearchOpen)
-  const navigate = useNavigate()
-  const location = useLocation()
-
-  const [query, setQuery] = useState('')
-  const [allProducts, setAllProducts] = useState(_productCache ?? [])
-  const [allBrands, setAllBrands] = useState(_brandCache ?? [])
-  const [loading, setLoading] = useState(false)
-  const [recent, setRecent] = useState([])
-  const inputRef = useRef(null)
-  const analyticsTimer = useRef(null)
-
-  useEffect(() => { setSearchOpen(false) }, [location.pathname])
-
-  useEffect(() => {
-    if (!searchOpen) { setQuery(''); return }
-    setRecent(getRecent())
-
-    const needsProducts = !_productCache
-    const needsBrands = !_brandCache
-
-    if (!needsProducts && !needsBrands) {
-      setTimeout(() => inputRef.current?.focus(), 60)
-      return
-    }
-
-    setLoading(true)
-    Promise.all([
-      needsProducts ? productService.getAll(0, 200).then(({ data }) => {
-        const products = (data.content ?? data ?? []).map(normalizeProduct)
-        _productCache = products
-        setAllProducts(products)
-      }) : Promise.resolve(),
-      needsBrands ? marcaService.getPublicas().then((r) => {
-        const brands = r.data?.data ?? r.data ?? []
-        _brandCache = Array.isArray(brands) ? brands : []
-        setAllBrands(_brandCache)
-      }) : Promise.resolve(),
-    ])
-      .catch(() => {})
-      .finally(() => {
-        setLoading(false)
-        setTimeout(() => inputRef.current?.focus(), 60)
-      })
-  }, [searchOpen])
-
-  useEffect(() => {
-    if (!searchOpen) return
-    const handler = (e) => { if (e.key === 'Escape') setSearchOpen(false) }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [searchOpen])
-
-  useEffect(() => {
-    clearTimeout(analyticsTimer.current)
-    if (query.trim().length > 1) {
-      analyticsTimer.current = setTimeout(() => {
-        analytics.searchQuery(query.trim(), productResults.length)
-      }, 900)
-    }
-    return () => clearTimeout(analyticsTimer.current)
-  }, [query])
-
-  const q = query.trim().toLowerCase()
-
-  const brandResults = useMemo(() => {
-    if (!q) return []
-    return allBrands.filter((b) => b.nombreMarca?.toLowerCase().includes(q)).slice(0, 3)
-  }, [q, allBrands])
-
-  const productResults = useMemo(() => {
-    if (!q) return []
-    return allProducts
-      .filter((p) =>
-        p.nombre?.toLowerCase().includes(q) ||
-        p.categoriaNombre?.toLowerCase().includes(q) ||
-        p.marcaNombre?.toLowerCase().includes(q) ||
-        p.descripcion?.toLowerCase().includes(q)
-      )
-      .slice(0, 6)
-  }, [q, allProducts])
-
-  const brandProductCount = useMemo(() => {
-    if (!brandResults.length) return {}
-    return Object.fromEntries(
-      brandResults.map((b) => [b.id, allProducts.filter((p) => String(p.marcaId) === String(b.id)).length])
-    )
-  }, [brandResults, allProducts])
-
-  const hasResults = brandResults.length > 0 || productResults.length > 0
-
-  const close = () => setSearchOpen(false)
-
-  const selectBrand = (brand) => {
-    saveRecent(brand.nombreMarca)
-    close()
-    navigate(`/productos?marcaId=${brand.id}`)
-  }
-
-  const selectProduct = (product) => {
-    saveRecent(query.trim() || product.nombre)
-    close()
-    navigate(`/productos/${product.id}`)
-  }
-
-  const viewAll = () => {
-    const q = query.trim()
-    if (q) saveRecent(q)
-    close()
-    navigate(q ? `/productos?search=${encodeURIComponent(q)}` : '/productos')
-  }
-
-  const clearRecent = () => {
-    localStorage.removeItem(RECENT_KEY)
-    setRecent([])
-  }
+  const panel = useSearchPanel()
 
   return (
     <AnimatePresence>
-      {searchOpen && (
+      {panel.searchOpen && (
         <>
           <motion.div
             key="search-backdrop"
@@ -168,7 +18,7 @@ export default function SearchPanel() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
             className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
-            onClick={close}
+            onClick={panel.close}
           />
 
           <div className="fixed inset-0 z-[51] flex flex-col md:block pointer-events-none">
@@ -186,9 +36,8 @@ export default function SearchPanel() {
                 maxHeight: '82vh',
               }}
             >
-              {/* Input */}
               <div className="flex items-center gap-3 px-4 py-3.5 border-b" style={{ borderColor: 'var(--hc-border)' }}>
-                {loading ? (
+                {panel.loading ? (
                   <div className="w-5 h-5 shrink-0 rounded-full border-2 border-[#4f7cff] border-t-transparent animate-spin" />
                 ) : (
                   <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" style={{ color: 'var(--hc-muted)' }}>
@@ -196,21 +45,21 @@ export default function SearchPanel() {
                   </svg>
                 )}
                 <input
-                  ref={inputRef}
+                  ref={panel.inputRef}
                   type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') viewAll() }}
+                  value={panel.query}
+                  onChange={(e) => panel.setQuery(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') panel.viewAll() }}
                   placeholder={t('search.placeholder')}
                   className="flex-1 bg-transparent text-base outline-none placeholder:opacity-40"
                   style={{ color: 'var(--hc-text)' }}
                   autoComplete="off"
                   spellCheck={false}
                 />
-                {query && (
+                {panel.query && (
                   <button
                     type="button"
-                    onClick={() => setQuery('')}
+                    onClick={() => panel.setQuery('')}
                     className="p-1 rounded-lg transition-colors hover:bg-white/8"
                     style={{ color: 'var(--hc-muted)' }}
                     aria-label={t('search.clearSearch')}
@@ -222,7 +71,7 @@ export default function SearchPanel() {
                 )}
                 <button
                   type="button"
-                  onClick={close}
+                  onClick={panel.close}
                   className="shrink-0 px-3 py-1.5 rounded-xl text-sm transition-colors hover:bg-white/8"
                   style={{ color: 'var(--hc-muted)' }}
                 >
@@ -230,197 +79,7 @@ export default function SearchPanel() {
                 </button>
               </div>
 
-              {/* Body */}
-              <div className="overflow-y-auto flex-1">
-
-                {/* Recent — no query */}
-                {!query && recent.length > 0 && (
-                  <div className="p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>
-                        {t('search.recent')}
-                      </span>
-                      <button onClick={clearRecent} className="text-xs text-[#4f7cff] hover:underline">{t('search.clearRecent')}</button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {recent.map((s) => (
-                        <button
-                          key={s}
-                          onClick={() => setQuery(s)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs border transition-colors hover:bg-white/5"
-                          style={{ color: 'var(--hc-text)', borderColor: 'var(--hc-border)' }}
-                        >
-                          <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--hc-muted)' }}>
-                            <polyline points="1 4 1 10 7 10" />
-                            <path d="M3.51 15a9 9 0 1 0 .49-3.46" />
-                          </svg>
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {!query && recent.length === 0 && !loading && (
-                  <div className="py-12 text-center">
-                    <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>{t('search.typeToSearch')}</p>
-                  </div>
-                )}
-
-                {/* Results */}
-                {query.trim() && (
-                  <>
-                    {!hasResults && !loading && (
-                      <div className="py-12 text-center px-6">
-                        <p className="font-semibold text-sm mb-1" style={{ color: 'var(--hc-text)' }}>
-                          {t('search.noResults')} "{query}"
-                        </p>
-                        <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-                          {t('search.noResultsSub')}
-                        </p>
-                        <button
-                          onClick={viewAll}
-                          className="mt-4 px-5 py-2 rounded-xl text-sm border transition-colors hover:bg-white/5"
-                          style={{ color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }}
-                        >
-                          {t('search.viewAll')}
-                        </button>
-                      </div>
-                    )}
-
-                    {/* ── MARCAS ── */}
-                    {brandResults.length > 0 && (
-                      <div>
-                        <div className="px-4 pt-4 pb-2">
-                          <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>
-                            {t('search.brandSection')}
-                          </span>
-                        </div>
-                        {brandResults.map((brand, i) => {
-                          const count = brandProductCount[brand.id] ?? 0
-                          return (
-                            <motion.button
-                              key={brand.id}
-                              initial={{ opacity: 0, x: -8 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: i * 0.04 }}
-                              onClick={() => selectBrand(brand)}
-                              className="w-full flex items-center gap-3 px-4 py-3 transition-colors hover:bg-white/5 text-left"
-                            >
-                              {/* Brand logo or initials */}
-                              <div className="w-10 h-10 rounded-xl bg-white/8 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
-                                {brand.logoUrl ? (
-                                  <img src={brand.logoUrl} alt={brand.nombreMarca} className="w-full h-full object-contain p-1.5" onError={(e) => { e.target.style.display = 'none' }} />
-                                ) : (
-                                  <span className="text-xs font-bold uppercase" style={{ color: 'var(--hc-accent)' }}>
-                                    {brand.nombreMarca?.slice(0, 2)}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>
-                                  {highlight(brand.nombreMarca, query.trim())}
-                                </p>
-                                {count > 0 && (
-                                  <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-                                    {count} {t('search.item', { count })}
-                                  </p>
-                                )}
-                              </div>
-                              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--hc-muted)' }}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                              </svg>
-                            </motion.button>
-                          )
-                        })}
-                      </div>
-                    )}
-
-                    {/* Divider between sections */}
-                    {brandResults.length > 0 && productResults.length > 0 && (
-                      <div className="mx-4 border-t" style={{ borderColor: 'var(--hc-border)' }} />
-                    )}
-
-                    {/* ── PRODUCTOS ── */}
-                    {productResults.length > 0 && (
-                      <div>
-                        <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-                          <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>
-                            {t('search.productsSection')}
-                          </span>
-                        </div>
-
-                        {productResults.map((product, i) => (
-                          <motion.button
-                            key={product.id}
-                            initial={{ opacity: 0, x: -8 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: (brandResults.length + i) * 0.035 }}
-                            onClick={() => selectProduct(product)}
-                            className="w-full flex items-center gap-3 px-4 py-3 transition-colors hover:bg-white/5 text-left"
-                          >
-                            <div className="w-12 h-12 rounded-xl bg-[#1a1a1f] flex items-center justify-center overflow-hidden shrink-0 border border-white/8">
-                              {product.imagenUrl ? (
-                                <img src={product.imagenUrl} alt={product.nombre} className="w-full h-full object-cover" loading="lazy" />
-                              ) : (
-                                <span className="text-xl opacity-25">📦</span>
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate" style={{ color: 'var(--hc-text)' }}>
-                                {highlight(product.nombre, query.trim())}
-                              </p>
-                              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                {product.marcaNombre && (
-                                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md" style={{ background: 'rgba(140,92,246,0.12)', color: 'var(--hc-accent)' }}>
-                                    {product.marcaNombre}
-                                  </span>
-                                )}
-                                {product.categoriaNombre && (
-                                  <span className="text-[11px]" style={{ color: 'var(--hc-muted)' }}>
-                                    {product.categoriaNombre}
-                                  </span>
-                                )}
-                                <span className={`text-[10px] font-medium flex items-center gap-1 ${product.stock === 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                                  <span className={`w-1 h-1 rounded-full ${product.stock === 0 ? 'bg-red-400' : 'bg-emerald-400'}`} />
-                                  {product.stock === 0 ? t('search.outOfStock') : t('search.inStock')}
-                                </span>
-                              </div>
-                            </div>
-                            <span className="font-bold text-sm text-[#4f7cff] shrink-0">
-                              {formatPrice(product.precio)}
-                            </span>
-                          </motion.button>
-                        ))}
-
-                        {/* Ver todos */}
-                        <div className="px-4 py-3 border-t" style={{ borderColor: 'var(--hc-border)' }}>
-                          <button
-                            onClick={viewAll}
-                            className="w-full py-2.5 rounded-xl text-sm font-medium transition-colors hover:opacity-80"
-                            style={{ background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 25%, transparent)' }}
-                          >
-                            {t('search.viewAllFor')} "{query}" →
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Solo marcas, sin productos */}
-                    {brandResults.length > 0 && productResults.length === 0 && (
-                      <div className="px-4 py-3 border-t" style={{ borderColor: 'var(--hc-border)' }}>
-                        <button
-                          onClick={viewAll}
-                          className="w-full py-2.5 rounded-xl text-sm font-medium transition-colors hover:opacity-80"
-                          style={{ background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 25%, transparent)' }}
-                        >
-                          {t('search.viewAll')} →
-                        </button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
+              <SearchPanelBody {...panel} />
             </motion.div>
           </div>
         </>

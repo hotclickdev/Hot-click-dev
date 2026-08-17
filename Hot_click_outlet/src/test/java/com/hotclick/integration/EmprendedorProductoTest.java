@@ -18,8 +18,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Verifica operaciones CRUD de productos para el rol EMPRENDEDOR:
  * - Crear, actualizar, eliminar productos propios
  * - Listar solo productos de la empresa
- * - Toggle carrusel/destacado
- * - Archivar sin stock y ajustar precios (scoped)
+ * - Carrusel/destacado/ajustar precios restringidos a ADMIN (emprendedor → 403)
+ * - Archivar sin stock (scoped por empresa)
  * - Catálogo público accesible sin autenticación
  */
 @DisplayName("[NORMAL] CRUD de Productos para Emprendedor (EmprendedorProducto)")
@@ -218,67 +218,67 @@ class EmprendedorProductoTest extends BaseIntegrationTest {
             .andExpect(status().isNotFound());
     }
 
-    // ── T-PROD-015: Toggle carrusel ON en producto propio → 200 ──────────────
+    // ── T-PROD-015: Emprendedor no puede togglear carrusel → 403 ────────────
     @Test
-    @DisplayName("T-PROD-015 | NORMAL — Toggle carrusel ON en producto propio → 200")
-    void toggleCarrusel_on_ownProducto_200() throws Exception {
+    @DisplayName("T-PROD-015 | NORMAL — Emprendedor togglear carrusel → 403 (solo ADMIN)")
+    void toggleCarrusel_emprendedor_403() throws Exception {
         mockMvc.perform(patch("/api/productos/" + productoPropio.getId() + "/carrusel")
                 .header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"enCarrusel\":true,\"orden\":2}"))
+            .andExpect(status().isForbidden());
+    }
+
+    // ── T-PROD-016: ADMIN togglear carrusel ON → 200 ─────────────────────────
+    @Test
+    @DisplayName("T-PROD-016 | NORMAL — ADMIN toggle carrusel ON → 200")
+    void toggleCarrusel_admin_on_200() throws Exception {
+        mockMvc.perform(patch("/api/productos/" + productoPropio.getId() + "/carrusel")
+                .header("Authorization", adminToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"enCarrusel\":true,\"orden\":2}"))
             .andExpect(status().isOk());
     }
 
-    // ── T-PROD-016: Toggle carrusel OFF en producto propio → 200 ─────────────
+    // ── T-PROD-017: ADMIN toggle carrusel sin enCarrusel → 400 ───────────────
     @Test
-    @DisplayName("T-PROD-016 | NORMAL — Toggle carrusel OFF en producto propio → 200")
-    void toggleCarrusel_off_ownProducto_200() throws Exception {
+    @DisplayName("T-PROD-017 | NORMAL — ADMIN toggle carrusel sin campo enCarrusel → 400")
+    void toggleCarrusel_admin_missingField_400() throws Exception {
         mockMvc.perform(patch("/api/productos/" + productoPropio.getId() + "/carrusel")
-                .header("Authorization", tokenEmp)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"enCarrusel\":false}"))
-            .andExpect(status().isOk());
-    }
-
-    // ── T-PROD-017: Toggle carrusel sin enCarrusel → 400 ─────────────────────
-    @Test
-    @DisplayName("T-PROD-017 | NORMAL — Toggle carrusel sin campo enCarrusel → 400")
-    void toggleCarrusel_missingField_400() throws Exception {
-        mockMvc.perform(patch("/api/productos/" + productoPropio.getId() + "/carrusel")
-                .header("Authorization", tokenEmp)
+                .header("Authorization", adminToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
             .andExpect(status().isBadRequest());
     }
 
-    // ── T-PROD-018: Toggle destacado ON → 200 ────────────────────────────────
+    // ── T-PROD-018: Emprendedor no puede togglear destacado → 403 ────────────
     @Test
-    @DisplayName("T-PROD-018 | NORMAL — Toggle destacado ON en producto propio → 200")
-    void toggleDestacado_on_200() throws Exception {
+    @DisplayName("T-PROD-018 | NORMAL — Emprendedor toggle destacado → 403 (solo ADMIN)")
+    void toggleDestacado_emprendedor_403() throws Exception {
         mockMvc.perform(patch("/api/productos/" + productoPropio.getId() + "/destacado")
                 .header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"destacado\":true}"))
+            .andExpect(status().isForbidden());
+    }
+
+    // ── T-PROD-019: ADMIN toggle destacado ON → 200 ──────────────────────────
+    @Test
+    @DisplayName("T-PROD-019 | NORMAL — ADMIN toggle destacado ON → 200")
+    void toggleDestacado_admin_on_200() throws Exception {
+        mockMvc.perform(patch("/api/productos/" + productoPropio.getId() + "/destacado")
+                .header("Authorization", adminToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"destacado\":true}"))
             .andExpect(status().isOk());
     }
 
-    // ── T-PROD-019: Toggle destacado OFF → 200 ───────────────────────────────
+    // ── T-PROD-020: ADMIN toggle destacado sin campo → 400 ───────────────────
     @Test
-    @DisplayName("T-PROD-019 | NORMAL — Toggle destacado OFF en producto propio → 200")
-    void toggleDestacado_off_200() throws Exception {
+    @DisplayName("T-PROD-020 | NORMAL — ADMIN toggle destacado sin campo 'destacado' → 400")
+    void toggleDestacado_admin_missingField_400() throws Exception {
         mockMvc.perform(patch("/api/productos/" + productoPropio.getId() + "/destacado")
-                .header("Authorization", tokenEmp)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"destacado\":false}"))
-            .andExpect(status().isOk());
-    }
-
-    // ── T-PROD-020: Toggle destacado sin campo → 400 ─────────────────────────
-    @Test
-    @DisplayName("T-PROD-020 | NORMAL — Toggle destacado sin campo 'destacado' → 400")
-    void toggleDestacado_missingField_400() throws Exception {
-        mockMvc.perform(patch("/api/productos/" + productoPropio.getId() + "/destacado")
-                .header("Authorization", tokenEmp)
+                .header("Authorization", adminToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
             .andExpect(status().isBadRequest());
@@ -321,23 +321,34 @@ class EmprendedorProductoTest extends BaseIntegrationTest {
             .andExpect(status().isUnauthorized());
     }
 
-    // ── T-PROD-025: Ajustar precios sin porcentaje → 400 ─────────────────────
+    // ── T-PROD-025: Emprendedor no puede ajustar precios masivo → 403 ────────
     @Test
-    @DisplayName("T-PROD-025 | NORMAL — ajustarPrecios con porcentaje=0 → 400")
-    void ajustarPrecios_cero_400() throws Exception {
+    @DisplayName("T-PROD-025 | NORMAL — Emprendedor ajustarPrecios → 403 (solo ADMIN)")
+    void ajustarPrecios_emprendedor_403() throws Exception {
         mockMvc.perform(post("/api/productos/ajustar-precios")
                 .header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"porcentaje\":10}"))
+            .andExpect(status().isForbidden());
+    }
+
+    // ── T-PROD-026: ADMIN ajustar precios con porcentaje=0 → 400 ─────────────
+    @Test
+    @DisplayName("T-PROD-026 | NORMAL — ADMIN ajustarPrecios con porcentaje=0 → 400")
+    void ajustarPrecios_admin_cero_400() throws Exception {
+        mockMvc.perform(post("/api/productos/ajustar-precios")
+                .header("Authorization", adminToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"porcentaje\":0}"))
             .andExpect(status().isBadRequest());
     }
 
-    // ── T-PROD-026: Ajustar precios +10% → 200 ───────────────────────────────
+    // ── T-PROD-026b: ADMIN ajustar precios +10% → 200 ───────────────────────
     @Test
-    @DisplayName("T-PROD-026 | NORMAL — ajustarPrecios +10% para empresa → 200")
-    void ajustarPrecios_positivo_200() throws Exception {
+    @DisplayName("T-PROD-026b | NORMAL — ADMIN ajustarPrecios +10% → 200")
+    void ajustarPrecios_admin_positivo_200() throws Exception {
         mockMvc.perform(post("/api/productos/ajustar-precios")
-                .header("Authorization", tokenEmp)
+                .header("Authorization", adminToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"porcentaje\":10}"))
             .andExpect(status().isOk())

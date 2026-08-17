@@ -7,28 +7,16 @@ import com.hotclick.model.*;
 import com.hotclick.payment.PaymentProviderFactory;
 import com.hotclick.payment.PaymentSession;
 import com.hotclick.repository.*;
-import com.hotclick.sse.StockCambioEvent;
 import com.hotclick.exception.IntegracionExternaException;
 import com.hotclick.exception.RecursoNoEncontradoException;
-import com.hotclick.exception.StockInsuficienteException;
+import com.hotclick.service.payment.*;
 import com.hotclick.utils.Constants;
-import com.hotclick.service.AggregatorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
-import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * Servicio central de pagos.
@@ -43,385 +31,96 @@ public class PaymentService {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
 
-    @Autowired private PaymentProviderFactory      providerFactory;
-    @Autowired private PedidoRepository            pedidoRepository;
-    @Autowired private ProductoRepository          productoRepository;
-    @Autowired private BodegaRepository            bodegaRepository;
-    @Autowired private UsuarioRepository           usuarioRepository;
-    @Autowired private RolRepository               rolRepository;
-    @Autowired private PagoRepository              pagoRepository;
-    @Autowired private TransaccionPagoRepository   transaccionPagoRepository;
-    @Autowired private EmpresaRepository           empresaRepository;
-    @Autowired private NotificacionEmailService    notificacionEmailService;
-    @Autowired private N8nWebhookService           n8nWebhookService;
-    @Autowired private PasswordEncoder             passwordEncoder;
-    @Autowired private CuponService               cuponService;
-    @Autowired private GiftCardService            giftCardService;
-    @Autowired private WebhookDispatcherService   webhookDispatcher;
-    @Autowired private ApplicationEventPublisher  eventPublisher;
-    @Autowired private AggregatorService          aggregatorService;
+    @Autowired private PaymentProviderFactory           providerFactory;
+    @Autowired private PedidoRepository                 pedidoRepository;
+    @Autowired private PagoRepository                 pagoRepository;
+    @Autowired private GiftCardService                  giftCardService;
+    @Autowired private ApplicationEventPublisher        eventPublisher;
 
-    // ================================================================
-    // CHECKOUT — Valida stock (con lock), reserva, crea Pedido + sesión
-    // ================================================================
+    @Autowired private CheckoutValidator                checkoutValidator;
+    @Autowired private GuestUserResolver                guestUserResolver;
+    @Autowired private StockReservationService          stockReservationService;
+    @Autowired private OrderPricingService              orderPricingService;
+    @Autowired private CheckoutOrderFactory             checkoutOrderFactory;
+    @Autowired private PaymentRecordFactory             paymentRecordFactory;
+    @Autowired private PaymentStatusAssembler           paymentStatusAssembler;
+    @Autowired private PaymentNotificationsFacade       paymentNotificationsFacade;
+    @Autowired private PaymentOrderConfirmationService  orderConfirmationService;
+    @Autowired private PaymentFailureHandler            paymentFailureHandler;
+    @Autowired private PaymentUserCancellationService   userCancellationService;
+    @Autowired private SinpePaymentAdminService         sinpePaymentAdminService;
+
     @Transactional
     public PaymentCheckoutResponse checkout(PaymentCheckoutRequest req, String correoUsuario) {
-        if (req.getItems() == null || req.getItems().isEmpty()) {
-            throw new IllegalArgumentException("El carrito no tiene productos");
-        }
+        checkoutValidator.validateCartNotEmpty(req);
 
-        String provider = req.getProvider() != null ? req.getProvider().toUpperCase() : "STRIPE";
-        if (!providerFactory.soporta(provider)) {
-            throw new IllegalArgumentException("Proveedor de pago no soportado: " + provider);
-        }
-
-        // Invitado: correoUsuario viene vacío, usar guestEmail del request
-        String emailEfectivo = (correoUsuario != null && !correoUsuario.equals("anonymousUser"))
-            ? correoUsuario : req.getGuestEmail();
-        if (emailEfectivo == null || emailEfectivo.isBlank()) {
-            throw new IllegalArgumentException("Se requiere correo electrónico para procesar el pedido");
-        }
-
-        Usuario usuario = usuarioRepository.findByCorreo(emailEfectivo)
-            .orElseGet(() -> crearUsuarioInvitado(emailEfectivo, req.getGuestPhone()));
+        String provider = checkoutValidator.resolveProvider(req, providerFactory);
+        String emailEfectivo = checkoutValidator.resolveEffectiveEmail(correoUsuario, req);
+        Usuario usuario = guestUserResolver.resolve(emailEfectivo, req.getGuestPhone());
 
         Long bodegaId = req.getBodegaId() != null ? req.getBodegaId() : 1L;
-        Bodega bodega = bodegaRepository.findById(bodegaId)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Bodega", bodegaId));
+        Bodega bodega = checkoutValidator.loadBodega(bodegaId);
+        checkoutValidator.assertBodegaTenant(bodega, bodegaId);
 
-        // Tenant assertion: la bodega del checkout debe pertenecer al negocio activo
-        // (slug de la tienda pública). Evita que un pedido de la Empresa A se asiente
-        // contra el inventario/empresa de la Bodega de la Empresa B.
-        Long tenantId = com.hotclick.security.TenantContext.get();
-        if (tenantId != null) {
-            Long bodegaEmpresaId = bodega.getEmpresa() != null ? bodega.getEmpresa().getId() : null;
-            if (!tenantId.equals(bodegaEmpresaId)) {
-                log.warn("[checkout] Intento cross-tenant bloqueado: tenant={}, bodegaId={}, bodega.empresaId={}",
-                    tenantId, bodegaId, bodegaEmpresaId);
-                throw new SecurityException("La bodega seleccionada no pertenece a este negocio");
-            }
-        }
+        StockReservationResult reservation = stockReservationService.reserveForCheckout(req.getItems());
+        checkoutValidator.validateRetiroEnTienda(req.getMetodoEnvio(), bodega, bodegaId, reservation.productosMap());
 
-        // ── Validar y RESERVAR stock con bloqueo pesimista ──────────────
-        // La reserva (stockReservado) impide que dos compradores simultáneos
-        // agoten el mismo item. Solo se descuenta stockActual al confirmar el pago.
-        int subtotal   = 0;
-        int costoTotal = 0;
-        // Cache de productos cargados con SELECT FOR UPDATE — evita N+1 en el snapshot posterior
-        Map<Long, Producto> productosMap = new java.util.HashMap<>();
-        for (PaymentCheckoutRequest.ItemDTO item : req.getItems()) {
-            // SELECT FOR UPDATE — previene race conditions al reservar
-            Producto p = productoRepository.findByIdForUpdate(item.getProductoId())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Producto", item.getProductoId()));
+        OrderPricingResult pricing = orderPricingService.calculate(req, bodega, reservation.subtotal());
 
-            if (!Boolean.TRUE.equals(p.getVisibleCatalogo()) || Boolean.TRUE.equals(p.getVendido())) {
-                throw new IllegalStateException("Producto no disponible: " + p.getNombreProducto());
-            }
-            // Validar contra stockDisponible (stockActual - stockReservado)
-            if (p.getStockDisponible() < item.getCantidad()) {
-                throw new StockInsuficienteException(p.getNombreProducto(), p.getStockDisponible(), item.getCantidad());
-            }
-            // Reservar unidades — se libera en cancelación/fallo, se consume en confirmación
-            p.setStockReservado(p.getStockReservado() + item.getCantidad());
-            productoRepository.save(p);
-            productosMap.put(p.getId(), p);
+        Pedido pedido = checkoutOrderFactory.createPendingOrder(
+            req, pricing, reservation.subtotal(), reservation.costoTotal(), provider, usuario, bodega);
+        checkoutOrderFactory.addItemSnapshots(pedido, req.getItems(), reservation.productosMap());
 
-            subtotal   += p.getPrecioVenta()  * item.getCantidad();
-            costoTotal += p.getPrecioCompra() * item.getCantidad();
-        }
-
-        // ── Retiro en tienda: solo si la bodega lo habilita y el carrito completo
-        //    pertenece a esa única bodega (evita "retiro gratis" en carritos multi-negocio).
-        if (Constants.ENVIO_RETIRO.equals(req.getMetodoEnvio())) {
-            if (!Boolean.TRUE.equals(bodega.getPermiteRetiroCliente())) {
-                throw new IllegalStateException("Esta bodega no tiene habilitado el retiro en tienda");
-            }
-            boolean todosMismaBodega = productosMap.values().stream()
-                .allMatch(p -> p.getBodega() != null && bodegaId.equals(p.getBodega().getId()));
-            if (!todosMismaBodega) {
-                throw new IllegalStateException("El retiro en tienda solo aplica cuando todos los productos son de la misma bodega");
-            }
-        }
-
-        int costoEnvio = calcularCostoEnvio(req.getMetodoEnvio());
-
-        // ── Validar y aplicar cupón de descuento ────────────────────────
-        int descuento = 0;
-        String codigoCuponAplicado = null;
-        String codigoCupon = req.getCodigoCupon();
-        if (codigoCupon != null && !codigoCupon.isBlank()) {
-            Long empresaIdCupon = bodega.getEmpresa() != null ? bodega.getEmpresa().getId() : null;
-            var cuponOpt = empresaIdCupon != null
-                ? cuponService.validarCodigo(codigoCupon, empresaIdCupon)
-                : cuponService.validarCodigo(codigoCupon);
-            if (cuponOpt.isPresent()) {
-                descuento = (int) Math.round(subtotal * cuponOpt.get().getDescuentoPorcentaje() / 100.0);
-                codigoCuponAplicado = cuponOpt.get().getCodigo();
-            }
-        }
-        int total = subtotal - descuento + costoEnvio;
-
-        // ── Validar gift card (sin canjear aún) ─────────────────────────
-        int    gcMonto  = 0;
-        String gcCodigo = req.getCodigoGiftCard() != null ? req.getCodigoGiftCard().trim().toUpperCase() : null;
-        if (gcCodigo != null && !gcCodigo.isBlank() && bodega.getEmpresa() != null) {
-            var gcOpt = giftCardService.validar(gcCodigo, bodega.getEmpresa().getId());
-            if (gcOpt.isPresent()) {
-                gcMonto = Math.min(total, gcOpt.get().getSaldoActual());
-            }
-        }
-        int totalConGC  = total - gcMonto;
-        boolean pagoGC  = gcMonto > 0 && totalConGC == 0;
-
-        // ── Crear Pedido PENDIENTE ───────────────────────────────────────
-        Pedido pedido = new Pedido();
-        pedido.setNumeroPedido(Constants.generarNumeroPedido("ORD-"));
-        pedido.setFechaPedido(LocalDateTime.now(Constants.ZONA_CR));
-        pedido.setSubtotal(subtotal);
-        pedido.setTotalPedido(totalConGC);
-        pedido.setCostoEnvio(costoEnvio);
-        pedido.setCostoTotalProductos(costoTotal);
-        pedido.setUtilidadBruta(subtotal - costoTotal - descuento);
-        pedido.setDescuentoTotal(descuento);
-        pedido.setCuponCodigo(codigoCuponAplicado);
-        pedido.setGiftCardCodigo(gcMonto > 0 ? gcCodigo : null);
-        pedido.setGiftCardMonto(gcMonto);
-        pedido.setMontoImpuesto(0);
-        pedido.setAplicaImpuesto(false);
-        if (subtotal > 0) {
-            pedido.setMargenGananciaPedido(
-                BigDecimal.valueOf((long) subtotal - costoTotal)
-                    .divide(BigDecimal.valueOf(subtotal), 4, RoundingMode.HALF_UP)
-                    .multiply(BigDecimal.valueOf(100)));
-        }
-        pedido.setMetodoPago(provider);
-        pedido.setMetodoEnvio(req.getMetodoEnvio() != null ? req.getMetodoEnvio() : "RETIRO_EN_TIENDA");
-        pedido.setNotas(req.getNotas());
-        pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
-        pedido.setUsuarioFinal(usuario);
-        pedido.setBodega(bodega);
-        pedido.setEmpresa(bodega.getEmpresa());
-        pedido.setEstado(Constants.ESTADO_ACTIVO);
-        pedidoRepository.save(pedido);
-
-        // Snapshot de precios al momento de compra — reutiliza productos ya cargados (no N+1)
-        for (PaymentCheckoutRequest.ItemDTO item : req.getItems()) {
-            Producto p = productosMap.get(item.getProductoId());
-            PedidoItem pi = new PedidoItem();
-            pi.setCantidad(item.getCantidad());
-            pi.setPrecioUnitarioMomento(p.getPrecioVenta());
-            pi.setCostoUnitarioMomento(p.getPrecioCompra());
-            pi.setSubtotalItem(p.getPrecioVenta() * item.getCantidad());
-            pi.setUtilidadItem((p.getPrecioVenta() - p.getPrecioCompra()) * item.getCantidad());
-            pi.setDescuentoAplicado(0);
-            pi.setProducto(p);
-            pi.setPedido(pedido);
-            pi.setEstado(Constants.ESTADO_ACTIVO);
-            pedido.getItems().add(pi);
-        }
-        pedidoRepository.save(pedido);
-
-        // ── Gift card cubre el 100%: marcar PAGADO sin pasar por proveedor ──
-        if (pagoGC) {
-            for (PedidoItem item : pedido.getItems()) {
-                Producto p = productoRepository.findByIdForUpdate(item.getProducto().getId())
-                    .orElseThrow(() -> new RecursoNoEncontradoException("Producto", item.getProducto().getId()));
-                p.setStockActual(Math.max(0, p.getStockActual() - item.getCantidad()));
-                p.setStockReservado(Math.max(0, p.getStockReservado() - item.getCantidad()));
-                if (Boolean.TRUE.equals(p.getEsUnico())) { p.setVendido(true); p.setVisibleCatalogo(false); }
-                productoRepository.save(p);
-            }
+        if (pricing.pagoGC()) {
+            stockReservationService.consumeForGiftCard(pedido);
             pedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
             pedido.setMetodoPago("GIFT_CARD");
             pedidoRepository.save(pedido);
-            giftCardService.canjear(gcCodigo, pedido, gcMonto);
-            notificacionEmailService.enviarConfirmacionPedido(pedido);
-            n8nWebhookService.notificarPedidoNuevo(pedido);
-            log.info("Pedido {} pagado 100% con gift card {}", pedido.getNumeroPedido(), gcCodigo);
+            giftCardService.canjear(pricing.gcCodigo(), pedido, pricing.gcMonto());
+            paymentNotificationsFacade.onGiftCardFullPayment(pedido, pricing.gcCodigo());
             return new PaymentCheckoutResponse(pedido.getId(), pedido.getNumeroPedido(),
                 null, "PAGADO", 0, "GIFT_CARD");
         }
 
-        // ── Delegar sesión al proveedor ─────────────────────────────────
         PaymentSession session;
         try {
             session = providerFactory.get(provider).crearSesion(pedido, usuario);
         } catch (RuntimeException e) {
-            // Si falla la sesión, liberar reservas ya hechas
-            liberarReservas(pedido);
+            stockReservationService.liberarReservas(pedido);
             throw e;
         } catch (Exception e) {
-            liberarReservas(pedido);
+            stockReservationService.liberarReservas(pedido);
             throw new IntegracionExternaException(provider, IntegracionExternaException.Tipo.IO_ERROR,
                 "Error iniciando sesión de pago: " + e.getMessage(), e);
         }
 
-        // ── Crear registro Pago ─────────────────────────────────────────
-        Pago pago = new Pago();
-        pago.setMerchantToken(session.externalId());
-        pago.setRedirectUrl(session.redirectUrl());
-        pago.setMonto(total);
-        pago.setMoneda("CRC");
-        pago.setEstadoPago(Constants.PAGO_PENDIENTE);
-        pago.setProveedor(provider);
-        pago.setFechaCreacion(LocalDateTime.now(Constants.ZONA_CR));
-        pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
-        // SINPE requiere más tiempo para revisión manual; resto expira en 30 min
-        boolean esSinpe = "SINPE".equalsIgnoreCase(provider);
-        pago.setFechaExpiracion(esSinpe
-            ? LocalDateTime.now(Constants.ZONA_CR).plusHours(24)
-            : LocalDateTime.now(Constants.ZONA_CR).plusMinutes(30));
-        pago.setPedido(pedido);
-        pago.setUsuario(usuario);
-        pago.setEstado(Constants.ESTADO_ACTIVO);
-        pagoRepository.save(pago);
+        paymentRecordFactory.createAndPersist(session, pedido, usuario, provider, pricing.total());
 
         log.info("Checkout iniciado: provider={} pedido={} total={}",
-            provider, pedido.getNumeroPedido(), total);
+            provider, pedido.getNumeroPedido(), pricing.total());
 
-        webhookDispatcher.dispatch(pedido.getEmpresaId(), "pedido.creado", Map.of(
-            "numeroPedido", pedido.getNumeroPedido(),
-            "total",        pedido.getTotalPedido(),
-            "metodoPago",   provider,
-            "metodoEnvio",  pedido.getMetodoEnvio()
-        ));
+        paymentNotificationsFacade.onPedidoCreado(pedido, provider);
 
         return new PaymentCheckoutResponse(
             pedido.getId(), pedido.getNumeroPedido(),
-            session.redirectUrl(), Constants.PAGO_PENDIENTE, total, provider);
+            session.redirectUrl(), Constants.PAGO_PENDIENTE, pricing.total(), provider);
     }
 
-    // ================================================================
-    // CONFIRMAR PEDIDO — Descuenta stockActual, libera stockReservado,
-    //                    marca PAGADO, envía email.
-    // Llamado por los providers tras una captura exitosa.
-    // ================================================================
     @Transactional
     public void confirmarPedido(Pago pago) {
-        Pedido pedido = pago.getPedido();
-        pedido.getItems().size(); // force-load
-
-        // Verificar que no esté ya confirmado (idempotencia)
-        if (Constants.PEDIDO_PAGADO.equals(pedido.getEstadoPedido())) {
-            log.info("confirmarPedido ignorado — pedido {} ya está PAGADO", pedido.getNumeroPedido());
-            return;
-        }
-
-        for (PedidoItem item : pedido.getItems()) {
-            Producto producto = productoRepository.findByIdForUpdate(item.getProducto().getId())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Producto no encontrado al confirmar pago"));
-
-            int cantidad   = item.getCantidad();
-            int nuevoStock = producto.getStockActual() - cantidad;
-
-            if (nuevoStock < 0) {
-                log.error("OVERSELL: producto={} stockActual={} cantidad={}",
-                    producto.getId(), producto.getStockActual(), cantidad);
-                nuevoStock = 0;
-            }
-            producto.setStockActual(nuevoStock);
-
-            // Liberar la reserva (puede quedar negativa si ya fue liberada antes → clamp a 0)
-            int nuevoReservado = Math.max(0, producto.getStockReservado() - cantidad);
-            producto.setStockReservado(nuevoReservado);
-
-            if (Boolean.TRUE.equals(producto.getEsUnico())) {
-                producto.setVendido(true);
-                producto.setVisibleCatalogo(false);
-            }
-            productoRepository.save(producto);
-
-            eventPublisher.publishEvent(new StockCambioEvent(
-                this, producto.getId(), producto.getEmpresaId(), nuevoStock));
-        }
-
-        pedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
-        pedidoRepository.save(pedido);
-
-        if (pedido.getCuponCodigo() != null) {
-            if (pedido.getEmpresa() != null) {
-                cuponService.marcarUsado(pedido.getCuponCodigo(), pedido.getEmpresa().getId());
-            } else {
-                cuponService.marcarUsado(pedido.getCuponCodigo());
-            }
-        }
-        if (pedido.getGiftCardCodigo() != null && pedido.getGiftCardMonto() != null && pedido.getGiftCardMonto() > 0) {
-            giftCardService.canjear(pedido.getGiftCardCodigo(), pedido, pedido.getGiftCardMonto());
-        }
-        // Inicializar proxy LAZY de usuarioFinal dentro de la TX para que el @Async
-        // thread no encuentre el proxy sin sesión → LazyInitializationException.
-        if (pedido.getUsuarioFinal() != null) {
-            pedido.getUsuarioFinal().getCorreo(); // touch dentro de la transacción
-        }
-        notificacionEmailService.enviarConfirmacionPedido(pedido);
-        n8nWebhookService.notificarPedidoNuevo(pedido);
-        webhookDispatcher.dispatch(pedido.getEmpresaId(), "pedido.pagado", Map.of(
-            "numeroPedido", pedido.getNumeroPedido(),
-            "total",        pedido.getTotalPedido(),
-            "proveedor",    pago.getProveedor()
-        ));
-        // Acreditar wallet del emprendedor (async, fuera de esta TX)
-        aggregatorService.acreditarVentaAsync(pedido);
-        log.info("Pedido {} confirmado PAGADO via {}", pedido.getNumeroPedido(), pago.getProveedor());
+        orderConfirmationService.confirmarPedido(pago, this, eventPublisher);
     }
 
-    // ================================================================
-    // LIBERAR RESERVAS — Solo libera stockReservado sin tocar stockActual.
-    // Usado en: pago cancelado, pago fallido, pago expirado.
-    // ================================================================
     @Transactional
     public void liberarReservas(Pedido pedido) {
-        if (pedido == null) return;
-        pedido.getItems().size(); // force-load
-
-        for (PedidoItem item : pedido.getItems()) {
-            try {
-                Producto producto = productoRepository.findByIdForUpdate(item.getProducto().getId())
-                    .orElse(null);
-                if (producto == null) continue;
-
-                int nuevoReservado = Math.max(0, producto.getStockReservado() - item.getCantidad());
-                producto.setStockReservado(nuevoReservado);
-                productoRepository.save(producto);
-            } catch (Exception e) {
-                log.error("Error liberando reserva producto={}: {}", item.getProducto().getId(), e.getMessage());
-            }
-        }
-        log.info("Reservas liberadas para pedido {}", pedido.getNumeroPedido());
+        stockReservationService.liberarReservas(pedido);
     }
 
-    // ================================================================
-    // CANCELAR POR USUARIO — El usuario regresó de la página de pago sin pagar.
-    // Libera el stockReservado y marca el pedido/pago como CANCELADO.
-    // ================================================================
     @Transactional
     public void cancelarPorUsuario(String numeroPedido, String correoUsuario) {
-        Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
-
-        if (!pedido.getUsuarioFinal().getCorreo().equals(correoUsuario)) {
-            throw new SecurityException("No tienes permiso para cancelar este pedido");
-        }
-
-        if (!Constants.PEDIDO_PENDIENTE.equals(pedido.getEstadoPedido())) {
-            throw new IllegalStateException("El pedido ya fue procesado y no puede cancelarse");
-        }
-
-        Pago pago = pagoRepository.findTopByPedidoId(pedido.getId())
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pago no encontrado para pedido: " + numeroPedido));
-
-        // Si el webhook ya confirmó o capturó el pago, no cancelar
-        if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
-            throw new IllegalStateException("El pago ya fue confirmado y no puede cancelarse");
-        }
-
-        marcarFallido(pago, "Cancelado por el usuario");
-        log.info("Pedido {} cancelado por el usuario {}", numeroPedido, correoUsuario);
+        userCancellationService.cancelarPorUsuario(numeroPedido, correoUsuario);
     }
 
-    // ================================================================
-    // CONSULTAR ESTADO
-    // ================================================================
     @Transactional(readOnly = true)
     public PaymentStatusResponse consultarEstado(String numeroPedido) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
@@ -431,194 +130,27 @@ public class PaymentService {
         return buildStatusResponse(pago);
     }
 
-    // ================================================================
-    // MARCAR PAGO FALLIDO — Llamado por webhooks cuando el pago es denegado.
-    // ================================================================
     @Transactional
     public void marcarFallido(Pago pago, String motivo) {
-        if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) return; // ya confirmado, no revertir
-
-        pago.setEstadoPago(Constants.PAGO_FALLIDO);
-        pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
-        pagoRepository.save(pago);
-
-        Pedido pedido = pago.getPedido();
-        if (Constants.PEDIDO_PENDIENTE.equals(pedido.getEstadoPedido())) {
-            pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
-            pedidoRepository.save(pedido);
-        }
-
-        liberarReservas(pedido);
-        if (pedido.getUsuarioFinal() != null) { pedido.getUsuarioFinal().getCorreo(); }
-        notificacionEmailService.enviarPagoFallido(pedido, motivo);
-        log.info("Pago {} marcado FALLIDO: {}", pago.getPedido().getNumeroPedido(), motivo);
+        paymentFailureHandler.marcarFallido(pago, motivo);
     }
 
-    // ================================================================
-    // CONFIRMAR SINPE — Admin confirma el comprobante manualmente.
-    // ================================================================
     @Transactional
     public PaymentStatusResponse confirmarSinpe(Long pagoId) {
-        Pago pago = pagoRepository.findById(pagoId)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pago", pagoId));
-
-        if (!Constants.PROVEEDOR_SINPE.equals(pago.getProveedor())) {
-            throw new IllegalArgumentException("El pago no es de tipo SINPE");
-        }
-        if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
-            return buildStatusResponse(pago);
-        }
-        if (!Constants.PAGO_PENDIENTE.equals(pago.getEstadoPago())) {
-            throw new IllegalStateException("El pago ya fue " + pago.getEstadoPago().toLowerCase() + " y no puede confirmarse");
-        }
-
-        pago.setEstadoPago(Constants.PAGO_CAPTURADO);
-        pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
-        pagoRepository.save(pago);
-
-        confirmarPedido(pago);
-        log.info("Pago SINPE {} confirmado manualmente", pago.getPedido().getNumeroPedido());
-        return buildStatusResponse(pago);
+        return sinpePaymentAdminService.confirmarSinpe(pagoId, this, eventPublisher);
     }
 
-    // ================================================================
-    // RECHAZAR SINPE — Admin rechaza el comprobante manualmente.
-    // ================================================================
     @Transactional
     public void rechazarSinpe(Long pagoId, String motivo) {
-        Pago pago = pagoRepository.findById(pagoId)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pago", pagoId));
-
-        if (!Constants.PROVEEDOR_SINPE.equals(pago.getProveedor())) {
-            throw new IllegalArgumentException("El pago no es de tipo SINPE");
-        }
-        if (!Constants.PAGO_PENDIENTE.equals(pago.getEstadoPago())) {
-            throw new IllegalStateException("El pago ya fue procesado y no puede rechazarse");
-        }
-
-        marcarFallido(pago, motivo != null && !motivo.isBlank()
-            ? motivo : "Comprobante rechazado por administrador");
-        log.info("Pago SINPE {} rechazado", pago.getPedido().getNumeroPedido());
+        sinpePaymentAdminService.rechazarSinpe(pagoId, motivo);
     }
 
-    // ================================================================
-    // LIMPIEZA PROGRAMADA — Cancela pedidos PENDIENTE expirados (TTL 30 min)
-    // ================================================================
-    @Scheduled(fixedRate = 5 * 60 * 1000) // cada 5 minutos
-    @SchedulerLock(name = "payment_expiration_cleanup", lockAtMostFor = "PT3M", lockAtLeastFor = "PT30S")
-    @Transactional
-    public void cancelarExpirados() {
-        LocalDateTime corte = LocalDateTime.now(Constants.ZONA_CR).minusMinutes(30);
-        for (var empresa : empresaRepository.findByEstadoEmpresaOrderByFechaRegistroAsc("ACTIVO")) {
-            try {
-                cancelarExpiradosDeEmpresa(empresa.getId(), corte);
-            } catch (Exception e) {
-                log.error("[payment-cleanup] Error empresa={}: {}", empresa.getId(), e.getMessage());
-            }
-        }
-    }
-
-    private void cancelarExpiradosDeEmpresa(Long empresaId, LocalDateTime corte) {
-        List<Pago> expirados = pagoRepository.findExpiradosPendientesByEmpresa(corte, empresaId);
-        List<Pago> pagosActualizados = new java.util.ArrayList<>();
-        List<Pedido> pedidosActualizados = new java.util.ArrayList<>();
-
-        for (Pago pago : expirados) {
-            pago.setEstadoPago(Constants.PAGO_CANCELADO);
-            pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
-            pagosActualizados.add(pago);
-
-            Pedido pedido = pago.getPedido();
-            if (Constants.PEDIDO_PENDIENTE.equals(pedido.getEstadoPedido())) {
-                pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
-                pedidosActualizados.add(pedido);
-                liberarReservas(pedido);
-                log.info("Pedido {} cancelado por expiración de pago TTL", pedido.getNumeroPedido());
-            }
-        }
-
-        if (!pagosActualizados.isEmpty()) {
-            pagoRepository.saveAll(pagosActualizados);
-            pedidoRepository.saveAll(pedidosActualizados);
-            log.info("Cleanup TTL empresa={}: {} pagos expirados cancelados", empresaId, pagosActualizados.size());
-        }
-    }
-
-    // ================================================================
-    // CANCELAR ANÓNIMO — Sin validación de usuario (invitados).
-    // Libera stock reservado y marca el pedido/pago como CANCELADO.
-    // ================================================================
     @Transactional
     public void cancelarAnon(String numeroPedido) {
-        Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
-
-        if (!Constants.PEDIDO_PENDIENTE.equals(pedido.getEstadoPedido())) {
-            throw new IllegalStateException("El pedido ya fue procesado y no puede cancelarse");
-        }
-
-        Pago pago = pagoRepository.findTopByPedidoId(pedido.getId())
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pago no encontrado para pedido: " + numeroPedido));
-
-        if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
-            throw new IllegalStateException("El pago ya fue confirmado y no puede cancelarse");
-        }
-
-        marcarFallido(pago, "Cancelado por el usuario");
-        log.info("Pedido {} cancelado (invitado)", numeroPedido);
-    }
-
-    // ================================================================
-    // Helpers
-    // ================================================================
-
-    private Usuario crearUsuarioInvitado(String correo, String telefono) {
-        Usuario u = new Usuario();
-        String uid = UUID.randomUUID().toString().replace("-", "");
-        u.setIdentificacion("GUEST-" + uid.substring(0, 13));
-        u.setNombre("Invitado");
-        u.setApellidoPaterno("Guest");
-        u.setCorreo(correo);
-        u.setTelefono(telefono != null && !telefono.isBlank()
-            ? telefono.replaceAll("[^0-9]", "") : "00000000");
-        u.setContrasenaHash(passwordEncoder.encode(UUID.randomUUID().toString()));
-        u.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
-        u.setEstado(Constants.ESTADO_ACTIVO);
-        rolRepository.findByNombreRol(Constants.ROL_USUARIO_FINAL)
-            .ifPresent(rol -> u.setRoles(List.of(rol)));
-        return usuarioRepository.save(u);
+        userCancellationService.cancelarAnon(numeroPedido);
     }
 
     public PaymentStatusResponse buildStatusResponse(Pago pago) {
-        TransaccionPago txn = transaccionPagoRepository
-            .findTopByPagoIdOrderByFechaTransaccionDesc(pago.getId())
-            .orElse(null);
-
-        PaymentStatusResponse resp = new PaymentStatusResponse();
-        resp.setPagoId(pago.getId());
-        resp.setEstadoPago(pago.getEstadoPago());
-        resp.setNumeroPedido(pago.getPedido().getNumeroPedido());
-        resp.setMetodoPago(pago.getMetodoPagoTipo() != null ? pago.getMetodoPagoTipo() : pago.getProveedor());
-        resp.setTotal(pago.getMonto());
-        resp.setProveedor(pago.getProveedor());
-        if (txn != null) {
-            resp.setCardLast4(txn.getCardLast4());
-            resp.setCardBrand(txn.getCardBrand());
-            resp.setFechaTransaccion(txn.getFechaTransaccion() != null
-                ? txn.getFechaTransaccion().toString() : null);
-        }
-        return resp;
-    }
-
-    private int calcularCostoEnvio(String metodoEnvio) {
-        if (metodoEnvio == null) return 0;
-        return switch (metodoEnvio) {
-            case "ENVIO_RAPIDO"            -> 5000;
-            case "ENVIO_NORMAL_GAM"        -> 4000;
-            case "ENVIO_NORMAL_FUERA_GAM"  -> 4000;
-            case "ENCOMIENDA_PROPIA"       -> 2500;
-            case "ENVIO_A_DOMICILIO"       -> 2000;
-            default                        -> 0;
-        };
+        return paymentStatusAssembler.build(pago);
     }
 }

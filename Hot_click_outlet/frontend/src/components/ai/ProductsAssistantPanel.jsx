@@ -1,266 +1,26 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Link } from 'react-router-dom'
-import useCartStore from '@/store/cartStore'
-import { shoppingAssistantService } from '@/services/shoppingAssistantService'
-import { getOrCreateVisitorId } from '@/utils/visitorId'
-import AICategoryChip from './AICategoryChip'
-
-const fmt = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
-
-const PANEL_CSS_ID = 'hc-panel-css'
-const PANEL_CSS = `
-  @keyframes hc-sa-dot { 0%,60%,100%{transform:translateY(0);opacity:.35} 30%{transform:translateY(-5px);opacity:1} }
-`
-if (typeof document !== 'undefined' && !document.getElementById(PANEL_CSS_ID)) {
-  const s = document.createElement('style')
-  s.id = PANEL_CSS_ID
-  s.textContent = PANEL_CSS
-  document.head.appendChild(s)
-}
-
-function TypingDots() {
-  return (
-    <span className="inline-flex items-center gap-[3px]">
-      {[0, 1, 2].map(i => (
-        <span key={i} style={{
-          display: 'inline-block', width: 5, height: 5, borderRadius: '50%',
-          backgroundColor: 'rgba(255,255,255,0.55)',
-          animation: 'hc-sa-dot 1.1s ease-in-out infinite',
-          animationDelay: `${i * 0.18}s`,
-        }} />
-      ))}
-    </span>
-  )
-}
-
-function ProductCard({ producto, onAdd }) {
-  const [added, setAdded] = useState(false)
-
-  function handleAdd() {
-    if (added) return
-    onAdd(producto)
-    setAdded(true)
-    setTimeout(() => setAdded(false), 2000)
-  }
-
-  return (
-    <div className="rounded-xl overflow-hidden" style={{
-      backgroundColor: 'rgba(255,255,255,0.06)',
-      border: '1px solid rgba(255,255,255,0.1)',
-    }}>
-      <Link to={`/productos/${producto.id}`} className="flex gap-3 p-3 hover:opacity-80 transition-opacity">
-        {producto.imagenUrl ? (
-          <img src={producto.imagenUrl} alt={producto.nombre}
-            className="w-14 h-14 rounded-lg object-cover shrink-0" />
-        ) : (
-          <div className="w-14 h-14 rounded-lg shrink-0 flex items-center justify-center text-2xl opacity-25"
-            style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>📦</div>
-        )}
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold leading-snug line-clamp-2" style={{ color: '#F4F6F9' }}>
-            {producto.nombre}
-          </p>
-          {producto.sku && (
-            <p className="text-[10px] mt-0.5 font-mono" style={{ color: 'rgba(255,255,255,0.32)' }}>
-              SKU {producto.sku}
-            </p>
-          )}
-          <p className="text-sm font-bold mt-1" style={{ color: 'var(--hc-accent)' }}>
-            ₡{fmt(producto.precio)}
-          </p>
-        </div>
-      </Link>
-      <div className="px-3 pb-3">
-        <button
-          onClick={handleAdd}
-          className="w-full py-1.5 rounded-lg text-xs font-semibold transition-all"
-          style={{
-            backgroundColor: added ? 'rgba(34,197,94,0.18)' : 'var(--hc-accent)',
-            color: added ? '#4ade80' : '#fff',
-            border: added ? '1px solid rgba(34,197,94,0.35)' : '1px solid transparent',
-          }}
-        >
-          {added ? '✓ Añadido' : 'Añadir al carrito'}
-        </button>
-      </div>
-    </div>
-  )
-}
-
-function Burbuja({ msg, onAdd, onCategoryFilter }) {
-  const isUser = msg.rol === 'user'
-  return (
-    <div className={`flex gap-2 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-      {!isUser && (
-        <div className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold mt-0.5"
-          style={{ backgroundColor: 'var(--hc-accent)', color: '#fff', minWidth: 24 }}>
-          ✦
-        </div>
-      )}
-      <div className="max-w-[84%] space-y-2">
-        {msg.typing ? (
-          <div className="px-3 py-2.5 rounded-2xl rounded-tl-sm"
-            style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
-            <TypingDots />
-          </div>
-        ) : (
-          <div
-            className={`px-3 py-2 rounded-2xl text-xs leading-relaxed ${isUser ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}
-            style={isUser
-              ? { backgroundColor: 'var(--hc-accent)', color: '#fff' }
-              : { backgroundColor: 'rgba(255,255,255,0.12)', color: '#F0F2F5', fontWeight: 400 }}
-          >
-            {msg.texto}
-          </div>
-        )}
-        {!msg.typing && msg.productos?.length > 0 && (
-          <div className="space-y-2">
-            {msg.productos.map((p, i) => (
-              <ProductCard key={p.id ?? i} producto={p} onAdd={onAdd} />
-            ))}
-          </div>
-        )}
-        {!msg.typing && msg.categorias?.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 pt-0.5">
-            {msg.categorias.map(cat => (
-              <AICategoryChip
-                key={cat}
-                nombre={cat}
-                onSelect={onCategoryFilter}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
+import { TypingDots } from './productsAssistant/ProductsAssistantTypingDots'
+import { ProductsAssistantBurbuja } from './productsAssistant/ProductsAssistantBurbuja'
+import { useProductsAssistant } from './productsAssistant/useProductsAssistant'
 
 export default function ProductsAssistantPanel({ isOpen, onClose, initialQuery = '', onCategoryFilter }) {
-  const addItem = useCartStore(s => s.addItem)
-  const [mensajes, setMensajes] = useState([])
-  const [input, setInput] = useState('')
-  const [cargando, setCargando] = useState(false)
-  const [sesionId, setSesionId] = useState(() => shoppingAssistantService.loadSesionId('hotclick'))
-  const visitorId = useMemo(() => getOrCreateVisitorId(), [])
-  const bottomRef = useRef(null)
-  const inputRef = useRef(null)
-  const cargRef = useRef(false)
-  const sentInitial = useRef(false)
-
-  function setLoading(v) { cargRef.current = v; setCargando(v) }
-
-  useEffect(() => {
-    if (!isOpen) return
-    if (mensajes.length === 0 && !sentInitial.current) {
-      const greeting = initialQuery
-        ? `Vi que llegaste buscando "${initialQuery}". Déjame ver qué tenemos para vos... 🛍️`
-        : '¡Hola! Soy el asistente de HotClick. ¿Qué estás buscando hoy?'
-
-      setTimeout(() => {
-        setMensajes([{ rol: 'assistant', texto: greeting }])
-        if (initialQuery) {
-          sentInitial.current = true
-          setTimeout(() => enviarDirecto(initialQuery), 350)
-        }
-      }, 180)
-    } else {
-      setTimeout(() => inputRef.current?.focus(), 100)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen])
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [mensajes])
-
-  const addCartItem = useCallback((producto) => {
-    addItem({
-      id: producto.id,
-      nombre: producto.nombre,
-      sku: producto.sku ?? '',
-      precio: producto.precio,
-      precioVenta: producto.precio,
-      imagenPrincipalUrl: producto.imagenUrl ?? null,
-      stock: 99,
-    }, 1)
-  }, [addItem])
-
-  async function enviarDirecto(msg) {
-    if (!msg || cargRef.current) return
-    setLoading(true)
-    setMensajes(prev => [...prev, { rol: 'assistant', typing: true }])
-    try {
-      const result = await shoppingAssistantService.chat({ empresaSlug: 'hotclick', mensaje: msg, sesionId, visitorId })
-      if (result.sesionId && result.sesionId !== sesionId) {
-        setSesionId(result.sesionId)
-        shoppingAssistantService.saveSesionId('hotclick', result.sesionId)
-      }
-      setMensajes(prev => [...prev.slice(0, -1), {
-        rol: 'assistant',
-        texto: result.respuesta,
-        productos: result.productos ?? [],
-        categorias: result.categorias ?? [],
-      }])
-    } catch (err) {
-      setMensajes(prev => [...prev.slice(0, -1), {
-        rol: 'assistant',
-        texto: err?.response?.status === 429
-          ? 'Demasiadas consultas. Esperá un momento.'
-          : 'Hubo un problema al conectar. Verificá que el servidor esté activo.',
-      }])
-    } finally {
-      setLoading(false)
-      inputRef.current?.focus()
-    }
-  }
-
-  async function enviar(mensajeDirecto) {
-    const msg = (mensajeDirecto ?? input).trim()
-    if (!msg || cargRef.current) return
-    setInput('')
-    setLoading(true)
-    setMensajes(prev => [
-      ...prev,
-      { rol: 'user', texto: msg },
-      { rol: 'assistant', typing: true },
-    ])
-    try {
-      const result = await shoppingAssistantService.chat({ empresaSlug: 'hotclick', mensaje: msg, sesionId, visitorId })
-      if (result.sesionId && result.sesionId !== sesionId) {
-        setSesionId(result.sesionId)
-        shoppingAssistantService.saveSesionId('hotclick', result.sesionId)
-      }
-      setMensajes(prev => [...prev.slice(0, -1), {
-        rol: 'assistant',
-        texto: result.respuesta,
-        productos: result.productos ?? [],
-        categorias: result.categorias ?? [],
-      }])
-    } catch (err) {
-      setMensajes(prev => [...prev.slice(0, -1), {
-        rol: 'assistant',
-        texto: err?.response?.status === 429
-          ? 'Demasiadas consultas. Esperá un momento.'
-          : 'Hubo un problema al conectar. Intentá de nuevo.',
-      }])
-    } finally {
-      setLoading(false)
-      inputRef.current?.focus()
-    }
-  }
-
-  function onKeyDown(e) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() }
-  }
+  const {
+    mensajes,
+    input,
+    setInput,
+    cargando,
+    bottomRef,
+    inputRef,
+    addCartItem,
+    enviar,
+    onKeyDown,
+  } = useProductsAssistant({ isOpen, initialQuery })
 
   return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop en mobile */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -270,7 +30,6 @@ export default function ProductsAssistantPanel({ isOpen, onClose, initialQuery =
             onClick={onClose}
           />
 
-          {/* Panel lateral izquierdo */}
           <motion.aside
             initial={{ x: -380 }}
             animate={{ x: 0 }}
@@ -284,7 +43,6 @@ export default function ProductsAssistantPanel({ isOpen, onClose, initialQuery =
               boxShadow: '8px 0 40px rgba(0,0,0,0.45)',
             }}
           >
-            {/* Header */}
             <div
               className="px-4 py-3.5 flex items-center gap-3 shrink-0"
               style={{
@@ -315,7 +73,6 @@ export default function ProductsAssistantPanel({ isOpen, onClose, initialQuery =
               </button>
             </div>
 
-            {/* Badge de contexto */}
             {initialQuery && (
               <div
                 className="px-4 py-2 shrink-0"
@@ -327,15 +84,13 @@ export default function ProductsAssistantPanel({ isOpen, onClose, initialQuery =
               </div>
             )}
 
-            {/* Mensajes */}
             <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
               {mensajes.map((m, i) => (
-                <Burbuja key={i} msg={m} onAdd={addCartItem} onCategoryFilter={onCategoryFilter} />
+                <ProductsAssistantBurbuja key={i} msg={m} onAdd={addCartItem} onCategoryFilter={onCategoryFilter} />
               ))}
               <div ref={bottomRef} />
             </div>
 
-            {/* Sugerencias rápidas — solo cuando no hay query inicial */}
             {mensajes.length <= 1 && !cargando && !initialQuery && (
               <div className="px-3 pb-2 flex flex-wrap gap-1.5 shrink-0">
                 {['¿Qué tenés?', 'Lo más popular', 'Ofertas', 'Busco un regalo'].map(s => (
@@ -355,7 +110,6 @@ export default function ProductsAssistantPanel({ isOpen, onClose, initialQuery =
               </div>
             )}
 
-            {/* Input */}
             <div
               className="px-3 pb-4 pt-2.5 shrink-0"
               style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}

@@ -6,7 +6,7 @@ import com.hotclick.payment.PaymentProvider;
 import com.hotclick.payment.PaymentProviderFactory;
 import com.hotclick.payment.PaymentSession;
 import com.hotclick.repository.*;
-import com.hotclick.service.AggregatorService;
+import com.hotclick.service.payment.*;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -56,7 +57,20 @@ class PaymentServiceF37Test {
     @Mock AggregatorService         aggregatorService;
     @Mock ApplicationEventPublisher eventPublisher;
 
-    @InjectMocks PaymentService service;
+    @InjectMocks CheckoutValidator              checkoutValidator;
+    @InjectMocks GuestUserResolver              guestUserResolver;
+    @InjectMocks StockReservationService        stockReservationService;
+    @InjectMocks OrderPricingService            orderPricingService;
+    @InjectMocks CheckoutOrderFactory           checkoutOrderFactory;
+    @InjectMocks PaymentRecordFactory           paymentRecordFactory;
+    @InjectMocks PaymentStatusAssembler         paymentStatusAssembler;
+    @InjectMocks PaymentNotificationsFacade     paymentNotificationsFacade;
+    @InjectMocks PaymentOrderConfirmationService orderConfirmationService;
+    @InjectMocks PaymentFailureHandler            paymentFailureHandler;
+    @InjectMocks PaymentUserCancellationService   userCancellationService;
+    @InjectMocks SinpePaymentAdminService         sinpePaymentAdminService;
+
+    PaymentService service;
 
     private Usuario  testUser;
     private Bodega   testBodega;
@@ -73,6 +87,7 @@ class PaymentServiceF37Test {
         testBodega = new Bodega();
         testBodega.setId(1L);
         testBodega.setNombreBodega("Bodega Test");
+        testBodega.setPermiteRetiroCliente(true);
 
         testProducto = new Producto();
         // Inject id via reflection (no public setter)
@@ -87,6 +102,42 @@ class PaymentServiceF37Test {
         testProducto.setVisibleCatalogo(true);
         testProducto.setVendido(false);
         testProducto.setEstado(Constants.ESTADO_ACTIVO);
+        testProducto.setBodega(testBodega);
+
+        service = new PaymentService();
+        ReflectionTestUtils.setField(service, "providerFactory", providerFactory);
+        ReflectionTestUtils.setField(service, "pedidoRepository", pedidoRepository);
+        ReflectionTestUtils.setField(service, "pagoRepository", pagoRepository);
+        ReflectionTestUtils.setField(service, "giftCardService", giftCardService);
+        ReflectionTestUtils.setField(service, "eventPublisher", eventPublisher);
+        ReflectionTestUtils.setField(service, "checkoutValidator", checkoutValidator);
+        ReflectionTestUtils.setField(service, "guestUserResolver", guestUserResolver);
+        ReflectionTestUtils.setField(service, "stockReservationService", stockReservationService);
+        ReflectionTestUtils.setField(service, "orderPricingService", orderPricingService);
+        ReflectionTestUtils.setField(service, "checkoutOrderFactory", checkoutOrderFactory);
+        ReflectionTestUtils.setField(service, "paymentRecordFactory", paymentRecordFactory);
+        ReflectionTestUtils.setField(service, "paymentStatusAssembler", paymentStatusAssembler);
+        ReflectionTestUtils.setField(service, "paymentNotificationsFacade", paymentNotificationsFacade);
+        ReflectionTestUtils.setField(service, "orderConfirmationService", orderConfirmationService);
+        ReflectionTestUtils.setField(service, "paymentFailureHandler", paymentFailureHandler);
+        ReflectionTestUtils.setField(service, "userCancellationService", userCancellationService);
+        ReflectionTestUtils.setField(service, "sinpePaymentAdminService", sinpePaymentAdminService);
+        ReflectionTestUtils.setField(orderConfirmationService, "pedidoRepository", pedidoRepository);
+        ReflectionTestUtils.setField(orderConfirmationService, "cuponService", cuponService);
+        ReflectionTestUtils.setField(orderConfirmationService, "giftCardService", giftCardService);
+        ReflectionTestUtils.setField(orderConfirmationService, "stockReservationService", stockReservationService);
+        ReflectionTestUtils.setField(orderConfirmationService, "paymentNotificationsFacade", paymentNotificationsFacade);
+        ReflectionTestUtils.setField(paymentFailureHandler, "pagoRepository", pagoRepository);
+        ReflectionTestUtils.setField(paymentFailureHandler, "pedidoRepository", pedidoRepository);
+        ReflectionTestUtils.setField(paymentFailureHandler, "stockReservationService", stockReservationService);
+        ReflectionTestUtils.setField(paymentFailureHandler, "paymentNotificationsFacade", paymentNotificationsFacade);
+        ReflectionTestUtils.setField(userCancellationService, "pedidoRepository", pedidoRepository);
+        ReflectionTestUtils.setField(userCancellationService, "pagoRepository", pagoRepository);
+        ReflectionTestUtils.setField(userCancellationService, "paymentFailureHandler", paymentFailureHandler);
+        ReflectionTestUtils.setField(sinpePaymentAdminService, "pagoRepository", pagoRepository);
+        ReflectionTestUtils.setField(sinpePaymentAdminService, "orderConfirmationService", orderConfirmationService);
+        ReflectionTestUtils.setField(sinpePaymentAdminService, "paymentFailureHandler", paymentFailureHandler);
+        ReflectionTestUtils.setField(sinpePaymentAdminService, "paymentStatusAssembler", paymentStatusAssembler);
     }
 
     // ── F37-01: numeroPedido tiene formato UUID (no milisegundos) ────────────
@@ -206,6 +257,7 @@ class PaymentServiceF37Test {
         p.setVisibleCatalogo(true);
         p.setVendido(false);
         p.setEstado(Constants.ESTADO_ACTIVO);
+        p.setBodega(testBodega);
         return p;
     }
 

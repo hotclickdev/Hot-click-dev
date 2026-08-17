@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.dto.ManualPedidoDTO;
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
+import com.hotclick.service.pedido.PedidoDetailMapper;
+import com.hotclick.service.pedido.PedidoManualFactory;
+import com.hotclick.service.pedido.PedidoNotificacionAppender;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -13,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +38,11 @@ class PedidoServiceTest {
     @Mock private ProductoRepository        productoRepository;
     @Mock private ObjectMapper              objectMapper;
 
-    @InjectMocks private PedidoService service;
+    @InjectMocks private PedidoManualFactory         pedidoManualFactory;
+    @InjectMocks private PedidoNotificacionAppender  pedidoNotificacionAppender;
+    @InjectMocks private PedidoDetailMapper          pedidoDetailMapper;
+
+    private PedidoService service;
 
     private Usuario  testUser;
     private Bodega   testBodega;
@@ -42,6 +50,14 @@ class PedidoServiceTest {
 
     @BeforeEach
     void setUp() {
+        service = new PedidoService();
+        ReflectionTestUtils.setField(service, "pedidoRepository", pedidoRepository);
+        ReflectionTestUtils.setField(service, "notificacionEmailService", notificacionEmailService);
+        ReflectionTestUtils.setField(service, "n8nWebhookService", n8nWebhookService);
+        ReflectionTestUtils.setField(service, "pedidoManualFactory", pedidoManualFactory);
+        ReflectionTestUtils.setField(service, "pedidoNotificacionAppender", pedidoNotificacionAppender);
+        ReflectionTestUtils.setField(service, "pedidoDetailMapper", pedidoDetailMapper);
+
         testUser = new Usuario();
         testUser.setId(1L);
         testUser.setCorreo("user@hotclick.cr");

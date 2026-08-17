@@ -1,355 +1,15 @@
-import { useState, useEffect, useCallback } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
-
-const TOUR_KEY = 'hc-admin-tour-v4-done'
-
-const STEPS = [
-  {
-    type: 'welcome',
-    emoji: '🛒',
-    title: '¡Bienvenido al Panel HotClick!',
-    desc: 'Este tour te lleva por cada sección del panel para que aprendas a gestionar tu negocio paso a paso. Solo toma un par de minutos.',
-    color: 'var(--hc-accent)',
-  },
-  {
-    path: '/admin',
-    emoji: '🏠',
-    title: 'Dashboard',
-    subtitle: 'Tu centro de control diario',
-    desc: 'La primera pantalla que verás al entrar. Muestra el estado de tu negocio en tiempo real para tomar decisiones rápidas.',
-    features: [
-      '📊 KPIs de ventas: ingresos hoy, esta semana y este mes',
-      '📦 Pedidos recientes con su estado actual',
-      '📈 Gráfica de ventas de los últimos 7 días',
-      '👥 Últimos clientes registrados en la plataforma',
-    ],
-    tip: 'Empezá aquí cada día para ver el panorama completo antes de atender clientes.',
-    color: 'var(--hc-accent)',
-    demo: { type: 'kpis', items: [
-      { label: 'Ventas hoy',    value: '₡145,000' },
-      { label: 'Pedidos',       value: '12' },
-      { label: 'Clientes nuevos', value: '3' },
-    ] },
-  },
-  {
-    path: '/admin/productos',
-    emoji: '📦',
-    title: 'Catálogo de Productos',
-    subtitle: 'Tu inventario digital completo',
-    desc: 'Desde acá creás y gestionás todo lo que vendés: fotos, precios, stock, categorías y más.',
-    features: [
-      '➕ Crear productos con fotos, precio y descripción detallada',
-      '📸 Generar fichas de producto automáticamente con IA desde una foto',
-      '🏷️ Clasificar por categorías, marcas y etiquetas',
-      '🔢 Control de stock con alertas de inventario bajo',
-      '⭐ Destacar productos para que aparezcan en el homepage',
-    ],
-    tip: 'Usá "Crear con IA" — sacás una foto y la IA rellena título, descripción y precio sugerido.',
-    color: 'var(--hc-accent)',
-    demo: { type: 'products', items: [
-      { nombre: 'Camisa azul talla M',       precio: '₡12,000', stock: 8 },
-      { nombre: 'Audífonos inalámbricos',    precio: '₡25,000', stock: 3 },
-    ] },
-  },
-  {
-    path: '/admin/pedidos',
-    emoji: '📋',
-    title: 'Pedidos',
-    subtitle: 'Gestión de órdenes online',
-    desc: 'Acá aterrizan todas las compras que hacen tus clientes desde la tienda online. Podés gestionar cada pedido de principio a fin.',
-    features: [
-      '🔄 Avanzar estados: Pendiente → Pagado → Enviado → Entregado',
-      '📬 Asignar número de guía de Correos de Costa Rica',
-      '📧 Notificar al cliente por email con un solo click',
-      '💬 Generar mensaje de WhatsApp listo para enviar',
-    ],
-    tip: 'El botón WhatsApp genera un mensaje completo con productos, estado y guía — solo abrís el chat.',
-    color: '#34d399',
-    demo: { type: 'orders', items: [
-      { numero: '#ORD-1042', estado: 'Pendiente', total: '₡18,500' },
-      { numero: '#ORD-1041', estado: 'Entregado', total: '₡32,000' },
-    ] },
-  },
-  {
-    path: '/admin/pos',
-    emoji: '🖥️',
-    title: 'Caja POS',
-    subtitle: 'Ventas presenciales y ferias',
-    desc: 'Punto de venta para cobrar cara a cara en tu tienda, feria o evento. No necesitás internet para funcionar.',
-    features: [
-      '🛍️ Buscador ultra rápido para agregar productos al carrito',
-      '💵 Aceptar efectivo, SINPE Móvil y tarjeta débito/crédito',
-      '🖨️ Enviar recibo por WhatsApp o imprimir en térmica',
-      '📊 Cuadre de caja al final de cada turno',
-      '🪑 Modo mesas: ideal para restaurantes y cafeterías',
-    ],
-    tip: 'Activá el modo offline antes de ir a una feria — podés cobrar sin señal y sincroniza al volver.',
-    color: '#f59e0b',
-    demo: { type: 'pos', items: [
-      { nombre: 'Camisa azul talla M', cant: 1, precio: '₡12,000' },
-      { nombre: 'Gorra negra',         cant: 1, precio: '₡6,500' },
-    ], total: '₡18,500', metodo: 'SINPE Móvil' },
-  },
-  {
-    path: '/admin/finanzas',
-    emoji: '💰',
-    title: 'Finanzas',
-    subtitle: 'Ingresos reales de tu negocio',
-    desc: 'Resumen financiero claro: cuánto entraste, cuánto costaron los envíos y el desglose por cada pedido entregado.',
-    features: [
-      '💵 Ingresos totales por productos (solo pedidos ENTREGADOS)',
-      '🚚 Costos de envío desglosados: moto vs Correos CR',
-      '📅 Filtros por período: hoy, 7 días, 30 días o rango manual',
-      '📊 Tabla con desglose detallado y totales por pedido',
-    ],
-    tip: 'Solo se muestran pedidos ENTREGADOS — siempre ves dinero real, no promesas de pago.',
-    color: '#4ade80',
-    demo: { type: 'finance', items: [
-      { label: 'Ingresos productos', value: '₡845,000' },
-      { label: 'Costos de envío',    value: '₡42,000' },
-      { label: 'Total cobrado',      value: '₡887,000' },
-    ] },
-  },
-  {
-    path: '/admin/ofertas',
-    emoji: '📣',
-    title: 'Marketing',
-    subtitle: 'Atraé y retené clientes',
-    desc: 'Herramientas para promocionar tu negocio: ofertas automáticas, cupones, publicaciones en redes y blog.',
-    features: [
-      '🔥 Crear ofertas con descuento por porcentaje o monto fijo',
-      '🎟️ Generar códigos de cupón para clientes especiales',
-      '📘 Publicar posts directamente en tu página de Facebook',
-      '📝 Blog: artículos y noticias para posicionar tu marca',
-      '🤝 Aparecer en el directorio de emprendimientos',
-    ],
-    tip: 'Los cupones se aplican automáticamente en el checkout — sin pasos extra para el cliente.',
-    color: '#E5A93D',
-    demo: { type: 'offer', badge: '-20% Camisas de verano', cupon: 'VERANO20' },
-  },
-  {
-    path: '/admin/copilot',
-    emoji: '🤖',
-    title: 'Inteligencia Artificial',
-    subtitle: 'Decisiones más inteligentes',
-    desc: 'Cuatro herramientas de IA para entender tu negocio, prevenir quiebres de stock y proyectar el futuro.',
-    features: [
-      '💬 AI Copilot: hacé preguntas en español y recibís análisis instantáneo',
-      '📊 AI Inventario: detecta automáticamente qué productos se van a agotar',
-      '📈 AI Forecast: proyecciones de demanda para planificar compras',
-      '🏆 Executive BI: dashboard gerencial con insights y alertas',
-    ],
-    tip: 'Probá preguntarle al Copilot: "¿Cuál es mi producto más rentable este mes?"',
-    color: 'var(--hc-blue-300)',
-    demo: { type: 'ai',
-      pregunta: '¿Cuál es mi producto más rentable?',
-      respuesta: 'Camisa azul: 34% de margen, 18 unidades vendidas este mes.' },
-  },
-  {
-    path: '/admin/mi-empresa',
-    emoji: '🏢',
-    title: 'Mi Negocio',
-    subtitle: 'Perfil y configuración de tu empresa',
-    desc: 'Completá el perfil de tu negocio, invitá a tu equipo, personalizá el branding y revisá tu suscripción.',
-    features: [
-      '🏢 Nombre, logo, descripción y datos de contacto',
-      '👥 Invitar colaboradores: cajero, gerente, supervisor',
-      '🎨 Personalizar colores, logo y modo white label',
-      '🔌 Conectar plugins e integraciones externas',
-      '💎 Ver tu plan actual, uso y límites',
-    ],
-    tip: 'Un perfil completo te hace aparecer en el directorio público de emprendimientos de HotClick.',
-    color: '#6490EA',
-    demo: { type: 'team', items: [
-      { nombre: 'María',  rol: 'Cajera' },
-      { nombre: 'Carlos', rol: 'Gerente' },
-    ] },
-  },
-  {
-    type: 'done',
-    emoji: '🎉',
-    title: '¡Tour completado!',
-    desc: 'Ya conocés las secciones principales del panel. Podés volver a ver este tour cuando quieras desde el botón de ayuda en el menú.',
-    color: 'var(--hc-accent)',
-  },
-]
-
-const TOTAL = STEPS.length
-
-// Vista previa con datos de ejemplo — no depende de lo que haya (o no) en la
-// cuenta real del usuario, así el tour se ve igual de completo para un
-// negocio recién creado (sin datos) que para uno con el plan gratuito
-// (donde la página real detrás puede mostrar un muro de "actualizá tu plan").
-function DemoPreview({ demo, color }) {
-  if (!demo) return null
-  return (
-    <div className="rounded-xl px-3 py-2.5" style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
-      <p className="text-[9px] font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--hc-muted)' }}>
-        Ejemplo — así se vería
-      </p>
-
-      {demo.type === 'kpis' && (
-        <div className="grid grid-cols-3 gap-2">
-          {demo.items.map((it, i) => (
-            <div key={i} className="text-center">
-              <div className="text-[13px] font-bold" style={{ color: 'var(--hc-text)' }}>{it.value}</div>
-              <div className="text-[9px]" style={{ color: 'var(--hc-muted)' }}>{it.label}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {demo.type === 'products' && (
-        <div className="space-y-1.5">
-          {demo.items.map((it, i) => (
-            <div key={i} className="flex items-center justify-between text-xs">
-              <span style={{ color: 'var(--hc-text)' }}>{it.nombre}</span>
-              <span style={{ color: 'var(--hc-muted)' }}>{it.precio} · stock {it.stock}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {demo.type === 'orders' && (
-        <div className="space-y-1.5">
-          {demo.items.map((it, i) => (
-            <div key={i} className="flex items-center justify-between text-xs">
-              <span style={{ color: 'var(--hc-text)' }}>{it.numero}</span>
-              <span className="px-1.5 py-0.5 rounded-full text-[9px] font-semibold" style={{ backgroundColor: `${color}1a`, color }}>{it.estado}</span>
-              <span style={{ color: 'var(--hc-muted)' }}>{it.total}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {demo.type === 'pos' && (
-        <div>
-          {demo.items.map((it, i) => (
-            <div key={i} className="flex items-center justify-between text-xs py-0.5">
-              <span style={{ color: 'var(--hc-text)' }}>{it.cant}× {it.nombre}</span>
-              <span style={{ color: 'var(--hc-muted)' }}>{it.precio}</span>
-            </div>
-          ))}
-          <div className="flex items-center justify-between text-xs font-bold pt-1.5 mt-1.5" style={{ borderTop: '1px dashed var(--hc-border)', color: 'var(--hc-text)' }}>
-            <span>Total · {demo.metodo}</span>
-            <span>{demo.total}</span>
-          </div>
-        </div>
-      )}
-
-      {demo.type === 'finance' && (
-        <div className="space-y-1.5">
-          {demo.items.map((it, i) => (
-            <div key={i} className="flex items-center justify-between text-xs">
-              <span style={{ color: 'var(--hc-muted)' }}>{it.label}</span>
-              <span className="font-semibold" style={{ color: 'var(--hc-text)' }}>{it.value}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {demo.type === 'offer' && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="px-2 py-1 rounded-lg text-[11px] font-bold" style={{ backgroundColor: `${color}1a`, color }}>{demo.badge}</span>
-          <span className="px-2 py-1 rounded-lg text-[11px] font-mono" style={{ backgroundColor: 'var(--hc-surface)', border: '1px dashed var(--hc-border)', color: 'var(--hc-text)' }}>{demo.cupon}</span>
-        </div>
-      )}
-
-      {demo.type === 'ai' && (
-        <div className="space-y-1.5">
-          <div className="text-xs px-2.5 py-1.5 rounded-xl ml-auto w-fit max-w-[85%]" style={{ backgroundColor: `${color}1a`, color: 'var(--hc-text)' }}>{demo.pregunta}</div>
-          <div className="text-xs px-2.5 py-1.5 rounded-xl w-fit max-w-[85%]" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}>{demo.respuesta}</div>
-        </div>
-      )}
-
-      {demo.type === 'team' && (
-        <div className="space-y-1.5">
-          {demo.items.map((it, i) => (
-            <div key={i} className="flex items-center gap-2 text-xs">
-              <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0" style={{ backgroundColor: `${color}1a`, color }}>
-                {it.nombre[0]}
-              </div>
-              <span style={{ color: 'var(--hc-text)' }}>{it.nombre}</span>
-              <span style={{ color: 'var(--hc-muted)' }}>· {it.rol}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-// Sidebar spotlight CSS — se inyecta solo cuando el tour está activo
-const TOUR_CSS = `
-  .hc-tour-active .hc-admin-sidebar a[aria-current="page"] {
-    animation: hc-tour-glow 2s ease-in-out infinite !important;
-  }
-  @keyframes hc-tour-glow {
-    0%, 100% { box-shadow: 0 0 0 2px rgba(23,71,168,.55), 0 0 18px rgba(23,71,168,.25); }
-    50%       { box-shadow: 0 0 0 3px rgba(23,71,168,.4),  0 0 32px rgba(23,71,168,.45); }
-  }
-`
-
-function useTourState() {
-  const [show, setShow] = useState(false)
-  useEffect(() => {
-    if (!localStorage.getItem(TOUR_KEY)) {
-      const t = setTimeout(() => setShow(true), 1800)
-      return () => clearTimeout(t)
-    }
-  }, [])
-  return [show, setShow]
-}
+import { STEPS } from './appTour/appTourSteps'
+import { DemoPreview } from './appTour/AppTourDemoPreview'
+import { useAppTour } from './appTour/useAppTour'
 
 export default function AppTour() {
-  const [show, setShow] = useTourState()
-  const [step, setStep] = useState(0)
-  const navigate = useNavigate()
-
-  // Inject spotlight CSS once
-  useEffect(() => {
-    const el = document.createElement('style')
-    el.textContent = TOUR_CSS
-    document.head.appendChild(el)
-    return () => el.remove()
-  }, [])
-
-  // Sidebar spotlight class
-  useEffect(() => {
-    document.body.classList.toggle('hc-tour-active', show)
-    return () => document.body.classList.remove('hc-tour-active')
-  }, [show])
-
-  // Manual trigger via window event
-  useEffect(() => {
-    const handler = () => { setStep(0); setShow(true) }
-    globalThis.addEventListener('hc-open-tour', handler)
-    return () => globalThis.removeEventListener('hc-open-tour', handler)
-  }, [setShow])
-
-  const dismiss = useCallback(() => {
-    localStorage.setItem(TOUR_KEY, '1')
-    setShow(false)
-  }, [setShow])
-
-  const go = useCallback((next) => {
-    if (next < 0 || next >= TOTAL) { dismiss(); return }
-    const s = STEPS[next]
-    if (s.path) navigate(s.path)
-    setStep(next)
-  }, [navigate, dismiss])
-
-  const current = STEPS[step]
-  const isSpecial = current.type === 'welcome' || current.type === 'done'
-  const isFirst   = step === 0
-  const isLast    = step === TOTAL - 1
+  const { show, step, current, isSpecial, isFirst, isLast, dismiss, go } = useAppTour()
 
   return (
     <AnimatePresence>
       {show && (
         <>
-          {/* ── Backdrop ── */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -363,7 +23,6 @@ export default function AppTour() {
             }}
           />
 
-          {/* ── Card ── */}
           <motion.div
             key={step}
             initial={{ opacity: 0, y: 30, scale: 0.95 }}
@@ -386,12 +45,10 @@ export default function AppTour() {
                 boxShadow: '0 28px 72px rgba(0,0,0,0.55), 0 4px 20px rgba(0,0,0,0.25)',
               }}
             >
-              {/* Accent stripe */}
               <div className="h-1.5 w-full" style={{ background: `linear-gradient(90deg, ${current.color}, ${current.color}99)` }} />
 
               <div className="p-5 space-y-4">
 
-                {/* ── Header ── */}
                 <div className="flex items-start gap-3">
                   <div
                     className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0 select-none"
@@ -424,7 +81,6 @@ export default function AppTour() {
                   </button>
                 </div>
 
-                {/* ── Feature list ── */}
                 {current.features && (
                   <div className="space-y-1.5 pl-1">
                     {current.features.map((f, i) => (
@@ -435,10 +91,8 @@ export default function AppTour() {
                   </div>
                 )}
 
-                {/* ── Vista previa con datos de ejemplo ── */}
                 <DemoPreview demo={current.demo} color={current.color} />
 
-                {/* ── Pro tip ── */}
                 {current.tip && (
                   <div
                     className="flex items-start gap-2 rounded-xl px-3 py-2.5 text-xs"
@@ -452,9 +106,7 @@ export default function AppTour() {
                   </div>
                 )}
 
-                {/* ── Footer ── */}
                 <div>
-                  {/* Progress dots */}
                   <div className="flex items-center gap-1 mb-3">
                     {STEPS.map((_, i) => (
                       <button
@@ -470,11 +122,10 @@ export default function AppTour() {
                       />
                     ))}
                     <span className="ml-auto text-[10px] font-medium shrink-0" style={{ color: 'var(--hc-muted)' }}>
-                      {step + 1} / {TOTAL}
+                      {step + 1} / {STEPS.length}
                     </span>
                   </div>
 
-                  {/* Navigation buttons */}
                   <div className="flex gap-2">
                     {isFirst ? (
                       <button

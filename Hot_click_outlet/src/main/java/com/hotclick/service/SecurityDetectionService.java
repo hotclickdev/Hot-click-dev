@@ -1,29 +1,14 @@
 package com.hotclick.service;
-import com.hotclick.utils.Constants;
 
-import com.hotclick.model.SecurityAlert;
-import com.hotclick.repository.SecurityAlertRepository;
 import com.hotclick.security.SecurityEventSeverity;
 import com.hotclick.security.SecurityEventType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import com.hotclick.service.security.SecurityAlertNotifier;
+import com.hotclick.service.security.SecurityRateWindowTracker;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
  * In-memory attack pattern detection.
@@ -40,15 +25,9 @@ import java.util.concurrent.TimeUnit;
  */
 @Service
 public class SecurityDetectionService {
-
-    private static final Logger log = LoggerFactory.getLogger(SecurityDetectionService.class);
-
-    @Autowired private SecurityAlertRepository alertRepo;
-    @Lazy @Autowired private SecurityAuditService    auditService;
-    @Autowired private ResendEmailService      emailService;
-
-    @Value("${security.alert.email:hotclick.cr@gmail.com}")
-    private String securityAlertEmail;
+    private final SecurityAuditService auditService;
+    private final SecurityRateWindowTracker tracker;
+    private final SecurityAlertNotifier alertNotifier;
 
     // ── Thresholds ────────────────────────────────────────────────────────────
     private static final int  BRUTE_FORCE_THRESHOLD    = 5;
@@ -66,27 +45,12 @@ public class SecurityDetectionService {
     private static final int  OTP_FLOOD_THRESHOLD      = 5;
     private static final long OTP_FLOOD_WINDOW_MS      = 600_000L;  // 10 min
 
-    private static final long ALERT_COOLDOWN_MS        = 300_000L;  // 5 min dedup window
-
-    // ── In-memory state ───────────────────────────────────────────────────────
-    private final ConcurrentHashMap<String, Queue<Long>> failedLoginsByIp   = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Queue<Long>> invalidJwtsByIp    = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Long, Queue<Long>>   otpRequestsByUser  = new ConcurrentHashMap<>();
-
-    // For password spray: track distinct target emails per IP within a rolling window
-    private final ConcurrentHashMap<String, Set<String>>  sprayTargetsByIp   = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Long>         sprayWindowStartMs = new ConcurrentHashMap<>();
-
-    // Alert dedup: "TYPE:key" → last alert epoch ms
-    private final ConcurrentHashMap<String, Long> alertCooldowns = new ConcurrentHashMap<>();
-
-    public SecurityDetectionService() {
-        ScheduledExecutorService cleaner = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r, "sec-detection-cleaner");
-            t.setDaemon(true);
-            return t;
-        });
-        cleaner.scheduleAtFixedRate(this::cleanup, 15, 15, TimeUnit.MINUTES);
+    public SecurityDetectionService(@Lazy SecurityAuditService auditService,
+                                    SecurityRateWindowTracker tracker,
+                                    SecurityAlertNotifier alertNotifier) {
+        this.auditService = auditService;
+        this.tracker = tracker;
+        this.alertNotifier = alertNotifier;
     }
 
     // ── Public API ────────────────────────────────────────────────────────────
@@ -97,11 +61,11 @@ public class SecurityDetectionService {
         long now = System.currentTimeMillis();
 
         // Brute force tracking (per IP)
-        Queue<Long> bf = failedLoginsByIp.computeIfAbsent(ip, k -> new ConcurrentLinkedQueue<>());
+        Queue<Long> bf = tracker.failedLoginsForIp(ip);
         bf.add(now);
-        pruneOld(bf, now, STUFFING_WINDOW_MS); // keep widest window
+        tracker.pruneOld(bf, now, STUFFING_WINDOW_MS); // keep widest window
 
-        int last10min = countRecent(bf, now, BRUTE_FORCE_WINDOW_MS);
+        int last10min = tracker.countRecent(bf, now, BRUTE_FORCE_WINDOW_MS);
         int last1hr   = bf.size();
 
         if (last1hr >= STUFFING_THRESHOLD) {
@@ -124,12 +88,7 @@ public class SecurityDetectionService {
 
         // Password spray tracking (distinct targets per IP)
         if (targetEmail != null) {
-            Long wsStart = sprayWindowStartMs.get(ip);
-            if (wsStart == null || now - wsStart > SPRAY_WINDOW_MS) {
-                sprayWindowStartMs.put(ip, now);
-                sprayTargetsByIp.put(ip, ConcurrentHashMap.newKeySet());
-            }
-            Set<String> targets = sprayTargetsByIp.computeIfAbsent(ip, k -> ConcurrentHashMap.newKeySet());
+            Set<String> targets = tracker.sprayTargetsForIp(ip, now, SPRAY_WINDOW_MS);
             targets.add(targetEmail.toLowerCase());
 
             if (targets.size() >= SPRAY_THRESHOLD) {
@@ -149,9 +108,9 @@ public class SecurityDetectionService {
         if (ip == null) return;
         long now = System.currentTimeMillis();
 
-        Queue<Long> q = invalidJwtsByIp.computeIfAbsent(ip, k -> new ConcurrentLinkedQueue<>());
+        Queue<Long> q = tracker.invalidJwtsForIp(ip);
         q.add(now);
-        pruneOld(q, now, JWT_SCAN_WINDOW_MS);
+        tracker.pruneOld(q, now, JWT_SCAN_WINDOW_MS);
 
         if (q.size() >= JWT_SCAN_THRESHOLD) {
             generateAlert("JWT_SCANNING", SecurityEventSeverity.MEDIUM,
@@ -169,9 +128,9 @@ public class SecurityDetectionService {
         if (userId == null) return;
         long now = System.currentTimeMillis();
 
-        Queue<Long> q = otpRequestsByUser.computeIfAbsent(userId, k -> new ConcurrentLinkedQueue<>());
+        Queue<Long> q = tracker.otpRequestsForUser(userId);
         q.add(now);
-        pruneOld(q, now, OTP_FLOOD_WINDOW_MS);
+        tracker.pruneOld(q, now, OTP_FLOOD_WINDOW_MS);
 
         if (q.size() >= OTP_FLOOD_THRESHOLD) {
             generateAlert("OTP_FLOOD", SecurityEventSeverity.MEDIUM,
@@ -186,105 +145,8 @@ public class SecurityDetectionService {
 
     // ── Alert generation ──────────────────────────────────────────────────────
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void generateAlert(String alertType, SecurityEventSeverity severity,
                                String ip, Long userId, String message, String details) {
-        // Dedup key prevents alert spam
-        String cooldownKey = alertType + ":" + (ip != null ? ip : "user:" + userId);
-        long now = System.currentTimeMillis();
-        Long lastAlert = alertCooldowns.get(cooldownKey);
-        if (lastAlert != null && now - lastAlert < ALERT_COOLDOWN_MS) {
-            return; // still in cooldown
-        }
-        alertCooldowns.put(cooldownKey, now);
-
-        try {
-            SecurityAlert alert = new SecurityAlert();
-            alert.setAlertType(alertType);
-            alert.setSeverity(severity.name());
-            alert.setIpAddress(ip);
-            alert.setUserId(userId);
-            alert.setMessage(message);
-            alert.setDetails(details);
-            alert.setResolved(false);
-            alert.setCreatedAt(LocalDateTime.now(Constants.ZONA_CR));
-            alertRepo.save(alert);
-
-            log.warn("[SEC-ALERT] type={} severity={} ip={} userId={} msg={}",
-                alertType, severity, ip, userId, message);
-
-            if (severity == SecurityEventSeverity.CRITICAL || severity == SecurityEventSeverity.HIGH) {
-                notificarPorEmail(alertType, severity, ip, message, details);
-            }
-        } catch (Exception e) {
-            log.error("[SEC-ALERT] Failed to persist alert type={}: {}", alertType, e.getMessage());
-        }
-    }
-
-    private void notificarPorEmail(String alertType, SecurityEventSeverity severity,
-                                    String ip, String message, String details) {
-        Thread.ofVirtual().start(() -> {
-            try {
-                String asunto = "[HOTCLICK SEGURIDAD] " + severity + " — " + alertType;
-                String html = "<div style='font-family:sans-serif;max-width:600px'>" +
-                    "<h2 style='color:" + (severity == SecurityEventSeverity.CRITICAL ? "#dc2626" : "#d97706") + "'>" +
-                    "Alerta de seguridad: " + alertType + "</h2>" +
-                    "<table style='border-collapse:collapse;width:100%'>" +
-                    "<tr><td style='padding:6px 12px;font-weight:bold;color:#6b7280'>Severidad</td>" +
-                    "<td style='padding:6px 12px'>" + severity + "</td></tr>" +
-                    "<tr style='background:#f9fafb'><td style='padding:6px 12px;font-weight:bold;color:#6b7280'>IP</td>" +
-                    "<td style='padding:6px 12px'>" + (ip != null ? ip : "—") + "</td></tr>" +
-                    "<tr><td style='padding:6px 12px;font-weight:bold;color:#6b7280'>Mensaje</td>" +
-                    "<td style='padding:6px 12px'>" + message + "</td></tr>" +
-                    "<tr style='background:#f9fafb'><td style='padding:6px 12px;font-weight:bold;color:#6b7280'>Detalle</td>" +
-                    "<td style='padding:6px 12px'>" + details + "</td></tr>" +
-                    "</table>" +
-                    "<p style='margin-top:16px;color:#6b7280;font-size:12px'>Ver todas las alertas en " +
-                    "<a href='https://hotclick.lat/admin/security'>Security Center</a></p>" +
-                    "</div>";
-                emailService.send(securityAlertEmail, asunto, html);
-            } catch (Exception e) {
-                log.warn("[SEC-ALERT] No se pudo enviar email de alerta type={}: {}", alertType, e.getMessage());
-            }
-        });
-    }
-
-    // ── Cleanup ───────────────────────────────────────────────────────────────
-
-    private void cleanup() {
-        try {
-            long now = System.currentTimeMillis();
-            // Remove fully-expired buckets
-            failedLoginsByIp.entrySet().removeIf(e -> {
-                pruneOld(e.getValue(), now, STUFFING_WINDOW_MS);
-                return e.getValue().isEmpty();
-            });
-            invalidJwtsByIp.entrySet().removeIf(e -> {
-                pruneOld(e.getValue(), now, JWT_SCAN_WINDOW_MS);
-                return e.getValue().isEmpty();
-            });
-            otpRequestsByUser.entrySet().removeIf(e -> {
-                pruneOld(e.getValue(), now, OTP_FLOOD_WINDOW_MS);
-                return e.getValue().isEmpty();
-            });
-            // Expire spray windows
-            sprayWindowStartMs.entrySet().removeIf(e -> now - e.getValue() > SPRAY_WINDOW_MS * 2);
-            sprayTargetsByIp.entrySet().removeIf(e -> !sprayWindowStartMs.containsKey(e.getKey()));
-            // Expire alert cooldowns
-            alertCooldowns.entrySet().removeIf(e -> now - e.getValue() > ALERT_COOLDOWN_MS * 2);
-        } catch (Exception e) {
-            log.error("[SEC] Detection cleanup error: {}", e.getMessage());
-        }
-    }
-
-    private void pruneOld(Queue<Long> queue, long now, long windowMs) {
-        Long head;
-        while ((head = queue.peek()) != null && now - head > windowMs) {
-            queue.poll();
-        }
-    }
-
-    private int countRecent(Queue<Long> queue, long now, long windowMs) {
-        return (int) queue.stream().filter(t -> now - t <= windowMs).count();
+        alertNotifier.generateAlert(alertType, severity, ip, userId, message, details);
     }
 }

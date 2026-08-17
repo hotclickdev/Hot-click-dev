@@ -92,6 +92,7 @@ export default defineConfig({
         // VITE_API_PROXY permite apuntar el dev server a otra API (ej. producción)
         target: process.env.VITE_API_PROXY || 'http://localhost:8080',
         changeOrigin: true,
+        secure: process.env.VITE_API_PROXY_INSECURE !== '1',
       },
     },
   },

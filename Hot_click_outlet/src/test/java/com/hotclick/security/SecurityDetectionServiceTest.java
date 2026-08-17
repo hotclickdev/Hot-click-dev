@@ -2,14 +2,16 @@ package com.hotclick.security;
 
 import com.hotclick.model.SecurityAlert;
 import com.hotclick.repository.SecurityAlertRepository;
+import com.hotclick.service.ResendEmailService;
 import com.hotclick.service.SecurityAuditService;
 import com.hotclick.service.SecurityDetectionService;
+import com.hotclick.service.security.SecurityAlertNotifier;
+import com.hotclick.service.security.SecurityRateWindowTracker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -37,13 +39,16 @@ class SecurityDetectionServiceTest {
 
     @Mock private SecurityAlertRepository alertRepo;
     @Mock private SecurityAuditService    auditService;
+    @Mock private ResendEmailService      emailService;
 
-    @InjectMocks
     private SecurityDetectionService detectionService;
 
     @BeforeEach
     void setUp() {
         when(alertRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+        SecurityRateWindowTracker tracker = new SecurityRateWindowTracker();
+        SecurityAlertNotifier alertNotifier = new SecurityAlertNotifier(alertRepo, emailService, tracker);
+        detectionService = new SecurityDetectionService(auditService, tracker, alertNotifier);
     }
 
     // ── Brute Force ───────────────────────────────────────────────────────────
