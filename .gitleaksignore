@@ -5,3 +5,5 @@
 210362e7e0748407693cb4d73bd3aaabf7317aac:Hot_click_outlet/src/main/resources/static/admin/admin-productos.html:generic-api-key:194
 c65fdfe1b458500d181c0a27a3e04385aebcaeeb:Hot_click_outlet/frontend/src/pages/admin/AdminProducts.jsx:generic-api-key:480
 c65fdfe1b458500d181c0a27a3e04385aebcaeeb:Hot_click_outlet/frontend/src/pages/admin/AdminProducts.jsx:jwt:480
+48cdd37f76599d6b3b270a02ac0c356bcbf06cfd:Hot_click_outlet/src/test/java/com/hotclick/service/ApiKeyCacheTest.java:generic-api-key:43
+5bd6a764e5309c0fe70ad05cc217a9c5d55da91a:.github/workflows/ci.yml:stripe-access-token:36

@@ -46,6 +46,8 @@ commits = [
   '''40c5661a55491a3eb8eb225f0c56de1dba5d3384''',
   '''1b6f466ac61dd8497f94c074019e29a76e739ee4''',
   '''b5ef4925606fa7ce0e2ad28e9d0e2d1f80272683''',
+  '''48cdd37f76599d6b3b270a02ac0c356bcbf06cfd''',
+  '''5bd6a764e5309c0fe70ad05cc217a9c5d55da91a''',
 ]
 
 [[allowlists]]
@@ -57,4 +59,6 @@ regexes = [
   '''hotclick-dev-secret-key-2026-local-only-32chars''',
   '''hotclick-unit-test-secret-key-at-least-32-chars-for-hs256''',
   '''hotclick-test-secret-minimum-32-chars-hs256''',
+  '''sk_test_placeholder''',
+  '''hck_live_TESTKEY''',
 ]

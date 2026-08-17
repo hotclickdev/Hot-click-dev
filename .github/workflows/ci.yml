@@ -33,7 +33,7 @@ jobs:
           DB_PASSWORD: ""
           JWT_SECRET: test-secret-for-ci-only-not-production
           SENTRY_DSN: ""
-          STRIPE_SECRET_KEY: sk_test_placeholder
+          STRIPE_SECRET_KEY: ci-mock-not-a-stripe-key
           STRIPE_WEBHOOK_SECRET: whsec_placeholder
           SENDGRID_API_KEY: placeholder
           AWS_ACCESS_KEY_ID: placeholder
