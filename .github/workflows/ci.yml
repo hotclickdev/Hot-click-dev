@@ -85,11 +85,11 @@ jobs:
           PR_NUMBER=$(gh pr list --head "${{ github.head_ref }}" --json number -q '.[0].number')
           if [ -n "$PR_NUMBER" ]; then
             gh pr merge "$PR_NUMBER" --squash --auto --delete-branch
-            MESSAGE="✅ *Fix deployado automáticamente*
-
-*PR:* #$PR_NUMBER mergeado a master
-*Rama:* ${{ github.head_ref }}
-*CI:* Todos los tests pasaron"
+            MESSAGE=$(printf '%s\n' \
+              "✅ *Fix deployado automáticamente*" \
+              "*PR:* #${PR_NUMBER} mergeado a master" \
+              "*Rama:* ${{ github.head_ref }}" \
+              "*CI:* Todos los tests pasaron")
             curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
               -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
               -d text="$MESSAGE" \
@@ -108,14 +108,14 @@ jobs:
       - name: Enviar alerta a Telegram
         run: |
           JOB_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          MESSAGE="❌ *FALLO EN CI/CD*
-
-*Detectado por:* GitHub Actions
-*Rama:* ${{ github.ref_name }}
-*Autor del commit:* ${{ github.actor }}
-*Commit:* \`${{ github.sha }}\`
-
-[Ver detalle del fallo]($JOB_URL)"
+          MESSAGE=$(printf '%s\n' \
+            "❌ *FALLO EN CI/CD*" \
+            "*Detectado por:* GitHub Actions" \
+            "*Rama:* ${{ github.ref_name }}" \
+            "*Autor del commit:* ${{ github.actor }}" \
+            "*Commit:* \`${{ github.sha }}\`" \
+            "" \
+            "[Ver detalle del fallo]($JOB_URL)")
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
             -d text="$MESSAGE" \
