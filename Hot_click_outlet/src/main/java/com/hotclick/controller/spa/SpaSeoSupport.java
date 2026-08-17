@@ -103,9 +103,10 @@ public class SpaSeoSupport {
 
     public String injectBlogMeta(String html, BlogEntrada e) {
         String title = xe(e.getTitulo()) + " | Blog HOTCLICK";
+        String titulo = e.getTitulo() != null ? e.getTitulo() : "";
         String desc = e.getResumen() != null && !e.getResumen().isBlank()
             ? e.getResumen()
-            : e.getTitulo();
+            : titulo;
         if (desc.length() > 155) desc = desc.substring(0, 152) + "...";
 
         String imagen = e.getImagenUrl() != null && !e.getImagenUrl().isBlank()

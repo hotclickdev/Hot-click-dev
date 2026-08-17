@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -91,7 +92,9 @@ class AiCopilotDataQueries {
         if (fecha instanceof java.sql.Timestamp ts)   momento = ts.toLocalDateTime();
         else if (fecha instanceof LocalDateTime ldt)   momento = ldt;
         else return "nunca registrada";
-        return ChronoUnit.DAYS.between(momento, LocalDateTime.now(Constants.ZONA_CR)) + " días";
+        return ChronoUnit.DAYS.between(
+            momento.atZone(Constants.ZONA_CR),
+            ZonedDateTime.now(Constants.ZONA_CR)) + " días";
     }
 
     /** Top 3 clientes por cada uno de los productos más vendidos (90d) — responde "quién me compra tal producto". */

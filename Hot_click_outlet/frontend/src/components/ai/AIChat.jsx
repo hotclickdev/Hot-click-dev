@@ -93,7 +93,7 @@ export default function AIChat({
   )
 
   const contextChipsEl = chat.showChips && chat.userMsgCount > 0 && (
-    <AIChatChips chips={chat.activeChips} enviar={chat.enviar} accent={chat.accent} variant="context" />
+    <AIChatChips chips={chat.activeChips} enviar={chat.enviar} accent={chat.accent} />
   )
 
   const alternativasEl = chat.showAlternativas && (

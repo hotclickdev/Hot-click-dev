@@ -70,6 +70,9 @@ public class CatalogoUrlExtractor {
                 if (!productosRenderizado.isEmpty()) {
                     productos = productosRenderizado;
                 }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn("[import-url] fallback con navegador headless interrumpido");
             } catch (Exception e) {
                 log.warn("[import-url] fallback con navegador headless falló: {}", e.getMessage());
             }

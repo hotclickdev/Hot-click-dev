@@ -210,7 +210,7 @@ public class EmprendedorRegistroService {
                          .replaceAll("[^a-z0-9\\s-]", "")
                          .replaceAll("\\s+", "-")
                          .replaceAll("-{2,}", "-")
-                         .replaceAll("(^-|-$)", "");
+                         .replaceAll("(^-)|(-$)", "");
     }
 
     private String uniqueSlug(String base) {

@@ -29,9 +29,10 @@ class ExtraccionOcrDetalleExtractor {
 
         // ── Cómo usar: buscar sección con cabecera de instrucciones ──────────────
         Pattern headerInstr = Pattern.compile(
-            "(?i)^(how\\s+to\\s+(use|apply)|directions?|instrucciones?|"
+            "^(how\\s+to\\s+(use|apply)|directions?|instrucciones?|"
             + "modo\\s+de\\s+(uso|empleo)|c[oó]mo\\s+usar|application|"
-            + "usage|use:?|how\\s+to\\s+use:?)\\s*$"
+            + "usage|use:?|how\\s+to\\s+use:?)\\s*$",
+            Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE
         );
         int instrStart = -1;
         for (int i = 0; i < lines.size(); i++) {
@@ -51,8 +52,9 @@ class ExtraccionOcrDetalleExtractor {
         // ── Especificaciones: líneas "Clave: Valor" o con unidades técnicas ──────
         Pattern specKV  = Pattern.compile("^[\\w\\s]{2,25}:\\s+.{2,}");
         Pattern techUnit = Pattern.compile(
-            "(?i)\\d+\\s*(mah|wh|w\\b|v\\b|a\\b|ghz|mhz|db|g\\b|kg|oz|ml\\b|l\\b|cm|mm|m\\b|in\\b|ft|"
-            + "hrs?|hours?|horas?|%|fps|rpm|mp\\b|px|x\\d+)");
+            "\\d+\\s*(mah|wh|w\\b|v\\b|a\\b|ghz|mhz|db|g\\b|kg|oz|ml\\b|l\\b|cm|mm|m\\b|in\\b|ft|"
+            + "hrs?|hours?|horas?|%|fps|rpm|mp\\b|px|x\\d+)",
+            Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
         List<String> specLines = new ArrayList<>();
         for (String line : lines) {
             boolean isSpec = specKV.matcher(line).find() || techUnit.matcher(line).find();

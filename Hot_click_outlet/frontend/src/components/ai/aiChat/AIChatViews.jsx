@@ -199,19 +199,13 @@ export function AIChatInputBar({
   )
 }
 
-export function AIChatChips({ chips, enviar, accent, variant = 'initial' }) {
+export function AIChatChips({ chips, enviar, accent }) {
   if (!chips?.length) return null
-  const baseStyle = variant === 'initial'
-    ? {
-        background: `color-mix(in srgb, ${accent} 8%, transparent)`,
-        color: accent,
-        border: `1px solid color-mix(in srgb, ${accent} 20%, transparent)`,
-      }
-    : {
-        background: `color-mix(in srgb, ${accent} 8%, transparent)`,
-        color: accent,
-        border: `1px solid color-mix(in srgb, ${accent} 20%, transparent)`,
-      }
+  const baseStyle = {
+    background: `color-mix(in srgb, ${accent} 8%, transparent)`,
+    color: accent,
+    border: `1px solid color-mix(in srgb, ${accent} 20%, transparent)`,
+  }
   return (
     <div className="flex flex-wrap gap-1.5">
       {chips.map(chip => (

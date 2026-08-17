@@ -63,6 +63,9 @@ public class ExtraccionPrecioExtractor {
         try {
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
                 .get(12, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Extraccion interrumpida: {}", e.getMessage());
         } catch (Exception e) {
             log.warn("Extraccion parcial o timeout: {}", e.getMessage());
         }
