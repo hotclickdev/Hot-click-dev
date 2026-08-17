@@ -4,6 +4,8 @@ import org.openqa.selenium.PageLoadStrategy;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class CatalogoHeadlessBrowserRenderer {
 
+    private static final Logger log = LoggerFactory.getLogger(CatalogoHeadlessBrowserRenderer.class);
     private static final Semaphore NAVEGADOR_LOCK = new Semaphore(1);
     private static final Duration TIMEOUT_NAVEGADOR = Duration.ofSeconds(20);
 
@@ -57,7 +60,8 @@ public class CatalogoHeadlessBrowserRenderer {
             if (driver != null) {
                 try {
                     driver.quit();
-                } catch (Exception ignored) {
+                } catch (Exception e) {
+                    log.debug("quit del driver headless: {}", e.getMessage());
                 }
             }
             NAVEGADOR_LOCK.release();

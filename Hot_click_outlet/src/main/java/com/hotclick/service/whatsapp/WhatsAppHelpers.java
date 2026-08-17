@@ -4,6 +4,7 @@ import com.hotclick.model.Pedido;
 import com.hotclick.model.PedidoItem;
 import com.hotclick.model.Usuario;
 
+import com.hotclick.utils.EmpresaNombre;
 import java.text.NumberFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,11 +26,7 @@ public final class WhatsAppHelpers {
         ctx.put("productos",     resumirProductos(pedido.getItems()));
         ctx.put("metodoPago",    pedido.getMetodoPago()  != null ? pedido.getMetodoPago()  : "");
         ctx.put("metodoEnvio",   pedido.getMetodoEnvio() != null ? pedido.getMetodoEnvio() : "");
-        ctx.put("nombreEmpresa", pedido.getEmpresa() != null
-            ? (pedido.getEmpresa().getNombreComercial() != null
-                ? pedido.getEmpresa().getNombreComercial()
-                : pedido.getEmpresa().getNombreEmpresa())
-            : "HotClick");
+        ctx.put("nombreEmpresa", EmpresaNombre.mostrar(pedido.getEmpresa(), "HotClick"));
         return ctx;
     }
 

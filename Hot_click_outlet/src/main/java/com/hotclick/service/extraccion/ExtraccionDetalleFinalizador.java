@@ -18,8 +18,10 @@ class ExtraccionDetalleFinalizador {
         // Combinar todas las señales disponibles para los generadores
         List<String> todasSeñales = new ArrayList<>(d.todasEtiquetas);
         visionResult.labelsFisicos.forEach(l -> { if (!todasSeñales.contains(l)) todasSeñales.add(l); });
-        String nombreFinal = d.nombre != null ? d.nombre
-            : (!todasSeñales.isEmpty() ? todasSeñales.get(0) : null);
+        String nombreFinal = d.nombre;
+        if (nombreFinal == null && !todasSeñales.isEmpty()) {
+            nombreFinal = todasSeñales.get(0);
+        }
 
         if (d.descripcionCorta == null)
             d.descripcionCorta = extraccionDetalleFallbackGenerator.construirDescripcionDeEtiquetas(nombreFinal, todasSeñales);

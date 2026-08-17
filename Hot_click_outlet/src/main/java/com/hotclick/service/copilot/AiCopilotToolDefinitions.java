@@ -4,6 +4,7 @@ import com.hotclick.model.Empresa;
 import com.hotclick.security.TenantContext;
 import com.hotclick.service.TenantService;
 import com.hotclick.utils.Constants;
+import com.hotclick.utils.EmpresaNombre;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -24,13 +25,21 @@ class AiCopilotToolDefinitions {
         Constants.PEDIDO_PREPARANDO, Constants.PEDIDO_ENVIADO, Constants.PEDIDO_ENTREGADO,
         Constants.PEDIDO_CANCELADO, Constants.PEDIDO_COMPLETADO);
 
+    private static final String JSON_TYPE = "type";
+    private static final String JSON_OBJECT = "object";
+    private static final String JSON_PROPERTIES = "properties";
+    private static final String JSON_STRING = "string";
+    private static final String JSON_DESCRIPTION = "description";
+    private static final String JSON_REQUIRED = "required";
+    private static final String JSON_INTEGER = "integer";
+    private static final String ARG_NUMERO_PEDIDO = "numeroPedido";
+    private static final String ARG_PRODUCTO = "producto";
+
     @Autowired private AiCopilotContextBuilder contextBuilder;
     @Autowired private TenantService tenantService;
 
     String buildSystemPromptConTools(Long empresaId, Empresa empresa, String nombreUsuario, boolean puedeGestionar) {
-        String nombreNegocio = empresa != null && empresa.getNombreComercial() != null && !empresa.getNombreComercial().isBlank()
-            ? empresa.getNombreComercial()
-            : (empresa != null && empresa.getNombreEmpresa() != null ? empresa.getNombreEmpresa() : "tu negocio");
+        String nombreNegocio = EmpresaNombre.mostrar(empresa, "tu negocio");
         String kpis = contextBuilder.getKpiContext(empresaId);
         String saludo = nombreUsuario != null && !nombreUsuario.isBlank()
             ? "Le hablás a " + nombreUsuario.trim() + ", dueño/a o encargado/a del negocio."
@@ -130,26 +139,26 @@ class AiCopilotToolDefinitions {
         List<Map<String, Object>> tools = new ArrayList<>();
         tools.add(toolDef("consultar_inventario",
             "Consulta el estado del catálogo: cuántos productos activos y unidades en stock hay, y cuáles productos tienen stock crítico (bajo el mínimo).",
-            Map.of("type", "object", "properties", Map.of())));
+            Map.of(JSON_TYPE, JSON_OBJECT, JSON_PROPERTIES, Map.of())));
         tools.add(toolDef("consultar_ventas",
             "Consulta ventas: pedidos e ingresos de hoy y de los últimos 30 días, productos más vendidos, productos sin ventas recientes, y clientes recurrentes por producto.",
-            Map.of("type", "object", "properties", Map.of())));
+            Map.of(JSON_TYPE, JSON_OBJECT, JSON_PROPERTIES, Map.of())));
         tools.add(toolDef("recomendaciones",
             "Devuelve acciones recomendadas para el negocio: productos con stock crítico a reabastecer, y productos sin ventas en 60+ días candidatos a descuento.",
-            Map.of("type", "object", "properties", Map.of())));
+            Map.of(JSON_TYPE, JSON_OBJECT, JSON_PROPERTIES, Map.of())));
         tools.add(toolDef("consultar_clientes",
             "Consulta la lista de clientes del negocio: cuántos son y sus nombres. Usar cuando pregunten cuáles/cuántos son sus clientes.",
-            Map.of("type", "object", "properties", Map.of())));
+            Map.of(JSON_TYPE, JSON_OBJECT, JSON_PROPERTIES, Map.of())));
 
         if (tieneFeatureReportes(empresaId)) {
             tools.add(toolDef("consultar_finanzas",
                 "Consulta KPIs financieros del negocio para un período: ventas totales, costo de mercadería vendida (CMV), ganancia neta, margen, IVA.",
-                Map.of("type", "object",
-                    "properties", Map.of("periodo", Map.of(
-                        "type", "string",
+                Map.of(JSON_TYPE, JSON_OBJECT,
+                    JSON_PROPERTIES, Map.of("periodo", Map.of(
+                        JSON_TYPE, JSON_STRING,
                         "enum", List.of("hoy", "semana", "mes", "todo"),
-                        "description", "Período a consultar — por defecto 'mes' (mes actual)")),
-                    "required", List.of())));
+                        JSON_DESCRIPTION, "Período a consultar — por defecto 'mes' (mes actual)")),
+                    JSON_REQUIRED, List.of())));
         }
 
         // Tools de mutación (propose → confirm → execute): solo visibles para
@@ -159,36 +168,36 @@ class AiCopilotToolDefinitions {
             tools.add(toolDef("proponer_cambiar_estado_pedido",
                 "Llamala cuando el usuario pida explícitamente cambiar el estado de un pedido (ej: marcarlo como entregado, confirmado, cancelado). "
                 + "Nunca la llames solo para consultar el estado de un pedido — para eso usá consultar_ventas.",
-                Map.of("type", "object",
-                    "properties", Map.of(
-                        "numeroPedido", Map.of("type", "string", "description", "Número de pedido (ej: ORD-2026-00123) o su id numérico, tal como lo dio el usuario"),
-                        "nuevoEstado", Map.of("type", "string", "enum", ESTADOS_PEDIDO_VALIDOS, "description", "Nuevo estado del pedido"),
-                        "nota", Map.of("type", "string", "description", "Nota opcional para el cliente, si el usuario la mencionó")),
-                    "required", List.of("numeroPedido", "nuevoEstado"))));
+                Map.of(JSON_TYPE, JSON_OBJECT,
+                    JSON_PROPERTIES, Map.of(
+                        ARG_NUMERO_PEDIDO, Map.of(JSON_TYPE, JSON_STRING, JSON_DESCRIPTION, "Número de pedido (ej: ORD-2026-00123) o su id numérico, tal como lo dio el usuario"),
+                        "nuevoEstado", Map.of(JSON_TYPE, JSON_STRING, "enum", ESTADOS_PEDIDO_VALIDOS, JSON_DESCRIPTION, "Nuevo estado del pedido"),
+                        "nota", Map.of(JSON_TYPE, JSON_STRING, JSON_DESCRIPTION, "Nota opcional para el cliente, si el usuario la mencionó")),
+                    JSON_REQUIRED, List.of(ARG_NUMERO_PEDIDO, "nuevoEstado"))));
             tools.add(toolDef("proponer_asignar_guia",
                 "Llamala cuando el usuario pida explícitamente asignar o registrar un número de guía de envío a un pedido.",
-                Map.of("type", "object",
-                    "properties", Map.of(
-                        "numeroPedido", Map.of("type", "string", "description", "Número de pedido o su id numérico"),
-                        "numeroGuia", Map.of("type", "string", "description", "Número de guía de envío")),
-                    "required", List.of("numeroPedido", "numeroGuia"))));
+                Map.of(JSON_TYPE, JSON_OBJECT,
+                    JSON_PROPERTIES, Map.of(
+                        ARG_NUMERO_PEDIDO, Map.of(JSON_TYPE, JSON_STRING, JSON_DESCRIPTION, "Número de pedido o su id numérico"),
+                        "numeroGuia", Map.of(JSON_TYPE, JSON_STRING, JSON_DESCRIPTION, "Número de guía de envío")),
+                    JSON_REQUIRED, List.of(ARG_NUMERO_PEDIDO, "numeroGuia"))));
             tools.add(toolDef("proponer_ajustar_stock",
                 "Llamala cuando el usuario pida explícitamente ajustar o corregir el stock de un producto a una cantidad exacta (conteo físico). "
                 + "Nunca la llames solo para consultar el stock — para eso usá consultar_inventario.",
-                Map.of("type", "object",
-                    "properties", Map.of(
-                        "producto", Map.of("type", "string", "description", "Nombre o parte del nombre del producto"),
-                        "cantidadReal", Map.of("type", "integer", "minimum", 0, "description", "Cantidad real en existencia")),
-                    "required", List.of("producto", "cantidadReal"))));
+                Map.of(JSON_TYPE, JSON_OBJECT,
+                    JSON_PROPERTIES, Map.of(
+                        ARG_PRODUCTO, Map.of(JSON_TYPE, JSON_STRING, JSON_DESCRIPTION, "Nombre o parte del nombre del producto"),
+                        "cantidadReal", Map.of(JSON_TYPE, JSON_INTEGER, "minimum", 0, JSON_DESCRIPTION, "Cantidad real en existencia")),
+                    JSON_REQUIRED, List.of(ARG_PRODUCTO, "cantidadReal"))));
             tools.add(toolDef("proponer_aplicar_oferta",
                 "Llamala cuando el usuario pida explícitamente aplicar, cambiar o quitar una oferta/descuento de un producto.",
-                Map.of("type", "object",
-                    "properties", Map.of(
-                        "producto", Map.of("type", "string", "description", "Nombre o parte del nombre del producto"),
-                        "porcentajeDescuento", Map.of("type", "integer", "description", "Porcentaje de descuento (ej: 15). Usar este o precioOferta, no ambos"),
-                        "precioOferta", Map.of("type", "integer", "description", "Precio de oferta en colones. Usar este o porcentajeDescuento, no ambos"),
-                        "quitarOferta", Map.of("type", "boolean", "description", "true si el pedido es QUITAR la oferta existente")),
-                    "required", List.of("producto"))));
+                Map.of(JSON_TYPE, JSON_OBJECT,
+                    JSON_PROPERTIES, Map.of(
+                        ARG_PRODUCTO, Map.of(JSON_TYPE, JSON_STRING, JSON_DESCRIPTION, "Nombre o parte del nombre del producto"),
+                        "porcentajeDescuento", Map.of(JSON_TYPE, JSON_INTEGER, JSON_DESCRIPTION, "Porcentaje de descuento (ej: 15). Usar este o precioOferta, no ambos"),
+                        "precioOferta", Map.of(JSON_TYPE, JSON_INTEGER, JSON_DESCRIPTION, "Precio de oferta en colones. Usar este o porcentajeDescuento, no ambos"),
+                        "quitarOferta", Map.of("type", "boolean", JSON_DESCRIPTION, "true si el pedido es QUITAR la oferta existente")),
+                    JSON_REQUIRED, List.of(ARG_PRODUCTO))));
         }
         return tools;
     }
@@ -208,7 +217,7 @@ class AiCopilotToolDefinitions {
     Map<String, Object> toolDef(String name, String description, Map<String, Object> parameters) {
         Map<String, Object> tool = new LinkedHashMap<>();
         tool.put("name", name);
-        tool.put("description", description);
+        tool.put(JSON_DESCRIPTION, description);
         tool.put("input_schema", parameters);
         return tool;
     }

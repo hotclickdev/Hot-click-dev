@@ -181,12 +181,15 @@ class AiCopilotMutationTools {
             if (precio != null) params.put("precioOferta", precio);
         }
 
-        String resumen = quitar
-            ? String.format("Quitar la oferta de %s", p.nombre())
-            : String.format("Aplicar oferta a %s (%s)", p.nombre(),
-                pct != null ? pct + "% de descuento" : "precio de oferta ₡" + precio);
+        String resumen = resumenOferta(quitar, p.nombre(), pct, precio);
 
         holder[0] = new AccionPropuestaTelegram(AccionPropuestaTelegram.PRODUCTO_OFERTA, p.id(), params, resumen);
         return MSG_PROPUESTA_OK;
+    }
+
+    private static String resumenOferta(boolean quitar, String nombre, Integer pct, Integer precio) {
+        if (quitar) return String.format("Quitar la oferta de %s", nombre);
+        String detalle = pct != null ? pct + "% de descuento" : "precio de oferta ₡" + precio;
+        return String.format("Aplicar oferta a %s (%s)", nombre, detalle);
     }
 }

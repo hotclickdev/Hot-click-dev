@@ -142,10 +142,7 @@ public class InventoryForecastService {
         LocalDateTime window = LocalDateTime.now(Constants.ZONA_CR).minusDays(WINDOW_DAYS);
         for (Producto p : ordenados) {
             acumulado += ingresos.getOrDefault(p.getId(), 0.0);
-            String clase = totalIngresos == 0 ? "C"
-                : acumulado / totalIngresos <= 0.70 ? "A"
-                : acumulado / totalIngresos <= 0.90 ? "B"
-                : "C";
+            String clase = clasificacionAbc(totalIngresos, acumulado);
             p.setClasificacionAbc(clase);
 
             // Moving average demand
@@ -203,6 +200,14 @@ public class InventoryForecastService {
         String sql = "SELECT COUNT(*) FROM hot_click_producto_tb WHERE fk_id_empresa = ? AND fk_id_estado = 1 AND visible_catalogo = TRUE";
         Long n = jdbc.queryForObject(sql, Long.class, empresaId);
         return n != null ? n : 0;
+    }
+
+    private static String clasificacionAbc(double totalIngresos, double acumulado) {
+        if (totalIngresos == 0) return "C";
+        double ratio = acumulado / totalIngresos;
+        if (ratio <= 0.70) return "A";
+        if (ratio <= 0.90) return "B";
+        return "C";
     }
 
     private Map<String, Object> rowToMap(Map<String, Object> row) {

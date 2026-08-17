@@ -2,6 +2,7 @@ package com.hotclick.service.email;
 
 import com.hotclick.model.Pedido;
 import com.hotclick.model.PedidoItem;
+import com.hotclick.utils.EmpresaNombre;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -15,11 +16,7 @@ class PedidoAdminEmailBuilder {
     @Autowired private EmailLayoutHelper layout;
 
     String buildNuevoPedidoEmprendedor(Pedido pedido) {
-        String nombreEmpresa = pedido.getEmpresa() != null
-            ? (pedido.getEmpresa().getNombreComercial() != null
-                ? pedido.getEmpresa().getNombreComercial()
-                : pedido.getEmpresa().getNombreEmpresa())
-            : "tu tienda";
+        String nombreEmpresa = EmpresaNombre.mostrar(pedido.getEmpresa(), "tu tienda");
 
         StringBuilder rows = new StringBuilder();
         if (pedido.getItems() != null) {
@@ -85,17 +82,9 @@ class PedidoAdminEmailBuilder {
     }
 
     String buildNuevoPedidoAdminIT(Pedido pedido) {
-        String nombreEmpresa = pedido.getEmpresa() != null
-            ? (pedido.getEmpresa().getNombreComercial() != null
-                ? pedido.getEmpresa().getNombreComercial()
-                : pedido.getEmpresa().getNombreEmpresa())
-            : "HotClick";
+        String nombreEmpresa = EmpresaNombre.mostrar(pedido.getEmpresa(), "HotClick");
 
-        String cliente = pedido.getUsuarioFinal() != null
-            ? layout.esc(pedido.getUsuarioFinal().getNombre()
-                + " &lt;" + pedido.getUsuarioFinal().getCorreo() + "&gt;"
-                + (pedido.getUsuarioFinal().getTelefono() != null ? " · " + pedido.getUsuarioFinal().getTelefono() : ""))
-            : "Invitado";
+        String cliente = textoClienteAdminIt(pedido);
 
         StringBuilder rows = new StringBuilder();
         if (pedido.getItems() != null) {
@@ -130,5 +119,13 @@ class PedidoAdminEmailBuilder {
                 : "")
             + layout.cta("https://hotclick.lat/admin/pedidos", "Gestionar pedido")
             + layout.footer("Notificación automática del sistema HotClick.");
+    }
+
+    private String textoClienteAdminIt(Pedido pedido) {
+        if (pedido.getUsuarioFinal() == null) return "Invitado";
+        String tel = pedido.getUsuarioFinal().getTelefono() != null
+            ? " · " + pedido.getUsuarioFinal().getTelefono() : "";
+        return layout.esc(pedido.getUsuarioFinal().getNombre()
+            + " &lt;" + pedido.getUsuarioFinal().getCorreo() + "&gt;" + tel);
     }
 }

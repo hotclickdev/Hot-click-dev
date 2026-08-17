@@ -78,9 +78,7 @@ class ExtraccionWebBusquedaDetalleExtractor {
     /** Busca páginas de producto en DuckDuckGo y devuelve hasta 4 URLs directas. */
     List<String> buscarUrlsProductoEnWeb(String nombre, List<String> etiquetas) {
         List<String> urls = new ArrayList<>();
-        String base = (nombre != null && !nombre.isBlank())
-            ? nombre
-            : (etiquetas.isEmpty() ? "" : etiquetas.get(0));
+        String base = textoBusquedaProducto(nombre, etiquetas);
         if (base.isBlank()) return urls;
         String enc = URLEncoder.encode(base + " product specifications review", StandardCharsets.UTF_8);
         Document doc = scrapingClient.fetchDocument("https://html.duckduckgo.com/html/?q=" + enc, ExtraccionDetalleTextUtils.USER_AGENT_DESKTOP,
@@ -120,5 +118,11 @@ class ExtraccionWebBusquedaDetalleExtractor {
             }
         }
         return null;
+    }
+
+    private static String textoBusquedaProducto(String nombre, List<String> etiquetas) {
+        if (nombre != null && !nombre.isBlank()) return nombre;
+        if (etiquetas.isEmpty()) return "";
+        return etiquetas.get(0);
     }
 }

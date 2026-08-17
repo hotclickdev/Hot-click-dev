@@ -132,9 +132,7 @@ class TelegramFlujoProductoConfirmHelper {
 
         String categoria = d.getCat() != null
             ? categoriaRepository.findById(d.getCat()).map(Categoria::getNombreCategoria).orElse("—") : "—";
-        String marca = d.getMarca() != null
-            ? marcaRepository.findById(d.getMarca()).map(Marca::getNombreMarca).orElse("—")
-            : (d.getMarcaTxt() != null ? d.getMarcaTxt() : "Sin marca");
+        String marca = marcaResumen(d);
 
         bot.enviarMensaje(v.getChatId(), "📦 *Revisá el producto:*\n\n"
             + "Nombre: *" + esc(d.getNom()) + "*\n"
@@ -147,6 +145,14 @@ class TelegramFlujoProductoConfirmHelper {
             + "Fotos: " + d.getFotos().size(),
             List.of(List.of(TelegramClienteBotService.boton("✅ Publicar producto", "prd:ok")),
                     List.of(TelegramClienteBotService.boton("❌ Cancelar", BTN_CANCELAR))));
+    }
+
+    private String marcaResumen(TelegramFlujoEstado.ProductoBorrador d) {
+        if (d.getMarca() != null) {
+            return marcaRepository.findById(d.getMarca()).map(Marca::getNombreMarca).orElse("—");
+        }
+        if (d.getMarcaTxt() != null) return d.getMarcaTxt();
+        return "Sin marca";
     }
 
     void confirmarProducto(TelegramVinculacion v, Long empresaId, TelegramFlujoEstado e) {

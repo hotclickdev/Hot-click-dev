@@ -5,6 +5,7 @@ import com.hotclick.model.SolicitudAprobacion;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.utils.EmpresaNombre;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -83,11 +84,7 @@ public class SolicitudAprobacionMapper {
         Map<String, Object> map = new HashMap<>();
         map.put("id", solicitud.getId());
         map.put("fechaSolicitud", solicitud.getFechaSolicitud());
-        map.put("empresaNombre", solicitud.getEmpresa() != null
-            ? (solicitud.getEmpresa().getNombreComercial() != null
-                ? solicitud.getEmpresa().getNombreComercial()
-                : solicitud.getEmpresa().getNombreEmpresa())
-            : null);
+        map.put("empresaNombre", EmpresaNombre.mostrar(solicitud.getEmpresa(), null));
         map.put("usuarioPide", solicitud.getUsuarioPide() != null ? solicitud.getUsuarioPide().getNombre() : null);
         return map;
     }

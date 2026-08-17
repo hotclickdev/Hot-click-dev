@@ -100,9 +100,7 @@ public class AiQuotaService {
             empresaId, hoy.getYear(), hoy.getMonthValue()).orElse(null);
 
         int limite   = empresa != null ? resolverLimite(empresa) : 0;
-        String plan  = empresa != null && empresa.getPlan() != null
-                       ? empresa.getPlan().getNombre()
-                       : (empresa != null ? empresa.getPlanSaas() : "Sin plan");
+        String plan  = nombrePlanAi(empresa);
         int llamadas = (uso != null) ? uso.getLlamadas() : 0;
         int teInput  = (uso != null) ? uso.getTokensEntrada() : 0;
         int tsOutput = (uso != null) ? uso.getTokensSalida() : 0;
@@ -150,5 +148,11 @@ public class AiQuotaService {
             case "PRO"        -> 50;
             default           -> 0;
         };
+    }
+
+    private static String nombrePlanAi(Empresa empresa) {
+        if (empresa == null) return "Sin plan";
+        if (empresa.getPlan() != null) return empresa.getPlan().getNombre();
+        return empresa.getPlanSaas();
     }
 }

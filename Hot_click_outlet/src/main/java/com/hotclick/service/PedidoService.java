@@ -44,8 +44,7 @@ public class PedidoService {
         pedido.setEstado(Constants.ESTADO_ACTIVO);
         Pedido saved = pedidoRepository.save(pedido);
 
-        String cliente = saved.getClienteNombre() != null ? saved.getClienteNombre()
-                : (saved.getUsuarioFinal() != null ? saved.getUsuarioFinal().getNombre() : "Invitado");
+        String cliente = nombreClienteTelegram(saved);
         String metodo = saved.getMetodoPago() != null ? saved.getMetodoPago() : "—";
         telegramService.enviar(String.format(
                 "🛒 *NUEVA COMPRA*\n\n*Cliente:* %s\n*Pedido:* %s\n*Total:* ₡%,d\n*Pago:* %s\n*Estado:* %s",
@@ -166,5 +165,11 @@ public class PedidoService {
     @Transactional(readOnly = true)
     public List<Map<String, Object>> listarTodosConDetalles() {
         return pedidoDetailMapper.listarTodosConDetalles();
+    }
+
+    private static String nombreClienteTelegram(Pedido saved) {
+        if (saved.getClienteNombre() != null) return saved.getClienteNombre();
+        if (saved.getUsuarioFinal() != null) return saved.getUsuarioFinal().getNombre();
+        return "Invitado";
     }
 }

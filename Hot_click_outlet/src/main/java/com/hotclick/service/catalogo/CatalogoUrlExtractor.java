@@ -118,7 +118,8 @@ public class CatalogoUrlExtractor {
             if (!heightAttr.isBlank() && Integer.parseInt(heightAttr) <= 32) {
                 return true;
             }
-        } catch (NumberFormatException ignored) {
+        } catch (NumberFormatException e) {
+            log.debug("width/height no numéricos, no tratar como icono: {}", e.getMessage());
         }
         return false;
     }

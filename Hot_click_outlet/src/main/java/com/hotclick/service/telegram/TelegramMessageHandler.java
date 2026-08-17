@@ -83,7 +83,7 @@ public class TelegramMessageHandler {
                 return;
             }
             case "/desvincular"             -> { vinculacion.desvincular(v); return; }
-            default -> { }
+            default -> { /* comando desconocido: sigue el flujo de contexto */ }
         }
 
         // Contexto de ajuste pendiente: se espera un número

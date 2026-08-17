@@ -4,6 +4,7 @@ import com.hotclick.model.BlogEntrada;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Producto;
 import com.hotclick.repository.TestimonioRepository;
+import com.hotclick.utils.EmpresaNombre;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -137,17 +138,13 @@ public class SpaSeoSupport {
     }
 
     public String injectTiendaMeta(String html, Empresa empresa) {
-        String nombre = empresa.getNombreComercial() != null && !empresa.getNombreComercial().isBlank()
-            ? empresa.getNombreComercial() : empresa.getNombreEmpresa();
+        String nombre = EmpresaNombre.mostrar(empresa, empresa.getNombreEmpresa());
         String title = xe(nombre) + " | Tienda en línea";
         String desc = empresa.getTagline() != null && !empresa.getTagline().isBlank()
             ? empresa.getTagline()
             : "Compra en " + nombre + " — envíos a todo Costa Rica.";
         if (desc.length() > 155) desc = desc.substring(0, 152) + "...";
-        String imagen = empresa.getOgImagenUrl() != null && !empresa.getOgImagenUrl().isBlank()
-            ? empresa.getOgImagenUrl()
-            : (empresa.getLogoUrl() != null && !empresa.getLogoUrl().isBlank()
-                ? empresa.getLogoUrl() : appUrl + "/og-image.png");
+        String imagen = imagenOg(empresa);
         String url = appUrl + "/tienda/" + empresa.getSlug();
 
         String seoBlock = SEO_START + "\n" +
@@ -184,6 +181,16 @@ public class SpaSeoSupport {
     public static String xa(String s) {
         if (s == null) return "";
         return s.replace("&", "&amp;").replace("\"", "&quot;").replace("<", "&lt;");
+    }
+
+    private String imagenOg(Empresa empresa) {
+        if (empresa.getOgImagenUrl() != null && !empresa.getOgImagenUrl().isBlank()) {
+            return empresa.getOgImagenUrl();
+        }
+        if (empresa.getLogoUrl() != null && !empresa.getLogoUrl().isBlank()) {
+            return empresa.getLogoUrl();
+        }
+        return appUrl + "/og-image.png";
     }
 
     private String replaceSeoBlock(String html, String seoBlock) {

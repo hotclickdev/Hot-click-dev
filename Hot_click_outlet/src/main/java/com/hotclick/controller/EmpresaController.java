@@ -2,6 +2,7 @@ package com.hotclick.controller;
 
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Empresa;
+import com.hotclick.model.Pedido;
 import com.hotclick.model.Plan;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.MiembroEmpresaRepository;
@@ -158,9 +159,7 @@ public class EmpresaController {
             m.put("fecha",        p.getFechaPedido());
             m.put("total",        p.getTotalPedido());
             m.put("estado",       p.getEstadoPedido());
-            m.put("cliente",      p.getUsuarioFinal() != null
-                                ? p.getUsuarioFinal().getNombre() + " " + (p.getUsuarioFinal().getApellidoPaterno() != null ? p.getUsuarioFinal().getApellidoPaterno() : "")
-                                : "—");
+            m.put("cliente",      nombreClientePedido(p));
             m.put("metodoPago",   p.getMetodoPago());
             return m;
         }).toList();
@@ -206,5 +205,12 @@ public class EmpresaController {
         m.put("fechaAprobacion",   e.getFechaAprobacion());
         m.put("logoUrl",           e.getLogoUrl());
         return m;
+    }
+
+    private static String nombreClientePedido(Pedido p) {
+        if (p.getUsuarioFinal() == null) return "—";
+        String apellido = p.getUsuarioFinal().getApellidoPaterno() != null
+            ? p.getUsuarioFinal().getApellidoPaterno() : "";
+        return p.getUsuarioFinal().getNombre() + " " + apellido;
     }
 }

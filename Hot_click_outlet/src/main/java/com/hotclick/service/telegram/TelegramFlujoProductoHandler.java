@@ -164,8 +164,7 @@ public class TelegramFlujoProductoHandler {
                 d.setPc(pc);
                 e.setP(P_PRD_STOCK);
                 support.guardar(v, e);
-                String aviso = pc > (d.getPv() != null ? d.getPv() : 0)
-                    ? "⚠️ Ojo: el costo es mayor que el precio de venta — venderías con pérdida.\n\n" : "";
+                String aviso = avisoCostoMayorVenta(pc, d.getPv());
                 bot.enviarMensaje(v.getChatId(), aviso + "¿Cuántas unidades tenés en stock?");
             }
             case P_PRD_STOCK -> {
@@ -190,5 +189,13 @@ public class TelegramFlujoProductoHandler {
 
     public boolean manejarFoto(TelegramVinculacion v, Long empresaId, JsonNode msg) {
         return confirm.manejarFoto(v, empresaId, msg);
+    }
+
+    private static String avisoCostoMayorVenta(Integer pc, Integer precioVenta) {
+        int pv = precioVenta != null ? precioVenta : 0;
+        if (pc > pv) {
+            return "⚠️ Ojo: el costo es mayor que el precio de venta — venderías con pérdida.\n\n";
+        }
+        return "";
     }
 }

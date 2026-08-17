@@ -105,9 +105,7 @@ public class ProductoFeedController {
 
         // Páginas de producto individuales — con imagen para Google Images
         for (Producto p : productos) {
-            String lastmod = p.getFechaUltimaVenta() != null
-                ? p.getFechaUltimaVenta().toLocalDate().toString()
-                : (p.getFechaCreacion() != null ? p.getFechaCreacion().toLocalDate().toString() : hoy);
+            String lastmod = lastmodProducto(p, hoy);
             String imagen = p.getImagenPrincipalUrl() != null ? p.getImagenPrincipalUrl() : "";
             String nombre = (p.getTituloProducto() != null && !p.getTituloProducto().isBlank())
                 ? p.getTituloProducto() : p.getNombreProducto();
@@ -160,6 +158,12 @@ public class ProductoFeedController {
             case "COMO_NUEVO" -> "refurbished";
             default           -> "new";
         };
+    }
+
+    private static String lastmodProducto(Producto p, String hoy) {
+        if (p.getFechaUltimaVenta() != null) return p.getFechaUltimaVenta().toLocalDate().toString();
+        if (p.getFechaCreacion() != null) return p.getFechaCreacion().toLocalDate().toString();
+        return hoy;
     }
 
     private static String stripHtml(String s) {

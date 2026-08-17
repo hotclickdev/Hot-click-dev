@@ -36,9 +36,7 @@ public class BodegaController {
         // IT Admin no tiene empresa propia (scopeEmpresaId null) — puede pedir explícitamente
         // las bodegas de una empresa puntual (ej. al elegir a quién asignar un import).
         // Para cualquier otro rol el query param se ignora: siempre manda su propio scope.
-        Long efectivo = scopeEmpresaId != null
-            ? scopeEmpresaId
-            : (companyScope.isAdminIT() ? empresaId : null);
+        Long efectivo = empresaIdEfectivoBodegas(scopeEmpresaId, empresaId);
         var bodegas = efectivo != null
             ? bodegaRepository.findByEmpresaIdOrNoEmpresaAndEstado(efectivo, Constants.ESTADO_ACTIVO)
             : bodegaRepository.findByEstado(Constants.ESTADO_ACTIVO);
@@ -178,5 +176,11 @@ public class BodegaController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
+    }
+
+    private Long empresaIdEfectivoBodegas(Long scopeEmpresaId, Long empresaId) {
+        if (scopeEmpresaId != null) return scopeEmpresaId;
+        if (companyScope.isAdminIT()) return empresaId;
+        return null;
     }
 }

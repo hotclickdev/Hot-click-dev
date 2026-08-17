@@ -111,11 +111,7 @@ public class TenantLimitChecker {
                 default          -> entidad;
             };
 
-            String mensaje = cantidad == 1
-                ? "Has alcanzado el límite de " + label + " de tu plan (" + usoActual + "/" + limite + ")."
-                : "No es posible agregar " + cantidad + " " + label + ": tu plan permite " + limite
-                  + ", ya tenés " + usoActual + " (" + disponibles + " disponible"
-                  + (disponibles == 1 ? "" : "s") + ").";
+            String mensaje = mensajeLimitePlan(cantidad, label, usoActual, limite, disponibles);
 
             String upgrade = "Plan actual: «" + plan.getNombre() + "». "
                 + "Ve a Configuración → Suscripción para ampliar tu capacidad.";
@@ -124,5 +120,14 @@ public class TenantLimitChecker {
                 empresaId, entidad, usoActual, cantidad, limite);
             throw new PlanLimitException(mensaje, entidad, upgrade);
         }
+    }
+
+    private static String mensajeLimitePlan(int cantidad, String label, long usoActual, long limite, long disponibles) {
+        if (cantidad == 1) {
+            return "Has alcanzado el límite de " + label + " de tu plan (" + usoActual + "/" + limite + ").";
+        }
+        String plural = disponibles == 1 ? "" : "s";
+        return "No es posible agregar " + cantidad + " " + label + ": tu plan permite " + limite
+            + ", ya tenés " + usoActual + " (" + disponibles + " disponible" + plural + ").";
     }
 }
