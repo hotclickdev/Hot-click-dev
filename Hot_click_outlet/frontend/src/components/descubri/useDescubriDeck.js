@@ -7,7 +7,7 @@ const SCORE_CAP = 30      // evita que una categoría domine para siempre
 const shuffle = (arr) => {
   const a = [...arr]
   for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
+    const j = Math.floor(Math.random() * (i + 1)) // NOSONAR — shuffle de UI, no crypto
     ;[a[i], a[j]] = [a[j], a[i]]
   }
   return a

@@ -131,7 +131,14 @@ export default function AdminPOSHistorial() {
               {ventasFiltradas.map(v => (
                 <>
                   <tr key={v.id}
+                    tabIndex={0}
                     onClick={() => setExpanded(expanded === v.id ? null : v.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        setExpanded(expanded === v.id ? null : v.id)
+                      }
+                    }}
                     className="cursor-pointer transition-colors hover:bg-white/[0.02] border-t"
                     style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
                     <td className="px-4 py-3 text-xs" style={{ color: 'var(--hc-muted)' }}>

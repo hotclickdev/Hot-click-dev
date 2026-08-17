@@ -167,10 +167,10 @@ public class TwoFactorService {
     /** Deserializes the JSON array of hashed codes stored in DB. */
     public List<String> jsonToCodes(String json) {
         if (json == null || json.isBlank() || json.equals("[]")) return new ArrayList<>();
-        String stripped = json.trim().replaceAll("^\\[|\\]$", "").trim();
+        String stripped = json.trim().replaceAll("(^\\[|\\]$)", "").trim();
         if (stripped.isEmpty()) return new ArrayList<>();
         return Arrays.stream(stripped.split(","))
-            .map(s -> s.trim().replaceAll("^\"|\"$", ""))
+            .map(s -> s.trim().replaceAll("(^\"|\"$)", ""))
             .filter(s -> !s.isEmpty())
             .collect(Collectors.toList());
     }

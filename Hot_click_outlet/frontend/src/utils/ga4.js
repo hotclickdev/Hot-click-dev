@@ -3,7 +3,7 @@
 // Only initializes if the user accepted analytics cookies (checked at call time).
 
 import { addAdapter, setAnalyticsConsent } from '@/utils/analytics'
-import { useCookieConsent } from '@/components/ui/CookieBanner'
+import { getCookieConsent } from '@/components/ui/CookieBanner'
 
 const GA4_ID = import.meta.env.VITE_GA4_ID
 
@@ -56,7 +56,7 @@ function hcPayloadToGA4(event, data) {
 export function initGA4() {
   if (!GA4_ID) return
 
-  const consent = useCookieConsent()
+  const consent = getCookieConsent()
   if (!consent?.analytics) return
 
   injectGtag(GA4_ID)

@@ -63,7 +63,14 @@ export default function GestionUserTable({
 
               return [
                 <tr key={u.id}
+                  tabIndex={0}
                   onClick={() => onToggleExpand(isOpen ? null : u.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      onToggleExpand(isOpen ? null : u.id)
+                    }
+                  }}
                   className="cursor-pointer hover:bg-white/4 transition-colors"
                   style={{ borderBottom: '1px solid var(--hc-border)' }}>
 
@@ -118,7 +125,9 @@ export default function GestionUserTable({
                   </td>
 
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-1.5"
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}>
                       {estado !== 'ELIMINADO' && (
                         <button onClick={() => onEdit(u)}
                           className="px-2.5 py-1 rounded-lg text-[10px] font-medium hover:opacity-80 transition-opacity"

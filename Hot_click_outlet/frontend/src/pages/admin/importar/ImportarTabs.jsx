@@ -57,8 +57,17 @@ export default function ImportarTabs({
       )}
 
       {(tab === 'pdf' || tab === 'csv') && (
-        <div onDrop={onDrop} onDragOver={onDragOver} onDragLeave={onDragLeave}
+        <div
+          role="button"
+          tabIndex={0}
+          onDrop={onDrop} onDragOver={onDragOver} onDragLeave={onDragLeave}
           onClick={() => fileRef.current?.click()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              fileRef.current?.click()
+            }
+          }}
           className="flex flex-col items-center justify-center gap-3 p-10 rounded-xl cursor-pointer transition-all"
           style={{
             border: `2px dashed ${dragging ? 'var(--hc-accent)' : 'var(--hc-border)'}`,

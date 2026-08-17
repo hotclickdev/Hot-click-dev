@@ -15,8 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class PremioService {
@@ -78,7 +78,7 @@ public class PremioService {
         if (premios == null || premios.isEmpty()) {
             throw new IllegalStateException("No hay premios disponibles para sorteo");
         }
-        double aleatorio = new Random().nextDouble() * 100;
+        double aleatorio = ThreadLocalRandom.current().nextDouble() * 100;
         double acumulado = 0;
         for (Premio premio : premios) {
             if (premio.getProbabilidad() != null) {

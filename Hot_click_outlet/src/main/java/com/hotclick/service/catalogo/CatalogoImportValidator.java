@@ -10,7 +10,8 @@ import java.util.regex.Pattern;
 @Service
 public class CatalogoImportValidator {
 
-    private static final Pattern ALLOWED_SCHEMES = Pattern.compile("^https?$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern ALLOWED_SCHEMES = Pattern.compile(
+        "^https?$", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
     private static final Set<String> BLOCKED_HOSTS = Set.of(
         "localhost", "127.0.0.1", "0.0.0.0", "169.254.169.254", "::1"
     );

@@ -56,7 +56,7 @@ public final class WhatsAppHelpers {
 
     static String limpiarTexto(String t) {
         return t.strip()
-                .replaceAll("^[\"']|[\"']$", "")
+                .replaceAll("(^[\"']|[\"']$)", "")
                 .replaceAll("\\*\\*", "")
                 .strip();
     }

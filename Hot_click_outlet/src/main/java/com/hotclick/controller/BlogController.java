@@ -117,6 +117,6 @@ public class BlogController {
             .replaceAll("[^a-z0-9\\s-]", "")
             .replaceAll("\\s+", "-")
             .replaceAll("-+", "-")
-            .replaceAll("^-|-$", "");
+            .replaceAll("(^-|-$)", "");
     }
 }

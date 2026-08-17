@@ -15,7 +15,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @Component
@@ -61,8 +62,9 @@ public class CarritoAbandonadoScheduler {
                         carrito.getEmail(), carrito.getId());
                 } else {
                     // No email — mark as expired after 24 h so scheduler doesn't reprocess
-                    long hoursOld = java.time.Duration.between(
-                        carrito.getCreatedAt(), LocalDateTime.now(Constants.ZONA_CR)).toHours();
+                    long hoursOld = Duration.between(
+                        carrito.getCreatedAt().atZone(Constants.ZONA_CR),
+                        ZonedDateTime.now(Constants.ZONA_CR)).toHours();
                     if (hoursOld >= 24) {
                         cartService.marcarVencido(carrito.getId());
                     }

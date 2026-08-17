@@ -29,7 +29,7 @@ public class CatalogoUrlExtractor {
     );
     private static final Pattern PATRON_ICONO = Pattern.compile(
         "(icon|logo|sprite|spinner|loading|placeholder|badge|payment|pixel|tracking|avatar|flag-)",
-        Pattern.CASE_INSENSITIVE
+        Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE
     );
 
     private final ObjectMapper mapper = new ObjectMapper();

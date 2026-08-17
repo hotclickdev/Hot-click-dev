@@ -1,5 +1,6 @@
 package com.hotclick.service.security;
 
+import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -30,13 +31,19 @@ public class SecurityRateWindowTracker {
     private final ConcurrentHashMap<String, Long> sprayWindowStartMs = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Long> alertCooldowns = new ConcurrentHashMap<>();
 
+    private final ScheduledExecutorService cleaner = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "sec-detection-cleaner");
+        t.setDaemon(true);
+        return t;
+    });
+
     public SecurityRateWindowTracker() {
-        ScheduledExecutorService cleaner = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r, "sec-detection-cleaner");
-            t.setDaemon(true);
-            return t;
-        });
         cleaner.scheduleAtFixedRate(this::cleanup, 15, 15, TimeUnit.MINUTES);
+    }
+
+    @PreDestroy
+    void shutdown() {
+        cleaner.shutdown();
     }
 
     public Queue<Long> failedLoginsForIp(String ip) {

@@ -31,13 +31,24 @@ export default function StepSubida({ onContinuar, limit }) {
     addFiles(e.dataTransfer.files)
   }
 
+  const openFilePicker = () => inputRef.current?.click()
+  const onZoneKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      openFilePicker()
+    }
+  }
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div
+        role="button"
+        tabIndex={0}
         onDrop={onDrop}
         onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
         onDragLeave={() => setDragging(false)}
-        onClick={() => inputRef.current?.click()}
+        onClick={openFilePicker}
+        onKeyDown={onZoneKeyDown}
         className="rounded-2xl border-2 border-dashed cursor-pointer transition-all flex flex-col items-center justify-center py-16 gap-4"
         style={{
           borderColor: dragging ? 'var(--hc-accent)' : 'rgba(255,255,255,0.12)',
@@ -77,12 +88,14 @@ export default function StepSubida({ onContinuar, limit }) {
               </div>
             ))}
             {drafts.length < limit && (
-              <div
-                className="aspect-square rounded-xl flex items-center justify-center transition-colors hover:bg-white/5 cursor-pointer"
+              <button
+                type="button"
+                onClick={openFilePicker}
+                className="aspect-square rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
                 style={{ border: '1px dashed rgba(255,255,255,0.15)' }}
               >
                 <IconPlus className="w-5 h-5 pointer-events-none" style={{ color: 'var(--hc-muted)' }} />
-              </div>
+              </button>
             )}
           </div>
 

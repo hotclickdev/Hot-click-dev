@@ -153,13 +153,21 @@ public class WebhookDispatcherService {
             log_entry.setCodigoRespuesta(response.statusCode());
             log_entry.setEstado(response.statusCode() >= 200 && response.statusCode() < 300 ? "ENVIADO" : "FALLIDO");
 
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            marcarWebhookFallido(log_entry, plugin, evento, e);
         } catch (Exception e) {
-            log_entry.setEstado("FALLIDO");
-            log_entry.setMensajeError(e.getMessage() != null ? e.getMessage().substring(0, Math.min(e.getMessage().length(), 490)) : "Error desconocido");
-            log.warn("Webhook fallo plugin={} evento={}: {}", plugin.getId(), evento, e.getMessage());
+            marcarWebhookFallido(log_entry, plugin, evento, e);
         }
 
         pluginEventoRepository.save(log_entry);
+    }
+
+    private void marcarWebhookFallido(PluginEvento logEntry, Plugin plugin, String evento, Exception e) {
+        logEntry.setEstado("FALLIDO");
+        String msg = e.getMessage() != null ? e.getMessage() : "Error desconocido";
+        logEntry.setMensajeError(msg.substring(0, Math.min(msg.length(), 490)));
+        log.warn("Webhook fallo plugin={} evento={}: {}", plugin.getId(), evento, e.getMessage());
     }
 
     private boolean isSubscribed(String eventosSuscritos, String evento) {

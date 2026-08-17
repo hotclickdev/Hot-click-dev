@@ -31,7 +31,7 @@ export const IMAGE_MAX_BYTES = 10 * 1024 * 1024
  */
 export function createDraft(file) {
   return {
-    id: `${Date.now()}-${Math.random()}`,
+    id: globalThis.crypto.randomUUID(),
     mainFile: file,
     mainPreview: URL.createObjectURL(file),
     extraFiles: [],

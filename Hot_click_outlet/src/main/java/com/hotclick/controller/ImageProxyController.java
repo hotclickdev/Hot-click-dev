@@ -84,6 +84,10 @@ public class ImageProxyController {
                 .header("Cache-Control", "public, max-age=31536000, immutable")
                 .body(imageBytes);
 
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("[img-proxy] Interrumpido {}", cleanPath);
+            return ResponseEntity.status(502).build();
         } catch (Exception e) {
             log.warn("[img-proxy] Error fetching {}: {}", cleanPath, e.getMessage());
             return ResponseEntity.status(502).build();

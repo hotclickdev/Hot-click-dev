@@ -40,6 +40,8 @@ public class TotpSecretEncryptionService {
     private static final int     IV_LEN    = 12;   // 96-bit IV recommended for GCM
     private static final int     TAG_BITS  = 128;  // 128-bit authentication tag
 
+    private final SecureRandom secureRandom = new SecureRandom();
+
     @Value("${totp.encryption.key:}")
     private String encryptionKeyHex;
 
@@ -142,7 +144,7 @@ public class TotpSecretEncryptionService {
 
     private byte[] generateIv() {
         byte[] iv = new byte[IV_LEN];
-        new SecureRandom().nextBytes(iv);
+        secureRandom.nextBytes(iv);
         return iv;
     }
 }

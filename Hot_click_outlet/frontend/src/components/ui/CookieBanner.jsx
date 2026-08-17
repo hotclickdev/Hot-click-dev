@@ -4,9 +4,13 @@ import { Link } from 'react-router-dom'
 
 const STORAGE_KEY = 'hotclick-cookie-consent'
 
-export function useCookieConsent() {
+export function getCookieConsent() {
   const raw = localStorage.getItem(STORAGE_KEY)
   return raw ? JSON.parse(raw) : null
+}
+
+export function useCookieConsent() {
+  return getCookieConsent()
 }
 
 export function setCookieConsent(value) {

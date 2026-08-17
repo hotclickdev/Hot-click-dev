@@ -127,6 +127,10 @@ public class IncidentClaudeClient {
             JsonNode root = objectMapper.readTree(response.body());
             return root.path("content").get(0).path("text").asText();
 
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Llamada a Claude interrumpida: {}", e.getMessage());
+            return null;
         } catch (Exception e) {
             log.error("Error llamando a Claude: {}", e.getMessage(), e);
             return null;

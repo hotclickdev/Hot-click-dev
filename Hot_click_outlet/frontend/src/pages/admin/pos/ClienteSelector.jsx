@@ -72,8 +72,20 @@ export default function ClienteSelector({ cliente, onChange }) {
           <span className="truncate font-medium">{cliente ? cliente.nombre : 'Cliente: Mostrador'}</span>
         </span>
         {cliente && (
-          <span onClick={(e) => { e.stopPropagation(); onChange(null) }}
-            className="shrink-0 opacity-60 hover:opacity-100">
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={(e) => { e.stopPropagation(); onChange(null) }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                e.stopPropagation()
+                onChange(null)
+              }
+            }}
+            className="shrink-0 opacity-60 hover:opacity-100"
+            aria-label="Quitar cliente"
+          >
             <CloseIcon />
           </span>
         )}

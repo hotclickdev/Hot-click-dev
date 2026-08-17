@@ -22,10 +22,13 @@ export default function GestionUserForm({
     <>
       {editUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(0,0,0,0.6)' }} onClick={onCloseEdit}>
+          style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+          onClick={onCloseEdit}
+          onKeyDown={(e) => { if (e.key === 'Escape') onCloseEdit() }}>
           <div className="w-full max-w-sm rounded-2xl p-6 space-y-5"
             style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
-            onClick={(e) => e.stopPropagation()}>
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}>
 
             <div className="flex items-center justify-between">
               <p className="font-semibold" style={{ color: 'var(--hc-text)' }}>Editar usuario</p>
@@ -100,10 +103,13 @@ export default function GestionUserForm({
 
       {actionUser && actionType && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(0,0,0,0.6)' }} onClick={onCloseAction}>
+          style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+          onClick={onCloseAction}
+          onKeyDown={(e) => { if (e.key === 'Escape') onCloseAction() }}>
           <div className="w-full max-w-xs rounded-2xl p-6 space-y-4"
             style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
-            onClick={(e) => e.stopPropagation()}>
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}>
             <p className="font-semibold" style={{ color: 'var(--hc-text)' }}>
               {actionType === 'block'   && 'Bloquear usuario'}
               {actionType === 'unblock' && 'Desbloquear usuario'}
