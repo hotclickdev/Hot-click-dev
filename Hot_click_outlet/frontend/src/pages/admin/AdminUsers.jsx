@@ -47,7 +47,7 @@ export default function AdminUsers() {
         setPending(pend)
         setEmpresasPlan(planes)
       })
-      .catch(() => toast({ message: 'Error al cargar usuarios', type: 'error' }))
+      .catch((err) => { console.error(err); toast({ message: 'Error al cargar usuarios', type: 'error' }) })
       .finally(() => setLoading(false))
   }
 
@@ -60,7 +60,7 @@ export default function AdminUsers() {
         setPending(pend)
         setEmpresasPlan(planes)
       })
-      .catch(() => { if (!cancelado) toast({ message: 'Error al cargar usuarios', type: 'error' }) })
+      .catch((err) => { if (!cancelado) { console.error(err); toast({ message: 'Error al cargar usuarios', type: 'error' }) } })
       .finally(() => { if (!cancelado) setLoading(false) })
     return () => { cancelado = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- montaje único
@@ -71,7 +71,7 @@ export default function AdminUsers() {
     let cancelado = false
     crmService.listarClientes()
       .then((lista) => { if (!cancelado) setClientes(lista) })
-      .catch(() => { if (!cancelado) toast({ message: 'Error al cargar CRM', type: 'error' }) })
+      .catch((err) => { if (!cancelado) { console.error(err); toast({ message: 'Error al cargar CRM', type: 'error' }) } })
       .finally(() => { if (!cancelado) setCrmLoading(false) })
     return () => { cancelado = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- carga CRM al entrar a la tab
@@ -126,7 +126,7 @@ export default function AdminUsers() {
   })
   const deletedUsers = users.filter((u) => getEstadoStr(u) === 'ELIMINADO')
 
-  const baseForTab = tab === 'pending' ? pending : tab === 'deleted' ? deletedUsers : activeUsers
+  const baseForTab = usuariosDeTab(tab, pending, deletedUsers, activeUsers)
   const displayed = search
     ? baseForTab.filter((u) =>
       (u.nombre ?? '').toLowerCase().includes(search.toLowerCase())
@@ -155,40 +155,11 @@ export default function AdminUsers() {
           onSearch={setSearch}
         />
 
-        {tab === 'crm' ? (
-          <CrmTab
-            clientes={clientes}
-            crmSearch={crmSearch}
-            onCrmSearch={setCrmSearch}
-            onSelect={setSelectedCliente}
-            loading={crmLoading}
-          />
-        ) : loading ? (
-          <div className="flex justify-center py-16"><Spinner size="lg" /></div>
-        ) : (
-          <UsuariosTable
-            displayed={displayed}
-            getPlanStr={getPlanStr}
-            columnLabels={[
-              t('admin.users.name'),
-              t('admin.users.email'),
-              t('admin.users.role'),
-              t('admin.users.status'),
-              t('admin.users.actions'),
-            ]}
-            emptyLabel={t('common.noData')}
-            approveLabel={t('admin.users.approve')}
-            rejectLabel={t('admin.users.reject')}
-            editLabel={t('common.edit')}
-            onApprove={approve}
-            onReject={reject}
-            onEdit={openEdit}
-            onBlock={setBlockUser}
-            onUnblock={setUnblockUser}
-            onDelete={setDeleteUser}
-            onRestore={setRestoreUser}
-          />
-        )}
+        {cuerpoAdminUsers({
+          tab, clientes, crmSearch, setCrmSearch, setSelectedCliente, crmLoading,
+          loading, displayed, getPlanStr, t, approve, reject, openEdit,
+          setBlockUser, setUnblockUser, setDeleteUser, setRestoreUser,
+        })}
       </div>
 
       <UsuariosConfirmModals
@@ -233,5 +204,56 @@ export default function AdminUsers() {
         />
       )}
     </>
+  )
+}
+
+function usuariosDeTab(tab, pending, deletedUsers, activeUsers) {
+  if (tab === 'pending') return pending
+  if (tab === 'deleted') return deletedUsers
+  return activeUsers
+}
+
+function cuerpoAdminUsers({
+  tab, clientes, crmSearch, setCrmSearch, setSelectedCliente, crmLoading,
+  loading, displayed, getPlanStr, t, approve, reject, openEdit,
+  setBlockUser, setUnblockUser, setDeleteUser, setRestoreUser,
+}) {
+  if (tab === 'crm') {
+    return (
+      <CrmTab
+        clientes={clientes}
+        crmSearch={crmSearch}
+        onCrmSearch={setCrmSearch}
+        onSelect={setSelectedCliente}
+        loading={crmLoading}
+      />
+    )
+  }
+  if (loading) {
+    return <div className="flex justify-center py-16"><Spinner size="lg" /></div>
+  }
+  return (
+    <UsuariosTable
+      displayed={displayed}
+      getPlanStr={getPlanStr}
+      columnLabels={[
+        t('admin.users.name'),
+        t('admin.users.email'),
+        t('admin.users.role'),
+        t('admin.users.status'),
+        t('admin.users.actions'),
+      ]}
+      emptyLabel={t('common.noData')}
+      approveLabel={t('admin.users.approve')}
+      rejectLabel={t('admin.users.reject')}
+      editLabel={t('common.edit')}
+      onApprove={approve}
+      onReject={reject}
+      onEdit={openEdit}
+      onBlock={setBlockUser}
+      onUnblock={setUnblockUser}
+      onDelete={setDeleteUser}
+      onRestore={setRestoreUser}
+    />
   )
 }

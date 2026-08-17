@@ -51,13 +51,7 @@ export default function UsuariosHeader({
             <button type="button"
               key={key}
               onClick={() => onTab(key)}
-              className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                tab === key
-                  ? key === 'deleted'
-                    ? 'bg-red-500/80 text-white'
-                    : 'bg-[#4f7cff] text-white'
-                  : 'text-[#8e8e9a] hover:text-white'
-              }`}
+              className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${claseTabUsuarios(tab, key)}`}
             >
               {label}
             </button>
@@ -100,4 +94,10 @@ export default function UsuariosHeader({
       )}
     </>
   )
+}
+
+function claseTabUsuarios(tab, key) {
+  if (tab !== key) return 'text-[#8e8e9a] hover:text-white'
+  if (key === 'deleted') return 'bg-red-500/80 text-white'
+  return 'bg-[#4f7cff] text-white'
 }

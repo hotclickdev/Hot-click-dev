@@ -77,18 +77,12 @@ export default function UsuariosTable({
               return (
                 <tr
                   key={u.id}
-                  className={`hover:bg-white/3 transition-colors ${isDeleted ? 'opacity-60' : isSuspended ? 'opacity-75' : ''}`}
+                  className={`hover:bg-white/3 transition-colors ${claseFilaUsuario(isDeleted, isSuspended)}`}
                 >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                          isDeleted
-                            ? 'bg-red-500/15 text-red-400'
-                            : isSuspended
-                              ? 'bg-amber-500/15 text-amber-400'
-                              : 'bg-[#4f7cff]/15 text-[#4f7cff]'
-                        }`}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${claseAvatarUsuario(isDeleted, isSuspended)}`}
                       >
                         {(u.nombre ?? u.correo)?.[0]?.toUpperCase()}
                       </div>
@@ -218,4 +212,16 @@ export default function UsuariosTable({
       </div>
     </div>
   )
+}
+
+function claseFilaUsuario(isDeleted, isSuspended) {
+  if (isDeleted) return 'opacity-60'
+  if (isSuspended) return 'opacity-75'
+  return ''
+}
+
+function claseAvatarUsuario(isDeleted, isSuspended) {
+  if (isDeleted) return 'bg-red-500/15 text-red-400'
+  if (isSuspended) return 'bg-amber-500/15 text-amber-400'
+  return 'bg-[#4f7cff]/15 text-[#4f7cff]'
 }
