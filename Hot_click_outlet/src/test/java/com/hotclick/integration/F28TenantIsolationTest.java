@@ -179,13 +179,15 @@ class F28TenantIsolationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("F28-T12 | HIGH — Se puede asignar padreId de la misma empresa → 200")
+    @DisplayName("F28-T12 | HIGH — ADMIN puede asignar padreId de la misma empresa → 200")
     void canSetPadreCategoria_mismaTenant() throws Exception {
         Categoria sub = crearCategoria("SubCat-F28-A", empresaA);
         String body = String.format(
             "{\"nombreCategoria\":\"SubCat-F28-A\",\"padreId\":\"%d\"}", categoriaA.getId());
+        // PUT /api/categorias/{id} es exclusivo ADMIN; el aislamiento de tenant
+        // se valida en el body (padre de la misma empresa), no en el rol EMPRENDEDOR.
         mockMvc.perform(put("/api/categorias/" + sub.getId())
-                .header("Authorization", tokenA)
+                .header("Authorization", adminToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body))
             .andExpect(status().isOk());

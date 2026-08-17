@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
  * F31-02 — AI Quota TOCTOU: verificarYReservar() atómico.
  *
  * Verifica que el path de reserva atómica funciona correctamente:
- * - ADMIN_IT: siempre true (unlimited)
+ * - ADMIN: siempre true (unlimited)
  * - Plan sin cuota: siempre false
  * - Empresa no encontrada: false
  * - Slot disponible: reservarSlot retorna valor → true
@@ -58,13 +58,13 @@ class AiQuotaServiceTest {
 
         empresaAdmin = new Empresa();
         empresaAdmin.setId(3L);
-        empresaAdmin.setPlanSaas("ADMIN_IT");
+        empresaAdmin.setPlanSaas("ADMIN");
     }
 
-    // ── ADMIN_IT: unlimited ───────────────────────────────────────────────────
+    // ── ADMIN: unlimited ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("ADMIN_IT → siempre true sin consultar cuota")
+    @DisplayName("ADMIN → siempre true sin consultar cuota")
     void verificarYReservar_adminIt_alwaysTrue() {
         when(empresaRepository.findById(3L)).thenReturn(Optional.of(empresaAdmin));
 

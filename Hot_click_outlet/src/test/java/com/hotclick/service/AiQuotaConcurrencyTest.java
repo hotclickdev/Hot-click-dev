@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
  *
  * Escenarios cubiertos:
  *   AIQUOTA-01  50 hilos vs cuota=10  → exactamente 10 obtienen slot
- *   AIQUOTA-02  ADMIN_IT (cuota=-1)   → todos los hilos obtienen slot (bypass)
+ *   AIQUOTA-02  ADMIN (cuota=-1)      → todos los hilos obtienen slot (bypass)
  *   AIQUOTA-03  Plan sin créditos     → ningún hilo obtiene slot
  */
 @ExtendWith(MockitoExtension.class)
@@ -108,15 +108,15 @@ class AiQuotaConcurrencyTest {
             .isEqualTo(CUOTA);
     }
 
-    // ── AIQUOTA-02: ADMIN_IT (cuota=-1) → todos pasan sin llamar reservarSlot ─
+    // ── AIQUOTA-02: ADMIN (cuota=-1) → todos pasan sin llamar reservarSlot ────
 
     @Test
-    @DisplayName("AIQUOTA-02 | HIGH — ADMIN_IT (cuota ilimitada) → todos los hilos obtienen slot, no se llama reservarSlot")
+    @DisplayName("AIQUOTA-02 | HIGH — ADMIN (cuota ilimitada) → todos los hilos obtienen slot, no se llama reservarSlot")
     void adminIt_cuotaIlimitada_todosGanan_sinLlamarReservarSlot() throws InterruptedException {
         final int HILOS = 20;
 
         Empresa empresa = mock(Empresa.class);
-        when(empresa.getPlanSaas()).thenReturn("ADMIN_IT"); // resolverLimite → -1 (ilimitado)
+        when(empresa.getPlanSaas()).thenReturn("ADMIN"); // resolverLimite → -1 (ilimitado)
         when(empresaRepository.findById(EMPRESA_ID)).thenReturn(Optional.of(empresa));
 
         CountDownLatch startGun = new CountDownLatch(1);
@@ -141,7 +141,7 @@ class AiQuotaConcurrencyTest {
         pool.shutdownNow();
 
         assertThat(exitos.get())
-            .as("ADMIN_IT bypass: todos los %d hilos deben obtener true sin límite", HILOS)
+            .as("ADMIN bypass: todos los %d hilos deben obtener true sin límite", HILOS)
             .isEqualTo(HILOS);
         // La SQL de reserva nunca debe ser llamada para plan ilimitado
         verify(aiUsoRepository, never())
@@ -156,7 +156,7 @@ class AiQuotaConcurrencyTest {
         final int HILOS = 20;
 
         Empresa empresa = mock(Empresa.class);
-        when(empresa.getPlanSaas()).thenReturn("INICIO"); // no es ADMIN_IT
+        when(empresa.getPlanSaas()).thenReturn("INICIO"); // no es ADMIN
         com.hotclick.model.Plan plan = mock(com.hotclick.model.Plan.class);
         when(plan.getMaxCreditosAi()).thenReturn(0);
         when(empresa.getPlan()).thenReturn(plan);
@@ -186,7 +186,7 @@ class AiQuotaConcurrencyTest {
         assertThat(exitos.get())
             .as("Plan sin créditos: ningún hilo debe obtener slot")
             .isEqualTo(0);
-        // Igual que ADMIN_IT, el early return impide llamar a la BD
+        // Igual que ADMIN, el early return impide llamar a la BD
         verify(aiUsoRepository, never())
             .reservarSlot(anyLong(), anyInt(), anyInt(), anyInt());
     }
