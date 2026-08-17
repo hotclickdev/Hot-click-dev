@@ -31,7 +31,7 @@ export default function StepApertura({ onAbrir, loading }) {
           disabled={loading}
           className="w-full py-4 rounded-2xl font-black text-base transition-all hover:brightness-110 disabled:opacity-40"
           style={{ background: 'var(--hc-accent)', color: '#fff', boxShadow: '0 8px 24px rgba(23,71,168,0.4)' }}>
-          {loading ? 'Abriendo turno…' : `✓  Abrir turno${monto > 0 ? ` — ₡${formatMontoPos(monto)}` : ''}`}
+          {etiquetaAbrirTurno(loading, monto)}
         </button>
 
         <p className="text-center text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>
@@ -40,4 +40,10 @@ export default function StepApertura({ onAbrir, loading }) {
       </div>
     </div>
   )
+}
+
+function etiquetaAbrirTurno(loading, monto) {
+  if (loading) return 'Abriendo turno…'
+  const extra = monto > 0 ? ` — ₡${formatMontoPos(monto)}` : ''
+  return `✓  Abrir turno${extra}`
 }

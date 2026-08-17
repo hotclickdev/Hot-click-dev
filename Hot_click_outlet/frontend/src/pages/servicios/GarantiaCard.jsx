@@ -136,9 +136,7 @@ export default function GarantiaCard({ g, onReportado }) {
               style={{ width: `${pct}%`, backgroundColor: barColor }} />
           </div>
           <p className="text-xs font-medium" style={{ color: activa ? barColor : '#6b7280' }}>
-            {activa
-              ? `${dias} día${dias === 1 ? '' : 's'} restante${dias === 1 ? '' : 's'} · vence ${fechaVenc}`
-              : `Venció el ${fechaVenc}`}
+            {textoVigenciaGarantia(activa, dias, fechaVenc)}
           </p>
         </div>
       </div>
@@ -210,4 +208,10 @@ export default function GarantiaCard({ g, onReportado }) {
       )}
     </div>
   )
+}
+
+function textoVigenciaGarantia(activa, dias, fechaVenc) {
+  if (!activa) return `Venció el ${fechaVenc}`
+  const s = dias === 1 ? '' : 's'
+  return `${dias} día${s} restante${s} · vence ${fechaVenc}`
 }

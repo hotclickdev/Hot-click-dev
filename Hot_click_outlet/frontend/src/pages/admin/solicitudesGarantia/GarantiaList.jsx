@@ -116,7 +116,7 @@ export default function GarantiaList({ solicitudes, filtro, isLoading, onOpenDet
                   </div>
 
                   {wa && (
-                    <div onClick={e => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                    <div>
                       <a href={wa} target="_blank" rel="noopener noreferrer"
                         className="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center gap-1"
                         style={{ backgroundColor: 'rgba(37,211,102,0.12)', color: '#25d366' }}>

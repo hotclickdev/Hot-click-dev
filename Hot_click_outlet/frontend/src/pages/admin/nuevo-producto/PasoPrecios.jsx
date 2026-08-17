@@ -36,10 +36,7 @@ export default function PasoPrecios({ form, setCampo, priceWarning, setPriceWarn
           style={margen < 0
             ? { backgroundColor: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.25)', color: '#a8291f' }
             : { backgroundColor: 'rgba(23,71,168,0.08)', border: '1px solid rgba(23,71,168,0.2)', color: 'var(--hc-accent)' }}>
-          {margen < 0
-            ? 'Estás vendiendo a pérdida — el precio de compra supera al de venta.'
-            : `Margen: ₡${margen.toLocaleString('es-CR')}${margenPct ? ` (${margenPct}%)` : ''}`
-          }
+          {textoMargenPaso(margen, margenPct)}
         </div>
       )}
       <div className="w-36">
@@ -48,4 +45,10 @@ export default function PasoPrecios({ form, setCampo, priceWarning, setPriceWarn
       </div>
     </div>
   )
+}
+
+function textoMargenPaso(margen, margenPct) {
+  if (margen < 0) return 'Estás vendiendo a pérdida — el precio de compra supera al de venta.'
+  const pct = margenPct ? ` (${margenPct}%)` : ''
+  return `Margen: ₡${margen.toLocaleString('es-CR')}${pct}`
 }

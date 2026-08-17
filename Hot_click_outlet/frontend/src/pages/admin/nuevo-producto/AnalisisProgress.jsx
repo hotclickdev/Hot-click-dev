@@ -33,11 +33,7 @@ export default function AnalisisProgress({ previews, currentIdx }) {
       <div className="flex gap-2 flex-wrap">
         {previews.map((src, idx) => (
           <div key={idx} className="relative w-12 h-12 rounded-lg overflow-hidden border-2 transition-all"
-            style={
-              idx < currentIdx ? { borderColor: 'rgba(30,127,79,0.7)', opacity: 0.6 }
-              : idx === currentIdx ? { borderColor: 'var(--hc-accent)', transform: 'scale(1.1)' }
-              : { borderColor: 'var(--hc-border)', opacity: 0.3 }
-            }>
+            style={estiloThumbAnalisis(idx, currentIdx)}>
             <img src={src} alt="" className="w-full h-full object-cover" />
             {idx < currentIdx && (
               <div className="absolute inset-0 bg-green-500/20 flex items-center justify-center">
@@ -51,4 +47,10 @@ export default function AnalisisProgress({ previews, currentIdx }) {
       </div>
     </div>
   )
+}
+
+function estiloThumbAnalisis(idx, currentIdx) {
+  if (idx < currentIdx) return { borderColor: 'rgba(30,127,79,0.7)', opacity: 0.6 }
+  if (idx === currentIdx) return { borderColor: 'var(--hc-accent)', transform: 'scale(1.1)' }
+  return { borderColor: 'var(--hc-border)', opacity: 0.3 }
 }

@@ -18,9 +18,7 @@ function chipsActivos({
     filterTalla  && { key: 'talla', label: `Talla ${filterTalla}`, clear: () => setFilterTalla('') },
     (priceMin || priceMax) && {
       key: 'price',
-      label: priceMin && priceMax
-        ? `₡${Number(priceMin).toLocaleString()} – ₡${Number(priceMax).toLocaleString()}`
-        : priceMin ? `> ₡${Number(priceMin).toLocaleString()}` : `< ₡${Number(priceMax).toLocaleString()}`,
+      label: etiquetaRangoPrecio(priceMin, priceMax),
       clear: () => { setPriceMin(''); setPriceMax('') },
     },
   ].filter(Boolean)
@@ -62,4 +60,12 @@ export default function ActiveFilterChips({
       )}
     </div>
   )
+}
+
+function etiquetaRangoPrecio(priceMin, priceMax) {
+  if (priceMin && priceMax) {
+    return `₡${Number(priceMin).toLocaleString()} – ₡${Number(priceMax).toLocaleString()}`
+  }
+  if (priceMin) return `> ₡${Number(priceMin).toLocaleString()}`
+  return `< ₡${Number(priceMax).toLocaleString()}`
 }

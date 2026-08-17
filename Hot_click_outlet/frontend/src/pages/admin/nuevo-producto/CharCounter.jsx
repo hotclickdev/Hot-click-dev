@@ -1,4 +1,10 @@
 export default function CharCounter({ current, max, min = 0 }) {
-  const color = current === 0 ? 'var(--hc-muted)' : current < min ? '#8a5a00' : current > max ? '#a8291f' : '#1E7F4F'
-  return <span className="text-xs tabular-nums" style={{ color }}>{current}/{max}</span>
+  return <span className="text-xs tabular-nums" style={{ color: colorConteo(current, min, max) }}>{current}/{max}</span>
+}
+
+function colorConteo(current, min, max) {
+  if (current === 0) return 'var(--hc-muted)'
+  if (current < min) return '#8a5a00'
+  if (current > max) return '#a8291f'
+  return '#1E7F4F'
 }

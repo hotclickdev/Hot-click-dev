@@ -55,19 +55,26 @@ export default function EmprendimientosView({ products, convenios, loading, onBa
         <p className="text-sm font-bold mb-4" style={{ color: 'var(--hc-text)' }}>
           {products.length > 0 ? `${products.length} productos de emprendimientos` : 'Explorá el catálogo de negocios locales'}
         </p>
-        {loading ? <div className="flex justify-center py-20"><Spinner size="lg" /></div>
-          : products.length === 0 ? (
-            <div className="text-center py-24">
-              <p className="text-6xl mb-4">🌱</p>
-              <p className="text-lg font-bold" style={{ color: 'var(--hc-text)' }}>Próximamente más productos</p>
-              <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>Los emprendimientos están cargando su inventario</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-              {products.map((p, i) => <EmpCard key={p.id} p={p} i={i} />)}
-            </div>
-          )}
+        {cuerpoCatalogoEmprendimientos(loading, products)}
       </div>
     </motion.div>
+  )
+}
+
+function cuerpoCatalogoEmprendimientos(loading, products) {
+  if (loading) return <div className="flex justify-center py-20"><Spinner size="lg" /></div>
+  if (products.length === 0) {
+    return (
+      <div className="text-center py-24">
+        <p className="text-6xl mb-4">🌱</p>
+        <p className="text-lg font-bold" style={{ color: 'var(--hc-text)' }}>Próximamente más productos</p>
+        <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>Los emprendimientos están cargando su inventario</p>
+      </div>
+    )
+  }
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+      {products.map((p, i) => <EmpCard key={p.id} p={p} i={i} />)}
+    </div>
   )
 }

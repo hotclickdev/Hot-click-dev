@@ -15,7 +15,7 @@ export function normalizeProduct(p) {
 /** Detects if current time is outside Costa Rica business hours (8am–8pm). */
 export function isAfterHours() {
   const crHour = new Date().toLocaleString('en-US', { timeZone: 'America/Costa_Rica', hour: 'numeric', hour12: false })
-  const h = parseInt(crHour, 10)
+  const h = Number.parseInt(crHour, 10)
   return h < 8 || h >= 20
 }
 

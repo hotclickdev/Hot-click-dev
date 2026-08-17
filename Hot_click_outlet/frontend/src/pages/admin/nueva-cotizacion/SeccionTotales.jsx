@@ -60,7 +60,7 @@ export default function SeccionTotales({ form, setF, subtotal, montoIva, total, 
           <button type="button" onClick={onGuardar} disabled={loading}
             className="w-full py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
             style={{ background: 'var(--hc-accent)', color: '#fff' }}>
-            {loading ? 'Guardando...' : esEdicion ? 'Actualizar cotización' : 'Crear cotización'}
+            {etiquetaGuardarCotizacion(loading, esEdicion)}
           </button>
           <button type="button" onClick={onCancelar}
             className="w-full py-2.5 rounded-xl text-sm font-medium border transition-colors hover:bg-black/5 dark:hover:bg-white/5"
@@ -71,4 +71,10 @@ export default function SeccionTotales({ form, setF, subtotal, montoIva, total, 
       </div>
     </div>
   )
+}
+
+function etiquetaGuardarCotizacion(loading, esEdicion) {
+  if (loading) return 'Guardando...'
+  if (esEdicion) return 'Actualizar cotización'
+  return 'Crear cotización'
 }

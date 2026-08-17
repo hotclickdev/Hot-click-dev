@@ -110,7 +110,7 @@ export default function StepCobro({ total, cartItems, descuento, onBack, onConfi
                 className="w-full pl-9 pr-4 py-4 rounded-xl text-2xl font-black outline-none tabular-nums"
                 style={{
                   backgroundColor: 'rgba(255,255,255,0.06)',
-                  border: `2px solid ${puedeConfirmar && recibidoNum > 0 ? 'rgba(52,211,153,0.4)' : faltante ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.1)'}`,
+                  border: `2px solid ${bordeInputCobro(puedeConfirmar, recibidoNum, faltante)}`,
                   color: '#fff',
                 }}/>
             </div>
@@ -182,13 +182,21 @@ export default function StepCobro({ total, cartItems, descuento, onBack, onConfi
             color: '#fff',
             boxShadow: puedeConfirmar ? '0 8px 24px rgba(23,71,168,0.35)' : 'none',
           }}>
-          {loading
-            ? '⏳ Procesando…'
-            : (metodo === 'SINPE' || metodo === 'TARJETA')
-              ? '📲 Generar QR de pago'
-              : '✓  Confirmar cobro'}
+          {etiquetaConfirmarCobro(loading, metodo)}
         </button>
       </div>
     </div>
   )
+}
+
+function bordeInputCobro(puedeConfirmar, recibidoNum, faltante) {
+  if (puedeConfirmar && recibidoNum > 0) return 'rgba(52,211,153,0.4)'
+  if (faltante) return 'rgba(239,68,68,0.4)'
+  return 'rgba(255,255,255,0.1)'
+}
+
+function etiquetaConfirmarCobro(loading, metodo) {
+  if (loading) return '⏳ Procesando…'
+  if (metodo === 'SINPE' || metodo === 'TARJETA') return '📲 Generar QR de pago'
+  return '✓  Confirmar cobro'
 }

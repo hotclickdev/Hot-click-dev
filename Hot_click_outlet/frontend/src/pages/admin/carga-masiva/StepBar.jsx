@@ -13,11 +13,7 @@ export default function StepBar({ step }) {
             <div className="flex items-center gap-2">
               <div
                 className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all"
-                style={{
-                  background: done ? 'rgba(16,185,129,0.2)' : active ? 'var(--hc-accent)' : 'rgba(255,255,255,0.06)',
-                  border: done ? '1px solid rgba(16,185,129,0.4)' : active ? 'none' : '1px solid rgba(255,255,255,0.1)',
-                  color: done ? '#34d399' : active ? '#fff' : 'var(--hc-muted)',
-                }}
+                style={estiloCirculoPaso(done, active)}
               >
                 {done ? <IconCheck className="w-3.5 h-3.5" /> : n}
               </div>
@@ -35,4 +31,14 @@ export default function StepBar({ step }) {
       })}
     </div>
   )
+}
+
+function estiloCirculoPaso(done, active) {
+  if (done) {
+    return { background: 'rgba(16,185,129,0.2)', border: '1px solid rgba(16,185,129,0.4)', color: '#34d399' }
+  }
+  if (active) {
+    return { background: 'var(--hc-accent)', border: 'none', color: '#fff' }
+  }
+  return { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--hc-muted)' }
 }

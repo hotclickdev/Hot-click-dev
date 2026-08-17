@@ -65,7 +65,7 @@ export default function StepSubida({ onContinuar, limit }) {
         </div>
         <div className="text-center pointer-events-none">
           <p className="font-semibold text-base" style={{ color: 'var(--hc-text)' }}>
-            {drafts.length === 0 ? 'Arrastrá las fotos aquí o hacé clic' : `${drafts.length} foto${drafts.length === 1 ? '' : 's'} cargada${drafts.length === 1 ? '' : 's'}`}
+            {drafts.length === 0 ? 'Arrastrá las fotos aquí o hacé clic' : textoFotosCargadas(drafts.length)}
           </p>
           <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>
             1 foto = 1 producto · máx. {limit} imágenes · hasta 10 MB por foto
@@ -118,4 +118,9 @@ export default function StepSubida({ onContinuar, limit }) {
       )}
     </div>
   )
+}
+
+function textoFotosCargadas(n) {
+  const s = n === 1 ? '' : 's'
+  return `${n} foto${s} cargada${s}`
 }

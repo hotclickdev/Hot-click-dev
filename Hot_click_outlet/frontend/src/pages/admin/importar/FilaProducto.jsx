@@ -78,7 +78,7 @@ export default function FilaProducto({ p, isLast, categorias, marcas, updateRow 
         {tieneAlerta && (
           <div className="flex items-center gap-1 text-[10px] text-amber-400">
             <IconWarn />
-            {faltaNombre ? 'Nombre requerido' : faltaCategoria ? 'Seleccioná una categoría' : 'Precio de venta en ₡0'}
+            {alertaFilaProducto(faltaNombre, faltaCategoria)}
           </div>
         )}
       </div>
@@ -163,4 +163,10 @@ export default function FilaProducto({ p, isLast, categorias, marcas, updateRow 
       <span />
     </div>
   )
+}
+
+function alertaFilaProducto(faltaNombre, faltaCategoria) {
+  if (faltaNombre) return 'Nombre requerido'
+  if (faltaCategoria) return 'Seleccioná una categoría'
+  return 'Precio de venta en ₡0'
 }

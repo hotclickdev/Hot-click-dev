@@ -96,34 +96,48 @@ export default function CategoryRowsView({ products, categories, convenioMarcaNa
 
   return (
     <motion.div key={`cat-rows-p${page}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
-      {rows.map((row) =>
-        row.type === 'emprendimientos' ? (
-          <EmprendimientosRow
-            key="emp-row"
-            products={emprendimientosProducts}
-            onVerEmprendimientos={onVerEmprendimientos}
-          />
-        ) : row.type === 'parent' ? (
-          <ParentCategoryRow
-            key={row.catId}
-            catName={row.catName}
-            catId={row.catId}
-            childItems={row.childItems}
-            totalCount={row.totalCount}
-            onVerMas={onVerMas}
-            onQuickView={onQuickView}
-          />
-        ) : (
-          <CategoryRow
-            key={row.catId}
-            catName={row.catName}
-            catId={row.catId}
-            products={row.products}
-            onVerMas={onVerMas}
-            onQuickView={onQuickView}
-          />
-        )
-      )}
+      {rows.map((row) => (
+        <FilaCatalogo
+          key={row.type === 'emprendimientos' ? 'emp-row' : row.catId}
+          row={row}
+          emprendimientosProducts={emprendimientosProducts}
+          onVerEmprendimientos={onVerEmprendimientos}
+          onVerMas={onVerMas}
+          onQuickView={onQuickView}
+        />
+      ))}
     </motion.div>
+  )
+}
+
+function FilaCatalogo({ row, emprendimientosProducts, onVerEmprendimientos, onVerMas, onQuickView }) {
+  if (row.type === 'emprendimientos') {
+    return (
+      <EmprendimientosRow
+        products={emprendimientosProducts}
+        onVerEmprendimientos={onVerEmprendimientos}
+      />
+    )
+  }
+  if (row.type === 'parent') {
+    return (
+      <ParentCategoryRow
+        catName={row.catName}
+        catId={row.catId}
+        childItems={row.childItems}
+        totalCount={row.totalCount}
+        onVerMas={onVerMas}
+        onQuickView={onQuickView}
+      />
+    )
+  }
+  return (
+    <CategoryRow
+      catName={row.catName}
+      catId={row.catId}
+      products={row.products}
+      onVerMas={onVerMas}
+      onQuickView={onQuickView}
+    />
   )
 }

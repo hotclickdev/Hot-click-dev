@@ -96,8 +96,8 @@ export function SaveButton({ saving, saved, label }) {
     <button type="submit" disabled={saving || saved}
       className={`cfg-btn ${saved ? 'cfg-btn-success' : 'cfg-btn-primary'}`}
       style={{ opacity: (saving || saved) ? 0.8 : 1 }}>
-      {saving ? <Spinner size="xs" /> : saved ? <CheckIcon style={{ width: '14px', height: '14px' }} /> : null}
-      {saved ? t('adminConfig.savedLabel') : (label ?? t('adminConfig.saveBtn'))}
+      {iconoBotonGuardar(saving, saved)}
+      {saved ? t('adminConfig.savedLabel') : etiquetaGuardar(label, t)}
     </button>
   )
 }
@@ -156,3 +156,13 @@ export function ClockIcon(p)     { return <svg viewBox="0 0 24 24" {...sv} {...p
 export function PercentIcon(p)   { return <svg viewBox="0 0 24 24" {...sv} {...p}><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg> }
 export function ZapIcon(p)       { return <svg viewBox="0 0 24 24" {...sv} {...p}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> }
 export function BoxIcon(p)       { return <svg viewBox="0 0 24 24" {...sv} {...p}><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> }
+
+function iconoBotonGuardar(saving, saved) {
+  if (saving) return <Spinner size="xs" />
+  if (saved) return <CheckIcon style={{ width: '14px', height: '14px' }} />
+  return null
+}
+
+function etiquetaGuardar(label, t) {
+  return label ?? t('adminConfig.saveBtn')
+}

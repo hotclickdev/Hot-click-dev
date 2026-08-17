@@ -44,7 +44,7 @@ export default function AdminDashboard() {
   const [ventas, setVentas] = useState([])
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
-  const [, setServerStatus] = useState(null)
+  const [serverStatus, setServerStatus] = useState(null)
   const [setupDismissed, setSetupDismissed] = useState(() => {
     try { return localStorage.getItem(SETUP_KEY) === '1' } catch { return false }
   })
@@ -56,10 +56,10 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     Promise.all([
-      adminService.getDashboard().catch(() => ({ data: {} })),
-      ventaService.getAll().catch(() => ({ data: [] })),
+      adminService.getDashboard().catch((err) => { console.error(err); return { data: {} } }),
+      ventaService.getAll().catch((err) => { console.error(err); return { data: [] } }),
       userRole === 'ADMIN'
-        ? adminService.getUsers().catch(() => ({ data: [] }))
+        ? adminService.getUsers().catch((err) => { console.error(err); return { data: [] } })
         : Promise.resolve({ data: [] }),
     ]).then(([{ data: s }, { data: vs }, { data: us }]) => {
       setStats(s)
@@ -154,6 +154,7 @@ export default function AdminDashboard() {
       title={t('admin.dashboard.title')}
       welcome={t('admin.dashboard.welcome')}
       onOpenTour={abrirTutorial}
+      serverStatus={serverStatus}
     />
   )
 

@@ -21,18 +21,15 @@ export default function GestionUserForm({
   return (
     <>
       {editUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
-          onClick={onCloseEdit}
-          onKeyDown={(e) => { if (e.key === 'Escape') onCloseEdit() }}>
-          <div className="w-full max-w-sm rounded-2xl p-6 space-y-5"
-            style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <button type="button" className="absolute inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+            aria-label="Cerrar" onClick={onCloseEdit} />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl p-6 space-y-5"
+            style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
 
             <div className="flex items-center justify-between">
               <p className="font-semibold" style={{ color: 'var(--hc-text)' }}>Editar usuario</p>
-              <button type="button" onClick={onCloseEdit} style={{ color: 'var(--hc-muted)' }}>
+              <button type="button" onClick={onCloseEdit} aria-label="Cerrar" style={{ color: 'var(--hc-muted)' }}>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -102,14 +99,11 @@ export default function GestionUserForm({
       )}
 
       {actionUser && actionType && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
-          onClick={onCloseAction}
-          onKeyDown={(e) => { if (e.key === 'Escape') onCloseAction() }}>
-          <div className="w-full max-w-xs rounded-2xl p-6 space-y-4"
-            style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <button type="button" className="absolute inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+            aria-label="Cerrar" onClick={onCloseAction} />
+          <div className="relative z-10 w-full max-w-xs rounded-2xl p-6 space-y-4"
+            style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
             <p className="font-semibold" style={{ color: 'var(--hc-text)' }}>
               {actionType === 'block'   && 'Bloquear usuario'}
               {actionType === 'unblock' && 'Desbloquear usuario'}

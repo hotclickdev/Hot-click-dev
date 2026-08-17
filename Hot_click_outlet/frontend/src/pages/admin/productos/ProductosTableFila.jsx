@@ -55,9 +55,7 @@ function estiloCarrusel(enCarrusel, lleno) {
 
 function BotonCarrusel({ producto, carruselSlots, onToggle }) {
   const lleno = carruselSlots.length >= 5
-  const title = producto.enCarrusel
-    ? `Quitar del carrusel (pos. ${producto.ordenCarrusel})`
-    : lleno ? 'Carrusel lleno (5/5)' : 'Agregar al carrusel'
+  const title = tituloCarrusel(producto, lleno)
   return (
     <button type="button"
       onClick={() => onToggle(producto)}
@@ -74,6 +72,12 @@ function BotonCarrusel({ producto, carruselSlots, onToggle }) {
       )}
     </button>
   )
+}
+
+function tituloCarrusel(producto, lleno) {
+  if (producto.enCarrusel) return `Quitar del carrusel (pos. ${producto.ordenCarrusel})`
+  if (lleno) return 'Carrusel lleno (5/5)'
+  return 'Agregar al carrusel'
 }
 
 function AccionesDesktop({ producto, t, onEdit, onKardex, onDelete }) {

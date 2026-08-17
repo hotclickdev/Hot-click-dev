@@ -27,19 +27,26 @@ export default function OfertasView({ products, loading }) {
           style={{ background: 'radial-gradient(circle, rgba(231,59,51,0.15), transparent 70%)' }} />
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        {loading ? <div className="flex justify-center py-20"><Spinner size="lg" /></div>
-          : products.length === 0 ? (
-            <div className="text-center py-24">
-              <p className="text-6xl mb-4">🔥</p>
-              <p className="text-lg font-bold" style={{ color: '#F4F6F9' }}>Las ofertas están cargando</p>
-              <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.35)' }}>Volvé pronto para no perder ningún precio</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-              {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} hotTag="HOT" />)}
-            </div>
-          )}
+        {cuerpoCatalogoOfertas(loading, products)}
       </div>
     </motion.div>
+  )
+}
+
+function cuerpoCatalogoOfertas(loading, products) {
+  if (loading) return <div className="flex justify-center py-20"><Spinner size="lg" /></div>
+  if (products.length === 0) {
+    return (
+      <div className="text-center py-24">
+        <p className="text-6xl mb-4">🔥</p>
+        <p className="text-lg font-bold" style={{ color: '#F4F6F9' }}>Las ofertas están cargando</p>
+        <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.35)' }}>Volvé pronto para no perder ningún precio</p>
+      </div>
+    )
+  }
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+      {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} hotTag="HOT" />)}
+    </div>
   )
 }

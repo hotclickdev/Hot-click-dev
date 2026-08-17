@@ -17,26 +17,26 @@ import {
  */
 export default function AgregarProductos({ items, onChange }) {
   const [q, setQ] = useState('')
-  const [resultados, setRes] = useState([])
+  const [resultados, setResultados] = useState([])
   const [buscando, setBuscando] = useState(false)
   const timerRef = useRef(null)
 
   const buscar = useCallback((valor) => {
     clearTimeout(timerRef.current)
-    if (valor.trim().length < 2) { setRes([]); return }
+    if (valor.trim().length < 2) { setResultados([]); return }
     timerRef.current = setTimeout(async () => {
       setBuscando(true)
       try {
         const { data } = await productService.getAll(0, 8, { q: valor.trim() })
-        setRes(productosDesdeRespuesta(data))
-      } catch { setRes([]) }
+        setResultados(productosDesdeRespuesta(data))
+      } catch { setResultados([]) }
       finally { setBuscando(false) }
     }, DEBOUNCE_MS)
   }, [])
 
   const agregar = (prod) => {
     setQ('')
-    setRes([])
+    setResultados([])
     const yaExiste = items.some(i => i.productoId === prod.id)
     if (yaExiste) {
       onChange(items.map(i => i.productoId === prod.id ? { ...i, cantidad: i.cantidad + 1 } : i))

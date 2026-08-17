@@ -82,9 +82,9 @@ export default function SeccionSistema({ toast }) {
       <Block label={t('adminConfig.sysHealthTitle')} sublabel={t('adminConfig.sysHealthSubtitle')}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: healthOk === null ? 'var(--hc-muted)' : healthOk ? '#22c55e' : '#ef4444', display: 'inline-block', animation: 'pulse 2s infinite' }} />
-            <span style={{ fontSize: '13px', color: healthOk === null ? 'var(--hc-muted)' : healthOk ? '#4ade80' : '#f87171', fontFamily: F.body }}>
-              {healthOk === null ? t('adminConfig.sysHealthUnknown') : healthOk ? t('adminConfig.sysHealthOk') : t('adminConfig.sysHealthFail')}
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: colorHealthDot(healthOk), display: 'inline-block', animation: 'pulse 2s infinite' }} />
+            <span style={{ fontSize: '13px', color: colorHealthText(healthOk), fontFamily: F.body }}>
+              {textoHealth(healthOk, t)}
             </span>
           </div>
           <button type="button" onClick={checkHealth} disabled={checking} className="cfg-btn cfg-btn-ghost" style={{ fontSize: '12px', padding: '7px 14px' }}>
@@ -210,4 +210,19 @@ export default function SeccionSistema({ toast }) {
       )}
     </div>
   )
+}
+
+function colorHealthDot(healthOk) {
+  if (healthOk === null) return 'var(--hc-muted)'
+  return healthOk ? '#22c55e' : '#ef4444'
+}
+
+function colorHealthText(healthOk) {
+  if (healthOk === null) return 'var(--hc-muted)'
+  return healthOk ? '#4ade80' : '#f87171'
+}
+
+function textoHealth(healthOk, t) {
+  if (healthOk === null) return t('adminConfig.sysHealthUnknown')
+  return healthOk ? t('adminConfig.sysHealthOk') : t('adminConfig.sysHealthFail')
 }

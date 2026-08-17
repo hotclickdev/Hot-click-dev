@@ -124,7 +124,9 @@ export default function BlogModal({ entrada, onSave, onClose }) {
               </div>
             </div>
 
-            <label style={{
+            <label
+              htmlFor="blog-publicado"
+              style={{
               display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', marginTop: 16,
               padding: '12px 14px', borderRadius: 10, background: 'var(--hc-surface)',
               border: '1px solid var(--hc-border)',
@@ -133,7 +135,7 @@ export default function BlogModal({ entrada, onSave, onClose }) {
                 position: 'relative', width: 38, height: 22, borderRadius: 999, flexShrink: 0,
                 background: form.publicado ? 'var(--hc-accent)' : 'var(--hc-border)', transition: 'background 0.15s ease',
               }}>
-                <input type="checkbox" checked={!!form.publicado}
+                <input id="blog-publicado" type="checkbox" checked={!!form.publicado}
                   onChange={e => setForm(f => ({ ...f, publicado: e.target.checked }))}
                   style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', margin: 0 }} />
                 <span style={{

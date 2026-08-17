@@ -94,7 +94,7 @@ export default function ServicioList({ solicitudes, filtroEstado, isLoading, onO
                       {fotos.length > 0 && <span>📸 {t('adminSolicitudes.photos', { count: fotos.length })}</span>}
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2 shrink-0" onClick={e => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                  <div className="flex flex-col gap-2 shrink-0">
                     {wa && (
                       <a href={wa} target="_blank" rel="noopener noreferrer"
                         className="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap"

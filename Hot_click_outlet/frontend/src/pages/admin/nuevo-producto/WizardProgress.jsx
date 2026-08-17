@@ -10,9 +10,15 @@ export default function WizardProgress({ step, steps }) {
       <div className="flex gap-1">
         {steps.map((_, idx) => (
           <div key={idx} className="h-1 flex-1 rounded-full transition-all duration-300"
-            style={{ backgroundColor: idx < step ? 'var(--hc-accent)' : idx === step ? 'rgba(23,71,168,0.5)' : 'var(--hc-border)' }} />
+            style={{ backgroundColor: colorBarraWizard(idx, step) }} />
         ))}
       </div>
     </div>
   )
+}
+
+function colorBarraWizard(idx, step) {
+  if (idx < step) return 'var(--hc-accent)'
+  if (idx === step) return 'rgba(23,71,168,0.5)'
+  return 'var(--hc-border)'
 }

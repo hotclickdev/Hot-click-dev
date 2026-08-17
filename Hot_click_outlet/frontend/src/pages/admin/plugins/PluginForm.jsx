@@ -18,14 +18,14 @@ export default function PluginForm({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1">
-          <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Nombre *</label>
-          <input required value={form.nombre} onChange={setStr('nombre')} placeholder="Mi integración"
+            <label htmlFor="plugin-nombre" className="text-xs" style={{ color: 'var(--hc-muted)' }}>Nombre *</label>
+          <input id="plugin-nombre" required value={form.nombre} onChange={setStr('nombre')} placeholder="Mi integración"
             className="w-full px-3 py-2 rounded-xl text-sm outline-none"
             style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }} />
         </div>
         <div className="space-y-1">
-          <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Tipo</label>
-          <select value={form.tipo} onChange={setStr('tipo')}
+            <label htmlFor="plugin-tipo" className="text-xs" style={{ color: 'var(--hc-muted)' }}>Tipo</label>
+          <select id="plugin-tipo" value={form.tipo} onChange={setStr('tipo')}
             className="w-full px-3 py-2 rounded-xl text-sm outline-none"
             style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}>
             <option value="WEBHOOK">Webhook (HTTP POST)</option>
@@ -35,10 +35,10 @@ export default function PluginForm({
       </div>
 
       <div className="space-y-1">
-        <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+            <label htmlFor="plugin-url" className="text-xs" style={{ color: 'var(--hc-muted)' }}>
           {form.tipo === 'WEBHOOK' ? 'URL del endpoint *' : 'URL del iframe *'}
         </label>
-        <input required value={form.url} onChange={setStr('url')}
+        <input id="plugin-url" required value={form.url} onChange={setStr('url')}
           placeholder={form.tipo === 'WEBHOOK' ? 'https://mi-servicio.com/webhook' : 'https://app.servicio.com/embed?token=xxx'}
           className="w-full px-3 py-2 rounded-xl text-sm font-mono outline-none"
           style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }} />
@@ -47,14 +47,14 @@ export default function PluginForm({
       {form.tipo === 'WEBHOOK' && (
         <>
           <div className="space-y-2">
-            <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Eventos suscritos</label>
+            <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Eventos suscritos</p>
             <EventosCheckbox value={form.eventosSuscritos} onChange={setField('eventosSuscritos')} />
           </div>
           <div className="space-y-1">
-            <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+            <label htmlFor="plugin-hmac" className="text-xs" style={{ color: 'var(--hc-muted)' }}>
               Secreto HMAC (para verificar firma — dejar vacío para no firmar)
             </label>
-            <input type="password" value={form.secretoHmac} onChange={setStr('secretoHmac')}
+            <input id="plugin-hmac" type="password" value={form.secretoHmac} onChange={setStr('secretoHmac')}
               placeholder={editando?.tieneSecretoHmac ? '••••••• (mantener vacío para no cambiar)' : 'secreto-opcional'}
               className="w-full px-3 py-2 rounded-xl text-sm font-mono outline-none"
               style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }} />
@@ -66,8 +66,8 @@ export default function PluginForm({
       )}
 
       <div className="space-y-1">
-        <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Descripción (opcional)</label>
-        <input value={form.descripcion} onChange={setStr('descripcion')} placeholder="Para qué sirve este plugin"
+        <label htmlFor="plugin-desc" className="text-xs" style={{ color: 'var(--hc-muted)' }}>Descripción (opcional)</label>
+        <input id="plugin-desc" value={form.descripcion} onChange={setStr('descripcion')} placeholder="Para qué sirve este plugin"
           className="w-full px-3 py-2 rounded-xl text-sm outline-none"
           style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }} />
       </div>

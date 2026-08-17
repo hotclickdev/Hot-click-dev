@@ -144,7 +144,7 @@ export function useCopilotChat() {
   }, [enviar])
 
   const pctUso = uso?.porcentaje ?? 0
-  const pctColor = pctUso >= 90 ? '#f87171' : pctUso >= 70 ? '#fbbf24' : '#34d399'
+  const pctColor = colorPctUso(pctUso)
 
   return {
     mensajes,
@@ -167,4 +167,10 @@ export function useCopilotChat() {
     pctUso,
     pctColor,
   }
+}
+
+function colorPctUso(pctUso) {
+  if (pctUso >= 90) return '#f87171'
+  if (pctUso >= 70) return '#fbbf24'
+  return '#34d399'
 }

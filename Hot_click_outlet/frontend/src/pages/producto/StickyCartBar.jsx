@@ -70,13 +70,7 @@ export default function StickyCartBar({ product, quantity, onDecrease, onIncreas
           onClick={onAdd}
           whileTap={inStock && !justAdded ? { scale: 0.95 } : {}}
           disabled={!inStock}
-          className={`shrink-0 h-10 px-5 sm:px-7 rounded-xl font-bold text-sm transition-all duration-300 ${
-            justAdded
-              ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)]'
-              : inStock
-              ? 'bg-[#4f7cff] hover:bg-[#3d6ee0] text-white shadow-[0_0_20px_rgba(23,71,168,0.35)] hover:shadow-[0_0_32px_rgba(23,71,168,0.55)]'
-              : 'bg-white/5 text-[#8e8e9a] cursor-not-allowed'
-          }`}
+          className={`shrink-0 h-10 px-5 sm:px-7 rounded-xl font-bold text-sm transition-all duration-300 ${claseCtaSticky(justAdded, inStock)}`}
         >
           <AnimatePresence mode="wait" initial={false}>
             {justAdded ? (
@@ -102,4 +96,12 @@ export default function StickyCartBar({ product, quantity, onDecrease, onIncreas
       </div>
     </motion.div>
   )
+}
+
+function claseCtaSticky(justAdded, inStock) {
+  if (justAdded) return 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)]'
+  if (inStock) {
+    return 'bg-[#4f7cff] hover:bg-[#3d6ee0] text-white shadow-[0_0_20px_rgba(23,71,168,0.35)] hover:shadow-[0_0_32px_rgba(23,71,168,0.55)]'
+  }
+  return 'bg-white/5 text-[#8e8e9a] cursor-not-allowed'
 }

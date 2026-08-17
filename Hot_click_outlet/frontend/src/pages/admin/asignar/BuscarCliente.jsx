@@ -16,7 +16,7 @@ import {
  */
 export default function BuscarCliente({ onSelect }) {
   const [q, setQ] = useState('')
-  const [resultados, setRes] = useState([])
+  const [resultados, setResultados] = useState([])
   const [buscando, setBuscando] = useState(false)
   const [modo, setModo] = useState('buscar')
   const [form, setForm] = useState(FORM_CLIENTE_VACIO)
@@ -26,13 +26,13 @@ export default function BuscarCliente({ onSelect }) {
 
   const buscar = useCallback((valor) => {
     clearTimeout(timerRef.current)
-    if (valor.trim().length < 2) { setRes([]); return }
+    if (valor.trim().length < 2) { setResultados([]); return }
     timerRef.current = setTimeout(async () => {
       setBuscando(true)
       try {
         const { data } = await asignarService.buscarCliente(valor.trim())
-        setRes(clientesDesdeRespuesta(data))
-      } catch { setRes([]) }
+        setResultados(clientesDesdeRespuesta(data))
+      } catch { setResultados([]) }
       finally { setBuscando(false) }
     }, DEBOUNCE_MS)
   }, [])

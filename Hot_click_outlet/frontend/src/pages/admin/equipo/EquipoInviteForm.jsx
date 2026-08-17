@@ -33,7 +33,7 @@ export default function EquipoInviteForm({
       <h2 className="font-semibold text-sm" style={{ color: 'var(--hc-text)' }}>Nuevo miembro</h2>
 
       <div>
-        <label className="text-xs font-medium block mb-2" style={{ color: 'var(--hc-muted)' }}>Rol en el negocio</label>
+        <p className="text-xs font-medium block mb-2" style={{ color: 'var(--hc-muted)' }}>Rol en el negocio</p>
         <div className="grid grid-cols-2 gap-2">
           {ROLES_ASIGNABLES.map((r) => {
             const cfg = ROL_CONFIG[r]

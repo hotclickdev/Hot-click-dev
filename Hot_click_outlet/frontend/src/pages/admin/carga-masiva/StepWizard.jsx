@@ -140,10 +140,11 @@ export default function StepWizard({ drafts, onUpdate, onFinalizar, categories, 
 
         <div className="space-y-4">
           <div>
-            <label className="text-xs block mb-1.5" style={{ color: 'var(--hc-muted)' }}>
+            <label htmlFor="cm-nombre" className="text-xs block mb-1.5" style={{ color: 'var(--hc-muted)' }}>
               Nombre del producto <span style={{ color: '#f87171' }}>*</span>
             </label>
             <input
+              id="cm-nombre"
               className={inp}
               style={inpStyle(errors.nombre)}
               value={draft.nombre}
@@ -155,9 +156,9 @@ export default function StepWizard({ drafts, onUpdate, onFinalizar, categories, 
           </div>
 
           <div>
-            <label className="text-xs block mb-1.5" style={{ color: 'var(--hc-muted)' }}>
+            <p className="text-xs block mb-1.5" style={{ color: 'var(--hc-muted)' }}>
               Categoría
-            </label>
+            </p>
             <CategoriaSelect
               categories={categories}
               value={draft.categoriaId}
@@ -167,10 +168,11 @@ export default function StepWizard({ drafts, onUpdate, onFinalizar, categories, 
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="text-xs block mb-1.5" style={{ color: 'var(--hc-muted)' }}>
+              <label htmlFor="cm-precio" className="text-xs block mb-1.5" style={{ color: 'var(--hc-muted)' }}>
                 Precio venta <span style={{ color: '#f87171' }}>*</span>
               </label>
               <input
+                id="cm-precio"
                 type="number"
                 min="0"
                 className={inp}
@@ -182,10 +184,11 @@ export default function StepWizard({ drafts, onUpdate, onFinalizar, categories, 
               {errors.precioVenta && <p className="text-xs mt-1" style={{ color: '#f87171' }}>{errors.precioVenta}</p>}
             </div>
             <div>
-              <label className="text-xs block mb-1.5" style={{ color: 'var(--hc-muted)' }}>
+              <label htmlFor="cm-costo" className="text-xs block mb-1.5" style={{ color: 'var(--hc-muted)' }}>
                 Costo
               </label>
               <input
+                id="cm-costo"
                 type="number"
                 min="0"
                 className={inp}
@@ -196,10 +199,11 @@ export default function StepWizard({ drafts, onUpdate, onFinalizar, categories, 
               />
             </div>
             <div>
-              <label className="text-xs block mb-1.5" style={{ color: 'var(--hc-muted)' }}>
+              <label htmlFor="cm-stock" className="text-xs block mb-1.5" style={{ color: 'var(--hc-muted)' }}>
                 Stock
               </label>
               <input
+                id="cm-stock"
                 type="number"
                 min="0"
                 className={inp}

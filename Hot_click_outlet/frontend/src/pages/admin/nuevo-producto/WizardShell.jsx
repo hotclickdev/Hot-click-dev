@@ -59,10 +59,7 @@ function WizardFooter({ wizard }) {
 
           {isLastStep ? (
             <Button onClick={onSave} disabled={saving || sinBodegas} className="flex-1">
-              {saving
-                ? <span className="flex items-center justify-center gap-2"><Spinner size="sm" />Publicando…</span>
-                : sinBodegas ? 'Creá una bodega primero' : 'Publicar producto'
-              }
+              {etiquetaPublicar(saving, sinBodegas)}
             </Button>
           ) : (
             <Button onClick={onNext} className="flex-1">
@@ -149,4 +146,12 @@ export default function WizardShell({ wizard }) {
       </div>
     </div>
   )
+}
+
+function etiquetaPublicar(saving, sinBodegas) {
+  if (saving) {
+    return <span className="flex items-center justify-center gap-2"><Spinner size="sm" />Publicando…</span>
+  }
+  if (sinBodegas) return 'Creá una bodega primero'
+  return 'Publicar producto'
 }

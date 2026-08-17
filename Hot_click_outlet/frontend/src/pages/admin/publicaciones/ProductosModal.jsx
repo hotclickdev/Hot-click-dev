@@ -111,7 +111,7 @@ export default function ProductosModal({
 
             <div className="px-5 py-4 border-t border-white/8 shrink-0 flex items-center justify-between gap-3">
               <span className="text-sm text-[#8e8e9a]">
-                {seleccionados.size > 0 ? `${seleccionados.size} seleccionado${seleccionados.size === 1 ? '' : 's'}` : 'Ninguno seleccionado'}
+                {textoSeleccionadosPublicacion(seleccionados.size)}
               </span>
               <div className="flex gap-2">
                 <button type="button"
@@ -121,10 +121,7 @@ export default function ProductosModal({
                   {t('common.cancel')}
                 </button>
                 <Button onClick={onGenerar} disabled={generando || seleccionados.size === 0}>
-                  {generando
-                    ? <><Spinner size="sm" /><span className="ml-1.5">Generando...</span></>
-                    : `Generar${seleccionados.size > 0 ? ` (${seleccionados.size})` : ''}`
-                  }
+                  {textoBotonGenerar(generando, seleccionados.size)}
                 </Button>
               </div>
             </div>
@@ -133,4 +130,18 @@ export default function ProductosModal({
       )}
     </AnimatePresence>
   )
+}
+
+function textoSeleccionadosPublicacion(size) {
+  if (size <= 0) return 'Ninguno seleccionado'
+  const s = size === 1 ? '' : 's'
+  return `${size} seleccionado${s}`
+}
+
+function textoBotonGenerar(generando, size) {
+  if (generando) {
+    return <><Spinner size="sm" /><span className="ml-1.5">Generando...</span></>
+  }
+  if (size > 0) return `Generar (${size})`
+  return 'Generar'
 }

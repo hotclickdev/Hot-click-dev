@@ -33,7 +33,7 @@ export default function SeccionSeguridad({ refreshToken, toast, onTwoFAChange })
   const score = Math.min(1 + methodCount, 3)
   const scoreLabels = ['', t('adminConfig.secScoreMid'), t('adminConfig.secScoreHigh'), t('adminConfig.secScoreMax')]
   const scoreLabel = scoreLabels[score] ?? t('adminConfig.secScoreMid')
-  const scoreColor = score >= 3 ? '#22c55e' : score === 2 ? '#84cc16' : '#f59e0b'
+  const scoreColor = colorScoreSeguridad(score)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -88,4 +88,10 @@ export default function SeccionSeguridad({ refreshToken, toast, onTwoFAChange })
         onDisabled={() => { setEmailOtpEnabled(false); if (!totpEnabled) { setTwoFAEnabled(false); onTwoFAChange(false) } }} />
     </div>
   )
+}
+
+function colorScoreSeguridad(score) {
+  if (score >= 3) return '#22c55e'
+  if (score === 2) return '#84cc16'
+  return '#f59e0b'
 }

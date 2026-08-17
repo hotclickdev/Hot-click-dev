@@ -26,8 +26,8 @@ export default function ProveedorFormModal({
 
         <ProveedorField label="Nombre *"   value={form.nombre}   onChange={set('nombre')}   placeholder="Ej: Distribuidora ABC" />
         <div>
-          <label className="block text-xs font-medium mb-1" style={{ color: 'var(--hc-muted)' }}>Tipo de proveedor</label>
-          <select value={form.tipo} onChange={e => set('tipo')(e.target.value)}
+          <label htmlFor="proveedor-tipo" className="block text-xs font-medium mb-1" style={{ color: 'var(--hc-muted)' }}>Tipo de proveedor</label>
+          <select id="proveedor-tipo" value={form.tipo} onChange={e => set('tipo')(e.target.value)}
             className="w-full px-3 py-2 rounded-xl text-sm outline-none"
             style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--hc-text)' }}>
             <option value="PRODUCTO_TERMINADO">Producto terminado</option>
@@ -42,8 +42,8 @@ export default function ProveedorFormModal({
         />
         <ProveedorField label="Correo" value={form.correo} onChange={set('correo')} type="email" placeholder="proveedor@mail.com" />
         <div>
-          <label className="block text-xs font-medium mb-1" style={{ color: 'var(--hc-muted)' }}>Notas</label>
-          <textarea value={form.notas} onChange={e => set('notas')(e.target.value)} rows={2}
+          <label htmlFor="proveedor-notas" className="block text-xs font-medium mb-1" style={{ color: 'var(--hc-muted)' }}>Notas</label>
+          <textarea id="proveedor-notas" value={form.notas} onChange={e => set('notas')(e.target.value)} rows={2}
             placeholder="Condiciones de pago, observaciones…"
             className="w-full px-3 py-2 rounded-xl text-sm outline-none resize-none"
             style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--hc-text)' }}/>

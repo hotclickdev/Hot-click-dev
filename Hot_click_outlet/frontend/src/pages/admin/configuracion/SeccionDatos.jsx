@@ -78,8 +78,8 @@ export default function SeccionDatos({ toast, isEmprendedor = false }) {
       isEmprendedor ? productService.adminGetAll(0, 1) : productService.getAll(0, 1),
       orderService.getAll(),
     ]).then(([p, o]) => {
-      const totalProd = p.status === 'fulfilled' ? (p.value.data?.data?.totalElements ?? p.value.data?.totalElements ?? '—') : '—'
-      const totalOrd  = o.status === 'fulfilled' ? (Array.isArray(o.value.data?.data) ? o.value.data.data.length : Array.isArray(o.value.data) ? o.value.data.length : '—') : '—'
+      const totalProd = p.status === 'fulfilled' ? totalProductosDesde(p.value.data) : '—'
+      const totalOrd  = o.status === 'fulfilled' ? totalPedidosDesde(o.value.data) : '—'
       setStats({ productos: totalProd, pedidos: totalOrd, clientes: '—' })
     }).finally(() => setLoadingStats(false))
   }, [isEmprendedor])
@@ -226,4 +226,14 @@ export default function SeccionDatos({ toast, isEmprendedor = false }) {
       </Block>
     </div>
   )
+}
+
+function totalProductosDesde(data) {
+  return data?.data?.totalElements ?? data?.totalElements ?? '—'
+}
+
+function totalPedidosDesde(data) {
+  if (Array.isArray(data?.data)) return data.data.length
+  if (Array.isArray(data)) return data.length
+  return '—'
 }

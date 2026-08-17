@@ -56,7 +56,7 @@ export default function ComprasOrdenList({
                 <p className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>Recibida {fmtDate(orden.fechaRecepcion)}</p>
               )}
             </div>
-            <div className="flex gap-2 shrink-0" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+            <div className="flex gap-2 shrink-0">
               {(orden.estado === 'PENDIENTE' || orden.estado === 'PARCIAL') && (
                 <button type="button" onClick={() => onRecibir(orden)}
                   className="px-3 py-1.5 text-xs rounded-lg font-medium transition-opacity hover:opacity-80"

@@ -67,7 +67,7 @@ export default function EmpresaDetail({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} onKeyDown={(e) => e.key === 'Escape' && onClose()} />
+      <button type="button" className="absolute inset-0 bg-black/60" aria-label="Cerrar" onClick={onClose} />
       <div className="relative z-10 w-full max-w-2xl flex flex-col" style={{ backgroundColor: 'var(--hc-surface)', borderLeft: '1px solid var(--hc-border)' }}>
         <div className="px-5 pt-5 pb-0 shrink-0">
           <DetailHeader selected={selected} onClose={onClose} />

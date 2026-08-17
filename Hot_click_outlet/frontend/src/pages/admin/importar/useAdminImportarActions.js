@@ -32,11 +32,6 @@ export function useAdminImportarActions(deps) {
     setEmpresaSeleccionada,
     setBodegaGlobal,
     setPaso,
-    setCatGlobal,
-    setMarcaGlobal,
-    setCondicionGlobal,
-    setStockGlobal,
-    setMargenGlobal,
     margenGlobal,
     catGlobal,
     marcaGlobal,
@@ -163,14 +158,14 @@ export function useAdminImportarActions(deps) {
   }, [addToast, condicionGlobal, setProductos])
 
   const aplicarStockATodos = useCallback(() => {
-    const valor = Math.max(0, parseInt(stockGlobal, 10) || 0)
+    const valor = Math.max(0, Number.parseInt(stockGlobal, 10) || 0)
     setProductos(prev => prev.map(p => p._sel ? { ...p, stockActual: valor } : p))
     addToast('Stock aplicado a todos los seleccionados', 'success')
   }, [addToast, setProductos, stockGlobal])
 
   const aplicarMargenATodos = useCallback(() => {
-    const pct = parseFloat(margenGlobal)
-    if (isNaN(pct)) return
+    const pct = Number.parseFloat(margenGlobal)
+    if (Number.isNaN(pct)) return
     setProductos(prev => prev.map(p => {
       if (!p._sel || p.precioCompra == null) return p
       const venta = Math.round(p.precioCompra * (1 + pct / 100))
@@ -201,7 +196,7 @@ export function useAdminImportarActions(deps) {
         categoriaId:        p.categoriaId,
         marcaId:            p.marcaId    ?? null,
         bodegaId:           p.bodegaId   ?? bodegaId,
-        stockActual:        parseInt(p.stockActual ?? 0, 10),
+        stockActual:        Number.parseInt(p.stockActual ?? 0, 10),
         condicion:          p.condicion  ?? 'NUEVO',
         grupoVarianteId:    p.grupoVarianteId ?? null,
         colorVariante:      p.colorVariante   ?? null,

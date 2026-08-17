@@ -63,13 +63,9 @@ export function ImportPreviewModal({
         </div>
 
         <div className="p-4 flex items-center justify-between gap-3" style={{ borderTop: '1px solid var(--hc-border)' }}>
-          {importErr ? (
-            <p className="text-xs flex-1" style={{ color: 'var(--hc-danger)' }}>{importErr}</p>
-          ) : importOk ? (
-            <p className="text-xs flex-1" style={{ color: 'var(--hc-success)' }}>{t('importExport.success')}</p>
-          ) : (
-            <p className="text-xs flex-1" style={{ color: 'var(--hc-muted)' }}>{t('importExport.previewNote')}</p>
-          )}
+          <p className="text-xs flex-1" style={{ color: colorNotaImport(importErr, importOk) }}>
+            {textoNotaImport(importErr, importOk, t)}
+          </p>
           <div className="flex gap-2">
             <button type="button"
               onClick={onClose}
@@ -90,4 +86,28 @@ export function ImportPreviewModal({
       </div>
     </div>
   )
+}
+
+function colorNotaImport(importErr, importOk) {
+  if (importErr) return 'var(--hc-danger)'
+  if (importOk) return 'var(--hc-success)'
+  return 'var(--hc-muted)'
+}
+
+function textoNotaImport(importErr, importOk, t) {
+  if (importErr) return importErr
+  if (importOk) return t('importExport.success')
+  return t('importExport.previewNote')
+}
+
+function colorNotaImport(importErr, importOk) {
+  if (importErr) return 'var(--hc-danger)'
+  if (importOk) return 'var(--hc-success)'
+  return 'var(--hc-muted)'
+}
+
+function textoNotaImport(importErr, importOk, t) {
+  if (importErr) return importErr
+  if (importOk) return t('importExport.success')
+  return t('importExport.previewNote')
 }

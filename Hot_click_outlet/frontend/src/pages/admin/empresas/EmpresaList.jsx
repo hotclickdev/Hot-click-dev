@@ -211,19 +211,7 @@ export default function EmpresaList({ empresas, loading, saving, onToggleVisibil
               </tr>
             </thead>
             <tbody>
-              {loading ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-sm" style={{ color: 'var(--hc-muted)' }}>Cargando…</td></tr>
-              ) : paged.length === 0 ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-sm" style={{ color: 'var(--hc-muted)' }}>Sin resultados</td></tr>
-              ) : paged.map((emp) => (
-                <EmpresaFila
-                  key={emp.id}
-                  emp={emp}
-                  saving={saving}
-                  onToggleVisibilidad={onToggleVisibilidad}
-                  onAbrirDetalle={onAbrirDetalle}
-                />
-              ))}
+              {filasTablaEmpresas(loading, paged, { saving, onToggleVisibilidad, onAbrirDetalle })}
             </tbody>
           </table>
         </div>
@@ -232,4 +220,22 @@ export default function EmpresaList({ empresas, loading, saving, onToggleVisibil
       <Paginacion page={page} totalPages={totalPages} filteredCount={filtered.length} onPage={setPage} />
     </div>
   )
+}
+
+function filasTablaEmpresas(loading, paged, { saving, onToggleVisibilidad, onAbrirDetalle }) {
+  if (loading) {
+    return <tr><td colSpan={7} className="px-4 py-8 text-center text-sm" style={{ color: 'var(--hc-muted)' }}>Cargando…</td></tr>
+  }
+  if (paged.length === 0) {
+    return <tr><td colSpan={7} className="px-4 py-8 text-center text-sm" style={{ color: 'var(--hc-muted)' }}>Sin resultados</td></tr>
+  }
+  return paged.map((emp) => (
+    <EmpresaFila
+      key={emp.id}
+      emp={emp}
+      saving={saving}
+      onToggleVisibilidad={onToggleVisibilidad}
+      onAbrirDetalle={onAbrirDetalle}
+    />
+  ))
 }

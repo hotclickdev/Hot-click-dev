@@ -61,7 +61,7 @@ export function seoByLangAuto(nombre, descripcion, precioVenta, seoAuto) {
   if (seoAuto.es) {
     next.es = {
       title: nombreSafe ? `${nombreSafe} | HotClick Outlet`.slice(0, 60) : '',
-      description: desc ? `${desc}${precio ? ` | Precio: ₡${precio}` : ''} | Envíos a todo Costa Rica`.slice(0, 160) : '',
+      description: descripcionSeoEs(desc, precio),
     }
   }
   if (seoAuto.en) {
@@ -83,4 +83,10 @@ export function seoByLangAuto(nombre, descripcion, precioVenta, seoAuto) {
     }
   }
   return next
+}
+
+function descripcionSeoEs(desc, precio) {
+  if (!desc) return ''
+  const extra = precio ? ` | Precio: ₡${precio}` : ''
+  return `${desc}${extra} | Envíos a todo Costa Rica`.slice(0, 160)
 }

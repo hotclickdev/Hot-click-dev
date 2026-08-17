@@ -10,13 +10,7 @@ export default function AddToCartButton({ mainCTARef, inStock, justAdded, onAdd,
       onClick={onAdd}
       disabled={!inStock}
       whileTap={inStock && !justAdded ? { scale: 0.97 } : {}}
-      className={`relative h-14 rounded-2xl font-semibold text-sm overflow-hidden transition-all duration-300 ${
-        !inStock
-          ? 'bg-white/5 text-[#8e8e9a] cursor-not-allowed border border-white/8'
-          : justAdded
-          ? 'bg-emerald-500 text-white shadow-[0_0_28px_rgba(16,185,129,0.45)]'
-          : 'bg-[#4f7cff] hover:bg-[#3d6ee0] text-white shadow-[0_0_20px_rgba(23,71,168,0.3)] hover:shadow-[0_0_36px_rgba(23,71,168,0.5)]'
-      }`}
+      className={`relative h-14 rounded-2xl font-semibold text-sm overflow-hidden transition-all duration-300 ${claseBotonCarrito(inStock, justAdded)}`}
     >
       <AnimatePresence>
         {justAdded && (
@@ -73,4 +67,10 @@ export default function AddToCartButton({ mainCTARef, inStock, justAdded, onAdd,
       </AnimatePresence>
     </motion.button>
   )
+}
+
+function claseBotonCarrito(inStock, justAdded) {
+  if (!inStock) return 'bg-white/5 text-[#8e8e9a] cursor-not-allowed border border-white/8'
+  if (justAdded) return 'bg-emerald-500 text-white shadow-[0_0_28px_rgba(16,185,129,0.45)]'
+  return 'bg-[#4f7cff] hover:bg-[#3d6ee0] text-white shadow-[0_0_20px_rgba(23,71,168,0.3)] hover:shadow-[0_0_36px_rgba(23,71,168,0.5)]'
 }

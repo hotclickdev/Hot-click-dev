@@ -29,21 +29,11 @@ export default function SistemaTab() {
       <Card className="p-5">
         <div className="flex items-center justify-between pb-4 mb-4" style={{ borderBottom: '1px solid var(--hc-border)' }}>
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full shrink-0 ${
-              serverStatus === null
-                ? 'bg-amber-400 animate-pulse'
-                : serverStatus.up
-                  ? 'bg-emerald-400'
-                  : 'bg-red-400 animate-pulse'
-            }`} />
+            <div className={`w-2 h-2 rounded-full shrink-0 ${clasePuntoServidor(serverStatus)}`} />
             <span className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Servidor hotclick.lat</span>
           </div>
           <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-            {serverStatus === null
-              ? 'Verificando...'
-              : serverStatus.up
-                ? `Operativo · ${serverStatus.ms}ms`
-                : 'Sin respuesta'}
+            {textoEstadoServidor(serverStatus)}
           </span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -67,4 +57,16 @@ export default function SistemaTab() {
       </Card>
     </div>
   )
+}
+
+function clasePuntoServidor(serverStatus) {
+  if (serverStatus === null) return 'bg-amber-400 animate-pulse'
+  if (serverStatus.up) return 'bg-emerald-400'
+  return 'bg-red-400 animate-pulse'
+}
+
+function textoEstadoServidor(serverStatus) {
+  if (serverStatus === null) return 'Verificando...'
+  if (serverStatus.up) return `Operativo · ${serverStatus.ms}ms`
+  return 'Sin respuesta'
 }

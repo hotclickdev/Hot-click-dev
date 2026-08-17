@@ -41,7 +41,7 @@ export default function ProductosTab({ loading, topProductos }) {
                   <td className="px-4 py-3 font-semibold" style={{ color: SUCCESS }}>{formatPrice(p.ingreso)}</td>
                   <td className="px-4 py-3 font-semibold" style={{ color: INFO }}>{formatPrice(p.utilidad)}</td>
                   <td className="px-4 py-3">
-                    <span className="font-semibold text-sm" style={{ color: Number.parseFloat(p.margen) >= 30 ? SUCCESS : Number.parseFloat(p.margen) >= 10 ? WARNING : DANGER }}>
+                    <span className="font-semibold text-sm" style={{ color: colorMargenProducto(p.margen) }}>
                       {p.margen}%
                     </span>
                   </td>
@@ -53,4 +53,11 @@ export default function ProductosTab({ loading, topProductos }) {
       </div>
     </>
   )
+}
+
+function colorMargenProducto(margen) {
+  const n = Number.parseFloat(margen)
+  if (n >= 30) return SUCCESS
+  if (n >= 10) return WARNING
+  return DANGER
 }

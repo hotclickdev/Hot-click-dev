@@ -12,8 +12,6 @@ export function useAdminProveedoresActions(deps) {
     form,
     editing,
     deleteTarget,
-    setProveedores,
-    setLoading,
     setModalOpen,
     setEditing,
     setForm,

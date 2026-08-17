@@ -18,7 +18,7 @@ function estiloBotonIcono(seleccionado) {
 function IconoCategoriaPicker({ icono, onCambiar }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-medium text-[#e8e8ed]">Icono (opcional)</label>
+      <p className="text-sm font-medium text-[#e8e8ed]">Icono (opcional)</p>
       <div className="grid grid-cols-10 gap-1">
         <button
           type="button"

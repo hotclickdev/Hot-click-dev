@@ -28,7 +28,7 @@ export function Badge({ used, usosActuales, maxUsos }) {
 
 export function UsageBar({ usosActuales = 0, maxUsos = 1 }) {
   const pct = maxUsos > 0 ? Math.min(100, Math.round(usosActuales / maxUsos * 100)) : 100
-  const color = pct >= 100 ? '#f87171' : pct >= 60 ? '#fbbf24' : '#34d399'
+  const color = colorUsoCupon(pct)
   return (
     <div className="flex items-center gap-2">
       <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--hc-border)' }}>
@@ -39,4 +39,10 @@ export function UsageBar({ usosActuales = 0, maxUsos = 1 }) {
       </span>
     </div>
   )
+}
+
+function colorUsoCupon(pct) {
+  if (pct >= 100) return '#f87171'
+  if (pct >= 60) return '#fbbf24'
+  return '#34d399'
 }

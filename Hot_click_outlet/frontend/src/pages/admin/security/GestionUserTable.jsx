@@ -125,9 +125,7 @@ export default function GestionUserTable({
                   </td>
 
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-1.5"
-                      onClick={(e) => e.stopPropagation()}
-                      onKeyDown={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-1.5">
                       {estado !== 'ELIMINADO' && (
                         <button type="button" onClick={() => onEdit(u)}
                           className="px-2.5 py-1 rounded-lg text-[10px] font-medium hover:opacity-80 transition-opacity"

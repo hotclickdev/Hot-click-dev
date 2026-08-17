@@ -4,7 +4,6 @@ import { multipaisService } from '@/services/multipaisService'
 const MONEDAS = ['CRC','USD','MXN','COP','PEN','GTQ','HNL','NIO','EUR']
 
 export default function AdminMultipais() {
-  const [, setConfig]           = useState(null)
   const [paises, setPaises]     = useState([])
   const [tasas, setTasas]       = useState([])
   const [guardando, setGuardando] = useState(false)
@@ -18,7 +17,7 @@ export default function AdminMultipais() {
       multipaisService.getPaises(),
       multipaisService.getTasas(),
     ]).then(([c, p, t]) => {
-      setConfig(c.data); setForm({ ...c.data }); setPaises(p.data); setTasas(t.data)
+      setForm({ ...c.data }); setPaises(p.data); setTasas(t.data)
     }).catch(() => setError('No se pudo cargar la configuración'))
   }, [])
 
@@ -29,7 +28,7 @@ export default function AdminMultipais() {
     setGuardando(true); setOk(false); setError(null)
     try {
       const { data } = await multipaisService.updateConfig(form)
-      setConfig(data); setForm({ ...data }); setOk(true)
+      setForm({ ...data }); setOk(true)
       setTimeout(() => setOk(false), 3000)
     } catch (err) {
       setError(err.response?.data?.error ?? 'Error al guardar')

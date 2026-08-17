@@ -102,7 +102,7 @@ export default function ResenaForm({ orders = [], ordersLoading = false }) {
             const lleno = count >= MAX_RESENAS
             return (
               <option key={p.id} value={p.id} disabled={lleno}>
-                {p.nombre}{lleno ? ` (${MAX_RESENAS}/${MAX_RESENAS} reseñas)` : count > 0 ? ` (${count}/${MAX_RESENAS})` : ''}
+                {p.nombre}{sufijoResenaProducto(lleno, count)}
               </option>
             )
           })}
@@ -166,4 +166,10 @@ export default function ResenaForm({ orders = [], ordersLoading = false }) {
       )}
     </form>
   )
+}
+
+function sufijoResenaProducto(lleno, count) {
+  if (lleno) return ` (${MAX_RESENAS}/${MAX_RESENAS} reseñas)`
+  if (count > 0) return ` (${count}/${MAX_RESENAS})`
+  return ''
 }
