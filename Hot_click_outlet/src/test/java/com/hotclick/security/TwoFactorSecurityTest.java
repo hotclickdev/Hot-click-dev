@@ -323,7 +323,7 @@ class TwoFactorSecurityTest extends BaseIntegrationTest {
         otp.setUsuario(testUser);
         otp.setTipoOtp(tipo);
         otp.setCodigoHash(passwordEncoder.encode("666666"));
-        otp.setExpiresAt(LocalDateTime.now().minusMinutes(1));  // EXPIRED
+        otp.setExpiresAt(LocalDateTime.now(Constants.ZONA_CR).minusMinutes(1));  // EXPIRED
         otp.setActiveFlag(true);
         otp.setAttempts(0);
         otp.setEstado(1);
