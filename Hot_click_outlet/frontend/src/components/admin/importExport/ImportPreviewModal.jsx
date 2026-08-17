@@ -99,15 +99,3 @@ function textoNotaImport(importErr, importOk, t) {
   if (importOk) return t('importExport.success')
   return t('importExport.previewNote')
 }
-
-function colorNotaImport(importErr, importOk) {
-  if (importErr) return 'var(--hc-danger)'
-  if (importOk) return 'var(--hc-success)'
-  return 'var(--hc-muted)'
-}
-
-function textoNotaImport(importErr, importOk, t) {
-  if (importErr) return importErr
-  if (importOk) return t('importExport.success')
-  return t('importExport.previewNote')
-}
