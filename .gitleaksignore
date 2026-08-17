@@ -1,0 +1,7 @@
+# Hallazgos historicos ya removidos de HEAD. Rotar esas credenciales en el proveedor.
+# Formato: commit:file:rule:line  (tal como lo imprime `gitleaks detect --verbose`)
+210362e7e0748407693cb4d73bd3aaabf7317aac:Hot_click_outlet/docker-compose.yml:generic-api-key:9
+210362e7e0748407693cb4d73bd3aaabf7317aac:Hot_click_outlet/src/main/resources/application.properties:generic-api-key:13
+210362e7e0748407693cb4d73bd3aaabf7317aac:Hot_click_outlet/src/main/resources/static/admin/admin-productos.html:generic-api-key:194
+c65fdfe1b458500d181c0a27a3e04385aebcaeeb:Hot_click_outlet/frontend/src/pages/admin/AdminProducts.jsx:generic-api-key:480
+c65fdfe1b458500d181c0a27a3e04385aebcaeeb:Hot_click_outlet/frontend/src/pages/admin/AdminProducts.jsx:jwt:480

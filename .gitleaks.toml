@@ -4,7 +4,7 @@ title = "HOTCLICK gitleaks config"
 useDefault = true
 
 [allowlist]
-description = "Falsos positivos conocidos (build frontend, migraciones seed, templates sin valores reales)"
+description = "Falsos positivos conocidos, templates, y secretos historicos ya removidos de HEAD (rotar en el proveedor)"
 paths = [
   '''Hot_click_outlet/src/main/resources/static/assets/.*''',
   '''Hot_click_outlet/src/main/resources/static/sw\.js''',
@@ -12,4 +12,37 @@ paths = [
   '''.*/target/.*''',
   '''.*\.env\.example$''',
   '''security-tools/.*/\.env\.example$''',
+  # Compose local viejo (borrado). El actual es docker-compose.prod.yml + .env
+  '''Hot_click_outlet/docker-compose\.yml$''',
+  # Admin HTML legacy (borrado; el panel vive en React)
+  '''Hot_click_outlet/src/main/resources/static/admin/.*''',
+]
+regexes = [
+  '''hc-admin-tour-v4-done''',
+  '''nosotros\.val\d(?:Title|Desc)''',
+  '''home\.servicesStep\d''',
+  '''hotclick-dev-secret-key-2026-local-only-32chars''',
+  '''hotclick-unit-test-secret-key-at-least-32-chars-for-hs256''',
+  '''hotclick-test-secret-minimum-32-chars-hs256''',
+]
+# Commits que introdujeron o reescribieron secretos ya sacados de HEAD.
+commits = [
+  '''210362e7e0748407693cb4d73bd3aaabf7317aac''',
+  '''c65fdfe1b458500d181c0a27a3e04385aebcaeeb''',
+  '''d155821d5ea30afd7b0fb9d68f484555bd095211''',
+  '''f0e3507a5b4fa957e98f12f63a027b9680ca68bd''',
+  '''2a71513db30f691be7a80a4d82e240e64d4e71a9''',
+  '''6848c0588a2ece7e1c24edd24597ea2ae869bfff''',
+  '''5c3acfcb57e68c695b2e4207aa868ad9e6fc168c''',
+  '''b2c0e6ef4bb09b03e7a88e82e90f3439648b5203''',
+  '''686cac2d1ab9c3310a15c8eaec7247bdbada2560''',
+  '''a5c00f7aab50f2e0335d3da46738086f847c9233''',
+  '''ecb615b4282c452a576faca2f3e3b1408fb6df83''',
+  '''2172d400d75c9d9c8a36cec165034614141c7450''',
+  '''591315893e851ef864e42b3e46e30ecf3b74a07b''',
+  '''9b04aa1a58b03fac4cdb466dd1f848e69634ec29''',
+  '''0629dd1e5da90b0034b8fbb78bb23add11732369''',
+  '''40c5661a55491a3eb8eb225f0c56de1dba5d3384''',
+  '''1b6f466ac61dd8497f94c074019e29a76e739ee4''',
+  '''b5ef4925606fa7ce0e2ad28e9d0e2d1f80272683''',
 ]

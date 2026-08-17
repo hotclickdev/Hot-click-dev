@@ -74,8 +74,8 @@ Cancela → /pago/cancelado (pantalla amigable con opción de reintentar)
 ## Variables de entorno requeridas (Render)
 
 ```
-PAYPAL_CLIENT_ID=BAAalMNKQuAmeoqeyKqebUOB_C...   (80 caracteres)
-PAYPAL_CLIENT_SECRET=EHbiOr43wNHDe...GZds-m       (80 caracteres)
+PAYPAL_CLIENT_ID=<paypal-sandbox-client-id>
+PAYPAL_CLIENT_SECRET=<paypal-sandbox-secret>
 PAYPAL_MODE=sandbox                                 (cambiar a "live" en producción)
 APP_URL=https://hot-click-dev.onrender.com          (SIN barra al final, SIN salto de línea)
 ```

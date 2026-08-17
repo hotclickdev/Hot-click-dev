@@ -157,15 +157,15 @@ Ya existe `ProductoImagen` en el modelo y `ProductoImagenRepository` — solo fa
 ## 3. Seguridad / Ops
 
 ### 3.1 Variables de entorno en archivo .env (PRIORIDAD ALTA)
-**Problema actual:** `SPRING_DATASOURCE_PASSWORD: "HotClick2026!"` está hardcodeada en `docker-compose.yml` (visible en Git).
+**Problema actual:** la contraseña de la base y otras keys estaban hardcodeadas en `docker-compose.yml` (visible en Git).
 **Solución:**
 ```bash
-# Crear Hot_click_outlet/.env (agregar a .gitignore)
-SPRING_DATASOURCE_PASSWORD=HotClick2026!
-SUPABASE_SERVICE_KEY=sb_secret_...
-MAIL_PASSWORD=rsluhsnfexlfjike
-PAYXPERT_ORIGINATOR_ID=...
-PAYXPERT_ORIGINATOR_PASSWORD=...
+# Crear Hot_click_outlet/.env (agregar a .gitignore) — valores reales solo ahí
+SPRING_DATASOURCE_PASSWORD=<from-.env>
+SUPABASE_SERVICE_KEY=<from-.env>
+MAIL_PASSWORD=<from-.env>
+PAYXPERT_ORIGINATOR_ID=<from-.env>
+PAYXPERT_ORIGINATOR_PASSWORD=<from-.env>
 APP_URL=https://hotclick.cr
 ```
 Y en `docker-compose.yml` usar `env_file: .env`
