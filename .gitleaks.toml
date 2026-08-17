@@ -1,10 +1,14 @@
 title = "HOTCLICK gitleaks config"
+minVersion = "8.25.0"
 
 [extend]
 useDefault = true
 
-[allowlist]
-description = "Falsos positivos conocidos, templates, y secretos historicos ya removidos de HEAD (rotar en el proveedor)"
+# En v8.25 [allowlist] se reemplazó por [[allowlists]].
+# Cada bloque se evalúa por separado (OR): si uno matchea, el hallazgo se ignora.
+
+[[allowlists]]
+description = "Build frontend, target Maven y templates sin valores reales"
 paths = [
   '''Hot_click_outlet/src/main/resources/static/assets/.*''',
   '''Hot_click_outlet/src/main/resources/static/sw\.js''',
@@ -12,20 +16,17 @@ paths = [
   '''.*/target/.*''',
   '''.*\.env\.example$''',
   '''security-tools/.*/\.env\.example$''',
-  # Compose local viejo (borrado). El actual es docker-compose.prod.yml + .env
+]
+
+[[allowlists]]
+description = "Archivos borrados que solo existen en el historial de git"
+paths = [
   '''Hot_click_outlet/docker-compose\.yml$''',
-  # Admin HTML legacy (borrado; el panel vive en React)
   '''Hot_click_outlet/src/main/resources/static/admin/.*''',
 ]
-regexes = [
-  '''hc-admin-tour-v4-done''',
-  '''nosotros\.val\d(?:Title|Desc)''',
-  '''home\.servicesStep\d''',
-  '''hotclick-dev-secret-key-2026-local-only-32chars''',
-  '''hotclick-unit-test-secret-key-at-least-32-chars-for-hs256''',
-  '''hotclick-test-secret-minimum-32-chars-hs256''',
-]
-# Commits que introdujeron o reescribieron secretos ya sacados de HEAD.
+
+[[allowlists]]
+description = "Commits historicos que introdujeron secretos ya sacados de HEAD (rotar en el proveedor)"
 commits = [
   '''210362e7e0748407693cb4d73bd3aaabf7317aac''',
   '''c65fdfe1b458500d181c0a27a3e04385aebcaeeb''',
@@ -45,4 +46,15 @@ commits = [
   '''40c5661a55491a3eb8eb225f0c56de1dba5d3384''',
   '''1b6f466ac61dd8497f94c074019e29a76e739ee4''',
   '''b5ef4925606fa7ce0e2ad28e9d0e2d1f80272683''',
+]
+
+[[allowlists]]
+description = "Placeholders de test y claves de UI que no son secretos"
+regexes = [
+  '''hc-admin-tour-v4-done''',
+  '''nosotros\.val\d(?:Title|Desc)''',
+  '''home\.servicesStep\d''',
+  '''hotclick-dev-secret-key-2026-local-only-32chars''',
+  '''hotclick-unit-test-secret-key-at-least-32-chars-for-hs256''',
+  '''hotclick-test-secret-minimum-32-chars-hs256''',
 ]
