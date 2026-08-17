@@ -26,25 +26,4 @@ jobs:
           chmod +x gitleaks
 
       - name: gitleaks detect
-        run: |
-          set +e
-          ./gitleaks detect --source . --config .gitleaks.toml --redact --exit-code 1 --verbose --report-format json --report-path gitleaks-report.json
-          code=$?
-          python3 - <<'PY'
-          import json, pathlib
-          p = pathlib.Path("gitleaks-report.json")
-          if not p.exists():
-              print("No gitleaks-report.json")
-              raise SystemExit(0)
-          data = json.loads(p.read_text(encoding="utf-8") or "[]")
-          print(f"LEAK_COUNT={len(data)}")
-          for f in data:
-              fp = f.get("Fingerprint", "")
-              rule = f.get("RuleID", "")
-              path = f.get("File", "")
-              line = f.get("StartLine", 1)
-              commit = (f.get("Commit") or "")[:12]
-              # Anotacion sin el secreto: visible en la API de checks
-              print(f"::error file={path},line={line}::{fp} rule={rule} commit={commit}")
-          PY
-          exit $code
+        run: ./gitleaks detect --source . --config .gitleaks.toml --redact --exit-code 1 --verbose
