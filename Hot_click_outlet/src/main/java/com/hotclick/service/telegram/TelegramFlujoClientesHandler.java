@@ -35,6 +35,7 @@ public class TelegramFlujoClientesHandler {
     @Autowired private UsuarioRepository             usuarioRepository;
     @Autowired private AiCopilotService              aiCopilotService;
     @Autowired private JdbcTemplate                  jdbc;
+    @Autowired private TelegramClienteDetalleBuilder detalleBuilder;
 
     public void callback(TelegramVinculacion v, Long empresaId, String sub) {
         // La lista expone PII (teléfonos) — mismo nivel de permiso que las escrituras.
@@ -45,7 +46,7 @@ public class TelegramFlujoClientesHandler {
             mostrarClientes(v, empresaId, pg != null ? pg : 0);
         } else if (sub.startsWith("v:")) {
             Long clienteId = parseLong(sub.substring(2));
-            mostrarDetalleCliente(v, empresaId, clienteId);
+            detalleBuilder.mostrarDetalle(v, empresaId, clienteId);
         } else if (sub.startsWith("ia:")) {
             Long clienteId = parseLong(sub.substring(3));
             if (clienteId == null || !support.clientePerteneceAEmpresa(clienteId, empresaId)) return;
@@ -74,53 +75,6 @@ public class TelegramFlujoClientesHandler {
         teclado.add(List.of(TelegramClienteBotService.boton("📋 Menú", "menu")));
 
         bot.enviarMensaje(v.getChatId(), "👥 *Tus clientes* (" + todos.size() + ")\nTocá uno para ver su historial:", teclado);
-    }
-
-    private void mostrarDetalleCliente(TelegramVinculacion v, Long empresaId, Long clienteId) {
-        if (clienteId == null || !support.clientePerteneceAEmpresa(clienteId, empresaId)) {
-            bot.enviarMensaje(v.getChatId(), "Ese cliente no pertenece a tu negocio.");
-            return;
-        }
-        Usuario c = usuarioRepository.findById(clienteId).orElse(null);
-        if (c == null) return;
-
-        Map<String, Object> stats = jdbc.queryForMap("""
-            SELECT COUNT(*) AS pedidos, COALESCE(SUM(total_pedido), 0) AS total
-            FROM hot_click_pedido_tb
-            WHERE fk_id_usuario_final = ? AND fk_id_empresa = ?
-              AND estado_pedido IN ('PAGADO','ENTREGADO','COMPLETADO')
-            """, clienteId, empresaId);
-
-        List<Map<String, Object>> compras = jdbc.queryForList("""
-            SELECT pr.nombre_producto, SUM(pi.cantidad) AS unidades, MAX(p.fecha_pedido) AS ultima
-            FROM hot_click_pedido_item_tb pi
-            JOIN hot_click_pedido_tb p   ON pi.fk_id_pedido = p.id_pedido
-            JOIN hot_click_producto_tb pr ON pi.fk_id_producto = pr.id_producto
-            WHERE p.fk_id_usuario_final = ? AND p.fk_id_empresa = ?
-              AND p.estado_pedido IN ('PAGADO','ENTREGADO','COMPLETADO')
-            GROUP BY pr.nombre_producto
-            ORDER BY ultima DESC
-            LIMIT 10
-            """, clienteId, empresaId);
-
-        StringBuilder sb = new StringBuilder("👤 *" + esc(support.nombreCompleto(c)) + "*\n");
-        if (c.getTelefono() != null && !"00000000".equals(c.getTelefono())) {
-            sb.append("📞 ").append(esc(c.getTelefono())).append("\n");
-        }
-        sb.append("\nCompras en tu negocio: *").append(stats.get("pedidos"))
-          .append("* — Total: *").append(colones(stats.get("total"))).append("*\n");
-        if (compras.isEmpty()) {
-            sb.append("\nTodavía no tiene compras registradas.");
-        } else {
-            sb.append("\n*Qué te ha comprado:*\n");
-            compras.forEach(f -> sb.append("• ").append(esc((String) f.get("nombre_producto")))
-                .append(" × ").append(f.get("unidades")).append("\n"));
-        }
-
-        bot.enviarMensaje(v.getChatId(), sb.toString(), List.of(
-            List.of(TelegramClienteBotService.boton("💡 Sugerir qué ofrecerle", "cli:ia:" + clienteId)),
-            List.of(TelegramClienteBotService.boton("⬅️ Clientes", "cli:pg:0"),
-                    TelegramClienteBotService.boton("📋 Menú", "menu"))));
     }
 
     /**

@@ -2,12 +2,10 @@ package com.hotclick.service.telegram;
 
 import com.hotclick.model.MiembroEmpresa;
 import com.hotclick.model.TelegramVinculacion;
-import com.hotclick.repository.MiembroEmpresaRepository;
 import com.hotclick.repository.TelegramVinculacionRepository;
 import com.hotclick.service.TelegramClienteBotService;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -23,16 +21,12 @@ public class TelegramVinculacionService {
         + "y tocá el botón que te aparece.";
 
     @Autowired private TelegramVinculacionRepository vinculacionRepository;
-    @Autowired private MiembroEmpresaRepository      miembroEmpresaRepository;
     @Autowired private TelegramClienteBotService     bot;
-    @Autowired private TelegramDatosQueryService     datosQuery;
-    @Autowired @Lazy private TelegramEmpresaContextService empresaContext;
-    @Autowired @Lazy private TelegramMenuBuilder     menuBuilder;
+    @Autowired private TelegramVinculacionPostLinkHelper postLink;
 
     public Optional<TelegramVinculacion> vinculacionActiva(long chatId) {
         Optional<TelegramVinculacion> v = vinculacionRepository
             .findByChatIdAndEstado(chatId, TelegramVinculacion.ACTIVA);
-        // Usuario desactivado en el panel → su Telegram tampoco tiene acceso
         if (v.isPresent() && !Integer.valueOf(Constants.ESTADO_ACTIVO).equals(v.get().getUsuario().getEstado())) {
             return Optional.empty();
         }
@@ -55,46 +49,21 @@ public class TelegramVinculacionService {
 
         TelegramVinculacion v = opt.get();
 
-        // Un mismo chat de Telegram solo puede estar vinculado a UNA cuenta del panel
-        vinculacionRepository
-            .findByChatIdAndEstadoAndUsuarioIdNot(chatId, TelegramVinculacion.ACTIVA, v.getUsuario().getId())
-            .forEach(otra -> {
-                otra.setEstado(TelegramVinculacion.REVOCADA);
-                otra.setChatId(null);
-                otra.setContexto(null);
-                vinculacionRepository.save(otra);
-            });
+        postLink.revocarVinculacionesPrevias(chatId, v.getUsuario().getId());
 
         v.setChatId(chatId);
         v.setTelegramUsername(username);
         v.setEstado(TelegramVinculacion.ACTIVA);
         v.setFechaVinculacion(LocalDateTime.now(Constants.ZONA_CR));
-        v.setCodigo(null);        // un solo uso
+        v.setCodigo(null);
         v.setCodigoExpira(null);
         v.setContexto(null);
 
-        List<MiembroEmpresa> membresias = miembroEmpresaRepository
-            .findByUsuarioIdAndEstado(v.getUsuario().getId(), 1);
-
-        if (membresias.isEmpty() && v.getUsuario().getEmpresaId() != null) {
-            v.setEmpresaActivaId(v.getUsuario().getEmpresaId());
-        } else if (membresias.size() == 1) {
-            v.setEmpresaActivaId(membresias.get(0).getEmpresa().getId());
-        }
+        postLink.asignarEmpresaActiva(v);
         vinculacionRepository.save(v);
 
-        String nombre = v.getUsuario().getNombre() != null ? v.getUsuario().getNombre() : "";
-        bot.enviarMensaje(chatId, ("¡Hola " + datosQuery.esc(nombre) + "! Tu cuenta quedó vinculada con HotClick.\n\n"
-                + "Desde acá podés consultar tu inventario, ventas y finanzas, y vas a recibir "
-                + "avisos de cada venta y alertas de stock.").trim());
-
-        if (membresias.size() > 1) {
-            empresaContext.mostrarSelectorEmpresa(v);
-        } else if (v.getEmpresaActivaId() != null) {
-            menuBuilder.mostrarMenu(v);
-        } else {
-            bot.enviarMensaje(chatId, "Tu cuenta no tiene un negocio asociado todavía. Cuando lo tengás, escribí /menu.");
-        }
+        List<MiembroEmpresa> membresias = postLink.membresiasActivas(v);
+        postLink.enviarBienvenidaYMenu(chatId, v, membresias);
     }
 
     public void desvincular(TelegramVinculacion v) {

@@ -9,8 +9,6 @@ import com.hotclick.model.Producto;
 import com.hotclick.model.TelegramVinculacion;
 import com.hotclick.repository.CategoriaRepository;
 import com.hotclick.repository.MarcaRepository;
-import com.hotclick.repository.TelegramVinculacionRepository;
-import com.hotclick.service.SupabaseStorageService;
 import com.hotclick.service.TelegramClienteBotService;
 import com.hotclick.service.TelegramFlujoService;
 import com.hotclick.service.TenantService;
@@ -41,12 +39,11 @@ class TelegramFlujoProductoConfirmHelper {
     @Autowired private TelegramClienteBotService     bot;
     @Autowired private CategoriaRepository           categoriaRepository;
     @Autowired private MarcaRepository               marcaRepository;
-    @Autowired private TelegramVinculacionRepository vinculacionRepository;
     @Autowired private TenantService                 tenantService;
     @Autowired private TextModerationService         textModerationService;
-    @Autowired private SupabaseStorageService        storageService;
     @Autowired private ObjectMapper                  objectMapper;
     @Autowired private TelegramFlujoProductoUiHelper ui;
+    @Autowired private TelegramFlujoProductoFotoHelper fotoHelper;
 
     /**
      * Foto entrante — como foto comprimida (`photo`) o como archivo/documento de
@@ -56,17 +53,13 @@ class TelegramFlujoProductoConfirmHelper {
      * estándar.
      */
     boolean manejarFoto(TelegramVinculacion v, Long empresaId, JsonNode msg) {
-        // Chequeo barato sin lock: ¿hay un borrador de producto esperando fotos?
         Optional<TelegramFlujoEstado> rapido = TelegramFlujoEstado.deserializar(v.getContexto(), objectMapper);
         if (rapido.isEmpty() || !FLUJO_PRODUCTO.equals(rapido.get().getF())
                 || !P_PRD_FOTOS.equals(rapido.get().getP())) {
             return false;
         }
 
-        // Relectura con lock: el borrador se reescribe por cada foto y un álbum
-        // llega como updates casi simultáneos.
-        Optional<TelegramVinculacion> conLock = vinculacionRepository
-            .findWithLockByChatIdAndEstado(v.getChatId(), TelegramVinculacion.ACTIVA);
+        Optional<TelegramVinculacion> conLock = fotoHelper.obtenerConLock(v.getChatId());
         if (conLock.isEmpty()) return false;
         TelegramVinculacion vl = conLock.get();
 
@@ -80,49 +73,13 @@ class TelegramFlujoProductoConfirmHelper {
             return true;
         }
 
-        // El array photo viene ordenado de menor a mayor resolución — se toma la
-        // más grande que respete el límite de tamaño. Si vino como documento
-        // (imagen sin comprimir), se usa directo su file_id/file_size.
-        String fileId = null;
-        if (msg.has("photo")) {
-            JsonNode sizes = msg.path("photo");
-            for (int i = sizes.size() - 1; i >= 0; i--) {
-                long fs = sizes.get(i).path("file_size").asLong(Long.MAX_VALUE);
-                if (fs <= MAX_FOTO_BYTES) { fileId = sizes.get(i).path("file_id").asText(null); break; }
-            }
-        } else if (msg.has("document")) {
-            JsonNode doc = msg.path("document");
-            long fs = doc.path("file_size").asLong(Long.MAX_VALUE);
-            if (fs <= MAX_FOTO_BYTES) fileId = doc.path("file_id").asText(null);
-        }
+        String fileId = fotoHelper.resolverFileId(msg);
         if (fileId == null) {
             bot.enviarMensaje(vl.getChatId(), "Esa foto es demasiado pesada (máx 10 MB). Probá con otra.");
             return true;
         }
 
-        bot.enviarAccionEscribiendo(vl.getChatId());
-        byte[] bytes = bot.descargarArchivo(fileId, MAX_FOTO_BYTES);
-        if (bytes == null) {
-            bot.enviarMensaje(vl.getChatId(), "No pude descargar la foto. Mandala de nuevo, por favor.");
-            return true;
-        }
-
-        try {
-            // Telegram recomprime las fotos a JPEG; subirImagenDescargada valida
-            // magic bytes y re-encodea igual que un upload del panel.
-            String url = storageService.subirImagenDescargada(bytes, "telegram.jpg", "image/jpeg", "productos/telegram");
-            fotos.add(url);
-            support.guardar(vl, e);
-            bot.enviarMensaje(vl.getChatId(),
-                "Foto " + fotos.size() + " recibida ✅" + (fotos.size() < MAX_FOTOS
-                    ? " Podés mandar otra (máx " + MAX_FOTOS + ") o tocar *Listo*."
-                    : " Tocá *Listo* para continuar."),
-                ui.tecladoFotos(fotos.size()));
-        } catch (Exception ex) {
-            log.error("[telegram-flujo] fallo subiendo foto de chat {} — {}", vl.getChatId(), ex.getMessage());
-            bot.enviarMensaje(vl.getChatId(), "No pude guardar la foto (" + ex.getMessage() + "). Probá con otra imagen.");
-        }
-        return true;
+        return fotoHelper.subirFotoAlBorrador(vl, e, fileId);
     }
 
     void mostrarResumenProducto(TelegramVinculacion v, Long empresaId, TelegramFlujoEstado e) {

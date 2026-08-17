@@ -28,6 +28,7 @@ public class AiCopilotStreamProcessor {
 
     @Autowired private ObjectMapper  objectMapper;
     @Autowired private AiQuotaService aiQuotaService;
+    @Autowired private AiCopilotStreamLineHandler lineHandler;
 
     public static Throwable unwrap(Throwable ex) {
         return ex instanceof CompletionException && ex.getCause() != null ? ex.getCause() : ex;
@@ -83,42 +84,8 @@ public class AiCopilotStreamProcessor {
         int[] tokenCount = {0, 0}; // [input, output]
 
         try {
-            response.body().forEach(line -> {
-                if (line.startsWith("data: ")) {
-                    String json = line.substring(6).trim();
-                    if ("[DONE]".equals(json)) return;
-                    try {
-                        JsonNode node = objectMapper.readTree(json);
-
-                        // El chunk final (stream_options.include_usage=true) trae "usage" con
-                        // choices vacío o ausente — se lee independiente del texto de este chunk.
-                        JsonNode usage = node.path("usage");
-                        if (usage.isObject()) {
-                            tokenCount[0] = usage.path("prompt_tokens").asInt(tokenCount[0]);
-                            tokenCount[1] = usage.path("completion_tokens").asInt(tokenCount[1]);
-                        }
-
-                        String text = node.path("choices").path(0).path("delta").path("content").asText("");
-                        if (!text.isEmpty()) {
-                            // Hard cap: kill stream if response grows unreasonably large (loop guard)
-                            if (fullText.length() >= MAX_RESPONSE_CHARS) return;
-                            fullText.append(text);
-                            try {
-                                emitter.send(SseEmitter.event().name("delta")
-                                    .data(objectMapper.writeValueAsString(Map.of("text", text))));
-                            } catch (IOException e) {
-                                // Cliente cerró la pestaña/conexión a mitad del stream — esperado, no es
-                                // un fallo de la integración con NVIDIA. No se loguea como error.
-                                log.debug("[AI] empresaId={} cliente desconectado durante stream: {}", empresaId, e.getMessage());
-                            }
-                        }
-                    } catch (JsonProcessingException e) {
-                        // Un chunk SSE individual de NVIDIA vino malformado — se descarta ese chunk
-                        // y se sigue con el stream, pero queda visible si el payload de NVIDIA cambió.
-                        log.warn("[AI] empresaId={} chunk SSE de NVIDIA no se pudo parsear: {}", empresaId, e.getMessage());
-                    }
-                }
-            });
+            response.body().forEach(line ->
+                lineHandler.procesarLinea(line, emitter, empresaId, fullText, tokenCount, MAX_RESPONSE_CHARS));
 
             emitter.send(SseEmitter.event().name("done").data("{}"));
             emitter.complete();
