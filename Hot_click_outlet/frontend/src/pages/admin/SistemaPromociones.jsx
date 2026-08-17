@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import api from '@/services/api'
 import { ofertaService } from '@/services/ofertaService'
+import { productService } from '@/services/productService'
 import { useToast } from '@/components/ui/Toast'
 import Spinner from '@/components/ui/Spinner'
 import { formatPrice } from '@/utils/format'
@@ -84,7 +84,7 @@ export default function SistemaPromociones() {
     setLoading(true)
     try {
       const [pRes, sRes] = await Promise.all([
-        api.get('/productos/admin/todos'),
+        productService.adminGetAll(),
         ofertaService.misPendientes().catch(() => ({ data: [] })),
       ])
       setProductos(pRes.data?.content ?? pRes.data ?? [])
@@ -96,7 +96,7 @@ export default function SistemaPromociones() {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { cargar() }, [cargar])
+  useEffect(() => { cargar() }, [cargar]) // eslint-disable-line react-hooks/set-state-in-effect -- carga al montar
 
   async function handleAplicar(id, pct) {
     try {

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import api from '@/services/api'
+import { adminService } from '@/services/orderService'
+import { flagService } from '@/services/flagService'
 
 const FLAG_LABELS = {
   facturacion_electronica: 'Facturación Electrónica CR',
@@ -21,15 +22,15 @@ export default function AdminSuperAdmin() {
   const [saving, setSaving]         = useState(null)   // flagNombre en proceso
 
   useEffect(() => {
-    api.get('/admin/empresas').then(r => setEmpresas(r.data ?? [])).catch(() => {})
-    api.get('/admin/flags').then(r => setFlags(r.data ?? [])).catch(() => {})
+    adminService.getEmpresas().then(r => setEmpresas(r.data ?? [])).catch(() => {})
+    flagService.list().then(r => setFlags(r.data ?? [])).catch(() => {})
   }, [])
 
   const cargarFlags = async (empresa) => {
     setSelected(empresa)
     setLoading(true)
     try {
-      const { data } = await api.get(`/admin/flags/${empresa.id}`)
+      const { data } = await flagService.getByEmpresa(empresa.id)
       setEstadoFlags(data ?? [])
     } finally {
       setLoading(false)
@@ -40,10 +41,7 @@ export default function AdminSuperAdmin() {
     if (!selected) return
     setSaving(flagNombre)
     try {
-      const endpoint = activo
-        ? `/admin/flags/${selected.id}/${flagNombre}/off`
-        : `/admin/flags/${selected.id}/${flagNombre}/on`
-      await api.post(endpoint)
+      await flagService.set(selected.id, flagNombre, !activo)
       setEstadoFlags(prev =>
         prev.map(f => f.nombre === flagNombre ? { ...f, activo: !activo } : f)
       )

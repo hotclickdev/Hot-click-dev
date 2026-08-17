@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import api from '@/services/api'
+import { inventarioService } from '@/services/inventarioService'
 
 const fmt = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
 const fmtDate = (ts) => ts ? String(ts).slice(0, 10) : '—'
@@ -70,18 +70,18 @@ export default function AdminInventario() {
   async function cargar() {
     setCargando(true); setError(null)
     try {
-      const { data: d } = await api.get('/admin/inventario/dashboard')
+      const { data: d } = await inventarioService.getDashboard()
       setData(d)
     } catch { setError('No se pudo cargar el análisis de inventario') }
     finally { setCargando(false) }
   }
 
-  useEffect(() => { cargar() }, [])
+  useEffect(() => { cargar() }, []) // eslint-disable-line react-hooks/set-state-in-effect -- carga al montar
 
   async function analizarAhora() {
     setAnalizando(true)
     try {
-      await api.post('/admin/inventario/analizar')
+      await inventarioService.analizar()
       await cargar()
     } catch { setError('Error al ejecutar análisis') }
     finally { setAnalizando(false) }

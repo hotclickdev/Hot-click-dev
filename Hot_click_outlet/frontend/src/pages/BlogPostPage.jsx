@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { Helmet } from 'react-helmet-async'
 import DOMPurify from 'dompurify'
 import MainLayout from '@/layouts/MainLayout'
-import api from '@/services/api'
+import { blogService } from '@/services/blogService'
 
 const SITE_URL = 'https://hotclick.lat'
 
@@ -58,9 +58,9 @@ export default function BlogPostPage() {
 
   useEffect(() => {
     if (!slug) return
-    setLoading(true)
+    setLoading(true) // eslint-disable-line react-hooks/set-state-in-effect -- reset al cambiar slug
     setNotFound(false)
-    api.get(`/blog/publico/${slug}`)
+    blogService.getPublico(slug)
       .then(r => setPost(r.data?.data ?? null))
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false))

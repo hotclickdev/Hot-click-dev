@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import api from '@/services/api'
+import { blogService } from '@/services/blogService'
 import { useToast } from '@/components/ui/Toast'
 
 const empty = { titulo: '', resumen: '', contenido: '', imagenUrl: '', publicado: false }
@@ -190,20 +190,20 @@ export default function AdminBlog() {
 
   async function fetchLista() {
     try {
-      const r = await api.get('/blog')
+      const r = await blogService.getAll()
       setLista(r.data?.data ?? [])
     } catch { showToast('Error cargando blog', 'error') }
     finally { setLoading(false) }
   }
 
-  useEffect(() => { fetchLista() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchLista() }, []) // eslint-disable-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect -- carga al montar
 
   async function handleSave(form) {
     if (form.id) {
-      await api.put(`/blog/${form.id}`, form)
+      await blogService.update(form.id, form)
       showToast('Actualizado', 'success')
     } else {
-      await api.post('/blog', form)
+      await blogService.create(form)
       showToast('Entrada creada', 'success')
     }
     fetchLista()
@@ -211,14 +211,14 @@ export default function AdminBlog() {
 
   async function handleDelete(id) {
     if (!confirm('¿Eliminar esta entrada?')) return
-    await api.delete(`/blog/${id}`)
+    await blogService.delete(id)
     showToast('Eliminada', 'success')
     setLista(prev => prev.filter(e => e.id !== id))
   }
 
   async function togglePublicado(e) {
     try {
-      await api.put(`/blog/${e.id}`, { ...e, publicado: !e.publicado })
+      await blogService.update(e.id, { ...e, publicado: !e.publicado })
       setLista(prev => prev.map(x => x.id === e.id ? { ...x, publicado: !x.publicado } : x))
       showToast(e.publicado ? 'Movido a borrador' : 'Publicado', 'success')
     } catch { showToast('Error', 'error') }

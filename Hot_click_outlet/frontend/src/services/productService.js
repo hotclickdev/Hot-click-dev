@@ -165,4 +165,10 @@ export const productService = {
 
   sincronizarImagenes: (productoId, urls) =>
     api.put(`/productos/${productoId}/imagenes`, { urls }),
+
+  archivarSinStock: () =>
+    api.post('/productos/archivar-sin-stock'),
+
+  ajustarPrecios: (porcentaje) =>
+    api.post('/productos/ajustar-precios', { porcentaje }),
 }

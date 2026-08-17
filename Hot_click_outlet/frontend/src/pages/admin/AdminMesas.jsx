@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import QRCode from 'react-qr-code'
-import api from '@/services/api'
+import { mesaService } from '@/services/mesaService'
 
 const TIPOS = ['MESA', 'KIOSK', 'ESTANTE', 'MOSTRADOR', 'ZONA']
 
@@ -76,19 +76,19 @@ export default function AdminMesas() {
   async function cargar() {
     setCargando(true)
     try {
-      const { data } = await api.get('/admin/mesas')
+      const { data } = await mesaService.getAll()
       setMesas(Array.isArray(data) ? data : [])
     } catch { setError('No se pudieron cargar las mesas') }
     finally { setCargando(false) }
   }
 
-  useEffect(() => { cargar() }, [])
+  useEffect(() => { cargar() }, []) // eslint-disable-line react-hooks/set-state-in-effect -- carga al montar
 
   async function crear(e) {
     e.preventDefault()
     setCreando(true); setError(null)
     try {
-      await api.post('/admin/mesas', form)
+      await mesaService.create(form)
       setForm({ nombre: '', descripcion: '', tipo: 'MESA' })
       setMostrarForm(false)
       await cargar()
@@ -99,7 +99,7 @@ export default function AdminMesas() {
 
   async function toggleActivo(mesa) {
     try {
-      await api.put(`/admin/mesas/${mesa.id}`, { activo: !mesa.activo })
+      await mesaService.update(mesa.id, { activo: !mesa.activo })
       await cargar()
     } catch { setError('Error al actualizar') }
   }
@@ -107,7 +107,7 @@ export default function AdminMesas() {
   async function regenerarToken(mesa) {
     if (!confirm('¿Regenerar el QR? El QR anterior dejará de funcionar.')) return
     try {
-      await api.post(`/admin/mesas/${mesa.id}/regenerar-token`)
+      await mesaService.regenerarToken(mesa.id)
       await cargar()
     } catch { setError('Error al regenerar') }
   }

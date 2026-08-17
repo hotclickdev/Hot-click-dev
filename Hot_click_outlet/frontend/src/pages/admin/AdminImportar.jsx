@@ -1,225 +1,19 @@
-import { useState, useRef, useCallback, useMemo } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { importService } from '@/services/importService'
 import { productService } from '@/services/productService'
 import { marcaService } from '@/services/marcaService'
+import { adminService, warehouseService } from '@/services/orderService'
 import { useToast } from '@/components/ui/Toast'
-import api from '@/services/api'
 import useAuthStore from '@/store/authStore'
 import { detectarColor } from '@/utils/colorDetector'
+import { fmtColones } from './importar/importarHelpers'
+import { IconCheck } from './importar/importarIcons'
+import ImportarResultados from './importar/ImportarResultados'
+import ImportarTabs from './importar/ImportarTabs'
+import ImportarToolbar from './importar/ImportarToolbar'
 
-// ── Iconos ────────────────────────────────────────────────────────────────────
-const s = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }
-
-function IconGlobe()   { return <svg viewBox="0 0 24 24" className="w-5 h-5" {...s}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10A15.3 15.3 0 0112 2z"/></svg> }
-function IconPdf()     { return <svg viewBox="0 0 24 24" className="w-5 h-5" {...s}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> }
-function IconCsv()     { return <svg viewBox="0 0 24 24" className="w-5 h-5" {...s}><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg> }
-function IconCheck()   { return <svg viewBox="0 0 24 24" className="w-4 h-4" {...s}><polyline points="20 6 9 17 4 12"/></svg> }
-function IconWarn()    { return <svg viewBox="0 0 24 24" className="w-4 h-4" {...s}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> }
-function IconUpload()  { return <svg viewBox="0 0 24 24" className="w-6 h-6" {...s}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> }
-function IconSpinner() { return <svg viewBox="0 0 24 24" className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" strokeWidth={2.5}><circle cx="12" cy="12" r="10" strokeOpacity={0.2}/><path d="M12 2a10 10 0 0110 10" strokeLinecap="round"/></svg> }
-function IconArrow()   { return <svg viewBox="0 0 24 24" className="w-4 h-4" {...s}><path d="M19 12H5M12 5l-7 7 7 7"/></svg> }
-function IconImg()     { return <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" {...s}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> }
-function IconEye()     { return <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" {...s}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> }
-function IconApply()   { return <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" {...s}><path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg> }
-function IconChevron() { return <svg viewBox="0 0 24 24" className="w-4 h-4" {...s}><polyline points="6 9 12 15 18 9"/></svg> }
-
-const TABS = [
-  { id: 'url', label: 'URL del sitio', icon: <IconGlobe /> },
-  { id: 'pdf', label: 'Catálogo PDF',  icon: <IconPdf />  },
-  { id: 'csv', label: 'Archivo CSV',   icon: <IconCsv />  },
-]
-
-const CONDICIONES = [
-  { value: 'NUEVO',      label: 'Nuevo'      },
-  { value: 'COMO_NUEVO', label: 'Como nuevo' },
-  { value: 'USADO',      label: 'Usado'      },
-]
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-const fmtColones = (v) => (v || v === 0) ? Number(v).toLocaleString('es-CR') : ''
-const parseColones = (str) => parseInt(String(str ?? '').replace(/[^0-9]/g, ''), 10) || 0
-
-// Thumbnail inline: muestra la imagen si la URL carga; se oculta silenciosamente en error
-function ImgPreview({ url }) {
-  const [ok, setOk] = useState(true)
-  if (!url || !ok) return null
-  return (
-    <img
-      src={url}
-      alt=""
-      onError={() => setOk(false)}
-      className="w-10 h-10 rounded-lg object-cover shrink-0"
-      style={{ border: '1px solid var(--hc-border)' }}
-    />
-  )
-}
-
-// Fila de detalle de un producto individual (una variante/color específico).
-// Se usa tanto para productos sin variantes de color como para el detalle expandido de un grupo.
-function FilaProducto({ p, isLast, categorias, marcas, updateRow }) {
-  const faltaNombre    = !p.nombreProducto?.trim()
-  const faltaCategoria = !p.categoriaId
-  const precioZero     = p._sel && (p.precioVenta ?? 0) === 0
-  const tieneAlerta    = p._sel && (faltaNombre || faltaCategoria || precioZero)
-
-  return (
-    <div
-      className="grid items-start px-3 py-3 gap-x-2 min-w-[990px]"
-      style={{
-        gridTemplateColumns: '28px 1fr 95px 95px 125px 105px 90px 60px 28px',
-        borderBottom: isLast ? 'none' : '1px solid var(--hc-border)',
-        backgroundColor: tieneAlerta ? 'rgba(245,158,11,0.04)' : 'transparent',
-        opacity: p._sel ? 1 : 0.4,
-      }}>
-
-      {/* Checkbox */}
-      <div className="pt-1.5 flex justify-center">
-        <input type="checkbox" checked={p._sel}
-          onChange={e => updateRow(p._id, '_sel', e.target.checked)}
-          className="w-4 h-4 cursor-pointer accent-[var(--hc-accent)]" />
-      </div>
-
-      {/* Nombre + descripción + imagen */}
-      <div className="space-y-1 min-w-0">
-        {p._colorLabel && (
-          <div className="flex items-center gap-1.5 text-[10px] font-medium" style={{ color: 'var(--hc-muted)' }}>
-            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: p._colorHex ?? '#999', border: '1px solid var(--hc-border)' }} />
-            {p._colorLabel}
-          </div>
-        )}
-        <input
-          value={p.nombreProducto ?? ''}
-          onChange={e => updateRow(p._id, 'nombreProducto', e.target.value)}
-          placeholder="Nombre del producto"
-          className="w-full text-sm font-medium px-2 py-1 rounded-lg outline-none"
-          style={{
-            backgroundColor: faltaNombre && p._sel ? 'rgba(239,68,68,0.08)' : 'var(--hc-surface-2)',
-            border: `1px solid ${faltaNombre && p._sel ? 'rgba(239,68,68,0.4)' : 'transparent'}`,
-            color: 'var(--hc-text)',
-          }} />
-        <input
-          value={p.descripcionCorta ?? ''}
-          onChange={e => updateRow(p._id, 'descripcionCorta', e.target.value)}
-          placeholder="Descripción breve…"
-          className="w-full text-xs px-2 py-1 rounded-lg outline-none"
-          style={{ backgroundColor: 'transparent', color: 'var(--hc-muted)' }} />
-
-        {/* Imagen URL editable + preview inline */}
-        <div className="flex items-center gap-1.5">
-          {/* Thumbnail inline */}
-          <ImgPreview url={p.imagenPrincipalUrl} />
-
-          <div className="flex-1 flex items-center gap-1">
-            <span style={{ color: 'var(--hc-muted)' }}><IconImg /></span>
-            <input
-              value={p.imagenPrincipalUrl ?? ''}
-              onChange={e => updateRow(p._id, 'imagenPrincipalUrl', e.target.value || null)}
-              placeholder="https://... (URL imagen)"
-              className="flex-1 text-[11px] px-2 py-0.5 rounded-lg outline-none"
-              style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)', border: '1px solid transparent' }} />
-            {p.imagenPrincipalUrl && (
-              <a href={p.imagenPrincipalUrl} target="_blank" rel="noopener noreferrer"
-                className="shrink-0 hover:opacity-70 transition-opacity"
-                style={{ color: 'var(--hc-muted)' }} title="Ver imagen">
-                <IconEye />
-              </a>
-            )}
-          </div>
-        </div>
-
-        {tieneAlerta && (
-          <div className="flex items-center gap-1 text-[10px] text-amber-400">
-            <IconWarn />
-            {faltaNombre ? 'Nombre requerido' : faltaCategoria ? 'Seleccioná una categoría' : 'Precio de venta en ₡0'}
-          </div>
-        )}
-      </div>
-
-      {/* Precio venta */}
-      <div>
-        <input
-          value={p._ventaFmt ?? ''}
-          onChange={e => { updateRow(p._id, 'precioVenta', parseColones(e.target.value)); updateRow(p._id, '_ventaFmt', e.target.value) }}
-          onBlur={() => updateRow(p._id, '_ventaFmt', fmtColones(p.precioVenta))}
-          placeholder="0"
-          className="w-full text-sm px-2 py-1.5 rounded-lg outline-none text-right"
-          style={{
-            backgroundColor: precioZero ? 'rgba(245,158,11,0.08)' : 'var(--hc-surface-2)',
-            border: `1px solid ${precioZero ? 'rgba(245,158,11,0.4)' : 'transparent'}`,
-            color: 'var(--hc-text)',
-          }} />
-        <p className="text-[9px] text-right mt-0.5" style={{ color: 'var(--hc-muted)' }}>₡ venta</p>
-      </div>
-
-      {/* Precio costo */}
-      <div>
-        <input
-          value={p._costoFmt ?? ''}
-          onChange={e => { updateRow(p._id, 'precioCompra', parseColones(e.target.value)); updateRow(p._id, '_costoFmt', e.target.value) }}
-          onBlur={() => updateRow(p._id, '_costoFmt', fmtColones(p.precioCompra))}
-          placeholder="0"
-          className="w-full text-sm px-2 py-1.5 rounded-lg outline-none text-right"
-          style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid transparent' }} />
-        <p className="text-[9px] text-right mt-0.5" style={{ color: 'var(--hc-muted)' }}>₡ costo</p>
-      </div>
-
-      {/* Categoría */}
-      <div>
-        <select
-          value={p.categoriaId ?? ''}
-          onChange={e => updateRow(p._id, 'categoriaId', e.target.value ? Number(e.target.value) : null)}
-          className="w-full text-xs px-2 py-1.5 rounded-lg outline-none"
-          style={{
-            backgroundColor: faltaCategoria && p._sel ? 'rgba(239,68,68,0.08)' : 'var(--hc-surface-2)',
-            border: `1px solid ${faltaCategoria && p._sel ? 'rgba(239,68,68,0.4)' : 'transparent'}`,
-            color: p.categoriaId ? 'var(--hc-text)' : 'var(--hc-muted)',
-          }}>
-          <option value="">Sin categoría</option>
-          {categorias.map(c => <option key={c.id} value={c.id}>{c.nombreCategoria}</option>)}
-        </select>
-      </div>
-
-      {/* Marca */}
-      <div>
-        <select
-          value={p.marcaId ?? ''}
-          onChange={e => updateRow(p._id, 'marcaId', e.target.value ? Number(e.target.value) : null)}
-          className="w-full text-xs px-2 py-1.5 rounded-lg outline-none"
-          style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid transparent' }}>
-          <option value="">{p.marcaTexto || 'Sin marca'}</option>
-          {marcas.map(m => <option key={m.id} value={m.id}>{m.nombreMarca}</option>)}
-        </select>
-      </div>
-
-      {/* Condición */}
-      <div>
-        <select
-          value={p.condicion ?? 'NUEVO'}
-          onChange={e => updateRow(p._id, 'condicion', e.target.value)}
-          className="w-full text-xs px-2 py-1.5 rounded-lg outline-none"
-          style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid transparent' }}>
-          {CONDICIONES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-        </select>
-      </div>
-
-      {/* Stock */}
-      <div>
-        <input type="number" min="0"
-          value={p.stockActual ?? 0}
-          onChange={e => updateRow(p._id, 'stockActual', Math.max(0, parseInt(e.target.value, 10) || 0))}
-          className="w-full text-sm px-2 py-1.5 rounded-lg outline-none text-center"
-          style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid transparent' }} />
-      </div>
-
-      {/* Espaciador (columna de expandir, solo existe en la cabecera del grupo) */}
-      <span />
-    </div>
-  )
-}
-
-// ── Componente principal ──────────────────────────────────────────────────────
 export default function AdminImportar() {
   const { showToast: addToast } = useToast()
   const navigate = useNavigate()
@@ -259,8 +53,8 @@ export default function AdminImportar() {
       const llamadas = [productService.getCategories(), marcaService.getAll()]
       // IT Admin no tiene empresa propia: las bodegas dependen de qué empresa elija,
       // así que no se cargan todavía (quedarían mezcladas entre todos los tenants).
-      if (!esAdminIT) llamadas.push(api.get('/bodegas'))
-      else llamadas.push(api.get('/admin/empresas'))
+      if (!esAdminIT) llamadas.push(warehouseService.getAll())
+      else llamadas.push(adminService.getEmpresas())
 
       const [catRes, marcRes, terceraRes] = await Promise.all(llamadas)
       const cats = catRes.data?.data ?? catRes.data ?? []
@@ -285,7 +79,7 @@ export default function AdminImportar() {
     setBodegaGlobal('')
     if (!id) { setBodegas([]); return }
     try {
-      const bodRes = await api.get('/bodegas', { params: { empresaId: id } })
+      const bodRes = await warehouseService.getAll({ empresaId: id })
       const bods = bodRes.data?.data ?? bodRes.data ?? []
       setBodegas(bods)
       if (bods.length > 0) setBodegaGlobal(String(bods[0].id))
@@ -410,50 +204,6 @@ export default function AdminImportar() {
   const todosSelec     = seleccionados.length === productos.length && productos.length > 0
   const algunoInvalido = seleccionados.some(p => !p.nombreProducto?.trim() || !p.categoriaId)
 
-  // ── Agrupación por producto base (mismas variantes de color) ──────────────
-  // Muchos PDFs de catálogo repiten el mismo modelo una vez por color disponible.
-  // Se agrupan por nombre-sin-color para no repetir imagen/categoría/marca por cada color.
-
-  const [gruposExpandidos, setGruposExpandidos] = useState(() => new Set())
-  const toggleGrupoExpandido = (key) => setGruposExpandidos(prev => {
-    const next = new Set(prev)
-    if (next.has(key)) next.delete(key); else next.add(key)
-    return next
-  })
-
-  const grupos = useMemo(() => {
-    const mapa = new Map()
-    productos.forEach(p => {
-      const { label, hex, nombreSinColor } = detectarColor(p.nombreProducto)
-      const key = (nombreSinColor || p.nombreProducto || '').toLowerCase()
-      if (!mapa.has(key)) mapa.set(key, { key, nombreBase: nombreSinColor || p.nombreProducto || '(sin nombre)', items: [] })
-      mapa.get(key).items.push({ ...p, _colorLabel: label, _colorHex: hex })
-    })
-    return [...mapa.values()]
-  }, [productos])
-
-  const estadoSeleccionGrupo = (items) => {
-    const n = items.filter(i => i._sel).length
-    if (n === 0) return 'none'
-    return n === items.length ? 'all' : 'partial'
-  }
-
-  // Valor de un campo si es igual en todos los ítems del grupo; undefined si difiere entre colores
-  const valorComunGrupo = (items, field) => {
-    const primero = items[0]?.[field] ?? null
-    return items.every(i => (i[field] ?? null) === primero) ? primero : undefined
-  }
-
-  const toggleSeleccionGrupo = (items, value) => {
-    const ids = new Set(items.map(i => i._id))
-    setProductos(prev => prev.map(p => ids.has(p._id) ? { ...p, _sel: value } : p))
-  }
-
-  const actualizarCampoGrupo = (items, field, value) => {
-    const ids = new Set(items.map(i => i._id))
-    setProductos(prev => prev.map(p => ids.has(p._id) ? { ...p, [field]: value } : p))
-  }
-
   // ── Confirmar importación ─────────────────────────────────────────────────
 
   async function confirmar() {
@@ -503,12 +253,9 @@ export default function AdminImportar() {
   const onDragOver  = (e) => { e.preventDefault(); setDragging(true) }
   const onDragLeave = ()  => setDragging(false)
 
-  // ── Render ────────────────────────────────────────────────────────────────
-
   return (
     <div className="max-w-6xl mx-auto space-y-6">
 
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold" style={{ color: 'var(--hc-text)' }}>Importar catálogo</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>
@@ -516,7 +263,6 @@ export default function AdminImportar() {
         </p>
       </div>
 
-      {/* Indicador de pasos */}
       <div className="flex items-center gap-3">
         {[{ n: 1, label: 'Seleccionar fuente' }, { n: 2, label: 'Verificar y categorizar' }].map(({ n, label }, i) => (
           <div key={n} className="flex items-center gap-2">
@@ -532,416 +278,76 @@ export default function AdminImportar() {
 
       <AnimatePresence mode="wait">
 
-        {/* ══ PASO 1 ══ */}
         {paso === 1 && (
           <motion.div key="paso1"
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
             className="rounded-2xl p-6 space-y-5"
             style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
           >
-            {/* Tabs */}
-            <div className="flex gap-1 p-1 rounded-xl" style={{ backgroundColor: 'var(--hc-surface-2)' }}>
-              {TABS.map(t => (
-                <button key={t.id} onClick={() => { setTab(t.id); setArchivoState(null) }}
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all"
-                  style={{
-                    backgroundColor: tab === t.id ? 'var(--hc-surface)' : 'transparent',
-                    color:           tab === t.id ? 'var(--hc-text)'    : 'var(--hc-muted)',
-                    boxShadow:       tab === t.id ? '0 1px 3px rgba(0,0,0,0.15)' : 'none',
-                  }}>
-                  {t.icon}
-                  <span className="hidden sm:inline">{t.label}</span>
-                </button>
-              ))}
-            </div>
-
-            {tab === 'url' && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>
-                  URL de la tienda o página de productos
-                </label>
-                <input type="url" value={url} onChange={e => setUrl(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && extraer()}
-                  placeholder="https://tiendacliente.com/productos"
-                  className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
-                  style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
-                />
-                <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-                  La URL debe ser pública. La IA extraerá automáticamente los productos que encuentre.
-                </p>
-              </div>
-            )}
-
-            {(tab === 'pdf' || tab === 'csv') && (
-              <div onDrop={onDrop} onDragOver={onDragOver} onDragLeave={onDragLeave}
-                onClick={() => fileRef.current?.click()}
-                className="flex flex-col items-center justify-center gap-3 p-10 rounded-xl cursor-pointer transition-all"
-                style={{
-                  border: `2px dashed ${dragging ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
-                  backgroundColor: dragging ? 'rgba(231,59,51,0.04)' : 'var(--hc-surface-2)',
-                }}>
-                <input ref={fileRef} type="file" className="hidden"
-                  accept={tab === 'pdf' ? '.pdf' : '.csv,.txt'}
-                  onChange={e => setArchivoState(e.target.files[0] || null)} />
-                <IconUpload />
-                {archivo
-                  ? <p className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>{archivo.name}</p>
-                  : <>
-                      <p className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Arrastrá o hacé clic para subir</p>
-                      <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>{tab === 'pdf' ? 'PDF hasta 30 MB' : 'CSV hasta 5 MB'}</p>
-                    </>
-                }
-              </div>
-            )}
-
-            <button onClick={extraer} disabled={cargando}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-60"
-              style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-              {cargando
-                ? <><IconSpinner /> {tab === 'pdf' ? 'Analizando con IA… (puede tardar unos minutos en PDFs escaneados)' : 'Analizando con IA…'}</>
-                : 'Extraer productos'}
-            </button>
+            <ImportarTabs
+              tab={tab}
+              onTab={(id) => { setTab(id); setArchivoState(null) }}
+              url={url}
+              setUrl={setUrl}
+              archivo={archivo}
+              dragging={dragging}
+              fileRef={fileRef}
+              onDrop={onDrop}
+              onDragOver={onDragOver}
+              onDragLeave={onDragLeave}
+              setArchivoState={setArchivoState}
+              onExtraer={extraer}
+              cargando={cargando}
+            />
           </motion.div>
         )}
 
-        {/* ══ PASO 2 ══ */}
         {paso === 2 && (
           <motion.div key="paso2"
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
             className="space-y-4"
           >
-            {/* Barra de config global */}
-            <div className="flex flex-wrap items-center gap-3 px-4 py-3 rounded-xl"
-              style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+            <ImportarToolbar
+              esAdminIT={esAdminIT}
+              empresas={empresas}
+              empresaSeleccionada={empresaSeleccionada}
+              onCambiarEmpresa={onCambiarEmpresa}
+              margenGlobal={margenGlobal}
+              setMargenGlobal={setMargenGlobal}
+              aplicarMargenATodos={aplicarMargenATodos}
+              bodegaGlobal={bodegaGlobal}
+              setBodegaGlobal={setBodegaGlobal}
+              bodegas={bodegas}
+              catGlobal={catGlobal}
+              setCatGlobal={setCatGlobal}
+              categorias={categorias}
+              aplicarCategoriaATodos={aplicarCategoriaATodos}
+              marcaGlobal={marcaGlobal}
+              setMarcaGlobal={setMarcaGlobal}
+              marcas={marcas}
+              aplicarMarcaATodos={aplicarMarcaATodos}
+              condicionGlobal={condicionGlobal}
+              setCondicionGlobal={setCondicionGlobal}
+              aplicarCondicionATodos={aplicarCondicionATodos}
+              stockGlobal={stockGlobal}
+              setStockGlobal={setStockGlobal}
+              aplicarStockATodos={aplicarStockATodos}
+              seleccionados={seleccionados}
+              productos={productos}
+              todosSelec={todosSelec}
+              toggleAll={toggleAll}
+            />
 
-              {/* Empresa destino — solo IT Admin, que no tiene empresa propia */}
-              {esAdminIT && (
-                <>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium whitespace-nowrap" style={{ color: 'var(--hc-muted)' }}>Empresa *</span>
-                    <select value={empresaSeleccionada} onChange={e => onCambiarEmpresa(e.target.value)}
-                      className="text-xs px-2 py-1.5 rounded-lg outline-none"
-                      style={{
-                        backgroundColor: 'var(--hc-surface-2)',
-                        color: empresaSeleccionada ? 'var(--hc-text)' : 'var(--hc-muted)',
-                        border: `1px solid ${empresaSeleccionada ? 'var(--hc-border)' : 'rgba(239,68,68,0.4)'}`,
-                      }}>
-                      <option value="">Seleccionar…</option>
-                      {empresas.map(e => <option key={e.id} value={e.id}>{e.nombreComercial || e.nombreEmpresa}</option>)}
-                    </select>
-                  </div>
-                  <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'var(--hc-border)' }} />
-                </>
-              )}
-
-              {/* Aplicar margen (% sobre costo) a todos */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium whitespace-nowrap" style={{ color: 'var(--hc-muted)' }}>Margen sobre costo</span>
-                <div className="flex items-center gap-1">
-                  <input type="number" value={margenGlobal} onChange={e => setMargenGlobal(e.target.value)}
-                    placeholder="10"
-                    className="w-14 text-xs px-2 py-1.5 rounded-lg outline-none text-center"
-                    style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }} />
-                  <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>%</span>
-                </div>
-                <button onClick={aplicarMargenATodos} disabled={margenGlobal === ''}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-40"
-                  style={{ backgroundColor: margenGlobal !== '' ? 'var(--hc-accent)' : 'var(--hc-surface-2)', color: margenGlobal !== '' ? '#fff' : 'var(--hc-muted)' }}
-                  title="Calcula precio de venta = precio de costo + %">
-                  <IconApply /> Aplicar a todos
-                </button>
-              </div>
-
-              {/* Separador */}
-              <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'var(--hc-border)' }} />
-
-              {/* Bodega global */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium whitespace-nowrap" style={{ color: 'var(--hc-muted)' }}>Bodega</span>
-                <select value={bodegaGlobal} onChange={e => setBodegaGlobal(e.target.value)}
-                  className="text-xs px-2 py-1.5 rounded-lg outline-none"
-                  style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
-                  {bodegas.length === 0 && (
-                    <option value="">{esAdminIT && !empresaSeleccionada ? 'Elegí una empresa primero' : 'Sin bodegas'}</option>
-                  )}
-                  {bodegas.map(b => <option key={b.id} value={b.id}>{b.nombre ?? b.nombreBodega}</option>)}
-                </select>
-              </div>
-
-              {/* Separador */}
-              <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'var(--hc-border)' }} />
-
-              {/* Aplicar categoría a todos */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium whitespace-nowrap" style={{ color: 'var(--hc-muted)' }}>Categoría global</span>
-                <select value={catGlobal} onChange={e => setCatGlobal(e.target.value)}
-                  className="text-xs px-2 py-1.5 rounded-lg outline-none"
-                  style={{ backgroundColor: 'var(--hc-surface-2)', color: catGlobal ? 'var(--hc-text)' : 'var(--hc-muted)', border: '1px solid var(--hc-border)' }}>
-                  <option value="">Seleccionar…</option>
-                  {categorias.map(c => <option key={c.id} value={c.id}>{c.nombreCategoria}</option>)}
-                </select>
-                <button onClick={aplicarCategoriaATodos} disabled={!catGlobal}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-40"
-                  style={{ backgroundColor: catGlobal ? 'var(--hc-accent)' : 'var(--hc-surface-2)', color: catGlobal ? '#fff' : 'var(--hc-muted)' }}>
-                  <IconApply /> Aplicar a todos
-                </button>
-              </div>
-
-              {/* Separador */}
-              <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'var(--hc-border)' }} />
-
-              {/* Aplicar marca a todos */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium whitespace-nowrap" style={{ color: 'var(--hc-muted)' }}>Marca global</span>
-                <select value={marcaGlobal} onChange={e => setMarcaGlobal(e.target.value)}
-                  className="text-xs px-2 py-1.5 rounded-lg outline-none"
-                  style={{ backgroundColor: 'var(--hc-surface-2)', color: marcaGlobal ? 'var(--hc-text)' : 'var(--hc-muted)', border: '1px solid var(--hc-border)' }}>
-                  <option value="">Seleccionar…</option>
-                  {marcas.map(m => <option key={m.id} value={m.id}>{m.nombreMarca}</option>)}
-                </select>
-                <button onClick={aplicarMarcaATodos} disabled={!marcaGlobal}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-40"
-                  style={{ backgroundColor: marcaGlobal ? 'var(--hc-accent)' : 'var(--hc-surface-2)', color: marcaGlobal ? '#fff' : 'var(--hc-muted)' }}>
-                  <IconApply /> Aplicar a todos
-                </button>
-              </div>
-
-              {/* Separador */}
-              <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'var(--hc-border)' }} />
-
-              {/* Aplicar condición a todos */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium whitespace-nowrap" style={{ color: 'var(--hc-muted)' }}>Condición global</span>
-                <select value={condicionGlobal} onChange={e => setCondicionGlobal(e.target.value)}
-                  className="text-xs px-2 py-1.5 rounded-lg outline-none"
-                  style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
-                  {CONDICIONES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                </select>
-                <button onClick={aplicarCondicionATodos}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                  style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-                  <IconApply /> Aplicar a todos
-                </button>
-              </div>
-
-              {/* Separador */}
-              <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'var(--hc-border)' }} />
-
-              {/* Aplicar stock a todos */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium whitespace-nowrap" style={{ color: 'var(--hc-muted)' }}>Stock global</span>
-                <input type="number" min="0" value={stockGlobal} onChange={e => setStockGlobal(e.target.value)}
-                  placeholder="0"
-                  className="w-16 text-xs px-2 py-1.5 rounded-lg outline-none text-center"
-                  style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }} />
-                <button onClick={aplicarStockATodos} disabled={stockGlobal === ''}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-40"
-                  style={{ backgroundColor: stockGlobal !== '' ? 'var(--hc-accent)' : 'var(--hc-surface-2)', color: stockGlobal !== '' ? '#fff' : 'var(--hc-muted)' }}>
-                  <IconApply /> Aplicar a todos
-                </button>
-              </div>
-
-              {/* Conteo y toggle */}
-              <div className="ml-auto flex items-center gap-3">
-                <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
-                  <span className="font-semibold" style={{ color: 'var(--hc-text)' }}>{seleccionados.length}</span>
-                  {' / '}
-                  <span className="font-semibold" style={{ color: 'var(--hc-text)' }}>{productos.length}</span>
-                </p>
-                <button onClick={() => toggleAll(!todosSelec)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap"
-                  style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
-                  {todosSelec ? 'Quitar todos' : 'Seleccionar todos'}
-                </button>
-              </div>
-            </div>
-
-            {/* Tabla */}
-            <div className="rounded-2xl overflow-x-auto" style={{ border: '1px solid var(--hc-border)' }}>
-
-              {/* Encabezado */}
-              <div className="grid text-[10px] font-semibold uppercase tracking-wider px-3 py-3 min-w-[990px]"
-                style={{
-                  gridTemplateColumns: '28px 1fr 95px 95px 125px 105px 90px 60px 28px',
-                  backgroundColor: 'var(--hc-surface-2)',
-                  color: 'var(--hc-muted)',
-                  borderBottom: '1px solid var(--hc-border)',
-                }}>
-                <span />
-                <span>Producto / Descripción / Imagen</span>
-                <span className="text-right">Precio venta</span>
-                <span className="text-right">Precio costo</span>
-                <span>Categoría *</span>
-                <span>Marca</span>
-                <span>Condición</span>
-                <span className="text-center">Stock</span>
-                <span />
-              </div>
-
-              {/* Filas — agrupadas por producto base cuando hay varias variantes de color */}
-              <div style={{ backgroundColor: 'var(--hc-surface)' }}>
-                {grupos.map((grupo, gIdx) => {
-                  const { key, nombreBase, items } = grupo
-                  const esUltimoGrupo = gIdx === grupos.length - 1
-
-                  // Sin variantes de color detectadas: fila normal, sin cabecera de grupo
-                  if (items.length === 1) {
-                    return <FilaProducto key={items[0]._id} p={items[0]} isLast={esUltimoGrupo}
-                      categorias={categorias} marcas={marcas} updateRow={updateRow} />
-                  }
-
-                  const expandido    = gruposExpandidos.has(key)
-                  const estadoSel    = estadoSeleccionGrupo(items)
-                  const catComun     = valorComunGrupo(items, 'categoriaId')
-                  const marcaComun   = valorComunGrupo(items, 'marcaId')
-                  const condComun    = valorComunGrupo(items, 'condicion')
-                  const ventas       = items.map(i => i.precioVenta ?? 0)
-                  const costos       = items.map(i => i.precioCompra ?? 0)
-                  const stockTotal   = items.reduce((acc, i) => acc + (parseInt(i.stockActual, 10) || 0), 0)
-                  const rangoVenta   = Math.min(...ventas) === Math.max(...ventas)
-                    ? fmtColones(ventas[0]) : `${fmtColones(Math.min(...ventas))}–${fmtColones(Math.max(...ventas))}`
-                  const rangoCosto   = Math.min(...costos) === Math.max(...costos)
-                    ? fmtColones(costos[0]) : `${fmtColones(Math.min(...costos))}–${fmtColones(Math.max(...costos))}`
-                  const algunaAlerta = items.some(p => p._sel && (!p.nombreProducto?.trim() || !p.categoriaId || (p.precioVenta ?? 0) === 0))
-
-                  return (
-                    <div key={key} style={{ borderBottom: esUltimoGrupo ? 'none' : '1px solid var(--hc-border)' }}>
-
-                      {/* Cabecera del grupo */}
-                      <div className="grid items-center px-3 py-2.5 gap-x-2 min-w-[990px]"
-                        style={{
-                          gridTemplateColumns: '28px 1fr 95px 95px 125px 105px 90px 60px 28px',
-                          backgroundColor: algunaAlerta ? 'rgba(245,158,11,0.06)' : 'var(--hc-surface-2)',
-                        }}>
-
-                        {/* Checkbox tri-estado (todo/algo/nada seleccionado en el grupo) */}
-                        <div className="flex justify-center">
-                          <input type="checkbox"
-                            checked={estadoSel === 'all'}
-                            ref={el => { if (el) el.indeterminate = estadoSel === 'partial' }}
-                            onChange={e => toggleSeleccionGrupo(items, e.target.checked)}
-                            className="w-4 h-4 cursor-pointer accent-[var(--hc-accent)]" />
-                        </div>
-
-                        {/* Imagen representativa + nombre base + círculos de color */}
-                        <div className="min-w-0 flex items-center gap-2">
-                          <ImgPreview url={items[0].imagenPrincipalUrl} />
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold truncate" style={{ color: 'var(--hc-text)' }}>
-                              {nombreBase}
-                              <span className="ml-1.5 font-normal text-xs" style={{ color: 'var(--hc-muted)' }}>
-                                ({items.length} colores)
-                              </span>
-                            </p>
-                            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                              {items.map(it => (
-                                <button key={it._id} type="button"
-                                  onClick={() => updateRow(it._id, '_sel', !it._sel)}
-                                  title={`${it._colorLabel ?? it.nombreProducto} · ${fmtColones(it.precioVenta) || '₡0'}`}
-                                  className="w-5 h-5 rounded-full shrink-0 transition-all"
-                                  style={{
-                                    background: it._colorHex ?? 'conic-gradient(from 90deg, #dc2626, #eab308, #16a34a, #2563eb, #7c3aed, #dc2626)',
-                                    border: it._sel ? '2px solid var(--hc-accent)' : '1px solid var(--hc-border)',
-                                    opacity: it._sel ? 1 : 0.35,
-                                  }} />
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Precio venta (rango entre colores) */}
-                        <div className="text-right text-xs" style={{ color: 'var(--hc-muted)' }}>
-                          ₡{rangoVenta}
-                        </div>
-
-                        {/* Precio costo (rango entre colores) */}
-                        <div className="text-right text-xs" style={{ color: 'var(--hc-muted)' }}>
-                          ₡{rangoCosto}
-                        </div>
-
-                        {/* Categoría — aplica a todos los colores del grupo */}
-                        <div>
-                          <select
-                            value={catComun ?? ''}
-                            onChange={e => actualizarCampoGrupo(items, 'categoriaId', e.target.value ? Number(e.target.value) : null)}
-                            className="w-full text-xs px-2 py-1.5 rounded-lg outline-none"
-                            style={{
-                              backgroundColor: !catComun ? 'rgba(239,68,68,0.08)' : 'var(--hc-surface)',
-                              border: `1px solid ${!catComun ? 'rgba(239,68,68,0.4)' : 'transparent'}`,
-                              color: catComun ? 'var(--hc-text)' : 'var(--hc-muted)',
-                            }}>
-                            <option value="">{catComun === undefined ? 'Varias…' : 'Sin categoría'}</option>
-                            {categorias.map(c => <option key={c.id} value={c.id}>{c.nombreCategoria}</option>)}
-                          </select>
-                        </div>
-
-                        {/* Marca — aplica a todos los colores del grupo */}
-                        <div>
-                          <select
-                            value={marcaComun ?? ''}
-                            onChange={e => actualizarCampoGrupo(items, 'marcaId', e.target.value ? Number(e.target.value) : null)}
-                            className="w-full text-xs px-2 py-1.5 rounded-lg outline-none"
-                            style={{ backgroundColor: 'var(--hc-surface)', color: marcaComun ? 'var(--hc-text)' : 'var(--hc-muted)', border: '1px solid transparent' }}>
-                            <option value="">{marcaComun === undefined ? 'Varias…' : (items[0].marcaTexto || 'Sin marca')}</option>
-                            {marcas.map(m => <option key={m.id} value={m.id}>{m.nombreMarca}</option>)}
-                          </select>
-                        </div>
-
-                        {/* Condición — aplica a todos los colores del grupo */}
-                        <div>
-                          <select
-                            value={condComun ?? 'NUEVO'}
-                            onChange={e => actualizarCampoGrupo(items, 'condicion', e.target.value)}
-                            className="w-full text-xs px-2 py-1.5 rounded-lg outline-none"
-                            style={{ backgroundColor: 'var(--hc-surface)', color: 'var(--hc-text)', border: '1px solid transparent' }}>
-                            {CONDICIONES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                          </select>
-                        </div>
-
-                        {/* Stock total del grupo */}
-                        <div className="text-center text-xs" style={{ color: 'var(--hc-muted)' }}>
-                          {stockTotal}
-                        </div>
-
-                        {/* Expandir/contraer detalle por color */}
-                        <div className="flex justify-center">
-                          <button type="button" onClick={() => toggleGrupoExpandido(key)}
-                            className="p-1 rounded-lg transition-transform"
-                            style={{ color: 'var(--hc-muted)', transform: expandido ? 'rotate(180deg)' : 'none' }}
-                            title={expandido ? 'Contraer' : 'Ver detalle de cada color'}>
-                            <IconChevron />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Detalle expandido: una fila editable por cada color */}
-                      {expandido && items.map((p, idx) => (
-                        <FilaProducto key={p._id} p={p} isLast={idx === items.length - 1}
-                          categorias={categorias} marcas={marcas} updateRow={updateRow} />
-                      ))}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="flex items-center justify-between gap-3 pt-1">
-              <button onClick={() => { setPaso(1); setProductos([]) }}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors"
-                style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
-                <IconArrow /> Volver
-              </button>
-
-              <button onClick={confirmar} disabled={guardando || seleccionados.length === 0}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
-                style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-                {guardando
-                  ? <><IconSpinner /> Importando…</>
-                  : <><IconCheck /> Importar {seleccionados.length} producto{seleccionados.length !== 1 ? 's' : ''}</>
-                }
-              </button>
-            </div>
+            <ImportarResultados
+              productos={productos}
+              setProductos={setProductos}
+              categorias={categorias}
+              marcas={marcas}
+              updateRow={updateRow}
+              onVolver={() => { setPaso(1); setProductos([]) }}
+              onConfirmar={confirmar}
+              guardando={guardando}
+            />
           </motion.div>
         )}
       </AnimatePresence>

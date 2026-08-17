@@ -6,7 +6,8 @@ import Input from '@/components/ui/Input'
 import PhoneField from '@/components/ui/PhoneField'
 import useAuthStore from '@/store/authStore'
 import { useToast } from '@/components/ui/Toast'
-import api, { registrarConsentimiento } from '@/services/api'
+import { authService } from '@/services/authService'
+import { haciendaService } from '@/services/haciendaService'
 
 const A = { color: 'var(--hc-primary)', ring: 'rgba(231,59,51,0.32)', bg: 'rgba(231,59,51,0.08)' }
 
@@ -52,7 +53,7 @@ export default function RegistrarNegocioPage() {
     setHaciendaResult(null)
     setDeclaraInscrito(false)
     try {
-      const { data } = await api.get(`/hacienda/contribuyente/${c}`)
+      const { data } = await haciendaService.getContribuyente(c)
       setHaciendaResult(data)
     } catch {
       setHaciendaError('No se pudo consultar Hacienda. Intentá de nuevo.')
@@ -72,7 +73,7 @@ export default function RegistrarNegocioPage() {
       return
     }
     setError(''); setLoading(true)
-    registrarConsentimiento('VENDEDOR')
+    authService.registrarConsentimiento('VENDEDOR')
     try {
       const payload = {
         ...form,
@@ -83,7 +84,7 @@ export default function RegistrarNegocioPage() {
           nombreHacienda:    haciendaResult.nombre,
         }),
       }
-      const { data } = await api.post('/auth/upgrade-emprendedor', payload)
+      const { data } = await authService.upgradeEmprendedor(payload)
       login(data?.data ?? data)
       toast({ message: '¡Negocio registrado! Bienvenido al panel de emprendedor.', type: 'success' })
       navigate('/admin', { replace: true })

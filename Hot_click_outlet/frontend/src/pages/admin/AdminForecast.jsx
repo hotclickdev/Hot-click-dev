@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import api from '@/services/api'
+import { forecastService } from '@/services/forecastService'
 
 const fmt = (n) => new Intl.NumberFormat('es-CR').format(Math.round(n ?? 0))
 
@@ -44,18 +44,18 @@ export default function AdminForecast() {
   async function cargar() {
     setCargando(true); setError(null)
     try {
-      const { data: d } = await api.get('/admin/forecast/dashboard')
+      const { data: d } = await forecastService.getDashboard()
       setData(d)
     } catch { setError('No se pudo cargar el pronóstico') }
     finally { setCargando(false) }
   }
 
-  useEffect(() => { cargar() }, [])
+  useEffect(() => { cargar() }, []) // eslint-disable-line react-hooks/set-state-in-effect -- carga al montar
 
   async function generar() {
     setGenerando(true)
     try {
-      await api.post('/admin/forecast/generar')
+      await forecastService.generar()
       await cargar()
     } catch { setError('Error al generar pronóstico') }
     finally { setGenerando(false) }

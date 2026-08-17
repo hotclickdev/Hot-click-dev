@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import api from '@/services/api'
+import { convenioService } from '@/services/convenioService'
 import { useToast } from '@/components/ui/Toast'
 
 const empty = { nombre: '', descripcion: '', logoUrl: '', urlWeb: '', activo: true }
@@ -95,20 +95,20 @@ export default function AdminConvenios() {
 
   async function fetchLista() {
     try {
-      const r = await api.get('/convenios')
+      const r = await convenioService.getAll()
       setLista(r.data?.data ?? [])
     } catch { showToast('Error cargando convenios', 'error') }
     finally { setLoading(false) }
   }
 
-  useEffect(() => { fetchLista() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchLista() }, []) // eslint-disable-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect -- carga al montar
 
   async function handleSave(form) {
     if (form.id) {
-      await api.put(`/convenios/${form.id}`, form)
+      await convenioService.update(form.id, form)
       showToast('Actualizado', 'success')
     } else {
-      await api.post('/convenios', form)
+      await convenioService.create(form)
       showToast('Creado', 'success')
     }
     fetchLista()
@@ -116,13 +116,13 @@ export default function AdminConvenios() {
 
   async function handleDelete(id) {
     if (!confirm('¿Eliminar este emprendimiento?')) return
-    await api.delete(`/convenios/${id}`)
+    await convenioService.delete(id)
     showToast('Eliminado', 'success')
     setLista(prev => prev.filter(c => c.id !== id))
   }
 
   async function handleToggle(c) {
-    await api.put(`/convenios/${c.id}`, { ...c, activo: !c.activo })
+    await convenioService.update(c.id, { ...c, activo: !c.activo })
     setLista(prev => prev.map(x => x.id === c.id ? { ...x, activo: !x.activo } : x))
     showToast(!c.activo ? 'Activado' : 'Desactivado', 'success')
   }

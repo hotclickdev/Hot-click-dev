@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import api from '@/services/api'
+import { observabilidadService } from '@/services/observabilidadService'
 
 const fmt = (n) => typeof n === 'number' ? n.toLocaleString('es-CR') : (n ?? '—')
 
@@ -43,7 +43,7 @@ export default function AdminObservabilidad() {
 
   const cargar = useCallback(() => {
     setLoading(true)
-    api.get('/admin/observabilidad')
+    observabilidadService.getDashboard()
       .then(({ data: d }) => {
         setData(d)
         setLastUpdate(new Date().toLocaleTimeString('es-CR'))
@@ -54,7 +54,7 @@ export default function AdminObservabilidad() {
   }, [])
 
   useEffect(() => {
-    cargar()
+    cargar() // eslint-disable-line react-hooks/set-state-in-effect -- carga al montar
     const interval = setInterval(cargar, 60_000) // refresco cada 60s
     return () => clearInterval(interval)
   }, [cargar])

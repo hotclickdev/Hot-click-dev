@@ -11,6 +11,12 @@ export const formatDate = (date) =>
     day: 'numeric',
   }).format(new Date(date))
 
+/** @param {string|number|Date} [date] */
+export function formatDateShort(date) {
+  if (!date) return '—'
+  return new Date(date).toLocaleDateString('es-CR', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
 export const formatDateTime = (date) =>
   new Intl.DateTimeFormat('es-CR', {
     year: 'numeric',

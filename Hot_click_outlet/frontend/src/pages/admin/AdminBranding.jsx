@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import api from '@/services/api'
+import { brandingService } from '@/services/brandingService'
 import { applyBranding, invalidateBrandingCache } from '@/hooks/useBranding'
 
 const FONTS = ['Inter', 'Poppins', 'Roboto', 'Nunito', 'Montserrat', 'Raleway', 'Lato', 'Open Sans']
@@ -48,7 +48,7 @@ export default function AdminBranding() {
   const [error, setError]     = useState(null)
 
   useEffect(() => {
-    api.get('/admin/branding').then(({ data }) => setForm(data))
+    brandingService.get().then(({ data }) => setForm(data))
       .catch(() => setError('No se pudo cargar la configuración'))
       .finally(() => setCargando(false))
   }, [])
@@ -59,7 +59,7 @@ export default function AdminBranding() {
     e.preventDefault()
     setGuardando(true); setOk(false); setError(null)
     try {
-      const { data } = await api.put('/admin/branding', form)
+      const { data } = await brandingService.update(form)
       setForm(data)
       invalidateBrandingCache()
       applyBranding(data)

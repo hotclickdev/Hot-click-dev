@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import api from '@/services/api'
+import { productService } from '@/services/productService'
+import { ofertaService } from '@/services/ofertaService'
 import { useToast } from '@/components/ui/Toast'
 
 const fmt = n => `₡${new Intl.NumberFormat('es-CR').format(n ?? 0)}`
@@ -17,7 +18,7 @@ function PctBadge({ pct }) {
   )
 }
 
-function ProductRow({ p, onToggle, loading }) {
+function ProductRow({ p, onToggle }) {
   const [pct, setPct] = useState(p.porcentajeDescuento ?? '')
   const [saving, setSaving] = useState(false)
 
@@ -112,8 +113,8 @@ export default function AdminOfertas() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const pRes = await api.get('/productos/admin/todos')
-      setProductos(pRes.data?.data?.content ?? pRes.data?.data ?? [])
+      const pRes = await productService.adminGetAll()
+      setProductos(pRes.data?.data?.content ?? pRes.data?.content ?? pRes.data?.data ?? [])
     } catch {
       showToast('Error cargando datos', 'error')
     } finally {
@@ -121,11 +122,11 @@ export default function AdminOfertas() {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { fetchData() }, [fetchData])
+  useEffect(() => { fetchData() }, [fetchData]) // eslint-disable-line react-hooks/set-state-in-effect -- carga al montar
 
   async function handleToggle(id, enOferta, pct) {
     try {
-      const { data } = await api.patch(`/productos/${id}/oferta`, { enOferta, porcentajeDescuento: pct })
+      const { data } = await ofertaService.aplicar(id, enOferta, pct)
       if (data?.pendiente) {
         showToast('Promoción enviada — pendiente de aprobación del admin', 'success')
         return

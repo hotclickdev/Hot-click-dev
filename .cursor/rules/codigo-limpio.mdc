@@ -1,0 +1,16 @@
+---
+description: Reglas estrictas de calidad y arquitectura limpia
+globs: **/*
+alwaysApply: true
+---
+
+# Código limpio
+
+- **Funciones chicas:** lógica (handlers, cálculos, validación) ≤ 25–30 líneas. Si hace “y”, extraé. JSX de una sola pieza visual puede pasarlo; extraé cuando la sección tenga nombre (formulario, tabla, modal), no por contar líneas.
+- **Sin nesting profundo:** guard clauses y `return` temprano. Loading / error / vacío salen primero. Máximo 2 niveles de indentación en lógica.
+- **DRY:** 3.ª copia real → extraer. Misma regla de negocio = un dueño. Parecido casual (van a divergir) no se unifica.
+- **Nombres:** descriptivos; prohibido `data1`, `temp`, `set` suelto. Un concepto = una palabra en el repo. Frontend es JS: JSDoc en exports, no `any`. No migrar a TypeScript de paso.
+- **Capas:** page/componente no llama axios; usa `src/services/`. Stores no hacen HTTP.
+- **Errores visibles:** nada de `catch (() => {})`. Toast o log; el usuario ve el fallo donde ocurrió.
+- **Constantes:** números/strings de negocio con nombre (`DIAS_RETENCION`). No `Constantes.java` cajón de sastre.
+- **Un export principal por archivo.** God-pages: extraer a carpeta hermana. Helpers puros al lado, testeables.

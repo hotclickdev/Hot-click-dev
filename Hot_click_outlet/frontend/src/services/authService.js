@@ -80,10 +80,6 @@ export const authService = {
   sendLoginEmailOtp: (tempToken) =>
     api.post('/auth/2fa/email/send', { tempToken }),
 
-  /** Get current 2FA status and active methods */
-  get2FAStatus: () =>
-    api.get('/auth/2fa/status'),
-
   /** Send EMAIL OTP to start enabling Email 2FA (requires session) */
   enableEmailOtp: () =>
     api.post('/auth/2fa/email/enable'),
@@ -95,4 +91,10 @@ export const authService = {
   /** Disable Email OTP (requires password confirmation) */
   disableEmailOtp: (contrasena) =>
     api.post('/auth/2fa/email/disable', { contrasena }),
+
+  upgradeEmprendedor: (data) =>
+    api.post('/auth/upgrade-emprendedor', data),
+
+  registrarConsentimiento: (tipo) =>
+    api.post('/consentimiento', { tipo }).catch(() => {}),
 }

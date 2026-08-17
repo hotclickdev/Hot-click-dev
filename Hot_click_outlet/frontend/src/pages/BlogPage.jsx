@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
-import api from '@/services/api'
+import { blogService } from '@/services/blogService'
 
 function fmtDate(d) {
   if (!d) return ''
@@ -63,7 +63,7 @@ export default function BlogPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get('/blog/publico')
+    blogService.getPublicos()
       .then(r => setEntradas(r.data?.data ?? []))
       .catch(() => {})
       .finally(() => setLoading(false))

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import api from '@/services/api'
+import { executiveService } from '@/services/executiveService'
 
 const fmt   = (n) => new Intl.NumberFormat('es-CR').format(Math.round(n ?? 0))
 const fmtPct = (n) => {
@@ -59,7 +59,7 @@ export default function AdminExecutive() {
   const printRef = useRef(null)
 
   useEffect(() => {
-    api.get('/admin/executive/dashboard')
+    executiveService.getDashboard()
       .then(({ data: d }) => setData(d))
       .catch(() => setError('No se pudo cargar el dashboard'))
       .finally(() => setCargando(false))
@@ -94,7 +94,7 @@ export default function AdminExecutive() {
           }
         }
       }
-    } catch (e) {
+    } catch {
       setError('Error generando resumen AI')
     } finally {
       setAiLoading(false)
@@ -104,7 +104,7 @@ export default function AdminExecutive() {
   async function guardarResumen() {
     const periodo = data?.periodo?.slice(0, 7) ?? new Date().toISOString().slice(0, 7)
     try {
-      await api.post('/admin/executive/guardar-resumen', { periodo, resumen: aiText })
+      await executiveService.guardarResumen({ periodo, resumen: aiText })
       setGuardado(true)
       setTimeout(() => setGuardado(false), 3000)
     } catch { /* save is best-effort, not critical */ }

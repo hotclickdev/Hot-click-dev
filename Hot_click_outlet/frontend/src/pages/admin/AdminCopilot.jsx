@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import api from '@/services/api'
-
-const fmt = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
+import { copilotService } from '@/services/copilotService'
+import { ofertaService } from '@/services/ofertaService'
 
 function Msg({ rol, contenido, streaming }) {
   const isUser = rol === 'user'
@@ -42,20 +41,20 @@ export default function AdminCopilot() {
   async function cargarHistorial() {
     try {
       const [{ data: hist }, { data: u }] = await Promise.all([
-        api.get('/admin/ai/historial'),
-        api.get('/admin/ai/uso'),
+        copilotService.getHistorial(),
+        copilotService.getUso(),
       ])
       setMensajes(Array.isArray(hist) ? hist : [])
       setUso(u)
     } catch { /* non-critical — UI handles empty state */ }
 
     try {
-      const { data: s } = await api.get('/admin/ai/sugerencias')
+      const { data: s } = await copilotService.getSugerencias()
       setSugerencias(Array.isArray(s) ? s : [])
     } catch { /* non-critical — chips simplemente no aparecen */ }
 
     try {
-      const { data: a } = await api.get('/admin/ai/productos-sin-venta')
+      const { data: a } = await copilotService.getProductosSinVenta()
       setAccionables(Array.isArray(a) ? a : [])
     } catch { /* non-critical — panel de acciones simplemente no aparece */ }
   }
@@ -63,10 +62,7 @@ export default function AdminCopilot() {
   async function aplicarDescuento(producto) {
     setAplicandoId(producto.id)
     try {
-      await api.patch(`/productos/${producto.id}/oferta`, {
-        enOferta: true,
-        porcentajeDescuento: producto.descuentoSugeridoPct,
-      })
+      await ofertaService.aplicar(producto.id, true, producto.descuentoSugeridoPct)
       setAccionables(prev => prev.filter(p => p.id !== producto.id))
       setConfirmandoId(null)
     } catch {
@@ -147,7 +143,7 @@ export default function AdminCopilot() {
       }
 
       // Refresh usage
-      try { const { data: u } = await api.get('/admin/ai/uso'); setUso(u) } catch { /* non-critical — UI handles empty state */ }
+      try { const { data: u } = await copilotService.getUso(); setUso(u) } catch { /* non-critical — UI handles empty state */ }
 
     } catch (err) {
       setMensajes(prev => [...prev, { rol: 'assistant', contenido: `⚠️ Error: ${err.message}` }])
@@ -160,7 +156,7 @@ export default function AdminCopilot() {
 
   async function limpiar() {
     if (!confirm('¿Limpiar el historial de conversación?')) return
-    try { await api.delete('/admin/ai/historial'); setMensajes([]) } catch { /* non-critical — UI handles empty state */ }
+    try { await copilotService.deleteHistorial(); setMensajes([]) } catch { /* non-critical — UI handles empty state */ }
   }
 
   function onKeyDown(e) {

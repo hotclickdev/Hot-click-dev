@@ -2,82 +2,10 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { posService } from '@/services/posService'
 import { useToast } from '@/components/ui/Toast'
-
-const fmt = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
-
-const DENOM = [
-  { v: 50000, label: '₡50.000', color: '#c0392b', bg: 'rgba(192,57,43,0.15)' },
-  { v: 20000, label: '₡20.000', color: '#27ae60', bg: 'rgba(39,174,96,0.15)'  },
-  { v: 10000, label: '₡10.000', color: '#e67e22', bg: 'rgba(230,126,34,0.15)' },
-  { v:  5000, label: '₡5.000',  color: '#2980b9', bg: 'rgba(41,128,185,0.15)' },
-  { v:  2000, label: '₡2.000',  color: '#8e44ad', bg: 'rgba(142,68,173,0.15)' },
-  { v:  1000, label: '₡1.000',  color: '#795548', bg: 'rgba(121,85,72,0.15)'  },
-  { v:   500, label: '₡500',    color: '#9e9e9e', bg: 'rgba(158,158,158,0.15)'},
-  { v:   100, label: '₡100',    color: '#ffc107', bg: 'rgba(255,193,7,0.15)'  },
-  { v:    50, label: '₡50',     color: '#ffc107', bg: 'rgba(255,193,7,0.12)'  },
-]
-
-function ConteoEfectivo({ label, onTotal }) {
-  const [qtys, setQtys] = useState(() => Object.fromEntries(DENOM.map(d => [d.v, ''])))
-
-  const setQty = (v, val) => {
-    const next = { ...qtys, [v]: val }
-    setQtys(next)
-    onTotal(DENOM.reduce((s, d) => s + (Number.parseInt(next[d.v]) || 0) * d.v, 0))
-  }
-
-  const total = DENOM.reduce((s, d) => s + (Number.parseInt(qtys[d.v]) || 0) * d.v, 0)
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>{label}</p>
-        <span className="text-xl font-black" style={{ color: 'var(--hc-accent)' }}>₡{fmt(total)}</span>
-      </div>
-      <div className="rounded-2xl overflow-hidden border" style={{ borderColor: 'rgba(255,255,255,0.06)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
-        {DENOM.map(d => {
-          const qty = qtys[d.v]
-          const sub = (Number.parseInt(qty) || 0) * d.v
-          return (
-            <div key={d.v} className="flex items-center gap-3 px-3 py-2 border-b last:border-0"
-              style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
-              <span className="w-20 shrink-0 text-center py-1 rounded-lg text-xs font-bold"
-                style={{ backgroundColor: d.bg, color: d.color, border: `1px solid ${d.color}40` }}>
-                {d.label}
-              </span>
-              <div className="flex items-center gap-1 shrink-0">
-                <button onClick={() => setQty(d.v, Math.max(0, (Number.parseInt(qty) || 0) - 1))}
-                  className="w-7 h-7 rounded-lg font-bold text-base flex items-center justify-center hover:bg-white/10"
-                  style={{ color: 'var(--hc-muted)' }}>−</button>
-                <input
-                  type="number" min={0} value={qty}
-                  onChange={e => setQty(d.v, Math.max(0, Number.parseInt(e.target.value) || 0))}
-                  className="w-14 text-center text-sm font-bold rounded-lg outline-none py-1.5"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--hc-text)' }}
-                />
-                <button onClick={() => setQty(d.v, (Number.parseInt(qty) || 0) + 1)}
-                  className="w-7 h-7 rounded-lg font-bold text-base flex items-center justify-center hover:bg-white/10"
-                  style={{ color: 'var(--hc-muted)' }}>+</button>
-              </div>
-              <span className="ml-auto text-xs font-semibold tabular-nums" style={{ color: sub > 0 ? 'var(--hc-text)' : 'var(--hc-muted)' }}>
-                {sub > 0 ? `₡${fmt(sub)}` : '—'}
-              </span>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-function StatBox({ label, value, color }) {
-  return (
-    <div className="rounded-xl p-4" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
-      <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>{label}</p>
-      <p className="text-xl font-bold mt-1" style={{ color: color ?? 'var(--hc-text)' }}>₡{fmt(value)}</p>
-    </div>
-  )
-}
+import ConteoEfectivo from './ConteoEfectivo'
+import StatBox from './StatBox'
+import { formatMontoPos } from './posHelpers'
+import { CheckIcon, TransferenciaIcon } from './posIcons'
 
 export default function AdminPOSCaja() {
   const { showToast } = useToast()
@@ -124,14 +52,14 @@ export default function AdminPOSCaja() {
       <div className="max-w-lg mx-auto px-4 py-8 space-y-6">
         <div className="rounded-3xl p-6 text-center space-y-4"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid rgba(255,255,255,0.07)' }}>
-          <div className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-3xl"
-            style={{ backgroundColor: 'rgba(52,211,153,0.15)', border: '1px solid rgba(52,211,153,0.25)' }}>
-            ✓
+          <div className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center"
+            style={{ backgroundColor: 'rgba(52,211,153,0.15)', border: '1px solid rgba(52,211,153,0.25)', color: '#34d399' }}>
+            <CheckIcon />
           </div>
           <div>
             <p className="text-xs font-bold uppercase tracking-widest" style={{ color: '#34d399' }}>Turno cerrado</p>
             <p className="text-3xl font-black mt-1 tabular-nums" style={{ color: '#fff' }}>
-              ₡{fmt(cerrado.montoDeclarado ?? 0)}
+              ₡{formatMontoPos(cerrado.montoDeclarado ?? 0)}
             </p>
             <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.45)' }}>efectivo contado</p>
           </div>
@@ -143,7 +71,7 @@ export default function AdminPOSCaja() {
             <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>Diferencia</p>
             <p className="text-lg font-black tabular-nums"
               style={{ color: diff === 0 ? '#34d399' : diff > 0 ? '#fbbf24' : '#f87171' }}>
-              {diff >= 0 ? '+' : ''}₡{fmt(diff)}
+              {diff >= 0 ? '+' : ''}₡{formatMontoPos(diff)}
               <span className="text-xs font-medium ml-1">
                 {diff > 0 ? '(sobrante)' : diff < 0 ? '(faltante)' : '(exacto)'}
               </span>
@@ -165,7 +93,9 @@ export default function AdminPOSCaja() {
       <div className="max-w-lg mx-auto px-4 py-8 space-y-6 text-center">
         <div className="rounded-2xl p-8"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid rgba(255,255,255,0.07)' }}>
-          <p className="text-4xl mb-3">🏦</p>
+          <div className="w-12 h-12 mx-auto mb-3 flex items-center justify-center" style={{ color: 'var(--hc-muted)' }}>
+            <TransferenciaIcon className="w-10 h-10" />
+          </div>
           <p className="font-bold" style={{ color: 'var(--hc-text)' }}>No hay turno activo</p>
           <p className="text-sm mt-2" style={{ color: 'var(--hc-muted)' }}>
             Abrí el turno desde el POS antes de hacer el cuadre
@@ -217,7 +147,7 @@ export default function AdminPOSCaja() {
         </div>
         <div className="text-right">
           <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Efectivo inicial</p>
-          <p className="text-lg font-bold" style={{ color: 'var(--hc-text)' }}>₡{fmt(turno.montoInicial)}</p>
+          <p className="text-lg font-bold" style={{ color: 'var(--hc-text)' }}>₡{formatMontoPos(turno.montoInicial)}</p>
         </div>
       </div>
 
@@ -231,7 +161,7 @@ export default function AdminPOSCaja() {
           </p>
         </div>
 
-        <ConteoEfectivo label="Total contado en caja" onTotal={setMontoDeclarado} />
+        <ConteoEfectivo label="Total contado en caja" onTotal={setMontoDeclarado} totalColor="var(--hc-accent)" />
 
         {/* Diferencia */}
         {diff !== null && (
@@ -243,7 +173,7 @@ export default function AdminPOSCaja() {
             <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Diferencia (contado − esperado)</p>
             <p className="font-black text-lg tabular-nums mt-0.5"
               style={{ color: diff === 0 ? '#34d399' : diff > 0 ? '#fbbf24' : '#f87171' }}>
-              {diff >= 0 ? '+' : ''}₡{fmt(diff)}
+              {diff >= 0 ? '+' : ''}₡{formatMontoPos(diff)}
               <span className="text-xs font-medium ml-1.5">
                 {diff > 0 ? 'sobrante' : diff < 0 ? 'faltante' : 'cuadre exacto ✓'}
               </span>

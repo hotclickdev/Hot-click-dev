@@ -33,11 +33,22 @@ export const adminService = {
   deleteUser: (id) => api.delete(`/admin/usuarios/${id}`),
   restoreUser: (id) => api.put(`/admin/usuarios/${id}/restaurar`),
   getEmpresas: () => api.get('/admin/empresas'),
+  getEmpresa: (id) => api.get(`/admin/empresas/${id}`),
+  getEmpresaTab: (id, tab) => api.get(`/admin/empresas/${id}/${tab}`),
   setEmpresaPlan: (id, plan) => api.put(`/admin/empresas/${id}/plan`, { plan }),
+  setEmpresaEstado: (id, estadoEmpresa) =>
+    api.put(`/admin/empresas/${id}/estado`, { estadoEmpresa }),
+  setEmpresaVisibilidad: (id, visibilidadPublica) =>
+    api.put(`/admin/empresas/${id}/visibilidad`, { visibilidadPublica }),
+  getUsuario: (id) => api.get(`/usuarios/${id}`),
+  updateUsuario: (id, body) => api.put(`/usuarios/${id}`, body),
+  health: () => api.get('/health'),
+  resetDatos: () => api.post('/admin/reset-datos'),
+  borrarPedidosCancelados: () => api.delete('/admin/pedidos/cancelados'),
 }
 
 export const warehouseService = {
-  getAll: () => api.get('/bodegas'),
+  getAll: (params) => api.get('/bodegas', params ? { params } : undefined),
   create: (data) => api.post('/bodegas', data),
   update: (id, data) => api.put(`/bodegas/${id}`, data),
   delete: (id) => api.delete(`/bodegas/${id}`),

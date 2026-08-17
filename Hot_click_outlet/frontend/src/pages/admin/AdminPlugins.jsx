@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import api from '@/services/api'
+import { pluginService } from '@/services/pluginService'
 
 const EVENTOS_DISPONIBLES = [
   { id: 'pedido.creado',    label: 'Pedido creado' },
@@ -40,7 +40,7 @@ function LogModal({ plugin, onClose }) {
   const [cargando, setCargando] = useState(true)
 
   useEffect(() => {
-    api.get(`/admin/plugins/${plugin.id}/eventos`)
+    pluginService.getEventos(plugin.id)
       .then(({ data }) => setLogs(Array.isArray(data) ? data : []))
       .catch(() => {})
       .finally(() => setCargando(false))
@@ -105,13 +105,13 @@ export default function AdminPlugins() {
   async function cargar() {
     setCargando(true)
     try {
-      const { data } = await api.get('/admin/plugins')
+      const { data } = await pluginService.list()
       setPlugins(Array.isArray(data) ? data : [])
     } catch { setError('No se pudieron cargar los plugins') }
     finally { setCargando(false) }
   }
 
-  useEffect(() => { cargar() }, [])
+  useEffect(() => { cargar() }, []) // eslint-disable-line react-hooks/set-state-in-effect -- carga al montar
 
   function abrirNuevo() { setForm(FORM_VACIO); setEditando(null); setMostrarForm(true) }
   function abrirEdicion(p) {
@@ -125,9 +125,9 @@ export default function AdminPlugins() {
     setGuardando(true); setError(null)
     try {
       if (editando) {
-        await api.put(`/admin/plugins/${editando.id}`, form)
+        await pluginService.update(editando.id, form)
       } else {
-        await api.post('/admin/plugins', form)
+        await pluginService.create(form)
       }
       setMostrarForm(false); setEditando(null)
       await cargar()
@@ -138,14 +138,14 @@ export default function AdminPlugins() {
 
   async function desactivar(p) {
     if (!confirm(`¿Desactivar el plugin "${p.nombre}"?`)) return
-    try { await api.delete(`/admin/plugins/${p.id}`); await cargar() }
+    try { await pluginService.remove(p.id); await cargar() }
     catch { setError('Error al desactivar') }
   }
 
   async function testWebhook(p) {
     setTestOk(null)
     try {
-      await api.post(`/admin/plugins/${p.id}/test`)
+      await pluginService.test(p.id)
       setTestOk(p.id)
       setTimeout(() => setTestOk(null), 3000)
     } catch { setError('Error al enviar test') }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import api from '@/services/api'
+import { cuponService } from '@/services/cuponService'
+import { useToast } from '@/components/ui/Toast'
 
 const FILTERS = [
   { label: 'Todos',        value: undefined },
@@ -56,6 +57,7 @@ function fmt(iso) {
 }
 
 export default function AdminCupones() {
+  const { showToast } = useToast()
   const [stats, setStats]       = useState(null)
   const [cupones, setCupones]   = useState([])
   const [total, setTotal]       = useState(0)
@@ -68,9 +70,9 @@ export default function AdminCupones() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const { data } = await api.get('/cupones/estadisticas')
+      const { data } = await cuponService.getEstadisticas()
       setStats(data.data)
-    } catch { /* noop */ }
+    } catch { /* ok */ }
   }, [])
 
   const fetchCupones = useCallback(async (p = 0, f = undefined) => {
@@ -78,15 +80,15 @@ export default function AdminCupones() {
     try {
       const params = { page: p, size: PAGE_SIZE }
       if (f !== undefined) params.usado = f
-      const { data } = await api.get('/cupones', { params })
+      const { data } = await cuponService.getAll(params)
       setCupones(data.data.content)
       setTotal(data.data.totalElements)
-    } catch { /* noop */ }
+    } catch { showToast('Error cargando cupones', 'error') }
     finally { setLoading(false) }
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    fetchStats()
+    fetchStats() // eslint-disable-line react-hooks/set-state-in-effect -- carga al montar
     fetchCupones(0, undefined)
   }, [fetchStats, fetchCupones])
 

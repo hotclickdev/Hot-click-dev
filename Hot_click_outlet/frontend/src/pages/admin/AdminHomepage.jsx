@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useToast } from '@/components/ui/Toast'
+import { categoriaService } from '@/services/orderService'
 
 const STORAGE_KEY = 'hc-homepage-config'
 
@@ -34,16 +35,14 @@ export default function AdminHomepage() {
   const [loadingCats, setLoadingCats] = useState(true)
 
   useEffect(() => {
-    import('@/services/api').then(({ default: api }) => {
-      api.get('/categorias')
-        .then(r => {
-          const data = r.data?.data ?? r.data ?? []
-          setCategories(Array.isArray(data) ? data : [])
-        })
-        .catch(() => {})
-        .finally(() => setLoadingCats(false))
-    })
-  }, [])
+    categoriaService.getAll()
+      .then(r => {
+        const data = r.data?.data ?? r.data ?? []
+        setCategories(Array.isArray(data) ? data : [])
+      })
+      .catch(() => toast({ message: 'Error al cargar categorías', type: 'error' }))
+      .finally(() => setLoadingCats(false))
+  }, [toast])
 
   function toggleHeroSection(id) {
     setConfig(prev => {

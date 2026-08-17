@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import MainLayout from '@/layouts/MainLayout'
 import SellerBadge from '@/components/ui/SellerBadge'
-import api from '@/services/api'
+import { convenioService } from '@/services/convenioService'
 
 export default function EmprendimientosPage() {
   const [lista, setLista] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get('/convenios/publicos')
+    convenioService.getPublicos()
       .then(r => setLista(r.data?.data ?? []))
       .catch(() => {})
       .finally(() => setLoading(false))

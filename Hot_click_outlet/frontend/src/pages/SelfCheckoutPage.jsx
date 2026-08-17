@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
-import api from '@/services/api'
+import { selfCheckoutService } from '@/services/selfCheckoutService'
 
 const fmt = (n) => new Intl.NumberFormat('es-CR').format(n)
 
@@ -81,8 +81,8 @@ export default function SelfCheckoutPage() {
 
   useEffect(() => {
     Promise.all([
-      api.get(`/qr/${token}`),
-      api.get(`/qr/${token}/productos`),
+      selfCheckoutService.getMesa(token),
+      selfCheckoutService.getProductos(token),
     ]).then(([mesaRes, prodRes]) => {
       setMesa(mesaRes.data)
       setProductos(Array.isArray(prodRes.data) ? prodRes.data : [])
@@ -112,7 +112,7 @@ export default function SelfCheckoutPage() {
         productoId: producto.id,
         cantidad,
       }))
-      const { data } = await api.post(`/qr/${token}/pedido`, { ...form, items })
+      const { data } = await selfCheckoutService.crearPedido(token, { ...form, items })
       setPedidoResult(data)
       setPaso('exito')
       setCarrito({})

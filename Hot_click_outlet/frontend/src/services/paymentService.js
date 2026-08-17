@@ -121,4 +121,16 @@ export const paymentService = {
     const params = motivo ? `?motivo=${encodeURIComponent(motivo)}` : ''
     return api.post(`/sinpe/admin/comprobantes/${comprobanteId}/rechazar${params}`)
   },
+
+  kpisAdmin() {
+    return api.get('/admin/pagos/kpis')
+  },
+
+  listarAdmin(queryString) {
+    return api.get(`/admin/pagos?${queryString}`)
+  },
+
+  listarWebhooks(queryString) {
+    return api.get(`/admin/webhooks?${queryString}`)
+  },
 }

@@ -4,12 +4,8 @@ import { useDebounce } from '@/hooks/useDebounce'
 import { useStickyState } from '@/hooks/useStickyState'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { RetryBanner } from '@/components/ui/RetryBanner'
-import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import Button from '@/components/ui/Button'
-import Input from '@/components/ui/Input'
-import Modal from '@/components/ui/Modal'
-import Badge from '@/components/ui/Badge'
 import Spinner from '@/components/ui/Spinner'
 import { productService, denormalizeProduct } from '@/services/productService'
 import KardexDrawer from '@/components/pos/KardexDrawer'
@@ -17,66 +13,24 @@ import { warehouseService } from '@/services/orderService'
 import { marcaService } from '@/services/marcaService'
 import ImportExportBar from '@/components/admin/ImportExportBar'
 import EmpresaProfileCard from '@/components/admin/EmpresaProfileCard'
-import CategoriaSelect from '@/components/admin/CategoriaSelect'
-import MultiImagePicker from '@/components/ui/MultiImagePicker'
 import { useToast } from '@/components/ui/Toast'
-import { formatPrice, conditionLabel, conditionVariant } from '@/utils/format'
 import useAuthStore from '@/store/authStore'
-
-const EMPTY_FORM = {
-  nombre: '', titulo: '', descripcion: '',
-  precioCompra: '', precioVenta: '', stock: '',
-  condicion: 'NUEVO', categoriaId: '', marcaId: '', imagenUrl: '', bodegaId: '', destacado: false,
-  especificaciones: '', comoUsar: '', imagenes: [],
-  metaTitle: '', metaDescription: '', metaKeywords: '',
-  videoUrl: '', sku: '', barcode: '',
-}
-
-function toSlug(str) {
-  return str
-    .toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-')
-}
-
-function SeoStatusIcon({ product }) {
-  const hasTitle = !!(product.metaTitle)
-  const hasDesc = !!(product.metaDescription)
-  const both = hasTitle && hasDesc
-  const none = !hasTitle && !hasDesc
-  let tip = `Falta título SEO\nDescripción: ${product.metaDescription}`
-  if (both) tip = `Título: ${product.metaTitle}\nDescripción: ${product.metaDescription}`
-  else if (none) tip = 'Sin título ni descripción SEO'
-  else if (hasTitle) tip = `Título: ${product.metaTitle}\nFalta meta descripción`
-  let icon = '⚠️'
-  if (both) icon = '✅'
-  else if (none) icon = '❌'
-  return (
-    <span title={tip} className="text-base cursor-default select-none">
-      {icon}
-    </span>
-  )
-}
-
-function CharCounter({ current, max, min = 0 }) {
-  let color = '#1E7F4F'
-  if (current === 0) color = 'var(--hc-muted)'
-  else if (current < min) color = '#8a5a00'
-  else if (current > max) color = '#a8291f'
-  return <span className="text-xs tabular-nums" style={{ color }}>{current}/{max}</span>
-}
-
-const STOCK_OPTIONS = [
-  { label: 'Todos', value: '' },
-  { label: 'En stock', value: 'ok' },
-  { label: 'Stock bajo (≤3)', value: 'low' },
-  { label: 'Agotado', value: 'out' },
-]
-
-const ta = 'w-full px-4 py-3 rounded-xl text-sm resize-y transition-all focus:outline-none'
-const taStyle = { backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }
+import CarruselPanel from './productos/CarruselPanel'
+import ProductoFormModal from './productos/ProductoFormModal'
+import ProductosFilters from './productos/ProductosFilters'
+import ProductosTable from './productos/ProductosTable'
+import {
+  COLUMNAS_EXPORT,
+  COLUMNAS_IMPORT,
+  EMPTY_FORM,
+  PROD_PAGE_SIZE,
+  filasExportProductos,
+  filtrarProductos,
+  formDesdeProducto,
+  mapImportRow,
+  metaDescriptionAuto,
+  metaTitleAuto,
+} from './productos/productosHelpers'
 
 export default function AdminProducts() {
   const { t } = useTranslation()
@@ -89,13 +43,13 @@ export default function AdminProducts() {
   const [marcas, setMarcas] = useState([])
   const [loading, setLoading] = useState(true)
   const [prodPage, setProdPage] = useState(0)
-  const PROD_PAGE_SIZE = 50
+  const [totalProds, setTotalProds] = useState(0)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
-  const [search, setSearch]         = useStickyState('hc-prod-search', '')
-  const [filterCat, setFilterCat]   = useStickyState('hc-prod-cat', '')
+  const [search, setSearch] = useStickyState('hc-prod-search', '')
+  const [filterCat, setFilterCat] = useStickyState('hc-prod-cat', '')
   const [filterCond, setFilterCond] = useStickyState('hc-prod-cond', '')
   const [filterStock, setFilterStock] = useStickyState('hc-prod-stock', '')
   const [deleteTarget, setDeleteTarget] = useState(null)
@@ -121,11 +75,11 @@ export default function AdminProducts() {
         warehouseService.getAll(),
         marcaService.getAll(),
       ])
-      if (id !== loadIdRef.current) return // stale — se disparó una carga más reciente
+      if (id !== loadIdRef.current) return
       if (prodsRes.status === 'rejected') throw prodsRes.reason
       const prods = prodsRes.value.data
-      const cats  = catsRes.status  === 'fulfilled' ? (catsRes.value.data  ?? []) : []
-      const bods  = bodsRes.status  === 'fulfilled' ? (bodsRes.value.data  ?? []) : []
+      const cats = catsRes.status === 'fulfilled' ? (catsRes.value.data ?? []) : []
+      const bods = bodsRes.status === 'fulfilled' ? (bodsRes.value.data ?? []) : []
       const marcsR = marcsRes.status === 'fulfilled' ? (marcsRes.value.data ?? []) : []
       const pageData = prods.content ?? prods ?? []
       setProducts(pageData)
@@ -140,9 +94,7 @@ export default function AdminProducts() {
     }
   }
 
-  const [totalProds, setTotalProds] = useState(0)
-
-  useEffect(() => { load(prodPage) }, [prodPage])
+  useEffect(() => { load(prodPage) }, [prodPage]) // eslint-disable-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- carga paginada
 
   const openNew = () => {
     setEditing(null)
@@ -158,27 +110,8 @@ export default function AdminProducts() {
     setEditing(p)
     setSeoAutoTitle(false)
     setSeoAutoDesc(false)
-    setForm({
-      nombre:           p.nombre          ?? '',
-      titulo:           p.titulo          ?? '',
-      descripcion:      p.descripcion     ?? '',
-      precioCompra:     p.precioCompra    ?? '',
-      precioVenta:      p.precioVenta     ?? p.precio ?? '',
-      stock:            p.stock           ?? '',
-      condicion:        p.condicion       ?? 'NUEVO',
-      categoriaId:      p.categoriaId     ?? '',
-      marcaId:          p.marcaId         ? String(p.marcaId) : '',
-      imagenUrl:        p.imagenUrl       ?? '',
-      bodegaId:         p.bodegaId        ?? bodegas[0]?.id ?? '',
-      destacado:        p.destacado       ?? false,
-      especificaciones: p.especificaciones ?? '',
-      comoUsar:         p.comoUsar        ?? '',
-      imagenes:         p.imagenUrl ? [p.imagenUrl] : [],
-      metaTitle:        p.metaTitle        ?? '',
-      metaDescription:  p.metaDescription  ?? '',
-      metaKeywords:     p.metaKeywords     ?? '',
-      videoUrl:         p.videoUrl         ?? '',
-    })
+    const inicial = formDesdeProducto(p, bodegas)
+    setForm(inicial)
     setModalOpen(true)
     try {
       const { data: imgs } = await productService.getImagenes(p.id)
@@ -190,24 +123,13 @@ export default function AdminProducts() {
           return updated
         })
       } else {
-        editInitialFormRef.current = JSON.stringify({
-          nombre: p.nombre ?? '', titulo: p.titulo ?? '', descripcion: p.descripcion ?? '',
-          precioCompra: p.precioCompra ?? '', precioVenta: p.precioVenta ?? p.precio ?? '',
-          stock: p.stock ?? '', condicion: p.condicion ?? 'NUEVO',
-          categoriaId: p.categoriaId ?? '', marcaId: p.marcaId ? String(p.marcaId) : '',
-          imagenUrl: p.imagenUrl ?? '', bodegaId: p.bodegaId ?? bodegas[0]?.id ?? '',
-          destacado: p.destacado ?? false, especificaciones: p.especificaciones ?? '',
-          comoUsar: p.comoUsar ?? '', imagenes: p.imagenUrl ? [p.imagenUrl] : [],
-          metaTitle: p.metaTitle ?? '', metaDescription: p.metaDescription ?? '',
-          metaKeywords: p.metaKeywords ?? '', videoUrl: p.videoUrl ?? '',
-        })
+        editInitialFormRef.current = JSON.stringify(inicial)
       }
     } catch {
       editInitialFormRef.current = JSON.stringify(form)
     }
   }
 
-  // Carrusel: productos ordenados por ordenCarrusel
   const carruselSlots = products
     .filter((p) => p.enCarrusel)
     .sort((a, b) => (a.ordenCarrusel ?? 0) - (b.ordenCarrusel ?? 0))
@@ -216,28 +138,26 @@ export default function AdminProducts() {
   const handleToggleCarrusel = async (p) => {
     const yaEsta = p.enCarrusel
     if (yaEsta) {
-      // Quitar del carrusel
       setProducts((prev) => prev.map((x) => x.id === p.id ? { ...x, enCarrusel: false, ordenCarrusel: 0 } : x))
       try { await productService.toggleCarrusel(p.id, false, 0) }
       catch { setProducts((prev) => prev.map((x) => x.id === p.id ? { ...x, enCarrusel: true } : x)) }
-    } else {
-      if (carruselSlots.length >= 5) { toast({ message: 'El carrusel ya tiene 5 productos (máximo)', type: 'error' }); return }
-      // Reassign all existing carousel orders + new one to ensure sequential values
-      const existing = [...carruselSlots]
-      const allAssignments = [
-        ...existing.map((s, i) => ({ id: s.id, orden: i + 1 })),
-        { id: p.id, orden: existing.length + 1 },
-      ]
-      setProducts((prev) => prev.map((x) => {
-        const a = allAssignments.find((n) => n.id === x.id)
-        return a ? { ...x, enCarrusel: true, ordenCarrusel: a.orden } : x
-      }))
-      try {
-        await Promise.all(allAssignments.map(({ id, orden }) =>
-          productService.toggleCarrusel(id, true, orden)
-        ))
-      } catch { setProducts((prev) => prev.map((x) => x.id === p.id ? { ...x, enCarrusel: false } : x)) }
+      return
     }
+    if (carruselSlots.length >= 5) { toast({ message: 'El carrusel ya tiene 5 productos (máximo)', type: 'error' }); return }
+    const existing = [...carruselSlots]
+    const allAssignments = [
+      ...existing.map((s, i) => ({ id: s.id, orden: i + 1 })),
+      { id: p.id, orden: existing.length + 1 },
+    ]
+    setProducts((prev) => prev.map((x) => {
+      const a = allAssignments.find((n) => n.id === x.id)
+      return a ? { ...x, enCarrusel: true, ordenCarrusel: a.orden } : x
+    }))
+    try {
+      await Promise.all(allAssignments.map(({ id, orden }) =>
+        productService.toggleCarrusel(id, true, orden)
+      ))
+    } catch { setProducts((prev) => prev.map((x) => x.id === p.id ? { ...x, enCarrusel: false } : x)) }
   }
 
   const handleCarruselMover = async (p, dir) => {
@@ -249,14 +169,11 @@ export default function AdminProducts() {
     const swapIdx = idx + dir
     if (swapIdx < 0 || swapIdx >= sorted.length) return
 
-    // Swap positions in the array
     const reordered = [...sorted]
     ;[reordered[idx], reordered[swapIdx]] = [reordered[swapIdx], reordered[idx]]
 
-    // Assign sequential orders 1…N so values are always distinct
     const assignments = reordered.map((s, i) => ({ id: s.id, orden: i + 1 }))
 
-    // Optimistic update
     setProducts((prev) => prev.map((x) => {
       const a = assignments.find((n) => n.id === x.id)
       return a ? { ...x, ordenCarrusel: a.orden } : x
@@ -285,18 +202,13 @@ export default function AdminProducts() {
 
   useEffect(() => {
     if (!seoAutoTitle || !modalOpen) return
-    setForm(p => ({ ...p, metaTitle: p.nombre ? `${p.nombre} | HotClick Outlet`.slice(0, 60) : '' }))
-  }, [form.nombre, seoAutoTitle, modalOpen]) // eslint-disable-line react-hooks/exhaustive-deps
+    setForm((p) => ({ ...p, metaTitle: metaTitleAuto(p.nombre) })) // eslint-disable-line react-hooks/set-state-in-effect -- SEO derivado del nombre
+  }, [form.nombre, seoAutoTitle, modalOpen])
 
   useEffect(() => {
     if (!seoAutoDesc || !modalOpen) return
-    const precio = form.precioVenta ? Number(form.precioVenta).toLocaleString('es-CR') : ''
-    const base = form.descripcion || ''
-    const suggested = base
-      ? `${base}${precio ? ` | Precio: ₡${precio}` : ''} | Envíos a todo Costa Rica`.slice(0, 160)
-      : ''
-    setForm(p => ({ ...p, metaDescription: suggested }))
-  }, [form.descripcion, form.precioVenta, seoAutoDesc, modalOpen]) // eslint-disable-line react-hooks/exhaustive-deps
+    setForm((p) => ({ ...p, metaDescription: metaDescriptionAuto(p.descripcion, p.precioVenta) })) // eslint-disable-line react-hooks/set-state-in-effect -- SEO derivado de desc/precio
+  }, [form.descripcion, form.precioVenta, seoAutoDesc, modalOpen])
 
   const handleSave = async (e) => {
     e.preventDefault()
@@ -307,7 +219,7 @@ export default function AdminProducts() {
       toast({ message: 'Selecciona una bodega', type: 'error' }); return
     }
     const compra = Number(form.precioCompra)
-    const venta  = Number(form.precioVenta)
+    const venta = Number(form.precioVenta)
     if (compra < 0) {
       toast({ message: 'El precio de compra no puede ser negativo', type: 'error' }); return
     }
@@ -358,36 +270,38 @@ export default function AdminProducts() {
     } catch { toast({ message: 'Error al eliminar', type: 'error' }) }
   }
 
-  // Todos los IDs descendientes de una categoría (inclusive)
-  const getDescIds = (rootId) => {
-    const ids = new Set([String(rootId)])
-    categories.filter((c) => String(c.padreId) === String(rootId))
-      .forEach((c) => getDescIds(c.id).forEach((id) => ids.add(id)))
-    return ids
-  }
-
-  const filtered = useMemo(() => products.filter((p) => {
-    if (debouncedSearch && !p.nombre?.toLowerCase().includes(debouncedSearch.toLowerCase())) return false
-    if (filterCat && !getDescIds(filterCat).has(String(p.categoriaId))) return false
-    if (filterCond && p.condicion !== filterCond) return false
-    if (filterStock === 'ok' && p.stock <= 3) return false
-    if (filterStock === 'low' && (p.stock === 0 || p.stock > 3)) return false
-    if (filterStock === 'out' && p.stock !== 0) return false
-    return true
-  }), [products, debouncedSearch, filterCat, filterCond, filterStock])
+  const filtered = useMemo(() => filtrarProductos({
+    products,
+    search: debouncedSearch,
+    filterCat,
+    filterCond,
+    filterStock,
+    categories,
+  }), [products, debouncedSearch, filterCat, filterCond, filterStock, categories])
 
   const hasFilters = filterCat || filterCond || filterStock || !!search
   const clearFilters = () => { setFilterCat(''); setFilterCond(''); setFilterStock(''); setSearch(''); setProdPage(0) }
-  const set = (f) => (e) => setForm((prev) => ({ ...prev, [f]: e.target.value }))
-  const setField = (f, v) => setForm((prev) => ({ ...prev, [f]: v }))
-
-  const isModalDirty = editing && editInitialFormRef.current
-    ? JSON.stringify(form) !== editInitialFormRef.current
-    : false
 
   const handleModalClose = () => {
-    if (isModalDirty) { setShowDiscardModal(true); return }
+    const sucio = editing && editInitialFormRef.current
+      ? JSON.stringify(form) !== editInitialFormRef.current
+      : false
+    if (sucio) { setShowDiscardModal(true); return }
     setModalOpen(false)
+  }
+
+  const propsFiltros = {
+    search,
+    onSearch: (valor) => { setSearch(valor); setProdPage(0) },
+    filterCat,
+    onFilterCat: setFilterCat,
+    filterCond,
+    onFilterCond: setFilterCond,
+    filterStock,
+    onFilterStock: setFilterStock,
+    categories,
+    hasFilters,
+    onClear: clearFilters,
   }
 
   return (
@@ -397,746 +311,86 @@ export default function AdminProducts() {
           <RetryBanner message="Error al cargar los productos. Verificá tu conexión." onRetry={() => load(prodPage)} />
         )}
 
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-4 flex-wrap">
-            <div>
-              <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>{t('admin.products.title')}</h1>
-              <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>{filtered.length} de {totalProds} productos</p>
-            </div>
-            <div className="flex flex-col items-start gap-0.5">
-              <span className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>Cuenta</span>
-              <EmpresaProfileCard totalProductos={totalProds} />
-            </div>
-          </div>
-          <div className="flex items-center gap-3 flex-wrap">
-            <ImportExportBar
-              data={products.map((p) => ({
-                nombre: p.nombre,
-                precioCompra: p.precioCompra,
-                precioVenta: p.precioVenta,
-                stock: p.stock,
-                condicion: p.condicion,
-                categoriaId: p.categoriaId,
-                categoriaNombre: p.categoriaNombre,
-                bodegaId: p.bodegaId,
-                bodegaNombre: p.bodegaNombre,
-                marcaId: p.marcaId ?? '',
-                marcaNombre: p.marcaNombre ?? '',
-                destacado: p.destacado ? 'SI' : 'NO',
-                descripcion: p.descripcion ?? '',
-              }))}
-              columns={['nombre','precioCompra','precioVenta','stock','condicion','categoriaId','categoriaNombre','bodegaId','bodegaNombre','marcaId','marcaNombre','destacado','descripcion']}
-              filename="productos"
-              sheetName="Productos"
-              importColumns={['nombre','precioCompra','precioVenta','stock','condicion','categoriaId','bodegaId','marcaId','descripcion']}
-              mapImportRow={(row) => ({
-                nombreProducto: row.nombre ?? row.nombreProducto ?? '',
-                precioCompra: Number(row.precioCompra) || 0,
-                precioVenta: Number(row.precioVenta) || 0,
-                stockActual: Number(row.stock ?? row.stockActual) || 0,
-                condicion: row.condicion ?? 'NUEVO',
-                categoriaId: row.categoriaId ? Number(row.categoriaId) : null,
-                bodegaId: row.bodegaId ? Number(row.bodegaId) : (bodegas[0]?.id ?? null),
-                marcaId: row.marcaId ? Number(row.marcaId) : null,
-                descripcionCorta: row.descripcion ?? row.descripcionCorta ?? '',
-                visibleCatalogo: true,
-              })}
-              onImport={async (rows) => {
-                await productService.importBulk(rows)
-                load(0)
-              }}
-            />
-            <Link
-              to="/admin/productos/carga-masiva"
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-[var(--hc-surface-2)]"
-              style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
-              </svg>
-              Carga masiva
-            </Link>
-            <Button onClick={openNew}>+ {t('admin.products.new')}</Button>
-          </div>
-        </div>
+        <ProductosHeader
+          t={t}
+          filteredCount={filtered.length}
+          totalProds={totalProds}
+          products={products}
+          bodegas={bodegas}
+          onImport={async (rows) => {
+            await productService.importBulk(rows)
+            load(0)
+          }}
+          onNuevo={openNew}
+        />
 
-        {/* ── Carrusel del inicio — solo ADMIN ── */}
         {isAdmin && (
-        <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-          <button
-            onClick={() => setCarruselOpen((o) => !o)}
-            className="w-full flex items-center justify-between px-5 py-4 hover:bg-[var(--hc-surface-2)] transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'rgba(23,71,168,0.1)', border: '1px solid rgba(23,71,168,0.25)' }}>
-                <svg className="w-4 h-4" style={{ color: 'var(--hc-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="3"/><path d="M12 3v3m0 12v3M3 12h3m12 0h3m-2.636-6.364-2.122 2.122M8.758 15.242l-2.122 2.122m0-12.728 2.122 2.122m6.364 6.364 2.122 2.122"/>
-                </svg>
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>Carrusel del inicio</p>
-                <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>{carruselSlots.length}/5 productos · se muestran en el hero de la tienda</p>
-              </div>
-            </div>
-            <svg className={`w-4 h-4 transition-transform duration-200 ${carruselOpen ? 'rotate-180' : ''}`} style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-
-          {carruselOpen && (
-            <div className="px-5 py-4" style={{ borderTop: '1px solid var(--hc-border)' }}>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                {Array.from({ length: 5 }, (_, i) => {
-                  const slot = carruselSlots[i]
-                  const slotColor = ['rgba(23,71,168,0.1)', 'rgba(122,163,255,0.1)', 'rgba(30,127,79,0.1)', 'rgba(245,158,11,0.1)', 'rgba(220,38,38,0.08)'][i]
-                  const slotBorder = ['rgba(23,71,168,0.3)', 'rgba(122,163,255,0.3)', 'rgba(30,127,79,0.3)', 'rgba(245,158,11,0.3)', 'rgba(220,38,38,0.25)'][i]
-                  return (
-                    <div
-                      key={i}
-                      className="relative rounded-xl overflow-hidden flex flex-col"
-                      style={{ border: `1px solid ${slot ? slotBorder : 'var(--hc-border)'}`, background: slot ? slotColor : 'var(--hc-surface-2)', minHeight: 120 }}
-                    >
-                      <div className="absolute top-2 left-2 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: slot ? slotBorder : 'var(--hc-surface-2)', color: 'var(--hc-text)' }}>
-                        {i + 1}
-                      </div>
-                      {slot ? (
-                        <>
-                          <div className="flex-1 flex items-center justify-center pt-6 pb-2 px-2">
-                            {slot.imagenUrl ? (
-                              <img src={slot.imagenUrl} alt={slot.nombre} className="w-16 h-16 object-contain" style={{ filter: 'drop-shadow(0 4px 12px rgba(26,26,26,0.15))' }} />
-                            ) : (
-                              <span className="text-3xl">📦</span>
-                            )}
-                          </div>
-                          <div className="px-2 pb-2">
-                            <p className="text-[10px] font-medium text-center line-clamp-1" style={{ color: 'var(--hc-text)' }}>{slot.nombre}</p>
-                          </div>
-                          <div className="flex items-center justify-between px-1.5 pb-1.5 gap-1">
-                            <button
-                              onClick={() => handleCarruselMover(slot, -1)}
-                              disabled={i === 0}
-                              className="flex-1 h-6 rounded-lg text-[10px] transition-colors hover:bg-[var(--hc-surface)] disabled:opacity-30"
-                              style={{ color: 'var(--hc-muted)' }}
-                            >←</button>
-                            <button
-                              onClick={() => handleToggleCarrusel(slot)}
-                              className="h-6 px-1.5 rounded-lg text-[10px] transition-colors hover:bg-red-500/15"
-                              style={{ color: '#a8291f' }}
-                            >✕</button>
-                            <button
-                              onClick={() => handleCarruselMover(slot, 1)}
-                              disabled={i === carruselSlots.length - 1}
-                              className="flex-1 h-6 rounded-lg text-[10px] transition-colors hover:bg-[var(--hc-surface)] disabled:opacity-30"
-                              style={{ color: 'var(--hc-muted)' }}
-                            >→</button>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center gap-1 py-4" style={{ color: 'var(--hc-muted)' }}>
-                          <span className="text-2xl opacity-30">+</span>
-                          <span className="text-[10px]">Vacío</span>
-                          <span className="text-[9px] opacity-60">Usá el botón de carrusel en la tabla</span>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-              <p className="text-[10px] mt-3" style={{ color: 'var(--hc-muted)' }}>
-                Para agregar un producto al carrusel, presioná el botón de carrusel en la columna de la tabla. Máximo 5 productos.
-              </p>
-            </div>
-          )}
-        </div>
+          <CarruselPanel
+            carruselSlots={carruselSlots}
+            open={carruselOpen}
+            onToggleOpen={() => setCarruselOpen((o) => !o)}
+            onMover={handleCarruselMover}
+            onQuitar={handleToggleCarrusel}
+          />
         )}
 
-        {/* Mobile: búsqueda + filtros rápidos */}
-        <div className="md:hidden space-y-2">
-          <div className="relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <input
-              type="text"
-              placeholder="Buscar producto..."
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setProdPage(0) }}
-              className="w-full h-10 pl-10 pr-4 rounded-xl text-sm focus:outline-none"
-              style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
-            />
-          </div>
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-            {hasFilters && (
-              <button onClick={clearFilters} className="shrink-0 px-3 py-1.5 rounded-full text-xs" style={{ border: '1px solid rgba(220,38,38,0.3)', color: '#a8291f' }}>
-                ✕ Limpiar
-              </button>
-            )}
-            <select
-              value={filterCat}
-              onChange={(e) => setFilterCat(e.target.value)}
-              className="shrink-0 h-8 px-2.5 rounded-full text-xs focus:outline-none"
-              style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
-            >
-              <option value="">Categoría</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.padreId ? `↳ ${c.nombreCategoria ?? c.nombre}` : (c.nombreCategoria ?? c.nombre)}
-                </option>
-              ))}
-            </select>
-            {[['', 'Condición'], ['NUEVO', 'Nuevo'], ['COMO_NUEVO', 'Como nuevo'], ['USADO', 'Usado']].map(([val, lbl]) => (
-              <button key={val} onClick={() => setFilterCond(val)}
-                className="shrink-0 px-3 py-1.5 rounded-full text-xs transition-all"
-                style={filterCond === val
-                  ? { backgroundColor: 'rgba(23,71,168,0.1)', color: 'var(--hc-accent)', border: '1px solid rgba(23,71,168,0.3)' }
-                  : { color: 'var(--hc-muted)', border: '1px solid var(--hc-border)' }}>{lbl}</button>
-            ))}
-          </div>
-        </div>
+        <ProductosFilters variante="mobile" {...propsFiltros} />
 
-        {/* Aviso de scope cuando hay búsqueda activa y catálogo paginado */}
         {debouncedSearch && totalProds > PROD_PAGE_SIZE && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs"
-            style={{ backgroundColor: 'rgba(23,71,168,0.06)', border: '1px solid rgba(23,71,168,0.18)', color: '#7fa0ff' }}>
-            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            Buscando en los {PROD_PAGE_SIZE} productos de la página actual. Para buscar en todo el catálogo, limpiá el texto y navegá por páginas.
-          </div>
+          <AvisoBusquedaPaginada />
         )}
 
         <div className="flex gap-5">
-          {/* Left: Filters panel — solo desktop */}
-          <aside className="w-52 shrink-0 space-y-5 hidden md:block">
-            <div className="rounded-2xl p-4 space-y-4" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>Filtros</span>
-                {hasFilters && (
-                  <button onClick={clearFilters} className="text-[10px] hover:underline" style={{ color: 'var(--hc-accent)' }}>Limpiar</button>
-                )}
-              </div>
+          <ProductosFilters variante="aside" {...propsFiltros} />
 
-              <div className="space-y-1.5">
-                <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Categoría</label>
-                <select
-                  value={filterCat}
-                  onChange={(e) => setFilterCat(e.target.value)}
-                  className="w-full h-9 px-2.5 rounded-xl text-xs focus:outline-none"
-                  style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
-                >
-                  <option value="">Todas</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>{c.nombreCategoria ?? c.nombre}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Condición</label>
-                <div className="space-y-1">
-                  {[['', 'Todas'], ['NUEVO', 'Nuevo'], ['COMO_NUEVO', 'Como nuevo'], ['USADO', 'Usado']].map(([val, lbl]) => (
-                    <button
-                      key={val}
-                      onClick={() => setFilterCond(val)}
-                      className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all hover:bg-[var(--hc-surface-2)]"
-                      style={filterCond === val
-                        ? { backgroundColor: 'rgba(23,71,168,0.1)', color: 'var(--hc-accent)', border: '1px solid rgba(23,71,168,0.25)' }
-                        : { color: 'var(--hc-muted)' }}
-                    >
-                      {lbl}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Stock</label>
-                <div className="space-y-1">
-                  {STOCK_OPTIONS.map(({ label: lbl, value: val }) => (
-                    <button
-                      key={val}
-                      onClick={() => setFilterStock(val)}
-                      className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all hover:bg-[var(--hc-surface-2)]"
-                      style={filterStock === val
-                        ? { backgroundColor: 'rgba(23,71,168,0.1)', color: 'var(--hc-accent)', border: '1px solid rgba(23,71,168,0.25)' }
-                        : { color: 'var(--hc-muted)' }}
-                    >
-                      {lbl}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </aside>
-
-          {/* Right: search + table */}
           <div className="flex-1 min-w-0 space-y-4">
-            {/* Buscador desktop */}
-            <div className="relative hidden md:block">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
-              <input
-                type="text"
-                placeholder="Buscar por nombre..."
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setProdPage(0) }}
-                className="w-full h-10 pl-10 pr-4 rounded-xl text-sm focus:outline-none transition-colors"
-                style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
-              />
-            </div>
+            <BuscadorDesktop search={search} onSearch={(valor) => { setSearch(valor); setProdPage(0) }} />
 
             {loading ? (
               <div className="flex justify-center py-16"><Spinner size="lg" /></div>
             ) : (
-              <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-                <div className="overflow-x-auto hidden md:block">
-                  <table className="w-full min-w-[900px] text-sm">
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid var(--hc-border)' }}>
-                        {[...(isAdmin ? ['★', 'Pos.'] : []), 'ID', t('admin.products.name'), t('admin.products.price'), t('admin.products.stock'), 'SKU / Barcode', t('admin.products.category'), ...(isAdmin ? ['SEO'] : []), t('admin.products.actions')].map((h) => (
-                          <th key={h} className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filtered.map((p) => (
-                        <motion.tr key={p.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="transition-colors hover:bg-[var(--hc-surface-2)]" style={{ borderTop: '1px solid var(--hc-border)' }}>
-                          {isAdmin && (
-                          <td className="px-4 py-3">
-                            <button
-                              onClick={() => handleToggleDestacado(p)}
-                              title={p.destacado ? 'Quitar destacado' : 'Marcar como destacado'}
-                              className="w-7 h-7 flex items-center justify-center rounded-lg transition-all"
-                              style={p.destacado
-                                ? { color: '#8a5a00', backgroundColor: '#f7ead2' }
-                                : { color: 'var(--hc-muted)', opacity: 0.5 }}
-                            >
-                              <StarIcon filled={p.destacado} />
-                            </button>
-                          </td>
-                          )}
-                          {isAdmin && (
-                          <td className="px-4 py-3">
-                            <button
-                              onClick={() => handleToggleCarrusel(p)}
-                              title={p.enCarrusel ? `Quitar del carrusel (pos. ${p.ordenCarrusel})` : carruselSlots.length >= 5 ? 'Carrusel lleno (5/5)' : 'Agregar al carrusel'}
-                              className="w-7 h-7 flex items-center justify-center rounded-lg transition-all text-sm"
-                              style={p.enCarrusel
-                                ? { backgroundColor: 'rgba(23,71,168,0.12)', border: '1px solid rgba(23,71,168,0.3)', color: 'var(--hc-accent)' }
-                                : carruselSlots.length >= 5
-                                ? { color: 'var(--hc-muted)', opacity: 0.3, cursor: 'not-allowed' }
-                                : { color: 'var(--hc-muted)', opacity: 0.5 }}
-                            >
-                              {p.enCarrusel ? (
-                                <span className="text-[10px] font-bold">{p.ordenCarrusel}</span>
-                              ) : (
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                                  <circle cx="12" cy="12" r="3"/><path d="M12 3v3m0 12v3M3 12h3m12 0h3m-2.636-6.364-2.122 2.122M8.758 15.242l-2.122 2.122m0-12.728 2.122 2.122m6.364 6.364 2.122 2.122"/>
-                                </svg>
-                              )}
-                            </button>
-                          </td>
-                          )}
-                          <td className="px-4 py-3 text-xs" style={{ color: 'var(--hc-muted)' }}>#{p.id}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-3">
-                              {p.imagenUrl ? (
-                                <img src={p.imagenUrl} alt={p.nombre} className="w-8 h-8 rounded-lg object-cover" style={{ backgroundColor: 'var(--hc-surface-2)' }} />
-                              ) : (
-                                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--hc-surface-2)' }}>
-                                  <svg className="w-4 h-4" style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
-                                  </svg>
-                                </div>
-                              )}
-                              <div className="min-w-0">
-                                <span className="font-medium truncate block" style={{ color: 'var(--hc-text)' }} title={p.nombre}>{p.nombre}</span>
-                                <div className="flex items-center gap-1.5 mt-0.5">
-                                  {p.categoriaNombre && <span className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>{p.categoriaNombre}</span>}
-                                  {p.especificaciones && <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ color: 'var(--hc-accent)', backgroundColor: 'rgba(23,71,168,0.08)' }}>con specs</span>}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 font-medium" style={{ color: 'var(--hc-text)' }}>{formatPrice(p.precio)}</td>
-                          <td className="px-4 py-3">
-                            <Badge variant={p.stock === 0 ? 'danger' : p.stock <= 3 ? 'warning' : 'success'}>{p.stock}</Badge>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="space-y-0.5">
-                              {p.sku     && <p className="text-[10px] font-mono" style={{ color: 'var(--hc-muted)' }}>SKU: {p.sku}</p>}
-                              {p.barcode && <p className="text-[10px] font-mono" style={{ color: 'var(--hc-accent)', opacity: 0.8 }}>BC: {p.barcode}</p>}
-                              {!p.sku && !p.barcode && <span className="text-[10px]" style={{ color: 'var(--hc-muted)', opacity: 0.5 }}>—</span>}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <Badge variant={conditionVariant(p.condicion)}>{conditionLabel(p.condicion)}</Badge>
-                          </td>
-                          {isAdmin && (
-                          <td className="px-4 py-3 text-center">
-                            <SeoStatusIcon product={p} />
-                          </td>
-                          )}
-                          <td className="px-4 py-3">
-                            <div className="flex gap-2">
-                              <button onClick={() => openEdit(p)} className="px-3 py-1 text-xs rounded-lg transition-colors hover:bg-[var(--hc-surface-2)]" style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>{t('admin.products.edit')}</button>
-                              <button onClick={() => setKardexProducto(p)} className="px-3 py-1 text-xs rounded-lg transition-colors hover:bg-[var(--hc-surface-2)]" style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }} title="Ver kardex">Kardex</button>
-                              <button onClick={() => handleDelete(p.id, p.nombre)} className="px-3 py-1 text-xs rounded-lg transition-colors hover:bg-red-500/15" style={{ backgroundColor: 'rgba(220,38,38,0.06)', color: '#a8291f' }}>{t('admin.products.delete')}</button>
-                            </div>
-                          </td>
-                        </motion.tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Mobile: tarjetas en vez de tabla (mockup Movil/Sistema - Productos.dc.html) */}
-                <div className="md:hidden divide-y" style={{ borderColor: 'var(--hc-border)' }}>
-                  {filtered.map((p) => (
-                    <div key={p.id} className="p-4 flex flex-col gap-2.5">
-                      <div className="flex items-center gap-3">
-                        {p.imagenUrl ? (
-                          <img src={p.imagenUrl} alt={p.nombre} className="w-12 h-12 rounded-xl object-cover shrink-0" style={{ backgroundColor: 'var(--hc-surface-2)' }} />
-                        ) : (
-                          <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--hc-surface-2)' }}>
-                            <svg className="w-5 h-5" style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
-                            </svg>
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate" style={{ color: 'var(--hc-text)' }}>{p.nombre}</p>
-                          <p className="text-xs font-mono truncate" style={{ color: 'var(--hc-muted)' }}>
-                            {p.sku ?? `#${p.id}`}{p.categoriaNombre ? ` · ${p.categoriaNombre}` : ''}
-                          </p>
-                        </div>
-                        <Badge variant={conditionVariant(p.condicion)}>{conditionLabel(p.condicion)}</Badge>
-                      </div>
-                      <div className="flex items-center justify-between pt-2.5" style={{ borderTop: '1px solid var(--hc-border)' }}>
-                        <div className="flex items-center gap-4">
-                          <span className="font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>{formatPrice(p.precio)}</span>
-                          <Badge variant={p.stock === 0 ? 'danger' : p.stock <= 3 ? 'warning' : 'success'}>{p.stock}</Badge>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs font-semibold">
-                          <button onClick={() => openEdit(p)} style={{ color: 'var(--hc-accent)' }}>{t('admin.products.edit')}</button>
-                          <button onClick={() => setKardexProducto(p)} style={{ color: 'var(--hc-muted)' }}>Kardex</button>
-                          <button onClick={() => handleDelete(p.id, p.nombre)} style={{ color: '#a8291f' }}>{t('admin.products.delete')}</button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div>
-                  {filtered.length === 0 && (
-                    <div className="text-center py-14">
-                      {search || hasFilters ? (
-                        <div className="space-y-2">
-                          <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>Sin resultados para los filtros actuales</p>
-                          <button onClick={clearFilters} className="text-xs hover:underline" style={{ color: 'var(--hc-accent)' }}>Limpiar filtros →</button>
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center" style={{ backgroundColor: 'rgba(23,71,168,0.1)', border: '1px solid rgba(23,71,168,0.15)' }}>
-                            <svg className="w-7 h-7" style={{ color: 'var(--hc-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-                          </div>
-                          <p className="font-semibold" style={{ color: 'var(--hc-text)' }}>Sin productos publicados</p>
-                          <p className="text-sm max-w-xs mx-auto" style={{ color: 'var(--hc-muted)' }}>Tu catálogo está vacío. Agregá tu primer producto para comenzar a vender.</p>
-                          <button
-                            onClick={openNew}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold mt-1 transition-opacity hover:opacity-80"
-                            style={{ backgroundColor: 'var(--hc-primary)', color: '#fff' }}
-                          >
-                            + Crear primer producto
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-                {totalProds > PROD_PAGE_SIZE && (
-                  <div className="px-4 py-3 flex items-center justify-between text-xs" style={{ borderTop: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
-                    <span>Página {prodPage + 1} · {products.length} de {totalProds} productos</span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setProdPage((p) => Math.max(0, p - 1))}
-                        disabled={prodPage === 0}
-                        className="px-2 py-1 rounded-lg disabled:opacity-30 transition-colors hover:bg-[var(--hc-surface-2)]"
-                        style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}
-                      >
-                        ← Anterior
-                      </button>
-                      <button
-                        onClick={() => setProdPage((p) => p + 1)}
-                        disabled={(prodPage + 1) * PROD_PAGE_SIZE >= totalProds}
-                        className="px-2 py-1 rounded-lg disabled:opacity-30 transition-colors hover:bg-[var(--hc-surface-2)]"
-                        style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}
-                      >
-                        Siguiente →
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <ProductosTable
+                filtered={filtered}
+                products={products}
+                totalProds={totalProds}
+                prodPage={prodPage}
+                isAdmin={isAdmin}
+                carruselSlots={carruselSlots}
+                search={search}
+                hasFilters={hasFilters}
+                onToggleDestacado={handleToggleDestacado}
+                onToggleCarrusel={handleToggleCarrusel}
+                onEdit={openEdit}
+                onKardex={setKardexProducto}
+                onDelete={handleDelete}
+                onClearFilters={clearFilters}
+                onNuevo={openNew}
+                onPage={setProdPage}
+              />
             )}
           </div>
         </div>
       </div>
 
-      {/* ── Modal crear / editar ── */}
-      <Modal open={modalOpen} onClose={handleModalClose} title={editing ? t('admin.products.edit') : t('admin.products.new')} size="lg">
-        <form onSubmit={handleSave} className="space-y-4">
-
-          {/* Información básica */}
-          <Input label="Nombre *" value={form.nombre} onChange={set('nombre')} required />
-          <Input label="Título visible en tienda" value={form.titulo} onChange={set('titulo')} hint="Si está vacío se usa el nombre. Este título lo ven los clientes." />
-          <Input label="Descripción corta" value={form.descripcion} onChange={set('descripcion')} />
-
-          {/* Precios */}
-          <div className="pt-4" style={{ borderTop: '1px solid var(--hc-border)' }}>
-            <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--hc-muted)' }}>Precios</p>
-            <div className="grid grid-cols-2 gap-3">
-              <Input label="Precio compra (₡) *" type="number" step="1" min="0" value={form.precioCompra} onChange={set('precioCompra')} required hint="Costo de adquisición" />
-              <Input label="Precio venta (₡) *" type="number" step="1" min={form.precioCompra || 0} value={form.precioVenta} onChange={set('precioVenta')} required hint="Debe ser ≥ precio de compra" />
-            </div>
-            {form.precioCompra && form.precioVenta && (
-              <div className="flex gap-2 mt-2 text-xs">
-                <span style={{ color: 'var(--hc-muted)' }}>Margen:</span>
-                <span className="font-medium" style={{ color: Number(form.precioVenta) > Number(form.precioCompra) ? '#1E7F4F' : '#a8291f' }}>
-                  ₡{(Number(form.precioVenta) - Number(form.precioCompra)).toLocaleString('es-CR')}
-                  {' '}({Number(form.precioCompra) > 0 ? `${(((Number(form.precioVenta) - Number(form.precioCompra)) / Number(form.precioCompra)) * 100).toFixed(1)}%` : '—'})
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Inventario */}
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="Stock *" type="number" min="0" value={form.stock} onChange={set('stock')} required />
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Condición</label>
-              <select value={form.condicion} onChange={set('condicion')} className="h-11 px-3 rounded-xl text-sm focus:outline-none" style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}>
-                <option value="NUEVO">Nuevo</option>
-                <option value="COMO_NUEVO">Como nuevo</option>
-                <option value="USADO">Usado</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Alerta: sin categorías */}
-          {categories.length === 0 && (
-            <div className="flex items-start gap-3 px-4 py-3 rounded-xl text-sm" style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', color: '#8a5a00' }}>
-              <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-              <span>
-                <span className="font-semibold">Sin categorías creadas.</span>{' '}Necesitás crear al menos una antes de publicar un producto.{' '}
-                <Link to="/admin/categorias" className="underline font-medium" onClick={() => setModalOpen(false)}>Crear categoría →</Link>
-              </span>
-            </div>
-          )}
-
-          {/* Categoría + Bodega */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Categoría *</label>
-              <CategoriaSelect
-                categories={categories}
-                value={form.categoriaId}
-                onChange={(id) => setField('categoriaId', id)}
-                required
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Bodega *</label>
-              <select value={form.bodegaId} onChange={set('bodegaId')} className="h-11 px-3 rounded-xl text-sm focus:outline-none" style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }} required={bodegas.length > 0}>
-                <option value="">{bodegas.length === 0 ? '— Sin bodegas —' : 'Selecciona bodega'}</option>
-                {bodegas.map((b) => <option key={b.id} value={b.id}>{b.nombreBodega ?? b.nombre}</option>)}
-              </select>
-            </div>
-          </div>
-
-          {/* Marca */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Marca</label>
-            <select value={form.marcaId} onChange={set('marcaId')} className="h-11 px-3 rounded-xl text-sm focus:outline-none" style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}>
-              <option value="">— Sin marca —</option>
-              {marcas.map((m) => (
-                <option key={m.id} value={m.id}>{m.nombreMarca}</option>
-              ))}
-            </select>
-          </div>
-
-          <MultiImagePicker
-            imagenes={form.imagenes}
-            onChange={(imgs) => setForm((prev) => ({ ...prev, imagenes: imgs, imagenUrl: imgs[0] ?? prev.imagenUrl }))}
-          />
-
-          {/* Destacado */}
-          <div className="flex items-center justify-between py-2.5 px-3 rounded-xl" style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
-            <div>
-              <p className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Destacado</p>
-              <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Aparece primero en el inicio de la tienda</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setField('destacado', !form.destacado)}
-              className="relative w-11 h-6 rounded-full transition-colors duration-200"
-              style={{ backgroundColor: form.destacado ? '#f59e0b' : 'var(--hc-border)' }}
-            >
-              <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${form.destacado ? 'translate-x-5' : 'translate-x-0'}`} />
-            </button>
-          </div>
-
-          {/* ── Contenido del producto ── */}
-          <div className="pt-4 space-y-4" style={{ borderTop: '1px solid var(--hc-border)' }}>
-            <div className="flex items-center gap-2">
-              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>Contenido del producto</p>
-              <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#1E7F4F', backgroundColor: '#e2f1e8' }}>visible para el cliente</span>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>
-                Especificaciones técnicas
-                {form.especificaciones && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full" style={{ color: 'var(--hc-accent)', backgroundColor: 'rgba(23,71,168,0.08)' }}>✓ con contenido</span>}
-              </label>
-              <textarea
-                value={form.especificaciones}
-                onChange={(e) => setField('especificaciones', e.target.value)}
-                rows={5}
-                placeholder={"- Marca: Samsung\n- Modelo: Galaxy A54\n- Color: Negro\n- Almacenamiento: 128GB\n- RAM: 6GB"}
-                className={`${ta} min-h-[110px] font-mono text-xs`}
-                style={taStyle}
-              />
-              <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Una línea = un punto. Se muestra como lista al cliente en la ficha del producto.</p>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>
-                Cómo usar
-                {form.comoUsar && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full" style={{ color: 'var(--hc-accent)', backgroundColor: 'rgba(23,71,168,0.08)' }}>✓ con contenido</span>}
-              </label>
-              <textarea
-                value={form.comoUsar}
-                onChange={(e) => setField('comoUsar', e.target.value)}
-                rows={4}
-                placeholder={"1. Cargue el dispositivo completamente antes de usar\n2. Inserte la tarjeta SIM\n3. Encienda con el botón lateral\n4. Siga las instrucciones en pantalla"}
-                className={`${ta} min-h-[90px]`}
-                style={taStyle}
-              />
-              <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Pasos numerados. Ej: "1. Primer paso". Se muestra como lista ordenada al cliente.</p>
-            </div>
-
-            {/* ── Video del producto ── */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--hc-text)' }}>
-                <span>Video del producto</span>
-                {form.videoUrl && (() => {
-                  const u = form.videoUrl
-                  if (/youtube|youtu\.be/.test(u)) return <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ color: '#a8291f', backgroundColor: 'rgba(220,38,38,0.08)' }}>▶ YouTube</span>
-                  if (/tiktok/.test(u)) return <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ color: 'var(--hc-text)', backgroundColor: 'var(--hc-surface-2)' }}>▶ TikTok</span>
-                  if (/instagram/.test(u)) return <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ color: '#be185d', backgroundColor: 'rgba(219,39,119,0.08)' }}>▶ Instagram</span>
-                  return <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ color: 'var(--hc-muted)', backgroundColor: 'var(--hc-surface-2)' }}>▶ con video</span>
-                })()}
-              </label>
-              <input
-                type="url"
-                value={form.videoUrl}
-                onChange={(e) => setField('videoUrl', e.target.value)}
-                placeholder="YouTube, TikTok o Instagram..."
-                className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none transition-all"
-                style={taStyle}
-              />
-              <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Pega el link de YouTube, TikTok o Instagram. Se mostrará como video embed en la página de detalle.</p>
-            </div>
-          </div>
-
-          {/* ── SEO ── */}
-          <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
-            <button
-              type="button"
-              onClick={() => setSeoOpen(o => !o)}
-              className="w-full flex items-center justify-between px-4 py-3 hover:bg-[var(--hc-surface-2)] transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>SEO</span>
-                <span className="text-base">🎯</span>
-                {form.metaTitle && form.metaDescription
-                  ? <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#1E7F4F', backgroundColor: '#e2f1e8' }}>Optimizado</span>
-                  : <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: 'var(--hc-muted)', backgroundColor: 'var(--hc-surface-2)' }}>Sin configurar</span>
-                }
-              </div>
-              <svg className={`w-4 h-4 transition-transform duration-200 ${seoOpen ? 'rotate-180' : ''}`} style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-            </button>
-
-            {seoOpen && (
-              <div className="px-4 py-4 space-y-4" style={{ borderTop: '1px solid var(--hc-border)' }}>
-                {/* Título SEO */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <label className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Título SEO</label>
-                      <span title="Aparece en Google. Usa entre 50-60 caracteres, incluye la palabra principal." className="cursor-help text-xs" style={{ color: 'var(--hc-muted)' }}>ⓘ</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {seoAutoTitle && <span className="text-[10px]" style={{ color: 'var(--hc-accent)' }}>auto</span>}
-                      <CharCounter current={(form.metaTitle || '').length} max={60} min={30} />
-                    </div>
-                  </div>
-                  <input
-                    value={form.metaTitle || ''}
-                    maxLength={60}
-                    placeholder="Nombre del producto | HotClick Outlet"
-                    onChange={e => { setSeoAutoTitle(false); setField('metaTitle', e.target.value) }}
-                    className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none transition-all"
-                    style={taStyle}
-                  />
-                </div>
-
-                {/* Meta Descripción */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <label className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Meta Descripción</label>
-                      <span title="Aparece debajo del título en Google. Usa entre 120-160 caracteres." className="cursor-help text-xs" style={{ color: 'var(--hc-muted)' }}>ⓘ</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {seoAutoDesc && <span className="text-[10px]" style={{ color: 'var(--hc-accent)' }}>auto</span>}
-                      <CharCounter current={(form.metaDescription || '').length} max={160} min={120} />
-                    </div>
-                  </div>
-                  <textarea
-                    value={form.metaDescription || ''}
-                    maxLength={160}
-                    rows={3}
-                    placeholder="Descripción del producto | Precio: ₡X | Envíos a todo Costa Rica"
-                    onChange={e => { setSeoAutoDesc(false); setField('metaDescription', e.target.value) }}
-                    className={`${ta} resize-none`}
-                    style={taStyle}
-                  />
-                </div>
-
-                {/* Vista previa Google */}
-                <div>
-                  <p className="text-xs mb-2" style={{ color: 'var(--hc-muted)' }}>Vista previa en Google</p>
-                  <div className="rounded-xl bg-white px-4 py-3 space-y-0.5">
-                    <p className="text-xs text-green-700 truncate">
-                      hotclick.com › productos › {form.nombre ? toSlug(form.nombre) : '…'}
-                    </p>
-                    <p className="text-base text-blue-700 truncate leading-snug">
-                      {form.metaTitle || 'Título SEO del producto'}
-                    </p>
-                    <p className="text-sm text-[#4d5156] line-clamp-2 leading-snug">
-                      {form.metaDescription || 'La meta descripción aparecerá aquí…'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <Button type="submit" loading={saving} className="flex-1">{editing ? t('admin.products.saved') : t('admin.products.new')}</Button>
-            <Button type="button" variant="secondary" onClick={handleModalClose}>{t('common.cancel')}</Button>
-          </div>
-        </form>
-      </Modal>
+      <ProductoFormModal
+        open={modalOpen}
+        onClose={handleModalClose}
+        form={form}
+        setForm={setForm}
+        categories={categories}
+        bodegas={bodegas}
+        marcas={marcas}
+        editing={editing}
+        saving={saving}
+        seoOpen={seoOpen}
+        setSeoOpen={setSeoOpen}
+        seoAutoTitle={seoAutoTitle}
+        setSeoAutoTitle={setSeoAutoTitle}
+        seoAutoDesc={seoAutoDesc}
+        setSeoAutoDesc={setSeoAutoDesc}
+        onSubmit={handleSave}
+        setModalOpen={setModalOpen}
+      />
 
       <ConfirmModal
         open={showDiscardModal}
@@ -1163,14 +417,69 @@ export default function AdminProducts() {
   )
 }
 
-function StarIcon({ filled }) {
-  return filled ? (
-    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-    </svg>
-  ) : (
-    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-    </svg>
+function ProductosHeader({ t, filteredCount, totalProds, products, bodegas, onImport, onNuevo }) {
+  return (
+    <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div className="flex items-center gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>{t('admin.products.title')}</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>{filteredCount} de {totalProds} productos</p>
+        </div>
+        <div className="flex flex-col items-start gap-0.5">
+          <span className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>Cuenta</span>
+          <EmpresaProfileCard totalProductos={totalProds} />
+        </div>
+      </div>
+      <div className="flex items-center gap-3 flex-wrap">
+        <ImportExportBar
+          data={filasExportProductos(products)}
+          columns={COLUMNAS_EXPORT}
+          filename="productos"
+          sheetName="Productos"
+          importColumns={COLUMNAS_IMPORT}
+          mapImportRow={(row) => mapImportRow(row, bodegas[0]?.id)}
+          onImport={onImport}
+        />
+        <Link
+          to="/admin/productos/carga-masiva"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-[var(--hc-surface-2)]"
+          style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+          </svg>
+          Carga masiva
+        </Link>
+        <Button onClick={onNuevo}>+ {t('admin.products.new')}</Button>
+      </div>
+    </div>
+  )
+}
+
+function AvisoBusquedaPaginada() {
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs"
+      style={{ backgroundColor: 'rgba(23,71,168,0.06)', border: '1px solid rgba(23,71,168,0.18)', color: '#7fa0ff' }}>
+      <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Buscando en los {PROD_PAGE_SIZE} productos de la página actual. Para buscar en todo el catálogo, limpiá el texto y navegá por páginas.
+    </div>
+  )
+}
+
+function BuscadorDesktop({ search, onSearch }) {
+  return (
+    <div className="relative hidden md:block">
+      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input
+        type="text"
+        placeholder="Buscar por nombre..."
+        value={search}
+        onChange={(e) => onSearch(e.target.value)}
+        className="w-full h-10 pl-10 pr-4 rounded-xl text-sm focus:outline-none transition-colors"
+        style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
+      />
+    </div>
   )
 }

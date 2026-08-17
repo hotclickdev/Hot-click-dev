@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import api from '@/services/api'
+import { walletService } from '@/services/walletService'
 import Spinner from '@/components/ui/Spinner'
 import { useToast } from '@/components/ui/Toast'
 
@@ -58,7 +58,7 @@ function PayoutModal({ onClose, onSaved }) {
     }
     setSaving(true)
     try {
-      await api.post('/wallet/payout', { ...form, monto: Number(form.monto) })
+      await walletService.solicitarPayout({ ...form, monto: Number(form.monto) })
       showToast('Solicitud de retiro enviada', 'success')
       onSaved()
     } catch (e) {
@@ -146,9 +146,9 @@ export default function AdminBilletera() {
     setLoading(true)
     try {
       const [wRes, txRes, prRes] = await Promise.all([
-        api.get('/wallet/saldo'),
-        api.get(`/wallet/transacciones?page=${txPage}&size=15`),
-        api.get('/wallet/payouts?page=0&size=50'),
+        walletService.getSaldo(),
+        walletService.getTransacciones(txPage),
+        walletService.getPayouts(),
       ])
       setWallet(wRes.data)
       setTxs(txRes.data.content ?? [])
@@ -159,9 +159,9 @@ export default function AdminBilletera() {
     } finally {
       setLoading(false)
     }
-  }, [txPage])
+  }, [txPage]) // eslint-disable-line react-hooks/exhaustive-deps -- showToast es estable
 
-  useEffect(() => { fetchAll() }, [fetchAll])
+  useEffect(() => { fetchAll() }, [fetchAll]) // eslint-disable-line react-hooks/set-state-in-effect -- carga al montar / cambiar página
 
   if (loading) return <div className="flex justify-center py-20"><Spinner /></div>
 

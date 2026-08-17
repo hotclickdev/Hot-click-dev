@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import facturaService from '@/services/facturaService'
-import api from '@/services/api'
+import { empresaService } from '@/services/empresaService'
+import { useToast } from '@/components/ui/Toast'
 
 const ESTADO_COLORS = {
   PENDIENTE:  'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
@@ -22,6 +23,7 @@ const fmtDate = s => s
   : '—'
 
 export default function AdminFacturas() {
+  const { showToast } = useToast()
   const [comprobantes, setComprobantes] = useState([])
   const [total, setTotal]               = useState(0)
   const [page, setPage]                 = useState(0)
@@ -35,14 +37,14 @@ export default function AdminFacturas() {
       setComprobantes(data.content ?? [])
       setTotal(data.totalElements ?? 0)
       setPage(p)
-    } catch { /* GlobalExceptionHandler maneja errores */ }
+    } catch { showToast('Error cargando comprobantes', 'error') }
     finally { setLoading(false) }
   }
 
   useEffect(() => {
-    cargar(0)
-    api.get('/empresa/perfil').then(r => setEmpresa(r.data?.data ?? r.data)).catch(() => {})
-  }, [])
+    cargar(0) // eslint-disable-line react-hooks/set-state-in-effect -- carga al montar
+    empresaService.getPerfil().then(r => setEmpresa(r.data?.data ?? r.data)).catch(() => { /* ok */ })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- carga al montar
 
   return (
     <div className="mx-auto max-w-7xl space-y-5 p-6">

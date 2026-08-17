@@ -39,4 +39,7 @@ export const securityService = {
   // Export CSV — retorna URL directa para descargar
   getExportUrl: (period = '7d') =>
     `${api.defaults.baseURL}/security/eventos/export?period=${period}`,
+
+  getAiDashboard: (anio, mes) =>
+    api.get('/security/ai/dashboard', { params: { anio, mes } }),
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import api from '@/services/api'
+import { empresaService } from '@/services/empresaService'
 import useAuthStore from '@/store/authStore'
 
 const TIPOS_CEDULA = [{ v: '01', l: 'Física' }, { v: '02', l: 'Jurídica' }, { v: '03', l: 'DIMEX' }, { v: '04', l: 'NITE' }]
@@ -38,7 +38,7 @@ export default function AdminConfigFiscal() {
   // ── Cargar datos del servidor ─────────────────────────────────────────────
   // KEY incluye empresaId — re-corre si el usuario cambia de negocio
   useEffect(() => {
-    api.get('/empresa/perfil')
+    empresaService.getPerfil()
       .then(({ data }) => {
         const server = {
           cedulaJuridica:     data.cedulaJuridica    ?? '',
@@ -78,7 +78,7 @@ export default function AdminConfigFiscal() {
       setDraftSaved(true)
       setTimeout(() => setDraftSaved(false), 2000)
     }, 800)
-  }, [])
+  }, [KEY])
 
   const set = (k, v) => {
     setForm(f => {
@@ -103,13 +103,11 @@ export default function AdminConfigFiscal() {
       if (p12File) {
         const fd = new FormData()
         fd.append('file', p12File)
-        await api.post('/empresa/perfil/cert-p12', fd, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        })
+        await empresaService.uploadCertP12(fd)
         setCertInfo(c => ({ ...c, tieneCertP12: true }))
         setP12File(null)
       }
-      await api.put('/empresa/perfil/fiscal', form)
+      await empresaService.updateFiscal(form)
       if (form.claveHacienda) setCertInfo(c => ({ ...c, tieneClaveHacienda: true }))
       // Limpiar borrador y campo clave del form tras guardar exitoso
       lsRm(KEY)

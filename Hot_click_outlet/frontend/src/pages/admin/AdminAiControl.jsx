@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import api from '@/services/api'
+import { securityService } from '@/services/securityService'
+import { flagService } from '@/services/flagService'
 
 const fmt = (n) => new Intl.NumberFormat('es-CR').format(Math.round(n ?? 0))
 
@@ -47,22 +48,19 @@ export default function AdminAiControl() {
   async function cargar(anio, mes) {
     setCargando(true); setError(null)
     try {
-      const { data: d } = await api.get('/security/ai/dashboard', { params: { anio, mes } })
+      const { data: d } = await securityService.getAiDashboard(anio, mes)
       setData(d)
     } catch { setError('No se pudo cargar el panel de control de IA') }
     finally { setCargando(false) }
   }
 
-  useEffect(() => { cargar(periodoAnio, periodoMes) }, [periodoAnio, periodoMes])
+  useEffect(() => { cargar(periodoAnio, periodoMes) }, [periodoAnio, periodoMes]) // eslint-disable-line react-hooks/set-state-in-effect -- carga al cambiar período
 
   async function toggleFlag(empresaId, flag, activo) {
     const key = `${empresaId}-${flag}`
     setToggling(key)
     try {
-      const ep = activo
-        ? `/admin/flags/${empresaId}/${flag}/off`
-        : `/admin/flags/${empresaId}/${flag}/on`
-      await api.post(ep)
+      await flagService.set(empresaId, flag, !activo)
       // Update local state
       setData(prev => ({
         ...prev,
@@ -80,10 +78,7 @@ export default function AdminAiControl() {
   async function toggleTodos(flag, activar) {
     if (!data?.empresas) return
     for (const e of data.empresas) {
-      const ep = activar
-        ? `/admin/flags/${e.id}/${flag}/on`
-        : `/admin/flags/${e.id}/${flag}/off`
-      await api.post(ep).catch(() => {})
+      await flagService.set(e.id, flag, activar).catch(() => {})
     }
     await cargar()
   }
