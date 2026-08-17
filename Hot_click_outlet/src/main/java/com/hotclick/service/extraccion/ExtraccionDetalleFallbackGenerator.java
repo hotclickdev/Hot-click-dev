@@ -3,7 +3,6 @@ package com.hotclick.service.extraccion;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 class ExtraccionDetalleFallbackGenerator {
@@ -102,7 +101,7 @@ class ExtraccionDetalleFallbackGenerator {
         List<String> extras = etiquetas.stream()
             .filter(e -> !e.equalsIgnoreCase(base) && e.length() > 3)
             .limit(3)
-            .collect(Collectors.toList());
+            .toList();
         if (extras.isEmpty()) return base + ".";
         return base + ". " + String.join(", ", extras) + ".";
     }

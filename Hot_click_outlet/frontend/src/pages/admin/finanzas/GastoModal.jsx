@@ -51,7 +51,7 @@ export default function GastoModal({ editing, onClose, onSaved }) {
           <h2 className="font-bold" style={{ color: 'var(--hc-text)' }}>
             {editing?.id ? 'Editar gasto' : 'Nuevo gasto'}
           </h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
+          <button type="button" onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
             style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>✕</button>
         </div>
 
@@ -90,12 +90,12 @@ export default function GastoModal({ editing, onClose, onSaved }) {
         </div>
 
         <div className="flex gap-3 pt-1">
-          <button onClick={onClose}
+          <button type="button" onClick={onClose}
             className="flex-1 py-2.5 rounded-xl text-sm font-medium"
             style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>
             Cancelar
           </button>
-          <button onClick={handleSave} disabled={saving || !form.concepto.trim() || montoInvalido}
+          <button type="button" onClick={handleSave} disabled={saving || !form.concepto.trim() || montoInvalido}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-80 disabled:opacity-40"
             style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
             {saving ? 'Guardando…' : 'Guardar'}

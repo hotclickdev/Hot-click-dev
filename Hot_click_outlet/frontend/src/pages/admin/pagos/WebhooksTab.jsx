@@ -78,7 +78,7 @@ export default function WebhooksTab({
             { value: 'true', label: 'Procesados' },
             { value: 'false', label: 'Con error' },
           ]} />
-        <button onClick={onRetry}
+        <button type="button" onClick={onRetry}
           className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/8 text-[#8e8e9a] hover:text-[#e8e8ed] text-sm transition-colors">
           Actualizar
         </button>

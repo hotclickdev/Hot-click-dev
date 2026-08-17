@@ -43,7 +43,7 @@ export default function WebAuthnStep({ correo, onSuccess, onError }) {
         <p className="text-sm text-amber-600 bg-amber-50 px-4 py-2 rounded-lg">{msg}</p>
       )}
 
-      <button
+      <button type="button"
         onClick={handleAuthenticate}
         disabled={loading}
         className="w-full py-3 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-60 transition-colors"

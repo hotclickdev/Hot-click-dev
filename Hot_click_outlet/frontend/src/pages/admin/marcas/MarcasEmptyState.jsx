@@ -16,7 +16,7 @@ export default function MarcasEmptyState({ onCrear }) {
       </div>
       <p className="font-semibold" style={{ color: 'var(--hc-text)' }}>Sin marcas registradas</p>
       <p className="text-sm max-w-xs mx-auto" style={{ color: 'var(--hc-muted)' }}>Las marcas aparecen en el catálogo y en cada producto.</p>
-      <button onClick={onCrear}
+      <button type="button" onClick={onCrear}
         className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold mt-1 transition-opacity hover:opacity-80"
         style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
         + Crear primera marca

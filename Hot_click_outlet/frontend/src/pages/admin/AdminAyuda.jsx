@@ -70,7 +70,7 @@ export default function AdminAyuda() {
         <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
           El equipo de HotClick va a revisar tu reporte y te va a contactar por correo o WhatsApp.
         </p>
-        <button
+        <button type="button"
           onClick={() => { setTitulo(''); setDescripcion(''); quitarFoto(); setEnviado(false) }}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>

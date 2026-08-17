@@ -72,7 +72,7 @@ export default function AIChat({
       <p className="text-[10px] font-medium px-1" style={{ color: '#9CA3AF' }}>Búsquedas recientes</p>
       <div className="flex flex-wrap gap-1.5">
         {chat.sessionSearches.slice(0, 4).map(s => (
-          <button
+          <button type="button"
             key={s}
             onClick={() => chat.enviar(s)}
             className="flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full transition-all hover:opacity-80 active:scale-95"
@@ -97,7 +97,7 @@ export default function AIChat({
   )
 
   const alternativasEl = chat.showAlternativas && (
-    <button
+    <button type="button"
       onClick={() => chat.enviar(chat.queryAlternativas)}
       className="self-start text-[11px] px-3 py-1.5 rounded-full transition-all hover:opacity-80 active:scale-95 flex items-center gap-1.5"
       style={{

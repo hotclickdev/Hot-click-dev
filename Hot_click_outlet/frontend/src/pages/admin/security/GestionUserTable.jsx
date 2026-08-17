@@ -129,28 +129,28 @@ export default function GestionUserTable({
                       onClick={(e) => e.stopPropagation()}
                       onKeyDown={(e) => e.stopPropagation()}>
                       {estado !== 'ELIMINADO' && (
-                        <button onClick={() => onEdit(u)}
+                        <button type="button" onClick={() => onEdit(u)}
                           className="px-2.5 py-1 rounded-lg text-[10px] font-medium hover:opacity-80 transition-opacity"
                           style={{ backgroundColor: 'var(--hc-border)', color: 'var(--hc-text)' }}>
                           Editar
                         </button>
                       )}
                       {estado !== 'ELIMINADO' && estado !== 'SUSPENDIDO' && estado !== 'PENDIENTE' && (
-                        <button onClick={() => onAction(u, 'block')}
+                        <button type="button" onClick={() => onAction(u, 'block')}
                           className="px-2.5 py-1 rounded-lg text-[10px] font-medium"
                           style={{ backgroundColor: 'rgba(245,158,11,0.1)', color: '#f59e0b' }}>
                           Bloquear
                         </button>
                       )}
                       {estado === 'SUSPENDIDO' && (
-                        <button onClick={() => onAction(u, 'unblock')}
+                        <button type="button" onClick={() => onAction(u, 'unblock')}
                           className="px-2.5 py-1 rounded-lg text-[10px] font-medium"
                           style={{ backgroundColor: 'rgba(34,197,94,0.1)', color: '#4ade80' }}>
                           Desbloquear
                         </button>
                       )}
                       {estado === 'ELIMINADO' && (
-                        <button onClick={() => onAction(u, 'restore')}
+                        <button type="button" onClick={() => onAction(u, 'restore')}
                           className="px-2.5 py-1 rounded-lg text-[10px] font-medium"
                           style={{ backgroundColor: 'rgba(34,197,94,0.1)', color: '#4ade80' }}>
                           Restaurar

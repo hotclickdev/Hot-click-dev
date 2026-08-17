@@ -16,7 +16,7 @@ export default function StepTracker({ estado, esRetiro, onStep, saving }) {
         return (
           <div key={e.key} className="flex items-center flex-1 min-w-0">
             <div className="flex flex-col items-center gap-1 shrink-0">
-              <button
+              <button type="button"
                 onClick={() => clickable && onStep(e.key)}
                 disabled={saving}
                 title={clickable ? `${t('adminOrders.changeTo')} ${label}` : label}

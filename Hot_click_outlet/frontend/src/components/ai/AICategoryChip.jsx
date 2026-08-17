@@ -18,7 +18,7 @@ export default function AICategoryChip({ nombre, accentColor, onSelect }) {
   }
 
   return (
-    <button
+    <button type="button"
       onClick={handleClick}
       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:opacity-80 active:scale-95"
       style={{

@@ -83,7 +83,7 @@ export default function CheckoutSinpePending({
                   Nuestro repartidor llevará tu pedido y cobrará el monto exacto en efectivo. Te avisamos por WhatsApp antes de salir.
                 </p>
               </div>
-              <button
+              <button type="button"
                 onClick={onSinpeWhatsApp}
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/18"
               >
@@ -157,7 +157,7 @@ export default function CheckoutSinpePending({
                   setSinpeUploadError('')
                 }}
               />
-              <button
+              <button type="button"
                 onClick={() => sinpeInputRef.current?.click()}
                 className="w-full flex items-center justify-center gap-2.5 py-4 rounded-xl text-sm font-medium transition-all border-dashed border-2"
                 style={sinpeImagen
@@ -197,7 +197,7 @@ export default function CheckoutSinpePending({
                 </p>
               )}
 
-              <button
+              <button type="button"
                 onClick={onSubirComprobante}
                 disabled={sinpeUploadEstado === 'uploading'}
                 className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50"
@@ -227,7 +227,7 @@ export default function CheckoutSinpePending({
               <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
                 Un administrador verificará tu pago y activará tu pedido. Te avisamos por correo.
               </p>
-              <button
+              <button type="button"
                 onClick={onSinpeWhatsApp}
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/18"
               >

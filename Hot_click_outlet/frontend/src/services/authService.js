@@ -96,5 +96,7 @@ export const authService = {
     api.post('/auth/upgrade-emprendedor', data),
 
   registrarConsentimiento: (tipo) =>
-    api.post('/consentimiento', { tipo }).catch(() => {}),
+    api.post('/consentimiento', { tipo }).catch((err) => {
+      console.error('[authService] consentimiento', err)
+    }),
 }

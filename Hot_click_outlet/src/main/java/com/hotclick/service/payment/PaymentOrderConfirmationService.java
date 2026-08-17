@@ -6,6 +6,7 @@ import com.hotclick.repository.PedidoRepository;
 import com.hotclick.service.CuponService;
 import com.hotclick.service.GiftCardService;
 import com.hotclick.utils.Constants;
+import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +28,7 @@ public class PaymentOrderConfirmationService {
     @Transactional
     public void confirmarPedido(Pago pago, Object paymentServiceSelf, ApplicationEventPublisher eventPublisher) {
         Pedido pedido = pago.getPedido();
-        pedido.getItems().size(); // force-load
+        Hibernate.initialize(pedido.getItems());
 
         // Verificar que no esté ya confirmado (idempotencia)
         if (Constants.PEDIDO_PAGADO.equals(pedido.getEstadoPedido())) {

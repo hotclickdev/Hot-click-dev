@@ -28,7 +28,7 @@ export default function SetupBanner({ onDismiss }) {
             ))}
           </div>
         </div>
-        <button
+        <button type="button"
           onClick={onDismiss}
           className="p-1 rounded-lg hover:bg-white/5 transition-colors shrink-0"
           style={{ color: '#A7B0BC' }}

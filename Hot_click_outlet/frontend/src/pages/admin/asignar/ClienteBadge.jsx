@@ -10,7 +10,7 @@ export default function ClienteBadge({ cliente, onCambiar }) {
         {cliente.nombre?.[0]?.toUpperCase()}
       </div>
       <span className="text-xs font-medium" style={{ color: 'var(--hc-accent)' }}>{cliente.nombre} {cliente.apellidoPaterno}</span>
-      <button onClick={onCambiar} className="text-[10px] underline ml-1" style={{ color: 'var(--hc-muted)' }}>cambiar</button>
+      <button type="button" onClick={onCambiar} className="text-[10px] underline ml-1" style={{ color: 'var(--hc-muted)' }}>cambiar</button>
     </div>
   )
 }

@@ -61,7 +61,7 @@ export default function AuthPromptModal() {
               }}
             >
               {/* Close */}
-              <button
+              <button type="button"
                 onClick={() => setAuthPromptOpen(false)}
                 className="absolute top-4 right-4 p-1.5 rounded-xl transition-colors hover:bg-white/8"
                 style={{ color: 'var(--hc-muted)' }}
@@ -97,7 +97,7 @@ export default function AuthPromptModal() {
 
               {/* Actions */}
               <div className="flex flex-col gap-3">
-                <button
+                <button type="button"
                   onClick={() => go('/checkout')}
                   className="w-full h-12 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2"
                   style={{ background: 'var(--hc-accent)', color: '#fff' }}
@@ -114,13 +114,13 @@ export default function AuthPromptModal() {
                   <div className="flex-1 h-px" style={{ background: 'var(--hc-border)' }} />
                 </div>
 
-                <button
+                <button type="button"
                   onClick={() => go('/registro')}
                   className="hc-btn hc-btn-outline w-full h-12 rounded-2xl text-sm font-semibold"
                 >
                   {t('authPrompt.createAccount')}
                 </button>
-                <button
+                <button type="button"
                   onClick={() => go('/login')}
                   className="text-xs text-center transition-colors hover:underline"
                   style={{ color: 'var(--hc-muted)' }}
@@ -134,7 +134,7 @@ export default function AuthPromptModal() {
                   <div className="flex-1 h-px" style={{ background: 'var(--hc-border)' }} />
                 </div>
 
-                <button
+                <button type="button"
                   onClick={() => {
                     setAuthPromptOpen(false)
                     globalThis.open(`https://wa.me/50686667888?text=${toWhatsAppMessage()}`, '_blank')

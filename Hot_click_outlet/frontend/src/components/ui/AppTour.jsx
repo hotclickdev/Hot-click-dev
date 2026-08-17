@@ -69,7 +69,7 @@ export default function AppTour() {
                       {current.desc}
                     </p>
                   </div>
-                  <button
+                  <button type="button"
                     onClick={dismiss}
                     aria-label="Cerrar tour"
                     className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg transition-opacity hover:opacity-70"
@@ -109,7 +109,7 @@ export default function AppTour() {
                 <div>
                   <div className="flex items-center gap-1 mb-3">
                     {STEPS.map((_, i) => (
-                      <button
+                      <button type="button"
                         key={i}
                         onClick={() => go(i)}
                         aria-label={`Paso ${i + 1}`}
@@ -128,7 +128,7 @@ export default function AppTour() {
 
                   <div className="flex gap-2">
                     {isFirst ? (
-                      <button
+                      <button type="button"
                         onClick={dismiss}
                         className="flex-1 rounded-xl text-sm font-medium transition-opacity hover:opacity-70"
                         style={{ minHeight: 44, backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}
@@ -136,7 +136,7 @@ export default function AppTour() {
                         Omitir
                       </button>
                     ) : (
-                      <button
+                      <button type="button"
                         onClick={() => go(step - 1)}
                         className="flex-1 rounded-xl text-sm font-medium transition-opacity hover:opacity-70"
                         style={{ minHeight: 44, backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}
@@ -144,7 +144,7 @@ export default function AppTour() {
                         ← Anterior
                       </button>
                     )}
-                    <button
+                    <button type="button"
                       onClick={() => go(step + 1)}
                       className="rounded-xl text-sm font-bold text-white transition-all active:scale-[0.97] hover:opacity-90"
                       style={{ minHeight: 44, flex: 2, backgroundColor: current.color }}

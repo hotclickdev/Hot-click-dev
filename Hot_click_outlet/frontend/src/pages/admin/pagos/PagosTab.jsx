@@ -39,14 +39,14 @@ function TablaPagos({ pagos, actionLoading, onConfirmar, onRechazar, page, total
                 <td className="px-4 py-3">
                   {p.proveedor === 'SINPE' && p.estadoPago === 'PENDIENTE' && (
                     <div className="flex gap-1.5">
-                      <button
+                      <button type="button"
                         onClick={() => onConfirmar(p.id)}
                         disabled={actionLoading === p.id}
                         className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors disabled:opacity-50 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
                       >
                         {actionLoading === p.id ? '…' : 'Confirmar'}
                       </button>
-                      <button
+                      <button type="button"
                         onClick={() => onRechazar(p.id)}
                         disabled={actionLoading === p.id}
                         className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors disabled:opacity-50 bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25"
@@ -89,7 +89,7 @@ export default function PagosTab({
           options={PROVEEDORES.map((p) => ({ value: p, label: p || t('admin.pagos.provider') }))} />
         <Select value={filtEstado} onChange={onFiltEstado}
           options={ESTADOS_PAGO.map((e) => ({ value: e, label: e || t('admin.pagos.status') }))} />
-        <button onClick={onRetry}
+        <button type="button" onClick={onRetry}
           className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/8 text-[#8e8e9a] hover:text-[#e8e8ed] text-sm transition-colors">
           {t('common.retry')}
         </button>

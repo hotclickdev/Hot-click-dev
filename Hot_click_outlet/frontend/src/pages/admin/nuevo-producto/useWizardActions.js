@@ -213,7 +213,7 @@ export function useWizardActions({
           if (dupes.length > 0) {
             toast({ message: `El título SEO "${seoTitle.slice(0, 45)}…" ya existe en otro producto. Editalo para diferenciarlo.`, type: 'warning' })
           }
-        }).catch(() => {})
+        }).catch((err) => console.error('[wizard] chequeo SEO duplicado', err))
       }
     } catch (err) {
       const status = err.response?.status

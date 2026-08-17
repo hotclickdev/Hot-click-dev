@@ -120,7 +120,7 @@ export default function TestimonioCard({ p, onEnviado }) {
     <div className="rounded-2xl overflow-hidden"
       style={{ backgroundColor: 'var(--hc-surface)', border: `1px solid ${abierto ? 'rgba(245,158,11,0.35)' : 'var(--hc-border)'}` }}>
 
-      <button onClick={() => { setAbierto(v => !v); setErr('') }}
+      <button type="button" onClick={() => { setAbierto(v => !v); setErr('') }}
         className="w-full flex items-center gap-3 p-4 text-left transition-colors"
         style={{ backgroundColor: abierto ? 'rgba(245,158,11,0.06)' : 'transparent' }}>
         <ProductoThumb p={p} />

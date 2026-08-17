@@ -21,7 +21,7 @@ export default function StepCobro({ total, cartItems, descuento, onBack, onConfi
       <div className="max-w-lg mx-auto px-4 py-5 space-y-5">
         {/* Volver */}
         <div className="flex items-center gap-3">
-          <button onClick={onBack}
+          <button type="button" onClick={onBack}
             className="px-3 py-2 rounded-xl text-sm font-semibold transition-all hover:brightness-125"
             style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.08)' }}>
             ← Volver al pedido
@@ -60,7 +60,7 @@ export default function StepCobro({ total, cartItems, descuento, onBack, onConfi
           <p className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.7)' }}>¿Cómo paga el cliente?</p>
           <div className="grid grid-cols-2 gap-2">
             {METODOS.map(m => (
-              <button key={m.id} onClick={() => setMetodo(m.id)}
+              <button type="button" key={m.id} onClick={() => setMetodo(m.id)}
                 className="flex items-center gap-3 px-4 py-4 rounded-2xl text-left transition-all"
                 style={{
                   backgroundColor: metodo === m.id ? `${m.color}15` : 'rgba(255,255,255,0.04)',
@@ -89,7 +89,7 @@ export default function StepCobro({ total, cartItems, descuento, onBack, onConfi
 
             <div className="flex flex-wrap gap-2">
               {montosSugeridos.map(m => (
-                <button key={m} onClick={() => setRecibido(String(m))}
+                <button type="button" key={m} onClick={() => setRecibido(String(m))}
                   className="px-3 py-2 rounded-xl text-sm font-bold transition-all hover:scale-105"
                   style={{
                     backgroundColor: recibidoNum === m ? 'rgba(23,71,168,0.25)' : 'rgba(23,71,168,0.08)',
@@ -173,7 +173,7 @@ export default function StepCobro({ total, cartItems, descuento, onBack, onConfi
         )}
 
         {/* Confirmar */}
-        <button
+        <button type="button"
           onClick={() => onConfirmar({ metodoPago: metodo, montoRecibido: metodo === 'EFECTIVO' ? recibidoNum : null })}
           disabled={!puedeConfirmar || loading}
           className="w-full py-4 rounded-2xl font-black text-base transition-all disabled:opacity-30 disabled:cursor-not-allowed"

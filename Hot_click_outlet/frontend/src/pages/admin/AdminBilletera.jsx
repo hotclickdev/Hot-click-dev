@@ -52,7 +52,7 @@ export default function AdminBilletera() {
             Saldo de ventas procesadas por la plataforma
           </p>
         </div>
-        <button
+        <button type="button"
           onClick={() => setShowModal(true)}
           disabled={hayPayoutActivo || !wallet?.saldoDisponible}
           className="px-4 py-2 rounded-xl text-sm bg-[var(--color-accent)] text-white font-medium disabled:opacity-40 disabled:cursor-not-allowed"
@@ -99,7 +99,7 @@ export default function AdminBilletera() {
 
       <div className="flex gap-1 border-b border-white/8">
         {[['movimientos', 'Movimientos'], ['retiros', 'Historial de retiros']].map(([k, label]) => (
-          <button key={k} onClick={() => setTab(k)}
+          <button type="button" key={k} onClick={() => setTab(k)}
             className={`px-4 py-2 text-sm font-medium transition-colors ${
               tab === k ? 'border-b-2 border-[var(--color-accent)] text-white' : 'text-[#8e8e9a] hover:text-white'
             }`}>

@@ -16,7 +16,7 @@ export function ConfirmModal({
       <div className="space-y-4">
         <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>{message}</p>
         <div className="flex gap-3">
-          <button
+          <button type="button"
             onClick={onConfirm}
             disabled={loading}
             className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
@@ -24,7 +24,7 @@ export function ConfirmModal({
           >
             {loading ? 'Procesando…' : confirmLabel}
           </button>
-          <button
+          <button type="button"
             onClick={onClose}
             disabled={loading}
             className="flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-opacity hover:opacity-80 disabled:opacity-50"

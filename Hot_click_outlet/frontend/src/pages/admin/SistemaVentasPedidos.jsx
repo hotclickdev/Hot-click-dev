@@ -55,7 +55,7 @@ function VentasTab() {
     <>
       <div className="flex gap-2 mb-4 flex-wrap">
         {PERIODOS.map(p => (
-          <button key={p.key} onClick={() => setPeriodo(p.key)}
+          <button type="button" key={p.key} onClick={() => setPeriodo(p.key)}
             className="px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
             style={periodo === p.key
               ? { backgroundColor: 'rgba(23,71,168,0.08)', border: '1px solid var(--hc-accent)', color: 'var(--hc-accent)', fontWeight: 700 }
@@ -122,7 +122,7 @@ function PedidosTab({ orders, loading, loadError, onRetry, onUpdate, onDelete })
     <>
       <div className="flex gap-1.5 overflow-x-auto pb-1 mb-4 scrollbar-hide">
         {FILTERS.map(f => (
-          <button key={f} onClick={() => changeFilter(f)}
+          <button type="button" key={f} onClick={() => changeFilter(f)}
             className="px-3.5 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap"
             style={filter === f
               ? { backgroundColor: 'rgba(23,71,168,0.08)', color: 'var(--hc-accent)', border: '1px solid var(--hc-accent)', fontWeight: 700 }
@@ -153,12 +153,12 @@ function PedidosTab({ orders, loading, loadError, onRetry, onUpdate, onDelete })
                 {filtered.length} pedidos · página {ordPage + 1} de {totalOrdPages}
               </span>
               <div className="flex gap-1">
-                <button onClick={() => setOrdPage(p => Math.max(0, p - 1))} disabled={ordPage === 0}
+                <button type="button" onClick={() => setOrdPage(p => Math.max(0, p - 1))} disabled={ordPage === 0}
                   className="px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-40"
                   style={{ backgroundColor: 'var(--hc-surface)', border: `1px solid ${PILL_BORDER}`, color: 'var(--hc-text)' }}>
                   ← Anterior
                 </button>
-                <button onClick={() => setOrdPage(p => Math.min(totalOrdPages - 1, p + 1))} disabled={ordPage >= totalOrdPages - 1}
+                <button type="button" onClick={() => setOrdPage(p => Math.min(totalOrdPages - 1, p + 1))} disabled={ordPage >= totalOrdPages - 1}
                   className="px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-40"
                   style={{ backgroundColor: 'var(--hc-surface)', border: `1px solid ${PILL_BORDER}`, color: 'var(--hc-accent)' }}>
                   Siguiente →
@@ -220,7 +220,7 @@ export default function SistemaVentasPedidos() {
             + Registrá una venta
           </Link>
         ) : (
-          <button onClick={() => setShowCreate(true)}
+          <button type="button" onClick={() => setShowCreate(true)}
             className="inline-flex items-center justify-center px-5 py-3 rounded-xl text-sm font-bold transition-opacity hover:opacity-90"
             style={{ backgroundColor: 'var(--hc-primary)', color: '#fff' }}>
             + Creá un pedido
@@ -230,12 +230,12 @@ export default function SistemaVentasPedidos() {
 
       {/* Tabs */}
       <div className="inline-flex gap-1 rounded-xl p-1 w-fit" style={{ backgroundColor: 'var(--hc-surface)' }}>
-        <button onClick={() => setTab('ventas')}
+        <button type="button" onClick={() => setTab('ventas')}
           className="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
           style={tab === 'ventas' ? { backgroundColor: 'var(--hc-accent)', color: '#fff' } : { color: 'var(--hc-muted)' }}>
           Ventas
         </button>
-        <button onClick={() => setTab('pedidos')}
+        <button type="button" onClick={() => setTab('pedidos')}
           className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
           style={tab === 'pedidos' ? { backgroundColor: 'var(--hc-accent)', color: '#fff' } : { color: 'var(--hc-muted)' }}>
           Pedidos

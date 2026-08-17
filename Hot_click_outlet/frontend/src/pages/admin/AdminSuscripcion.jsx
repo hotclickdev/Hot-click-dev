@@ -110,7 +110,7 @@ export default function AdminSuscripcion() {
     <div className="p-6 max-w-3xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold" style={{ color: 'var(--hc-text)' }}>Mi suscripción</h1>
-        <button
+        <button type="button"
           onClick={() => navigate('/admin/billing/planes')}
           className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
@@ -149,7 +149,7 @@ export default function AdminSuscripcion() {
               <p className="text-sm" style={{ color: 'var(--hc-text)' }}>Activar suscripción</p>
               <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Elige un plan y paga con tarjeta</p>
             </div>
-            <button
+            <button type="button"
               onClick={() => navigate('/admin/billing/planes')}
               className="px-4 py-2 rounded-xl text-sm font-semibold"
               style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
@@ -165,7 +165,7 @@ export default function AdminSuscripcion() {
               <p className="text-sm" style={{ color: 'var(--hc-text)' }}>Portal de facturación</p>
               <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Actualizar tarjeta, descargar facturas</p>
             </div>
-            <button
+            <button type="button"
               onClick={abrirPortal}
               disabled={abriendo}
               className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
@@ -184,14 +184,14 @@ export default function AdminSuscripcion() {
             </div>
             {confirmarCancelar ? (
               <div className="flex gap-2">
-                <button
+                <button type="button"
                   onClick={() => setConfirmarCancelar(false)}
                   className="px-3 py-1.5 rounded-lg text-xs"
                   style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}
                 >
                   No
                 </button>
-                <button
+                <button type="button"
                   onClick={cancelarSuscripcion}
                   disabled={cancelando}
                   className="px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50"
@@ -201,7 +201,7 @@ export default function AdminSuscripcion() {
                 </button>
               </div>
             ) : (
-              <button
+              <button type="button"
                 onClick={() => setConfirmarCancelar(true)}
                 className="px-4 py-2 rounded-xl text-sm transition-opacity hover:opacity-80"
                 style={{ color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}

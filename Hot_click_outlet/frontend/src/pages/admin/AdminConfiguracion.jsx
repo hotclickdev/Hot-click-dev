@@ -149,7 +149,7 @@ export default function AdminConfiguracion() {
               {nav.map(({ id, label, icon: Icon, badge, desc }) => {
                 const active = section === id
                 return (
-                  <button key={id} className={`cfg-nav-btn ${active ? 'cfg-nav-active' : ''}`}
+                  <button type="button" key={id} className={`cfg-nav-btn ${active ? 'cfg-nav-active' : ''}`}
                     style={{ alignItems: 'flex-start' }}
                     onClick={() => go(id)}>
                     {/* Icon box */}
@@ -192,7 +192,7 @@ export default function AdminConfiguracion() {
             {nav.map(({ id, label, icon: Icon, badge }) => {
               const active = section === id
               return (
-                <button key={id} onClick={() => go(id)} className="cfg-btn shrink-0 relative"
+                <button type="button" key={id} onClick={() => go(id)} className="cfg-btn shrink-0 relative"
                   style={{
                     background: active ? 'var(--hc-accent)' : 'var(--hc-surface)',
                     color: active ? '#fff' : 'var(--hc-text)',

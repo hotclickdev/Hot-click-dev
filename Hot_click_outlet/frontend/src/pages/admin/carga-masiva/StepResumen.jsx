@@ -75,7 +75,7 @@ export default function StepResumen({ drafts, categories, onEditar, onGuardar, s
                       {1 + d.extraFiles.length}
                     </td>
                     <td className="px-4 py-3">
-                      <button
+                      <button type="button"
                         onClick={() => onEditar(i)}
                         disabled={saving}
                         className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs transition-colors hover:bg-white/8 disabled:opacity-40"
@@ -94,7 +94,7 @@ export default function StepResumen({ drafts, categories, onEditar, onGuardar, s
       </div>
 
       <div className="flex justify-end">
-        <button
+        <button type="button"
           onClick={onGuardar}
           disabled={saving}
           className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-opacity hover:opacity-85 disabled:opacity-50 disabled:cursor-not-allowed"

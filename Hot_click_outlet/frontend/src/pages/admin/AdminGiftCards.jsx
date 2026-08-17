@@ -63,7 +63,7 @@ export default function AdminGiftCards() {
             Emite tarjetas de regalo canjeables en el checkout
           </p>
         </div>
-        <button onClick={() => setMostrarForm(v => !v)}
+        <button type="button" onClick={() => setMostrarForm(v => !v)}
           className="px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-80"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
           + Nueva gift card
@@ -169,7 +169,7 @@ export default function AdminGiftCards() {
                   </td>
                   <td className="px-4 py-3">
                     {gc.estado === 'ACTIVA' && (
-                      <button onClick={() => cancelar(gc.id)}
+                      <button type="button" onClick={() => cancelar(gc.id)}
                         className="text-xs px-2 py-1 rounded-lg hover:opacity-80"
                         style={{ border: '1px solid rgba(239,68,68,0.4)', color: '#f87171' }}>
                         Cancelar

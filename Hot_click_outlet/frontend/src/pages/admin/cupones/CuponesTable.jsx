@@ -66,7 +66,7 @@ export default function CuponesTable({
         <div className="p-4 flex flex-wrap gap-3 items-center border-b" style={{ borderColor: 'var(--hc-border)' }}>
           <div className="flex gap-2 flex-wrap">
             {FILTERS.map(f => (
-              <button
+              <button type="button"
                 key={String(f.value)}
                 onClick={() => onApplyFilter(f.value)}
                 className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
@@ -153,7 +153,7 @@ export default function CuponesTable({
               Página {page + 1} de {totalPages} — {total} cupones
             </span>
             <div className="flex gap-2">
-              <button
+              <button type="button"
                 onClick={() => onGoPage(page - 1)}
                 disabled={page === 0}
                 className="px-3 py-1.5 rounded-xl text-xs font-semibold disabled:opacity-40"
@@ -161,7 +161,7 @@ export default function CuponesTable({
               >
                 ← Anterior
               </button>
-              <button
+              <button type="button"
                 onClick={() => onGoPage(page + 1)}
                 disabled={page >= totalPages - 1}
                 className="px-3 py-1.5 rounded-xl text-xs font-semibold disabled:opacity-40"

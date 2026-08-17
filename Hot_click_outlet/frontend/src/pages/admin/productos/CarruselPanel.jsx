@@ -32,18 +32,18 @@ function CarruselSlotOcupado({ slot, index, total, onMover, onQuitar }) {
         <p className="text-[10px] font-medium text-center line-clamp-1" style={{ color: 'var(--hc-text)' }}>{slot.nombre}</p>
       </div>
       <div className="flex items-center justify-between px-1.5 pb-1.5 gap-1">
-        <button
+        <button type="button"
           onClick={() => onMover(slot, -1)}
           disabled={index === 0}
           className="flex-1 h-6 rounded-lg text-[10px] transition-colors hover:bg-[var(--hc-surface)] disabled:opacity-30"
           style={{ color: 'var(--hc-muted)' }}
         >←</button>
-        <button
+        <button type="button"
           onClick={() => onQuitar(slot)}
           className="h-6 px-1.5 rounded-lg text-[10px] transition-colors hover:bg-red-500/15"
           style={{ color: '#a8291f' }}
         ><XIcon /></button>
-        <button
+        <button type="button"
           onClick={() => onMover(slot, 1)}
           disabled={index === total - 1}
           className="flex-1 h-6 rounded-lg text-[10px] transition-colors hover:bg-[var(--hc-surface)] disabled:opacity-30"
@@ -85,7 +85,7 @@ function CarruselSlot({ index, slot, totalOcupados, onMover, onQuitar }) {
 export default function CarruselPanel({ carruselSlots, open, onToggleOpen, onMover, onQuitar }) {
   return (
     <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-      <button
+      <button type="button"
         onClick={onToggleOpen}
         className="w-full flex items-center justify-between px-5 py-4 hover:bg-[var(--hc-surface-2)] transition-colors"
       >

@@ -83,7 +83,7 @@ export default function CheckoutAssistant(props) {
             className="flex-1 px-3 py-2.5 rounded-xl text-sm outline-none disabled:opacity-50"
             style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
           />
-          <button onClick={() => enviar()} disabled={!input.trim() || cargando}
+          <button type="button" onClick={() => enviar()} disabled={!input.trim() || cargando}
             className="w-10 h-10 rounded-xl flex items-center justify-center transition-all hover:opacity-80 disabled:opacity-30"
             style={{ background: accentColor, color: '#fff' }} aria-label="Enviar">
             {cargando ? <TypingDots /> : (

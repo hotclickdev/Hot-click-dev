@@ -11,7 +11,7 @@ export default function AdminWebAuthnSetup() {
   useEffect(() => {
     webAuthnService.hasCredentials()
       .then(v => setHasKey(v))
-      .catch(() => {})
+      .catch((err) => { console.error('[AdminWebAuthnSetup] hasCredentials', err) })
       .finally(() => setLoading(false))
   }, [])
 
@@ -71,7 +71,7 @@ export default function AdminWebAuthnSetup() {
             />
           </div>
 
-          <button
+          <button type="button"
             onClick={handleRegister}
             disabled={working}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-60 transition-colors"

@@ -51,7 +51,7 @@ export default function TrialBanner() {
         </svg>
         <span style={{ color: '#fff' }} className="truncate">{mensaje}</span>
       </div>
-      <button
+      <button type="button"
         onClick={() => navigate('/admin/billing/planes')}
         className="shrink-0 px-3 py-1 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80"
         style={{ backgroundColor: accent, color: '#1a1a1a' }}

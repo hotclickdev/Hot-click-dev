@@ -56,7 +56,7 @@ export function useSearchPanel() {
         setAllBrands(getBrandCache())
       }) : Promise.resolve(),
     ])
-      .catch(() => {})
+      .catch((err) => { console.error('[useSearchPanel] productos/marcas', err) })
       .finally(() => {
         setLoading(false)
         setTimeout(() => inputRef.current?.focus(), 60)

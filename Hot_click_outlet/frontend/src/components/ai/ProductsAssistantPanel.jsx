@@ -62,7 +62,7 @@ export default function ProductsAssistantPanel({ isOpen, onClose, initialQuery =
                   {cargando ? 'Buscando productos...' : 'Te ayudo a encontrar lo que necesitás'}
                 </p>
               </div>
-              <button
+              <button type="button"
                 onClick={onClose}
                 className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors shrink-0"
                 aria-label="Cerrar asistente"
@@ -94,7 +94,7 @@ export default function ProductsAssistantPanel({ isOpen, onClose, initialQuery =
             {mensajes.length <= 1 && !cargando && !initialQuery && (
               <div className="px-3 pb-2 flex flex-wrap gap-1.5 shrink-0">
                 {['¿Qué tenés?', 'Lo más popular', 'Ofertas', 'Busco un regalo'].map(s => (
-                  <button
+                  <button type="button"
                     key={s}
                     onClick={() => enviar(s)}
                     className="text-[11px] px-2.5 py-1 rounded-full hover:opacity-70 transition-opacity"
@@ -130,7 +130,7 @@ export default function ProductsAssistantPanel({ isOpen, onClose, initialQuery =
                     border: '1px solid rgba(255,255,255,0.14)',
                   }}
                 />
-                <button
+                <button type="button"
                   onClick={() => enviar()}
                   disabled={!input.trim() || cargando}
                   className="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center transition-opacity hover:opacity-80 disabled:opacity-30"

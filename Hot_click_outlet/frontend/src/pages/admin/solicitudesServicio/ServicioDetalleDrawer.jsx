@@ -36,7 +36,7 @@ export default function ServicioDetalleDrawer({
             <h2 className="font-bold" style={{ color: 'var(--hc-text)' }}>{t('adminSolicitudes.requestId', { id: selected.id })}</h2>
             <ServicioEstadoBadge estado={selected.estado} />
           </div>
-          <button onClick={onClose} className="text-xl" style={{ color: 'var(--hc-muted)' }}>×</button>
+          <button type="button" onClick={onClose} className="text-xl" style={{ color: 'var(--hc-muted)' }}>×</button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
@@ -96,7 +96,7 @@ export default function ServicioDetalleDrawer({
             <p className="text-xs font-semibold mb-2" style={{ color: 'var(--hc-muted)' }}>{t('adminSolicitudes.changeStatus')}</p>
             <div className="grid grid-cols-2 gap-2">
               {ESTADOS.map(e => (
-                <button key={e} onClick={() => onNuevoEstado(e)}
+                <button type="button" key={e} onClick={() => onNuevoEstado(e)}
                   className="py-2 px-3 rounded-xl text-xs font-semibold transition-all text-left"
                   style={{
                     backgroundColor: nuevoEstado === e ? ESTADO_STYLES[e].bg : 'var(--hc-surface-2)',
@@ -133,12 +133,12 @@ export default function ServicioDetalleDrawer({
         </div>
 
         <div className="px-5 py-4 flex gap-3 border-t" style={{ borderColor: 'var(--hc-border)' }}>
-          <button onClick={() => onEliminar(selected.id)}
+          <button type="button" onClick={() => onEliminar(selected.id)}
             className="px-4 py-2 rounded-xl text-xs font-semibold"
             style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
             {t('adminSolicitudes.delete')}
           </button>
-          <button onClick={onGuardar} disabled={saving}
+          <button type="button" onClick={onGuardar} disabled={saving}
             className="flex-1 py-2 rounded-xl text-sm font-bold disabled:opacity-60"
             style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
             {saving ? t('adminSolicitudes.saving') : t('adminSolicitudes.save')}

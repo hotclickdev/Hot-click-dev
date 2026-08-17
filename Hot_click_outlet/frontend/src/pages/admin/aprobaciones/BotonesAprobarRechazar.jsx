@@ -1,7 +1,7 @@
 export default function BotonesAprobarRechazar({ disabled, onAprobar, onRechazar }) {
   return (
     <>
-      <button
+      <button type="button"
         onClick={onAprobar}
         disabled={disabled}
         className="px-4 py-2 rounded-xl text-sm font-medium disabled:opacity-50 transition-opacity hover:opacity-80"
@@ -9,7 +9,7 @@ export default function BotonesAprobarRechazar({ disabled, onAprobar, onRechazar
       >
         Aprobar
       </button>
-      <button
+      <button type="button"
         onClick={onRechazar}
         disabled={disabled}
         className="px-4 py-2 rounded-xl text-sm font-medium disabled:opacity-50 transition-opacity hover:opacity-80"

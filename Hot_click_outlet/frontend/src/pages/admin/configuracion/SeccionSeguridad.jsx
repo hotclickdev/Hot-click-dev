@@ -22,7 +22,7 @@ export default function SeccionSeguridad({ refreshToken, toast, onTwoFAChange })
         setEmailOtpEnabled(s.emailOtpEnabled ?? false)
         onTwoFAChange(s.enabled ?? false)
       })
-      .catch(() => {})
+      .catch((err) => { console.error('[SeccionSeguridad] 2FA status', err) })
       .finally(() => setLoadingStatus(false))
   }
 

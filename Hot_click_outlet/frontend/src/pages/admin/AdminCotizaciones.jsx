@@ -87,7 +87,7 @@ export default function AdminCotizaciones() {
             Propuestas comerciales para clientes empresariales
           </p>
         </div>
-        <button
+        <button type="button"
           onClick={() => navigate('/admin/cotizaciones/nueva')}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
           style={{ background: 'var(--hc-accent)', color: '#fff' }}>
@@ -109,7 +109,7 @@ export default function AdminCotizaciones() {
       {/* Filtros */}
       <div className="flex gap-2 flex-wrap">
         {FILTROS.map(f => (
-          <button key={f.value}
+          <button type="button" key={f.value}
             onClick={() => setFiltro(f.value)}
             className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
             style={{
@@ -189,7 +189,7 @@ export default function AdminCotizaciones() {
                     </select>
 
                     {/* Duplicar */}
-                    <button onClick={() => handleDuplicar(c.id)}
+                    <button type="button" onClick={() => handleDuplicar(c.id)}
                       title="Duplicar"
                       className="p-1.5 rounded-lg transition-colors hover:bg-black/10 dark:hover:bg-white/10"
                       style={{ color: 'var(--hc-muted)' }}>
@@ -200,7 +200,7 @@ export default function AdminCotizaciones() {
                     </button>
 
                     {/* Enlace público */}
-                    <button
+                    <button type="button"
                       onClick={() => { navigator.clipboard.writeText(`${globalThis.location.origin}/cotizacion/${c.tokenPublico}`); toast('Enlace copiado', 'success') }}
                       title="Copiar enlace público"
                       className="p-1.5 rounded-lg transition-colors hover:bg-black/10 dark:hover:bg-white/10"
@@ -224,7 +224,7 @@ export default function AdminCotizaciones() {
                     </a>
 
                     {/* Eliminar */}
-                    <button onClick={() => handleEliminar(c.id)}
+                    <button type="button" onClick={() => handleEliminar(c.id)}
                       title="Eliminar"
                       className="p-1.5 rounded-lg transition-colors hover:bg-red-500/10"
                       style={{ color: '#ef4444' }}>

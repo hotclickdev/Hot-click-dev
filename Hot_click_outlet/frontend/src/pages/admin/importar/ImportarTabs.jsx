@@ -26,7 +26,7 @@ export default function ImportarTabs({
     <>
       <div className="flex gap-1 p-1 rounded-xl" style={{ backgroundColor: 'var(--hc-surface-2)' }}>
         {TABS.map(t => (
-          <button key={t.id} onClick={() => onTab(t.id)}
+          <button type="button" key={t.id} onClick={() => onTab(t.id)}
             className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all"
             style={{
               backgroundColor: tab === t.id ? 'var(--hc-surface)' : 'transparent',
@@ -57,9 +57,8 @@ export default function ImportarTabs({
       )}
 
       {(tab === 'pdf' || tab === 'csv') && (
-        <div
-          role="button"
-          tabIndex={0}
+        <button
+          type="button"
           onDrop={onDrop} onDragOver={onDragOver} onDragLeave={onDragLeave}
           onClick={() => fileRef.current?.click()}
           onKeyDown={(e) => {
@@ -68,14 +67,15 @@ export default function ImportarTabs({
               fileRef.current?.click()
             }
           }}
-          className="flex flex-col items-center justify-center gap-3 p-10 rounded-xl cursor-pointer transition-all"
+          className="w-full flex flex-col items-center justify-center gap-3 p-10 rounded-xl cursor-pointer transition-all"
           style={{
             border: `2px dashed ${dragging ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
             backgroundColor: dragging ? 'rgba(231,59,51,0.04)' : 'var(--hc-surface-2)',
           }}>
           <input ref={fileRef} type="file" className="hidden"
             accept={tab === 'pdf' ? '.pdf' : '.csv,.txt'}
-            onChange={e => setArchivoState(e.target.files[0] || null)} />
+            onChange={e => setArchivoState(e.target.files[0] || null)}
+            onClick={e => e.stopPropagation()} />
           <IconUpload />
           {archivo
             ? <p className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>{archivo.name}</p>
@@ -84,10 +84,10 @@ export default function ImportarTabs({
                 <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>{tab === 'pdf' ? 'PDF hasta 30 MB' : 'CSV hasta 5 MB'}</p>
               </>
           }
-        </div>
+        </button>
       )}
 
-      <button onClick={onExtraer} disabled={cargando}
+      <button type="button" onClick={onExtraer} disabled={cargando}
         className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-60"
         style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
         {cargando

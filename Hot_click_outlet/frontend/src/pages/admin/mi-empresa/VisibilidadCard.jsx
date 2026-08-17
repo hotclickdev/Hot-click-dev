@@ -36,7 +36,7 @@ export default function VisibilidadCard({ visible, onChange }) {
         </div>
       </div>
 
-      <button
+      <button type="button"
         onClick={toggle}
         disabled={loading}
         className="relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-60 shrink-0"

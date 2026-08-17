@@ -56,7 +56,7 @@ export default function ProductosModal({
                   Elige los productos para generar texto de Facebook Marketplace
                 </p>
               </div>
-              <button
+              <button type="button"
                 onClick={onClose}
                 className="p-1.5 rounded-lg text-[#8e8e9a] hover:text-white hover:bg-white/8 transition-colors"
               >
@@ -114,7 +114,7 @@ export default function ProductosModal({
                 {seleccionados.size > 0 ? `${seleccionados.size} seleccionado${seleccionados.size === 1 ? '' : 's'}` : 'Ninguno seleccionado'}
               </span>
               <div className="flex gap-2">
-                <button
+                <button type="button"
                   onClick={onClose}
                   className="px-4 py-2 rounded-xl border border-white/10 text-sm text-[#8e8e9a] hover:text-white hover:bg-white/5 transition-colors"
                 >

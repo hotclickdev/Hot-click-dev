@@ -119,7 +119,7 @@ export default function ExitIntentModal() {
                 className="relative px-6 pt-6 pb-4 text-center"
                 style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--hc-accent) 12%, transparent), color-mix(in srgb, #ec4899 8%, transparent))' }}
               >
-                <button
+                <button type="button"
                   onClick={() => setOpen(false)}
                   className="absolute top-4 right-4 w-7 h-7 rounded-xl flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/10 transition-all"
                 >✕</button>
@@ -165,7 +165,7 @@ export default function ExitIntentModal() {
                 >
                   {hasCart ? 'Completar compra' : 'Ver mis favoritos'}
                 </Link>
-                <button
+                <button type="button"
                   onClick={() => setOpen(false)}
                   className="w-full h-9 rounded-xl text-xs font-medium transition-all hover:bg-white/5"
                   style={{ color: 'var(--hc-muted)' }}

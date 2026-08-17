@@ -64,6 +64,6 @@ export function useWishlistAlert() {
           }
         }
       })
-      .catch(() => {})
+      .catch((err) => { console.error('[useWishlistAlert] check', err) })
   }, []) // run once on mount — interval guards re-checking
 }

@@ -89,13 +89,13 @@ export default function AdminHomepage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <button
+          <button type="button"
             onClick={handleReset}
             className="hc-btn hc-btn-outline hc-btn-sm"
           >
             Restablecer
           </button>
-          <button
+          <button type="button"
             onClick={handleSave}
             className="hc-btn hc-btn-primary hc-btn-sm"
           >
@@ -117,7 +117,7 @@ export default function AdminHomepage() {
           {HERO_OPTIONS.map(opt => {
             const active = config.heroSections.includes(opt.id)
             return (
-              <button
+              <button type="button"
                 key={opt.id}
                 onClick={() => toggleHeroSection(opt.id)}
                 className="rounded-xl p-4 text-left transition-all"
@@ -175,7 +175,7 @@ export default function AdminHomepage() {
               const nombre = cat.nombreCategoria ?? cat.nombre ?? 'Sin nombre'
               const active = config.visibleCategoryIds.includes(id)
               return (
-                <button
+                <button type="button"
                   key={id}
                   onClick={() => toggleCategory(id)}
                   className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold transition-all"
@@ -202,7 +202,7 @@ export default function AdminHomepage() {
             <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
               {config.visibleCategoryIds.length} categoría{config.visibleCategoryIds.length === 1 ? '' : 's'} seleccionada{config.visibleCategoryIds.length === 1 ? '' : 's'}
             </p>
-            <button
+            <button type="button"
               onClick={() => setConfig(prev => ({ ...prev, visibleCategoryIds: [] }))}
               className="text-xs hover:opacity-70 transition-opacity"
               style={{ color: 'var(--hc-danger)' }}

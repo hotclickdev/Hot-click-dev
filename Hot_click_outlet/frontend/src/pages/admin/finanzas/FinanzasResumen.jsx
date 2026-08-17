@@ -1,6 +1,6 @@
 import Spinner from '@/components/ui/Spinner'
 import { formatPrice } from '@/utils/format'
-import KPI from './Kpi'
+import Kpi from './Kpi'
 import ProgressBar from './ProgressBar'
 import { estiloOrigen, porcentajeDe } from './finanzasHelpers'
 
@@ -40,9 +40,9 @@ export default function FinanzasResumen({
   return (
     <>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPI label="Ingresos brutos" value={totalIngresos} color="#4ade80" />
-        <KPI label="Egresos totales" value={totalEgresos} color="#f87171" negative />
-        <KPI label="Utilidad neta" value={utilidadNeta} color={colorUtilidad} />
+        <Kpi label="Ingresos brutos" value={totalIngresos} color="#4ade80" />
+        <Kpi label="Egresos totales" value={totalEgresos} color="#f87171" negative />
+        <Kpi label="Utilidad neta" value={utilidadNeta} color={colorUtilidad} />
         <div className="bg-[#111114] border border-white/8 rounded-2xl p-5">
           <p className="text-xs text-[#8e8e9a] mb-1">Margen neto</p>
           <p className="text-2xl font-bold" style={{ color: colorUtilidad }}>

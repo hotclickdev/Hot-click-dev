@@ -1,1 +1,0 @@
-import{t as e}from"./api-Wb1xpFge.js";var t={getPublicos:()=>e.get(`/convenios/publicos`),getAll:()=>e.get(`/convenios`),create:t=>e.post(`/convenios`,t),update:(t,n)=>e.put(`/convenios/${t}`,n),delete:t=>e.delete(`/convenios/${t}`)};export{t};

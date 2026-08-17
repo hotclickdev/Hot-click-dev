@@ -74,7 +74,7 @@ export default function StepWizard({ drafts, onUpdate, onFinalizar, categories, 
         </div>
         <div className="flex gap-1.5 flex-wrap mt-2">
           {drafts.map((d, i) => (
-            <button
+            <button type="button"
               key={d.id}
               onClick={() => { if (validate() || i < idx) setIdx(i) }}
               className="relative w-8 h-8 rounded-lg overflow-hidden transition-all"
@@ -114,7 +114,7 @@ export default function StepWizard({ drafts, onUpdate, onFinalizar, categories, 
                 <div key={i} className="relative w-14 h-14 rounded-xl overflow-hidden group"
                   style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
                   <img src={url} alt="" className="w-full h-full object-cover" />
-                  <button
+                  <button type="button"
                     onClick={() => removeExtra(i)}
                     className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                     style={{ background: 'rgba(0,0,0,0.65)' }}
@@ -124,7 +124,7 @@ export default function StepWizard({ drafts, onUpdate, onFinalizar, categories, 
                 </div>
               ))}
               {draft.extraFiles.length < MAX_EXTRA && (
-                <button
+                <button type="button"
                   onClick={() => extraInputRef.current?.click()}
                   className="w-14 h-14 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
                   style={{ border: '1px dashed rgba(255,255,255,0.18)' }}
@@ -214,7 +214,7 @@ export default function StepWizard({ drafts, onUpdate, onFinalizar, categories, 
       </div>
 
       <div className="flex items-center justify-between pt-2">
-        <button
+        <button type="button"
           onClick={goPrev}
           disabled={idx === 0}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all disabled:opacity-30"
@@ -223,7 +223,7 @@ export default function StepWizard({ drafts, onUpdate, onFinalizar, categories, 
           <IconArrow className="w-4 h-4" left />
           Anterior
         </button>
-        <button
+        <button type="button"
           onClick={goNext}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-opacity hover:opacity-85"
           style={{ background: 'var(--hc-accent)', color: '#fff' }}

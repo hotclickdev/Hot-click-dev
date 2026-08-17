@@ -88,7 +88,7 @@ export default function AdminReporteContador() {
       {/* Filtros de período */}
       <div className="flex flex-wrap gap-2">
         {QUICK_DAYS.map(days => (
-          <button key={days} onClick={() => applyQuick(days)}
+          <button type="button" key={days} onClick={() => applyQuick(days)}
             className="px-3 py-1.5 rounded-lg text-sm transition-all"
             style={{
               backgroundColor: quick === days ? 'var(--hc-accent)' : 'color-mix(in srgb,var(--hc-text) 5%,transparent)',
@@ -166,7 +166,7 @@ export default function AdminReporteContador() {
             </div>
 
             {/* Export CSV */}
-            <button onClick={handleExport} disabled={exporting}
+            <button type="button" onClick={handleExport} disabled={exporting}
               className="w-full flex items-center justify-center gap-3 py-5 rounded-2xl text-base font-bold transition-opacity hover:opacity-90 disabled:opacity-50"
               style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
               {exporting ? <Spinner size="sm"/> : (

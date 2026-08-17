@@ -52,7 +52,7 @@ export default function CheckoutPayError({
           <>
             <p>{errorStr}</p>
             {intentos < maxIntentos && (
-              <button onClick={onPagar} className="mt-3 text-[#4f7cff] hover:underline text-xs">
+              <button type="button" onClick={onPagar} className="mt-3 text-[#4f7cff] hover:underline text-xs">
                 {t('checkout.retry', { remaining: maxIntentos - intentos })}
               </button>
             )}

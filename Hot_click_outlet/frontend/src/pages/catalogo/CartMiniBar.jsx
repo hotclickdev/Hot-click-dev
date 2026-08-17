@@ -18,7 +18,7 @@ export default function CartMiniBar() {
           transition={{ type: 'spring', stiffness: 320, damping: 28 }}
           className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-40 pointer-events-none"
         >
-          <button
+          <button type="button"
             onClick={() => navigate('/carrito')}
             className="pointer-events-auto flex items-center gap-3 pl-3 pr-4 py-2.5 rounded-2xl shadow-2xl transition-all hover:scale-105 active:scale-95"
             style={{

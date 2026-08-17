@@ -20,7 +20,7 @@ function TabBar({ tab, onTab, notifCount }) {
   return (
     <div className="flex border-b" style={{ borderColor: 'var(--hc-border)' }}>
       {['detalle', 'notificaciones'].map((id) => (
-        <button
+        <button type="button"
           key={id}
           onClick={() => onTab(id)}
           className="relative px-5 py-3 text-xs font-semibold transition-colors"
@@ -139,7 +139,7 @@ export default function OrderCard({ order }) {
       className="rounded-2xl border overflow-hidden"
       style={{ backgroundColor: 'var(--hc-surface)', borderColor: 'var(--hc-border)' }}
     >
-      <button
+      <button type="button"
         onClick={() => { setOpen((v) => !v); if (open) setTab('detalle') }}
         aria-expanded={open}
         className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left transition-colors"

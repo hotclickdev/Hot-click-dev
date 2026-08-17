@@ -9,6 +9,7 @@ import com.hotclick.service.pedido.PedidoDetailMapper;
 import com.hotclick.service.pedido.PedidoManualFactory;
 import com.hotclick.service.pedido.PedidoNotificacionAppender;
 import com.hotclick.utils.Constants;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -72,7 +73,7 @@ public class PedidoService {
             pedidoNotificacionAppender.appendNotificacion(pedido, nuevoEstado, nota);
         }
         pedido = pedidoRepository.save(pedido);
-        pedido.getItems().size(); // force-initialize items within session
+        Hibernate.initialize(pedido.getItems());
         // Inicializar proxy LAZY de usuarioFinal para que el @Async email no falle
         if (pedido.getUsuarioFinal() != null) { pedido.getUsuarioFinal().getCorreo(); }
         if (pedido.getBodega() != null) { pedido.getBodega().getNombreBodega(); } // evita LazyInitializationException al serializar la respuesta
@@ -116,7 +117,7 @@ public class PedidoService {
         pedido.setFechaEnvio(LocalDateTime.now(Constants.ZONA_CR));
         pedido.setEstadoPedido(Constants.PEDIDO_ENVIADO);
         pedido = pedidoRepository.save(pedido);
-        pedido.getItems().size();
+        Hibernate.initialize(pedido.getItems());
         if (pedido.getUsuarioFinal() != null) { pedido.getUsuarioFinal().getCorreo(); }
         if (pedido.getBodega() != null) { pedido.getBodega().getNombreBodega(); }
         notificacionEmailService.enviarNotificacionGuia(pedido);
@@ -133,7 +134,7 @@ public class PedidoService {
         if (costoEnvio != null) pedido.setCostoEnvio(costoEnvio);
         pedido.setEstadoPedido(Constants.PEDIDO_ENVIADO);
         pedido = pedidoRepository.save(pedido);
-        pedido.getItems().size();
+        Hibernate.initialize(pedido.getItems());
         if (pedido.getUsuarioFinal() != null) { pedido.getUsuarioFinal().getCorreo(); }
         if (pedido.getBodega() != null) { pedido.getBodega().getNombreBodega(); }
         notificacionEmailService.enviarNotificacionGuia(pedido);

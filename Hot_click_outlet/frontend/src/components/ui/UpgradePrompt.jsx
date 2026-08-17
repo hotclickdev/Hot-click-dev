@@ -29,7 +29,7 @@ export default function UpgradePrompt({ feature, planRequerido = 'PYME', compact
             d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
         </svg>
         <span>{featureLabel} requiere plan <strong>{planRequerido}</strong></span>
-        <button
+        <button type="button"
           onClick={() => navigate('/admin/planes')}
           className="ml-auto font-semibold underline hover:no-underline"
         >
@@ -57,7 +57,7 @@ export default function UpgradePrompt({ feature, planRequerido = 'PYME', compact
         Actualiza tu plan para desbloquearla.
       </p>
 
-      <button
+      <button type="button"
         onClick={() => navigate('/admin/planes')}
         className="rounded-xl bg-[var(--hc-primary)] px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-[var(--hc-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--hc-focus-ring)]"
       >

@@ -105,7 +105,7 @@ export default function QuickViewModal({ product, onClose }) {
                     {product.titulo || product.nombre}
                   </h3>
                 </div>
-                <button
+                <button type="button"
                   onClick={onClose}
                   className="p-1.5 rounded-xl transition-colors shrink-0 hover:bg-white/8"
                   style={{ color: 'var(--hc-muted)' }}
@@ -139,12 +139,12 @@ export default function QuickViewModal({ product, onClose }) {
               {inStock && (
                 <div className="flex items-center gap-3">
                   <div className="flex items-center rounded-xl border overflow-hidden" style={{ borderColor: 'var(--hc-border)' }}>
-                    <button
+                    <button type="button"
                       onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                       className="w-9 h-9 flex items-center justify-center transition-colors text-[#8e8e9a] hover:text-white select-none text-lg"
                     >−</button>
                     <span className="w-8 text-center text-sm font-bold" style={{ color: 'var(--hc-text)' }}>{quantity}</span>
-                    <button
+                    <button type="button"
                       onClick={() => setQuantity((q) => Math.min(q + 1, product.stock ?? 99))}
                       disabled={atMax}
                       className="w-9 h-9 flex items-center justify-center transition-colors text-[#8e8e9a] hover:text-white disabled:opacity-25 select-none text-lg"
@@ -202,7 +202,7 @@ export default function QuickViewModal({ product, onClose }) {
                   </AnimatePresence>
                 </motion.button>
 
-                <button
+                <button type="button"
                   onClick={() => { onClose(); navigate(`/productos/${product.id}`) }}
                   className="h-11 px-4 rounded-xl text-sm font-medium border transition-colors whitespace-nowrap hover:bg-white/5"
                   style={{ color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }}

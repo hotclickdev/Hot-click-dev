@@ -121,7 +121,7 @@ export default function UsuariosTable({
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {isDeleted && (
-                        <button
+                        <button type="button"
                           onClick={() => onRestore(u)}
                           className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-colors"
                         >
@@ -138,13 +138,13 @@ export default function UsuariosTable({
 
                       {!isDeleted && estadoStr === 'PENDIENTE' && (
                         <>
-                          <button
+                          <button type="button"
                             onClick={() => onApprove(u.id)}
                             className="px-2.5 py-1 text-xs rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-colors"
                           >
                             {approveLabel}
                           </button>
-                          <button
+                          <button type="button"
                             onClick={() => onReject(u.id)}
                             className="px-2.5 py-1 text-xs rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors"
                           >
@@ -154,7 +154,7 @@ export default function UsuariosTable({
                       )}
 
                       {!isDeleted && (
-                        <button
+                        <button type="button"
                           onClick={() => onEdit(u)}
                           className="px-2.5 py-1 text-xs rounded-lg bg-white/5 hover:bg-white/10 text-[#8e8e9a] hover:text-white transition-colors"
                         >
@@ -164,7 +164,7 @@ export default function UsuariosTable({
 
                       {!isDeleted && (
                         isSuspended ? (
-                          <button
+                          <button type="button"
                             onClick={() => onUnblock(u)}
                             className="flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-colors"
                           >
@@ -178,7 +178,7 @@ export default function UsuariosTable({
                             Desbloquear
                           </button>
                         ) : estadoStr !== 'PENDIENTE' && (
-                          <button
+                          <button type="button"
                             onClick={() => onBlock(u)}
                             className="flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 transition-colors"
                           >
@@ -195,7 +195,7 @@ export default function UsuariosTable({
                       )}
 
                       {!isDeleted && (
-                        <button
+                        <button type="button"
                           onClick={() => onDelete(u)}
                           className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-500/8 hover:bg-red-500/20 text-red-400 transition-colors"
                         >

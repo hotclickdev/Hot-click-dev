@@ -51,13 +51,13 @@ export default function BilleteraMovimientosTable({ txs, txPage, txTotal, onPage
       </table>
       {txTotal > 1 && (
         <div className="flex gap-2 justify-center p-4">
-          <button disabled={txPage === 0}
+          <button type="button" disabled={txPage === 0}
             onClick={() => onPage(txPage - 1)}
             className="px-3 py-1.5 rounded-lg text-sm border border-white/10 disabled:opacity-30">
             ← Anterior
           </button>
           <span className="text-xs text-[#8e8e9a] self-center">Pág. {txPage + 1} / {txTotal}</span>
-          <button disabled={txPage >= txTotal - 1}
+          <button type="button" disabled={txPage >= txTotal - 1}
             onClick={() => onPage(txPage + 1)}
             className="px-3 py-1.5 rounded-lg text-sm border border-white/10 disabled:opacity-30">
             Siguiente →

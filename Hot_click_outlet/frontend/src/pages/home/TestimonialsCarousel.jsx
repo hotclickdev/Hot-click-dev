@@ -48,14 +48,14 @@ export default function TestimonialsCarousel() {
           ))}
         </div>
         <div className="flex items-center justify-center gap-4 mt-6">
-          <button onClick={prev} aria-label={t('common.previous')}
+          <button type="button" onClick={prev} aria-label={t('common.previous')}
             className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors"
             style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
           <div className="flex gap-1.5">
             {TESTIMONIALS.map((_, i) => (
-              <button key={i} onClick={() => setIdx(i)} aria-label={`Ver testimonio ${i + 1}`} className="p-2.5 flex items-center justify-center" style={{ background: 'transparent', border: 'none' }}>
+              <button type="button" key={i} onClick={() => setIdx(i)} aria-label={`Ver testimonio ${i + 1}`} className="p-2.5 flex items-center justify-center" style={{ background: 'transparent', border: 'none' }}>
                 <span className="block rounded-full transition-all" style={{
                   width: i === idx ? 16 : 10,
                   height: 10,
@@ -64,7 +64,7 @@ export default function TestimonialsCarousel() {
               </button>
             ))}
           </div>
-          <button onClick={next} aria-label={t('common.next')}
+          <button type="button" onClick={next} aria-label={t('common.next')}
             className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors"
             style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>

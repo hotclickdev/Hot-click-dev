@@ -20,7 +20,7 @@ export function useBranding(slug) {
       cached = data
       setBranding(data)
       applyBranding(data)
-    }).catch(() => {})
+    }).catch((err) => { console.error('[useBranding] branding', err) })
   }, [slug])
 
   return branding

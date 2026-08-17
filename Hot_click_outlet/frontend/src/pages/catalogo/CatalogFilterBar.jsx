@@ -55,7 +55,7 @@ export default function CatalogFilterBar({
             </Link>
 
             {/* Mobile: abre sidebar drawer */}
-            <button
+            <button type="button"
               onClick={onOpenSidebar}
               className="flex lg:hidden items-center gap-1.5 h-9 px-3 rounded-xl text-sm font-semibold border shrink-0 transition-all hover:opacity-80"
               style={{ color: 'var(--hc-text)', borderColor: 'var(--hc-border)', background: 'var(--hc-surface)' }}
@@ -71,7 +71,7 @@ export default function CatalogFilterBar({
 
             {/* Limpiar todo */}
             {hasFilters && (
-              <button
+              <button type="button"
                 onClick={clearFilters}
                 className="flex items-center gap-1 h-9 px-3 rounded-xl text-xs font-semibold border transition-all shrink-0 hover:opacity-70"
                 style={{ color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }}
@@ -94,7 +94,7 @@ export default function CatalogFilterBar({
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="flex gap-1.5 py-2 min-w-max">
-              <button
+              <button type="button"
                 onClick={() => setCategory('')}
                 className="flex items-center gap-1.5 shrink-0 h-8 px-3.5 rounded-full text-xs font-semibold transition-all"
                 style={!category
@@ -113,7 +113,7 @@ export default function CatalogFilterBar({
                 const isActive = String(category) === String(cat.id)
                 const catCount = categoryTotalCount?.[cat.id] ?? 0
                 return (
-                  <button
+                  <button type="button"
                     key={cat.id}
                     onClick={() => setCategory(isActive ? '' : String(cat.id))}
                     className="flex items-center gap-1.5 shrink-0 h-8 px-3.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap"

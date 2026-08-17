@@ -23,7 +23,7 @@ export default function ProductDetailAssistant({ product }) {
       className="rounded-2xl overflow-hidden"
       style={{ border: '1px solid var(--hc-border)', background: 'var(--hc-surface)' }}
     >
-      <button
+      <button type="button"
         onClick={() => setAbierto(v => !v)}
         className="w-full flex items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-white/3"
       >
@@ -60,7 +60,7 @@ export default function ProductDetailAssistant({ product }) {
               {mensajes.length <= 1 && !cargando && (
                 <div className="px-4 pt-3 pb-2 flex flex-wrap gap-1.5">
                   {PREGUNTAS_RAPIDAS.map(q => (
-                    <button
+                    <button type="button"
                       key={q}
                       onClick={() => enviar(q)}
                       className="text-[11px] px-3 py-1.5 rounded-full transition-all hover:opacity-80"
@@ -120,7 +120,7 @@ export default function ProductDetailAssistant({ product }) {
                       color: 'var(--hc-text)',
                     }}
                   />
-                  <button
+                  <button type="button"
                     onClick={() => enviar()}
                     disabled={!input.trim() || cargando}
                     className="w-10 h-10 rounded-xl flex items-center justify-center transition-all hover:opacity-80 disabled:opacity-30"

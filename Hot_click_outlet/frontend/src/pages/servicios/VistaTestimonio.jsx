@@ -52,7 +52,7 @@ function ContenidoTestimonio({ token, loadingResenar, productosResenar, refetchR
         </div>
         <p className="font-bold text-lg mb-1" style={{ color: 'var(--hc-text)' }}>Iniciá sesión para dejar una reseña</p>
         <p className="text-sm mb-6" style={{ color: 'var(--hc-muted)' }}>Solo se pueden reseñar productos que hayas comprado.</p>
-        <button onClick={() => navigate('/login')}
+        <button type="button" onClick={() => navigate('/login')}
           className="px-6 py-3 rounded-2xl text-sm font-bold"
           style={{ backgroundColor: '#f59e0b', color: '#fff' }}>
           Iniciar sesión

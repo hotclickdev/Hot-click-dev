@@ -17,7 +17,7 @@ export default function StepVenta({ cartItems, onAdd, onSetCantidad, onSetPrecio
           { id: 'productos', label: 'Productos' },
           { id: 'carrito', label: `Carrito${numItems > 0 ? ` (${numItems})` : ''}` },
         ].map(t => (
-          <button key={t.id} onClick={() => setMobileTab(t.id)}
+          <button type="button" key={t.id} onClick={() => setMobileTab(t.id)}
             className="flex-1 py-3 text-sm font-semibold transition-colors"
             style={{
               color: mobileTab === t.id ? 'var(--hc-accent)' : 'rgba(255,255,255,0.4)',
@@ -54,7 +54,7 @@ export default function StepVenta({ cartItems, onAdd, onSetCantidad, onSetPrecio
               )}
             </div>
             {cartItems.length > 0 && (
-              <button onClick={onNueva}
+              <button type="button" onClick={onNueva}
                 className="text-xs px-2.5 py-1 rounded-lg"
                 style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
                 Limpiar
@@ -119,7 +119,7 @@ export default function StepVenta({ cartItems, onAdd, onSetCantidad, onSetPrecio
               </span>
             </div>
 
-            <button onClick={onCobrar} disabled={cartItems.length === 0}
+            <button type="button" onClick={onCobrar} disabled={cartItems.length === 0}
               className="w-full py-4 rounded-2xl font-black text-base transition-all disabled:opacity-20 disabled:cursor-not-allowed"
               style={{
                 background: cartItems.length > 0 ? 'var(--hc-accent)' : 'rgba(255,255,255,0.06)',
@@ -131,7 +131,7 @@ export default function StepVenta({ cartItems, onAdd, onSetCantidad, onSetPrecio
             </button>
 
             {cartItems.length > 0 && (
-              <button onClick={onQrCliente} disabled={loadingQr}
+              <button type="button" onClick={onQrCliente} disabled={loadingQr}
                 className="w-full py-3 rounded-2xl font-semibold text-sm transition-all disabled:opacity-40 flex items-center justify-center gap-2"
                 style={{
                   backgroundColor: 'rgba(122,163,255,0.08)',

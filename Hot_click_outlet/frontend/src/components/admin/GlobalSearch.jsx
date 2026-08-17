@@ -51,7 +51,7 @@ function ResultGroup({ title, items, onSelect }) {
       <p className="text-[10px] font-semibold uppercase tracking-wider px-3 py-1.5"
         style={{ color: 'var(--hc-muted)' }}>{title}</p>
       {items.map((item, i) => (
-        <button key={i} onClick={() => onSelect(item)}
+        <button type="button" key={i} onClick={() => onSelect(item)}
           className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-white/[0.05] rounded-lg"
           style={{ color: 'var(--hc-text)' }}>
           <span className="w-6 h-6 flex items-center justify-center rounded-md shrink-0 text-xs"

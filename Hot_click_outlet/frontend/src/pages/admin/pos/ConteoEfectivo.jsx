@@ -30,7 +30,7 @@ export default function ConteoEfectivo({ label, onTotal, totalColor = '#34d399' 
                 {d.label}
               </span>
               <div className="flex items-center gap-1 shrink-0">
-                <button onClick={() => setQty(d.v, Math.max(0, (Number.parseInt(qty) || 0) - 1))}
+                <button type="button" onClick={() => setQty(d.v, Math.max(0, (Number.parseInt(qty) || 0) - 1))}
                   className="w-7 h-7 rounded-lg font-bold text-base flex items-center justify-center transition-colors hover:bg-white/10"
                   style={{ color: 'var(--hc-muted)' }}>−</button>
                 <input
@@ -39,7 +39,7 @@ export default function ConteoEfectivo({ label, onTotal, totalColor = '#34d399' 
                   className="w-14 text-center text-sm font-bold rounded-lg outline-none py-1.5"
                   style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--hc-text)' }}
                 />
-                <button onClick={() => setQty(d.v, (Number.parseInt(qty) || 0) + 1)}
+                <button type="button" onClick={() => setQty(d.v, (Number.parseInt(qty) || 0) + 1)}
                   className="w-7 h-7 rounded-lg font-bold text-base flex items-center justify-center transition-colors hover:bg-white/10"
                   style={{ color: 'var(--hc-muted)' }}>+</button>
               </div>

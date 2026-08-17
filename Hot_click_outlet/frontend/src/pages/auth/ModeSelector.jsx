@@ -90,7 +90,7 @@ export default function ModeSelector() {
         {modes.map(mode => {
           const dark = mode.id === 'pos'
           return (
-            <button
+            <button type="button"
               key={mode.id}
               onClick={() => handleSelect(mode)}
               className="group flex flex-col gap-4.5 text-left rounded-2xl p-7 transition-all duration-200 hover:-translate-y-0.5"
@@ -126,7 +126,7 @@ export default function ModeSelector() {
       {/* Pie: sesión */}
       <div className="text-xs" style={{ color: 'var(--hc-muted)' }}>
         Ingresaste como {userName || 'usuario'} ·{' '}
-        <button
+        <button type="button"
           onClick={() => { localStorage.removeItem(MODE_PREF_KEY) }}
           className="font-semibold hover:underline"
           style={{ color: 'var(--hc-muted)' }}>

@@ -28,7 +28,7 @@ export default function AbandonedWaPrompt({ items, total, onDismiss }) {
           boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
         }}
       >
-        <button
+        <button type="button"
           onClick={descartar}
           className="absolute top-3 right-3 w-6 h-6 flex items-center justify-center rounded-lg text-[#8e8e9a] hover:text-white transition-colors hover:bg-white/8"
           aria-label="Cerrar"
@@ -66,7 +66,7 @@ export default function AbandonedWaPrompt({ items, total, onDismiss }) {
             <WhatsAppIcon />
             Continuar por WhatsApp
           </a>
-          <button
+          <button type="button"
             onClick={descartar}
             className="w-full py-2 rounded-xl text-sm transition-opacity hover:opacity-70"
             style={{ color: 'var(--hc-muted)' }}

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import Spinner from '@/components/ui/Spinner'
 import { formatPrice, formatDate } from '@/utils/format'
-import KPI from './Kpi'
+import Kpi from './Kpi'
 import {
   clienteDePedido,
   envioDePedido,
@@ -91,11 +91,11 @@ export default function IngresosTab({
 
   const kpis = (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <KPI label="Productos vendidos" value={totalProductos}
+      <Kpi label="Productos vendidos" value={totalProductos}
         sub={`${filteredP.length} pedidos entregados`} color="#4ade80" />
-      <KPI label="Costos de envío (moto)" value={totalEnvio}
+      <Kpi label="Costos de envío (moto)" value={totalEnvio}
         sub={`${filteredP.filter((p) => envioDePedido(p) > 0).length} con envío`} color="#f59e0b" />
-      <KPI label="Total cobrado" value={totalIngresos}
+      <Kpi label="Total cobrado" value={totalIngresos}
         sub="Productos + envío" color="#4f7cff" />
     </div>
   )

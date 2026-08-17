@@ -83,14 +83,14 @@ export default function CookieBanner({ onConsent }) {
 
             {/* Actions */}
             <div className="flex gap-2 shrink-0 w-full sm:w-auto">
-              <button
+              <button type="button"
                 onClick={() => accept(false)}
                 className="flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:bg-white/8"
                 style={{ color: 'var(--hc-muted)', border: '1px solid var(--hc-border)' }}
               >
                 Solo esenciales
               </button>
-              <button
+              <button type="button"
                 onClick={() => accept(true)}
                 className="flex-1 sm:flex-none px-5 py-2 rounded-xl text-xs font-semibold text-white transition-all hover:opacity-90 active:scale-95"
                 style={{

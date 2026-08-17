@@ -79,7 +79,7 @@ function PlanCard({ plan, esCurrent, loading, onSelect }) {
       </div>
 
       {!esCurrent && !esFree && (
-        <button
+        <button type="button"
           onClick={() => onSelect(plan.id)}
           disabled={loading}
           className="w-full py-2.5 rounded-xl font-semibold text-sm transition-opacity hover:opacity-80 disabled:opacity-50"
@@ -146,7 +146,7 @@ export default function AdminPlanes() {
             )}
           </p>
         </div>
-        <button
+        <button type="button"
           onClick={() => navigate('/admin/billing/suscripcion')}
           className="text-sm px-4 py-2 rounded-xl transition-opacity hover:opacity-70"
           style={{ color: 'var(--hc-accent)', border: '1px solid var(--hc-accent)' }}

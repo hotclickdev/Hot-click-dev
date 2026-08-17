@@ -149,7 +149,7 @@ export default function AdminEquipo() {
             Personas que pueden gestionar tu negocio junto a vos
           </p>
         </div>
-        <button
+        <button type="button"
           onClick={() => setShowForm((v) => !v)}
           className="px-4 py-2 rounded-xl text-sm font-medium transition-opacity hover:opacity-80"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}

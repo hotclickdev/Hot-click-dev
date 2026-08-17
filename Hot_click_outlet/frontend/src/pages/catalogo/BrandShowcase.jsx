@@ -21,7 +21,7 @@ export default function BrandShowcase({ marcas, visibleMarcaIds, marcasCountInSc
           )}
         </div>
         {marcasFilter.size > 0 && (
-          <button
+          <button type="button"
             onClick={clearMarcas}
             className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-all hover:opacity-80"
             style={{ color: 'var(--hc-accent)', background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)' }}
@@ -39,7 +39,7 @@ export default function BrandShowcase({ marcas, visibleMarcaIds, marcasCountInSc
           const isActive = marcasFilter.has(String(m.id))
           const count = marcasCountInScope[m.id] ?? 0
           return (
-            <button
+            <button type="button"
               key={m.id}
               onClick={() => toggleMarca(String(m.id))}
               aria-pressed={isActive}

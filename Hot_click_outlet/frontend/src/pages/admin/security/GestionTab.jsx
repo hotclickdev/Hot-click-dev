@@ -129,7 +129,7 @@ export default function GestionTab() {
         </div>
         <div className="flex gap-1.5 flex-wrap">
           {[['ALL','Todos'], ['EMPRENDEDOR','Emprendedores'], ['USUARIO_FINAL','Clientes'], ['ADMIN','Admin']].map(([v, l]) => (
-            <button key={v} onClick={() => setRoleFilter(v)}
+            <button type="button" key={v} onClick={() => setRoleFilter(v)}
               className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
               style={{
                 backgroundColor: roleFilter === v ? 'var(--hc-accent)' : 'var(--hc-card)',

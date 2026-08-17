@@ -1,6 +1,6 @@
 import Spinner from '@/components/ui/Spinner'
 import { formatPrice } from '@/utils/format'
-import KPI from './Kpi'
+import Kpi from './Kpi'
 import { EMPTY_GASTO } from './finanzasHelpers'
 
 export default function EgresosTab({
@@ -19,10 +19,10 @@ export default function EgresosTab({
 
   const kpis = (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <KPI label="Total egresos" value={totalEgresos}
+      <Kpi label="Total egresos" value={totalEgresos}
         sub={`${gastos.length} gasto${gastos.length === 1 ? '' : 's'} registrado${gastos.length === 1 ? '' : 's'}`}
         color="#f87171" negative />
-      <KPI label="Promedio por gasto" value={gastos.length > 0 ? Math.round(totalEgresos / gastos.length) : 0}
+      <Kpi label="Promedio por gasto" value={gastos.length > 0 ? Math.round(totalEgresos / gastos.length) : 0}
         sub="en el período" color="#f87171" />
     </div>
   )
@@ -34,7 +34,7 @@ export default function EgresosTab({
         <div className="bg-[#111114] border border-white/8 rounded-2xl p-10 text-center space-y-3">
           <p className="text-[#e8e8ed] font-medium">Sin gastos registrados</p>
           <p className="text-sm text-[#8e8e9a]">Registrá los egresos operativos para ver la utilidad neta.</p>
-          <button onClick={() => onNuevo(EMPTY_GASTO)}
+          <button type="button" onClick={() => onNuevo(EMPTY_GASTO)}
             className="px-4 py-2 rounded-xl text-sm font-semibold"
             style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
             + Primer gasto
@@ -74,11 +74,11 @@ export default function EgresosTab({
                   <td className="px-4 py-3 font-bold text-[#f87171]">{formatPrice(g.monto)}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
-                      <button onClick={() => onEditar(g)}
+                      <button type="button" onClick={() => onEditar(g)}
                         className="px-3 py-1 text-xs rounded-lg bg-white/5 hover:bg-white/10 text-[#8e8e9a] hover:text-white transition-colors">
                         Editar
                       </button>
-                      <button onClick={() => onEliminar(g)}
+                      <button type="button" onClick={() => onEliminar(g)}
                         className="px-3 py-1 text-xs rounded-lg bg-red-500/8 hover:bg-red-500/15 text-red-400 transition-colors">
                         Eliminar
                       </button>

@@ -33,7 +33,7 @@ function ExportRow({ label, desc, loading, onExport, color }) {
         <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--hc-text)', fontFamily: F.body, margin: 0 }}>{label}</p>
         <p style={{ fontSize: '12px', color: 'var(--hc-muted)', fontFamily: F.body }}>{desc}</p>
       </div>
-      <button onClick={onExport} disabled={loading} className="cfg-btn"
+      <button type="button" onClick={onExport} disabled={loading} className="cfg-btn"
         style={{ flexShrink: 0, padding: '7px 14px', fontSize: '12px', fontWeight: 600, background: `color-mix(in srgb, ${color} 9%, transparent)`, color, border: `1px solid color-mix(in srgb, ${color} 21%, transparent)`, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, gap: '6px' }}>
         {loading ? <Spinner size="xs" /> : <DownloadIcon style={{ width: '13px', height: '13px' }} />}
         {t('adminConfig.datosExportBtn')}
@@ -49,7 +49,7 @@ function CleanRow({ label, desc, loading, onAction, btnLabel }) {
         <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--hc-text)', fontFamily: F.body, margin: 0 }}>{label}</p>
         <p style={{ fontSize: '12px', color: 'var(--hc-muted)', fontFamily: F.body }}>{desc}</p>
       </div>
-      <button onClick={onAction} disabled={loading} className="cfg-btn cfg-btn-danger" style={{ flexShrink: 0, fontSize: '12px', padding: '7px 14px' }}>
+      <button type="button" onClick={onAction} disabled={loading} className="cfg-btn cfg-btn-danger" style={{ flexShrink: 0, fontSize: '12px', padding: '7px 14px' }}>
         {loading ? <Spinner size="xs" /> : <TrashLiteIcon style={{ width: '13px', height: '13px' }} />}
         {btnLabel}
       </button>
@@ -201,7 +201,7 @@ export default function SeccionDatos({ toast, isEmprendedor = false }) {
               </div>
             </FormGroup>
           </div>
-          <button onClick={aplicarAjustePrecio} disabled={applyingPct || !pct} className="cfg-btn cfg-btn-primary" style={{ marginBottom: '1px', opacity: (!pct || applyingPct) ? 0.5 : 1 }}>
+          <button type="button" onClick={aplicarAjustePrecio} disabled={applyingPct || !pct} className="cfg-btn cfg-btn-primary" style={{ marginBottom: '1px', opacity: (!pct || applyingPct) ? 0.5 : 1 }}>
             {applyingPct ? <Spinner size="xs" /> : <ZapIcon style={{ width: '14px', height: '14px' }} />}
             {t('adminConfig.datosBulkBtn')}
           </button>

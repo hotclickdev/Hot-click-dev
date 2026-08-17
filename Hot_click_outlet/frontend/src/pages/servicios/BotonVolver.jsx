@@ -1,6 +1,6 @@
 export default function BotonVolver({ onClick }) {
   return (
-    <button onClick={onClick}
+    <button type="button" onClick={onClick}
       className="flex items-center gap-1.5 text-sm font-semibold mb-6 transition-opacity hover:opacity-70"
       style={{ color: 'var(--hc-muted)' }}>
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>

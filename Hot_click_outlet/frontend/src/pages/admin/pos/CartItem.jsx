@@ -17,7 +17,7 @@ export default function CartItem({ item, onSetCantidad, onSetPrecio, onRemove })
           <p className="text-xs font-semibold line-clamp-2 leading-tight" style={{ color: '#F4F6F9' }}>
             {item.nombre}
           </p>
-          <button onClick={() => onRemove(item.id)}
+          <button type="button" onClick={() => onRemove(item.id)}
             className="w-5 h-5 rounded-lg flex items-center justify-center shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
             style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#f87171' }}>
             <CloseIcon />
@@ -26,14 +26,14 @@ export default function CartItem({ item, onSetCantidad, onSetPrecio, onRemove })
 
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1">
-            <button onClick={() => onSetCantidad(item.id, item.cantidad - 1)} disabled={item.cantidad <= 1}
+            <button type="button" onClick={() => onSetCantidad(item.id, item.cantidad - 1)} disabled={item.cantidad <= 1}
               className="w-6 h-6 rounded-md font-bold text-sm flex items-center justify-center disabled:opacity-30"
               style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#fff' }}>−</button>
             <input type="number" min={1} value={item.cantidad}
               onChange={e => onSetCantidad(item.id, e.target.value)}
               className="w-10 text-center text-xs font-bold rounded-md outline-none"
               style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '3px 0' }}/>
-            <button onClick={() => onSetCantidad(item.id, item.cantidad + 1)} disabled={item.cantidad >= item.stockActual}
+            <button type="button" onClick={() => onSetCantidad(item.id, item.cantidad + 1)} disabled={item.cantidad >= item.stockActual}
               className="w-6 h-6 rounded-md font-bold text-sm flex items-center justify-center disabled:opacity-30"
               style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#fff' }}>+</button>
           </div>

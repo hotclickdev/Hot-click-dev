@@ -33,7 +33,7 @@ export default function AnalizarTab({
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
       <div className="flex gap-1 p-1 rounded-xl bg-white/5 border border-white/8 w-fit">
         {MODOS_ANALISIS.map(({ key, label }) => (
-          <button
+          <button type="button"
             key={key}
             onClick={() => onModoAnalisis(key)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${

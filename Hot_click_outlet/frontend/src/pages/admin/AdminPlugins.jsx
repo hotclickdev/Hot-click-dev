@@ -50,7 +50,7 @@ export default function AdminPlugins() {
             Conecta HotClick con servicios externos via Webhook o iframe embebido
           </p>
         </div>
-        <button onClick={abrirNuevo}
+        <button type="button" onClick={abrirNuevo}
           className="px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-80"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
           + Nuevo plugin

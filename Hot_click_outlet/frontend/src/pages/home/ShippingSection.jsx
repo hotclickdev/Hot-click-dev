@@ -155,7 +155,7 @@ export default function ShippingSection() {
           {/* Tab pills */}
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
             {ENVIO_OPTS.map((o, i) => (
-              <button
+              <button type="button"
                 key={o.title}
                 onClick={() => setActive(i)}
                 className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"

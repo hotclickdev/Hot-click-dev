@@ -55,12 +55,12 @@ export default function AdminExecutive() {
           </p>
         </div>
         <div className="flex gap-2">
-          <button onClick={generarAiSummary} disabled={aiLoading}
+          <button type="button" onClick={generarAiSummary} disabled={aiLoading}
             className="px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 hover:opacity-80"
             style={{ backgroundColor: 'rgba(23,71,168,0.15)', color: 'var(--hc-accent)', border: '1px solid rgba(23,71,168,0.3)' }}>
             {aiLoading ? '⏳ Generando…' : '🤖 Resumen AI'}
           </button>
-          <button onClick={imprimir}
+          <button type="button" onClick={imprimir}
             className="px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-80"
             style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
             🖨 Imprimir / PDF

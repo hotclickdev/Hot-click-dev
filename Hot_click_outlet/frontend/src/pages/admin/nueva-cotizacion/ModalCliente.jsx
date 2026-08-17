@@ -28,7 +28,7 @@ export default function ModalCliente({ onClose, onCreado }) {
         style={{ background: 'var(--hc-card)', borderColor: 'var(--hc-border)' }}>
         <div className="flex items-center justify-between">
           <h3 className="font-bold text-lg" style={{ color: 'var(--hc-text)' }}>Nuevo cliente B2B</h3>
-          <button onClick={onClose} style={{ color: 'var(--hc-muted)' }}>
+          <button type="button" onClick={onClose} style={{ color: 'var(--hc-muted)' }}>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
             </svg>
@@ -56,11 +56,11 @@ export default function ModalCliente({ onClose, onCreado }) {
           </div>
         </div>
         <div className="flex justify-end gap-3 pt-2">
-          <button onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-medium border"
+          <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-medium border"
             style={{ color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }}>
             Cancelar
           </button>
-          <button onClick={guardar} disabled={loading}
+          <button type="button" onClick={guardar} disabled={loading}
             className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
             style={{ background: 'var(--hc-accent)', color: '#fff' }}>
             {loading ? 'Guardando...' : 'Crear cliente'}

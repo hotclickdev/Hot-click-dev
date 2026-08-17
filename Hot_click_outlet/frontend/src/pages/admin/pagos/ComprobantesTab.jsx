@@ -33,14 +33,14 @@ function TarjetaComprobante({
 
         {c.estado === 'PENDIENTE' && (
           <div className="flex gap-2 shrink-0">
-            <button
+            <button type="button"
               onClick={() => onAprobar(c.id)}
               disabled={compAction === c.id}
               className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
             >
               {compAction === c.id ? '…' : '✓ Aprobar'}
             </button>
-            <button
+            <button type="button"
               onClick={() => onAbrirRechazo(c.id)}
               disabled={compAction === c.id}
               className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25"
@@ -66,7 +66,7 @@ function TarjetaComprobante({
       {c.urlComprobante && (
         <div>
           <p className="text-xs text-[#8e8e9a] mb-2">Comprobante:</p>
-          <button
+          <button type="button"
             onClick={() => onAmpliar(c.urlComprobante)}
             className="block rounded-xl overflow-hidden border border-white/10 hover:border-[#4f7cff]/50 transition-colors group max-w-xs"
           >
@@ -146,7 +146,7 @@ export default function ComprobantesTab({
           onChange={onFiltComp}
           options={ESTADOS_COMPROBANTE.map((e) => ({ value: e, label: e || 'Todos los estados' }))}
         />
-        <button
+        <button type="button"
           onClick={onRetry}
           className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/8 text-[#8e8e9a] hover:text-[#e8e8ed] text-sm transition-colors"
         >

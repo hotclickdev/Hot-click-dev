@@ -68,7 +68,7 @@ export default function AdminObservabilidad() {
   if (error) return (
     <div className="mx-auto max-w-2xl p-8 text-center">
       <p className="text-red-500">{error}</p>
-      <button onClick={cargar} className="mt-4 rounded-lg bg-[var(--hc-primary)] px-4 py-2 text-sm text-white hover:bg-[var(--hc-primary-hover)]">
+      <button type="button" onClick={cargar} className="mt-4 rounded-lg bg-[var(--hc-primary)] px-4 py-2 text-sm text-white hover:bg-[var(--hc-primary-hover)]">
         Reintentar
       </button>
     </div>
@@ -92,7 +92,7 @@ export default function AdminObservabilidad() {
           {lastUpdate && (
             <span className="text-xs text-gray-400">Actualizado: {lastUpdate}</span>
           )}
-          <button
+          <button type="button"
             onClick={cargar}
             disabled={loading}
             className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 dark:border-gray-700 dark:text-gray-400"

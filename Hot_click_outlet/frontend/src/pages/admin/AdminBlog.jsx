@@ -30,7 +30,7 @@ export default function AdminBlog() {
             {publicados} publicado{publicados === 1 ? '' : 's'} · {lista.length - publicados} borrador{lista.length - publicados === 1 ? '' : 'es'}
           </p>
         </div>
-        <button onClick={() => setModal('new')} style={{
+        <button type="button" onClick={() => setModal('new')} style={{
           padding: '9px 18px', borderRadius: 10,
           background: 'var(--hc-accent)', color: 'white',
           border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer',

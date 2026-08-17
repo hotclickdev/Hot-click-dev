@@ -53,7 +53,7 @@ function ContenidoGarantia({ token, loadingGarantias, misGarantias, onReportado 
         </div>
         <p className="font-bold text-lg mb-1" style={{ color: 'var(--hc-text)' }}>Iniciá sesión para ver tus garantías</p>
         <p className="text-sm mb-6" style={{ color: 'var(--hc-muted)' }}>Tus garantías activas aparecen vinculadas a tu cuenta.</p>
-        <button onClick={() => navigate('/login')}
+        <button type="button" onClick={() => navigate('/login')}
           className="px-6 py-3 rounded-2xl text-sm font-bold"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
           Iniciar sesión

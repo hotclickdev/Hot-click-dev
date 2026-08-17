@@ -48,7 +48,7 @@ export default function UsuariosHeader({
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="flex gap-1 bg-white/3 border border-white/8 rounded-xl p-1 w-fit">
           {tabs.map(([key, label]) => (
-            <button
+            <button type="button"
               key={key}
               onClick={() => onTab(key)}
               className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${

@@ -76,7 +76,7 @@ export default function AdminOfflineCola() {
             <span style={{ color: 'var(--hc-muted)' }}>{isOnline ? 'En línea' : 'Sin conexión'}</span>
           </div>
           {pendientes > 0 && isOnline && (
-            <button
+            <button type="button"
               onClick={sincronizar}
               disabled={syncing}
               className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
@@ -126,7 +126,7 @@ export default function AdminOfflineCola() {
               </div>
               <div className="flex gap-2 shrink-0">
                 {(item.estado === 'ERROR' || item.estado === 'CONFLICTO') && (
-                  <button
+                  <button type="button"
                     onClick={() => reintentar(item)}
                     className="text-xs px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80"
                     style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
@@ -135,7 +135,7 @@ export default function AdminOfflineCola() {
                   </button>
                 )}
                 {item.estado !== 'OK' && (
-                  <button
+                  <button type="button"
                     onClick={() => descartar(item.id)}
                     className="text-xs px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80"
                     style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#f87171' }}

@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @Service
 class ExtraccionOcrDetalleExtractor {
@@ -22,7 +21,7 @@ class ExtraccionOcrDetalleExtractor {
         List<String> lines = Arrays.stream(ocrText.split("\n"))
             .map(String::trim)
             .filter(l -> !l.isBlank())
-            .collect(Collectors.toList());
+            .toList();
         if (lines.isEmpty()) return null;
 
         ExtraccionService.DetallesProducto d = new ExtraccionService.DetallesProducto();

@@ -22,8 +22,8 @@ export default function AdminSuperAdmin() {
   const [saving, setSaving]         = useState(null)   // flagNombre en proceso
 
   useEffect(() => {
-    adminService.getEmpresas().then(r => setEmpresas(r.data ?? [])).catch(() => {})
-    flagService.list().then(r => setFlags(r.data ?? [])).catch(() => {})
+    adminService.getEmpresas().then(r => setEmpresas(r.data ?? [])).catch((err) => { console.error('[AdminSuperAdmin] empresas', err) })
+    flagService.list().then(r => setFlags(r.data ?? [])).catch((err) => { console.error('[AdminSuperAdmin] flags', err) })
   }, [])
 
   const cargarFlags = async (empresa) => {
@@ -74,7 +74,7 @@ export default function AdminSuperAdmin() {
               )}
               {empresas.map(e => (
                 <li key={e.id}>
-                  <button
+                  <button type="button"
                     onClick={() => cargarFlags(e)}
                     className={`w-full px-4 py-3 text-left transition hover:bg-gray-50 dark:hover:bg-gray-800 ${
                       selected?.id === e.id ? 'bg-[var(--hc-info-bg)] dark:bg-[var(--hc-info-bg)]' : ''
@@ -131,7 +131,7 @@ export default function AdminSuperAdmin() {
                       )}
 
                       {/* Toggle */}
-                      <button
+                      <button type="button"
                         onClick={() => toggleFlag(flag.nombre, activo)}
                         disabled={isBusy}
                         className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent

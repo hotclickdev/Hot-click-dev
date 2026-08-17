@@ -31,6 +31,7 @@ const Button = forwardRef(({
       ref={ref}
       whileTap={!disabled && !loading ? { scale: 0.97 } : {}}
       transition={{ duration: 0.12 }}
+      type="button"
       disabled={disabled || loading}
       className={`
         hc-btn

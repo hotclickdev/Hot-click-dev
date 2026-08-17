@@ -24,7 +24,7 @@ export default function NavbarActions({
 
   return (
     <div className="flex items-center gap-1">
-      <button
+      <button type="button"
         onClick={() => setSearchOpen(true)}
         aria-label={t('nav.buscar')}
         className="p-2 rounded-lg transition-all duration-150 hover:scale-105"
@@ -124,7 +124,7 @@ export default function NavbarActions({
               {userName?.split(' ')[0] || t('nav.perfil')}
             </span>
           </Link>
-          <button
+          <button type="button"
             onClick={onLogout}
             aria-label={t('nav.cerrarSesion')}
             className="hidden md:flex p-2 rounded-lg transition-colors hover:text-red-400"

@@ -26,7 +26,7 @@ export default function LanguageSelector({ className = '' }) {
   }, [animating, currentIndex, setLanguage])
 
   return (
-    <button
+    <button type="button"
       onClick={handleCycle}
       title={`${current.name} → ${LANGUAGES[(currentIndex + 1) % LANGUAGES.length].name}`}
       aria-label={`Idioma: ${current.name}. Cambiar a ${LANGUAGES[(currentIndex + 1) % LANGUAGES.length].name}`}

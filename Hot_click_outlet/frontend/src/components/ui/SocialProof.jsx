@@ -14,7 +14,7 @@ export default function SocialProof({ productId }) {
         const d = data?.data
         if (d && d.reviewCount > 0) setRating(d)
       })
-      .catch(() => {})
+      .catch((err) => { console.error('[SocialProof] rating', err) })
   }, [productId])
 
   return (

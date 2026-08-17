@@ -43,7 +43,7 @@ export default function AdminCompras() {
         <div className="flex items-center gap-2">
           <div className="flex rounded-xl overflow-hidden border" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
             {FILTROS_COMPRAS.map((f) => (
-              <button key={f} onClick={() => setFiltro(f)}
+              <button type="button" key={f} onClick={() => setFiltro(f)}
                 className="px-3 py-1.5 text-xs font-medium transition-all"
                 style={{
                   backgroundColor: filtro === f ? 'var(--hc-accent)' : 'var(--hc-surface)',

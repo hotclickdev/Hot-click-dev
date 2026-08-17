@@ -40,7 +40,7 @@ export function ProductsAssistantProductCard({ producto, onAdd }) {
         </div>
       </Link>
       <div className="px-3 pb-3">
-        <button
+        <button type="button"
           onClick={handleAdd}
           className="w-full py-1.5 rounded-lg text-xs font-semibold transition-all"
           style={{

@@ -73,7 +73,7 @@ export default function RecuperarCarritoPage() {
           <p className="text-sm mb-6" style={{ color: 'var(--hc-muted)' }}>
             {t('recuperarCarrito.expired')}
           </p>
-          <button
+          <button type="button"
             onClick={() => navigate('/productos')}
             className="hc-btn hc-btn-primary"
           >
@@ -160,14 +160,14 @@ export default function RecuperarCarritoPage() {
 
           {/* Actions */}
           <div className="flex flex-col gap-3">
-            <button
+            <button type="button"
               onClick={handleRestore}
               disabled={adding}
               className="hc-btn hc-btn-primary w-full h-12 text-sm font-bold disabled:opacity-60"
             >
               {adding ? t('recuperarCarrito.adding') : t('recuperarCarrito.restore')}
             </button>
-            <button
+            <button type="button"
               onClick={() => navigate('/productos')}
               className="hc-btn hc-btn-ghost w-full h-10 text-sm"
               style={{ color: 'var(--hc-muted)' }}

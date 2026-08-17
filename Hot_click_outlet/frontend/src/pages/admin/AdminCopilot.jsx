@@ -51,7 +51,7 @@ export default function AdminCopilot() {
               )}
             </div>
           )}
-          <button onClick={limpiar} className="text-xs px-2 py-1 rounded-lg hover:opacity-80"
+          <button type="button" onClick={limpiar} className="text-xs px-2 py-1 rounded-lg hover:opacity-80"
             style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
             Limpiar
           </button>
@@ -84,19 +84,19 @@ export default function AdminCopilot() {
               {confirmandoId === p.id ? (
                 <div className="flex items-center gap-1.5 shrink-0">
                   <span style={{ color: 'var(--hc-muted)' }}>¿Aplicar {p.descuentoSugeridoPct}% de descuento?</span>
-                  <button onClick={() => aplicarDescuento(p)} disabled={aplicandoId === p.id}
+                  <button type="button" onClick={() => aplicarDescuento(p)} disabled={aplicandoId === p.id}
                     className="px-2 py-1 rounded-lg font-semibold disabled:opacity-50"
                     style={{ backgroundColor: 'rgba(52,211,153,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.3)' }}>
                     {aplicandoId === p.id ? '...' : 'Confirmar'}
                   </button>
-                  <button onClick={() => setConfirmandoId(null)} disabled={aplicandoId === p.id}
+                  <button type="button" onClick={() => setConfirmandoId(null)} disabled={aplicandoId === p.id}
                     className="px-2 py-1 rounded-lg disabled:opacity-50"
                     style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
                     Cancelar
                   </button>
                 </div>
               ) : (
-                <button onClick={() => setConfirmandoId(p.id)}
+                <button type="button" onClick={() => setConfirmandoId(p.id)}
                   className="shrink-0 px-2 py-1 rounded-lg hover:opacity-80"
                   style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}>
                   Aplicar {p.descuentoSugeridoPct}% descuento
@@ -118,7 +118,7 @@ export default function AdminCopilot() {
             </p>
             <div className="flex flex-wrap gap-2 justify-center pt-2">
               {sugerencias.map((s) => (
-                <button key={s} onClick={() => setInput(s)}
+                <button type="button" key={s} onClick={() => setInput(s)}
                   className="text-xs px-3 py-1.5 rounded-xl hover:opacity-80"
                   style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
                   {s}

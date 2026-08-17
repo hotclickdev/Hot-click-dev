@@ -69,7 +69,7 @@ function Filtros({ search, filtroEstado, filtroPlan, onSearch, onEstado, onPlan 
 function VisibilidadToggle({ emp, saving, onToggle }) {
   const visible = emp.visibilidadPublica
   return (
-    <button
+    <button type="button"
       onClick={() => onToggle(emp.id, !visible)}
       disabled={saving}
       title={visible ? 'Ocultar negocio' : 'Hacer visible'}
@@ -114,7 +114,7 @@ function EmpresaFila({ emp, saving, onToggleVisibilidad, onAbrirDetalle }) {
       </td>
       <td className="px-4 py-3 text-xs" style={{ color: 'var(--hc-muted)' }}>{formatDateShort(emp.fechaRegistro)}</td>
       <td className="px-4 py-3">
-        <button
+        <button type="button"
           onClick={() => onAbrirDetalle(emp)}
           className="text-xs px-3 py-1 rounded-lg transition-colors hover:opacity-80"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
@@ -134,7 +134,7 @@ function Paginacion({ page, totalPages, filteredCount, onPage }) {
         {filteredCount} empresa{filteredCount === 1 ? '' : 's'} · página {page + 1} de {totalPages}
       </span>
       <div className="flex gap-1">
-        <button
+        <button type="button"
           onClick={() => onPage(Math.max(0, page - 1))}
           disabled={page === 0}
           className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity disabled:opacity-40 hover:opacity-80"
@@ -143,7 +143,7 @@ function Paginacion({ page, totalPages, filteredCount, onPage }) {
           ← Anterior
         </button>
         {indicesPagina(page, totalPages).map((idx) => (
-          <button
+          <button type="button"
             key={idx}
             onClick={() => onPage(idx)}
             className="w-8 h-8 rounded-lg text-xs font-medium transition-all"
@@ -156,7 +156,7 @@ function Paginacion({ page, totalPages, filteredCount, onPage }) {
             {idx + 1}
           </button>
         ))}
-        <button
+        <button type="button"
           onClick={() => onPage(Math.min(totalPages - 1, page + 1))}
           disabled={page >= totalPages - 1}
           className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity disabled:opacity-40 hover:opacity-80"

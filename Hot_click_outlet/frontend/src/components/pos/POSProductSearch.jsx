@@ -63,7 +63,7 @@ export default function POSProductSearch({ onAdd }) {
           {catSel ? (
             <>
               <div className="flex items-center gap-2">
-                <button onClick={() => { setCatSel(null); setProductos([]) }}
+                <button type="button" onClick={() => { setCatSel(null); setProductos([]) }}
                   className="p-1.5 rounded-lg hover:bg-white/8 transition-colors"
                   style={{ color: 'var(--hc-muted)' }}>
                   ← Volver
@@ -91,7 +91,7 @@ export default function POSProductSearch({ onAdd }) {
                   {categorias.map((cat, i) => {
                     const c = CatColor(i)
                     return (
-                      <button key={cat.id}
+                      <button type="button" key={cat.id}
                         onClick={() => cargarPorCategoria(cat)}
                         className="flex flex-col items-center justify-center gap-1.5 p-4 rounded-2xl text-center transition-all hover:scale-[1.03] active:scale-[0.97]"
                         style={{ backgroundColor: c.bg, border: `1.5px solid ${c.border}`, minHeight: 80 }}>

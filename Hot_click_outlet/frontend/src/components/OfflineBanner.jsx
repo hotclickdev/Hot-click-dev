@@ -27,7 +27,7 @@ function PendingBanner({ pendientes, lastSyncResult, syncAhora }) {
         <span className={`w-2 h-2 rounded-full shrink-0 ${dotClass}`} />
         <span style={{ color: textColor }}>{label}</span>
       </div>
-      <button
+      <button type="button"
         onClick={syncAhora}
         className="text-xs px-3 py-1 rounded-lg transition-opacity hover:opacity-80"
         style={{ backgroundColor: btnBg, color: textColor }}

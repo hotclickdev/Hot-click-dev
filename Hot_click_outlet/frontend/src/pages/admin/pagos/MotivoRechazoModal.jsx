@@ -22,14 +22,14 @@ export default function MotivoRechazoModal({
           style={{ background: 'rgba(255,255,255,0.05)', border: '1.5px solid rgba(255,255,255,0.1)', color: '#e8e8ed' }}
         />
         <div className="flex gap-2">
-          <button
+          <button type="button"
             onClick={onCancel}
             className="flex-1 py-2.5 rounded-xl text-sm border text-[#8e8e9a] hover:text-[#e8e8ed] transition-colors"
             style={{ borderColor: 'rgba(255,255,255,0.1)' }}
           >
             Cancelar
           </button>
-          <button
+          <button type="button"
             onClick={onConfirm}
             disabled={loading}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"

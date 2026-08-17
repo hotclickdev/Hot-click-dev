@@ -1,6 +1,6 @@
 import { formatPrice } from '@/utils/format'
 
-export default function KPI({ label, value, sub, color = '#4ade80', negative = false }) {
+export default function Kpi({ label, value, sub, color = '#4ade80', negative = false }) {
   return (
     <div className="bg-[#111114] border border-white/8 rounded-2xl p-5">
       <p className="text-xs text-[#8e8e9a] mb-1">{label}</p>

@@ -87,7 +87,7 @@ export default function SeccionSistema({ toast }) {
               {healthOk === null ? t('adminConfig.sysHealthUnknown') : healthOk ? t('adminConfig.sysHealthOk') : t('adminConfig.sysHealthFail')}
             </span>
           </div>
-          <button onClick={checkHealth} disabled={checking} className="cfg-btn cfg-btn-ghost" style={{ fontSize: '12px', padding: '7px 14px' }}>
+          <button type="button" onClick={checkHealth} disabled={checking} className="cfg-btn cfg-btn-ghost" style={{ fontSize: '12px', padding: '7px 14px' }}>
             {checking ? <Spinner size="xs" /> : <RefreshIcon style={{ width: '14px', height: '14px' }} />}
             {t('adminConfig.sysCheckBtn')}
           </button>
@@ -108,7 +108,7 @@ export default function SeccionSistema({ toast }) {
                   <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--hc-text)', fontFamily: F.body, margin: 0 }}>{t(titleKey)}</p>
                   <p style={{ fontSize: '12px', color: 'var(--hc-muted)', marginTop: '2px', fontFamily: F.body }}>{t(descKey)}</p>
                 </div>
-                <button onClick={action} disabled={loading} className="cfg-btn cfg-btn-ghost" style={{ flexShrink: 0, fontSize: '12px', padding: '7px 12px' }}>
+                <button type="button" onClick={action} disabled={loading} className="cfg-btn cfg-btn-ghost" style={{ flexShrink: 0, fontSize: '12px', padding: '7px 12px' }}>
                   {loading ? <Spinner size="xs" /> : null}
                   {t(labelKey)}
                 </button>
@@ -136,7 +136,7 @@ export default function SeccionSistema({ toast }) {
               <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--hc-text)', fontFamily: F.body, margin: 0 }}>{t('adminConfig.sysResetTitle')}</p>
               <p style={{ fontSize: '12px', color: 'var(--hc-muted)', marginTop: '4px', lineHeight: 1.5, fontFamily: F.body }}>{t('adminConfig.sysResetDesc')}</p>
             </div>
-            <button onClick={openResetModal} className="cfg-btn cfg-btn-danger" style={{ flexShrink: 0, fontSize: '12px', padding: '7px 14px' }}>
+            <button type="button" onClick={openResetModal} className="cfg-btn cfg-btn-danger" style={{ flexShrink: 0, fontSize: '12px', padding: '7px 14px' }}>
               <SkullIcon style={{ width: '13px', height: '13px' }} />{t('adminConfig.sysResetBtn')}
             </button>
           </div>
@@ -198,8 +198,8 @@ export default function SeccionSistema({ toast }) {
                 style={{ textTransform: 'uppercase', letterSpacing: '0.08em', borderColor: resetInput === 'ELIMINAR' ? 'rgba(239,68,68,0.5)' : undefined }} />
             </div>
             <div style={{ padding: '0 24px 24px', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button onClick={closeResetModal} disabled={resetting} className="cfg-btn cfg-btn-ghost">{t('adminConfig.sysResetCancel')}</button>
-              <button onClick={handleReset} disabled={resetInput !== 'ELIMINAR' || resetting} className="cfg-btn"
+              <button type="button" onClick={closeResetModal} disabled={resetting} className="cfg-btn cfg-btn-ghost">{t('adminConfig.sysResetCancel')}</button>
+              <button type="button" onClick={handleReset} disabled={resetInput !== 'ELIMINAR' || resetting} className="cfg-btn"
                 style={{ background: resetInput === 'ELIMINAR' ? '#dc2626' : 'rgba(239,68,68,0.15)', color: resetInput === 'ELIMINAR' ? '#fff' : '#f87171', boxShadow: resetInput === 'ELIMINAR' ? '0 2px 14px rgba(220,38,38,0.4)' : 'none', opacity: (resetInput !== 'ELIMINAR' || resetting) ? 0.5 : 1, cursor: (resetInput !== 'ELIMINAR' || resetting) ? 'not-allowed' : 'pointer' }}>
                 {resetting ? <Spinner size="xs" /> : <SkullIcon style={{ width: '14px', height: '14px' }} />}
                 {resetting ? t('adminConfig.sysResetDeleting') : t('adminConfig.sysResetConfirm')}

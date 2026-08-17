@@ -101,7 +101,7 @@ export default function ChatModal() {
             >
               {/* Botón volver — solo en modo checkout */}
               {checkoutMode && (
-                <button
+                <button type="button"
                   onClick={() => setCheckoutMode(false)}
                   className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-60 shrink-0"
                   style={{ color: 'var(--hc-muted)' }}
@@ -127,7 +127,7 @@ export default function ChatModal() {
 
               {/* Botón "Pagar ya" */}
               {!checkoutMode && cartCount > 0 && (
-                <button
+                <button type="button"
                   onClick={() => setCheckoutMode(true)}
                   className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all hover:opacity-80 active:scale-95"
                   style={{ background: 'var(--hc-accent)', color: '#fff' }}
@@ -141,7 +141,7 @@ export default function ChatModal() {
               )}
 
               {/* Cerrar */}
-              <button
+              <button type="button"
                 onClick={close}
                 aria-label="Cerrar asistente"
                 className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-60 shrink-0"

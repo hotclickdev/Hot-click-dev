@@ -12,7 +12,7 @@ export default function CategoriasEmptyState({ onCrear }) {
       <p className="text-sm text-[#8e8e9a] max-w-xs mx-auto">
         Las categorías organizan tu catálogo. Los productos las necesitan para publicarse.
       </p>
-      <button
+      <button type="button"
         onClick={onCrear}
         className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold mt-1 transition-opacity hover:opacity-80"
         style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}

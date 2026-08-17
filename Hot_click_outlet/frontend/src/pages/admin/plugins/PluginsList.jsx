@@ -55,24 +55,24 @@ export default function PluginsList({
               </div>
               <div className="flex gap-2 shrink-0 flex-wrap justify-end">
                 {p.tipo === 'WEBHOOK' && p.activo && (
-                  <button onClick={() => onTestWebhook(p)}
+                  <button type="button" onClick={() => onTestWebhook(p)}
                     className="text-xs px-2 py-1 rounded-lg hover:opacity-80 transition-all"
                     style={{ border: '1px solid var(--hc-border)', color: testOk === p.id ? '#10b981' : 'var(--hc-muted)' }}>
                     {testOk === p.id ? '✓ Enviado' : 'Test'}
                   </button>
                 )}
-                <button onClick={() => onShowLogs(p)}
+                <button type="button" onClick={() => onShowLogs(p)}
                   className="text-xs px-2 py-1 rounded-lg hover:opacity-80"
                   style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
                   Logs
                 </button>
-                <button onClick={() => onEdit(p)}
+                <button type="button" onClick={() => onEdit(p)}
                   className="text-xs px-2 py-1 rounded-lg hover:opacity-80"
                   style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
                   Editar
                 </button>
                 {p.activo && (
-                  <button onClick={() => onDeactivate(p)}
+                  <button type="button" onClick={() => onDeactivate(p)}
                     className="text-xs px-2 py-1 rounded-lg hover:opacity-80"
                     style={{ border: '1px solid rgba(239,68,68,0.4)', color: '#f87171' }}>
                     Desactivar

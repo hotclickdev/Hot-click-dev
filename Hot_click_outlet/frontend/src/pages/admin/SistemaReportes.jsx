@@ -122,7 +122,7 @@ export default function SistemaReportes() {
       {/* Tabs */}
       <div className="inline-flex gap-1 rounded-xl p-1 w-fit flex-wrap" style={{ backgroundColor: 'var(--hc-surface)' }}>
         {TABS.map(({ key, label }) => (
-          <button key={key} onClick={() => setTab(key)}
+          <button type="button" key={key} onClick={() => setTab(key)}
             className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5"
             style={tab === key ? { backgroundColor: 'var(--hc-accent)', color: '#fff' } : { color: 'var(--hc-muted)' }}>
             {label}

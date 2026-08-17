@@ -9,7 +9,7 @@ export default function LogModal({ plugin, onClose }) {
   useEffect(() => {
     pluginService.getEventos(plugin.id)
       .then(({ data }) => setLogs(Array.isArray(data) ? data : []))
-      .catch(() => {})
+      .catch((err) => { console.error('[LogModal] eventos', err) })
       .finally(() => setCargando(false))
   }, [plugin.id])
 
@@ -24,7 +24,7 @@ export default function LogModal({ plugin, onClose }) {
           <h3 className="font-bold text-sm" style={{ color: 'var(--hc-text)' }}>
             Logs — {plugin.nombre}
           </h3>
-          <button onClick={onClose} className="text-sm" style={{ color: 'var(--hc-muted)' }}>✕</button>
+          <button type="button" onClick={onClose} className="text-sm" style={{ color: 'var(--hc-muted)' }}>✕</button>
         </div>
         <div className="overflow-y-auto flex-1 p-4 space-y-2">
           {cargando ? (

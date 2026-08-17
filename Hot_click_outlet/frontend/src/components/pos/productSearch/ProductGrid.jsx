@@ -22,7 +22,7 @@ export function ProductGrid({ items, onAdd }) {
         else if (bajo) stockCls += ' text-yellow-400'
         const stockStyle = agotado || bajo ? {} : { color: 'var(--hc-muted)' }
         return (
-          <button key={p.id ?? p.idProducto}
+          <button type="button" key={p.id ?? p.idProducto}
             onClick={() => agotado || onAdd(p)}
             disabled={agotado}
             className="flex flex-col rounded-2xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"

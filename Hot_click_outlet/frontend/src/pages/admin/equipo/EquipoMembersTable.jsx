@@ -48,7 +48,7 @@ export default function EquipoMembersTable({
         <p className="text-xs max-w-xs mx-auto leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
           Agregá colaboradores para que puedan gestionar productos, pedidos y configuración junto a vos.
         </p>
-        <button
+        <button type="button"
           onClick={onAgregar}
           className="mt-2 px-4 py-2 rounded-xl text-sm font-medium transition-opacity hover:opacity-80"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
@@ -129,14 +129,14 @@ export default function EquipoMembersTable({
                   {m.rolEnEmpresa !== 'PROPIETARIO' && (
                     confirmId === m.id ? (
                       <div className="flex gap-2">
-                        <button
+                        <button type="button"
                           onClick={() => onEliminar(m.id)}
                           disabled={saving}
                           className="text-xs px-2 py-1 rounded-lg bg-red-500 text-white disabled:opacity-50"
                         >
                           Confirmar
                         </button>
-                        <button
+                        <button type="button"
                           onClick={() => onConfirmId(null)}
                           className="text-xs px-2 py-1 rounded-lg"
                           style={{ color: 'var(--hc-muted)' }}
@@ -145,7 +145,7 @@ export default function EquipoMembersTable({
                         </button>
                       </div>
                     ) : (
-                      <button
+                      <button type="button"
                         onClick={() => onConfirmId(m.id)}
                         className="text-xs px-2 py-1 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors"
                       >

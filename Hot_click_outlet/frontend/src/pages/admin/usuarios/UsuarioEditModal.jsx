@@ -58,7 +58,7 @@ export default function UsuarioEditModal({
             <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">{roleLabel}</label>
             <div className="grid grid-cols-3 gap-2">
               {ROLES.map(({ value, label }) => (
-                <button
+                <button type="button"
                   key={value}
                   onClick={() => onRol(value)}
                   className={`px-2 py-2.5 rounded-xl text-xs font-medium border transition-all ${
@@ -78,7 +78,7 @@ export default function UsuarioEditModal({
               <label className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wider">Plan del negocio</label>
               <div className="grid grid-cols-3 gap-2">
                 {PLANES.map((value) => (
-                  <button
+                  <button type="button"
                     key={value}
                     onClick={() => onPlan(value)}
                     className={`px-2 py-2.5 rounded-xl text-xs font-medium border transition-all ${
@@ -101,7 +101,7 @@ export default function UsuarioEditModal({
                 ['ACTIVO', 'Activo', 'bg-emerald-500/15 text-emerald-400 border-emerald-500/40'],
                 ['INACTIVO', 'Inactivo', 'bg-red-500/15 text-red-400 border-red-500/40'],
               ].map(([val, lbl, activeClass]) => (
-                <button
+                <button type="button"
                   key={val}
                   onClick={() => onEstado(val)}
                   className={`px-2 py-2.5 rounded-xl text-xs font-medium border transition-all ${
@@ -122,7 +122,7 @@ export default function UsuarioEditModal({
           </div>
 
           <div className="flex gap-3 pt-1">
-            <button
+            <button type="button"
               onClick={onClose}
               className="flex-1 h-10 rounded-xl bg-white/5 hover:bg-white/8 text-[#8e8e9a] hover:text-white text-sm transition-colors"
             >

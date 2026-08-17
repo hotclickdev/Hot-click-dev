@@ -37,7 +37,7 @@ export default function POSHeader({ userName, turno, step, onCerrarTurno, mostra
       <div className="flex-1" />
 
       {turno && (
-        <button onClick={onCerrarTurno}
+        <button type="button" onClick={onCerrarTurno}
           className="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all hover:brightness-125"
           style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
           Cerrar turno

@@ -150,7 +150,7 @@ export default function AIProductCard({ producto, similarity, onAdd, whatsappNum
 
       {/* Acciones */}
       <div className="px-3 pb-3 flex gap-2">
-        <button
+        <button type="button"
           onClick={handleAdd}
           disabled={producto.stock === 0}
           className="flex-1 py-2 rounded-xl text-xs font-bold transition-all active:scale-95"

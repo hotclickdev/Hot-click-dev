@@ -150,7 +150,7 @@ export default function AdminAprobaciones() {
 
       <div className="flex gap-2 border-b" style={{ borderColor: 'var(--hc-border)' }}>
         {tabs.map((item) => (
-          <button key={item.id} onClick={() => setTab(item.id)}
+          <button type="button" key={item.id} onClick={() => setTab(item.id)}
             className="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors"
             style={{
               borderColor: tab === item.id ? 'var(--hc-accent)' : 'transparent',

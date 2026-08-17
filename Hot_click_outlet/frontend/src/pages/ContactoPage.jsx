@@ -127,7 +127,7 @@ export default function ContactoPage() {
                 </div>
                 <p className="text-[#e8e8ed] font-semibold text-lg">{t('contacto.sent')}</p>
                 <p className="text-sm text-[#8e8e9a]">{t('contacto.sentSub')}</p>
-                <button
+                <button type="button"
                   onClick={() => { setSent(false); setForm({ nombre: '', correo: '', mensaje: '' }) }}
                   className="mt-2 text-sm text-[#4f7cff] hover:text-[#3d6ee0] transition-colors"
                 >

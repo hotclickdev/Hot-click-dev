@@ -61,7 +61,7 @@ export default function ResenaForm({ orders = [], ordersLoading = false }) {
       <p className="text-3xl">🎉</p>
       <p className="text-sm font-semibold" style={{ color: '#059669' }}>¡Reseña enviada!</p>
       <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Aparecerá en el producto una vez que la aprobemos.</p>
-      <button className="text-xs mt-2 underline" style={{ color: 'var(--hc-muted)' }} onClick={reset}>
+      <button type="button" className="text-xs mt-2 underline" style={{ color: 'var(--hc-muted)' }} onClick={reset}>
         Dejar otra reseña
       </button>
     </div>

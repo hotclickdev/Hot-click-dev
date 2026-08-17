@@ -72,7 +72,7 @@ export default function AdminPOSHistorial() {
         <div className="flex items-center gap-2">
           <div className="flex rounded-xl overflow-hidden border" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
             {FILTROS.map(f => (
-              <button key={f.key} onClick={() => setFiltro(f.key)}
+              <button type="button" key={f.key} onClick={() => setFiltro(f.key)}
                 className="px-3 py-1.5 text-xs font-medium transition-all"
                 style={{
                   backgroundColor: filtro === f.key ? 'var(--hc-accent)' : 'var(--hc-surface)',
@@ -82,7 +82,7 @@ export default function AdminPOSHistorial() {
               </button>
             ))}
           </div>
-          <button onClick={exportCSV}
+          <button type="button" onClick={exportCSV}
             className="px-3 py-1.5 rounded-xl text-xs font-medium transition-opacity hover:opacity-70"
             style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>
             CSV

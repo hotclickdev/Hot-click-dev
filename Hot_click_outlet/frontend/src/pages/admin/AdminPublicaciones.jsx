@@ -191,7 +191,7 @@ export default function AdminPublicaciones() {
             { key: 'analizar', label: t('admin.publicaciones.new') },
             { key: 'cola', label: `${t('admin.publicaciones.status')}${publicaciones.length ? ` (${publicaciones.length})` : ''}` },
           ].map(({ key, label }) => (
-            <button
+            <button type="button"
               key={key}
               onClick={() => setTab(key)}
               className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 ${

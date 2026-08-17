@@ -39,7 +39,7 @@ export default function ItemRow({ item, index, productos, onChange, onRemove }) 
         )}
         <div className="flex gap-1 mt-1">
           {['CATALOGO', 'TEMPORAL'].map(t => (
-            <button key={t}
+            <button type="button" key={t}
               onClick={() => onChange(index, { tipo: t, productoId: null, nombre: '', codigo: '', imagenUrl: '', descripcion: '' })}
               className="text-[10px] px-1.5 py-0.5 rounded"
               style={{
@@ -104,7 +104,7 @@ export default function ItemRow({ item, index, productos, onChange, onRemove }) 
       </td>
       {/* Borrar */}
       <td className="px-2 py-2 w-8">
-        <button onClick={() => onRemove(index)} className="p-1 rounded-lg transition-colors hover:bg-red-500/10" style={{ color: '#ef4444' }}>
+        <button type="button" onClick={() => onRemove(index)} className="p-1 rounded-lg transition-colors hover:bg-red-500/10" style={{ color: '#ef4444' }}>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
           </svg>

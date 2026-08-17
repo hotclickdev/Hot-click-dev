@@ -85,7 +85,7 @@ export default function AdminReportes() {
   useEffect(() => {
     ventaService.getAll()
       .then(({ data }) => setVentas(Array.isArray(data) ? data : data?.content ?? []))
-      .catch(() => {})
+      .catch((err) => { console.error('[AdminReportes] ventas', err) })
       .finally(() => setLoading(false))
     // eslint-disable-next-line react-hooks/set-state-in-effect -- init de fechas al montar (mismo applyQuick(30) original)
     applyQuick(30)
@@ -98,7 +98,7 @@ export default function AdminReportes() {
           const items = res?.data?.content ?? res?.data ?? []
           setProductos(Array.isArray(items) ? items : [])
         })
-        .catch(() => {})
+        .catch((err) => { console.error('[AdminReportes] productos', err) })
         .finally(() => setLoadingP(false))
     }
     if (activeTab === 'pos' && posVentas.length === 0) {
@@ -147,7 +147,7 @@ export default function AdminReportes() {
               />
             )}
             {activeTab === 'productos' && topProductos.length > 0 && (
-              <button onClick={exportTopProductos}
+              <button type="button" onClick={exportTopProductos}
                 className="px-4 py-2 rounded-xl text-xs font-semibold transition-opacity hover:opacity-80"
                 style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>
                 Exportar CSV
@@ -170,7 +170,7 @@ export default function AdminReportes() {
 
         <div className="flex gap-1 rounded-xl p-1 w-fit flex-wrap" style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
           {TABS.map(({ key, label }) => (
-            <button key={key} onClick={() => cambiarTab(key)}
+            <button type="button" key={key} onClick={() => cambiarTab(key)}
               className="px-4 py-1.5 rounded-lg text-xs font-medium transition-all"
               style={activeTab === key
                 ? { backgroundColor: 'var(--hc-accent)', color: '#fff' }

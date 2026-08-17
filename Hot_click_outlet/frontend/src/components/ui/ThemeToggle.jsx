@@ -7,7 +7,7 @@ export default function ThemeToggle({ className = '' }) {
   const isDark = theme === 'dark'
 
   return (
-    <button
+    <button type="button"
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
       title={isDark ? t('theme.light') : t('theme.dark')}
       aria-label={t('theme.toggle')}

@@ -10,7 +10,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Component
 class ShoppingAssistantSessionHelper {
@@ -85,7 +84,7 @@ class ShoppingAssistantSessionHelper {
                 "role",    r.get("rol").toString(),
                 "content", r.get("contenido").toString()
             ))
-            .collect(Collectors.toList());
+            .toList();
     }
 
     /**
@@ -126,7 +125,7 @@ class ShoppingAssistantSessionHelper {
                     "rol",   r.get("rol").toString(),
                     "texto", r.get("contenido").toString()
                 ))
-                .collect(Collectors.toList());
+                .toList();
 
             return Map.of("sesionId", sesionIdStr, "mensajes", mensajes);
 

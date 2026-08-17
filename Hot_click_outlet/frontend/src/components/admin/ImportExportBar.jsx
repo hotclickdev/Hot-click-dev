@@ -29,7 +29,7 @@ export default function ImportExportBar({
 
         {!exportOnly && (
           <>
-            <button
+            <button type="button"
               onClick={() => bar.fileRef.current?.click()}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--hc-surface-2)] hover:bg-[var(--hc-surface-3)] text-xs font-medium transition-colors"
               style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
@@ -41,7 +41,7 @@ export default function ImportExportBar({
               </svg>
               {bar.t('importExport.import')}
             </button>
-            <button
+            <button type="button"
               onClick={bar.handleTemplate}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--hc-surface-2)] hover:bg-[var(--hc-surface-3)] text-xs font-medium transition-colors"
               style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}
@@ -65,7 +65,7 @@ export default function ImportExportBar({
 
         <div className="w-px h-4 mx-0.5" style={{ backgroundColor: 'var(--hc-border)' }} />
 
-        <button
+        <button type="button"
           onClick={bar.handleExportCSV}
           disabled={!data.length}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--hc-surface-2)] hover:bg-[var(--hc-surface-3)] text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
@@ -78,7 +78,7 @@ export default function ImportExportBar({
           </svg>
           CSV
         </button>
-        <button
+        <button type="button"
           onClick={bar.handleExportExcel}
           disabled={!data.length}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1a7a4a]/20 hover:bg-[#1a7a4a]/30 border border-[#1a7a4a]/40 text-[#4ade80] text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"

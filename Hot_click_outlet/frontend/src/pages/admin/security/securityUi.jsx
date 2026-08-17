@@ -34,7 +34,7 @@ export function Card({ children, className = '' }) {
 
 export function TabBtn({ active, onClick, children, badge }) {
   return (
-    <button onClick={onClick}
+    <button type="button" onClick={onClick}
       className="px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5"
       style={{ backgroundColor: active ? 'var(--hc-accent)' : 'transparent', color: active ? '#fff' : 'var(--hc-muted)' }}>
       {children}
@@ -50,7 +50,7 @@ export function PeriodSelector({ value, onChange }) {
   return (
     <div className="flex gap-2">
       {PERIODS.map(p => (
-        <button key={p.value} onClick={() => onChange(p.value)}
+        <button type="button" key={p.value} onClick={() => onChange(p.value)}
           className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
           style={{
             backgroundColor: value === p.value ? 'var(--hc-accent)' : 'var(--hc-card)',

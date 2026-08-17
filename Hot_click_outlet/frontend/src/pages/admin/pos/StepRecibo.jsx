@@ -63,17 +63,17 @@ export default function StepRecibo({ venta, userName, onNueva }) {
         </div>
 
         <div className="grid grid-cols-3 gap-2">
-          <button onClick={imprimir}
+          <button type="button" onClick={imprimir}
             className="py-3 rounded-2xl text-xs font-semibold transition-all hover:brightness-125 flex items-center justify-center gap-1.5"
             style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)' }}>
             <PrintIcon /> Imprimir
           </button>
-          <button onClick={whatsapp}
+          <button type="button" onClick={whatsapp}
             className="py-3 rounded-2xl text-xs font-semibold transition-all hover:brightness-125 flex items-center justify-center gap-1.5"
             style={{ backgroundColor: 'rgba(37,211,102,0.12)', color: '#25d366' }}>
             <WhatsAppIcon /> WhatsApp
           </button>
-          <button onClick={onNueva}
+          <button type="button" onClick={onNueva}
             className="py-3 rounded-2xl text-xs font-semibold transition-all hover:brightness-125"
             style={{ background: 'var(--hc-accent)', color: '#fff' }}>
             + Nueva

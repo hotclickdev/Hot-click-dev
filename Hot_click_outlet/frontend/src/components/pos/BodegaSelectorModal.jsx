@@ -87,7 +87,7 @@ export default function BodegaSelectorModal({ onSelect }) {
             <div className="rounded-2xl p-5 text-center space-y-4"
               style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
               <p className="text-sm font-semibold" style={{ color: '#f87171' }}>{error}</p>
-              <button onClick={cargar}
+              <button type="button" onClick={cargar}
                 className="px-6 py-3 rounded-2xl font-bold text-sm transition-all hover:brightness-110"
                 style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}>
                 Reintentar
@@ -101,7 +101,7 @@ export default function BodegaSelectorModal({ onSelect }) {
               {bodegas.map(b => {
                 const activa = selected === b.id
                 return (
-                  <button key={b.id} onClick={() => setSelected(b.id)}
+                  <button type="button" key={b.id} onClick={() => setSelected(b.id)}
                     className="w-full text-left rounded-2xl transition-all active:scale-[0.99]"
                     style={{
                       backgroundColor: activa ? 'rgba(23,71,168,0.15)' : 'rgba(255,255,255,0.04)',
@@ -169,7 +169,7 @@ export default function BodegaSelectorModal({ onSelect }) {
 
           {/* CTA principal */}
           {!loading && !error && bodegas.length > 0 && (
-            <button
+            <button type="button"
               onClick={handleConfirmar}
               disabled={!selected}
               className="w-full rounded-2xl font-black text-base transition-all disabled:opacity-30 disabled:cursor-not-allowed"

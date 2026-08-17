@@ -22,7 +22,7 @@ function DetailHeader({ selected, onClose }) {
           </span>
         </div>
       </div>
-      <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--hc-surface-2)] shrink-0" style={{ color: 'var(--hc-muted)' }}>
+      <button type="button" onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--hc-surface-2)] shrink-0" style={{ color: 'var(--hc-muted)' }}>
         <CloseIcon />
       </button>
     </div>
@@ -33,7 +33,7 @@ function DetailTabs({ tab, detail, onTab }) {
   return (
     <div className="flex gap-1" style={{ borderBottom: '1px solid var(--hc-border)' }}>
       {tabsDetalle(detail).map((t) => (
-        <button
+        <button type="button"
           key={t.id}
           onClick={() => onTab(t.id)}
           className="px-4 py-2.5 text-sm font-medium transition-colors relative"

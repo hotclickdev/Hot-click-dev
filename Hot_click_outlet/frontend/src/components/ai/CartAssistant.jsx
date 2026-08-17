@@ -23,7 +23,7 @@ export default function CartAssistant({ cartItems, cartTotal }) {
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--hc-border)', background: 'var(--hc-surface)' }}>
-      <button
+      <button type="button"
         onClick={() => setAbierto(v => !v)}
         className="w-full flex items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-white/3"
       >
@@ -107,7 +107,7 @@ export default function CartAssistant({ cartItems, cartTotal }) {
               {mensajes.length <= 1 && !cargando && (
                 <div className="px-4 pb-3 flex flex-wrap gap-1.5">
                   {['¿Qué va bien con esto?', 'Algo más económico', 'Accesorios relacionados'].map(s => (
-                    <button key={s} onClick={() => enviar(s)}
+                    <button type="button" key={s} onClick={() => enviar(s)}
                       className="text-[11px] px-3 py-1.5 rounded-full hover:opacity-80 transition-opacity"
                       style={{ background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', color: 'var(--hc-accent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 20%, transparent)' }}>
                       {s}
@@ -124,7 +124,7 @@ export default function CartAssistant({ cartItems, cartTotal }) {
                     className="flex-1 px-3 py-2.5 rounded-xl text-sm outline-none disabled:opacity-50"
                     style={{ background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
                   />
-                  <button onClick={() => enviar()} disabled={!input.trim() || cargando}
+                  <button type="button" onClick={() => enviar()} disabled={!input.trim() || cargando}
                     className="w-10 h-10 rounded-xl flex items-center justify-center transition-all hover:opacity-80 disabled:opacity-30"
                     style={{ background: 'var(--hc-accent)', color: '#fff' }} aria-label="Enviar">
                     {cargando ? <TypingDots /> : (

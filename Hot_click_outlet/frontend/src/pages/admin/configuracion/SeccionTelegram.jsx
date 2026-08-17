@@ -105,7 +105,7 @@ export default function SeccionTelegram({ toast }) {
                 </p>
               )}
             </div>
-            <button className="cfg-btn" onClick={desconectar}
+            <button type="button" className="cfg-btn" onClick={desconectar}
               style={{ background: 'var(--hc-surface-2)', color: 'var(--hc-danger)', border: '1px solid var(--hc-border)' }}>
               Desvincular
             </button>
@@ -114,7 +114,7 @@ export default function SeccionTelegram({ toast }) {
       ) : (
         <Block label="Conectar Telegram" sublabel="Un solo toque desde tu teléfono — sin números ni contraseñas">
           {!link ? (
-            <button className="cfg-btn cfg-btn-primary" onClick={conectar} disabled={generando}>
+            <button type="button" className="cfg-btn cfg-btn-primary" onClick={conectar} disabled={generando}>
               <SendIcon style={{ width: '14px', height: '14px' }} />
               {generando ? 'Generando…' : 'Conectar Telegram'}
             </button>
@@ -154,7 +154,7 @@ export default function SeccionTelegram({ toast }) {
                       {m.telegramUsername ? `@${m.telegramUsername}` : m.correo}
                     </p>
                   </div>
-                  <button className="cfg-btn" onClick={() => revocar(m.usuarioId)}
+                  <button type="button" className="cfg-btn" onClick={() => revocar(m.usuarioId)}
                     style={{ background: 'var(--hc-surface-2)', color: 'var(--hc-danger)', border: '1px solid var(--hc-border)', padding: '6px 12px', fontSize: '12px' }}>
                     Revocar
                   </button>

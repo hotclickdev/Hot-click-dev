@@ -112,7 +112,7 @@ function ProductCard({ product, priority = false, index = 0, hotTag = null }) {
         </div>
 
         {/* Wishlist heart */}
-        <button
+        <button type="button"
           onClick={(e) => { e.stopPropagation(); toggleWishlist(product) }}
           className="absolute top-2.5 right-2.5 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
           style={{

@@ -28,7 +28,7 @@ export default function AdminWarehouses() {
     setLoading(true)
     warehouseService.getAll()
       .then(({ data }) => setWarehouses(Array.isArray(data) ? data : []))
-      .catch(() => {})
+      .catch((err) => { console.error('[AdminWarehouses] load', err) })
       .finally(() => setLoading(false))
   }
 
@@ -142,8 +142,8 @@ export default function AdminWarehouses() {
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0 ml-2">
-                    <button onClick={() => openEdit(w)} className="p-1.5 rounded-lg transition-colors text-sm hover:bg-[var(--hc-surface-2)]" style={{ color: 'var(--hc-muted)' }}>✎</button>
-                    <button onClick={() => handleDelete(w.id, w.nombreBodega)} className="p-1.5 rounded-lg transition-colors text-sm hover:text-red-400 hover:bg-red-500/10" style={{ color: 'var(--hc-muted)' }}>✕</button>
+                    <button type="button" onClick={() => openEdit(w)} className="p-1.5 rounded-lg transition-colors text-sm hover:bg-[var(--hc-surface-2)]" style={{ color: 'var(--hc-muted)' }}>✎</button>
+                    <button type="button" onClick={() => handleDelete(w.id, w.nombreBodega)} className="p-1.5 rounded-lg transition-colors text-sm hover:text-red-400 hover:bg-red-500/10" style={{ color: 'var(--hc-muted)' }}>✕</button>
                   </div>
                 </div>
                 <div className="space-y-1 text-xs" style={{ color: 'var(--hc-muted)' }}>

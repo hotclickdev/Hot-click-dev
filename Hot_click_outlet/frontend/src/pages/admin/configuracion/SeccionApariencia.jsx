@@ -23,7 +23,7 @@ export default function SeccionApariencia() {
       <Block label={t('adminConfig.apThemeTitle')} sublabel={t('adminConfig.apThemeSubtitle')}>
         <div style={{ display: 'flex', gap: '12px' }}>
           {themes.map(th => (
-            <button key={th.id} onClick={() => setTheme(th.id)} className="cfg-btn"
+            <button type="button" key={th.id} onClick={() => setTheme(th.id)} className="cfg-btn"
               style={{ flex: 1, flexDirection: 'column', gap: '8px', padding: '16px', border: `1px solid ${theme === th.id ? 'var(--hc-accent)' : 'var(--hc-border)'}`, background: theme === th.id ? 'var(--hc-glass-bg)' : 'var(--hc-bg)', fontWeight: 400 }}>
               <div style={{ width: '48px', height: '32px', borderRadius: '8px', border: '1px solid var(--hc-border)', overflow: 'hidden', position: 'relative', background: th.bg }}>
                 <div style={{ position: 'absolute', top: '6px', left: '6px', width: '12px', height: '4px', borderRadius: '2px', background: th.accent, opacity: 0.8 }} />
@@ -39,7 +39,7 @@ export default function SeccionApariencia() {
       <Block label={t('adminConfig.apFontTitle')} sublabel={t('adminConfig.apFontSubtitle')}>
         <div style={{ display: 'flex', gap: '8px' }}>
           {sizes.map(s => (
-            <button key={s.id} onClick={() => setFontSize(s.id)} className="cfg-btn"
+            <button type="button" key={s.id} onClick={() => setFontSize(s.id)} className="cfg-btn"
               style={{ flex: 1, justifyContent: 'center', border: `1px solid ${fontSize === s.id ? 'var(--hc-accent)' : 'var(--hc-border)'}`, background: fontSize === s.id ? 'var(--hc-glass-bg)' : 'var(--hc-surface-2)', color: fontSize === s.id ? 'var(--hc-accent)' : 'var(--hc-muted)', fontWeight: fontSize === s.id ? 600 : 400, padding: '8px' }}>
               {t(s.labelKey)}
             </button>

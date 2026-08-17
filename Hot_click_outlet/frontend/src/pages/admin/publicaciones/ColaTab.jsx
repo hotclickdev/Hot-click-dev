@@ -17,7 +17,7 @@ export default function ColaTab({
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
       <div className="flex items-center gap-2 flex-wrap">
         {FILTROS_ESTADO_COLA.map((e) => (
-          <button
+          <button type="button"
             key={e}
             onClick={() => onFiltroEstado(e)}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
@@ -30,13 +30,13 @@ export default function ColaTab({
           </button>
         ))}
         <div className="ml-auto flex items-center gap-2">
-          <button
+          <button type="button"
             onClick={onActualizar}
             className="px-3 py-1 rounded-full text-xs text-[#8e8e9a] hover:text-white border border-white/10 hover:bg-white/5 transition-colors"
           >
             Actualizar
           </button>
-          <button
+          <button type="button"
             onClick={onAgregar}
             className="px-3 py-1 rounded-full text-xs font-medium bg-[#4f7cff]/15 text-[#4f7cff] border border-[#4f7cff]/30 hover:bg-[#4f7cff]/25 transition-colors"
           >

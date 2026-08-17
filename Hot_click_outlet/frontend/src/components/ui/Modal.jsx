@@ -50,7 +50,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }) {
                 <h2 className="text-base font-semibold" style={{ color: 'var(--hc-text)' }}>
                   {title}
                 </h2>
-                <button
+                <button type="button"
                   onClick={onClose}
                   aria-label="Cerrar"
                   className="hc-modal-close rounded-lg p-1.5"

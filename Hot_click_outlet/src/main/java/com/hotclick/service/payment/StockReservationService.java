@@ -8,6 +8,7 @@ import com.hotclick.model.PedidoItem;
 import com.hotclick.model.Producto;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.sse.StockCambioEvent;
+import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -108,7 +109,7 @@ public class StockReservationService {
      */
     public void liberarReservas(Pedido pedido) {
         if (pedido == null) return;
-        pedido.getItems().size(); // force-load
+        Hibernate.initialize(pedido.getItems());
 
         for (PedidoItem item : pedido.getItems()) {
             try {

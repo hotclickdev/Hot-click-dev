@@ -226,7 +226,7 @@ export default function CheckoutSummary({
       </label>
 
       {/* CTA único rojo del checkout — el botón repite el monto (§5.6 / voseo 15.3) */}
-      <button
+      <button type="button"
         onClick={onPagar}
         disabled={!aceptaDatos || estado === 'loading' || estado === 'redirecting' || intentos >= maxIntentos}
         className="hc-btn hc-btn-primary w-full !h-12 text-[15px] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"

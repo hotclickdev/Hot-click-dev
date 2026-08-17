@@ -3,27 +3,17 @@ package com.hotclick.controller.producto;
 import com.hotclick.dto.ProductoRequestDTO;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.exception.RecursoNoEncontradoException;
-import com.hotclick.model.Empresa;
 import com.hotclick.model.Producto;
-import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.service.ProductoService;
-import com.hotclick.service.SupabaseStorageService;
-import com.hotclick.service.TenantService;
 import com.hotclick.service.producto.ProductoAccessGuard;
 import com.hotclick.service.producto.ProductoApprovalService;
 import com.hotclick.service.producto.ProductoBulkOperationsService;
-import com.hotclick.service.producto.ProductoIdempotencyService;
-import com.hotclick.service.producto.ProductoModerationFacade;
-import com.hotclick.service.producto.ProductoRequestSanitizer;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -38,19 +28,15 @@ import static com.hotclick.controller.producto.ProductoControllerSupport.current
 @Component
 public class ProductoWriteHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(ProductoWriteHandler.class);
+    @Autowired private ProductoCreateHandler createHandler;
+    @Autowired private ProductoUpdateHandler updateHandler;
+    @Autowired private ProductoDeleteImagenHandler deleteImagenHandler;
 
     @Autowired private ProductoService    productoService;
-    @Autowired private SupabaseStorageService supabaseStorageService;
     @Autowired private ProductoRepository productoRepository;
     @Autowired private CompanyScope       companyScope;
-    @Autowired private EmpresaRepository  empresaRepository;
-    @Autowired private TenantService      tenantService;
     @Autowired private ProductoAccessGuard productoAccessGuard;
-    @Autowired private ProductoModerationFacade productoModerationFacade;
-    @Autowired private ProductoRequestSanitizer productoRequestSanitizer;
     @Autowired private ProductoApprovalService productoApprovalService;
-    @Autowired private ProductoIdempotencyService productoIdempotencyService;
     @Autowired private ProductoBulkOperationsService productoBulkOperationsService;
 
     public ResponseEntity<ResponseDTO> toggleCarrusel(Long id, Map<String, Object> body) {
@@ -88,40 +74,11 @@ public class ProductoWriteHandler {
     }
 
     public ResponseEntity<ResponseDTO> crearProducto(@Valid ProductoRequestDTO dto, String idempotencyKey) {
-        // Idempotencia: misma clave = mismo tab o doble-clic → 409 en vez de duplicar (#17)
-        if (productoIdempotencyService.isDuplicate(idempotencyKey)) {
-            return ResponseEntity.status(409)
-                .body(ResponseDTO.error("Este producto ya fue publicado. Actualizá la página."));
-        }
-        // Verificación de límite de plan — propaga PlanLimitException → GlobalExceptionHandler (HTTP 403)
-        Long eid = companyScope.getCurrentEmpresaIdOrOwn();
-        if (eid != null) tenantService.verificarLimiteProductos(eid);
-
-        productoRequestSanitizer.restringirCamposSoloAdmin(dto, productoAccessGuard.hasRole("ADMIN"));
-        try {
-            if (!productoModerationFacade.isTextoPermitido(dto))
-                return ResponseEntity.badRequest().body(ResponseDTO.error("El contenido del producto no está permitido en la plataforma"));
-            Empresa empresa = eid != null ? empresaRepository.findById(eid).orElse(null) : null;
-            var producto = productoService.crearProducto(dto, currentUserName(), empresa);
-            productoIdempotencyService.remember(idempotencyKey);
-            var creationResult = productoApprovalService.aplicarReglasPublicacion(producto, empresa);
-            return ResponseEntity.ok(ResponseDTO.success(creationResult.mensaje(), creationResult.producto()));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(productoRequestSanitizer.mensajeAmigable(e)));
-        }
+        return createHandler.crearProducto(dto, idempotencyKey);
     }
 
     public ResponseEntity<ResponseDTO> actualizarProducto(Long id, ProductoRequestDTO dto) {
-        try {
-            productoAccessGuard.assertCanAccessProducto(id);
-            productoRequestSanitizer.restringirCamposSoloAdmin(dto, productoAccessGuard.hasRole("ADMIN"));
-            if (!productoModerationFacade.isTextoPermitido(dto))
-                return ResponseEntity.badRequest().body(ResponseDTO.error("El contenido del producto no está permitido en la plataforma"));
-            var producto = productoService.actualizarProducto(id, dto, currentUserName());
-            return ResponseEntity.ok(ResponseDTO.success("Producto actualizado", producto));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(productoRequestSanitizer.mensajeAmigable(e)));
-        }
+        return updateHandler.actualizarProducto(id, dto);
     }
 
     public ResponseEntity<ResponseDTO> archivarSinStock() {
@@ -152,30 +109,11 @@ public class ProductoWriteHandler {
     }
 
     public ResponseEntity<ResponseDTO> subirImagen(MultipartFile file) {
-        if (file == null || file.isEmpty())
-            return ResponseEntity.badRequest().body(ResponseDTO.error("No se recibió ningún archivo"));
-        try {
-            var mod = productoModerationFacade.moderarImagen(file);
-            if (!mod.safe())
-                return ResponseEntity.badRequest().body(ResponseDTO.error("Imagen rechazada: " + mod.reason()));
-            String url = supabaseStorageService.subirImagen(file);
-            return ResponseEntity.ok(ResponseDTO.success("Imagen subida", Map.of("url", url)));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
-        } catch (Exception e) {
-            log.error("[productos/imagen] Error al subir: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().body(ResponseDTO.error("Error al subir imagen: " + e.getMessage()));
-        }
+        return deleteImagenHandler.subirImagen(file);
     }
 
     public ResponseEntity<ResponseDTO> eliminarProducto(Long id) {
-        try {
-            productoAccessGuard.assertCanAccessProducto(id);
-            productoService.eliminarProducto(id);
-            return ResponseEntity.ok(ResponseDTO.success("Producto eliminado", null));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
-        }
+        return deleteImagenHandler.eliminarProducto(id);
     }
 
     /** Aplicar/quitar oferta a un producto individual */

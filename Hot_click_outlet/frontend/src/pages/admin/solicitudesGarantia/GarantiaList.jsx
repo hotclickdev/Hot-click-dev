@@ -30,7 +30,7 @@ export default function GarantiaList({ solicitudes, filtro, isLoading, onOpenDet
 
       <div className="flex flex-wrap gap-2">
         {['TODOS', ...ESTADOS].map(e => (
-          <button key={e}
+          <button type="button" key={e}
             onClick={() => onSetFiltro(e)}
             className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
             style={{

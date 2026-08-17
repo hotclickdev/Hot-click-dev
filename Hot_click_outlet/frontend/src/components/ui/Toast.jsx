@@ -66,7 +66,7 @@ export function ToastProvider({ children }) {
                 {ICON[t.type] || ICON.info}
               </span>
               <p className="text-sm leading-snug flex-1">{t.message}</p>
-              <button
+              <button type="button"
                 onClick={() => remove(t.id)}
                 aria-label="Cerrar notificación"
                 className="shrink-0 flex items-center justify-center rounded opacity-60 hover:opacity-100 transition-opacity"

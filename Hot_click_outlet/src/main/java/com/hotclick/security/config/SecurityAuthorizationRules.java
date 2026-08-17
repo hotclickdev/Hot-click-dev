@@ -1,5 +1,6 @@
 package com.hotclick.security.config;
 
+import com.hotclick.utils.Constants;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
@@ -12,12 +13,14 @@ import static org.springframework.http.HttpMethod.*;
  */
 final class SecurityAuthorizationRules {
 
+    private static final String API_PRODUCTO_POR_ID = "/api/productos/*";
+
     private SecurityAuthorizationRules() {}
 
     static Customizer<AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry> configure() {
         return auth -> auth
             // Actuator — locked to ADMIN only
-            .requestMatchers("/actuator/**").hasRole("ADMIN")
+            .requestMatchers("/actuator/**").hasRole(Constants.ROL_ADMIN)
             // Auth: 2FA verify y envío de EMAIL OTP durante login son públicos (validan tempToken internamente)
             .requestMatchers(POST, "/api/auth/2fa/verify").permitAll()
             .requestMatchers(POST, "/api/auth/2fa/email/send").permitAll()
@@ -59,14 +62,14 @@ final class SecurityAuthorizationRules {
             .requestMatchers(GET, "/api/productos/marca/*").permitAll()
             .requestMatchers(GET, "/api/productos/*/recomendaciones").permitAll()
             .requestMatchers(GET, "/api/productos/*/imagenes").permitAll()
-            .requestMatchers(GET, "/api/productos/*").permitAll()
+            .requestMatchers(GET, API_PRODUCTO_POR_ID).permitAll()
             // Stock en tiempo real (SSE) — público; el tenant se infiere del producto, no del caller
             .requestMatchers(GET, "/api/marketplace/productos/*/stock-stream").permitAll()
             // Gestión de productos — roles de empresa + API keys con scope write:productos
-            .requestMatchers(POST,   "/api/productos").hasAnyRole("ADMIN", "EMPRENDEDOR")
-            .requestMatchers(PUT,    "/api/productos/*").hasAnyRole("ADMIN", "EMPRENDEDOR")
-            .requestMatchers(DELETE, "/api/productos/*").hasAnyRole("ADMIN", "EMPRENDEDOR")
-            .requestMatchers(POST,   "/api/productos/**").hasAnyRole("ADMIN", "EMPRENDEDOR")
+            .requestMatchers(POST,   "/api/productos").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(PUT,    API_PRODUCTO_POR_ID).hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(DELETE, API_PRODUCTO_POR_ID).hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(POST,   "/api/productos/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(GET, "/api/categorias").permitAll()
             .requestMatchers(GET, "/api/categorias/**").permitAll()
             .requestMatchers(GET, "/api/convenios/publicos").permitAll()
@@ -98,22 +101,22 @@ final class SecurityAuthorizationRules {
             // Servicios HOT — fotos y solicitudes son públicas; gestión requiere ADMIN
             .requestMatchers(POST, "/api/servicios/fotos").permitAll()
             .requestMatchers(POST, "/api/servicios").permitAll()
-            .requestMatchers(GET,    "/api/servicios").hasRole("ADMIN")
-            .requestMatchers(PUT,    "/api/servicios/*/estado").hasRole("ADMIN")
-            .requestMatchers(DELETE, "/api/servicios/*").hasRole("ADMIN")
+            .requestMatchers(GET,    "/api/servicios").hasRole(Constants.ROL_ADMIN)
+            .requestMatchers(PUT,    "/api/servicios/*/estado").hasRole(Constants.ROL_ADMIN)
+            .requestMatchers(DELETE, "/api/servicios/*").hasRole(Constants.ROL_ADMIN)
             // Garantías — mis-garantias y mis-solicitudes: auth; admin: ADMIN
             .requestMatchers(GET, "/api/garantias/solicitudes/mis-solicitudes").authenticated()
-            .requestMatchers(GET, "/api/garantias/solicitudes").hasAnyRole("ADMIN", "EMPRENDEDOR")
-            .requestMatchers(PUT, "/api/garantias/solicitudes/*/estado").hasAnyRole("ADMIN", "EMPRENDEDOR")
+            .requestMatchers(GET, "/api/garantias/solicitudes").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(PUT, "/api/garantias/solicitudes/*/estado").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             // Testimonios — público: GET aprobados; auth: crear + subir imagen; admin: listar todos + moderar
             .requestMatchers(GET, "/api/testimonios/publicos").permitAll()
             .requestMatchers(GET, "/api/testimonios/producto/*/rating").permitAll()
             // Blog — público: listado y detalle de publicaciones publicadas
             .requestMatchers(GET, "/api/blog/publico").permitAll()
             .requestMatchers(GET, "/api/blog/publico/*").permitAll()
-            .requestMatchers(GET, "/api/testimonios/admin").hasRole("ADMIN")
-            .requestMatchers(PUT, "/api/testimonios/*/aprobar").hasRole("ADMIN")
-            .requestMatchers(PUT, "/api/testimonios/*/rechazar").hasRole("ADMIN")
+            .requestMatchers(GET, "/api/testimonios/admin").hasRole(Constants.ROL_ADMIN)
+            .requestMatchers(PUT, "/api/testimonios/*/aprobar").hasRole(Constants.ROL_ADMIN)
+            .requestMatchers(PUT, "/api/testimonios/*/rechazar").hasRole(Constants.ROL_ADMIN)
             // Carrito abandonado — público (incluye DELETE; el controller valida sessionId)
             .requestMatchers(POST, "/api/cart/abandoned").permitAll()
             .requestMatchers(GET,  "/api/cart/abandoned/recover/**").permitAll()
@@ -129,41 +132,41 @@ final class SecurityAuthorizationRules {
             .requestMatchers(GET, "/api/public/**").permitAll()
             .requestMatchers(GET, "/sitemap.xml").permitAll()
             // Perfil de empresa — solo lectura para todos los roles de la empresa; escritura solo EMPRENDEDOR
-            .requestMatchers(GET,  "/api/empresa/perfil").hasAnyRole("ADMIN", "EMPRENDEDOR")
-            .requestMatchers(PUT,  "/api/empresa/perfil").hasAnyRole("EMPRENDEDOR", "ADMIN")
-            .requestMatchers(PUT,  "/api/empresa/perfil/visibilidad").hasAnyRole("EMPRENDEDOR", "ADMIN")
-            .requestMatchers(PUT,  "/api/empresa/perfil/fiscal").hasAnyRole("EMPRENDEDOR", "ADMIN")
-            .requestMatchers(POST, "/api/empresa/perfil/cert-p12").hasAnyRole("EMPRENDEDOR", "ADMIN")
-            .requestMatchers(POST, "/api/empresa/perfil/logo").hasAnyRole("EMPRENDEDOR", "ADMIN")
+            .requestMatchers(GET,  "/api/empresa/perfil").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(PUT,  "/api/empresa/perfil").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
+            .requestMatchers(PUT,  "/api/empresa/perfil/visibilidad").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
+            .requestMatchers(PUT,  "/api/empresa/perfil/fiscal").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
+            .requestMatchers(POST, "/api/empresa/perfil/cert-p12").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
+            .requestMatchers(POST, "/api/empresa/perfil/logo").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
             // Gestión de equipo — accesible para EMPRENDEDOR de la misma empresa
-            .requestMatchers(GET,    "/api/empresa/equipo").hasAnyRole("ADMIN", "EMPRENDEDOR")
-            .requestMatchers(POST,   "/api/empresa/equipo").hasRole("EMPRENDEDOR")
-            .requestMatchers(PUT,    "/api/empresa/equipo/*/rol").hasRole("EMPRENDEDOR")
-            .requestMatchers(DELETE, "/api/empresa/equipo/*").hasRole("EMPRENDEDOR")
+            .requestMatchers(GET,    "/api/empresa/equipo").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(POST,   "/api/empresa/equipo").hasRole(Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(PUT,    "/api/empresa/equipo/*/rol").hasRole(Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(DELETE, "/api/empresa/equipo/*").hasRole(Constants.ROL_EMPRENDEDOR)
             // Security Center — ADMIN only
-            .requestMatchers("/api/security/**").hasRole("ADMIN")
+            .requestMatchers("/api/security/**").hasRole(Constants.ROL_ADMIN)
             // Observabilidad — ADMIN only
-            .requestMatchers("/api/admin/observabilidad/**").hasRole("ADMIN")
+            .requestMatchers("/api/admin/observabilidad/**").hasRole(Constants.ROL_ADMIN)
             // Admin-only routes — ADMIN only (superadmin exclusivos)
-            .requestMatchers("/api/admin/empresas/**").hasRole("ADMIN")
+            .requestMatchers("/api/admin/empresas/**").hasRole(Constants.ROL_ADMIN)
             .requestMatchers("/api/auth/seleccionar-empresa").permitAll()
             .requestMatchers("/api/auth/mis-negocios").authenticated()
             .requestMatchers("/api/auth/cambiar-negocio").authenticated()
             .requestMatchers("/api/auth/nuevo-negocio").authenticated()
             // Dashboard y KPIs — ADMIN, EMPRENDEDOR
-            .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "EMPRENDEDOR")
+            .requestMatchers("/api/admin/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             // Pedidos admin — ADMIN, EMPRENDEDOR
             // Pedidos — roles de empresa + API keys con scope read:pedidos o write:pedidos
-            .requestMatchers(GET,    "/api/pedidos").hasAnyRole("ADMIN", "EMPRENDEDOR")
-            .requestMatchers(GET,    "/api/pedidos/pendientes").hasAnyRole("ADMIN", "EMPRENDEDOR")
-            .requestMatchers(POST,   "/api/pedidos/manual").hasAnyRole("ADMIN", "EMPRENDEDOR")
-            .requestMatchers(PUT,    "/api/pedidos/*/estado").hasAnyRole("ADMIN", "EMPRENDEDOR")
-            .requestMatchers(PUT,    "/api/pedidos/*/guia").hasAnyRole("ADMIN", "EMPRENDEDOR")
-            .requestMatchers(PUT,    "/api/pedidos/*/envio").hasAnyRole("ADMIN", "EMPRENDEDOR")
-            .requestMatchers(DELETE, "/api/pedidos/*").hasAnyRole("ADMIN", "EMPRENDEDOR")
-            .requestMatchers(POST,   "/api/pedidos/*/notificar").hasAnyRole("ADMIN", "EMPRENDEDOR")
+            .requestMatchers(GET,    "/api/pedidos").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(GET,    "/api/pedidos/pendientes").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(POST,   "/api/pedidos/manual").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(PUT,    "/api/pedidos/*/estado").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(PUT,    "/api/pedidos/*/guia").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(PUT,    "/api/pedidos/*/envio").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(DELETE, "/api/pedidos/*").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(POST,   "/api/pedidos/*/notificar").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             // Lista de usuarios — solo admin (perfil propio y actualización siguen autenticados)
-            .requestMatchers(GET, "/api/usuarios").hasRole("ADMIN")
+            .requestMatchers(GET, "/api/usuarios").hasRole(Constants.ROL_ADMIN)
             // Todas las demás rutas /api/** requieren autenticación
             .requestMatchers("/api/**").authenticated()
             // Rutas del SPA React (frontend)

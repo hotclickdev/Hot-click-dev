@@ -153,7 +153,7 @@ export default function CartPage() {
               {items.length} {items.length === 1 ? t('cart.product') : t('cart.products')}
             </p>
           </div>
-          <button
+          <button type="button"
             onClick={vaciarCarrito}
             className="text-sm text-[#8e8e9a] hover:text-red-400 transition-colors"
           >

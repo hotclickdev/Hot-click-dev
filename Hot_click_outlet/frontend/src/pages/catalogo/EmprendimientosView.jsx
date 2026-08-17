@@ -15,7 +15,7 @@ export default function EmprendimientosView({ products, convenios, loading, onBa
           <nav aria-label="Ruta de navegación" className="flex items-center gap-2 text-xs mb-5">
             <Link to="/" className="hover:underline" style={{ color: 'var(--hc-muted)' }}>Inicio</Link>
             <span aria-hidden="true" style={{ color: 'var(--hc-border-strong)' }}>/</span>
-            <button onClick={onBack} className="hover:underline" style={{ color: 'var(--hc-muted)' }}>Productos</button>
+            <button type="button" onClick={onBack} className="hover:underline" style={{ color: 'var(--hc-muted)' }}>Productos</button>
             <span aria-hidden="true" style={{ color: 'var(--hc-border-strong)' }}>/</span>
             <span className="font-semibold" style={{ color: '#10b981' }}>Emprendimientos</span>
           </nav>

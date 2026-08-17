@@ -58,14 +58,14 @@ export default function ComprasOrdenList({
             </div>
             <div className="flex gap-2 shrink-0" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
               {(orden.estado === 'PENDIENTE' || orden.estado === 'PARCIAL') && (
-                <button onClick={() => onRecibir(orden)}
+                <button type="button" onClick={() => onRecibir(orden)}
                   className="px-3 py-1.5 text-xs rounded-lg font-medium transition-opacity hover:opacity-80"
                   style={{ backgroundColor: 'rgba(52,211,153,0.15)', color: '#34d399' }}>
                   Recibir
                 </button>
               )}
               {orden.estado === 'PENDIENTE' && (
-                <button onClick={() => onCancelar(orden.id)}
+                <button type="button" onClick={() => onCancelar(orden.id)}
                   className="px-3 py-1.5 text-xs rounded-lg transition-opacity hover:opacity-80"
                   style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#f87171' }}>
                   Cancelar

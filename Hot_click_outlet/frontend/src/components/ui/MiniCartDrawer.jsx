@@ -101,7 +101,7 @@ export default function MiniCartDrawer() {
                   {items.length} {t('miniCart.item', { count: items.length })}
                 </p>
               </div>
-              <button
+              <button type="button"
                 onClick={() => setCartDrawerOpen(false)}
                 className="p-2 rounded-xl transition-colors hover:bg-white/8"
                 style={{ color: 'var(--hc-muted)' }}
@@ -170,7 +170,7 @@ export default function MiniCartDrawer() {
                           {/* Qty controls */}
                           <div className="flex items-center gap-2 mt-2">
                             <div className="flex items-center rounded-lg border overflow-hidden" style={{ borderColor: 'var(--hc-border)' }}>
-                              <button
+                              <button type="button"
                                 onClick={() => updateQuantity(item.id, item.cantidad - 1)}
                                 className="w-7 h-7 flex items-center justify-center text-xs transition-colors"
                                 style={{ color: 'var(--hc-muted)' }}
@@ -178,14 +178,14 @@ export default function MiniCartDrawer() {
                               <span className="w-7 text-center text-xs font-bold" style={{ color: 'var(--hc-text)' }}>
                                 {item.cantidad}
                               </span>
-                              <button
+                              <button type="button"
                                 onClick={() => updateQuantity(item.id, item.cantidad + 1)}
                                 disabled={item.cantidad >= (item.stock ?? 99)}
                                 className="w-7 h-7 flex items-center justify-center text-xs transition-colors disabled:opacity-25"
                                 style={{ color: 'var(--hc-muted)' }}
                               >+</button>
                             </div>
-                            <button
+                            <button type="button"
                               onClick={() => removeItem(item.id)}
                               className="text-xs transition-colors hover:text-red-400"
                               style={{ color: 'var(--hc-muted)' }}
@@ -215,7 +215,7 @@ export default function MiniCartDrawer() {
                     <span className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>{formatPrice(total())}</span>
                   </div>
 
-                  <button
+                  <button type="button"
                     onClick={handleCheckout}
                     className="hc-btn hc-btn-primary hc-btn-lg w-full"
                   >

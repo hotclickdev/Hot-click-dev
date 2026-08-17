@@ -29,7 +29,7 @@ export default function AdminSecurityCenter() {
   useEffect(() => {
     securityService.getDashboard('24h')
       .then(({ data }) => setAlertCount(data?.summary?.activeAlerts ?? 0))
-      .catch(() => {})
+      .catch((err) => { console.error('[AdminSecurityCenter] dashboard', err) })
   }, [])
 
   return (

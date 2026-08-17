@@ -55,7 +55,7 @@ export default function Navbar() {
       >
         <nav className={`max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-4 hc-nav-inner ${scrolled ? 'h-12' : 'h-14'}`}>
           <div className="flex items-center gap-1">
-            <button
+            <button type="button"
               className="md:hidden p-2 rounded-lg transition-colors"
               style={{ color: 'var(--hc-muted)' }}
               onClick={() => setMenuOpen(!menuOpen)}

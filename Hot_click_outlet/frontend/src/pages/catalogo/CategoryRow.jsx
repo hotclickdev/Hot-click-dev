@@ -17,7 +17,7 @@ export default function CategoryRow({ catName, catId, products, onVerMas, onQuic
             {products.length}
           </span>
         </div>
-        <button
+        <button type="button"
           onClick={() => onVerMas(catId)}
           className="flex items-center gap-1 text-xs font-semibold transition-opacity hover:opacity-70"
           style={{ color: 'var(--hc-accent)' }}
@@ -45,7 +45,7 @@ export default function CategoryRow({ catName, catId, products, onVerMas, onQuic
 
         {/* Tarjeta "ver todos" — solo desktop, misma estructura que ProductCard */}
         {hasMore && (
-          <button
+          <button type="button"
             onClick={() => onVerMas(catId)}
             className="hidden sm:flex flex-col rounded-2xl overflow-hidden transition-all hover:opacity-80 hover:scale-[1.01] text-left"
             style={{

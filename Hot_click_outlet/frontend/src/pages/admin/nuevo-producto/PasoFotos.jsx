@@ -20,9 +20,9 @@ export default function PasoFotos({
             <polyline points="14 2 14 8 20 8"/>
           </svg>
           <span style={{ color: 'var(--hc-accent)' }} className="flex-1 text-xs">Tenés un borrador guardado.</span>
-          <button onClick={onCargarBorrador} className="text-xs font-semibold px-3 py-1 rounded-lg"
+          <button type="button" onClick={onCargarBorrador} className="text-xs font-semibold px-3 py-1 rounded-lg"
             style={{ background: 'var(--hc-accent)', color: '#fff' }}>Cargar</button>
-          <button onClick={onLimpiarBorrador} className="text-xs px-2 py-1 rounded-lg" style={{ color: 'var(--hc-muted)' }}>Descartar</button>
+          <button type="button" onClick={onLimpiarBorrador} className="text-xs px-2 py-1 rounded-lg" style={{ color: 'var(--hc-muted)' }}>Descartar</button>
         </div>
       )}
       <div className="flex items-start gap-3 px-4 py-3 rounded-xl"

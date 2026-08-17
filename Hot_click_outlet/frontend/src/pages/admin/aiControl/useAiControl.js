@@ -46,7 +46,9 @@ export function useAiControl() {
   const toggleTodos = useCallback(async (flag, activar) => {
     if (!data?.empresas) return
     for (const e of data.empresas) {
-      await flagService.set(e.id, flag, activar).catch(() => {})
+      await flagService.set(e.id, flag, activar).catch((err) => {
+        console.error('[useAiControl] toggleTodos', err)
+      })
     }
     await cargar(periodoAnio, periodoMes)
   }, [data?.empresas, cargar, periodoAnio, periodoMes])

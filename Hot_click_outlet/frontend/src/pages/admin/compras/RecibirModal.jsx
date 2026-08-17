@@ -38,7 +38,7 @@ export default function RecibirModal({ orden, onClose, onDone }) {
           <h2 className="font-bold" style={{ color: 'var(--hc-text)' }}>
             Recibir mercancía — {orden.numeroOrden}
           </h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
+          <button type="button" onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
             style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>✕</button>
         </div>
 
@@ -79,12 +79,12 @@ export default function RecibirModal({ orden, onClose, onDone }) {
         </p>
 
         <div className="flex gap-3">
-          <button onClick={onClose}
+          <button type="button" onClick={onClose}
             className="flex-1 py-2.5 rounded-xl text-sm font-medium"
             style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>
             Cancelar
           </button>
-          <button onClick={handleConfirmar} disabled={saving}
+          <button type="button" onClick={handleConfirmar} disabled={saving}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-80 disabled:opacity-40"
             style={{ backgroundColor: '#34d399', color: '#000' }}>
             {saving ? 'Registrando…' : 'Confirmar recepción'}

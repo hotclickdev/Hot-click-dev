@@ -38,7 +38,7 @@ function EmailForm({ email, onChange, onSave }) {
             color: 'var(--hc-text)',
           }}
         />
-        <button
+        <button type="button"
           onClick={onSave}
           className="px-4 h-9 rounded-xl text-xs font-semibold text-white transition-all hover:opacity-90 active:scale-95 shrink-0"
           style={{ background: 'var(--hc-accent)' }}
@@ -68,7 +68,7 @@ export default function AbandonedEmailPrompt({ email, emailSaved, onChangeEmail,
           boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
         }}
       >
-        <button
+        <button type="button"
           onClick={onDismiss}
           className="absolute top-3 right-3 w-6 h-6 flex items-center justify-center rounded-lg text-[#8e8e9a] hover:text-white transition-colors hover:bg-white/8"
           aria-label="Cerrar"

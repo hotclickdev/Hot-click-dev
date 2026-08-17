@@ -41,7 +41,7 @@ export default function EmprendimientoCloud({ onRegistrar }) {
             </div>
           ))}
         </div>
-        <button onClick={onRegistrar}
+        <button type="button" onClick={onRegistrar}
           className="group inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl font-bold text-sm text-white w-full transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
           style={{ background: EMPR.color, boxShadow: `0 0 32px ${EMPR.ring}` }}>
           <span>Registrá tu negocio</span>

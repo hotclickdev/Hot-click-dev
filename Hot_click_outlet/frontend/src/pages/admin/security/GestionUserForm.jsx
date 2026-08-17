@@ -32,7 +32,7 @@ export default function GestionUserForm({
 
             <div className="flex items-center justify-between">
               <p className="font-semibold" style={{ color: 'var(--hc-text)' }}>Editar usuario</p>
-              <button onClick={onCloseEdit} style={{ color: 'var(--hc-muted)' }}>
+              <button type="button" onClick={onCloseEdit} style={{ color: 'var(--hc-muted)' }}>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -54,7 +54,7 @@ export default function GestionUserForm({
               <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>Rol</p>
               <div className="grid grid-cols-3 gap-2">
                 {ROLES_ADMIN.map(({ value, label }) => (
-                  <button key={value} onClick={() => onEditRol(value)}
+                  <button type="button" key={value} onClick={() => onEditRol(value)}
                     className="px-2 py-2 rounded-xl text-xs font-medium border transition-all"
                     style={{
                       backgroundColor: editRol === value ? 'rgba(79,124,255,0.15)' : 'transparent',
@@ -72,7 +72,7 @@ export default function GestionUserForm({
               <div className="grid grid-cols-2 gap-2">
                 {[['ACTIVO', '#4ade80', 'rgba(34,197,94,0.15)', 'rgba(34,197,94,0.4)'],
                   ['INACTIVO', '#f87171', 'rgba(239,68,68,0.15)', 'rgba(239,68,68,0.4)']].map(([val, color, bg, border]) => (
-                  <button key={val} onClick={() => onEditEstado(val)}
+                  <button type="button" key={val} onClick={() => onEditEstado(val)}
                     className="px-2 py-2 rounded-xl text-xs font-medium border transition-all"
                     style={{
                       backgroundColor: editEstado === val ? bg : 'transparent',
@@ -86,12 +86,12 @@ export default function GestionUserForm({
             </div>
 
             <div className="flex gap-3 pt-1">
-              <button onClick={onCloseEdit}
+              <button type="button" onClick={onCloseEdit}
                 className="flex-1 h-10 rounded-xl text-sm transition-colors"
                 style={{ backgroundColor: 'var(--hc-border)', color: 'var(--hc-muted)' }}>
                 Cancelar
               </button>
-              <button onClick={onSave} disabled={saving}
+              <button type="button" onClick={onSave} disabled={saving}
                 className="flex-1 h-10 rounded-xl text-sm font-semibold disabled:opacity-50"
                 style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
                 {saving ? 'Guardando...' : 'Guardar'}
@@ -120,12 +120,12 @@ export default function GestionUserForm({
               {actionUser.nombre ?? actionUser.correo}
             </p>
             <div className="flex gap-3">
-              <button onClick={onCloseAction}
+              <button type="button" onClick={onCloseAction}
                 className="flex-1 h-9 rounded-xl text-sm"
                 style={{ backgroundColor: 'var(--hc-border)', color: 'var(--hc-muted)' }}>
                 Cancelar
               </button>
-              <button onClick={onConfirmAction} disabled={actionLoading}
+              <button type="button" onClick={onConfirmAction} disabled={actionLoading}
                 className="flex-1 h-9 rounded-xl text-sm font-semibold disabled:opacity-50"
                 style={{
                   backgroundColor: actionType === 'block' || actionType === 'delete' ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)',

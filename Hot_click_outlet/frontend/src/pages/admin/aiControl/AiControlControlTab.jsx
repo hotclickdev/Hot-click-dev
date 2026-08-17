@@ -14,12 +14,12 @@ export default function AiControlControlTab({ empresas, toggling, onToggleFlag, 
             <p className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>Widget de búsqueda en el storefront</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => onToggleTodos('chat_publico', true)}
+            <button type="button" onClick={() => onToggleTodos('chat_publico', true)}
               className="text-xs px-2 py-1 rounded-lg hover:opacity-80"
               style={{ backgroundColor: 'rgba(52,211,153,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.3)' }}>
               Activar todos
             </button>
-            <button onClick={() => onToggleTodos('chat_publico', false)}
+            <button type="button" onClick={() => onToggleTodos('chat_publico', false)}
               className="text-xs px-2 py-1 rounded-lg hover:opacity-80"
               style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}>
               Desactivar todos
@@ -36,12 +36,12 @@ export default function AiControlControlTab({ empresas, toggling, onToggleFlag, 
             <p className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>Chat AI en panel admin del emprendedor</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => onToggleTodos('copilot_emprendedor', true)}
+            <button type="button" onClick={() => onToggleTodos('copilot_emprendedor', true)}
               className="text-xs px-2 py-1 rounded-lg hover:opacity-80"
               style={{ backgroundColor: 'rgba(52,211,153,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.3)' }}>
               Activar todos
             </button>
-            <button onClick={() => onToggleTodos('copilot_emprendedor', false)}
+            <button type="button" onClick={() => onToggleTodos('copilot_emprendedor', false)}
               className="text-xs px-2 py-1 rounded-lg hover:opacity-80"
               style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}>
               Desactivar todos

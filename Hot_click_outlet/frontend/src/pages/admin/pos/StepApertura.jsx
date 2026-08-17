@@ -26,7 +26,7 @@ export default function StepApertura({ onAbrir, loading }) {
           <ConteoEfectivo label="Efectivo en caja al inicio" onTotal={setMonto} />
         </div>
 
-        <button
+        <button type="button"
           onClick={() => onAbrir(monto)}
           disabled={loading}
           className="w-full py-4 rounded-2xl font-black text-base transition-all hover:brightness-110 disabled:opacity-40"

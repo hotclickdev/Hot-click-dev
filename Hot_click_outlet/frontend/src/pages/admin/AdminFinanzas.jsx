@@ -149,7 +149,7 @@ export default function AdminFinanzas() {
             />
           )}
           {tab === 'egresos' && (
-            <button onClick={() => setGastoModal(EMPTY_GASTO)}
+            <button type="button" onClick={() => setGastoModal(EMPTY_GASTO)}
               className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
               style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
               + Nuevo gasto
@@ -159,7 +159,7 @@ export default function AdminFinanzas() {
 
         <div className="flex gap-1 bg-white/3 border border-white/8 rounded-xl p-1 w-fit">
           {[['ingresos', 'Ingresos'], ['egresos', 'Egresos'], ['dashboard', 'Dashboard']].map(([k, l]) => (
-            <button key={k} onClick={() => {
+            <button type="button" key={k} onClick={() => {
               setTab(k)
               if (k === 'egresos' || k === 'dashboard') setLoadingG(true)
             }}
@@ -171,7 +171,7 @@ export default function AdminFinanzas() {
 
         <div className="flex flex-wrap gap-2">
           {QUICK_DAYS.map((days) => (
-            <button key={days} onClick={() => applyQuick(days)}
+            <button type="button" key={days} onClick={() => applyQuick(days)}
               className="px-3 py-1.5 rounded-lg text-sm transition-all"
               style={{
                 backgroundColor: quick === days ? 'var(--hc-accent)' : 'color-mix(in srgb,var(--hc-text) 5%,transparent)',

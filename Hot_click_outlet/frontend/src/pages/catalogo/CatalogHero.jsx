@@ -17,7 +17,7 @@ export default function CatalogHero({ activeCatName, filteredCount, onClearCateg
           <nav aria-label="Ruta de navegación" className="flex items-center gap-2 text-xs mb-4">
             <Link to="/" className="hover:underline" style={{ color: 'var(--hc-muted)' }}>Inicio</Link>
             <span aria-hidden="true" style={{ color: 'var(--hc-border-strong)' }}>/</span>
-            <button onClick={onClearCategory} className="hover:underline" style={{ color: 'var(--hc-muted)' }}>Productos</button>
+            <button type="button" onClick={onClearCategory} className="hover:underline" style={{ color: 'var(--hc-muted)' }}>Productos</button>
             <span aria-hidden="true" style={{ color: 'var(--hc-border-strong)' }}>/</span>
             <span className="font-semibold" style={{ color: 'var(--hc-text-2)' }}>{activeCatName}</span>
           </nav>

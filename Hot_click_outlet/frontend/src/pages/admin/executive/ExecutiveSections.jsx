@@ -112,7 +112,7 @@ export function ExecutiveAiSummary({ aiText, aiLoading, guardado, onGuardar }) {
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-[#4f7cff]">🤖 Resumen ejecutivo AI</p>
         {aiText && !aiLoading && (
-          <button onClick={onGuardar}
+          <button type="button" onClick={onGuardar}
             className="text-xs px-3 py-1 rounded-lg hover:opacity-80"
             style={{ backgroundColor: guardado ? 'rgba(52,211,153,0.15)' : 'rgba(23,71,168,0.15)',
               color: guardado ? '#34d399' : 'var(--hc-accent)', border: '1px solid currentColor' }}>

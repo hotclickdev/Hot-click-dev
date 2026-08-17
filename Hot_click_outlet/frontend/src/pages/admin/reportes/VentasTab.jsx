@@ -105,10 +105,10 @@ export default function VentasTab({
             <div className="px-4 py-3 flex items-center justify-between text-xs" style={{ borderTop: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
               <span>{filtered.length} resultados</span>
               <div className="flex items-center gap-2">
-                <button onClick={() => onTablePage(p => Math.max(0, p-1))} disabled={tablePage === 0}
+                <button type="button" onClick={() => onTablePage(p => Math.max(0, p-1))} disabled={tablePage === 0}
                   className="px-2 py-1 rounded-lg disabled:opacity-30" style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>←</button>
                 <span>{tablePage + 1} / {totalPages}</span>
-                <button onClick={() => onTablePage(p => Math.min(totalPages-1, p+1))} disabled={tablePage >= totalPages-1}
+                <button type="button" onClick={() => onTablePage(p => Math.min(totalPages-1, p+1))} disabled={tablePage >= totalPages-1}
                   className="px-2 py-1 rounded-lg disabled:opacity-30" style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>→</button>
               </div>
             </div>

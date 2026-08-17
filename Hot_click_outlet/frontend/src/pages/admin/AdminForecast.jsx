@@ -100,7 +100,7 @@ export default function AdminForecast() {
             Pronóstico semanal con Holt-Winters · Actualización automática diaria a las 4:30 AM
           </p>
         </div>
-        <button onClick={generar} disabled={generando || cargando}
+        <button type="button" onClick={generar} disabled={generando || cargando}
           className="px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 hover:opacity-80"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
           {generando ? 'Calculando…' : '▶ Generar ahora'}
@@ -123,7 +123,7 @@ export default function AdminForecast() {
           <div className="text-4xl">📈</div>
           <p className="font-medium">Sin datos suficientes para el pronóstico</p>
           <p className="text-sm">Necesitas al menos 4 semanas de historial de ventas para generar el pronóstico.</p>
-          <button onClick={generar}
+          <button type="button" onClick={generar}
             className="px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-80"
             style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
             Intentar generar
@@ -161,7 +161,7 @@ export default function AdminForecast() {
               </div>
               <div className="flex gap-1 p-1 rounded-xl" style={{ backgroundColor: 'var(--hc-bg)' }}>
                 {['ingresos', 'unidades'].map(t => (
-                  <button key={t} onClick={() => setTab(t)}
+                  <button type="button" key={t} onClick={() => setTab(t)}
                     className="px-3 py-1.5 rounded-lg text-xs font-medium"
                     style={{
                       backgroundColor: tab === t ? 'var(--hc-surface)' : 'transparent',

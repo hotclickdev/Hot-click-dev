@@ -145,7 +145,7 @@ export default function GarantiaCard({ g, onReportado }) {
 
       {activa && !enviado && (
         <div className="px-4 pb-4">
-          <button
+          <button type="button"
             onClick={() => setAbierto(v => !v)}
             className="w-full py-2.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center justify-center gap-2"
             style={{

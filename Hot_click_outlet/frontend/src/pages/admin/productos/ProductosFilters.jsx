@@ -55,7 +55,7 @@ function FiltrosMovil({
       </div>
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
         {hasFilters && (
-          <button onClick={onClear} className="shrink-0 px-3 py-1.5 rounded-full text-xs inline-flex items-center gap-1" style={{ border: '1px solid rgba(220,38,38,0.3)', color: '#a8291f' }}>
+          <button type="button" onClick={onClear} className="shrink-0 px-3 py-1.5 rounded-full text-xs inline-flex items-center gap-1" style={{ border: '1px solid rgba(220,38,38,0.3)', color: '#a8291f' }}>
             <XIcon /> Limpiar
           </button>
         )}
@@ -73,7 +73,7 @@ function FiltrosMovil({
           ))}
         </select>
         {[['', 'Condición'], ...OPCIONES_CONDICION].map(([val, lbl]) => (
-          <button key={val} onClick={() => onFilterCond(val)}
+          <button type="button" key={val} onClick={() => onFilterCond(val)}
             className="shrink-0 px-3 py-1.5 rounded-full text-xs transition-all"
             style={estiloChipActivo(filterCond === val)}>{lbl}</button>
         ))}
@@ -92,7 +92,7 @@ function FiltrosAside({
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>Filtros</span>
           {hasFilters && (
-            <button onClick={onClear} className="text-[10px] hover:underline" style={{ color: 'var(--hc-accent)' }}>Limpiar</button>
+            <button type="button" onClick={onClear} className="text-[10px] hover:underline" style={{ color: 'var(--hc-accent)' }}>Limpiar</button>
           )}
         </div>
 
@@ -115,7 +115,7 @@ function FiltrosAside({
           <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Condición</label>
           <div className="space-y-1">
             {[['', 'Todas'], ...OPCIONES_CONDICION].map(([val, lbl]) => (
-              <button
+              <button type="button"
                 key={val}
                 onClick={() => onFilterCond(val)}
                 className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all hover:bg-[var(--hc-surface-2)]"
@@ -131,7 +131,7 @@ function FiltrosAside({
           <label className="text-xs" style={{ color: 'var(--hc-muted)' }}>Stock</label>
           <div className="space-y-1">
             {STOCK_OPTIONS.map(({ label: lbl, value: val }) => (
-              <button
+              <button type="button"
                 key={val}
                 onClick={() => onFilterStock(val)}
                 className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all hover:bg-[var(--hc-surface-2)]"

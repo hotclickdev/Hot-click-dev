@@ -14,7 +14,7 @@ export default function EmprendimientosRow({ products, onVerEmprendimientos }) {
             {products.length}
           </span>
         </div>
-        <button
+        <button type="button"
           onClick={onVerEmprendimientos}
           className="flex items-center gap-1 text-xs font-semibold transition-opacity hover:opacity-70"
           style={{ color: '#10b981' }}

@@ -85,7 +85,7 @@ function ListaResultadosProductos({ resultados, onAgregar }) {
     <div className="absolute top-full left-0 right-0 mt-1 rounded-xl shadow-xl z-10 overflow-hidden"
       style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
       {resultados.map((p) => (
-        <button
+        <button type="button"
           key={p.id}
           onClick={() => onAgregar(p)}
           className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[var(--hc-surface-2)]"
@@ -150,7 +150,7 @@ function ListaItems({ items, onUpdate, onQuitar }) {
             <div className="text-sm font-semibold" style={{ color: 'var(--hc-accent)' }}>
               {formatPrice(item.cantidad * item.precioUnitario)}
             </div>
-            <button onClick={() => onQuitar(item.productoId)} className="text-xs mt-1 transition-opacity hover:opacity-70" style={{ color: '#f87171' }}>
+            <button type="button" onClick={() => onQuitar(item.productoId)} className="text-xs mt-1 transition-opacity hover:opacity-70" style={{ color: '#f87171' }}>
               Quitar
             </button>
           </div>

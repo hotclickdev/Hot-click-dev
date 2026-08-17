@@ -40,7 +40,7 @@ export default function CategorySidebar({
             /* ── Modo drill-down: muestra padre + hijos + otras categorías padre ── */
             <>
               {/* Padre activo + hijos */}
-              <button
+              <button type="button"
                 onClick={() => handleCatSelect(String(drilledNode.id))}
                 className="w-full text-left px-3 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2"
                 style={String(category) === String(drilledNode.id)
@@ -61,7 +61,7 @@ export default function CategorySidebar({
                   .map(sub => {
                     const subCount = categoryTotalCount?.[sub.id] ?? 0
                     return (
-                      <button key={sub.id}
+                      <button type="button" key={sub.id}
                         onClick={() => handleCatSelect(String(sub.id))}
                         className="w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5"
                         style={String(category) === String(sub.id)
@@ -81,7 +81,7 @@ export default function CategorySidebar({
               {tree.filter(c => String(c.id) !== String(drilledNode.id)).length > 0 && (
                 <>
                   <div className="my-3 mx-1 border-t" style={{ borderColor: 'var(--hc-border)' }} />
-                  <button
+                  <button type="button"
                     onClick={() => handleCatSelect('')}
                     className="w-full text-left px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 mb-1"
                     style={!category
@@ -97,7 +97,7 @@ export default function CategorySidebar({
                   {tree
                     .filter(c => String(c.id) !== String(drilledNode.id) && (categoryTotalCount?.[c.id] ?? 0) > 0)
                     .map(cat => (
-                      <button
+                      <button type="button"
                         key={cat.id}
                         onClick={() => handleCatSelect(String(cat.id))}
                         className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 group"
@@ -122,7 +122,7 @@ export default function CategorySidebar({
           ) : (
             /* ── Vista normal: todas las categorías ── */
             <>
-              <button
+              <button type="button"
                 onClick={() => handleCatSelect('')}
                 className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-all"
                 style={!category
@@ -135,7 +135,7 @@ export default function CategorySidebar({
               {tree.map(cat => {
                 const catCount = categoryTotalCount?.[cat.id] ?? 0
                 return (
-                  <button
+                  <button type="button"
                     key={cat.id}
                     onClick={() => handleCatSelect(String(cat.id))}
                     className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 group"

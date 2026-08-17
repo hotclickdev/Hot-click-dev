@@ -44,7 +44,7 @@ export default function StickyCartBar({ product, quantity, onDecrease, onIncreas
 
         {/* Quantity selector */}
         <div className="flex items-center rounded-xl border overflow-hidden shrink-0" style={{ borderColor: 'var(--hc-border)' }}>
-          <button
+          <button type="button"
             onClick={onDecrease}
             disabled={quantity <= 1}
             aria-label={t('common.previous')}
@@ -55,7 +55,7 @@ export default function StickyCartBar({ product, quantity, onDecrease, onIncreas
           <span className="w-7 sm:w-8 text-center text-sm font-bold" aria-live="polite" style={{ color: 'var(--hc-text)' }}>
             {quantity}
           </span>
-          <button
+          <button type="button"
             onClick={onIncrease}
             disabled={atMax}
             aria-label={t('common.next')}

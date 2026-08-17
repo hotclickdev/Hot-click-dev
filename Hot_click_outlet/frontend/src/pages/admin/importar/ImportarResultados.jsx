@@ -219,13 +219,13 @@ export default function ImportarResultados({
       </div>
 
       <div className="flex items-center justify-between gap-3 pt-1">
-        <button onClick={onVolver}
+        <button type="button" onClick={onVolver}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors"
           style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
           <IconArrow /> Volver
         </button>
 
-        <button onClick={onConfirmar} disabled={guardando || seleccionados.length === 0}
+        <button type="button" onClick={onConfirmar} disabled={guardando || seleccionados.length === 0}
           className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
           {guardando

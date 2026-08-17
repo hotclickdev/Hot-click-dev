@@ -18,7 +18,7 @@ export default function TwoFaPickerStep({ methods, loading, onPick, onBack }) {
         <div className="h-[3px]" style={{ background: `linear-gradient(90deg, transparent, ${A.color}, transparent)` }} />
         <div className="p-6 flex flex-col gap-3">
           {methods.includes('TOTP') && (
-            <button onClick={() => onPick('TOTP')} disabled={loading}
+            <button type="button" onClick={() => onPick('TOTP')} disabled={loading}
               className="flex items-center gap-4 p-4 rounded-xl text-left transition-all"
               style={{ background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
               <span style={{ fontSize: 28 }}>🔐</span>
@@ -29,7 +29,7 @@ export default function TwoFaPickerStep({ methods, loading, onPick, onBack }) {
             </button>
           )}
           {methods.includes('EMAIL_OTP') && (
-            <button onClick={() => onPick('EMAIL_OTP')} disabled={loading}
+            <button type="button" onClick={() => onPick('EMAIL_OTP')} disabled={loading}
               className="flex items-center gap-4 p-4 rounded-xl text-left transition-all"
               style={{ background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
               <span style={{ fontSize: 28 }}>📧</span>

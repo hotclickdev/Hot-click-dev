@@ -46,7 +46,7 @@ export default function ActiveFilterChips({
   return (
     <div className="flex flex-wrap items-center gap-2">
       {chips.map(chip => (
-        <button key={chip.key} onClick={chip.clear}
+        <button type="button" key={chip.key} onClick={chip.clear}
           className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-all hover:opacity-80"
           style={{ background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', color: 'var(--hc-accent)', borderColor: 'color-mix(in srgb, var(--hc-accent) 25%, transparent)' }}>
           {chip.label}
@@ -56,7 +56,7 @@ export default function ActiveFilterChips({
         </button>
       ))}
       {chips.length > 1 && (
-        <button onClick={clearFilters} className="text-xs hover:opacity-70 transition-opacity underline" style={{ color: 'var(--hc-muted)' }}>
+        <button type="button" onClick={clearFilters} className="text-xs hover:opacity-70 transition-opacity underline" style={{ color: 'var(--hc-muted)' }}>
           Limpiar todo
         </button>
       )}

@@ -48,14 +48,14 @@ export default function MarcaCard({ marca, logoRoto, onEdit, onDelete, onLogoErr
         {marca.nombreMarca}
       </p>
       <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button
+        <button type="button"
           onClick={() => onEdit(marca)}
           className="p-1.5 rounded-lg transition-colors hover:bg-[var(--hc-surface-2)]"
           style={{ color: 'var(--hc-muted)' }}
           title="Editar">
           <EditIcon />
         </button>
-        <button
+        <button type="button"
           onClick={() => onDelete(marca)}
           className="p-1.5 rounded-lg transition-colors hover:bg-red-500/10 hover:text-red-400"
           style={{ color: 'var(--hc-muted)' }}

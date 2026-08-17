@@ -75,7 +75,7 @@ export default function AdminOrders() {
               filename="pedidos"
               sheetName="Pedidos"
             />
-            <button
+            <button type="button"
               onClick={() => setSortDesc((v) => !v)}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all shrink-0"
               style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}
@@ -89,7 +89,7 @@ export default function AdminOrders() {
               </svg>
               {sortDesc ? 'Recientes' : 'Antiguos'}
             </button>
-            <button
+            <button type="button"
               onClick={() => setShowCreate(true)}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0"
               style={{ backgroundColor: 'var(--hc-accent)', color: 'white' }}
@@ -101,7 +101,7 @@ export default function AdminOrders() {
 
         <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
           {FILTERS.map((f) => (
-            <button
+            <button type="button"
               key={f}
               onClick={() => changeFilter(f)}
               className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
@@ -135,7 +135,7 @@ export default function AdminOrders() {
                   {filtered.length} pedidos · página {ordPage + 1} de {totalOrdPages}
                 </span>
                 <div className="flex gap-1">
-                  <button
+                  <button type="button"
                     onClick={() => setOrdPage((p) => Math.max(0, p - 1))}
                     disabled={ordPage === 0}
                     className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity disabled:opacity-40"
@@ -143,7 +143,7 @@ export default function AdminOrders() {
                   >
                     ← Anterior
                   </button>
-                  <button
+                  <button type="button"
                     onClick={() => setOrdPage((p) => Math.min(totalOrdPages - 1, p + 1))}
                     disabled={ordPage >= totalOrdPages - 1}
                     className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity disabled:opacity-40"

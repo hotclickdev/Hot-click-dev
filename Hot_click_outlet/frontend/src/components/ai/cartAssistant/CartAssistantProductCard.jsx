@@ -28,7 +28,7 @@ export function CartAssistantProductCard({ producto, onAdd }) {
         </div>
       </Link>
       <div className="px-3 pb-3">
-        <button onClick={handleAdd}
+        <button type="button" onClick={handleAdd}
           className="w-full py-1.5 rounded-lg text-xs font-bold transition-all"
           style={{
             background: added ? 'rgba(34,197,94,0.12)' : 'var(--hc-accent)',

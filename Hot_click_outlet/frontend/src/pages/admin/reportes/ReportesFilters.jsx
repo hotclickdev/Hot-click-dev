@@ -4,7 +4,7 @@ export default function ReportesFilters({ quick, desde, hasta, onQuick, onDesde,
   return (
     <div className="flex flex-wrap gap-2">
       {QUICK.map(q => (
-        <button key={q.days} onClick={() => onQuick(q.days)}
+        <button type="button" key={q.days} onClick={() => onQuick(q.days)}
           className="px-3 py-1.5 rounded-lg text-sm transition-all"
           style={quick === q.days
             ? { backgroundColor: 'var(--hc-accent)', color: '#fff' }

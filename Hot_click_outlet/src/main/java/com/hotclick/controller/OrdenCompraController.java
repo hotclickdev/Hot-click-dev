@@ -10,6 +10,7 @@ import com.hotclick.security.CompanyScope;
 import com.hotclick.security.JwtUtil;
 import com.hotclick.service.StockService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -110,7 +111,7 @@ public class OrdenCompraController {
             orden.setTotal(total);
 
             OrdenCompra saved = ordenCompraRepository.save(orden);
-            saved.getItems().size();
+            Hibernate.initialize(saved.getItems());
             return ResponseEntity.ok(ResponseDTO.success("Orden de compra creada", saved));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));

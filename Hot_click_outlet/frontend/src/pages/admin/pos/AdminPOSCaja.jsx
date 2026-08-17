@@ -190,7 +190,7 @@ export default function AdminPOSCaja() {
             style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--hc-text)' }}/>
         </div>
 
-        <button onClick={handleCerrar} disabled={saving || montoDeclarado === 0}
+        <button type="button" onClick={handleCerrar} disabled={saving || montoDeclarado === 0}
           className="w-full py-3.5 rounded-xl font-bold text-sm transition-opacity hover:opacity-80 disabled:opacity-40"
           style={{ backgroundColor: 'rgba(239,68,68,0.8)', color: '#fff' }}>
           {saving ? 'Cerrando…' : montoDeclarado === 0 ? 'Contá el efectivo primero' : 'Cerrar turno'}

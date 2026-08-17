@@ -29,7 +29,7 @@ function CatalogGridEmpty({ hasFilters, onClearFilters }) {
         <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>Intentá con otros filtros o buscá por nombre</p>
       </div>
       {hasFilters && (
-        <button onClick={onClearFilters}
+        <button type="button" onClick={onClearFilters}
           className="px-5 py-2 rounded-xl border text-sm font-medium transition-colors hover:opacity-70"
           style={{ color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }}>
           Limpiar filtros
@@ -46,7 +46,7 @@ function CatalogGridPagination({ filteredPages, filterViewPage, onPageChange }) 
   }
   return (
     <nav aria-label="Paginación" className="flex items-center justify-center gap-1.5 mt-8 flex-wrap">
-      <button
+      <button type="button"
         onClick={() => irA(filterViewPage - 1)}
         disabled={filterViewPage === 0}
         className="hc-btn hc-btn-outline hc-btn-sm disabled:opacity-30 disabled:cursor-not-allowed">
@@ -56,7 +56,7 @@ function CatalogGridPagination({ filteredPages, filterViewPage, onPageChange }) 
         i === '…' ? (
           <span key={`gap-${idx}`} className="px-1 text-sm" style={{ color: 'var(--hc-muted)' }}>…</span>
         ) : (
-          <button
+          <button type="button"
             key={i}
             onClick={() => irA(i)}
             aria-label={`Página ${i + 1}`}
@@ -70,7 +70,7 @@ function CatalogGridPagination({ filteredPages, filterViewPage, onPageChange }) 
           </button>
         )
       )}
-      <button
+      <button type="button"
         onClick={() => irA(filterViewPage + 1)}
         disabled={filterViewPage >= filteredPages - 1}
         className="hc-btn hc-btn-outline hc-btn-sm disabled:opacity-30 disabled:cursor-not-allowed">

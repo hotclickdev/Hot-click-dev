@@ -35,7 +35,7 @@ export default function CartItemRow({ item, onRemove, onUpdateQuantity }) {
         </p>
         <div className="flex items-center gap-3 mt-3">
           <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-lg p-1">
-            <button
+            <button type="button"
               onClick={() => onUpdateQuantity(item.id, item.cantidad - 1)}
               aria-label={`Reducir cantidad de ${item.nombre}`}
               className="w-8 h-8 flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/8 rounded-md transition-colors text-sm"
@@ -45,7 +45,7 @@ export default function CartItemRow({ item, onRemove, onUpdateQuantity }) {
             <span className="w-8 text-center text-sm font-medium text-[#e8e8ed]">
               {item.cantidad}
             </span>
-            <button
+            <button type="button"
               onClick={() => onUpdateQuantity(item.id, item.cantidad + 1)}
               disabled={item.cantidad >= stockMax}
               aria-label={`Aumentar cantidad de ${item.nombre}`}
@@ -54,7 +54,7 @@ export default function CartItemRow({ item, onRemove, onUpdateQuantity }) {
               +
             </button>
           </div>
-          <button
+          <button type="button"
             onClick={() => onRemove(item)}
             className="text-xs text-[#8e8e9a] hover:text-red-400 transition-colors"
           >

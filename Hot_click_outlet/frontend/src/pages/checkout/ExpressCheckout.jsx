@@ -14,7 +14,7 @@ export default function ExpressCheckout({ onWhatsApp }) {
       <h2 className="font-semibold text-sm" style={{ color: 'var(--hc-text)' }}>{t('checkout.expressPayment')}</h2>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
         {/* WhatsApp — functional */}
-        <button
+        <button type="button"
           onClick={onWhatsApp}
           className="flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-medium transition-all bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/18 hover:border-emerald-500/40"
         >

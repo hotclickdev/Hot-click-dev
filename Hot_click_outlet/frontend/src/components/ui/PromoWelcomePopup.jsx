@@ -106,7 +106,7 @@ export default function PromoWelcomePopup() {
                   <div className="text-xs font-semibold text-[#4f7cff] tracking-widest uppercase mt-0.5">{t('promo.firstPurchase')}</div>
                 </div>
 
-                <button
+                <button type="button"
                   onClick={dismiss}
                   className="absolute top-3 right-3 p-1.5 rounded-lg transition-colors hover:bg-white/10"
                   style={{ color: 'rgba(255,255,255,0.5)' }}
@@ -174,7 +174,7 @@ export default function PromoWelcomePopup() {
                         </motion.button>
                       </form>
 
-                      <button
+                      <button type="button"
                         onClick={dismiss}
                         className="w-full mt-2 py-2 rounded-xl text-xs transition-colors hover:bg-white/5"
                         style={{ color: 'var(--hc-muted)' }}

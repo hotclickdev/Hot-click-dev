@@ -11,7 +11,7 @@ export default function AsignarStepper({ paso, onPaso }) {
         const active = i === paso
         return (
           <div key={i} className="flex items-center gap-2 flex-1 last:flex-none">
-            <button
+            <button type="button"
               onClick={() => { if (i < paso) onPaso(i) }}
               disabled={i > paso}
               className="flex items-center gap-2 disabled:cursor-not-allowed"

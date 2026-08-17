@@ -45,11 +45,11 @@ function SubcategoriaItem({ subcategoria, onEdit, onDelete }) {
         )}
       </div>
       <div className="flex gap-0.5 shrink-0 ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button onClick={() => onEdit(subcategoria)}
+        <button type="button" onClick={() => onEdit(subcategoria)}
           className="p-1 text-[#8e8e9a] hover:text-white rounded" title="Editar">
           <EditIcon />
         </button>
-        <button onClick={() => onDelete(subcategoria)}
+        <button type="button" onClick={() => onDelete(subcategoria)}
           className="p-1 text-[#8e8e9a] hover:text-red-400 rounded" title="Eliminar">
           <TrashIcon />
         </button>
@@ -102,24 +102,24 @@ export default function CategoriaCard({ node, onEdit, onDelete, onAddSub }) {
           )}
         </div>
         <div className="flex items-center gap-1 shrink-0 ml-2">
-          <button onClick={() => onAddSub(node)}
+          <button type="button" onClick={() => onAddSub(node)}
             className="px-2 py-1 rounded-lg text-xs font-medium transition-colors"
             style={{ backgroundColor: 'rgba(23,71,168,0.12)', color: '#7aa3ff' }}
             title="Agregar subcategoría">
             + sub
           </button>
-          <button onClick={() => onEdit(node)}
+          <button type="button" onClick={() => onEdit(node)}
             className="p-1.5 text-[#8e8e9a] hover:text-white hover:bg-white/8 rounded-lg transition-colors"
             title="Editar">
             <EditIcon />
           </button>
-          <button onClick={() => onDelete(node)}
+          <button type="button" onClick={() => onDelete(node)}
             className="p-1.5 text-[#8e8e9a] hover:text-red-400 hover:bg-red-500/8 rounded-lg transition-colors"
             title="Eliminar">
             <TrashIcon />
           </button>
           {tieneHijas && (
-            <button onClick={() => setAbierto((prev) => !prev)}
+            <button type="button" onClick={() => setAbierto((prev) => !prev)}
               className="p-1.5 text-[#8e8e9a] hover:text-white rounded-lg transition-colors"
               title={abierto ? 'Ocultar subcategorías' : 'Mostrar subcategorías'}>
               <ChevronIcon abierto={abierto} />

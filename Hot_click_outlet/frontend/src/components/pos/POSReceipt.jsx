@@ -89,17 +89,17 @@ export default function POSReceipt({ venta, onNuevaVenta }) {
 
         {/* Botones de acción */}
         <div className="flex gap-2">
-          <button onClick={handlePrint}
+          <button type="button" onClick={handlePrint}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
             style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'var(--hc-text)' }}>
             Imprimir
           </button>
-          <button onClick={handleWhatsApp}
+          <button type="button" onClick={handleWhatsApp}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
             style={{ backgroundColor: 'rgba(37,211,102,0.15)', color: '#25d366' }}>
             WhatsApp
           </button>
-          <button onClick={onNuevaVenta}
+          <button type="button" onClick={onNuevaVenta}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
             style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
             Nueva venta

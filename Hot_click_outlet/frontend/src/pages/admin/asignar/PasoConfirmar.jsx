@@ -67,10 +67,10 @@ export default function PasoConfirmar({
       </div>
 
       <div className="flex justify-between items-center pt-1">
-        <button onClick={onVolver} className="text-sm transition-opacity hover:opacity-70" style={{ color: 'var(--hc-muted)' }}>
+        <button type="button" onClick={onVolver} className="text-sm transition-opacity hover:opacity-70" style={{ color: 'var(--hc-muted)' }}>
           ← Volver
         </button>
-        <button
+        <button type="button"
           onClick={onConfirmar}
           disabled={enviando}
           className="px-6 py-3 rounded-xl text-sm font-semibold transition-opacity disabled:opacity-50 hover:opacity-90"

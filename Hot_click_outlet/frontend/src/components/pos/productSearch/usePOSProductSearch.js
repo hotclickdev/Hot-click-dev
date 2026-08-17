@@ -24,7 +24,7 @@ export function usePOSProductSearch() {
         const cats = Array.isArray(data) ? data : (data?.data ?? [])
         setCategorias(cats)
       })
-      .catch(() => {})
+      .catch((err) => { console.error('[usePOSProductSearch] categorias', err) })
       .finally(() => setLoadingCat(false))
   }, [])
 

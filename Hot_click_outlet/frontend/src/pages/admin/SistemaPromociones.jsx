@@ -60,7 +60,7 @@ function ProductRow({ p, onAplicar, disabled }) {
             className="w-20 px-2.5 py-1.5 rounded-lg text-sm"
             style={{ border: '1px solid var(--hc-border)', backgroundColor: 'var(--hc-surface)', color: 'var(--hc-text)' }}
           />
-          <button
+          <button type="button"
             onClick={handleApply} disabled={saving || !pct || disabled}
             className="px-3.5 py-1.5 rounded-lg text-sm font-semibold disabled:opacity-50 transition-opacity hover:opacity-90"
             style={{ backgroundColor: 'var(--hc-primary)', color: '#fff' }}

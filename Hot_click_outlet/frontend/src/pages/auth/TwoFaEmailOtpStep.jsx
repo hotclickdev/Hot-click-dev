@@ -41,7 +41,7 @@ export default function TwoFaEmailOtpStep({
               style={{ background: A.color, boxShadow: `0 0 32px ${A.ring}` }}>
               {loading ? 'Verificando…' : 'Verificar código'}
             </button>
-            <button type="button" disabled={resendCooldown > 0 || loading}
+            <button type="submit" disabled={resendCooldown > 0 || loading}
               className="hc-btn hc-btn-outline hc-btn-lg w-full disabled:opacity-40"
               onClick={onResend}>
               {resendCooldown > 0 ? `Reenviar en ${resendCooldown}s` : '↻ Reenviar código'}

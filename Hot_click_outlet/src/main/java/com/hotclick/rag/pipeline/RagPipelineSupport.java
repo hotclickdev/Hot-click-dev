@@ -67,7 +67,7 @@ final class RagPipelineSupport {
         if (mc.find()) {
             categoriasSugeridas = Arrays.stream(mc.group(1).split(","))
                 .map(String::trim).filter(s -> !s.isBlank()).limit(5)
-                .collect(Collectors.toList());
+                .toList();
             texto = texto.replace(mc.group(0), "").strip();
         }
 
@@ -77,7 +77,7 @@ final class RagPipelineSupport {
         if (mo.find()) {
             opts = Arrays.stream(mo.group(1).split(","))
                 .map(String::trim).filter(s -> !s.isBlank()).limit(8)
-                .collect(Collectors.toList());
+                .toList();
             texto = texto.replace(mo.group(0), "").strip();
         }
 
@@ -93,7 +93,7 @@ final class RagPipelineSupport {
                 .collect(Collectors.toSet());
             productosAMostrar = productos.stream()
                 .filter(p -> p.sku() != null && skusSeleccionados.contains(p.sku().toUpperCase()))
-                .collect(Collectors.toList());
+                .toList();
             texto = texto.replace(mp.group(0), "").strip();
         }
 

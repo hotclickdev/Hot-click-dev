@@ -127,7 +127,7 @@ function ToastItem({ item, onDismiss }) {
 
       {/* Right: close + status dot */}
       <div className="shrink-0 flex flex-col items-center gap-1.5">
-        <button
+        <button type="button"
           onClick={onDismiss}
           aria-label={t('socialProofToast.closeNotif')}
           className="w-5 h-5 rounded-full flex items-center justify-center transition-colors"

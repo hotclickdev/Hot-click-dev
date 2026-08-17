@@ -34,7 +34,7 @@ export default function GarantiaDetalleDrawer({
             </h2>
             <GarantiaEstadoBadge estado={selected.estado} />
           </div>
-          <button onClick={onClose} className="text-2xl leading-none"
+          <button type="button" onClick={onClose} className="text-2xl leading-none"
             style={{ color: 'var(--hc-muted)' }}>×</button>
         </div>
 
@@ -94,7 +94,7 @@ export default function GarantiaDetalleDrawer({
               {ESTADOS.map(e => {
                 const cfg = ESTADO_CFG[e]
                 return (
-                  <button key={e}
+                  <button type="button" key={e}
                     onClick={() => onNuevoEstado(e)}
                     className="py-2.5 px-3 rounded-xl text-xs font-bold transition-all"
                     style={{
@@ -137,7 +137,7 @@ export default function GarantiaDetalleDrawer({
               💬 WhatsApp
             </a>
           )}
-          <button onClick={onGuardar} disabled={saving}
+          <button type="button" onClick={onGuardar} disabled={saving}
             className="flex-1 py-3 rounded-2xl text-sm font-bold disabled:opacity-50"
             style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
             {saving

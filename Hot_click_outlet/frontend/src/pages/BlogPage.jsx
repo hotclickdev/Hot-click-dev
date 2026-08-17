@@ -65,7 +65,7 @@ export default function BlogPage() {
   useEffect(() => {
     blogService.getPublicos()
       .then(r => setEntradas(r.data?.data ?? []))
-      .catch(() => {})
+      .catch((err) => { console.error('[BlogPage] entradas', err) })
       .finally(() => setLoading(false))
   }, [])
 

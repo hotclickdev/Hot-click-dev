@@ -34,7 +34,7 @@ export function useHeroRotator() {
     import('@/services/api').then(({ default: api }) => {
       api.get('/convenios/publicos')
         .then((r) => setConvenios(r.data?.data ?? []))
-        .catch(() => {})
+        .catch((err) => { console.error('[useHeroRotator] convenios', err) })
     })
   }, [])
 

@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Component
 public class PedidoDetailMapper {
@@ -47,17 +46,17 @@ public class PedidoDetailMapper {
                 m.put("clienteCorreo", p.getUsuarioFinal() != null ? p.getUsuarioFinal().getCorreo() : "—");
                 m.put("items", List.of());
                 return m;
-            }).collect(Collectors.toList());
+            }).toList();
     }
 
     public List<Map<String, Object>> listarTodosConDetallesByEmpresa(Long empresaId) {
         return pedidoRepository.findAllWithDetailsByEmpresaId(empresaId).stream()
-            .map(this::mapPedidoDetalle).collect(Collectors.toList());
+            .map(this::mapPedidoDetalle).toList();
     }
 
     public List<Map<String, Object>> listarTodosConDetalles() {
         return pedidoRepository.findAllWithDetails().stream()
-            .map(this::mapPedidoDetalle).collect(Collectors.toList());
+            .map(this::mapPedidoDetalle).toList();
     }
 
     public Map<String, Object> mapPedidoDetalle(Pedido p) {
@@ -92,7 +91,7 @@ public class PedidoDetailMapper {
             im.put("cantidad",        i.getCantidad());
             im.put("precioUnitario",  i.getPrecioUnitarioMomento());
             return im;
-        }).collect(Collectors.toList());
+        }).toList();
         m.put("items", items);
         return m;
     }

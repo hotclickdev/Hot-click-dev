@@ -23,7 +23,7 @@ export default function CatalogViewTabs({ viewMode, onSelect }) {
         {TABS.map(tab => {
           const active = viewMode === tab.id
           return (
-            <button key={tab.id}
+            <button type="button" key={tab.id}
               onClick={() => onSelect(tab.id)}
               className="relative shrink-0 flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-left transition-all duration-200 whitespace-nowrap"
               style={active

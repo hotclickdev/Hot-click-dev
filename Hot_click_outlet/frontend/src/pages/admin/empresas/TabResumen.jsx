@@ -35,7 +35,7 @@ function VisibilidadPanel({ selected, saving, onToggleVisibilidad }) {
       <p className="text-xs font-semibold" style={{ color: 'var(--hc-text)' }}>
         {visible ? 'Negocio visible al público — productos en catálogo.' : 'Negocio oculto — no aparece en catálogo.'}
       </p>
-      <button
+      <button type="button"
         onClick={() => onToggleVisibilidad(selected.id, !visible)}
         disabled={saving}
         className="w-full text-xs font-bold px-3 py-2 rounded-lg transition-opacity disabled:opacity-40 inline-flex items-center justify-center gap-1.5"
@@ -53,7 +53,7 @@ function PlanEstadoActions({ selected, saving, onCambiarPlan, onCambiarEstado })
       <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>Cambiar plan</p>
       <div className="flex flex-wrap gap-2">
         {PLANES.map((p) => (
-          <button
+          <button type="button"
             key={p}
             onClick={() => onCambiarPlan(selected.id, p)}
             disabled={saving || selected.plan === p}
@@ -66,7 +66,7 @@ function PlanEstadoActions({ selected, saving, onCambiarPlan, onCambiarEstado })
       <p className="text-xs font-semibold uppercase tracking-wider pt-1" style={{ color: 'var(--hc-muted)' }}>Cambiar estado</p>
       <div className="flex flex-wrap gap-2">
         {ESTADOS.map((s) => (
-          <button
+          <button type="button"
             key={s}
             onClick={() => onCambiarEstado(selected.id, s)}
             disabled={saving || selected.estadoEmpresa === s}

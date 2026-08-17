@@ -146,13 +146,13 @@ function ConfirmUserModal({
             </div>
           </div>
           <div className="flex gap-3">
-            <button
+            <button type="button"
               onClick={onClose}
               className="flex-1 h-10 rounded-xl bg-white/5 hover:bg-white/8 text-[#8e8e9a] hover:text-white text-sm transition-colors"
             >
               {cancelLabel}
             </button>
-            <button
+            <button type="button"
               onClick={onConfirm}
               disabled={loading}
               className={`flex-1 h-10 rounded-xl text-sm font-medium border transition-colors disabled:opacity-50 ${colors.confirm}`}

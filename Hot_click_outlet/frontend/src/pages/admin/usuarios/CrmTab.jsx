@@ -90,7 +90,7 @@ function CrmRow({ cliente, onSelect }) {
         {cliente.puntosFidelidad ?? 0} pts
       </td>
       <td className="px-4 py-3">
-        <button
+        <button type="button"
           onClick={(e) => { e.stopPropagation(); onSelect(cliente.id) }}
           className="px-3 py-1 text-xs rounded-lg bg-white/5 hover:bg-white/10 text-[#8e8e9a] hover:text-white transition-colors"
         >

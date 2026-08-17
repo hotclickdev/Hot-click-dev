@@ -20,7 +20,7 @@ export default function PasoProductos({ cliente, items, onChange, onCambiarClien
       </div>
       <AgregarProductos items={items} onChange={onChange} />
       <div className="flex justify-end mt-5">
-        <button
+        <button type="button"
           onClick={onContinuar}
           className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}

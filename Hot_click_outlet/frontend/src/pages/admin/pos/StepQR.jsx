@@ -67,13 +67,13 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
         )}
 
         <div className="grid grid-cols-2 gap-3">
-          <button onClick={onCancelar}
+          <button type="button" onClick={onCancelar}
             className="py-3 rounded-2xl text-sm font-semibold"
             style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
             Cancelar
           </button>
           {metodoPago === 'SINPE' ? (
-            <button onClick={() => onConfirmSinpe(token, false)} disabled={loadingConfirm}
+            <button type="button" onClick={() => onConfirmSinpe(token, false)} disabled={loadingConfirm}
               className="py-3 rounded-2xl text-sm font-black disabled:opacity-40"
               style={{ background: 'var(--hc-accent)', color: '#fff' }}>
               {loadingConfirm ? '⏳…' : '✓ SINPE recibido'}

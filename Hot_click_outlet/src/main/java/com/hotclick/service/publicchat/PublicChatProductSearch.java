@@ -150,6 +150,6 @@ public class PublicChatProductSearch {
                     + " " + String.valueOf(p.getOrDefault("descripcion_corta", ""))).toLowerCase();
                 return negations.stream().noneMatch(text::contains);
             })
-            .collect(Collectors.toList());
+            .toList();
     }
 }

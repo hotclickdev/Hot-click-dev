@@ -14,6 +14,7 @@ import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.service.N8nWebhookService;
 import com.hotclick.utils.Constants;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -99,7 +100,7 @@ public class PedidoManualFactory {
         pedido.setEmpresa(empresa);
 
         Pedido saved = pedidoRepository.save(pedido);
-        saved.getItems().size();
+        Hibernate.initialize(saved.getItems());
         if (Constants.PEDIDO_PAGADO.equals(saved.getEstadoPedido())) {
             n8nWebhookService.notificarPedidoNuevo(saved);
         }

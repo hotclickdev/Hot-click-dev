@@ -83,7 +83,7 @@ export default function TiendaProductoPage() {
           {imagenes.length > 1 && (
             <div className="flex gap-2 overflow-x-auto">
               {imagenes.map((img, i) => (
-                <button
+                <button type="button"
                   key={i}
                   onClick={() => setImgActiva(i)}
                   className={`shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
@@ -143,21 +143,21 @@ export default function TiendaProductoPage() {
           {stockDisponible > 0 && (
             <div className="flex items-center gap-4 mt-2">
               <div className="flex items-center gap-2 border rounded-lg p-1">
-                <button
+                <button type="button"
                   onClick={() => setCantidad(c => Math.max(1, c - 1))}
                   className="p-1 rounded hover:bg-gray-100"
                 >
                   <MinusIcon className="h-4 w-4" />
                 </button>
                 <span className="w-8 text-center font-semibold">{cantidad}</span>
-                <button
+                <button type="button"
                   onClick={() => setCantidad(c => Math.min(stockDisponible, c + 1))}
                   className="p-1 rounded hover:bg-gray-100"
                 >
                   <PlusIcon className="h-4 w-4" />
                 </button>
               </div>
-              <button
+              <button type="button"
                 onClick={handleAgregar}
                 className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-white font-semibold transition-colors"
                 style={{ backgroundColor: agregado ? '#22c55e' : 'var(--t-secondary)' }}

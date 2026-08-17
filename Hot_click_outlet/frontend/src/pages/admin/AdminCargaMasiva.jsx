@@ -98,7 +98,10 @@ export default function AdminCargaMasiva() {
         // 4. Sincronizar galería si hay extras
         if (productId && extraUrls.length > 0) {
           const allUrls = [mainUrl, ...extraUrls].filter(Boolean)
-          await productService.sincronizarImagenes(productId, allUrls).catch(() => {})
+          await productService.sincronizarImagenes(productId, allUrls).catch((err) => {
+            console.error('[AdminCargaMasiva] sincronizarImagenes', err)
+            toast({ message: 'No se pudieron sincronizar las imágenes', type: 'error' })
+          })
         }
       } catch (err) {
         errors.push(`Producto "${d.nombre}" (${i + 1}): ${err?.response?.data?.message ?? err.message ?? 'Error'}`)
@@ -123,7 +126,7 @@ export default function AdminCargaMasiva() {
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <div className="flex items-center gap-4 mb-8">
-        <button
+        <button type="button"
           onClick={() => navigate('/admin/productos')}
           className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/8"
           style={{ border: '1px solid rgba(255,255,255,0.1)' }}

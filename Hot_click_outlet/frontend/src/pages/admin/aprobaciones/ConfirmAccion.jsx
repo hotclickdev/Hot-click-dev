@@ -26,7 +26,7 @@ export default function ConfirmAccion({
         />
       )}
       <div className="flex gap-1.5">
-        <button
+        <button type="button"
           onClick={onConfirm}
           disabled={saving}
           className="flex-1 px-2 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50"
@@ -34,7 +34,7 @@ export default function ConfirmAccion({
         >
           {saving ? '…' : 'Sí, confirmar'}
         </button>
-        <button
+        <button type="button"
           onClick={onCancel}
           disabled={saving}
           className="px-2 py-1.5 rounded-lg text-xs disabled:opacity-50"

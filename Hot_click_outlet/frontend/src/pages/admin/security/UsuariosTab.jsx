@@ -34,7 +34,7 @@ export default function UsuariosTab() {
 
   if (selected) return (
     <div className="space-y-4">
-      <button onClick={() => { setSelected(null); setDetalle(null) }}
+      <button type="button" onClick={() => { setSelected(null); setDetalle(null) }}
         className="text-sm flex items-center gap-1" style={{ color: 'var(--hc-accent)' }}>
         ← Volver a la lista
       </button>
@@ -163,7 +163,7 @@ export default function UsuariosTab() {
                           : <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>Normal</span>}
                       </td>
                       <td className="px-4 py-2.5">
-                        <button onClick={() => verDetalle(u)}
+                        <button type="button" onClick={() => verDetalle(u)}
                           className="px-2.5 py-1 rounded-lg text-xs font-medium hover:opacity-80"
                           style={{ backgroundColor: 'var(--hc-border)', color: 'var(--hc-text)' }}>
                           Ver
@@ -183,12 +183,12 @@ export default function UsuariosTab() {
               {data?.totalElements} usuarios · pág {(data?.page ?? 0) + 1} de {data?.totalPages || 1}
             </p>
             <div className="flex gap-2">
-              <button onClick={() => load(page - 1)} disabled={page === 0}
+              <button type="button" onClick={() => load(page - 1)} disabled={page === 0}
                 className="px-3 py-1.5 rounded-lg text-xs disabled:opacity-40"
                 style={{ backgroundColor: 'var(--hc-card)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
                 ← Anterior
               </button>
-              <button onClick={() => load(page + 1)} disabled={page >= (data?.totalPages - 1)}
+              <button type="button" onClick={() => load(page + 1)} disabled={page >= (data?.totalPages - 1)}
                 className="px-3 py-1.5 rounded-lg text-xs disabled:opacity-40"
                 style={{ backgroundColor: 'var(--hc-card)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
                 Siguiente →

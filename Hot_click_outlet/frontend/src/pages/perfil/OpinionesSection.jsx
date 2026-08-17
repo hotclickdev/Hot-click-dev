@@ -27,10 +27,10 @@ export default function OpinionesSection({ orders = [], ordersLoading = false })
           ⭐ Tu opinión
         </h2>
         <div className="flex gap-1 p-1 rounded-xl" style={{ backgroundColor: 'var(--hc-surface-2)' }}>
-          <button style={tabStyle(tab === 'testimonio')} onClick={() => setTab('testimonio')}>
+          <button type="button" style={tabStyle(tab === 'testimonio')} onClick={() => setTab('testimonio')}>
             💬 Testimonio web
           </button>
-          <button style={tabStyle(tab === 'resena')} onClick={() => setTab('resena')}>
+          <button type="button" style={tabStyle(tab === 'resena')} onClick={() => setTab('resena')}>
             📦 Reseña de producto
           </button>
         </div>

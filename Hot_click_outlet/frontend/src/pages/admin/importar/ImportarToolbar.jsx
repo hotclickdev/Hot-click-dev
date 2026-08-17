@@ -63,7 +63,7 @@ export default function ImportarToolbar({
             style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }} />
           <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>%</span>
         </div>
-        <button onClick={aplicarMargenATodos} disabled={margenGlobal === ''}
+        <button type="button" onClick={aplicarMargenATodos} disabled={margenGlobal === ''}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-40"
           style={{ backgroundColor: margenGlobal !== '' ? 'var(--hc-accent)' : 'var(--hc-surface-2)', color: margenGlobal !== '' ? '#fff' : 'var(--hc-muted)' }}
           title="Calcula precio de venta = precio de costo + %">
@@ -95,7 +95,7 @@ export default function ImportarToolbar({
           <option value="">Seleccionar…</option>
           {categorias.map(c => <option key={c.id} value={c.id}>{c.nombreCategoria}</option>)}
         </select>
-        <button onClick={aplicarCategoriaATodos} disabled={!catGlobal}
+        <button type="button" onClick={aplicarCategoriaATodos} disabled={!catGlobal}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-40"
           style={{ backgroundColor: catGlobal ? 'var(--hc-accent)' : 'var(--hc-surface-2)', color: catGlobal ? '#fff' : 'var(--hc-muted)' }}>
           <IconApply /> Aplicar a todos
@@ -112,7 +112,7 @@ export default function ImportarToolbar({
           <option value="">Seleccionar…</option>
           {marcas.map(m => <option key={m.id} value={m.id}>{m.nombreMarca}</option>)}
         </select>
-        <button onClick={aplicarMarcaATodos} disabled={!marcaGlobal}
+        <button type="button" onClick={aplicarMarcaATodos} disabled={!marcaGlobal}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-40"
           style={{ backgroundColor: marcaGlobal ? 'var(--hc-accent)' : 'var(--hc-surface-2)', color: marcaGlobal ? '#fff' : 'var(--hc-muted)' }}>
           <IconApply /> Aplicar a todos
@@ -128,7 +128,7 @@ export default function ImportarToolbar({
           style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
           {CONDICIONES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
         </select>
-        <button onClick={aplicarCondicionATodos}
+        <button type="button" onClick={aplicarCondicionATodos}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
           <IconApply /> Aplicar a todos
@@ -143,7 +143,7 @@ export default function ImportarToolbar({
           placeholder="0"
           className="w-16 text-xs px-2 py-1.5 rounded-lg outline-none text-center"
           style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }} />
-        <button onClick={aplicarStockATodos} disabled={stockGlobal === ''}
+        <button type="button" onClick={aplicarStockATodos} disabled={stockGlobal === ''}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-40"
           style={{ backgroundColor: stockGlobal !== '' ? 'var(--hc-accent)' : 'var(--hc-surface-2)', color: stockGlobal !== '' ? '#fff' : 'var(--hc-muted)' }}>
           <IconApply /> Aplicar a todos
@@ -156,7 +156,7 @@ export default function ImportarToolbar({
           {' / '}
           <span className="font-semibold" style={{ color: 'var(--hc-text)' }}>{productos.length}</span>
         </p>
-        <button onClick={() => toggleAll(!todosSelec)}
+        <button type="button" onClick={() => toggleAll(!todosSelec)}
           className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap"
           style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
           {todosSelec ? 'Quitar todos' : 'Seleccionar todos'}

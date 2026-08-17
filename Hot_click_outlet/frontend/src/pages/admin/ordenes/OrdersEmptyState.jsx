@@ -3,7 +3,7 @@ export default function OrdersEmptyState({ filter, onVerTodos, onCrear }) {
     return (
       <div className="space-y-2">
         <p className="text-[var(--hc-muted)] text-sm">Sin pedidos con estado <strong className="text-[var(--hc-text)]">{filter}</strong></p>
-        <button onClick={onVerTodos} className="text-xs text-[var(--hc-accent)] hover:underline">Ver todos los pedidos →</button>
+        <button type="button" onClick={onVerTodos} className="text-xs text-[var(--hc-accent)] hover:underline">Ver todos los pedidos →</button>
       </div>
     )
   }
@@ -14,7 +14,7 @@ export default function OrdersEmptyState({ filter, onVerTodos, onCrear }) {
       </div>
       <p className="font-semibold text-[var(--hc-text)]">Sin pedidos todavía</p>
       <p className="text-sm text-[var(--hc-muted)] max-w-xs mx-auto">Los pedidos de tus clientes aparecen aquí. También podés registrar uno manual.</p>
-      <button
+      <button type="button"
         onClick={onCrear}
         className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold mt-1 transition-opacity hover:opacity-80"
         style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}

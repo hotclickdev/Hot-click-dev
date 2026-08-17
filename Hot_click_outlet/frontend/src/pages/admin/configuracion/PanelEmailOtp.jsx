@@ -85,12 +85,12 @@ export default function PanelEmailOtp({ enabled, loading, toast, onEnabled, onDi
         {step === 'idle' && (
           <div style={{ display: 'flex', gap: '10px' }}>
             {!enabled ? (
-              <button onClick={sendOtp} disabled={working} className="cfg-btn cfg-btn-primary" style={{ background: E.color, boxShadow: `0 1px 12px ${E.border}` }}>
+              <button type="button" onClick={sendOtp} disabled={working} className="cfg-btn cfg-btn-primary" style={{ background: E.color, boxShadow: `0 1px 12px ${E.border}` }}>
                 {working ? <Spinner size="xs" /> : <ShieldIcon style={{ width: '14px', height: '14px' }} />}
                 Activar Email OTP
               </button>
             ) : (
-              <button onClick={() => setStep('disable')} className="cfg-btn cfg-btn-danger">
+              <button type="button" onClick={() => setStep('disable')} className="cfg-btn cfg-btn-danger">
                 Desactivar Email OTP
               </button>
             )}
@@ -111,14 +111,14 @@ export default function PanelEmailOtp({ enabled, loading, toast, onEnabled, onDi
                 style={{ fontFamily: F.mono, letterSpacing: '0.3em', fontSize: '20px', textAlign: 'center' }} />
             </FormGroup>
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <button onClick={activate} disabled={working || code.length !== 6} className="cfg-btn cfg-btn-primary">
+              <button type="button" onClick={activate} disabled={working || code.length !== 6} className="cfg-btn cfg-btn-primary">
                 {working ? <Spinner size="xs" /> : <CheckIcon style={{ width: '14px', height: '14px' }} />}
                 Activar
               </button>
-              <button onClick={sendOtp} disabled={cooldown > 0 || working} className="cfg-btn cfg-btn-ghost">
+              <button type="button" onClick={sendOtp} disabled={cooldown > 0 || working} className="cfg-btn cfg-btn-ghost">
                 {cooldown > 0 ? `Reenviar (${cooldown}s)` : '↻ Reenviar código'}
               </button>
-              <button onClick={cancel} className="cfg-btn cfg-btn-ghost">Cancelar</button>
+              <button type="button" onClick={cancel} className="cfg-btn cfg-btn-ghost">Cancelar</button>
             </div>
           </div>
         )}
@@ -133,12 +133,12 @@ export default function PanelEmailOtp({ enabled, loading, toast, onEnabled, onDi
               <StyledInput type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Tu contraseña" />
             </FormGroup>
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={disable} disabled={working || !password}
+              <button type="button" onClick={disable} disabled={working || !password}
                 className="cfg-btn"
                 style={{ background: '#dc2626', color: '#fff', opacity: (working || !password) ? 0.4 : 1, cursor: (working || !password) ? 'not-allowed' : 'pointer' }}>
                 {working ? <Spinner size="xs" /> : null} Desactivar
               </button>
-              <button onClick={cancel} className="cfg-btn cfg-btn-ghost">Cancelar</button>
+              <button type="button" onClick={cancel} className="cfg-btn cfg-btn-ghost">Cancelar</button>
             </div>
           </div>
         )}

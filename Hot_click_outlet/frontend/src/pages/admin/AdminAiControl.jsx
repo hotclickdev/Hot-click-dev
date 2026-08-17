@@ -98,7 +98,7 @@ export default function AdminAiControl() {
           { id: 'control', label: '⚙️ Control por cuenta' },
           { id: 'consumo', label: '📊 Consumo IA' },
         ].map((t) => (
-          <button key={t.id} onClick={() => setTab(t.id)}
+          <button type="button" key={t.id} onClick={() => setTab(t.id)}
             className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
             style={{
               backgroundColor: tab === t.id ? 'var(--hc-surface)' : 'transparent',

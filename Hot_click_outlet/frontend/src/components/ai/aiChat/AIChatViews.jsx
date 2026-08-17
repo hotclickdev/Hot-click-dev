@@ -49,7 +49,7 @@ export function AIChatMessageList({
                     </span>
                 }
                 {m.failed && (
-                  <button
+                  <button type="button"
                     onClick={() => { setMensajes(removeMsg(m)); enviar(m.failedQuery) }}
                     className="flex items-center gap-1 mt-2 text-[11px] font-medium transition-opacity hover:opacity-80"
                     style={{ color: '#E73B33' }}
@@ -63,7 +63,7 @@ export function AIChatMessageList({
               </div>
 
               {m.rol === 'assistant' && !m.typing && !m.failed && m.texto && (
-                <button
+                <button type="button"
                   onClick={() => copyMessage(m.texto, i)}
                   className="absolute -bottom-1 right-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg"
                   style={{ background: '#F3F4F6', color: '#6B7280' }}
@@ -103,7 +103,7 @@ export function AIChatMessageList({
         {!m.typing && m.opts?.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pt-0.5">
             {m.opts.map(opt => (
-              <button
+              <button type="button"
                 key={opt}
                 onClick={() => enviar(opt)}
                 className="text-[11px] px-3 py-1.5 rounded-full font-medium transition-all hover:opacity-80 active:scale-95"
@@ -181,7 +181,7 @@ export function AIChatInputBar({
           </svg>
         </a>
       )}
-      <button
+      <button type="button"
         onClick={() => enviar()}
         disabled={!input.trim() || cargando}
         aria-label="Enviar"
@@ -209,7 +209,7 @@ export function AIChatChips({ chips, enviar, accent }) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {chips.map(chip => (
-        <button
+        <button type="button"
           key={chip}
           onClick={() => enviar(chip)}
           className="text-[11px] px-3 py-1.5 rounded-full transition-all hover:opacity-80 active:scale-95"

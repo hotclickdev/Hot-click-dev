@@ -35,7 +35,7 @@ export default function PubRow({ pub, onCopiar, onPublicado, onEliminar }) {
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <button
+          <button type="button"
             onClick={() => setExpanded((v) => !v)}
             className="px-2.5 py-1.5 rounded-lg text-xs text-[#8e8e9a] hover:text-white hover:bg-white/8 transition-colors border border-white/10"
           >
@@ -43,13 +43,13 @@ export default function PubRow({ pub, onCopiar, onPublicado, onEliminar }) {
           </button>
           {pub.estadoPublicacion !== 'PUBLICADO' && (
             <>
-              <button
+              <button type="button"
                 onClick={copiar}
                 className="px-2.5 py-1.5 rounded-lg text-xs bg-[#4f7cff]/15 text-[#4f7cff] hover:bg-[#4f7cff]/25 transition-colors border border-[#4f7cff]/20"
               >
                 Copiar
               </button>
-              <button
+              <button type="button"
                 onClick={() => onPublicado(pub.id)}
                 className="px-2.5 py-1.5 rounded-lg text-xs bg-green-500/15 text-green-400 hover:bg-green-500/25 transition-colors border border-green-500/20"
               >
@@ -57,7 +57,7 @@ export default function PubRow({ pub, onCopiar, onPublicado, onEliminar }) {
               </button>
             </>
           )}
-          <button
+          <button type="button"
             onClick={() => onEliminar(pub.id)}
             className="p-1.5 rounded-lg text-[#8e8e9a] hover:text-red-400 hover:bg-red-500/8 transition-colors"
             title="Eliminar"

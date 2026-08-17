@@ -160,12 +160,12 @@ export default function AdminFacturas() {
               Página {page + 1} de {Math.ceil(total / 20)}
             </p>
             <div className="flex gap-2">
-              <button
+              <button type="button"
                 onClick={() => cargar(page - 1)}
                 disabled={page === 0}
                 className="rounded-lg border px-3 py-1 text-xs disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800"
               >Anterior</button>
-              <button
+              <button type="button"
                 onClick={() => cargar(page + 1)}
                 disabled={(page + 1) * 20 >= total}
                 className="rounded-lg border px-3 py-1 text-xs disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800"

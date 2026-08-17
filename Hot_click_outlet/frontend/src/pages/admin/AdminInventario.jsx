@@ -96,7 +96,7 @@ export default function AdminInventario() {
             Análisis ABC · pronóstico de demanda · alertas de stock
           </p>
         </div>
-        <button onClick={analizarAhora} disabled={analizando || cargando}
+        <button type="button" onClick={analizarAhora} disabled={analizando || cargando}
           className="px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 hover:opacity-80"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
           {analizando ? 'Analizando…' : '▶ Ejecutar análisis ahora'}
@@ -134,7 +134,7 @@ export default function AdminInventario() {
               { id: 'lentos', label: `Mov. lento (${data.lentosCount})` },
               { id: 'abc',    label: 'Clasificación ABC' },
             ].map(t => (
-              <button key={t.id} onClick={() => setTab(t.id)}
+              <button type="button" key={t.id} onClick={() => setTab(t.id)}
                 className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
                 style={{
                   backgroundColor: tab === t.id ? 'var(--hc-surface)' : 'transparent',

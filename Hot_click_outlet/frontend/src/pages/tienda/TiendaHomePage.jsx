@@ -32,7 +32,7 @@ export default function TiendaHomePage() {
   }, [slug, query, catActiva])  // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    tiendaService.getCategorias(slug).then(setCategorias).catch(() => {})
+    tiendaService.getCategorias(slug).then(setCategorias).catch((err) => { console.error('[TiendaHomePage] categorias', err) })
     cargarProductos(0, '', null)
   }, [slug])  // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -88,7 +88,7 @@ export default function TiendaHomePage() {
       {/* Filtros de categoría */}
       {categorias.length > 0 && (
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-          <button
+          <button type="button"
             onClick={() => filtrarCategoria(null)}
             className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
               catActiva === null
@@ -100,7 +100,7 @@ export default function TiendaHomePage() {
             <FunnelIcon className="inline h-3 w-3 mr-1" />Todos
           </button>
           {categorias.map(c => (
-            <button
+            <button type="button"
               key={c.id}
               onClick={() => filtrarCategoria(c.id)}
               className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
@@ -147,7 +147,7 @@ export default function TiendaHomePage() {
                 <p className="text-base font-bold mt-auto" style={{ color: 'var(--t-primary)' }}>
                   ₡{fmt(p.precio)}
                 </p>
-                <button
+                <button type="button"
                   onClick={() => handleAgregar(p)}
                   className="w-full py-1.5 rounded-lg text-white text-xs font-semibold transition-opacity"
                   style={{ backgroundColor: agregados[p.id] ? '#22c55e' : 'var(--t-secondary)' }}
@@ -163,7 +163,7 @@ export default function TiendaHomePage() {
       {/* Paginación */}
       {totalPages > 1 && (
         <div className="flex justify-center gap-2 pt-4">
-          <button
+          <button type="button"
             disabled={page === 0}
             onClick={() => cargarProductos(page - 1)}
             className="px-4 py-2 rounded-lg border text-sm disabled:opacity-40"
@@ -173,7 +173,7 @@ export default function TiendaHomePage() {
           <span className="px-4 py-2 text-sm text-gray-500">
             {page + 1} / {totalPages}
           </span>
-          <button
+          <button type="button"
             disabled={page + 1 >= totalPages}
             onClick={() => cargarProductos(page + 1)}
             className="px-4 py-2 rounded-lg border text-sm disabled:opacity-40"

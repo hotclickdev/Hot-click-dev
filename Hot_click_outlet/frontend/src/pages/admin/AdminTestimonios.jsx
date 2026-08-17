@@ -78,7 +78,7 @@ export default function AdminTestimonios() {
         {/* Filtros */}
         <div className="flex gap-2 flex-wrap">
           {FILTROS.map(f => (
-            <button
+            <button type="button"
               key={f}
               onClick={() => setFilter(f)}
               className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"

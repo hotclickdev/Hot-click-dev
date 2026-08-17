@@ -48,12 +48,12 @@ function QrModal({ mesa, onClose }) {
         </div>
         <p className="text-xs text-center break-all" style={{ color: 'var(--hc-muted)' }}>{url}</p>
         <div className="flex gap-3 w-full">
-          <button onClick={imprimir}
+          <button type="button" onClick={imprimir}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
             style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
             Imprimir / Descargar
           </button>
-          <button onClick={onClose}
+          <button type="button" onClick={onClose}
             className="px-4 py-2.5 rounded-xl text-sm transition-opacity hover:opacity-70"
             style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
             Cerrar
@@ -123,7 +123,7 @@ export default function AdminMesas() {
             Genera códigos QR para que los clientes realicen pedidos desde su teléfono
           </p>
         </div>
-        <button onClick={() => setMostrarForm(v => !v)}
+        <button type="button" onClick={() => setMostrarForm(v => !v)}
           className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
           + Nueva mesa
@@ -208,7 +208,7 @@ export default function AdminMesas() {
               </div>
 
               <div className="flex gap-2 flex-wrap">
-                <button onClick={() => setQrMesa(m)}
+                <button type="button" onClick={() => setQrMesa(m)}
                   className="flex-1 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80"
                   style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
                   Ver QR
@@ -220,12 +220,12 @@ export default function AdminMesas() {
                 </a>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => toggleActivo(m)}
+                <button type="button" onClick={() => toggleActivo(m)}
                   className="flex-1 py-1.5 rounded-lg text-xs transition-opacity hover:opacity-80"
                   style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
                   {m.activo ? 'Desactivar' : 'Activar'}
                 </button>
-                <button onClick={() => regenerarToken(m)}
+                <button type="button" onClick={() => regenerarToken(m)}
                   className="flex-1 py-1.5 rounded-lg text-xs transition-opacity hover:opacity-80"
                   style={{ border: '1px solid rgba(239,68,68,0.3)', color: '#f87171' }}
                   title="Genera un nuevo QR — el anterior deja de funcionar">

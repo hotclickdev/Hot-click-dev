@@ -53,7 +53,7 @@ export default function WishlistPage() {
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 mt-1">
-              <button
+              <button type="button"
                 onClick={() => navigate('/productos')}
                 className="px-6 py-2.5 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-medium text-sm transition-all shadow-[0_0_20px_rgba(23,71,168,0.25)] hover:shadow-[0_0_32px_rgba(23,71,168,0.4)]"
               >
@@ -122,7 +122,7 @@ export default function WishlistPage() {
                     )}
                   </Link>
                   {/* Remove heart */}
-                  <button
+                  <button type="button"
                     onClick={(e) => { e.stopPropagation(); remove(product.id) }}
                     className="absolute top-2 right-2 z-10 w-7 h-7 rounded-lg flex items-center justify-center bg-black/45 hover:bg-red-500/30 transition-colors border border-white/10"
                     aria-label={t('wishlist.remove')}
@@ -146,7 +146,7 @@ export default function WishlistPage() {
 
                 {/* Add to cart */}
                 <div className="px-3 pb-3">
-                  <button
+                  <button type="button"
                     onClick={() => handleAddToCart(product)}
                     disabled={product.stock === 0}
                     className={`w-full h-8 rounded-xl text-xs font-semibold transition-all duration-200 ${btnClass}`}

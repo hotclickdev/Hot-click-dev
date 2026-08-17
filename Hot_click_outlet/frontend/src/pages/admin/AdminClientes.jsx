@@ -71,7 +71,7 @@ export default function AdminClientes() {
             Tu libreta de contactos — se completa sola con cada venta, o agregalos vos mismo
           </p>
         </div>
-        <button onClick={() => setShowNuevo(s => !s)}
+        <button type="button" onClick={() => setShowNuevo(s => !s)}
           className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
           + Nuevo cliente
@@ -90,7 +90,7 @@ export default function AdminClientes() {
           <input value={correo} onChange={e => setCorreo(e.target.value)} placeholder="Correo (opcional)"
             className="px-3 py-2 rounded-lg text-sm outline-none"
             style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }} />
-          <button onClick={crear} disabled={!nombre.trim() || saving}
+          <button type="button" onClick={crear} disabled={!nombre.trim() || saving}
             className="sm:col-span-3 py-2 rounded-lg text-sm font-semibold disabled:opacity-40 transition-opacity"
             style={{ backgroundColor: '#22c55e', color: '#fff' }}>
             {saving ? 'Guardando…' : 'Registrar cliente'}

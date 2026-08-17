@@ -19,7 +19,7 @@ export function ImportPreviewModal({
             <h2 className="font-semibold text-base" style={{ color: 'var(--hc-text)' }}>{t('importExport.previewTitle')}</h2>
             <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>{t('importExport.rows', { count: preview.length })}</p>
           </div>
-          <button
+          <button type="button"
             onClick={onClose}
             className="hover:opacity-70 transition-opacity p-1"
             style={{ color: 'var(--hc-muted)' }}
@@ -71,14 +71,14 @@ export function ImportPreviewModal({
             <p className="text-xs flex-1" style={{ color: 'var(--hc-muted)' }}>{t('importExport.previewNote')}</p>
           )}
           <div className="flex gap-2">
-            <button
+            <button type="button"
               onClick={onClose}
               className="px-4 py-2 rounded-lg bg-[var(--hc-surface-2)] hover:bg-[var(--hc-surface-3)] text-sm transition-colors"
               style={{ color: 'var(--hc-text)' }}
             >
               {t('importExport.cancel')}
             </button>
-            <button
+            <button type="button"
               onClick={onConfirm}
               disabled={importing || importOk || !onImport}
               className="px-4 py-2 rounded-lg bg-[var(--hc-accent)] hover:bg-[var(--hc-accent-hover)] text-white text-sm font-medium transition-colors disabled:opacity-50"

@@ -46,21 +46,21 @@ export default function TiendaCarritoPage() {
               </p>
               <div className="flex items-center gap-3 mt-auto">
                 <div className="flex items-center gap-1 border rounded-lg">
-                  <button
+                  <button type="button"
                     onClick={() => actualizarCantidad(producto.id, cantidad - 1)}
                     className="p-1 hover:bg-gray-100 rounded-l-lg"
                   >
                     <MinusIcon className="h-3.5 w-3.5" />
                   </button>
                   <span className="w-8 text-center text-sm font-semibold">{cantidad}</span>
-                  <button
+                  <button type="button"
                     onClick={() => actualizarCantidad(producto.id, cantidad + 1)}
                     className="p-1 hover:bg-gray-100 rounded-r-lg"
                   >
                     <PlusIcon className="h-3.5 w-3.5" />
                   </button>
                 </div>
-                <button
+                <button type="button"
                   onClick={() => quitarDelCarrito(producto.id)}
                   className="text-gray-400 hover:text-red-500 transition-colors ml-auto"
                   aria-label="Eliminar"

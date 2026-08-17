@@ -41,22 +41,24 @@ export default function StepSubida({ onContinuar, limit }) {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <div
-        role="button"
+      <button
+        type="button"
         tabIndex={0}
         onDrop={onDrop}
         onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
         onDragLeave={() => setDragging(false)}
         onClick={openFilePicker}
         onKeyDown={onZoneKeyDown}
-        className="rounded-2xl border-2 border-dashed cursor-pointer transition-all flex flex-col items-center justify-center py-16 gap-4"
+        className="w-full rounded-2xl border-2 border-dashed cursor-pointer transition-all flex flex-col items-center justify-center py-16 gap-4"
         style={{
           borderColor: dragging ? 'var(--hc-accent)' : 'rgba(255,255,255,0.12)',
           background: dragging ? 'rgba(79,124,255,0.06)' : 'rgba(255,255,255,0.02)',
         }}
       >
         <input ref={inputRef} type="file" accept="image/*" multiple className="hidden"
-          onChange={(e) => { addFiles(e.target.files); e.target.value = '' }} />
+          onChange={(e) => { addFiles(e.target.files); e.target.value = '' }}
+          onClick={(e) => e.stopPropagation()}
+        />
         <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
           style={{ background: 'rgba(79,124,255,0.12)', border: '1px solid rgba(79,124,255,0.3)' }}>
           <IconUpload className="w-7 h-7" style={{ color: 'var(--hc-accent)' }} />
@@ -69,7 +71,7 @@ export default function StepSubida({ onContinuar, limit }) {
             1 foto = 1 producto · máx. {limit} imágenes · hasta 10 MB por foto
           </p>
         </div>
-      </div>
+      </button>
 
       {drafts.length > 0 && (
         <>
@@ -78,7 +80,7 @@ export default function StepSubida({ onContinuar, limit }) {
               <div key={d.id} className="relative aspect-square rounded-xl overflow-hidden group"
                 style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
                 <img src={d.mainPreview} alt="" className="w-full h-full object-cover" />
-                <button
+                <button type="button"
                   onClick={(e) => { e.stopPropagation(); remove(d.id) }}
                   className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                   style={{ background: 'rgba(0,0,0,0.75)' }}
@@ -103,7 +105,7 @@ export default function StepSubida({ onContinuar, limit }) {
             <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
               {drafts.length} de {limit} imágenes
             </p>
-            <button
+            <button type="button"
               onClick={() => onContinuar(drafts)}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-opacity hover:opacity-85"
               style={{ background: 'var(--hc-accent)', color: '#fff' }}

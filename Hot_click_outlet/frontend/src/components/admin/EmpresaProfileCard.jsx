@@ -16,7 +16,7 @@ function useEmpresaPerfil() {
         _cached = e
         setEmpresa(e)
       })
-      .catch(() => {})
+      .catch((err) => { console.error('[EmpresaProfileCard] perfil', err) })
       .finally(() => setLoading(false))
   }, [])
 
@@ -64,7 +64,7 @@ function Popover({ empresa, totalProductos, onClose }) {
             </p>
           )}
         </div>
-        <button onClick={onClose}
+        <button type="button" onClick={onClose}
           className="ml-auto shrink-0 w-6 h-6 rounded-lg hover:bg-[var(--hc-surface-2)] flex items-center justify-center transition-colors"
           style={{ color: 'var(--hc-muted)' }}>
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">

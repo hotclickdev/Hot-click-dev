@@ -28,7 +28,7 @@ export default function AlertasTab() {
     <div className="space-y-4">
       <div className="flex gap-2">
         {[[false,'Activas'],[true,'Resueltas']].map(([v, label]) => (
-          <button key={String(v)} onClick={() => setResolved(v)}
+          <button type="button" key={String(v)} onClick={() => setResolved(v)}
             className="px-3 py-1.5 rounded-lg text-sm font-medium"
             style={{ backgroundColor: resolved === v ? 'var(--hc-accent)' : 'var(--hc-card)', color: resolved === v ? '#fff' : 'var(--hc-muted)', border: '1px solid var(--hc-border)' }}>
             {label}
@@ -60,7 +60,7 @@ export default function AlertasTab() {
                 </div>
               </div>
               {!alert.resolved && (
-                <button onClick={() => handleResolve(alert.id)} disabled={resolving === alert.id}
+                <button type="button" onClick={() => handleResolve(alert.id)} disabled={resolving === alert.id}
                   className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold hover:opacity-80 disabled:opacity-40"
                   style={{ backgroundColor: 'rgba(74,222,128,0.15)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.3)' }}>
                   {resolving === alert.id ? '...' : 'Resolver'}

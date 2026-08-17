@@ -33,7 +33,7 @@ export default function ServicioList({ solicitudes, filtroEstado, isLoading, onO
 
       <div className="flex flex-wrap gap-2 mb-5">
         {['TODOS', ...ESTADOS].map(e => (
-          <button key={e}
+          <button type="button" key={e}
             onClick={() => onSetFiltro(e)}
             className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
             style={{

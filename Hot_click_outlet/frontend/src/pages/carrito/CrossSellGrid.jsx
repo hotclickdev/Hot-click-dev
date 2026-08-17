@@ -36,7 +36,7 @@ function CrossSellCard({ product, added, onAdd, delay }) {
           {product.nombre}
         </Link>
         <p className="text-sm font-bold text-[#4f7cff] mb-2">{formatPrice(product.precio)}</p>
-        <button
+        <button type="button"
           onClick={() => onAdd(product)}
           className={`w-full h-7 rounded-lg text-xs font-medium transition-all duration-200 ${
             added

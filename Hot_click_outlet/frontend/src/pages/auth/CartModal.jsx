@@ -38,8 +38,8 @@ export default function CartModal({ open, cart, addItem, onClose, onDone }) {
           )}
         </div>
         <div className="flex gap-2">
-          <button onClick={restore} className="hc-btn hc-btn-primary flex-1">Restaurar carrito</button>
-          <button onClick={discard} className="hc-btn hc-btn-outline flex-1">Descartar</button>
+          <button type="button" onClick={restore} className="hc-btn hc-btn-primary flex-1">Restaurar carrito</button>
+          <button type="button" onClick={discard} className="hc-btn hc-btn-outline flex-1">Descartar</button>
         </div>
       </div>
     </Modal>

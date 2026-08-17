@@ -136,7 +136,7 @@ export default function AdminConvenios() {
             Negocios aliados que aparecen en el sitio público
           </p>
         </div>
-        <button onClick={() => setModal('new')} style={{
+        <button type="button" onClick={() => setModal('new')} style={{
           padding: '9px 18px', borderRadius: 10,
           background: 'var(--hc-accent)', color: 'white',
           border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer',
@@ -176,7 +176,7 @@ export default function AdminConvenios() {
                 {c.urlWeb && <a href={c.urlWeb} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: 'var(--hc-accent)', textDecoration: 'none' }}>{c.urlWeb}</a>}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <button onClick={() => handleToggle(c)} style={{
+                <button type="button" onClick={() => handleToggle(c)} style={{
                   padding: '5px 12px', borderRadius: 7, fontSize: 11, fontWeight: 700,
                   border: '1px solid', cursor: 'pointer',
                   background: c.activo ? 'rgba(5,150,105,0.1)' : 'rgba(107,114,128,0.1)',
@@ -185,14 +185,14 @@ export default function AdminConvenios() {
                 }}>
                   {c.activo ? 'Activo' : 'Inactivo'}
                 </button>
-                <button onClick={() => setModal(c)} style={{
+                <button type="button" onClick={() => setModal(c)} style={{
                   padding: '5px 10px', borderRadius: 7, fontSize: 12, fontWeight: 600,
                   border: '1px solid var(--hc-border)', background: 'var(--hc-surface)',
                   color: 'var(--hc-text)', cursor: 'pointer',
                 }}>
                   Editar
                 </button>
-                <button onClick={() => handleDelete(c.id)} style={{
+                <button type="button" onClick={() => handleDelete(c.id)} style={{
                   padding: '5px 10px', borderRadius: 7, fontSize: 12, fontWeight: 600,
                   border: '1px solid rgba(220,38,38,0.3)', background: 'rgba(220,38,38,0.06)',
                   color: '#dc2626', cursor: 'pointer',

@@ -35,21 +35,21 @@ export default function BlogEntryList({ lista, onTogglePublicado, onEdit, onDele
             }}>
               {e.publicado ? 'Publicado' : 'Borrador'}
             </span>
-            <button onClick={() => onTogglePublicado(e)} style={{
+            <button type="button" onClick={() => onTogglePublicado(e)} style={{
               padding: '5px 10px', borderRadius: 7, fontSize: 11, fontWeight: 600,
               border: '1px solid var(--hc-border)', background: 'var(--hc-surface)',
               color: 'var(--hc-text-2)', cursor: 'pointer',
             }}>
               {e.publicado ? 'Despublicar' : 'Publicar'}
             </button>
-            <button onClick={() => onEdit(e)} style={{
+            <button type="button" onClick={() => onEdit(e)} style={{
               padding: '5px 10px', borderRadius: 7, fontSize: 12, fontWeight: 600,
               border: '1px solid var(--hc-border)', background: 'var(--hc-surface)',
               color: 'var(--hc-text)', cursor: 'pointer',
             }}>
               Editar
             </button>
-            <button onClick={() => onDelete(e.id)} style={{
+            <button type="button" onClick={() => onDelete(e.id)} style={{
               padding: '5px 10px', borderRadius: 7, fontSize: 12,
               border: '1px solid rgba(220,38,38,0.3)', background: 'rgba(220,38,38,0.06)',
               color: '#dc2626', cursor: 'pointer',

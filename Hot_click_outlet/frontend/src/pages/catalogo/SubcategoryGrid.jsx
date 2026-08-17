@@ -31,7 +31,7 @@ export default function SubcategoryGrid({ subcats, onSelect, productCountByCat }
           const c = PALETTE[idx % PALETTE.length]
           const name = sub.nombreCategoria ?? sub.nombre ?? ''
           return (
-            <button
+            <button type="button"
               key={sub.id}
               onClick={() => onSelect(String(sub.id))}
               className="group flex flex-col items-start p-4 rounded-2xl text-left transition-all duration-200 hover:scale-[1.02] hover:shadow-md active:scale-[0.98]"

@@ -33,17 +33,17 @@ export default function ProveedoresTable({ proveedores, onCostos, onEdit, onDele
                 <td className="px-4 py-3 text-xs" style={{ color: 'var(--hc-muted)' }}>{p.correo || '—'}</td>
                 <td className="px-4 py-3">
                   <div className="flex gap-2">
-                    <button onClick={() => onCostos(p)}
+                    <button type="button" onClick={() => onCostos(p)}
                       className="px-3 py-1 text-xs rounded-lg transition-colors hover:bg-white/10"
                       style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: 'var(--hc-muted)' }}>
                       Costos
                     </button>
-                    <button onClick={() => onEdit(p)}
+                    <button type="button" onClick={() => onEdit(p)}
                       className="px-3 py-1 text-xs rounded-lg transition-colors hover:bg-white/10"
                       style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: 'var(--hc-muted)' }}>
                       Editar
                     </button>
-                    <button onClick={() => onDelete(p)}
+                    <button type="button" onClick={() => onDelete(p)}
                       className="px-3 py-1 text-xs rounded-lg transition-colors"
                       style={{ backgroundColor: 'rgba(239,68,68,0.08)', color: '#f87171' }}>
                       Eliminar
@@ -70,7 +70,7 @@ export function ProveedorCostosModal({ costosTarget, historial, loadingHistorial
           <h2 className="font-bold" style={{ color: 'var(--hc-text)' }}>
             Costos — {costosTarget.nombre}
           </h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
+          <button type="button" onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
             style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>✕</button>
         </div>
         <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>

@@ -33,7 +33,7 @@ export default function EventosTab() {
         a.download = `security-log-${exportPeriod}.csv`
         a.click()
       })
-      .catch(() => {})
+      .catch((err) => { console.error('[EventosTab] export CSV', err) })
   }
 
   return (
@@ -60,7 +60,7 @@ export default function EventosTab() {
             style={{ backgroundColor: 'var(--hc-card)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
             {PERIODS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
           </select>
-          <button onClick={downloadCsv}
+          <button type="button" onClick={downloadCsv}
             className="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5"
             style={{ backgroundColor: 'var(--hc-card)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
@@ -103,10 +103,10 @@ export default function EventosTab() {
               {evData.totalElements} eventos · pág {evData.page + 1} de {evData.totalPages || 1}
             </p>
             <div className="flex gap-2">
-              <button onClick={() => load(evPage - 1)} disabled={evPage === 0}
+              <button type="button" onClick={() => load(evPage - 1)} disabled={evPage === 0}
                 className="px-3 py-1.5 rounded-lg text-xs disabled:opacity-40"
                 style={{ backgroundColor: 'var(--hc-card)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>← Anterior</button>
-              <button onClick={() => load(evPage + 1)} disabled={evPage >= (evData.totalPages - 1)}
+              <button type="button" onClick={() => load(evPage + 1)} disabled={evPage >= (evData.totalPages - 1)}
                 className="px-3 py-1.5 rounded-lg text-xs disabled:opacity-40"
                 style={{ backgroundColor: 'var(--hc-card)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>Siguiente →</button>
             </div>

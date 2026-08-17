@@ -161,7 +161,7 @@ export default function POSPagoPage() {
 
         {/* Stripe button */}
         {!isSinpe && (
-          <button
+          <button type="button"
             onClick={handleStripe}
             disabled={paying}
             className="w-full py-4 rounded-2xl font-black text-base transition-all disabled:opacity-50"

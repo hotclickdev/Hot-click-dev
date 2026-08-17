@@ -27,7 +27,7 @@ export function useNavbar() {
         const all = Array.isArray(data) ? data : []
         setCategoriasPadre(all.filter((c) => !c.padreId))
       })
-      .catch(() => {})
+      .catch((err) => { console.error('[useNavbar] categorias', err) })
   }, [categoriasPadre.length])
 
   useEffect(() => {

@@ -144,7 +144,7 @@ export default function SaleDetailModal({ pedidoId, onClose }) {
               <p className="text-xs text-[#8e8e9a] mt-0.5">{formatDate(data.fechaCreacion)}</p>
             )}
           </div>
-          <button onClick={onClose}
+          <button type="button" onClick={onClose}
             className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
             style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>
             ✕
@@ -162,7 +162,7 @@ export default function SaleDetailModal({ pedidoId, onClose }) {
               style={{ backgroundColor: 'rgba(23,71,168,0.12)', color: 'var(--hc-accent)', border: '1px solid rgba(23,71,168,0.25)' }}>
               Ver en pedidos
             </Link>
-            <button onClick={onClose}
+            <button type="button" onClick={onClose}
               className="flex-1 py-2 rounded-xl text-xs font-medium"
               style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>
               Cerrar

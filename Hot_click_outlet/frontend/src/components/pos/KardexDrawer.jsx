@@ -67,7 +67,7 @@ export default function KardexDrawer({ producto, onClose }) {
               </span>
             </div>
           </div>
-          <button onClick={onClose}
+          <button type="button" onClick={onClose}
             className="w-8 h-8 flex items-center justify-center rounded-lg hover:opacity-70"
             style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>✕</button>
         </div>

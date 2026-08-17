@@ -29,12 +29,12 @@ export default function ClienteDetailModal({ clienteId, onClose }) {
           style={{ backgroundColor: 'var(--hc-surface)', borderColor: 'rgba(255,255,255,0.07)' }}>
           <h2 className="font-bold" style={{ color: 'var(--hc-text)' }}>Ficha de cliente</h2>
           <div className="flex items-center gap-2">
-            <button onClick={() => setEditMode(e => !e)}
+            <button type="button" onClick={() => setEditMode(e => !e)}
               className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-70"
               style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>
               {editMode ? 'Cancelar' : 'Editar'}
             </button>
-            <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
+            <button type="button" onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
               style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>✕</button>
           </div>
         </div>
@@ -104,10 +104,10 @@ export default function ClienteDetailModal({ clienteId, onClose }) {
                     placeholder="cantidad"
                     className="flex-1 px-3 py-2 rounded-xl text-sm text-center outline-none"
                     style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--hc-text)' }}/>
-                  <button onClick={() => handleAjustarPuntos(1)}
+                  <button type="button" onClick={() => handleAjustarPuntos(1)}
                     className="px-3 py-2 rounded-xl text-sm font-bold"
                     style={{ backgroundColor: 'rgba(52,211,153,0.15)', color: '#34d399' }}>+ Sumar</button>
-                  <button onClick={() => handleAjustarPuntos(-1)}
+                  <button type="button" onClick={() => handleAjustarPuntos(-1)}
                     className="px-3 py-2 rounded-xl text-sm font-bold"
                     style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#f87171' }}>− Restar</button>
                 </div>
@@ -164,7 +164,7 @@ export default function ClienteDetailModal({ clienteId, onClose }) {
             </div>
 
             {editMode && (
-              <button onClick={handleSave} disabled={saving}
+              <button type="button" onClick={handleSave} disabled={saving}
                 className="w-full py-3 rounded-xl font-bold text-sm transition-opacity hover:opacity-80 disabled:opacity-40"
                 style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
                 {saving ? 'Guardando…' : 'Guardar cambios'}

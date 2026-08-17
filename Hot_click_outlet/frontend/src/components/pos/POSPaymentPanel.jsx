@@ -77,7 +77,7 @@ export default function POSPaymentPanel({ total, onConfirm, onClose, loading }) 
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold" style={{ color: 'var(--hc-text)' }}>Cobrar venta</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
+          <button type="button" onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
             style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>✕</button>
         </div>
 
@@ -93,7 +93,7 @@ export default function POSPaymentPanel({ total, onConfirm, onClose, loading }) 
           <p className="text-xs font-medium mb-2" style={{ color: 'var(--hc-muted)' }}>Método de pago</p>
           <div className="grid grid-cols-2 gap-2">
             {METODOS.map(m => (
-              <button key={m.id} onClick={() => !m.disabled && setMetodoPago(m.id)}
+              <button type="button" key={m.id} onClick={() => !m.disabled && setMetodoPago(m.id)}
                 disabled={m.disabled}
                 title={m.disabled ? 'Próximamente' : m.desc}
                 className="flex flex-col items-start px-3 py-2.5 rounded-xl text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
@@ -163,7 +163,7 @@ export default function POSPaymentPanel({ total, onConfirm, onClose, loading }) 
               className="w-full px-3 py-2 rounded-xl text-xs outline-none"
               style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--hc-text)' }}/>
             {clienteId && (
-              <button onClick={limpiarCliente}
+              <button type="button" onClick={limpiarCliente}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-xs"
                 style={{ color: '#f87171' }}>✕</button>
             )}
@@ -174,7 +174,7 @@ export default function POSPaymentPanel({ total, onConfirm, onClose, loading }) 
             <div className="mt-1 rounded-xl overflow-hidden border"
               style={{ backgroundColor: 'var(--hc-bg)', borderColor: 'rgba(255,255,255,0.08)' }}>
               {sugerencias.slice(0, 5).map(c => (
-                <button key={c.id} onClick={() => seleccionarCliente(c)}
+                <button type="button" key={c.id} onClick={() => seleccionarCliente(c)}
                   className="w-full flex items-center justify-between px-3 py-2.5 text-xs text-left transition-colors hover:bg-white/[0.04] border-b last:border-0"
                   style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
                   <div>
@@ -206,7 +206,7 @@ export default function POSPaymentPanel({ total, onConfirm, onClose, loading }) 
         </div>
 
         {/* Confirmar */}
-        <button onClick={handleConfirmar} disabled={!puedeConfirmar || loading}
+        <button type="button" onClick={handleConfirmar} disabled={!puedeConfirmar || loading}
           className="w-full py-3.5 rounded-xl font-bold text-base transition-all disabled:opacity-40"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
           {loading ? 'Procesando…' : `Confirmar — ₡${fmt(total)}`}

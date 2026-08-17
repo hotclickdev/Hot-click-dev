@@ -10,6 +10,7 @@ import com.hotclick.service.StockService;
 import com.hotclick.service.TurnoCajaService;
 import com.hotclick.utils.Constants;
 import jakarta.servlet.http.HttpServletRequest;
+import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -148,7 +149,7 @@ public class PosController {
             pedido.setMargenGananciaPedido(margen);
 
             Pedido saved = pedidoRepository.save(pedido);
-            saved.getItems().size(); // forzar inicialización dentro de la transacción
+            Hibernate.initialize(saved.getItems());
             evictDashboard(empresaId);
 
             // ── Actualizar turno si está abierto ──────────────────────────

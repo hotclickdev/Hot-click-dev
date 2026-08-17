@@ -5,7 +5,7 @@ export default function Pagination({ page, totalPages, onPage }) {
   if (totalPages <= 1) return null
   return (
     <div className="flex items-center justify-between px-4 py-3 border-t border-white/8">
-      <button
+      <button type="button"
         onClick={() => onPage(page - 1)}
         disabled={page === 0}
         className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/8 text-[#8e8e9a] text-sm disabled:opacity-30 transition-colors"
@@ -13,7 +13,7 @@ export default function Pagination({ page, totalPages, onPage }) {
         ← {t('common.previous')}
       </button>
       <span className="text-[#8e8e9a] text-xs">{page + 1} / {totalPages}</span>
-      <button
+      <button type="button"
         onClick={() => onPage(page + 1)}
         disabled={page >= totalPages - 1}
         className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/8 text-[#8e8e9a] text-sm disabled:opacity-30 transition-colors"

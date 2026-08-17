@@ -11,7 +11,7 @@ export function RetryBanner({ message = 'Error al cargar los datos. Verificá tu
         <span>{message}</span>
       </div>
       {onRetry && (
-        <button
+        <button type="button"
           onClick={onRetry}
           className="px-3 py-1 rounded-lg text-xs font-semibold shrink-0 transition-opacity hover:opacity-80"
           style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}

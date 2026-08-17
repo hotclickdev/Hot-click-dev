@@ -28,11 +28,11 @@ export function SearchPanelBody({
             <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>
               {t('search.recent')}
             </span>
-            <button onClick={clearRecent} className="text-xs text-[#4f7cff] hover:underline">{t('search.clearRecent')}</button>
+            <button type="button" onClick={clearRecent} className="text-xs text-[#4f7cff] hover:underline">{t('search.clearRecent')}</button>
           </div>
           <div className="flex flex-wrap gap-2">
             {recent.map((s) => (
-              <button
+              <button type="button"
                 key={s}
                 onClick={() => setQuery(s)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs border transition-colors hover:bg-white/5"
@@ -65,7 +65,7 @@ export function SearchPanelBody({
               <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
                 {t('search.noResultsSub')}
               </p>
-              <button
+              <button type="button"
                 onClick={viewAll}
                 className="mt-4 px-5 py-2 rounded-xl text-sm border transition-colors hover:bg-white/5"
                 style={{ color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }}
@@ -177,7 +177,7 @@ export function SearchPanelBody({
               ))}
 
               <div className="px-4 py-3 border-t" style={{ borderColor: 'var(--hc-border)' }}>
-                <button
+                <button type="button"
                   onClick={viewAll}
                   className="w-full py-2.5 rounded-xl text-sm font-medium transition-colors hover:opacity-80"
                   style={{ background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 25%, transparent)' }}
@@ -190,7 +190,7 @@ export function SearchPanelBody({
 
           {brandResults.length > 0 && productResults.length === 0 && (
             <div className="px-4 py-3 border-t" style={{ borderColor: 'var(--hc-border)' }}>
-              <button
+              <button type="button"
                 onClick={viewAll}
                 className="w-full py-2.5 rounded-xl text-sm font-medium transition-colors hover:opacity-80"
                 style={{ background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 25%, transparent)' }}

@@ -11,7 +11,7 @@ export default function EmprendimientosPage() {
   useEffect(() => {
     convenioService.getPublicos()
       .then(r => setLista(r.data?.data ?? []))
-      .catch(() => {})
+      .catch((err) => { console.error('[EmprendimientosPage] convenios', err) })
       .finally(() => setLoading(false))
   }, [])
 

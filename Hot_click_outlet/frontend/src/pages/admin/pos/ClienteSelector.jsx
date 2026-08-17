@@ -58,7 +58,8 @@ export default function ClienteSelector({ cliente, onChange }) {
 
   return (
     <div className="relative" ref={ref}>
-      <button onClick={() => setOpen(o => !o)}
+      <div className="flex items-stretch gap-1">
+      <button type="button" onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-sm transition-colors"
         style={{
           backgroundColor: cliente ? 'rgba(23,71,168,0.1)' : 'rgba(255,255,255,0.04)',
@@ -71,32 +72,30 @@ export default function ClienteSelector({ cliente, onChange }) {
           </svg>
           <span className="truncate font-medium">{cliente ? cliente.nombre : 'Cliente: Mostrador'}</span>
         </span>
+      </button>
         {cliente && (
-          <span
-            role="button"
-            tabIndex={0}
-            onClick={(e) => { e.stopPropagation(); onChange(null) }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                e.stopPropagation()
-                onChange(null)
-              }
+          <button
+            type="button"
+            onClick={() => onChange(null)}
+            className="shrink-0 px-2 rounded-xl opacity-60 hover:opacity-100"
+            style={{
+              backgroundColor: 'rgba(23,71,168,0.1)',
+              border: '1px solid rgba(23,71,168,0.3)',
+              color: '#7aa3ff',
             }}
-            className="shrink-0 opacity-60 hover:opacity-100"
             aria-label="Quitar cliente"
           >
             <CloseIcon />
-          </span>
+          </button>
         )}
-      </button>
+      </div>
 
       {open && (
         <div className="absolute z-20 left-0 right-0 mt-1.5 rounded-xl overflow-hidden shadow-xl"
           style={{ backgroundColor: '#15151d', border: '1px solid rgba(255,255,255,0.08)' }}>
           <div className="flex border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
             {[{ id: 'buscar', label: 'Buscar' }, { id: 'nuevo', label: '+ Nuevo' }].map(t => (
-              <button key={t.id} onClick={() => setTab(t.id)}
+              <button type="button" key={t.id} onClick={() => setTab(t.id)}
                 className="flex-1 py-2 text-xs font-semibold transition-colors"
                 style={{ color: tab === t.id ? '#7aa3ff' : 'rgba(255,255,255,0.35)' }}>
                 {t.label}
@@ -116,7 +115,7 @@ export default function ClienteSelector({ cliente, onChange }) {
                   <p className="text-xs text-center py-2" style={{ color: 'rgba(255,255,255,0.3)' }}>Sin resultados</p>
                 )}
                 {listaClientes.map(c => (
-                  <button key={c.id} onClick={() => seleccionar(c)}
+                  <button type="button" key={c.id} onClick={() => seleccionar(c)}
                     className="w-full text-left px-2 py-1.5 rounded-lg text-xs hover:bg-white/5 transition-colors">
                     <span className="font-medium" style={{ color: '#fff' }}>{c.nombre} {c.apellidoPaterno}</span>
                     <span className="ml-1.5" style={{ color: 'rgba(255,255,255,0.35)' }}>{c.telefono}</span>
@@ -132,7 +131,7 @@ export default function ClienteSelector({ cliente, onChange }) {
               <input value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="Teléfono (opcional)"
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff' }} />
-              <button onClick={crear} disabled={!nombre.trim() || creando}
+              <button type="button" onClick={crear} disabled={!nombre.trim() || creando}
                 className="w-full py-2 rounded-lg text-xs font-semibold disabled:opacity-40 transition-opacity"
                 style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
                 {creando ? 'Guardando…' : 'Registrar y usar'}

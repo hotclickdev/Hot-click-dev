@@ -18,7 +18,7 @@ export default function ProfileOrdersCard({ orders, loading }) {
         <h2 className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
           📋 {t('profile.recentOrders')}
         </h2>
-        <button
+        <button type="button"
           onClick={() => navigate('/mis-pedidos')}
           className="text-xs font-semibold transition-colors"
           style={{ color: 'var(--hc-accent)' }}

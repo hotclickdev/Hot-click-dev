@@ -72,7 +72,7 @@ function ProductRow({ p, onToggle }) {
                 color: 'var(--hc-text)', fontSize: 12,
               }}
             />
-            <button
+            <button type="button"
               onClick={handleApply} disabled={saving || !pct}
               style={{
                 padding: '5px 12px', borderRadius: 7,
@@ -86,7 +86,7 @@ function ProductRow({ p, onToggle }) {
             </button>
           </>
         ) : (
-          <button
+          <button type="button"
             onClick={handleQuit} disabled={saving}
             style={{
               padding: '5px 12px', borderRadius: 7,

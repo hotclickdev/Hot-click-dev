@@ -17,7 +17,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Sesiones activas, IPs sospechosas y bloqueo/desbloqueo del Security Center.
@@ -63,7 +62,7 @@ class SecurityIpHandler {
             m.put("ultimoEvento",   last);
             m.put("bloqueada",      ipBloqueadaRepo.existsByIpAddressAndActivaTrue(ip));
             return m;
-        }).collect(Collectors.toList());
+        }).toList();
 
         return ResponseEntity.ok(result);
     }

@@ -92,7 +92,7 @@ export default function OrderCardExpanded({
 
       {pendingEstado && pendingEstado !== estado && (
         <div className="flex gap-2">
-          <button
+          <button type="button"
             onClick={onSaveEstado}
             disabled={saving || (needsEnvioForm && !guia.trim())}
             className="flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50"
@@ -100,7 +100,7 @@ export default function OrderCardExpanded({
           >
             {saving ? t('adminOrders.saving') : t('adminOrders.saveChanges')}
           </button>
-          <button
+          <button type="button"
             onClick={onCancelPending}
             disabled={saving}
             className="px-4 py-2.5 rounded-xl text-sm transition-all"
@@ -140,7 +140,7 @@ export default function OrderCardExpanded({
 
       <div className="flex flex-wrap gap-2">
         {order.clienteCorreo && order.clienteCorreo !== '—' && (
-          <button
+          <button type="button"
             onClick={onSendEmail}
             disabled={notifying}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50"
@@ -197,7 +197,7 @@ export default function OrderCardExpanded({
 
       <div className="pt-2 border-t flex items-start justify-between gap-4" style={{ borderColor: 'var(--hc-border)' }}>
         <div className="flex-1">
-          <button onClick={() => onShowOver((v) => !v)}
+          <button type="button" onClick={() => onShowOver((v) => !v)}
             className="text-xs text-[var(--hc-muted)] hover:text-[var(--hc-muted)] transition-colors">
             {t('adminOrders.manualCorrection')}
           </button>
@@ -213,7 +213,7 @@ export default function OrderCardExpanded({
                   <option key={s} value={s}>{s}</option>
                 ))}
               </select>
-              <button
+              <button type="button"
                 onClick={onApplyOverride}
                 disabled={saving || !override || override === estado}
                 className="px-4 rounded-xl text-sm font-medium transition-all disabled:opacity-40"
@@ -224,7 +224,7 @@ export default function OrderCardExpanded({
             </div>
           )}
         </div>
-        <button
+        <button type="button"
           onClick={onConfirmDelete}
           disabled={saving}
           className="text-xs px-3 py-1.5 rounded-lg transition-all disabled:opacity-40 shrink-0"

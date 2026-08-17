@@ -57,7 +57,7 @@ export default function EmpresaSelectionPage() {
         {/* Empresa cards */}
         <div className="space-y-3">
           {empresas.map((emp) => (
-            <button
+            <button type="button"
               key={emp.id}
               onClick={() => seleccionar(emp)}
               disabled={loading !== null}

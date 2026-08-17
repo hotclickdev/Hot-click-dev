@@ -103,7 +103,7 @@ export default function ReturnVisitorBanner() {
                   Ver favoritos
                 </Link>
               )}
-              <button
+              <button type="button"
                 onClick={dismiss}
                 className="w-6 h-6 flex items-center justify-center rounded-lg text-xs transition-all hover:bg-white/10"
                 style={{ color: 'var(--hc-muted)' }}
