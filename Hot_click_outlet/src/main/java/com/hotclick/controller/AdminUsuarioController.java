@@ -1,217 +1,90 @@
 package com.hotclick.controller;
 
 import com.hotclick.dto.ResponseDTO;
-import com.hotclick.model.Rol;
-import com.hotclick.model.Usuario;
-import com.hotclick.repository.RolRepository;
-import com.hotclick.repository.UsuarioRepository;
-import com.hotclick.utils.Constants;
+import com.hotclick.service.AdminUsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-
 
 @RestController
 @RequestMapping("/api/admin/usuarios")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminUsuarioController {
 
-    @Autowired private UsuarioRepository usuarioRepository;
-    @Autowired private RolRepository     rolRepository;
+    @Autowired private AdminUsuarioService adminUsuarioService;
 
-    /** Lista todos los usuarios ordenados por ID desc. */
-    @Transactional(readOnly = true)
     @GetMapping
     public ResponseDTO listarTodos() {
-        return ResponseDTO.success("Usuarios", usuarioRepository.findAllWithRolesOrderByIdDesc());
+        return ResponseDTO.success("Usuarios", adminUsuarioService.listarTodos());
     }
 
-    /** Lista solo los usuarios pendientes de aprobación. */
-    @Transactional(readOnly = true)
     @GetMapping("/pendientes")
     public ResponseDTO listarPendientes() {
-        List<Usuario> pendientes = usuarioRepository.findByEstadoOrderByIdDesc(Constants.ESTADO_PENDIENTE);
-        return ResponseDTO.success("Usuarios pendientes", pendientes);
+        return ResponseDTO.success("Usuarios pendientes", adminUsuarioService.listarPendientes());
     }
 
-    /**
-     * Aprueba un usuario: activa la cuenta y asigna el rol indicado.
-     * Body: { "rol": "USUARIO_FINAL" | "ADMIN" | "EMPRENDEDOR" }
-     */
-    @Transactional
     @PutMapping("/{id}/aprobar")
-    public ResponseEntity<ResponseDTO> aprobar(@PathVariable Long id,
-                                                @RequestBody Map<String, String> body) {
-        Optional<Usuario> opt = usuarioRepository.findByIdWithRoles(id);
-        if (opt.isEmpty()) {
-            return ResponseEntity.status(404).body(ResponseDTO.error("Usuario no encontrado"));
+    public ResponseEntity<ResponseDTO> aprobar(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        try {
+            String rol = adminUsuarioService.aprobar(id, body.getOrDefault("rol", null));
+            return ResponseEntity.ok(ResponseDTO.success("Usuario aprobado con rol " + rol, null));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(500).body(ResponseDTO.error(e.getMessage()));
         }
-        Usuario usuario = opt.get();
-
-        String rolNombre = body.getOrDefault("rol", Constants.ROL_USUARIO_FINAL).trim();
-        if (!List.of(Constants.ROL_USUARIO_FINAL, Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
-                .contains(rolNombre)) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error("Rol inválido: " + rolNombre));
-        }
-
-        Optional<Rol> rolOpt = rolRepository.findByNombreRol(rolNombre);
-        if (rolOpt.isEmpty()) {
-            return ResponseEntity.status(500).body(ResponseDTO.error("Rol '" + rolNombre + "' no existe en la BD"));
-        }
-
-        usuario.setEstado(Constants.ESTADO_ACTIVO);
-        usuario.getRoles().clear();
-        usuario.getRoles().add(rolOpt.get());
-        usuarioRepository.save(usuario);
-
-        return ResponseEntity.ok(ResponseDTO.success(
-            "Usuario aprobado con rol " + rolNombre, null));
     }
 
-    /**
-     * Rechaza/elimina un usuario pendiente.
-     * Usa soft-delete (estado = ELIMINADO).
-     */
     @PutMapping("/{id}/rechazar")
     public ResponseEntity<ResponseDTO> rechazar(@PathVariable Long id) {
-        Optional<Usuario> opt = usuarioRepository.findById(id);
-        if (opt.isEmpty()) {
-            return ResponseEntity.status(404).body(ResponseDTO.error("Usuario no encontrado"));
-        }
-        Usuario usuario = opt.get();
-        usuario.setEstado(Constants.ESTADO_ELIMINADO);
-        usuarioRepository.save(usuario);
+        adminUsuarioService.rechazar(id);
         return ResponseEntity.ok(ResponseDTO.success("Usuario rechazado", null));
     }
 
-    /**
-     * Cambia el rol de cualquier usuario existente.
-     * Body: { "rol": "USUARIO_FINAL" | "ADMIN" | "EMPRENDEDOR" }
-     */
-    @Transactional
     @PutMapping("/{id}/rol")
-    public ResponseEntity<ResponseDTO> cambiarRol(@PathVariable Long id,
-                                                   @RequestBody Map<String, String> body) {
-        String rolNombre = body.get("rol");
-        if (rolNombre == null || rolNombre.isBlank()) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error("El campo 'rol' es requerido"));
-        }
-
-        Optional<Usuario> opt = usuarioRepository.findByIdWithRoles(id);
-        if (opt.isEmpty()) {
-            return ResponseEntity.status(404).body(ResponseDTO.error("Usuario no encontrado"));
-        }
-
-        Optional<Rol> rolOpt = rolRepository.findByNombreRol(rolNombre.trim());
-        if (rolOpt.isEmpty()) {
-            return ResponseEntity.status(400).body(ResponseDTO.error("Rol '" + rolNombre + "' no existe"));
-        }
-
-        Usuario usuario = opt.get();
-        usuario.getRoles().clear();
-        usuario.getRoles().add(rolOpt.get());
-        usuarioRepository.save(usuario);
-
-        return ResponseEntity.ok(ResponseDTO.success("Rol actualizado a " + rolNombre, null));
+    public ResponseEntity<ResponseDTO> cambiarRol(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        adminUsuarioService.cambiarRol(id, body.get("rol"));
+        return ResponseEntity.ok(ResponseDTO.success("Rol actualizado a " + body.get("rol"), null));
     }
 
-    /**
-     * Elimina (soft-delete) un usuario.
-     */
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseDTO> eliminar(@PathVariable Long id) {
-        Optional<Usuario> opt = usuarioRepository.findById(id);
-        if (opt.isEmpty()) {
-            return ResponseEntity.status(404).body(ResponseDTO.error("Usuario no encontrado"));
-        }
-        Usuario usuario = opt.get();
-        usuario.setEstado(Constants.ESTADO_ELIMINADO);
-        usuarioRepository.save(usuario);
+        adminUsuarioService.eliminar(id);
         return ResponseEntity.ok(ResponseDTO.success("Usuario eliminado", null));
     }
 
-    /**
-     * Activa o desactiva una cuenta existente.
-     * Body: { "estado": 1 } (1=activo, 2=inactivo)
-     */
     @PutMapping("/{id}/estado")
-    public ResponseEntity<ResponseDTO> cambiarEstado(@PathVariable Long id,
-                                                      @RequestBody Map<String, Object> body) {
+    public ResponseEntity<ResponseDTO> cambiarEstado(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         Object raw = body.get("estado");
         if (raw == null) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("El campo 'estado' es requerido"));
         }
-        int nuevoEstado = Integer.parseInt(raw.toString());
-        if (nuevoEstado != Constants.ESTADO_ACTIVO && nuevoEstado != Constants.ESTADO_INACTIVO) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error("Estado inválido (usa 1=activo, 2=inactivo)"));
-        }
-
-        Optional<Usuario> opt = usuarioRepository.findById(id);
-        if (opt.isEmpty()) {
-            return ResponseEntity.status(404).body(ResponseDTO.error("Usuario no encontrado"));
-        }
-
-        Usuario usuario = opt.get();
-        usuario.setEstado(nuevoEstado);
-        usuarioRepository.save(usuario);
-
-        String msg = nuevoEstado == Constants.ESTADO_ACTIVO ? "Usuario activado" : "Usuario desactivado";
+        String msg = adminUsuarioService.cambiarEstado(id, Integer.parseInt(raw.toString()));
         return ResponseEntity.ok(ResponseDTO.success(msg, null));
     }
 
-    /**
-     * Restaura un usuario eliminado, devolviéndolo a estado ACTIVO.
-     */
     @PutMapping("/{id}/restaurar")
     public ResponseEntity<ResponseDTO> restaurar(@PathVariable Long id) {
-        Optional<Usuario> opt = usuarioRepository.findById(id);
-        if (opt.isEmpty()) {
-            return ResponseEntity.status(404).body(ResponseDTO.error("Usuario no encontrado"));
-        }
-        Usuario usuario = opt.get();
-        if (usuario.getEstado() == null || usuario.getEstado() != Constants.ESTADO_ELIMINADO) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error("El usuario no está eliminado"));
-        }
-        usuario.setEstado(Constants.ESTADO_ACTIVO);
-        usuarioRepository.save(usuario);
+        adminUsuarioService.restaurar(id);
         return ResponseEntity.ok(ResponseDTO.success("Usuario restaurado correctamente", null));
     }
 
-    /** Bloquea (suspende) una cuenta activa. */
     @PutMapping("/{id}/bloquear")
     public ResponseEntity<ResponseDTO> bloquear(@PathVariable Long id) {
-        Optional<Usuario> opt = usuarioRepository.findById(id);
-        if (opt.isEmpty()) {
-            return ResponseEntity.status(404).body(ResponseDTO.error("Usuario no encontrado"));
-        }
-        Usuario usuario = opt.get();
-        if (usuario.getEstado() != null && usuario.getEstado() == Constants.ESTADO_ELIMINADO) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error("No se puede bloquear un usuario eliminado"));
-        }
-        usuario.setEstado(Constants.ESTADO_SUSPENDIDO);
-        usuarioRepository.save(usuario);
+        adminUsuarioService.bloquear(id);
         return ResponseEntity.ok(ResponseDTO.success("Usuario bloqueado", null));
     }
 
-    /** Desbloquea una cuenta suspendida, volviéndola activa. */
     @PutMapping("/{id}/desbloquear")
     public ResponseEntity<ResponseDTO> desbloquear(@PathVariable Long id) {
-        Optional<Usuario> opt = usuarioRepository.findById(id);
-        if (opt.isEmpty()) {
-            return ResponseEntity.status(404).body(ResponseDTO.error("Usuario no encontrado"));
-        }
-        Usuario usuario = opt.get();
-        if (usuario.getEstado() == null || usuario.getEstado() != Constants.ESTADO_SUSPENDIDO) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error("El usuario no está bloqueado"));
-        }
-        usuario.setEstado(Constants.ESTADO_ACTIVO);
-        usuarioRepository.save(usuario);
+        adminUsuarioService.desbloquear(id);
         return ResponseEntity.ok(ResponseDTO.success("Usuario desbloqueado", null));
     }
 }

@@ -1,218 +1,112 @@
 package com.hotclick.controller;
 
-import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.dto.ResponseDTO;
-import com.hotclick.model.Empresa;
-import com.hotclick.model.MiembroEmpresa;
 import com.hotclick.model.Usuario;
-import com.hotclick.repository.MiembroEmpresaRepository;
-import com.hotclick.repository.RolRepository;
-import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.security.CompanyScope;
-import com.hotclick.service.NotificacionEmailService;
-import com.hotclick.service.TenantService;
-import com.hotclick.utils.Constants;
+import com.hotclick.service.EquipoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/empresa/equipo")
 public class EquipoController {
 
-    @Autowired private UsuarioRepository        usuarioRepository;
-    @Autowired private RolRepository            rolRepository;
-    @Autowired private PasswordEncoder          passwordEncoder;
-    @Autowired private CompanyScope             companyScope;
-    @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
-    @Autowired private NotificacionEmailService notificacionEmailService;
-    @Autowired private TenantService            tenantService;
+    private static final Set<String> ROLES_PERMITIDOS = Set.of("EDITOR", "LECTOR", "ADMIN");
 
-    private static final int MAX_EMPRESAS_POR_USUARIO = 20;
-    private static final java.util.Set<String> ROLES_PERMITIDOS = java.util.Set.of("EDITOR", "LECTOR", "ADMIN");
+    @Autowired private CompanyScope companyScope;
+    @Autowired private EquipoService equipoService;
 
     @GetMapping
     public ResponseEntity<ResponseDTO> listar() {
         Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
-        if (empresaId == null)
+        if (empresaId == null) {
             return ResponseEntity.status(403).body(ResponseDTO.error("Solo disponible para empresas"));
-
-        // Listar por junction table para incluir miembros invitados de otras empresas
-        List<MiembroEmpresa> membresías = miembroEmpresaRepository.findByEmpresaIdAndEstado(empresaId, 1);
-        List<Map<String, Object>> result = membresías.stream().map(m -> {
-            Usuario u = m.getUsuario();
-            Map<String, Object> r = new java.util.HashMap<>();
-            r.put("id",            u.getId());
-            r.put("nombre",        u.getNombre());
-            r.put("apellidoPaterno", u.getApellidoPaterno());
-            r.put("correo",        u.getCorreo());
-            r.put("telefono",      u.getTelefono());
-            r.put("fotoPerfilUrl", u.getFotoPerfilUrl());
-            r.put("estado",        u.getEstado());
-            r.put("rolEnEmpresa",  m.getRolEnEmpresa());
-            r.put("fechaIngreso",  m.getFechaIngreso());
-            return r;
-        }).toList();
-        return ResponseEntity.ok(ResponseDTO.success("Equipo", result));
+        }
+        return ResponseEntity.ok(ResponseDTO.success("Equipo", equipoService.listar(empresaId)));
     }
 
     @PostMapping
     public ResponseEntity<ResponseDTO> invitar(@RequestBody Map<String, String> body) {
-        if (!companyScope.isEmprendedor())
-            return ResponseEntity.status(403).body(ResponseDTO.error("Solo el emprendedor puede agregar miembros"));
-
+        ResponseEntity<ResponseDTO> denegado = denegarSiNoEmprendedor("Solo el emprendedor puede agregar miembros");
+        if (denegado != null) return denegado;
         Usuario currentUser = companyScope.getCurrentUser();
-        if (currentUser == null || currentUser.getEmpresa() == null)
+        if (currentUser == null || currentUser.getEmpresa() == null) {
             return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada"));
-
-        String nombre       = body.get("nombre");
-        String correo       = body.get("correo");
-        String password     = body.get("password");
-        String telefono     = body.getOrDefault("telefono", "00000000");
+        }
+        ResponseEntity<ResponseDTO> invalido = validarInvitacion(body);
+        if (invalido != null) return invalido;
         String rolEnEmpresa = body.getOrDefault("rolEnEmpresa", "EDITOR");
-
-        if (nombre == null || nombre.isBlank())
-            return ResponseEntity.badRequest().body(ResponseDTO.error("El nombre es requerido"));
-        if (correo == null || correo.isBlank())
-            return ResponseEntity.badRequest().body(ResponseDTO.error("El correo es requerido"));
-        if (password == null || password.length() < 6)
-            return ResponseEntity.badRequest().body(ResponseDTO.error("La contraseña debe tener al menos 6 caracteres"));
-        if (!ROLES_PERMITIDOS.contains(rolEnEmpresa))
-            return ResponseEntity.badRequest().body(ResponseDTO.error("Rol inválido. Valores aceptados: EDITOR, LECTOR"));
-
-        Empresa empresa    = currentUser.getEmpresa();
-        String correoNorm  = correo.trim().toLowerCase();
-
-        Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
-        if (empresaId != null) {
-            tenantService.verificarLimiteUsuariosEquipo(empresaId);
-        }
-
-        var rolMiembro = rolRepository.findByNombreRol(Constants.ROL_EMPRENDEDOR)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Rol EMPRENDEDOR no configurado"));
-
-        Optional<Usuario> existenteOpt = usuarioRepository.findByCorreo(correoNorm);
-        if (existenteOpt.isPresent()) {
-            Usuario u = existenteOpt.get();
-
-            if (miembroEmpresaRepository.existsByUsuarioIdAndEmpresaIdAndEstado(u.getId(), empresa.getId(), 1))
-                return ResponseEntity.badRequest().body(ResponseDTO.error("Este usuario ya es miembro activo de tu equipo"));
-
-            if (miembroEmpresaRepository.countEmpresasByUsuarioId(u.getId()) >= MAX_EMPRESAS_POR_USUARIO)
-                return ResponseEntity.badRequest().body(ResponseDTO.error("El usuario ya pertenece al máximo de " + MAX_EMPRESAS_POR_USUARIO + " negocios permitidos"));
-
-            boolean tieneRol = u.getRoles().stream().anyMatch(r -> Constants.ROL_EMPRENDEDOR.equals(r.getNombreRol()));
-            if (!tieneRol) { u.getRoles().add(rolMiembro); }
-            if (u.getEmpresa() == null) { u.setEmpresa(empresa); }
-            usuarioRepository.save(u);
-
-            // Reactivar membresía eliminada si existe, o crear nueva
-            Optional<MiembroEmpresa> previo = miembroEmpresaRepository.findByUsuarioIdAndEmpresaId(u.getId(), empresa.getId());
-            if (previo.isPresent()) {
-                MiembroEmpresa m = previo.get();
-                m.setEstado(1);
-                m.setRolEnEmpresa(rolEnEmpresa);
-                m.setFechaIngreso(LocalDateTime.now(Constants.ZONA_CR));
-                miembroEmpresaRepository.save(m);
-            } else {
-                miembroEmpresaRepository.save(new MiembroEmpresa(u, empresa, rolEnEmpresa));
-            }
-            notificacionEmailService.enviarInvitacionMiembro(
-                correoNorm, u.getNombre(), rolEnEmpresa,
-                empresa.getNombreComercial() != null ? empresa.getNombreComercial() : empresa.getNombreEmpresa(),
-                null);
-            return ResponseEntity.ok(ResponseDTO.success("Miembro agregado al equipo como " + rolEnEmpresa, null));
-        }
-
-        // Usuario nuevo — crear y asociar a esta empresa
-        String[] partes = nombre.trim().split("\\s+", 2);
-        Usuario nuevo = new Usuario();
-        nuevo.setNombre(partes[0]);
-        nuevo.setApellidoPaterno(partes.length > 1 ? partes[1] : "Miembro");
-        nuevo.setIdentificacion("ADM-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12));
-        nuevo.setCorreo(correoNorm);
-        nuevo.setContrasenaHash(passwordEncoder.encode(password));
-        nuevo.setTelefono(telefono);
-        nuevo.setEstado(Constants.ESTADO_ACTIVO);
-        nuevo.setIntentosFallidos(0);
-        nuevo.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
-        nuevo.setEmpresa(empresa);
-        nuevo.getRoles().add(rolMiembro);
-        Usuario saved = usuarioRepository.save(nuevo);
-
-        miembroEmpresaRepository.save(new MiembroEmpresa(saved, empresa, rolEnEmpresa));
-        notificacionEmailService.enviarInvitacionMiembro(
-            correoNorm, saved.getNombre(), rolEnEmpresa,
-            empresa.getNombreComercial() != null ? empresa.getNombreComercial() : empresa.getNombreEmpresa(),
-            password);
+        equipoService.invitar(
+            currentUser.getEmpresa(),
+            companyScope.getCurrentEmpresaIdOrOwn(),
+            body.get("nombre"),
+            body.get("correo").trim().toLowerCase(),
+            body.get("password"),
+            body.getOrDefault("telefono", "00000000"),
+            rolEnEmpresa);
         return ResponseEntity.ok(ResponseDTO.success("Miembro agregado al equipo como " + rolEnEmpresa, null));
     }
 
     @PutMapping("/{id}/rol")
-    public ResponseEntity<ResponseDTO> cambiarRol(@PathVariable Long id,
-                                                  @RequestBody Map<String, String> body) {
-        if (!companyScope.isEmprendedor())
-            return ResponseEntity.status(403).body(ResponseDTO.error("Solo el emprendedor puede cambiar roles"));
-
+    public ResponseEntity<ResponseDTO> cambiarRol(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        ResponseEntity<ResponseDTO> denegado = denegarSiNoEmprendedor("Solo el emprendedor puede cambiar roles");
+        if (denegado != null) return denegado;
         Long empresaId = companyScope.getCurrentEmpresaId();
-        if (empresaId == null)
+        if (empresaId == null) {
             return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada"));
-
+        }
         String nuevoRol = body.get("rolEnEmpresa");
-        if (nuevoRol == null || !ROLES_PERMITIDOS.contains(nuevoRol))
+        if (nuevoRol == null || !ROLES_PERMITIDOS.contains(nuevoRol)) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Rol inválido. Valores aceptados: EDITOR, LECTOR"));
-
-        Optional<MiembroEmpresa> mOpt = miembroEmpresaRepository.findByUsuarioIdAndEmpresaIdAndEstado(id, empresaId, 1);
-        if (mOpt.isEmpty())
-            return ResponseEntity.status(404).body(ResponseDTO.error("Miembro no encontrado en tu equipo"));
-
-        MiembroEmpresa m = mOpt.get();
-        if ("PROPIETARIO".equals(m.getRolEnEmpresa()))
-            return ResponseEntity.badRequest().body(ResponseDTO.error("No puedes cambiar el rol del propietario"));
-
-        m.setRolEnEmpresa(nuevoRol);
-        miembroEmpresaRepository.save(m);
-        return ResponseEntity.ok(ResponseDTO.success("Rol actualizado a " + nuevoRol, Map.of("rolEnEmpresa", nuevoRol)));
+        }
+        return ResponseEntity.ok(ResponseDTO.success("Rol actualizado a " + nuevoRol,
+            equipoService.cambiarRol(id, empresaId, nuevoRol)));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseDTO> eliminar(@PathVariable Long id) {
-        if (!companyScope.isEmprendedor())
-            return ResponseEntity.status(403).body(ResponseDTO.error("Solo el emprendedor puede eliminar miembros"));
-
+        ResponseEntity<ResponseDTO> denegado = denegarSiNoEmprendedor("Solo el emprendedor puede eliminar miembros");
+        if (denegado != null) return denegado;
         Long empresaId = companyScope.getCurrentEmpresaId();
-        if (empresaId == null)
+        if (empresaId == null) {
             return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada"));
-
-        if (id.equals(companyScope.getCurrentUserId()))
-            return ResponseEntity.badRequest().body(ResponseDTO.error("No puedes eliminarte a ti mismo"));
-
-        // Desactivar membresía en junction table
-        Optional<MiembroEmpresa> mOpt = miembroEmpresaRepository.findByUsuarioIdAndEmpresaIdAndEstado(id, empresaId, 1);
-        if (mOpt.isEmpty())
-            return ResponseEntity.status(403).body(ResponseDTO.error("El usuario no pertenece a tu equipo"));
-
-        MiembroEmpresa m = mOpt.get();
-        if ("PROPIETARIO".equals(m.getRolEnEmpresa()))
-            return ResponseEntity.badRequest().body(ResponseDTO.error("No puedes eliminar al propietario del negocio"));
-
-        m.setEstado(0);
-        miembroEmpresaRepository.save(m);
-
-        // Si solo pertenecía a esta empresa, también marcar usuario como eliminado
-        if (miembroEmpresaRepository.countEmpresasByUsuarioId(id) == 0) {
-            usuarioRepository.findById(id).ifPresent(u -> {
-                u.setEstado(Constants.ESTADO_ELIMINADO);
-                usuarioRepository.save(u);
-            });
         }
+        equipoService.eliminar(id, empresaId, companyScope.getCurrentUserId());
         return ResponseEntity.ok(ResponseDTO.success("Miembro eliminado del equipo", null));
+    }
+
+    private ResponseEntity<ResponseDTO> denegarSiNoEmprendedor(String mensaje) {
+        if (!companyScope.isEmprendedor()) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(mensaje));
+        }
+        return null;
+    }
+
+    private ResponseEntity<ResponseDTO> validarInvitacion(Map<String, String> body) {
+        if (body.get("nombre") == null || body.get("nombre").isBlank()) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error("El nombre es requerido"));
+        }
+        if (body.get("correo") == null || body.get("correo").isBlank()) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error("El correo es requerido"));
+        }
+        if (body.get("password") == null || body.get("password").length() < 6) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error("La contraseña debe tener al menos 6 caracteres"));
+        }
+        String rolEnEmpresa = body.getOrDefault("rolEnEmpresa", "EDITOR");
+        if (!ROLES_PERMITIDOS.contains(rolEnEmpresa)) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error("Rol inválido. Valores aceptados: EDITOR, LECTOR"));
+        }
+        return null;
     }
 }
