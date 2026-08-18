@@ -36,6 +36,9 @@ public class ChatRequest {
     @Size(max = 36, message = "El visitorId no puede superar 36 caracteres")
     private String visitorId;
 
+    /** Producto de la ficha; si viene, el RAG no busca el catálogo. */
+    private Long productoId;
+
     public String getMensaje()     { return mensaje; }
     public void   setMensaje(String mensaje) { this.mensaje = mensaje; }
 
@@ -50,4 +53,7 @@ public class ChatRequest {
 
     public String getVisitorId()   { return visitorId; }
     public void   setVisitorId(String visitorId) { this.visitorId = visitorId; }
+
+    public Long getProductoId() { return productoId; }
+    public void setProductoId(Long productoId) { this.productoId = productoId; }
 }

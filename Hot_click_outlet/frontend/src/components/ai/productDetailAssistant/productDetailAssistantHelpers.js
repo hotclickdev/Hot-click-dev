@@ -1,11 +1,9 @@
-export const PREGUNTAS_RAPIDAS = [
-  '¿Para qué sirve exactamente?',
-  '¿Es fácil de instalar?',
-  '¿Para qué espacio es ideal?',
-  '¿Tiene garantía?',
-  '¿Es compatible con Alexa / Google Home?',
-  '¿Vale la pena el precio?',
-]
+import { chipsAsesorProducto } from '../productAdvisorChips'
+
+/** @param {object | null} product */
+export function preguntasRapidasDe(product) {
+  return chipsAsesorProducto(product)
+}
 
 export function TypingDots() {
   return (

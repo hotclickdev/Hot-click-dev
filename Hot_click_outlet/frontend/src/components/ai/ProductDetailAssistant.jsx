@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { TypingDots, PREGUNTAS_RAPIDAS } from './productDetailAssistant/productDetailAssistantHelpers'
+import { TypingDots, preguntasRapidasDe } from './productDetailAssistant/productDetailAssistantHelpers'
 import { useProductDetailAssistant } from './productDetailAssistant/useProductDetailAssistant'
 
 export default function ProductDetailAssistant({ product }) {
@@ -59,7 +59,7 @@ export default function ProductDetailAssistant({ product }) {
             <div style={{ borderTop: '1px solid var(--hc-border)' }}>
               {mensajes.length <= 1 && !cargando && (
                 <div className="px-4 pt-3 pb-2 flex flex-wrap gap-1.5">
-                  {PREGUNTAS_RAPIDAS.map(q => (
+                  {preguntasRapidasDe(product).map(q => (
                     <button type="button"
                       key={q}
                       onClick={() => enviar(q)}

@@ -22,7 +22,6 @@ import static com.hotclick.service.AiCopilotService.ChatConAccionesResultado;
 public class AiCopilotSyncChatService {
 
     private static final Logger log = LoggerFactory.getLogger(AiCopilotSyncChatService.class);
-    private static final int    MAX_RESPONSE_CHARS = 8_000;  // hard cap — stops runaway stream output loops
 
     @Value("${anthropic.api-key:}")
     private String claudeApiKey;
@@ -36,6 +35,26 @@ public class AiCopilotSyncChatService {
 
     private boolean isClaudeEnabled() {
         return claudeApiKey != null && !claudeApiKey.isBlank();
+    }
+
+    public boolean claudeDisponible() {
+        return isClaudeEnabled();
+    }
+
+    /**
+     * Claude + tools. No reserva cuota ni persiste mensajes.
+     * En el panel web usar {@code puedeGestionar=false}: las mutaciones
+     * dependen de botones de confirmación de Telegram.
+     */
+    public AiCopilotClaudeClient.ResultadoLoopClaude completarConClaude(
+            Long empresaId, Empresa empresa, String userMessage,
+            String nombreUsuario, boolean puedeGestionar)
+            throws java.io.IOException, InterruptedException {
+        List<Map<String, Object>> messages = requestBuilder.buildMessages(empresaId, userMessage);
+        String systemPrompt = toolExecutor.buildSystemPromptConTools(
+            empresaId, empresa, nombreUsuario, puedeGestionar);
+        List<Map<String, Object>> tools = toolExecutor.buildTools(empresaId, puedeGestionar);
+        return claudeClient.ejecutarLoopClaude(empresaId, systemPrompt, messages, tools);
     }
 
     /**
@@ -85,19 +104,11 @@ public class AiCopilotSyncChatService {
         }
 
         try {
-            List<Map<String, Object>> messages = requestBuilder.buildMessages(empresaId, userMessage);
-            String systemPrompt = toolExecutor.buildSystemPromptConTools(empresaId, empresa, nombreUsuario, puedeGestionar);
-            List<Map<String, Object>> tools = toolExecutor.buildTools(empresaId, puedeGestionar);
+            AiCopilotClaudeClient.ResultadoLoopClaude loop =
+                completarConClaude(empresaId, empresa, userMessage, nombreUsuario, puedeGestionar);
+            if (loop == null) return null;
 
-            AiCopilotClaudeClient.ResultadoLoopClaude loop = claudeClient.ejecutarLoopClaude(empresaId, systemPrompt, messages, tools);
-            if (loop == null) return null; // fallo de proveedor — el caller decide su fallback
-
-            String texto = loop.texto();
-            if (texto == null || texto.isBlank()) {
-                texto = "No pude generar una respuesta. Probá reformular la pregunta.";
-            }
-            if (texto.length() > MAX_RESPONSE_CHARS) texto = texto.substring(0, MAX_RESPONSE_CHARS);
-
+            String texto = AiCopilotTextoRespuesta.normalizar(loop.texto(), AiCopilotTextoRespuesta.MAX_CHARS);
             messageStore.saveMsg(empresa, "assistant", texto, loop.tokensOut());
             aiQuotaService.actualizarTokens(empresaId, loop.tokensIn(), loop.tokensOut());
             return new ChatConAccionesResultado(texto, loop.accionPropuesta());
@@ -106,7 +117,7 @@ public class AiCopilotSyncChatService {
             Thread.currentThread().interrupt();
             return null;
         } catch (Exception e) {
-            log.error("[AI-sync] empresaId={} fallo llamando a NVIDIA — {}", empresaId, e.getMessage());
+            log.error("[AI-sync] empresaId={} fallo llamando a Claude — {}", empresaId, e.getMessage());
             return null;
         }
     }

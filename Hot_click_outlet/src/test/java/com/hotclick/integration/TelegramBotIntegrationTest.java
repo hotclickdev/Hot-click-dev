@@ -350,7 +350,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
     // ── IA de texto libre ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("Texto libre sin créditos de IA → mensaje de cuota, sin llamar a NVIDIA")
+    @DisplayName("Texto libre sin créditos de IA → mensaje de cuota, sin llamar a Claude")
     void textoLibre_sinCreditos_mensajeDeCuota() throws Exception {
         vincularDirecto(duenno, empresa, CHAT_ID); // empresa GRATUITO sin plan → 0 créditos
 

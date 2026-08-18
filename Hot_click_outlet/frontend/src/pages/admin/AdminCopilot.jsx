@@ -33,7 +33,7 @@ export default function AdminCopilot() {
             🤖 AI Copilot
           </h1>
           <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-            Powered by NVIDIA AI · Contexto en tiempo real de tu negocio
+            Powered by Claude · Contexto en tiempo real de tu negocio
           </p>
         </div>
         <div className="flex items-center gap-3">

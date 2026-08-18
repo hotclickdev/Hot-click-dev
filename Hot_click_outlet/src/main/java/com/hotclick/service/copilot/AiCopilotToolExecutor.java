@@ -21,14 +21,9 @@ public class AiCopilotToolExecutor {
     @Autowired private AiCopilotToolDefinitions toolDefinitions;
     @Autowired private AiCopilotMutationTools   mutationTools;
 
-    // ── Tool-calling real (solo chatSync / bot de Telegram) ────────────────────
-    //
-    // A diferencia de chatStream (panel admin), que sigue con el patrón de
-    // inyectar un bloque de datos fijo según intención detectada por regex,
-    // chatSync expone herramientas reales (tools) que el modelo NVIDIA decide
-    // cuándo invocar — confirmado que meta/llama-3.1-70b-instruct soporta el
-    // mismo formato de function-calling que OpenAI (ver memoria del proyecto).
-    // chatStream no se toca: mismo comportamiento de siempre para el panel.
+    // ── Tool-calling (Telegram y panel admin) ────────────────────────────────
+    // El panel usa las mismas tools de consulta; las de mutación (proponer_*)
+    // solo se exponen en Telegram con confirmación por botón.
 
     public String buildSystemPromptConTools(Long empresaId, Empresa empresa, String nombreUsuario, boolean puedeGestionar) {
         return toolDefinitions.buildSystemPromptConTools(empresaId, empresa, nombreUsuario, puedeGestionar);

@@ -6,65 +6,36 @@ import com.hotclick.exception.IntegracionExternaException;
 import com.hotclick.model.Empresa;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.security.TenantContext;
+import com.hotclick.service.copilot.AiCopilotClaudeClient;
 import com.hotclick.service.copilot.AiCopilotContextBuilder;
 import com.hotclick.service.copilot.AiCopilotCrossSellService;
 import com.hotclick.service.copilot.AiCopilotHistoryService;
 import com.hotclick.service.copilot.AiCopilotMessageStore;
-import com.hotclick.service.copilot.AiCopilotRequestBuilder;
 import com.hotclick.service.copilot.AiCopilotStreamProcessor;
 import com.hotclick.service.copilot.AiCopilotSuggestionsService;
 import com.hotclick.service.copilot.AiCopilotSyncChatService;
+import com.hotclick.service.copilot.AiCopilotTextoRespuesta;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
 /**
- * AI Copilot — dos proveedores, uno por canal:
- *   - chatStream (panel admin, SSE) sigue en NVIDIA NIM (OpenAI-compatible).
- *   - chatSync/crossSellCliente (bot de Telegram) usan Claude (Anthropic Messages
- *     API): el tier gratuito de NVIDIA demostró ser intermitentemente lento/no
- *     disponible bajo uso real (ver memoria del proyecto), y Claude ya es
- *     confiable en producción para el asistente de compras de esta misma app.
+ * AI Copilot — Claude (Anthropic) en todos los canales:
+ *   - chatStream (panel admin / resumen ejecutivo, SSE)
+ *   - chatSync / crossSellCliente (bot de Telegram)
  *
- * Uses Java 21 HttpClient — no external SDK required.
- * Streams la respuesta del panel via SSE para evitar timeouts de conexión.
- * Cuando la api-key correspondiente está vacía, devuelve una respuesta mock (dev mode).
- *
- * Context injected into every system prompt:
- *   - Empresa name, plan, country
- *   - Last 7 days KPIs (orders, revenue, top products)
- *   - Low-stock alerts
+ * NVIDIA NIM queda fuera de este flujo (el tier gratis falló en uso real).
+ * TextModerationService sigue filtrando el mensaje en el controller.
  */
 @Service
 public class AiCopilotService {
 
-    private static final HttpClient HTTP = HttpClient.newBuilder()
-        .connectTimeout(Duration.ofSeconds(15))
-        .build();
-
-    // Apunta directo a NVIDIA NIM por defecto. Para pasar por el sidecar de
-    // NeMo Guardrails (security-tools/guardrails/), setear NVIDIA_BASE_URL=
-    // http://guardrails:8001/v1/ — ver security-tools/guardrails/README.md.
-    @Value("${nvidia.base-url}chat/completions")
-    private String nvidiaUrl;
-
-    @Value("${nvidia.api-key:}")
-    private String apiKey;
-
     @Autowired private AiQuotaService               aiQuotaService;
     @Autowired private EmpresaRepository            empresaRepository;
     @Autowired private AiCopilotContextBuilder      contextBuilder;
-    @Autowired private AiCopilotRequestBuilder      requestBuilder;
     @Autowired private AiCopilotStreamProcessor     streamProcessor;
     @Autowired private AiCopilotSuggestionsService  suggestionsService;
     @Autowired private AiCopilotHistoryService      historyService;
@@ -73,7 +44,7 @@ public class AiCopilotService {
     @Autowired private AiCopilotCrossSellService    crossSellService;
 
     public boolean isEnabled() {
-        return apiKey != null && !apiKey.isBlank();
+        return syncChatService.claudeDisponible();
     }
 
     public List<Map<String, Object>> getHistorial(Long empresaId) {
@@ -92,56 +63,56 @@ public class AiCopilotService {
         return suggestionsService.getSugerencias(empresaId);
     }
 
-    /** Main streaming endpoint: NVIDIA reply via SSE. */
-    @CircuitBreaker(name = "nvidia", fallbackMethod = "chatStreamFallback")
+    /** Panel admin y resumen ejecutivo: Claude + tools de consulta, respuesta por SSE. */
+    @CircuitBreaker(name = "claude", fallbackMethod = "chatStreamFallback")
     public void chatStream(Long empresaId, String userMessage, SseEmitter emitter) {
-        // TenantContext sobrevive el salto a sseExecutor (TenantAwareTaskDecorator),
-        // pero NO sobrevive al callback de HttpClient.sendAsync más abajo — ese corre
-        // en un hilo propio del HttpClient. Por eso se captura aquí y se pasa explícito.
         Long tenantId = TenantContext.get();
 
-        // Reserva slot atómicamente antes del HTTP call — elimina race condition TOCTOU
         if (!aiQuotaService.verificarYReservar(empresaId)) {
             streamProcessor.sendError(emitter, "Cuota mensual de AI agotada. Actualiza tu plan.");
             return;
         }
 
-        // Save user message
         Empresa empresa = empresaRepository.findById(empresaId).orElse(null);
         messageStore.saveMsg(empresa, "user", userMessage, 0);
 
         if (!isEnabled()) {
-            // Mock mode for development
-            streamProcessor.streamMock(emitter, "*(modo desarrollo — configura NVIDIA_API_KEY para respuestas reales)*\n\nHola, soy tu copilot de HOTCLICK. ¿En qué te puedo ayudar con tu negocio?");
+            streamProcessor.streamMock(emitter,
+                "*(modo desarrollo — configura ANTHROPIC_API_KEY para respuestas reales)*\n\n"
+                    + "Hola, soy tu copilot de HOTCLICK. ¿En qué te puedo ayudar con tu negocio?");
             messageStore.saveMsg(empresa, "assistant", "Mock response", 0);
             return;
         }
 
+        emitirRespuestaClaude(empresaId, empresa, userMessage, emitter, tenantId);
+    }
+
+    private void emitirRespuestaClaude(Long empresaId, Empresa empresa, String userMessage,
+                                       SseEmitter emitter, Long tenantId) {
         try {
-            AiCopilotContextBuilder.Intent intent = contextBuilder.detectIntent(userMessage);
-
-            // Build messages array para NVIDIA (formato OpenAI chat completions)
-            List<Map<String, Object>> messages = requestBuilder.buildMessages(empresaId, userMessage);
-            String systemPrompt = contextBuilder.buildSystemPrompt(empresaId, intent);
-            String requestBody  = requestBuilder.buildRequestBody(systemPrompt, messages, tenantId);
-
-            HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(nvidiaUrl))
-                .timeout(Duration.ofSeconds(60))
-                .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + apiKey)
-                .header("Accept", "text/event-stream")
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
-                .build();
-
-            HTTP.sendAsync(request, HttpResponse.BodyHandlers.ofLines())
-                .thenAccept(response -> streamProcessor.processStream(response, emitter, empresa, empresaId, messageStore::saveMsg))
-                .exceptionally(ex -> {
-                    streamProcessor.reportNvidiaFailure(AiCopilotStreamProcessor.unwrap(ex), tenantId, emitter);
-                    return null;
-                });
+            // Panel web: sin tools de mutación (no hay botones de confirmar como en Telegram).
+            AiCopilotClaudeClient.ResultadoLoopClaude loop =
+                syncChatService.completarConClaude(empresaId, empresa, userMessage, null, false);
+            if (loop == null) {
+                throw new IntegracionExternaException("claude-api",
+                    IntegracionExternaException.Tipo.IO_ERROR, tenantId,
+                    "Claude no respondió", null);
+            }
+            String texto = AiCopilotTextoRespuesta.normalizar(loop.texto(), AiCopilotTextoRespuesta.MAX_CHARS);
+            streamProcessor.streamText(emitter, texto);
+            messageStore.saveMsg(empresa, "assistant", texto, loop.tokensOut());
+            aiQuotaService.actualizarTokens(empresaId, loop.tokensIn(), loop.tokensOut());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IntegracionExternaException("claude-api",
+                IntegracionExternaException.Tipo.TIMEOUT, tenantId,
+                "Claude interrumpido", e);
         } catch (IntegracionExternaException e) {
-            streamProcessor.reportNvidiaFailure(e, tenantId, emitter);
+            throw e;
+        } catch (Exception e) {
+            throw new IntegracionExternaException("claude-api",
+                IntegracionExternaException.Tipo.DESCONOCIDO, tenantId,
+                "Fallo llamando a Claude API", e);
         }
     }
 

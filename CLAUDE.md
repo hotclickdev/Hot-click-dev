@@ -116,12 +116,10 @@ nano /home/ec2-user/app/Hot_click_outlet/.env
 docker-compose -f docker-compose.prod.yml restart app
 ```
 
-**Apagado de emergencia del sidecar de guardrails** (si hay problemas de RAM o
-latencia en el t3.small — son 2 GB, vigilar con `docker stats`):
+**Apagado de emergencia del sidecar de guardrails** (RAM en t3.small). El copilot
+de admin ya no pasa por NVIDIA; el sidecar solo consume RAM si sigue levantado:
 ```bash
-nano /home/ec2-user/app/Hot_click_outlet/.env
-# → NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1/
-docker-compose -f docker-compose.prod.yml restart app
+docker-compose -f docker-compose.prod.yml stop guardrails
 ```
 
 ## Arquitectura
@@ -262,28 +260,21 @@ Un pedido aparece en finanzas automáticamente al marcarlo como ENTREGADO.
 
 ## Seguridad del AI Copilot
 
-`AiCopilotService.java` habla con NVIDIA NIM vía la property `nvidia.base-url`
-(`NVIDIA_BASE_URL`, default apunta directo a NVIDIA). Dos piezas separadas,
-ninguna reemplaza a la otra:
+El copilot de admin/PYME (`AiCopilotService.chatStream`) y el bot de Telegram
+(`chatSync`) hablan con **Claude / Anthropic** (`ANTHROPIC_API_KEY`,
+`anthropic.model`). El chat de tienda público ya usaba Claude.
 
-- **`security-tools/guardrails/`** — sidecar de NeMo Guardrails que se interpone
-  entre el backend y NVIDIA NIM cuando `NVIDIA_BASE_URL=http://guardrails:8001/v1/`.
-  Filtra jailbreak/prompt injection en el mensaje del usuario **antes** de llamar
-  al modelo. Corre como segundo contenedor en `docker-compose.prod.yml`. Si hay
-  problemas de RAM/latencia en el t3.small, apagarlo es solo volver
-  `NVIDIA_BASE_URL` al valor directo de NVIDIA (ver sección de deploy). No hace
-  output rail (bufferear la respuesta completa rompería el streaming del chat).
-- **`security-tools/deepteam/`** — herramienta de *testing* (red-teaming), corre
-  en dev/CI manualmente, nunca contra tráfico real. Ataca una réplica del system
-  prompt directo contra NVIDIA NIM para medir qué tan vulnerable es a jailbreak/
-  bias/fuga de PII. Sirve para trackear si el sidecar de guardrails mejora esa
-  medición en el tiempo.
+NVIDIA NIM queda fuera del tráfico real del copilot (el tier gratis falló
+en uso). `NVIDIA_API_KEY` / `NVIDIA_BASE_URL` siguen existiendo para:
 
-Ambas reutilizan `NVIDIA_API_KEY`/`NVIDIA_MODEL` — no gestionan API keys nuevas.
+- **`security-tools/guardrails/`** — sidecar de NeMo Guardrails, pensado para
+  interponerse delante de NVIDIA NIM. Ya no está en el camino del copilot
+  de admin. Se puede apagar el contenedor `guardrails` si no se usa.
+- **`security-tools/deepteam/`** — red-teaming en dev/CI contra un system
+  prompt, nunca contra tráfico real.
 
 `TextModerationService.java` (blocklist de contenido prohibido) sigue corriendo
-en el backend, antes de llegar al Copilot — cubre un hueco distinto (contenido),
-no jailbreak/inyección.
+en el backend, en el controller del copilot, antes de llamar a Claude.
 
 ## Convenciones
 

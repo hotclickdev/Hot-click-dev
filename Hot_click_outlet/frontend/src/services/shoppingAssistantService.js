@@ -21,13 +21,14 @@ export const shoppingAssistantService = {
   // contexto opcional: "GENERAL" | "PRODUCTO:nombre:precio:desc" | "CARRITO:items:total" |
   //                    "PAGO_FALLO:codigo" | "PAGO_EXITO:metodo:numeroPedido"
   // visitorId opcional: UUID de la cookie hotclick_visitor_id para memoria persistente
-  async chat({ empresaSlug, mensaje, sesionId, contexto, visitorId }) {
+  async chat({ empresaSlug, mensaje, sesionId, contexto, visitorId, productoId }) {
     const { data } = await api.post('/public/shopping-assistant/chat', {
       empresaSlug,
       mensaje,
       sesionId:  sesionId  || undefined,
       contexto:  contexto  || undefined,
       visitorId: visitorId || undefined,
+      productoId: productoId || undefined,
     })
     return data
   },

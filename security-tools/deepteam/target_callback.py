@@ -4,8 +4,7 @@ IMPORTANTE: esto NO le pega al endpoint real POST /api/admin/ai/chat
 (AiCopilotController.java) — ese requiere JWT + rol EMPRENDEDOR/ADMIN +
 TenantContext, y NUNCA debe recibir tráfico de ataque automatizado.
 
-En su lugar, replica el mismo system prompt + stop sequences que arma
-AiCopilotService.buildSystemPrompt() / buildRequestBody() y le pega
+En su lugar, replica un system prompt + stop sequences de prueba y le pega
 directo a NVIDIA NIM, para encontrar fallas en el prompt/modelo mismo.
 No ejercita TextModerationService (filtro previo) ni rate limiter ni
 circuit breaker — solo el modelo+prompt.

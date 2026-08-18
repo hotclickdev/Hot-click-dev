@@ -1,6 +1,7 @@
 package com.hotclick.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hotclick.service.publicchat.PublicChatAdvisorHandler;
 import com.hotclick.service.publicchat.PublicChatClaudeClient;
 import com.hotclick.service.publicchat.PublicChatIntentHelper;
 import com.hotclick.service.publicchat.PublicChatProductSearch;
@@ -28,21 +29,23 @@ public class PublicChatService {
     private final PublicChatIntentHelper intentHelper;
     private final PublicChatProductSearch productSearch;
     private final PublicChatClaudeClient claudeClient;
+    private final PublicChatAdvisorHandler advisorHandler;
 
     public PublicChatService(JdbcTemplate jdbc, ObjectMapper objectMapper, InputSanitizer sanitizer,
                              PublicChatIntentHelper intentHelper, PublicChatProductSearch productSearch,
-                             PublicChatClaudeClient claudeClient) {
+                             PublicChatClaudeClient claudeClient, PublicChatAdvisorHandler advisorHandler) {
         this.jdbc = jdbc;
         this.objectMapper = objectMapper;
         this.sanitizer = sanitizer;
         this.intentHelper = intentHelper;
         this.productSearch = productSearch;
         this.claudeClient = claudeClient;
+        this.advisorHandler = advisorHandler;
     }
 
-    public void chat(Long empresaId, String userMessage, int offset,
+    public void chat(Long empresaId, boolean marketplace, String userMessage, int offset,
                      List<Map<String, Object>> history, String context,
-                     List<Long> focusIds, SseEmitter emitter) {
+                     List<Long> focusIds, Long productoId, SseEmitter emitter) {
         try {
             String msg = sanitizer.cleanWithLimit(userMessage == null ? "" : userMessage, MAX_MSG_LENGTH);
             if (msg.isBlank()) {
@@ -52,7 +55,7 @@ public class PublicChatService {
             }
             userMessage = msg;
 
-            if (intentHelper.isGreeting(userMessage)) {
+            if (productoId == null && intentHelper.isGreeting(userMessage)) {
                 boolean en = intentHelper.isEnglish(userMessage);
                 String greeting = en
                     ? "Hello! I'm the HOTCLICK virtual assistant. What product are you looking for today?"
@@ -113,6 +116,10 @@ public class PublicChatService {
                 return;
             }
 
+            if (advisorHandler.tryHandle(empresaId, marketplace, userMessage, history, productoId, emitter)) {
+                return;
+            }
+
             boolean isEnglish = intentHelper.isEnglish(userMessage);
             Long maxBudget = intentHelper.extractMaxBudget(userMessage);
             boolean isGift = intentHelper.isGiftIntent(userMessage);
@@ -126,15 +133,17 @@ public class PublicChatService {
                 && focusIds != null && !focusIds.isEmpty() && intentHelper.isProductFaqFollowUp(userMessage);
             String tsQuery = (showAll || showOffers || isFaqFollowUp) ? "" : intentHelper.buildTsQuery(userMessage);
             List<Map<String, Object>> productos = isFaqFollowUp
-                ? productSearch.buscarPorIds(empresaId, focusIds)
+                ? productSearch.buscarPorIds(empresaId, marketplace, focusIds)
                 : showAll
-                ? productSearch.buscarPopulares(empresaId, offset)
+                ? productSearch.buscarPopulares(empresaId, marketplace, offset)
                 : showOffers
-                ? productSearch.buscarEnOferta(empresaId, offset)
-                : productSearch.buscarProductos(empresaId, tsQuery, userMessage, offset, maxBudget, negations);
+                ? productSearch.buscarEnOferta(empresaId, marketplace, offset)
+                : productSearch.buscarProductos(
+                    empresaId, marketplace, tsQuery, userMessage, offset, maxBudget, negations);
             if (isFaqFollowUp && productos.isEmpty()) {
                 productos = productSearch.buscarProductos(
-                    empresaId, intentHelper.buildTsQuery(userMessage), userMessage, offset, maxBudget, negations
+                    empresaId, marketplace, intentHelper.buildTsQuery(userMessage),
+                    userMessage, offset, maxBudget, negations
                 );
             }
             boolean hasMore = productos.size() > productSearch.getPageSize();

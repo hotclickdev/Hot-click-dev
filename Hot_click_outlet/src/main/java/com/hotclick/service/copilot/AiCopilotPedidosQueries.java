@@ -15,7 +15,7 @@ class AiCopilotPedidosQueries {
 
     String getPedidosPendientesData(Long empresaId) {
         // Solo el nombre — el email es PII innecesaria para que el LLM
-        // aconseje sobre despachos y no debe salir hacia la API de NVIDIA.
+        // aconseje sobre despachos y no debe salir hacia el modelo.
         String sql = """
             SELECT p.id_pedido, p.estado_pedido, p.total_pedido, p.fecha_pedido,
                    u.nombre AS nombre_usuario

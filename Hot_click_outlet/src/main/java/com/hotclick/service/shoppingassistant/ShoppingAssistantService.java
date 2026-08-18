@@ -86,7 +86,7 @@ public class ShoppingAssistantService {
      */
     public ChatResponse chat(Long empresaId, String empresaNombre,
                              String mensajeRaw, String sesionIdStr,
-                             String contexto, String visitorId) {
+                             String contexto, String visitorId, boolean marketplace, Long productoId) {
 
         // 1. Sanitizar entrada
         String mensaje = sanitizer.cleanWithLimit(
@@ -119,7 +119,7 @@ public class ShoppingAssistantService {
 
         // 6. Ejecutar el pipeline RAG con memoria del cliente inyectada en el prompt
         RagResult resultado = ragPipeline.ejecutar(
-            mensaje, empresaId, empresaNombre, historial, contexto, memoria.toXmlBlock());
+            mensaje, empresaId, empresaNombre, historial, contexto, memoria.toXmlBlock(), marketplace, productoId);
 
         // 7. Persistir pregunta + respuesta de forma atómica; actualizar sesión
         persistence.persistirMensajes(sesionId, empresaId, mensaje, resultado);

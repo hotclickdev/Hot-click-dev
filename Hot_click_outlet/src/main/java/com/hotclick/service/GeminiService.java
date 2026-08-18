@@ -34,6 +34,7 @@ public class GeminiService {
         public String descripcionCorta;
         public String especificaciones;
         public String comoUsar;
+        public java.util.List<String> ambientes = java.util.List.of();
     }
 
     /**
@@ -61,13 +62,15 @@ public class GeminiService {
                   "marca": "brand name only (e.g. Kidde)",
                   "descripcionCorta": "product description in Spanish, 1-2 sentences about what it does and key features, max 180 chars",
                   "especificaciones": "technical specs in Spanish as Clave: Valor lines. Include: type, coverage area, power source, detection range, battery life, dimensions, certifications. Max 450 chars.",
-                  "comoUsar": "specific usage instructions in Spanish for THIS type of product, max 140 chars"
+                  "comoUsar": "specific usage instructions in Spanish for THIS type of product, max 140 chars",
+                  "ambientes": ["sala"]
                 }
 
                 Rules:
                 - "nombre" must identify the EXACT product (brand + model/type), not website text or UI elements
                 - "especificaciones" must list REAL technical specs typical for this product category, not prices
                 - "comoUsar" must be specific to this product type, not a generic phrase
+                - "ambientes": 0 to 2 values from ONLY this list, if the product belongs in that room/use: sala, cocina, dormitorio, baño, jardín, oficina, comedor, terraza, garaje, lavandería. Empty array if none apply.
                 - If a field cannot be determined from the image, still provide reasonable typical values for this product type
                 - Return ONLY the JSON object
                 """;
@@ -88,7 +91,7 @@ public class GeminiService {
 
             Map<String, Object> body = Map.of(
                 "model",      CLAUDE_MODEL,
-                "max_tokens", 600,
+                "max_tokens", 700,
                 "messages",   List.of(Map.of("role", "user", "content", contentParts))
             );
 
@@ -133,6 +136,7 @@ public class GeminiService {
             p.descripcionCorta = textoONull(node, "descripcionCorta");
             p.especificaciones = textoONull(node, "especificaciones");
             p.comoUsar         = textoONull(node, "comoUsar");
+            p.ambientes        = leerAmbientes(node);
 
             if (p.nombre == null && p.descripcionCorta == null && p.especificaciones == null)
                 return null;
@@ -141,6 +145,17 @@ public class GeminiService {
             log.debug("[GeminiService] No se pudo parsear respuesta de Claude: {}", e.getMessage());
             return null;
         }
+    }
+
+    private java.util.List<String> leerAmbientes(JsonNode node) {
+        JsonNode arr = node.path("ambientes");
+        if (!arr.isArray() || arr.isEmpty()) return java.util.List.of();
+        java.util.List<String> out = new java.util.ArrayList<>();
+        for (JsonNode n : arr) {
+            String v = n.asText("").trim().toLowerCase();
+            if (!v.isBlank() && out.size() < 2) out.add(v);
+        }
+        return out;
     }
 
     private String textoONull(JsonNode node, String key) {

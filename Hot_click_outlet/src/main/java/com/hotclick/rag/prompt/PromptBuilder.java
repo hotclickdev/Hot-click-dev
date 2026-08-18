@@ -31,6 +31,12 @@ public class PromptBuilder {
      */
     public String construir(String empresaNombre, List<ProductoContexto> productos,
                             String contexto, String customerMemory, List<String> categorias) {
+        return construir(empresaNombre, productos, contexto, customerMemory, categorias, false);
+    }
+
+    public String construir(String empresaNombre, List<ProductoContexto> productos,
+                            String contexto, String customerMemory, List<String> categorias,
+                            boolean asesorFicha) {
         String nombre  = empresaNombre != null ? empresaNombre : "la tienda";
         String ctx     = contexto != null ? contexto.trim() : "GENERAL";
         String ctxType = ctx.contains(":") ? ctx.substring(0, ctx.indexOf(':')) : ctx;
@@ -38,9 +44,14 @@ public class PromptBuilder {
         StringBuilder sb = new StringBuilder();
 
         PromptIdentidadSection.append(sb, nombre, ctx, ctxType);
+        if (asesorFicha) {
+            PromptIdentidadSection.appendAsesorFicha(sb);
+        }
         PromptReglasSection.append(sb, nombre);
         PromptCatalogoSection.appendMemoria(sb, customerMemory);
-        PromptCatalogoSection.appendCategorias(sb, categorias);
+        if (!asesorFicha) {
+            PromptCatalogoSection.appendCategorias(sb, categorias);
+        }
         PromptCatalogoSection.appendCatalogo(sb, productos);
 
         return sb.toString();

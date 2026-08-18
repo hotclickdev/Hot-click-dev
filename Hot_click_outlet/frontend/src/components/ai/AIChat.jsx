@@ -8,6 +8,7 @@ import { AIChatMessageList, AIChatInputBar, AIChatChips } from './aiChat/AIChatV
 export default function AIChat({
   empresaSlug = 'hotclick',
   context = 'GENERAL',
+  productoId = null,
   sessionKey = 'hotclick',
   chips = [],
   placeholder = '¿En qué te puedo ayudar?',
@@ -25,6 +26,7 @@ export default function AIChat({
   const chat = useAiChat({
     empresaSlug,
     context,
+    productoId,
     sessionKey,
     chips,
     autoQuery,

@@ -1,8 +1,8 @@
 /**
  * Chips, alternativas y saludo derivados del estado del chat.
- * @param {{ mensajes: object[], chips: string[], cargando: boolean, context: string, userName: string | null }} args
+ * @param {{ mensajes: object[], chips: string[], cargando: boolean, context: string, userName: string | null, productoId?: number | null }} args
  */
-export function deriveAiChatView({ mensajes, chips, cargando, context, userName }) {
+export function deriveAiChatView({ mensajes, chips, cargando, context, userName, productoId = null }) {
   const userMsgCount    = mensajes.filter(m => m.rol === 'user').length
   const lastAssistant   = [...mensajes].reverse().find(m => m.rol === 'assistant' && !m.typing)
   const lastUserMsg     = [...mensajes].reverse().find(m => m.rol === 'user')
@@ -14,6 +14,7 @@ export function deriveAiChatView({ mensajes, chips, cargando, context, userName 
     ? context.split(':')[1] ?? null : null
 
   const showAlternativas =
+    !productoId &&
     !cargando && userMsgCount > 0 && lastAssistant != null &&
     (lastAssistant.productos?.length ?? 0) === 0 && lastUserMsg != null
 

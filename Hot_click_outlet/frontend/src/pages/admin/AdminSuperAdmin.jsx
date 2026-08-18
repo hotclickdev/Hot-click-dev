@@ -4,7 +4,7 @@ import { flagService } from '@/services/flagService'
 
 const FLAG_LABELS = {
   facturacion_electronica: 'Facturación Electrónica CR',
-  ai_copilot:              'AI Copilot (NVIDIA)',
+  ai_copilot:              'AI Copilot (Claude)',
   ai_forecast:             'AI Forecast de demanda',
   mobile_pos:              'Mobile POS (PWA offline)',
   self_checkout:           'Self-Checkout QR',

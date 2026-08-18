@@ -5,13 +5,7 @@ import {
   Square3Stack3DIcon, Squares2X2Icon, BuildingLibraryIcon, CloudIcon, GlobeAltIcon,
   FaceSmileIcon, HeartIcon, UserIcon, UserGroupIcon, TagIcon,
 } from '@heroicons/react/24/outline'
-
-const TAG_GROUPS = [
-  { label: 'Ambiente', tags: ['sala','cocina','dormitorio','baño','jardín','oficina','comedor','terraza','garaje','lavandería'] },
-  { label: 'Tipo de producto', tags: ['mueble','decoración','iluminación','textil','electrodoméstico','herramienta','arte','almacenamiento','colchón','espejo'] },
-  { label: 'Estilo', tags: ['moderno','rústico','minimalista','clásico','industrial','bohemio','escandinavo','tropical'] },
-  { label: 'Para quién', tags: ['niños','mascotas','adultos','familia','pareja','soltero','oficina en casa'] },
-]
+import { TAG_GROUPS } from './chatTagMapper'
 
 const TAG_ICONS = {
   sala: HomeIcon, cocina: FireIcon, dormitorio: MoonIcon, baño: SparklesIcon,

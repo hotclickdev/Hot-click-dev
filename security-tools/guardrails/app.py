@@ -1,14 +1,16 @@
-"""Sidecar de NeMo Guardrails delante de NVIDIA NIM para AiCopilotService.java.
+"""Sidecar de NeMo Guardrails delante de NVIDIA NIM (testing / red-team).
+
+El copilot de admin ya habla con Claude, no con NVIDIA. Este wrapper
+sigue sirviendo para deepteam y para filtrar llamadas de prueba a NIM.
 
 Wrapper FastAPI propio (no el `nemoguardrails server` embebido) porque
-AiCopilotService.processStream() ya parsea un contrato SSE muy específico:
-líneas "data: {...}" con choices[0].delta.content, sentinel "[DONE]", y un
-chunk final con "usage" cuando stream_options.include_usage=true. Ese
-contrato hay que preservarlo byte-a-byte.
+el contrato SSE de NIM es específico: líneas "data: {...}" con
+choices[0].delta.content, sentinel "[DONE]", y un chunk final con "usage"
+cuando stream_options.include_usage=true.
 
 Flujo por request:
-  1. Recibe POST /v1/chat/completions con el mismo body que ya arma
-     AiCopilotService.buildRequestBody() (model, messages, stream, stop, ...).
+  1. Recibe POST /v1/chat/completions con body OpenAI-compatible
+     (model, messages, stream, stop, ...).
   2. Corre el input rail (NeMo Guardrails, solo modo "input" — no dispara
      generación) sobre el último mensaje "user".
   3. Si el rail bloquea (jailbreak/prompt injection detectado): corta ahí,

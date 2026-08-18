@@ -80,6 +80,15 @@ public class PublicChatClaudeClient {
             isEnglish, isGift, maxBudget, negations, afterHours, smartOpts);
     }
 
+    public void streamAdvisorResponse(SseEmitter emitter, String userMessage,
+                                      Map<String, Object> ficha,
+                                      List<Map<String, Object>> history,
+                                      Long empresaId, boolean isEnglish, boolean afterHours,
+                                      List<String> smartOpts) {
+        String wa = getEmpresaWhatsapp(empresaId);
+        streamer.streamAdvisor(log, emitter, userMessage, ficha, history, wa, isEnglish, afterHours, smartOpts);
+    }
+
     public String generarRespuestaMock(List<Map<String, Object>> productos,
                                        List<Map<String, Object>> history,
                                        boolean isEnglish) {
@@ -89,5 +98,13 @@ public class PublicChatClaudeClient {
     public List<String> generateOpts(String context, List<Map<String, Object>> productos,
                                      String userMessage, boolean isEnglish, boolean afterHours) {
         return mockResponses.generateOpts(context, productos, userMessage, isEnglish, afterHours);
+    }
+
+    public List<String> generateAdvisorOpts(boolean isEnglish) {
+        return mockResponses.generateAdvisorOpts(isEnglish);
+    }
+
+    public String generarRespuestaAsesor(Map<String, Object> ficha, boolean isEnglish) {
+        return mockResponses.generarRespuestaAsesor(ficha, isEnglish);
     }
 }

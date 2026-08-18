@@ -7,6 +7,7 @@ import com.hotclick.rag.controller.shoppingassistant.ShoppingAssistantTenantGuar
 import com.hotclick.rag.dto.ChatRequest;
 import com.hotclick.rag.dto.ChatResponse;
 import com.hotclick.rag.dto.FeedbackRequest;
+import com.hotclick.service.catalogo.MarketplaceCatalogo;
 import com.hotclick.service.shoppingassistant.ShoppingAssistantService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -92,7 +93,9 @@ public class ShoppingAssistantController {
             request.getMensaje(),
             request.getSesionId(),
             request.getContexto(),
-            request.getVisitorId()
+            request.getVisitorId(),
+            MarketplaceCatalogo.esMarketplace(request.getEmpresaSlug()),
+            request.getProductoId()
         );
 
         return ResponseEntity.ok(response);

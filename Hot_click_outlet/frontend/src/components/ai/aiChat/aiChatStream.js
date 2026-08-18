@@ -41,16 +41,23 @@ function applySseEvent(eventName, parsed, assembled, productos, setMensajes) {
 
 /**
  * Streaming SSE del chat — mismo orden de fetch y eventos que el original.
- * @param {{ empresaSlug: string, msg: string, history: object[], context: string, focusIds: unknown[], setMensajes: function }} args
+ * @param {{ empresaSlug: string, msg: string, history: object[], context: string, focusIds: unknown[], productoId?: number | null, setMensajes: function }} args
  */
-export async function streamChat({ empresaSlug, msg, history, context, focusIds = [], setMensajes }) {
+export async function streamChat({ empresaSlug, msg, history, context, focusIds = [], productoId = null, setMensajes }) {
   let assembled = ''
   let productos = []
   try {
     const response = await fetch(`/api/public/chat?slug=${encodeURIComponent(empresaSlug)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: msg, offset: 0, history, context, focusIds }),
+      body: JSON.stringify({
+        message: msg,
+        offset: 0,
+        history,
+        context,
+        focusIds,
+        ...(productoId ? { productoId } : {}),
+      }),
     })
     if (!response.ok) throw new Error(response.status === 429 ? '429' : 'err')
 

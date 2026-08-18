@@ -23,7 +23,7 @@
     {
       "name": "anthropic.api-key",
       "type": "java.lang.String",
-      "description": "Anthropic Claude API key (sk-ant-...). Usado por generación de descripciones, import de catálogo y RAG (no el AI Copilot)."
+      "description": "Anthropic Claude API key (sk-ant-...). Chat de tienda, copilot admin/Telegram, descripciones, import y RAG."
     },
     {
       "name": "anthropic.model",
@@ -33,12 +33,12 @@
     {
       "name": "nvidia.api-key",
       "type": "java.lang.String",
-      "description": "NVIDIA NIM API key (integrate.api.nvidia.com). Vacío = AI Copilot deshabilitado."
+      "description": "NVIDIA NIM API key (integrate.api.nvidia.com). Solo deepteam/guardrails; el copilot de admin usa Claude."
     },
     {
       "name": "nvidia.model",
       "type": "java.lang.String",
-      "description": "Modelo NVIDIA para el AI Copilot. Default: meta/llama-3.3-70b-instruct."
+      "description": "Modelo NVIDIA para deepteam/guardrails. Default: meta/llama-3.3-70b-instruct."
     },
     {
       "name": "whatsapp.phone-id",

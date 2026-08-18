@@ -79,21 +79,20 @@ public class RagPipeline {
     @CircuitBreaker(name = "claude", fallbackMethod = "ejecutarFallback")
     public RagResult ejecutar(String query, Long empresaId, String empresaNombre,
                               List<Map<String, Object>> historial, String contexto,
-                              String customerMemory) {
+                              String customerMemory, boolean marketplace, Long productoId) {
 
-        // 1. Búsqueda semántica (degrada graciosamente si Voyage no está disponible)
-        List<ProductoContexto> productos = vectorSearchService.buscarSimilares(empresaId, query, TOP_K);
+        boolean asesorFicha = productoId != null && productoId > 0;
+        List<ProductoContexto> productos = asesorFicha
+            ? vectorSearchService.buscarPorId(empresaId, productoId, marketplace)
+            : vectorSearchService.buscarSimilares(empresaId, query, TOP_K, marketplace);
 
-        // 2. Categorías de la empresa para el prompt (best-effort)
-        List<String> categorias = fetchCategorias(empresaId);
+        List<String> categorias = asesorFicha ? List.of() : fetchCategorias(empresaId, marketplace);
 
-        // 3. System prompt con catálogo XML + contexto de página + memoria del visitante
-        String systemPrompt = promptBuilder.construir(empresaNombre, productos, contexto, customerMemory, categorias);
+        String systemPrompt = promptBuilder.construir(
+            empresaNombre, productos, contexto, customerMemory, categorias, asesorFicha);
 
-        // 4. Mensajes para Claude: historial + query actual
         List<Map<String, Object>> messages = RagPipelineSupport.buildMessages(historial, query);
 
-        // 5. Llamada a Claude
         if (apiKey == null || apiKey.isBlank()) {
             log.debug("[rag] Dev mode — ANTHROPIC_API_KEY no configurado, retornando mock");
             return RagPipelineSupport.mockResponse(productos, categorias, query);
@@ -103,21 +102,24 @@ public class RagPipeline {
             systemPrompt, messages, productos, categorias);
     }
 
-    // ── Fallback de Circuit Breaker ───────────────────────────────────────────
-
-    @SuppressWarnings("unused") // invocado por Resilience4j via reflexión
+    @SuppressWarnings("unused")
     RagResult ejecutarFallback(String query, Long empresaId, String empresaNombre,
                                List<Map<String, Object>> historial, String contexto,
-                               String customerMemory, Throwable t) {
+                               String customerMemory, boolean marketplace, Long productoId, Throwable t) {
         log.warn("[rag-circuit] Circuit abierto para empresa={}: {}", empresaId, t.getMessage());
         return RagResult.fallback();
     }
 
-    private List<String> fetchCategorias(Long empresaId) {
+    private List<String> fetchCategorias(Long empresaId, boolean marketplace) {
         try {
-            return categoriaRepository.findByEmpresaIdAndEstado(empresaId, 1)
-                .stream()
+            var cats = marketplace
+                ? categoriaRepository.findPublicasByEstado(1)
+                : categoriaRepository.findByEmpresaIdOrNoEmpresaAndEstado(empresaId, 1);
+            return cats.stream()
                 .map(c -> c.getNombreCategoria())
+                .filter(n -> n != null && !n.isBlank())
+                .distinct()
+                .limit(15)
                 .collect(Collectors.toList());
         } catch (Exception e) {
             log.warn("[rag] No se pudieron cargar categorías empresa={}: {}", empresaId, e.getMessage());

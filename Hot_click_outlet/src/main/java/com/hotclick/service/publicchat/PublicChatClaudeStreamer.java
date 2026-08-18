@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 @Component
 class PublicChatClaudeStreamer {
@@ -50,26 +51,25 @@ class PublicChatClaudeStreamer {
                                      boolean isEnglish, boolean isGift,
                                      Long maxBudget, Set<String> negations,
                                      boolean afterHours, List<String> smartOpts) {
+        String systemPrompt = promptBuilder.buildSalesSystemPrompt(wa, context, productos,
+            isEnglish, isGift, maxBudget, negations, afterHours);
+        String fallback = mockResponses.generarRespuestaMock(productos, history, isEnglish);
+        streamWithSystemPrompt(log, emitter, userMessage, history, systemPrompt, fallback, smartOpts);
+    }
+
+    public void streamAdvisor(Logger log, SseEmitter emitter, String userMessage,
+                              Map<String, Object> ficha, List<Map<String, Object>> history,
+                              String wa, boolean isEnglish, boolean afterHours, List<String> smartOpts) {
+        String systemPrompt = promptBuilder.buildAdvisorSystemPrompt(wa, ficha, isEnglish, afterHours);
+        String fallback = mockResponses.generarRespuestaAsesor(ficha, isEnglish);
+        streamWithSystemPrompt(log, emitter, userMessage, history, systemPrompt, fallback, smartOpts);
+    }
+
+    void streamWithSystemPrompt(Logger log, SseEmitter emitter, String userMessage,
+                                List<Map<String, Object>> history, String systemPrompt,
+                                String fallback, List<String> smartOpts) {
         try {
-            String systemPrompt = promptBuilder.buildSalesSystemPrompt(wa, context, productos,
-                isEnglish, isGift, maxBudget, negations, afterHours);
-
-            List<Map<String, Object>> messages = new ArrayList<>();
-            String lastRole = null;
-            for (Map<String, Object> m : history) {
-                String rol = String.valueOf(m.getOrDefault("rol", "")).trim();
-                String texto = String.valueOf(m.getOrDefault("texto", "")).trim();
-                if (texto.isBlank()) continue;
-                String claudeRole = "assistant".equals(rol) || "bot".equals(rol) ? "assistant" : "user";
-                if (claudeRole.equals(lastRole)) continue;
-                messages.add(Map.of("role", claudeRole, "content", texto));
-                lastRole = claudeRole;
-            }
-            if ("user".equals(lastRole) && !messages.isEmpty()) {
-                messages.remove(messages.size() - 1);
-            }
-            messages.add(Map.of("role", "user", "content", userMessage));
-
+            List<Map<String, Object>> messages = messagesParaClaude(history, userMessage);
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("model", model);
             body.put("max_tokens", 400);
@@ -87,47 +87,70 @@ class PublicChatClaudeStreamer {
                 .build();
 
             HTTP.sendAsync(request, HttpResponse.BodyHandlers.ofLines())
-                .thenAccept(response -> {
-                    try {
-                        response.body().forEach(line -> {
-                            if (line.startsWith("data: ")) {
-                                String json = line.substring(6).trim();
-                                try {
-                                    JsonNode node = objectMapper.readTree(json);
-                                    if ("content_block_delta".equals(node.path("type").asText())) {
-                                        String text = node.path("delta").path("text").asText();
-                                        if (!text.isEmpty()) {
-                                            emitter.send(SseEmitter.event().name("delta")
-                                                .data(objectMapper.writeValueAsString(Map.of("text", text))));
-                                        }
-                                    }
-                                } catch (Exception e) { log.debug("SSE delta error: {}", e.getMessage()); }
-                            }
-                        });
-                        emitter.send(SseEmitter.event().name("done")
-                            .data(objectMapper.writeValueAsString(Map.of("opts", smartOpts))));
-                        emitter.complete();
-                    } catch (Exception e) {
-                        log.error("[Chat] Stream processing error: {}", e.getMessage());
-                        try { emitter.complete(); } catch (Exception ae) { log.debug("SSE complete error: {}", ae.getMessage()); }
-                    }
-                })
+                .thenAccept(response -> enviarDeltas(log, emitter, response, smartOpts))
                 .exceptionally(ex -> {
-                    log.error("[Chat] Claude call failed: {}", ex.getMessage());
-                    try {
-                        String fallback = mockResponses.generarRespuestaMock(productos, history, isEnglish);
-                        emitter.send(SseEmitter.event().name("delta")
-                            .data(objectMapper.writeValueAsString(Map.of("text", fallback))));
-                        emitter.send(SseEmitter.event().name("done")
-                            .data(objectMapper.writeValueAsString(Map.of("opts", smartOpts))));
-                        emitter.complete();
-                    } catch (Exception e) { log.debug("SSE fallback error: {}", e.getMessage()); }
+                    enviarFallback(log, emitter, fallback, smartOpts, ex);
                     return null;
                 });
-
         } catch (Exception e) {
             log.error("[Chat] Build request error: {}", e.getMessage());
             try { emitter.complete(); } catch (Exception ae) { log.debug("SSE complete error: {}", ae.getMessage()); }
         }
+    }
+
+    private List<Map<String, Object>> messagesParaClaude(List<Map<String, Object>> history, String userMessage) {
+        List<Map<String, Object>> messages = new ArrayList<>();
+        String lastRole = null;
+        for (Map<String, Object> m : history) {
+            String rol = String.valueOf(m.getOrDefault("rol", "")).trim();
+            String texto = String.valueOf(m.getOrDefault("texto", "")).trim();
+            if (texto.isBlank()) continue;
+            String claudeRole = "assistant".equals(rol) || "bot".equals(rol) ? "assistant" : "user";
+            if (claudeRole.equals(lastRole)) continue;
+            messages.add(Map.of("role", claudeRole, "content", texto));
+            lastRole = claudeRole;
+        }
+        if ("user".equals(lastRole) && !messages.isEmpty()) {
+            messages.remove(messages.size() - 1);
+        }
+        messages.add(Map.of("role", "user", "content", userMessage));
+        return messages;
+    }
+
+    private void enviarDeltas(Logger log, SseEmitter emitter, HttpResponse<Stream<String>> response,
+                              List<String> smartOpts) {
+        try {
+            response.body().forEach(line -> enviarDeltaSiHay(log, emitter, line));
+            emitter.send(SseEmitter.event().name("done")
+                .data(objectMapper.writeValueAsString(Map.of("opts", smartOpts))));
+            emitter.complete();
+        } catch (Exception e) {
+            log.error("[Chat] Stream processing error: {}", e.getMessage());
+            try { emitter.complete(); } catch (Exception ae) { log.debug("SSE complete error: {}", ae.getMessage()); }
+        }
+    }
+
+    private void enviarDeltaSiHay(Logger log, SseEmitter emitter, String line) {
+        if (!line.startsWith("data: ")) return;
+        try {
+            JsonNode node = objectMapper.readTree(line.substring(6).trim());
+            if (!"content_block_delta".equals(node.path("type").asText())) return;
+            String text = node.path("delta").path("text").asText();
+            if (text.isEmpty()) return;
+            emitter.send(SseEmitter.event().name("delta")
+                .data(objectMapper.writeValueAsString(Map.of("text", text))));
+        } catch (Exception e) { log.debug("SSE delta error: {}", e.getMessage()); }
+    }
+
+    private void enviarFallback(Logger log, SseEmitter emitter, String fallback,
+                                List<String> smartOpts, Throwable ex) {
+        log.error("[Chat] Claude call failed: {}", ex.getMessage());
+        try {
+            emitter.send(SseEmitter.event().name("delta")
+                .data(objectMapper.writeValueAsString(Map.of("text", fallback))));
+            emitter.send(SseEmitter.event().name("done")
+                .data(objectMapper.writeValueAsString(Map.of("opts", smartOpts))));
+            emitter.complete();
+        } catch (Exception e) { log.debug("SSE fallback error: {}", e.getMessage()); }
     }
 }

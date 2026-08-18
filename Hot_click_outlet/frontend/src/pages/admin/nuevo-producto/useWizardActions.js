@@ -2,6 +2,7 @@ import { publicacionService } from '@/services/publicacionService'
 import { productService, denormalizeProduct } from '@/services/productService'
 import { KNOWN_TRADEMARKS } from './productFormUi'
 import { DRAFT_KEY } from './wizardHelpers'
+import { mapEtiquetasToChatTags } from './chatTagMapper'
 
 /**
  * Acciones pesadas del wizard de nuevo producto: análisis IA de fotos y publicación.
@@ -97,6 +98,7 @@ export function useWizardActions({
       }
 
       const nombreIA = (d.nombre ?? '').slice(0, 80)
+      const tagsAuto = mapEtiquetasToChatTags(d.todasEtiquetas ?? []).join(',')
       setForm(prev => ({
         ...prev,
         nombre:           nombreIA,
@@ -112,6 +114,7 @@ export function useWizardActions({
         imagenUrl:        uploadedUrls[0] ?? '',
         imagenes:         uploadedUrls,
         categoriaId:      categoriaAutoId,
+        tags:             prev.tags || tagsAuto,
       }))
 
       const marcaRaw = (d.marca ?? '').toLowerCase().trim()

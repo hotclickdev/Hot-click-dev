@@ -1,11 +1,16 @@
 package com.hotclick.rag.service;
 
 import com.hotclick.rag.dto.ProductoContexto;
+import com.hotclick.service.catalogo.CatalogoChatSql;
+import com.hotclick.service.catalogo.ChatProductoMatchSql;
+import com.hotclick.service.catalogo.ChatSearchTerms;
+import com.hotclick.service.publicchat.PublicChatIntentHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -13,147 +18,135 @@ import java.util.List;
  * Búsqueda de productos para el pipeline RAG.
  *
  * Estrategia con degradación en dos niveles:
- *   1. Búsqueda semántica (pgvector + Gemini text-embedding-004) — más precisa.
- *   2. Fallback a búsqueda por palabras clave (PostgreSQL ILIKE + unaccent) — sin dependencia de Gemini.
- *
- * El fallback se activa automáticamente si Gemini no está disponible (403, timeout, etc.).
+ *   1. Búsqueda semántica (pgvector + Voyage) — más precisa.
+ *   2. Fallback a palabras clave (ILIKE OR + sinónimos del chat público).
  */
 @Service
 public class VectorSearchService {
 
     private static final Logger log = LoggerFactory.getLogger(VectorSearchService.class);
 
-    private final EmbeddingService embeddingService;
-    private final JdbcTemplate     jdbc;
+    private static final String SELECT_FICHA = """
+        SELECT p.id_producto,
+               p.nombre_producto,
+               p.sku,
+               p.precio_venta,
+               p.descripcion_corta,
+               p.imagen_principal_url,
+               (p.stock_actual - COALESCE(p.stock_reservado, 0)) AS stock_disponible,
+               p.tags,
+               c.nombre_categoria AS nombre_categoria,
+               LEFT(COALESCE(p.especificaciones, ''), 280) AS especificaciones,
+               LEFT(COALESCE(p.como_usar, ''), 160) AS como_usar
+        """;
 
-    public VectorSearchService(EmbeddingService embeddingService, JdbcTemplate jdbc) {
+    private static final String SELECT_ASESOR = """
+        SELECT p.id_producto,
+               p.nombre_producto,
+               p.sku,
+               p.precio_venta,
+               LEFT(COALESCE(p.descripcion_corta, ''), 400) AS descripcion_corta,
+               p.imagen_principal_url,
+               (p.stock_actual - COALESCE(p.stock_reservado, 0)) AS stock_disponible,
+               p.tags,
+               c.nombre_categoria AS nombre_categoria,
+               LEFT(COALESCE(p.especificaciones, ''), 1500) AS especificaciones,
+               LEFT(COALESCE(p.como_usar, ''), 800) AS como_usar
+        """;
+
+    private final EmbeddingService embeddingService;
+    private final JdbcTemplate jdbc;
+    private final PublicChatIntentHelper intentHelper;
+
+    public VectorSearchService(EmbeddingService embeddingService, JdbcTemplate jdbc,
+                               PublicChatIntentHelper intentHelper) {
         this.embeddingService = embeddingService;
-        this.jdbc             = jdbc;
+        this.jdbc = jdbc;
+        this.intentHelper = intentHelper;
     }
 
-    /**
-     * Busca los {@code limit} productos más relevantes para {@code query}
-     * dentro de la empresa {@code empresaId}, excluyendo artículos sin stock.
-     *
-     * Intenta búsqueda semántica primero; si Gemini falla cae a búsqueda por palabras clave.
-     */
     public List<ProductoContexto> buscarSimilares(Long empresaId, String query, int limit) {
-        // 1. Búsqueda semántica (embedding)
+        return buscarSimilares(empresaId, query, limit, false);
+    }
+
+    public List<ProductoContexto> buscarSimilares(Long empresaId, String query, int limit,
+                                                  boolean marketplace) {
+        List<ProductoContexto> semanticos = buscarPorEmbedding(empresaId, query, limit, marketplace);
+        if (!semanticos.isEmpty()) return semanticos;
+        return buscarPorKeywords(empresaId, query, limit, marketplace);
+    }
+
+    private List<ProductoContexto> buscarPorEmbedding(Long empresaId, String query, int limit,
+                                                      boolean marketplace) {
         try {
-            float[] vector    = embeddingService.generarEmbedding(query);
-            String  vectorStr = toVectorString(vector);
+            float[] vector = embeddingService.generarEmbedding(query);
+            String vectorStr = toVectorString(vector);
 
-            List<ProductoContexto> resultados = jdbc.query("""
-                SELECT p.id_producto,
-                       p.nombre_producto,
-                       p.sku,
-                       p.precio_venta,
-                       p.descripcion_corta,
-                       p.imagen_principal_url,
-                       (p.stock_actual - COALESCE(p.stock_reservado, 0)) AS stock_disponible
-                FROM   hot_click_producto_embedding_tb e
-                JOIN   hot_click_producto_tb p ON p.id_producto = e.fk_id_producto
-                WHERE  e.fk_id_empresa = ?
-                  AND  p.fk_id_estado      = 1
-                  AND  p.visible_catalogo  = true
-                  AND  p.vendido           = false
-                  AND  (p.stock_actual - COALESCE(p.stock_reservado, 0)) > 0
-                ORDER  BY e.embedding <-> ?::vector
-                LIMIT  ?
-                """,
-                (rs, rowNum) -> mapProducto(rs),
-                empresaId, vectorStr, limit
-            );
+            List<Object> params = new ArrayList<>();
+            CatalogoChatSql.bindEmpresaSiTenant(params, empresaId, marketplace);
+            params.add(vectorStr);
+            params.add(limit);
 
-            if (!resultados.isEmpty()) {
-                return resultados;
-            }
-            // Sin embeddings generados aún → fallback keyword
-            log.debug("[vector-search] Embedding OK pero sin filas en tabla — usando fallback keyword");
+            String sql = SELECT_FICHA
+                + " FROM hot_click_producto_embedding_tb emb"
+                + " JOIN hot_click_producto_tb p ON p.id_producto = emb.fk_id_producto"
+                + CatalogoChatSql.joins(marketplace)
+                + " WHERE " + CatalogoChatSql.whereVisible(marketplace, true)
+                + " ORDER BY emb.embedding <-> ?::vector"
+                + " LIMIT ?";
 
+            List<ProductoContexto> resultados = jdbc.query(sql, (rs, rowNum) -> mapProducto(rs), params.toArray());
+            if (!resultados.isEmpty()) return resultados;
+            log.debug("[vector-search] Embedding OK pero sin filas — usando fallback keyword");
         } catch (Exception e) {
-            log.warn("[vector-search] Gemini embedding falló empresa={}: {} — usando fallback por palabras clave",
+            log.warn("[vector-search] Embedding falló empresa={}: {} — usando fallback por palabras clave",
                 empresaId, e.getMessage());
         }
-
-        // 2. Fallback: búsqueda por palabras clave (ILIKE multi-campo)
-        return buscarPorKeywords(empresaId, query, limit);
+        return List.of();
     }
 
-    /**
-     * Búsqueda por palabras clave contra nombre, descripcion, marca y tags.
-     * Cada palabra del query se evalúa por separado (AND lógico) para mayor precisión.
-     * Si no hay matches multi-palabra, reintenta con solo la primera palabra.
-     */
-    private List<ProductoContexto> buscarPorKeywords(Long empresaId, String query, int limit) {
+    private List<ProductoContexto> buscarPorKeywords(Long empresaId, String query, int limit,
+                                                     boolean marketplace) {
         try {
-            // Normaliza: minúsculas, quita puntuación, toma palabras > 2 chars
-            String[] palabras = query.toLowerCase()
-                .replaceAll("[^a-záéíóúüñ0-9\\s]", " ")
-                .trim()
-                .split("\\s+");
+            List<String> terms = ChatSearchTerms.fromTsQuery(intentHelper.buildTsQuery(query));
+            if (terms.isEmpty()) return Collections.emptyList();
 
-            List<String> keywords = new java.util.ArrayList<>();
-            for (String p : palabras) {
-                if (p.length() > 2) keywords.add(p);
-            }
-            if (keywords.isEmpty() && palabras.length > 0) {
-                keywords.add(palabras[0]); // al menos la primera palabra
-            }
-            if (keywords.isEmpty()) {
-                return Collections.emptyList();
-            }
-
-            // Construye condición: cada keyword debe aparecer en alguno de los campos
-            StringBuilder where = new StringBuilder();
-            List<Object> params = new java.util.ArrayList<>();
-            params.add(empresaId);
-
-            for (String kw : keywords) {
-                if (!where.isEmpty()) where.append(" AND ");
-                String like = "%" + kw + "%";
-                where.append("(LOWER(p.nombre_producto) LIKE ? OR LOWER(p.descripcion_corta) LIKE ? OR LOWER(p.marca) LIKE ? OR LOWER(p.tags) LIKE ?)");
-                params.add(like); params.add(like); params.add(like); params.add(like);
+            List<Object> params = new ArrayList<>();
+            CatalogoChatSql.bindEmpresaSiTenant(params, empresaId, marketplace);
+            for (String term : terms) {
+                ChatProductoMatchSql.bindTermino(params, term);
             }
             params.add(limit);
 
-            String sql = """
-                SELECT p.id_producto,
-                       p.nombre_producto,
-                       p.sku,
-                       p.precio_venta,
-                       p.descripcion_corta,
-                       p.imagen_principal_url,
-                       (p.stock_actual - COALESCE(p.stock_reservado, 0)) AS stock_disponible
-                FROM   hot_click_producto_tb p
-                WHERE  p.fk_id_empresa   = ?
-                  AND  p.fk_id_estado    = 1
-                  AND  p.visible_catalogo = true
-                  AND  p.vendido         = false
-                  AND  (p.stock_actual - COALESCE(p.stock_reservado, 0)) > 0
-                  AND  """ + where + """
-                ORDER  BY p.nombre_producto
-                LIMIT  ?
-                """;
+            String sql = SELECT_FICHA
+                + " FROM hot_click_producto_tb p"
+                + CatalogoChatSql.joins(marketplace)
+                + " WHERE " + CatalogoChatSql.whereVisible(marketplace, true)
+                + " AND (" + ChatProductoMatchSql.orDeTerminos(terms.size()) + ")"
+                + " ORDER BY p.nombre_producto"
+                + " LIMIT ?";
 
-            List<ProductoContexto> resultados = jdbc.query(sql,
-                (rs, rowNum) -> mapProducto(rs),
-                params.toArray()
-            );
-
-            // Si el AND entre palabras no devolvió nada, reintenta con la primera keyword sola
-            if (resultados.isEmpty() && keywords.size() > 1) {
-                return buscarPorKeywords(empresaId, keywords.get(0), limit);
-            }
-
-            log.debug("[vector-search] Fallback keyword empresa={} query='{}' → {} resultados",
-                empresaId, query, resultados.size());
+            List<ProductoContexto> resultados = jdbc.query(sql, (rs, rowNum) -> mapProducto(rs), params.toArray());
+            log.debug("[vector-search] Fallback keyword empresa={} marketplace={} query='{}' → {} resultados",
+                empresaId, marketplace, query, resultados.size());
             return resultados;
-
         } catch (Exception ex) {
             log.warn("[vector-search] Fallback keyword también falló empresa={}: {}", empresaId, ex.getMessage());
             return Collections.emptyList();
         }
+    }
+
+    public List<ProductoContexto> buscarPorId(Long empresaId, Long productoId, boolean marketplace) {
+        if (productoId == null || productoId <= 0) return List.of();
+        List<Object> params = new ArrayList<>();
+        CatalogoChatSql.bindEmpresaSiTenant(params, empresaId, marketplace);
+        params.add(productoId);
+        String sql = SELECT_ASESOR
+            + " FROM hot_click_producto_tb p"
+            + CatalogoChatSql.joins(marketplace)
+            + " WHERE " + CatalogoChatSql.whereFichaAsesor(marketplace)
+            + " AND p.id_producto = ?";
+        return jdbc.query(sql, (rs, rowNum) -> mapProducto(rs), params.toArray());
     }
 
     private static ProductoContexto mapProducto(java.sql.ResultSet rs) throws java.sql.SQLException {
@@ -164,12 +157,15 @@ public class VectorSearchService {
             rs.getInt("precio_venta"),
             rs.getString("descripcion_corta"),
             rs.getString("imagen_principal_url"),
-            rs.getInt("stock_disponible")
+            rs.getInt("stock_disponible"),
+            rs.getString("tags"),
+            rs.getString("nombre_categoria"),
+            rs.getString("especificaciones"),
+            rs.getString("como_usar")
         );
     }
 
-    /** Convierte float[] al formato de literal pgvector: [f1,f2,...,fn]. */
-    private static String toVectorString(float[] vector) {
+    static String toVectorString(float[] vector) {
         StringBuilder sb = new StringBuilder("[");
         for (int i = 0; i < vector.length; i++) {
             if (i > 0) sb.append(',');

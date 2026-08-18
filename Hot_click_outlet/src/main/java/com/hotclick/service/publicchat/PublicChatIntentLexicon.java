@@ -17,7 +17,9 @@ final class PublicChatIntentLexicon {
         "en","a","para","con","que","es","se","me","mi","al","le","lo","su",
         "por","como","más","pero","ya","hay","cuando","donde","cual",
         "quiero","busco","busca","necesito","ando","algo","ver","tengo",
-        "puede","puedo","dame","dime","muestra","mostrame"
+        "puede","puedo","dame","dime","muestra","mostrame",
+        "producto","productos","articulo","articulos","artículo","artículos",
+        "item","items","cosas"
     );
 
     static final Set<String> OFF_TOPIC_TRIGGERS = Set.of(
@@ -25,7 +27,7 @@ final class PublicChatIntentLexicon {
         "política","gobierno","presidente","elecciones","votar",
         "matemáticas","calcular","ecuación","resolver","algebra",
         "programar","código","javascript","python","java","software",
-        "receta","cocinar","ingredientes","platillo","gastronomía",
+        "receta","ingredientes","platillo","gastronomía",
         "medicina","síntoma","diagnóstico","enfermedad","doctor","hospital",
         "abogado","ley","demanda","impuestos","tributos",
         "chiste","broma","cuento","canción","película","serie",

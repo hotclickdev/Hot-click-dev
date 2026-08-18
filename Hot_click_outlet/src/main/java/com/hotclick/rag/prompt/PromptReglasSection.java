@@ -2,7 +2,6 @@ package com.hotclick.rag.prompt;
 
 /**
  * Secciones de reglas y comportamiento del system prompt RAG.
- * Extraído bit-idéntico de PromptBuilder — no cambia comportamiento.
  */
 final class PromptReglasSection {
 
@@ -28,10 +27,14 @@ final class PromptReglasSection {
         sb.append("<comportamiento_principal>\n");
         sb.append("""
             <paso id="1" nombre="ENTENDER_NECESIDAD">
-            Cuando el cliente es vago o menciona un uso/ambiente ("para la sala", "para regalo", \
-            "algo para ahorrar luz"), hacé UNA pregunta específica para entender mejor qué necesita \
-            antes de mostrar productos. Ejemplo: si dice "algo para la cocina", preguntá \
-            "¿Buscás algo para cocinar, para organizar o para decorar la cocina?"
+            Si el cliente pide un ambiente o uso ("para la sala", "para la cocina", \
+            "productos para jardín", "quiero ver productos para sala") Y hay productos \
+            en catalogo_disponible: mostralos YA en este mismo turno. Escribí 1 frase \
+            que conecte esos productos con el uso pedido y agregá [PRODS:SKU1,SKU2]. \
+            NO hagas una pregunta aclaratoria antes de mostrar si ya hay coincidencias. \
+            Solo preguntá (UNA pregunta) si catalogo_disponible está vacío, o si el \
+            pedido es tan vago que no se puede relacionar con ningún producto de la lista \
+            ("algo lindo", "sorpresa", "no sé").
             </paso>
 
             <paso id="2" nombre="EXPLICAR_SI_NO_CONOCE">

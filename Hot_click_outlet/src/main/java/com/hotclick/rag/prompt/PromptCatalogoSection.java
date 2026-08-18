@@ -6,7 +6,6 @@ import java.util.List;
 
 /**
  * Secciones de catálogo, categorías y memoria del system prompt RAG.
- * Extraído bit-idéntico de PromptBuilder — no cambia comportamiento.
  */
 final class PromptCatalogoSection {
 
@@ -41,10 +40,11 @@ final class PromptCatalogoSection {
                 sb.append("    <nombre>").append(PromptBuilderSupport.xmlEscape(p.nombre())).append("</nombre>\n");
                 sb.append("    <sku>").append(PromptBuilderSupport.xmlEscape(p.sku())).append("</sku>\n");
                 sb.append("    <precio>₡").append(PromptBuilderSupport.PRECIO_FORMAT.format(p.precio())).append("</precio>\n");
-                if (p.descripcionCorta() != null && !p.descripcionCorta().isBlank()) {
-                    sb.append("    <descripcion>").append(PromptBuilderSupport.xmlEscape(p.descripcionCorta()))
-                      .append("</descripcion>\n");
-                }
+                appendOpcional(sb, "descripcion", p.descripcionCorta());
+                appendOpcional(sb, "tags", p.tags());
+                appendOpcional(sb, "categoria", p.categoria());
+                appendOpcional(sb, "especificaciones", p.especificaciones());
+                appendOpcional(sb, "como_usar", p.comoUsar());
                 if (p.stock() != null) {
                     sb.append("    <stock_disponible>").append(p.stock()).append("</stock_disponible>\n");
                 }
@@ -63,5 +63,12 @@ final class PromptCatalogoSection {
             sb.append("  </instruccion_vacio>\n");
             sb.append("</catalogo_disponible>\n");
         }
+    }
+
+    private static void appendOpcional(StringBuilder sb, String tag, String valor) {
+        if (valor == null || valor.isBlank()) return;
+        sb.append("    <").append(tag).append(">")
+            .append(PromptBuilderSupport.xmlEscape(valor))
+            .append("</").append(tag).append(">\n");
     }
 }

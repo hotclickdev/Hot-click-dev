@@ -42,7 +42,7 @@ public class EmpresaPerfilService {
         return toSafeMap(e);
     }
 
-    public void subirCertP12(Long empresaId, MultipartFile file) {
+    public void subirCertP12(Long empresaId, MultipartFile file) throws java.io.IOException {
         String path = supabaseStorageService.subirCertificado(file, empresaId);
         empresaRepository.findById(empresaId).ifPresent(e -> {
             e.setCertP12Path(path);
@@ -81,7 +81,7 @@ public class EmpresaPerfilService {
         return data;
     }
 
-    public String subirLogo(Long empresaId, MultipartFile file) {
+    public String subirLogo(Long empresaId, MultipartFile file) throws java.io.IOException {
         var mod = imageModerationService.moderar(file);
         if (!mod.safe()) {
             throw new IllegalArgumentException("Imagen rechazada: " + mod.reason());

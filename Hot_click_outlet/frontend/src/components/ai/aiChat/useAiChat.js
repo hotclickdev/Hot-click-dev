@@ -13,6 +13,7 @@ import { useAiChatEffects } from './useAiChatEffects'
 export function useAiChat({
   empresaSlug = 'hotclick',
   context = 'GENERAL',
+  productoId = null,
   sessionKey = 'hotclick',
   chips = [],
   autoQuery = null,
@@ -51,7 +52,7 @@ export function useAiChat({
     if (!msg?.trim() || cargRef.current) return
     setLoading(true)
     setMensajes(prev => [...prev, { rol: 'assistant', typing: true, texto: '', productos: [] }])
-    await streamChat({ empresaSlug, msg: msg.trim(), history: [], context, focusIds: [], setMensajes })
+    await streamChat({ empresaSlug, msg: msg.trim(), history: [], context, focusIds: [], productoId, setMensajes })
     setLoading(false)
   }
 
@@ -98,12 +99,12 @@ export function useAiChat({
       .filter(m => !m.typing && !m.failed && m.texto)
       .slice(-10)
       .map(m => ({ rol: m.rol, texto: m.texto }))
-    const focusIds = lastShownProductIds()
+    const focusIds = productoId ? [productoId] : lastShownProductIds()
     setMensajes(prev => [...prev,
       { rol: 'user', texto: msg },
       { rol: 'assistant', typing: true, texto: '', productos: [] },
     ])
-    await streamChat({ empresaSlug, msg, history, context, focusIds, setMensajes })
+    await streamChat({ empresaSlug, msg, history, context, focusIds, productoId, setMensajes })
     setLoading(false)
     setTimeout(() => inputRef.current?.focus(), 80)
   }
@@ -112,7 +113,7 @@ export function useAiChat({
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() }
   }
 
-  const derived = deriveAiChatView({ mensajes, chips, cargando, context, userName })
+  const derived = deriveAiChatView({ mensajes, chips, cargando, context, userName, productoId })
 
   return {
     mensajes,

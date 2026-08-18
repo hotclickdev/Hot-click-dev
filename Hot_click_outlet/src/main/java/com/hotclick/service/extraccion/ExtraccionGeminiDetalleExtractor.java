@@ -43,6 +43,14 @@ class ExtraccionGeminiDetalleExtractor {
                 if (ia.descripcionCorta != null) d.descripcionCorta = ia.descripcionCorta;
                 if (ia.especificaciones != null) d.especificaciones = ia.especificaciones;
                 if (ia.comoUsar        != null) d.comoUsar        = ia.comoUsar;
+                if (ia.ambientes != null && !ia.ambientes.isEmpty()) {
+                    d.todasEtiquetas = new java.util.ArrayList<>(d.todasEtiquetas);
+                    for (String ambiente : ia.ambientes) {
+                        if (ambiente != null && !ambiente.isBlank() && !d.todasEtiquetas.contains(ambiente)) {
+                            d.todasEtiquetas.add(ambiente);
+                        }
+                    }
+                }
                 geminiCompleto = d.descripcionCorta != null && d.especificaciones != null && d.comoUsar != null;
                 log.info("Gemini: nombre={}, completo={}", d.nombre, geminiCompleto);
             }

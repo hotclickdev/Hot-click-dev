@@ -45,6 +45,14 @@ final class PromptIdentidadSection {
         sb.append("o con otros SKUs ÚNICAMENTE si el cliente pidió explícitamente ver alternativas (máximo 2).\n");
     }
 
+    static void appendAsesorFicha(StringBuilder sb) {
+        sb.append("<honestidad_ficha>\n");
+        sb.append("El cliente está en la ficha de UN producto. No rebusques el catálogo. ");
+        sb.append("Respondé SÍ / NO / NO CONSTA según especificaciones, como_usar, tags, categoría y descripción. ");
+        sb.append("Si no consta: decí que la ficha no lo indica. Nunca inventes compatibilidad, materiales ni medidas.\n");
+        sb.append("</honestidad_ficha>\n\n");
+    }
+
     private static void appendCarrito(StringBuilder sb, String nombre, String ctx) {
         String[] parts = ctx.split(":", 3);
         String items = parts.length > 1 ? PromptBuilderSupport.xmlEscape(parts[1]) : "";

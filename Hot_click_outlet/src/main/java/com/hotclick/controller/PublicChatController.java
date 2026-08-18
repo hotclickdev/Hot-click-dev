@@ -3,6 +3,8 @@ package com.hotclick.controller;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.security.RateLimiter;
 import com.hotclick.service.PublicChatService;
+import com.hotclick.service.catalogo.MarketplaceCatalogo;
+import com.hotclick.service.publicchat.PublicChatRequestParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -113,13 +115,17 @@ public class PublicChatController {
             .limit(5)
             .collect(Collectors.toList());
 
+        Long productoId = PublicChatRequestParser.productoId(body);
+
         final Long eid = empresaId;
+        final boolean marketplace = MarketplaceCatalogo.esMarketplace(slug);
         final String finalMessage = message;
         final List<Map<String, Object>> finalHistory = history;
         final String finalContext = context;
         emitter.onCompletion(emitter::complete);
         emitter.onTimeout(emitter::complete);
-        sseExecutor.execute(() -> chatService.chat(eid, finalMessage, offset, finalHistory, finalContext, focusIds, emitter));
+        sseExecutor.execute(() -> chatService.chat(
+            eid, marketplace, finalMessage, offset, finalHistory, finalContext, focusIds, productoId, emitter));
         return emitter;
     }
 

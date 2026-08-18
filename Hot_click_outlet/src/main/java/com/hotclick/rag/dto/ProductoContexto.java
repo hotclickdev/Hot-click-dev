@@ -15,5 +15,9 @@ public record ProductoContexto(
     Integer precio,
     String  descripcionCorta,
     String  imagenUrl,
-    Integer stock
+    Integer stock,
+    String  tags,
+    String  categoria,
+    String  especificaciones,
+    String  comoUsar
 ) {}

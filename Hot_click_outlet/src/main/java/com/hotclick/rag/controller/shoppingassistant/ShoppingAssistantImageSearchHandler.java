@@ -4,6 +4,7 @@ import com.hotclick.model.Empresa;
 import com.hotclick.rag.dto.ProductoContexto;
 import com.hotclick.rag.service.VectorSearchService;
 import com.hotclick.service.GoogleVisionService;
+import com.hotclick.service.catalogo.MarketplaceCatalogo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -69,7 +70,8 @@ public class ShoppingAssistantImageSearchHandler {
 
         List<ProductoContexto> productos = query.isBlank()
             ? List.of()
-            : vectorSearchService.buscarSimilares(empresa.getId(), query, 5);
+            : vectorSearchService.buscarSimilares(
+                empresa.getId(), query, 5, MarketplaceCatalogo.esMarketplace(empresaSlug));
 
         // Asignar porcentajes de similitud decrecientes (sin image embeddings, es estimación)
         int[] simScores = { 94, 87, 80, 74, 68 };

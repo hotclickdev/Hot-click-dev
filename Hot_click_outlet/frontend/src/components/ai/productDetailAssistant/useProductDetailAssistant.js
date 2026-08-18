@@ -8,7 +8,8 @@ export function useProductDetailAssistant(product) {
   const [mensajes, setMensajes] = useState([])
   const [input,    setInput]    = useState('')
   const [cargando, setCargando] = useState(false)
-  const [sesionId, setSesionId] = useState(() => shoppingAssistantService.loadSesionId('hotclick'))
+  const sesionKey = `producto-${product?.id ?? 'hotclick'}`
+  const [sesionId, setSesionId] = useState(() => shoppingAssistantService.loadSesionId(sesionKey))
   const visitorId = useMemo(() => getOrCreateVisitorId(), [])
   const bottomRef = useRef(null)
   const inputRef  = useRef(null)
@@ -49,10 +50,11 @@ export function useProductDetailAssistant(product) {
     try {
       const result = await shoppingAssistantService.chat({
         empresaSlug: 'hotclick', mensaje: msg, sesionId, contexto, visitorId,
+        productoId: product?.id ?? null,
       })
       if (result.sesionId && result.sesionId !== sesionId) {
         setSesionId(result.sesionId)
-        shoppingAssistantService.saveSesionId('hotclick', result.sesionId)
+        shoppingAssistantService.saveSesionId(sesionKey, result.sesionId)
       }
       setMensajes(prev => [...prev.slice(0, -1), {
         rol: 'assistant', texto: result.respuesta, productos: result.productos ?? [],

@@ -3232,3 +3232,27 @@ UPDATE hot_click_solicitud_aprobacion_tb s
    AND s.tipo_entidad = 'PRODUCTO'
    AND s.estado_solicitud = 'PENDIENTE'
    AND e.estado_empresa = 'ACTIVO';
+
+-- ============================================================
+-- V101: chat search_vector incluye ficha (desc larga, specs, como_usar)
+-- ============================================================
+
+DROP INDEX IF EXISTS idx_producto_fts;
+
+ALTER TABLE hot_click_producto_tb DROP COLUMN IF EXISTS search_vector;
+
+ALTER TABLE hot_click_producto_tb
+    ADD COLUMN search_vector tsvector
+    GENERATED ALWAYS AS (
+        to_tsvector('spanish',
+            COALESCE(nombre_producto, '') || ' ' ||
+            COALESCE(descripcion_corta, '') || ' ' ||
+            COALESCE(left(descripcion_larga, 2000), '') || ' ' ||
+            COALESCE(tags, '') || ' ' ||
+            COALESCE(left(especificaciones, 1500), '') || ' ' ||
+            COALESCE(left(como_usar, 800), '')
+        )
+    ) STORED;
+
+CREATE INDEX IF NOT EXISTS idx_producto_fts
+    ON hot_click_producto_tb USING GIN(search_vector);

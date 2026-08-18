@@ -3,14 +3,7 @@
  * No se puede plegar/ocultar. Muestra chips de preguntas frecuentes al inicio.
  */
 import AIChat from './AIChat'
-
-const CHIPS = [
-  '¿Para qué sirve exactamente?',
-  '¿Es fácil de instalar?',
-  '¿Compatible con Alexa?',
-  '¿Vale la pena?',
-  '¿Tiene garantía?',
-]
+import { chipsAsesorProducto } from './productAdvisorChips'
 
 export default function AIProductSection({ product }) {
   if (!product) return null
@@ -38,16 +31,17 @@ export default function AIProductSection({ product }) {
             Preguntá sobre este producto
           </p>
           <p className="text-[11px]" style={{ color: 'var(--hc-muted)' }}>
-            HotClick AI · respuestas instantáneas
+            HotClick AI · respuestas según la ficha
           </p>
         </div>
       </div>
 
       <AIChat
         context={context}
-        sessionKey="hotclick"
-        chips={CHIPS}
-        placeholder="¿Tenés alguna duda sobre este producto?"
+        productoId={product.id}
+        sessionKey={`producto-${product.id}`}
+        chips={chipsAsesorProducto(product)}
+        placeholder="¿Este producto te sirve para lo que necesitás?"
         maxHistoryHeight={320}
       />
     </section>
