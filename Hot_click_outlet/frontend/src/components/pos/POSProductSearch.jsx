@@ -86,6 +86,12 @@ export default function POSProductSearch({ onAdd }) {
                   <div className="w-6 h-6 border-2 rounded-full animate-spin"
                     style={{ borderColor: 'var(--hc-accent)', borderTopColor: 'transparent' }}/>
                 </div>
+              ) : categorias.length === 0 ? (
+                <div className="flex items-center justify-center h-32">
+                  <p className="text-sm text-center" style={{ color: 'var(--hc-muted)' }}>
+                    Este negocio aún no tiene productos para vender en caja
+                  </p>
+                </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                   {categorias.map((cat, i) => {

@@ -33,4 +33,11 @@ public interface CategoriaRepository extends JpaRepository<Categoria, Long> {
     // las vea todo negocio; se conservan también las creadas antes por cada empresa (legado).
     @Query("SELECT c FROM Categoria c WHERE c.estado = :estado AND (c.empresa.id = :empresaId OR c.empresa IS NULL)")
     List<Categoria> findByEmpresaIdOrNoEmpresaAndEstado(@Param("empresaId") Long empresaId, @Param("estado") Integer estado);
+
+    /** POS: solo categorías donde este negocio tiene al menos un producto activo. */
+    @Query("SELECT DISTINCT c FROM Producto p JOIN p.categoria c "
+        + "WHERE p.empresa.id = :empresaId AND p.estado = :estado AND c.estado = :estado "
+        + "ORDER BY c.nombreCategoria")
+    List<Categoria> findConProductosDeEmpresa(
+        @Param("empresaId") Long empresaId, @Param("estado") Integer estado);
 }

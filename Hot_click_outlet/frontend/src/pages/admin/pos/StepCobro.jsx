@@ -58,7 +58,7 @@ export default function StepCobro({ total, cartItems, descuento, onBack, onConfi
         {/* Método de pago */}
         <div className="space-y-3">
           <p className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.7)' }}>¿Cómo paga el cliente?</p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {METODOS.map(m => (
               <button type="button" key={m.id} onClick={() => setMetodo(m.id)}
                 className="flex items-center gap-3 px-4 py-4 rounded-2xl text-left transition-all"
@@ -154,20 +154,9 @@ export default function StepCobro({ total, cartItems, descuento, onBack, onConfi
               {metodo === 'SINPE' ? 'Se genera un QR de SINPE Móvil' : 'Se genera un QR para pago con tarjeta'}
             </p>
             <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
-              El cliente escanea el QR con su celular y paga en línea
-            </p>
-          </div>
-        )}
-
-        {metodo === 'TRANSFERENCIA' && (
-          <div className="rounded-2xl p-4 text-center space-y-1"
-            style={{ backgroundColor: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.2)' }}>
-            <p className="font-semibold text-sm flex items-center justify-center gap-2" style={{ color: '#fbbf24' }}>
-              <MetodoPagoIcon iconId="transferencia" className="w-4 h-4" />
-              Revisá el comprobante antes de confirmar
-            </p>
-            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
-              Verificá que la transferencia ya llegó a la cuenta
+              {metodo === 'SINPE'
+                ? 'Se muestra el número del negocio para enviar el comprobante'
+                : 'El cliente escanea el QR y paga en la pasarela; el carrito ya está listo'}
             </p>
           </div>
         )}

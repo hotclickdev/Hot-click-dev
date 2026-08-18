@@ -48,7 +48,7 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
           <div className="rounded-2xl p-4 space-y-2"
             style={{ backgroundColor: 'rgba(100,144,234,0.08)', border: '1px solid rgba(100,144,234,0.2)' }}>
             {[
-              ['SINPE Móvil a:', sinpeNumero],
+              ['SINPE Móvil a:', sinpeNumero || 'Configurá el WhatsApp del negocio'],
               ['Referencia:', (token ?? '').substring(0, 8).toUpperCase()],
               ['Monto exacto:', `₡${formatMontoPos(total)}`],
             ].map(([k, v]) => (

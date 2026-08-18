@@ -13,6 +13,14 @@ export const CAT_COLORS = [
 
 export function CatColor(idx) { return CAT_COLORS[idx % CAT_COLORS.length] }
 
+/** Lista de un GET que puede venir cruda o envuelta en ResponseDTO. */
+export function listaDesdeRespuesta(data) {
+  if (Array.isArray(data)) return data
+  if (Array.isArray(data?.data)) return data.data
+  if (Array.isArray(data?.content)) return data.content
+  return []
+}
+
 export function categoryEmoji(nombre) {
   const n = (nombre ?? '').toLowerCase()
   if (n.includes('ropa') || n.includes('tela') || n.includes('camis')) return '👕'

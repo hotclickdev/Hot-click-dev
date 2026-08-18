@@ -2,6 +2,7 @@ package com.hotclick.controller.producto;
 
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Producto;
+import com.hotclick.repository.CategoriaRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.service.ProductoService;
@@ -28,9 +29,10 @@ public class ProductoCatalogHandler {
     private static final int MAX_PAGE_SIZE        = 100;
     private static final int MAX_PAGE_SIZE_PUBLIC =  50;
 
-    @Autowired private ProductoService    productoService;
-    @Autowired private ProductoRepository productoRepository;
-    @Autowired private CompanyScope       companyScope;
+    @Autowired private ProductoService     productoService;
+    @Autowired private ProductoRepository  productoRepository;
+    @Autowired private CategoriaRepository categoriaRepository;
+    @Autowired private CompanyScope        companyScope;
     @Autowired private StockService        stockService;
     @Autowired private ProductoAccessGuard productoAccessGuard;
 
@@ -52,6 +54,16 @@ public class ProductoCatalogHandler {
             ? productoRepository.findByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO, pageable)
             : productoService.listarTodosActivos(pageable);
         return ResponseEntity.ok(ResponseDTO.success("Productos obtenidos", productos));
+    }
+
+    /** POS: categorías con productos de este negocio, no las del marketplace entero. */
+    public ResponseEntity<ResponseDTO> categoriasPOS() {
+        Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
+        if (empresaId == null) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error("Empresa requerida en el contexto"));
+        }
+        var cats = categoriaRepository.findConProductosDeEmpresa(empresaId, Constants.ESTADO_ACTIVO);
+        return ResponseEntity.ok(ResponseDTO.success("OK", cats));
     }
 
     /** POS: productos por categoría dentro de la empresa. */

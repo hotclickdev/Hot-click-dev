@@ -11,10 +11,9 @@ export const DENOM = [
 ]
 
 export const METODOS = [
-  { id: 'EFECTIVO',      label: 'Efectivo',      iconId: 'efectivo',      color: '#34d399', desc: 'Pago en mano' },
-  { id: 'SINPE',         label: 'SINPE Móvil',   iconId: 'sinpe',         color: '#6490EA', desc: 'SINPE Móvil' },
-  { id: 'TARJETA',       label: 'Tarjeta',       iconId: 'tarjeta',       color: '#7aa3ff', desc: 'Crédito / Débito' },
-  { id: 'TRANSFERENCIA', label: 'Transferencia', iconId: 'transferencia', color: '#fbbf24', desc: 'Bancaria' },
+  { id: 'EFECTIVO', label: 'Efectivo',    iconId: 'efectivo', color: '#34d399', desc: 'Pago en mano' },
+  { id: 'SINPE',    label: 'SINPE Móvil', iconId: 'sinpe',    color: '#6490EA', desc: 'Al número del negocio' },
+  { id: 'TARJETA',  label: 'Tarjeta',     iconId: 'tarjeta',  color: '#7aa3ff', desc: 'QR a la pasarela' },
 ]
 
 /**

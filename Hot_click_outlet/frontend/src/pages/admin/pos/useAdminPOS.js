@@ -139,7 +139,7 @@ export function useAdminPOS() {
         token:      data.token,
         metodoPago: data.metodoPago ?? 'TARJETA',
         total:      data.total ?? total,
-        sinpeNumero: data.sinpeNumero ?? '8666-7888',
+        sinpeNumero: data.sinpeNumero ?? '',
       })
       setStep('qr')
     } catch (err) {
@@ -163,7 +163,7 @@ export function useAdminPOS() {
           token:       data.token,
           metodoPago:  data.metodoPago,
           total:       data.total ?? total,
-          sinpeNumero: data.sinpeNumero ?? '8666-7888',
+          sinpeNumero: data.sinpeNumero ?? '',
         })
         setStep('qr')
       } catch (err) {

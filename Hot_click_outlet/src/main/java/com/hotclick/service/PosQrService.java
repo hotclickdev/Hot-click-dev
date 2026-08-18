@@ -27,6 +27,10 @@ public class PosQrService {
         return sessionService.crearSesion(usuarioId, empresaId, turnoId, metodoPago, items, notas);
     }
 
+    public Map<String, Object> respuestaCajero(PosQrSesion sesion) {
+        return sessionService.respuestaCajero(sesion);
+    }
+
     @Transactional(readOnly = true)
     public Map<String, Object> getInfoPublica(String token) {
         return sessionService.getInfoPublica(token);

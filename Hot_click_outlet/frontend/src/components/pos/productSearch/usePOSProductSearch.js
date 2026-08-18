@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { productService } from '@/services/productService'
 import api from '@/services/api'
+import { listaDesdeRespuesta } from './posProductSearchHelpers'
 
 /** Estado y handlers del buscador POS — bit-idéntico al original. */
 export function usePOSProductSearch() {
@@ -19,11 +20,8 @@ export function usePOSProductSearch() {
 
   useEffect(() => {
     setLoadingCat(true)
-    api.get('/categorias')
-      .then(({ data }) => {
-        const cats = Array.isArray(data) ? data : (data?.data ?? [])
-        setCategorias(cats)
-      })
+    api.get('/productos/pos/categorias')
+      .then(({ data }) => setCategorias(listaDesdeRespuesta(data)))
       .catch((err) => { console.error('[usePOSProductSearch] categorias', err) })
       .finally(() => setLoadingCat(false))
   }, [])
@@ -34,10 +32,7 @@ export function usePOSProductSearch() {
     setSearchResults([])
     setLoadingProd(true)
     api.get(`/productos/pos/categoria/${cat.id}`)
-      .then(({ data }) => {
-        const list = data?.data ?? []
-        setProductos(Array.isArray(list) ? list : [])
-      })
+      .then(({ data }) => setProductos(listaDesdeRespuesta(data)))
       .catch(() => setProductos([]))
       .finally(() => setLoadingProd(false))
   }, [])

@@ -113,6 +113,7 @@ public class PosVentaService {
         for (PosVentaDTO.Item itemDto : dto.getItems()) {
             Producto producto = productoRepository.findByIdForUpdate(itemDto.getProductoId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Producto", itemDto.getProductoId()));
+            PosProductoDeEmpresa.exigirMismoNegocio(producto.getEmpresaId(), pedido.getEmpresa().getId());
             int cantidad = itemDto.getCantidad() != null ? itemDto.getCantidad() : 1;
             int precio = itemDto.getPrecioUnitario() != null
                 ? itemDto.getPrecioUnitario() : producto.getPrecioEfectivo();

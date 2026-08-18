@@ -48,12 +48,8 @@ public class PosQrController {
             PosQrSesion sesion = posQrService.crearSesion(
                 usuarioId, empresaId, turnoId, metodo, items, notas);
 
-            return ResponseEntity.ok(ResponseDTO.success("QR generado", Map.of(
-                "token",      sesion.getToken(),
-                "total",      sesion.getTotal(),
-                "metodoPago", sesion.getMetodoPago(),
-                "expiracion", sesion.getFechaExpiracion().toString()
-            )));
+            return ResponseEntity.ok(ResponseDTO.success("QR generado",
+                posQrService.respuestaCajero(sesion)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }

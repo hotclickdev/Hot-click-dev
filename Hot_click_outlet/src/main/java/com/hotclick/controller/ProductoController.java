@@ -37,6 +37,11 @@ public class ProductoController {
         return catalogHandler.listarTodosAdmin(page, size);
     }
 
+    @GetMapping("/pos/categorias")
+    public ResponseEntity<ResponseDTO> categoriasPOS() {
+        return catalogHandler.categoriasPOS();
+    }
+
     @GetMapping("/pos/categoria/{catId}")
     public ResponseEntity<ResponseDTO> porCategoriaPOS(@PathVariable Long catId) {
         return catalogHandler.porCategoriaPOS(catId);

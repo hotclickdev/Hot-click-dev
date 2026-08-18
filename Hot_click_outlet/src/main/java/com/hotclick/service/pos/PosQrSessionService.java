@@ -8,6 +8,7 @@ import com.hotclick.model.PosQrSesion;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.PosQrSesionRepository;
+import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.TurnoCajaRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.utils.Constants;
@@ -32,6 +33,7 @@ public class PosQrSessionService {
     @Autowired private PosQrSesionRepository posQrRepo;
     @Autowired private UsuarioRepository     usuarioRepo;
     @Autowired private EmpresaRepository     empresaRepo;
+    @Autowired private ProductoRepository    productoRepo;
     @Autowired private TurnoCajaRepository   turnoCajaRepo;
 
     private final ObjectMapper mapper = new ObjectMapper();
@@ -46,6 +48,7 @@ public class PosQrSessionService {
         if (!"SINPE".equals(metodoPago) && !"TARJETA".equals(metodoPago)) {
             throw new IllegalArgumentException("Método de pago debe ser SINPE o TARJETA");
         }
+        exigirItemsDelNegocio(empresaId, items);
 
         Usuario usuario  = usuarioRepo.findById(usuarioId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Usuario", usuarioId));
@@ -96,8 +99,7 @@ public class PosQrSessionService {
             items = List.of();
         }
 
-        String sinpeNumero = empresa.getNumeroWhatsapp() != null
-            ? empresa.getNumeroWhatsapp() : "50689745370";
+        String sinpeNumero = numeroSinpe(empresa);
 
         Map<String, Object> r = new LinkedHashMap<>();
         r.put("token",        sesion.getToken());
@@ -114,6 +116,42 @@ public class PosQrSessionService {
         r.put("sinpeNumero",  sinpeNumero);
         r.put("sinpeRef",     sesion.getToken().substring(0, 8).toUpperCase());
         return r;
+    }
+
+    public Map<String, Object> respuestaCajero(PosQrSesion sesion) {
+        Map<String, Object> r = new LinkedHashMap<>();
+        r.put("token", sesion.getToken());
+        r.put("total", sesion.getTotal());
+        r.put("metodoPago", sesion.getMetodoPago());
+        r.put("expiracion", sesion.getFechaExpiracion().toString());
+        r.put("sinpeNumero", numeroSinpe(sesion.getEmpresa()));
+        return r;
+    }
+
+    static String numeroSinpe(Empresa empresa) {
+        if (empresa == null) return "";
+        if (tieneTexto(empresa.getNumeroWhatsapp())) return empresa.getNumeroWhatsapp().trim();
+        if (tieneTexto(empresa.getTelefonoEmpresa())) return empresa.getTelefonoEmpresa().trim();
+        return "";
+    }
+
+    private void exigirItemsDelNegocio(Long empresaId, List<Map<String, Object>> items) {
+        for (Map<String, Object> item : items) {
+            Long productoId = productoIdDe(item);
+            Long dueño = productoRepo.findEmpresaIdById(productoId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
+            PosProductoDeEmpresa.exigirMismoNegocio(dueño, empresaId);
+        }
+    }
+
+    private static Long productoIdDe(Map<String, Object> item) {
+        Object raw = item.get("productoId");
+        if (raw instanceof Number n) return n.longValue();
+        throw new IllegalArgumentException("Cada ítem necesita productoId");
+    }
+
+    private static boolean tieneTexto(String valor) {
+        return valor != null && !valor.isBlank();
     }
 
     @Transactional
