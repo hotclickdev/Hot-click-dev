@@ -75,7 +75,10 @@ public class EmpresaPerfilService {
         if (val == null) throw new IllegalArgumentException("Campo visibilidadPublica requerido");
         e.setVisibilidadPublica(Boolean.parseBoolean(val.toString()));
         empresaRepository.save(e);
-        return Map.of("visibilidadPublica", e.getVisibilidadPublica(), "estadoEmpresa", e.getEstadoEmpresa());
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("visibilidadPublica", e.getVisibilidadPublica());
+        data.put("estadoEmpresa", e.getEstadoEmpresa());
+        return data;
     }
 
     public String subirLogo(Long empresaId, MultipartFile file) {
