@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
+import { copilotService } from '@/services/copilotService'
 import { ofertaService } from '@/services/ofertaService'
 import { productService } from '@/services/productService'
 import { useToast } from '@/components/ui/Toast'
@@ -7,6 +8,7 @@ import Spinner from '@/components/ui/Spinner'
 import { formatPrice } from '@/utils/format'
 
 const CARD_SHADOW = '0 1px 2px rgba(26,26,26,0.04), 0 8px 20px rgba(26,26,26,0.06)'
+const DESCUENTO_SUGERIDO_LENTOS = 15
 
 const ESTADO_LABEL = {
   PENDIENTE: 'Pendiente de revisión',
@@ -22,9 +24,11 @@ function fmtDate(d) {
   return new Date(d).toLocaleDateString('es-CR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
 
-function ProductRow({ p, onAplicar, disabled }) {
-  const [pct, setPct] = useState('')
+function ProductRow({ p, onAplicar, disabled, pctSugerido }) {
+  const [pct, setPct] = useState(pctSugerido ? String(pctSugerido) : '')
   const [saving, setSaving] = useState(false)
+  const nombre = p.nombreProducto ?? p.nombre
+  const imagen = p.imagenPrincipalUrl ?? p.imagenUrl
 
   async function handleApply() {
     if (!pct || pct < 1 || pct > 99) return
@@ -36,11 +40,11 @@ function ProductRow({ p, onAplicar, disabled }) {
 
   return (
     <div className="flex items-center gap-3 rounded-xl p-3 flex-wrap" style={{ backgroundColor: 'var(--hc-surface-2)' }}>
-      {p.imagenPrincipalUrl && (
-        <img src={p.imagenPrincipalUrl} alt="" className="w-9 h-9 rounded-md object-cover shrink-0" />
+      {imagen && (
+        <img src={imagen} alt="" className="w-9 h-9 rounded-md object-cover shrink-0" />
       )}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold truncate" style={{ color: 'var(--hc-text)' }}>{p.nombreProducto}</p>
+        <p className="text-sm font-semibold truncate" style={{ color: 'var(--hc-text)' }}>{nombre}</p>
         <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
           {formatPrice(p.precioVenta)}
           {p.enOferta && p.precioOferta && <span className="ml-2 font-semibold" style={{ color: 'var(--hc-primary)' }}>→ {formatPrice(p.precioOferta)}</span>}
@@ -77,18 +81,27 @@ export default function SistemaPromociones() {
   const toast = useToast()
   const [productos, setProductos] = useState([])
   const [pendientes, setPendientes] = useState([])
+  const [lentos, setLentos] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
 
   const cargar = useCallback(async () => {
     setLoading(true)
     try {
-      const [pRes, sRes] = await Promise.all([
+      const [pRes, sRes, iRes] = await Promise.all([
         productService.adminGetAll(),
-        ofertaService.misPendientes().catch(() => ({ data: [] })),
+        ofertaService.misPendientes().catch((err) => {
+          console.error('[SistemaPromociones] pendientes', err)
+          return { data: [] }
+        }),
+        copilotService.getInsights().catch((err) => {
+          console.error('[SistemaPromociones] insights', err)
+          return { data: {} }
+        }),
       ])
       setProductos(pRes.data?.content ?? pRes.data ?? [])
       setPendientes(Array.isArray(sRes.data) ? sRes.data : [])
+      setLentos(Array.isArray(iRes.data?.lentos) ? iRes.data.lentos : [])
     } catch {
       toast({ message: 'Error cargando promociones', type: 'error' })
     } finally {
@@ -112,10 +125,15 @@ export default function SistemaPromociones() {
 
   const pendientesActivos = pendientes.filter(s => s.estadoSolicitud === 'PENDIENTE' || s.estadoSolicitud === 'RECHAZADO')
   const idsConSolicitudPendiente = new Set(pendientes.filter(s => s.estadoSolicitud === 'PENDIENTE').map(s => s.productoId))
+  const idsLentos = new Set(lentos.map((p) => Number(p.id)))
+  const sugeridos = productos.filter((p) => idsLentos.has(Number(p.id)) && !p.enOferta)
 
-  const filtrados = productos.filter(p =>
-    !search || p.nombreProducto?.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtrados = productos.filter((p) => {
+    if (idsLentos.has(Number(p.id)) && !p.enOferta) return false
+    if (!search) return true
+    const nombre = (p.nombreProducto ?? p.nombre ?? '').toLowerCase()
+    return nombre.includes(search.toLowerCase())
+  })
 
   if (loading) return <div className="flex justify-center py-20"><Spinner size="lg" /></div>
 
@@ -125,8 +143,32 @@ export default function SistemaPromociones() {
 
       <header>
         <h1 style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 26, letterSpacing: '-0.5px', color: 'var(--hc-text)' }}>Promociones</h1>
-        <p style={{ margin: '4px 0 0', fontSize: 15, color: 'var(--hc-muted)' }}>Aplicá descuentos a tus productos — el equipo de HOTCLICK las revisa antes de publicarlas.</p>
+        <p style={{ margin: '4px 0 0', fontSize: 15, color: 'var(--hc-muted)' }}>
+          HOTCLICK revisa antes de publicar. Arriba van las sugeridas (sin venta ~60 días, {DESCUENTO_SUGERIDO_LENTOS}%).
+        </p>
       </header>
+
+      {sugeridos.length > 0 && (
+        <div className="rounded-2xl p-5 flex flex-col gap-3" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
+          <h2 style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, color: 'var(--hc-text)' }}>
+            Sugeridas — sin venta reciente
+          </h2>
+          <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+            Un {DESCUENTO_SUGERIDO_LENTOS}% puede moverlas. El equipo revisa antes de publicar.
+          </p>
+          <div className="flex flex-col gap-2">
+            {sugeridos.map((p) => (
+              <ProductRow
+                key={p.id}
+                p={p}
+                onAplicar={handleAplicar}
+                disabled={idsConSolicitudPendiente.has(p.id)}
+                pctSugerido={DESCUENTO_SUGERIDO_LENTOS}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {pendientesActivos.length > 0 && (
         <div className="rounded-2xl p-5 flex flex-col gap-3" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>

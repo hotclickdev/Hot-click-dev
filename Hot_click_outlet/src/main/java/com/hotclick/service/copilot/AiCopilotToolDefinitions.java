@@ -94,10 +94,15 @@ class AiCopilotToolDefinitions {
             español con el vos costarricense: directo, concreto y accionable. %s
 
             Tenés herramientas para consultar datos reales del negocio (inventario,
-            ventas, finanzas, clientes, recomendaciones). Nunca inventés cifras.
-            Nunca llamés una herramienta "por si acaso" o de relleno cuando no
-            estés seguro de qué te piden — si no sabés qué necesita, preguntá,
-            no dispares una consulta al azar.
+            ventas, finanzas, clientes, reporte operativo, proyección, marca, catálogo público).
+            Nunca inventés cifras. Si piden inventario, ventas, reporte, qué reponer,
+            qué no se vende o comparar precios, LLAMÁ la herramienta. Si preguntan
+            ganancia, margen, IVA o cómo van de plata, llamá consultar_finanzas.
+            Si preguntan proyección, "si sigo así" o reordenar, llamá proyeccion_negocio.
+            Si preguntan por la marca, ficha o visibilidad, llamá perfil_marca.
+            Respondé con las cifras que devolvió y UNA acción concreta. Nada de
+            consejos genéricos ("mejorá tu estrategia"). Nunca uses ventas ni stock
+            de otros negocios.
 
             ESTILO DE RESPUESTA (reglas duras, segui todas, siempre):
             1. Respondé EXACTAMENTE lo que se pregunta o cuenta, ni una palabra
@@ -146,13 +151,30 @@ class AiCopilotToolDefinitions {
         tools.add(toolDef("recomendaciones",
             "Devuelve acciones recomendadas para el negocio: productos con stock crítico a reabastecer, y productos sin ventas en 60+ días candidatos a descuento.",
             Map.of(JSON_TYPE, JSON_OBJECT, JSON_PROPERTIES, Map.of())));
+        tools.add(toolDef("reporte_negocio",
+            "Arma un reporte operativo: pedidos, ingresos, top productos, stock crítico y productos sin venta. Usar siempre que pidan un reporte o resumen del negocio.",
+            Map.of(JSON_TYPE, JSON_OBJECT,
+                JSON_PROPERTIES, Map.of("periodo", Map.of(
+                    JSON_TYPE, JSON_STRING,
+                    "enum", List.of("hoy", "7d", "30d"),
+                    JSON_DESCRIPTION, "Período — por defecto 30d")),
+                JSON_REQUIRED, List.of())));
+        tools.add(toolDef("comparar_catalogo_publico",
+            "Compara precios de productos propios contra el catálogo público de HOTCLICK. Incluye percentil vs el típico de la misma categoría. Solo precios y nombres; nunca stock ni ventas de otros negocios.",
+            Map.of(JSON_TYPE, JSON_OBJECT, JSON_PROPERTIES, Map.of())));
+        tools.add(toolDef("proyeccion_negocio",
+            "Proyecta los próximos 30 días en colones según demanda reciente, qué reponer y qué se mueve poco. Usar si preguntan proyección, 'si sigo así' o reordenar.",
+            Map.of(JSON_TYPE, JSON_OBJECT, JSON_PROPERTIES, Map.of())));
+        tools.add(toolDef("perfil_marca",
+            "Perfil de la marca en HotClick: nombre, bio, visibilidad en marketplace, productos visibles y huecos de ficha (sin foto o sin tags).",
+            Map.of(JSON_TYPE, JSON_OBJECT, JSON_PROPERTIES, Map.of())));
         tools.add(toolDef("consultar_clientes",
             "Consulta la lista de clientes del negocio: cuántos son y sus nombres. Usar cuando pregunten cuáles/cuántos son sus clientes.",
             Map.of(JSON_TYPE, JSON_OBJECT, JSON_PROPERTIES, Map.of())));
 
         if (tieneFeatureReportes(empresaId)) {
             tools.add(toolDef("consultar_finanzas",
-                "Consulta KPIs financieros del negocio para un período: ventas totales, costo de mercadería vendida (CMV), ganancia neta, margen, IVA.",
+                "Consulta KPIs financieros del negocio para un período: ventas totales, costo de mercadería vendida (CMV), ganancia neta, margen, IVA. Usar si preguntan ganancia, margen, IVA o cómo van de plata.",
                 Map.of(JSON_TYPE, JSON_OBJECT,
                     JSON_PROPERTIES, Map.of("periodo", Map.of(
                         JSON_TYPE, JSON_STRING,

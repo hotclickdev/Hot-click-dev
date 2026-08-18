@@ -67,7 +67,7 @@ export default function BlogModal({ entrada, onSave, onClose }) {
         }}
       >
         <h2 style={{ fontSize: 19, fontWeight: 800, color: 'var(--hc-text)', margin: 0 }}>
-          {entrada ? 'Editar entrada' : 'Nueva entrada del blog'}
+          {entrada?.id ? 'Editar entrada' : 'Nueva entrada del blog'}
         </h2>
         <p style={{ fontSize: 12.5, color: 'var(--hc-muted)', margin: '4px 0 22px' }}>
           Completá los datos y guardá como borrador o publicalo directo.

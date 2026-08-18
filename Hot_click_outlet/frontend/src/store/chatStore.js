@@ -1,14 +1,12 @@
 import { create } from 'zustand'
 
-const INACTIVITY_MS = 10 * 60 * 1000  // 10 minutos
+const INACTIVITY_MS = 10 * 60 * 1000
 let _interval = null
 
 const useChatStore = create((set, get) => ({
   isOpen: false,
   pendingMessage: null,
 
-  // Historial de la sesión GENERAL (homepage). Sincronizado por AIChat para
-  // que CartAssistant y otros componentes lean el contexto sin page reload.
   mensajes: [],
   sesionId: null,
   lastActivity: null,
@@ -25,17 +23,20 @@ const useChatStore = create((set, get) => ({
 
   setSesionId: (id) => set({ sesionId: id }),
 
-  // Limpia historial + sesionId (llamado por checkExpiry o reset manual)
   resetSession: () => set({ mensajes: [], sesionId: null, lastActivity: null }),
 
   checkExpiry: () => {
     const { lastActivity, mensajes } = get()
     if (mensajes.length > 0 && lastActivity && Date.now() - lastActivity > INACTIVITY_MS) {
       set({ mensajes: [], sesionId: null, lastActivity: null })
+      try {
+        sessionStorage.removeItem('hc-chat-msgs-hotclick')
+      } catch (err) {
+        console.error(err)
+      }
     }
   },
 
-  // Inicia el polling de expiración (60 s). Idempotente: no crea duplicados.
   startExpiryTimer: () => {
     if (_interval) return
     _interval = setInterval(() => get().checkExpiry(), 60_000)

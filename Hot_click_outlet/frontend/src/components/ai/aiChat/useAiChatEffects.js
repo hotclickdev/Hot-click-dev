@@ -46,7 +46,7 @@ export function useAiChatEffects({
         ? `Hola ${userName.split(' ')[0]}, ¿encontraste lo que buscás? Puedo ayudarte.`
         : '¿Podés ayudarte a encontrar algo? Tenemos ofertas disponibles hoy.'
       setMensajes(prev => [...prev, { rol: 'assistant', texto: msg, productos: [], opts: [
-        '¿Qué hay en oferta?', '¿Cuánto cuesta el envío?', 'Ver productos populares',
+        '¿Qué hay en oferta?', '¿Cuánto cuesta el envío?',
       ]}])
     }, 3 * 60 * 1000)
     return () => clearTimeout(timer)
@@ -60,7 +60,7 @@ export function useAiChatEffects({
       if (mensajes.length > 0 || cargRef.current) return
       setMensajes(prev => [...prev, { rol: 'assistant', texto:
         '¡Espera! ¿Encontraste lo que buscabas? Puedo ayudarte a encontrar exactamente lo que necesitás antes de irte.',
-        productos: [], opts: ['¿Tenés algo en oferta?', '¿Cuánto cuesta el envío?', 'Buscar un producto'],
+        productos: [], opts: ['¿Tenés algo en oferta?', '¿Cuánto cuesta el envío?'],
       }])
     }
     document.addEventListener('mouseleave', handleMouseLeave)

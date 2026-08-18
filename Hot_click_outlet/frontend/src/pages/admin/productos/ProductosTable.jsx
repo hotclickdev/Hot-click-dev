@@ -17,22 +17,15 @@ export default function ProductosTable({
   onEdit,
   onKardex,
   onDelete,
+  onOferta,
+  onOcultar,
   onClearFilters,
   onNuevo,
   onPage,
+  vistaSimple,
 }) {
   const { t } = useTranslation()
-  const encabezados = [
-    ...(isAdmin ? ['★', 'Pos.'] : []),
-    'ID',
-    t('admin.products.name'),
-    t('admin.products.price'),
-    t('admin.products.stock'),
-    'SKU / Barcode',
-    t('admin.products.category'),
-    ...(isAdmin ? ['SEO'] : []),
-    t('admin.products.actions'),
-  ]
+  const encabezados = encabezadosProductos(t, isAdmin, vistaSimple)
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
@@ -58,6 +51,9 @@ export default function ProductosTable({
                 onEdit={onEdit}
                 onKardex={onKardex}
                 onDelete={onDelete}
+                onOferta={onOferta}
+                onOcultar={onOcultar}
+                vistaSimple={vistaSimple}
               />
             ))}
           </tbody>
@@ -73,6 +69,9 @@ export default function ProductosTable({
             onEdit={onEdit}
             onKardex={onKardex}
             onDelete={onDelete}
+            onOferta={onOferta}
+            onOcultar={onOcultar}
+            vistaSimple={vistaSimple}
           />
         ))}
       </div>
@@ -95,4 +94,18 @@ export default function ProductosTable({
       />
     </div>
   )
+}
+
+function encabezadosProductos(t, isAdmin, vistaSimple) {
+  return [
+    ...(isAdmin ? ['★', 'Pos.'] : []),
+    ...(vistaSimple ? [] : ['ID']),
+    t('admin.products.name'),
+    t('admin.products.price'),
+    t('admin.products.stock'),
+    vistaSimple ? 'Movimiento' : 'SKU / Barcode',
+    t('admin.products.category'),
+    ...(isAdmin ? ['SEO'] : []),
+    t('admin.products.actions'),
+  ]
 }

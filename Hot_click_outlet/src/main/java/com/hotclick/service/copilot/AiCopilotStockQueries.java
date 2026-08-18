@@ -108,4 +108,52 @@ class AiCopilotStockQueries {
         }
         return sb.toString();
     }
+
+    List<Map<String, Object>> getStockCriticoAccionable(Long empresaId) {
+        return inventoryForecastService.productosEnRiesgo(empresaId).stream()
+            .limit(4)
+            .map(p -> {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("id", p.get("id_producto"));
+                m.put("nombre", p.get("nombre_producto"));
+                m.put("stock", p.get("stock_actual"));
+                m.put("minimo", p.get("stock_minimo"));
+                return m;
+            })
+            .toList();
+    }
+
+    List<Map<String, Object>> getReponerMasAccionable(Long empresaId) {
+        return jdbc.queryForList("""
+            SELECT p.id_producto, p.nombre_producto, p.stock_actual, p.stock_minimo,
+                   SUM(pi.cantidad) AS uds
+            FROM hot_click_pedido_item_tb pi
+            JOIN hot_click_pedido_tb ped ON pi.fk_id_pedido = ped.id_pedido
+            JOIN hot_click_producto_tb p ON pi.fk_id_producto = p.id_producto
+            WHERE ped.fk_id_empresa = ? AND ped.fecha_pedido >= NOW() - INTERVAL '30 days'
+              AND ped.estado_pedido IN ('PAGADO','ENTREGADO')
+              AND p.fk_id_estado = 1 AND p.visible_catalogo = TRUE AND p.vendido = FALSE
+              AND p.stock_actual <= COALESCE(p.stock_minimo, 5)
+            GROUP BY p.id_producto, p.nombre_producto, p.stock_actual, p.stock_minimo
+            ORDER BY uds DESC
+            LIMIT 4
+            """, empresaId).stream()
+            .map(p -> {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("id", p.get("id_producto"));
+                m.put("nombre", p.get("nombre_producto"));
+                m.put("stock", p.get("stock_actual"));
+                m.put("udsVendidas", p.get("uds"));
+                return m;
+            })
+            .toList();
+    }
+
+    Map<String, Object> getInsights(Long empresaId) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("lentos", getProductosSinVentaAccionables(empresaId).stream().limit(4).toList());
+        m.put("enRiesgo", getStockCriticoAccionable(empresaId));
+        m.put("reponerMas", getReponerMasAccionable(empresaId));
+        return m;
+    }
 }

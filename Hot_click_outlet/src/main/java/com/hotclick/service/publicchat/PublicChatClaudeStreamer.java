@@ -50,9 +50,9 @@ class PublicChatClaudeStreamer {
                                      String wa, String context,
                                      boolean isEnglish, boolean isGift,
                                      Long maxBudget, Set<String> negations,
-                                     boolean afterHours, List<String> smartOpts) {
+                                     boolean afterHours, List<String> smartOpts, boolean mostrarFichas) {
         String systemPrompt = promptBuilder.buildSalesSystemPrompt(wa, context, productos,
-            isEnglish, isGift, maxBudget, negations, afterHours);
+            isEnglish, isGift, maxBudget, negations, afterHours, mostrarFichas);
         String fallback = mockResponses.generarRespuestaMock(productos, history, isEnglish);
         streamWithSystemPrompt(log, emitter, userMessage, history, systemPrompt, fallback, smartOpts);
     }

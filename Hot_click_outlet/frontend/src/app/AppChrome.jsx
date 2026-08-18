@@ -9,6 +9,8 @@ import { useAbandonedCart } from '@/hooks/useAbandonedCart'
 import { useWishlistAlert } from '@/hooks/useWishlistAlert'
 import { useBranding } from '@/hooks/useBranding'
 import { initGA4, trackPageView } from '@/utils/ga4'
+import { trackAiPage } from '@/components/ai/aiChat/aiChatBehavior'
+import { surfaceFromPath } from '@/components/ai/aiChat/chatSurface'
 
 // Excluded paths — social proof / abandoned-cart watcher skip these
 const EXCLUDED_PREFIXES = ['/admin', '/carrito', '/checkout', '/pago']
@@ -24,6 +26,9 @@ export function ScrollToTop() {
   useEffect(() => {
     globalThis.scrollTo(0, 0)
     trackPageView(pathname)
+    if (pathname.startsWith('/admin')) return
+    const ficha = pathname.match(/^\/productos\/([^/]+)/)
+    trackAiPage(surfaceFromPath(pathname), ficha?.[1])
   }, [pathname])
   return null
 }

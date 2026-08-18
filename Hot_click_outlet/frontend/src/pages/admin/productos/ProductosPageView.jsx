@@ -34,6 +34,7 @@ export default function ProductosPageView({
           bodegas={header.bodegas}
           onImport={header.onImport}
           onNuevo={header.onNuevo}
+          vistaSimple={header.vistaSimple}
         />
 
         {carrusel.isAdmin && (

@@ -65,7 +65,7 @@ public class PublicChatClaudeClient {
                                          boolean afterHours) {
         String wa = getEmpresaWhatsapp(empresaId);
         return promptBuilder.buildSalesSystemPrompt(wa, context, productos,
-            isEnglish, isGift, maxBudget, negations, afterHours);
+            isEnglish, isGift, maxBudget, negations, afterHours, true);
     }
 
     public void streamClaudeResponse(SseEmitter emitter, String userMessage,
@@ -74,10 +74,10 @@ public class PublicChatClaudeClient {
                                      Long empresaId, String context,
                                      boolean isEnglish, boolean isGift,
                                      Long maxBudget, Set<String> negations,
-                                     boolean afterHours, List<String> smartOpts) {
+                                     boolean afterHours, List<String> smartOpts, boolean mostrarFichas) {
         String wa = getEmpresaWhatsapp(empresaId);
         streamer.streamClaudeResponse(log, emitter, userMessage, productos, history, wa, context,
-            isEnglish, isGift, maxBudget, negations, afterHours, smartOpts);
+            isEnglish, isGift, maxBudget, negations, afterHours, smartOpts, mostrarFichas);
     }
 
     public void streamAdvisorResponse(SseEmitter emitter, String userMessage,

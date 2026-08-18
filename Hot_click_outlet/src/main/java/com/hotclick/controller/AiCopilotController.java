@@ -100,6 +100,11 @@ public class AiCopilotController {
         return ResponseEntity.ok(aiCopilotService.getProductosSinVentaAccionables(TenantContext.get()));
     }
 
+    @GetMapping("/insights")
+    public ResponseEntity<?> insights() {
+        return ResponseEntity.ok(aiCopilotService.getInsights(TenantContext.get()));
+    }
+
     /** Clear conversation history. */
     @DeleteMapping("/historial")
     @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN')")

@@ -51,6 +51,10 @@ public class AiCopilotToolExecutor {
                 case "recomendaciones"      -> contextBuilder.getRecomendacionesData(empresaId);
                 case "consultar_clientes"   -> contextBuilder.getClientesData(empresaId);
                 case "consultar_finanzas"   -> contextBuilder.getFinanzasData(empresaId, args);
+                case "reporte_negocio"      -> contextBuilder.getReporteNegocio(empresaId, args);
+                case "comparar_catalogo_publico" -> contextBuilder.compararCatalogoPublico(empresaId);
+                case "proyeccion_negocio"   -> contextBuilder.getProyeccion(empresaId);
+                case "perfil_marca"         -> contextBuilder.getPerfilMarca(empresaId);
                 case "proponer_cambiar_estado_pedido" -> mutationTools.proponerCambiarEstadoPedido(empresaId, args, accionHolder);
                 case "proponer_asignar_guia"          -> mutationTools.proponerAsignarGuia(empresaId, args, accionHolder);
                 case "proponer_ajustar_stock"         -> mutationTools.proponerAjustarStock(empresaId, args, accionHolder);

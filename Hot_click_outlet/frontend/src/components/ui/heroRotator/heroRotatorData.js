@@ -1,8 +1,7 @@
 export const CHAT_CHIPS = [
   '¿Qué tenés en oferta?',
   'Algo para la sala',
-  'Productos para regalar',
-  'Accesorios de cocina',
+  '¿Cómo funciona el envío?',
 ]
 
 export const PREGUNTAS = [

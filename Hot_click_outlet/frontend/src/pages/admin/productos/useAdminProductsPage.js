@@ -4,6 +4,7 @@ import { useStickyState } from '@/hooks/useStickyState'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '@/components/ui/Toast'
 import useAuthStore from '@/store/authStore'
+import usePlan from '@/hooks/usePlan'
 import { useAdminProductsActions } from './useAdminProductsActions'
 import { toProductosPageViewProps } from './toProductosPageViewProps'
 import {
@@ -21,6 +22,8 @@ export function useAdminProductsPage() {
   const toast = useToast()
   const userRole = useAuthStore((s) => s.userRole)
   const isAdmin = userRole === 'ADMIN'
+  const { plan } = usePlan()
+  const vistaSimple = plan === 'EMPRENDEDOR'
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [bodegas, setBodegas] = useState([])
@@ -64,6 +67,8 @@ export function useAdminProductsPage() {
     confirmDelete,
     handleModalClose,
     handleImportBulk,
+    handleOfertaRapida,
+    handleOcultar,
   } = useAdminProductsActions({
     prodPage,
     bodegas,
@@ -132,7 +137,7 @@ export function useAdminProductsPage() {
   }
 
   return toProductosPageViewProps({
-    t, isAdmin, loadError, loading, load, prodPage, filtered, totalProds,
+    t, isAdmin, vistaSimple, loadError, loading, load, prodPage, filtered, totalProds,
     products, bodegas, categories, marcas, handleImportBulk, openNew, openEdit,
     carruselSlots, carruselOpen, setCarruselOpen, handleCarruselMover,
     handleToggleCarrusel, handleToggleDestacado, propsFiltros, debouncedSearch,
@@ -141,5 +146,6 @@ export function useAdminProductsPage() {
     seoAutoTitle, setSeoAutoTitle, seoAutoDesc, setSeoAutoDesc, showDiscardModal,
     setShowDiscardModal, deleteTarget, setDeleteTarget, kardexProducto,
     setKardexProducto, editInitialFormRef, clearFilters, hasFilters, setProdPage,
+    handleOfertaRapida, handleOcultar,
   })
 }

@@ -11,7 +11,7 @@ export function useAdminProductsActions(deps) {
   const { load } = useAdminProductsLoad(deps)
   const { handleToggleCarrusel, handleCarruselMover, handleToggleDestacado } =
     useAdminProductsCarrusel({ ...deps, load })
-  const { handleSave, handleDelete, confirmDelete, handleImportBulk } =
+  const { handleSave, handleDelete, confirmDelete, handleImportBulk, handleOfertaRapida, handleOcultar } =
     useAdminProductsCrud({ ...deps, load })
   const { openNew, openEdit, handleModalClose } = useAdminProductsForm(deps)
 
@@ -27,5 +27,7 @@ export function useAdminProductsActions(deps) {
     confirmDelete,
     handleModalClose,
     handleImportBulk,
+    handleOfertaRapida,
+    handleOcultar,
   }
 }

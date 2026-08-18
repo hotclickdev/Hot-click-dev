@@ -46,9 +46,12 @@ export default function ProductosListado({
   onEdit,
   onKardex,
   onDelete,
+  onOferta,
+  onOcultar,
   onClearFilters,
   onNuevo,
   onPage,
+  vistaSimple,
 }) {
   return (
     <>
@@ -81,9 +84,12 @@ export default function ProductosListado({
               onEdit={onEdit}
               onKardex={onKardex}
               onDelete={onDelete}
+              onOferta={onOferta}
+              onOcultar={onOcultar}
               onClearFilters={onClearFilters}
               onNuevo={onNuevo}
               onPage={onPage}
+              vistaSimple={vistaSimple}
             />
           )}
         </div>

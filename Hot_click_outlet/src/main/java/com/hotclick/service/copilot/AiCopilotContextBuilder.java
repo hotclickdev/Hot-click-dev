@@ -106,4 +106,24 @@ public class AiCopilotContextBuilder {
     public String getFinanzasData(Long empresaId, JsonNode args) {
         return dataQueries.getFinanzasData(empresaId, args);
     }
+
+    public String getReporteNegocio(Long empresaId, JsonNode args) {
+        return dataQueries.getReporteNegocio(empresaId, args);
+    }
+
+    public String compararCatalogoPublico(Long empresaId) {
+        return dataQueries.compararCatalogoPublico(empresaId);
+    }
+
+    public String getProyeccion(Long empresaId) {
+        return dataQueries.getProyeccion(empresaId);
+    }
+
+    public String getPerfilMarca(Long empresaId) {
+        return dataQueries.getPerfilMarca(empresaId);
+    }
+
+    public Map<String, Object> getInsights(Long empresaId) {
+        return dataQueries.getInsights(empresaId);
+    }
 }

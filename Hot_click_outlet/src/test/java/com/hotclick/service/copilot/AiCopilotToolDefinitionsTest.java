@@ -34,7 +34,8 @@ class AiCopilotToolDefinitionsTest {
     void panel_sinHerramientasDeMutacion() {
         when(tenantService.tieneFeature(anyString())).thenReturn(false);
         List<String> nombres = nombres(defs.buildTools(1L, false));
-        assertThat(nombres).contains("consultar_inventario", "consultar_ventas", "consultar_clientes");
+        assertThat(nombres).contains("consultar_inventario", "consultar_ventas", "consultar_clientes",
+            "reporte_negocio", "comparar_catalogo_publico", "proyeccion_negocio", "perfil_marca");
         assertThat(nombres).noneMatch(n -> n.startsWith("proponer_"));
     }
 

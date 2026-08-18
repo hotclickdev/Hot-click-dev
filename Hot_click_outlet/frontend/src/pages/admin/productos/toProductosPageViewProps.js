@@ -69,6 +69,7 @@ export function toProductosPageViewProps(ctx) {
       bodegas,
       onImport: handleImportBulk,
       onNuevo: openNew,
+      vistaSimple: ctx.vistaSimple,
     },
     carrusel: {
       isAdmin,
@@ -96,9 +97,12 @@ export function toProductosPageViewProps(ctx) {
       onEdit: openEdit,
       onKardex: setKardexProducto,
       onDelete: handleDelete,
+      onOferta: ctx.handleOfertaRapida,
+      onOcultar: ctx.handleOcultar,
       onClearFilters: clearFilters,
       onNuevo: openNew,
       onPage: setProdPage,
+      vistaSimple: ctx.vistaSimple,
     },
     formModal: {
       open: modalOpen,

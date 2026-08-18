@@ -2,16 +2,23 @@ import { useState } from 'react'
 import Spinner from '@/components/ui/Spinner'
 import { RetryBanner } from '@/components/ui/RetryBanner'
 import { useStickyState } from '@/hooks/useStickyState'
-import { FILTERS, ORD_PAGE_SIZE } from '../ordenes/ordenesHelpers'
+import { ORD_PAGE_SIZE } from '../ordenes/ordenesHelpers'
 import OrderCard from '../ordenes/AdminOrderCard'
-import { CARD_SHADOW, PILL_BORDER, estiloPildora, textoVacioPedidos } from './ventasPedidosHelpers'
+import {
+  CARD_SHADOW,
+  FILTROS_PEDIDOS_SISTEMA,
+  PILL_BORDER,
+  estiloPildora,
+  pedidosDelFiltro,
+  textoVacioPedidos,
+} from './ventasPedidosHelpers'
 
 export default function PedidosTab({ orders, loading, loadError, onRetry, onUpdate, onDelete }) {
-  const [filter, setFilter] = useStickyState('hc-ord-filter', 'Todos')
+  const [filter, setFilter] = useStickyState('hc-ord-filter-sistema', 'por_despachar')
   const [ordPage, setOrdPage] = useState(0)
   const changeFilter = (f) => { setFilter(f); setOrdPage(0) }
 
-  const filtered = (filter === 'Todos' ? orders : orders.filter(o => o.estado === filter))
+  const filtered = pedidosDelFiltro(orders, filter)
     .slice().sort((a, b) => new Date(b.fechaCreacion ?? 0) - new Date(a.fechaCreacion ?? 0))
 
   const totalOrdPages = Math.ceil(filtered.length / ORD_PAGE_SIZE)
@@ -24,11 +31,11 @@ export default function PedidosTab({ orders, loading, loadError, onRetry, onUpda
   return (
     <>
       <div className="flex gap-1.5 overflow-x-auto pb-1 mb-4 scrollbar-hide">
-        {FILTERS.map(f => (
-          <button type="button" key={f} onClick={() => changeFilter(f)}
+        {FILTROS_PEDIDOS_SISTEMA.map((f) => (
+          <button type="button" key={f.key} onClick={() => changeFilter(f.key)}
             className="px-3.5 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap"
-            style={estiloPildora(filter === f)}>
-            {f === 'Todos' ? 'Todos' : f}
+            style={estiloPildora(filter === f.key)}>
+            {f.label}
           </button>
         ))}
       </div>

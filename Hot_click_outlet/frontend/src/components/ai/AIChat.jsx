@@ -73,7 +73,7 @@ export default function AIChat({
     <div className="space-y-1">
       <p className="text-[10px] font-medium px-1" style={{ color: '#9CA3AF' }}>Búsquedas recientes</p>
       <div className="flex flex-wrap gap-1.5">
-        {chat.sessionSearches.slice(0, 4).map(s => (
+        {chat.sessionSearches.slice(0, 3).map(s => (
           <button type="button"
             key={s}
             onClick={() => chat.enviar(s)}
@@ -90,11 +90,7 @@ export default function AIChat({
     </div>
   )
 
-  const initialChipsEl = chat.showChips && chat.userMsgCount === 0 && (
-    <AIChatChips chips={chat.activeChips} enviar={chat.enviar} accent={chat.accent} />
-  )
-
-  const contextChipsEl = chat.showChips && chat.userMsgCount > 0 && (
+  const initialChipsEl = chat.showChips && (
     <AIChatChips chips={chat.activeChips} enviar={chat.enviar} accent={chat.accent} />
   )
 
@@ -150,7 +146,6 @@ export default function AIChat({
           className="shrink-0 px-4 pt-2 pb-4 flex flex-col gap-2"
           style={{ borderTop: '1px solid var(--hc-border)' }}
         >
-          {contextChipsEl}
           {alternativasEl}
           {inputBar}
         </div>
@@ -179,7 +174,6 @@ export default function AIChat({
 
       {sessionSearchChips}
       {initialChipsEl}
-      {contextChipsEl}
       {alternativasEl}
       {inputBar}
     </div>

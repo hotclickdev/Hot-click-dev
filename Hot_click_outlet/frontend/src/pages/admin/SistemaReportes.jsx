@@ -4,6 +4,7 @@ import Spinner from '@/components/ui/Spinner'
 import { useToast } from '@/components/ui/Toast'
 import { ventaService } from '@/services/orderService'
 import { productService } from '@/services/productService'
+import { formatPrice } from '@/utils/format'
 import useTenantStore from '@/store/tenantStore'
 import TabFinanzas from './sistema-reportes/TabFinanzas'
 import TabAnalisis from './sistema-reportes/TabAnalisis'
@@ -74,7 +75,11 @@ export default function SistemaReportes() {
 
       <header>
         <h1 style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 26, letterSpacing: '-0.5px', color: 'var(--hc-text)' }}>Reportes</h1>
-        <p style={{ margin: '4px 0 0', fontSize: 15, color: 'var(--hc-muted)' }}>Entendé cómo va tu negocio con datos claros.</p>
+        <p style={{ margin: '4px 0 0', fontSize: 15, color: 'var(--hc-muted)' }}>
+          Esta semana: ventas {formatPrice(totalSemana)}
+          {costoSemana > 0 ? ` · costo ${formatPrice(costoSemana)}` : ''}
+          {stockRiesgo.length > 0 ? ` · ${stockRiesgo.length} con stock bajo` : ''}.
+        </p>
       </header>
 
       {vistaPrevia && <BannerVistaPrevia />}
@@ -123,11 +128,8 @@ export default function SistemaReportes() {
 function BannerVistaPrevia() {
   return (
     <div className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ backgroundColor: 'rgba(23,71,168,0.08)' }}>
-      <svg className="w-5 h-5 shrink-0" style={{ color: 'var(--hc-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-        <rect x="4" y="10" width="16" height="10" rx="2"/><path strokeLinecap="round" d="M8 10V7a4 4 0 118 0v3"/>
-      </svg>
       <p className="text-sm" style={{ color: 'var(--hc-text)' }}>
-        <strong>Estás viendo una vista previa</strong> con tus datos actuales. Con el plan PYME estos reportes traen más historial y detalle.
+        Estás viendo esta semana con tus datos. El plan PYME trae más historial y detalle.
       </p>
     </div>
   )
@@ -142,9 +144,9 @@ function CtaPlanPyme() {
         </svg>
       </div>
       <div className="flex-1 min-w-[200px]">
-        <p style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 17, color: 'var(--hc-text)' }}>Activá tus reportes reales</p>
+        <p style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 17, color: 'var(--hc-text)' }}>Más historial con PYME</p>
         <p style={{ margin: '2px 0 0', fontSize: 14, color: 'var(--hc-muted)' }}>
-          Tu plan actual es <strong>Emprendedor (gratis)</strong>. Con el plan PYME sumás más historial y detalle.
+          Acá ves la semana. El plan PYME suma meses atrás y más detalle.
         </p>
       </div>
       <Link to="/admin/billing/planes"

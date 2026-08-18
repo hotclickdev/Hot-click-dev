@@ -3256,3 +3256,9 @@ ALTER TABLE hot_click_producto_tb
 
 CREATE INDEX IF NOT EXISTS idx_producto_fts
     ON hot_click_producto_tb USING GIN(search_vector);
+
+-- V102: Plan EMPRENDEDOR con reportes
+UPDATE hot_click_plan_tb
+SET tiene_reportes = TRUE
+WHERE nombre = 'EMPRENDEDOR';
+

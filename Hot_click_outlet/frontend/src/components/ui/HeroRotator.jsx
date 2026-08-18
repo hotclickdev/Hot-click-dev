@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { PHASES } from './heroRotator/heroRotatorData'
 import { ChatDecos, ProductDecos, BusinessDecos } from './heroRotator/HeroRotatorDecos'
-import { ChatPhase, ProductsPhase, BusinessesPhase, PhaseBar, InlineChat } from './heroRotator/HeroRotatorPhases'
+import { ChatPhase, ProductsPhase, BusinessesPhase, PhaseBar } from './heroRotator/HeroRotatorPhases'
 import { useHeroRotator } from './heroRotator/useHeroRotator'
 
 export default function HeroRotator({ destacados }) {
@@ -10,12 +10,9 @@ export default function HeroRotator({ destacados }) {
     phaseIdx,
     progress,
     convenios,
-    chatMode,
-    chatQuery,
     pauseTimer,
     resumeTimer,
     handleChatSubmit,
-    handleChatClose,
     goTo,
   } = useHeroRotator()
 
@@ -70,54 +67,39 @@ export default function HeroRotator({ destacados }) {
         </AnimatePresence>
       </div>
 
-      {!chatMode && (
-        <AnimatePresence mode="wait">
-          {phase.id === 'chat' && <ChatDecos key="deco-chat" productos={destacados} />}
-          {phase.id === 'products' && <ProductDecos key="deco-prod" productos={destacados} />}
-          {phase.id === 'businesses' && <BusinessDecos key="deco-biz" convenios={convenios} accent={phase.accent} />}
-        </AnimatePresence>
-      )}
+      <AnimatePresence mode="wait">
+        {phase.id === 'chat' && <ChatDecos key="deco-chat" productos={destacados} />}
+        {phase.id === 'products' && <ProductDecos key="deco-prod" productos={destacados} />}
+        {phase.id === 'businesses' && <BusinessDecos key="deco-biz" convenios={convenios} accent={phase.accent} />}
+      </AnimatePresence>
 
       <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-10 overflow-hidden">
         <div className="w-full">
           <AnimatePresence mode="wait">
-            {chatMode ? (
-              <InlineChat
-                key="inline-chat"
-                initialQuery={chatQuery}
-                accent={phase.accent}
-                onClose={handleChatClose}
-              />
-            ) : (
-              <>
-                {phase.id === 'chat' && (
-                  <ChatPhase key="chat" accent={phase.accent}
-                    onPause={pauseTimer} onResume={resumeTimer}
-                    destacados={destacados}
-                    onSubmit={handleChatSubmit} />
-                )}
-                {phase.id === 'products' && (
-                  <ProductsPhase key="products" productos={destacados} accent={phase.accent} />
-                )}
-                {phase.id === 'businesses' && (
-                  <BusinessesPhase key="businesses" convenios={convenios} accent={phase.accent} />
-                )}
-              </>
+            {phase.id === 'chat' && (
+              <ChatPhase key="chat" accent={phase.accent}
+                onPause={pauseTimer} onResume={resumeTimer}
+                destacados={destacados}
+                onSubmit={handleChatSubmit} />
+            )}
+            {phase.id === 'products' && (
+              <ProductsPhase key="products" productos={destacados} accent={phase.accent} />
+            )}
+            {phase.id === 'businesses' && (
+              <BusinessesPhase key="businesses" convenios={convenios} accent={phase.accent} />
             )}
           </AnimatePresence>
         </div>
       </div>
 
-      {!chatMode && (
-        <div className="relative w-full flex justify-center pb-6">
-          <PhaseBar
-            phases={PHASES}
-            currentIdx={phaseIdx}
-            progress={progress}
-            onSelect={goTo}
-          />
-        </div>
-      )}
+      <div className="relative w-full flex justify-center pb-6">
+        <PhaseBar
+          phases={PHASES}
+          currentIdx={phaseIdx}
+          progress={progress}
+          onSelect={goTo}
+        />
+      </div>
     </section>
   )
 }

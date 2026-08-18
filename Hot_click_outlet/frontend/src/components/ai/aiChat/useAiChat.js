@@ -6,6 +6,8 @@ import { loadMensajes, loadSessionSearches } from './aiChatStorage'
 import { streamChat } from './aiChatStream'
 import { deriveAiChatView } from './aiChatDerived'
 import { useAiChatEffects } from './useAiChatEffects'
+import { trackAiUserMsg } from './aiChatBehavior'
+import { surfaceFromSessionKey } from './chatSurface'
 
 /**
  * Estado y streaming SSE del chat AI — bit-idéntico al original.
@@ -97,9 +99,10 @@ export function useAiChat({
 
     const history = mensajes
       .filter(m => !m.typing && !m.failed && m.texto)
-      .slice(-10)
+      .slice(-24)
       .map(m => ({ rol: m.rol, texto: m.texto }))
     const focusIds = productoId ? [productoId] : lastShownProductIds()
+    trackAiUserMsg(surfaceFromSessionKey(sessionKey))
     setMensajes(prev => [...prev,
       { rol: 'user', texto: msg },
       { rol: 'assistant', typing: true, texto: '', productos: [] },

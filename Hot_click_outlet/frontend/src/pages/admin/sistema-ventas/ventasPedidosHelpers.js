@@ -38,8 +38,31 @@ export function estiloBadgePendientes(tabPedidosActiva) {
   return { backgroundColor: 'rgba(23,71,168,0.12)', color: 'var(--hc-accent)' }
 }
 
+export const FILTROS_PEDIDOS_SISTEMA = [
+  { key: 'por_despachar', label: 'Por despachar' },
+  { key: 'PAGADO', label: 'Pagados' },
+  { key: 'ENTREGADO', label: 'Entregados' },
+  { key: 'Todos', label: 'Todos' },
+]
+
+export const ESTADOS_POR_DESPACHAR = [
+  'PENDIENTE', 'PAGADO', 'EN_PREPARACION', 'LISTO_RETIRO', 'ENVIADO',
+]
+
+const LABEL_FILTRO = Object.fromEntries(FILTROS_PEDIDOS_SISTEMA.map((f) => [f.key, f.label]))
+
+/** @param {object[]} orders @param {string} filter */
+export function pedidosDelFiltro(orders, filter) {
+  if (filter === 'Todos') return orders
+  if (filter === 'por_despachar') {
+    return orders.filter((o) => ESTADOS_POR_DESPACHAR.includes(o.estado))
+  }
+  return orders.filter((o) => o.estado === filter)
+}
+
 export function textoVacioPedidos(filter) {
-  if (filter !== 'Todos') return `Sin pedidos con estado ${filter}`
+  if (filter === 'por_despachar') return 'No hay pedidos por despachar.'
+  if (filter !== 'Todos') return `Sin pedidos en ${LABEL_FILTRO[filter] ?? filter}.`
   return 'Todavía no tenés pedidos.'
 }
 

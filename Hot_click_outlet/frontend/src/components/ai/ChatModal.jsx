@@ -10,8 +10,7 @@ import { HotClickMark } from '@/components/ui/BrandLogo'
 const CHIPS = [
   '¿Qué tenés en oferta?',
   'Algo para la sala',
-  'Productos para regalar',
-  'Accesorios de cocina',
+  '¿Cómo funciona el envío?',
 ]
 
 export default function ChatModal() {

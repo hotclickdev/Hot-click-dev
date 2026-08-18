@@ -3,31 +3,25 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Spinner from '@/components/ui/Spinner'
 import { adminService, ventaService } from '@/services/orderService'
+import { copilotService } from '@/services/copilotService'
 import { formatPrice } from '@/utils/format'
 import useAuthStore from '@/store/authStore'
-
-const ESTADOS_COMPLETADOS = new Set(['COMPLETADO', 'ENTREGADO'])
+import usePlan from '@/hooks/usePlan'
+import HoyAlertas from './sistema-inicio/HoyAlertas'
+import {
+  ESTADO_LABEL,
+  countPorDespachar,
+  conteosHoy,
+  isoDay,
+  pctCambio,
+  timeAgo,
+  totalCompletado,
+  ventasDelDia,
+} from './sistema-inicio/sistemaInicioHelpers'
 
 const stagger = {
   container: { show: { transition: { staggerChildren: 0.07 } } },
   item: { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.3 } } },
-}
-
-function timeAgo(dateStr) {
-  if (!dateStr) return ''
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'ahora'
-  if (mins < 60) return `hace ${mins} min`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `hace ${hrs} h`
-  return `hace ${Math.floor(hrs / 24)} d`
-}
-
-function isoDay(offsetDays = 0) {
-  const d = new Date()
-  d.setDate(d.getDate() - offsetDays)
-  return d.toISOString().slice(0, 10)
 }
 
 const ESTADO_STYLE = {
@@ -42,52 +36,57 @@ function EstadoBadge({ estado }) {
   const s = ESTADO_STYLE[estado] ?? { bg: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }
   return (
     <span className="text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap" style={{ backgroundColor: s.bg, color: s.color }}>
-      {estado ?? '—'}
+      {ESTADO_LABEL[estado] ?? estado ?? '—'}
     </span>
   )
 }
 
 export default function SistemaInicio() {
-  const userName    = useAuthStore((s) => s.userName)
+  const userName = useAuthStore((s) => s.userName)
   const empresaNombre = useAuthStore((s) => s.empresaNombre)
-  const [stats, setStats]   = useState(null)
+  const { hasFeature } = usePlan()
+  const [stats, setStats] = useState(null)
   const [ventas, setVentas] = useState([])
+  const [insights, setInsights] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     Promise.all([
-      adminService.getDashboard().catch(() => ({ data: {} })),
-      ventaService.getAll().catch(() => ({ data: [] })),
-    ]).then(([{ data: s }, { data: vs }]) => {
+      adminService.getDashboard().catch((err) => {
+        console.error('[SistemaInicio] dashboard', err)
+        return { data: {} }
+      }),
+      ventaService.getAll().catch((err) => {
+        console.error('[SistemaInicio] ventas', err)
+        return { data: [] }
+      }),
+      copilotService.getInsights().catch((err) => {
+        console.error('[SistemaInicio] insights', err)
+        return { data: {} }
+      }),
+    ]).then(([{ data: s }, { data: vs }, { data: ins }]) => {
       setStats(s)
       setVentas(Array.isArray(vs) ? vs : vs?.content ?? [])
+      setInsights(ins ?? {})
     }).finally(() => setLoading(false))
   }, [])
 
-  const hoy   = isoDay(0)
-  const ayer  = isoDay(1)
-
-  const ventasHoyList  = useMemo(() => ventas.filter(v => (v.fechaCreacion ?? '').startsWith(hoy)), [ventas, hoy])
-  const ventasAyerList = useMemo(() => ventas.filter(v => (v.fechaCreacion ?? '').startsWith(ayer)), [ventas, ayer])
-
-  const totalHoy  = ventasHoyList.filter(v => ESTADOS_COMPLETADOS.has(v.estado)).reduce((s, v) => s + (v.total ?? 0), 0)
-  const totalAyer = ventasAyerList.filter(v => ESTADOS_COMPLETADOS.has(v.estado)).reduce((s, v) => s + (v.total ?? 0), 0)
-  const ventasCompHoy = totalAyer > 0 ? Math.round(((totalHoy - totalAyer) / totalAyer) * 100) : null
-
-  const pedidosHoy  = ventasHoyList.length
-  const pedidosAyer = ventasAyerList.length
-
-  const ticketHoy  = ventasHoyList.length > 0 ? Math.round(totalHoy / ventasHoyList.length) : 0
+  const hoy = isoDay(0)
+  const ayer = isoDay(1)
+  const ventasHoyList = useMemo(() => ventasDelDia(ventas, hoy), [ventas, hoy])
+  const ventasAyerList = useMemo(() => ventasDelDia(ventas, ayer), [ventas, ayer])
+  const totalHoy = totalCompletado(ventasHoyList)
+  const totalAyer = totalCompletado(ventasAyerList)
+  const ventasCompHoy = pctCambio(totalHoy, totalAyer)
+  const ticketHoy = ventasHoyList.length > 0 ? Math.round(totalHoy / ventasHoyList.length) : 0
   const ticketAyer = ventasAyerList.length > 0 ? Math.round(totalAyer / ventasAyerList.length) : 0
-  const ticketComp = ticketAyer > 0 ? Math.round(((ticketHoy - ticketAyer) / ticketAyer) * 100) : null
-
-  const pendientes = ventas.filter(v => v.estado === 'PENDIENTE').length
-
+  const ticketComp = pctCambio(ticketHoy, ticketAyer)
+  const porDespachar = countPorDespachar(ventas)
+  const { sinStock, sinVenta } = conteosHoy(insights, stats?.stockBajo ?? 0)
   const recientes = useMemo(
     () => [...ventas].sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion)).slice(0, 4),
-    [ventas]
+    [ventas],
   )
-
   const fechaHoyLegible = new Date().toLocaleDateString('es-CR', { weekday: 'long', day: 'numeric', month: 'long' })
 
   if (loading) {
@@ -96,7 +95,6 @@ export default function SistemaInicio() {
 
   return (
     <div className="space-y-6">
-      {/* Saludo */}
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl sm:text-[26px] font-bold tracking-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>
           Hola, {userName?.split(' ')[0] ?? 'de nuevo'}
@@ -106,114 +104,123 @@ export default function SistemaInicio() {
         </p>
       </header>
 
-      {/* KPI cards */}
-      <motion.div variants={stagger.container} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
-        <motion.div variants={stagger.item} className="rounded-2xl p-5 flex flex-col gap-3" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: '0 1px 2px rgba(26,26,26,0.04), 0 8px 20px rgba(26,26,26,0.06)' }}>
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>Ventas de hoy</span>
-            <span className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold" style={{ backgroundColor: 'rgba(23,71,168,0.08)', color: 'var(--hc-accent)' }}>₡</span>
-          </div>
-          <div className="text-2xl sm:text-[28px] leading-none" style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', color: 'var(--hc-text)' }}>
-            {formatPrice(totalHoy)}
-          </div>
-          {ventasCompHoy !== null && (
-            <span className="text-xs font-bold px-2.5 py-1 rounded-full w-fit" style={{ backgroundColor: ventasCompHoy >= 0 ? '#e2f1e8' : 'var(--hc-surface-2)', color: ventasCompHoy >= 0 ? '#1E7F4F' : 'var(--hc-muted)' }}>
-              {ventasCompHoy >= 0 ? '▲' : '▼'} {Math.abs(ventasCompHoy)}% vs ayer
-            </span>
-          )}
-        </motion.div>
+      <HoyAlertas porDespachar={porDespachar} sinStock={sinStock} sinVenta={sinVenta} />
 
-        <motion.div variants={stagger.item} className="rounded-2xl p-5 flex flex-col gap-3" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: '0 1px 2px rgba(26,26,26,0.04), 0 8px 20px rgba(26,26,26,0.06)' }}>
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>Pedidos de hoy</span>
-            <span className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(23,71,168,0.08)' }}>
-              <span className="w-3 h-3 rounded-sm border-2" style={{ borderColor: 'var(--hc-accent)' }} />
-            </span>
-          </div>
-          <div className="text-2xl sm:text-[28px] leading-none" style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', color: 'var(--hc-text)' }}>
-            {pedidosHoy}
-          </div>
-          {pedidosHoy !== pedidosAyer && (
-            <span className="text-xs font-bold px-2.5 py-1 rounded-full w-fit" style={{ backgroundColor: pedidosHoy >= pedidosAyer ? '#e2f1e8' : 'var(--hc-surface-2)', color: pedidosHoy >= pedidosAyer ? '#1E7F4F' : 'var(--hc-muted)' }}>
-              {pedidosHoy >= pedidosAyer ? '▲' : '▼'} {Math.abs(pedidosHoy - pedidosAyer)} vs ayer
-            </span>
-          )}
-        </motion.div>
+      <KpiGrid
+        totalHoy={totalHoy}
+        ventasCompHoy={ventasCompHoy}
+        pedidosHoy={ventasHoyList.length}
+        pedidosAyer={ventasAyerList.length}
+        ticketHoy={ticketHoy}
+        ticketComp={ticketComp}
+        stockBajo={stats?.stockBajo ?? 0}
+      />
 
-        <motion.div variants={stagger.item} className="rounded-2xl p-5 flex flex-col gap-3" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: '0 1px 2px rgba(26,26,26,0.04), 0 8px 20px rgba(26,26,26,0.06)' }}>
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>Ticket promedio</span>
-            <span className="w-8 h-8 rounded-lg flex items-center justify-center gap-0.5" style={{ backgroundColor: 'rgba(23,71,168,0.08)' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--hc-accent)" strokeWidth={2.5}><line x1="6" y1="18" x2="6" y2="12"/><line x1="12" y1="18" x2="12" y2="8"/><line x1="18" y1="18" x2="18" y2="14"/></svg>
-            </span>
-          </div>
-          <div className="text-2xl sm:text-[28px] leading-none" style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', color: 'var(--hc-text)' }}>
-            {formatPrice(ticketHoy)}
-          </div>
-          {ticketComp !== null && (
-            <span className="text-xs font-bold px-2.5 py-1 rounded-full w-fit" style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>
-              {ticketComp >= 0 ? '▲' : '▼'} {Math.abs(ticketComp)}% vs ayer
-            </span>
-          )}
-        </motion.div>
+      <AccesosRapidos porDespachar={porDespachar} mostrarPos={hasFeature('pos')} />
 
-        <motion.div variants={stagger.item} className="rounded-2xl p-5 flex flex-col gap-3" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: '0 1px 2px rgba(26,26,26,0.04), 0 8px 20px rgba(26,26,26,0.06)' }}>
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>Por agotarse</span>
-            <span className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#f7ead2' }}>
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#8a5a00' }} />
-            </span>
-          </div>
-          <div className="text-2xl sm:text-[28px] leading-none" style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', color: 'var(--hc-text)' }}>
-            {stats?.stockBajo ?? 0}
-          </div>
-          <Link to="/admin/productos" className="text-xs font-bold w-fit" style={{ color: 'var(--hc-accent)' }}>Revisalos →</Link>
-        </motion.div>
-      </motion.div>
+      <PedidosRecientes recientes={recientes} />
+    </div>
+  )
+}
 
-      {/* Accesos rápidos */}
-      <div className="flex flex-wrap gap-3">
-        <Link to="/admin/nuevo-producto"
-          className="flex items-center justify-center px-5 py-3.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-90"
-          style={{ backgroundColor: 'var(--hc-primary)', color: '#fff' }}>
-          + Agregá un producto
-        </Link>
-        <Link to="/admin/pedidos"
-          className="flex items-center gap-2 px-5 py-3.5 rounded-xl text-sm font-semibold transition-colors"
-          style={{ backgroundColor: 'var(--hc-surface)', color: 'var(--hc-accent)', border: '1px solid var(--hc-border)' }}>
-          Mirá los pedidos
-          {pendientes > 0 && (
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(23,71,168,0.1)' }}>{pendientes} pendientes</span>
-          )}
-        </Link>
+function KpiGrid({ totalHoy, ventasCompHoy, pedidosHoy, pedidosAyer, ticketHoy, ticketComp, stockBajo }) {
+  return (
+    <motion.div variants={stagger.container} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+      <KpiCard titulo="Ventas de hoy" valor={formatPrice(totalHoy)} badge={badgePct(ventasCompHoy)} />
+      <KpiCard titulo="Pedidos de hoy" valor={String(pedidosHoy)} badge={badgeDelta(pedidosHoy, pedidosAyer)} />
+      <KpiCard titulo="Ticket promedio" valor={formatPrice(ticketHoy)} badge={badgePct(ticketComp)} />
+      <KpiCard titulo="Por agotarse" valor={String(stockBajo)}
+        extra={<Link to="/admin/productos" className="text-xs font-bold w-fit" style={{ color: 'var(--hc-accent)' }}>Revisalos →</Link>} />
+    </motion.div>
+  )
+}
+
+function KpiCard({ titulo, valor, badge, extra }) {
+  return (
+    <motion.div variants={stagger.item} className="rounded-2xl p-5 flex flex-col gap-3"
+      style={{ backgroundColor: 'var(--hc-surface)', boxShadow: '0 1px 2px rgba(26,26,26,0.04), 0 8px 20px rgba(26,26,26,0.06)' }}>
+      <span className="text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>{titulo}</span>
+      <div className="text-2xl sm:text-[28px] leading-none"
+        style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', color: 'var(--hc-text)' }}>
+        {valor}
+      </div>
+      {badge}
+      {extra}
+    </motion.div>
+  )
+}
+
+function badgePct(pct) {
+  if (pct == null) return null
+  const ok = pct >= 0
+  return (
+    <span className="text-xs font-bold px-2.5 py-1 rounded-full w-fit"
+      style={{ backgroundColor: ok ? '#e2f1e8' : 'var(--hc-surface-2)', color: ok ? '#1E7F4F' : 'var(--hc-muted)' }}>
+      {ok ? '▲' : '▼'} {Math.abs(pct)}% vs ayer
+    </span>
+  )
+}
+
+function badgeDelta(hoy, ayer) {
+  if (hoy === ayer) return null
+  const ok = hoy >= ayer
+  return (
+    <span className="text-xs font-bold px-2.5 py-1 rounded-full w-fit"
+      style={{ backgroundColor: ok ? '#e2f1e8' : 'var(--hc-surface-2)', color: ok ? '#1E7F4F' : 'var(--hc-muted)' }}>
+      {ok ? '▲' : '▼'} {Math.abs(hoy - ayer)} vs ayer
+    </span>
+  )
+}
+
+function AccesosRapidos({ porDespachar, mostrarPos }) {
+  return (
+    <div className="flex flex-wrap gap-3">
+      <Link to="/admin/nuevo-producto"
+        className="flex items-center justify-center px-5 py-3.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-90"
+        style={{ backgroundColor: 'var(--hc-surface)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
+        + Agregá un producto
+      </Link>
+      <Link to="/admin/pedidos"
+        className="flex items-center gap-2 px-5 py-3.5 rounded-xl text-sm font-semibold transition-colors"
+        style={{ backgroundColor: 'var(--hc-surface)', color: 'var(--hc-accent)', border: '1px solid var(--hc-border)' }}>
+        Mirá los pedidos
+        {porDespachar > 0 && (
+          <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(23,71,168,0.1)' }}>
+            {porDespachar} por despachar
+          </span>
+        )}
+      </Link>
+      {mostrarPos && (
         <Link to="/admin/pos"
           className="flex items-center justify-center px-5 py-3.5 rounded-xl text-sm font-semibold transition-colors"
           style={{ backgroundColor: 'var(--hc-surface)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
           Abrí la caja (POS)
         </Link>
-      </div>
-
-      {/* Pedidos recientes */}
-      <section className="rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: '0 1px 2px rgba(26,26,26,0.04), 0 8px 20px rgba(26,26,26,0.06)' }}>
-        <div className="flex items-center justify-between px-5 pt-4 pb-2">
-          <h2 className="text-base font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>Pedidos recientes</h2>
-          <Link to="/admin/pedidos" className="text-sm font-semibold" style={{ color: 'var(--hc-accent)' }}>Vé todos →</Link>
-        </div>
-        {recientes.length === 0 ? (
-          <p className="text-sm text-center py-8" style={{ color: 'var(--hc-muted)' }}>Todavía no tenés pedidos.</p>
-        ) : (
-          recientes.map((v) => (
-            <div key={v.id} className="flex items-center gap-4 px-5 py-3.5" style={{ borderTop: '1px solid var(--hc-border)' }}>
-              <span className="text-sm font-semibold w-16 shrink-0" style={{ color: 'var(--hc-text)' }}>#{v.id}</span>
-              <span className="text-sm flex-1 truncate" style={{ color: 'var(--hc-text)' }}>
-                {v.nombreCliente ?? v.cliente?.nombre ?? 'Cliente'} · {timeAgo(v.fechaCreacion)}
-              </span>
-              <span className="text-sm font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>{formatPrice(v.total ?? 0)}</span>
-              <EstadoBadge estado={v.estado} />
-            </div>
-          ))
-        )}
-      </section>
+      )}
     </div>
+  )
+}
+
+function PedidosRecientes({ recientes }) {
+  return (
+    <section className="rounded-2xl overflow-hidden"
+      style={{ backgroundColor: 'var(--hc-surface)', boxShadow: '0 1px 2px rgba(26,26,26,0.04), 0 8px 20px rgba(26,26,26,0.06)' }}>
+      <div className="flex items-center justify-between px-5 pt-4 pb-2">
+        <h2 className="text-base font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>Pedidos recientes</h2>
+        <Link to="/admin/pedidos" className="text-sm font-semibold" style={{ color: 'var(--hc-accent)' }}>Vé todos →</Link>
+      </div>
+      {recientes.length === 0 ? (
+        <p className="text-sm text-center py-8" style={{ color: 'var(--hc-muted)' }}>Todavía no tenés pedidos.</p>
+      ) : recientes.map((v) => (
+        <div key={v.id} className="flex items-center gap-4 px-5 py-3.5" style={{ borderTop: '1px solid var(--hc-border)' }}>
+          <span className="text-sm font-semibold w-16 shrink-0" style={{ color: 'var(--hc-text)' }}>#{v.id}</span>
+          <span className="text-sm flex-1 truncate" style={{ color: 'var(--hc-text)' }}>
+            {v.nombreCliente ?? v.cliente?.nombre ?? 'Cliente'} · {timeAgo(v.fechaCreacion)}
+          </span>
+          <span className="text-sm font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>{formatPrice(v.total ?? 0)}</span>
+          <EstadoBadge estado={v.estado} />
+        </div>
+      ))}
+    </section>
   )
 }

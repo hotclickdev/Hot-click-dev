@@ -25,12 +25,22 @@ class PublicChatPromptBuilderTest {
             "nombre_categoria", "Iluminación"
         ));
         String prompt = builder.buildSalesSystemPrompt(
-            "50686667888", "GENERAL", productos, false, false, null, Set.of(), false);
+            "50686667888", "GENERAL", productos, false, false, null, Set.of(), false, true);
 
         assertThat(prompt).contains("Lámpara de pie");
         assertThat(prompt).contains("tags: sala,iluminación");
         assertThat(prompt).contains("cat: Iluminación");
         assertThat(prompt).contains("recomendálos YA");
+    }
+
+    @Test
+    @DisplayName("Antes del 3.er turno no empuja fichas")
+    void conversacionTemprana_sinEmpujarCatalogo() {
+        PublicChatPromptBuilder builder = new PublicChatPromptBuilder();
+        String prompt = builder.buildSalesSystemPrompt(
+            "50686667888", "GENERAL", List.of(), false, false, null, Set.of(), false, false);
+        assertThat(prompt).contains("Es temprano en la charla");
+        assertThat(prompt).doesNotContain("recomendálos YA");
     }
 
     @Test

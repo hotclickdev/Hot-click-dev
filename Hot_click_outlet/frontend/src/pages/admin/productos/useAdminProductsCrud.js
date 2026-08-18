@@ -1,5 +1,7 @@
 import { useCallback } from 'react'
 import { productService, denormalizeProduct } from '@/services/productService'
+import { ofertaService } from '@/services/ofertaService'
+import { PCT_OFERTA_RAPIDA } from './productosHelpers'
 
 /**
  * Guardar, eliminar e importar productos admin.
@@ -103,5 +105,39 @@ export function useAdminProductsCrud(deps) {
     load(0)
   }, [load])
 
-  return { handleSave, handleDelete, confirmDelete, handleImportBulk }
+  const handleOfertaRapida = useCallback(async (producto) => {
+    try {
+      const { data } = await ofertaService.aplicar(producto.id, true, PCT_OFERTA_RAPIDA)
+      if (data?.pendiente) {
+        toast({ message: 'Oferta enviada — HOTCLICK revisa antes de publicar', type: 'success' })
+        return
+      }
+      toast({ message: `Oferta de ${PCT_OFERTA_RAPIDA}% aplicada`, type: 'success' })
+      load()
+    } catch (err) {
+      toast({ message: err?.response?.data?.message ?? 'No se pudo enviar la oferta', type: 'error' })
+    }
+  }, [load, toast])
+
+  const handleOcultar = useCallback(async (producto) => {
+    const visible = producto.visibleCatalogo !== false
+    try {
+      await productService.update(producto.id, { visibleCatalogo: !visible })
+      setProducts((prev) => prev.map((p) => (
+        p.id === producto.id ? { ...p, visibleCatalogo: !visible } : p
+      )))
+      toast({ message: visible ? 'Producto oculto del catálogo' : 'Producto visible de nuevo', type: 'success' })
+    } catch (err) {
+      toast({ message: err?.response?.data?.message ?? 'No se pudo cambiar la visibilidad', type: 'error' })
+    }
+  }, [setProducts, toast])
+
+  return {
+    handleSave,
+    handleDelete,
+    confirmDelete,
+    handleImportBulk,
+    handleOfertaRapida,
+    handleOcultar,
+  }
 }

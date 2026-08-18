@@ -16,6 +16,12 @@ export const STOCK_OPTIONS = [
 
 export const PROD_PAGE_SIZE = 50
 
+/** Días sin venta para marcar un producto como “no se vende”. */
+export const DIAS_MOVIMIENTO_ACTIVO = 30
+
+/** Descuento rápido desde la lista emprendedor (HOTCLICK revisa). */
+export const PCT_OFERTA_RAPIDA = 15
+
 export const COLUMNAS_EXPORT = [
   'nombre', 'precioCompra', 'precioVenta', 'stock', 'condicion',
   'categoriaId', 'categoriaNombre', 'bodegaId', 'bodegaNombre',
@@ -157,6 +163,14 @@ export function metaDescriptionAuto(descripcion, precioVenta) {
   const base = descripcion || ''
   if (!base) return ''
   return `${base}${precio ? ` | Precio: ₡${precio}` : ''} | Envíos a todo Costa Rica`.slice(0, 160)
+}
+
+/** @param {object} producto */
+export function etiquetaMovimiento(producto) {
+  const fecha = producto.fechaUltimaVenta
+  if (!fecha) return 'No se vende'
+  const dias = (Date.now() - new Date(fecha).getTime()) / 86_400_000
+  return dias <= DIAS_MOVIMIENTO_ACTIVO ? 'Se vende' : 'No se vende'
 }
 
 /**

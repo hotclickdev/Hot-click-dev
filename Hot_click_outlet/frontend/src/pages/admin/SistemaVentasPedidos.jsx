@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { orderService } from '@/services/orderService'
+import usePlan from '@/hooks/usePlan'
 import CrearPedidoModal from './ordenes/CrearPedidoModal'
 import VentasTab from './sistema-ventas/VentasTab'
 import PedidosTab from './sistema-ventas/PedidosTab'
@@ -10,7 +11,9 @@ const CLASE_CTA = 'inline-flex items-center justify-center px-5 py-3 rounded-xl 
 const ESTILO_CTA = { backgroundColor: 'var(--hc-primary)', color: '#fff' }
 
 export default function SistemaVentasPedidos() {
-  const [tab, setTab] = useState('ventas')
+  const { hasFeature } = usePlan()
+  const tienePos = hasFeature('pos')
+  const [tab, setTab] = useState('pedidos')
   const [showCreate, setShowCreate] = useState(false)
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
@@ -50,12 +53,12 @@ export default function SistemaVentasPedidos() {
             {textoConteoPedidos(orders.length, pendientes)}
           </p>
         </div>
-        <AccionPrincipal tab={tab} onCrearPedido={() => setShowCreate(true)} />
+        <AccionPrincipal tab={tab} tienePos={tienePos} onCrearPedido={() => setShowCreate(true)} />
       </div>
 
-      <TabsVentasPedidos tab={tab} pendientes={pendientes} onTab={setTab} />
+      {tienePos && <TabsVentasPedidos tab={tab} pendientes={pendientes} onTab={setTab} />}
 
-      {tab === 'ventas'
+      {tienePos && tab === 'ventas'
         ? <VentasTab />
         : <PedidosTab orders={orders} loading={loading} loadError={loadError} onRetry={load} onUpdate={handleUpdate} onDelete={handleDelete} />
       }
@@ -67,8 +70,8 @@ export default function SistemaVentasPedidos() {
   )
 }
 
-function AccionPrincipal({ tab, onCrearPedido }) {
-  if (tab === 'ventas') {
+function AccionPrincipal({ tab, tienePos, onCrearPedido }) {
+  if (tienePos && tab === 'ventas') {
     return (
       <Link to="/admin/pos" className={CLASE_CTA} style={ESTILO_CTA}>
         + Registrá una venta

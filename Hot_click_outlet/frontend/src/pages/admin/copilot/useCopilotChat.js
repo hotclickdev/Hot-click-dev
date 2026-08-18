@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { copilotService } from '@/services/copilotService'
 import { ofertaService } from '@/services/ofertaService'
+import { COPILOT_CHIPS_FIJOS, parseCopilotSse } from './copilotChatHelpers'
 
 /**
- * Estado y handlers del chat copilot admin — bit-idéntico al original.
+ * Estado y handlers del chat Copilot admin.
  */
 export function useCopilotChat() {
   const [mensajes, setMensajes] = useState([])
@@ -11,7 +12,7 @@ export function useCopilotChat() {
   const [enviando, setEnviando] = useState(false)
   const [uso, setUso] = useState(null)
   const [sugerencias, setSugerencias] = useState([])
-  const [accionables, setAccionables] = useState([])
+  const [insights, setInsights] = useState({ lentos: [], enRiesgo: [], reponerMas: [] })
   const [confirmandoId, setConfirmandoId] = useState(null)
   const [aplicandoId, setAplicandoId] = useState(null)
   const [streamText, setStreamText] = useState('')
@@ -30,24 +31,31 @@ export function useCopilotChat() {
       ])
       setMensajes(Array.isArray(hist) ? hist : [])
       setUso(u)
-    } catch { /* non-critical */ }
+    } catch (err) { console.error(err) }
 
     try {
       const { data: s } = await copilotService.getSugerencias()
       setSugerencias(Array.isArray(s) ? s : [])
-    } catch { /* non-critical */ }
+    } catch (err) { console.error(err) }
 
     try {
-      const { data: a } = await copilotService.getProductosSinVenta()
-      setAccionables(Array.isArray(a) ? a : [])
-    } catch { /* non-critical */ }
+      const { data: a } = await copilotService.getInsights()
+      setInsights({
+        lentos: Array.isArray(a?.lentos) ? a.lentos : [],
+        enRiesgo: Array.isArray(a?.enRiesgo) ? a.enRiesgo : [],
+        reponerMas: Array.isArray(a?.reponerMas) ? a.reponerMas : [],
+      })
+    } catch (err) { console.error(err) }
   }, [])
 
   const aplicarDescuento = useCallback(async (producto) => {
     setAplicandoId(producto.id)
     try {
       await ofertaService.aplicar(producto.id, true, producto.descuentoSugeridoPct)
-      setAccionables((prev) => prev.filter((p) => p.id !== producto.id))
+      setInsights((prev) => ({
+        ...prev,
+        lentos: prev.lentos.filter((p) => p.id !== producto.id),
+      }))
       setConfirmandoId(null)
     } catch {
       alert('No se pudo aplicar el descuento. Intentá de nuevo desde Ofertas.')
@@ -59,9 +67,8 @@ export function useCopilotChat() {
   useEffect(() => { cargarHistorial() }, [cargarHistorial])
   useEffect(() => { scrollBottom() }, [mensajes, streamText, scrollBottom])
 
-  const enviar = useCallback(async (e) => {
-    e?.preventDefault()
-    const msg = input.trim()
+  const enviarTexto = useCallback(async (textoLibre) => {
+    const msg = (textoLibre ?? '').trim()
     if (!msg || enviando) return
 
     setInput('')
@@ -70,73 +77,35 @@ export function useCopilotChat() {
     setMensajes((prev) => [...prev, { rol: 'user', contenido: msg }])
 
     try {
-      const rawAuth = localStorage.getItem('hotclick-auth')
-      const token = rawAuth ? (JSON.parse(rawAuth)?.state?.token ?? '') : ''
-
-      const response = await fetch('/api/admin/ai/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ message: msg }),
-      })
-
-      if (!response.ok) { throw new Error('Error del servidor') }
-
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ''
-      let assembled = ''
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buffer += decoder.decode(value, { stream: true })
-
-        const lines = buffer.split('\n')
-        buffer = lines.pop() ?? ''
-
-        for (const line of lines) {
-          if (line.startsWith('data:')) {
-            const data = line.slice(5).trim()
-            if (!data) continue
-            try {
-              const parsed = JSON.parse(data)
-              if (parsed.text) {
-                assembled += parsed.text
-                setStreamText(assembled)
-                scrollBottom()
-              }
-              if (parsed.error) {
-                setMensajes((prev) => [...prev, { rol: 'assistant', contenido: `⚠️ ${parsed.error}` }])
-                setStreamText('')
-              }
-            } catch { /* non-critical */ }
-          } else if (line.startsWith('event: done')) {
-            // response complete
-          }
-        }
-      }
-
-      if (assembled) {
-        setMensajes((prev) => [...prev, { rol: 'assistant', contenido: assembled }])
+      const resultado = await streamCopilot(msg, setStreamText, scrollBottom)
+      if (resultado.error) {
+        setMensajes((prev) => [...prev, { rol: 'assistant', contenido: resultado.error }])
+        setStreamText('')
+      } else if (resultado.text) {
+        setMensajes((prev) => [...prev, { rol: 'assistant', contenido: resultado.text }])
         setStreamText('')
       }
-
-      try { const { data: u } = await copilotService.getUso(); setUso(u) } catch { /* non-critical */ }
-    } catch (err) {
-      setMensajes((prev) => [...prev, { rol: 'assistant', contenido: `⚠️ Error: ${err.message}` }])
+      try { const { data: u } = await copilotService.getUso(); setUso(u) } catch (err) { console.error(err) }
+    } catch {
+      setMensajes((prev) => [...prev, {
+        rol: 'assistant',
+        contenido: 'No pude conectar con el asistente. Reintentá.',
+      }])
       setStreamText('')
     } finally {
       setEnviando(false)
       textareaRef.current?.focus()
     }
-  }, [input, enviando, scrollBottom])
+  }, [enviando, scrollBottom])
+
+  const enviar = useCallback((e) => {
+    e?.preventDefault()
+    return enviarTexto(input)
+  }, [enviarTexto, input])
 
   const limpiar = useCallback(async () => {
     if (!confirm('¿Limpiar el historial de conversación?')) return
-    try { await copilotService.deleteHistorial(); setMensajes([]) } catch { /* non-critical */ }
+    try { await copilotService.deleteHistorial(); setMensajes([]) } catch (err) { console.error(err) }
   }, [])
 
   const onKeyDown = useCallback((e) => {
@@ -145,6 +114,7 @@ export function useCopilotChat() {
 
   const pctUso = uso?.porcentaje ?? 0
   const pctColor = colorPctUso(pctUso)
+  const chipsFijos = COPILOT_CHIPS_FIJOS
 
   return {
     mensajes,
@@ -153,7 +123,8 @@ export function useCopilotChat() {
     enviando,
     uso,
     sugerencias,
-    accionables,
+    insights,
+    chipsFijos,
     confirmandoId,
     setConfirmandoId,
     aplicandoId,
@@ -162,6 +133,7 @@ export function useCopilotChat() {
     textareaRef,
     aplicarDescuento,
     enviar,
+    enviarTexto,
     limpiar,
     onKeyDown,
     pctUso,
@@ -173,4 +145,44 @@ function colorPctUso(pctUso) {
   if (pctUso >= 90) return '#f87171'
   if (pctUso >= 70) return '#fbbf24'
   return '#34d399'
+}
+
+async function streamCopilot(msg, setStreamText, scrollBottom) {
+  const rawAuth = localStorage.getItem('hotclick-auth')
+  const token = rawAuth ? (JSON.parse(rawAuth)?.state?.token ?? '') : ''
+  const response = await fetch('/api/admin/ai/chat', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'text/event-stream',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ message: msg }),
+  })
+  if (!response.ok) throw new Error('servidor')
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let assembled = ''
+  let eventName = 'message'
+
+  let sseError = ''
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    const lines = buffer.split('\n')
+    buffer = lines.pop() ?? ''
+    for (const line of lines) {
+      const parsed = parseCopilotSse(line, eventName)
+      eventName = parsed.eventName
+      if (parsed.error) sseError = parsed.error
+      if (parsed.text) {
+        assembled += parsed.text
+        setStreamText(assembled)
+        scrollBottom()
+      }
+    }
+  }
+  return { text: assembled, error: sseError }
 }

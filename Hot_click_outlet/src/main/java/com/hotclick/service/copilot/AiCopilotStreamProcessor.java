@@ -11,13 +11,45 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 public class AiCopilotStreamProcessor {
 
     private static final Logger log = LoggerFactory.getLogger(AiCopilotStreamProcessor.class);
+    private static final long PING_MS = 10_000;
 
     @Autowired private ObjectMapper objectMapper;
+
+    /**
+     * Comentarios SSE periódicos para que Nginx no cierre el POST mientras Claude corre.
+     */
+    public AutoCloseable startHeartbeat(SseEmitter emitter) {
+        AtomicBoolean vivo = new AtomicBoolean(true);
+        Thread hilo = Thread.ofVirtual().unstarted(() -> latir(emitter, vivo));
+        hilo.setName("copilot-sse-ping");
+        hilo.start();
+        return () -> {
+            vivo.set(false);
+            hilo.interrupt();
+        };
+    }
+
+    private void latir(SseEmitter emitter, AtomicBoolean vivo) {
+        while (vivo.get()) {
+            try {
+                Thread.sleep(PING_MS);
+                if (!vivo.get()) return;
+                emitter.send(SseEmitter.event().name("ping").comment("ping").data("{}"));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            } catch (IOException e) {
+                log.debug("[AI] heartbeat SSE cortado: {}", e.getMessage());
+                return;
+            }
+        }
+    }
 
     @SuppressWarnings("unused") // userMessage forma parte de la firma del fallback de Resilience4j
     public void chatStreamFallback(Long empresaId, String userMessage, SseEmitter emitter, Throwable t) {

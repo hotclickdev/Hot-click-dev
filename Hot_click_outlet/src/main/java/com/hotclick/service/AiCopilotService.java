@@ -59,6 +59,10 @@ public class AiCopilotService {
         return contextBuilder.getProductosSinVentaAccionables(empresaId);
     }
 
+    public Map<String, Object> getInsights(Long empresaId) {
+        return contextBuilder.getInsights(empresaId);
+    }
+
     public List<String> getSugerencias(Long empresaId) {
         return suggestionsService.getSugerencias(empresaId);
     }
@@ -76,15 +80,22 @@ public class AiCopilotService {
         Empresa empresa = empresaRepository.findById(empresaId).orElse(null);
         messageStore.saveMsg(empresa, "user", userMessage, 0);
 
-        if (!isEnabled()) {
-            streamProcessor.streamMock(emitter,
-                "*(modo desarrollo — configura ANTHROPIC_API_KEY para respuestas reales)*\n\n"
-                    + "Hola, soy tu copilot de HOTCLICK. ¿En qué te puedo ayudar con tu negocio?");
-            messageStore.saveMsg(empresa, "assistant", "Mock response", 0);
-            return;
+        try (AutoCloseable ignored = streamProcessor.startHeartbeat(emitter)) {
+            if (!isEnabled()) {
+                streamProcessor.streamMock(emitter,
+                    "*(modo desarrollo — configura ANTHROPIC_API_KEY para respuestas reales)*\n\n"
+                        + "Hola, soy tu copilot de HOTCLICK. ¿En qué te puedo ayudar con tu negocio?");
+                messageStore.saveMsg(empresa, "assistant", "Mock response", 0);
+                return;
+            }
+            emitirRespuestaClaude(empresaId, empresa, userMessage, emitter, tenantId);
+        } catch (IntegracionExternaException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IntegracionExternaException("claude-api",
+                IntegracionExternaException.Tipo.DESCONOCIDO, tenantId,
+                "Fallo en el stream del copilot", e);
         }
-
-        emitirRespuestaClaude(empresaId, empresa, userMessage, emitter, tenantId);
     }
 
     private void emitirRespuestaClaude(Long empresaId, Empresa empresa, String userMessage,

@@ -20,6 +20,10 @@ class AiCopilotDataQueries {
     @Autowired private AiCopilotCatalogoQueries catalogoQueries;
     @Autowired private AiCopilotPedidosQueries pedidosQueries;
     @Autowired private AiCopilotFinanzasQueries finanzasQueries;
+    @Autowired private AiCopilotReporteQueries reporteQueries;
+    @Autowired private AiCopilotMercadoQueries mercadoQueries;
+    @Autowired private AiCopilotProyeccionQueries proyeccionQueries;
+    @Autowired private AiCopilotMarcaQueries marcaQueries;
 
     String getVentasData(Long empresaId) {
         return ventasQueries.getVentasData(empresaId);
@@ -59,5 +63,25 @@ class AiCopilotDataQueries {
 
     String getFinanzasData(Long empresaId, JsonNode args) {
         return finanzasQueries.getFinanzasData(empresaId, args);
+    }
+
+    String getReporteNegocio(Long empresaId, JsonNode args) {
+        return reporteQueries.getReporteNegocio(empresaId, args);
+    }
+
+    String compararCatalogoPublico(Long empresaId) {
+        return mercadoQueries.compararCatalogoPublico(empresaId);
+    }
+
+    String getProyeccion(Long empresaId) {
+        return proyeccionQueries.getProyeccion(empresaId);
+    }
+
+    String getPerfilMarca(Long empresaId) {
+        return marcaQueries.getPerfilMarca(empresaId);
+    }
+
+    Map<String, Object> getInsights(Long empresaId) {
+        return stockQueries.getInsights(empresaId);
     }
 }

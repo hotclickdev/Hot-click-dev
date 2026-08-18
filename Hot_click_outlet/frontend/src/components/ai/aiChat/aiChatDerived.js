@@ -6,17 +6,20 @@ export function deriveAiChatView({ mensajes, chips, cargando, context, userName,
   const userMsgCount    = mensajes.filter(m => m.rol === 'user').length
   const lastAssistant   = [...mensajes].reverse().find(m => m.rol === 'assistant' && !m.typing)
   const lastUserMsg     = [...mensajes].reverse().find(m => m.rol === 'user')
-  const contextChips = chipsDeContexto(lastAssistant)
-  const activeChips = chipsActivos(userMsgCount, chips, contextChips)
-  const showChips       = activeChips.length > 0 && !cargando
+  const startChips      = (chips ?? []).slice(0, 3)
+  const showChips       = userMsgCount === 0 && startChips.length > 0 && !cargando
+  const activeChips     = startChips
 
   const productoNombreCtx = context.startsWith('PRODUCTO:')
     ? context.split(':')[1] ?? null : null
 
   const showAlternativas =
     !productoId &&
-    !cargando && userMsgCount > 0 && lastAssistant != null &&
-    (lastAssistant.productos?.length ?? 0) === 0 && lastUserMsg != null
+    !cargando &&
+    userMsgCount >= 3 &&
+    lastAssistant != null &&
+    (lastAssistant.productos?.length ?? 0) === 0 &&
+    lastUserMsg != null
 
   const queryAlternativas = productoNombreCtx
     ? `¿Qué productos similares o alternativos a "${productoNombreCtx}" tenés disponibles?`
@@ -40,15 +43,4 @@ export function deriveAiChatView({ mensajes, chips, cargando, context, userName,
     hasProductsInLastMsg,
     greetingText,
   }
-}
-
-function chipsDeContexto(lastAssistant) {
-  if (lastAssistant?.opts?.length > 0) return lastAssistant.opts
-  if (lastAssistant?.categorias?.length > 0) return lastAssistant.categorias
-  return null
-}
-
-function chipsActivos(userMsgCount, chips, contextChips) {
-  if (userMsgCount === 0) return chips
-  return contextChips ?? []
 }

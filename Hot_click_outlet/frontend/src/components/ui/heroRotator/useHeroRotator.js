@@ -1,15 +1,15 @@
 import { useState, useEffect, useRef } from 'react'
 import { PHASES } from './heroRotatorData'
+import useChatStore from '@/store/chatStore'
 
 /**
- * Estado y handlers del hero rotator — bit-idéntico al original.
+ * Estado y handlers del hero rotator.
+ * El chat abre el drawer; el hero sigue rotando destacados y emprendimientos.
  */
 export function useHeroRotator() {
   const [phaseIdx, setPhaseIdx] = useState(0)
   const [progress, setProgress] = useState(0)
   const [convenios, setConvenios] = useState([])
-  const [chatMode, setChatMode] = useState(false)
-  const [chatQuery, setChatQuery] = useState(null)
   const progressRef = useRef(null)
   const pausedRef   = useRef(false)
 
@@ -19,15 +19,7 @@ export function useHeroRotator() {
   function resumeTimer() { pausedRef.current = false }
 
   function handleChatSubmit(text) {
-    clearInterval(progressRef.current)
-    setChatQuery(text)
-    setChatMode(true)
-  }
-
-  function handleChatClose() {
-    setChatMode(false)
-    setChatQuery(null)
-    setPhaseIdx(0)
+    useChatStore.getState().open(text)
   }
 
   useEffect(() => {
@@ -73,12 +65,9 @@ export function useHeroRotator() {
     phaseIdx,
     progress,
     convenios,
-    chatMode,
-    chatQuery,
     pauseTimer,
     resumeTimer,
     handleChatSubmit,
-    handleChatClose,
     goTo,
   }
 }

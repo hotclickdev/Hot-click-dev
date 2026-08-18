@@ -37,6 +37,8 @@ export function normalizeProduct(p) {
     metaDescription: p.metaDescription ?? null,
     metaKeywords: p.metaKeywords ?? null,
     tags: p.tags ?? '',
+    fechaUltimaVenta: p.fechaUltimaVenta ?? null,
+    visibleCatalogo: p.visibleCatalogo !== false,
     metaTitleEn: p.metaTitleEn ?? null,
     metaTitlePt: p.metaTitlePt ?? null,
     metaTitleFr: p.metaTitleFr ?? null,

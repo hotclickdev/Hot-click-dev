@@ -16,7 +16,10 @@ export function AIChatMessageList({
   isCarritoContext,
   hasProductsInLastMsg,
 }) {
-  return mensajes.map((m, i) => (
+  return mensajes.map((m, i) => {
+    const esUltimo = i === mensajes.length - 1
+    const optsVisibles = esUltimo && !m.typing && m.opts?.length > 0 ? m.opts.slice(0, 2) : []
+    return (
     <div
       key={i}
       className={`flex gap-2.5 ${m.rol === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
@@ -36,9 +39,9 @@ export function AIChatMessageList({
                 style={m.rol === 'user'
                   ? { background: accent, color: '#ffffff', fontWeight: 500 }
                   : {
-                      background: m.failed ? '#FEF2F2' : '#F9FAFB',
-                      color: '#111827',
-                      border: `1px solid ${m.failed ? '#FECACA' : '#E5E7EB'}`,
+                      background: m.failed ? '#FEF2F2' : 'var(--hc-surface)',
+                      color: 'var(--hc-text)',
+                      border: `1px solid ${m.failed ? '#FECACA' : 'var(--hc-border)'}`,
                     }}
               >
                 {m.rol === 'user'
@@ -100,9 +103,9 @@ export function AIChatMessageList({
           </div>
         )}
 
-        {!m.typing && m.opts?.length > 0 && (
+        {optsVisibles.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pt-0.5">
-            {m.opts.map(opt => (
+            {optsVisibles.map(opt => (
               <button type="button"
                 key={opt}
                 onClick={() => enviar(opt)}
@@ -133,7 +136,8 @@ export function AIChatMessageList({
         )}
       </div>
     </div>
-  ))
+  )
+  })
 }
 
 export function AIChatInputBar({

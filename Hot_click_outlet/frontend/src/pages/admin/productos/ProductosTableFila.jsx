@@ -3,6 +3,7 @@ import Badge from '@/components/ui/Badge'
 import { formatPrice, conditionLabel, conditionVariant } from '@/utils/format'
 import SeoStatusIcon from './SeoStatusIcon'
 import StarIcon from './StarIcon'
+import { etiquetaMovimiento } from './productosHelpers'
 
 function BoxIcon({ className }) {
   return (
@@ -80,7 +81,35 @@ function tituloCarrusel(producto, lleno) {
   return 'Agregar al carrusel'
 }
 
-function AccionesDesktop({ producto, t, onEdit, onKardex, onDelete }) {
+function CeldaSkuOMovimiento({ producto, vistaSimple }) {
+  if (vistaSimple) {
+    const movimiento = etiquetaMovimiento(producto)
+    return <Badge variant={movimiento === 'Se vende' ? 'success' : 'warning'}>{movimiento}</Badge>
+  }
+  return (
+    <div className="space-y-0.5">
+      {producto.sku && <p className="text-[10px] font-mono" style={{ color: 'var(--hc-muted)' }}>SKU: {producto.sku}</p>}
+      {producto.barcode && <p className="text-[10px] font-mono" style={{ color: 'var(--hc-accent)', opacity: 0.8 }}>BC: {producto.barcode}</p>}
+      {!producto.sku && !producto.barcode && <span className="text-[10px]" style={{ color: 'var(--hc-muted)', opacity: 0.5 }}>—</span>}
+    </div>
+  )
+}
+
+function AccionesDesktop({ producto, t, onEdit, onKardex, onDelete, onOferta, onOcultar, vistaSimple }) {
+  if (vistaSimple) {
+    const visible = producto.visibleCatalogo !== false
+    return (
+      <div className="flex gap-2">
+        <button type="button" onClick={() => onEdit(producto)} className="px-3 py-1 text-xs rounded-lg" style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>{t('admin.products.edit')}</button>
+        <button type="button" onClick={() => onOferta(producto)} disabled={producto.enOferta} className="px-3 py-1 text-xs rounded-lg disabled:opacity-40" style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-accent)' }}>
+          {producto.enOferta ? 'En oferta' : 'Oferta'}
+        </button>
+        <button type="button" onClick={() => onOcultar(producto)} className="px-3 py-1 text-xs rounded-lg" style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>
+          {visible ? 'Ocultar' : 'Mostrar'}
+        </button>
+      </div>
+    )
+  }
   return (
     <div className="flex gap-2">
       <button type="button" onClick={() => onEdit(producto)} className="px-3 py-1 text-xs rounded-lg transition-colors hover:bg-[var(--hc-surface-2)]" style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>{t('admin.products.edit')}</button>
@@ -90,7 +119,7 @@ function AccionesDesktop({ producto, t, onEdit, onKardex, onDelete }) {
   )
 }
 
-export default function FilaProducto({ producto, isAdmin, carruselSlots, t, onToggleDestacado, onToggleCarrusel, onEdit, onKardex, onDelete }) {
+export default function FilaProducto({ producto, isAdmin, carruselSlots, t, onToggleDestacado, onToggleCarrusel, onEdit, onKardex, onDelete, onOferta, onOcultar, vistaSimple }) {
   return (
     <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="transition-colors hover:bg-[var(--hc-surface-2)]" style={{ borderTop: '1px solid var(--hc-border)' }}>
       {isAdmin && (
@@ -103,7 +132,9 @@ export default function FilaProducto({ producto, isAdmin, carruselSlots, t, onTo
           <BotonCarrusel producto={producto} carruselSlots={carruselSlots} onToggle={onToggleCarrusel} />
         </td>
       )}
-      <td className="px-4 py-3 text-xs" style={{ color: 'var(--hc-muted)' }}>#{producto.id}</td>
+      {!vistaSimple && (
+        <td className="px-4 py-3 text-xs" style={{ color: 'var(--hc-muted)' }}>#{producto.id}</td>
+      )}
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">
           <ProductoThumb producto={producto} sizeClass="w-8 h-8 rounded-lg" />
@@ -121,11 +152,7 @@ export default function FilaProducto({ producto, isAdmin, carruselSlots, t, onTo
         <Badge variant={varianteStock(producto.stock)}>{producto.stock}</Badge>
       </td>
       <td className="px-4 py-3">
-        <div className="space-y-0.5">
-          {producto.sku && <p className="text-[10px] font-mono" style={{ color: 'var(--hc-muted)' }}>SKU: {producto.sku}</p>}
-          {producto.barcode && <p className="text-[10px] font-mono" style={{ color: 'var(--hc-accent)', opacity: 0.8 }}>BC: {producto.barcode}</p>}
-          {!producto.sku && !producto.barcode && <span className="text-[10px]" style={{ color: 'var(--hc-muted)', opacity: 0.5 }}>—</span>}
-        </div>
+        <CeldaSkuOMovimiento producto={producto} vistaSimple={vistaSimple} />
       </td>
       <td className="px-4 py-3">
         <Badge variant={conditionVariant(producto.condicion)}>{conditionLabel(producto.condicion)}</Badge>
@@ -136,21 +163,24 @@ export default function FilaProducto({ producto, isAdmin, carruselSlots, t, onTo
         </td>
       )}
       <td className="px-4 py-3">
-        <AccionesDesktop producto={producto} t={t} onEdit={onEdit} onKardex={onKardex} onDelete={onDelete} />
+        <AccionesDesktop producto={producto} t={t} onEdit={onEdit} onKardex={onKardex} onDelete={onDelete} onOferta={onOferta} onOcultar={onOcultar} vistaSimple={vistaSimple} />
       </td>
     </motion.tr>
   )
 }
 
-export function TarjetaProducto({ producto, t, onEdit, onKardex, onDelete }) {
+export function TarjetaProducto({ producto, t, onEdit, onKardex, onDelete, onOferta, onOcultar, vistaSimple }) {
+  const visible = producto.visibleCatalogo !== false
   return (
     <div className="p-4 flex flex-col gap-2.5">
       <div className="flex items-center gap-3">
         <ProductoThumb producto={producto} sizeClass="w-12 h-12 rounded-xl shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="font-medium truncate" style={{ color: 'var(--hc-text)' }}>{producto.nombre}</p>
-          <p className="text-xs font-mono truncate" style={{ color: 'var(--hc-muted)' }}>
-            {producto.sku ?? `#${producto.id}`}{producto.categoriaNombre ? ` · ${producto.categoriaNombre}` : ''}
+          <p className="text-xs truncate" style={{ color: 'var(--hc-muted)' }}>
+            {vistaSimple ? etiquetaMovimiento(producto) : (producto.sku ?? `#${producto.id}`)}
+            {producto.categoriaNombre ? ` · ${producto.categoriaNombre}` : ''}
+            {vistaSimple && !visible ? ' · Oculto' : ''}
           </p>
         </div>
         <Badge variant={conditionVariant(producto.condicion)}>{conditionLabel(producto.condicion)}</Badge>
@@ -162,8 +192,21 @@ export function TarjetaProducto({ producto, t, onEdit, onKardex, onDelete }) {
         </div>
         <div className="flex items-center gap-3 text-xs font-semibold">
           <button type="button" onClick={() => onEdit(producto)} style={{ color: 'var(--hc-accent)' }}>{t('admin.products.edit')}</button>
-          <button type="button" onClick={() => onKardex(producto)} style={{ color: 'var(--hc-muted)' }}>Kardex</button>
-          <button type="button" onClick={() => onDelete(producto.id, producto.nombre)} style={{ color: '#a8291f' }}>{t('admin.products.delete')}</button>
+          {vistaSimple ? (
+            <>
+              <button type="button" onClick={() => onOferta(producto)} disabled={producto.enOferta} style={{ color: 'var(--hc-accent)' }}>
+                {producto.enOferta ? 'En oferta' : 'Oferta'}
+              </button>
+              <button type="button" onClick={() => onOcultar(producto)} style={{ color: 'var(--hc-muted)' }}>
+                {visible ? 'Ocultar' : 'Mostrar'}
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" onClick={() => onKardex(producto)} style={{ color: 'var(--hc-muted)' }}>Kardex</button>
+              <button type="button" onClick={() => onDelete(producto.id, producto.nombre)} style={{ color: '#a8291f' }}>{t('admin.products.delete')}</button>
+            </>
+          )}
         </div>
       </div>
     </div>

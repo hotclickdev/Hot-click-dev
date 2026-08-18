@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { crmService } from '@/services/crmService'
 import { useToast } from '@/components/ui/Toast'
 import ClienteDetailModal from '@/components/admin/ClienteDetailModal'
+import { esInactivo30d } from './clientes/clientesHelpers'
 
 const fmt = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
 
@@ -17,6 +18,7 @@ export default function AdminClientes() {
   const [clientes, setClientes] = useState([])
   const [loading, setLoading]   = useState(true)
   const [query, setQuery]       = useState('')
+  const [filtroInactivos, setFiltroInactivos] = useState(false)
   const [selectedId, setSelectedId] = useState(null)
   const [showNuevo, setShowNuevo]   = useState(false)
   const [nombre, setNombre]     = useState('')
@@ -53,14 +55,15 @@ export default function AdminClientes() {
     }
   }
 
-  const filtrados = query.trim().length < 2
-    ? clientes
-    : clientes.filter(c => {
-        const q = query.trim().toLowerCase()
-        return (c.nombre ?? '').toLowerCase().includes(q)
-          || (c.correo ?? '').toLowerCase().includes(q)
-          || (c.telefono ?? '').includes(q)
-      })
+  const filtrados = clientes.filter((c) => {
+    if (filtroInactivos && !esInactivo30d(c)) return false
+    if (query.trim().length < 2) return true
+    const q = query.trim().toLowerCase()
+    return (c.nombre ?? '').toLowerCase().includes(q)
+      || (c.correo ?? '').toLowerCase().includes(q)
+      || (c.telefono ?? '').includes(q)
+  })
+  const inactivosCount = clientes.filter(esInactivo30d).length
 
   return (
     <div className="space-y-6">
@@ -98,9 +101,18 @@ export default function AdminClientes() {
         </div>
       )}
 
-      <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Buscar por nombre, correo o teléfono…"
-        className="w-full max-w-md px-3 py-2 rounded-xl text-sm outline-none"
-        style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }} />
+      <div className="flex flex-wrap items-center gap-3">
+        <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Buscar por nombre, correo o teléfono…"
+          className="w-full max-w-md px-3 py-2 rounded-xl text-sm outline-none"
+          style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }} />
+        <button type="button" onClick={() => setFiltroInactivos((v) => !v)}
+          className="px-3.5 py-2 rounded-xl text-xs font-semibold"
+          style={filtroInactivos
+            ? { backgroundColor: 'rgba(23,71,168,0.12)', border: '1px solid var(--hc-accent)', color: 'var(--hc-accent)' }
+            : { backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}>
+          Inactivos 30d{inactivosCount > 0 ? ` (${inactivosCount})` : ''}
+        </button>
+      </div>
 
       {loading ? (
         <div className="py-12 text-center text-sm" style={{ color: 'var(--hc-muted)' }}>Cargando clientes…</div>
