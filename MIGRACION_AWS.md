@@ -668,34 +668,26 @@ En tu registrador (Cloudflare, Namecheap, etc.):
 
 ### 10.2 Nginx + Certbot (HTTPS)
 
+> **Config versionada:** usar [`Hot_click_outlet/deploy/nginx/hotclick.conf`](Hot_click_outlet/deploy/nginx/hotclick.conf) y [`deploy/ec2/apply-nginx.sh`](Hot_click_outlet/deploy/ec2/apply-nginx.sh) en lugar de pegar el snippet manualmente.
+
 ```bash
 sudo dnf install -y nginx certbot python3-certbot-nginx
 sudo systemctl start nginx
 sudo systemctl enable nginx
 
-sudo tee /etc/nginx/conf.d/hotclick.conf << 'EOF'
-server {
-    listen 80;
-    server_name hotclick.lat www.hotclick.lat;
+# Copiar config versionada desde el repo
+cd /home/ec2-user/app
+sudo bash Hot_click_outlet/deploy/ec2/apply-nginx.sh
 
-    location / {
-        proxy_pass         http://localhost:8080;
-        proxy_set_header   Host              $host;
-        proxy_set_header   X-Real-IP         $remote_addr;
-        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto $scheme;
-        proxy_read_timeout 120s;
-    }
-}
-EOF
-
-sudo nginx -t
-sudo systemctl reload nginx
-
-# SSL gratuito con Let's Encrypt:
+# SSL gratuito con Let's Encrypt (primera vez):
 sudo certbot --nginx -d hotclick.lat -d www.hotclick.lat \
   --email hotclick.cr@gmail.com --agree-tos --no-eff-email
+
+# Verificar renovación automática
+sudo bash Hot_click_outlet/deploy/ec2/verify-certbot.sh
 ```
+
+Ver también: [`deploy/ec2/security-group-hardening.md`](Hot_click_outlet/deploy/ec2/security-group-hardening.md) (cerrar puerto 8080).
 
 ### 10.3 Actualizar Stripe Webhook
 
