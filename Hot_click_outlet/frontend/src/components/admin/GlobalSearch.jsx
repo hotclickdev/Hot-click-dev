@@ -3,46 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { productService } from '@/services/productService'
 import { crmService } from '@/services/crmService'
 import api from '@/services/api'
-
-const fmt = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
-
-// Secciones del admin con sinónimos — permite buscar por nombre cotidiano
-const SECCIONES = [
-  { label: 'Usuarios / Clientes',   path: '/admin/usuarios',      icon: '👥', keys: ['usuarios','clientes','cliente','usuario','personas','compradores','comprador','gente'] },
-  { label: 'Productos',             path: '/admin/productos',      icon: '📦', keys: ['productos','producto','items','articulos','artículos','catalogo','catálogo','inventario'] },
-  { label: 'Pedidos',               path: '/admin/pedidos',        icon: '🛍', keys: ['pedidos','pedido','ordenes','orden','ventas','venta','compras del cliente'] },
-  { label: 'Marcas',                path: '/admin/marcas',         icon: '🏷', keys: ['marcas','marca','brand','brands','fabricante'] },
-  { label: 'Categorías',            path: '/admin/categorias',     icon: '📂', keys: ['categorias','categoria','categorías','departamentos','secciones','tipos'] },
-  { label: 'Bodegas / Almacenes',   path: '/admin/bodegas',        icon: '🏭', keys: ['bodegas','bodega','almacen','almacén','almacenes','depósito','deposito','stock','inventario'] },
-  { label: 'Finanzas',              path: '/admin/finanzas',       icon: '💰', keys: ['finanzas','finanza','dinero','caja','ingresos','egresos','contabilidad','ganancias'] },
-  { label: 'Mi Billetera',         path: '/admin/billetera',      icon: '👛', keys: ['billetera','wallet','saldo','retiro','payout','comision','comisión','cobrar'] },
-  { label: 'Reportes',              path: '/admin/reportes',       icon: '📊', keys: ['reportes','reporte','informe','informes','estadisticas','estadísticas','analitica'] },
-  { label: 'Proveedores',           path: '/admin/proveedores',    icon: '🚚', keys: ['proveedores','proveedor','suppliers','suministros','compras'] },
-  { label: 'Compras a Proveedor',   path: '/admin/compras',        icon: '🛒', keys: ['compras','compra','ordenes de compra','orden de compra','reabastecimiento'] },
-  { label: 'Caja POS',              path: '/admin/pos',            icon: '🏪', keys: ['caja','pos','punto de venta','venta directa','tienda fisica','cobros'] },
-  { label: 'Mesas / QR',            path: '/admin/mesas',          icon: '🪑', keys: ['mesas','mesa','qr','restaurante','salon','comensales'] },
-  { label: 'Ofertas / Promociones', path: '/admin/ofertas',        icon: '🏷', keys: ['ofertas','oferta','descuentos','descuento','promociones','promocion','promo'] },
-  { label: 'Blog / Publicaciones',  path: '/admin/blog',           icon: '📝', keys: ['blog','articulos','publicaciones','publicacion','noticias','contenido'] },
-  { label: 'Publicaciones Auto IA', path: '/admin/publicaciones',  icon: '🤖', keys: ['publicaciones','ia','automatico','generar producto','crear producto','ai','inteligencia'] },
-  { label: 'Emprendimientos',       path: '/emprendimientos',      icon: '🏢', keys: ['emprendimientos','emprendimiento','negocios','negocio','pymes','pyme','empresas'] },
-  { label: 'Equipo',                path: '/admin/equipo',         icon: '👤', keys: ['equipo','empleados','empleado','staff','trabajadores','colaboradores','miembros'] },
-  { label: 'Gift Cards',            path: '/admin/gift-cards',     icon: '🎁', keys: ['gift cards','tarjetas regalo','regalos','regalo','vouchers','voucher','cupon','cupón'] },
-  { label: 'Configuración',         path: '/admin/configuracion',  icon: '⚙', keys: ['configuracion','configuración','ajustes','settings','config','preferencias'] },
-  { label: 'Seguridad',             path: '/admin/seguridad',      icon: '🔒', keys: ['seguridad','security','accesos','permisos','auditoria','logs'] },
-  { label: 'Mi Empresa',            path: '/admin/mi-empresa',     icon: '🏠', keys: ['mi empresa','empresa','datos empresa','perfil negocio','negocio','branding'] },
-  { label: 'Facturación Electrónica', path: '/admin/facturacion', icon: '🧾', keys: ['facturacion','facturas','hacienda','comprobantes','electronicos','fiscal'] },
-  { label: 'Plan / Suscripción',    path: '/admin/suscripcion',    icon: '💳', keys: ['plan','suscripcion','suscripción','billing','pago mensual','upgrade'] },
-  { label: 'Observabilidad',        path: '/admin/observabilidad', icon: '📡', keys: ['observabilidad','metricas','métricas','monitoreo','logs','plataforma'] },
-  { label: 'Dashboard',             path: '/admin',                icon: '🏠', keys: ['dashboard','inicio','home','panel','resumen','kpi'] },
-]
-
-function buscarSecciones(q) {
-  const term = q.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-  return SECCIONES.filter(s =>
-    s.label.toLowerCase().includes(term) ||
-    s.keys.some(k => k.includes(term) || term.includes(k.split(' ')[0]))
-  ).slice(0, 5)
-}
+import {
+  mapearProductosBusqueda,
+  mapearPedidosBusqueda,
+  mapearClientesBusqueda,
+  queryParecePedido,
+} from './globalSearchQuery'
 
 function ResultGroup({ title, items, onSelect }) {
   if (!items.length) return null
@@ -92,7 +58,10 @@ export default function GlobalSearch({ open, onClose }) {
 
   const buscar = useCallback((query) => {
     clearTimeout(timerRef.current)
-    if (!query.trim() || query.trim().length < 2) { setResults({ productos: [], pedidos: [], clientes: [] }); return }
+    if (!query.trim() || query.trim().length < 2) {
+      setResults({ productos: [], pedidos: [], clientes: [] })
+      return
+    }
     timerRef.current = setTimeout(async () => {
       setLoading(true)
       try {
@@ -102,41 +71,17 @@ export default function GlobalSearch({ open, onClose }) {
         ])
         const prodList = prods.status === 'fulfilled' ? (prods.value ?? []) : []
         const clienList = clientes.status === 'fulfilled' ? (clientes.value ?? []) : []
-
-        // Buscar pedidos por número
-        let pedidoList = []
-        if (/^\d+$/.test(query.trim()) || query.trim().toUpperCase().startsWith('ORD')) {
-          try {
-            const res = await api.get(`/pedidos/${query.trim()}`)
-            const p = res.data?.data ?? res.data
-            if (p?.id) pedidoList = [p]
-          } catch { /* no pedido */ }
-        }
-
+        const pedidoList = await buscarPedidoSiAplica(query)
         setResults({
-          productos: prodList.slice(0, 5).map(p => ({
-            label: p.nombreProducto ?? p.nombre,
-            sub: `SKU: ${p.sku ?? '—'} · Stock: ${p.stockActual ?? p.stock ?? 0}`,
-            meta: `₡${fmt(p.precioEfectivo ?? p.precioVenta ?? p.precio)}`,
-            icon: '📦', iconColor: 'rgba(23,71,168,',
-            path: `/admin/productos`,
-          })),
-          pedidos: pedidoList.slice(0, 3).map(p => ({
-            label: `Pedido #${p.id} — ${p.numeroPedido ?? ''}`,
-            sub: `${p.estadoPedido ?? ''} · ₡${fmt(p.totalPedido)}`,
-            icon: '🧾', iconColor: 'rgba(52,211,153,',
-            path: `/admin/pedidos`,
-          })),
-          clientes: clienList.slice(0, 5).map(c => ({
-            label: `${c.nombre ?? ''} ${c.apellidoPaterno ?? ''}`.trim(),
-            sub: c.correo,
-            meta: `${c.puntosFidelidad ?? 0} pts`,
-            icon: '👤', iconColor: 'rgba(151,183,243,',
-            path: `/admin/usuarios`,
-          })),
+          productos: mapearProductosBusqueda(prodList),
+          pedidos: mapearPedidosBusqueda(pedidoList),
+          clientes: mapearClientesBusqueda(clienList),
         })
-      } catch { /* silently fail */ }
-      finally { setLoading(false) }
+      } catch (err) {
+        console.error('[busqueda] falló la búsqueda global', err)
+      } finally {
+        setLoading(false)
+      }
     }, 250)
   }, [])
 
@@ -160,7 +105,6 @@ export default function GlobalSearch({ open, onClose }) {
         style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid rgba(255,255,255,0.1)' }}
         onClick={e => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
 
-        {/* Input */}
         <div className="flex items-center gap-3 px-4 py-3 border-b" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
           <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2}
             viewBox="0 0 24 24" style={{ color: 'var(--hc-muted)' }}>
@@ -183,7 +127,6 @@ export default function GlobalSearch({ open, onClose }) {
             style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>Esc</kbd>
         </div>
 
-        {/* Resultados */}
         <div className="max-h-[60vh] overflow-y-auto p-2">
           {!hasQuery && (
             <div className="py-8 text-center text-sm" style={{ color: 'var(--hc-muted)' }}>
@@ -204,7 +147,6 @@ export default function GlobalSearch({ open, onClose }) {
           )}
         </div>
 
-        {/* Footer */}
         <div className="px-4 py-2 border-t flex items-center gap-3 text-[10px]"
           style={{ borderColor: 'rgba(255,255,255,0.07)', color: 'var(--hc-muted)' }}>
           <span>↑↓ navegar</span>
@@ -214,4 +156,16 @@ export default function GlobalSearch({ open, onClose }) {
       </div>
     </div>
   )
+}
+
+async function buscarPedidoSiAplica(query) {
+  if (!queryParecePedido(query)) return []
+  try {
+    const res = await api.get(`/pedidos/${query.trim()}`)
+    const p = res.data?.data ?? res.data
+    return p?.id ? [p] : []
+  } catch (err) {
+    console.debug('[busqueda] pedido no encontrado', err)
+    return []
+  }
 }

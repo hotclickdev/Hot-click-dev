@@ -4,6 +4,7 @@
  */
 import { useState } from 'react'
 import api from '@/services/api'
+import { Field, FotoReferencia, inputStyle } from './AISolicitudEspecialFields'
 
 const WA_REGEX = /^[2-9]\d{7}$/
 
@@ -16,16 +17,16 @@ export default function AISolicitudEspecial({ descripcionInicial = '', onSuccess
   const [imagenPreview, setImagenPreview] = useState(null)
   const [enviado, setEnviado] = useState(false)
 
-  function set(field, value) {
+  function setCampo(field, value) {
     setForm(prev => ({ ...prev, [field]: value }))
-    if (errors[field]) setErrors(prev => { const e = { ...prev }; delete e[field]; return e })
+    if (errors[field]) setErrors(prev => { const next = { ...prev }; delete next[field]; return next })
   }
 
   function onImageChange(e) {
     const file = e.target.files?.[0]
     if (!file) return
     if (file.size > 5 * 1024 * 1024) { alert('La imagen no puede superar 5MB.'); return }
-    set('imagen', file)
+    setCampo('imagen', file)
     setImagenPreview(URL.createObjectURL(file))
     e.target.value = ''
   }
@@ -58,7 +59,8 @@ export default function AISolicitudEspecial({ descripcionInicial = '', onSuccess
       })
       setEnviado(true)
       setTimeout(() => onSuccess?.(), 2500)
-    } catch {
+    } catch (err) {
+      console.error('[solicitud-especial] no se pudo enviar', err)
       setErrors({ submit: 'No se pudo enviar. Intentá de nuevo en un momento.' })
     } finally {
       setEnviando(false)
@@ -98,11 +100,10 @@ export default function AISolicitudEspecial({ descripcionInicial = '', onSuccess
         )}
       </div>
 
-      {/* Nombre */}
       <Field label="Nombre *" error={errors.nombre}>
         <input
           value={form.nombre}
-          onChange={e => set('nombre', e.target.value)}
+          onChange={e => setCampo('nombre', e.target.value)}
           placeholder="Tu nombre"
           maxLength={100}
           className="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
@@ -110,13 +111,12 @@ export default function AISolicitudEspecial({ descripcionInicial = '', onSuccess
         />
       </Field>
 
-      {/* WhatsApp */}
       <Field label="WhatsApp *" error={errors.whatsapp}>
         <div className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl" style={inputStyle(errors.whatsapp)}>
           <span className="text-xs shrink-0" style={{ color: 'var(--hc-muted)' }}>+506</span>
           <input
             value={form.whatsapp}
-            onChange={e => set('whatsapp', e.target.value)}
+            onChange={e => setCampo('whatsapp', e.target.value)}
             placeholder="8888 8888"
             maxLength={12}
             className="flex-1 bg-transparent text-sm outline-none"
@@ -126,11 +126,10 @@ export default function AISolicitudEspecial({ descripcionInicial = '', onSuccess
         </div>
       </Field>
 
-      {/* Correo */}
       <Field label="Correo (opcional)">
         <input
           value={form.correo}
-          onChange={e => set('correo', e.target.value)}
+          onChange={e => setCampo('correo', e.target.value)}
           placeholder="tu@correo.com"
           type="email"
           maxLength={150}
@@ -139,11 +138,10 @@ export default function AISolicitudEspecial({ descripcionInicial = '', onSuccess
         />
       </Field>
 
-      {/* Descripción */}
       <Field label="¿Qué estás buscando?">
         <textarea
           value={form.descripcion}
-          onChange={e => set('descripcion', e.target.value)}
+          onChange={e => setCampo('descripcion', e.target.value)}
           placeholder="Describí el producto que necesitás, tus usos, presupuesto..."
           maxLength={500}
           rows={3}
@@ -152,29 +150,11 @@ export default function AISolicitudEspecial({ descripcionInicial = '', onSuccess
         />
       </Field>
 
-      {/* Imagen */}
-      <div>
-        <p className="text-xs font-medium mb-1.5" style={{ color: 'var(--hc-muted)' }}>Foto de referencia (opcional)</p>
-        {imagenPreview
-          ? <div className="relative inline-flex">
-              <img src={imagenPreview} alt="Referencia" className="w-20 h-20 rounded-xl object-cover" style={{ border: '1px solid var(--hc-border)' }} />
-              <button
-                type="button"
-                onClick={() => { setImagenPreview(null); set('imagen', null) }}
-                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center"
-                style={{ background: 'var(--hc-accent)', color: '#fff' }}
-              >✕</button>
-            </div>
-          : <label className="flex items-center gap-2 cursor-pointer w-fit px-4 py-2 rounded-xl text-xs font-medium transition-opacity hover:opacity-70"
-              style={{ background: 'var(--hc-surface-2, rgba(0,0,0,0.06))', border: '1px dashed var(--hc-border)', color: 'var(--hc-muted)' }}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              Subir foto
-              <input type="file" accept="image/*" className="hidden" onChange={onImageChange} />
-            </label>
-        }
-      </div>
+      <FotoReferencia
+        imagenPreview={imagenPreview}
+        onClear={() => { setImagenPreview(null); setCampo('imagen', null) }}
+        onImageChange={onImageChange}
+      />
 
       {errors.submit && (
         <p className="text-xs text-red-400">{errors.submit}</p>
@@ -190,23 +170,4 @@ export default function AISolicitudEspecial({ descripcionInicial = '', onSuccess
       </button>
     </form>
   )
-}
-
-function Field({ label, error, children }) {
-  return (
-    <div>
-      <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--hc-muted)' }}>{label}</label>
-      {children}
-      {error && <p className="text-xs mt-1" style={{ color: '#f87171' }}>{error}</p>}
-    </div>
-  )
-}
-
-function inputStyle(error) {
-  return {
-    background: 'var(--hc-surface-2, rgba(0,0,0,0.04))',
-    border: `1px solid ${error ? '#f87171' : 'var(--hc-border)'}`,
-    color: 'var(--hc-text)',
-    caretColor: 'var(--hc-accent)',
-  }
 }
