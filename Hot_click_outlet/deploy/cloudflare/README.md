@@ -1,6 +1,17 @@
-# Cloudflare delante de EC2 — guía de implementación
+# Cloudflare delante de EC2
+
+**Guía principal (empezar acá):** [SETUP.md](./SETUP.md) — paso a paso para activar Cloudflare sin permisos de IT universitario.
 
 Cloudflare mejora reputación del dominio (útil para filtros universitarios), WAF, DDoS protection y TLS en el edge.
+
+## Scripts
+
+| Script | Uso |
+|--------|-----|
+| [SETUP.md](./SETUP.md) | Guía paso a paso completa |
+| [install-origin-cert.sh](./install-origin-cert.sh) | Instalar Origin Certificate en EC2 |
+| [verify-cloudflare.sh](./verify-cloudflare.sh) | Verificar header `cf-ray` y DNS proxied |
+| [generate-real-ip-conf.sh](./generate-real-ip-conf.sh) | Actualizar IPs de Cloudflare en Nginx |
 
 ## Arquitectura
 

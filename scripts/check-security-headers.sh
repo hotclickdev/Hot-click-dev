@@ -98,6 +98,15 @@ fi
 
 # Port 8080 exposure check (optional, uses known EC2 IP)
 echo ""
+echo "=== Cloudflare (cf-ray) ==="
+CF_RAY=$(header_val "$URL" "cf-ray")
+if [[ -n "$CF_RAY" ]]; then
+    pass "Cloudflare activo — cf-ray: $CF_RAY"
+else
+    warn "cf-ray ausente — activar Cloudflare proxy (ver deploy/cloudflare/SETUP.md)"
+fi
+
+echo ""
 echo "=== Puerto 8080 (bypass Nginx) ==="
 EC2_IP="${EC2_IP:-18.227.68.15}"
 PORT8080=$(curl -s --max-time 5 -o /dev/null -w "%{http_code}" "http://${EC2_IP}:8080/api/health" 2>/dev/null || echo "000")

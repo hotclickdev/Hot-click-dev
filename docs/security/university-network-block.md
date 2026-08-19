@@ -23,24 +23,32 @@ Verificado desde red externa (no universitaria):
 
 **Conclusión:** el sitio es seguro y accesible fuera del campus. El bloqueo es filtrado por categoría institucional.
 
-## Acciones inmediatas
+## Acción principal: Cloudflare (sin permisos de IT)
 
-### A. Confirmar en tu red
+Si no podés solicitar whitelist a la universidad, **activar Cloudflare es la solución recomendada**.
 
-1. Probar `https://hotclick.lat` con **datos móviles** (sin WiFi universitaria)
-2. Si funciona en móvil pero no en campus → confirma filtro universitario
+Guía paso a paso: [`Hot_click_outlet/deploy/cloudflare/SETUP.md`](../../Hot_click_outlet/deploy/cloudflare/SETUP.md)
 
-### B. Consultar categoría del dominio
+Resumen:
+1. Crear cuenta en [Cloudflare](https://dash.cloudflare.com) y agregar `hotclick.lat`
+2. Cambiar nameservers en Spaceship a los de Cloudflare
+3. DNS: registros A con **proxy ON** (nube naranja)
+4. SSL: **Full (strict)** + Origin Certificate en EC2
+5. Verificar: `bash Hot_click_outlet/deploy/cloudflare/verify-cloudflare.sh`
 
-- [FortiGuard Web Filter Lookup](https://www.fortiguard.com/webfilter) — buscar `hotclick.lat`
-- [Cisco Talos Intelligence](https://talosintelligence.com/reputation_center) — buscar dominio
-- [VirusTotal](https://www.virustotal.com/gui/domain/hotclick.lat) — reputación
-
-Anotar la categoría reportada (ej. Shopping, Uncategorized, Newly Registered Domains).
+El firewall universitario verá tráfico hacia Cloudflare (CDN), no directamente hacia el e-commerce.
 
 ---
 
-## Plantilla: ticket a IT universitario
+## Acciones alternativas (si Cloudflare no alcanza)
+
+### Confirmar categoría
+
+- [FortiGuard Web Filter Lookup](https://www.fortiguard.com/webfilter)
+- [Cisco Talos Intelligence](https://talosintelligence.com/reputation_center)
+- Recategorización Fortinet: [category-submit](https://www.fortiguard.com/faq/wf/category-submit)
+
+### Ticket a IT universitario (opcional)
 
 Copiar y enviar al mesa de ayuda / soporte de redes:
 
@@ -117,7 +125,7 @@ Enviar en cada portal (tiempo de respuesta típico: 3–14 días):
 | Recurso | Descripción |
 |---------|-------------|
 | [deploy/nginx/hotclick.conf](../../Hot_click_outlet/deploy/nginx/hotclick.conf) | Nginx versionado con TLS 1.2+ y HSTS |
-| [deploy/cloudflare/README.md](../../Hot_click_outlet/deploy/cloudflare/README.md) | Cloudflare delante de EC2 |
+| [deploy/cloudflare/SETUP.md](../../Hot_click_outlet/deploy/cloudflare/SETUP.md) | **Cloudflare paso a paso** (solución sin IT) |
 | [deploy/ec2/security-group-hardening.md](../../Hot_click_outlet/deploy/ec2/security-group-hardening.md) | Cerrar puerto 8080 |
 | [scripts/check-security-headers.sh](../../scripts/check-security-headers.sh) | Verificación automatizada |
 

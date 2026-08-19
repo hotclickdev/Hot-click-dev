@@ -43,6 +43,10 @@ bash scripts/check-security-headers.sh
 bash scripts/check-security-headers.sh https://hotclick.lat/api/health
 ```
 
+## Cloudflare (recomendado)
+
+Ver [`Hot_click_outlet/deploy/cloudflare/SETUP.md`](cloudflare/SETUP.md).
+
 Scanners externos:
 - https://www.ssllabs.com/ssltest/analyze.html?d=hotclick.lat
 - https://securityheaders.com/?q=https://hotclick.lat

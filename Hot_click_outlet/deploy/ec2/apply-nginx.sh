@@ -9,6 +9,8 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 NGINX_CONF="/etc/nginx/conf.d/hotclick.conf"
 SSL_PARAMS="/etc/nginx/conf.d/ssl-params.conf"
+CF_REAL_IP="/etc/nginx/conf.d/cloudflare-real-ip.conf"
+SSL_SNIPPET="/etc/nginx/conf.d/hotclick-ssl.conf"
 
 echo "[apply-nginx] Repo: $REPO_ROOT"
 
@@ -18,10 +20,19 @@ if ! command -v nginx >/dev/null 2>&1; then
     exit 1
 fi
 
-# Directorio para challenges de Certbot
 sudo mkdir -p /var/www/certbot
 
 sudo cp "$REPO_ROOT/deploy/nginx/ssl-params.conf" "$SSL_PARAMS"
+sudo cp "$REPO_ROOT/deploy/nginx/cloudflare-real-ip.conf" "$CF_REAL_IP"
+
+# Solo copiar snippet Let's Encrypt si no existe Origin Certificate de Cloudflare
+if [[ ! -f "$SSL_SNIPPET" ]]; then
+    sudo cp "$REPO_ROOT/deploy/nginx/hotclick-ssl.conf" "$SSL_SNIPPET"
+    echo "[apply-nginx] SSL: Let's Encrypt (default)"
+else
+    echo "[apply-nginx] SSL: manteniendo $SSL_SNIPPET existente (Cloudflare Origin Certificate)"
+fi
+
 sudo cp "$REPO_ROOT/deploy/nginx/hotclick.conf" "$NGINX_CONF"
 
 echo "[apply-nginx] Validando sintaxis..."
@@ -31,6 +42,4 @@ echo "[apply-nginx] Recargando nginx..."
 sudo systemctl reload nginx
 
 echo "[apply-nginx] OK — config aplicada."
-echo "[apply-nginx] Verificar:"
-echo "  curl -I http://hotclick.lat/api/health   # debe redirigir a HTTPS"
-echo "  curl -I https://hotclick.lat/api/health  # debe retornar 200"
+echo "[apply-nginx] Cloudflare activo? sudo bash $REPO_ROOT/deploy/cloudflare/verify-cloudflare.sh"
