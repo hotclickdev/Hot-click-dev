@@ -5,7 +5,7 @@ const RAYO_PATH = 'M27.5 8 L14 25.5 H23.5 L19.5 40 L36 21 H26.2 Z'
 
 /**
  * Isotipo oficial HOTCLICK v2: rayo blanco sobre cuadrado con gradiente
- * violeta→cian. `gap` se ignora (compat con el lockup v1.1).
+ * violeta→cian. `variant="mono"` usa currentColor en el fondo.
  */
 export function HotClickMark({ className, size = 28, variant = 'color' }) {
   const uid = useId().replace(/:/g, '')
