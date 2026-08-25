@@ -27,8 +27,8 @@ export const FORMULARIO_VACIO = {
   telefonoEmpresa: '',
   correoEmpresa: '',
   numeroWhatsapp: '',
-  colorPrimario: '#E73B33',
-  colorSecundario: '#1747A8',
+  colorPrimario: '#4F7CFF',
+  colorSecundario: '#0A0A0B',
   logoUrl: '',
 }
 
@@ -86,8 +86,8 @@ export function formularioDesdeEmpresa(empresa) {
     telefonoEmpresa: empresa.telefonoEmpresa ?? '',
     correoEmpresa:   empresa.correoEmpresa ?? '',
     numeroWhatsapp:  empresa.numeroWhatsapp ?? '',
-    colorPrimario:   empresa.colorPrimario ?? '#E73B33',
-    colorSecundario: empresa.colorSecundario ?? '#1747A8',
+    colorPrimario:   empresa.colorPrimario ?? '#4F7CFF',
+    colorSecundario: empresa.colorSecundario ?? '#0A0A0B',
     logoUrl:         empresa.logoUrl ?? '',
   }
 }

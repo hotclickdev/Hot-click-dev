@@ -23,9 +23,9 @@ export default function TiendaLayout() {
 
   // Aplica branding del emprendedor como CSS vars en el root del layout
   const brandStyle = empresa ? {
-    '--t-primary':   empresa.colorPrimario   ?? '#E73B33',
-    '--t-secondary': empresa.colorSecundario ?? '#152B5E',
-    '--t-accent':    empresa.colorAcento     ?? '#1747A8',
+    '--t-primary':   empresa.colorPrimario   ?? '#4F7CFF',
+    '--t-secondary': empresa.colorSecundario ?? '#0A0A0B',
+    '--t-accent':    empresa.colorAcento     ?? '#863BFF',
   } : {}
 
   const nombre = empresa?.nombreComercial ?? slug

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { HotClickMark } from '@/components/ui/BrandLogo'
+import { HotClickMark, HotClickWordmark } from '@/components/ui/BrandLogo'
 import { motion } from 'framer-motion'
 import { PERKS, STATS, stagger } from './registroEmpresaHelpers'
 import {
@@ -19,34 +19,32 @@ const ICONOS_PERK = {
 export default function RegistroEmpresaAside() {
   return (
     <div className="hidden lg:flex lg:w-[44%] relative flex-col overflow-hidden shrink-0"
-      style={{ background: 'var(--hc-blue-900)' }}>
+      style={{ background: 'var(--hc-n-950)' }}>
 
       <div className="absolute inset-0 pointer-events-none" style={{
-        backgroundImage: 'linear-gradient(rgba(231,59,51,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(231,59,51,0.05) 1px, transparent 1px)',
+        backgroundImage: 'linear-gradient(color-mix(in srgb, var(--hc-purple) 8%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--hc-purple) 8%, transparent) 1px, transparent 1px)',
         backgroundSize: '56px 56px',
       }} />
       <div className="absolute pointer-events-none" style={{
         top: '-10%', right: '-12%', width: '60%', height: '60%',
-        background: 'radial-gradient(circle, rgba(231,59,51,0.3) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, color-mix(in srgb, var(--hc-purple) 38%, transparent) 0%, transparent 70%)',
         filter: 'blur(50px)',
       }} />
       <div className="absolute pointer-events-none" style={{
         bottom: '5%', left: '-10%', width: '50%', height: '50%',
-        background: 'radial-gradient(circle, rgba(63,108,222,0.20) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, color-mix(in srgb, var(--hc-cyan) 28%, transparent) 0%, transparent 70%)',
         filter: 'blur(55px)',
       }} />
       <div className="absolute right-0 top-0 bottom-0 w-px" style={{
-        background: 'linear-gradient(to bottom, transparent, rgba(231,59,51,0.25) 25%, rgba(231,59,51,0.25) 75%, transparent)',
+        background: 'linear-gradient(to bottom, transparent, color-mix(in srgb, var(--hc-cyan) 35%, transparent) 25%, color-mix(in srgb, var(--hc-purple) 35%, transparent) 75%, transparent)',
       }} />
 
       <div className="relative z-10 flex flex-col h-full p-10">
 
         <motion.div {...stagger(0)} className="flex items-center gap-3 mb-12">
-          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', '--hc-wordmark-hot': '#F0524A', '--hc-wordmark-click': '#FFFFFF' }}>
-            <HotClickMark size={38} gap="#152B5E" />
-            <span className="hc-wordmark" style={{ fontSize: '1.25rem' }}>
-              <span className="hot">Hot</span><span className="click">Click</span>
-            </span>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', '--hc-wordmark': '#E8E8ED' }}>
+            <HotClickMark size={38} />
+            <HotClickWordmark size="1.25rem" />
           </Link>
         </motion.div>
 
@@ -63,7 +61,7 @@ export default function RegistroEmpresaAside() {
               fontFamily: 'var(--hc-font-display)', fontWeight: 800,
               fontSize: 'clamp(2.4rem, 3.8vw, 3.4rem)', lineHeight: 1,
               letterSpacing: '-0.025em',
-              color: i === 2 ? '#F0524A' : '#FFFFFF',
+              color: i === 2 ? 'var(--hc-cyan)' : '#FFFFFF',
             }}>
               {line}
             </motion.div>
@@ -81,8 +79,8 @@ export default function RegistroEmpresaAside() {
               const Icono = ICONOS_PERK[id]
               return (
                 <div key={title} style={{
-                  background: 'rgba(231,59,51,0.06)',
-                  border: '1px solid rgba(231,59,51,0.14)',
+                  background: 'color-mix(in srgb, var(--hc-purple) 10%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--hc-purple) 22%, transparent)',
                   borderRadius: 14, padding: '14px 12px',
                   backdropFilter: 'blur(12px)',
                 }}>
@@ -98,7 +96,7 @@ export default function RegistroEmpresaAside() {
         </div>
 
         <motion.div {...stagger(7)} style={{
-          borderTop: '1px solid rgba(231,59,51,0.18)', paddingTop: 24, display: 'flex', gap: 36,
+          borderTop: '1px solid color-mix(in srgb, var(--hc-purple) 22%, transparent)', paddingTop: 24, display: 'flex', gap: 36,
         }}>
           {STATS.map(({ n, s }) => (
             <div key={s}>

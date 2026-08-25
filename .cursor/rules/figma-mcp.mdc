@@ -1,0 +1,11 @@
+---
+description: Cómo usar el MCP de Figma si está conectado. Assets del payload, no placeholders.
+alwaysApply: true
+---
+
+# Figma MCP (cuando el server `figma` está autenticado)
+
+- Pedí `get_design_context` y `get_screenshot` del node del link antes de codear.
+- Traducí a tokens HOTCLICK v2 (`--hc-purple`, `--hc-cyan`, `--hc-primary`, Barlow/Inter). No copies Tailwind genérico del MCP como código final.
+- Si el MCP devuelve una URL localhost de imagen/SVG, usala directo. No inventes placeholders ni agregues packs de íconos.
+- Reusá `BrandLogo`, `hc-btn` y variables `--hc-*`. No reintroduzcas el carrito v1.1.

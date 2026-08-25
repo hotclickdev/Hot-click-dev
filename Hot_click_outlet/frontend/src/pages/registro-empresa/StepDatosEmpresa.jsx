@@ -19,7 +19,7 @@ export default function StepDatosEmpresa({
       <div className="flex gap-2.5">
         <button type="button" onClick={onAtras} className="hc-btn hc-btn-outline px-4">← Atrás</button>
         <button type="submit" className="hc-btn hc-btn-primary hc-btn-lg flex-1"
-          style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px rgba(231,59,51,0.3)' }}>
+          style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px color-mix(in srgb, var(--hc-primary) 30%, transparent)' }}>
           Siguiente →
         </button>
       </div>

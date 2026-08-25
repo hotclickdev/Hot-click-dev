@@ -99,7 +99,7 @@ export default function SidebarNavGroups({
                             }
                           : {
                               color:           isActive ? '#fff' : 'rgba(255,255,255,0.48)',
-                              backgroundColor: isActive ? 'rgba(231,59,51,0.16)' : 'transparent',
+                              backgroundColor: isActive ? 'color-mix(in srgb, var(--hc-primary) 16%, transparent)' : 'transparent',
                               border:          '1px solid transparent',
                             })}
                       >
@@ -137,7 +137,7 @@ export default function SidebarNavGroups({
                               <motion.div
                                 layoutId="sidebar-active-line"
                                 className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full"
-                                style={{ backgroundColor: 'var(--hc-red-500)' }}
+                                style={{ backgroundColor: 'var(--hc-primary)' }}
                                 transition={{ type: 'spring', stiffness: 420, damping: 32 }}
                               />
                             )}
@@ -181,7 +181,7 @@ export default function SidebarNavGroups({
                               <motion.div
                                 layoutId="sidebar-active-dot"
                                 className="w-1.5 h-1.5 rounded-full shrink-0"
-                                style={{ backgroundColor: 'var(--hc-red-500)' }}
+                                style={{ backgroundColor: 'var(--hc-primary)' }}
                                 transition={{ type: 'spring', stiffness: 420, damping: 32 }}
                               />
                             )}

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 
 /**
  * Receta única de sección de la tienda (Auditoría UX §3.1, patrón Mercurio × tokens HotClick).
- * Título Sora 700 terminado en punto + subtítulo gris inline + acción azul a la derecha.
+ * Título Barlow 700 terminado en punto + subtítulo gris inline + acción de acento a la derecha.
  * Ritmo vertical fijo (40/56px) y fondos con significado:
  *   default  → hereda el fondo de página (neutro 50)
  *   surface  → blanco, para alternar bloques

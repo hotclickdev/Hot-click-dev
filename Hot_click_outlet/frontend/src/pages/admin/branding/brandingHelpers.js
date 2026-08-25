@@ -1,6 +1,6 @@
 export const FONTS_BRANDING = ['Inter', 'Poppins', 'Roboto', 'Nunito', 'Montserrat', 'Raleway', 'Lato', 'Open Sans']
-export const COLOR_PRIMARIO_DEF = '#E73B33'
-export const COLOR_SECUNDARIO_DEF = '#1E242E'
+export const COLOR_PRIMARIO_DEF = '#4F7CFF'
+export const COLOR_SECUNDARIO_DEF = '#0A0A0B'
 
 export function inicialNombre(nombreComercial) {
   return (nombreComercial || 'T')[0].toUpperCase()

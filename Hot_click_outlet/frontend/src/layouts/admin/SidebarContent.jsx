@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { useState, useRef, useLayoutEffect } from 'react'
-import { HotClickMark } from '@/components/ui/BrandLogo'
+import { HotClickMark, HotClickWordmark } from '@/components/ui/BrandLogo'
 import useTenantStore from '@/store/tenantStore'
 import SidebarNavGroups from './SidebarNavGroups'
 import SidebarUserFooter from './SidebarUserFooter'
@@ -63,8 +63,8 @@ export default function SidebarContent({ sidebarLinks, roleBadge, t, userName, e
         <div className="flex items-center justify-between gap-2 px-3 pt-[18px] pb-3 shrink-0">
           <div className="flex items-center gap-2">
             <HotClickMark size={22} className="shrink-0" />
-            <div className="hc-wordmark text-sm leading-none"><span className="hot">Hot</span><span className="click">Click</span></div>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0" style={{ color: 'var(--hc-link)', backgroundColor: 'rgba(23,71,168,0.08)' }}>
+            <HotClickWordmark className="text-sm" />
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0" style={{ color: 'var(--hc-link)', backgroundColor: 'color-mix(in srgb, var(--hc-link) 10%, transparent)' }}>
               Sistema
             </span>
           </div>
@@ -78,11 +78,11 @@ export default function SidebarContent({ sidebarLinks, roleBadge, t, userName, e
         </div>
       ) : (
         <div className="h-16 flex items-center px-5 shrink-0"
-          style={{ borderBottom: '1px solid var(--hc-n-800)', '--hc-wordmark-hot': '#F0524A', '--hc-wordmark-click': '#FFFFFF', '--hc-surface': '#14171C' }}>
+          style={{ borderBottom: '1px solid var(--hc-n-800)', '--hc-wordmark': '#E8E8ED' }}>
           <div className="flex items-center gap-2.5">
             <HotClickMark size={26} className="shrink-0" />
             <div>
-              <div className="hc-wordmark text-sm leading-none"><span className="hot">Hot</span><span className="click">Click</span></div>
+              <HotClickWordmark className="text-sm" />
               <div className="text-[10px] mt-0.5" style={{ color: muted }}>{t('admin.sidebar.panelAdmin')}</div>
             </div>
           </div>

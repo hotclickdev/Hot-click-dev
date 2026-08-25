@@ -1,0 +1,55 @@
+---
+description: Identidad visual HOTCLICK v2 y flujo Figma MCP. Usar al tocar logo, tokens, tipografía, colores o UI de marca.
+alwaysApply: true
+---
+
+# Marca HOTCLICK v2 + Figma MCP
+
+Fuente de verdad: `Manual de Marca HOTCLICK v2 - Standalone.html`.
+No reintroducir el carrito rojo + cursor azul ni Sora / Public Sans / Rojo Hot `#E73B33` como primario.
+
+## Tokens
+
+| Token | Valor | Uso |
+|---|---|---|
+| `--hc-purple` | `#863bff` | Marca, hero, gradiente |
+| `--hc-cyan` | `#47bfff` | Marca, gradiente |
+| `--hc-accent` / `--hc-primary` | `#4f7cff` | CTA, links, focus |
+| `--hc-accent-hover` | `#3d6ee0` | Hover de acento |
+| Dark bg / surface / surface-2 | `#0a0a0b` / `#111114` / `#18181d` | Modo oscuro (manual) |
+| Light bg | `#f5f5f7` | Marketplace (productos se leen mejor en claro) |
+| Display | Barlow 900 | Wordmark y títulos |
+| Body | Inter | UI |
+| Mono | JetBrains Mono | Datos |
+
+Gradiente de marca: `135deg` de `--hc-purple` a `--hc-cyan`.
+Rojo `#E73B33` solo para peligro, stock y badges de oferta.
+
+## Logo
+
+- Isotipo: rayo blanco sobre cuadrado redondeado con el gradiente de marca.
+- Wordmark: `HOTCLICK` en Barlow Black, una sola palabra, tracking negativo. No partir en Hot/Click bicolor.
+- Componente: `BrandLogo.jsx` (`HotClickMark`, `HotClickWordmark`). No copiar el SVG del carrito.
+- Sobre dark: wordmark `#e8e8ed`. Sobre light: `var(--hc-text)`.
+- Blanco mono solo sobre el gradiente de marca.
+
+El panel EMPRENDEDOR (`.hc-sistema-theme`) conserva el crema del mockup EPN; el logo y el primario sí siguen v2.
+
+## Figma ↔ Cursor (MCP)
+
+Config del proyecto: `.cursor/mcp.json` → server remoto `figma` (`https://mcp.figma.com/mcp`).
+Plan Gratis/Starter: ese es el único MCP que aplica (unas pocas lecturas al mes). Dev Mode / `127.0.0.1:3845` requiere plan de pago.
+
+### Un clic que solo puede hacer Andres (OAuth)
+
+En **Cursor Desktop** (no en este agente cloud):
+
+1. `Ctrl+Shift+J` → Tools & MCP.
+2. En **figma** → **Connect** (se abre el navegador).
+3. Verde = listo. Pegá el link del frame en el Agent de Cursor Desktop.
+
+`/add-plugin figma` se escribe **solo** (sin JSON) en el chat Agent de Cursor Desktop.
+
+Este cloud agent no puede completar Connect. Sin MCP: PNG o link del archivo; tokens del mini-manual v2.
+
+Tiendas white-label (`--t-primary` del emprendedor) no se pisan: solo cambian los defaults de marca HOTCLICK.

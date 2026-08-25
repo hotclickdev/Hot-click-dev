@@ -25,7 +25,7 @@ export default function EmprendimientoProgreso({ step }) {
 function estiloPasoEmprendimiento(i, step) {
   if (i < step) return { background: 'var(--hc-success, #22c55e)', color: '#fff' }
   if (i === step) {
-    return { background: 'var(--hc-primary)', color: '#fff', boxShadow: '0 0 12px rgba(231,59,51,0.4)' }
+    return { background: 'var(--hc-primary)', color: '#fff', boxShadow: '0 0 12px color-mix(in srgb, var(--hc-primary) 40%, transparent)' }
   }
   return { background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }
 }

@@ -1,4 +1,4 @@
-export const A = { color: 'var(--hc-primary)', ring: 'rgba(231,59,51,0.32)', bg: 'rgba(231,59,51,0.08)' }
+export const A = { color: 'var(--hc-primary)', ring: 'color-mix(in srgb, var(--hc-primary) 32%, transparent)', bg: 'color-mix(in srgb, var(--hc-primary) 8%, transparent)' }
 
 export const ESTADO_COLOR = {
   INSCRITO:            { bg: 'rgba(34,197,94,0.10)', border: 'rgba(34,197,94,0.30)', text: '#16a34a', label: 'Inscrito' },

@@ -21,7 +21,7 @@ function usePremiumFonts() {
     const el = document.createElement('link')
     el.id = 'hc-cfg-fonts'
     el.rel = 'stylesheet'
-    el.href = 'https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap'
+    el.href = 'https://fonts.googleapis.com/css2?family=Barlow:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap'
     document.head.appendChild(el)
   }, [])
 }

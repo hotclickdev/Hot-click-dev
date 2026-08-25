@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { HotClickMark } from '@/components/ui/BrandLogo'
+import { HotClickMark, HotClickWordmark } from '@/components/ui/BrandLogo'
 import { AnimatePresence } from 'framer-motion'
 import { authService } from '@/services/authService'
 import { useToast } from '@/components/ui/Toast'
@@ -29,7 +29,7 @@ function estiloPaso(indice, step, tributacion) {
     return {
       background: hasDanger ? 'var(--hc-danger)' : 'var(--hc-primary)',
       color: '#fff',
-      boxShadow: hasDanger ? '0 0 12px rgba(239,68,68,0.4)' : '0 0 12px rgba(231,59,51,0.4)',
+      boxShadow: hasDanger ? '0 0 12px rgba(239,68,68,0.4)' : '0 0 12px color-mix(in srgb, var(--hc-primary) 40%, transparent)',
     }
   }
   return { background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }
@@ -138,9 +138,7 @@ export default function RegistroEmpresaPage() {
           style={{ borderBottom: '1px solid var(--hc-border)' }}>
           <Link to="/" className="flex items-center gap-2.5" style={{ textDecoration: 'none' }}>
             <HotClickMark size={28} className="shrink-0" />
-            <span className="hc-wordmark lg:hidden" style={{ fontSize: '1rem' }}>
-              <span className="hot">Hot</span><span className="click">Click</span>
-            </span>
+            <HotClickWordmark className="lg:hidden" size="1rem" />
           </Link>
           <div className="flex items-center gap-2.5">
             <span style={{ color: 'var(--hc-muted)', fontSize: '0.8rem' }}>¿Ya tenés cuenta?</span>
@@ -154,7 +152,7 @@ export default function RegistroEmpresaPage() {
 
           <div className="text-center mb-8 w-full max-w-[460px]">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-4"
-              style={{ background: 'rgba(231,59,51,0.08)', border: '1px solid rgba(231,59,51,0.22)', color: 'var(--hc-primary)', letterSpacing: '0.06em' }}>
+              style={{ background: 'color-mix(in srgb, var(--hc-primary) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-primary) 22%, transparent)', color: 'var(--hc-primary)', letterSpacing: '0.06em' }}>
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--hc-primary)] animate-pulse"></span>
               <span>Registro de emprendimiento</span>
             </div>

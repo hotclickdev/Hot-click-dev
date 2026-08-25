@@ -29,7 +29,7 @@ export default function StepDatosAdmin({
         <button type="button" onClick={onAtras} className="hc-btn hc-btn-outline px-4">← Atrás</button>
         <button type="submit" disabled={loading}
           className="hc-btn hc-btn-primary hc-btn-lg flex-1 disabled:opacity-60"
-          style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px rgba(231,59,51,0.3)' }}>
+          style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px color-mix(in srgb, var(--hc-primary) 30%, transparent)' }}>
           {loading
             ? (
               <span className="flex items-center gap-2">
