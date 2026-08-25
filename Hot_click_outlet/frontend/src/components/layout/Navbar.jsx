@@ -5,7 +5,7 @@ import { useNavbar } from './navbar/useNavbar'
 import NavbarDesktopNav from './navbar/NavbarDesktopNav'
 import NavbarActions from './navbar/NavbarActions'
 import NavbarMobileMenu from './navbar/NavbarMobileMenu'
-import { MenuIcon } from './navbar/navbarIcons'
+import { MenuIcon, StarNavIcon } from './navbar/navbarIcons'
 
 export default function Navbar() {
   const { t } = useTranslation()
@@ -70,6 +70,7 @@ export default function Navbar() {
               <span className="hc-wordmark hidden sm:inline text-[18px] leading-none transition-opacity duration-200 group-hover:opacity-80">
                 <span className="hot">Hot</span><span className="click">Click</span>
               </span>
+              <StarNavIcon />
             </Link>
           </div>
 

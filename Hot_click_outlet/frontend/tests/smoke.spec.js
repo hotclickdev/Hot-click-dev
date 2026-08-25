@@ -75,6 +75,7 @@ test.describe('Smoke público', () => {
     await page.goto('/', { waitUntil: 'domcontentloaded' })
     await assertNotBlank(page)
     await expect(page.locator('body')).toContainText(/HotClick|marketplace|productos/i)
+    await expect(page.getByTestId('navbar-estrella-figma')).toBeVisible()
     await page.waitForTimeout(800)
     guards.assertClean()
   })
