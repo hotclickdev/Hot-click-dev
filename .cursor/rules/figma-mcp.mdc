@@ -1,0 +1,25 @@
+---
+description: Figma MCP — diseño a código en Hotclick
+globs:
+alwaysApply: true
+---
+
+# Figma MCP (Hotclick)
+
+El servidor MCP remoto de Figma está configurado en `.cursor/mcp.json` (`https://mcp.figma.com/mcp`).
+
+## Autenticación
+
+La conexión OAuth se hace en **Cursor Desktop**: Settings → Tools & MCP → Figma → Connect. No hay tokens en el repo.
+
+## Cómo usarlo
+
+1. Pegá un link de Figma (archivo, frame o componente) en el chat.
+2. El agente debe leer el diseño con las herramientas MCP de Figma, no adivinar layout ni colores.
+3. Implementar en `Hot_click_outlet/frontend/` (React + Vite + Tailwind). No llamar axios desde páginas; usar `src/services/`.
+
+## Assets
+
+- Si el MCP de Figma devuelve un source localhost para imagen o SVG, usalo directo.
+- No importar paquetes de iconos nuevos si el asset ya viene en el payload de Figma.
+- No inventar placeholders si Figma ya dio el asset.
