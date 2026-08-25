@@ -7,7 +7,7 @@ export default function EmprendimientoHeader() {
       {/* Badge */}
       <div className="flex items-center gap-3 mb-5">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold"
-          style={{ background: 'rgba(231,59,51,0.08)', border: '1px solid rgba(231,59,51,0.22)', color: 'var(--hc-primary)', letterSpacing: '0.06em' }}>
+          style={{ background: 'color-mix(in srgb, var(--hc-primary) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-primary) 22%, transparent)', color: 'var(--hc-primary)', letterSpacing: '0.06em' }}>
           <span className="w-1.5 h-1.5 rounded-full bg-[var(--hc-primary)] animate-pulse"></span>
           <span>Registro de emprendimiento</span>
         </div>

@@ -50,7 +50,7 @@ export default function SelfCheckoutProductCard({ producto, onAdd }) {
             <div className="flex items-center gap-2 w-full justify-between">
               <button type="button" onClick={quitar}
                 className="w-10 h-10 rounded-xl font-bold text-lg flex items-center justify-center"
-                style={{ backgroundColor: 'rgba(231,59,51,0.15)', color: 'var(--hc-primary)' }}>
+                style={{ backgroundColor: 'color-mix(in srgb, var(--hc-primary) 15%, transparent)', color: 'var(--hc-primary)' }}>
                 −
               </button>
               <span className="text-white font-bold">{qty}</span>

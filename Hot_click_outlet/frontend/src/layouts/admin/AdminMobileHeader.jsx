@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { HotClickMark } from '@/components/ui/BrandLogo'
+import { HotClickMark, HotClickWordmark } from '@/components/ui/BrandLogo'
 
 /** Header móvil del panel admin (Sistema claro vs Admin oscuro). */
 export default function AdminMobileHeader({ isLightSidebar, t, userName, location, navigate, setDrawerOpen }) {
@@ -22,8 +22,8 @@ export default function AdminMobileHeader({ isLightSidebar, t, userName, locatio
             <span className="w-4 h-0.5 rounded-full" style={{ backgroundColor: 'var(--hc-text)' }} />
           </button>
           <HotClickMark size={22} className="shrink-0" />
-          <div className="hc-wordmark text-sm"><span className="hot">Hot</span><span className="click">Click</span></div>
-          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0" style={{ color: 'var(--hc-link)', backgroundColor: 'rgba(23,71,168,0.08)' }}>
+          <HotClickWordmark className="text-sm" />
+          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0" style={{ color: 'var(--hc-link)', backgroundColor: 'color-mix(in srgb, var(--hc-link) 10%, transparent)' }}>
             Sistema
           </span>
           <div className="flex-1" />
@@ -58,7 +58,7 @@ export default function AdminMobileHeader({ isLightSidebar, t, userName, locatio
               </button>
             )}
             <HotClickMark size={26} className="shrink-0" />
-            <div className="hc-wordmark text-sm"><span className="hot">Hot</span><span className="click">Click</span></div>
+            <HotClickWordmark className="text-sm" />
             <span className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>Admin</span>
           </div>
           <button type="button"

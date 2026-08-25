@@ -1,48 +1,54 @@
-/**
- * Logo oficial HotClick (Brand Book v1.1, §2.1–§2.4).
- * Símbolo: carrito Rojo Hot + cursor Azul Click. Wordmark: «Hot» rojo +
- * «Click» azul en Sora 800, una sola palabra. En modo oscuro los colores
- * del wordmark se elevan vía --hc-wordmark-* (definidos en index.css).
- */
+import { useId } from 'react'
 
-export function HotClickMark({ className, size = 28, gap = 'var(--hc-surface, #FFFFFF)' }) {
+/** Rayo del isotipo v2 (mini-manual: geometría del mark sobre retícula). */
+const RAYO_PATH = 'M27.5 8 L14 25.5 H23.5 L19.5 40 L36 21 H26.2 Z'
+
+/**
+ * Isotipo oficial HOTCLICK v2: rayo blanco sobre cuadrado con gradiente
+ * violeta→cian. `gap` se ignora (compat con el lockup v1.1).
+ */
+export function HotClickMark({ className, size = 28, variant = 'color' }) {
+  const uid = useId().replace(/:/g, '')
+  const gradientId = `hc-mark-${uid}`
+  const isMono = variant === 'mono'
+
   return (
     <svg
-      viewBox="0 0 224 188"
+      viewBox="0 0 48 48"
       width={size}
-      height={Math.round(size * (188 / 224))}
+      height={size}
       className={className}
       role="img"
-      aria-label="HotClick"
+      aria-label="HOTCLICK"
     >
-      <g fill="var(--hc-wordmark-hot, #E73B33)">
-        <path d="M30 26 H58 L74 52" fill="none" stroke="var(--hc-wordmark-hot, #E73B33)" strokeWidth="13" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M58 48 L188 48 L172.5 120 Q170 132 157.5 132 L88.5 132 Q76 132 73.5 120 Z" stroke="var(--hc-wordmark-hot, #E73B33)" strokeWidth="8" strokeLinejoin="round" />
-        <rect x="66" y="138" width="114" height="13" rx="6.5" />
-        <circle cx="94" cy="166" r="15" />
-        <circle cx="154" cy="166" r="15" />
-      </g>
-      <g fill="none" stroke={gap} strokeWidth="12" strokeLinecap="round">
-        <path d="M111 72 L102 102" />
-        <path d="M141 72 L132 102" />
-      </g>
-      <g>
-        <g fill="none" stroke="var(--hc-wordmark-click, #1747A8)" strokeWidth="9" strokeLinecap="round">
-          <path d="M157 4 L159 14" />
-          <path d="M136 10 L143 17" />
-          <path d="M126 30 L136 31" />
-        </g>
-        <path
-          d="M0 0 L0 31 L8.6 24 L13.8 36.2 L20.2 33.5 L15 21.6 L24.4 21.6 Z"
-          transform="translate(162 38) rotate(-45) scale(1.85)"
-          fill="var(--hc-wordmark-click, #1747A8)"
-          paintOrder="stroke"
-          stroke={gap}
-          strokeWidth="9"
-          strokeLinejoin="round"
-        />
-      </g>
+      {!isMono && (
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="var(--hc-purple, #863bff)" />
+            <stop offset="100%" stopColor="var(--hc-cyan, #47bfff)" />
+          </linearGradient>
+        </defs>
+      )}
+      <rect
+        width="48"
+        height="48"
+        rx="10"
+        fill={isMono ? 'currentColor' : `url(#${gradientId})`}
+      />
+      <path d={RAYO_PATH} fill={isMono ? 'var(--hc-bg, #fff)' : '#fff'} />
     </svg>
+  )
+}
+
+/** Wordmark oficial: HOTCLICK en Barlow Black, una sola palabra. */
+export function HotClickWordmark({ className = '', size }) {
+  return (
+    <span
+      className={`hc-wordmark leading-none ${className}`}
+      style={size ? { fontSize: size } : undefined}
+    >
+      HOTCLICK
+    </span>
   )
 }
 
@@ -50,12 +56,7 @@ export default function BrandLogo({ size = 28, wordmarkSize = 18, wordmarkClassN
   return (
     <span className="inline-flex items-center gap-2">
       <HotClickMark size={size} />
-      <span
-        className={`hc-wordmark leading-none ${wordmarkClassName}`}
-        style={{ fontSize: wordmarkSize }}
-      >
-        <span className="hot">Hot</span><span className="click">Click</span>
-      </span>
+      <HotClickWordmark className={wordmarkClassName} size={wordmarkSize} />
     </span>
   )
 }

@@ -65,7 +65,7 @@ export default function SelfCheckoutPage() {
     }
   }
 
-  const primaryColor = mesa?.colorPrimario ?? '#E73B33'
+  const primaryColor = mesa?.colorPrimario ?? '#4F7CFF'
 
   if (cargando) {
     return <SelfCheckoutLoading primaryColor={primaryColor} />

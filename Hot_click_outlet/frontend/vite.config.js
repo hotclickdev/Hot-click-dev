@@ -19,8 +19,8 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'any',
-        background_color: '#F8F9FB',
-        theme_color: '#E73B33',
+        background_color: '#F5F5F7',
+        theme_color: '#4F7CFF',
         lang: 'es-CR',
         icons: [
           { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' },

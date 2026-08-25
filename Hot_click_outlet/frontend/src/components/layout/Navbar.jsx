@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { HotClickMark } from '@/components/ui/BrandLogo'
+import { HotClickMark, HotClickWordmark } from '@/components/ui/BrandLogo'
 import { useNavbar } from './navbar/useNavbar'
 import NavbarDesktopNav from './navbar/NavbarDesktopNav'
 import NavbarActions from './navbar/NavbarActions'
@@ -65,11 +65,9 @@ export default function Navbar() {
               <MenuIcon open={menuOpen} />
             </button>
 
-            <Link to="/" className="flex items-center gap-2 shrink-0 group" aria-label="HotClick — inicio">
+            <Link to="/" className="flex items-center gap-2 shrink-0 group" aria-label="HOTCLICK — inicio">
               <HotClickMark size={30} className="shrink-0 transition-transform duration-200 group-hover:scale-105" />
-              <span className="hc-wordmark hidden sm:inline text-[18px] leading-none transition-opacity duration-200 group-hover:opacity-80">
-                <span className="hot">Hot</span><span className="click">Click</span>
-              </span>
+              <HotClickWordmark className="hidden sm:inline text-[18px] transition-opacity duration-200 group-hover:opacity-80" />
             </Link>
           </div>
 

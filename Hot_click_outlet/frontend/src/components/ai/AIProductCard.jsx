@@ -19,14 +19,14 @@ function StarRating({ rating, total }) {
                 <>
                   <defs>
                     <linearGradient id={`hg-${i}`} x1="0" x2="1" y1="0" y2="0">
-                      <stop offset="50%" stopColor="#E73B33" />
+                      <stop offset="50%" stopColor="var(--hc-primary)" />
                       <stop offset="50%" stopColor="#D1D5DB" />
                     </linearGradient>
                   </defs>
                   <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" fill={`url(#hg-${i})`} />
                 </>
               ) : (
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" fill={filled ? '#E73B33' : '#D1D5DB'} />
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" fill={filled ? 'var(--hc-primary)' : '#D1D5DB'} />
               )}
             </svg>
           )
@@ -71,7 +71,7 @@ export default function AIProductCard({ producto, similarity, onAdd, whatsappNum
 
   const availableBtnStyle = producto.stock === 0
     ? { background: '#F3F4F6', color: '#9CA3AF', border: '1px solid #E5E7EB', cursor: 'not-allowed' }
-    : { background: '#E73B33', color: '#fff', border: 'none' }
+    : { background: 'var(--hc-primary)', color: '#fff', border: 'none' }
   const btnStyle = added
     ? { background: 'rgba(34,197,94,0.10)', color: '#178A50', border: '1px solid rgba(34,197,94,0.25)' }
     : availableBtnStyle
@@ -119,7 +119,7 @@ export default function AIProductCard({ producto, similarity, onAdd, whatsappNum
             {similarity != null && (
               <span
                 className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                style={{ background: 'rgba(231,59,51,0.10)', color: '#E73B33' }}
+                style={{ background: 'color-mix(in srgb, var(--hc-primary) 10%, transparent)', color: 'var(--hc-primary)' }}
               >
                 {similarity}% similar
               </span>
@@ -136,7 +136,7 @@ export default function AIProductCard({ producto, similarity, onAdd, whatsappNum
 
           {/* Precio */}
           <div className="flex items-baseline gap-1.5 mt-auto">
-            <span className="text-base font-black" style={{ color: '#E73B33' }}>
+            <span className="text-base font-black" style={{ color: 'var(--hc-primary)' }}>
               ₡{fmt(precioFinal)}
             </span>
             {enOferta && (

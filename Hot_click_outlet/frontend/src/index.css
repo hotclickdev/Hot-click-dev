@@ -6,10 +6,10 @@
 
 /*
  * Fallback local para evitar FOIT mientras cargan las fuentes de marca
- * (Sora / Public Sans, ver Brand Book cap. 4).
+ * (Barlow / Inter, Manual de Marca v2).
  */
 @font-face {
-  font-family: 'PublicSans-fallback';
+  font-family: 'Inter-fallback';
   src: local('Arial'), local('Helvetica Neue'), local('Helvetica');
 }
 
@@ -27,9 +27,9 @@
   --color-hc-danger: var(--hc-danger);
   --color-hc-warning: var(--hc-warning);
 
-  --font-sans: 'Public Sans', 'PublicSans-fallback', system-ui, -apple-system, sans-serif;
-  --font-display: 'Sora', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-sans: 'Inter', 'Inter-fallback', system-ui, -apple-system, sans-serif;
+  --font-display: 'Barlow', 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
   --radius-sm: var(--hc-r-sm);
   --radius-md: var(--hc-r-md);
@@ -37,48 +37,38 @@
   --radius-xl: var(--hc-r-xl);
 }
 
-/* ── Modo claro (default) — Brand Book cap. 3.4 ──
-   Los roles base (--hc-bg, --hc-surface, --hc-text, --hc-border,
-   --hc-primary, --hc-link, --hc-focus-ring…) vienen de hotclick-tokens.css.
-   Aquí solo viven los alias que el resto de la app ya consume. */
+/* ── Modo claro (default) — marketplace; el manual v2 es dark-first.
+   Los roles base vienen de hotclick-tokens.css. */
 :root {
   --hc-surface-2: var(--hc-n-100);
   --hc-surface-3: var(--hc-n-200);
   --hc-text-2: var(--hc-n-700);
   --hc-muted: var(--hc-text-secondary);
-  --hc-accent: var(--hc-link);            /* Azul Click: enlaces y acciones secundarias */
-  --hc-accent-hover: var(--hc-blue-700);
-  --hc-shadow: rgba(20, 23, 28, 0.10);
+  --hc-shadow: rgba(10, 10, 11, 0.10);
   --hc-glass-bg: rgba(255, 255, 255, 0.72);
-  --hc-glass-border: rgba(20, 23, 28, 0.08);
+  --hc-glass-border: rgba(10, 10, 11, 0.08);
   --hc-glass-strong-bg: rgba(255, 255, 255, 0.86);
-  --hc-glass-strong-border: rgba(20, 23, 28, 0.12);
-  --hc-scrollbar: rgba(20, 23, 28, 0.18);
-  --hc-scrollbar-hover: rgba(20, 23, 28, 0.34);
-  /* Wordmark bicolor (§2.1) */
-  --hc-wordmark-hot: var(--hc-red-500);
-  --hc-wordmark-click: var(--hc-blue-600);
+  --hc-glass-strong-border: rgba(10, 10, 11, 0.12);
+  --hc-scrollbar: rgba(10, 10, 11, 0.18);
+  --hc-scrollbar-hover: rgba(10, 10, 11, 0.34);
+  --hc-wordmark: var(--hc-text);
   color-scheme: light;
 }
 
-/* ── Modo oscuro — Brand Book cap. 8: la marca sube un paso de luminosidad ── */
+/* ── Modo oscuro — Manual de Marca v2 (Dark) ── */
 html.dark {
   --hc-surface-2: var(--hc-surface-raised);
-  --hc-surface-3: #262D38;
+  --hc-surface-3: #1F1F25;
   --hc-text-2: var(--hc-text-secondary);
   --hc-muted: var(--hc-text-secondary);
-  --hc-accent: var(--hc-link);
-  --hc-accent-hover: var(--hc-blue-300);
   --hc-shadow: rgba(0, 0, 0, 0.55);
-  --hc-glass-bg: rgba(22, 27, 34, 0.70);
-  --hc-glass-border: rgba(244, 246, 249, 0.08);
-  --hc-glass-strong-bg: rgba(22, 27, 34, 0.86);
-  --hc-glass-strong-border: rgba(244, 246, 249, 0.12);
-  --hc-scrollbar: rgba(244, 246, 249, 0.14);
-  --hc-scrollbar-hover: rgba(244, 246, 249, 0.28);
-  /* Logo sobre fondo oscuro (§2.4): rojo elevado + "Click" en blanco */
-  --hc-wordmark-hot: #F0524A;
-  --hc-wordmark-click: #FFFFFF;
+  --hc-glass-bg: rgba(17, 17, 20, 0.70);
+  --hc-glass-border: rgba(232, 232, 237, 0.08);
+  --hc-glass-strong-bg: rgba(17, 17, 20, 0.86);
+  --hc-glass-strong-border: rgba(232, 232, 237, 0.12);
+  --hc-scrollbar: rgba(232, 232, 237, 0.14);
+  --hc-scrollbar-hover: rgba(232, 232, 237, 0.28);
+  --hc-wordmark: #E8E8ED;
   color-scheme: dark;
 }
 
@@ -135,10 +125,10 @@ html.reduce-motion *::after {
     overflow-x: hidden;
   }
 
-  /* Títulos en Sora (Brand Book cap. 4): tracking negativo y balance */
+  /* Títulos en Barlow Black (Manual de Marca v2) */
   h1, h2, h3, h4 {
     font-family: var(--font-display);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
     text-wrap: balance;
   }
 
@@ -149,8 +139,12 @@ html.reduce-motion *::after {
   }
 
   ::selection {
-    background-color: var(--hc-blue-200);
-    color: var(--hc-n-900);
+    background-color: color-mix(in srgb, var(--hc-purple) 28%, white);
+    color: var(--hc-n-950);
+  }
+  html.dark ::selection {
+    background-color: color-mix(in srgb, var(--hc-purple) 40%, transparent);
+    color: var(--hc-text);
   }
 
   :focus-visible {
@@ -192,15 +186,20 @@ html.reduce-motion *::after {
   }
 
   .text-gradient {
-    color: var(--hc-text);
+    background: var(--hc-brand-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
-  /* El manual no usa texto en degradado: titulares sólidos en Sora */
   .text-gradient-accent {
-    color: var(--hc-text);
+    background: var(--hc-brand-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
-  .glow { box-shadow: 0 0 40px rgba(23, 71, 168, 0.12); }
+  .glow { box-shadow: 0 0 40px color-mix(in srgb, var(--hc-purple) 22%, transparent); }
 
   .surface {
     background-color: var(--hc-surface);
@@ -351,7 +350,7 @@ html.dark .hc-btn[disabled], html.dark .hc-btn:disabled {
   background: var(--hc-surface-2);
 }
 
-/* Primario — Rojo Hot. El CTA de la vista: comprar, pagar, guardar. */
+/* Primario — acento #4f7cff. El CTA de la vista: comprar, pagar, guardar. */
 .hc-btn-primary {
   background: var(--hc-primary);
   color: white;
@@ -366,7 +365,7 @@ html.dark .hc-btn[disabled], html.dark .hc-btn:disabled {
   border-color: var(--hc-primary-press);
 }
 
-/* Secundario — Azul Click contorneado: agregar al carrito, exportar. */
+/* Secundario — acento contorneado: agregar al carrito, exportar. */
 .hc-btn-ghost {
   background: transparent;
   color: var(--hc-link);
@@ -575,14 +574,16 @@ html.dark .hc-input:focus {
 }
 .group:hover .hc-product-img img { transform: scale(1.07); }
 
-/* ── Wordmark bicolor del logo (§2.1): Hot rojo + Click azul, Sora 800 ── */
+/* ── Wordmark v2: HOTCLICK Barlow Black, una sola palabra ── */
 .hc-wordmark {
   font-family: var(--font-display);
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  color: var(--hc-wordmark, var(--hc-text));
 }
-.hc-wordmark .hot { color: var(--hc-wordmark-hot); }
-.hc-wordmark .click { color: var(--hc-wordmark-click); }
+.hc-wordmark .hot,
+.hc-wordmark .click { color: inherit; }
 
 /* ═══════════════════════════════════════════════════════
    LIGHT MODE — override hardcoded Tailwind dark classes
@@ -632,12 +633,12 @@ html.dark .hc-input:focus {
 /* — hover:bg-[#1a1a1f] → surface-2 — */
 :root [class*="hover:bg-[#1a1a1f]"]:hover { background-color: var(--hc-surface-2) !important; }
 
-/* — Antiguo azul (#4f7cff) → Azul Click — */
+/* — Acento de marca v2 (#4f7cff) — */
 :root [class*="bg-[#4f7cff]"]     { background-color: var(--hc-accent) !important; }
 :root [class*="bg-[#3d6ee0]"]     { background-color: var(--hc-accent-hover) !important; }
 :root [class*="text-[#4f7cff]"]   { color: var(--hc-accent) !important; }
-:root [class*="border-[#4f7cff]"] { border-color: rgba(23,71,168,0.32) !important; }
-:root [class*="bg-[#4f7cff]/"]    { background-color: rgba(23,71,168,0.10) !important; }
+:root [class*="border-[#4f7cff]"] { border-color: color-mix(in srgb, var(--hc-accent) 32%, transparent) !important; }
+:root [class*="bg-[#4f7cff]/"]    { background-color: color-mix(in srgb, var(--hc-accent) 10%, transparent) !important; }
 
 /* — Black overlays permanecen negros (son sobre imágenes, funciona en ambos modos) — */
 
@@ -669,9 +670,9 @@ html.dark .hc-input:focus {
   border-top-color: var(--hc-border) !important;
 }
 
-/* — Admin sidebar: nav oscura n-900 en ambos modos (Brand Book cap. 6) — */
+/* — Admin sidebar: nav dark de marca v2 — */
 :root .hc-admin-sidebar {
-  background-color: var(--hc-n-900) !important;
+  background-color: var(--hc-n-950) !important;
   border-right-color: var(--hc-n-800) !important;
 }
 /* Sistema (rol EMPRENDEDOR) usa sidebar clara siguiendo el mockup aprobado
@@ -701,8 +702,7 @@ html.dark .hc-input:focus {
   --hc-glass-strong-border: rgba(20, 23, 28, 0.12);
   --hc-scrollbar: rgba(20, 23, 28, 0.18);
   --hc-scrollbar-hover: rgba(20, 23, 28, 0.34);
-  --hc-wordmark-hot: var(--hc-red-500);
-  --hc-wordmark-click: var(--hc-blue-600);
+  --hc-wordmark: var(--hc-text);
   color-scheme: light;
 }
 
@@ -826,7 +826,7 @@ html.dark .hc-sistema-theme td { color: var(--hc-text) !important; }
 html.dark .hc-sistema-theme tr:hover { background-color: var(--hc-surface-2) !important; }
 
 /* ═══════════════════════════════════════════════════════
-   SCROLL PROGRESS BAR — Rojo Hot sólido
+   SCROLL PROGRESS BAR — gradiente de marca v2
    ═══════════════════════════════════════════════════════ */
 
 .hc-progress {
@@ -835,7 +835,7 @@ html.dark .hc-sistema-theme tr:hover { background-color: var(--hc-surface-2) !im
   height: 2px;
   z-index: 60;
   transform-origin: 0% 50%;
-  background: var(--hc-primary);
+  background: var(--hc-brand-gradient);
   will-change: transform;
   pointer-events: none;
   border-radius: 0 2px 2px 0;

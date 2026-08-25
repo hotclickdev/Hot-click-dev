@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { HotClickMark } from '@/components/ui/BrandLogo'
+import { HotClickMark, HotClickWordmark } from '@/components/ui/BrandLogo'
 import FooterLink from './FooterLink'
 
 export default function FooterColumns() {
@@ -9,11 +9,9 @@ export default function FooterColumns() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6">
       <div className="sm:col-span-2 lg:col-span-1">
-        <Link to="/" className="inline-flex items-center gap-2 group mb-4" style={{ textDecoration: 'none' }} aria-label="HotClick — inicio">
+        <Link to="/" className="inline-flex items-center gap-2 group mb-4" style={{ textDecoration: 'none' }} aria-label="HOTCLICK — inicio">
           <HotClickMark size={30} className="shrink-0 transition-transform duration-200 group-hover:scale-105" />
-          <span className="hc-wordmark text-[18px] leading-none">
-            <span className="hot">Hot</span><span className="click">Click</span>
-          </span>
+          <HotClickWordmark className="text-[18px]" />
         </Link>
 
         <p className="text-sm font-semibold mb-1 leading-snug" style={{ color: 'var(--hc-text)', maxWidth: 220 }}>

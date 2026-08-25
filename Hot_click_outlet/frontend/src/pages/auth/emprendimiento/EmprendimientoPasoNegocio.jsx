@@ -19,7 +19,7 @@ export default function EmprendimientoPasoNegocio({ form, error, actualizarCampo
         value={form.telefonoEmpresa} onChange={(val) => setForm(p => ({ ...p, telefonoEmpresa: val }))} />
       {error && <ErrMsg>{error}</ErrMsg>}
       <button type="submit" className="hc-btn hc-btn-primary hc-btn-lg w-full"
-        style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px rgba(231,59,51,0.3)' }}>
+        style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px color-mix(in srgb, var(--hc-primary) 30%, transparent)' }}>
         Continuar →
       </button>
     </motion.form>

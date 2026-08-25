@@ -13,7 +13,7 @@ export function ColorField({ label, value, onChange, fieldId }) {
         <input id={textId} type="text" value={value || ''}
           onChange={e => onChange(e.target.value)}
           maxLength={7}
-          placeholder="#E73B33"
+          placeholder="#4F7CFF"
           className="flex-1 px-3 py-2 rounded-xl text-sm font-mono outline-none"
           style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }} />
       </div>

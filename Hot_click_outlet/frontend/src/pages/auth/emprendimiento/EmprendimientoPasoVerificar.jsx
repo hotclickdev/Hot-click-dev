@@ -53,7 +53,7 @@ export default function EmprendimientoPasoVerificar({
       {!otpFalló && (
         <button type="submit" disabled={loading || codigoVerif.length !== 6}
           className="hc-btn hc-btn-primary hc-btn-lg w-full disabled:opacity-50"
-          style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px rgba(231,59,51,0.3)' }}>
+          style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px color-mix(in srgb, var(--hc-primary) 30%, transparent)' }}>
           {loading ? 'Verificando…' : 'Verificar y entrar al panel →'}
         </button>
       )}

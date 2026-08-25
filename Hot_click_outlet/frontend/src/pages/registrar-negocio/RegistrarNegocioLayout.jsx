@@ -8,7 +8,7 @@ export default function RegistrarNegocioLayout({ onSkip, children }) {
 
       {/* Fondo */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 60% 50% at 70% 25%, rgba(231,59,51,0.1), transparent 65%)` }} />
+        <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 60% 50% at 70% 25%, color-mix(in srgb, var(--hc-purple) 16%, transparent), transparent 65%)` }} />
       </div>
       <div className="absolute inset-0 opacity-[0.25] pointer-events-none" style={{
         backgroundImage: 'linear-gradient(var(--hc-border) 1px,transparent 1px),linear-gradient(90deg,var(--hc-border) 1px,transparent 1px)',

@@ -70,7 +70,7 @@ export default function ImportarTabs({
           className="w-full flex flex-col items-center justify-center gap-3 p-10 rounded-xl cursor-pointer transition-all"
           style={{
             border: `2px dashed ${dragging ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
-            backgroundColor: dragging ? 'rgba(231,59,51,0.04)' : 'var(--hc-surface-2)',
+            backgroundColor: dragging ? 'color-mix(in srgb, var(--hc-primary) 6%, transparent)' : 'var(--hc-surface-2)',
           }}>
           <input ref={fileRef} type="file" className="hidden"
             accept={tab === 'pdf' ? '.pdf' : '.csv,.txt'}
