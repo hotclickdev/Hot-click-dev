@@ -37,25 +37,19 @@ El panel EMPRENDEDOR (`.hc-sistema-theme`) conserva el crema del mockup EPN; el 
 
 ## Figma ↔ Cursor (MCP)
 
-El repo declara dos servers en `.cursor/mcp.json`:
+Config del proyecto: `.cursor/mcp.json` → server remoto `figma` (`https://mcp.figma.com/mcp`).
+Plan Gratis/Starter: ese es el único MCP que aplica (unas pocas lecturas al mes). Dev Mode / `127.0.0.1:3845` requiere plan de pago.
 
-- `figma` → remoto (`https://mcp.figma.com/mcp`) — pide OAuth en Cursor
-- `figma-desktop` → local (`http://127.0.0.1:3845/mcp`) — **preferido si ya tenés Figma Desktop**; no pide OAuth
+### Un clic que solo puede hacer Andres (OAuth)
 
-### Encender el server en Figma Desktop
+En **Cursor Desktop** (no en este agente cloud):
 
-1. Abrí **Figma Desktop** (no el navegador) y el archivo de diseño.
-2. `Shift+D` (o View → Switch to Dev Mode).
-3. En el panel Inspect de la derecha: **Enable desktop MCP server**.
-4. Dejá Figma Desktop abierto.
+1. `Ctrl+Shift+J` → Tools & MCP.
+2. En **figma** → **Connect** (se abre el navegador).
+3. Verde = listo. Pegá el link del frame en el Agent de Cursor Desktop.
 
-### En Cursor Desktop
+`/add-plugin figma` se escribe **solo** (sin JSON) en el chat Agent de Cursor Desktop.
 
-1. `Ctrl+Shift+J` (Windows) o `Cmd+Shift+J` (Mac) → **Cursor Settings**.
-2. Pestaña **MCP** / **Tools & MCP**.
-3. `figma-desktop` debe quedar verde. Si está rojo, el server de Figma no está encendido.
-4. En Figma: clic derecho en el frame → **Copy link to selection** → pegalo en el chat del agente.
-
-Este entorno cloud no ve `127.0.0.1`. Sin MCP, pegá el link del frame o un PNG; aplicar el mini-manual, no inventar otra paleta.
+Este cloud agent no puede completar Connect. Sin MCP: PNG o link del archivo; tokens del mini-manual v2.
 
 Tiendas white-label (`--t-primary` del emprendedor) no se pisan: solo cambian los defaults de marca HOTCLICK.
