@@ -6,8 +6,11 @@ import { adminService, ventaService } from '@/services/orderService'
 import { copilotService } from '@/services/copilotService'
 import { formatPrice } from '@/utils/format'
 import useAuthStore from '@/store/authStore'
-import usePlan from '@/hooks/usePlan'
+import TextoFlecha from '@/components/ui/TextoFlecha'
+import TextoMas from '@/components/ui/TextoMas'
 import HoyAlertas from './sistema-inicio/HoyAlertas'
+import SistemaChecklist from './sistema-inicio/SistemaChecklist'
+import { SETUP_KEY } from './dashboard/dashboardHelpers'
 import {
   ESTADO_LABEL,
   countPorDespachar,
@@ -18,6 +21,9 @@ import {
   totalCompletado,
   ventasDelDia,
 } from './sistema-inicio/sistemaInicioHelpers'
+import AccesoTiendaPublica from '@/components/sistema/AccesoTiendaPublica'
+import useTenantStore from '@/store/tenantStore'
+import { debeMostrarChecklist } from './sistema-inicio/sistemaChecklistPasos'
 
 const stagger = {
   container: { show: { transition: { staggerChildren: 0.07 } } },
@@ -44,11 +50,20 @@ function EstadoBadge({ estado }) {
 export default function SistemaInicio() {
   const userName = useAuthStore((s) => s.userName)
   const empresaNombre = useAuthStore((s) => s.empresaNombre)
-  const { hasFeature } = usePlan()
+  const estadoEmpresa = useTenantStore((s) => s.estadoEmpresa)
+  const visibilidadPublica = useTenantStore((s) => s.visibilidadPublica)
   const [stats, setStats] = useState(null)
   const [ventas, setVentas] = useState([])
   const [insights, setInsights] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [setupDismissed, setSetupDismissed] = useState(() => {
+    try { return localStorage.getItem(SETUP_KEY) === '1' } catch { return false }
+  })
+
+  function dismissSetup() {
+    try { localStorage.setItem(SETUP_KEY, '1') } catch { /* ok */ }
+    setSetupDismissed(true)
+  }
 
   useEffect(() => {
     Promise.all([
@@ -89,6 +104,13 @@ export default function SistemaInicio() {
   )
   const fechaHoyLegible = new Date().toLocaleDateString('es-CR', { weekday: 'long', day: 'numeric', month: 'long' })
 
+  const mostrarChecklist = debeMostrarChecklist({
+    dismissed: setupDismissed,
+    totalProductos: stats?.totalProductos,
+    estadoEmpresa,
+    visibilidadPublica,
+  })
+
   if (loading) {
     return <div className="flex justify-center py-20"><Spinner size="lg" /></div>
   }
@@ -104,6 +126,15 @@ export default function SistemaInicio() {
         </p>
       </header>
 
+      {mostrarChecklist && (
+        <SistemaChecklist
+          onDismiss={dismissSetup}
+          totalProductos={stats?.totalProductos}
+          estadoEmpresa={estadoEmpresa}
+          visibilidadPublica={visibilidadPublica}
+        />
+      )}
+
       <HoyAlertas porDespachar={porDespachar} sinStock={sinStock} sinVenta={sinVenta} />
 
       <KpiGrid
@@ -116,7 +147,7 @@ export default function SistemaInicio() {
         stockBajo={stats?.stockBajo ?? 0}
       />
 
-      <AccesosRapidos porDespachar={porDespachar} mostrarPos={hasFeature('pos')} />
+      <AccesosRapidos porDespachar={porDespachar} />
 
       <PedidosRecientes recientes={recientes} />
     </div>
@@ -130,7 +161,7 @@ function KpiGrid({ totalHoy, ventasCompHoy, pedidosHoy, pedidosAyer, ticketHoy, 
       <KpiCard titulo="Pedidos de hoy" valor={String(pedidosHoy)} badge={badgeDelta(pedidosHoy, pedidosAyer)} />
       <KpiCard titulo="Ticket promedio" valor={formatPrice(ticketHoy)} badge={badgePct(ticketComp)} />
       <KpiCard titulo="Por agotarse" valor={String(stockBajo)}
-        extra={<Link to="/admin/productos" className="text-xs font-bold w-fit" style={{ color: 'var(--hc-accent)' }}>Revisalos →</Link>} />
+        extra={<Link to="/admin/productos" className="text-xs font-bold w-fit" style={{ color: 'var(--hc-accent)' }}><TextoFlecha>Revisalos</TextoFlecha></Link>} />
     </motion.div>
   )
 }
@@ -156,7 +187,7 @@ function badgePct(pct) {
   return (
     <span className="text-xs font-bold px-2.5 py-1 rounded-full w-fit"
       style={{ backgroundColor: ok ? '#e2f1e8' : 'var(--hc-surface-2)', color: ok ? '#1E7F4F' : 'var(--hc-muted)' }}>
-      {ok ? '▲' : '▼'} {Math.abs(pct)}% vs ayer
+      {ok ? '+' : '−'}{Math.abs(pct)}% vs ayer
     </span>
   )
 }
@@ -167,18 +198,18 @@ function badgeDelta(hoy, ayer) {
   return (
     <span className="text-xs font-bold px-2.5 py-1 rounded-full w-fit"
       style={{ backgroundColor: ok ? '#e2f1e8' : 'var(--hc-surface-2)', color: ok ? '#1E7F4F' : 'var(--hc-muted)' }}>
-      {ok ? '▲' : '▼'} {Math.abs(hoy - ayer)} vs ayer
+      {ok ? '+' : '−'}{Math.abs(hoy - ayer)} vs ayer
     </span>
   )
 }
 
-function AccesosRapidos({ porDespachar, mostrarPos }) {
+function AccesosRapidos({ porDespachar }) {
   return (
     <div className="flex flex-wrap gap-3">
-      <Link to="/admin/nuevo-producto"
-        className="flex items-center justify-center px-5 py-3.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-90"
+      <Link to="/admin/productos/nuevo"
+        className="flex items-center justify-center gap-1.5 px-5 py-3.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-90"
         style={{ backgroundColor: 'var(--hc-surface)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
-        + Agregá un producto
+        <TextoMas>Agregá un producto</TextoMas>
       </Link>
       <Link to="/admin/pedidos"
         className="flex items-center gap-2 px-5 py-3.5 rounded-xl text-sm font-semibold transition-colors"
@@ -190,13 +221,17 @@ function AccesosRapidos({ porDespachar, mostrarPos }) {
           </span>
         )}
       </Link>
-      {mostrarPos && (
-        <Link to="/admin/pos"
-          className="flex items-center justify-center px-5 py-3.5 rounded-xl text-sm font-semibold transition-colors"
-          style={{ backgroundColor: 'var(--hc-surface)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
-          Abrí la caja (POS)
-        </Link>
-      )}
+      <Link to="/admin/pos"
+        className="flex items-center justify-center px-5 py-3.5 rounded-xl text-sm font-semibold transition-colors"
+        style={{ backgroundColor: 'var(--hc-surface)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
+        Abrí la caja (POS)
+      </Link>
+      <AccesoTiendaPublica />
+      <Link to="/admin/billing/planes"
+        className="flex items-center justify-center px-5 py-3.5 rounded-xl text-sm font-semibold transition-colors"
+        style={{ backgroundColor: 'var(--hc-surface)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
+        Tu plan
+      </Link>
     </div>
   )
 }
@@ -207,7 +242,7 @@ function PedidosRecientes({ recientes }) {
       style={{ backgroundColor: 'var(--hc-surface)', boxShadow: '0 1px 2px rgba(26,26,26,0.04), 0 8px 20px rgba(26,26,26,0.06)' }}>
       <div className="flex items-center justify-between px-5 pt-4 pb-2">
         <h2 className="text-base font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>Pedidos recientes</h2>
-        <Link to="/admin/pedidos" className="text-sm font-semibold" style={{ color: 'var(--hc-accent)' }}>Vé todos →</Link>
+        <Link to="/admin/pedidos" className="text-sm font-semibold" style={{ color: 'var(--hc-accent)' }}><TextoFlecha>Vé todos</TextoFlecha></Link>
       </div>
       {recientes.length === 0 ? (
         <p className="text-sm text-center py-8" style={{ color: 'var(--hc-muted)' }}>Todavía no tenés pedidos.</p>

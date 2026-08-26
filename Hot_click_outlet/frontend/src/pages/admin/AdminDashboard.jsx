@@ -4,6 +4,7 @@ import Spinner from '@/components/ui/Spinner'
 import { adminService, ventaService } from '@/services/orderService'
 import { formatPrice } from '@/utils/format'
 import useAuthStore from '@/store/authStore'
+import { RUTA_SISTEMA_MARCA } from '@/utils/rutaTienda'
 import ActivityFeed from './dashboard/ActivityFeed'
 import CategoryBars from './dashboard/CategoryBars'
 import DashboardHeader from './dashboard/DashboardHeader'
@@ -16,7 +17,6 @@ import SetupBanner from './dashboard/SetupBanner'
 import {
   BarChartIcon,
   BoltIcon,
-  CheckCircleIcon,
   ClipboardQLIcon,
   CoinIcon,
   MonitorIcon,
@@ -28,9 +28,14 @@ import {
   ROLES_NEGOCIO,
   SETUP_KEY,
   buildActivity,
-  buildByMethod,
   buildSalesLast7,
 } from './dashboard/dashboardHelpers'
+import {
+  metricasDecision,
+  textoCambioDelta,
+  textoCambioPct,
+  tonoCambio,
+} from './dashboard/dashboardDecision'
 
 function abrirTutorial() {
   localStorage.removeItem('hc-admin-tour-v4-done')
@@ -84,75 +89,20 @@ export default function AdminDashboard() {
     return () => clearInterval(interval)
   }, [userRole])
 
-  const now = new Date()
-  const mesKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-
   const salesLast7 = useMemo(() => buildSalesLast7(ventas), [ventas])
-  const byMethod = useMemo(() => buildByMethod(ventas), [ventas])
   const activity = useMemo(() => buildActivity(ventas, users), [ventas, users])
-
-  const totalMes = ventas
-    .filter((v) => (v.fechaCreacion ?? '').startsWith(mesKey))
-    .reduce((s, v) => s + (v.total ?? 0), 0)
-
+  const kpis = useMemo(() => metricasDecision(ventas, stats), [ventas, stats])
+  const categorias = stats?.categorias ?? []
+  const cards = cardsDecision(kpis, t)
+  const quickLinks = accesosRapidos(t, userRole)
+  const mostrarSetup = !setupDismissed && (stats?.totalProductos === 0 || stats?.totalProductos == null) && ROLES_NEGOCIO.has(userRole)
   const completadas = ventas.filter((v) => v.estado === 'COMPLETADO' || v.estado === 'ENTREGADO').length
   const pendientes = ventas.filter((v) => v.estado === 'PENDIENTE').length
-
-  const usuariosNuevosMes = useMemo(
-    () => users.filter((u) => (u.fechaCreacion ?? u.createdAt ?? '').startsWith(mesKey)).length,
-    [users, mesKey],
-  )
-
-  const categorias = stats?.categorias ?? []
-
-  const cards = [
-    {
-      label: t('admin.finanzas.income'),
-      value: formatPrice(totalMes),
-      icon: <CoinIcon />,
-      color: 'text-emerald-400',
-      sub: `${ventas.length} ventas total`,
-    },
-    {
-      label: t('admin.dashboard.totalOrders'),
-      value: completadas,
-      icon: <CheckCircleIcon />,
-      color: 'text-[#4f7cff]',
-      sub: `${pendientes} pendientes`,
-    },
-    {
-      label: t('admin.dashboard.totalUsers'),
-      value: stats?.totalUsuarios ?? '—',
-      icon: <PeopleIcon />,
-      color: 'text-[var(--hc-blue-400)]',
-      sub: usuariosNuevosMes > 0 ? `+${usuariosNuevosMes} este mes` : 'usuarios activos',
-    },
-    {
-      label: t('admin.dashboard.totalProducts'),
-      value: stats?.totalProductos ?? '—',
-      icon: <PackageIcon />,
-      color: 'text-amber-400',
-      sub: `${stats?.stockBajo ?? 0} stock bajo`,
-    },
-  ]
-
-  const quickLinks = [
-    { to: '/admin/pos', label: 'Caja POS', icon: <MonitorIcon />, roles: ['ADMIN', 'EMPRENDEDOR', 'CAJERO', 'GERENTE', 'SUPERVISOR'], highlight: true },
-    { to: '/admin/pedidos', label: t('admin.orders.title'), icon: <ClipboardQLIcon />, roles: ['ADMIN', 'EMPRENDEDOR'] },
-    { to: '/admin/productos', label: t('admin.products.title'), icon: <PackageIcon />, roles: ['ADMIN', 'EMPRENDEDOR'] },
-    { to: '/admin/usuarios', label: t('admin.users.title'), icon: <PeopleIcon />, roles: ['ADMIN'] },
-    { to: '/admin/ventas', label: t('admin.sales.title'), icon: <BoltIcon />, roles: ['ADMIN', 'EMPRENDEDOR'] },
-    { to: '/admin/finanzas', label: t('admin.finanzas.title'), icon: <CoinIcon />, roles: ['ADMIN', 'EMPRENDEDOR'] },
-    { to: '/admin/reportes', label: t('admin.reportes.title'), icon: <BarChartIcon />, roles: ['ADMIN', 'EMPRENDEDOR'] },
-    { to: '/admin/mi-empresa', label: 'Mi negocio', icon: <PackageIcon />, roles: ['EMPRENDEDOR'] },
-  ].filter((link) => link.roles.includes(userRole))
-
-  const mostrarSetup = !setupDismissed && (stats?.totalProductos === 0 || stats?.totalProductos == null) && ROLES_NEGOCIO.has(userRole)
 
   const header = (
     <DashboardHeader
       title={t('admin.dashboard.title')}
-      welcome={t('admin.dashboard.welcome')}
+      welcome={t('admin.dashboard.welcomeDecision')}
       onOpenTour={abrirTutorial}
       serverStatus={serverStatus}
     />
@@ -170,27 +120,79 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       {header}
-
       {mostrarSetup && <SetupBanner onDismiss={dismissSetup} />}
-
       <KpiCards cards={cards} />
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4">
           <SalesChart salesLast7={salesLast7} />
           <CategoryBars categorias={categorias} />
         </div>
         <PaymentMethods
-          byMethod={byMethod}
+          byMethod={kpis.canales}
           completadas={completadas}
           pendientes={pendientes}
           ventasCount={ventas.length}
+          titulo={kpis.canalDeHoy ? t('admin.dashboard.channelToday') : t('admin.dashboard.channel')}
+          vacio={t('admin.dashboard.channelEmpty')}
+          etiquetaConteo={t('admin.dashboard.channelCount')}
         />
       </div>
-
       <ActivityFeed activity={activity} />
       <QuickLinks links={quickLinks} />
       <RecentSales ventas={ventas} />
     </div>
   )
+}
+
+function cardsDecision(kpis, t) {
+  return [
+    {
+      label: t('admin.dashboard.salesToday'),
+      value: formatPrice(kpis.totalHoy),
+      icon: <CoinIcon />,
+      color: 'text-emerald-400',
+      sub: textoCambioPct(kpis.pctIngresos),
+      subTone: tonoCambio(kpis.pctIngresos),
+      to: '/admin/finanzas',
+    },
+    {
+      label: t('admin.dashboard.ordersToday'),
+      value: kpis.pedidosHoy,
+      icon: <ClipboardQLIcon />,
+      color: 'text-[var(--hc-blue-400)]',
+      sub: textoCambioDelta(kpis.pedidosHoy, kpis.pedidosAyer),
+      subTone: tonoCambio(kpis.pedidosHoy - kpis.pedidosAyer),
+      to: '/admin/pedidos',
+    },
+    {
+      label: t('admin.dashboard.avgTicket'),
+      value: formatPrice(kpis.ticketHoy),
+      icon: <BoltIcon />,
+      color: 'text-amber-400',
+      sub: textoCambioPct(kpis.pctTicket),
+      subTone: tonoCambio(kpis.pctTicket),
+      to: '/admin/reportes',
+    },
+    {
+      label: t('admin.dashboard.lowStock'),
+      value: kpis.stockBajo,
+      icon: <PackageIcon />,
+      color: kpis.stockBajo > 0 ? 'text-red-400' : 'text-emerald-400',
+      sub: t('admin.dashboard.reviewStock'),
+      subTone: kpis.stockBajo > 0 ? 'down' : 'neutral',
+      to: '/admin/productos',
+    },
+  ]
+}
+
+function accesosRapidos(t, userRole) {
+  return [
+    { to: '/admin/pedidos', label: t('admin.orders.title'), icon: <ClipboardQLIcon />, roles: ['ADMIN', 'EMPRENDEDOR'], highlight: true },
+    { to: '/admin/pos', label: 'Caja POS', icon: <MonitorIcon />, roles: ['ADMIN', 'EMPRENDEDOR', 'CAJERO', 'GERENTE', 'SUPERVISOR'] },
+    { to: '/admin/productos', label: t('admin.products.title'), icon: <PackageIcon />, roles: ['ADMIN', 'EMPRENDEDOR'] },
+    { to: '/admin/usuarios', label: t('admin.users.title'), icon: <PeopleIcon />, roles: ['ADMIN'] },
+    { to: '/admin/finanzas', label: t('admin.finanzas.title'), icon: <CoinIcon />, roles: ['ADMIN', 'EMPRENDEDOR'] },
+    { to: '/admin/reportes', label: t('admin.reportes.title'), icon: <BarChartIcon />, roles: ['ADMIN', 'EMPRENDEDOR'] },
+    { to: RUTA_SISTEMA_MARCA, label: 'Mi marca', icon: <PackageIcon />, roles: ['EMPRENDEDOR'] },
+  ].filter((link) => link.roles.includes(userRole))
 }

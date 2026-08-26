@@ -37,8 +37,14 @@ export default function PedidoTimeline({ estadoActual, esRetiro }) {
                 }}
               >
                 {done
-                  ? <span className="text-white text-[10px]">✓</span>
-                  : <span style={{ color: 'var(--hc-muted)', fontSize: 9 }}>○</span>}
+                  ? (
+                    <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3} aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )
+                  : (
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--hc-muted)' }} aria-hidden="true" />
+                  )}
               </div>
               <span className="text-[9px] text-center leading-tight max-w-[52px]"
                 style={{ color: done ? 'var(--hc-accent)' : 'var(--hc-muted)', fontWeight: done ? 600 : 400 }}>

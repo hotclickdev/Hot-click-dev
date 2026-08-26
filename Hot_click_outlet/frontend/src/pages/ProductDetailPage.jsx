@@ -25,6 +25,7 @@ export default function ProductDetailPage() {
     recommendations, brandProducts, galeria, activeImg, setActiveImg,
     variantes, tallaSeleccionada, setTallaSeleccionada, mainCTARef,
     recentlyViewed, inStock, atMax, handleDecrease, handleIncrease, handleAdd,
+    handleComprarAhora,
   } = useProductDetail(id, t)
 
   if (loading) {
@@ -64,6 +65,7 @@ export default function ProductDetailPage() {
             onDecrease={handleDecrease}
             onIncrease={handleIncrease}
             onAdd={handleAdd}
+            onComprarAhora={handleComprarAhora}
             justAdded={justAdded}
             inStock={inStock}
             atMax={atMax}
@@ -97,8 +99,7 @@ export default function ProductDetailPage() {
             quantity={quantity}
             onDecrease={handleDecrease}
             onIncrease={handleIncrease}
-            onAdd={handleAdd}
-            justAdded={justAdded}
+            onComprarAhora={handleComprarAhora}
             atMax={atMax}
             inStock={inStock}
           />

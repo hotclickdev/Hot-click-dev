@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useLocation } from 'react-router-dom'
 import useCartStore from '@/store/cartStore'
 import useWishlistStore from '@/store/wishlistStore'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 const FIRST_VISIT_KEY = 'hc-first-visit-ts'
 const DISMISSED_KEY   = 'hc-return-banner-dismissed'
@@ -65,19 +67,21 @@ export default function ReturnVisitorBanner() {
             style={{ background: 'linear-gradient(90deg, color-mix(in srgb, var(--hc-accent) 8%, transparent), color-mix(in srgb, #ec4899 5%, transparent))' }}
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <span className="text-base shrink-0">👋</span>
+              <span className="shrink-0" style={{ color: 'var(--hc-accent)' }}>
+                <TrustGlyph tipo="clientes" className="w-4 h-4" />
+              </span>
               <div className="min-w-0">
                 <span className="text-xs font-semibold" style={{ color: 'var(--hc-text)' }}>
                   {greeting}{' '}
                 </span>
                 {cartItems.length > 0 && (
                   <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-                    Tienes {cartItems.length} producto{cartItems.length > 1 ? 's' : ''} en el carrito.
+                    Tenés {cartItems.length} producto{cartItems.length > 1 ? 's' : ''} en el pedido.
                   </span>
                 )}
                 {!cartItems.length && wishCount > 0 && (
                   <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-                    Tienes {wishCount} producto{wishCount > 1 ? 's' : ''} en tu lista de deseos.
+                    Tenés {wishCount} producto{wishCount > 1 ? 's' : ''} en tu lista de deseos.
                   </span>
                 )}
               </div>
@@ -87,18 +91,16 @@ export default function ReturnVisitorBanner() {
                 <Link
                   to="/carrito"
                   onClick={dismiss}
-                  className="px-3 py-1 rounded-lg text-xs font-semibold text-white transition-all hover:opacity-90"
-                  style={{ background: 'var(--hc-accent)' }}
+                  className="hc-btn hc-btn-primary px-3 py-1 min-h-8 text-xs"
                 >
-                  Ver carrito
+                  Ver pedido
                 </Link>
               )}
               {!cartItems.length && wishCount > 0 && (
                 <Link
                   to="/wishlist"
                   onClick={dismiss}
-                  className="px-3 py-1 rounded-lg text-xs font-semibold text-white transition-all hover:opacity-90"
-                  style={{ background: 'var(--hc-accent)' }}
+                  className="hc-btn hc-btn-primary px-3 py-1 min-h-8 text-xs"
                 >
                   Ver favoritos
                 </Link>
@@ -107,7 +109,10 @@ export default function ReturnVisitorBanner() {
                 onClick={dismiss}
                 className="w-6 h-6 flex items-center justify-center rounded-lg text-xs transition-all hover:bg-white/10"
                 style={{ color: 'var(--hc-muted)' }}
-              >✕</button>
+                aria-label="Cerrar"
+              >
+                <CloseIcon className="w-3 h-3" />
+              </button>
             </div>
           </div>
         </motion.div>

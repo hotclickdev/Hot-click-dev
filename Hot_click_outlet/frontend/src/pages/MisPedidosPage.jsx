@@ -10,6 +10,7 @@ import { orderService } from '@/services/orderService'
 import { useToast } from '@/components/ui/Toast'
 import OrderCard from './pedidos/OrderCard'
 import PedidosEmptyState from './pedidos/PedidosEmptyState'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 import { pedidosDesdeRespuesta } from './pedidos/pedidoHelpers'
 
 export default function MisPedidosPage() {
@@ -44,10 +45,7 @@ export default function MisPedidosPage() {
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-4 sm:mb-6">
           <button type="button" onClick={() => navigate('/perfil')} className="flex items-center gap-1.5 text-sm mb-4 transition-colors"
             style={{ color: 'var(--hc-muted)' }}>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-            {t('nav.perfil')}
+            <TextoFlecha dir="atras" iconClassName="w-4 h-4">{t('nav.perfil')}</TextoFlecha>
           </button>
           <h1 className="text-2xl font-bold" style={{ color: 'var(--hc-text)' }}>{t('nav.misPedidos')}</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>{t('orders.subtitle')}</p>
@@ -62,13 +60,13 @@ export default function MisPedidosPage() {
         {totalPages > 1 && (
           <div className="flex justify-center gap-3 mt-8">
             <Button variant="secondary" size="sm" disabled={page === 0} onClick={() => { setLoading(true); setPage((p) => p - 1) }}>
-              ← {t('common.previous')}
+              <TextoFlecha dir="atras">{t('common.previous')}</TextoFlecha>
             </Button>
             <span className="text-sm self-center" style={{ color: 'var(--hc-muted)' }}>
               {page + 1} / {totalPages}
             </span>
             <Button variant="secondary" size="sm" disabled={page >= totalPages - 1} onClick={() => { setLoading(true); setPage((p) => p + 1) }}>
-              {t('common.next')} →
+              <TextoFlecha>{t('common.next')}</TextoFlecha>
             </Button>
           </div>
         )}

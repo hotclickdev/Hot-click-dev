@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
 import { useToast } from '@/components/ui/Toast'
 import useAuthStore from '@/store/authStore'
+import { esUsuarioSistema } from '@/utils/sistemaUser'
 import AdminPlanes from './AdminPlanes'
 import SeccionPerfil from './configuracion/SeccionPerfil'
 import SeccionTienda from './configuracion/SeccionTienda'
+import SistemaVisibilidadMarca from './configuracion/SistemaVisibilidadMarca'
+import SistemaMarcaForm from './configuracion/SistemaMarcaForm'
+import SeccionBodega from './configuracion/SeccionBodega'
 import SeccionSeguridad from './configuracion/SeccionSeguridad'
 import SeccionNotificaciones from './configuracion/SeccionNotificaciones'
 import SeccionTelegram from './configuracion/SeccionTelegram'
@@ -12,7 +17,7 @@ import SeccionDatos from './configuracion/SeccionDatos'
 import SeccionApariencia from './configuracion/SeccionApariencia'
 import SeccionSistema from './configuracion/SeccionSistema'
 import {
-  F, UserIcon, StoreIcon, ShieldIcon, BellIcon, SendIcon, DatabaseIcon, PaletteIcon, CogIcon, CardIcon,
+  F, UserIcon, StoreIcon, ShieldIcon, BellIcon, SendIcon, DatabaseIcon, PaletteIcon, CogIcon, CardIcon, BoxIcon,
 } from './configuracion/configUi'
 
 function usePremiumFonts() {
@@ -31,15 +36,17 @@ export default function AdminConfiguracion() {
   const { t } = useTranslation()
   const toast = useToast()
   const { userId, userEmail, userName, setUserName, refreshToken, userRole } = useAuthStore()
-  const [section, setSection] = useState('perfil')
+  const [searchParams] = useSearchParams()
+  const [section, setSection] = useState(() => searchParams.get('seccion') || 'perfil')
   const [twoFAOn, setTwoFAOn] = useState(false)
   const [animKey, setAnimKey] = useState(0)
-  const isEmprendedor = userRole === 'EMPRENDEDOR'
+  const isEmprendedor = esUsuarioSistema(userRole)
 
   const allNav = [
     { id: 'plan',           label: 'Plan y cuenta',                    icon: CardIcon,     desc: 'Tu plan y suscripción',      soloEmprendedor: true },
     { id: 'perfil',         label: t('adminConfig.navPerfil'),         icon: UserIcon,     desc: 'Nombre y datos personales' },
-    { id: 'tienda',         label: t('adminConfig.navTienda'),         icon: StoreIcon,    desc: 'Contacto y horario',        emprendedor: false },
+    { id: 'marca',          label: isEmprendedor ? 'Marca' : t('adminConfig.navTienda'), icon: StoreIcon, desc: isEmprendedor ? 'Logo, nombre y cómo te ven' : 'Contacto y horario' },
+    { id: 'bodega',         label: 'Bodega',                           icon: BoxIcon,      desc: 'Dónde guardás el inventario', soloEmprendedor: true },
     { id: 'seguridad',      label: t('adminConfig.navSeguridad'),      icon: ShieldIcon,   desc: 'Contraseña y 2FA',           badge: !twoFAOn ? '!' : null },
     { id: 'notificaciones', label: t('adminConfig.navNotificaciones'), icon: BellIcon,     desc: 'Alertas y emails',           emprendedor: false },
     { id: 'telegram',       label: 'Telegram',                         icon: SendIcon,     desc: 'Bot y avisos del negocio' },
@@ -139,7 +146,11 @@ export default function AdminConfiguracion() {
           <h1 style={{ fontFamily: F.display, fontWeight: 700, fontSize: '21px', color: 'var(--hc-text)', letterSpacing: '-0.025em', margin: 0 }}>
             {t('adminConfig.title')}
           </h1>
-          <p style={{ fontSize: '13px', color: 'var(--hc-muted)', marginTop: '4px', fontFamily: F.body }}>{t('adminConfig.subtitle')}</p>
+          <p style={{ fontSize: '13px', color: 'var(--hc-muted)', marginTop: '4px', fontFamily: F.body }}>
+            {isEmprendedor
+              ? 'Tu plan, tu perfil, tu marca y tus bodegas, todo en un lugar.'
+              : t('adminConfig.subtitle')}
+          </p>
         </div>
 
         <div className="flex flex-col md:flex-row gap-6 items-start">
@@ -181,10 +192,12 @@ export default function AdminConfiguracion() {
                 )
               })}
             </nav>
+            {!isEmprendedor && (
             <div style={{ marginTop: '20px', paddingTop: '14px', borderTop: '1px solid var(--hc-border)', paddingLeft: '4px' }}>
               <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--hc-muted)', fontFamily: F.body, margin: 0, opacity: 0.6 }}>HotClick</p>
               <p style={{ fontSize: '11px', color: 'var(--hc-muted)', marginTop: '2px', fontFamily: F.body, opacity: 0.4 }}>v1.0 · Admin Panel</p>
             </div>
+            )}
           </aside>
 
           {/* Mobile nav */}
@@ -213,7 +226,17 @@ export default function AdminConfiguracion() {
             <div key={animKey} className="cfg-in">
               {section === 'plan'           && <AdminPlanes />}
               {section === 'perfil'         && <SeccionPerfil userId={userId} userEmail={userEmail} userName={userName} setUserName={setUserName} toast={toast} />}
-              {section === 'tienda'         && <SeccionTienda toast={toast} />}
+              {(section === 'marca' || section === 'tienda') && (
+                isEmprendedor ? (
+                  <>
+                    <SistemaVisibilidadMarca />
+                    <SistemaMarcaForm />
+                  </>
+                ) : (
+                  <SeccionTienda toast={toast} />
+                )
+              )}
+              {section === 'bodega'         && <SeccionBodega />}
               {section === 'seguridad'      && <SeccionSeguridad refreshToken={refreshToken} toast={toast} onTwoFAChange={setTwoFAOn} />}
               {section === 'notificaciones' && <SeccionNotificaciones toast={toast} soloVentas={isEmprendedor} />}
               {section === 'telegram'       && <SeccionTelegram toast={toast} />}

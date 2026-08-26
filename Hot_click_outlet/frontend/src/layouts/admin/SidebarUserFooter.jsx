@@ -1,7 +1,9 @@
 import { NavLink } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { PLAN_LABELS } from './adminSidebarTheme'
+import { esUsuarioSistema } from '@/utils/sistemaUser'
 import ModeSwitcherWrapper from './ModeSwitcherWrapper'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 /** Footer del sidebar admin: acciones de cuenta y avatar. */
 export default function SidebarUserFooter({
@@ -27,7 +29,7 @@ export default function SidebarUserFooter({
             className="flex items-center justify-center px-3 py-[11px] rounded-[10px] text-sm font-semibold transition-colors hover:bg-[var(--hc-surface-2)]"
             style={{ color: 'var(--hc-link)', border: '1px solid var(--hc-border)' }}
           >
-            Ir a la Caja (POS) →
+            <TextoFlecha>Ir a la Caja (POS)</TextoFlecha>
           </NavLink>
           <motion.button
             onClick={handleLogout}
@@ -88,7 +90,7 @@ export default function SidebarUserFooter({
         </motion.div>
         <div className="min-w-0">
           <div className={`truncate ${isLight ? 'text-[13px] font-semibold' : 'text-xs'}`} style={{ color: isLight ? 'var(--hc-text)' : 'rgba(255,255,255,0.55)' }}>{userName || 'Admin'}</div>
-          {userRole === 'EMPRENDEDOR' && tenantLoaded ? (
+          {esUsuarioSistema(userRole) && tenantLoaded ? (
             <div className={`truncate ${isLight ? 'text-xs' : 'text-[10px]'}`} style={{ color: muted }}>
               Plan {PLAN_LABELS[planNombre] ?? planNombre}
             </div>

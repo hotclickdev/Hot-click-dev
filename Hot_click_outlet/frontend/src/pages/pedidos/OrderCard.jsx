@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next'
 import GarantiaBar from './GarantiaBar'
 import NotificacionesTab from './NotificacionesTab'
 import PedidoTimeline from './PedidoTimeline'
+import IconoEstadoPedido from './IconoEstadoPedido'
 import {
   ESTADOS_SIN_ACCION,
-  STATUS_ICONS,
   colorEstadoPedido,
   estadoDePedido,
   formatDateShort,
@@ -146,7 +146,13 @@ export default function OrderCard({ order }) {
         style={{ backgroundColor: open ? 'var(--hc-surface-2)' : 'transparent' }}
       >
         <div className="flex items-center gap-3 min-w-0">
-          <div className="text-xl">{STATUS_ICONS[estado] ?? '·'}</div>
+          <span
+            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+            style={{ color: colors.text, backgroundColor: colors.bg }}
+            aria-hidden="true"
+          >
+            <IconoEstadoPedido estado={estado} />
+          </span>
           <div className="min-w-0">
             <p className="text-sm font-semibold truncate" style={{ color: 'var(--hc-text)' }}>
               {order.numeroPedido ?? `Pedido #${order.id}`}

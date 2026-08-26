@@ -9,9 +9,9 @@ import { productService, normalizeProduct } from '@/services/productService'
 import { useToast } from '@/components/ui/Toast'
 import { abandonedCartService } from '@/services/abandonedCartService'
 import AICartSection from '@/components/ai/AICartSection'
+import CheckoutStepper from '@/components/ui/CheckoutStepper'
 import { isValidEmail } from '@/utils/validators'
 import AbandonedEmailPrompt from './carrito/AbandonedEmailPrompt'
-import AbandonedWaPrompt from './carrito/AbandonedWaPrompt'
 import CartEmptyState from './carrito/CartEmptyState'
 import CartItemRow from './carrito/CartItemRow'
 import CartSummary from './carrito/CartSummary'
@@ -22,13 +22,11 @@ import {
   EMAIL_GUARDADO_OCULTAR_MS,
   EMAIL_PROMPT_DELAY_MS,
   FALLBACK_CATALOGO_SIZE,
-  WA_PROMPT_DELAY_MS,
   emailCarritoYaCapturado,
   guardarEmailCarritoLocal,
   listaProductosDesdeRespuesta,
   seleccionarCrossSell,
   urlWhatsApp,
-  whatsappAbandonoDescartado,
 } from './carrito/cartHelpers'
 
 async function cargarSugerencias(idsEnCarrito) {
@@ -52,25 +50,14 @@ export default function CartPage() {
   const [emailPrompt, setEmailPrompt] = useState(false)
   const [capturedEmail, setCapturedEmail] = useState('')
   const [emailSaved, setEmailSaved] = useState(false)
-  const [waPrompt, setWaPrompt] = useState(false)
   const promptTimerRef = useRef(null)
-  const waTimerRef = useRef(null)
   const totalColones = total()
 
   useEffect(() => {
     if (token || user || emailCarritoYaCapturado() || items.length === 0) return
-    promptTimerRef.current = setTimeout(() => {
-      setEmailPrompt(true)
-      setWaPrompt(false)
-    }, EMAIL_PROMPT_DELAY_MS)
+    promptTimerRef.current = setTimeout(() => setEmailPrompt(true), EMAIL_PROMPT_DELAY_MS)
     return () => clearTimeout(promptTimerRef.current)
   }, [token, user, items.length])
-
-  useEffect(() => {
-    if (items.length === 0 || whatsappAbandonoDescartado()) return
-    waTimerRef.current = setTimeout(() => setWaPrompt(true), WA_PROMPT_DELAY_MS)
-    return () => clearTimeout(waTimerRef.current)
-  }, [items.length])
 
   useEffect(() => {
     const idsEnCarrito = new Set(items.map((item) => item.id))
@@ -146,6 +133,7 @@ export default function CartPage() {
   return (
     <MainLayout>
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+        <CheckoutStepper activeStep="cart" />
         <div className="flex items-center justify-between mb-4 sm:mb-6">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-[#e8e8ed]">{t('cart.title')}</h1>
@@ -190,16 +178,6 @@ export default function CartPage() {
 
         {crossSellGrid}
       </div>
-
-      <AnimatePresence>
-        {waPrompt && (
-          <AbandonedWaPrompt
-            items={items}
-            total={totalColones}
-            onDismiss={() => setWaPrompt(false)}
-          />
-        )}
-      </AnimatePresence>
 
       <AnimatePresence>
         {emailPrompt && (

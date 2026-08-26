@@ -35,16 +35,16 @@ function CrossSellCard({ product, added, onAdd, delay }) {
         >
           {product.nombre}
         </Link>
-        <p className="text-sm font-bold text-[#4f7cff] mb-2">{formatPrice(product.precio)}</p>
+        <p className="text-sm font-bold mb-2" style={{ color: 'var(--hc-accent)' }}>{formatPrice(product.precio)}</p>
         <button type="button"
           onClick={() => onAdd(product)}
-          className={`w-full h-7 rounded-lg text-xs font-medium transition-all duration-200 ${
+          className={`w-full min-h-11 rounded-lg text-xs font-medium transition-all duration-200 ${
             added
               ? 'bg-emerald-500 text-white'
-              : 'bg-[#4f7cff] hover:bg-[#3d6ee0] text-white'
+              : 'hc-btn hc-btn-ghost'
           }`}
         >
-          {added ? '✓ Añadido' : '+ Agregar'}
+          {added ? 'Añadido' : 'Agregar'}
         </button>
       </div>
     </motion.div>

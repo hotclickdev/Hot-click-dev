@@ -40,14 +40,21 @@ function ModeIcon({ icon, size = 28 }) {
   }
 }
 
+function pieModo(mode) {
+  if (mode.id === 'pos') return 'Abrí la caja'
+  if (mode.id === 'store') return 'Ver'
+  return 'Entrá'
+}
+
 export default function ModeSelector() {
   const navigate    = useNavigate()
   const userRole    = useAuthStore(s => s.userRole)
   const permissions = useAuthStore(s => s.permissions)
+  const empresaSlug = useAuthStore(s => s.empresaSlug)
   const userName    = useAuthStore(s => s.userName)
   const token       = useAuthStore(s => s.token)
 
-  const modes = getAvailableModes(userRole, permissions)
+  const modes = getAvailableModes(userRole, permissions, { empresaSlug })
 
   // Si no hay sesión → login
   useEffect(() => {
@@ -116,7 +123,7 @@ export default function ModeSelector() {
                 )}
               </div>
               <div className="mt-auto font-bold text-[15px]" style={{ color: dark ? '#ffffff' : 'var(--hc-accent)' }}>
-                {mode.id === 'pos' ? 'Abrí la Caja →' : `Entrá${mode.id === 'admin' ? ' al Sistema' : ''} →`}
+                {pieModo(mode)}
               </div>
             </button>
           )

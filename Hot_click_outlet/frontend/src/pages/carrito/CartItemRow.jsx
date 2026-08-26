@@ -30,7 +30,7 @@ export default function CartItemRow({ item, onRemove, onUpdateQuantity }) {
         <h3 className="font-medium text-[#e8e8ed] text-sm leading-snug truncate">
           {item.nombre}
         </h3>
-        <p className="text-[#4f7cff] font-semibold text-sm mt-1">
+        <p className="text-sm font-semibold mt-1" style={{ color: 'var(--hc-accent)' }}>
           {formatPrice(item.precio)}
         </p>
         <div className="flex items-center gap-3 mt-3">

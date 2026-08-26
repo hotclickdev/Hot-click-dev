@@ -23,7 +23,7 @@ export default function HoyAlertas({ porDespachar, sinStock, sinVenta }) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <AlertaHoy to="/admin/pedidos" cuenta={porDespachar} etiqueta="pedidos por despachar" tono="urgente" />
         <AlertaHoy to="/admin/productos" cuenta={sinStock} etiqueta="sin stock o al mínimo" tono="alerta" />
-        <AlertaHoy to="/admin/promociones" cuenta={sinVenta} etiqueta="sin venta reciente" tono="suave" />
+        <AlertaHoy to="/admin/ofertas" cuenta={sinVenta} etiqueta="sin venta reciente" tono="suave" />
       </div>
     </section>
   )

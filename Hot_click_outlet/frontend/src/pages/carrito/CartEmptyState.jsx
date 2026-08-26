@@ -14,7 +14,7 @@ export default function CartEmptyState() {
       <div className="relative w-28 h-28 flex items-center justify-center">
         <div className="absolute inset-0 rounded-3xl" style={{ background: 'color-mix(in srgb, var(--hc-accent) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 16%, transparent)' }} />
         <div className="absolute inset-0 rounded-3xl blur-2xl opacity-30" style={{ background: 'var(--hc-accent)' }} />
-        <svg className="relative w-14 h-14 text-[#4f7cff]" fill="none" stroke="currentColor" strokeWidth={1.2} viewBox="0 0 24 24">
+        <svg className="relative w-14 h-14" fill="none" stroke="currentColor" strokeWidth={1.2} viewBox="0 0 24 24" style={{ color: 'var(--hc-accent)' }}>
           <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
           <path strokeLinecap="round" strokeLinejoin="round" d="M1 1h4l2.68 13.39a2 2 0 001.95 1.61h9.72a2 2 0 001.95-1.61L23 6H6" />
         </svg>
@@ -26,7 +26,7 @@ export default function CartEmptyState() {
       <div className="flex flex-col sm:flex-row gap-3 mt-1">
         <Link
           to="/productos"
-          className="px-6 py-2.5 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-medium text-sm transition-all shadow-[0_0_20px_rgba(23,71,168,0.25)] hover:shadow-[0_0_32px_rgba(23,71,168,0.4)]"
+          className="hc-btn hc-btn-primary min-h-11"
         >
           {t('cart.explore')}
         </Link>

@@ -4,16 +4,6 @@ export const ESTADOS_SIN_ACCION = new Set(['CANCELADO', 'PENDIENTE'])
 export const DIAS_GARANTIA = 40
 export const MS_POR_DIA = 86_400_000
 
-export const STATUS_ICONS = {
-  PENDIENTE: '🕐',
-  PAGADO: '✅',
-  EN_PREPARACION: '📦',
-  ENVIADO: '🚚',
-  ENTREGADO: '🏠',
-  LISTO_RETIRO: '🏪',
-  CANCELADO: '❌',
-}
-
 export const ESTADO_LABELS = {
   PENDIENTE: 'Pendiente',
   PAGADO: 'Pago confirmado',

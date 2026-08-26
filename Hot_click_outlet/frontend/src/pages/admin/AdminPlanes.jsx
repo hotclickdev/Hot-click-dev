@@ -3,22 +3,17 @@ import { Link, useNavigate } from 'react-router-dom'
 import { billingService } from '@/services/billingService'
 import useTenantStore from '@/store/tenantStore'
 import useAuthStore from '@/store/authStore'
-
-const CHECK = (
-  <svg className="w-4 h-4 shrink-0" style={{ color: '#22c55e' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-  </svg>
-)
-const X = (
-  <svg className="w-4 h-4 shrink-0" style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-  </svg>
-)
+import { esUsuarioSistema } from '@/utils/sistemaUser'
+import AccesoTiendaPublica from '@/components/sistema/AccesoTiendaPublica'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 function Feature({ ok, label }) {
   return (
     <div className="flex items-center gap-2 text-sm" style={{ color: ok ? 'var(--hc-text)' : 'var(--hc-muted)' }}>
-      {ok ? CHECK : X}
+      {ok
+        ? <span className="shrink-0" style={{ color: '#22c55e' }}><TrustGlyph tipo="check" className="w-4 h-4" /></span>
+        : <CloseIcon className="w-4 h-4 shrink-0" />}
       {label}
     </div>
   )
@@ -68,13 +63,15 @@ function PlanCard({ plan, esCurrent, loading, onSelect }) {
       <div className="flex flex-col gap-2 flex-1">
         <Feature ok label={`${plan.maxProductos === -1 ? 'Ilimitados' : plan.maxProductos} productos`} />
         <Feature ok label={`${plan.maxUsuarios} usuario${plan.maxUsuarios > 1 ? 's' : ''}`} />
-        <Feature ok={plan.tienePos}      label="POS / Caja registradora" />
+        {/* Caja en todos los planes (jul 2026). tienePos del API no debe
+            pintar la cruz: el dueño ya entra a /admin/pos sin PlanGate. */}
+        <Feature ok label="POS / Caja registradora" />
         {/* CRM básico es gratis en todo plan; tieneCrm del plan ahora solo refleja
             la futura función de IA de comportamiento, no el acceso al CRM en sí. */}
         <Feature ok label="CRM / Clientes" />
         <Feature ok={plan.tieneCompras}  label="Módulo de compras" />
         <Feature ok={plan.tieneReportes} label="Reportes avanzados" />
-        <Feature ok={plan.tieneAi}       label="AI Copilot" />
+        <Feature ok={plan.tieneAi}       label="Consultas con Hot" />
         <Feature ok={plan.tieneApi}      label="API Keys / Webhooks" />
       </div>
 
@@ -188,7 +185,7 @@ export default function AdminPlanes() {
           Sistema, siguiendo el mockup aprobado (Sistema - Configuracion.dc.html),
           que ubica "Cerrá sesión" al pie de esta misma pantalla. */}
       <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm font-semibold pt-2">
-        <Link to="/" className="hover:underline" style={{ color: 'var(--hc-muted)' }}>Ver tienda como cliente</Link>
+        <EnlaceTiendaCliente />
         <button
           type="button"
           onClick={() => globalThis.dispatchEvent(new Event('hc-open-tour'))}
@@ -202,5 +199,17 @@ export default function AdminPlanes() {
         </button>
       </div>
     </div>
+  )
+}
+
+function EnlaceTiendaCliente() {
+  const userRole = useAuthStore((s) => s.userRole)
+  if (esUsuarioSistema(userRole)) {
+    return <AccesoTiendaPublica variante="muted" conCopiar={false} />
+  }
+  return (
+    <Link to="/" className="hover:underline" style={{ color: 'var(--hc-muted)' }}>
+      Ver tienda como cliente
+    </Link>
   )
 }

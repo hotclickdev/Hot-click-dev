@@ -1,3 +1,5 @@
+import TrustGlyph from '@/components/ui/TrustGlyph'
+
 export function LockIcon() {
   return (
     <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -14,18 +16,8 @@ export function WhatsAppIcon() {
   )
 }
 
-export function CloseIcon() {
-  return (
-    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-    </svg>
-  )
-}
+export { default as CloseIcon } from '@/components/ui/CloseIcon'
 
 export function PackagePlaceholder({ className = 'w-8 h-8 opacity-30' }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
-    </svg>
-  )
+  return <TrustGlyph tipo="paquete" className={className} />
 }

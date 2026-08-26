@@ -3,10 +3,9 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 const STEPS = [
-  { id: 'cart',     href: '/carrito' },
-  { id: 'checkout', href: null },
-  { id: 'payment',  href: null },
-  { id: 'confirm',  href: null },
+  { id: 'cart', href: '/carrito' },
+  { id: 'checkout', href: '/checkout' },
+  { id: 'confirm', href: null },
 ]
 
 export default function CheckoutStepper({ activeStep = 'checkout' }) {
@@ -16,21 +15,21 @@ export default function CheckoutStepper({ activeStep = 'checkout' }) {
   return (
     <nav aria-label={t('checkoutStepper.progress')} className="flex items-center justify-center mb-4 sm:mb-6 select-none">
       {STEPS.map((step, i) => {
-        const done    = i < activeIdx
-        const active  = i === activeIdx
-        const pending = i > activeIdx
-        const label   = t(`checkoutStepper.${step.id}`)
-        const labelColor = active ? 'var(--hc-accent)' : done ? 'var(--hc-muted)' : 'color-mix(in srgb, var(--hc-muted) 40%, transparent)'
+        const done = i < activeIdx
+        const active = i === activeIdx
+        const label = t(`checkoutStepper.${step.id}`)
+        const labelColor = active ? 'var(--hc-primary)' : done ? 'var(--hc-muted)' : 'color-mix(in srgb, var(--hc-muted) 40%, transparent)'
+        const puedeVolver = done && step.href && activeStep !== 'confirm'
 
         return (
           <div key={step.id} className="flex items-center">
             <div className="flex flex-col items-center gap-1.5">
-              {done && step.href ? (
+              {puedeVolver ? (
                 <Link to={step.href} aria-label={t('checkoutStepper.backTo', { step: label })}>
                   <StepCircle done active={false} pending={false} index={i + 1} />
                 </Link>
               ) : (
-                <StepCircle done={done} active={active} pending={pending} index={i + 1} />
+                <StepCircle done={done} active={active} index={i + 1} />
               )}
               <span
                 className="text-[10px] font-medium hidden sm:block transition-colors duration-300"
@@ -44,7 +43,7 @@ export default function CheckoutStepper({ activeStep = 'checkout' }) {
             {i < STEPS.length - 1 && (
               <div
                 className="w-8 sm:w-14 h-0.5 mx-1 mb-3 rounded-full transition-colors duration-500"
-                style={{ background: i < activeIdx ? 'var(--hc-accent)' : 'var(--hc-border)' }}
+                style={{ background: i < activeIdx ? 'var(--hc-primary)' : 'var(--hc-border)' }}
               />
             )}
           </div>
@@ -54,10 +53,10 @@ export default function CheckoutStepper({ activeStep = 'checkout' }) {
   )
 }
 
-function StepCircle({ done, active, pending, index }) {
+function StepCircle({ done, active, index }) {
   let circleStyle = { background: 'color-mix(in srgb, var(--hc-surface) 60%, transparent)', color: 'color-mix(in srgb, var(--hc-muted) 40%, transparent)', border: '1px solid var(--hc-border)' }
-  if (done) circleStyle = { background: '#10b981', color: '#fff', boxShadow: '0 0 12px rgba(16,185,129,0.4)' }
-  else if (active) circleStyle = { background: 'var(--hc-accent)', color: '#fff', boxShadow: '0 0 16px color-mix(in srgb, var(--hc-accent) 50%, transparent)' }
+  if (done) circleStyle = { background: 'var(--hc-primary)', color: '#fff', boxShadow: '0 0 12px color-mix(in srgb, var(--hc-primary) 40%, transparent)' }
+  else if (active) circleStyle = { background: 'var(--hc-primary)', color: '#fff', boxShadow: '0 0 16px color-mix(in srgb, var(--hc-primary) 50%, transparent)' }
   return (
     <motion.div
       initial={false}

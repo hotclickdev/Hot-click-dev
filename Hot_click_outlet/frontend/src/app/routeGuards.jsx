@@ -4,6 +4,9 @@ import useAuthStore, { ADMIN_ROLES } from '@/store/authStore'
 import AdminLayout from '@/layouts/AdminLayout'
 import POSShell from '@/layouts/POSShell'
 import AdminErrorBoundary from '@/app/AdminErrorBoundary'
+import { esUsuarioSistema } from '@/utils/sistemaUser'
+import { isTokenAlive } from '@/utils/authToken'
+import { rutaLoginConRetorno } from '@/utils/authRedirect'
 
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'))
 const SistemaInicio  = lazy(() => import('@/pages/admin/SistemaInicio'))
@@ -13,27 +16,25 @@ const AdminReportes       = lazy(() => import('@/pages/admin/AdminReportes'))
 const SistemaReportes     = lazy(() => import('@/pages/admin/SistemaReportes'))
 const AdminOfertas              = lazy(() => import('@/pages/admin/AdminOfertas'))
 const SistemaPromociones        = lazy(() => import('@/pages/admin/SistemaPromociones'))
+const AdminProducts             = lazy(() => import('@/pages/admin/AdminProducts'))
+const SistemaProductos          = lazy(() => import('@/pages/admin/SistemaProductos'))
+const SistemaProductoForm       = lazy(() => import('@/pages/admin/sistema-productos/SistemaProductoForm'))
+const AdminClientes             = lazy(() => import('@/pages/admin/AdminClientes'))
+const SistemaClientes           = lazy(() => import('@/pages/admin/SistemaClientes'))
+const AdminBlog                 = lazy(() => import('@/pages/admin/AdminBlog'))
+const SistemaPosts              = lazy(() => import('@/pages/admin/SistemaPosts'))
+const AdminCopilot              = lazy(() => import('@/pages/admin/AdminCopilot'))
+const SistemaCopilot            = lazy(() => import('@/pages/admin/SistemaCopilot'))
 
 /**
- * True si el JWT existe y `exp` todavía no pasó.
- * @param {string|null|undefined} token
- */
-function isTokenAlive(token) {
-  if (!token) return false
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]))
-    return payload.exp * 1000 > Date.now()
-  } catch {
-    return false
-  }
-}
-
-/**
- * Exige sesión viva; si no, redirige a `/login`.
+ * Exige sesión viva; si no, redirige a `/login` con retorno a esta ruta.
  */
 export function ProtectedRoute({ children }) {
   const token = useAuthStore((s) => s.token)
-  return isTokenAlive(token) ? children : <Navigate to="/login" replace />
+  const location = useLocation()
+  if (isTokenAlive(token)) return children
+  const from = `${location.pathname}${location.search}`
+  return <Navigate to={rutaLoginConRetorno(from)} replace state={{ from }} />
 }
 
 /**
@@ -57,38 +58,69 @@ export function ITOnlyGuard() {
   return <Outlet />
 }
 
-// El dueño de negocio (EMPRENDEDOR) ve el Inicio simplificado del "Sistema";
-// el resto de roles admin sigue con el dashboard actual sin cambios.
-/** Inicio admin: Sistema para EMPRENDEDOR, dashboard para el resto. */
+/** Inicio: Sistema para el dueño (cualquier plan), dashboard para el resto. */
 export function AdminHomeRoute() {
   const userRole = useAuthStore((s) => s.userRole)
-  return userRole === 'EMPRENDEDOR' ? <SistemaInicio /> : <AdminDashboard />
+  return esUsuarioSistema(userRole) ? <SistemaInicio /> : <AdminDashboard />
 }
 
-// Mismo criterio: EMPRENDEDOR ve "Ventas y pedidos" con tabs (mockup Sistema
-// - Ventas.dc.html); el resto de roles admin sigue con AdminOrders sin cambios.
-/** Pedidos admin: Sistema para EMPRENDEDOR, AdminOrders para el resto. */
+/** Pedidos: Sistema para el dueño, AdminOrders para el resto. */
 export function AdminPedidosRoute() {
   const userRole = useAuthStore((s) => s.userRole)
-  return userRole === 'EMPRENDEDOR' ? <SistemaVentasPedidos /> : <AdminOrders />
+  return esUsuarioSistema(userRole) ? <SistemaVentasPedidos /> : <AdminOrders />
 }
 
-// Mismo criterio: EMPRENDEDOR ve "Reportes" con la estructura Finanzas /
-// Análisis y recomendaciones / Alertas de productos (mockup Sistema -
-// Reportes.dc.html); el resto de roles admin sigue con AdminReportes sin cambios.
-/** Reportes admin: Sistema para EMPRENDEDOR, AdminReportes para el resto. */
+/** Reportes: Sistema para el dueño, AdminReportes para el resto. */
 export function AdminReportesRoute() {
   const userRole = useAuthStore((s) => s.userRole)
-  return userRole === 'EMPRENDEDOR' ? <SistemaReportes /> : <AdminReportes />
+  return esUsuarioSistema(userRole) ? <SistemaReportes /> : <AdminReportes />
 }
 
-// Mismo criterio: EMPRENDEDOR ve "Promociones" con solicitud de aprobación
-// + estado de sus solicitudes; el resto de roles admin sigue con AdminOfertas
-// (que aplica la promo al instante) sin cambios.
-/** Promociones admin: Sistema para EMPRENDEDOR, AdminOfertas para el resto. */
+/** Promociones: Sistema para el dueño, AdminOfertas para el resto. */
 export function AdminPromocionesRoute() {
   const userRole = useAuthStore((s) => s.userRole)
-  return userRole === 'EMPRENDEDOR' ? <SistemaPromociones /> : <AdminOfertas />
+  return esUsuarioSistema(userRole) ? <SistemaPromociones /> : <AdminOfertas />
+}
+
+/** Productos: Sistema para el dueño (EMPRENDEDOR/PYME/NEGOCIO_PLUS), admin IT para el resto. */
+export function AdminProductosRoute() {
+  const userRole = useAuthStore((s) => s.userRole)
+  return esUsuarioSistema(userRole) ? <SistemaProductos /> : <AdminProducts />
+}
+
+/** Alta/edición Sistema. El admin IT sigue usando el modal de AdminProducts. */
+export function SistemaProductoFormRoute() {
+  const userRole = useAuthStore((s) => s.userRole)
+  if (!esUsuarioSistema(userRole)) return <Navigate to="/admin/productos" replace />
+  return <SistemaProductoForm />
+}
+
+/** Clientes: tarjetas Sistema para el dueño. */
+export function AdminClientesRoute() {
+  const userRole = useAuthStore((s) => s.userRole)
+  return esUsuarioSistema(userRole) ? <SistemaClientes /> : <AdminClientes />
+}
+
+/** Posts: mockup Sistema para el dueño. */
+export function AdminBlogRoute() {
+  const userRole = useAuthStore((s) => s.userRole)
+  return esUsuarioSistema(userRole) ? <SistemaPosts /> : <AdminBlog />
+}
+
+/** Consultas con Hot: mockup Sistema para el dueño. */
+export function AdminCopilotRoute() {
+  const userRole = useAuthStore((s) => s.userRole)
+  return esUsuarioSistema(userRole) ? <SistemaCopilot /> : <AdminCopilot />
+}
+
+/**
+ * Si el dueño pega una URL de admin IT, lo manda al equivalente Sistema.
+ * @param {{ to: string, children: import('react').ReactNode }} props
+ */
+export function RedirectSiSistema({ to, children }) {
+  const userRole = useAuthStore((s) => s.userRole)
+  if (esUsuarioSistema(userRole)) return <Navigate to={to} replace />
+  return children
 }
 
 /** Roles de caja/POS que entran al shell sin ser ADMIN_ROLES. */

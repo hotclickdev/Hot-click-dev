@@ -42,6 +42,9 @@ const useTenantStore = create((set, get) => ({
   loaded: false,
   loading: false,
 
+  estadoEmpresa: null,
+  visibilidadPublica: null,
+
   // ── Acciones ─────────────────────────────────────────────────────────────
 
   loadTenantInfo: async () => {
@@ -75,6 +78,11 @@ const useTenantStore = create((set, get) => ({
       set({ usoProductos: data.productos ?? 0, usoUsuarios: data.usuarios ?? 0 })
     } catch { /* silencioso */ }
   },
+
+  setEmpresaStatus: ({ estadoEmpresa, visibilidadPublica }) => set({
+    estadoEmpresa: estadoEmpresa ?? null,
+    visibilidadPublica: visibilidadPublica === true,
+  }),
 
   /**
    * Verifica si el plan activo incluye una feature.
@@ -121,6 +129,7 @@ const useTenantStore = create((set, get) => ({
     trialDias: -1, fechaVenc: null, features: {},
     usoProductos: 0, usoUsuarios: 0,
     loaded: false, loading: false,
+    estadoEmpresa: null, visibilidadPublica: null,
   }),
 }))
 

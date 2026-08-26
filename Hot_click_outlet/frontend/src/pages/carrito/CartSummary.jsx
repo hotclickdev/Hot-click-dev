@@ -5,6 +5,7 @@ import Button from '@/components/ui/Button'
 import ShippingProgress from '@/components/ui/ShippingProgress'
 import { formatPrice } from '@/utils/format'
 import { subtotalItem } from './cartHelpers'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 import { LockIcon, WhatsAppIcon } from './cartIcons'
 
 export default function CartSummary({ items, total, onCheckout, onWhatsApp }) {
@@ -36,23 +37,25 @@ export default function CartSummary({ items, total, onCheckout, onWhatsApp }) {
       <div className="pt-2 space-y-2">
         <Button
           onClick={onCheckout}
-          className="w-full bg-[#4f7cff] hover:bg-[#3d6ee0] shadow-[0_0_20px_rgba(23,71,168,0.3)]"
+          variant="primary"
+          className="w-full"
           size="lg"
         >
           <LockIcon />
           {t('cart.payCard')}
         </Button>
-        <Button
+        <button
+          type="button"
           onClick={onWhatsApp}
-          className="w-full bg-[#25D366] hover:bg-[#1da851] shadow-[0_0_20px_rgba(37,211,102,0.25)]"
-          size="lg"
+          className="w-full min-h-11 inline-flex items-center justify-center gap-2 text-sm font-medium"
+          style={{ color: 'var(--hc-muted)' }}
         >
           <WhatsAppIcon />
           {t('cart.orderWhatsapp')}
-        </Button>
+        </button>
         <Link to="/productos">
           <Button variant="ghost" className="w-full" size="md">
-            {t('cart.keepShopping')}
+            <TextoFlecha dir="atras">{t('cart.keepShopping')}</TextoFlecha>
           </Button>
         </Link>
       </div>

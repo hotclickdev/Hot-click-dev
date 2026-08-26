@@ -2,6 +2,8 @@ import { motion } from 'framer-motion'
 import { useState, useRef, useLayoutEffect } from 'react'
 import { HotClickMark } from '@/components/ui/BrandLogo'
 import useTenantStore from '@/store/tenantStore'
+import { esUsuarioSistema } from '@/utils/sistemaUser'
+import { leerSeccionesColapsadas, CLAVE_SIDEBAR_COLAPSADO } from './adminItJobs'
 import SidebarNavGroups from './SidebarNavGroups'
 import SidebarUserFooter from './SidebarUserFooter'
 
@@ -18,22 +20,19 @@ export default function SidebarContent({ sidebarLinks, roleBadge, t, userName, e
   // "Sistema" (EMPRENDEDOR) usa sidebar claro siguiendo el mockup aprobado
   // (Front para cliente EPN); ADMIN/GERENTE/SUPERVISOR mantienen el nav
   // oscuro n-900 del Brand Book cap. 6.
-  const isLight = userRole === 'EMPRENDEDOR'
+  const isLight = esUsuarioSistema(userRole)
   const muted   = isLight ? 'var(--hc-muted)' : 'rgba(255,255,255,0.45)'
   const faint   = isLight ? 'var(--hc-muted)' : 'rgba(255,255,255,0.32)'
   const hoverBg = isLight ? 'var(--hc-surface-2)' : 'rgba(255,255,255,0.04)'
 
-  const [collapsed, setCollapsed] = useState(() => {
-    try { return new Set(JSON.parse(localStorage.getItem('hc-sidebar-collapsed') || '[]')) }
-    catch { return new Set() }
-  })
+  const [collapsed, setCollapsed] = useState(() => leerSeccionesColapsadas(userRole))
 
   const toggleSection = (section) => {
     setCollapsed(prev => {
       const next = new Set(prev)
       if (next.has(section)) next.delete(section)
       else next.add(section)
-      try { localStorage.setItem('hc-sidebar-collapsed', JSON.stringify([...next])) } catch { /* quota or private mode */ }
+      try { localStorage.setItem(CLAVE_SIDEBAR_COLAPSADO, JSON.stringify([...next])) } catch { /* quota or private mode */ }
       return next
     })
   }

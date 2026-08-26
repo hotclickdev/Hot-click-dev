@@ -30,7 +30,7 @@ function ProductCard({ product, priority = false, index = 0, hotTag = null }) {
     if (product.stock === 0) return
     addItem(product)
     setAdded(true)
-    toast({ message: `${product.nombre} agregado al carrito`, type: 'success' })
+    toast({ message: t('product.added', { name: product.nombre }), type: 'success' })
     setTimeout(() => setAdded(false), 1500)
   }
 

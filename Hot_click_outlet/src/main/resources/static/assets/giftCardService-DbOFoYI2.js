@@ -1,1 +1,0 @@
-import{t as e}from"./api-BBkWg_i6.js";var t={validar:t=>e.get(`/gift-cards/validar?codigo=${encodeURIComponent(t)}`),listar:()=>e.get(`/admin/gift-cards`),crear:t=>e.post(`/admin/gift-cards`,t),cancelar:t=>e.delete(`/admin/gift-cards/${t}`)};export{t};

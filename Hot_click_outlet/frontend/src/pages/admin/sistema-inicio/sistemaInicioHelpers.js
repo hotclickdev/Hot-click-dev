@@ -31,11 +31,14 @@ export function timeAgo(dateStr) {
   return `hace ${Math.floor(diff / MS_POR_DIA)} d`
 }
 
-/** @param {number} [offsetDays] */
+/** Día civil local (CR), no UTC — si no, después de las 18h “hoy” ya es mañana. */
 export function isoDay(offsetDays = 0) {
   const d = new Date()
   d.setDate(d.getDate() - offsetDays)
-  return d.toISOString().slice(0, 10)
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
 }
 
 /** @param {object[]} ventas @param {string} diaIso */
