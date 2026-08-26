@@ -6,6 +6,7 @@ import com.hotclick.exception.PlanLimitException;
 import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.exception.TenantNotFoundException;
+import io.sentry.Sentry;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,6 +68,7 @@ public class GlobalExceptionHandler {
                 : HttpStatus.BAD_GATEWAY;
         log.error("[integracion-externa] integracion={} tipo={} tenantId={} msg={}",
                 ex.getIntegracion(), ex.getTipo(), ex.getTenantId(), ex.getMessage(), ex);
+        Sentry.captureException(ex);
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("error",       "INTEGRACION_EXTERNA_FALLO");
         body.put("integracion", ex.getIntegracion());
@@ -108,7 +110,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ResponseDTO> handleIllegalState(IllegalStateException ex) {
-        return ResponseEntity.badRequest().body(ResponseDTO.error(ex.getMessage()));
+        if (ex.getCause() == null) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(ex.getMessage()));
+        }
+        log.error("Unhandled state [{}]: {}", ex.getClass().getSimpleName(), ex.getMessage(), ex);
+        Sentry.captureException(ex);
+        return ResponseEntity.internalServerError()
+                .body(ResponseDTO.error("Error interno del servidor"));
     }
 
     /** Recurso no encontrado (Optional.get() sin valor, etc.) */
@@ -155,12 +163,20 @@ public class GlobalExceptionHandler {
                 .body(ResponseDTO.error("Recurso no encontrado"));
     }
 
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ResponseDTO> handleMethodNotSupported(
+            org.springframework.web.HttpRequestMethodNotSupportedException ex) {
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(ResponseDTO.error("Método no soportado"));
+    }
+
     // ── Fallback ──────────────────────────────────────────────────────────────
 
     /** Captura cualquier excepción no manejada explícitamente arriba */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ResponseDTO> handleGeneral(Exception ex) {
         log.error("Unhandled exception [{}]: {}", ex.getClass().getSimpleName(), ex.getMessage(), ex);
+        Sentry.captureException(ex);
         return ResponseEntity.internalServerError()
                 .body(ResponseDTO.error("Error interno del servidor"));
     }

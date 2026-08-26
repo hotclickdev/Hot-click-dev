@@ -9,6 +9,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import CategoriaCard from './categorias/CategoriaCard'
 import CategoriaFormModal from './categorias/CategoriaFormModal'
 import CategoriasEmptyState from './categorias/CategoriasEmptyState'
+import TextoMas from '@/components/ui/TextoMas'
 import {
   COLUMNAS_EXPORT_CATEGORIAS,
   COLUMNAS_IMPORT_CATEGORIAS,
@@ -182,7 +183,7 @@ function CategoriasHeader({ categorias, onImportar, onNueva }) {
           mapImportRow={filaImportacionCategoria}
           onImport={onImportar}
         />
-        <Button onClick={onNueva}>+ Nuevo grupo</Button>
+        <Button onClick={onNueva}><TextoMas>Nuevo grupo</TextoMas></Button>
       </div>
     </div>
   )

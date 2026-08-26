@@ -1,6 +1,7 @@
 import AICategoryChip from '../AICategoryChip'
 import { TypingDots } from './ProductsAssistantTypingDots'
 import { ProductsAssistantProductCard } from './ProductsAssistantProductCard'
+import IconoAsistente from '../IconoAsistente'
 
 export function ProductsAssistantBurbuja({ msg, onAdd, onCategoryFilter }) {
   const isUser = msg.rol === 'user'
@@ -9,7 +10,7 @@ export function ProductsAssistantBurbuja({ msg, onAdd, onCategoryFilter }) {
       {!isUser && (
         <div className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold mt-0.5"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff', minWidth: 24 }}>
-          ✦
+          <IconoAsistente className="w-3 h-3" />
         </div>
       )}
       <div className="max-w-[84%] space-y-2">

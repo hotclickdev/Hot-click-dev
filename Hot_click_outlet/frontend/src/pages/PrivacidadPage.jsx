@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 const SITE_URL = 'https://hotclick.lat'
 const LAST_UPDATED = '5 de junio de 2025'
@@ -136,8 +137,7 @@ export default function PrivacidadPage() {
             <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--hc-muted)', textDecoration: 'none', marginBottom: '1.5rem' }}
               onMouseEnter={e => e.currentTarget.style.color = 'var(--hc-accent)'}
               onMouseLeave={e => e.currentTarget.style.color = 'var(--hc-muted)'}>
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-              Volver al inicio
+              <TextoFlecha dir="atras" iconClassName="w-3.5 h-3.5">Volver al inicio</TextoFlecha>
             </Link>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: '1rem' }}>
@@ -204,10 +204,10 @@ export default function PrivacidadPage() {
             <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
               <Link to="/terminos" style={{ fontSize: 13, color: 'var(--hc-muted)', textDecoration: 'none' }}
                 onMouseEnter={e => e.currentTarget.style.color = 'var(--hc-accent)'}
-                onMouseLeave={e => e.currentTarget.style.color = 'var(--hc-muted)'}>Términos y Condiciones →</Link>
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--hc-muted)'}><TextoFlecha>Términos y Condiciones</TextoFlecha></Link>
               <Link to="/" style={{ fontSize: 13, color: 'var(--hc-muted)', textDecoration: 'none' }}
                 onMouseEnter={e => e.currentTarget.style.color = 'var(--hc-accent)'}
-                onMouseLeave={e => e.currentTarget.style.color = 'var(--hc-muted)'}>Volver al inicio →</Link>
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--hc-muted)'}><TextoFlecha>Volver al inicio</TextoFlecha></Link>
             </div>
           </div>
         </div>

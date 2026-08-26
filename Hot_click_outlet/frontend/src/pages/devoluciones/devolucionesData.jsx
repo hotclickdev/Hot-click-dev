@@ -20,9 +20,9 @@ export const returnPolicyJsonLd = {
 }
 
 export const badges = [
-  { icon: '📦', title: '7 días hábiles', desc: 'Para solicitar devolución' },
-  { icon: '💬', title: 'Proceso simple', desc: 'Contactás al emprendedor' },
-  { icon: '💳', title: 'Reembolso garantizado', desc: 'En productos defectuosos' },
+  { icono: 'paquete', title: '7 días hábiles', desc: 'Para solicitar devolución' },
+  { icono: 'chat', title: 'Proceso simple', desc: 'Contactás al emprendedor' },
+  { icono: 'tarjeta', title: 'Reembolso garantizado', desc: 'En productos defectuosos' },
 ]
 
 export const sections = [

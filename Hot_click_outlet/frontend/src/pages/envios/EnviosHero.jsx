@@ -1,14 +1,14 @@
 import { Link } from 'react-router-dom'
 import { paymentMethods } from './enviosData'
-import { IconBack, IconLogistica } from './enviosIcons'
+import { IconLogistica } from './enviosIcons'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function EnviosHero() {
   return (
     <div className="envios-hero">
       <div className="envios-hero-inner">
         <Link to="/" className="back-link">
-          <IconBack />
-          Volver al inicio
+          <TextoFlecha dir="atras" iconClassName="w-3.5 h-3.5">Volver al inicio</TextoFlecha>
         </Link>
 
         <div className="envios-eyebrow">

@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import useChatStore from '@/store/chatStore'
-import { isBrowser } from '@/utils/browser'
 import useCartStore from '@/store/cartStore'
 import AIChat from './AIChat'
-import POSPaymentPanel from './POSPaymentPanel'
 import { HotClickMark } from '@/components/ui/BrandLogo'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 const CHIPS = [
   '¿Qué tenés en oferta?',
@@ -14,13 +14,11 @@ const CHIPS = [
 ]
 
 export default function ChatModal() {
-  const isOpen         = useChatStore(s => s.isOpen)
+  const isOpen = useChatStore(s => s.isOpen)
   const pendingMessage = useChatStore(s => s.pendingMessage)
-  const close          = useChatStore(s => s.close)
-  const clearPending   = useChatStore(s => s.clearPending)
-  const cartCount      = useCartStore(s => s.items.length)
-
-  const [checkoutMode, setCheckoutMode] = useState(false)
+  const close = useChatStore(s => s.close)
+  const clearPending = useChatStore(s => s.clearPending)
+  const cartCount = useCartStore(s => s.items.length)
 
   useEffect(() => {
     const { startExpiryTimer, stopExpiryTimer } = useChatStore.getState()
@@ -33,35 +31,16 @@ export default function ChatModal() {
   }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!isOpen) setCheckoutMode(false)
-  }, [isOpen])
-
-  useEffect(() => {
     if (!isOpen) return
-    const onKey = (e) => {
-      if (e.key === 'Escape') {
-        if (checkoutMode) setCheckoutMode(false)
-        else close()
-      }
-    }
+    const onKey = (e) => { if (e.key === 'Escape') close() }
     globalThis.addEventListener('keydown', onKey)
     return () => globalThis.removeEventListener('keydown', onKey)
-  }, [isOpen, checkoutMode, close])
-
-  const histHeight = isBrowser ? Math.max(300, globalThis.innerHeight - 200) : 500
-
-  // En mobile (<640px) ocupa pantalla completa; en desktop, drawer fijo 420px desde la izquierda
-  const drawerVariants = {
-    hidden:  { x: '-100%' },
-    visible: { x: 0 },
-    exit:    { x: '-100%' },
-  }
+  }, [isOpen, close])
 
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             key="chat-backdrop"
             initial={{ opacity: 0 }}
@@ -73,16 +52,13 @@ export default function ChatModal() {
             style={{ background: 'rgba(0,0,0,0.30)' }}
             aria-hidden="true"
           />
-
-          {/* Drawer — izquierda en desktop, fullscreen en mobile */}
           <motion.aside
             key="chat-drawer"
             role="dialog"
             aria-label="Asistente HotClick"
-            variants={drawerVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
+            initial={{ x: '-100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '-100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 280 }}
             className="hc-drawer-surface fixed left-0 top-0 bottom-0 z-50 flex flex-col"
             style={{
@@ -93,103 +69,53 @@ export default function ChatModal() {
               color: 'var(--hc-text)',
             }}
           >
-            {/* Header minimalista */}
-            <div
-              className="flex items-center gap-3 px-4 py-3.5 shrink-0"
-              style={{ borderBottom: '1px solid var(--hc-border)' }}
-            >
-              {/* Botón volver — solo en modo checkout */}
-              {checkoutMode && (
-                <button type="button"
-                  onClick={() => setCheckoutMode(false)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-60 shrink-0"
-                  style={{ color: 'var(--hc-muted)' }}
-                  aria-label="Volver al chat"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-              )}
-
-              {/* Logo */}
-              {!checkoutMode && <HotClickMark size={32} className="shrink-0" />}
-
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm" style={{ color: 'var(--hc-text)' }}>
-                  {checkoutMode ? 'Pagar pedido' : 'Asistente HotClick'}
-                </p>
-                <p className="text-[11px] leading-none mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-                  {checkoutMode ? 'Sin salir del chat' : 'Tu guía de compras'}
-                </p>
-              </div>
-
-              {/* Botón "Pagar ya" */}
-              {!checkoutMode && cartCount > 0 && (
-                <button type="button"
-                  onClick={() => setCheckoutMode(true)}
-                  className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all hover:opacity-80 active:scale-95"
-                  style={{ background: 'var(--hc-accent)', color: '#fff' }}
-                  aria-label="Pagar ahora"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
-                  </svg>
-                  Pagar ya
-                </button>
-              )}
-
-              {/* Cerrar */}
-              <button type="button"
-                onClick={close}
-                aria-label="Cerrar asistente"
-                className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-60 shrink-0"
-                style={{ color: 'var(--hc-muted)' }}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Cuerpo — sin scroll propio; AIChat maneja su layout interno */}
+            <ChatHeader cartCount={cartCount} onClose={close} />
             <div className="flex-1 min-h-0 overflow-hidden">
-              <AnimatePresence mode="wait">
-                {checkoutMode ? (
-                  <motion.div
-                    key="checkout"
-                    initial={{ opacity: 0, x: -24 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -24 }}
-                    transition={{ duration: 0.18 }}
-                    className="h-full overflow-y-auto px-4 py-4"
-                  >
-                    <POSPaymentPanel onClose={close} />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="chat"
-                    initial={{ opacity: 0, x: 24 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 24 }}
-                    transition={{ duration: 0.18 }}
-                    className="h-full"
-                  >
-                    <AIChat
-                      context="GENERAL"
-                      sessionKey="hotclick"
-                      chips={CHIPS}
-                      placeholder="¿Qué estás buscando?"
-                      autoQuery={pendingMessage || undefined}
-                      fullHeight
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <AIChat
+                context="GENERAL"
+                sessionKey="hotclick"
+                chips={CHIPS}
+                placeholder="¿Qué estás buscando?"
+                autoQuery={pendingMessage || undefined}
+                fullHeight
+              />
             </div>
           </motion.aside>
         </>
       )}
     </AnimatePresence>
+  )
+}
+
+function ChatHeader({ cartCount, onClose }) {
+  return (
+    <div
+      className="flex items-center gap-3 px-4 py-3.5 shrink-0"
+      style={{ borderBottom: '1px solid var(--hc-border)' }}
+    >
+      <HotClickMark size={32} className="shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="font-bold text-sm" style={{ color: 'var(--hc-text)' }}>Asistente HotClick</p>
+        <p className="text-[11px] leading-none mt-0.5" style={{ color: 'var(--hc-muted)' }}>Tu guía de compras</p>
+      </div>
+      {cartCount > 0 && (
+        <Link
+          to="/checkout"
+          onClick={onClose}
+          className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold min-h-11 transition-all hover:opacity-80"
+          style={{ background: 'var(--hc-accent)', color: '#fff' }}
+        >
+          Ir a datos y pago
+        </Link>
+      )}
+      <button type="button"
+        onClick={onClose}
+        aria-label="Cerrar asistente"
+        className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-60 shrink-0"
+        style={{ color: 'var(--hc-muted)' }}
+      >
+        <CloseIcon className="w-5 h-5" />
+      </button>
+    </div>
   )
 }

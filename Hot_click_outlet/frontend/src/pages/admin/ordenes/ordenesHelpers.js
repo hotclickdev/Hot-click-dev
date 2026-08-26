@@ -139,6 +139,6 @@ export function mensajeWhatsAppPedido(order, estado) {
     ...(productos ? ['\nProductos:', productos] : []),
     ...(order.numeroGuia ? [`\nGuía: *${order.numeroGuia}*`] : []),
     '',
-    '¿Tenés alguna consulta? Con gusto te ayudamos. 🙂',
+    '¿Tenés alguna consulta? Con gusto te ayudamos.',
   ].join('\n')
 }

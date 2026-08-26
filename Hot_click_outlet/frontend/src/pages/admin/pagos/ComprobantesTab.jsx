@@ -38,14 +38,14 @@ function TarjetaComprobante({
               disabled={compAction === c.id}
               className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
             >
-              {compAction === c.id ? '…' : '✓ Aprobar'}
+              {compAction === c.id ? '…' : 'Aprobar'}
             </button>
             <button type="button"
               onClick={() => onAbrirRechazo(c.id)}
               disabled={compAction === c.id}
               className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25"
             >
-              ✕ Rechazar
+              Rechazar
             </button>
           </div>
         )}

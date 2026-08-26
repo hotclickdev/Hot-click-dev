@@ -24,14 +24,14 @@ export default function OpinionesSection({ orders = [], ordersLoading = false })
 
       <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--hc-border)' }}>
         <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--hc-text)' }}>
-          ⭐ Tu opinión
+          Tu opinión
         </h2>
         <div className="flex gap-1 p-1 rounded-xl" style={{ backgroundColor: 'var(--hc-surface-2)' }}>
           <button type="button" style={tabStyle(tab === 'testimonio')} onClick={() => setTab('testimonio')}>
-            💬 Testimonio web
+            Testimonio web
           </button>
           <button type="button" style={tabStyle(tab === 'resena')} onClick={() => setTab('resena')}>
-            📦 Reseña de producto
+            Reseña de producto
           </button>
         </div>
       </div>

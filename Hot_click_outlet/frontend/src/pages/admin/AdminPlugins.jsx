@@ -4,6 +4,8 @@ import { useAdminPluginsActions } from './plugins/useAdminPluginsActions'
 import PluginForm from './plugins/PluginForm'
 import PluginsList from './plugins/PluginsList'
 import LogModal from './plugins/LogModal'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import TextoMas from '@/components/ui/TextoMas'
 
 export default function AdminPlugins() {
   const [plugins, setPlugins]       = useState([])
@@ -51,9 +53,9 @@ export default function AdminPlugins() {
           </p>
         </div>
         <button type="button" onClick={abrirNuevo}
-          className="px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-80"
+          className="px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-80 inline-flex items-center gap-1.5"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-          + Nuevo plugin
+          <TextoMas>Nuevo plugin</TextoMas>
         </button>
       </div>
 
@@ -82,7 +84,9 @@ export default function AdminPlugins() {
         </div>
       ) : plugins.length === 0 ? (
         <div className="text-center py-16" style={{ color: 'var(--hc-muted)' }}>
-          <div className="text-4xl mb-3">🔌</div>
+          <div className="flex justify-center mb-3 opacity-40">
+            <TrustGlyph tipo="rayo" className="w-10 h-10" />
+          </div>
           <p className="font-medium">Sin plugins configurados</p>
           <p className="text-sm mt-1">Agrega un webhook o un iframe para conectar servicios externos</p>
         </div>

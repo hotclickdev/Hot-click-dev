@@ -1,10 +1,15 @@
+import TextoFlecha from '@/components/ui/TextoFlecha'
+import TextoMas from '@/components/ui/TextoMas'
+
 export default function ProductosVacio({ search, hasFilters, onClearFilters, onNuevo }) {
   if (search || hasFilters) {
     return (
       <div className="text-center py-14">
         <div className="space-y-2">
           <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>Sin resultados para los filtros actuales</p>
-          <button type="button" onClick={onClearFilters} className="text-xs hover:underline" style={{ color: 'var(--hc-accent)' }}>Limpiar filtros →</button>
+          <button type="button" onClick={onClearFilters} className="text-xs hover:underline" style={{ color: 'var(--hc-accent)' }}>
+            <TextoFlecha>Limpiar filtros</TextoFlecha>
+          </button>
         </div>
       </div>
     )
@@ -22,7 +27,7 @@ export default function ProductosVacio({ search, hasFilters, onClearFilters, onN
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold mt-1 transition-opacity hover:opacity-80"
           style={{ backgroundColor: 'var(--hc-primary)', color: '#fff' }}
         >
-          + Crear primer producto
+          <TextoMas>Crear primer producto</TextoMas>
         </button>
       </div>
     </div>

@@ -91,13 +91,11 @@ export default function CheckoutPage() {
     setSinpeUploadError: form.setSinpeUploadError,
   })
 
-  if (items.length === 0) return <CheckoutEmpty />
-
   if (estado === 'sinpe_pendiente') {
     return (
       <CheckoutSinpePending
         pagoData={pagoData}
-        totalFinal={form.totalFinal}
+        totalFinal={form.totalFinal || pagoData?.total || 0}
         sinpeNombre={form.sinpeNombre}
         sinpeCedula={form.sinpeCedula}
         sinpeTelefono={form.sinpeTelefono}
@@ -121,6 +119,9 @@ export default function CheckoutPage() {
   if (estado === 'redirecting' || estado === 'loading') {
     return <CheckoutLoading estado={estado} />
   }
+
+  // Después de SINPE/gift el carrito se vacía a propósito; no mostrar vacío ahí.
+  if (items.length === 0) return <CheckoutEmpty />
 
   return (
     <CheckoutLayout

@@ -99,7 +99,7 @@ export default function AdminInventario() {
         <button type="button" onClick={analizarAhora} disabled={analizando || cargando}
           className="px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 hover:opacity-80"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-          {analizando ? 'Analizando…' : '▶ Ejecutar análisis ahora'}
+          {analizando ? 'Analizando…' : 'Ejecutar análisis ahora'}
         </button>
       </div>
 

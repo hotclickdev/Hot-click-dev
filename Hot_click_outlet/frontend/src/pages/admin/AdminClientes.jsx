@@ -3,6 +3,7 @@ import { crmService } from '@/services/crmService'
 import { useToast } from '@/components/ui/Toast'
 import ClienteDetailModal from '@/components/admin/ClienteDetailModal'
 import { esInactivo30d } from './clientes/clientesHelpers'
+import TextoMas from '@/components/ui/TextoMas'
 
 const fmt = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
 
@@ -75,9 +76,9 @@ export default function AdminClientes() {
           </p>
         </div>
         <button type="button" onClick={() => setShowNuevo(s => !s)}
-          className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
+          className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 inline-flex items-center gap-1.5"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-          + Nuevo cliente
+          <TextoMas>Nuevo cliente</TextoMas>
         </button>
       </div>
 

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { HotClickMark } from '@/components/ui/BrandLogo'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 import FooterLink from './FooterLink'
 
 export default function FooterColumns() {
@@ -70,12 +71,14 @@ export default function FooterColumns() {
 
         <div className="flex flex-col gap-2">
           {[
-            { icon: '🔒', text: 'Pagos 100% seguros' },
-            { icon: '🇨🇷', text: 'Tienda costarricense' },
-            { icon: '⚡', text: 'Envío express disponible' },
+            { icono: 'candado', text: 'Pagos 100% seguros' },
+            { icono: 'cr', text: 'Tienda costarricense' },
+            { icono: 'rayo', text: 'Envío express disponible' },
           ].map((b) => (
             <div key={b.text} className="flex items-center gap-2">
-              <span className="text-sm leading-none">{b.icon}</span>
+              <span className="w-4 flex justify-center" style={{ color: 'var(--hc-muted)' }}>
+                <TrustGlyph tipo={b.icono} className="w-3.5 h-3.5" />
+              </span>
               <span className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>{b.text}</span>
             </div>
           ))}
@@ -103,6 +106,7 @@ export default function FooterColumns() {
           <FooterLink to="/nosotros">{t('footer.nosotros')}</FooterLink>
           <FooterLink to="/contacto">{t('footer.contacto')}</FooterLink>
           <FooterLink to="/registro-empresa" highlight>Vendé con nosotros</FooterLink>
+          <FooterLink to="/emprende">{t('nav.emprender')}</FooterLink>
           <FooterLink to="/emprendimientos">Emprendimientos</FooterLink>
           <FooterLink to="/blog">Blog</FooterLink>
         </ul>

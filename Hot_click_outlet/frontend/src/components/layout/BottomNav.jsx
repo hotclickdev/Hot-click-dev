@@ -3,6 +3,16 @@ import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import useCartStore from '@/store/cartStore'
 import useAuthStore from '@/store/authStore'
+import { itemsBottomNav, estaTabActiva } from './bottomNavItems'
+import { esRutaTienda } from '@/utils/rutaTienda'
+
+const ICONOS = {
+  comprar: ShopIcon,
+  vender: VenderIcon,
+  emprender: EmprenderIcon,
+  pedido: CartNavIcon,
+  cuenta: AccountIcon,
+}
 
 export default function BottomNav() {
   const { t } = useTranslation()
@@ -10,20 +20,19 @@ export default function BottomNav() {
   const cartCount = useCartStore((s) => s.count())
   const { token } = useAuthStore()
 
-  if (location.pathname.startsWith('/admin')) return null
+  if (location.pathname.startsWith('/admin') || esRutaTienda(location.pathname)) return null
 
   const cartBadge = cartCount > 9 ? '9+' : `${cartCount}`
-  const items = [
-    { href: '/', label: t('bnav.inicio'), exact: true, icon: HomeIcon },
-    { href: '/productos', label: t('bnav.tienda'), icon: ShopIcon },
-    { href: '/descubri', label: t('bnav.descubri'), icon: DescubriIcon },
-    { href: '/carrito', label: t('bnav.carrito'), icon: CartNavIcon, badge: cartCount > 0 ? cartBadge : null },
-    { href: token ? '/perfil' : '/login', label: t('bnav.cuenta'), icon: AccountIcon },
-  ]
+  const items = itemsBottomNav({
+    t,
+    token,
+    cartBadge: cartCount > 0 ? cartBadge : null,
+  })
 
   return (
     <nav
       className="hc-bottom-nav fixed bottom-0 left-0 right-0 z-40 md:hidden backdrop-blur-xl"
+      aria-label={t('bnav.principal')}
       style={{
         backgroundColor: 'var(--hc-surface)',
         borderTop: '1px solid var(--hc-border)',
@@ -31,13 +40,15 @@ export default function BottomNav() {
       }}
     >
       <div className="flex items-stretch h-16">
-        {items.map(({ href, label, icon: Icon, badge, exact }) => {
-          const isActive = exact ? location.pathname === href : location.pathname.startsWith(href)
+        {items.map((item) => {
+          const Icon = ICONOS[item.icon]
+          const isActive = estaTabActiva(item, location.pathname)
           return (
             <Link
-              key={href}
-              to={href}
-              className="flex flex-col items-center justify-center gap-1 flex-1 relative py-2 touch-manipulation"
+              key={item.id}
+              to={item.href}
+              aria-current={isActive ? 'page' : undefined}
+              className="flex flex-col items-center justify-center gap-1 flex-1 relative py-2 min-h-11 touch-manipulation"
             >
               {isActive && (
                 <motion.div
@@ -49,7 +60,7 @@ export default function BottomNav() {
               )}
               <div className="relative">
                 <Icon active={isActive} />
-                {badge && (
+                {item.badge && (
                   <span
                     className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 rounded-full text-white text-[9px] font-bold flex items-center justify-center"
                     style={{
@@ -57,7 +68,7 @@ export default function BottomNav() {
                       boxShadow: '0 0 8px color-mix(in srgb, var(--hc-accent) 55%, transparent)',
                     }}
                   >
-                    {badge}
+                    {item.badge}
                   </span>
                 )}
               </div>
@@ -65,26 +76,13 @@ export default function BottomNav() {
                 className="text-[10px] font-medium leading-none transition-colors"
                 style={{ color: isActive ? 'var(--hc-accent)' : 'var(--hc-muted)' }}
               >
-                {label}
+                {item.label}
               </span>
             </Link>
           )
         })}
       </div>
     </nav>
-  )
-}
-
-function HomeIcon({ active }) {
-  return active ? (
-    <svg className="w-[22px] h-[22px]" style={{ color: 'var(--hc-accent)' }} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 101.06-1.06l-8.689-8.69a2.25 2.25 0 00-3.182 0l-8.69 8.69a.75.75 0 001.061 1.06l8.69-8.689z" />
-      <path d="M12 5.432l8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-3a.75.75 0 00-.75.75V21a.75.75 0 01-.75.75H5.625a1.875 1.875 0 01-1.875-1.875v-6.198c.03-.028.061-.056.091-.086L12 5.432z" />
-    </svg>
-  ) : (
-    <svg className="w-[22px] h-[22px]" style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-    </svg>
   )
 }
 
@@ -103,17 +101,22 @@ function ShopIcon({ active }) {
   )
 }
 
-function DescubriIcon({ active }) {
-  // Dos cartas apiladas (mazo de swipe): la trasera rotada, la frontal recta
+function VenderIcon({ active }) {
   return active ? (
     <svg className="w-[22px] h-[22px]" style={{ color: 'var(--hc-accent)' }} viewBox="0 0 24 24" fill="currentColor">
-      <rect x="8.2" y="2.6" width="11" height="15" rx="2.5" transform="rotate(9 13.7 10.1)" opacity="0.45" />
-      <rect x="4.5" y="6" width="11.5" height="15.5" rx="2.5" />
+      <path d="M3 21h18V10.5L12 3 3 10.5V21zm8-2v-5h2v5h-2z" />
     </svg>
   ) : (
     <svg className="w-[22px] h-[22px]" style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="8.2" y="2.6" width="11" height="15" rx="2.5" transform="rotate(9 13.7 10.1)" />
-      <rect x="4.5" y="6" width="11.5" height="15.5" rx="2.5" />
+      <path d="M3 21h18M5 21V10l7-6 7 6v11M9 21v-6h6v6" />
+    </svg>
+  )
+}
+
+function EmprenderIcon({ active }) {
+  return (
+    <svg className="w-[22px] h-[22px]" style={{ color: active ? 'var(--hc-accent)' : 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
     </svg>
   )
 }

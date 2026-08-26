@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion'
 import CartModal from './CartModal'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 const BUYER = {
   color: 'var(--hc-accent)',
@@ -56,9 +58,9 @@ export default function RegisterVerifyStep({
           <div className="p-6 sm:p-7">
             <div className="flex items-start gap-2.5 rounded-xl px-3 py-2.5 mb-5"
               style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
-              <svg className="w-4 h-4 mt-0.5 shrink-0 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
+              <span className="mt-0.5 shrink-0 text-amber-400">
+                <TrustGlyph tipo="alerta" className="w-4 h-4" />
+              </span>
               <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-warning)' }}>
                 <span className="font-semibold">Este código es solo para verificar tu cuenta.</span>{' '}No lo compartas con nadie.
               </p>
@@ -79,9 +81,7 @@ export default function RegisterVerifyStep({
                 <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
                   className="flex items-center gap-2 text-sm rounded-xl px-3 py-2.5"
                   style={{ color: 'var(--hc-danger)', background: 'color-mix(in srgb, var(--hc-danger) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--hc-danger) 20%, transparent)' }}>
-                  <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <TrustGlyph tipo="error" className="w-4 h-4 shrink-0" />
                   {error}
                 </motion.div>
               )}
@@ -103,7 +103,7 @@ export default function RegisterVerifyStep({
               </p>
               <button type="button" onClick={onBack}
                 className="text-xs" style={{ color: 'var(--hc-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
-                ← {t('register.backToForm')}
+                <TextoFlecha dir="atras">{t('register.backToForm')}</TextoFlecha>
               </button>
             </div>
           </div>

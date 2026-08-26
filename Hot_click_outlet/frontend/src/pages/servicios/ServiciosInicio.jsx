@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import ServiceCardImage from './ServiceCardImage'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 function SearchIcon({ className = 'w-6 h-6' }) {
   return (
@@ -30,9 +31,7 @@ function FlechaCard() {
   return (
     <div className="absolute bottom-4 right-4 w-8 h-8 rounded-full flex items-center justify-center transition-transform duration-200 group-hover:translate-x-1"
       style={{ backgroundColor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(6px)' }}>
-      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-      </svg>
+      <TrustGlyph tipo="adelante" className="w-4 h-4 text-white" />
     </div>
   )
 }
@@ -47,7 +46,7 @@ function SparkleIcon({ className = 'w-3.5 h-3.5' }) {
 
 export function ServiciosHero() {
   return (
-    <section className="pt-20 sm:pt-28 pb-10 px-4 text-center relative overflow-hidden">
+    <section className="pt-8 sm:pt-12 pb-10 px-4 text-center relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none"
         style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(23,71,168,0.1) 0%, transparent 70%)' }} />
       <motion.div className="relative max-w-xl mx-auto"

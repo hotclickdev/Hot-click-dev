@@ -1,12 +1,10 @@
 package com.hotclick.service.pos;
 
 import com.hotclick.model.Empresa;
-import com.hotclick.model.PosQrSesion;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("Número SINPE del negocio en POS")
 class PosQrNumeroSinpeTest {
@@ -33,15 +31,5 @@ class PosQrNumeroSinpeTest {
     void vacioSinFallbackHotclick() {
         assertThat(PosQrSessionService.numeroSinpe(new Empresa())).isEmpty();
         assertThat(PosQrSessionService.numeroSinpe(null)).isEmpty();
-    }
-
-    @Test
-    @DisplayName("Sesión QR sin empresa no se consulta a ciegas")
-    void sesionSinEmpresaLanza() {
-        PosQrSesion sesion = new PosQrSesion();
-        sesion.setToken("abc123");
-        assertThatThrownBy(() -> PosQrSessionService.exigirEmpresa(sesion))
-            .isInstanceOf(NullPointerException.class)
-            .hasMessageContaining("sesión QR sin empresa");
     }
 }

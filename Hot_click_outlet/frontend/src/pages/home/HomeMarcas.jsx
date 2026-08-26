@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { getOptimizedUrl } from '@/utils/imageUtils'
 import { SectionHeader } from '@/components/ui/Section'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 /**
  * @param {{ marca: { id: string|number, nombreMarca: string, logoUrl?: string } }} props
@@ -31,7 +32,9 @@ function MarcaChip({ marca }) {
               loading="lazy" decoding="async" width={56} height={56}
             />
           ) : (
-            <span className="text-2xl" style={{ opacity: 0.4 }}>🏷</span>
+            <span className="opacity-40" style={{ color: 'var(--hc-muted)' }}>
+              <TrustGlyph tipo="etiqueta" className="w-6 h-6" />
+            </span>
           )}
         </div>
         <span className="text-xs font-semibold text-center leading-tight group-hover:opacity-70 transition-opacity"

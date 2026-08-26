@@ -6,7 +6,7 @@ import useUiStore from '@/store/uiStore'
 import { HotClickMark } from '@/components/ui/BrandLogo'
 import useChatStore from '@/store/chatStore'
 import A11yPanelContent from './accessibility/A11yPanelContent'
-import { CloseIcon } from './accessibility/a11yUi'
+import { CloseIcon, A11yIcon } from './accessibility/a11yUi'
 
 export default function AccessibilityPanel() {
   const { t } = useTranslation()
@@ -27,6 +27,7 @@ export default function AccessibilityPanel() {
   // El widget es para clientes de la tienda (idioma, tamaño de letra, filtros de color);
   // en el panel admin flotaba encima de botones y texto de las herramientas internas.
   if (pathname.startsWith('/admin')) return null
+  if (pathname.startsWith('/tienda')) return null
   if (chatOpen) return null
 
   const isDark = theme === 'dark'
@@ -50,8 +51,11 @@ export default function AccessibilityPanel() {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 sticky top-0"
               style={{ borderBottom: '1px solid var(--hc-border)', backgroundColor: 'var(--hc-surface)' }}>
-              <span className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
-                ⚙ {t('a11y.panel')}
+              <span className="text-sm font-semibold flex items-center gap-2" style={{ color: 'var(--hc-text)' }}>
+                <span className="shrink-0" style={{ color: 'var(--hc-muted)' }} aria-hidden="true">
+                  <A11yIcon />
+                </span>
+                {t('a11y.panel')}
               </span>
               <button type="button"
                 onClick={() => setOpen(false)}

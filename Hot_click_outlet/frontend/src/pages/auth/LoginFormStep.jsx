@@ -4,12 +4,14 @@ import Input from '@/components/ui/Input'
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons'
 import { Turnstile } from '@marsidev/react-turnstile'
 import { A } from './authUi'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 const STATS_LOGIN = [
-  { icon: '🔒', val: '100%', label: 'Seguro' },
-  { icon: '🇨🇷', val: 'CR', label: 'Costa Rica' },
-  { icon: '⭐', val: '4.9', label: 'Valoración' },
-  { icon: null, val: '10K+', label: 'Productos' },
+  { icono: 'candado', val: '100%', label: 'Seguro' },
+  { icono: null, val: 'CR', label: 'Costa Rica' },
+  { icono: 'estrella', val: '4.9', label: 'Valoración' },
+  { icono: null, val: '10K+', label: 'Productos' },
 ]
 
 export default function LoginFormStep({
@@ -71,13 +73,13 @@ export default function LoginFormStep({
                 {needsVerification && (
                   <button type="button" onClick={onResendVerification} disabled={resendLoading}
                     style={{ textAlign: 'left', color: A.color, fontSize: 12, background: 'none', border: 'none', cursor: resendLoading ? 'not-allowed' : 'pointer', opacity: resendLoading ? 0.6 : 1 }}>
-                    {resendLoading ? 'Enviando…' : 'Reenviar código de verificación →'}
+                    {resendLoading ? 'Enviando…' : <TextoFlecha>Reenviar código de verificación</TextoFlecha>}
                   </button>
                 )}
                 {needsPasswordReset && (
                   <button type="button" onClick={onForgot}
                     style={{ textAlign: 'left', color: A.color, fontSize: 12, background: 'none', border: 'none', cursor: 'pointer' }}>
-                    Recuperar acceso por correo →
+                    <TextoFlecha>Recuperar acceso por correo</TextoFlecha>
                   </button>
                 )}
               </motion.div>
@@ -95,7 +97,7 @@ export default function LoginFormStep({
             )}
 
             <button type="submit" disabled={loading || (!!turnstileSiteKey && !turnstileToken)}
-              className="inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl font-bold text-sm text-white w-full transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60"
+              className="group inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl font-bold text-sm text-white w-full transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60"
               style={{ background: A.color, boxShadow: `0 0 32px ${A.ring}` }}>
               {loading ? (
                 <>
@@ -105,7 +107,11 @@ export default function LoginFormStep({
                   </svg>
                   Cargando…
                 </>
-              ) : <>Iniciar sesión <span className="group-hover:translate-x-1 transition-transform">→</span></>}
+              ) : (
+                <TextoFlecha iconClassName="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1">
+                  Iniciar sesión
+                </TextoFlecha>
+              )}
             </button>
           </form>
 
@@ -124,13 +130,17 @@ export default function LoginFormStep({
         initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45, duration: 0.4 }}
         className="mt-6 flex items-stretch rounded-2xl overflow-hidden"
         style={{ border: '1px solid var(--hc-border)', background: 'var(--hc-surface)' }}>
-        {STATS_LOGIN.map(({ icon, val, label }, i) => (
+        {STATS_LOGIN.map(({ icono, val, label }, i) => (
           <div key={label} className="flex-1 flex flex-col items-center justify-center py-3 px-2 relative">
             {i > 0 && <div className="absolute left-0 top-2 bottom-2 w-px" style={{ background: 'var(--hc-border)' }} />}
             <div className="text-sm font-black" style={{ color: 'var(--hc-text)', lineHeight: 1 }}>
-              {icon ? <span>{icon}</span> : val}
+              {icono ? (
+                <span style={{ color: 'var(--hc-text)' }}>
+                  <TrustGlyph tipo={icono} className="w-4 h-4" />
+                </span>
+              ) : val}
             </div>
-            {icon && <div className="text-xs font-bold mt-0.5" style={{ color: A.color }}>{val}</div>}
+            {icono && <div className="text-xs font-bold mt-0.5" style={{ color: A.color }}>{val}</div>}
             <div className="text-[10px] mt-1 text-center leading-tight" style={{ color: 'var(--hc-muted)' }}>{label}</div>
           </div>
         ))}

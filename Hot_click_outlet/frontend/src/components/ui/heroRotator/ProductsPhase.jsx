@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { formatPrice } from '@/utils/format'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 /** Carrusel de hasta 3 productos destacados del hero. */
 export function ProductsPhase({ productos, accent }) {
@@ -68,8 +69,9 @@ export function ProductsPhase({ productos, accent }) {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center opacity-20"
-                    style={{ fontSize: '3rem' }}>📦</div>
+                  <div className="w-full h-full flex items-center justify-center opacity-30" style={{ color: 'var(--hc-muted)' }}>
+                    <TrustGlyph tipo="paquete" className="w-12 h-12" />
+                  </div>
                 )}
               </div>
               <div className="p-4">

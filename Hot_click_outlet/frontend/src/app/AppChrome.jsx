@@ -11,9 +11,11 @@ import { useBranding } from '@/hooks/useBranding'
 import { initGA4, trackPageView } from '@/utils/ga4'
 import { trackAiPage } from '@/components/ai/aiChat/aiChatBehavior'
 import { surfaceFromPath } from '@/components/ai/aiChat/chatSurface'
+import { esRutaTienda } from '@/utils/rutaTienda'
+import ChatModal from '@/components/ai/ChatModal'
 
 // Excluded paths — social proof / abandoned-cart watcher skip these
-const EXCLUDED_PREFIXES = ['/admin', '/carrito', '/checkout', '/pago']
+const EXCLUDED_PREFIXES = ['/admin', '/carrito', '/checkout', '/pago', '/tienda']
 
 // El botón de WhatsApp no aparece en checkout/pago (Brand Book §15.4) ni en flujos de auth
 const WAB_HIDDEN_PATHS = new Set(['/login', '/registro', '/carrito', '/checkout'])
@@ -53,7 +55,15 @@ export function ConditionalWhatsAppFab() {
   const { pathname } = useLocation()
   if (WAB_HIDDEN_PATHS.has(pathname)) return null
   if (pathname.startsWith('/admin') || pathname.startsWith('/checkout') || pathname.startsWith('/pago')) return null
+  if (esRutaTienda(pathname)) return null
   return <WhatsAppFab />
+}
+
+/** Asistente del marketplace: no se abre encima de la tienda de un vendedor. */
+export function ConditionalChatModal() {
+  const { pathname } = useLocation()
+  if (esRutaTienda(pathname)) return null
+  return <ChatModal />
 }
 
 /**

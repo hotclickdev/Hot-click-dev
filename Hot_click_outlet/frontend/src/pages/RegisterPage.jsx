@@ -1,11 +1,13 @@
 import RegisterFormStep from './auth/RegisterFormStep'
 import RegisterVerifyStep from './auth/RegisterVerifyStep'
 import { useRegisterFlow } from './auth/useRegisterFlow'
+import { Navigate, useSearchParams } from 'react-router-dom'
 
 /**
  * Página de registro — orquesta el flujo y las secciones visuales.
  */
 export default function RegisterPage() {
+  const [params] = useSearchParams()
   const {
     t, navigate,
     modo, setModo, step, setStep, loading, error, setError,
@@ -13,6 +15,10 @@ export default function RegisterPage() {
     correoRegistro, codigo, setCodigo, form, setForm,
     actualizarCampo, handleSubmit, handleVerify, handleReenviar,
   } = useRegisterFlow()
+
+  if (params.get('intencion') === 'vender') {
+    return <Navigate to="/registro-empresa" replace />
+  }
 
   const cartProps = {
     showCartRecovery, recoveryCart, addItem,
@@ -42,7 +48,7 @@ export default function RegisterPage() {
       t={t} modo={modo} form={form} setForm={setForm}
       error={error} loading={loading} actualizarCampo={actualizarCampo}
       onSubmit={handleSubmit}
-      onRegistrar={() => { setModo('emprendedor'); setError('') }}
+      onRegistrar={() => navigate('/registro-empresa')}
       onVolver={() => { setModo('comprador'); setError('') }}
       {...cartProps}
     />

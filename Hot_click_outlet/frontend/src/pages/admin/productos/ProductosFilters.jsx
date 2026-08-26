@@ -1,4 +1,6 @@
 import { STOCK_OPTIONS } from './productosHelpers'
+import CloseIcon from '@/components/ui/CloseIcon'
+import { etiquetaOpcionPadre } from '@/pages/admin/categorias/formCategoria'
 
 const OPCIONES_CONDICION = [
   ['NUEVO', 'Nuevo'],
@@ -10,14 +12,6 @@ function SearchIcon() {
   return (
     <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
       <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-    </svg>
-  )
-}
-
-function XIcon({ className = 'w-3 h-3' }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6 18L18 6M6 6l12 12" />
     </svg>
   )
 }
@@ -56,7 +50,7 @@ function FiltrosMovil({
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
         {hasFilters && (
           <button type="button" onClick={onClear} className="shrink-0 px-3 py-1.5 rounded-full text-xs inline-flex items-center gap-1" style={{ border: '1px solid rgba(220,38,38,0.3)', color: '#a8291f' }}>
-            <XIcon /> Limpiar
+            <CloseIcon className="w-3 h-3" /> Limpiar
           </button>
         )}
         <select
@@ -68,7 +62,7 @@ function FiltrosMovil({
           <option value="">Categoría</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>
-              {c.padreId ? `↳ ${c.nombreCategoria ?? c.nombre}` : (c.nombreCategoria ?? c.nombre)}
+              {etiquetaOpcionPadre(c, categories)}
             </option>
           ))}
         </select>

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 const SITE_URL = 'https://hotclick.lat'
 
@@ -41,9 +42,9 @@ export default function NosotrosPage() {
   const { t } = useTranslation()
 
   const values = [
-    { icon: '💡', titleKey: 'nosotros.val1Title', descKey: 'nosotros.val1Desc' },
-    { icon: '👂', titleKey: 'nosotros.val2Title', descKey: 'nosotros.val2Desc' },
-    { icon: '🔒', titleKey: 'nosotros.val3Title', descKey: 'nosotros.val3Desc' },
+    { icono: 'idea', titleKey: 'nosotros.val1Title', descKey: 'nosotros.val1Desc' },
+    { icono: 'chat', titleKey: 'nosotros.val2Title', descKey: 'nosotros.val2Desc' },
+    { icono: 'candado', titleKey: 'nosotros.val3Title', descKey: 'nosotros.val3Desc' },
   ]
 
   return (
@@ -119,14 +120,16 @@ export default function NosotrosPage() {
         <motion.div {...fadeUp(0.15)}>
           <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: 'var(--hc-text)' }}>{t('nosotros.values')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {values.map(({ icon, titleKey, descKey }, i) => (
+            {values.map(({ icono, titleKey, descKey }, i) => (
               <motion.div
                 key={titleKey}
                 {...fadeUp(0.1 * i)}
                 className="text-center p-6 rounded-2xl transition-colors"
                 style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
               >
-                <span className="text-3xl block mb-3">{icon}</span>
+                <span className="flex justify-center mb-3" style={{ color: 'var(--hc-accent)' }}>
+                  <TrustGlyph tipo={icono} className="w-8 h-8" />
+                </span>
                 <h3 className="font-semibold mb-2" style={{ color: 'var(--hc-text)' }}>{t(titleKey)}</h3>
                 <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>{t(descKey)}</p>
               </motion.div>

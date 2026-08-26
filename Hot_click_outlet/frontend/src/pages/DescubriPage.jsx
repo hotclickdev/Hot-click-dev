@@ -13,6 +13,7 @@ import DescubriLoading from './descubri/DescubriLoading'
 import DescubriError from './descubri/DescubriError'
 import DescubriDeck from './descubri/DescubriDeck'
 import DescubriDone from './descubri/DescubriDone'
+import { destinoDetalleDescubri } from './descubri/destinoDetalleDescubri'
 
 export default function DescubriPage() {
   const { t } = useTranslation()
@@ -75,13 +76,7 @@ export default function DescubriPage() {
 
   // Destino del botón "detalle" según la carta en el top del mazo
   const top = deck.remaining[0]
-  const detailTo = !top
-    ? '/productos'
-    : top._tipo === 'info'
-      ? '/nosotros'
-      : top._tipo === 'empresa'
-        ? `/tienda/${top.slug}`
-        : `/productos/${top.id}`
+  const detailTo = destinoDetalleDescubri(top, deck.remaining)
 
   const handleAddAll = () => {
     const disponibles = deck.liked.filter((p) => p.stock > 0)

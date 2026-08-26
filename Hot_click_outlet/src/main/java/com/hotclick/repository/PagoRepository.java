@@ -33,7 +33,16 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     @Query("SELECT p FROM Pago p WHERE (:proveedor IS NULL OR p.proveedor = :proveedor) AND (:estadoPago IS NULL OR p.estadoPago = :estadoPago) ORDER BY p.fechaCreacion DESC")
     Page<Pago> buscarPagos(@Param("proveedor") String proveedor, @Param("estadoPago") String estadoPago, Pageable pageable);
 
-    @Query("SELECT p FROM Pago p WHERE (:proveedor IS NULL OR p.proveedor = :proveedor) AND (:estadoPago IS NULL OR p.estadoPago = :estadoPago) AND (:empresaId IS NULL OR p.pedido.empresa.id = :empresaId) ORDER BY p.fechaCreacion DESC")
+    @Query(
+        value = "SELECT p FROM Pago p JOIN FETCH p.pedido ped JOIN FETCH p.usuario "
+            + "WHERE (:proveedor IS NULL OR p.proveedor = :proveedor) "
+            + "AND (:estadoPago IS NULL OR p.estadoPago = :estadoPago) "
+            + "AND (:empresaId IS NULL OR ped.empresa.id = :empresaId) "
+            + "ORDER BY p.fechaCreacion DESC",
+        countQuery = "SELECT COUNT(p) FROM Pago p "
+            + "WHERE (:proveedor IS NULL OR p.proveedor = :proveedor) "
+            + "AND (:estadoPago IS NULL OR p.estadoPago = :estadoPago) "
+            + "AND (:empresaId IS NULL OR p.pedido.empresa.id = :empresaId)")
     Page<Pago> buscarPagosByEmpresa(@Param("proveedor") String proveedor, @Param("estadoPago") String estadoPago, @Param("empresaId") Long empresaId, Pageable pageable);
 
     @Query("SELECT COUNT(p) FROM Pago p WHERE p.estadoPago = :estadoPago")

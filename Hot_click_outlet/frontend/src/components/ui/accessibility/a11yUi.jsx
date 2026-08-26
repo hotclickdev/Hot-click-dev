@@ -58,7 +58,7 @@ function Toggle({ checked, onChange, 'aria-label': ariaLabel }) {
 export function A11yIcon() {
   return (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-      strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <circle cx="12" cy="4" r="1.5"/>
       <path d="M12 7v6m0 0l-3 4m3-4l3 4"/>
       <path d="M9 10h6"/>
@@ -66,11 +66,4 @@ export function A11yIcon() {
   )
 }
 
-export function CloseIcon() {
-  return (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-      strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-    </svg>
-  )
-}
+export { default as CloseIcon } from '@/components/ui/CloseIcon'

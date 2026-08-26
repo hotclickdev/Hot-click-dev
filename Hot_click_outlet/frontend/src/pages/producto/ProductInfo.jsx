@@ -7,7 +7,7 @@ import TitleAndBadges from './TitleAndBadges'
 import ProductPriceRow from './ProductPriceRow'
 import ProductLowStockAlert from './ProductLowStockAlert'
 import QuantitySelector from './QuantitySelector'
-import AddToCartButton from './AddToCartButton'
+import ProductBuyActions from './ProductBuyActions'
 import TrustBadges from './TrustBadges'
 
 /**
@@ -22,6 +22,7 @@ export default function ProductInfo({
   onDecrease,
   onIncrease,
   onAdd,
+  onComprarAhora,
   justAdded,
   inStock,
   atMax,
@@ -72,11 +73,12 @@ export default function ProductInfo({
         />
       )}
 
-      <AddToCartButton
+      <ProductBuyActions
         mainCTARef={mainCTARef}
         inStock={inStock}
         justAdded={justAdded}
         onAdd={onAdd}
+        onComprarAhora={onComprarAhora}
         t={t}
       />
 

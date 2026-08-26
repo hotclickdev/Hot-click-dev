@@ -114,7 +114,7 @@ export default function PaymentMethods({
       {metodoPago === 'EFECTIVO' && (
         <div className="p-3 rounded-xl" style={{ background: 'color-mix(in srgb, #f59e0b 8%, transparent)', border: '1px solid color-mix(in srgb, #f59e0b 25%, transparent)' }}>
           <p className="text-xs leading-relaxed text-amber-300/90">
-            💵 Tenés que tener el monto exacto disponible al recibir el pedido. Nuestro repartidor no maneja cambio.
+            Tenés que tener el monto exacto disponible al recibir el pedido. Nuestro repartidor no maneja cambio.
           </p>
         </div>
       )}
@@ -201,11 +201,11 @@ export default function PaymentMethods({
               <div className="rounded-xl p-3.5 space-y-1.5" style={{ background: 'color-mix(in srgb, #10b981 6%, transparent)', border: '1px solid color-mix(in srgb, #10b981 20%, transparent)' }}>
                 <p className="text-[10px] font-semibold text-emerald-400 mb-1.5">DESTINO DEL SINPE</p>
                 <div className="flex justify-between text-xs">
-                  <span style={{ color: 'var(--hc-muted)' }}>📱 Número</span>
+                  <span style={{ color: 'var(--hc-muted)' }}>Número</span>
                   <span className="font-bold tracking-wider" style={{ color: 'var(--hc-text)' }}>{SINPE_NUMERO}</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span style={{ color: 'var(--hc-muted)' }}>👤 Titular</span>
+                  <span style={{ color: 'var(--hc-muted)' }}>Titular</span>
                   <span style={{ color: 'var(--hc-text)' }}>{SINPE_TITULAR}</span>
                 </div>
                 <p className="text-[10px] pt-1" style={{ color: 'var(--hc-muted)' }}>

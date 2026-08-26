@@ -2,6 +2,7 @@ import Spinner from '@/components/ui/Spinner'
 import { formatPrice } from '@/utils/format'
 import Kpi from './Kpi'
 import { EMPTY_GASTO } from './finanzasHelpers'
+import TextoMas from '@/components/ui/TextoMas'
 
 export default function EgresosTab({
   loading,
@@ -35,9 +36,9 @@ export default function EgresosTab({
           <p className="text-[#e8e8ed] font-medium">Sin gastos registrados</p>
           <p className="text-sm text-[#8e8e9a]">Registrá los egresos operativos para ver la utilidad neta.</p>
           <button type="button" onClick={() => onNuevo(EMPTY_GASTO)}
-            className="px-4 py-2 rounded-xl text-sm font-semibold"
+            className="px-4 py-2 rounded-xl text-sm font-semibold inline-flex items-center"
             style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-            + Primer gasto
+            <TextoMas>Primer gasto</TextoMas>
           </button>
         </div>
       </>

@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { ESTADOS, parseFotosUrls, waLinkServicio } from './servicioHelpers'
 import ServicioEstadoBadge from './ServicioEstadoBadge'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 export default function ServicioList({ solicitudes, filtroEstado, isLoading, onOpenDetalle, onSetFiltro }) {
   const { t } = useTranslation()
@@ -60,7 +61,9 @@ export default function ServicioList({ solicitudes, filtroEstado, isLoading, onO
       ) : !filtradas.length ? (
         <div className="text-center py-20 rounded-2xl"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-          <div className="text-4xl mb-3">📋</div>
+          <div className="flex justify-center mb-3 opacity-40" style={{ color: 'var(--hc-muted)' }}>
+            <TrustGlyph tipo="lista" className="w-10 h-10" />
+          </div>
           <p style={{ color: 'var(--hc-muted)' }}>{filtroEstado !== 'TODOS' ? t('adminSolicitudes.noRequestsFiltered') : t('adminSolicitudes.noRequests')}</p>
         </div>
       ) : (
@@ -88,10 +91,10 @@ export default function ServicioList({ solicitudes, filtroEstado, isLoading, onO
                     </p>
                     <div className="flex flex-wrap gap-3 text-xs" style={{ color: 'var(--hc-muted)' }}>
                       {(s.nombreContacto || s.usuario?.nombre) && (
-                        <span>👤 {s.nombreContacto || `${s.usuario.nombre} ${s.usuario.apellidoPaterno || ''}`}</span>
+                        <span>{s.nombreContacto || `${s.usuario.nombre} ${s.usuario.apellidoPaterno || ''}`}</span>
                       )}
-                      {s.presupuesto && <span>💰 {s.presupuesto}</span>}
-                      {fotos.length > 0 && <span>📸 {t('adminSolicitudes.photos', { count: fotos.length })}</span>}
+                      {s.presupuesto && <span>{s.presupuesto}</span>}
+                      {fotos.length > 0 && <span>{t('adminSolicitudes.photos', { count: fotos.length })}</span>}
                     </div>
                   </div>
                   <div className="flex flex-col gap-2 shrink-0">

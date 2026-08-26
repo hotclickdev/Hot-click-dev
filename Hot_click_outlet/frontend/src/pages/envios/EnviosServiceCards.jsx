@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { services } from './enviosData'
 import { IconBadgeOfficial, IconBadgeSoon } from './enviosIcons'
 
@@ -9,6 +10,40 @@ function PriceNote({ service }) {
     return <span className="card-price-note">Precio estimado — puede variar</span>
   }
   return null
+}
+
+function claseBadge(tipo) {
+  if (tipo === 'official') return 'badge-official'
+  if (tipo === 'prior') return 'badge-prior'
+  return 'badge-soon'
+}
+
+function BadgeServicio({ type, label }) {
+  return (
+    <span className={`service-badge ${claseBadge(type)}`}>
+      {type === 'soon' ? <IconBadgeSoon /> : <IconBadgeOfficial />}
+      {label}
+    </span>
+  )
+}
+
+function CtaServicio({ cta }) {
+  if (!cta) return null
+  const clase = cta.atajo ? 'card-cta-atajo' : 'card-cta'
+  if (cta.internal) {
+    return <Link to={cta.href} className={clase}>{cta.label}</Link>
+  }
+  return (
+    <a
+      href={cta.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={clase}
+      aria-label={cta.ariaLabel}
+    >
+      {cta.label}
+    </a>
+  )
 }
 
 function ServiceCard({ service: s }) {
@@ -26,10 +61,7 @@ function ServiceCard({ service: s }) {
         >
           {s.icon}
         </div>
-        <span className={`service-badge ${s.badgeType === 'official' ? 'badge-official' : 'badge-soon'}`}>
-          {s.badgeType === 'official' ? <IconBadgeOfficial /> : <IconBadgeSoon />}
-          {s.badge}
-        </span>
+        <BadgeServicio type={s.badgeType} label={s.badge} />
       </div>
 
       <div>
@@ -61,11 +93,7 @@ function ServiceCard({ service: s }) {
         </div>
       )}
 
-      {s.cta && s.active && (
-        <a href={s.cta.href} target="_blank" rel="noopener noreferrer" className="card-cta">
-          {s.cta.label}
-        </a>
-      )}
+      {s.active && <CtaServicio cta={s.cta} />}
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import MainLayout from '@/layouts/MainLayout'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 import { BENEFITS, mensajeCargaPago } from './pagoHelpers'
 
 /**
@@ -86,7 +87,9 @@ export default function PagoLoading({ estado, stripeApproved }) {
               transition={{ duration: 0.4 }}
               className="flex items-center gap-3"
             >
-              <span className="text-2xl">{benefit.icon}</span>
+              <span style={{ color: 'var(--hc-accent)' }}>
+                <TrustGlyph tipo={benefit.icono} className="w-6 h-6 shrink-0" />
+              </span>
               <span className="text-sm font-medium text-left" style={{ color: 'var(--hc-text)' }}>
                 {benefit.text}
               </span>

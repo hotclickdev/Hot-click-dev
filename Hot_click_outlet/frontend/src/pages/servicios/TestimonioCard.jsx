@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { testimonioService } from '@/services/testimonioService'
 import { FOTO_MAX_BYTES, RATING_LABELS } from './serviciosHelpers'
+import CloseIcon from '@/components/ui/CloseIcon'
 import StarPicker from './StarPicker'
 
 function PackageIcon({ className = 'w-5 h-5' }) {
@@ -171,8 +172,10 @@ export default function TestimonioCard({ p, onEnviado }) {
                 {imagenUrl ? (
                   <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0" style={{ border: '1.5px solid var(--hc-border)' }}>
                     <img src={imagenUrl} alt="" className="w-full h-full object-cover" />
-                    <button type="button" onClick={() => setImagenUrl('')}
-                      className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-bold leading-none">×</button>
+                    <button type="button" onClick={() => setImagenUrl('')} aria-label="Quitar foto"
+                      className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center">
+                      <CloseIcon className="w-3 h-3" />
+                    </button>
                   </div>
                 ) : (
                   <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}

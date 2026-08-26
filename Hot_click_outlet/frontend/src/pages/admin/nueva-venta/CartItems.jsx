@@ -1,4 +1,5 @@
 import { formatPrice } from '@/utils/format'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 /**
  * @param {{
@@ -29,7 +30,9 @@ export default function CartItems({ items, onUpdateQty, onRemove }) {
             className="w-14 h-7 text-center text-sm bg-white/5 border border-white/10 rounded-lg text-[#e8e8ed] focus:outline-none"
           />
           <span className="text-xs font-semibold text-[#e8e8ed] w-16 text-right">{formatPrice(i.precio * i.cantidad)}</span>
-          <button type="button" onClick={() => onRemove(i.id)} className="text-[#8e8e9a] hover:text-red-400 transition-colors text-sm">✕</button>
+          <button type="button" onClick={() => onRemove(i.id)} aria-label="Quitar del pedido" className="text-[#8e8e9a] hover:text-red-400 transition-colors">
+            <CloseIcon className="w-3.5 h-3.5" />
+          </button>
         </div>
       ))}
     </div>

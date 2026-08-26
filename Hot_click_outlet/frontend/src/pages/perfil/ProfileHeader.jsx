@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
 import useAuthStore from '@/store/authStore'
+import { RUTA_SISTEMA_MARCA } from '@/utils/rutaTienda'
 import { EmpresaIcon } from './perfilIcons'
 import { roleLabel } from './perfilHelpers'
 
@@ -27,11 +28,11 @@ function EmpresaCard({ empresaNombre, empresaSlug }) {
       </div>
       <div className="flex gap-2 shrink-0">
         <Link
-          to="/admin/mi-empresa"
+          to={RUTA_SISTEMA_MARCA}
           className="text-xs px-3 py-1.5 rounded-lg font-medium transition-opacity hover:opacity-80"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
         >
-          Configurar empresa
+          Configurar marca
         </Link>
         <Link
           to="/admin"

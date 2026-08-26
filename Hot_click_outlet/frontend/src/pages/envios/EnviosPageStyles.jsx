@@ -137,6 +137,11 @@ const ENVIOS_CSS = `
           background: color-mix(in srgb, var(--hc-muted) 8%, transparent);
           border: 1px solid var(--hc-border);
         }
+        .badge-prior {
+          color: #d97706;
+          background: color-mix(in srgb, #f59e0b 12%, transparent);
+          border: 1px solid color-mix(in srgb, #f59e0b 28%, transparent);
+        }
 
         .card-name { font-size: 15px; font-weight: 800; color: var(--hc-text); margin: 0; }
         .card-time { font-size: 12px; font-weight: 600; margin: 0; }
@@ -185,6 +190,13 @@ const ENVIOS_CSS = `
           transition: background 0.15s;
         }
         .card-cta:hover { background: color-mix(in srgb, var(--hc-accent) 14%, transparent); }
+        .card-cta-atajo {
+          display: inline-flex; align-items: center;
+          font-size: 12px; font-weight: 500;
+          color: var(--hc-muted);
+          text-decoration: none; margin-top: auto;
+          min-height: 44px;
+        }
 
         /* Urgent banner */
         .urgent-banner {
@@ -205,16 +217,6 @@ const ENVIOS_CSS = `
         }
         .urgent-title { font-size: 14px; font-weight: 800; color: var(--hc-text); margin: 0 0 2px; }
         .urgent-sub { font-size: 12px; color: var(--hc-muted); margin: 0; }
-        .urgent-btn {
-          display: inline-flex; align-items: center; gap: 7px;
-          background: #25d366; color: #fff;
-          font-size: 13px; font-weight: 700;
-          border-radius: 10px; padding: 9px 18px;
-          text-decoration: none; white-space: nowrap;
-          transition: opacity 0.15s;
-          flex-shrink: 0;
-        }
-        .urgent-btn:hover { opacity: 0.88; }
 
         /* FAQ */
         .faq-section { margin-bottom: 2.5rem; }
@@ -234,12 +236,12 @@ const ENVIOS_CSS = `
           border-radius: 16px; padding: 1.75rem;
           text-align: center;
         }
-        .envios-cta p { font-size: 14px; color: var(--hc-muted); margin: 0 0 0.5rem; }
+        .envios-cta p { font-size: 14px; color: var(--hc-muted); margin: 0 0 0.75rem; }
         .envios-cta a.wa {
-          font-size: 16px; font-weight: 800; color: var(--hc-accent); text-decoration: none;
-          display: block; margin-bottom: 1.25rem;
+          font-size: 13px; font-weight: 500; color: var(--hc-muted); text-decoration: none;
+          display: block; margin: 0.75rem 0 1.25rem;
         }
-        .envios-cta a.wa:hover { text-decoration: underline; }
+        .envios-cta a.wa:hover { color: var(--hc-link); text-decoration: underline; }
         .envios-cta-links { display: flex; justify-content: center; gap: 1.25rem; flex-wrap: wrap; }
         .envios-cta-links a {
           font-size: 12.5px; color: var(--hc-muted); text-decoration: none;

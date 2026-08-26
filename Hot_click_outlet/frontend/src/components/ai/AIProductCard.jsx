@@ -75,7 +75,7 @@ export default function AIProductCard({ producto, similarity, onAdd, whatsappNum
   const btnStyle = added
     ? { background: 'rgba(34,197,94,0.10)', color: '#178A50', border: '1px solid rgba(34,197,94,0.25)' }
     : availableBtnStyle
-  const addLabel = added ? 'Agregado al carrito' : (producto.stock === 0 ? 'Sin stock' : 'Agregar al carrito')
+  const addLabel = added ? 'Agregado al pedido' : (producto.stock === 0 ? 'Sin stock' : 'Agregar al pedido')
 
   return (
     <div

@@ -6,13 +6,7 @@ export function IconUpload({ className }) {
   )
 }
 
-export function IconX({ className }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
-    </svg>
-  )
-}
+export { default as IconX } from '@/components/ui/CloseIcon'
 
 export function IconPlus({ className }) {
   return (

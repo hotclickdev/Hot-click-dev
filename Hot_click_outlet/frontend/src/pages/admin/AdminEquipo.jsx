@@ -4,6 +4,7 @@ import { useToast } from '@/components/ui/Toast'
 import { isValidEmail } from '@/utils/validators'
 import EquipoInviteForm from './equipo/EquipoInviteForm'
 import EquipoMembersTable from './equipo/EquipoMembersTable'
+import TextoMas from '@/components/ui/TextoMas'
 import {
   FORMULARIO_EQUIPO_VACIO,
   ROL_CONFIG,
@@ -151,10 +152,10 @@ export default function AdminEquipo() {
         </div>
         <button type="button"
           onClick={() => setShowForm((v) => !v)}
-          className="px-4 py-2 rounded-xl text-sm font-medium transition-opacity hover:opacity-80"
+          className="px-4 py-2 rounded-xl text-sm font-medium transition-opacity hover:opacity-80 inline-flex items-center"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
         >
-          {showForm ? 'Cancelar' : '+ Agregar miembro'}
+          {showForm ? 'Cancelar' : <TextoMas>Agregar miembro</TextoMas>}
         </button>
       </div>
 

@@ -22,7 +22,7 @@ export function useProductsAssistant({ isOpen, initialQuery = '' }) {
     if (!isOpen) return
     if (mensajes.length === 0 && !sentInitial.current) {
       const greeting = initialQuery
-        ? `Vi que llegaste buscando "${initialQuery}". Déjame ver qué tenemos para vos... 🛍️`
+        ? `Vi que llegaste buscando "${initialQuery}". Déjame ver qué tenemos para vos.`
         : '¡Hola! Soy el asistente de HotClick. ¿Qué estás buscando hoy?'
 
       setTimeout(() => {

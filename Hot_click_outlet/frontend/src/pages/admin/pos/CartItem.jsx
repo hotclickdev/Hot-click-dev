@@ -30,6 +30,7 @@ export default function CartItem({ item, onSetCantidad, onSetPrecio, onRemove })
               className="w-6 h-6 rounded-md font-bold text-sm flex items-center justify-center disabled:opacity-30"
               style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#fff' }}>−</button>
             <input type="number" min={1} value={item.cantidad}
+              data-pos-qty
               onChange={e => onSetCantidad(item.id, e.target.value)}
               className="w-10 text-center text-xs font-bold rounded-md outline-none"
               style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '3px 0' }}/>

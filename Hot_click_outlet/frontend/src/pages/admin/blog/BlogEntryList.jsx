@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { fmtDate } from './blogHelpers'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 export default function BlogEntryList({ lista, onTogglePublicado, onEdit, onDelete }) {
   return (
@@ -49,12 +50,12 @@ export default function BlogEntryList({ lista, onTogglePublicado, onEdit, onDele
             }}>
               Editar
             </button>
-            <button type="button" onClick={() => onDelete(e.id)} style={{
+            <button type="button" onClick={() => onDelete(e.id)} aria-label="Eliminar" style={{
               padding: '5px 10px', borderRadius: 7, fontSize: 12,
               border: '1px solid rgba(220,38,38,0.3)', background: 'rgba(220,38,38,0.06)',
               color: '#dc2626', cursor: 'pointer',
             }}>
-              ×
+              <CloseIcon className="w-3.5 h-3.5" />
             </button>
           </div>
         </motion.div>

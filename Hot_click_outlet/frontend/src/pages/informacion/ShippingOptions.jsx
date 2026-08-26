@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { TruckIcon, BoltIcon } from './informacionIcons'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
-/** Opciones de envío: Correos CR y Uber Flash. */
+/** Opciones de envío: Correos CR y envío rápido de checkout. */
 export default function ShippingOptions() {
   const { t } = useTranslation()
   return (
@@ -31,13 +32,13 @@ export default function ShippingOptions() {
           <ul className="space-y-2.5">
             {[t('informacion.correosP1'), t('informacion.correosP2'), t('informacion.correosP3'), t('informacion.correosP4')].map((pt) => (
               <li key={pt} className="flex items-start gap-2 text-sm text-[#8e8e9a]">
-                <span className="text-[#4f7cff] mt-0.5 shrink-0">→</span>{pt}
+                <TrustGlyph tipo="adelante" className="w-3.5 h-3.5 text-[#4f7cff] mt-0.5 shrink-0" />{pt}
               </li>
             ))}
           </ul>
         </motion.div>
 
-        {/* Uber Flash */}
+        {/* Envío rápido */}
         <motion.div
           initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
           transition={{ duration: 0.4, delay: 0.1 }}
@@ -55,7 +56,7 @@ export default function ShippingOptions() {
           <ul className="space-y-2.5">
             {[t('informacion.uberP1'), t('informacion.uberP2'), t('informacion.uberP3'), t('informacion.uberP4')].map((pt) => (
               <li key={pt} className="flex items-start gap-2 text-sm text-[#8e8e9a]">
-                <span className="text-amber-400 mt-0.5 shrink-0">→</span>{pt}
+                <TrustGlyph tipo="adelante" className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0" />{pt}
               </li>
             ))}
           </ul>

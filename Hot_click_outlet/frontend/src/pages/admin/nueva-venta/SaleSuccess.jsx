@@ -1,6 +1,8 @@
 import Button from '@/components/ui/Button'
 import { formatPrice } from '@/utils/format'
 import SaleStepTracker from './SaleStepTracker'
+import TextoFlecha from '@/components/ui/TextoFlecha'
+import TextoMas from '@/components/ui/TextoMas'
 
 /**
  * @param {{
@@ -59,10 +61,10 @@ export default function SaleSuccess({ createdOrder, onNuevaVenta, onVerPedidos }
 
       <div className="flex gap-3">
         <Button variant="ghost" size="lg" className="flex-1" onClick={onNuevaVenta}>
-          + Nueva venta
+          <TextoMas>Nueva venta</TextoMas>
         </Button>
         <Button size="lg" className="flex-1" onClick={onVerPedidos}>
-          Ver pedidos →
+          <TextoFlecha>Ver pedidos</TextoFlecha>
         </Button>
       </div>
     </div>

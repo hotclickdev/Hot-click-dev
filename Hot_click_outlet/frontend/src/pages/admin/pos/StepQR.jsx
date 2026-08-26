@@ -62,7 +62,7 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
 
         {metodoPago === 'TARJETA' && !paid && (
           <p className="text-center text-xs animate-pulse" style={{ color: '#7aa3ff' }}>
-            ⏳ Esperando confirmación de pago…
+            Esperando confirmación de pago…
           </p>
         )}
 
@@ -76,7 +76,7 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
             <button type="button" onClick={() => onConfirmSinpe(token, false)} disabled={loadingConfirm}
               className="py-3 rounded-2xl text-sm font-black disabled:opacity-40"
               style={{ background: 'var(--hc-accent)', color: '#fff' }}>
-              {loadingConfirm ? '⏳…' : '✓ SINPE recibido'}
+              {loadingConfirm ? 'Confirmando…' : 'SINPE recibido'}
             </button>
           ) : (
             <div className="py-3 rounded-2xl text-xs text-center"

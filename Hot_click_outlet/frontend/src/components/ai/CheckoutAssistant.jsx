@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { TypingDots } from './checkoutAssistant/checkoutAssistantHelpers'
 import { useCheckoutAssistant } from './checkoutAssistant/useCheckoutAssistant'
+import IconoAsistente from './IconoAsistente'
 
 export default function CheckoutAssistant(props) {
   const {
@@ -34,7 +35,7 @@ export default function CheckoutAssistant(props) {
         style={{ borderBottom: `1px solid ${isSuccess ? 'rgba(34,197,94,0.12)' : 'color-mix(in srgb, var(--hc-accent) 12%, transparent)'}` }}>
         <div className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold shrink-0"
           style={{ background: isSuccess ? 'rgba(34,197,94,0.15)' : 'color-mix(in srgb, var(--hc-accent) 15%, transparent)', color: accentColor }}>
-          {isSuccess ? '🎉' : '✦'}
+          <IconoAsistente exito={isSuccess} className="w-4 h-4" />
         </div>
         <div className="flex-1">
           <p className="text-sm font-bold" style={{ color: 'var(--hc-text)' }}>
@@ -52,7 +53,7 @@ export default function CheckoutAssistant(props) {
             {m.rol === 'assistant' && (
               <div className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[10px] font-bold mt-0.5"
                 style={{ background: accentColor, color: '#fff' }}>
-                {isSuccess ? '✓' : '✦'}
+                <IconoAsistente exito={isSuccess} className="w-3 h-3" />
               </div>
             )}
             <div className="max-w-[85%]">

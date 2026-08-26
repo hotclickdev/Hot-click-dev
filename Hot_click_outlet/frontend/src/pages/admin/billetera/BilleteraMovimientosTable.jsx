@@ -1,4 +1,5 @@
 import { fmt, TIPO_LABEL } from './billeteraHelpers'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 /** Tabla de movimientos de billetera. */
 export default function BilleteraMovimientosTable({ txs, txPage, txTotal, onPage }) {
@@ -54,13 +55,13 @@ export default function BilleteraMovimientosTable({ txs, txPage, txTotal, onPage
           <button type="button" disabled={txPage === 0}
             onClick={() => onPage(txPage - 1)}
             className="px-3 py-1.5 rounded-lg text-sm border border-white/10 disabled:opacity-30">
-            ← Anterior
+            <TextoFlecha dir="atras">Anterior</TextoFlecha>
           </button>
           <span className="text-xs text-[#8e8e9a] self-center">Pág. {txPage + 1} / {txTotal}</span>
           <button type="button" disabled={txPage >= txTotal - 1}
             onClick={() => onPage(txPage + 1)}
             className="px-3 py-1.5 rounded-lg text-sm border border-white/10 disabled:opacity-30">
-            Siguiente →
+            <TextoFlecha>Siguiente</TextoFlecha>
           </button>
         </div>
       )}

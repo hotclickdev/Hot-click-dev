@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { A } from './authUi'
 import TwoFaCodeInputs from './TwoFaCodeInputs'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function TwoFaTotpStep({
   useRecovery, recoveryInput, onRecoveryInput,
@@ -58,10 +59,10 @@ export default function TwoFaTotpStep({
               {loading ? 'Verificando…' : verifyLabel}
             </button>
             <button type="button" className="hc-btn hc-btn-outline hc-btn-lg w-full" onClick={onToggleRecovery}>
-              {useRecovery ? '← Volver a código TOTP' : '¿Perdiste tu dispositivo?'}
+              {useRecovery ? <TextoFlecha dir="atras">Volver a código TOTP</TextoFlecha> : '¿Perdiste tu dispositivo?'}
             </button>
             <button type="button" className="hc-btn hc-btn-outline w-full" onClick={onBack}>
-              ← {t('login.backToLogin')}
+              <TextoFlecha dir="atras">{t('login.backToLogin')}</TextoFlecha>
             </button>
           </form>
         </div>

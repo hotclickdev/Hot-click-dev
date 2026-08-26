@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion'
 import ErrMsg from '../ErrMsg'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 /**
  * Paso 2 — verificar correo. Handlers de verify/reenviar viven en el padre.
@@ -13,7 +15,9 @@ export default function EmprendimientoPasoVerificar({
       exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }}
       onSubmit={onSubmit} className="space-y-5">
       <div className="text-center py-2">
-        <div className="text-4xl mb-3">📧</div>
+        <div className="flex justify-center mb-3" style={{ color: 'var(--hc-accent)' }}>
+          <TrustGlyph tipo="sobre" className="w-10 h-10" />
+        </div>
         <h3 className="font-bold text-base" style={{ color: 'var(--hc-text)' }}>Verificá tu correo</h3>
         <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>
           {otpFalló
@@ -54,14 +58,14 @@ export default function EmprendimientoPasoVerificar({
         <button type="submit" disabled={loading || codigoVerif.length !== 6}
           className="hc-btn hc-btn-primary hc-btn-lg w-full disabled:opacity-50"
           style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px rgba(231,59,51,0.3)' }}>
-          {loading ? 'Verificando…' : 'Verificar y entrar al panel →'}
+          {loading ? 'Verificando…' : <TextoFlecha>Verificar y entrar al panel</TextoFlecha>}
         </button>
       )}
 
       <button type="button" onClick={onReenviar} disabled={reenvioLoad}
         className="w-full text-center text-xs py-1.5 rounded-lg transition-opacity disabled:opacity-50"
         style={{ color: 'var(--hc-accent)', background: 'none', border: 'none', cursor: 'pointer' }}>
-        {reenvioLoad ? 'Enviando…' : '¿No llegó el código? Reenviar →'}
+        {reenvioLoad ? 'Enviando…' : <TextoFlecha>¿No llegó el código? Reenviar</TextoFlecha>}
       </button>
     </motion.form>
   )

@@ -1,9 +1,14 @@
+import TextoFlecha from '@/components/ui/TextoFlecha'
+import TextoMas from '@/components/ui/TextoMas'
+
 export default function OrdersEmptyState({ filter, onVerTodos, onCrear }) {
   if (filter !== 'Todos') {
     return (
       <div className="space-y-2">
         <p className="text-[var(--hc-muted)] text-sm">Sin pedidos con estado <strong className="text-[var(--hc-text)]">{filter}</strong></p>
-        <button type="button" onClick={onVerTodos} className="text-xs text-[var(--hc-accent)] hover:underline">Ver todos los pedidos →</button>
+        <button type="button" onClick={onVerTodos} className="text-xs text-[var(--hc-accent)] hover:underline">
+          <TextoFlecha>Ver todos los pedidos</TextoFlecha>
+        </button>
       </div>
     )
   }
@@ -19,7 +24,7 @@ export default function OrdersEmptyState({ filter, onVerTodos, onCrear }) {
         className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold mt-1 transition-opacity hover:opacity-80"
         style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
       >
-        + Registrar pedido manual
+        <TextoMas>Registrar pedido manual</TextoMas>
       </button>
     </div>
   )

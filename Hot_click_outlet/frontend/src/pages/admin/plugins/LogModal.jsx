@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { pluginService } from '@/services/pluginService'
 import { ESTADO_STYLE } from './pluginsHelpers'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 export default function LogModal({ plugin, onClose }) {
   const [logs, setLogs] = useState([])
@@ -25,9 +26,7 @@ export default function LogModal({ plugin, onClose }) {
             Logs — {plugin.nombre}
           </h3>
           <button type="button" onClick={onClose} className="text-sm" aria-label="Cerrar" style={{ color: 'var(--hc-muted)' }}>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <CloseIcon className="w-4 h-4" />
           </button>
         </div>
         <div className="overflow-y-auto flex-1 p-4 space-y-2">

@@ -21,7 +21,7 @@ export default function SentryTab() {
             </svg>
           </Card>
         </a>
-        <a href="https://hotclick.sentry.io/issues/?project=spring-boot" target="_blank" rel="noreferrer">
+        <a href="https://hotclick.sentry.io/issues/?project=java-spring-boot" target="_blank" rel="noreferrer">
           <Card className="p-5 flex items-center gap-4 hover:opacity-80 transition-opacity cursor-pointer">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
               style={{ backgroundColor: 'rgba(34,197,94,0.15)' }}>
@@ -31,7 +31,7 @@ export default function SentryTab() {
             </div>
             <div>
               <p className="font-semibold text-sm" style={{ color: 'var(--hc-text)' }}>Errores Java / Backend</p>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>Proyecto: spring-boot · hotclick.sentry.io</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>Proyecto: java-spring-boot · hotclick.sentry.io</p>
             </div>
             <svg className="w-4 h-4 ml-auto shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: 'var(--hc-muted)' }}>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -46,8 +46,8 @@ export default function SentryTab() {
           {[
             ['Frontend React', 'Errores de JavaScript, renders rotos, errores en checkout y carrito'],
             ['Backend Java',   'Excepciones no capturadas, errores 500, fallos en Stripe/S3/SendGrid'],
-            ['Alertas email',  'Sentry envía email automático al detectar un error nuevo en producción'],
-            ['Agrupación',     'Errores iguales se agrupan — 100 usuarios con el mismo bug = 1 issue'],
+            ['Alertas Telegram', 'Issue nuevo en producción, nivel error o fatal. Remediación automática solo en fatal'],
+            ['Agrupación',       'Errores iguales se agrupan — 100 usuarios con el mismo bug = 1 issue'],
           ].map(([title, desc]) => (
             <div key={title} className="rounded-xl p-3"
               style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)' }}>
@@ -55,6 +55,25 @@ export default function SentryTab() {
               <p>{desc}</p>
             </div>
           ))}
+        </div>
+      </Card>
+
+      <Card className="p-5 space-y-3">
+        <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>Alertas en Sentry (completar en la UI)</p>
+        <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+          Telegram ya filtra issue nuevo / error / production. En Sentry conviene una alerta de síntoma (tasa de error) y apagar el email de cada issue si ya llega a Telegram.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <a href="https://hotclick.sentry.io/alerts/rules/" target="_blank" rel="noreferrer"
+            className="rounded-xl p-3 text-xs hover:opacity-80" style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)' }}>
+            <p className="font-semibold mb-1" style={{ color: 'var(--hc-text)' }}>Reglas de alerta</p>
+            <p style={{ color: 'var(--hc-muted)' }}>Crear metric alert: error rate de producción &gt; 1% durante 5 min, un issue por proyecto.</p>
+          </a>
+          <a href="https://hotclick.sentry.io/settings/account/notifications/" target="_blank" rel="noreferrer"
+            className="rounded-xl p-3 text-xs hover:opacity-80" style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)' }}>
+            <p className="font-semibold mb-1" style={{ color: 'var(--hc-text)' }}>Notificaciones de cuenta</p>
+            <p style={{ color: 'var(--hc-muted)' }}>Desactivar “Issue Alerts” por email si el webhook a Telegram ya cubre el pager.</p>
+          </a>
         </div>
       </Card>
 

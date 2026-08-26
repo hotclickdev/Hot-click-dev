@@ -10,6 +10,8 @@ import { warehouseService } from '@/services/orderService'
 import { useToast } from '@/components/ui/Toast'
 import ImportExportBar from '@/components/admin/ImportExportBar'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import CloseIcon from '@/components/ui/CloseIcon'
+import TextoMas from '@/components/ui/TextoMas'
 
 const EMPTY = { nombreBodega: '', direccionExacta: '', telefono: '', correoContacto: '', encargadoNombre: '', permiteRetiroCliente: false }
 
@@ -111,7 +113,7 @@ export default function AdminWarehouses() {
                 load()
               }}
             />
-            <Button onClick={openNew}>+ {t('admin.warehouses.new')}</Button>
+            <Button onClick={openNew}><TextoMas>{t('admin.warehouses.new')}</TextoMas></Button>
           </div>
         </div>
 
@@ -142,15 +144,21 @@ export default function AdminWarehouses() {
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0 ml-2">
-                    <button type="button" onClick={() => openEdit(w)} className="p-1.5 rounded-lg transition-colors text-sm hover:bg-[var(--hc-surface-2)]" style={{ color: 'var(--hc-muted)' }}>✎</button>
-                    <button type="button" onClick={() => handleDelete(w.id, w.nombreBodega)} className="p-1.5 rounded-lg transition-colors text-sm hover:text-red-400 hover:bg-red-500/10" style={{ color: 'var(--hc-muted)' }}>✕</button>
+                    <button type="button" onClick={() => openEdit(w)} aria-label="Editar bodega" className="p-1.5 rounded-lg transition-colors hover:bg-[var(--hc-surface-2)]" style={{ color: 'var(--hc-muted)' }}>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487a2.25 2.25 0 113.182 3.182L8.25 18.463 3 19.5l1.037-5.25 12.825-10.763z" />
+                      </svg>
+                    </button>
+                    <button type="button" onClick={() => handleDelete(w.id, w.nombreBodega)} aria-label="Eliminar bodega" className="p-1.5 rounded-lg transition-colors hover:text-red-400 hover:bg-red-500/10" style={{ color: 'var(--hc-muted)' }}>
+                      <CloseIcon className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
                 <div className="space-y-1 text-xs" style={{ color: 'var(--hc-muted)' }}>
-                  {w.direccionExacta && <div>📍 {w.direccionExacta}</div>}
-                  {w.telefono && <div>📞 {w.telefono}</div>}
-                  {w.correoContacto && <div>✉ {w.correoContacto}</div>}
-                  {w.encargadoNombre && <div>👤 {w.encargadoNombre}</div>}
+                  {w.direccionExacta && <div>{w.direccionExacta}</div>}
+                  {w.telefono && <div>{w.telefono}</div>}
+                  {w.correoContacto && <div>{w.correoContacto}</div>}
+                  {w.encargadoNombre && <div>{w.encargadoNombre}</div>}
                 </div>
                 {w.permiteRetiroCliente && (
                   <Badge variant="success">Permite retiro de clientes</Badge>

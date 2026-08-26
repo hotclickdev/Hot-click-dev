@@ -3,6 +3,7 @@ import { useAiControl } from './aiControl/useAiControl'
 import { fmt, ALERTA_STYLE, MESES } from './aiControl/aiControlHelpers'
 import AiControlControlTab from './aiControl/AiControlControlTab'
 import AiControlConsumoTab from './aiControl/AiControlConsumoTab'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 export default function AdminAiControl() {
   const [tab, setTab] = useState('control')
@@ -82,7 +83,9 @@ export default function AdminAiControl() {
             return (
               <div key={i} className="flex items-start gap-3 px-4 py-3 rounded-xl text-sm"
                 style={{ backgroundColor: s.bg, border: `1px solid ${s.color}30` }}>
-                <span>{s.icon}</span>
+                <span style={{ color: s.color }}>
+                  <TrustGlyph tipo={s.icono} className="w-4 h-4" />
+                </span>
                 <div>
                   <span className="font-semibold" style={{ color: s.color }}>{a.nombre}: </span>
                   <span style={{ color: 'var(--hc-text)' }}>{a.mensaje}</span>
@@ -95,8 +98,8 @@ export default function AdminAiControl() {
 
       <div className="flex gap-1 p-1 rounded-xl w-fit" style={{ backgroundColor: 'var(--hc-bg)' }}>
         {[
-          { id: 'control', label: '⚙️ Control por cuenta' },
-          { id: 'consumo', label: '📊 Consumo IA' },
+          { id: 'control', label: 'Control por cuenta' },
+          { id: 'consumo', label: 'Consumo IA' },
         ].map((t) => (
           <button type="button" key={t.id} onClick={() => setTab(t.id)}
             className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
@@ -125,8 +128,9 @@ export default function AdminAiControl() {
 
       <div className="rounded-2xl p-5 space-y-3"
         style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-        <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
-          💡 Recomendaciones
+        <p className="text-sm font-semibold flex items-center gap-2" style={{ color: 'var(--hc-text)' }}>
+          <TrustGlyph tipo="idea" className="w-4 h-4" />
+          Recomendaciones
         </p>
         <ul className="space-y-2 text-xs" style={{ color: 'var(--hc-muted)' }}>
           <li>• Desactivar el chat público en cuentas EMPRENDEDOR reduce el riesgo de abuso sin costo.</li>

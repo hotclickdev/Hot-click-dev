@@ -9,6 +9,7 @@ import SeccionNotificaciones from './SeccionNotificaciones'
 import {
   F, Block, FormGroup, StyledInput, SaveButton, LoadingSkeleton, SectionHeader, MailIcon, CheckIcon,
 } from './configUi'
+import TextoMas from '@/components/ui/TextoMas'
 
 export default function SeccionPerfil({ userId, userEmail, userName, setUserName, toast }) {
   const { t } = useTranslation()
@@ -165,7 +166,7 @@ export default function SeccionPerfil({ userId, userEmail, userName, setUserName
               onClick={() => setShowNuevoNegocio(v => !v)}
               style={{ padding: '8px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, fontFamily: F.body, background: 'var(--hc-accent)', color: '#fff', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
             >
-              + Crear negocio
+              <TextoMas>Crear negocio</TextoMas>
             </button>
           </div>
 

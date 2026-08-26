@@ -40,17 +40,19 @@ export default function PagoPendiente({ pagoData, stripeApproved }) {
           )}
 
           <div className="flex flex-col gap-3">
+            <Link to="/mis-pedidos" className="hc-btn hc-btn-primary w-full min-h-11">
+              Ver mis pedidos
+            </Link>
             <a
               href="https://wa.me/50686667888"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full py-3 rounded-xl bg-[#25D366] hover:bg-[#1da851] text-white font-semibold text-sm transition-all text-center"
+              aria-label="Contactar soporte por WhatsApp"
+              className="flex items-center justify-center min-h-11 text-sm font-medium"
+              style={{ color: 'var(--hc-muted)' }}
             >
-              📱 Contactar soporte por WhatsApp
+              Contactar soporte por WhatsApp
             </a>
-            <Link to="/mis-pedidos" className="w-full py-3 rounded-xl border border-white/10 hover:border-white/20 text-[#8e8e9a] hover:text-[#e8e8ed] font-medium text-sm transition-all text-center">
-              Ver mis pedidos
-            </Link>
           </div>
         </motion.div>
       </div>

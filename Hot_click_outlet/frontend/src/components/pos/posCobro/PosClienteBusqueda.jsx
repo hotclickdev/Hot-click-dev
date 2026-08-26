@@ -1,4 +1,5 @@
 import { SEG_COLOR } from './posCobroHelpers'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 export default function PosClienteBusqueda({
   clienteQuery,
@@ -32,8 +33,11 @@ export default function PosClienteBusqueda({
           style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--hc-text)' }}/>
         {clienteId && (
           <button type="button" onClick={limpiarCliente}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-xs"
-            style={{ color: '#f87171' }}>✕</button>
+            className="absolute right-2 top-1/2 -translate-y-1/2"
+            style={{ color: '#f87171' }}
+            aria-label="Quitar cliente">
+            <CloseIcon className="w-3 h-3" />
+          </button>
         )}
       </div>
 
@@ -67,7 +71,7 @@ export default function PosClienteBusqueda({
 
       {!clienteId && (
         <p className="text-[10px] mt-1" style={{ color: 'var(--hc-muted)' }}>
-          Sin cliente identificado → se registra como "Mostrador"
+          Sin cliente identificado: se registra como "Mostrador"
         </p>
       )}
     </div>

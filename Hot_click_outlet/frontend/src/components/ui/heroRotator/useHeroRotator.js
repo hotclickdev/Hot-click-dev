@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { PHASES } from './heroRotatorData'
+import { convenioService, listaConvenios } from '@/services/convenioService'
 import useChatStore from '@/store/chatStore'
 
 /**
@@ -23,11 +24,9 @@ export function useHeroRotator() {
   }
 
   useEffect(() => {
-    import('@/services/api').then(({ default: api }) => {
-      api.get('/convenios/publicos')
-        .then((r) => setConvenios(r.data?.data ?? []))
-        .catch((err) => { console.error('[useHeroRotator] convenios', err) })
-    })
+    convenioService.getPublicos()
+      .then((r) => setConvenios(listaConvenios(r)))
+      .catch((err) => { console.error('[useHeroRotator] convenios', err) })
   }, [])
 
   useEffect(() => {

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { giftCardService } from '@/services/giftCardService'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import TextoMas from '@/components/ui/TextoMas'
 
 const fmt = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
 
@@ -64,9 +66,9 @@ export default function AdminGiftCards() {
           </p>
         </div>
         <button type="button" onClick={() => setMostrarForm(v => !v)}
-          className="px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-80"
+          className="px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-80 inline-flex items-center gap-1.5"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-          + Nueva gift card
+          <TextoMas>Nueva gift card</TextoMas>
         </button>
       </div>
 
@@ -129,7 +131,9 @@ export default function AdminGiftCards() {
         </div>
       ) : cards.length === 0 ? (
         <div className="text-center py-16" style={{ color: 'var(--hc-muted)' }}>
-          <div className="text-4xl mb-3">🎁</div>
+          <div className="flex justify-center mb-3 opacity-40">
+            <TrustGlyph tipo="tarjeta" className="w-10 h-10" />
+          </div>
           <p className="font-medium">No hay gift cards emitidas</p>
           <p className="text-sm mt-1">Crea una gift card para que tus clientes la usen en el checkout</p>
         </div>

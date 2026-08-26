@@ -61,7 +61,7 @@ export default function FooterBottomBar({ year }) {
       </div>
 
       <p className="text-xs flex items-center gap-1.5 order-1 sm:order-3" style={{ color: 'var(--hc-muted)' }}>
-        Hecho con amor en Costa Rica <span className="text-base">🇨🇷</span>
+        Hecho en Costa Rica
       </p>
     </motion.div>
   )

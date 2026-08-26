@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { SearchIcon, EyeIcon, CartIcon, WhatsIcon, CheckIcon, TruckIcon } from './informacionIcons'
+import { SearchIcon, EyeIcon, CartIcon, PayIcon, CheckIcon, TruckIcon } from './informacionIcons'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 /** Pasos de cómo comprar. */
 export default function HowToBuySection() {
@@ -10,8 +11,8 @@ export default function HowToBuySection() {
   const STEPS = [
     { n: '01', title: t('informacion.step1Title'), desc: t('informacion.step1Desc'), icon: <SearchIcon />, color: 'text-[#4f7cff]', bg: 'bg-[#4f7cff]/10', border: 'border-[#4f7cff]/20' },
     { n: '02', title: t('informacion.step2Title'), desc: t('informacion.step2Desc'), icon: <EyeIcon />, color: 'text-[var(--hc-blue-400)]', bg: 'bg-[var(--hc-blue-500)]/10', border: 'border-[var(--hc-blue-500)]/20' },
-    { n: '03', title: t('informacion.step3Title'), desc: t('informacion.step3Desc'), icon: <CartIcon />, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
-    { n: '04', title: t('informacion.step4Title'), desc: t('informacion.step4Desc'), icon: <WhatsIcon />, color: 'text-[#25D366]', bg: 'bg-[#25D366]/10', border: 'border-[#25D366]/20' },
+    { n: '03', title: t('informacion.step3Title'), desc: t('informacion.step3Desc'), icon: <CartIcon />, color: 'text-[var(--hc-primary)]', bg: 'bg-[var(--hc-primary)]/10', border: 'border-[var(--hc-primary)]/20' },
+    { n: '04', title: t('informacion.step4Title'), desc: t('informacion.step4Desc'), icon: <PayIcon />, color: 'text-[var(--hc-primary)]', bg: 'bg-[var(--hc-primary)]/10', border: 'border-[var(--hc-primary)]/20' },
     { n: '05', title: t('informacion.step5Title'), desc: t('informacion.step5Desc'), icon: <CheckIcon />, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
     { n: '06', title: t('informacion.step6Title'), desc: t('informacion.step6Desc'), icon: <TruckIcon />, color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/20' },
   ]
@@ -48,9 +49,10 @@ export default function HowToBuySection() {
       <div className="mt-6 text-center">
         <Link
           to="/productos"
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-semibold text-sm transition-all shadow-[0_0_24px_rgba(23,71,168,0.3)]"
+          className="inline-flex items-center justify-center gap-2 min-h-11 px-6 py-3 rounded-xl text-white font-semibold text-sm"
+          style={{ backgroundColor: 'var(--hc-primary)' }}
         >
-          {t('informacion.goCatalog')}
+          <TextoFlecha>{t('informacion.goCatalog')}</TextoFlecha>
         </Link>
       </div>
     </section>

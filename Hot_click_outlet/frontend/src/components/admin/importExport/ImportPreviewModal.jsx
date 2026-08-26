@@ -1,3 +1,5 @@
+import CloseIcon from '@/components/ui/CloseIcon'
+
 export function ImportPreviewModal({
   t,
   preview,
@@ -21,12 +23,11 @@ export function ImportPreviewModal({
           </div>
           <button type="button"
             onClick={onClose}
+            aria-label="Cerrar"
             className="hover:opacity-70 transition-opacity p-1"
             style={{ color: 'var(--hc-muted)' }}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <CloseIcon className="w-5 h-5" />
           </button>
         </div>
 

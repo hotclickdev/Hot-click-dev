@@ -2,13 +2,15 @@ import CopilotMsg from './copilot/CopilotMsg'
 import CopilotInsightCards from './copilot/CopilotInsightCards'
 import CopilotFixedChips from './copilot/CopilotFixedChips'
 import { useCopilotChat } from './copilot/useCopilotChat'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import { textoConsultasRestantes } from './copilot/copilotChatHelpers'
 
 export default function AdminCopilot() {
   const chat = useCopilotChat()
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] max-w-4xl mx-auto px-4 py-4">
-      <CopilotHeader uso={chat.uso} pctUso={chat.pctUso} pctColor={chat.pctColor} onLimpiar={chat.limpiar} />
+      <CopilotHeader uso={chat.uso} pctUso={chat.pctUso} pctColor={chat.pctColor} onLimpiar={chat.pedirLimpiar} />
 
       {chat.uso && !chat.uso.habilitado && (
         <div className="rounded-2xl p-5 text-center mb-3 space-y-2"
@@ -95,6 +97,15 @@ export default function AdminCopilot() {
           Las respuestas se generan con IA y pueden contener errores. Verificá datos importantes.
         </p>
       </div>
+      <ConfirmModal
+        open={chat.limpiarOpen}
+        onClose={() => chat.setLimpiarOpen(false)}
+        onConfirm={chat.confirmarLimpiar}
+        title="Limpiar conversación"
+        message="Se borra el historial de esta charla con Hot. No se puede deshacer."
+        confirmLabel="Limpiar"
+        danger={false}
+      />
     </div>
   )
 }
@@ -113,7 +124,7 @@ function CopilotHeader({ uso, pctUso, pctColor, onLimpiar }) {
           <div className="text-xs space-y-0.5">
             <div className="flex items-center gap-2">
               <span style={{ color: 'var(--hc-muted)' }}>
-                {uso.llamadas}/{uso.limite < 0 ? '∞' : uso.limite} llamadas · {uso.plan}
+                {textoConsultasRestantes(uso)}
               </span>
             </div>
             {uso.limite > 0 && (

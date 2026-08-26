@@ -3,6 +3,7 @@ import { cotizacionClienteService } from '@/services/cotizacionService'
 import { useToast } from '@/components/ui/Toast'
 import Field from './Field'
 import { inputCls, inputStyle } from './nuevaCotizacionUi'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 export default function ModalCliente({ onClose, onCreado }) {
   const { toast } = useToast()
@@ -28,10 +29,8 @@ export default function ModalCliente({ onClose, onCreado }) {
         style={{ background: 'var(--hc-card)', borderColor: 'var(--hc-border)' }}>
         <div className="flex items-center justify-between">
           <h3 className="font-bold text-lg" style={{ color: 'var(--hc-text)' }}>Nuevo cliente B2B</h3>
-          <button type="button" onClick={onClose} style={{ color: 'var(--hc-muted)' }}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
+          <button type="button" onClick={onClose} aria-label="Cerrar" style={{ color: 'var(--hc-muted)' }}>
+            <CloseIcon className="w-5 h-5" />
           </button>
         </div>
         <div className="grid grid-cols-2 gap-3">

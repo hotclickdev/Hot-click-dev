@@ -188,7 +188,7 @@ export function useAdminPOS() {
       setDescuento(0)
       setCliente(null)
       setStep('recibo')
-      showToast('✓ Venta registrada', 'success')
+      showToast('Venta registrada', 'success')
     } catch (err) {
       showToast(err?.response?.data?.message ?? 'Error al procesar la venta', 'error')
     } finally {
@@ -205,7 +205,7 @@ export function useAdminPOS() {
       setCartItems([])
       setDescuento(0)
       setStep('recibo')
-      showToast('✓ Pago con tarjeta confirmado', 'success')
+      showToast('Pago con tarjeta confirmado', 'success')
       return
     }
 
@@ -217,7 +217,7 @@ export function useAdminPOS() {
       setCartItems([])
       setDescuento(0)
       setStep('recibo')
-      showToast('✓ SINPE confirmado', 'success')
+      showToast('SINPE confirmado', 'success')
     } catch (err) {
       showToast(err?.response?.data?.message ?? 'Error al confirmar SINPE', 'error')
     } finally {

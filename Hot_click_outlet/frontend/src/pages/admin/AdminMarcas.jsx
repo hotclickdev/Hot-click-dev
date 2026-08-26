@@ -9,6 +9,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import MarcaCard from './marcas/MarcaCard'
 import MarcaFormModal from './marcas/MarcaFormModal'
 import MarcasEmptyState from './marcas/MarcasEmptyState'
+import TextoMas from '@/components/ui/TextoMas'
 import {
   COLUMNAS_EXPORT_MARCAS,
   COLUMNAS_IMPORT_MARCAS,
@@ -171,7 +172,7 @@ function MarcasHeader({ cantidad, marcas, onImportar, onNueva }) {
           mapImportRow={filaImportacionMarca}
           onImport={onImportar}
         />
-        <Button onClick={onNueva}>+ {t('admin.marcas.new')}</Button>
+        <Button onClick={onNueva}><TextoMas>{t('admin.marcas.new')}</TextoMas></Button>
       </div>
     </div>
   )

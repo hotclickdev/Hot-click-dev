@@ -1,4 +1,5 @@
 import { fmt, fmtPct } from './executiveFormatters'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 export function KpiCard({ label, value, sub, delta, color = 'var(--hc-accent)' }) {
   return (
@@ -110,13 +111,16 @@ export function ExecutiveAiSummary({ aiText, aiLoading, guardado, onGuardar }) {
     <div className="rounded-2xl p-5 space-y-3"
       style={{ backgroundColor: 'rgba(23,71,168,0.06)', border: '1px solid rgba(23,71,168,0.2)' }}>
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-[#4f7cff]">🤖 Resumen ejecutivo AI</p>
+        <p className="text-sm font-semibold text-[#4f7cff] inline-flex items-center gap-1.5">
+          <TrustGlyph tipo="sparkle" className="w-4 h-4" />
+          Resumen ejecutivo AI
+        </p>
         {aiText && !aiLoading && (
           <button type="button" onClick={onGuardar}
             className="text-xs px-3 py-1 rounded-lg hover:opacity-80"
             style={{ backgroundColor: guardado ? 'rgba(52,211,153,0.15)' : 'rgba(23,71,168,0.15)',
               color: guardado ? '#34d399' : 'var(--hc-accent)', border: '1px solid currentColor' }}>
-            {guardado ? '✓ Guardado' : 'Guardar'}
+            {guardado ? 'Guardado' : 'Guardar'}
           </button>
         )}
       </div>

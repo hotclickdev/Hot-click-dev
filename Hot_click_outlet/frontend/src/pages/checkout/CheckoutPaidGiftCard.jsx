@@ -16,10 +16,10 @@ export default function CheckoutPaidGiftCard({ pagoData }) {
         {pagoData?.numeroPedido && (
           <div className="rounded-2xl p-5 w-full" style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
             <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Número de pedido</p>
-            <p className="text-xl font-bold mt-1 text-[#4f7cff]">{pagoData.numeroPedido}</p>
+            <p className="text-xl font-bold mt-1" style={{ color: 'var(--hc-accent)' }}>{pagoData.numeroPedido}</p>
           </div>
         )}
-        <a href="/mis-pedidos" className="px-6 py-3 rounded-xl font-semibold text-sm bg-[#4f7cff] text-white hover:bg-[#3d6ee0] transition-colors">
+        <a href="/mis-pedidos" className="hc-btn hc-btn-primary min-h-11">
           Ver mis pedidos
         </a>
       </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import useAuthStore from '@/store/authStore'
 import { useToast } from '@/components/ui/Toast'
@@ -11,12 +11,15 @@ import RegistrarNegocioCard from './registrar-negocio/RegistrarNegocioCard'
 import DatosNegocioFields from './registrar-negocio/DatosNegocioFields'
 import HaciendaVerificacion from './registrar-negocio/HaciendaVerificacion'
 import AcuerdoYSubmit from './registrar-negocio/AcuerdoYSubmit'
+import { destinoVender, RUTA_REGISTRAR_NEGOCIO } from '@/utils/destinoVender'
 
 /** Página de registro de negocio — orquesta estado, envío y secciones visuales. */
 export default function RegistrarNegocioPage() {
   const navigate = useNavigate()
   const toast    = useToast()
   const login    = useAuthStore((s) => s.login)
+  const userRole = useAuthStore((s) => s.userRole)
+  const empresaId = useAuthStore((s) => s.empresaId)
   const { userEmail, userName } = useAuthStore()
 
   const [form, setForm] = useState({
@@ -36,6 +39,11 @@ export default function RegistrarNegocioPage() {
   const [loading,       setLoading]       = useState(false)
   const [error,         setError]         = useState('')
   const [aceptaAcuerdo, setAceptaAcuerdo] = useState(false)
+
+  const destino = destinoVender({ tokenVivo: true, rol: userRole, empresaId })
+  if (destino !== RUTA_REGISTRAR_NEGOCIO) {
+    return <Navigate to={destino} replace />
+  }
 
   const set = (field) => (e) => setForm((p) => ({ ...p, [field]: e.target.value }))
 

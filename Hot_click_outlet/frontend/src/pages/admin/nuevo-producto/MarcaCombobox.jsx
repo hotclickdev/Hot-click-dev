@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { inp, inpStyle } from './productFormUi'
+import CloseIcon from '@/components/ui/CloseIcon'
+import TextoMas from '@/components/ui/TextoMas'
 
 export default function MarcaCombobox({ marcas, value, onChange, showNuevaMarca, setShowNuevaMarca, nuevaMarca, setNuevaMarca, creandoMarca, onCrear }) {
   const [open, setOpen] = useState(false)
@@ -29,7 +31,10 @@ export default function MarcaCombobox({ marcas, value, onChange, showNuevaMarca,
           {creandoMarca ? '...' : 'Crear'}
         </button>
         <button type="button" onClick={() => setShowNuevaMarca(false)}
-          className="shrink-0 px-3 py-2 rounded-xl text-sm" style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>✕</button>
+          className="shrink-0 px-3 py-2 rounded-xl text-sm" style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}
+          aria-label="Cancelar">
+          <CloseIcon />
+        </button>
       </div>
     )
   }
@@ -70,8 +75,8 @@ export default function MarcaCombobox({ marcas, value, onChange, showNuevaMarca,
           </div>
           <div className="p-2" style={{ borderTop: '1px solid var(--hc-border)' }}>
             <button type="button" onClick={() => { setShowNuevaMarca(true); setOpen(false) }}
-              className="w-full text-left px-3 py-2 text-sm rounded-lg transition-colors hover:bg-[rgba(23,71,168,0.08)]" style={{ color: 'var(--hc-accent)' }}>
-              + Crear nueva marca
+              className="w-full text-left px-3 py-2 text-sm rounded-lg transition-colors hover:bg-[rgba(23,71,168,0.08)] inline-flex items-center" style={{ color: 'var(--hc-accent)' }}>
+              <TextoMas>Crear nueva marca</TextoMas>
             </button>
           </div>
         </div>

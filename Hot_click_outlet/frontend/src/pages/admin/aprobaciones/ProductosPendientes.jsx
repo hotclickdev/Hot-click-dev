@@ -27,7 +27,7 @@ export default function ProductosPendientes({ productos, loading, aprobar, recha
     return <div className="py-12 text-center text-sm" style={{ color: 'var(--hc-muted)' }}>Cargando productos…</div>
   }
   if (productos.length === 0) {
-    return <EmptyPendientes mensaje="No hay productos esperando aprobación." />
+    return <EmptyPendientes mensaje="Nada en esta cola. Aprobar el negocio publica sus productos; no hay revisión producto por producto." />
   }
 
   const ocupado = saving !== null

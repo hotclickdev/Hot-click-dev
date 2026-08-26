@@ -45,7 +45,7 @@ export function opcionesEnvio(bodegaRetiro) {
     ...(bodegaRetiro ? [{
       value: 'RETIRO_EN_TIENDA',
       label: `Retiro en ${bodegaRetiro.nombre}`,
-      sub: [bodegaRetiro.direccion, bodegaRetiro.telefono].filter(Boolean).join(' · ') || 'Gratis · Coordinamos el punto de entrega',
+      sub: [bodegaRetiro.direccion, bodegaRetiro.telefono].filter(Boolean).join(' · ') || 'Gratis · Lo coordinamos al confirmar',
       precio: 0,
       badge: null,
       needsAddress: false,

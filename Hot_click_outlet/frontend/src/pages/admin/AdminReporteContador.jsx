@@ -3,6 +3,7 @@ import Spinner from '@/components/ui/Spinner'
 import { finanzasReporteService } from '@/services/finanzasReporteService'
 import { formatPrice } from '@/utils/format'
 import { useToast } from '@/components/ui/Toast'
+import TextoCamino from '@/components/ui/TextoCamino'
 
 const toISO = (d) => d.toISOString().slice(0, 10)
 const QUICK_DAYS = [7, 30, 90, -1]
@@ -108,7 +109,7 @@ export default function AdminReporteContador() {
           <p className="text-[#e8e8ed] font-bold text-lg">Función disponible en plan Pro+</p>
           <p className="text-sm text-[#8e8e9a] max-w-md mx-auto">
             La analítica financiera y el reporte para el contador requieren un plan Pro o superior.
-            Ve a Configuración → Suscripción para mejorar tu plan.
+            Ve a <TextoCamino partes={['Configuración', 'Suscripción']} /> para mejorar tu plan.
           </p>
         </div>
       )}

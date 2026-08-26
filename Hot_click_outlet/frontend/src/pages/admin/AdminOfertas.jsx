@@ -53,7 +53,7 @@ function ProductRow({ p, onToggle }) {
         <p style={{ fontSize: 12, color: 'var(--hc-muted)', margin: 0 }}>
           {fmt(p.precioVenta)}
           {p.enOferta && p.precioOferta && (
-            <span style={{ marginLeft: 8, color: '#dc2626', fontWeight: 600 }}>→ {fmt(p.precioOferta)}</span>
+            <span style={{ marginLeft: 8, color: '#dc2626', fontWeight: 600 }}>ahora {fmt(p.precioOferta)}</span>
           )}
         </p>
       </div>
@@ -166,7 +166,7 @@ export default function AdminOfertas() {
           background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)',
           fontSize: 13, fontWeight: 700, color: '#dc2626',
         }}>
-          🏷️ {enOfertaCount} en oferta
+          {enOfertaCount} en oferta
         </div>
       </div>
 

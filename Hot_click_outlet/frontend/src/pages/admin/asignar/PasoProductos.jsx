@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import ClienteBadge from './ClienteBadge'
 import AgregarProductos from './AgregarProductos'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 /**
  * @param {{
@@ -25,7 +26,7 @@ export default function PasoProductos({ cliente, items, onChange, onCambiarClien
           className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
         >
-          Continuar →
+          <TextoFlecha>Continuar</TextoFlecha>
         </button>
       </div>
     </motion.div>

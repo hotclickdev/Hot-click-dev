@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { ESTADOS, ESTADO_CFG, waLinkGarantia } from './garantiaHelpers'
 import GarantiaEstadoBadge from './GarantiaEstadoBadge'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 export default function GarantiaList({ solicitudes, filtro, isLoading, onOpenDetalle, onSetFiltro }) {
   const filtradas = filtro === 'TODOS'
@@ -13,8 +14,9 @@ export default function GarantiaList({ solicitudes, filtro, isLoading, onOpenDet
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-black" style={{ fontFamily: 'var(--hc-font-display)', color: 'var(--hc-text)' }}>
-            🛡️ Solicitudes de Garantía
+          <h1 className="text-2xl font-black flex items-center gap-2" style={{ fontFamily: 'var(--hc-font-display)', color: 'var(--hc-text)' }}>
+            <TrustGlyph tipo="garantia" className="w-6 h-6" />
+            Solicitudes de Garantía
           </h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--hc-muted)' }}>
             Reportes de problemas con productos en garantía
@@ -57,7 +59,9 @@ export default function GarantiaList({ solicitudes, filtro, isLoading, onOpenDet
       ) : !filtradas.length ? (
         <div className="text-center py-20 rounded-2xl"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-          <div className="text-4xl mb-3">🛡️</div>
+          <div className="mb-3 flex justify-center" style={{ color: 'var(--hc-muted)' }}>
+            <TrustGlyph tipo="garantia" className="w-10 h-10 opacity-40" />
+          </div>
           <p style={{ color: 'var(--hc-muted)' }}>
             {filtro !== 'TODOS' ? 'No hay solicitudes con ese filtro.' : 'No hay solicitudes de garantía aún.'}
           </p>
@@ -110,7 +114,10 @@ export default function GarantiaList({ solicitudes, filtro, isLoading, onOpenDet
 
                     {s.usuarioNombre && (
                       <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-                        👤 {s.usuarioNombre} · {s.usuarioCorreo}
+                        <span className="inline-flex items-center gap-1">
+                          <TrustGlyph tipo="clientes" className="w-3 h-3" />
+                          {s.usuarioNombre} · {s.usuarioCorreo}
+                        </span>
                       </p>
                     )}
                   </div>
@@ -120,7 +127,8 @@ export default function GarantiaList({ solicitudes, filtro, isLoading, onOpenDet
                       <a href={wa} target="_blank" rel="noopener noreferrer"
                         className="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center gap-1"
                         style={{ backgroundColor: 'rgba(37,211,102,0.12)', color: '#25d366' }}>
-                        💬 WA
+                        <TrustGlyph tipo="chat" className="w-3.5 h-3.5" />
+                        WhatsApp
                       </a>
                     </div>
                   )}
@@ -129,7 +137,10 @@ export default function GarantiaList({ solicitudes, filtro, isLoading, onOpenDet
                 {s.notasAdmin && (
                   <div className="mt-3 px-3 py-2 rounded-xl text-xs"
                     style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>
-                    💬 {s.notasAdmin}
+                    <span className="inline-flex items-start gap-1.5">
+                      <TrustGlyph tipo="chat" className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                      {s.notasAdmin}
+                    </span>
                   </div>
                 )}
               </motion.div>

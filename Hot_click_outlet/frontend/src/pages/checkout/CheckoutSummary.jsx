@@ -191,13 +191,13 @@ export default function CheckoutSummary({
 
       <div className="pt-3 border-t flex justify-between font-bold" style={{ borderColor: 'var(--hc-border)', color: 'var(--hc-text)' }}>
         <span>{t('checkout.total')}</span>
-        <span className="text-lg text-[#4f7cff]">{formatPrice(totalFinal)}</span>
+        <span className="text-lg" style={{ color: 'var(--hc-accent)' }}>{formatPrice(totalFinal)}</span>
       </div>
 
       {metodoPago === 'SINPE' && (
         <div className="text-[10px] leading-relaxed rounded-lg p-2.5 space-y-0.5" style={{ background: 'color-mix(in srgb, #10b981 8%, transparent)', border: '1px solid color-mix(in srgb, #10b981 20%, transparent)', color: 'var(--hc-muted)' }}>
-          <p>📱 SINPE: <strong className="text-emerald-400">{SINPE_NUMERO}</strong></p>
-          <p>💰 Monto: <strong style={{ color: 'var(--hc-text)' }}>{formatPrice(totalFinal)}</strong></p>
+          <p>SINPE: <strong className="text-emerald-400">{SINPE_NUMERO}</strong></p>
+          <p>Monto: <strong style={{ color: 'var(--hc-text)' }}>{formatPrice(totalFinal)}</strong></p>
         </div>
       )}
 

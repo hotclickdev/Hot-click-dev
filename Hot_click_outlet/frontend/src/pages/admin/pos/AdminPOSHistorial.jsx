@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { posService } from '@/services/posService'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 const fmt = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
 const fmtDate = (d) => d ? new Date(d).toLocaleString('es-CR', { dateStyle: 'short', timeStyle: 'short' }) : '—'
@@ -66,7 +67,9 @@ export default function AdminPOSHistorial() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <Link to="/admin/pos" className="text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>← Volver al POS</Link>
+          <Link to="/admin/pos" className="text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>
+            <TextoFlecha dir="atras">Volver al POS</TextoFlecha>
+          </Link>
           <h1 className="text-xl font-bold mt-1" style={{ color: 'var(--hc-text)' }}>Historial POS</h1>
         </div>
         <div className="flex items-center gap-2">

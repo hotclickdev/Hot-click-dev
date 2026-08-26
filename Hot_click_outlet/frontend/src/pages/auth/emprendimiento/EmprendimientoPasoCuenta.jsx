@@ -4,6 +4,7 @@ import PhoneField from '@/components/ui/PhoneField'
 import Input from '@/components/ui/Input'
 import { Turnstile } from '@marsidev/react-turnstile'
 import ErrMsg from '../ErrMsg'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY
 
@@ -61,13 +62,15 @@ export default function EmprendimientoPasoCuenta({
       )}
 
       <div className="flex gap-2.5">
-        <button type="button" onClick={onAtras} className="hc-btn hc-btn-outline px-4">← Atrás</button>
+        <button type="button" onClick={onAtras} className="hc-btn hc-btn-outline px-4">
+          <TextoFlecha dir="atras">Atrás</TextoFlecha>
+        </button>
         <button type="submit" disabled={loading || !aceptaTerminos || (!!TURNSTILE_SITE_KEY && !turnstileToken)}
           className="hc-btn hc-btn-primary hc-btn-lg flex-1 disabled:opacity-60"
           style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px rgba(231,59,51,0.3)' }}>
           {loading
             ? <span className="flex items-center gap-2"><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Creando…</span>
-            : 'Crear mi negocio →'}
+            : <TextoFlecha>Crear mi negocio</TextoFlecha>}
         </button>
       </div>
     </motion.form>

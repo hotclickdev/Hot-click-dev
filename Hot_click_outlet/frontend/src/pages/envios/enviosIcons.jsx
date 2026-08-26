@@ -63,14 +63,6 @@ export function IconInternacional() {
   )
 }
 
-export function IconBack() {
-  return (
-    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-    </svg>
-  )
-}
-
 export function IconLogistica() {
   return (
     <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">

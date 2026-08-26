@@ -5,8 +5,9 @@ import useAuthStore from '@/store/authStore'
 /** Alterna entre panel admin y caja POS cuando el usuario tiene ambos modos. */
 export default function ModeSwitcherWrapper({ userRole }) {
   const permissions = useAuthStore(s => s.permissions)
+  const empresaSlug = useAuthStore(s => s.empresaSlug)
   const navigate    = useNavigate()
-  const modes       = getAvailableModes(userRole, permissions)
+  const modes       = getAvailableModes(userRole, permissions, { empresaSlug })
   const inPOSA      = useMatch('/admin/pos')
   const inPOSB      = useMatch('/admin/pos/*')
   if (modes.length <= 1) return null
@@ -23,8 +24,7 @@ export default function ModeSwitcherWrapper({ userRole }) {
       onClick={() => { localStorage.setItem(MODE_PREF_KEY, altMode.id); navigate(altMode.path) }}
       className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors hover:bg-[var(--hc-surface-2)]"
       style={{ color: 'var(--hc-accent)' }}>
-      <span className="text-xs">⇄</span>
-      {inPOS ? 'Panel admin' : 'Caja POS'}
+      {inPOS ? (userRole === 'EMPRENDEDOR' ? 'Sistema' : 'Panel admin') : 'Caja POS'}
     </button>
   )
 }

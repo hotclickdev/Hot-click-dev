@@ -1,5 +1,6 @@
 package com.hotclick.security;
 
+import com.hotclick.sentry.SentryRequestContext;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,6 +41,7 @@ public class TenantFilter extends OncePerRequestFilter {
                     if (empresaId != null) {
                         TenantContext.set(empresaId);
                     }
+                    SentryRequestContext.set(jwtUtil.extractUserId(token), jwtUtil.extractRol(token));
                 } catch (Exception e) {
                     log.debug("tenant filter jwt error: {}", e.getMessage());
                 }
@@ -47,6 +49,7 @@ public class TenantFilter extends OncePerRequestFilter {
             chain.doFilter(request, response);
         } finally {
             TenantContext.clear();
+            SentryRequestContext.clear();
         }
     }
 }

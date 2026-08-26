@@ -143,9 +143,9 @@ public class PosQrSessionService {
     private void exigirItemsDelNegocio(Long empresaId, List<Map<String, Object>> items) {
         for (Map<String, Object> item : items) {
             Long productoId = productoIdDe(item);
-            Long dueño = productoRepo.findEmpresaIdById(productoId)
+            Long empresaDueno = productoRepo.findEmpresaIdById(productoId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
-            PosProductoDeEmpresa.exigirMismoNegocio(dueño, empresaId);
+            PosProductoDeEmpresa.exigirMismoNegocio(empresaDueno, empresaId);
         }
     }
 

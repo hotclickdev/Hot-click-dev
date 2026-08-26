@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion'
 import { ESTADOS, ESTADO_CFG, waLinkGarantia } from './garantiaHelpers'
 import GarantiaEstadoBadge from './GarantiaEstadoBadge'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 export default function GarantiaDetalleDrawer({
   selected,
@@ -34,8 +36,10 @@ export default function GarantiaDetalleDrawer({
             </h2>
             <GarantiaEstadoBadge estado={selected.estado} />
           </div>
-          <button type="button" onClick={onClose} className="text-2xl leading-none"
-            style={{ color: 'var(--hc-muted)' }}>×</button>
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="p-1.5"
+            style={{ color: 'var(--hc-muted)' }}>
+            <CloseIcon className="w-4 h-4" />
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
@@ -65,10 +69,10 @@ export default function GarantiaDetalleDrawer({
               {selected.usuarioNombre || 'Sin nombre'}
             </p>
             {selected.usuarioCorreo && (
-              <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>✉ {selected.usuarioCorreo}</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>{selected.usuarioCorreo}</p>
             )}
             {selected.usuarioTelefono && (
-              <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>📱 {selected.usuarioTelefono}</p>
+              <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>{selected.usuarioTelefono}</p>
             )}
           </div>
 
@@ -132,9 +136,10 @@ export default function GarantiaDetalleDrawer({
         <div className="p-5 flex gap-3" style={{ borderTop: '1px solid var(--hc-border)' }}>
           {waLinkGarantia(selected) && (
             <a href={waLinkGarantia(selected)} target="_blank" rel="noopener noreferrer"
-              className="flex-1 py-3 rounded-2xl text-sm font-bold text-center"
+              className="flex-1 py-3 rounded-2xl text-sm font-bold text-center inline-flex items-center justify-center gap-2"
               style={{ backgroundColor: 'rgba(37,211,102,0.12)', color: '#25d366' }}>
-              💬 WhatsApp
+              <TrustGlyph tipo="chat" className="w-4 h-4" />
+              WhatsApp
             </a>
           )}
           <button type="button" onClick={onGuardar} disabled={saving}

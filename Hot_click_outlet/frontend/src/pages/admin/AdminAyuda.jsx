@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { soporteService } from '@/services/soporteService'
 import { useToast } from '@/components/ui/Toast'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 const inputStyle = { backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }
 
@@ -83,7 +84,7 @@ export default function AdminAyuda() {
   return (
     <div className="space-y-6 max-w-lg">
       <header>
-        <h1 className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>Ayuda</h1>
+        <h1 className="text-xl font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>Ayuda</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>
           ¿Algo no funciona como esperabas? Contanos qué pasó y te ayudamos.
         </p>
@@ -121,9 +122,9 @@ export default function AdminAyuda() {
           {preview ? (
             <div className="relative w-32 h-32 rounded-xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
               <img src={preview} alt="" className="w-full h-full object-cover" />
-              <button type="button" onClick={quitarFoto}
-                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/70 text-white flex items-center justify-center text-xs">
-                ✕
+              <button type="button" onClick={quitarFoto} aria-label="Quitar foto"
+                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/70 text-white flex items-center justify-center">
+                <CloseIcon className="w-3 h-3" />
               </button>
             </div>
           ) : (

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import BotonVolver from './BotonVolver'
 import FormularioBusqueda from './FormularioBusqueda'
 import ListaSolicitudes from './ListaSolicitudes'
+import TextoMas from '@/components/ui/TextoMas'
 
 function SearchIcon({ className = 'w-8 h-8' }) {
   return (
@@ -41,14 +42,14 @@ export default function VistaBusqueda({
 
       {token && (
         <div className="flex gap-1 mb-6 p-1 rounded-2xl" style={{ backgroundColor: 'var(--hc-surface)' }}>
-          {[{ key: 'solicitar', label: '+ Nueva solicitud' }, { key: 'mis-solicitudes', label: 'Mis solicitudes' }].map(tb => (
+          {[{ key: 'solicitar', label: 'Nueva solicitud', mas: true }, { key: 'mis-solicitudes', label: 'Mis solicitudes' }].map(tb => (
             <button type="button" key={tb.key} onClick={() => setTabBusqueda(tb.key)}
-              className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all duration-200"
+              className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 inline-flex items-center justify-center"
               style={{
                 backgroundColor: tabBusqueda === tb.key ? 'var(--hc-accent)' : 'transparent',
                 color: tabBusqueda === tb.key ? '#fff' : 'var(--hc-muted)',
               }}>
-              {tb.label}
+              {tb.mas ? <TextoMas>{tb.label}</TextoMas> : tb.label}
             </button>
           ))}
         </div>

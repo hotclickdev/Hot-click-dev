@@ -20,20 +20,3 @@ export function listaDesdeRespuesta(data) {
   if (Array.isArray(data?.content)) return data.content
   return []
 }
-
-export function categoryEmoji(nombre) {
-  const n = (nombre ?? '').toLowerCase()
-  if (n.includes('ropa') || n.includes('tela') || n.includes('camis')) return '👕'
-  if (n.includes('electro') || n.includes('celul') || n.includes('tecnol')) return '📱'
-  if (n.includes('juguete') || n.includes('niño')) return '🧸'
-  if (n.includes('deport') || n.includes('sport')) return '⚽'
-  if (n.includes('comida') || n.includes('aliment') || n.includes('bebida')) return '🍔'
-  if (n.includes('mueble') || n.includes('hogar') || n.includes('casa')) return '🛋️'
-  if (n.includes('herram') || n.includes('tool')) return '🔧'
-  if (n.includes('cosmetic') || n.includes('belleza') || n.includes('perfum')) return '💄'
-  if (n.includes('libro') || n.includes('escolar') || n.includes('papeler')) return '📚'
-  if (n.includes('auto') || n.includes('moto') || n.includes('vehic')) return '🚗'
-  if (n.includes('mascota') || n.includes('pet')) return '🐾'
-  if (n.includes('joya') || n.includes('acceso')) return '💍'
-  return '📦'
-}

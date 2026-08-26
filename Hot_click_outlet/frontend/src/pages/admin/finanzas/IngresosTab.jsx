@@ -10,6 +10,7 @@ import {
   subtotalDePedido,
   totalDePedido,
 } from './finanzasHelpers'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 function TablaIngresos({ filteredP, totalProductos, totalEnvio, totalIngresos, onSelectPedido }) {
   return (
@@ -52,7 +53,9 @@ function TablaIngresos({ filteredP, totalProductos, totalEnvio, totalIngresos, o
                     {formatPrice(totalDePedido(p))}
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-[10px] text-[#8e8e9a]/60 hover:text-[#4f7cff] transition-colors whitespace-nowrap">Ver →</span>
+                    <span className="text-[10px] text-[#8e8e9a]/60 hover:text-[#4f7cff] transition-colors whitespace-nowrap">
+                      <TextoFlecha>Ver</TextoFlecha>
+                    </span>
                   </td>
                 </tr>
               )
@@ -110,7 +113,7 @@ export default function IngresosTab({
             Las ventas aparecen aquí al marcar pedidos como <strong className="text-[#4ade80]">Entregado</strong>.
           </p>
           <Link to="/admin/pedidos" className="inline-block text-xs text-[#4f7cff] hover:underline mt-1">
-            Ver pedidos →
+            <TextoFlecha>Ver pedidos</TextoFlecha>
           </Link>
         </div>
       </>

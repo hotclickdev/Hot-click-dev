@@ -28,12 +28,20 @@ export default function Navbar() {
   } = useNavbar()
 
   const navLinks = [
-    { href: '/', label: t('nav.inicio') },
-    { href: '/productos', label: t('nav.productos') },
-    { href: '/servicios', label: t('nav.servicios'), highlight: true },
-    { href: '/informacion', label: t('nav.informacion') },
-    { href: '/nosotros', label: t('nav.nosotros') },
-    { href: '/contacto', label: t('nav.contacto') },
+    { href: '/productos', label: t('nav.comprar') },
+    { href: '/registro-empresa', label: t('nav.vender') },
+    { href: '/emprende', label: t('nav.emprender') },
+    {
+      id: 'mas',
+      label: t('nav.mas'),
+      menu: [
+        { href: '/descubri', label: t('nav.descubri') },
+        { href: '/servicios', label: t('nav.servicios') },
+        { href: '/informacion', label: t('nav.informacion') },
+        { href: '/nosotros', label: t('nav.nosotros') },
+        { href: '/contacto', label: t('nav.contacto') },
+      ],
+    },
   ]
 
   return (

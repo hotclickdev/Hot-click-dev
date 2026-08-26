@@ -6,6 +6,11 @@ import * as Sentry from '@sentry/react'
  * Reporta a Sentry sin cambiar el fallback visual.
  */
 export default class AdminErrorBoundary extends Component {
+  static defaultProps = {
+    titulo: 'Error inesperado',
+    detalle: 'Algo salió mal en el panel. Si el problema persiste, contactá soporte.',
+    accion: 'Recargar panel',
+  }
   state = { hasError: false }
   static getDerivedStateFromError() { return { hasError: true } }
   componentDidCatch(error, info) {
@@ -22,16 +27,16 @@ export default class AdminErrorBoundary extends Component {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
             </svg>
           </div>
-          <p className="text-lg font-bold" style={{ color: 'var(--hc-text)' }}>Error inesperado</p>
+          <p className="text-lg font-bold" style={{ color: 'var(--hc-text)' }}>{this.props.titulo}</p>
           <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
-            Algo salió mal en el panel. Si el problema persiste, contactá soporte.
+            {this.props.detalle}
           </p>
           <button type="button"
             onClick={() => { this.setState({ hasError: false }); globalThis.location.reload() }}
             className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
             style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
           >
-            Recargar panel
+            {this.props.accion}
           </button>
         </div>
       </div>

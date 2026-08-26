@@ -14,6 +14,7 @@ import {
   inputStyle,
   cardStyle,
 } from './reportesHelpers'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 export default function VentasTab({
   search, onSearch,
@@ -106,10 +107,16 @@ export default function VentasTab({
               <span>{filtered.length} resultados</span>
               <div className="flex items-center gap-2">
                 <button type="button" onClick={() => onTablePage(p => Math.max(0, p-1))} disabled={tablePage === 0}
-                  className="px-2 py-1 rounded-lg disabled:opacity-30" style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>←</button>
+                  aria-label="Anterior"
+                  className="px-2 py-1 rounded-lg disabled:opacity-30" style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
+                  <TrustGlyph tipo="atras" className="w-3.5 h-3.5" />
+                </button>
                 <span>{tablePage + 1} / {totalPages}</span>
                 <button type="button" onClick={() => onTablePage(p => Math.min(totalPages-1, p+1))} disabled={tablePage >= totalPages-1}
-                  className="px-2 py-1 rounded-lg disabled:opacity-30" style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>→</button>
+                  aria-label="Siguiente"
+                  className="px-2 py-1 rounded-lg disabled:opacity-30" style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
+                  <TrustGlyph tipo="adelante" className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
           )}

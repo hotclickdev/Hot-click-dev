@@ -1,8 +1,8 @@
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
+import PilaresLinks from './PilaresLinks'
 
-/** Banner CTA de campaña sobre azul 900. */
+/** Cierre de home: mismas tres puertas, no solo catálogo. */
 export default function HomeCta() {
   const { t } = useTranslation()
   return (
@@ -26,9 +26,7 @@ export default function HomeCta() {
         <p className="mb-6 sm:mb-8 max-w-md mx-auto" style={{ color: 'var(--hc-blue-200)' }}>
           {t('home.ctaSub')}
         </p>
-        <Link to="/productos" className="hc-btn hc-btn-primary hc-btn-lg inline-flex">
-          {t('home.ctaBtn')}
-        </Link>
+        <PilaresLinks tono="oscuro" />
       </motion.div>
     </section>
   )

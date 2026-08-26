@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { formatPrice } from '@/utils/format'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 export default function MiniCartItems({ items, removeItem, updateQuantity }) {
   const { t } = useTranslation()
@@ -23,7 +24,9 @@ export default function MiniCartItems({ items, removeItem, updateQuantity }) {
               {item.imagenUrl ? (
                 <img src={item.imagenUrl} alt={item.nombre} className="w-full h-full object-cover" loading="lazy" />
               ) : (
-                <span className="flex items-center justify-center w-full h-full text-xl">📦</span>
+                <span className="flex items-center justify-center w-full h-full opacity-30" style={{ color: 'var(--hc-muted)' }}>
+                  <TrustGlyph tipo="paquete" className="w-6 h-6" />
+                </span>
               )}
             </div>
 

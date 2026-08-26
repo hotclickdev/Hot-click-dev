@@ -24,6 +24,13 @@ class JwtUtilTest {
     // ── generateToken / extractUsername ──────────────────────────────────────
 
     @Test
+    @DisplayName("extractRol → returns rol from claims")
+    void extractRol_returnsRol() {
+        String token = jwtUtil.generateToken(EMAIL, 1L, "EMPRENDEDOR");
+        assertThat(jwtUtil.extractRol(token)).isEqualTo("EMPRENDEDOR");
+    }
+
+    @Test
     @DisplayName("generateToken → extractUsername returns same email")
     void generateToken_extractUsername_match() {
         String token = jwtUtil.generateToken(EMAIL, 1L, "USUARIO_FINAL");

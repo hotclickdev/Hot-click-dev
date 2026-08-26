@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { CARD_SHADOW, textoRecomendacionDia } from './sistemaReportesHelpers'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function TabAnalisis({ productosEstrella, totalSemana, mejorDia, mejorDiaPct }) {
   return (
@@ -42,7 +43,9 @@ export default function TabAnalisis({ productosEstrella, totalSemana, mejorDia, 
         </div>
       )}
 
-      <Link to="/admin/copilot" className="text-sm font-semibold self-start" style={{ color: 'var(--hc-accent)' }}>Consultale más a Hot →</Link>
+      <Link to="/admin/copilot" className="text-sm font-semibold self-start" style={{ color: 'var(--hc-accent)' }}>
+        <TextoFlecha>Consultale más a Hot</TextoFlecha>
+      </Link>
     </div>
   )
 }

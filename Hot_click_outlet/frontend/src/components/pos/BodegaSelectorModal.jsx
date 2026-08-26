@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { posService } from '@/services/posService'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import TextoCamino from '@/components/ui/TextoCamino'
 
 /**
  * Pantalla bloqueante que exige seleccionar la bodega de operación al abrir el POS.
@@ -62,9 +64,9 @@ export default function BodegaSelectorModal({ onSelect }) {
 
           {/* Título */}
           <div className="text-center space-y-2">
-            <div className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-3xl"
-              style={{ backgroundColor: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)' }}>
-              🏭
+            <div className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center"
+              style={{ backgroundColor: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', color: '#fbbf24' }}>
+              <TrustGlyph tipo="edificio" className="w-8 h-8" />
             </div>
             <h1 className="text-2xl sm:text-3xl font-black leading-tight" style={{ color: '#fff' }}>
               ¿Desde qué bodega<br />operás hoy?
@@ -111,12 +113,13 @@ export default function BodegaSelectorModal({ onSelect }) {
                     <div className="flex items-start gap-4">
 
                       {/* Ícono */}
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
                         style={{
                           backgroundColor: activa ? 'rgba(23,71,168,0.22)' : 'rgba(255,255,255,0.06)',
                           border: `1px solid ${activa ? 'rgba(23,71,168,0.5)' : 'rgba(255,255,255,0.1)'}`,
+                          color: activa ? '#7aa3ff' : 'rgba(255,255,255,0.55)',
                         }}>
-                        🏭
+                        <TrustGlyph tipo="edificio" className="w-6 h-6" />
                       </div>
 
                       {/* Datos */}
@@ -128,13 +131,13 @@ export default function BodegaSelectorModal({ onSelect }) {
                         {b.direccionExacta && (
                           <p className="text-sm truncate"
                             style={{ color: 'rgba(255,255,255,0.38)' }}>
-                            📍 {b.direccionExacta}
+                            {b.direccionExacta}
                           </p>
                         )}
                         {b.encargadoNombre && (
                           <p className="text-xs"
                             style={{ color: 'rgba(255,255,255,0.28)' }}>
-                            👤 {b.encargadoNombre}
+                            {b.encargadoNombre}
                           </p>
                         )}
                       </div>
@@ -146,7 +149,7 @@ export default function BodegaSelectorModal({ onSelect }) {
                           border: `2px solid ${activa ? 'var(--hc-accent)' : 'rgba(255,255,255,0.18)'}`,
                           transition: 'all 0.15s ease',
                         }}>
-                        {activa && <span className="text-white text-xs font-black leading-none">✓</span>}
+                        {activa && <TrustGlyph tipo="check" className="w-3.5 h-3.5 text-white" />}
                       </div>
                     </div>
                   </button>
@@ -159,10 +162,10 @@ export default function BodegaSelectorModal({ onSelect }) {
           {!loading && !error && bodegas.length === 0 && (
             <div className="rounded-2xl p-8 text-center space-y-3"
               style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <p className="text-4xl">📦</p>
+              <TrustGlyph tipo="paquete" className="w-10 h-10 mx-auto opacity-50" />
               <p className="font-bold" style={{ color: 'rgba(255,255,255,0.7)' }}>No hay bodegas activas</p>
               <p className="text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                Creá al menos una bodega en Configuración → Bodegas antes de usar el POS
+                Creá al menos una bodega en <TextoCamino partes={['Configuración', 'Bodegas']} /> antes de usar el POS
               </p>
             </div>
           )}
@@ -181,7 +184,7 @@ export default function BodegaSelectorModal({ onSelect }) {
                 letterSpacing: '0.04em',
               }}>
               {selected
-                ? `✓  Operar desde esta bodega`
+                ? 'Operar desde esta bodega'
                 : 'Tocá una bodega para seleccionarla'}
             </button>
           )}

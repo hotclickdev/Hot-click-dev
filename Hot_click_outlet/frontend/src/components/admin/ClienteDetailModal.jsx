@@ -1,6 +1,8 @@
 import { fmt, fmtDate } from './clienteDetail/clienteDetailHelpers'
 import { SegmentoBadge } from './clienteDetail/SegmentoBadge'
 import { useClienteDetailModal } from './clienteDetail/useClienteDetailModal'
+import CloseIcon from '@/components/ui/CloseIcon'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 export default function ClienteDetailModal({ clienteId, onClose }) {
   const {
@@ -34,8 +36,10 @@ export default function ClienteDetailModal({ clienteId, onClose }) {
               style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>
               {editMode ? 'Cancelar' : 'Editar'}
             </button>
-            <button type="button" onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
-              style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>✕</button>
+            <button type="button" onClick={onClose} aria-label="Cerrar" className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
+              style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>
+              <CloseIcon />
+            </button>
           </div>
         </div>
 
@@ -105,11 +109,17 @@ export default function ClienteDetailModal({ clienteId, onClose }) {
                     className="flex-1 px-3 py-2 rounded-xl text-sm text-center outline-none"
                     style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--hc-text)' }}/>
                   <button type="button" onClick={() => handleAjustarPuntos(1)}
-                    className="px-3 py-2 rounded-xl text-sm font-bold"
-                    style={{ backgroundColor: 'rgba(52,211,153,0.15)', color: '#34d399' }}>+ Sumar</button>
+                    className="px-3 py-2 rounded-xl text-sm font-bold inline-flex items-center gap-1"
+                    style={{ backgroundColor: 'rgba(52,211,153,0.15)', color: '#34d399' }}>
+                    <TrustGlyph tipo="mas" className="w-3.5 h-3.5" />
+                    Sumar
+                  </button>
                   <button type="button" onClick={() => handleAjustarPuntos(-1)}
-                    className="px-3 py-2 rounded-xl text-sm font-bold"
-                    style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#f87171' }}>− Restar</button>
+                    className="px-3 py-2 rounded-xl text-sm font-bold inline-flex items-center gap-1"
+                    style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#f87171' }}>
+                    <TrustGlyph tipo="menos" className="w-3.5 h-3.5" />
+                    Restar
+                  </button>
                 </div>
               </div>
             )}

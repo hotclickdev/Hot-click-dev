@@ -8,6 +8,8 @@ import { abandonedCartService } from '@/services/abandonedCartService'
 import useCartStore from '@/store/cartStore'
 import { formatPrice } from '@/utils/format'
 import { useToast } from '@/components/ui/Toast'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function RecuperarCarritoPage() {
   const { t } = useTranslation()
@@ -66,7 +68,9 @@ export default function RecuperarCarritoPage() {
     return (
       <MainLayout>
         <div className="max-w-md mx-auto px-4 py-20 text-center">
-          <p className="text-4xl mb-4">🛒</p>
+          <span className="flex justify-center mb-4 opacity-40" style={{ color: 'var(--hc-muted)' }}>
+            <TrustGlyph tipo="bolsa" className="w-12 h-12" />
+          </span>
           <h1 className="text-xl font-bold mb-2" style={{ color: 'var(--hc-text)' }}>
             {t('recuperarCarrito.notAvailable')}
           </h1>
@@ -94,7 +98,9 @@ export default function RecuperarCarritoPage() {
         >
           {/* Header */}
           <div className="text-center mb-8">
-            <span className="text-5xl">🛒</span>
+            <span className="flex justify-center opacity-40" style={{ color: 'var(--hc-muted)' }}>
+              <TrustGlyph tipo="bolsa" className="w-14 h-14" />
+            </span>
             <h1 className="text-2xl font-bold mt-3 mb-1" style={{ color: 'var(--hc-text)' }}>
               {t('recuperarCarrito.title')}
             </h1>
@@ -126,10 +132,10 @@ export default function RecuperarCarritoPage() {
                   />
                 ) : (
                   <div
-                    className="w-13 h-13 rounded-xl shrink-0 flex items-center justify-center text-xl"
-                    style={{ background: 'var(--hc-bg)', width: 52, height: 52 }}
+                    className="rounded-xl shrink-0 flex items-center justify-center opacity-30"
+                    style={{ background: 'var(--hc-bg)', width: 52, height: 52, color: 'var(--hc-muted)' }}
                   >
-                    📦
+                    <TrustGlyph tipo="paquete" className="w-6 h-6" />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
@@ -165,7 +171,7 @@ export default function RecuperarCarritoPage() {
               disabled={adding}
               className="hc-btn hc-btn-primary w-full h-12 text-sm font-bold disabled:opacity-60"
             >
-              {adding ? t('recuperarCarrito.adding') : t('recuperarCarrito.restore')}
+              {adding ? t('recuperarCarrito.adding') : <TextoFlecha>{t('recuperarCarrito.restore')}</TextoFlecha>}
             </button>
             <button type="button"
               onClick={() => navigate('/productos')}

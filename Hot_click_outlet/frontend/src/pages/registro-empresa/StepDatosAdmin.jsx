@@ -4,6 +4,7 @@ import Input from '@/components/ui/Input'
 import PhoneField from '@/components/ui/PhoneField'
 import ErrMsg from '../auth/ErrMsg'
 import { MIN_PASSWORD, STEP_MOTION } from './registroEmpresaHelpers'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function StepDatosAdmin({
   form, error, loading, onCampo, onTelefono, onSubmit, onAtras,
@@ -26,7 +27,9 @@ export default function StepDatosAdmin({
         value={form.telefonoAdmin} onChange={onTelefono} />
       {error && <ErrMsg>{error}</ErrMsg>}
       <div className="flex gap-2.5">
-        <button type="button" onClick={onAtras} className="hc-btn hc-btn-outline px-4">← Atrás</button>
+        <button type="button" onClick={onAtras} className="hc-btn hc-btn-outline px-4">
+          <TextoFlecha dir="atras">Atrás</TextoFlecha>
+        </button>
         <button type="submit" disabled={loading}
           className="hc-btn hc-btn-primary hc-btn-lg flex-1 disabled:opacity-60"
           style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px rgba(231,59,51,0.3)' }}>

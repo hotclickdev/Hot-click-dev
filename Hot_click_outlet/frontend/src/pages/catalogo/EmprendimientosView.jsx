@@ -20,8 +20,12 @@ export default function EmprendimientosView({ products, convenios, loading, onBa
             <span className="font-semibold" style={{ color: '#10b981' }}>Emprendimientos</span>
           </nav>
           <div className="flex items-center gap-4 mb-2">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
-              style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.25)' }}>🤝</div>
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.25)', color: '#10b981' }}>
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
             <div>
               <h2 className="text-4xl sm:text-5xl font-black tracking-tight" style={{ color: 'var(--hc-text)' }}>Emprendimientos</h2>
               <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>Apoyá negocios locales de Costa Rica — cada compra cuenta</p>
@@ -66,7 +70,9 @@ function cuerpoCatalogoEmprendimientos(loading, products) {
   if (products.length === 0) {
     return (
       <div className="text-center py-24">
-        <p className="text-6xl mb-4">🌱</p>
+        <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24" style={{ color: 'var(--hc-muted)' }} aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-6-6h12" />
+        </svg>
         <p className="text-lg font-bold" style={{ color: 'var(--hc-text)' }}>Próximamente más productos</p>
         <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>Los emprendimientos están cargando su inventario</p>
       </div>

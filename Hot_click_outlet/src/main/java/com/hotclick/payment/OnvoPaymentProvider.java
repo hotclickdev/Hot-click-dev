@@ -48,7 +48,8 @@ public class OnvoPaymentProvider implements PaymentProvider {
         if (onvoService.isMockMode()) {
             throw new IllegalStateException(
                 "ONVO no está configurado. " +
-                "Añade ONVO_SECRET_KEY (onvo_test_secret_key_...) al entorno para procesar pagos con tarjeta.");
+                "Añade ONVO_SECRET_KEY (onvo_test_secret_key_...) al entorno para procesar pagos con tarjeta.",
+                new IllegalStateException("ONVO_SECRET_KEY"));
         }
 
         String descripcion = "Pedido HOTCLICK " + pedido.getNumeroPedido();

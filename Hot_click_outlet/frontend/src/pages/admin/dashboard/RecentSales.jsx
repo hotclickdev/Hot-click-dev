@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { formatPrice } from '@/utils/format'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 /** @param {{ ventas: object[] }} props */
 export default function RecentSales({ ventas }) {
@@ -10,7 +11,7 @@ export default function RecentSales({ ventas }) {
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-sm font-semibold text-[#e8e8ed]">Ventas recientes</h2>
         <Link to="/admin/ventas" className="text-xs text-[#4f7cff] hover:underline">
-          Ver todas →
+          <TextoFlecha>Ver todas</TextoFlecha>
         </Link>
       </div>
       <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">

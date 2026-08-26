@@ -10,6 +10,7 @@ import EmprendimientoProgreso from './emprendimiento/EmprendimientoProgreso'
 import EmprendimientoPasoNegocio from './emprendimiento/EmprendimientoPasoNegocio'
 import EmprendimientoPasoCuenta from './emprendimiento/EmprendimientoPasoCuenta'
 import EmprendimientoPasoVerificar from './emprendimiento/EmprendimientoPasoVerificar'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function EmprendimientoForm({ onVolver }) {
   const navigate   = useNavigate()
@@ -142,7 +143,7 @@ export default function EmprendimientoForm({ onVolver }) {
         <button type="button" onClick={onVolver}
           className="mt-5 w-full text-center text-sm py-2 rounded-xl transition-colors hover:opacity-70"
           style={{ color: 'var(--hc-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
-          ← Registrarme como comprador
+          <TextoFlecha dir="atras">Registrarme como comprador</TextoFlecha>
         </button>
       )}
     </motion.div>

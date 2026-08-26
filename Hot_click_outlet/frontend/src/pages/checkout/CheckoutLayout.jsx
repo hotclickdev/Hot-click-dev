@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import CheckoutStepper from '@/components/ui/CheckoutStepper'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 import CheckoutForm from './CheckoutForm'
 import CheckoutSummary from './CheckoutSummary'
 
@@ -58,8 +59,8 @@ export default function CheckoutLayout({
         <CheckoutStepper activeStep="checkout" />
 
         <div className="mb-4 sm:mb-6">
-          <Link to="/carrito" className="text-sm transition-colors hover:text-[#4f7cff]" style={{ color: 'var(--hc-muted)' }}>
-            ← {t('checkout.backToCart')}
+          <Link to="/carrito" className="text-sm transition-colors hover:opacity-80" style={{ color: 'var(--hc-link)' }}>
+            <TextoFlecha dir="atras">{t('checkout.backToCart')}</TextoFlecha>
           </Link>
           <h1 className="text-2xl sm:text-3xl font-bold mt-2" style={{ color: 'var(--hc-text)' }}>{t('checkout.title')}</h1>
         </div>

@@ -31,10 +31,10 @@ export function ChatPhase({ accent, onPause, onResume, destacados, onSubmit }) {
       className="flex flex-col items-center text-center w-full"
     >
       <div className="relative z-10 flex flex-col items-center max-w-xl mx-auto px-4 w-full">
-        <h1 className="font-black tracking-tight mb-2"
+        <p className="font-black tracking-tight mb-2"
           style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', lineHeight: 1.08, color: 'var(--hc-text)' }}>
           ¿Qué estás buscando hoy?
-        </h1>
+        </p>
 
         <div className="w-full flex flex-col items-center mb-7" style={{ minHeight: '6.5rem' }}>
           <div className="relative w-full flex items-center justify-center overflow-hidden"

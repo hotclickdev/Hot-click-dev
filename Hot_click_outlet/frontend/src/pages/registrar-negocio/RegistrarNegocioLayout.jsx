@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import BrandLogo from '@/components/ui/BrandLogo'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 /** Chrome de fondo, header y contenedor de `/registrar-negocio`. */
 export default function RegistrarNegocioLayout({ onSkip, children }) {
@@ -22,7 +23,7 @@ export default function RegistrarNegocioLayout({ onSkip, children }) {
           <BrandLogo size={28} wordmarkSize={15} />
         </Link>
         <button type="button" onClick={onSkip} className="hc-btn hc-btn-ghost hc-btn-sm">
-          Hacer esto después →
+          <TextoFlecha>Hacer esto después</TextoFlecha>
         </button>
       </header>
 

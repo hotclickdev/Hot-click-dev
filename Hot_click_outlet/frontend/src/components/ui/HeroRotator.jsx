@@ -19,7 +19,7 @@ export default function HeroRotator({ destacados }) {
   return (
     <section
       className="relative w-full overflow-hidden flex flex-col"
-      style={{ minHeight: '82vh', maxHeight: '100vh' }}
+      style={{ minHeight: '56vh', maxHeight: '100vh' }}
     >
       <AnimatePresence>
         <motion.div

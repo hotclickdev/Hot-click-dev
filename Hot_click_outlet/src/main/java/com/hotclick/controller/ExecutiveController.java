@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import com.hotclick.sse.SseStreamHeaders;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.concurrent.Executor;
 
@@ -47,7 +49,8 @@ public class ExecutiveController {
 
     /** Streams an AI executive summary using the copilot (SSE). */
     @PostMapping(value = "/ai-summary", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter aiSummary() {
+    public SseEmitter aiSummary(HttpServletResponse response) {
+        SseStreamHeaders.aplicar(response);
         Long empresaId = TenantContext.get();
         String periodo  = LocalDate.now(Constants.ZONA_CR).toString().substring(0, 7);
 
@@ -76,8 +79,7 @@ public class ExecutiveController {
         );
 
         SseEmitter emitter = new SseEmitter(120_000L);
-        emitter.onCompletion(() -> emitter.complete());
-        emitter.onTimeout(() -> emitter.complete());
+        emitter.onTimeout(emitter::complete);
         sseExecutor.execute(() -> aiCopilotService.chatStream(empresaId, prompt, emitter));
         return emitter;
     }

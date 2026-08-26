@@ -70,7 +70,7 @@ export default function CategoriaSelect({ categories = [], value, onChange, requ
             onChange={(e) => handleSelect(i + 1, e.target.value)}
             className={sel}
           >
-            <option value="">↳ Subcategoría (opcional)</option>
+            <option value="">Subcategoría (opcional)</option>
             {kids.map((c) => (
               <option key={c.id} value={c.id}>{c.nombreCategoria}</option>
             ))}

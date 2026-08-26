@@ -9,7 +9,7 @@ export function buildInitialMessages(tipo, numeroPedido, metodoPago, errorCode, 
     if (usuarioDatos.nombre)    datosConocidos.push(`nombre: ${usuarioDatos.nombre}`)
     if (usuarioDatos.telefono)  datosConocidos.push(`teléfono: ${usuarioDatos.telefono}`)
     if (usuarioDatos.direccion) datosConocidos.push(`dirección: ${usuarioDatos.direccion}`)
-    const mensajeInicial = '¡Tu compra fue exitosa! 🎉 Para coordinar la entrega, necesito confirmar algunos datos tuyos.'
+    const mensajeInicial = 'Tu compra fue exitosa. Para coordinar la entrega, necesito confirmar algunos datos tuyos.'
     const autoQuery = datosConocidos.length > 0
       ? `Mi pedido es el #${numeroPedido}. Mis datos son: ${datosConocidos.join(', ')}. ¿Están correctos y qué sigue?`
       : `Mi pedido es el #${numeroPedido} pagado con ${metodoPago}. ¿Qué datos necesitás para la entrega?`
@@ -18,7 +18,7 @@ export function buildInitialMessages(tipo, numeroPedido, metodoPago, errorCode, 
   const tipoError = clasificarError(errorCode)
   if (tipoError === 'leve') {
     return {
-      mensajeInicial: 'Hubo un problema con tu método de pago. No te preocupés, tu carrito sigue intacto.',
+      mensajeInicial: 'Hubo un problema con tu método de pago. No te preocupés, tu pedido sigue intacto.',
       autoQuery: 'Tuve un problema al pagar. ¿Qué opciones tengo?',
     }
   }

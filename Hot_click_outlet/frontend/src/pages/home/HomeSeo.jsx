@@ -10,8 +10,8 @@ export default function HomeSeo({ destacados = [] }) {
   return (
     <>
       <Seo
-        title="HotClick — Marketplace de emprendedores en Costa Rica"
-        description="Marketplace de emprendedores costarricenses. Productos únicos con envío a todo Costa Rica, pagos seguros y soporte local."
+        title="HotClick — Compra · Vende · Emprende en Costa Rica"
+        description="Todo empieza con un click. Comprá a emprendedores de Costa Rica, vendé tu negocio o crecé en HotClick. Envío a todo el país y pagos seguros."
         type="website"
       />
       <Helmet>

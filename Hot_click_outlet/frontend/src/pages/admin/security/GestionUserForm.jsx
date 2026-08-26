@@ -1,4 +1,5 @@
 import { ROLES_ADMIN } from './gestionTabHelpers'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 /**
  * Modales editar usuario y confirmar acción — bit-idéntico al original.
@@ -30,9 +31,7 @@ export default function GestionUserForm({
             <div className="flex items-center justify-between">
               <p className="font-semibold" style={{ color: 'var(--hc-text)' }}>Editar usuario</p>
               <button type="button" onClick={onCloseEdit} aria-label="Cerrar" style={{ color: 'var(--hc-muted)' }}>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <CloseIcon className="w-4 h-4" />
               </button>
             </div>
 

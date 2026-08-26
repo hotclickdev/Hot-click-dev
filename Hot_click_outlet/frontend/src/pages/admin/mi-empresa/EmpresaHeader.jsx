@@ -1,4 +1,7 @@
 import { PLAN_COLOR, ESTADO_COLOR, fechaPerfil, perfilCompletitud } from './miEmpresaHelpers'
+import CopiarLinkTienda from '@/components/sistema/CopiarLinkTienda'
+import { tiendaEsPublica } from '@/utils/rutaTienda'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 function CompletitudCard({ form }) {
   const { checks, done, pct } = perfilCompletitud(form)
@@ -17,13 +20,14 @@ function CompletitudCard({ form }) {
       </div>
       <div className="flex flex-wrap gap-2">
         {checks.map(c => (
-          <span key={c.label} className="text-xs px-2 py-0.5 rounded-full font-medium"
+          <span key={c.label} className="text-xs px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1"
             style={{
               backgroundColor: c.done ? 'rgba(34,197,94,0.1)' : 'var(--hc-surface-2)',
               color: c.done ? '#22c55e' : 'var(--hc-muted)',
               border: `1px solid ${c.done ? 'rgba(34,197,94,0.2)' : 'var(--hc-border)'}`,
             }}>
-            {c.done ? '✓ ' : ''}{c.label}
+            {c.done && <TrustGlyph tipo="check" className="w-3 h-3" />}
+            {c.label}
           </span>
         ))}
       </div>
@@ -53,6 +57,9 @@ export default function EmpresaHeader({ empresa, isDirty, canEdit, form }) {
           <div className="font-semibold" style={{ color: 'var(--hc-text)' }}>{empresa.nombreEmpresa}</div>
           <div className="text-xs mt-0.5 font-mono" style={{ color: 'var(--hc-muted)' }}>/{empresa.slug}</div>
         </div>
+        {tiendaEsPublica(empresa) && empresa.slug && (
+          <CopiarLinkTienda ruta={`/tienda/${empresa.slug}`} />
+        )}
         <div className="flex gap-2 flex-wrap">
           <span className={`text-xs font-semibold px-2 py-1 rounded-full ${PLAN_COLOR[empresa.planSaas] ?? ''}`}>
             {empresa.planSaas}

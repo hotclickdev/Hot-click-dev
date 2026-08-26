@@ -4,16 +4,14 @@ import './index.css'
 import './i18n'
 import App from './App.jsx'
 import { registerSW } from 'virtual:pwa-register'
-import * as Sentry from '@sentry/react'
 import { PostHogProvider } from '@posthog/react'
+import { initSentry, syncSentryUser } from '@/utils/sentryClient'
+import useAuthStore from '@/store/authStore'
 
-if (import.meta.env.VITE_SENTRY_DSN) {
-  Sentry.init({
-    dsn: import.meta.env.VITE_SENTRY_DSN,
-    environment: import.meta.env.MODE,
-    tracesSampleRate: 0.1,
-    integrations: [Sentry.browserTracingIntegration()],
-  })
+initSentry()
+const sesion = useAuthStore.getState()
+if (sesion.userId) {
+  syncSentryUser({ userId: sesion.userId, empresaId: sesion.empresaId, rol: sesion.userRole })
 }
 
 const posthogOptions = {

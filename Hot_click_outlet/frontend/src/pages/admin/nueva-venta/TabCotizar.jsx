@@ -3,6 +3,7 @@ import Input from '@/components/ui/Input'
 import PhoneField from '@/components/ui/PhoneField'
 import { WA_TABS } from './nuevaVentaHelpers'
 import { WhatsAppIcon } from './nuevaVentaIcons'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 /**
  * @param {{
@@ -71,8 +72,8 @@ function CotizarPreview({ waTab, waTexts, onClose, onWaTab, onWaTexts, onEnviar 
       <div className="w-full max-w-lg rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
         <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--hc-border)' }}>
           <h3 className="font-bold text-[15px]" style={{ color: 'var(--hc-text)' }}>Previsualizar mensaje</h3>
-          <button type="button" onClick={onClose} className="p-1.5 rounded-lg hover:opacity-70" style={{ color: 'var(--hc-muted)' }}>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="p-1.5 rounded-lg hover:opacity-70" style={{ color: 'var(--hc-muted)' }}>
+            <CloseIcon className="w-4 h-4" />
           </button>
         </div>
         <div className="p-5 space-y-3">

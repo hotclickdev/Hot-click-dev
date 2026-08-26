@@ -3,7 +3,31 @@ import { useTranslation } from 'react-i18next'
 import PhoneField from '@/components/ui/PhoneField'
 import { formatPrice } from '@/utils/format'
 import SmartField from './SmartField'
-import { validateAddress, validatePhone } from './checkoutHelpers'
+import { GlobeIcon } from './checkoutIcons'
+import { WHATSAPP, validateAddress, validatePhone } from './checkoutHelpers'
+
+const TEXTO_WA_INTERNACIONAL = encodeURIComponent('Hola HotClick, consulto un envío internacional.')
+
+function EnvioInternacionalAtajo() {
+  const { t } = useTranslation()
+  return (
+    <a
+      href={`https://wa.me/${WHATSAPP}?text=${TEXTO_WA_INTERNACIONAL}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={t('checkout.envioInternacionalAria')}
+      className="flex items-center gap-2 min-h-11 px-1 text-sm"
+      style={{ color: 'var(--hc-muted)' }}
+    >
+      <GlobeIcon />
+      <span>
+        {t('checkout.envioInternacional')}
+        {' — '}
+        {t('checkout.envioInternacionalHint')}
+      </span>
+    </a>
+  )
+}
 
 export default function ShippingSection({
   opciones,
@@ -50,7 +74,7 @@ export default function ShippingSection({
                 setMetodoEnvio(op.value)
                 if (op.value === 'ENVIO_RAPIDO' && metodoPago === 'EFECTIVO') setMetodoPago('SINPE')
               }}
-              className="accent-[#4f7cff]"
+              style={{ accentColor: 'var(--hc-accent)' }}
             />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
@@ -63,27 +87,15 @@ export default function ShippingSection({
               </div>
               <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>{op.sub}</p>
             </div>
-            <span className={`font-semibold text-sm shrink-0 ${op.precio === 0 ? 'text-[#4f7cff]' : ''}`}
-              style={op.precio === 0 ? {} : { color: 'var(--hc-text)' }}>
+            <span
+              className="font-semibold text-sm shrink-0"
+              style={{ color: op.precio === 0 ? 'var(--hc-accent)' : 'var(--hc-text)' }}
+            >
               {op.precio === 0 ? 'Gratis' : formatPrice(op.precio)}
             </span>
           </label>
         ))}
-
-        {/* Internacional — enlace a WhatsApp */}
-        <a
-          href="https://wa.me/50686667888?text=Hola%20HotClick%2C%20quiero%20realizar%20un%20env%C3%ADo%20internacional"
-          target="_blank" rel="noopener noreferrer"
-          className="flex items-center gap-4 p-4 rounded-xl border transition-all duration-200 hover:opacity-80"
-          style={{ borderColor: 'var(--hc-border)', borderStyle: 'dashed' }}
-        >
-          <span className="text-lg">✈️</span>
-          <div className="flex-1">
-            <p className="font-medium text-sm" style={{ color: 'var(--hc-text)' }}>Envío Internacional</p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>Disponible · Consultá precio por WhatsApp</p>
-          </div>
-          <span className="text-xs font-semibold" style={{ color: '#25D366' }}>Consultar →</span>
-        </a>
+        <EnvioInternacionalAtajo />
       </div>
 
       {/* Domicilio fields — animate in */}

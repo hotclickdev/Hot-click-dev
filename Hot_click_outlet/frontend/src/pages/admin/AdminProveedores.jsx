@@ -6,6 +6,7 @@ import { EMPTY_PROVEEDOR } from './proveedores/proveedoresHelpers'
 import { useAdminProveedoresActions } from './proveedores/useAdminProveedoresActions'
 import ProveedorFormModal from './proveedores/ProveedorFormModal'
 import ProveedoresTable, { ProveedorCostosModal } from './proveedores/ProveedoresTable'
+import TextoMas from '@/components/ui/TextoMas'
 
 export default function AdminProveedores() {
   const { showToast } = useToast()
@@ -64,9 +65,9 @@ export default function AdminProveedores() {
           <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>{proveedores.length} proveedor{proveedores.length === 1 ? '' : 'es'} activo{proveedores.length === 1 ? '' : 's'}</p>
         </div>
         <button type="button" onClick={openNew}
-          className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
+          className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80 inline-flex items-center"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-          + Nuevo proveedor
+          <TextoMas>Nuevo proveedor</TextoMas>
         </button>
       </div>
 
@@ -79,8 +80,8 @@ export default function AdminProveedores() {
         <div className="text-center py-16 rounded-2xl"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid rgba(255,255,255,0.07)' }}>
           <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>No hay proveedores registrados</p>
-          <button type="button" onClick={openNew} className="mt-3 text-sm font-medium" style={{ color: 'var(--hc-accent)' }}>
-            + Agregar el primero
+          <button type="button" onClick={openNew} className="mt-3 text-sm font-medium inline-flex items-center" style={{ color: 'var(--hc-accent)' }}>
+            <TextoMas>Agregar el primero</TextoMas>
           </button>
         </div>
       ) : (

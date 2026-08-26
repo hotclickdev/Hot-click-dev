@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { STEP_MOTION } from './registroEmpresaHelpers'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 function IconoCheck() {
   return (
@@ -88,7 +89,7 @@ function BloqueoTributacion({ onVolver }) {
         </ol>
       </div>
       <button type="button" onClick={onVolver} className="hc-btn hc-btn-outline w-full">
-        ← Volver a la pregunta
+        <TextoFlecha dir="atras">Volver a la pregunta</TextoFlecha>
       </button>
     </motion.div>
   )

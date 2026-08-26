@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import useCartStore from '@/store/cartStore'
@@ -10,6 +11,7 @@ import QuickViewActions from '@/components/ui/quickView/QuickViewActions'
 
 export default function QuickViewModal({ product, onClose }) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [quantity, setQuantity] = useState(1)
   const [justAdded, setJustAdded] = useState(false)
   const addItem = useCartStore((s) => s.addItem)
@@ -39,9 +41,14 @@ export default function QuickViewModal({ product, onClose }) {
     addTimeout.current = setTimeout(() => setJustAdded(false), 1400)
   }
 
-  let addBtnCls = 'bg-[#4f7cff] hover:bg-[#3d6ee0] text-white'
-  if (!inStock) addBtnCls = 'bg-white/5 text-[#8e8e9a] cursor-not-allowed'
-  else if (justAdded) addBtnCls = 'bg-emerald-500 text-white'
+  const handleComprarAhora = () => {
+    if (!inStock) return
+    if (!justAdded) {
+      for (let i = 0; i < quantity; i++) addItem(product)
+    }
+    onClose()
+    navigate('/checkout')
+  }
 
   return (
     <>
@@ -83,8 +90,8 @@ export default function QuickViewModal({ product, onClose }) {
                 liked={liked}
                 toggle={toggle}
                 handleAdd={handleAdd}
+                handleComprarAhora={handleComprarAhora}
                 justAdded={justAdded}
-                addBtnCls={addBtnCls}
                 onClose={onClose}
               />
             </QuickViewInfo>

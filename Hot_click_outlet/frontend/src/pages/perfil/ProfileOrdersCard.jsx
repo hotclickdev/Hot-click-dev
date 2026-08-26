@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import Spinner from '@/components/ui/Spinner'
 import { formatDate } from '@/utils/format'
 import { garantiaDias, primerProducto, MAX_PEDIDOS_RECIENTES } from './perfilHelpers'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function ProfileOrdersCard({ orders, loading }) {
   const navigate = useNavigate()
@@ -15,15 +17,16 @@ export default function ProfileOrdersCard({ orders, loading }) {
       style={{ backgroundColor: 'var(--hc-surface)', borderColor: 'var(--hc-border)' }}
     >
       <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--hc-border)' }}>
-        <h2 className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
-          📋 {t('profile.recentOrders')}
+        <h2 className="text-sm font-semibold flex items-center gap-2" style={{ color: 'var(--hc-text)' }}>
+          <TrustGlyph tipo="lista" className="w-4 h-4" />
+          {t('profile.recentOrders')}
         </h2>
         <button type="button"
           onClick={() => navigate('/mis-pedidos')}
           className="text-xs font-semibold transition-colors"
           style={{ color: 'var(--hc-accent)' }}
         >
-          {t('profile.verTodos')} →
+          <TextoFlecha>{t('profile.verTodos')}</TextoFlecha>
         </button>
       </div>
 
@@ -50,9 +53,10 @@ export default function ProfileOrdersCard({ orders, loading }) {
                   </p>
                 </div>
                 {dias !== null && dias > 0 && (
-                  <span className="text-[11px] font-semibold px-2 py-1 rounded-lg shrink-0"
+                  <span className="text-[11px] font-semibold px-2 py-1 rounded-lg shrink-0 inline-flex items-center gap-1"
                     style={{ backgroundColor: 'rgba(5,150,105,0.1)', color: '#059669' }}>
-                    🛡 {t('profile.warrantyDays', { count: dias })}
+                    <TrustGlyph tipo="garantia" className="w-3 h-3" />
+                    {t('profile.warrantyDays', { count: dias })}
                   </span>
                 )}
                 {dias !== null && dias <= 0 && (

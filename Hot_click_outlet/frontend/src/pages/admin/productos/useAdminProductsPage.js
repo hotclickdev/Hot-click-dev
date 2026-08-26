@@ -4,7 +4,6 @@ import { useStickyState } from '@/hooks/useStickyState'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '@/components/ui/Toast'
 import useAuthStore from '@/store/authStore'
-import usePlan from '@/hooks/usePlan'
 import { useAdminProductsActions } from './useAdminProductsActions'
 import { toProductosPageViewProps } from './toProductosPageViewProps'
 import {
@@ -22,8 +21,8 @@ export function useAdminProductsPage() {
   const toast = useToast()
   const userRole = useAuthStore((s) => s.userRole)
   const isAdmin = userRole === 'ADMIN'
-  const { plan } = usePlan()
-  const vistaSimple = plan === 'EMPRENDEDOR'
+  // El dueño ve SistemaProductos. Esta página solo la usa ADMIN/GERENTE.
+  const vistaSimple = false
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [bodegas, setBodegas] = useState([])

@@ -79,7 +79,7 @@ export default function AdminConfigFiscal() {
 
       {hasDraft && (
         <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-          <span>📝 Hay un borrador guardado. Podés continuar desde donde lo dejaste.</span>
+          <span>Hay un borrador guardado. Podés continuar desde donde lo dejaste.</span>
           <button
             type="button"
             onClick={descartarBorrador}

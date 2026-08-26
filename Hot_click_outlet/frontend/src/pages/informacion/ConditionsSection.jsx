@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 /** Condiciones de producto. */
 export default function ConditionsSection() {
@@ -32,7 +33,7 @@ export default function ConditionsSection() {
             <ul className="space-y-1.5">
               {points.map((pt) => (
                 <li key={pt} className="flex items-start gap-2 text-xs text-[#8e8e9a]">
-                  <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+                  <TrustGlyph tipo="check" className="w-3 h-3 mt-0.5 shrink-0 text-emerald-400" />
                   {pt}
                 </li>
               ))}

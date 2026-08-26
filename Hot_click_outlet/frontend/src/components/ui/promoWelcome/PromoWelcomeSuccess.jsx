@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function PromoWelcomeSuccess({ dismiss, navigate }) {
   const { t } = useTranslation()
@@ -34,7 +35,7 @@ export default function PromoWelcomeSuccess({ dismiss, navigate }) {
         className="w-full py-3 rounded-xl font-semibold text-sm text-white"
         style={{ background: 'var(--hc-accent)', boxShadow: '0 0 20px rgba(23,71,168,0.3)' }}
       >
-        {t('promo.viewProducts')}
+        <TextoFlecha>{t('promo.viewProducts')}</TextoFlecha>
       </motion.button>
     </motion.div>
   )

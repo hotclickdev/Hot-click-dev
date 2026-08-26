@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { copilotService } from '@/services/copilotService'
 import { ofertaService } from '@/services/ofertaService'
-import { COPILOT_CHIPS_FIJOS, parseCopilotSse } from './copilotChatHelpers'
+import { COPILOT_CHIPS_FIJOS, parseCopilotSse, mensajeErrorStream } from './copilotChatHelpers'
 
 /**
  * Estado y handlers del chat Copilot admin.
@@ -16,6 +16,7 @@ export function useCopilotChat() {
   const [confirmandoId, setConfirmandoId] = useState(null)
   const [aplicandoId, setAplicandoId] = useState(null)
   const [streamText, setStreamText] = useState('')
+  const [limpiarOpen, setLimpiarOpen] = useState(false)
   const bottomRef = useRef(null)
   const textareaRef = useRef(null)
 
@@ -86,10 +87,10 @@ export function useCopilotChat() {
         setStreamText('')
       }
       try { const { data: u } = await copilotService.getUso(); setUso(u) } catch (err) { console.error(err) }
-    } catch {
+    } catch (err) {
       setMensajes((prev) => [...prev, {
         rol: 'assistant',
-        contenido: 'No pude conectar con el asistente. Reintentá.',
+        contenido: mensajeErrorStream(err),
       }])
       setStreamText('')
     } finally {
@@ -103,9 +104,14 @@ export function useCopilotChat() {
     return enviarTexto(input)
   }, [enviarTexto, input])
 
-  const limpiar = useCallback(async () => {
-    if (!confirm('¿Limpiar el historial de conversación?')) return
-    try { await copilotService.deleteHistorial(); setMensajes([]) } catch (err) { console.error(err) }
+  const pedirLimpiar = useCallback(() => setLimpiarOpen(true), [])
+
+  const confirmarLimpiar = useCallback(async () => {
+    try {
+      await copilotService.deleteHistorial()
+      setMensajes([])
+      setLimpiarOpen(false)
+    } catch (err) { console.error(err) }
   }, [])
 
   const onKeyDown = useCallback((e) => {
@@ -134,7 +140,10 @@ export function useCopilotChat() {
     aplicarDescuento,
     enviar,
     enviarTexto,
-    limpiar,
+    pedirLimpiar,
+    confirmarLimpiar,
+    limpiarOpen,
+    setLimpiarOpen,
     onKeyDown,
     pctUso,
     pctColor,
@@ -152,6 +161,7 @@ async function streamCopilot(msg, setStreamText, scrollBottom) {
   const token = rawAuth ? (JSON.parse(rawAuth)?.state?.token ?? '') : ''
   const response = await fetch('/api/admin/ai/chat', {
     method: 'POST',
+    cache: 'no-store',
     headers: {
       'Content-Type': 'application/json',
       Accept: 'text/event-stream',
@@ -159,7 +169,11 @@ async function streamCopilot(msg, setStreamText, scrollBottom) {
     },
     body: JSON.stringify({ message: msg }),
   })
+  if (response.status === 429) {
+    return { text: '', error: 'Mandaste muchas consultas seguidas. Esperá un momento.' }
+  }
   if (!response.ok) throw new Error('servidor')
+  if (!response.body) throw new Error('network error')
   const reader = response.body.getReader()
   const decoder = new TextDecoder()
   let buffer = ''
@@ -167,6 +181,7 @@ async function streamCopilot(msg, setStreamText, scrollBottom) {
   let eventName = 'message'
 
   let sseError = ''
+  let doneEvent = false
   while (true) {
     const { done, value } = await reader.read()
     if (done) break
@@ -176,6 +191,7 @@ async function streamCopilot(msg, setStreamText, scrollBottom) {
     for (const line of lines) {
       const parsed = parseCopilotSse(line, eventName)
       eventName = parsed.eventName
+      if (parsed.done) doneEvent = true
       if (parsed.error) sseError = parsed.error
       if (parsed.text) {
         assembled += parsed.text
@@ -183,6 +199,10 @@ async function streamCopilot(msg, setStreamText, scrollBottom) {
         scrollBottom()
       }
     }
+  }
+  if (sseError) return { text: assembled, error: sseError }
+  if (!assembled && !doneEvent) {
+    return { text: '', error: 'Se cortó la conexión con Hot. Esperá un segundo y volvé a preguntar.' }
   }
   return { text: assembled, error: sseError }
 }

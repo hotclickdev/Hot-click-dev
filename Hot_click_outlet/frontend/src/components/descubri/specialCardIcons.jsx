@@ -26,8 +26,7 @@ export const IconStore = (props) => (
   </svg>
 )
 
-// Config por sub-variante de tarjeta info. CTA con `to` navega interno,
-// con `href` abre externo (WhatsApp).
+// Config por sub-variante de tarjeta info. CTA con `to` navega interno.
 export const INFO_CONFIG = {
   about: {
     icon: IconShield,
@@ -48,6 +47,6 @@ export const INFO_CONFIG = {
     kicker: 'descubri.infoPagoKicker',
     title: 'descubri.infoPagoTitle',
     body: 'descubri.infoPagoBody',
-    cta: { label: 'descubri.infoPagoCta', href: 'https://wa.me/50686667888', id: 'whatsapp' },
+    cta: { label: 'descubri.infoPagoCta', to: '/informacion', id: 'informacion' },
   },
 }

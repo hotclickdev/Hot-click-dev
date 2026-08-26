@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { multipaisService } from '@/services/multipaisService'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 const MONEDAS = ['CRC','USD','MXN','COP','PEN','GTQ','HNL','NIO','EUR']
 
@@ -135,7 +136,7 @@ export default function AdminMultipais() {
         {/* Preview */}
         <div className="rounded-2xl p-4 flex items-center gap-4"
           style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)' }}>
-          <span className="text-3xl">{selectedPais?.bandera ?? '🌎'}</span>
+          <VistaBanderaPais pais={selectedPais} />
           <div>
             <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
               {selectedPais?.nombre ?? form.paisOperacion} · {form.monedaDefecto}
@@ -153,7 +154,7 @@ export default function AdminMultipais() {
             style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
             {guardando ? 'Guardando…' : 'Guardar configuración'}
           </button>
-          {ok && <span className="text-sm text-emerald-400">✓ Guardado correctamente</span>}
+          {ok && <span className="text-sm text-emerald-400">Guardado correctamente</span>}
         </div>
       </form>
 
@@ -183,4 +184,11 @@ export default function AdminMultipais() {
       )}
     </div>
   )
+}
+
+function VistaBanderaPais({ pais }) {
+  if (pais?.bandera) {
+    return <span className="text-3xl leading-none">{pais.bandera}</span>
+  }
+  return <TrustGlyph tipo="pin" className="w-8 h-8" />
 }

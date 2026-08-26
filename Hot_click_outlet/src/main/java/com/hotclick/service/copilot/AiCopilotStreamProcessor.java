@@ -40,7 +40,7 @@ public class AiCopilotStreamProcessor {
             try {
                 Thread.sleep(PING_MS);
                 if (!vivo.get()) return;
-                emitter.send(SseEmitter.event().name("ping").comment("ping").data("{}"));
+                enviar(emitter, SseEmitter.event().name("ping").comment("ping").data("{}"));
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return;
@@ -65,11 +65,11 @@ public class AiCopilotStreamProcessor {
     public void streamText(SseEmitter emitter, String text) {
         try {
             if (text != null && !text.isBlank()) {
-                emitter.send(SseEmitter.event().name("delta")
+                enviar(emitter, SseEmitter.event().name("delta")
                     .data(objectMapper.writeValueAsString(Map.of("text", text))));
             }
-            emitter.send(SseEmitter.event().name("done").data("{}"));
-            emitter.complete();
+            enviar(emitter, SseEmitter.event().name("done").data("{}"));
+            cerrar(emitter);
         } catch (IOException e) {
             log.debug("[AI] cliente desconectado durante stream: {}", e.getMessage());
         }
@@ -79,12 +79,12 @@ public class AiCopilotStreamProcessor {
         try {
             String[] words = text.split(" ");
             for (String w : words) {
-                emitter.send(SseEmitter.event().name("delta")
+                enviar(emitter, SseEmitter.event().name("delta")
                     .data(objectMapper.writeValueAsString(Map.of("text", w + " "))));
                 Thread.sleep(20);
             }
-            emitter.send(SseEmitter.event().name("done").data("{}"));
-            emitter.complete();
+            enviar(emitter, SseEmitter.event().name("done").data("{}"));
+            cerrar(emitter);
         } catch (IOException e) {
             log.debug("[AI] cliente desconectado durante mock stream: {}", e.getMessage());
         } catch (InterruptedException e) {
@@ -94,11 +94,24 @@ public class AiCopilotStreamProcessor {
 
     public void sendError(SseEmitter emitter, String msg) {
         try {
-            emitter.send(SseEmitter.event().name("error")
+            enviar(emitter, SseEmitter.event().name("error")
                 .data(objectMapper.writeValueAsString(Map.of("error", msg))));
-            emitter.complete();
+            cerrar(emitter);
         } catch (IOException e) {
             log.debug("[AI] no se pudo enviar evento de error por SSE: {}", e.getMessage());
+        }
+    }
+
+    /** SseEmitter no es thread-safe: heartbeat y respuesta no pueden intercalarse. */
+    private static void enviar(SseEmitter emitter, SseEmitter.SseEventBuilder event) throws IOException {
+        synchronized (emitter) {
+            emitter.send(event);
+        }
+    }
+
+    private static void cerrar(SseEmitter emitter) {
+        synchronized (emitter) {
+            emitter.complete();
         }
     }
 }

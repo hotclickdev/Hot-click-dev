@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { compraService } from '@/services/compraService'
 import { productService } from '@/services/productService'
 import { useToast } from '@/components/ui/Toast'
+import CloseIcon from '@/components/ui/CloseIcon'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import TextoMas from '@/components/ui/TextoMas'
 
 const fmt = (n) => new Intl.NumberFormat('es-CR').format(n ?? 0)
 
@@ -81,10 +84,10 @@ export default function AdminNuevaCompra() {
     <form onSubmit={handleSubmit} className="p-6 max-w-3xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <button type="button" onClick={() => navigate('/admin/compras')}
+        <button type="button" onClick={() => navigate('/admin/compras')} aria-label="Volver"
           className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
           style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>
-          ←
+          <TrustGlyph tipo="atras" className="w-4 h-4" />
         </button>
         <h1 className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>Nueva orden de compra</h1>
       </div>
@@ -119,9 +122,9 @@ export default function AdminNuevaCompra() {
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>Productos a comprar</h2>
           <button type="button" onClick={addItem}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-70"
+            className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-70 inline-flex items-center"
             style={{ backgroundColor: 'rgba(23,71,168,0.12)', color: 'var(--hc-accent)' }}>
-            + Agregar línea
+            <TextoMas>Agregar línea</TextoMas>
           </button>
         </div>
 
@@ -161,9 +164,11 @@ export default function AdminNuevaCompra() {
               </div>
               <div className="col-span-1 flex justify-end">
                 {items.length > 1 && (
-                  <button type="button" onClick={() => removeItem(i)}
-                    className="w-6 h-6 rounded-md flex items-center justify-center text-xs"
-                    style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#f87171' }}>✕</button>
+                  <button type="button" onClick={() => removeItem(i)} aria-label="Quitar"
+                    className="w-6 h-6 rounded-md flex items-center justify-center"
+                    style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#f87171' }}>
+                    <CloseIcon className="w-3 h-3" />
+                  </button>
                 )}
               </div>
             </div>

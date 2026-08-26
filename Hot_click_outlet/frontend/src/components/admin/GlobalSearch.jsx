@@ -9,6 +9,7 @@ import {
   mapearClientesBusqueda,
   queryParecePedido,
 } from './globalSearchQuery'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 function ResultGroup({ title, items, onSelect }) {
   if (!items.length) return null
@@ -20,9 +21,9 @@ function ResultGroup({ title, items, onSelect }) {
         <button type="button" key={i} onClick={() => onSelect(item)}
           className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-white/[0.05] rounded-lg"
           style={{ color: 'var(--hc-text)' }}>
-          <span className="w-6 h-6 flex items-center justify-center rounded-md shrink-0 text-xs"
+          <span className="w-6 h-6 flex items-center justify-center rounded-md shrink-0"
             style={{ backgroundColor: `${item.iconColor ?? 'rgba(23,71,168,'}0.15)`, color: item.iconColor ?? 'var(--hc-accent)' }}>
-            {item.icon}
+            <TrustGlyph tipo={item.icono} className="w-3.5 h-3.5" />
           </span>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate" style={{ color: 'var(--hc-text)' }}>{item.label}</p>

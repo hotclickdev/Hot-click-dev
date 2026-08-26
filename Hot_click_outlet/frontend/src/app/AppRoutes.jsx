@@ -8,6 +8,12 @@ import {
   AdminPedidosRoute,
   AdminReportesRoute,
   AdminPromocionesRoute,
+  AdminProductosRoute,
+  SistemaProductoFormRoute,
+  AdminClientesRoute,
+  AdminBlogRoute,
+  AdminCopilotRoute,
+  RedirectSiSistema,
   AdminShell,
 } from '@/app/routeGuards'
 
@@ -35,12 +41,10 @@ const EnviosPage              = lazy(() => import('@/pages/EnviosPage'))
 const AcuerdoVendedoresPage   = lazy(() => import('@/pages/AcuerdoVendedoresPage'))
 const CookiesPage             = lazy(() => import('@/pages/CookiesPage'))
 
-const AdminProducts = lazy(() => import('@/pages/admin/AdminProducts'))
 const AdminUsers = lazy(() => import('@/pages/admin/AdminUsers'))
 const AdminCategories = lazy(() => import('@/pages/admin/AdminCategories'))
 const AdminWarehouses = lazy(() => import('@/pages/admin/AdminWarehouses'))
 const AdminNewSale = lazy(() => import('@/pages/admin/AdminNewSale'))
-const AdminClientes = lazy(() => import('@/pages/admin/AdminClientes'))
 const AdminFinanzas   = lazy(() => import('@/pages/admin/AdminFinanzas'))
 const AdminBilletera  = lazy(() => import('@/pages/admin/AdminBilletera'))
 const AdminReporteContador = lazy(() => import('@/pages/admin/AdminReporteContador'))
@@ -57,6 +61,7 @@ const PaymentStatusPage = lazy(() => import('@/pages/PaymentStatusPage'))
 const WishlistPage              = lazy(() => import('@/pages/WishlistPage'))
 const RecuperarCarritoPage      = lazy(() => import('@/pages/RecuperarCarritoPage'))
 const ServiciosHotPage          = lazy(() => import('@/pages/ServiciosHotPage'))
+const NotFoundPage              = lazy(() => import('@/pages/NotFoundPage'))
 const AdminSolicitudesServicio  = lazy(() => import('@/pages/admin/AdminSolicitudesServicio'))
 const AdminSolicitudesGarantia  = lazy(() => import('@/pages/admin/AdminSolicitudesGarantia'))
 const AdminTestimonios          = lazy(() => import('@/pages/admin/AdminTestimonios'))
@@ -77,7 +82,7 @@ const EmpresaSelectionPage      = lazy(() => import('@/pages/EmpresaSelectionPag
 const BlogPage                  = lazy(() => import('@/pages/BlogPage'))
 const BlogPostPage               = lazy(() => import('@/pages/BlogPostPage'))
 const EmprendimientosPage       = lazy(() => import('@/pages/EmprendimientosPage'))
-const AdminBlog                 = lazy(() => import('@/pages/admin/AdminBlog'))
+const EmprendePage              = lazy(() => import('@/pages/EmprendePage'))
 const AdminConvenios            = lazy(() => import('@/pages/admin/AdminConvenios'))
 const AdminPOS                  = lazy(() => import('@/pages/admin/pos/AdminPOS'))
 const AdminPOSCaja              = lazy(() => import('@/pages/admin/pos/AdminPOSCaja'))
@@ -97,7 +102,6 @@ const AdminBranding             = lazy(() => import('@/pages/admin/AdminBranding
 const AdminHomepage             = lazy(() => import('@/pages/admin/AdminHomepage'))
 const AdminPlugins              = lazy(() => import('@/pages/admin/AdminPlugins'))
 const AdminInventario           = lazy(() => import('@/pages/admin/AdminInventario'))
-const AdminCopilot              = lazy(() => import('@/pages/admin/AdminCopilot'))
 const AdminAyuda                = lazy(() => import('@/pages/admin/AdminAyuda'))
 const AdminForecast             = lazy(() => import('@/pages/admin/AdminForecast'))
 const AdminExecutive            = lazy(() => import('@/pages/admin/AdminExecutive'))
@@ -163,31 +167,31 @@ export default function AppRoutes() {
               <Route path="/servicios" element={<ServiciosHotPage />} />
               <Route path="/blog" element={<BlogPage />} />
               <Route path="/blog/:slug" element={<BlogPostPage />} />
+              <Route path="/emprende" element={<EmprendePage />} />
               <Route path="/emprendimientos" element={<EmprendimientosPage />} />
               <Route path="/pago/exito"     element={<PaymentStatusPage />} />
               <Route path="/pago/cancelado" element={<PaymentStatusPage />} />
               <Route element={<AdminShell />}>
                 <Route path="/admin" element={<AdminHomeRoute />} />
-                <Route path="/admin/productos" element={<AdminProducts />} />
+                <Route path="/admin/productos" element={<AdminProductosRoute />} />
+                <Route path="/admin/productos/nuevo" element={<SistemaProductoFormRoute />} />
+                <Route path="/admin/productos/:id/editar" element={<SistemaProductoFormRoute />} />
                 <Route path="/admin/pedidos" element={<AdminPedidosRoute />} />
-                <Route path="/admin/bodegas" element={<AdminWarehouses />} />
-                <Route path="/admin/ventas" element={<AdminNewSale />} />
-                <Route path="/admin/clientes" element={<AdminClientes />} />
-                <Route path="/admin/finanzas" element={<AdminFinanzas />} />
-                <Route path="/admin/finanzas/reporte-contador" element={<AdminReporteContador />} />
-                <Route path="/admin/billetera" element={<AdminBilletera />} />
-                {/* AdminReportes/SistemaReportes manejan su propia vista previa
-                    cuando el plan no incluye 'reportes' (banner + tarjeta de
-                    upgrade) — PlanGate tapaba toda la pantalla antes. */}
+                <Route path="/admin/bodegas" element={<RedirectSiSistema to="/admin/configuracion?seccion=bodega"><AdminWarehouses /></RedirectSiSistema>} />
+                <Route path="/admin/ventas" element={<RedirectSiSistema to="/admin/pedidos"><AdminNewSale /></RedirectSiSistema>} />
+                <Route path="/admin/clientes" element={<AdminClientesRoute />} />
+                <Route path="/admin/finanzas" element={<RedirectSiSistema to="/admin/reportes"><AdminFinanzas /></RedirectSiSistema>} />
+                <Route path="/admin/finanzas/reporte-contador" element={<RedirectSiSistema to="/admin/reportes"><AdminReporteContador /></RedirectSiSistema>} />
+                <Route path="/admin/billetera" element={<RedirectSiSistema to="/admin/reportes"><AdminBilletera /></RedirectSiSistema>} />
                 <Route path="/admin/reportes" element={<AdminReportesRoute />} />
-                <Route path="/admin/nuevo-producto" element={<AdminNuevoProducto />} />
-                <Route path="/admin/productos/carga-masiva" element={<AdminCargaMasiva />} />
-                <Route path="/admin/productos/importar" element={<AdminImportar />} />
-                <Route path="/admin/marcas" element={<AdminMarcas />} />
+                <Route path="/admin/nuevo-producto" element={<RedirectSiSistema to="/admin/productos/nuevo"><AdminNuevoProducto /></RedirectSiSistema>} />
+                <Route path="/admin/productos/carga-masiva" element={<RedirectSiSistema to="/admin/productos"><AdminCargaMasiva /></RedirectSiSistema>} />
+                <Route path="/admin/productos/importar" element={<RedirectSiSistema to="/admin/productos"><AdminImportar /></RedirectSiSistema>} />
+                <Route path="/admin/marcas" element={<RedirectSiSistema to="/admin/configuracion?seccion=marca"><AdminMarcas /></RedirectSiSistema>} />
                 <Route path="/admin/configuracion" element={<AdminConfiguracion />} />
-                <Route path="/admin/garantias" element={<AdminSolicitudesGarantia />} />
-                <Route path="/admin/equipo" element={<AdminEquipo />} />
-                <Route path="/admin/mi-empresa" element={<AdminMiEmpresa />} />
+                <Route path="/admin/garantias" element={<RedirectSiSistema to="/admin/ayuda"><AdminSolicitudesGarantia /></RedirectSiSistema>} />
+                <Route path="/admin/equipo" element={<RedirectSiSistema to="/admin/configuracion"><AdminEquipo /></RedirectSiSistema>} />
+                <Route path="/admin/mi-empresa" element={<RedirectSiSistema to="/admin/configuracion?seccion=marca"><AdminMiEmpresa /></RedirectSiSistema>} />
                 {/* Solo ADMIN (superadmin de la plataforma) — no son por-empresa */}
                 <Route element={<ITOnlyGuard />}>
                   <Route path="/admin/categorias" element={<AdminCategories />} />
@@ -216,29 +220,28 @@ export default function AppRoutes() {
                   <Route path="/admin/convenios"     element={<AdminConvenios />} />
                 </Route>
                 {/* ADMIN + EMPRENDEDOR (por-empresa) — algunas requieren plan PYME/NEGOCIO_PLUS */}
+                <Route path="/admin/planes"              element={<Navigate to="/admin/billing/planes" replace />} />
                 <Route path="/admin/billing/planes"      element={<AdminPlanes />} />
                 <Route path="/admin/billing/suscripcion" element={<AdminSuscripcion />} />
-                <Route path="/admin/offline/cola"        element={<AdminOfflineCola />} />
-                <Route path="/admin/gift-cards"          element={<AdminGiftCards />} />
-                <Route path="/admin/inventario"          element={<PlanGate feature="ai" planRequerido="PYME"><AdminInventario /></PlanGate>} />
-                {/* Copilot NO se bloquea por plan — el plan gratis tiene 10 créditos/mes
-                    (V91) + flag 'copilot_emprendedor'; lo hace cumplir AiQuotaService. */}
-                <Route path="/admin/copilot"             element={<AdminCopilot />} />
+                <Route path="/admin/offline/cola"        element={<RedirectSiSistema to="/admin"><AdminOfflineCola /></RedirectSiSistema>} />
+                <Route path="/admin/gift-cards"          element={<RedirectSiSistema to="/admin"><AdminGiftCards /></RedirectSiSistema>} />
+                <Route path="/admin/inventario"          element={<RedirectSiSistema to="/admin/copilot"><PlanGate feature="ai" planRequerido="PYME"><AdminInventario /></PlanGate></RedirectSiSistema>} />
+                <Route path="/admin/copilot"             element={<AdminCopilotRoute />} />
                 <Route path="/admin/ayuda"               element={<AdminAyuda />} />
-                <Route path="/admin/forecast"            element={<PlanGate feature="ai" planRequerido="PYME"><AdminForecast /></PlanGate>} />
-                <Route path="/admin/executive"           element={<PlanGate feature="reportes" planRequerido="PYME"><AdminExecutive /></PlanGate>} />
-                <Route path="/admin/asignar-compra" element={<AdminAsignarProducto />} />
+                <Route path="/admin/forecast"            element={<RedirectSiSistema to="/admin/copilot"><PlanGate feature="ai" planRequerido="PYME"><AdminForecast /></PlanGate></RedirectSiSistema>} />
+                <Route path="/admin/executive"           element={<RedirectSiSistema to="/admin/reportes"><PlanGate feature="reportes" planRequerido="PYME"><AdminExecutive /></PlanGate></RedirectSiSistema>} />
+                <Route path="/admin/asignar-compra" element={<RedirectSiSistema to="/admin/pedidos"><AdminAsignarProducto /></RedirectSiSistema>} />
                 <Route path="/admin/ofertas"       element={<AdminPromocionesRoute />} />
-                <Route path="/admin/blog"          element={<AdminBlog />} />
+                <Route path="/admin/blog"          element={<AdminBlogRoute />} />
                 {/* El POS está disponible para todos los planes (decisión de
                     negocio jul 2026) — sin PlanGate. AdminShell ya valida
                     token y rol antes de llegar acá. */}
                 <Route path="/admin/pos"           element={<AdminPOS />} />
                 <Route path="/admin/pos/caja"      element={<AdminPOSCaja />} />
                 <Route path="/admin/pos/historial" element={<AdminPOSHistorial />} />
-                <Route path="/admin/compras"        element={<PlanGate feature="compras" planRequerido="PYME"><AdminCompras /></PlanGate>} />
-                <Route path="/admin/compras/nueva"  element={<PlanGate feature="compras" planRequerido="PYME"><AdminNuevaCompra /></PlanGate>} />
-                <Route path="/admin/proveedores"    element={<AdminProveedores />} />
+                <Route path="/admin/compras"        element={<RedirectSiSistema to="/admin/configuracion"><PlanGate feature="compras" planRequerido="PYME"><AdminCompras /></PlanGate></RedirectSiSistema>} />
+                <Route path="/admin/compras/nueva"  element={<RedirectSiSistema to="/admin/configuracion"><PlanGate feature="compras" planRequerido="PYME"><AdminNuevaCompra /></PlanGate></RedirectSiSistema>} />
+                <Route path="/admin/proveedores"    element={<RedirectSiSistema to="/admin/configuracion"><AdminProveedores /></RedirectSiSistema>} />
               </Route>
               {/* Self-checkout QR — futuro (comentado)
               <Route path="/checkout/qr/:token" element={<SelfCheckoutPage />} />
@@ -253,7 +256,8 @@ export default function AppRoutes() {
                 <Route path="checkout" element={<TiendaCheckoutPage />} />
                 <Route path="checkout/exito" element={<TiendaSuccessPage />} />
               </Route>
-              <Route path="*" element={<Navigate to="/" replace />} />
+              <Route path="/404" element={<NotFoundPage />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
   )
 }

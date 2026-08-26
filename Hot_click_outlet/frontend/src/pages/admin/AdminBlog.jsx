@@ -6,6 +6,7 @@ import { useAdminBlogActions } from './blog/useAdminBlogActions'
 import BlogModal from './blog/BlogModal'
 import BlogEntryList from './blog/BlogEntryList'
 import { formPostSugerido, postSugeridoDeVentas } from './blog/blogHelpers'
+import TextoMas from '@/components/ui/TextoMas'
 
 export default function AdminBlog() {
   const { showToast } = useToast()
@@ -42,12 +43,12 @@ export default function AdminBlog() {
             {publicados} publicado{publicados === 1 ? '' : 's'} · {lista.length - publicados} borrador{lista.length - publicados === 1 ? '' : 'es'}
           </p>
         </div>
-        <button type="button" onClick={() => setModal('new')} style={{
+        <button type="button" onClick={() => setModal('new')} className="inline-flex items-center" style={{
           padding: '9px 18px', borderRadius: 10,
           background: 'var(--hc-accent)', color: 'white',
           border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer',
         }}>
-          + Nueva entrada
+          <TextoMas>Nueva entrada</TextoMas>
         </button>
       </div>
 

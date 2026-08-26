@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { getColaCompleta, actualizarEstado } from '@/db/offlineDb'
 import { procesarCola, descartarItem } from '@/services/syncService'
 import { useOffline } from '@/hooks/useOffline'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 const ESTADO_STYLE = {
   PENDIENTE:     { label: 'Pendiente',     color: '#fbbf24', bg: '#78350f22' },
@@ -95,7 +96,7 @@ export default function AdminOfflineCola() {
         </div>
       ) : cola.length === 0 ? (
         <div className="text-center py-16" style={{ color: 'var(--hc-muted)' }}>
-          <div className="text-4xl mb-3">✓</div>
+          <TrustGlyph tipo="check" className="w-10 h-10 mx-auto mb-3 opacity-60" />
           <p className="font-medium">Cola vacía — todo sincronizado</p>
         </div>
       ) : (

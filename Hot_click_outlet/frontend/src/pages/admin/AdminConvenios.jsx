@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { convenioService } from '@/services/convenioService'
 import { useToast } from '@/components/ui/Toast'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import TextoMas from '@/components/ui/TextoMas'
 
 const empty = { nombre: '', descripcion: '', logoUrl: '', urlWeb: '', activo: true }
 
@@ -136,12 +138,12 @@ export default function AdminConvenios() {
             Negocios aliados que aparecen en el sitio público
           </p>
         </div>
-        <button type="button" onClick={() => setModal('new')} style={{
+        <button type="button" onClick={() => setModal('new')} className="inline-flex items-center" style={{
           padding: '9px 18px', borderRadius: 10,
           background: 'var(--hc-accent)', color: 'white',
           border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer',
         }}>
-          + Nuevo
+          <TextoMas>Nuevo</TextoMas>
         </button>
       </div>
 
@@ -149,7 +151,9 @@ export default function AdminConvenios() {
         <p style={{ color: 'var(--hc-muted)', textAlign: 'center', padding: 48 }}>Cargando...</p>
       ) : lista.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 64, color: 'var(--hc-muted)' }}>
-          <p style={{ fontSize: 40, margin: '0 0 12px' }}>🤝</p>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12, opacity: 0.4, color: 'var(--hc-muted)' }}>
+            <TrustGlyph tipo="clientes" className="w-10 h-10" />
+          </div>
           <p style={{ fontSize: 15, fontWeight: 600 }}>Sin emprendimientos aún</p>
           <p style={{ fontSize: 13 }}>Agregá el primer convenio</p>
         </div>
@@ -168,7 +172,9 @@ export default function AdminConvenios() {
               {c.logoUrl ? (
                 <img src={c.logoUrl} alt={c.nombre} style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'contain', background: '#fff', border: '1px solid var(--hc-border)', padding: 2, flexShrink: 0 }} />
               ) : (
-                <div style={{ width: 44, height: 44, borderRadius: 10, background: 'var(--hc-surface-3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>🤝</div>
+                <div style={{ width: 44, height: 44, borderRadius: 10, background: 'var(--hc-surface-3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--hc-muted)' }}>
+                  <TrustGlyph tipo="clientes" className="w-5 h-5" />
+                </div>
               )}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--hc-text)', margin: 0 }}>{c.nombre}</p>

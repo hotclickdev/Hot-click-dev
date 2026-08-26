@@ -5,8 +5,8 @@ import Section from '@/components/ui/Section'
 
 // ─── Testimonials ─────────────────────────────────────────────────────────────
 const TESTIMONIALS = [
-  { name: 'Andrés M.', location: 'San José', rating: 5, text: 'Compré unos audífonos y llegaron en perfectas condiciones. El trato por WhatsApp fue muy rápido y claro. 100% recomendado.' },
-  { name: 'Valeria R.', location: 'Heredia', rating: 5, text: 'Encontré una laptop como nueva a un precio increíble. El proceso fue sencillo: elegí, mandé el WhatsApp y en 2 días la tenía en casa.' },
+  { name: 'Andrés M.', location: 'San José', rating: 5, text: 'Compré unos audífonos y llegaron en perfectas condiciones. Pedí y pagué en HotClick. 100% recomendado.' },
+  { name: 'Valeria R.', location: 'Heredia', rating: 5, text: 'Encontré una laptop como nueva a un precio increíble. Elegí, pagué en la web y en 2 días la tenía en casa.' },
   { name: 'Carlos B.', location: 'Cartago', rating: 5, text: 'Excelente servicio. Me explicaron todo sobre la condición del producto antes de comprar. Llegó exactamente como lo describieron.' },
   { name: 'Sofía L.', location: 'Alajuela', rating: 5, text: 'Precios muy accesibles y productos de buena calidad. Ya es mi segunda compra y sigo igual de satisfecha con HotClick.' },
   { name: 'Diego P.', location: 'Liberia', rating: 5, text: 'Me sorprendió lo rápido que respondieron. En menos de 10 minutos ya tenía confirmado el pedido. El envío llegó sin problemas al Correos.' },

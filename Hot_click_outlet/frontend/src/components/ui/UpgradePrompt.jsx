@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 const FEATURE_LABELS = {
   pos:      'Punto de Venta (POS)',
@@ -30,7 +31,7 @@ export default function UpgradePrompt({ feature, planRequerido = 'PYME', compact
         </svg>
         <span>{featureLabel} requiere plan <strong>{planRequerido}</strong></span>
         <button type="button"
-          onClick={() => navigate('/admin/planes')}
+          onClick={() => navigate('/admin/billing/planes')}
           className="ml-auto font-semibold underline hover:no-underline"
         >
           Upgrade
@@ -58,10 +59,10 @@ export default function UpgradePrompt({ feature, planRequerido = 'PYME', compact
       </p>
 
       <button type="button"
-        onClick={() => navigate('/admin/planes')}
+        onClick={() => navigate('/admin/billing/planes')}
         className="rounded-xl bg-[var(--hc-primary)] px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-[var(--hc-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--hc-focus-ring)]"
       >
-        Ver planes disponibles →
+        <TextoFlecha>Ver planes disponibles</TextoFlecha>
       </button>
     </div>
   )

@@ -17,6 +17,7 @@ import RecentlyViewedSection from './home/RecentlyViewedSection'
 import HomeMarcas from './home/HomeMarcas'
 import ServiciosHotPromo from './home/ServiciosHotPromo'
 import HomeCta from './home/HomeCta'
+import HomeJobsHero from './home/HomeJobsHero'
 import SobreHotClick from './home/SobreHotClick'
 
 export default function HomePage() {
@@ -52,7 +53,7 @@ export default function HomePage() {
   return (
     <MainLayout>
       <HomeSeo destacados={destacados} />
-      <h1 className="sr-only">HotClick — Marketplace de emprendedores en Costa Rica</h1>
+      <HomeJobsHero />
       <HeroRotator destacados={destacados.slice(0, 3)} />
       <TrustStrip />
       <DestacadosSection destacados={destacados} />

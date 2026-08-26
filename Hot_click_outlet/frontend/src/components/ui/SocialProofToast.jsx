@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import useChatStore from '@/store/chatStore'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 const AUTO_DISMISS_MS = 5_000
 const MAX_VISIBLE     = 2   // never stack more than 2 at once
@@ -101,10 +103,10 @@ function ToastItem({ item, onDismiss }) {
           </div>
         ) : (
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
-            style={{ background: 'rgba(23,71,168,0.12)', border: '1px solid rgba(23,71,168,0.25)' }}
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{ background: 'rgba(23,71,168,0.12)', border: '1px solid rgba(23,71,168,0.25)', color: 'var(--hc-accent)' }}
           >
-            {action.emoji}
+            <TrustGlyph tipo={action.icono} className="w-5 h-5" />
           </div>
         )}
       </div>
@@ -133,9 +135,7 @@ function ToastItem({ item, onDismiss }) {
           className="w-5 h-5 rounded-full flex items-center justify-center transition-colors"
           style={{ color: 'var(--hc-muted)' }}
         >
-          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <CloseIcon className="w-3 h-3" />
         </button>
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
       </div>

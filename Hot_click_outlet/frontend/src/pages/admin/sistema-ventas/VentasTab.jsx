@@ -11,6 +11,7 @@ import {
   estiloPildora,
   nombresArticulosVenta,
 } from './ventasPedidosHelpers'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function VentasTab() {
   const { showToast } = useToast()
@@ -59,7 +60,9 @@ function VacioVentas() {
   return (
     <div className="rounded-2xl p-10 text-center" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
       <p style={{ color: 'var(--hc-muted)' }}>Sin ventas en este período.</p>
-      <Link to="/admin/pos" className="text-sm font-semibold mt-2 inline-block" style={{ color: 'var(--hc-accent)' }}>Abrí la caja (POS) →</Link>
+      <Link to="/admin/pos" className="text-sm font-semibold mt-2 inline-block" style={{ color: 'var(--hc-accent)' }}>
+        <TextoFlecha>Abrí la caja (POS)</TextoFlecha>
+      </Link>
     </div>
   )
 }

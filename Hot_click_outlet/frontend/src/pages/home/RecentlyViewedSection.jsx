@@ -7,6 +7,7 @@ import { useToast } from '@/components/ui/Toast'
 import { formatPrice } from '@/utils/format'
 import { getOptimizedUrl } from '@/utils/imageUtils'
 import Section from '@/components/ui/Section'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 /**
  * @param {{
@@ -41,7 +42,9 @@ function RecentlyViewedCard({ product, onAdd }) {
             height={112}
           />
         ) : (
-          <span aria-hidden="true" className="text-4xl">📦</span>
+          <span aria-hidden="true" className="opacity-30" style={{ color: 'var(--hc-muted)' }}>
+            <TrustGlyph tipo="paquete" className="w-10 h-10" />
+          </span>
         )}
       </Link>
       <div className="flex flex-col flex-1 px-3 pt-2 pb-3 gap-1">
@@ -56,7 +59,7 @@ function RecentlyViewedCard({ product, onAdd }) {
         <div className="flex justify-end mt-1">
           <motion.button
             whileTap={{ scale: 0.88 }}
-            aria-label={`Añadir ${product.nombre} al carrito`}
+            aria-label={`Agregar ${product.nombre} al pedido`}
             onClick={() => onAdd(product)}
             className="w-7 h-7 rounded-full flex items-center justify-center text-white text-base font-bold shadow"
             style={{ background: 'var(--hc-accent)' }}

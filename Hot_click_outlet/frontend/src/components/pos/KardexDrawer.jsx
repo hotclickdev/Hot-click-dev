@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { productService } from '@/services/productService'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 const fmtDate = (d) => d ? new Date(d).toLocaleString('es-CR', { dateStyle: 'short', timeStyle: 'short' }) : '—'
 
@@ -67,9 +68,11 @@ export default function KardexDrawer({ producto, onClose }) {
               </span>
             </div>
           </div>
-          <button type="button" onClick={onClose}
+          <button type="button" onClick={onClose} aria-label="Cerrar"
             className="w-8 h-8 flex items-center justify-center rounded-lg hover:opacity-70"
-            style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>✕</button>
+            style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>
+            <CloseIcon />
+          </button>
         </div>
 
         {/* Contenido */}

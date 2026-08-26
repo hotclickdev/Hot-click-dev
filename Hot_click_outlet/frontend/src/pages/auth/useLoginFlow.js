@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { getAvailableModes, MODE_PREF_KEY } from '@/utils/modes'
 import { useTranslation } from 'react-i18next'
 import { authService } from '@/services/authService'
@@ -16,11 +16,12 @@ import { destinoPostLogin, mensajeErrorAuth } from './authHelpers'
 export function useLoginFlow() {
   const navigate  = useNavigate()
   const location  = useLocation()
+  const [params]  = useSearchParams()
   const login     = useAuthStore((s) => s.login)
   const toast     = useToast()
   const { t }     = useTranslation()
 
-  const from = destinoPostLogin(location.state?.from ?? '/')
+  const from = destinoPostLogin(params.get('redirect') ?? location.state?.from ?? '/')
 
   const [step,              setStep]              = useState('login')
   const [loading,           setLoading]           = useState(false)
@@ -169,7 +170,9 @@ export function useLoginFlow() {
 
   const handleLoginSuccess = async (data) => {
     login(data)
-    const modes = getAvailableModes(data.rol, data.permisos ?? [])
+    const modes = getAvailableModes(data.rol, data.permisos ?? [], {
+      empresaSlug: data.empresaSlug,
+    })
     const isInternal = data.rol !== 'USUARIO_FINAL'
     toast({ message: isInternal ? t('login.welcomeAdmin') : t('login.welcome'), type: 'success' })
 

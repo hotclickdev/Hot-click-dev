@@ -71,6 +71,11 @@ export default defineConfig({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/admin/ai'),
+            handler: 'NetworkOnly',
+            method: 'POST',
+          },
         ],
         skipWaiting: false,     // esperar a que el usuario confirme la actualización
         clientsClaim: true,
@@ -93,6 +98,8 @@ export default defineConfig({
         target: process.env.VITE_API_PROXY || 'http://localhost:8080',
         changeOrigin: true,
         secure: process.env.VITE_API_PROXY_INSECURE !== '1',
+        timeout: 120_000,
+        proxyTimeout: 120_000,
       },
     },
   },

@@ -10,29 +10,7 @@ export const COLUMNAS_IMPORT_CATEGORIAS = ['nombreCategoria', 'descripcion', 'pa
 export const NOMBRE_ARCHIVO_CATEGORIAS = 'categorias'
 export const NOMBRE_HOJA_CATEGORIAS = 'Categorías'
 
-/** Iconos guardados en `icono` (dato de catálogo, no chrome de UI). */
-export const ICONOS_CATEGORIA = [
-  { emoji: '👕', label: 'Ropa' },
-  { emoji: '👟', label: 'Calzado' },
-  { emoji: '🎮', label: 'Videojuegos' },
-  { emoji: '📱', label: 'Tecnología' },
-  { emoji: '🖥️', label: 'Computadoras' },
-  { emoji: '🪑', label: 'Muebles' },
-  { emoji: '🏋️', label: 'Deportes' },
-  { emoji: '🧸', label: 'Juguetes' },
-  { emoji: '🚗', label: 'Vehículos' },
-  { emoji: '💄', label: 'Belleza' },
-  { emoji: '🍽️', label: 'Hogar' },
-  { emoji: '📚', label: 'Libros' },
-  { emoji: '🎵', label: 'Música' },
-  { emoji: '🌿', label: 'Jardín' },
-  { emoji: '🐾', label: 'Mascotas' },
-  { emoji: '🎨', label: 'Arte' },
-  { emoji: '💍', label: 'Joyería' },
-  { emoji: '🔧', label: 'Herramientas' },
-  { emoji: '🎁', label: 'Regalos' },
-  { emoji: '🧴', label: 'Cuidado personal' },
-]
+export { ICONOS_CATEGORIA, etiquetaIconoCategoria, iconoCategoriaEsItem } from '@/pages/catalogo/categoriaIconos'
 
 /** @param {unknown} data */
 export function listaCategoriasDesdeRespuesta(data) {
@@ -100,12 +78,14 @@ export function opcionesPadre(categorias, editing) {
   return categorias.filter((categoria) => !bloqueados.has(String(categoria.id)))
 }
 
-/** @param {{ id: number, nombreCategoria: string, padreId?: number }} categoria */
+/** @param {{ id: number, nombreCategoria?: string, nombre?: string, padreId?: number }} categoria */
 export function etiquetaOpcionPadre(categoria, categorias) {
-  if (!categoria.padreId) return categoria.nombreCategoria
+  const nombre = categoria.nombreCategoria ?? categoria.nombre
+  if (!categoria.padreId) return nombre
   const padre = categorias.find((item) => String(item.id) === String(categoria.padreId))
-  const sufijo = padre ? ` (en ${padre.nombreCategoria})` : ''
-  return `↳ ${categoria.nombreCategoria}${sufijo}`
+  const nombrePadre = padre ? (padre.nombreCategoria ?? padre.nombre) : ''
+  if (!nombrePadre) return nombre
+  return `${nombre} (en ${nombrePadre})`
 }
 
 /** @param {{ padreId?: number }[]} categorias */

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
+import CheckoutStepper from '@/components/ui/CheckoutStepper'
 import { formatPrice } from '@/utils/format'
 import AIPostPaySection from '@/components/ai/AIPostPaySection'
 
@@ -16,7 +17,7 @@ function PagoExitoResumen({ pagoData, t }) {
       {pagoData.total && (
         <div className="flex justify-between">
           <span className="text-[#8e8e9a]">Total pagado</span>
-          <span className="text-[#4f7cff] font-bold">{formatPrice(pagoData.total)}</span>
+          <span className="font-bold" style={{ color: 'var(--hc-primary)' }}>{formatPrice(pagoData.total)}</span>
         </div>
       )}
       {pagoData.metodoPago && (
@@ -39,35 +40,40 @@ function PagoExitoAcciones({ token, t }) {
   return (
     <div className="flex flex-col gap-3">
       {token ? (
-        <Link
-          to="/mis-pedidos"
-          className="inline-block w-full py-3 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-semibold text-sm transition-all text-center"
-        >
+        <Link to="/mis-pedidos" className="hc-btn hc-btn-primary w-full min-h-11">
           Ver mis pedidos
         </Link>
       ) : (
-        <a
-          href="https://wa.me/50686667888"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block w-full py-3 rounded-xl bg-[#25D366] hover:bg-[#1da851] text-white font-semibold text-sm transition-all text-center"
-        >
-          📱 Consultar mi pedido por WhatsApp
-        </a>
+        <Link to="/productos" className="hc-btn hc-btn-primary w-full min-h-11">
+          {t('checkout.continueShopping')}
+        </Link>
       )}
       <Link
         to="/"
-        className="inline-block w-full py-3 rounded-xl border border-white/10 hover:border-white/20 text-[#8e8e9a] hover:text-[#e8e8ed] font-medium text-sm transition-all text-center"
+        className="inline-block w-full py-3 rounded-xl border border-white/10 hover:border-white/20 text-[#8e8e9a] hover:text-[#e8e8ed] font-medium text-sm transition-all text-center min-h-11"
       >
         {t('payment.home')}
       </Link>
       {!token && (
-        <Link
-          to="/registro"
-          className="text-xs text-center text-[#4f7cff] hover:underline"
-        >
-          Crear cuenta para ver el historial de pedidos →
-        </Link>
+        <>
+          <a
+            href="https://wa.me/50686667888"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Consultar mi pedido por WhatsApp"
+            className="flex items-center justify-center min-h-11 text-sm font-medium"
+            style={{ color: 'var(--hc-muted)' }}
+          >
+            Consultar mi pedido por WhatsApp
+          </a>
+          <Link
+            to="/registro"
+            className="text-xs text-center hover:underline"
+            style={{ color: 'var(--hc-link)' }}
+          >
+            Crear cuenta para ver el historial de pedidos
+          </Link>
+        </>
       )}
     </div>
   )
@@ -81,7 +87,8 @@ export default function PagoExito({ pagoData, numeroPedido, token }) {
   const { t } = useTranslation()
   return (
     <MainLayout>
-      <div className="max-w-lg mx-auto px-4 py-20">
+      <div className="max-w-lg mx-auto px-4 py-10 sm:py-16">
+        <CheckoutStepper activeStep="confirm" />
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -99,7 +106,12 @@ export default function PagoExito({ pagoData, numeroPedido, token }) {
           <PagoExitoResumen pagoData={pagoData} t={t} />
 
           <div className="bg-emerald-500/8 border border-emerald-500/20 rounded-xl p-3 text-sm text-center mb-4">
-            <span className="text-emerald-400 font-medium">🛡 Tu garantía de 40 días está activa</span>
+            <span className="text-emerald-400 font-medium inline-flex items-center justify-center gap-1.5">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              Tu garantía de 40 días está activa
+            </span>
             <p className="text-[#8e8e9a] text-xs mt-1">
               Si tienes cualquier problema, contáctanos por WhatsApp.
             </p>

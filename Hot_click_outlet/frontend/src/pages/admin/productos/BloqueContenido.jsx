@@ -3,15 +3,15 @@ import { setField } from './productoFormCampos'
 
 function BadgeConContenido({ visible }) {
   if (!visible) return null
-  return <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full" style={{ color: 'var(--hc-accent)', backgroundColor: 'rgba(23,71,168,0.08)' }}>✓ con contenido</span>
+  return <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full" style={{ color: 'var(--hc-accent)', backgroundColor: 'rgba(23,71,168,0.08)' }}>con contenido</span>
 }
 
 function etiquetaVideo(url) {
   if (!url) return null
-  if (/youtube|youtu\.be/.test(url)) return { label: '▶ YouTube', color: '#a8291f', bg: 'rgba(220,38,38,0.08)' }
-  if (/tiktok/.test(url)) return { label: '▶ TikTok', color: 'var(--hc-text)', bg: 'var(--hc-surface-2)' }
-  if (/instagram/.test(url)) return { label: '▶ Instagram', color: '#be185d', bg: 'rgba(219,39,119,0.08)' }
-  return { label: '▶ con video', color: 'var(--hc-muted)', bg: 'var(--hc-surface-2)' }
+  if (/youtube|youtu\.be/.test(url)) return { label: 'YouTube', color: '#a8291f', bg: 'rgba(220,38,38,0.08)' }
+  if (/tiktok/.test(url)) return { label: 'TikTok', color: 'var(--hc-text)', bg: 'var(--hc-surface-2)' }
+  if (/instagram/.test(url)) return { label: 'Instagram', color: '#be185d', bg: 'rgba(219,39,119,0.08)' }
+  return { label: 'con video', color: 'var(--hc-muted)', bg: 'var(--hc-surface-2)' }
 }
 
 export default function BloqueContenido({ form, setForm }) {

@@ -6,6 +6,8 @@ import ConteoEfectivo from './ConteoEfectivo'
 import StatBox from './StatBox'
 import { formatMontoPos } from './posHelpers'
 import { CheckIcon, TransferenciaIcon } from './posIcons'
+import TextoFlecha from '@/components/ui/TextoFlecha'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 export default function AdminPOSCaja() {
   const { showToast } = useToast()
@@ -81,7 +83,7 @@ export default function AdminPOSCaja() {
         <Link to="/admin/pos"
           className="block w-full py-4 rounded-2xl font-black text-center text-base"
           style={{ background: 'var(--hc-accent)', color: '#fff' }}>
-          ← Volver al POS
+          <TextoFlecha dir="atras">Volver al POS</TextoFlecha>
         </Link>
       </div>
     )
@@ -102,9 +104,9 @@ export default function AdminPOSCaja() {
           </p>
         </div>
         <Link to="/admin/pos"
-          className="block w-full py-4 rounded-2xl font-black text-center text-base"
+          className="flex w-full py-4 rounded-2xl font-black items-center justify-center gap-1 text-base"
           style={{ background: 'var(--hc-accent)', color: '#fff' }}>
-          Ir al POS → abrir turno
+          Ir al POS <TrustGlyph tipo="adelante" className="w-3.5 h-3.5" /> abrir turno
         </Link>
       </div>
     )
@@ -119,7 +121,9 @@ export default function AdminPOSCaja() {
       {/* Header */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <Link to="/admin/pos" className="text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>← Volver al POS</Link>
+          <Link to="/admin/pos" className="text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>
+            <TextoFlecha dir="atras">Volver al POS</TextoFlecha>
+          </Link>
           <h1 className="text-xl font-bold mt-1" style={{ color: 'var(--hc-text)' }}>Cuadre de caja</h1>
           <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
             Paso 3 de 3 — Cerrá el turno y contá el efectivo final
@@ -175,7 +179,7 @@ export default function AdminPOSCaja() {
               style={{ color: diff === 0 ? '#34d399' : diff > 0 ? '#fbbf24' : '#f87171' }}>
               {diff >= 0 ? '+' : ''}₡{formatMontoPos(diff)}
               <span className="text-xs font-medium ml-1.5">
-                {diff > 0 ? 'sobrante' : diff < 0 ? 'faltante' : 'cuadre exacto ✓'}
+                {diff > 0 ? 'sobrante' : diff < 0 ? 'faltante' : 'cuadre exacto'}
               </span>
             </p>
           </div>

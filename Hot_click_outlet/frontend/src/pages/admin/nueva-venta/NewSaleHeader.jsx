@@ -1,4 +1,5 @@
 import Button from '@/components/ui/Button'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 /**
  * Título y volver de nueva venta.
@@ -13,7 +14,7 @@ export default function NewSaleHeader({ t, onVolver }) {
         <p className="text-sm text-[#8e8e9a] mt-1">Registra una venta, venta rápida o cotización por WhatsApp</p>
       </div>
       <Button variant="ghost" size="sm" onClick={onVolver} className="shrink-0">
-        ← Volver
+        <TextoFlecha dir="atras">Volver</TextoFlecha>
       </Button>
     </div>
   )

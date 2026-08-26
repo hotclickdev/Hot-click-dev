@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { testimonioService } from '@/services/testimonioService'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 export default function SocialProof({ productId }) {
   const { t } = useTranslation()
@@ -52,7 +53,9 @@ export default function SocialProof({ productId }) {
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium border"
             style={{ color: 'var(--hc-muted)', borderColor: 'var(--hc-border)', background: 'color-mix(in srgb, var(--hc-surface) 70%, transparent)' }}
           >
-            <span className="text-xs">{b.icon}</span>
+            <span style={{ color: 'var(--hc-muted)' }}>
+              <TrustGlyph tipo={b.icono} className="w-3 h-3" />
+            </span>
             {t(b.key)}
           </motion.span>
         ))}
@@ -62,10 +65,10 @@ export default function SocialProof({ productId }) {
 }
 
 const TRUST_BADGES = [
-  { icon: '🔒', key: 'socialProof.secure' },
-  { icon: '↩',  key: 'socialProof.warranty' },
-  { icon: '🚚', key: 'socialProof.shipping' },
-  { icon: '⭐', key: 'socialProof.satisfied' },
+  { icono: 'candado', key: 'socialProof.secure' },
+  { icono: 'garantia', key: 'socialProof.warranty' },
+  { icono: 'envio', key: 'socialProof.shipping' },
+  { icono: 'estrella', key: 'socialProof.satisfied' },
 ]
 
 function StarIcon({ filled, half }) {

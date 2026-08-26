@@ -95,7 +95,7 @@ export default function FiscalForm({
           <label htmlFor="fiscal-clave-atv" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Clave ATV
             {certInfo.tieneClaveHacienda && (
-              <span className="ml-2 text-xs text-green-600 dark:text-green-400 font-normal">✓ configurada</span>
+              <span className="ml-2 text-xs text-green-600 dark:text-green-400 font-normal">configurada</span>
             )}
           </label>
           <input id="fiscal-clave-atv"
@@ -112,7 +112,7 @@ export default function FiscalForm({
         <label htmlFor="fiscal-cert-p12" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Certificado PKCS#12 (.p12)
           {certInfo.tieneCertP12 && (
-            <span className="ml-2 text-xs text-green-600 dark:text-green-400 font-normal">✓ cargado</span>
+            <span className="ml-2 text-xs text-green-600 dark:text-green-400 font-normal">cargado</span>
           )}
         </label>
         <input id="fiscal-cert-p12"

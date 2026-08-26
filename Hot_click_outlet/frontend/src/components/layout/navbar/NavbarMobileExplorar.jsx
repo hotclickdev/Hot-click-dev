@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { HotClickMark } from '@/components/ui/BrandLogo'
 import NavbarMobileCategorias from './NavbarMobileCategorias'
+import { RUTA_EMPRENDE, esRutaEmprender } from '@/utils/emprendimientoRutas'
 
 /** Sección Explorar del menú móvil. */
 export default function NavbarMobileExplorar({
@@ -54,11 +54,34 @@ export default function NavbarMobileExplorar({
           setMenuOpen={setMenuOpen}
         />
 
-        {/* Emprendimientos */}
+        {/* Vender */}
         {(() => {
-          const isActive = location.pathname === '/emprendimientos'
+          const isActive = location.pathname === '/registro-empresa' || location.pathname === '/registrar-negocio'
           return (
-            <Link to="/emprendimientos" onClick={() => setMenuOpen(false)}
+            <Link to="/registro-empresa" onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150"
+              style={{ color: isActive ? 'var(--hc-text)' : 'var(--hc-muted)', backgroundColor: isActive ? 'var(--hc-surface-2)' : 'transparent' }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--hc-surface-2)'; e.currentTarget.style.color = 'var(--hc-text)' }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = isActive ? 'var(--hc-surface-2)' : 'transparent'; e.currentTarget.style.color = isActive ? 'var(--hc-text)' : 'var(--hc-muted)' }}
+            >
+              <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                style={{ backgroundColor: isActive ? 'color-mix(in srgb, var(--hc-accent) 15%, transparent)' : 'var(--hc-surface)' }}>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"
+                  style={{ color: isActive ? 'var(--hc-accent)' : 'inherit' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </span>
+              <span className="text-sm font-medium">Vender</span>
+              {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: 'var(--hc-accent)' }} />}
+            </Link>
+          )
+        })()}
+
+        {/* Emprender */}
+        {(() => {
+          const isActive = esRutaEmprender(location.pathname)
+          return (
+            <Link to={RUTA_EMPRENDE} onClick={() => setMenuOpen(false)}
               className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150"
               style={{ color: isActive ? 'var(--hc-text)' : 'var(--hc-muted)', backgroundColor: isActive ? 'var(--hc-surface-2)' : 'transparent' }}
               onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--hc-surface-2)'; e.currentTarget.style.color = 'var(--hc-text)' }}
@@ -71,25 +94,11 @@ export default function NavbarMobileExplorar({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
               </span>
-              <span className="text-sm font-medium">Emprendimientos</span>
+              <span className="text-sm font-medium">Emprender</span>
               {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: 'var(--hc-accent)' }} />}
             </Link>
           )
         })()}
-
-        {/* Servicios HOT — destacado */}
-        <Link to="/servicios" onClick={() => setMenuOpen(false)}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150"
-          style={{ backgroundColor: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', color: 'var(--hc-accent)' }}
-          onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--hc-accent) 18%, transparent)' }}
-          onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--hc-accent) 10%, transparent)' }}
-        >
-          <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-            style={{ backgroundColor: 'color-mix(in srgb, var(--hc-accent) 20%, transparent)' }}>
-            <HotClickMark size={18} />
-          </span>
-          <span className="text-sm font-semibold">✦ Servicios HOT</span>
-        </Link>
       </div>
     </motion.div>
   )

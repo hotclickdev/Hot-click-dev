@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { posService } from '@/services/posService'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 const fmt = (n) => new Intl.NumberFormat('es-CR').format(Math.round(n ?? 0))
 
@@ -61,7 +62,9 @@ export default function POSPagoPage() {
   if (error) return (
     <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: '#08080c' }}>
       <div className="text-center max-w-xs">
-        <div className="text-5xl mb-4">⚠️</div>
+        <div className="mb-4 flex justify-center" style={{ color: '#fbbf24' }}>
+          <TrustGlyph tipo="alerta" className="w-12 h-12" />
+        </div>
         <p className="font-bold text-white mb-2">QR inválido o expirado</p>
         <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
           Este código de pago ya no es válido. Solicita uno nuevo al cajero.
@@ -73,9 +76,9 @@ export default function POSPagoPage() {
   if (estado === 'PAGADO') return (
     <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: '#08080c' }}>
       <div className="text-center max-w-xs">
-        <div className="w-20 h-20 rounded-3xl mx-auto mb-5 flex items-center justify-center text-4xl"
-          style={{ backgroundColor: 'rgba(52,211,153,0.15)', border: '1px solid rgba(52,211,153,0.3)' }}>
-          ✓
+        <div className="w-20 h-20 rounded-3xl mx-auto mb-5 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(52,211,153,0.15)', border: '1px solid rgba(52,211,153,0.3)', color: '#34d399' }}>
+          <TrustGlyph tipo="check" className="w-10 h-10" />
         </div>
         <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#34d399' }}>Pago completado</p>
         <p className="text-3xl font-black tabular-nums mb-1" style={{ color: '#fff' }}>₡{fmt(info?.total)}</p>
@@ -167,7 +170,7 @@ export default function POSPagoPage() {
             className="w-full py-4 rounded-2xl font-black text-base transition-all disabled:opacity-50"
             style={{ background: 'var(--hc-accent)', color: '#fff',
               boxShadow: '0 8px 24px rgba(23,71,168,0.35)' }}>
-            {paying ? '⏳ Redirigiendo…' : '💳 Pagar con tarjeta'}
+            {paying ? 'Redirigiendo…' : 'Pagar con tarjeta'}
           </button>
         )}
 

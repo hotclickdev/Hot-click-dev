@@ -1,5 +1,18 @@
 import { useMemo } from 'react'
 import { buildCategoryTree } from './catalogoHelpers'
+import CategoriaGlyph from './CategoriaGlyph'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+
+function IconoCategoriaNodo({ nodo, className = 'w-4 h-4 shrink-0' }) {
+  if (!nodo?.icono) return null
+  return (
+    <CategoriaGlyph
+      icono={nodo.icono}
+      nombre={nodo.nombreCategoria ?? nodo.nombre}
+      className={className}
+    />
+  )
+}
 
 // ── Sidebar de categorías y marcas ───────────────────────────────────────────
 export default function CategorySidebar({
@@ -48,7 +61,7 @@ export default function CategorySidebar({
                   : { color: 'var(--hc-text)' }
                 }
               >
-                {drilledNode.icono && <span className="text-base leading-none">{drilledNode.icono}</span>}
+                <IconoCategoriaNodo nodo={drilledNode} />
                 <span className="truncate flex-1">{drilledNode.nombreCategoria ?? drilledNode.nombre}</span>
                 <span className="text-[10px] font-bold opacity-50 shrink-0">
                   {categoryTotalCount?.[drilledNode.id] ?? 0}
@@ -69,7 +82,7 @@ export default function CategorySidebar({
                           : { color: 'var(--hc-muted)' }
                         }
                       >
-                        {sub.icono && <span className="text-sm leading-none">{sub.icono}</span>}
+                        <IconoCategoriaNodo nodo={sub} className="w-3.5 h-3.5 shrink-0" />
                         <span className="flex-1 truncate">{sub.nombreCategoria ?? sub.nombre}</span>
                         <span className="text-[10px] font-bold opacity-50 shrink-0">{subCount}</span>
                       </button>
@@ -103,16 +116,13 @@ export default function CategorySidebar({
                         className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 group"
                         style={{ color: 'var(--hc-text)' }}
                       >
-                        {cat.icono && <span className="text-base leading-none shrink-0">{cat.icono}</span>}
+                        <IconoCategoriaNodo nodo={cat} />
                         <span className="truncate flex-1">{cat.nombreCategoria ?? cat.nombre}</span>
                         <span className="text-[10px] font-bold opacity-50 shrink-0 ml-auto">
                           {categoryTotalCount?.[cat.id] ?? 0}
                         </span>
                         {cat.children?.length > 0 && (
-                          <svg className="w-3.5 h-3.5 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity"
-                            fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
-                          </svg>
+                          <TrustGlyph tipo="adelante" className="w-3.5 h-3.5 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity" />
                         )}
                       </button>
                     ))}
@@ -144,14 +154,11 @@ export default function CategorySidebar({
                       : { color: 'var(--hc-text)' }
                     }
                   >
-                    {cat.icono && <span className="text-base leading-none shrink-0">{cat.icono}</span>}
+                    <IconoCategoriaNodo nodo={cat} />
                     <span className="truncate flex-1">{cat.nombreCategoria ?? cat.nombre}</span>
                     <span className="text-[10px] font-bold opacity-50 shrink-0 ml-auto">{catCount}</span>
                     {cat.children?.length > 0 && (
-                      <svg className="w-3.5 h-3.5 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity"
-                        fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
-                      </svg>
+                      <TrustGlyph tipo="adelante" className="w-3.5 h-3.5 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity" />
                     )}
                   </button>
                 )

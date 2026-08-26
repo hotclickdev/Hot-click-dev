@@ -17,3 +17,4 @@ alwaysApply: true
 - **Refactor bit-idéntico:** en pago, auth, 2FA, POS, wizard producto y security solo mover código; mismo orden de llamadas y side effects. No “mejorar” lógica en el mismo PR de limpieza.
 - **Tests de regresión (Java):** tras cada mini-tarea backend, `.\maven\bin\mvn test` del módulo tocado; no mergear con tests rotos.
 - **Backend delgado:** `@RestController` = HTTP + validación; negocio en `@Service`. No mover `@Transactional` sin revisar límites de transacción.
+- **Con Sonar:** no mezclar extract con cambio de UI ni rehacer a11y que ya pasa. Protocolo: `.claude/skills/codigo-limpio-sonar/SKILL.md`.

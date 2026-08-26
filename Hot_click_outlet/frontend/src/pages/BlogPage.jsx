@@ -4,6 +4,8 @@ import { motion } from 'framer-motion'
 import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
 import { blogService } from '@/services/blogService'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 function fmtDate(d) {
   if (!d) return ''
@@ -51,7 +53,7 @@ function CardArticulo({ e, i }) {
           fontSize: 13, fontWeight: 600, color: 'var(--hc-accent)',
           textDecoration: 'none',
         }}>
-          Leer más →
+          <TextoFlecha>Leer más</TextoFlecha>
         </Link>
       </div>
     </motion.article>
@@ -143,7 +145,9 @@ export default function BlogPage() {
           )}
           {!loading && entradas.length === 0 && (
             <div style={{ textAlign: 'center', padding: 80 }}>
-              <p style={{ fontSize: 48, margin: '0 0 16px' }}>📝</p>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16, color: 'var(--hc-muted)', opacity: 0.4 }}>
+                <TrustGlyph tipo="lista" className="w-12 h-12" />
+              </div>
               <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--hc-text)', margin: 0 }}>Próximamente</p>
               <p style={{ fontSize: 14, color: 'var(--hc-muted)', marginTop: 8 }}>Estamos preparando contenido para vos.</p>
             </div>

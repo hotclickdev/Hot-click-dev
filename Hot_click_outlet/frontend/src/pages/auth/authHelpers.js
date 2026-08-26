@@ -1,11 +1,4 @@
-/**
- * Destino seguro post-login: solo rutas relativas internas.
- * @param {unknown} from
- * @returns {string}
- */
-export function destinoPostLogin(from) {
-  return typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') ? from : '/'
-}
+export { destinoPostLogin } from '@/utils/authRedirect'
 
 /**
  * Mensaje de error de API, o fallback si no viene string.

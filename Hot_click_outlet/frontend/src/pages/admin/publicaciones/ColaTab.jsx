@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import Spinner from '@/components/ui/Spinner'
 import PubRow from './PubRow'
 import { FILTROS_ESTADO_COLA } from './publicacionesHelpers'
+import TextoMas from '@/components/ui/TextoMas'
 
 export default function ColaTab({
   filtroEstado,
@@ -38,9 +39,9 @@ export default function ColaTab({
           </button>
           <button type="button"
             onClick={onAgregar}
-            className="px-3 py-1 rounded-full text-xs font-medium bg-[#4f7cff]/15 text-[#4f7cff] border border-[#4f7cff]/30 hover:bg-[#4f7cff]/25 transition-colors"
+            className="px-3 py-1 rounded-full text-xs font-medium bg-[#4f7cff]/15 text-[#4f7cff] border border-[#4f7cff]/30 hover:bg-[#4f7cff]/25 transition-colors inline-flex items-center"
           >
-            + Agregar a la cola
+            <TextoMas>Agregar a la cola</TextoMas>
           </button>
         </div>
       </div>
@@ -52,7 +53,7 @@ export default function ColaTab({
           No hay publicaciones{filtroEstado ? ` con estado ${filtroEstado}` : ''}.
           <br />
           <span className="text-xs mt-1 block">
-            Haz clic en "+ Agregar a la cola" para seleccionar productos del catálogo.
+            Haz clic en «Agregar a la cola» para seleccionar productos del catálogo.
           </span>
         </div>
       ) : (

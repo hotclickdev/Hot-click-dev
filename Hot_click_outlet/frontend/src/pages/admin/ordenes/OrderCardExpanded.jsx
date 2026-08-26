@@ -7,6 +7,8 @@ import {
   numeroWhatsAppCliente,
 } from './ordenesHelpers'
 import { MailIcon, NotaIcon, PackagePlaceholder, WhatsAppIcon } from './orderCardIcons'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import TextoCamino from '@/components/ui/TextoCamino'
 
 export default function OrderCardExpanded({
   order,
@@ -49,7 +51,10 @@ export default function OrderCardExpanded({
           {pendingEstado && pendingEstado !== estado && (
             <>
               <p className="text-[11px] text-[var(--hc-muted)] text-center -mt-1">
-                {estado} → <span className="text-[var(--hc-accent)] font-semibold">{pendingEstado}</span>
+                <TextoCamino partes={[
+                  estado,
+                  <span key="destino" className="text-[var(--hc-accent)] font-semibold">{pendingEstado}</span>,
+                ]} />
               </p>
               <textarea
                 value={nota}
@@ -95,10 +100,15 @@ export default function OrderCardExpanded({
           <button type="button"
             onClick={onSaveEstado}
             disabled={saving || (needsEnvioForm && !guia.trim())}
-            className="flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50"
+            className="flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
             style={{ backgroundColor: 'var(--hc-accent)', color: 'white' }}
           >
-            {saving ? t('adminOrders.saving') : t('adminOrders.saveChanges')}
+            {saving ? t('adminOrders.saving') : (
+              <>
+                <TrustGlyph tipo="guardar" className="w-3.5 h-3.5" />
+                {t('adminOrders.saveChanges')}
+              </>
+            )}
           </button>
           <button type="button"
             onClick={onCancelPending}
@@ -186,10 +196,16 @@ export default function OrderCardExpanded({
       )}
 
       {estado === 'ENTREGADO' && (
-        <p className="text-center text-sm text-[#1E7F4F] py-1">{t('adminOrders.orderDelivered')}</p>
+        <p className="text-center text-sm text-[#1E7F4F] py-1 inline-flex items-center justify-center gap-1.5 w-full">
+          <TrustGlyph tipo="check" className="w-3.5 h-3.5" />
+          {t('adminOrders.orderDelivered')}
+        </p>
       )}
       {estado === 'COMPLETADO' && (
-        <p className="text-center text-sm py-1" style={{ color: 'var(--hc-accent)' }}>{t('adminOrders.orderCompleted')}</p>
+        <p className="text-center text-sm py-1 inline-flex items-center justify-center gap-1.5 w-full" style={{ color: 'var(--hc-accent)' }}>
+          <TrustGlyph tipo="check" className="w-3.5 h-3.5" />
+          {t('adminOrders.orderCompleted')}
+        </p>
       )}
       {estado === 'CANCELADO' && (
         <p className="text-center text-sm text-[#a8291f] py-1">{t('adminOrders.orderCancelled')}</p>
@@ -227,9 +243,10 @@ export default function OrderCardExpanded({
         <button type="button"
           onClick={onConfirmDelete}
           disabled={saving}
-          className="text-xs px-3 py-1.5 rounded-lg transition-all disabled:opacity-40 shrink-0"
+          className="text-xs px-3 py-1.5 rounded-lg transition-all disabled:opacity-40 shrink-0 inline-flex items-center gap-1"
           style={{ backgroundColor: 'rgba(248,113,113,0.10)', color: 'var(--hc-danger)', border: '1px solid rgba(248,113,113,0.25)' }}
         >
+          <TrustGlyph tipo="papelera" className="w-3.5 h-3.5" />
           {t('adminOrders.deleteOrder')}
         </button>
       </div>

@@ -1,3 +1,5 @@
+import TextoMas from '@/components/ui/TextoMas'
+
 function TagIcon() {
   return (
     <svg className="w-7 h-7" style={{ color: 'var(--hc-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
@@ -19,7 +21,7 @@ export default function MarcasEmptyState({ onCrear }) {
       <button type="button" onClick={onCrear}
         className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold mt-1 transition-opacity hover:opacity-80"
         style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-        + Crear primera marca
+        <TextoMas>Crear primera marca</TextoMas>
       </button>
     </div>
   )

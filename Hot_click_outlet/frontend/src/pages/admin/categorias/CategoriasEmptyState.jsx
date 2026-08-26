@@ -1,3 +1,5 @@
+import TextoMas from '@/components/ui/TextoMas'
+
 export default function CategoriasEmptyState({ onCrear }) {
   return (
     <div className="text-center py-14 space-y-3">
@@ -16,7 +18,7 @@ export default function CategoriasEmptyState({ onCrear }) {
         onClick={onCrear}
         className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold mt-1 transition-opacity hover:opacity-80"
         style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
-      >+ Crear primera categoría</button>
+      ><TextoMas>Crear primera categoría</TextoMas></button>
     </div>
   )
 }

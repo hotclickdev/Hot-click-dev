@@ -2,8 +2,7 @@ import { useState, useRef } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { Helmet } from 'react-helmet-async'
-import Navbar from '@/components/layout/Navbar'
-import Footer from '@/components/layout/Footer'
+import MainLayout from '@/layouts/MainLayout'
 import useAuthStore from '@/store/authStore'
 import { servicioService } from '@/services/servicioService'
 import { garantiaService } from '@/services/garantiaService'
@@ -102,7 +101,7 @@ export default function ServiciosHotPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--hc-bg)' }}>
+    <MainLayout>
       <Helmet>
         <title>Servicios HotClick — Búsqueda de productos y garantías en Costa Rica</title>
         <meta name="description" content="Solicitá búsqueda de cualquier producto o gestioná la garantía de tu compra. Servicios gratuitos para clientes de HotClick en Costa Rica." />
@@ -119,11 +118,10 @@ export default function ServiciosHotPage() {
         <meta property="og:site_name" content="HotClick" />
         <script type="application/ld+json">{JSON.stringify(serviciosJsonLd)}</script>
       </Helmet>
-      <Navbar />
 
       <ServiciosHero />
 
-      <div ref={contenidoRef} className="px-4 pb-28 max-w-2xl mx-auto">
+      <div ref={contenidoRef} className="px-4 pb-8 max-w-2xl mx-auto">
         <AnimatePresence mode="wait">
           {vista === 'inicio' && <ServiciosInicio irA={irA} />}
           {vista === 'busqueda' && (
@@ -171,8 +169,6 @@ export default function ServiciosHotPage() {
           )}
         </AnimatePresence>
       </div>
-
-      <Footer />
-    </div>
+    </MainLayout>
   )
 }

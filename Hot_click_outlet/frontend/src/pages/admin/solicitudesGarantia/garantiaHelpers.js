@@ -14,7 +14,7 @@ export function waLinkGarantia(s) {
   const num = tel.replace(/\D/g, '')
   const full = num.startsWith('506') ? num : `506${num}`
   const msg = encodeURIComponent(
-    `Hola ${s.usuarioNombre || ''}! 👋 Te contactamos de HotClick sobre tu solicitud de garantía del producto "${(s.productoNombre || '').slice(0, 50)}".`
+    `Hola ${s.usuarioNombre || ''}! Te contactamos de HotClick sobre tu solicitud de garantía del producto "${(s.productoNombre || '').slice(0, 50)}".`
   )
   return `https://wa.me/${full}?text=${msg}`
 }

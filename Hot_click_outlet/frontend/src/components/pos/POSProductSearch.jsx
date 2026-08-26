@@ -1,6 +1,8 @@
-import { CatColor, categoryEmoji } from './productSearch/posProductSearchHelpers'
+import { CatColor } from './productSearch/posProductSearchHelpers'
 import { ProductGrid } from './productSearch/ProductGrid'
 import { usePOSProductSearch } from './productSearch/usePOSProductSearch'
+import CatIcon from '@/pages/catalogo/CatIcon'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function POSProductSearch({ onAdd }) {
   const {
@@ -31,10 +33,11 @@ export default function POSProductSearch({ onAdd }) {
         <input
           ref={inputRef}
           type="text"
+          data-pos-search
           value={query}
           onChange={handleChange}
           onKeyDown={(e) => handleKeyDown(e, onAdd)}
-          placeholder="Buscar o escanear barcode… (F2)"
+          placeholder="Buscar o escanear (F2)"
           className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm outline-none"
           style={{
             backgroundColor: 'var(--hc-surface)',
@@ -66,7 +69,7 @@ export default function POSProductSearch({ onAdd }) {
                 <button type="button" onClick={() => { setCatSel(null); setProductos([]) }}
                   className="p-1.5 rounded-lg hover:bg-white/8 transition-colors"
                   style={{ color: 'var(--hc-muted)' }}>
-                  ← Volver
+                  <TextoFlecha dir="atras">Volver</TextoFlecha>
                 </button>
                 <span className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
                   {catSel.nombreCategoria}
@@ -101,8 +104,8 @@ export default function POSProductSearch({ onAdd }) {
                         onClick={() => cargarPorCategoria(cat)}
                         className="flex flex-col items-center justify-center gap-1.5 p-4 rounded-2xl text-center transition-all hover:scale-[1.03] active:scale-[0.97]"
                         style={{ backgroundColor: c.bg, border: `1.5px solid ${c.border}`, minHeight: 80 }}>
-                        <span className="text-2xl">
-                          {categoryEmoji(cat.nombreCategoria)}
+                        <span style={{ color: c.text }}>
+                          <CatIcon name={cat.nombreCategoria} className="w-8 h-8" />
                         </span>
                         <span className="text-xs font-semibold leading-tight" style={{ color: c.text }}>
                           {cat.nombreCategoria}

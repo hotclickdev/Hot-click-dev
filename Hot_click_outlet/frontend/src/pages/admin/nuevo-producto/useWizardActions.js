@@ -172,7 +172,7 @@ export function useWizardActions({
       // 2+ tallas marcadas -> mismo producto en varias filas (una por talla), agrupadas
       // como variantes (mismo mecanismo que ya se usa para colores en el import).
       const paresTalla = (form.tallasCantidad || []).filter(x => x.talla && Number(x.cantidad) > 0)
-      let productoId, pendienteAprobacion
+      let productoId, ocultoDelCatalogo
 
       if (paresTalla.length > 1) {
         const grupoVarianteId = crypto.randomUUID()
@@ -183,7 +183,7 @@ export function useWizardActions({
           if (creado?.id && form.imagenes.length > 0) {
             try { await productService.sincronizarImagenes(creado.id, form.imagenes) } catch { /* se avisa una sola vez abajo */ }
           }
-          if (!productoId) { productoId = creado?.id; pendienteAprobacion = creado?.visibleCatalogo === false }
+          if (!productoId) { productoId = creado?.id; ocultoDelCatalogo = creado?.visibleCatalogo === false }
         }
       } else {
         const dtoFinal = paresTalla.length === 1
@@ -192,7 +192,7 @@ export function useWizardActions({
         const res = await productService.create(dtoFinal, { headers: { 'X-Idempotency-Key': idempotencyKey.current } })
         const productoCreadoData = res.data?.data ?? res.data
         productoId = productoCreadoData?.id
-        pendienteAprobacion = productoCreadoData?.visibleCatalogo === false
+        ocultoDelCatalogo = productoCreadoData?.visibleCatalogo === false
 
         if (productoId && form.imagenes.length > 0) {
           try {
@@ -205,7 +205,7 @@ export function useWizardActions({
 
       try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignorar */ }
       setTieneBorrador(false)
-      setProductoCreado({ id: productoId, nombre: form.nombre, imagen: imagenUrl, pendienteAprobacion })
+      setProductoCreado({ id: productoId, nombre: form.nombre, imagen: imagenUrl, ocultoDelCatalogo })
       setDone(true)
 
       const seoTitle = sl.es?.title || form.metaTitle || ''

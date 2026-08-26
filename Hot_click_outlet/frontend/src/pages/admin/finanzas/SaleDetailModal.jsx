@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import Spinner from '@/components/ui/Spinner'
 import { orderService } from '@/services/orderService'
 import { formatPrice, formatDate } from '@/utils/format'
+import CloseIcon from '@/components/ui/CloseIcon'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 function DetallePedido({ loading, error, data }) {
   if (loading) {
@@ -97,7 +99,7 @@ function DetallePedido({ loading, error, data }) {
           {data.urlTracking && (
             <a href={data.urlTracking} target="_blank" rel="noopener noreferrer"
               className="text-xs text-[#6490EA] underline mt-1 block">
-              Rastrear →
+              <TextoFlecha>Rastrear</TextoFlecha>
             </a>
           )}
         </div>
@@ -144,10 +146,10 @@ export default function SaleDetailModal({ pedidoId, onClose }) {
               <p className="text-xs text-[#8e8e9a] mt-0.5">{formatDate(data.fechaCreacion)}</p>
             )}
           </div>
-          <button type="button" onClick={onClose}
+          <button type="button" onClick={onClose} aria-label="Cerrar"
             className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
             style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>
-            ✕
+            <CloseIcon />
           </button>
         </div>
 

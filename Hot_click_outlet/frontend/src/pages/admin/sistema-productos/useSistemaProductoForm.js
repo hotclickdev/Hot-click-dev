@@ -149,11 +149,12 @@ async function resolverTiendaPublica() {
   if (stored.estadoEmpresa) return tiendaEsPublica(stored)
   try {
     const { data } = await empresaService.getPerfil()
+    const e = data?.id ? data : data
     useTenantStore.getState().setEmpresaStatus({
-      estadoEmpresa: data?.estadoEmpresa,
-      visibilidadPublica: data?.visibilidadPublica,
+      estadoEmpresa: e?.estadoEmpresa,
+      visibilidadPublica: e?.visibilidadPublica,
     })
-    return tiendaEsPublica(data)
+    return tiendaEsPublica(e)
   } catch (err) {
     console.error('[SistemaProductoForm] perfil', err)
     return false

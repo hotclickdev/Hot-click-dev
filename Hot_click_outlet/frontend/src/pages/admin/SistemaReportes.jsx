@@ -19,6 +19,7 @@ import {
   productosEstrellaDe,
   stockEnRiesgo,
 } from './sistema-reportes/sistemaReportesHelpers'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function SistemaReportes() {
   const hasFeature = useTenantStore((s) => s.hasFeature)
@@ -71,7 +72,9 @@ export default function SistemaReportes() {
 
   return (
     <div className="space-y-4 max-w-[1060px]">
-      <Link to="/admin" className="inline-flex items-center gap-1 text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>← Inicio</Link>
+      <Link to="/admin" className="inline-flex items-center gap-1 text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
+        <TextoFlecha dir="atras">Inicio</TextoFlecha>
+      </Link>
 
       <header>
         <h1 style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 26, letterSpacing: '-0.5px', color: 'var(--hc-text)' }}>Reportes</h1>

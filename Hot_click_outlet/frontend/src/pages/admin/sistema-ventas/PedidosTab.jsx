@@ -12,6 +12,7 @@ import {
   pedidosDelFiltro,
   textoVacioPedidos,
 } from './ventasPedidosHelpers'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function PedidosTab({ orders, loading, loadError, onRetry, onUpdate, onDelete }) {
   const [filter, setFilter] = useStickyState('hc-ord-filter-sistema', 'por_despachar')
@@ -92,12 +93,12 @@ function PaginacionPedidos({ total, ordPage, totalOrdPages, setOrdPage }) {
         <button type="button" onClick={() => setOrdPage(p => Math.max(0, p - 1))} disabled={ordPage === 0}
           className="px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-40"
           style={{ backgroundColor: 'var(--hc-surface)', border: `1px solid ${PILL_BORDER}`, color: 'var(--hc-text)' }}>
-          ← Anterior
+          <TextoFlecha dir="atras">Anterior</TextoFlecha>
         </button>
         <button type="button" onClick={() => setOrdPage(p => Math.min(totalOrdPages - 1, p + 1))} disabled={ordPage >= totalOrdPages - 1}
           className="px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-40"
           style={{ backgroundColor: 'var(--hc-surface)', border: `1px solid ${PILL_BORDER}`, color: 'var(--hc-accent)' }}>
-          Siguiente →
+          <TextoFlecha>Siguiente</TextoFlecha>
         </button>
       </div>
     </div>

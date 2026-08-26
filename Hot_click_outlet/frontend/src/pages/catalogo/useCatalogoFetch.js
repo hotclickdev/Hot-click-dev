@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { productService, normalizeProduct } from '@/services/productService'
 import { marcaService } from '@/services/marcaService'
-import { convenioService } from '@/services/convenioService'
+import { convenioService, listaConvenios } from '@/services/convenioService'
 import { colapsarGruposVariante } from './catalogoHelpers'
 import { PAGE_SIZE } from './catalogoFiltros'
 
@@ -57,7 +57,7 @@ export function useCatalogoFetch(toast, page, setPage) {
       setMarcas(Array.isArray(ms) ? ms : [])
     }).catch(() => toast({ message: 'Error al cargar marcas', type: 'error' }))
     convenioService.getPublicos()
-      .then((r) => setConvenios(r.data?.data ?? []))
+      .then((r) => setConvenios(listaConvenios(r)))
       .catch(() => toast({ message: 'Error al cargar convenios', type: 'error' }))
   }, [toast])
 

@@ -1,4 +1,5 @@
 import { ETAPAS_ENVIO, ETAPAS_RETIRO, METODOS_PAGO } from './nuevaVentaHelpers'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 /**
  * @param {{
@@ -37,8 +38,8 @@ export default function SaleEntregaPago({
         <label className="text-sm font-medium text-[#e8e8ed]">Tipo de entrega</label>
         <div className="grid grid-cols-2 gap-2">
           {[
-            { value: 'LOCAL', label: 'Retiro en local', icon: '🏪' },
-            { value: 'DOMICILIO', label: 'Envío a domicilio', icon: '🚚' },
+            { value: 'LOCAL', label: 'Retiro en local', icono: 'edificio' },
+            { value: 'DOMICILIO', label: 'Envío a domicilio', icono: 'envio' },
           ].map((opt) => (
             <button
               key={opt.value}
@@ -50,7 +51,7 @@ export default function SaleEntregaPago({
                   : 'bg-white/3 border-white/8 text-[#8e8e9a] hover:border-white/15 hover:text-[#e8e8ed]'
               }`}
             >
-              <span>{opt.icon}</span>
+              <TrustGlyph tipo={opt.icono} className="w-4 h-4" />
               <span>{opt.label}</span>
             </button>
           ))}

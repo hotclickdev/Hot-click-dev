@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 const SERVICIO_STEPS = [
   {
-    n: '01', icon: '📷',
+    n: '01', icono: 'camara',
     labelKey: 'home.servicesStep1',
     desc: 'Mandanos la foto del producto por WhatsApp',
     accent: '#f59e0b',
@@ -12,7 +14,7 @@ const SERVICIO_STEPS = [
     accentBorder: 'rgba(245,158,11,0.25)',
   },
   {
-    n: '02', icon: '🔍',
+    n: '02', icono: 'buscar',
     labelKey: 'home.servicesStep2',
     desc: 'Consultamos todos nuestros proveedores',
     accent: 'var(--hc-accent)',
@@ -20,7 +22,7 @@ const SERVICIO_STEPS = [
     accentBorder: 'color-mix(in srgb, var(--hc-accent) 28%, transparent)',
   },
   {
-    n: '03', icon: '💬',
+    n: '03', icono: 'chat',
     labelKey: 'home.servicesStep3',
     desc: 'Precio y disponibilidad en minutos',
     accent: '#10b981',
@@ -96,8 +98,9 @@ function PromoCopy() {
       >
         <Link to="/servicios" className="hc-btn hc-btn-primary hc-btn-lg inline-flex items-center gap-2 group">
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          {t('home.servicesRequest')}
-          <span className="inline-block group-hover:translate-x-1 transition-transform duration-200">→</span>
+          <TextoFlecha iconClassName="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1">
+            {t('home.servicesRequest')}
+          </TextoFlecha>
         </Link>
       </motion.div>
     </div>
@@ -107,7 +110,7 @@ function PromoCopy() {
 /**
  * @param {{
  *   n: string,
- *   icon: string,
+ *   icono: string,
  *   label: string,
  *   desc: string,
  *   accent: string,
@@ -116,7 +119,7 @@ function PromoCopy() {
  *   index: number,
  * }} props
  */
-function PromoStep({ n, icon, label, desc, accent, accentBg, accentBorder, index }) {
+function PromoStep({ n, icono, label, desc, accent, accentBg, accentBorder, index }) {
   return (
     <motion.div
       initial={{ opacity: 0, x: 28 }}
@@ -134,7 +137,9 @@ function PromoStep({ n, icon, label, desc, accent, accentBg, accentBorder, index
     >
       <div className="w-[3.75rem] h-[3.75rem] rounded-xl flex flex-col items-center justify-center shrink-0 gap-0.5"
         style={{ background: accentBg, border: `1px solid ${accentBorder}` }}>
-        <span className="text-xl leading-none">{icon}</span>
+        <span style={{ color: accent }}>
+          <TrustGlyph tipo={icono} className="w-5 h-5" />
+        </span>
         <span className="text-[9px] font-black tracking-widest" style={{ color: accent }}>{n}</span>
       </div>
       <div className="flex flex-col gap-0.5">
@@ -156,7 +161,7 @@ function PromoSteps() {
           <PromoStep
             key={s.n}
             n={s.n}
-            icon={s.icon}
+            icono={s.icono}
             label={t(s.labelKey)}
             desc={s.desc}
             accent={s.accent}

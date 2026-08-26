@@ -3,6 +3,7 @@
  * Activa el autoQuery según el tipo (success / failed) al montar.
  */
 import AIChat from './AIChat'
+import IconoAsistente from './IconoAsistente'
 
 export default function AIPostPaySection({ tipo, numeroPedido, metodoPago, errorCode }) {
   const isSuccess = tipo === 'success'
@@ -30,7 +31,7 @@ export default function AIPostPaySection({ tipo, numeroPedido, metodoPago, error
           className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
           style={{ background: accentColor || 'var(--hc-accent)', color: '#fff' }}
         >
-          {isSuccess ? '✓' : '✦'}
+          <IconoAsistente exito={isSuccess} className="w-3.5 h-3.5" />
         </div>
         <div>
           <p className="text-sm font-bold" style={{ color: 'var(--hc-text)' }}>

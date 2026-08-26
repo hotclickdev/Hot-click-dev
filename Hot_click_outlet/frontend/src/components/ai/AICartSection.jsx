@@ -13,7 +13,7 @@ export default function AICartSection({ cartItems = [], cartTotal = 0 }) {
     .slice(0, 200)
 
   const context = `CARRITO:${itemsStr}:${cartTotal}`
-  const autoQuery = `Tengo en mi carrito: ${itemsStr}. ¿Qué más podría necesitar o me recomendás complementar?`
+  const autoQuery = `Tengo en mi pedido: ${itemsStr}. ¿Qué más podría necesitar o me recomendás complementar?`
 
   return (
     <section
@@ -38,7 +38,7 @@ export default function AICartSection({ cartItems = [], cartTotal = 0 }) {
             HotClick AI
           </p>
           <p className="text-[11px]" style={{ color: 'var(--hc-muted)' }}>
-            Sugerencias basadas en tu carrito
+            Sugerencias basadas en tu pedido
           </p>
         </div>
       </div>

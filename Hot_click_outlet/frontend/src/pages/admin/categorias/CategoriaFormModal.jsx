@@ -2,10 +2,13 @@ import { useTranslation } from 'react-i18next'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Modal from '@/components/ui/Modal'
+import CatIcon from '@/pages/catalogo/CatIcon'
 import {
   ICONOS_CATEGORIA,
   etiquetaBotonGuardarCategoria,
+  etiquetaIconoCategoria,
   etiquetaOpcionPadre,
+  iconoCategoriaEsItem,
 } from './formCategoria'
 
 function estiloBotonIcono(seleccionado) {
@@ -13,6 +16,20 @@ function estiloBotonIcono(seleccionado) {
     return { background: 'rgba(23,71,168,0.2)', borderColor: 'var(--hc-accent)', color: 'var(--hc-accent)' }
   }
   return { background: 'transparent', borderColor: 'rgba(255,255,255,0.1)', color: '#8e8e9a' }
+}
+
+function BotonIconoCategoria({ item, seleccionado, onCambiar }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onCambiar(item.clave)}
+      title={item.label}
+      className="w-8 h-8 rounded-lg flex items-center justify-center transition-all border"
+      style={estiloBotonIcono(seleccionado)}
+    >
+      <CatIcon name={item.clave} className="w-4 h-4" />
+    </button>
+  )
 }
 
 function IconoCategoriaPicker({ icono, onCambiar }) {
@@ -27,22 +44,19 @@ function IconoCategoriaPicker({ icono, onCambiar }) {
           className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all border"
           style={estiloBotonIcono(!icono)}
         >—</button>
-        {ICONOS_CATEGORIA.map(({ emoji, label }) => (
-          <button
-            key={emoji}
-            type="button"
-            onClick={() => onCambiar(emoji)}
-            title={label}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-lg transition-all border"
-            style={icono === emoji
-              ? { background: 'rgba(23,71,168,0.2)', borderColor: 'var(--hc-accent)' }
-              : { background: 'transparent', borderColor: 'transparent' }
-            }
-          >{emoji}</button>
+        {ICONOS_CATEGORIA.map((item) => (
+          <BotonIconoCategoria
+            key={item.clave}
+            item={item}
+            seleccionado={iconoCategoriaEsItem(icono, item)}
+            onCambiar={onCambiar}
+          />
         ))}
       </div>
       {icono && (
-        <p className="text-xs text-[#8e8e9a]">Icono seleccionado: {icono}</p>
+        <p className="text-xs text-[#8e8e9a]">
+          Icono seleccionado: {etiquetaIconoCategoria(icono)}
+        </p>
       )}
     </div>
   )

@@ -4,6 +4,8 @@ import { Link, useLocation } from 'react-router-dom'
 import useCartStore from '@/store/cartStore'
 import useWishlistStore from '@/store/wishlistStore'
 import { formatPrice } from '@/utils/format'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 const SESSION_KEY = 'hc-exit-intent-shown'
 const DELAY_BEFORE_ARMED_MS = 5000
@@ -122,10 +124,15 @@ export default function ExitIntentModal() {
                 <button type="button"
                   onClick={() => setOpen(false)}
                   className="absolute top-4 right-4 w-7 h-7 rounded-xl flex items-center justify-center text-[#8e8e9a] hover:text-white hover:bg-white/10 transition-all"
-                >✕</button>
-                <div className="text-3xl mb-2">{hasCart ? '🛒' : '❤️'}</div>
+                  aria-label="Cerrar"
+                >
+                  <CloseIcon />
+                </button>
+                <div className="flex justify-center mb-2" style={{ color: 'var(--hc-accent)' }}>
+                  <TrustGlyph tipo={hasCart ? 'bolsa' : 'corazon'} className="w-8 h-8" />
+                </div>
                 <h2 className="text-lg font-bold" style={{ color: 'var(--hc-text)' }}>
-                  {hasCart ? '¡Espera! Tu carrito te necesita' : '¡Tus favoritos te esperan!'}
+                  {hasCart ? '¡Espera! Tu pedido te espera' : '¡Tus favoritos te esperan!'}
                 </h2>
                 <p className="text-xs mt-1" style={{ color: 'var(--hc-muted)' }}>
                   {hasCart
@@ -141,17 +148,19 @@ export default function ExitIntentModal() {
                     <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 flex items-center justify-center" style={{ background: 'var(--hc-bg)' }}>
                       {item.imagenUrl
                         ? <img src={item.imagenUrl} alt={item.nombre} className="w-full h-full object-cover" />
-                        : <span className="text-lg opacity-30">📦</span>}
+                        : <span className="opacity-30" style={{ color: 'var(--hc-muted)' }}>
+                            <TrustGlyph tipo="paquete" className="w-5 h-5" />
+                          </span>}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium truncate" style={{ color: 'var(--hc-text)' }}>{item.nombre}</p>
-                      <p className="text-xs font-bold text-[#4f7cff]">{formatPrice(item.precio)}</p>
+                      <p className="text-xs font-bold" style={{ color: 'var(--hc-text)' }}>{formatPrice(item.precio)}</p>
                     </div>
                     {hasCart && <span className="text-[10px] shrink-0" style={{ color: 'var(--hc-muted)' }}>×{item.cantidad}</span>}
                   </div>
                 ))}
                 {preview.length > 3 && (
-                  <p className="text-xs text-center" style={{ color: 'var(--hc-muted)' }}>+ {preview.length - 3} más</p>
+                  <p className="text-xs text-center" style={{ color: 'var(--hc-muted)' }}>y {preview.length - 3} más</p>
                 )}
               </div>
 
@@ -160,8 +169,7 @@ export default function ExitIntentModal() {
                 <Link
                   to={hasCart ? '/carrito' : '/wishlist'}
                   onClick={() => setOpen(false)}
-                  className="w-full h-10 rounded-xl flex items-center justify-center text-sm font-semibold text-white transition-all hover:opacity-90"
-                  style={{ background: 'var(--hc-accent)', boxShadow: '0 0 20px color-mix(in srgb, var(--hc-accent) 35%, transparent)' }}
+                  className="hc-btn hc-btn-primary w-full min-h-11"
                 >
                   {hasCart ? 'Completar compra' : 'Ver mis favoritos'}
                 </Link>

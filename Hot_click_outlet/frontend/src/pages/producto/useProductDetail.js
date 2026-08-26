@@ -153,7 +153,18 @@ export function useProductDetail(id, t) {
 
   const handleAdd = () => {
     if (!inStock || justAdded) return
+    agregarAlPedido({ conAviso: true })
+  }
+
+  const handleComprarAhora = () => {
+    if (!inStock) return
+    if (!justAdded) agregarAlPedido({ conAviso: false })
+    navigate('/checkout')
+  }
+
+  function agregarAlPedido({ conAviso }) {
     addItem({ ...normalizeProduct(product), tallaSeleccionada }, quantity)
+    if (!conAviso) return
     const qtyPrefix = quantity > 1 ? `${quantity}× ` : ''
     toast({
       message: t('product.added', { name: `${qtyPrefix}${product.nombre}` }),
@@ -168,5 +179,6 @@ export function useProductDetail(id, t) {
     recommendations, brandProducts, galeria, activeImg, setActiveImg,
     variantes, tallaSeleccionada, setTallaSeleccionada, mainCTARef,
     recentlyViewed, inStock, atMax, handleDecrease, handleIncrease, handleAdd,
+    handleComprarAhora,
   }
 }

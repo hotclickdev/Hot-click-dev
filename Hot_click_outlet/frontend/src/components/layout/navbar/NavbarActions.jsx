@@ -6,6 +6,7 @@ import {
   SearchNavIcon,
   WishlistNavIcon,
   CartIcon,
+  AdminNavIcon,
   LogoutIcon,
 } from './navbarIcons'
 
@@ -63,7 +64,7 @@ export default function NavbarActions({
 
       <Link
         to="/carrito"
-        aria-label={t('bnav.carrito')}
+        aria-label={t('bnav.pedido')}
         className="relative p-2 rounded-lg transition-all duration-150 hover:scale-105"
         style={{ color: 'var(--hc-muted)' }}
         onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--hc-text)'; e.currentTarget.style.backgroundColor = 'var(--hc-surface-2)' }}
@@ -101,12 +102,12 @@ export default function NavbarActions({
               className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors"
               style={{ color: 'var(--hc-muted)' }}
             >
-              <span className="text-xs">⚙</span>
+              <AdminNavIcon />
               {t('nav.admin')}
             </Link>
           )}
           <Link
-            to="/perfil"
+            to="/mis-pedidos"
             className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors"
             style={{ color: 'var(--hc-muted)' }}
           >

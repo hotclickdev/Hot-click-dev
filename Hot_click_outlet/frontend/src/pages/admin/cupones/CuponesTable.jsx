@@ -1,5 +1,6 @@
 import { FILTERS, fmt, PAGE_SIZE } from './cuponesHelpers'
 import { Badge, StatCard, UsageBar } from './CuponesUi'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function CuponesTable({
   stats,
@@ -159,7 +160,7 @@ export default function CuponesTable({
                 className="px-3 py-1.5 rounded-xl text-xs font-semibold disabled:opacity-40"
                 style={{ background: 'var(--hc-bg)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}
               >
-                ← Anterior
+                <TextoFlecha dir="atras">Anterior</TextoFlecha>
               </button>
               <button type="button"
                 onClick={() => onGoPage(page + 1)}
@@ -167,7 +168,7 @@ export default function CuponesTable({
                 className="px-3 py-1.5 rounded-xl text-xs font-semibold disabled:opacity-40"
                 style={{ background: 'var(--hc-bg)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}
               >
-                Siguiente →
+                <TextoFlecha>Siguiente</TextoFlecha>
               </button>
             </div>
           </div>

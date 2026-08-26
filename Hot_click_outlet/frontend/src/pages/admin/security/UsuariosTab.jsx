@@ -3,6 +3,7 @@ import Spinner from '@/components/ui/Spinner'
 import { securityService } from '@/services/securityService'
 import { EVENT_LABEL, timeAgo, fmtDate } from './securityHelpers'
 import { Card, SeverityBadge } from './securityUi'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function UsuariosTab() {
   const [data, setData]         = useState(null)
@@ -36,7 +37,7 @@ export default function UsuariosTab() {
     <div className="space-y-4">
       <button type="button" onClick={() => { setSelected(null); setDetalle(null) }}
         className="text-sm flex items-center gap-1" style={{ color: 'var(--hc-accent)' }}>
-        ← Volver a la lista
+        <TextoFlecha dir="atras">Volver a la lista</TextoFlecha>
       </button>
       <Card className="p-5 space-y-3">
         <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -186,12 +187,12 @@ export default function UsuariosTab() {
               <button type="button" onClick={() => load(page - 1)} disabled={page === 0}
                 className="px-3 py-1.5 rounded-lg text-xs disabled:opacity-40"
                 style={{ backgroundColor: 'var(--hc-card)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
-                ← Anterior
+                <TextoFlecha dir="atras">Anterior</TextoFlecha>
               </button>
               <button type="button" onClick={() => load(page + 1)} disabled={page >= (data?.totalPages - 1)}
                 className="px-3 py-1.5 rounded-lg text-xs disabled:opacity-40"
                 style={{ backgroundColor: 'var(--hc-card)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
-                Siguiente →
+                <TextoFlecha>Siguiente</TextoFlecha>
               </button>
             </div>
           </div>

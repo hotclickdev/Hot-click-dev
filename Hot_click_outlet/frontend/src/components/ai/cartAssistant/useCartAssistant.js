@@ -35,13 +35,13 @@ export function useCartAssistant({ cartItems, cartTotal }) {
       initialized.current = true
       const itemSuffix = cartItems.length === 1 ? '' : 's'
       const greeting = busquedasPrevias
-        ? `Vi que preguntaste por: "${busquedasPrevias}". Basándome en tu carrito, déjame sugerirte qué más podría interesarte...`
-        : `Tenés ${cartItems.length} producto${itemSuffix} en tu carrito. ¿Puedo sugerirte algo que complemente tu compra?`
+        ? `Vi que preguntaste por: "${busquedasPrevias}". Basándome en tu pedido, déjame sugerirte qué más podría interesarte...`
+        : `Tenés ${cartItems.length} producto${itemSuffix} en tu pedido. ¿Puedo sugerirte algo que complemente tu compra?`
 
       setMensajes([{ rol: 'assistant', texto: greeting }])
 
       if (busquedasPrevias && cartItems.length > 0) {
-        const autoQuery = `Tengo en el carrito: ${itemsStr}. También pregunté por: ${busquedasPrevias}. ¿Qué más me recomendás?`
+        const autoQuery = `Tengo en el pedido: ${itemsStr}. También pregunté por: ${busquedasPrevias}. ¿Qué más me recomendás?`
         setTimeout(() => enviarDirecto(autoQuery), 400)
       }
     }

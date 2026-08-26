@@ -7,9 +7,20 @@ import { useTranslation } from 'react-i18next'
  *   completadas: number
  *   pendientes: number
  *   ventasCount: number
+ *   titulo?: string
+ *   vacio?: string
+ *   etiquetaConteo?: string
  * }} props
  */
-export default function PaymentMethods({ byMethod, completadas, pendientes, ventasCount }) {
+export default function PaymentMethods({
+  byMethod,
+  completadas,
+  pendientes,
+  ventasCount,
+  titulo = 'Métodos de pago',
+  vacio,
+  etiquetaConteo = 'ventas',
+}) {
   const { t } = useTranslation()
   const maxMethod = byMethod[0]?.[1] ?? 1
   const estados = [
@@ -20,23 +31,24 @@ export default function PaymentMethods({ byMethod, completadas, pendientes, vent
 
   return (
     <div className="bg-[#111114] border border-white/8 rounded-2xl p-5">
-      <h2 className="text-sm font-semibold text-[#e8e8ed] mb-4">Métodos de pago</h2>
+      <h2 className="text-sm font-semibold text-[#e8e8ed] mb-4">{titulo}</h2>
       {byMethod.length === 0 ? (
-        <p className="text-xs text-[#8e8e9a] text-center py-8">{t('common.noData')}</p>
+        <p className="text-xs text-[#8e8e9a] text-center py-8">{vacio ?? t('common.noData')}</p>
       ) : (
         <div className="space-y-3">
           {byMethod.map(([method, count]) => (
             <div key={method}>
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-[#e8e8ed]">{method}</span>
-                <span className="text-[#8e8e9a]">{count} ventas</span>
+                <span className="text-[#8e8e9a]">{count} {etiquetaConteo}</span>
               </div>
               <div className="h-2 bg-white/5 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${(count / maxMethod) * 100}%` }}
                   transition={{ duration: 0.5 }}
-                  className="h-full bg-[#4f7cff] rounded-full"
+                  className="h-full rounded-full"
+                  style={{ backgroundColor: 'var(--hc-link)' }}
                 />
               </div>
             </div>

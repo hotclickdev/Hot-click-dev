@@ -41,6 +41,7 @@ public class PedidoDetailMapper {
                 m.put("total",         p.getTotalPedido());
                 m.put("metodoPago",    p.getMetodoPago());
                 m.put("metodoEnvio",   p.getMetodoEnvio());
+                m.put("origen",        p.getOrigen());
                 m.put("costoEnvio",    p.getCostoEnvio());
                 m.put("nombreCliente", p.getUsuarioFinal() != null ? p.getUsuarioFinal().getNombre() : "—");
                 m.put("clienteCorreo", p.getUsuarioFinal() != null ? p.getUsuarioFinal().getCorreo() : "—");
@@ -68,6 +69,7 @@ public class PedidoDetailMapper {
         m.put("total",         p.getTotalPedido());
         m.put("metodoPago",    p.getMetodoPago());
         m.put("metodoEnvio",   p.getMetodoEnvio());
+        m.put("origen",        p.getOrigen());
         m.put("costoEnvio",    p.getCostoEnvio());
         m.put("numeroGuia",    p.getNumeroGuia());
         m.put("notas",         p.getNotas());

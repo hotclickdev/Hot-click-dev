@@ -43,6 +43,7 @@ export default function VisibilidadCard({ visible, onChange }) {
         style={{ backgroundColor: visible ? '#22c55e' : '#6366f1' }}
         role="switch"
         aria-checked={visible}
+        aria-label="Visibilidad pública"
       >
         {loading
           ? <span className="absolute inset-0 flex items-center justify-center">

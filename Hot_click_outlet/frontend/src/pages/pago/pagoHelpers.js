@@ -1,10 +1,10 @@
 export const BENEFITS = [
-  { icon: '🛡', text: 'Tu compra está protegida con garantía de 40 días' },
-  { icon: '📦', text: 'Tu pedido será preparado con cuidado' },
-  { icon: '🚀', text: 'Envíos rápidos a todo Costa Rica' },
-  { icon: '💬', text: 'Soporte por WhatsApp disponible 24/7' },
-  { icon: '🔒', text: 'Pago 100% seguro y encriptado' },
-  { icon: '⭐', text: 'Miles de clientes satisfechos en Costa Rica' },
+  { icono: 'garantia', text: 'Tu compra está protegida con garantía de 40 días' },
+  { icono: 'paquete', text: 'Tu pedido será preparado con cuidado' },
+  { icono: 'envio', text: 'Envíos rápidos a todo Costa Rica' },
+  { icono: 'whatsapp', text: 'Soporte por WhatsApp disponible 24/7' },
+  { icono: 'pago', text: 'Pago 100% seguro y encriptado' },
+  { icono: 'clientes', text: 'Miles de clientes satisfechos en Costa Rica' },
 ]
 
 /** @param {string | null} redirectStatus */

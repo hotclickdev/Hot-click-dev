@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { METODOS, formatMontoPos, sugerirMontos, descomponer } from './posHelpers'
 import { MetodoPagoIcon } from './posIcons'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function StepCobro({ total, cartItems, descuento, onBack, onConfirmar, loading }) {
   const [metodo, setMetodo] = useState('EFECTIVO')
@@ -24,7 +25,7 @@ export default function StepCobro({ total, cartItems, descuento, onBack, onConfi
           <button type="button" onClick={onBack}
             className="px-3 py-2 rounded-xl text-sm font-semibold transition-all hover:brightness-125"
             style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.08)' }}>
-            ← Volver al pedido
+            <TextoFlecha dir="atras">Volver al pedido</TextoFlecha>
           </button>
         </div>
 
@@ -185,7 +186,7 @@ function bordeInputCobro(puedeConfirmar, recibidoNum, faltante) {
 }
 
 function etiquetaConfirmarCobro(loading, metodo) {
-  if (loading) return '⏳ Procesando…'
-  if (metodo === 'SINPE' || metodo === 'TARJETA') return '📲 Generar QR de pago'
-  return '✓  Confirmar cobro'
+  if (loading) return 'Procesando…'
+  if (metodo === 'SINPE' || metodo === 'TARJETA') return 'Generar QR de pago'
+  return 'Confirmar cobro'
 }

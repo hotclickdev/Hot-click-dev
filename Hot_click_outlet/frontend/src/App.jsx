@@ -7,16 +7,17 @@ import { PageLoader } from '@/components/ui/Spinner'
 import PageProgressBar from '@/components/ui/PageProgressBar'
 import AccessibilityPanel from '@/components/ui/AccessibilityPanel'
 import AuthPromptModal from '@/components/ui/AuthPromptModal'
-import ChatModal from '@/components/ai/ChatModal'
 import CookieBanner from '@/components/ui/CookieBanner'
 import { setAnalyticsConsent } from '@/utils/analytics'
 import { initGA4 } from '@/utils/ga4'
 import HtmlClassManager from '@/app/HtmlClassManager'
 import AppRoutes from '@/app/AppRoutes'
+import AdminErrorBoundary from '@/app/AdminErrorBoundary'
 import {
   ScrollToTop,
   PageFade,
   ConditionalWhatsAppFab,
+  ConditionalChatModal,
   AbandonedCartWatcher,
   WishlistAlertWatcher,
   SocialProofController,
@@ -42,13 +43,19 @@ export default function App() {
           <ScrollToTop />
           <Suspense fallback={<PageLoader />}>
             <PageFade>
-            <AppRoutes />
+            <AdminErrorBoundary
+              titulo="Error inesperado"
+              detalle="Algo salió mal. Recargá la página. Si el problema sigue, contactá soporte."
+              accion="Recargar"
+            >
+              <AppRoutes />
+            </AdminErrorBoundary>
           </PageFade>
           </Suspense>
           <ConditionalWhatsAppFab />
           <AccessibilityPanel />
           <AuthPromptModal />
-          <ChatModal />
+          <ConditionalChatModal />
           <SocialProofController />
           <AbandonedCartWatcher />
           <WishlistAlertWatcher />

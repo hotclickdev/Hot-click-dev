@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { TypingDots, preguntasRapidasDe } from './productDetailAssistant/productDetailAssistantHelpers'
 import { useProductDetailAssistant } from './productDetailAssistant/useProductDetailAssistant'
+import IconoAsistente from './IconoAsistente'
 
 export default function ProductDetailAssistant({ product }) {
   const {
@@ -29,7 +30,7 @@ export default function ProductDetailAssistant({ product }) {
       >
         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-sm font-bold"
           style={{ background: 'color-mix(in srgb, var(--hc-accent) 15%, transparent)', color: 'var(--hc-accent)' }}>
-          ✦
+          <IconoAsistente className="w-4 h-4" />
         </div>
         <div className="flex-1">
           <p className="text-sm font-bold" style={{ color: 'var(--hc-text)' }}>
@@ -82,7 +83,9 @@ export default function ProductDetailAssistant({ product }) {
                   <div key={i} className={`flex gap-2 ${m.rol === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                     {m.rol === 'assistant' && (
                       <div className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[10px] font-bold mt-0.5"
-                        style={{ background: 'var(--hc-accent)', color: '#fff' }}>✦</div>
+                        style={{ background: 'var(--hc-accent)', color: '#fff' }}>
+                        <IconoAsistente className="w-3 h-3" />
+                      </div>
                     )}
                     <div className="max-w-[85%] space-y-2">
                       {m.typing

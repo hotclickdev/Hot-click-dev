@@ -1,18 +1,17 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { orderService } from '@/services/orderService'
-import usePlan from '@/hooks/usePlan'
 import CrearPedidoModal from './ordenes/CrearPedidoModal'
 import VentasTab from './sistema-ventas/VentasTab'
 import PedidosTab from './sistema-ventas/PedidosTab'
 import { estiloBadgePendientes, estiloTab, textoConteoPedidos } from './sistema-ventas/ventasPedidosHelpers'
+import TextoFlecha from '@/components/ui/TextoFlecha'
+import TextoMas from '@/components/ui/TextoMas'
 
 const CLASE_CTA = 'inline-flex items-center justify-center px-5 py-3 rounded-xl text-sm font-bold transition-opacity hover:opacity-90'
 const ESTILO_CTA = { backgroundColor: 'var(--hc-primary)', color: '#fff' }
 
 export default function SistemaVentasPedidos() {
-  const { hasFeature } = usePlan()
-  const tienePos = hasFeature('pos')
   const [tab, setTab] = useState('pedidos')
   const [showCreate, setShowCreate] = useState(false)
   const [orders, setOrders] = useState([])
@@ -44,7 +43,9 @@ export default function SistemaVentasPedidos() {
 
   return (
     <div className="space-y-4 max-w-[1060px]">
-      <Link to="/admin" className="inline-flex items-center gap-1 text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>← Inicio</Link>
+      <Link to="/admin" className="inline-flex items-center gap-1 text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
+        <TextoFlecha dir="atras">Inicio</TextoFlecha>
+      </Link>
 
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
@@ -53,12 +54,12 @@ export default function SistemaVentasPedidos() {
             {textoConteoPedidos(orders.length, pendientes)}
           </p>
         </div>
-        <AccionPrincipal tab={tab} tienePos={tienePos} onCrearPedido={() => setShowCreate(true)} />
+        <AccionPrincipal tab={tab} onCrearPedido={() => setShowCreate(true)} />
       </div>
 
-      {tienePos && <TabsVentasPedidos tab={tab} pendientes={pendientes} onTab={setTab} />}
+      <TabsVentasPedidos tab={tab} pendientes={pendientes} onTab={setTab} />
 
-      {tienePos && tab === 'ventas'
+      {tab === 'ventas'
         ? <VentasTab />
         : <PedidosTab orders={orders} loading={loading} loadError={loadError} onRetry={load} onUpdate={handleUpdate} onDelete={handleDelete} />
       }
@@ -70,17 +71,17 @@ export default function SistemaVentasPedidos() {
   )
 }
 
-function AccionPrincipal({ tab, tienePos, onCrearPedido }) {
-  if (tienePos && tab === 'ventas') {
+function AccionPrincipal({ tab, onCrearPedido }) {
+  if (tab === 'ventas') {
     return (
       <Link to="/admin/pos" className={CLASE_CTA} style={ESTILO_CTA}>
-        + Registrá una venta
+        <TextoMas>Registrá una venta</TextoMas>
       </Link>
     )
   }
   return (
     <button type="button" onClick={onCrearPedido} className={CLASE_CTA} style={ESTILO_CTA}>
-      + Creá un pedido
+      <TextoMas>Creá un pedido</TextoMas>
     </button>
   )
 }

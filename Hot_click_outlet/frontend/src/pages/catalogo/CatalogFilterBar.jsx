@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { buildCategoryTree } from './catalogoHelpers'
 import CatIcon from './CatIcon'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 // ── Barra de filtros completa ─────────────────────────────────────────────────
 export default function CatalogFilterBar({
@@ -76,9 +77,7 @@ export default function CatalogFilterBar({
                 className="flex items-center gap-1 h-9 px-3 rounded-xl text-xs font-semibold border transition-all shrink-0 hover:opacity-70"
                 style={{ color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }}
               >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
+                <CloseIcon className="w-3 h-3" />
                 Limpiar
               </button>
             )}

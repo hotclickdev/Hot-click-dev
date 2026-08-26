@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import Button from '@/components/ui/Button'
 import MultiUploadZone from './MultiUploadZone'
 import AnalisisProgress from './AnalisisProgress'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function PasoFotos({
   tieneBorrador, onCargarBorrador, onLimpiarBorrador,
@@ -47,7 +48,7 @@ export default function PasoFotos({
             <button type="button" onClick={onSkip}
               className="w-full py-3 rounded-xl text-sm transition-colors hover:bg-[var(--hc-surface-2)]"
               style={{ border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
-              {imagenesFile.length > 0 ? 'Continuar sin analizar →' : 'Ingresar sin fotos →'}
+              {imagenesFile.length > 0 ? <TextoFlecha>Continuar sin analizar</TextoFlecha> : <TextoFlecha>Ingresar sin fotos</TextoFlecha>}
             </button>
           </div>
           <p className="text-xs text-center" style={{ color: 'var(--hc-muted)', opacity: 0.8 }}>

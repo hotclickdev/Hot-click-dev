@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import useUiStore from '@/store/uiStore'
 import useCartStore from '@/store/cartStore'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 export default function AuthPromptModal() {
   const { t } = useTranslation()
@@ -67,9 +68,7 @@ export default function AuthPromptModal() {
                 style={{ color: 'var(--hc-muted)' }}
                 aria-label={t('authPrompt.close')}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <CloseIcon className="w-4 h-4" />
               </button>
 
               {/* Icon */}
@@ -99,8 +98,7 @@ export default function AuthPromptModal() {
               <div className="flex flex-col gap-3">
                 <button type="button"
                   onClick={() => go('/checkout')}
-                  className="w-full h-12 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2"
-                  style={{ background: 'var(--hc-accent)', color: '#fff' }}
+                  className="hc-btn hc-btn-primary w-full h-12 rounded-2xl text-sm font-bold"
                 >
                   <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -128,18 +126,13 @@ export default function AuthPromptModal() {
                   {t('authPrompt.hasAccount')}
                 </button>
 
-                <div className="flex items-center gap-3 my-1">
-                  <div className="flex-1 h-px" style={{ background: 'var(--hc-border)' }} />
-                  <span className="text-[11px]" style={{ color: 'var(--hc-muted)' }}>o</span>
-                  <div className="flex-1 h-px" style={{ background: 'var(--hc-border)' }} />
-                </div>
-
                 <button type="button"
                   onClick={() => {
                     setAuthPromptOpen(false)
                     globalThis.open(`https://wa.me/50686667888?text=${toWhatsAppMessage()}`, '_blank')
                   }}
-                  className="w-full h-12 rounded-2xl bg-[#25D366] hover:bg-[#1da851] text-white font-bold text-sm transition-all flex items-center justify-center gap-2.5 shadow-[0_0_16px_rgba(37,211,102,0.2)] hover:shadow-[0_0_24px_rgba(37,211,102,0.35)]"
+                  className="w-full min-h-11 inline-flex items-center justify-center gap-2 text-sm font-medium"
+                  style={{ color: 'var(--hc-muted)' }}
                 >
                   <WhatsAppIcon />
                   {t('authPrompt.whatsapp')}

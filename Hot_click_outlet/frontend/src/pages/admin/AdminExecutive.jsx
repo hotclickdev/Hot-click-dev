@@ -6,6 +6,7 @@ import {
   ExecutiveKpis,
   ExecutiveTrends,
 } from './executive/ExecutiveSections'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 export default function AdminExecutive() {
   const [data, setData]         = useState(null)
@@ -58,12 +59,17 @@ export default function AdminExecutive() {
           <button type="button" onClick={generarAiSummary} disabled={aiLoading}
             className="px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 hover:opacity-80"
             style={{ backgroundColor: 'rgba(23,71,168,0.15)', color: 'var(--hc-accent)', border: '1px solid rgba(23,71,168,0.3)' }}>
-            {aiLoading ? '⏳ Generando…' : '🤖 Resumen AI'}
+            {aiLoading ? 'Generando…' : (
+              <span className="inline-flex items-center gap-1.5">
+                <TrustGlyph tipo="sparkle" className="w-4 h-4" />
+                Resumen AI
+              </span>
+            )}
           </button>
           <button type="button" onClick={imprimir}
             className="px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-80"
             style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
-            🖨 Imprimir / PDF
+            Imprimir / PDF
           </button>
         </div>
       </div>
@@ -92,7 +98,11 @@ export default function AdminExecutive() {
               <span key={r.id} className="text-xs px-3 py-1.5 rounded-xl flex items-center gap-1.5"
                 style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)' }}>
                 {r.periodo}
-                {r.tieneAi && <span className="text-[#4f7cff]">🤖</span>}
+                {r.tieneAi && (
+                  <span className="text-[#4f7cff]">
+                    <TrustGlyph tipo="sparkle" className="w-3 h-3" />
+                  </span>
+                )}
               </span>
             ))}
           </div>

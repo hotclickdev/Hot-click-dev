@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { TypingDots } from './productsAssistant/ProductsAssistantTypingDots'
 import { ProductsAssistantBurbuja } from './productsAssistant/ProductsAssistantBurbuja'
 import { useProductsAssistant } from './productsAssistant/useProductsAssistant'
+import IconoAsistente from './IconoAsistente'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 export default function ProductsAssistantPanel({ isOpen, onClose, initialQuery = '', onCategoryFilter }) {
   const {
@@ -54,7 +56,7 @@ export default function ProductsAssistantPanel({ isOpen, onClose, initialQuery =
                 className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
                 style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: '#fff' }}
               >
-                ✦
+                <IconoAsistente className="w-4 h-4" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-white leading-none">Asistente HotClick</p>
@@ -67,9 +69,7 @@ export default function ProductsAssistantPanel({ isOpen, onClose, initialQuery =
                 className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors shrink-0"
                 aria-label="Cerrar asistente"
               >
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <CloseIcon className="w-4 h-4 text-white" />
               </button>
             </div>
 

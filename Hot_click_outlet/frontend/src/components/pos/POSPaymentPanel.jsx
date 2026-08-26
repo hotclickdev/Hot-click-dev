@@ -4,6 +4,7 @@ import { fmt } from './posCobro/posCobroHelpers'
 import PosMetodosPago from './posCobro/PosMetodosPago'
 import PosCamposMetodo from './posCobro/PosCamposMetodo'
 import PosClienteBusqueda from './posCobro/PosClienteBusqueda'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 export default function POSPaymentPanel({ total, onConfirm, onClose, loading }) {
   const [metodoPago, setMetodoPago]       = useState('EFECTIVO')
@@ -71,8 +72,10 @@ export default function POSPaymentPanel({ total, onConfirm, onClose, loading }) 
 
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold" style={{ color: 'var(--hc-text)' }}>Cobrar venta</h2>
-          <button type="button" onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
-            style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>✕</button>
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
+            style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>
+            <CloseIcon />
+          </button>
         </div>
 
         <div className="rounded-xl p-4 text-center"

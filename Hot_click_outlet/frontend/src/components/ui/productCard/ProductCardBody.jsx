@@ -51,37 +51,38 @@ export default function ProductCardBody({ product, stockColor, stockText, added,
       </p>
 
       <motion.button
+        type="button"
         whileTap={{ scale: 0.94 }}
         onClick={onAddToCart}
         disabled={product.stock === 0}
-        className="w-full flex items-center justify-center gap-2 h-9 rounded-xl text-sm font-semibold transition-all duration-200 mt-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
-        style={{
-          background: added
-            ? 'color-mix(in srgb, #10b981 15%, transparent)'
-            : 'color-mix(in srgb, var(--hc-accent) 10%, transparent)',
-          color: added ? '#10b981' : 'var(--hc-accent)',
-          border: `1.5px solid ${added
-            ? 'color-mix(in srgb, #10b981 30%, transparent)'
-            : 'color-mix(in srgb, var(--hc-accent) 25%, transparent)'}`,
-        }}
+        className={claseAgregarCatalogo(product.stock === 0, added)}
       >
         {added ? (
           <>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
-            Agregado
+            {t('product.addedBtn', 'Agregado')}
           </>
         ) : (
           <>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
-            Agregar al carrito
+            {t('product.addToCart')}
           </>
         )}
       </motion.button>
 
     </div>
   )
+}
+
+/** En el catálogo el único CTA de compra es este: rojo Hot, no azul de acento. */
+function claseAgregarCatalogo(sinStock, added) {
+  if (sinStock) return 'hc-btn w-full min-h-11 rounded-xl text-sm mt-0.5'
+  if (added) {
+    return 'hc-btn w-full min-h-11 rounded-xl text-sm mt-0.5 bg-emerald-500 text-white border-emerald-500 flex items-center justify-center gap-2'
+  }
+  return 'hc-btn hc-btn-primary w-full min-h-11 rounded-xl text-sm mt-0.5 flex items-center justify-center gap-2'
 }

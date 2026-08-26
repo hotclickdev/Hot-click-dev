@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import CategoriaGlyph from '@/pages/catalogo/CategoriaGlyph'
 
 /** Productos + submenú de categorías padre del menú móvil. */
 export default function NavbarMobileCategorias({
@@ -62,8 +63,12 @@ export default function NavbarMobileCategorias({
                   onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--hc-surface-2)'; e.currentTarget.style.color = 'var(--hc-text)' }}
                   onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--hc-muted)' }}
                 >
-                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: 'var(--hc-border)' }} />
-                  {cat.icono ? `${cat.icono} ` : ''}{cat.nombreCategoria}
+                  <CategoriaGlyph
+                    icono={cat.icono}
+                    nombre={cat.nombreCategoria}
+                    className="w-3.5 h-3.5 shrink-0"
+                  />
+                  {cat.nombreCategoria}
                 </Link>
               ))}
               {categoriasPadre.length === 0 && (

@@ -668,6 +668,14 @@ html.dark .hc-input:focus {
   background-color: rgba(255, 255, 255, 0.96) !important;
   border-top-color: var(--hc-border) !important;
 }
+.hc-bottom-nav a:focus-visible {
+  outline: 2px solid var(--hc-focus-ring);
+  outline-offset: -4px;
+}
+.hc-tienda-bottom-nav a:focus-visible {
+  outline: 2px solid var(--t-accent);
+  outline-offset: -4px;
+}
 
 /* — Admin sidebar: nav oscura n-900 en ambos modos (Brand Book cap. 6) — */
 :root .hc-admin-sidebar {

@@ -8,6 +8,8 @@ import { useStickyState } from '@/hooks/useStickyState'
 import CrearPedidoModal from './ordenes/CrearPedidoModal'
 import OrderCard from './ordenes/AdminOrderCard'
 import OrdersEmptyState from './ordenes/OrdersEmptyState'
+import TextoFlecha from '@/components/ui/TextoFlecha'
+import TextoMas from '@/components/ui/TextoMas'
 import {
   COLUMNAS_EXPORT_PEDIDOS,
   FILTERS,
@@ -94,7 +96,7 @@ export default function AdminOrders() {
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0"
               style={{ backgroundColor: 'var(--hc-accent)', color: 'white' }}
             >
-              {t('adminOrders.newOrderBtn')}
+              <TextoMas>{t('adminOrders.newOrderBtn')}</TextoMas>
             </button>
           </div>
         </div>
@@ -141,7 +143,7 @@ export default function AdminOrders() {
                     className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity disabled:opacity-40"
                     style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
                   >
-                    ← Anterior
+                    <TextoFlecha dir="atras">Anterior</TextoFlecha>
                   </button>
                   <button type="button"
                     onClick={() => setOrdPage((p) => Math.min(totalOrdPages - 1, p + 1))}
@@ -149,7 +151,7 @@ export default function AdminOrders() {
                     className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity disabled:opacity-40"
                     style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
                   >
-                    Siguiente →
+                    <TextoFlecha>Siguiente</TextoFlecha>
                   </button>
                 </div>
               </div>

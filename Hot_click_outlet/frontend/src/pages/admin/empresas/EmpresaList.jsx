@@ -13,6 +13,7 @@ import {
   kpisEmpresas,
   nombreVisibleEmpresa,
 } from './empresasHelpers'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 function Kpis({ empresas }) {
   const kpis = kpisEmpresas(empresas)
@@ -140,7 +141,7 @@ function Paginacion({ page, totalPages, filteredCount, onPage }) {
           className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity disabled:opacity-40 hover:opacity-80"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
         >
-          ← Anterior
+          <TextoFlecha dir="atras">Anterior</TextoFlecha>
         </button>
         {indicesPagina(page, totalPages).map((idx) => (
           <button type="button"
@@ -162,7 +163,7 @@ function Paginacion({ page, totalPages, filteredCount, onPage }) {
           className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity disabled:opacity-40 hover:opacity-80"
           style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
         >
-          Siguiente →
+          <TextoFlecha>Siguiente</TextoFlecha>
         </button>
       </div>
     </div>

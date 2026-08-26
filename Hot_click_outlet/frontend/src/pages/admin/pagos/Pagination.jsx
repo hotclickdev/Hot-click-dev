@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function Pagination({ page, totalPages, onPage }) {
   const { t } = useTranslation()
@@ -10,7 +11,7 @@ export default function Pagination({ page, totalPages, onPage }) {
         disabled={page === 0}
         className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/8 text-[#8e8e9a] text-sm disabled:opacity-30 transition-colors"
       >
-        ← {t('common.previous')}
+        <TextoFlecha dir="atras">{t('common.previous')}</TextoFlecha>
       </button>
       <span className="text-[#8e8e9a] text-xs">{page + 1} / {totalPages}</span>
       <button type="button"
@@ -18,7 +19,7 @@ export default function Pagination({ page, totalPages, onPage }) {
         disabled={page >= totalPages - 1}
         className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/8 text-[#8e8e9a] text-sm disabled:opacity-30 transition-colors"
       >
-        {t('common.next')} →
+        <TextoFlecha>{t('common.next')}</TextoFlecha>
       </button>
     </div>
   )

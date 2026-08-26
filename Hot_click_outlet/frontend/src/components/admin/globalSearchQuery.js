@@ -5,7 +5,7 @@ export function mapearProductosBusqueda(prodList) {
     label: p.nombreProducto ?? p.nombre,
     sub: `SKU: ${p.sku ?? '—'} · Stock: ${p.stockActual ?? p.stock ?? 0}`,
     meta: `₡${fmt(p.precioEfectivo ?? p.precioVenta ?? p.precio)}`,
-    icon: '📦', iconColor: 'rgba(23,71,168,',
+    icono: 'paquete', iconColor: 'rgba(23,71,168,',
     path: `/admin/productos`,
   }))
 }
@@ -14,7 +14,7 @@ export function mapearPedidosBusqueda(pedidoList) {
   return pedidoList.slice(0, 3).map(p => ({
     label: `Pedido #${p.id} — ${p.numeroPedido ?? ''}`,
     sub: `${p.estadoPedido ?? ''} · ₡${fmt(p.totalPedido)}`,
-    icon: '🧾', iconColor: 'rgba(52,211,153,',
+    icono: 'lista', iconColor: 'rgba(52,211,153,',
     path: `/admin/pedidos`,
   }))
 }
@@ -24,7 +24,7 @@ export function mapearClientesBusqueda(clienList) {
     label: `${c.nombre ?? ''} ${c.apellidoPaterno ?? ''}`.trim(),
     sub: c.correo,
     meta: `${c.puntosFidelidad ?? 0} pts`,
-    icon: '👤', iconColor: 'rgba(151,183,243,',
+    icono: 'clientes', iconColor: 'rgba(151,183,243,',
     path: `/admin/usuarios`,
   }))
 }

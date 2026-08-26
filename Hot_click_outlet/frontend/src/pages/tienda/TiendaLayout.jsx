@@ -1,82 +1,67 @@
-import { useEffect } from 'react'
-import { Outlet, useParams, Link, useNavigate } from 'react-router-dom'
-import { ShoppingCartIcon } from '@heroicons/react/24/outline'
+import { useEffect, useState, useCallback } from 'react'
+import { Outlet, useParams } from 'react-router-dom'
 import tiendaService from '@/services/tiendaService'
 import useTiendaStore from '@/store/tiendaStore'
+import { estiloMarcaTienda } from './tiendaTheme'
+import TiendaHeader from './TiendaHeader'
+import TiendaFooter from './TiendaFooter'
+import TiendaBottomNav from './TiendaBottomNav'
+import TiendaWhatsAppFab from './TiendaWhatsAppFab'
+import TiendaNoDisponible from './TiendaNoDisponible'
+import TiendaInfoError from './TiendaInfoError'
+import EsqueletoTiendaLayout from './EsqueletoTiendaLayout'
 
 /**
- * Layout independiente para la tienda pública de un emprendedor.
- * Aplica los colores de branding del negocio como CSS custom properties.
- * No comparte navbar ni footer con HOTCLICK.
+ * Layout de /tienda/:slug. Theme del vendedor, carrito aislado,
+ * chrome que nombra HotClick.
  */
 export default function TiendaLayout() {
   const { slug } = useParams()
-  const navigate  = useNavigate()
   const { empresa, setEmpresa, totalItems } = useTiendaStore()
+  const [infoEstado, setInfoEstado] = useState('cargando')
   const cantidadCarrito = totalItems()
 
-  useEffect(() => {
+  const cargarInfo = useCallback(() => {
+    setInfoEstado('cargando')
     tiendaService.getInfo(slug)
-      .then(data => setEmpresa(slug, data))
-      .catch(() => navigate('/404', { replace: true }))
-  }, [slug])    // eslint-disable-line react-hooks/exhaustive-deps
+      .then((data) => {
+        setEmpresa(slug, data)
+        setInfoEstado('lista')
+      })
+      .catch((err) => {
+        console.error('[TiendaLayout] getInfo', err)
+        setInfoEstado(estadoTrasFalloInfo(err))
+      })
+  }, [slug, setEmpresa])
 
-  // Aplica branding del emprendedor como CSS vars en el root del layout
-  const brandStyle = empresa ? {
-    '--t-primary':   empresa.colorPrimario   ?? '#E73B33',
-    '--t-secondary': empresa.colorSecundario ?? '#152B5E',
-    '--t-accent':    empresa.colorAcento     ?? '#1747A8',
-  } : {}
+  useEffect(() => {
+    cargarInfo()
+  }, [cargarInfo])
+
+  if (infoEstado === 'cargando') return <EsqueletoTiendaLayout />
+  if (infoEstado === 'noDisponible') return <TiendaNoDisponible />
+  if (infoEstado === 'error') return <TiendaInfoError onRetry={cargarInfo} />
 
   const nombre = empresa?.nombreComercial ?? slug
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50" style={brandStyle}>
-      {/* ── Navbar de la tienda ──────────────────────────────────────────── */}
-      <header
-        className="sticky top-0 z-40 shadow-sm"
-        style={{ backgroundColor: 'var(--t-secondary)' }}
-      >
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-          {/* Logo / nombre */}
-          <Link to={`/tienda/${slug}`} className="flex items-center gap-2 shrink-0">
-            {empresa?.logoUrl
-              ? <img src={empresa.logoUrl} alt={nombre} className="h-8 w-auto object-contain" />
-              : <span className="text-white font-bold text-lg truncate max-w-[180px]">{nombre}</span>
-            }
-          </Link>
-
-          {/* Carrito */}
-          <Link
-            to={`/tienda/${slug}/carrito`}
-            className="relative text-white hover:text-gray-200 transition-colors"
-            aria-label="Ver carrito"
-          >
-            <ShoppingCartIcon className="h-6 w-6" />
-            {cantidadCarrito > 0 && (
-              <span
-                className="absolute -top-1.5 -right-1.5 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center"
-                style={{ backgroundColor: 'var(--t-primary)' }}
-              >
-                {cantidadCarrito > 9 ? '9+' : cantidadCarrito}
-              </span>
-            )}
-          </Link>
-        </div>
-      </header>
-
-      {/* ── Contenido de la ruta ─────────────────────────────────────────── */}
-      <main className="flex-1">
+    <div className="hc-tenant-theme flex flex-col min-h-screen" style={estiloMarcaTienda(empresa)}>
+      <TiendaHeader
+        slug={slug}
+        nombre={nombre}
+        logoUrl={empresa?.logoUrl}
+        cantidadCarrito={cantidadCarrito}
+      />
+      <main className="flex-1 pb-20 md:pb-0">
         <Outlet />
       </main>
-
-      {/* ── Footer mínimo ────────────────────────────────────────────────── */}
-      <footer className="py-6 text-center text-xs text-gray-400 border-t bg-white">
-        {empresa?.footerTexto
-          ? <p>{empresa.footerTexto}</p>
-          : <p>{nombre} &mdash; Tienda en línea powered by <span className="font-semibold text-gray-500">HOTCLICK</span></p>
-        }
-      </footer>
+      <TiendaFooter nombre={nombre} footerTexto={empresa?.footerTexto} />
+      <TiendaBottomNav slug={slug} cantidadCarrito={cantidadCarrito} />
+      <TiendaWhatsAppFab nombre={nombre} whatsapp={empresa?.whatsapp} />
     </div>
   )
+}
+
+function estadoTrasFalloInfo(err) {
+  return err.response?.status === 404 ? 'noDisponible' : 'error'
 }

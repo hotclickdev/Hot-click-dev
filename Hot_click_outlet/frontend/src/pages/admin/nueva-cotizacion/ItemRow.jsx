@@ -1,5 +1,6 @@
 import { formatMonto } from '@/services/cotizacionService'
 import { inputCls, inputStyle } from './nuevaCotizacionUi'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 export default function ItemRow({ item, index, productos, onChange, onRemove }) {
   const subtotal = Math.round(
@@ -104,10 +105,8 @@ export default function ItemRow({ item, index, productos, onChange, onRemove }) 
       </td>
       {/* Borrar */}
       <td className="px-2 py-2 w-8">
-        <button type="button" onClick={() => onRemove(index)} className="p-1 rounded-lg transition-colors hover:bg-red-500/10" style={{ color: '#ef4444' }}>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
+        <button type="button" onClick={() => onRemove(index)} aria-label="Quitar" className="p-1 rounded-lg transition-colors hover:bg-red-500/10" style={{ color: '#ef4444' }}>
+          <CloseIcon className="w-4 h-4" />
         </button>
       </td>
     </tr>

@@ -1,4 +1,5 @@
 import ProductCard from '@/components/ui/ProductCard'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 // ── Fila de una categoría (3 productos + Ver más) ─────────────────────────────
 export default function CategoryRow({ catName, catId, products, onVerMas, onQuickView }) {
@@ -22,10 +23,7 @@ export default function CategoryRow({ catName, catId, products, onVerMas, onQuic
           className="flex items-center gap-1 text-xs font-semibold transition-opacity hover:opacity-70"
           style={{ color: 'var(--hc-accent)' }}
         >
-          Ver más
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
-          </svg>
+          <TextoFlecha iconClassName="w-3.5 h-3.5">Ver más</TextoFlecha>
         </button>
       </div>
 
@@ -73,11 +71,8 @@ export default function CategoryRow({ catName, catId, products, onVerMas, onQuic
                   Ver todos los productos
                 </p>
               </div>
-              <div className="mt-2 flex items-center gap-1 text-xs font-semibold" style={{ color: 'var(--hc-accent)' }}>
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
-                </svg>
-                Ver categoría completa
+              <div className="mt-2 text-xs font-semibold" style={{ color: 'var(--hc-accent)' }}>
+                <TextoFlecha iconClassName="w-3.5 h-3.5">Ver categoría completa</TextoFlecha>
               </div>
             </div>
           </button>

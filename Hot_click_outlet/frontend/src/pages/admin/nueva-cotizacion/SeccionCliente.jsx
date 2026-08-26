@@ -1,6 +1,7 @@
 import Field from './Field'
 import SectionCard from './SectionCard'
 import { inputCls, inputStyle } from './nuevaCotizacionUi'
+import TextoMas from '@/components/ui/TextoMas'
 
 /**
  * Selector y ficha del cliente de la cotización.
@@ -24,9 +25,9 @@ export default function SeccionCliente({ form, setF, clientes, onNuevoCliente })
           </Field>
         </div>
         <button type="button" onClick={onNuevoCliente}
-          className="px-3 py-2 rounded-xl text-xs font-semibold border transition-colors hover:bg-black/5 dark:hover:bg-white/5 whitespace-nowrap"
+          className="px-3 py-2 rounded-xl text-xs font-semibold border transition-colors hover:bg-black/5 dark:hover:bg-white/5 whitespace-nowrap inline-flex items-center"
           style={{ color: 'var(--hc-accent)', borderColor: 'var(--hc-accent)' }}>
-          + Nuevo cliente
+          <TextoMas>Nuevo cliente</TextoMas>
         </button>
       </div>
 

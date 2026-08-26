@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import PhoneField from '@/components/ui/PhoneField'
 import SmartField from './SmartField'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 import { validateGuestEmail } from './checkoutHelpers'
 
 export default function GuestContactSection({
@@ -30,9 +31,10 @@ export default function GuestContactSection({
         </div>
         <Link
           to="/login"
-          className="text-xs font-medium text-[#4f7cff] hover:underline shrink-0 ml-4"
+          className="text-xs font-medium hover:underline shrink-0 ml-4"
+          style={{ color: 'var(--hc-link)' }}
         >
-          {t('checkout.guestLoginLink')}
+          <TextoFlecha>{t('checkout.guestLoginLink')}</TextoFlecha>
         </Link>
       </div>
 

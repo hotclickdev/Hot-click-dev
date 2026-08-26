@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useToast } from '@/components/ui/Toast'
 import { categoriaService } from '@/services/orderService'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import TextoCamino from '@/components/ui/TextoCamino'
 
 const STORAGE_KEY = 'hc-homepage-config'
 
@@ -23,9 +25,9 @@ function saveConfig(cfg) {
 }
 
 const HERO_OPTIONS = [
-  { id: 'chat',       label: 'Asistente IA',          desc: 'Chat inteligente que ayuda al cliente a encontrar productos',   icon: '🤖' },
-  { id: 'products',   label: 'Productos destacados',   desc: 'Muestra los últimos productos marcados como destacados',        icon: '⭐' },
-  { id: 'businesses', label: 'Emprendimientos',        desc: 'Muestra los emprendimientos con convenio activo',               icon: '🤝' },
+  { id: 'chat',       label: 'Asistente IA',          desc: 'Chat inteligente que ayuda al cliente a encontrar productos',   icono: 'sparkle' },
+  { id: 'products',   label: 'Productos destacados',   desc: 'Muestra los últimos productos marcados como destacados',        icono: 'estrella' },
+  { id: 'businesses', label: 'Emprendimientos',        desc: 'Muestra los emprendimientos con convenio activo',               icono: 'clientes' },
 ]
 
 export default function AdminHomepage() {
@@ -109,7 +111,8 @@ export default function AdminHomepage() {
         <div>
           <h2 className="text-base font-bold" style={{ color: 'var(--hc-text)' }}>Carousel / Hero</h2>
           <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-            Seleccioná qué secciones aparecen en el hero rotador. El orden es: IA → Productos → Emprendimientos.
+            Seleccioná qué secciones aparecen en el hero rotador. El orden es:{' '}
+            <TextoCamino partes={['IA', 'Productos', 'Emprendimientos']} />.
           </p>
         </div>
 
@@ -131,7 +134,9 @@ export default function AdminHomepage() {
                 }}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-2xl">{opt.icon}</span>
+                  <span style={{ color: 'var(--hc-accent)' }}>
+                    <TrustGlyph tipo={opt.icono} className="w-6 h-6" />
+                  </span>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${active ? 'border-[var(--hc-accent)]' : 'border-[var(--hc-border)]'}`}
                     style={{ background: active ? 'var(--hc-accent)' : 'transparent' }}>
                     {active && (
@@ -149,7 +154,7 @@ export default function AdminHomepage() {
         </div>
 
         <p className="text-xs px-1" style={{ color: 'var(--hc-muted)' }}>
-          Activo: {config.heroSections.map(id => HERO_OPTIONS.find(o => o.id === id)?.label).filter(Boolean).join(' → ')}
+          Activo: <TextoCamino partes={config.heroSections.map(id => HERO_OPTIONS.find(o => o.id === id)?.label).filter(Boolean)} />
         </p>
       </section>
 

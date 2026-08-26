@@ -1,4 +1,5 @@
 import CatalogBrandLogo from './CatalogBrandLogo'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 // ── Showcase de marcas en grande (reemplaza las pills pequeñas) ───────────────
 export default function BrandShowcase({ marcas, visibleMarcaIds, marcasCountInScope = {}, marcasFilter, toggleMarca, clearMarcas, title = 'Compra por Marca' }) {
@@ -26,9 +27,7 @@ export default function BrandShowcase({ marcas, visibleMarcaIds, marcasCountInSc
             className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-all hover:opacity-80"
             style={{ color: 'var(--hc-accent)', background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)' }}
           >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
+            <CloseIcon className="w-3 h-3" />
             Ver todas
           </button>
         )}

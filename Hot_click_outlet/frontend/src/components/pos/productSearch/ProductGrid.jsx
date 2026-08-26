@@ -1,4 +1,5 @@
 import { fmt } from './posProductSearchHelpers'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 export function ProductGrid({ items, onAdd }) {
   if (!items.length) {
@@ -36,8 +37,8 @@ export function ProductGrid({ items, onAdd }) {
                 <img src={p.imagenPrincipalUrl} alt={p.nombreProducto}
                   className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-3xl opacity-30">
-                  📦
+                <div className="w-full h-full flex items-center justify-center">
+                  <TrustGlyph tipo="paquete" className="w-10 h-10 opacity-30" />
                 </div>
               )}
             </div>

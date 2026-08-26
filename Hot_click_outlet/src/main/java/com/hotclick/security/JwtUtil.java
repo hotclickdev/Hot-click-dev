@@ -153,8 +153,14 @@ public class JwtUtil {
 
     public Long extractUserId(String token) {
         Object raw = extractAllClaims(token).get("userId");
+        if (raw == null) return null;
         if (raw instanceof Long l)    return l;
         if (raw instanceof Integer i) return i.longValue();
         return Long.parseLong(raw.toString());
+    }
+
+    public String extractRol(String token) {
+        Object raw = extractAllClaims(token).get("rol");
+        return raw != null ? raw.toString() : null;
     }
 }

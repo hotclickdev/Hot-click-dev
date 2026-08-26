@@ -92,7 +92,8 @@ public class ProductoFeedController {
         // Páginas principales
         sitemapUrl(xml, appUrl + "/",              "1.0", "daily",   hoy);
         sitemapUrl(xml, appUrl + "/productos",     "0.9", "daily",   hoy);
-        sitemapUrl(xml, appUrl + "/emprendimientos", "0.7", "weekly", hoy);
+        sitemapUrl(xml, appUrl + "/emprende", "0.8", "weekly", hoy);
+        sitemapUrl(xml, appUrl + "/emprendimientos", "0.6", "weekly", hoy);
         sitemapUrl(xml, appUrl + "/nosotros",      "0.5", "monthly", hoy);
         sitemapUrl(xml, appUrl + "/contacto",      "0.5", "monthly", hoy);
         sitemapUrl(xml, appUrl + "/servicios",     "0.5", "monthly", hoy);

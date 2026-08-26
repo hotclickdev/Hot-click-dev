@@ -167,6 +167,10 @@ public class StorefrontGuestOrderService {
         return bodegas.isEmpty() ? null : bodegas.get(0);
     }
 
+    private static String digitosTelefono(String telefono) {
+        return telefono == null ? "" : telefono.replaceAll("[^0-9]", "");
+    }
+
     private Usuario crearInvitado(String correo, String telefono) {
         Usuario usuario = new Usuario();
         String uid = UUID.randomUUID().toString().replace("-", "");
@@ -174,8 +178,7 @@ public class StorefrontGuestOrderService {
         usuario.setNombre("Invitado");
         usuario.setApellidoPaterno("Guest");
         usuario.setCorreo(correo);
-        usuario.setTelefono(telefono != null && !telefono.isBlank()
-            ? telefono.replaceAll("[^0-9]", "") : "00000000");
+        usuario.setTelefono(digitosTelefono(telefono));
         usuario.setContrasenaHash(passwordEncoder.encode(UUID.randomUUID().toString()));
         usuario.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
         usuario.setEstado(Constants.ESTADO_ACTIVO);

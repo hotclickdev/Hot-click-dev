@@ -1,4 +1,5 @@
 import { fmt } from './selfCheckoutFormat'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 /**
  * Formulario de confirmación del pedido. El envío vive en el padre (pago congelado).
@@ -11,7 +12,7 @@ export default function SelfCheckoutFormulario({
     <div className="flex-1 p-4 space-y-4">
       <button type="button" onClick={onVolver}
         className="flex items-center gap-2 text-sm text-gray-400">
-        ← Volver al menú
+        <TextoFlecha dir="atras">Volver al menú</TextoFlecha>
       </button>
       <h2 className="text-lg font-bold text-white">Tu pedido</h2>
 

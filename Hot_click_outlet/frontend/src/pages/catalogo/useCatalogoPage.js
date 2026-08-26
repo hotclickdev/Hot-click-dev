@@ -19,8 +19,9 @@ export function useCatalogoPage() {
   const aiQuery = searchParams.get('q') || ''
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- abrir panel IA desde ?ai=1
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- abrir panel IA / tab desde query
     if (searchParams.get('ai') === '1') setAiPanelOpen(true)
+    if (searchParams.get('vista') === 'emprendimientos') setViewMode('emprendimientos')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

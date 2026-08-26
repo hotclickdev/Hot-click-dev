@@ -4,6 +4,7 @@ import { useToast } from '@/components/ui/Toast'
 import { testimonioService } from '@/services/testimonioService'
 import ImagenPicker from './ImagenPicker'
 import useImageUpload from './useImageUpload'
+import EnvioOpinionOk from './EnvioOpinionOk'
 
 export default function TestimonioForm() {
   const toast = useToast()
@@ -31,14 +32,12 @@ export default function TestimonioForm() {
   }
 
   if (done) return (
-    <div className="px-5 py-8 text-center space-y-2">
-      <p className="text-3xl">🎉</p>
-      <p className="text-sm font-semibold" style={{ color: '#059669' }}>¡Testimonio enviado!</p>
-      <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Aparecerá en la web una vez que lo aprobemos.</p>
-      <button type="button" className="text-xs mt-2 underline" style={{ color: 'var(--hc-muted)' }} onClick={reset}>
-        Dejar otro testimonio
-      </button>
-    </div>
+    <EnvioOpinionOk
+      titulo="¡Testimonio enviado!"
+      detalle="Aparecerá en la web una vez que lo aprobemos."
+      onOtro={reset}
+      otroLabel="Dejar otro testimonio"
+    />
   )
 
   return (

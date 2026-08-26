@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import Section from '@/components/ui/Section'
-import { SearchStepIcon, CartStepIcon, WhatsStepIcon, TruckStepIcon } from './homeIcons'
+import { SearchStepIcon, CartStepIcon, PayStepIcon, TruckStepIcon } from './homeIcons'
 
 /**
  * @param {{
@@ -42,7 +42,7 @@ export default function HowItWorks() {
   const steps = [
     { step: '01', icon: <SearchStepIcon />, title: t('home.step1Title'), desc: t('home.step1Desc'), accent: 'var(--hc-link)' },
     { step: '02', icon: <CartStepIcon />, title: t('home.step2Title'), desc: t('home.step2Desc'), accent: 'var(--hc-link)' },
-    { step: '03', icon: <WhatsStepIcon />, title: t('home.step3Title'), desc: t('home.step3Desc'), accent: '#25D366' },
+    { step: '03', icon: <PayStepIcon />, title: t('home.step3Title'), desc: t('home.step3Desc'), accent: 'var(--hc-primary)' },
     { step: '04', icon: <TruckStepIcon />, title: t('home.step4Title'), desc: t('home.step4Desc'), accent: 'var(--hc-success)' },
   ]
   return (

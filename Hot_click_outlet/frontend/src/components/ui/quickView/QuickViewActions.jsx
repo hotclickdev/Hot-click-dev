@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import Button from '@/components/ui/Button'
 
 export default function QuickViewActions({
   product,
@@ -11,8 +12,8 @@ export default function QuickViewActions({
   liked,
   toggle,
   handleAdd,
+  handleComprarAhora,
   justAdded,
-  addBtnCls,
   onClose,
 }) {
   const { t } = useTranslation()
@@ -56,13 +57,23 @@ export default function QuickViewActions({
         </div>
       )}
 
-      <div className="flex gap-2 mt-auto pt-1">
-        <motion.button
-          onClick={handleAdd}
+      <div className="flex flex-col gap-2 mt-auto pt-1">
+        <Button
+          variant="primary"
+          className="w-full h-11 rounded-xl text-sm font-semibold"
           disabled={!inStock}
-          whileTap={inStock && !justAdded ? { scale: 0.97 } : {}}
-          className={`flex-1 h-11 rounded-xl font-semibold text-sm transition-all duration-300 overflow-hidden ${addBtnCls}`}
+          onClick={handleComprarAhora}
         >
+          {t('product.buyNow')}
+        </Button>
+        <div className="flex gap-2">
+          <motion.button
+            type="button"
+            onClick={handleAdd}
+            disabled={!inStock}
+            whileTap={inStock && !justAdded ? { scale: 0.97 } : {}}
+            className={`flex-1 h-11 rounded-xl font-semibold text-sm overflow-hidden ${claseAgregarQuick(inStock, justAdded)}`}
+          >
           <AnimatePresence mode="wait" initial={false}>
             {justAdded ? (
               <motion.span
@@ -92,9 +103,16 @@ export default function QuickViewActions({
         >
           {t('quickView.viewDetail')}
         </button>
+        </div>
       </div>
     </>
   )
+}
+
+function claseAgregarQuick(inStock, justAdded) {
+  if (!inStock) return 'hc-btn'
+  if (justAdded) return 'hc-btn bg-emerald-500 text-white border-emerald-500'
+  return 'hc-btn hc-btn-ghost'
 }
 
 function HeartIcon({ filled }) {

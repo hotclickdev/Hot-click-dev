@@ -1,3 +1,5 @@
+import IconoAsistente from '@/components/ai/IconoAsistente'
+
 /**
  * Botón lateral para abrir/cerrar el asistente IA del catálogo.
  */
@@ -14,7 +16,13 @@ export default function CatalogAiFab({ aiPanelOpen, setAiPanelOpen }) {
       }}
       aria-label={aiPanelOpen ? 'Cerrar asistente IA' : 'Abrir asistente IA'}
     >
-      <span style={{ fontSize: 14, animation: aiPanelOpen ? 'none' : 'hc-fab-pulse 2s ease-in-out infinite' }}>✦</span>
+      <span
+        className="inline-flex"
+        style={{ animation: aiPanelOpen ? 'none' : 'hc-fab-pulse 2s ease-in-out infinite' }}
+        aria-hidden="true"
+      >
+        <IconoAsistente className="w-3.5 h-3.5" />
+      </span>
       <span style={{
         writingMode: 'vertical-lr',
         transform: 'rotate(180deg)',

@@ -45,5 +45,5 @@ export default function StepApertura({ onAbrir, loading }) {
 function etiquetaAbrirTurno(loading, monto) {
   if (loading) return 'Abriendo turno…'
   const extra = monto > 0 ? ` — ₡${formatMontoPos(monto)}` : ''
-  return `✓  Abrir turno${extra}`
+  return `Abrir turno${extra}`
 }

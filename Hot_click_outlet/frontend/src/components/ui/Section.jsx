@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 /**
  * Receta única de sección de la tienda (Auditoría UX §3.1, patrón Mercurio × tokens HotClick).
@@ -40,7 +41,7 @@ export function SectionHeader({ title, subtitle, action, dark = false }) {
           className="shrink-0 inline-flex items-center gap-1 text-sm font-semibold whitespace-nowrap hover:underline"
           style={{ color: dark ? 'var(--hc-blue-200)' : 'var(--hc-link)' }}
         >
-          {action.label} <span aria-hidden="true">›</span>
+          {action.label} <TrustGlyph tipo="adelante" className="w-3.5 h-3.5" />
         </Link>
       )}
     </div>

@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion'
 import { A } from './authUi'
 import TwoFaCodeInputs from './TwoFaCodeInputs'
+import TextoFlecha from '@/components/ui/TextoFlecha'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 export default function TwoFaEmailOtpStep({
   code2FA, refs2FA, onCodeChange, error, loading, resendCooldown,
@@ -44,10 +46,15 @@ export default function TwoFaEmailOtpStep({
             <button type="submit" disabled={resendCooldown > 0 || loading}
               className="hc-btn hc-btn-outline hc-btn-lg w-full disabled:opacity-40"
               onClick={onResend}>
-              {resendCooldown > 0 ? `Reenviar en ${resendCooldown}s` : '↻ Reenviar código'}
+              {resendCooldown > 0 ? `Reenviar en ${resendCooldown}s` : (
+                <span className="inline-flex items-center justify-center gap-1.5">
+                  <TrustGlyph tipo="reenviar" className="w-3.5 h-3.5" />
+                  Reenviar código
+                </span>
+              )}
             </button>
             <button type="button" className="hc-btn hc-btn-outline w-full" onClick={onBack}>
-              ← Volver
+              <TextoFlecha dir="atras">Volver</TextoFlecha>
             </button>
           </form>
         </div>

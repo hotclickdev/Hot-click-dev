@@ -23,11 +23,12 @@ export function chipPrompt(chip) {
 /**
  * @param {string} line
  * @param {string} eventName
- * @returns {{ eventName: string, text?: string, error?: string }}
+ * @returns {{ eventName: string, text?: string, error?: string, done?: boolean }}
  */
 export function parseCopilotSse(line, eventName) {
   if (line.startsWith('event:')) {
-    return { eventName: line.slice(6).trim() }
+    const name = line.slice(6).trim()
+    return { eventName: name, done: name === 'done' }
   }
   if (!line.startsWith('data:')) {
     if (line.trim() === '') return { eventName: 'message' }
@@ -38,7 +39,7 @@ export function parseCopilotSse(line, eventName) {
   try {
     const parsed = JSON.parse(data)
     if (eventName === 'error' || parsed.error) {
-      return { eventName, error: parsed.error || 'El asistente no está disponible.' }
+      return { eventName, error: parsed.error || 'Hot no está disponible ahora.' }
     }
     if (parsed.text) return { eventName, text: parsed.text }
   } catch (err) {
@@ -47,19 +48,23 @@ export function parseCopilotSse(line, eventName) {
   return { eventName }
 }
 
-/**
- * Subtítulo de consultas restantes. Vacío si no hay uso o el plan no incluye Hot.
- * @param {{ llamadas?: number, limite?: number, habilitado?: boolean } | null | undefined} uso
- * @returns {string}
- */
-export function textoConsultasRestantes(uso) {
-  if (!uso || uso.habilitado === false) return ''
-  const usadas = Number(uso.llamadas) || 0
-  const limite = Number(uso.limite)
-  if (!Number.isFinite(limite)) return ''
-  if (limite < 0) return 'Consultas ilimitadas este mes'
-  if (limite === 0) return ''
-  const restantes = Math.max(0, limite - usadas)
-  if (restantes === 1) return 'Te queda 1 consulta este mes'
-  return `Te quedan ${restantes} consultas este mes`
+/** @param {unknown} err */
+export function mensajeErrorStream(err) {
+  const raw = String(err?.message ?? '').toLowerCase()
+  if (raw.includes('network') || raw.includes('abort') || raw.includes('chunked')) {
+    return 'Se cortó la conexión con Hot. Esperá un segundo y volvé a preguntar.'
+  }
+  if (raw.includes('429') || raw.includes('rate')) {
+    return 'Mandaste muchas consultas seguidas. Esperá un momento.'
+  }
+  return 'No pude conectar con Hot. Reintentá en un momento.'
 }
+
+/** @param {{ llamadas?: number, limite?: number } | null} uso */
+export function textoConsultasRestantes(uso) {
+  if (!uso) return ''
+  if (uso.limite < 0) return 'Consultas ilimitadas este mes'
+  const quedan = Math.max(0, (uso.limite ?? 0) - (uso.llamadas ?? 0))
+  return `Te quedan ${quedan} consultas este mes`
+}
+

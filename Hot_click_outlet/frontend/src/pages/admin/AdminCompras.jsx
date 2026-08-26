@@ -6,6 +6,7 @@ import ComprasOrdenList from './compras/ComprasOrdenList'
 import RecibirModal from './compras/RecibirModal'
 import { useAdminComprasActions } from './compras/useAdminComprasActions'
 import { ESTADO_META, FILTROS_COMPRAS } from './compras/comprasHelpers'
+import TextoMas from '@/components/ui/TextoMas'
 
 export default function AdminCompras() {
   const { showToast } = useToast()
@@ -54,9 +55,9 @@ export default function AdminCompras() {
             ))}
           </div>
           <Link to="/admin/compras/nueva"
-            className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
+            className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80 inline-flex items-center"
             style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-            + Nueva orden
+            <TextoMas>Nueva orden</TextoMas>
           </Link>
         </div>
       </div>

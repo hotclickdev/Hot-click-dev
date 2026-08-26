@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { adminService } from '@/services/orderService'
 import { flagService } from '@/services/flagService'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 const FLAG_LABELS = {
   facturacion_electronica: 'Facturación Electrónica CR',
@@ -100,7 +101,7 @@ export default function AdminSuperAdmin() {
 
             {!selected && (
               <div className="flex items-center justify-center py-16 text-sm text-gray-400">
-                ← Selecciona una empresa para gestionar sus flags
+                <TextoFlecha dir="atras">Selecciona una empresa para gestionar sus flags</TextoFlecha>
               </div>
             )}
 

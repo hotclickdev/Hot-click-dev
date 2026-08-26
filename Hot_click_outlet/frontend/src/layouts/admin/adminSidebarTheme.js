@@ -5,10 +5,15 @@ export const SECTION_COLORS = {
   'Catálogo':              'var(--hc-primary)',
   'Catálogo e inventario': 'var(--hc-primary)',
   'Ventas':                'var(--hc-link)',
+  'Abastecimiento':        '#06b6d4',
   'POS':                   '#10b981',
   'Punto de Venta':        '#10b981',
+  'Finanzas':              '#22c55e',
   'Marketing':             '#f59e0b',
+  'Plataforma':            'var(--hc-muted)',
   'Sistema':               'var(--hc-muted)',
+  'IA':                    '#a78bfa',
+  'Fiscal':                '#38bdf8',
   'Mi negocio':            'var(--hc-link)',
 }
 

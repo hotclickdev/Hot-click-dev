@@ -12,9 +12,9 @@ const BUYERS = [
 ]
 
 const ACTIONS = [
-  { text: 'compró',           emoji: '🛒' },
-  { text: 'agregó al carrito', emoji: '🛍️' },
-  { text: 'acaba de ver',     emoji: '👀' },
+  { text: 'compró',            icono: 'bolsa' },
+  { text: 'agregó al pedido', icono: 'paquete' },
+  { text: 'acaba de ver',      icono: 'buscar' },
 ]
 
 function pick(arr) {

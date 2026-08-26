@@ -10,6 +10,8 @@ import FinanzasResumen from './finanzas/FinanzasResumen'
 import GastoModal from './finanzas/GastoModal'
 import IngresosTab from './finanzas/IngresosTab'
 import SaleDetailModal from './finanzas/SaleDetailModal'
+import TextoFlecha from '@/components/ui/TextoFlecha'
+import TextoMas from '@/components/ui/TextoMas'
 import {
   COLUMNAS_EXPORT_INGRESOS,
   EMPTY_GASTO,
@@ -269,7 +271,7 @@ function FinanzasCabecera({ tab, filteredP, onNuevoGasto }) {
         <p className="text-sm text-[#8e8e9a] mt-1">Ingresos, egresos y flujo de caja</p>
         <Link to="/admin/finanzas/reporte-contador"
           className="inline-block text-xs text-[#4f7cff] hover:underline mt-1">
-          Ver analítica financiera y reporte para el contador →
+          <TextoFlecha>Ver analítica financiera y reporte para el contador</TextoFlecha>
         </Link>
       </div>
       {tab === 'ingresos' && (
@@ -281,9 +283,9 @@ function FinanzasCabecera({ tab, filteredP, onNuevoGasto }) {
       )}
       {tab === 'egresos' && (
         <button type="button" onClick={onNuevoGasto}
-          className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
+          className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80 inline-flex items-center gap-1.5"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-          + Nuevo gasto
+          <TextoMas>Nuevo gasto</TextoMas>
         </button>
       )}
     </div>

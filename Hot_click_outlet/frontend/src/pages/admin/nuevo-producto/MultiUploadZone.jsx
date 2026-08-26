@@ -1,5 +1,6 @@
 import { useRef, useState, useCallback } from 'react'
 import { MAX_FOTOS } from './productFormUi'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 export default function MultiUploadZone({ files, previews, onAddFiles, onRemove }) {
   const inputRef = useRef()
@@ -29,9 +30,9 @@ export default function MultiUploadZone({ files, previews, onAddFiles, onRemove 
               {idx === 0 && (
                 <span className="absolute bottom-0 inset-x-0 text-center text-[9px] text-white py-0.5" style={{ backgroundColor: 'rgba(23,71,168,0.85)' }}>Principal</span>
               )}
-              <button type="button" onClick={() => onRemove(idx)}
-                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[10px] leading-none">
-                ✕
+              <button type="button" onClick={() => onRemove(idx)} aria-label="Quitar foto"
+                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <CloseIcon className="w-3 h-3" />
               </button>
             </div>
           ))}

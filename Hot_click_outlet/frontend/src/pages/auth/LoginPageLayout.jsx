@@ -5,6 +5,7 @@ import ForgotPasswordModal from './ForgotPasswordModal'
 import { A } from './authUi'
 import LoginHeader from './LoginHeader'
 import CartModal from './CartModal'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 /**
  * Marco visual de login: fondo, header, badge, footer y modales.
@@ -72,14 +73,16 @@ export default function LoginPageLayout({ children, flow }) {
         <div className="space-y-3">
           <p className="text-sm mb-4" style={{ color: 'var(--hc-muted)' }}>{t('login.adminModalSub')}</p>
           {[
-            { icon: '⚙', label: t('login.enterAdmin'), sub: t('login.enterAdminSub'), dest: '/admin' },
-            { icon: '🛍', label: t('login.enterClient'), sub: t('login.enterClientSub'), dest: '/' },
-          ].map(({ icon, label, sub, dest }) => (
+            { icono: 'monitor', label: t('login.enterAdmin'), sub: t('login.enterAdminSub'), dest: '/admin' },
+            { icono: 'bolsa', label: t('login.enterClient'), sub: t('login.enterClientSub'), dest: '/' },
+          ].map(({ icono, label, sub, dest }) => (
             <button type="button" key={dest} onClick={() => { setShowAdminModal(false); navigate(dest) }}
               className="w-full flex items-center gap-3 p-4 rounded-xl text-left transition-colors hover:bg-[color-mix(in_srgb,var(--hc-accent)_5%,transparent)]"
               style={{ background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: 'var(--hc-surface-3)', fontSize: '1.1rem' }}>{icon}</div>
+                style={{ background: 'var(--hc-surface-3)', color: 'var(--hc-accent)' }}>
+                <TrustGlyph tipo={icono} className="w-5 h-5" />
+              </div>
               <div>
                 <div className="font-semibold text-sm" style={{ color: 'var(--hc-text)' }}>{label}</div>
                 <div className="text-xs" style={{ color: 'var(--hc-muted)' }}>{sub}</div>

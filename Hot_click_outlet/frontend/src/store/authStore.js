@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { syncSentryUser } from '@/utils/sentryClient'
 
 export const ADMIN_ROLES = new Set(['ADMIN', 'EMPRENDEDOR'])
 
@@ -57,6 +58,11 @@ const useAuthStore = create(
           permissions:  Array.isArray(permissions) ? permissions : [],
           roles:        rol ? [rol] : [],
         })
+        syncSentryUser({
+          userId: data.id,
+          empresaId: empresaId ? Number(empresaId) : null,
+          rol,
+        })
       },
 
       updateAccessToken: (accessToken) => {
@@ -71,19 +77,22 @@ const useAuthStore = create(
 
       setUserName: (nombre) => set({ userName: nombre }),
 
-      logout: () => set({
-        token:        null,
-        refreshToken: null,
-        userId:       null,
-        userEmail:    null,
-        userRole:     null,
-        userName:     null,
-        empresaId:    null,
-        empresaSlug:  null,
-        empresaNombre: null,
-        permissions:  [],
-        roles:        [],
-      }),
+      logout: () => {
+        syncSentryUser()
+        set({
+          token:        null,
+          refreshToken: null,
+          userId:       null,
+          userEmail:    null,
+          userRole:     null,
+          userName:     null,
+          empresaId:    null,
+          empresaSlug:  null,
+          empresaNombre: null,
+          permissions:  [],
+          roles:        [],
+        })
+      },
     }),
     { name: 'hotclick-auth' }
   )

@@ -22,7 +22,7 @@ export default function PagoCancelado() {
           <h1 className="text-2xl font-bold text-[#e8e8ed] mb-2">{t('payment.cancelled')}</h1>
           <p className="text-[#8e8e9a] text-sm mb-6">{t('payment.cancelledSub')}</p>
           <div className="flex flex-col gap-3">
-            <Link to="/checkout" className="w-full py-3 rounded-xl bg-[#4f7cff] hover:bg-[#3d6ee0] text-white font-semibold text-sm transition-all text-center">
+            <Link to="/checkout" className="hc-btn hc-btn-primary w-full min-h-11">
               {t('payment.retry')}
             </Link>
             <Link to="/carrito" className="w-full py-3 rounded-xl border border-white/10 hover:border-white/20 text-[#8e8e9a] hover:text-[#e8e8ed] font-medium text-sm transition-all text-center">

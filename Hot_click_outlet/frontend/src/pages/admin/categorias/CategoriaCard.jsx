@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import CategoriaGlyph from '@/pages/catalogo/CategoriaGlyph'
 import { inicialDeCategoria } from './formCategoria'
 
 function EditIcon() {
@@ -86,7 +87,9 @@ export default function CategoriaCard({ node, onEdit, onDelete, onAddSub }) {
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-lg font-bold"
             style={{ backgroundColor: 'rgba(23,71,168,0.15)', color: 'var(--hc-accent)' }}>
-            {node.icono || inicialDeCategoria(node.nombreCategoria)}
+            {node.icono
+              ? <CategoriaGlyph icono={node.icono} nombre={node.nombreCategoria} className="w-4 h-4" />
+              : inicialDeCategoria(node.nombreCategoria)}
           </div>
           <div className="min-w-0">
             <p className="font-semibold text-[#e8e8ed] text-sm truncate">{node.nombreCategoria}</p>

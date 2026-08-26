@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import PhoneField from '@/components/ui/PhoneField'
 import Field from './Field'
 import { MAX_FOTOS, inputStyle } from './serviciosHelpers'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 function CheckIcon({ className = 'w-14 h-14' }) {
   return (
@@ -83,8 +84,10 @@ export default function FormularioBusqueda({
             <div key={i} className="relative w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0"
               style={{ border: '1.5px solid var(--hc-border)' }}>
               <img src={f.preview} alt="" className="w-full h-full object-cover" />
-              <button type="button" onClick={() => setFotos(p => p.filter((_, x) => x !== i))}
-                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 text-white text-sm flex items-center justify-center font-bold leading-none">×</button>
+              <button type="button" onClick={() => setFotos(p => p.filter((_, x) => x !== i))} aria-label="Quitar foto"
+                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center">
+                <CloseIcon className="w-3 h-3" />
+              </button>
             </div>
           ))}
           {fotos.length < MAX_FOTOS && (

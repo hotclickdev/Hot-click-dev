@@ -1,3 +1,5 @@
+import TrustGlyph from './TrustGlyph'
+
 export default function Spinner({ size = 'md', className = '' }) {
   const sizes = { sm: 'h-4 w-4', md: 'h-6 w-6', lg: 'h-8 w-8', xl: 'h-12 w-12' }
   return (
@@ -33,9 +35,10 @@ export function PageLoader() {
           <path d="M26 4 a22 22 0 0 1 22 22" stroke="var(--hc-primary)"
             strokeWidth="3" strokeLinecap="round"/>
         </svg>
-        {/* Emoji centrado */}
         <span style={{ position:'absolute', inset:0, display:'flex', alignItems:'center',
-          justifyContent:'center', fontSize:22 }}>ðŸ›ï¸</span>
+          justifyContent:'center', color:'var(--hc-primary)' }}>
+          <TrustGlyph tipo="bolsa" className="w-6 h-6" />
+        </span>
       </div>
 
       {/* Barra de progreso indeterminada */}

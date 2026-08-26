@@ -76,8 +76,6 @@ export default function CheckoutForm({
         />
       )}
 
-      <ExpressCheckout onWhatsApp={onWhatsApp} />
-
       <ShippingSection
         opciones={SHIPPING_OPTIONS}
         metodoEnvio={metodoEnvio}
@@ -116,6 +114,8 @@ export default function CheckoutForm({
         sinpeEmail={sinpeEmail}
         setSinpeEmail={setSinpeEmail}
       />
+
+      <ExpressCheckout onWhatsApp={onWhatsApp} />
 
       <CheckoutNotes notas={notas} setNotas={setNotas} />
 

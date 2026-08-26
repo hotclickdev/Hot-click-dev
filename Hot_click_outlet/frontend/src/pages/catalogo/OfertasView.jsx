@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import Spinner from '@/components/ui/Spinner'
 import ProductCard from '@/components/ui/ProductCard'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 // ── Ofertas HOT — usa la ProductCard compartida con tag roja (una sola tarjeta en todo el sitio)
 export default function OfertasView({ products, loading }) {
@@ -12,7 +13,9 @@ export default function OfertasView({ products, loading }) {
         style={{ background: 'linear-gradient(135deg, rgba(231,59,51,0.14) 0%, transparent 60%)' }}>
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-4 mb-2">
-            <span className="text-5xl" style={{ filter: 'drop-shadow(0 0 16px rgba(231,59,51,0.6))' }}>🔥</span>
+            <span className="shrink-0" style={{ color: 'var(--hc-red-500)', filter: 'drop-shadow(0 0 16px rgba(231,59,51,0.6))' }}>
+              <TrustGlyph tipo="rayo" className="w-12 h-12" />
+            </span>
             <div>
               <h2 className="text-4xl sm:text-5xl font-black tracking-tight" style={{ color: '#fff' }}>Ofertas HOT</h2>
               <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>Los mejores precios del momento — no dejes pasar ninguno</p>
@@ -38,7 +41,9 @@ function cuerpoCatalogoOfertas(loading, products) {
   if (products.length === 0) {
     return (
       <div className="text-center py-24">
-        <p className="text-6xl mb-4">🔥</p>
+        <span className="flex justify-center mb-4 opacity-40" style={{ color: 'var(--hc-red-400)' }}>
+          <TrustGlyph tipo="rayo" className="w-14 h-14" />
+        </span>
         <p className="text-lg font-bold" style={{ color: '#F4F6F9' }}>Las ofertas están cargando</p>
         <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.35)' }}>Volvé pronto para no perder ningún precio</p>
       </div>

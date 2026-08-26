@@ -48,7 +48,8 @@ public class StripePaymentProvider implements PaymentProvider {
         if (stripeService.isMockMode()) {
             throw new IllegalStateException(
                 "Stripe no está configurado. " +
-                "Añade STRIPE_SECRET_KEY (sk_test_...) al entorno para procesar pagos con tarjeta.");
+                "Añade STRIPE_SECRET_KEY (sk_test_...) al entorno para procesar pagos con tarjeta.",
+                new IllegalStateException("STRIPE_SECRET_KEY"));
         }
 
         int tc = bccrService.getTipoCambioVenta();

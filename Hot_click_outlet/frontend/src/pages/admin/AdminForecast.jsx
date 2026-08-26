@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { forecastService } from '@/services/forecastService'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 const fmt = (n) => new Intl.NumberFormat('es-CR').format(Math.round(n ?? 0))
 
@@ -103,7 +104,7 @@ export default function AdminForecast() {
         <button type="button" onClick={generar} disabled={generando || cargando}
           className="px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 hover:opacity-80"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-          {generando ? 'Calculando…' : '▶ Generar ahora'}
+          {generando ? 'Calculando…' : 'Generar ahora'}
         </button>
       </div>
 
@@ -120,7 +121,9 @@ export default function AdminForecast() {
         </div>
       ) : !data || (!data.historial?.length && !data.pronostico?.length) ? (
         <div className="text-center py-16 space-y-3" style={{ color: 'var(--hc-muted)' }}>
-          <div className="text-4xl">📈</div>
+          <div className="flex justify-center opacity-40">
+            <TrustGlyph tipo="tendencia" className="w-10 h-10" />
+          </div>
           <p className="font-medium">Sin datos suficientes para el pronóstico</p>
           <p className="text-sm">Necesitas al menos 4 semanas de historial de ventas para generar el pronóstico.</p>
           <button type="button" onClick={generar}
@@ -168,7 +171,7 @@ export default function AdminForecast() {
                       color: tab === t ? 'var(--hc-text)' : 'var(--hc-muted)',
                       border: tab === t ? '1px solid var(--hc-border)' : '1px solid transparent',
                     }}>
-                    {t === 'ingresos' ? '₡ Ingresos' : '📦 Unidades'}
+                    {t === 'ingresos' ? 'Ingresos' : 'Unidades'}
                   </button>
                 ))}
               </div>

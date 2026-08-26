@@ -2,6 +2,8 @@ import CharCounter from '../nuevo-producto/CharCounter'
 import { toSlug } from '../nuevo-producto/toSlug'
 import { ta, inpStyle as taStyle } from '../nuevo-producto/productFormUi'
 import { setField } from './productoFormCampos'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import TextoCamino from '@/components/ui/TextoCamino'
 
 function TargetIcon() {
   return (
@@ -38,7 +40,9 @@ export default function BloqueSeo({
             <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-1.5">
                 <label className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Título SEO</label>
-                <span title="Aparece en Google. Usa entre 50-60 caracteres, incluye la palabra principal." className="cursor-help text-xs" style={{ color: 'var(--hc-muted)' }}>ⓘ</span>
+                <span title="Aparece en Google. Usa entre 50-60 caracteres, incluye la palabra principal." className="cursor-help" style={{ color: 'var(--hc-muted)' }}>
+                  <TrustGlyph tipo="info" className="w-3.5 h-3.5" />
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 {seoAutoTitle && <span className="text-[10px]" style={{ color: 'var(--hc-accent)' }}>auto</span>}
@@ -59,7 +63,9 @@ export default function BloqueSeo({
             <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-1.5">
                 <label className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Meta Descripción</label>
-                <span title="Aparece debajo del título en Google. Usa entre 120-160 caracteres." className="cursor-help text-xs" style={{ color: 'var(--hc-muted)' }}>ⓘ</span>
+                <span title="Aparece debajo del título en Google. Usa entre 120-160 caracteres." className="cursor-help" style={{ color: 'var(--hc-muted)' }}>
+                  <TrustGlyph tipo="info" className="w-3.5 h-3.5" />
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 {seoAutoDesc && <span className="text-[10px]" style={{ color: 'var(--hc-accent)' }}>auto</span>}
@@ -81,7 +87,10 @@ export default function BloqueSeo({
             <p className="text-xs mb-2" style={{ color: 'var(--hc-muted)' }}>Vista previa en Google</p>
             <div className="rounded-xl bg-white px-4 py-3 space-y-0.5">
               <p className="text-xs text-green-700 truncate">
-                hotclick.com › productos › {form.nombre ? toSlug(form.nombre) : '…'}
+                <TextoCamino
+                  partes={['hotclick.com', 'productos', form.nombre ? toSlug(form.nombre) : '…']}
+                  iconClassName="w-3 h-3 shrink-0"
+                />
               </p>
               <p className="text-base text-blue-700 truncate leading-snug">
                 {form.metaTitle || 'Título SEO del producto'}

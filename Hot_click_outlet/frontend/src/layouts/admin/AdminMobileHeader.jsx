@@ -1,5 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { HotClickMark } from '@/components/ui/BrandLogo'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 /** Header móvil del panel admin (Sistema claro vs Admin oscuro). */
 export default function AdminMobileHeader({ isLightSidebar, t, userName, location, navigate, setDrawerOpen }) {
@@ -31,7 +33,7 @@ export default function AdminMobileHeader({ isLightSidebar, t, userName, locatio
             className="text-[13px] font-bold px-3 py-1.5 rounded-full whitespace-nowrap shrink-0 transition-colors hover:bg-[var(--hc-surface-2)]"
             style={{ color: 'var(--hc-link)', border: '1px solid var(--hc-border)' }}
           >
-            Caja →
+            <TextoFlecha>Caja</TextoFlecha>
           </NavLink>
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
             style={{ backgroundColor: 'var(--hc-link)', color: '#fff' }}>
@@ -52,9 +54,7 @@ export default function AdminMobileHeader({ isLightSidebar, t, userName, locatio
                 style={{ color: 'var(--hc-text)' }}
                 aria-label="Atrás"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 12H5M12 5l-7 7 7 7"/>
-                </svg>
+                <TrustGlyph tipo="atras" className="w-5 h-5" />
               </button>
             )}
             <HotClickMark size={26} className="shrink-0" />

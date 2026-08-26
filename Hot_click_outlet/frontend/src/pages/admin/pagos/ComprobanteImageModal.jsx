@@ -1,3 +1,5 @@
+import CloseIcon from '@/components/ui/CloseIcon'
+
 export default function ComprobanteImageModal({ src, onClose }) {
   return (
     <div
@@ -9,7 +11,10 @@ export default function ComprobanteImageModal({ src, onClose }) {
         <button type="button"
           onClick={onClose}
           className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-[#111114] border border-white/15 text-[#8e8e9a] hover:text-white flex items-center justify-center z-10 transition-colors"
-        >✕</button>
+          aria-label="Cerrar"
+        >
+          <CloseIcon />
+        </button>
         <img
           src={src}
           alt="Comprobante SINPE ampliado"

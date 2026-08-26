@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import ComprasEstadoBadge from './ComprasEstadoBadge'
 import { fmt, fmtDate, ESTADO_META } from './comprasHelpers'
+import TextoMas from '@/components/ui/TextoMas'
 
 /** Lista expandible de órdenes de compra. */
 export default function ComprasOrdenList({
@@ -18,8 +19,8 @@ export default function ComprasOrdenList({
         <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
           {filtro === 'TODAS' ? 'No hay órdenes de compra' : `No hay órdenes ${ESTADO_META[filtro]?.label?.toLowerCase()}`}
         </p>
-        <Link to="/admin/compras/nueva" className="mt-3 inline-block text-sm font-medium" style={{ color: 'var(--hc-accent)' }}>
-          + Crear primera orden
+        <Link to="/admin/compras/nueva" className="mt-3 inline-flex items-center text-sm font-medium" style={{ color: 'var(--hc-accent)' }}>
+          <TextoMas>Crear primera orden</TextoMas>
         </Link>
       </div>
     )

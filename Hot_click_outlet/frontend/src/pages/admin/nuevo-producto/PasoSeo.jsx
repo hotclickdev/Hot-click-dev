@@ -2,6 +2,7 @@ import { toSlug } from './toSlug'
 import { inp, ta, inpStyle } from './productFormUi'
 import CharCounter from './CharCounter'
 import { SEO_LANGS } from './wizardHelpers'
+import TextoCamino from '@/components/ui/TextoCamino'
 
 function actualizarTituloSeo(seoLang, isEs, val) {
   return (p) => ({
@@ -87,7 +88,12 @@ export default function PasoSeo({ form, setForm, seoLang, setSeoLang, seoAuto, s
       <div>
         <p className="text-xs mb-1.5" style={{ color: 'var(--hc-muted)' }}>Vista previa Google · {langMeta?.label} {langMeta?.name}</p>
         <div className="rounded-xl bg-white px-4 py-3 space-y-0.5">
-          <p className="text-xs text-green-700 truncate">hotclick.com › productos › {form.nombre ? toSlug(form.nombre) : '…'}</p>
+          <p className="text-xs text-green-700 truncate">
+            <TextoCamino
+              partes={['hotclick.com', 'productos', form.nombre ? toSlug(form.nombre) : '…']}
+              iconClassName="w-3 h-3 shrink-0"
+            />
+          </p>
           <p className="text-base text-blue-700 truncate leading-snug">{currentSeo.title || `Título SEO en ${langMeta?.name}`}</p>
           <p className="text-sm text-[#4d5156] line-clamp-2 leading-snug">{currentSeo.description || 'La meta descripción aparecerá aquí…'}</p>
         </div>

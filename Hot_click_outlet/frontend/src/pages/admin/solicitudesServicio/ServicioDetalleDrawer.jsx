@@ -2,6 +2,8 @@ import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { ESTADOS, ESTADO_STYLES, parseFotosUrls, waLinkServicio } from './servicioHelpers'
 import ServicioEstadoBadge from './ServicioEstadoBadge'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 export default function ServicioDetalleDrawer({
   selected,
@@ -36,7 +38,9 @@ export default function ServicioDetalleDrawer({
             <h2 className="font-bold" style={{ color: 'var(--hc-text)' }}>{t('adminSolicitudes.requestId', { id: selected.id })}</h2>
             <ServicioEstadoBadge estado={selected.estado} />
           </div>
-          <button type="button" onClick={onClose} className="text-xl" style={{ color: 'var(--hc-muted)' }}>×</button>
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="p-1.5" style={{ color: 'var(--hc-muted)' }}>
+            <CloseIcon className="w-4 h-4" />
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
@@ -47,11 +51,11 @@ export default function ServicioDetalleDrawer({
             </p>
             {(selected.telefonoContacto || selected.usuario?.telefono) && (
               <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-                📱 {selected.telefonoContacto || selected.usuario?.telefono}
+                {selected.telefonoContacto || selected.usuario?.telefono}
               </p>
             )}
             {selected.usuario?.correo && (
-              <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>✉ {selected.usuario.correo}</p>
+              <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>{selected.usuario.correo}</p>
             )}
           </div>
 
@@ -84,7 +88,10 @@ export default function ServicioDetalleDrawer({
                       className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-colors"
                       style={{ backgroundColor: 'rgba(66,133,244,0.10)', color: '#4285f4' }}
                       title="Buscar producto por imagen en Google Lens">
-                      🔍 Lens
+                      <span className="inline-flex items-center gap-1">
+                        <TrustGlyph tipo="buscar" className="w-3 h-3" />
+                        Lens
+                      </span>
                     </a>
                   </div>
                 ))}

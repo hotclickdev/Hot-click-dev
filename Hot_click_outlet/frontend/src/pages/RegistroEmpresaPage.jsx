@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { HotClickMark } from '@/components/ui/BrandLogo'
 import { AnimatePresence } from 'framer-motion'
 import { authService } from '@/services/authService'
@@ -11,6 +11,9 @@ import RegistroEmpresaAside from './registro-empresa/RegistroEmpresaAside'
 import StepTributacion from './registro-empresa/StepTributacion'
 import StepDatosEmpresa from './registro-empresa/StepDatosEmpresa'
 import StepDatosAdmin from './registro-empresa/StepDatosAdmin'
+import { isTokenAlive } from '@/utils/authToken'
+import { rutaLoginConRetorno } from '@/utils/authRedirect'
+import { destinoVender, RUTA_REGISTRO_EMPRESA, RUTA_REGISTRAR_NEGOCIO } from '@/utils/destinoVender'
 
 const STEP_TITLES = ['Requisito previo', 'Tu empresa', 'Tu cuenta de acceso']
 const STEP_DESCS = [
@@ -58,6 +61,9 @@ export default function RegistroEmpresaPage() {
   const navigate = useNavigate()
   const toast = useToast()
   const loginStore = useAuthStore((s) => s.login)
+  const token = useAuthStore((s) => s.token)
+  const userRole = useAuthStore((s) => s.userRole)
+  const empresaId = useAuthStore((s) => s.empresaId)
 
   const [step, setStep] = useState(0)
   const [tributacion, setTributacion] = useState(null)
@@ -67,6 +73,11 @@ export default function RegistroEmpresaPage() {
     nombreEmpresa: '', correoEmpresa: '', telefonoEmpresa: '',
     nombreAdmin: '', correoAdmin: '', passwordAdmin: '', telefonoAdmin: '',
   })
+
+  const destino = destinoVender({ tokenVivo: isTokenAlive(token), rol: userRole, empresaId })
+  if (destino !== RUTA_REGISTRO_EMPRESA) {
+    return <Navigate to={destino} replace />
+  }
 
   const actualizarCampo = (campo) => (evento) => setForm((prev) => ({ ...prev, [campo]: evento.target.value }))
 
@@ -144,7 +155,11 @@ export default function RegistroEmpresaPage() {
           </Link>
           <div className="flex items-center gap-2.5">
             <span style={{ color: 'var(--hc-muted)', fontSize: '0.8rem' }}>¿Ya tenés cuenta?</span>
-            <Link to="/login" className="hc-btn hc-btn-ghost hc-btn-sm" style={{ textDecoration: 'none' }}>
+            <Link
+              to={rutaLoginConRetorno(RUTA_REGISTRAR_NEGOCIO)}
+              className="hc-btn hc-btn-ghost hc-btn-sm"
+              style={{ textDecoration: 'none' }}
+            >
               Iniciar sesión
             </Link>
           </div>
@@ -162,7 +177,7 @@ export default function RegistroEmpresaPage() {
               Registrá tu empresa
             </h1>
             <p style={{ color: 'var(--hc-muted)', fontSize: '0.9rem' }}>
-              Completá los datos y empezá a vender hoy en HotClick.
+              Cuenta nueva acá. Si ya comprás en HotClick, iniciá sesión y registrá el negocio sin crear otra cuenta.
             </p>
           </div>
 

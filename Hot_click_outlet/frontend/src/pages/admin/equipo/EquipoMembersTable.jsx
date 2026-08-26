@@ -1,5 +1,6 @@
 import { formatDateShort } from '@/utils/format'
 import { ESTADO_COLOR, ESTADO_LABEL, ROL_CONFIG, ROLES_ASIGNABLES } from './equipoHelpers'
+import TextoMas from '@/components/ui/TextoMas'
 
 /**
  * @param {{
@@ -50,10 +51,10 @@ export default function EquipoMembersTable({
         </p>
         <button type="button"
           onClick={onAgregar}
-          className="mt-2 px-4 py-2 rounded-xl text-sm font-medium transition-opacity hover:opacity-80"
+          className="mt-2 px-4 py-2 rounded-xl text-sm font-medium transition-opacity hover:opacity-80 inline-flex items-center"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
         >
-          + Agregar primer miembro
+          <TextoMas>Agregar primer miembro</TextoMas>
         </button>
       </div>
     )

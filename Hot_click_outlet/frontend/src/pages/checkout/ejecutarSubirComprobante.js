@@ -50,7 +50,7 @@ export async function ejecutarSubirComprobante({
 export function ejecutarSinpeWhatsApp({ pagoData, sinpeNombre, sinpeCedula, sinpeTelefono, totalFinal }) {
   const numeroPedido = pagoData?.numeroPedido ?? ''
   const msg = encodeURIComponent(
-    `Hola HotClick 👋\n\n*Comprobante SINPE Móvil*\n\n` +
+    `Hola HotClick\n\n*Comprobante SINPE Móvil*\n\n` +
       `Nombre: ${sinpeNombre || '(sin nombre)'}\n` +
       (sinpeCedula ? `Cédula: ${sinpeCedula}\n` : '') +
       (sinpeTelefono ? `Teléfono: ${sinpeTelefono}\n` : '') +

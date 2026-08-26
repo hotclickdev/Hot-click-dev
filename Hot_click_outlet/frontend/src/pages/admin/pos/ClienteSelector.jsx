@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { crmService } from '@/services/crmService'
 import { useToast } from '@/components/ui/Toast'
 import { CloseIcon } from './posIcons'
+import TextoMas from '@/components/ui/TextoMas'
 
 export default function ClienteSelector({ cliente, onChange }) {
   const { showToast } = useToast()
@@ -94,11 +95,11 @@ export default function ClienteSelector({ cliente, onChange }) {
         <div className="absolute z-20 left-0 right-0 mt-1.5 rounded-xl overflow-hidden shadow-xl"
           style={{ backgroundColor: '#15151d', border: '1px solid rgba(255,255,255,0.08)' }}>
           <div className="flex border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-            {[{ id: 'buscar', label: 'Buscar' }, { id: 'nuevo', label: '+ Nuevo' }].map(t => (
+            {[{ id: 'buscar', label: 'Buscar' }, { id: 'nuevo', label: 'Nuevo', mas: true }].map(t => (
               <button type="button" key={t.id} onClick={() => setTab(t.id)}
-                className="flex-1 py-2 text-xs font-semibold transition-colors"
+                className="flex-1 py-2 text-xs font-semibold transition-colors inline-flex items-center justify-center"
                 style={{ color: tab === t.id ? '#7aa3ff' : 'rgba(255,255,255,0.35)' }}>
-                {t.label}
+                {t.mas ? <TextoMas>{t.label}</TextoMas> : t.label}
               </button>
             ))}
           </div>

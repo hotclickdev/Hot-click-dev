@@ -47,7 +47,7 @@ import java.util.Map;
  *   ────────────────────────────────────────────
  *   /api/public/chat                      → 10 / 60s
  *   /api/public/shopping-assistant/chat   → 10 / 60s
- *   /api/admin/ai/chat                    →  5 / 60s
+ *   /api/admin/ai/chat                    → 20 / 60s
  *
  * Limits (GET, per IP — endpoints públicos sin auth):
  *   /api/hacienda/contribuyente/** →  10 / 60s  (proxy a API externa de CR)
@@ -93,7 +93,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         Map.entry("/api/public/chat",                                 new Limit(10,  60)),
         Map.entry("/api/public/shopping-assistant/chat",              new Limit(10,  60)),
         Map.entry("/api/public/shopping-assistant/search-by-image",   new Limit(5,   60)),
-        Map.entry("/api/admin/ai/chat",                               new Limit(5,   60))
+        Map.entry("/api/admin/ai/chat",                               new Limit(20,  60))
     );
 
     // Prefix-based limits for paths with variables (e.g. /api/pedidos/123/notificar).

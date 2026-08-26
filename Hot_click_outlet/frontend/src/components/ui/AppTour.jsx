@@ -2,6 +2,9 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { STEPS } from './appTour/appTourSteps'
 import { DemoPreview } from './appTour/AppTourDemoPreview'
 import { useAppTour } from './appTour/useAppTour'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import CloseIcon from '@/components/ui/CloseIcon'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function AppTour() {
   const { show, step, current, isSpecial, isFirst, isLast, dismiss, go } = useAppTour()
@@ -51,10 +54,10 @@ export default function AppTour() {
 
                 <div className="flex items-start gap-3">
                   <div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0 select-none"
-                    style={{ backgroundColor: `${current.color}1a` }}
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: `${current.color}1a`, color: current.color }}
                   >
-                    {current.emoji}
+                    <TrustGlyph tipo={current.icono} className="w-6 h-6" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-[15px] font-bold leading-snug" style={{ color: 'var(--hc-text)' }}>
@@ -75,9 +78,7 @@ export default function AppTour() {
                     className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg transition-opacity hover:opacity-70"
                     style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
+                    <CloseIcon />
                   </button>
                 </div>
 
@@ -98,7 +99,9 @@ export default function AppTour() {
                     className="flex items-start gap-2 rounded-xl px-3 py-2.5 text-xs"
                     style={{ backgroundColor: `${current.color}0f`, border: `1px solid ${current.color}28` }}
                   >
-                    <span className="shrink-0 text-sm leading-relaxed">💡</span>
+                    <span className="shrink-0" style={{ color: current.color }}>
+                      <TrustGlyph tipo="idea" className="w-3.5 h-3.5" />
+                    </span>
                     <p style={{ color: 'var(--hc-muted)' }}>
                       <strong style={{ color: current.color }}>Pro tip: </strong>
                       {current.tip}
@@ -141,7 +144,7 @@ export default function AppTour() {
                         className="flex-1 rounded-xl text-sm font-medium transition-opacity hover:opacity-70"
                         style={{ minHeight: 44, backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}
                       >
-                        ← Anterior
+                        <TextoFlecha dir="atras">Anterior</TextoFlecha>
                       </button>
                     )}
                     <button type="button"
@@ -149,7 +152,7 @@ export default function AppTour() {
                       className="rounded-xl text-sm font-bold text-white transition-all active:scale-[0.97] hover:opacity-90"
                       style={{ minHeight: 44, flex: 2, backgroundColor: current.color }}
                     >
-                      {isLast ? '¡Listo! 🎉' : 'Siguiente →'}
+                      {isLast ? 'Listo' : <TextoFlecha>Siguiente</TextoFlecha>}
                     </button>
                   </div>
                 </div>

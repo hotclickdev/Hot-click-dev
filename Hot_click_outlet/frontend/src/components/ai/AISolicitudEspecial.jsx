@@ -4,6 +4,8 @@
  */
 import { useState } from 'react'
 import api from '@/services/api'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 import { Field, FotoReferencia, inputStyle } from './AISolicitudEspecialFields'
 
 const WA_REGEX = /^[2-9]\d{7}$/
@@ -70,7 +72,9 @@ export default function AISolicitudEspecial({ descripcionInicial = '', onSuccess
   if (enviado) {
     return (
       <div className="rounded-2xl p-5 text-center" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
-        <p className="text-2xl mb-1">✓</p>
+        <div className="mb-1 flex justify-center" style={{ color: '#4ade80' }}>
+          <TrustGlyph tipo="check" className="w-8 h-8" />
+        </div>
         <p className="font-bold text-sm" style={{ color: '#4ade80' }}>¡Solicitud enviada!</p>
         <p className="text-xs mt-1" style={{ color: 'var(--hc-muted)' }}>
           El equipo de HotClick te contacta pronto por WhatsApp.
@@ -166,7 +170,7 @@ export default function AISolicitudEspecial({ descripcionInicial = '', onSuccess
         className="w-full py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-80 disabled:opacity-50"
         style={{ background: 'var(--hc-accent)', color: '#fff' }}
       >
-        {enviando ? 'Enviando...' : 'Enviar solicitud →'}
+        {enviando ? 'Enviando...' : <TextoFlecha>Enviar solicitud</TextoFlecha>}
       </button>
     </form>
   )

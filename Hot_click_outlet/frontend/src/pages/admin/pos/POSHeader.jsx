@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function POSHeader({ userName, turno, step, onCerrarTurno, mostrarVolverSistema }) {
   const labels = { apertura: 'Paso 1 — Abrir turno', venta: 'Paso 2 — Pedido', cobro: 'Paso 3 — Cobrar', qr: 'Esperando pago', recibo: 'Venta lista' }
@@ -15,7 +16,7 @@ export default function POSHeader({ userName, turno, step, onCerrarTurno, mostra
         <Link to="/admin"
           className="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all hover:brightness-125"
           style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.08)' }}>
-          ← Sistema
+          <TextoFlecha dir="atras">Sistema</TextoFlecha>
         </Link>
       )}
 
@@ -23,6 +24,12 @@ export default function POSHeader({ userName, turno, step, onCerrarTurno, mostra
         <span className="text-xs px-2.5 py-1 rounded-full font-medium"
           style={{ backgroundColor: 'rgba(23,71,168,0.12)', color: '#7aa3ff', border: '1px solid rgba(23,71,168,0.2)' }}>
           {labels[step]}
+        </span>
+      )}
+      {step === 'venta' && (
+        <span className="text-xs px-2.5 py-1 rounded-full font-medium hidden sm:inline"
+          style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          F2 buscar · F4 cantidad · F8 cobrar
         </span>
       )}
 

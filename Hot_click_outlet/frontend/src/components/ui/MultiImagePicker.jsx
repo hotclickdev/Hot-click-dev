@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { productService } from '@/services/productService'
 import { useTranslation } from 'react-i18next'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 const MAX_FOTOS = 10
 
@@ -62,8 +63,11 @@ export default function MultiImagePicker({ imagenes = [], onChange }) {
               <button
                 type="button"
                 onClick={() => remove(idx)}
-                className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[10px] leading-none"
-              >✕</button>
+                aria-label="Quitar foto"
+                className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <CloseIcon className="w-3 h-3" />
+              </button>
             </div>
           ))}
           {Array.from({ length: uploadingCount }).map((_, i) => (

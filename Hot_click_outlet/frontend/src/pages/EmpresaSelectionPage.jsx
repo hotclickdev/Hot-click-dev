@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { authService } from '@/services/authService'
 import useAuthStore from '@/store/authStore'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 export default function EmpresaSelectionPage() {
   const navigate  = useNavigate()
@@ -98,14 +99,11 @@ export default function EmpresaSelectionPage() {
               </div>
 
               {/* Arrow / spinner */}
-              <div className="shrink-0">
+              <div className="shrink-0" style={{ color: 'var(--hc-muted)' }}>
                 {loading === emp.id
                   ? <div className="w-5 h-5 border-2 rounded-full animate-spin"
                       style={{ borderColor: 'var(--hc-border)', borderTopColor: 'var(--hc-accent)' }} />
-                  : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                      style={{ color: 'var(--hc-muted)' }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
+                  : <TrustGlyph tipo="adelante" className="w-5 h-5" />
                 }
               </div>
             </button>

@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { A, ESTADO_COLOR } from './registrarNegocioTheme'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 /** Bloque opcional de verificación de inscripción en Hacienda CR. */
 export default function HaciendaVerificacion({
@@ -59,16 +60,11 @@ export default function HaciendaVerificacion({
             initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
             className="rounded-lg p-3 flex flex-col gap-1.5"
             style={{ background: estadoInfo.bg, border: `1px solid ${estadoInfo.border}` }}>
-            <div className="flex items-center gap-2">
-              {haciendaResult.inscrito ? (
-                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: estadoInfo.text }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: estadoInfo.text }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              )}
+            <div className="flex items-center gap-2" style={{ color: estadoInfo.text }}>
+              <TrustGlyph
+                tipo={haciendaResult.inscrito ? 'check' : 'error'}
+                className="w-4 h-4 flex-shrink-0"
+              />
               <span className="text-xs font-bold" style={{ color: estadoInfo.text }}>
                 {estadoInfo.label}
               </span>

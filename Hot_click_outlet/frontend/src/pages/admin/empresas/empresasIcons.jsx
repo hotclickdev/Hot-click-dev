@@ -15,14 +15,7 @@ export function EyeOffIcon({ className = 'w-3 h-3' }) {
   )
 }
 
-export function CloseIcon() {
-  return (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  )
-}
+export { default as CloseIcon } from '@/components/ui/CloseIcon'
 
 export function PackageIcon() {
   return (

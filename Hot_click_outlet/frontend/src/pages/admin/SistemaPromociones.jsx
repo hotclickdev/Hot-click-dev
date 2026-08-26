@@ -6,6 +6,7 @@ import { productService } from '@/services/productService'
 import { useToast } from '@/components/ui/Toast'
 import Spinner from '@/components/ui/Spinner'
 import { formatPrice } from '@/utils/format'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 const CARD_SHADOW = '0 1px 2px rgba(26,26,26,0.04), 0 8px 20px rgba(26,26,26,0.06)'
 const DESCUENTO_SUGERIDO_LENTOS = 15
@@ -47,7 +48,7 @@ function ProductRow({ p, onAplicar, disabled, pctSugerido }) {
         <p className="text-sm font-semibold truncate" style={{ color: 'var(--hc-text)' }}>{nombre}</p>
         <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
           {formatPrice(p.precioVenta)}
-          {p.enOferta && p.precioOferta && <span className="ml-2 font-semibold" style={{ color: 'var(--hc-primary)' }}>→ {formatPrice(p.precioOferta)}</span>}
+          {p.enOferta && p.precioOferta && <span className="ml-2 font-semibold" style={{ color: 'var(--hc-primary)' }}>ahora {formatPrice(p.precioOferta)}</span>}
         </p>
       </div>
       {p.enOferta ? (
@@ -139,7 +140,9 @@ export default function SistemaPromociones() {
 
   return (
     <div className="space-y-4 max-w-[1060px]">
-      <Link to="/admin" className="inline-flex items-center gap-1 text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>← Inicio</Link>
+      <Link to="/admin" className="inline-flex items-center gap-1 text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
+        <TextoFlecha dir="atras">Inicio</TextoFlecha>
+      </Link>
 
       <header>
         <h1 style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 26, letterSpacing: '-0.5px', color: 'var(--hc-text)' }}>Promociones</h1>

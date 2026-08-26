@@ -1,4 +1,5 @@
 import { PROD_PAGE_SIZE } from './productosHelpers'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function PaginacionProductos({ prodPage, productsLength, totalProds, onPage }) {
   if (totalProds <= PROD_PAGE_SIZE) return null
@@ -12,7 +13,7 @@ export default function PaginacionProductos({ prodPage, productsLength, totalPro
           className="px-2 py-1 rounded-lg disabled:opacity-30 transition-colors hover:bg-[var(--hc-surface-2)]"
           style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}
         >
-          ← Anterior
+          <TextoFlecha dir="atras">Anterior</TextoFlecha>
         </button>
         <button type="button"
           onClick={() => onPage(prodPage + 1)}
@@ -20,7 +21,7 @@ export default function PaginacionProductos({ prodPage, productsLength, totalPro
           className="px-2 py-1 rounded-lg disabled:opacity-30 transition-colors hover:bg-[var(--hc-surface-2)]"
           style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}
         >
-          Siguiente →
+          <TextoFlecha>Siguiente</TextoFlecha>
         </button>
       </div>
     </div>

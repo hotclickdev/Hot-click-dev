@@ -1,4 +1,5 @@
 import Badge from '@/components/ui/Badge'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 import { conditionLabel, conditionVariant } from '@/utils/format'
 import ColorSwatches from './ColorSwatches'
 import SizeSelector from './SizeSelector'
@@ -50,7 +51,8 @@ export default function TitleAndBadges({ product, variantes, tallaSeleccionada, 
         t={t}
       />
       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-medium">
-        ✓ {t('socialProof.warranty')}
+        <TrustGlyph tipo="check" className="w-3.5 h-3.5" />
+        {t('socialProof.warranty')}
       </span>
     </div>
   )

@@ -8,6 +8,7 @@ import {
   filasExportProductos,
   mapImportRow,
 } from './productosHelpers'
+import TextoMas from '@/components/ui/TextoMas'
 
 /**
  * Cabecera de admin productos: título, cuenta, import/export y acciones.
@@ -59,7 +60,7 @@ export default function ProductosHeader({ t, filteredCount, totalProds, products
             </Link>
           </>
         )}
-        <Button onClick={onNuevo}>+ {t('admin.products.new')}</Button>
+        <Button onClick={onNuevo}><TextoMas>{t('admin.products.new')}</TextoMas></Button>
       </div>
     </div>
   )

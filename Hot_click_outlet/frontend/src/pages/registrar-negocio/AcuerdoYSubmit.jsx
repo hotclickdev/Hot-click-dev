@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { A } from './registrarNegocioTheme'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 /** Checkbox del Acuerdo de Vendedores, error y botón de envío. */
 export default function AcuerdoYSubmit({ aceptaAcuerdo, onAceptaChange, error, loading }) {
@@ -40,7 +41,7 @@ export default function AcuerdoYSubmit({ aceptaAcuerdo, onAceptaChange, error, l
             </svg>
             Registrando…
           </>
-        ) : 'Registrar mi negocio →'}
+        ) : <TextoFlecha>Registrar mi negocio</TextoFlecha>}
       </button>
     </>
   )

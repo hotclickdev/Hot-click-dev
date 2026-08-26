@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { CARD_SHADOW, textoStockAlerta } from './sistemaReportesHelpers'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function TabAlertas({ stockRiesgo }) {
   if (stockRiesgo.length === 0) {
@@ -23,7 +24,9 @@ export default function TabAlertas({ stockRiesgo }) {
                 {textoStockAlerta(actual)}
               </p>
             </div>
-            <Link to="/admin/productos" className="text-sm font-semibold shrink-0" style={{ color: 'var(--hc-accent)' }}>Reponé →</Link>
+            <Link to="/admin/productos" className="text-sm font-semibold shrink-0" style={{ color: 'var(--hc-accent)' }}>
+              <TextoFlecha>Reponé</TextoFlecha>
+            </Link>
           </div>
         )
       })}

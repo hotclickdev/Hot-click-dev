@@ -5,6 +5,7 @@ import EmpresaProfileCard from '@/components/admin/EmpresaProfileCard'
 import PhotoPanel from './PhotoPanel'
 import WizardProgress from './WizardProgress'
 import WizardStepSwitch from './WizardStepSwitch'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 function EtiquetasBanner({ etiquetas, wizardStep, isLastStep, fuenteDetalles }) {
   if (etiquetas.length === 0 || wizardStep <= 0 || isLastStep) return null
@@ -85,7 +86,7 @@ function WizardFooter({ wizard }) {
         <div className="mt-4 flex items-center gap-4">
           <button type="button" onClick={onSave} disabled={saving}
             className="text-sm transition-colors disabled:opacity-50" style={{ color: 'var(--hc-accent)' }}>
-            {saving ? 'Publicando…' : 'Publicar ahora →'}
+            {saving ? 'Publicando…' : <TextoFlecha>Publicar ahora</TextoFlecha>}
           </button>
           <span className="text-xs" style={{ color: 'var(--hc-muted)', opacity: 0.5 }}>·</span>
           <button type="button" onClick={onGuardarBorrador}

@@ -10,6 +10,7 @@ import {
   ESTILO_INPUT,
   clientesDesdeRespuesta,
 } from './asignarHelpers'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 /**
  * @param {{ onSelect: (usuario: object) => void }} props
@@ -130,9 +131,9 @@ function PanelBuscar({ q, onQ, buscando, resultados, onSelect, onCrear }) {
                   {u.correo} {u.telefono ? `· ${u.telefono}` : ''}
                 </div>
               </div>
-              <svg className="w-4 h-4 shrink-0 ml-auto" style={{ color: 'var(--hc-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
-              </svg>
+              <span className="shrink-0 ml-auto" style={{ color: 'var(--hc-accent)' }}>
+                <TrustGlyph tipo="adelante" className="w-4 h-4" />
+              </span>
             </button>
           ))}
         </div>

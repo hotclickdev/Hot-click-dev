@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { formatPrice } from '@/utils/format'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 /**
  * @param {{ salesLast7: { label: string, total: number }[] }} props
@@ -18,7 +19,7 @@ export default function SalesChart({ salesLast7 }) {
           <p className="text-xs text-[#8e8e9a] mt-0.5">Últimos 7 días (completadas)</p>
         </div>
         <Link to="/admin/reportes" className="text-xs text-[#4f7cff] hover:underline">
-          Ver reportes →
+          <TextoFlecha>Ver reportes</TextoFlecha>
         </Link>
       </div>
       <div className="flex items-end gap-2 h-40">

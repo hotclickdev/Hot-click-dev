@@ -7,6 +7,7 @@ import CartModal from './CartModal'
 import EmprendimientoCloud from './EmprendimientoCloud'
 import EmprendimientoForm from './EmprendimientoForm'
 import RegisterHeader from './RegisterHeader'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 const CLERK_ENABLED = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 
@@ -60,6 +61,21 @@ export default function RegisterFormStep({
 
                 {/* Columna izquierda */}
                 <div>
+                  <div className="flex flex-wrap gap-2 mb-5">
+                    <span
+                      className="inline-flex items-center px-3 py-2 rounded-xl text-sm font-semibold min-h-[44px]"
+                      style={{ backgroundColor: 'color-mix(in srgb, var(--hc-primary) 12%, transparent)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}
+                    >
+                      {t('register.quieroComprar')}
+                    </span>
+                    <Link
+                      to="/registro-empresa"
+                      className="inline-flex items-center px-3 py-2 rounded-xl text-sm font-semibold min-h-[44px]"
+                      style={{ color: 'var(--hc-muted)', border: '1px solid var(--hc-border)' }}
+                    >
+                      {t('register.quieroVender')}
+                    </Link>
+                  </div>
                   <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
                     className="flex items-center gap-3 mb-5">
                     <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold"
@@ -119,7 +135,11 @@ export default function RegisterFormStep({
                         <button type="submit" disabled={loading}
                           className="group inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl font-bold text-sm text-white w-full transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60"
                           style={{ background: BUYER.color, boxShadow: `0 0 32px ${BUYER.ring}` }}>
-                          {loading ? 'Enviando código…' : <>{t('register.sendCode')} <span className="group-hover:translate-x-1 transition-transform">→</span></>}
+                          {loading ? 'Enviando código…' : (
+                            <TextoFlecha iconClassName="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1">
+                              {t('register.sendCode')}
+                            </TextoFlecha>
+                          )}
                         </button>
                       </form>
                       {CLERK_ENABLED && <SocialLoginButtons mode="signUp" />}
@@ -133,7 +153,7 @@ export default function RegisterFormStep({
 
                 {/* Columna derecha — cloud */}
                 <div>
-                  <EmprendimientoCloud onRegistrar={onRegistrar} />
+                  <EmprendimientoCloud />
                 </div>
               </motion.div>
             )}

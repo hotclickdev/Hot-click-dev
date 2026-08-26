@@ -3,6 +3,7 @@ import Spinner from '@/components/ui/Spinner'
 import { securityService } from '@/services/securityService'
 import { EVENT_LABEL, PERIODS, fmtDate } from './securityHelpers'
 import { Card, SeverityBadge } from './securityUi'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function EventosTab() {
   const [evPage, setEvPage]   = useState(0)
@@ -105,10 +106,14 @@ export default function EventosTab() {
             <div className="flex gap-2">
               <button type="button" onClick={() => load(evPage - 1)} disabled={evPage === 0}
                 className="px-3 py-1.5 rounded-lg text-xs disabled:opacity-40"
-                style={{ backgroundColor: 'var(--hc-card)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>← Anterior</button>
+                style={{ backgroundColor: 'var(--hc-card)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
+                <TextoFlecha dir="atras">Anterior</TextoFlecha>
+              </button>
               <button type="button" onClick={() => load(evPage + 1)} disabled={evPage >= (evData.totalPages - 1)}
                 className="px-3 py-1.5 rounded-lg text-xs disabled:opacity-40"
-                style={{ backgroundColor: 'var(--hc-card)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>Siguiente →</button>
+                style={{ backgroundColor: 'var(--hc-card)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
+                <TextoFlecha>Siguiente</TextoFlecha>
+              </button>
             </div>
           </div>
         </>

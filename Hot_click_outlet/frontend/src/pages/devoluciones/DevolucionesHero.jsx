@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { LAST_UPDATED } from './devolucionesData'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 /** Hero: volver, título y resumen de 7 días hábiles. */
 export default function DevolucionesHero() {
@@ -18,10 +19,7 @@ export default function DevolucionesHero() {
           onMouseEnter={e => e.currentTarget.style.color = 'var(--hc-accent)'}
           onMouseLeave={e => e.currentTarget.style.color = 'var(--hc-muted)'}
         >
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-          Volver al inicio
+          <TextoFlecha dir="atras" iconClassName="w-3.5 h-3.5">Volver al inicio</TextoFlecha>
         </Link>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: '1rem' }}>

@@ -2,6 +2,8 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { formatPrice, conditionLabel, conditionVariant } from '@/utils/format'
 import Badge from '@/components/ui/Badge'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 export default function QuickViewInfo({ product, inStock, onClose, children }) {
   const { t } = useTranslation()
@@ -17,7 +19,9 @@ export default function QuickViewInfo({ product, inStock, onClose, children }) {
         {product.imagenUrl ? (
           <img src={product.imagenUrl} alt={product.nombre} className="w-full h-full object-cover" />
         ) : (
-          <span className="text-6xl opacity-20">📦</span>
+          <span className="opacity-25" style={{ color: 'var(--hc-muted)' }}>
+            <TrustGlyph tipo="paquete" className="w-16 h-16" />
+          </span>
         )}
       </button>
 
@@ -39,9 +43,7 @@ export default function QuickViewInfo({ product, inStock, onClose, children }) {
             style={{ color: 'var(--hc-muted)' }}
             aria-label={t('quickView.close')}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <CloseIcon className="w-5 h-5" />
           </button>
         </div>
 

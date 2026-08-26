@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Section from '@/components/ui/Section'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 // ─── Sección "Explorar por categoría" estilo Amazon ──────────────────────────
 export default function CategoryBrowse({ products, categories }) {
@@ -71,8 +73,8 @@ export default function CategoryBrowse({ products, categories }) {
                           loading="lazy"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-2xl opacity-20">
-                          📦
+                        <div className="w-full h-full flex items-center justify-center opacity-30" style={{ color: 'var(--hc-muted)' }}>
+                          <TrustGlyph tipo="paquete" className="w-7 h-7" />
                         </div>
                       )}
                     </div>
@@ -84,7 +86,7 @@ export default function CategoryBrowse({ products, categories }) {
               <div className="px-4 py-3">
                 <span className="text-xs font-semibold transition-opacity group-hover:opacity-60"
                   style={{ color: 'var(--hc-accent)' }}>
-                  Ver {group.products.length} producto{group.products.length === 1 ? '' : 's'} →
+                  <TextoFlecha>Ver {group.products.length} producto{group.products.length === 1 ? '' : 's'}</TextoFlecha>
                 </span>
               </div>
             </Link>

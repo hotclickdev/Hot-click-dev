@@ -1,4 +1,4 @@
-import { catSvgIcon } from './catalogoHelpers'
+import CategoriaGlyph from './CategoriaGlyph'
 
 // ── Cuadrícula de categorías hijas (Cajas Hijas) ─────────────────────────────
 export default function SubcategoryGrid({ subcats, onSelect, productCountByCat }) {
@@ -38,16 +38,10 @@ export default function SubcategoryGrid({ subcats, onSelect, productCountByCat }
               style={{ background: c.bg, border: `1.5px solid ${c.border}` }}
             >
               <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center mb-3 text-xl leading-none shrink-0"
-                style={{ background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(4px)' }}
+                className="w-11 h-11 rounded-xl flex items-center justify-center mb-3 shrink-0"
+                style={{ background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(4px)', color: c.icon }}
               >
-                {sub.icono ? (
-                  <span>{sub.icono}</span>
-                ) : (
-                  <svg className="w-5 h-5" fill="none" stroke={c.icon} strokeWidth={1.6} viewBox="0 0 24 24">
-                    {catSvgIcon(name)}
-                  </svg>
-                )}
+                <CategoriaGlyph icono={sub.icono} nombre={name} className="w-5 h-5" />
               </div>
               <span className="text-sm font-bold leading-snug mb-1" style={{ color: 'var(--hc-text)' }}>
                 {name}

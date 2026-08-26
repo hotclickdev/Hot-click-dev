@@ -5,6 +5,8 @@ import { Helmet } from 'react-helmet-async'
 import DOMPurify from 'dompurify'
 import MainLayout from '@/layouts/MainLayout'
 import { blogService } from '@/services/blogService'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 const SITE_URL = 'https://hotclick.lat'
 
@@ -84,9 +86,13 @@ export default function BlogPostPage() {
           <meta name="robots" content="noindex, follow" />
         </Helmet>
         <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: 'var(--hc-bg)' }}>
-          <p style={{ fontSize: 64 }}>📄</p>
+          <span style={{ color: 'var(--hc-muted)', opacity: 0.45 }}>
+            <TrustGlyph tipo="lista" className="w-16 h-16" />
+          </span>
           <h1 style={{ color: 'var(--hc-text)', fontSize: 24, fontWeight: 700 }}>Artículo no encontrado</h1>
-          <Link to="/blog" style={{ color: 'var(--hc-accent)', fontWeight: 600 }}>← Volver al blog</Link>
+          <Link to="/blog" style={{ color: 'var(--hc-accent)', fontWeight: 600 }}>
+            <TextoFlecha dir="atras">Volver al blog</TextoFlecha>
+          </Link>
         </div>
       </MainLayout>
     )
@@ -195,7 +201,7 @@ export default function BlogPostPage() {
               color: 'var(--hc-accent)', fontWeight: 700, textDecoration: 'none',
               fontSize: 15,
             }}>
-              ← Volver al blog
+              <TextoFlecha dir="atras">Volver al blog</TextoFlecha>
             </Link>
           </div>
         </div>

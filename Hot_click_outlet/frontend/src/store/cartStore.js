@@ -57,11 +57,11 @@ const useCartStore = create(
         const lines = items.map(
           (i) => `  • ${i.nombre ?? i.nombreProducto}${i.tallaSeleccionada ? ` (Talla ${i.tallaSeleccionada})` : ''} x${i.cantidad} — ₡${((i.precio ?? i.precioVenta ?? 0) * i.cantidad).toLocaleString('es-CR')}`
         )
+        const detalle = items.length
+          ? `${lines.join('\n')}\n\nTotal: ₡${total().toLocaleString('es-CR')}\n\n`
+          : ''
         return encodeURIComponent(
-          `Hola Andrés! 👋 Me interesa hacer el siguiente pedido:\n\n` +
-          `${lines.join('\n')}\n\n` +
-          `💰 *Total: ₡${total().toLocaleString('es-CR')}*\n\n` +
-          `¿Está disponible? ¿Cuál es el tiempo de entrega y cómo puedo pagar? Gracias 😊`
+          `Hola HotClick, consulto sobre este pedido:\n\n${detalle}¿Me ayudan con una duda?`
         )
       },
     }),

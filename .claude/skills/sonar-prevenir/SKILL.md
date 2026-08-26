@@ -11,8 +11,10 @@ description: |
 
 Checklist de las reglas que **ya nos tumbaron el gate**. No es un tratado de
 Sonar. Complejidad y funciones chicas: `.cursor/rules/codigo-limpio.mdc`.
-Click vs teclado: skill `accesibilidad-basica`. Verificar al final:
-`fable-verificar`. Informe del dashboard: `sonar-revisar`.
+Si la tarea limpia **y** toca Sonar: `codigo-limpio-sonar` (orden en el archivo;
+no rehacer a11y ni extraer mezclado con UI). Click vs teclado: skill
+`accesibilidad-basica`. Verificar al final: `fable-verificar`. Informe del
+dashboard: `sonar-revisar`.
 
 ## Checklist
 

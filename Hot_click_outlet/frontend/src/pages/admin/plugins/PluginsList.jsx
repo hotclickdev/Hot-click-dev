@@ -1,4 +1,5 @@
 import { parseEventos } from './pluginsHelpers'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 export default function PluginsList({
   plugins,
@@ -16,9 +17,9 @@ export default function PluginsList({
           <div key={p.id} className="rounded-2xl p-4"
             style={{ backgroundColor: 'var(--hc-surface)', border: `1px solid ${p.activo ? 'var(--hc-border)' : 'rgba(156,163,175,0.2)'}`, opacity: p.activo ? 1 : 0.55 }}>
             <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-lg"
-                style={{ backgroundColor: 'var(--hc-bg)' }}>
-                {p.tipo === 'WEBHOOK' ? '🪝' : '🖼️'}
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: 'var(--hc-bg)', color: 'var(--hc-muted)' }}>
+                <TrustGlyph tipo={p.tipo === 'WEBHOOK' ? 'rayo' : 'monitor'} className="w-4 h-4" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -58,7 +59,7 @@ export default function PluginsList({
                   <button type="button" onClick={() => onTestWebhook(p)}
                     className="text-xs px-2 py-1 rounded-lg hover:opacity-80 transition-all"
                     style={{ border: '1px solid var(--hc-border)', color: testOk === p.id ? '#10b981' : 'var(--hc-muted)' }}>
-                    {testOk === p.id ? '✓ Enviado' : 'Test'}
+                    {testOk === p.id ? 'Enviado' : 'Test'}
                   </button>
                 )}
                 <button type="button" onClick={() => onShowLogs(p)}

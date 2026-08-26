@@ -2,6 +2,8 @@ import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { formatPrice } from '@/utils/format'
 import { highlight } from './searchPanelHighlight'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export function SearchPanelBody({
   query,
@@ -112,9 +114,7 @@ export function SearchPanelBody({
                         </p>
                       )}
                     </div>
-                    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--hc-muted)' }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
+                    <TrustGlyph tipo="adelante" className="w-4 h-4 shrink-0" />
                   </motion.button>
                 )
               })}
@@ -146,7 +146,9 @@ export function SearchPanelBody({
                     {product.imagenUrl ? (
                       <img src={product.imagenUrl} alt={product.nombre} className="w-full h-full object-cover" loading="lazy" />
                     ) : (
-                      <span className="text-xl opacity-25">📦</span>
+                      <span className="opacity-30" style={{ color: 'var(--hc-muted)' }}>
+                        <TrustGlyph tipo="paquete" className="w-5 h-5" />
+                      </span>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -182,7 +184,7 @@ export function SearchPanelBody({
                   className="w-full py-2.5 rounded-xl text-sm font-medium transition-colors hover:opacity-80"
                   style={{ background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 25%, transparent)' }}
                 >
-                  {t('search.viewAllFor')} "{query}" →
+                  <TextoFlecha>{t('search.viewAllFor')} "{query}"</TextoFlecha>
                 </button>
               </div>
             </div>
@@ -195,7 +197,7 @@ export function SearchPanelBody({
                 className="w-full py-2.5 rounded-xl text-sm font-medium transition-colors hover:opacity-80"
                 style={{ background: 'color-mix(in srgb, var(--hc-accent) 12%, transparent)', color: 'var(--hc-accent)', border: '1px solid color-mix(in srgb, var(--hc-accent) 25%, transparent)' }}
               >
-                {t('search.viewAll')} →
+                <TextoFlecha>{t('search.viewAll')}</TextoFlecha>
               </button>
             </div>
           )}

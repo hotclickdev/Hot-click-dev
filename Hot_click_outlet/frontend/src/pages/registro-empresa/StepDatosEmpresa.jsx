@@ -3,6 +3,7 @@ import Input from '@/components/ui/Input'
 import PhoneField from '@/components/ui/PhoneField'
 import ErrMsg from '../auth/ErrMsg'
 import { STEP_MOTION } from './registroEmpresaHelpers'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function StepDatosEmpresa({
   form, error, onCampo, onTelefono, onSubmit, onAtras,
@@ -17,10 +18,12 @@ export default function StepDatosEmpresa({
         value={form.telefonoEmpresa} onChange={onTelefono} />
       {error && <ErrMsg>{error}</ErrMsg>}
       <div className="flex gap-2.5">
-        <button type="button" onClick={onAtras} className="hc-btn hc-btn-outline px-4">← Atrás</button>
+        <button type="button" onClick={onAtras} className="hc-btn hc-btn-outline px-4">
+          <TextoFlecha dir="atras">Atrás</TextoFlecha>
+        </button>
         <button type="submit" className="hc-btn hc-btn-primary hc-btn-lg flex-1"
           style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px rgba(231,59,51,0.3)' }}>
-          Siguiente →
+          <TextoFlecha>Siguiente</TextoFlecha>
         </button>
       </div>
     </motion.form>

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import Spinner from '@/components/ui/Spinner'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 import { authService } from '@/services/authService'
-import { F, Block, FormGroup, StyledInput, ShieldIcon, CheckIcon } from './configUi'
+import { F, Block, FormGroup, StyledInput, ShieldIcon, CheckIcon, MailIcon } from './configUi'
 
 export default function PanelEmailOtp({ enabled, loading, toast, onEnabled, onDisabled }) {
   const [step,      setStep]      = useState('idle')   // idle | setup | verify | disable
@@ -100,8 +101,9 @@ export default function PanelEmailOtp({ enabled, loading, toast, onEnabled, onDi
         {/* Verify OTP step */}
         {step === 'verify' && (
           <div style={{ borderRadius: '12px', padding: '16px', background: E.bg, border: `1px solid ${E.border}`, display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--hc-text)', fontFamily: F.body, margin: 0 }}>
-              📧 Revisá tu correo e ingresá el código de 6 dígitos
+            <p className="inline-flex items-center gap-2" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--hc-text)', fontFamily: F.body, margin: 0 }}>
+              <MailIcon style={{ width: 14, height: 14 }} />
+              Revisá tu correo e ingresá el código de 6 dígitos
             </p>
             <FormGroup label="Código de verificación">
               <input type="text" inputMode="numeric" maxLength={6} value={code}
@@ -115,8 +117,13 @@ export default function PanelEmailOtp({ enabled, loading, toast, onEnabled, onDi
                 {working ? <Spinner size="xs" /> : <CheckIcon style={{ width: '14px', height: '14px' }} />}
                 Activar
               </button>
-              <button type="button" onClick={sendOtp} disabled={cooldown > 0 || working} className="cfg-btn cfg-btn-ghost">
-                {cooldown > 0 ? `Reenviar (${cooldown}s)` : '↻ Reenviar código'}
+              <button type="button" onClick={sendOtp} disabled={cooldown > 0 || working} className="cfg-btn cfg-btn-ghost inline-flex items-center gap-1.5">
+                {cooldown > 0 ? `Reenviar (${cooldown}s)` : (
+                  <>
+                    <TrustGlyph tipo="reenviar" className="w-3.5 h-3.5" />
+                    Reenviar código
+                  </>
+                )}
               </button>
               <button type="button" onClick={cancel} className="cfg-btn cfg-btn-ghost">Cancelar</button>
             </div>

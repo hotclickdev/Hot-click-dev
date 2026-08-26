@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useToast } from '@/components/ui/Toast'
 import { gastoService } from '@/services/gastoService'
 import { CATEGORIAS, EMPTY_GASTO } from './finanzasHelpers'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 const estiloCampo = {
   backgroundColor: 'rgba(255,255,255,0.05)',
@@ -51,8 +52,10 @@ export default function GastoModal({ editing, onClose, onSaved }) {
           <h2 className="font-bold" style={{ color: 'var(--hc-text)' }}>
             {editing?.id ? 'Editar gasto' : 'Nuevo gasto'}
           </h2>
-          <button type="button" onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
-            style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>✕</button>
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
+            style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>
+            <CloseIcon />
+          </button>
         </div>
 
         <div>

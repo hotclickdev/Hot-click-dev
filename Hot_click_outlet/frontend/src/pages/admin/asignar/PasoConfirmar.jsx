@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import ClienteBadge from './ClienteBadge'
 import ResumenItems from './ResumenItems'
 import { ESTILO_INPUT, METODOS_PAGO } from './asignarHelpers'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 /**
  * @param {{
@@ -68,7 +69,7 @@ export default function PasoConfirmar({
 
       <div className="flex justify-between items-center pt-1">
         <button type="button" onClick={onVolver} className="text-sm transition-opacity hover:opacity-70" style={{ color: 'var(--hc-muted)' }}>
-          ← Volver
+          <TextoFlecha dir="atras">Volver</TextoFlecha>
         </button>
         <button type="button"
           onClick={onConfirmar}

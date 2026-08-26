@@ -1,6 +1,7 @@
 import { sel, inpStyle } from './productFormUi'
 import Label from './Label'
 import MarcaCombobox from './MarcaCombobox'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 function SelectCargando() {
   return (
@@ -18,7 +19,7 @@ function CampoBodega({ bodegas, loadingCatalog, sinBodegas, form, setCampo }) {
         style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
         <span className="text-xs flex-1" style={{ color: '#8a5a00' }}>Sin bodegas creadas — creá una para poder guardar el producto.</span>
         <a href="/admin/bodegas" className="text-xs font-semibold px-3 py-1 rounded-lg"
-          style={{ background: 'rgba(245,158,11,0.2)', color: '#8a5a00' }}>Crear →</a>
+          style={{ background: 'rgba(245,158,11,0.2)', color: '#8a5a00' }}><TextoFlecha>Crear</TextoFlecha></a>
       </div>
     )
   }

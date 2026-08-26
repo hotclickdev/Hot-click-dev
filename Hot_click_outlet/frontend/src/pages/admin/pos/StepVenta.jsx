@@ -4,10 +4,18 @@ import CartItem from './CartItem'
 import ClienteSelector from './ClienteSelector'
 import { formatMontoPos } from './posHelpers'
 import { CartEmptyIcon } from './posIcons'
+import { usePosAtajos } from './usePosAtajos'
 
 export default function StepVenta({ cartItems, onAdd, onSetCantidad, onSetPrecio, onRemove, descuento, onSetDescuento, subtotal, total, onNueva, onCobrar, onQrCliente, loadingQr, cliente, onSetCliente }) {
   const [mobileTab, setMobileTab] = useState('productos')
   const numItems = cartItems.reduce((s, i) => s + i.cantidad, 0)
+  usePosAtajos({
+    activo: true,
+    hayItems: cartItems.length > 0,
+    onCobrar,
+    alBuscar: () => setMobileTab('productos'),
+    alCantidad: () => setMobileTab('carrito'),
+  })
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -33,7 +41,7 @@ export default function StepVenta({ cartItems, onAdd, onSetCantidad, onSetPrecio
         <div className={`${mobileTab === 'carrito' ? 'hidden' : 'flex'} sm:flex flex-1 flex-col overflow-hidden border-r border-white/5`}>
           <div className="px-4 pt-2 pb-1 shrink-0">
             <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
-              Buscá por nombre, SKU o escaneá el código de barras
+              F2 buscar · F4 cantidad · F8 cobrar
             </p>
           </div>
           <div className="flex-1 overflow-y-auto p-4 pt-2">
@@ -127,7 +135,7 @@ export default function StepVenta({ cartItems, onAdd, onSetCantidad, onSetPrecio
                 boxShadow: cartItems.length > 0 ? '0 6px 24px rgba(23,71,168,0.4)' : 'none',
                 letterSpacing: '0.05em',
               }}>
-              {cartItems.length === 0 ? 'Agregá productos primero' : `COBRAR  ·  ₡${formatMontoPos(total)}  →`}
+              {cartItems.length === 0 ? 'Agregá productos primero' : `COBRAR  ·  ₡${formatMontoPos(total)}  (F8)`}
             </button>
 
             {cartItems.length > 0 && (

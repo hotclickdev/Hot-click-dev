@@ -19,7 +19,7 @@ export default function MiniCartFooter({ total, onCheckout }) {
         onClick={onCheckout}
         className="hc-btn hc-btn-primary hc-btn-lg w-full"
       >
-        {t('miniCart.checkout')}
+        {t('cart.payCard')}
       </button>
 
       <Link

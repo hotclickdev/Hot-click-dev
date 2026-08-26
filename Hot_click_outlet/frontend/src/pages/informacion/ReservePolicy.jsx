@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { ClockIcon } from './informacionIcons'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 /** Política de reserva de 1 hora. */
 export default function ReservePolicy() {
@@ -25,11 +26,11 @@ export default function ReservePolicy() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 text-xs">
             <div className="flex items-start gap-2 text-[#8e8e9a]">
-              <span className="text-amber-400 mt-0.5 shrink-0">→</span>
+              <TrustGlyph tipo="adelante" className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0" />
               {t('informacion.reservePoint1')}
             </div>
             <div className="flex items-start gap-2 text-[#8e8e9a]">
-              <span className="text-amber-400 mt-0.5 shrink-0">→</span>
+              <TrustGlyph tipo="adelante" className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0" />
               {t('informacion.reservePoint2')}
             </div>
           </div>

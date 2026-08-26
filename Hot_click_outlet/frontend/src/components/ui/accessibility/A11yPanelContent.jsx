@@ -1,5 +1,6 @@
 import { LANGUAGES, COLOR_FILTERS } from './a11yConstants'
 import { SectionLabel, ThemeBtn, ToggleRow } from './a11yUi'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 /**
  * Contenido del panel de accesibilidad (tema, idioma, fuente, filtros, toggles).
@@ -16,8 +17,8 @@ export default function A11yPanelContent({
       <div>
         <SectionLabel>{t('theme.toggle')}</SectionLabel>
         <div className="flex gap-2">
-          <ThemeBtn active={!isDark} onClick={() => setTheme('light')} label={t('theme.light')} icon="☀️" />
-          <ThemeBtn active={isDark} onClick={() => setTheme('dark')} label={t('theme.dark')} icon="🌙" />
+          <ThemeBtn active={!isDark} onClick={() => setTheme('light')} label={t('theme.light')} icon={<TrustGlyph tipo="sol" className="w-3.5 h-3.5" />} />
+          <ThemeBtn active={isDark} onClick={() => setTheme('dark')} label={t('theme.dark')} icon={<TrustGlyph tipo="luna" className="w-3.5 h-3.5" />} />
         </div>
       </div>
 

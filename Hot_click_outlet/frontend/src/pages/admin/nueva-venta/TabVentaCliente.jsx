@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import PhoneField from '@/components/ui/PhoneField'
+import TextoMas from '@/components/ui/TextoMas'
 
 /**
  * @param {{
@@ -47,7 +48,7 @@ export default function TabVentaCliente({
             onClick={onToggleNewClient}
             className="text-xs font-medium text-[#4f7cff] hover:text-[#7c9cff] transition-colors"
           >
-            {showNewClient ? 'Cancelar' : '+ Nuevo cliente'}
+            {showNewClient ? 'Cancelar' : <TextoMas>Nuevo cliente</TextoMas>}
           </button>
         </div>
         {!showNewClient && (

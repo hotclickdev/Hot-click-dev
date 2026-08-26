@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { fadeUp, WHATSAPP } from './contactoHelpers'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 export default function ContactoCanales() {
   const { t } = useTranslation()
@@ -23,7 +24,7 @@ export default function ContactoCanales() {
           <p className="text-sm font-semibold text-green-400 group-hover:text-green-300 transition-colors">+506 8666-7888</p>
           <p className="text-xs text-[#8e8e9a] mt-0.5">{t('contacto.waHint')}</p>
         </div>
-        <IconFlecha className="group-hover:text-green-400" />
+        <TrustGlyph tipo="adelante" className="w-4 h-4 text-[#8e8e9a] transition-colors flex-shrink-0 group-hover:text-green-400" />
       </motion.a>
 
       <motion.a
@@ -40,7 +41,7 @@ export default function ContactoCanales() {
           <p className="text-xs text-[#8e8e9a] mb-0.5">Email</p>
           <p className="text-sm font-semibold text-[#4f7cff] group-hover:text-[#3d6ee0] transition-colors truncate">hotclick.cr@gmail.com</p>
         </div>
-        <IconFlecha className="group-hover:text-[#4f7cff]" />
+        <TrustGlyph tipo="adelante" className="w-4 h-4 text-[#8e8e9a] transition-colors flex-shrink-0 group-hover:text-[#4f7cff]" />
       </motion.a>
 
       <motion.div {...fadeUp(0.25)} className="flex items-center gap-4 p-5 bg-[#111114] border border-white/8 rounded-2xl">
@@ -78,14 +79,6 @@ export default function ContactoCanales() {
         </div>
       </motion.div>
     </div>
-  )
-}
-
-function IconFlecha({ className = '' }) {
-  return (
-    <svg className={`w-4 h-4 text-[#8e8e9a] transition-colors flex-shrink-0 ${className}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-    </svg>
   )
 }
 

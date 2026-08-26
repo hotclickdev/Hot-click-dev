@@ -1,21 +1,7 @@
 import { PhoneInput } from 'react-international-phone'
 import 'react-international-phone/style.css'
 import { PHONE_FIELD_COUNTRIES } from './phoneFieldCountries'
-
-function emojiFlag(iso2) {
-  if (!iso2) return '🌐'
-  return String.fromCodePoint(
-    ...iso2.toUpperCase().split('').map(c => 0x1F1A5 + c.codePointAt(0))
-  )
-}
-
-function FlagEmoji({ iso2 }) {
-  return (
-    <span style={{ fontSize: 18, lineHeight: 1, userSelect: 'none' }}>
-      {emojiFlag(iso2)}
-    </span>
-  )
-}
+import './PhoneField.css'
 
 export default function PhoneField({
   label,
@@ -29,7 +15,7 @@ export default function PhoneField({
 }) {
   const border = `1.5px solid ${error ? '#ef4444' : 'var(--hc-border)'}`
   return (
-    <div className="space-y-1.5">
+    <div className="hc-phone-field space-y-1.5">
       {label && (
         <div className="flex items-baseline justify-between">
           <label className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
@@ -46,7 +32,6 @@ export default function PhoneField({
         value={value}
         onChange={onChange}
         disabled={disabled}
-        FlagComponent={FlagEmoji}
         inputStyle={{
           backgroundColor: 'var(--hc-surface-2)',
           border,
@@ -72,6 +57,10 @@ export default function PhoneField({
             paddingRight: 8,
             height: 44,
             flexShrink: 0,
+          },
+          flagStyle: { display: 'none' },
+          dropdownStyleProps: {
+            listItemFlagStyle: { display: 'none' },
           },
         }}
         style={{ display: 'flex', width: '100%', alignItems: 'stretch' }}

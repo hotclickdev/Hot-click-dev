@@ -25,6 +25,6 @@ No pedir que el usuario copie el dashboard. El proyecto es público.
 | **Ignore en properties** | Falso positivo de regla + glob, con un comentario de por qué |
 | **Won't Fix en Cloud** | Patrón intencional (p.ej. `collection.size()` para lazy load Hibernate, `S2201`) |
 
-No inventar números si la API falla. No bajar el Quality Gate para “pasar”. No proponer un sprint de 1000 smells: boy scout al tocar el archivo (ver `gestionar-deuda-tecnica` y `.cursor/rules/codigo-limpio.mdc`).
+No inventar números si la API falla. No bajar el Quality Gate para “pasar”. No proponer un sprint de 1000 smells: boy scout al tocar el archivo (ver `gestionar-deuda-tecnica` y `.cursor/rules/codigo-limpio.mdc`). Al aplicar el slice **y** las 4 reglas en el mismo archivo, usar `codigo-limpio-sonar`.
 
 Para **escribir código nuevo** que no vuelva a tumbar el gate, usar `sonar-prevenir`.

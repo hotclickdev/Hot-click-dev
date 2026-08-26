@@ -175,7 +175,7 @@ export function generateFAQJsonLd() {
         name: '¿Cómo hago un pedido en HOTCLICK?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Es muy fácil: buscá el producto, agregalo al carrito, completá el checkout con tus datos de envío y pagá de forma segura con SINPE Móvil, Visa o Mastercard. Recibirás confirmación por email.',
+          text: 'Es muy fácil: buscá el producto, agregalo al pedido, completá datos y pago con tu envío y pagá de forma segura con SINPE Móvil, Visa o Mastercard. Recibirás confirmación por email.',
         },
       },
       {

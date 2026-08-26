@@ -1,4 +1,5 @@
 import { formatPrice } from '@/utils/format'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 export default function ProveedoresTable({ proveedores, onCostos, onEdit, onDelete }) {
   return (
@@ -70,8 +71,10 @@ export function ProveedorCostosModal({ costosTarget, historial, loadingHistorial
           <h2 className="font-bold" style={{ color: 'var(--hc-text)' }}>
             Costos — {costosTarget.nombre}
           </h2>
-          <button type="button" onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
-            style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>✕</button>
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
+            style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>
+            <CloseIcon />
+          </button>
         </div>
         <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
           Precios pagados en órdenes de compra a este proveedor.

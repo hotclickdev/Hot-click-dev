@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { TypingDots } from './cartAssistant/cartAssistantHelpers'
 import { CartAssistantProductCard } from './cartAssistant/CartAssistantProductCard'
 import { useCartAssistant } from './cartAssistant/useCartAssistant'
+import IconoAsistente from './IconoAsistente'
 
 export default function CartAssistant({ cartItems, cartTotal }) {
   const {
@@ -30,7 +31,7 @@ export default function CartAssistant({ cartItems, cartTotal }) {
         <div className="relative shrink-0">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold"
             style={{ background: 'color-mix(in srgb, var(--hc-accent) 15%, transparent)', color: 'var(--hc-accent)' }}>
-            ✦
+            <IconoAsistente className="w-4 h-4" />
           </div>
           {busquedasPrevias && (
             <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-400 border-2"
@@ -76,7 +77,9 @@ export default function CartAssistant({ cartItems, cartTotal }) {
                   <div key={i} className={`flex gap-2 ${m.rol === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                     {m.rol === 'assistant' && (
                       <div className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[10px] font-bold mt-0.5"
-                        style={{ background: 'var(--hc-accent)', color: '#fff' }}>✦</div>
+                        style={{ background: 'var(--hc-accent)', color: '#fff' }}>
+                        <IconoAsistente className="w-3 h-3" />
+                      </div>
                     )}
                     <div className="max-w-[88%] space-y-2">
                       {m.typing

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import api from '@/services/api'
 import PromoWelcomeForm from '@/components/ui/promoWelcome/PromoWelcomeForm'
 import PromoWelcomeSuccess from '@/components/ui/promoWelcome/PromoWelcomeSuccess'
+import CloseIcon from '@/components/ui/CloseIcon'
 
 const LS_KEY = 'hc-promo-seen'
 const COOLDOWN_DAYS = 7
@@ -111,9 +112,7 @@ export default function PromoWelcomePopup() {
                   style={{ color: 'rgba(255,255,255,0.5)' }}
                   aria-label="Cerrar"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <CloseIcon className="w-4 h-4" />
                 </button>
               </div>
 

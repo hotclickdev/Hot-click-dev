@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  F, NOTIF_KEY, defaultNotifPrefs, Block, Toggle, SectionHeader, ShoppingIcon, TruckIcon, AlertIcon, BellIcon,
+  F, NOTIF_KEY, defaultNotifPrefs, Block, Toggle, SectionHeader, ShoppingIcon, TruckIcon, AlertIcon, BellIcon, PhoneIcon,
 } from './configUi'
 
 export default function SeccionNotificaciones({ toast, soloVentas = false }) {
@@ -53,7 +53,7 @@ export default function SeccionNotificaciones({ toast, soloVentas = false }) {
       {!soloVentas && (
         <Block label={t('adminConfig.notifWaTitle')} sublabel={t('adminConfig.notifWaSubtitle')}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', borderRadius: '10px', background: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-muted)', fontSize: '13px', fontFamily: F.mono }}>
-            <span style={{ fontSize: '16px' }}>📱</span>
+            <PhoneIcon style={{ width: '15px', height: '15px', flexShrink: 0 }} />
             <span style={{ flex: 1 }}>+506 8666-7888</span>
             <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>Andrés Zúñiga</span>
           </div>

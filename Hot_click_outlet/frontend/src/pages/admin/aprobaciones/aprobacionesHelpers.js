@@ -13,7 +13,7 @@ export const ESTADO_COLOR = {
 
 export const SUBTITULO_TAB = {
   empresas: 'Negocios nuevos esperando tu aprobación para activarse en la plataforma',
-  productos: 'Productos nuevos esperando tu aprobación para publicarse en el catálogo',
+  productos: 'El catálogo se abre al aprobar el negocio. Los productos nuevos de un negocio activo no esperan revisión acá.',
   ofertas: 'Promociones esperando tu aprobación para aplicarse',
 }
 

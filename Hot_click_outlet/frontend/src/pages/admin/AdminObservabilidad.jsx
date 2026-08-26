@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { observabilidadService } from '@/services/observabilidadService'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 const fmt = (n) => typeof n === 'number' ? n.toLocaleString('es-CR') : (n ?? '—')
 
-function KpiCard({ label, value, sub, color = 'gray', icon }) {
+function KpiCard({ label, value, sub, color = 'gray', icono }) {
   const colors = {
     green:  'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/30',
     red:    'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30',
@@ -16,7 +17,11 @@ function KpiCard({ label, value, sub, color = 'gray', icon }) {
     <div className={`rounded-2xl border p-5 shadow-sm ${colors[color]}`}>
       <div className="flex items-start justify-between">
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">{label}</p>
-        {icon && <span className="text-lg">{icon}</span>}
+        {icono && (
+          <span className="text-gray-400">
+            <TrustGlyph tipo={icono} className="w-4 h-4" />
+          </span>
+        )}
       </div>
       <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">{fmt(value)}</p>
       {sub && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{sub}</p>}
@@ -104,32 +109,32 @@ export default function AdminObservabilidad() {
 
       {/* Empresas */}
       <Section title="Empresas">
-        <KpiCard label="Total"    value={d.empresas?.total}    icon="🏢" color="gray" />
-        <KpiCard label="Activas"  value={d.empresas?.activas}  icon="✅" color="green" />
-        <KpiCard label="Trial"    value={d.empresas?.trial}    icon="⏳" color="amber" />
-        <KpiCard label="Vencidas" value={d.empresas?.vencidas} icon="🔴" color="red" />
+        <KpiCard label="Total"    value={d.empresas?.total}    icono="edificio" color="gray" />
+        <KpiCard label="Activas"  value={d.empresas?.activas}  icono="check" color="green" />
+        <KpiCard label="Trial"    value={d.empresas?.trial}    icono="reloj" color="amber" />
+        <KpiCard label="Vencidas" value={d.empresas?.vencidas} icono="error" color="red" />
       </Section>
 
       {/* Pedidos */}
       <Section title="Pedidos">
-        <KpiCard label="Total histórico"  value={d.pedidos?.total}         icon="📦" color="gray" />
-        <KpiCard label="Pendientes"       value={d.pedidos?.pendientes}     icon="🕐" color="amber" />
-        <KpiCard label="En preparación"   value={d.pedidos?.enPreparacion}  icon="🔧" color="blue" />
-        <KpiCard label="Enviados"         value={d.pedidos?.enviados}       icon="🚚" color="green" />
+        <KpiCard label="Total histórico"  value={d.pedidos?.total}         icono="paquete" color="gray" />
+        <KpiCard label="Pendientes"       value={d.pedidos?.pendientes}     icono="reloj" color="amber" />
+        <KpiCard label="En preparación"   value={d.pedidos?.enPreparacion}  icono="lista" color="blue" />
+        <KpiCard label="Enviados"         value={d.pedidos?.enviados}       icono="envio" color="green" />
       </Section>
 
       {/* Pagos */}
       <Section title="Pagos">
-        <KpiCard label="Capturados"  value={d.pagos?.capturados} icon="💳" color="green" />
-        <KpiCard label="Pendientes"  value={d.pagos?.pendientes} icon="⏳" color="amber" />
-        <KpiCard label="Fallidos"    value={d.pagos?.fallidos}   icon="❌" color="red" />
-        <KpiCard label="Productos"   value={d.productos?.total}  icon="🛍️" color="gray" />
+        <KpiCard label="Capturados"  value={d.pagos?.capturados} icono="tarjeta" color="green" />
+        <KpiCard label="Pendientes"  value={d.pagos?.pendientes} icono="reloj" color="amber" />
+        <KpiCard label="Fallidos"    value={d.pagos?.fallidos}   icono="error" color="red" />
+        <KpiCard label="Productos"   value={d.productos?.total}  icono="bolsa" color="gray" />
       </Section>
 
       {/* Usuarios */}
       <Section title="Usuarios">
-        <KpiCard label="Activos"    value={d.usuarios?.activos}    icon="👤" color="green" />
-        <KpiCard label="Pendientes" value={d.usuarios?.pendientes} icon="⏳" color="amber" />
+        <KpiCard label="Activos"    value={d.usuarios?.activos}    icono="clientes" color="green" />
+        <KpiCard label="Pendientes" value={d.usuarios?.pendientes} icono="reloj" color="amber" />
       </Section>
 
       {/* Seguridad */}
@@ -137,38 +142,38 @@ export default function AdminObservabilidad() {
         <KpiCard
           label="Eventos totales"
           value={d.seguridad?.eventosTotal24h}
-          icon="🔍"
+          icono="buscar"
           color="gray"
         />
         <KpiCard
           label="Eventos críticos"
           value={d.seguridad?.eventosCriticos24h}
-          icon="🚨"
+          icono="alerta"
           color={d.seguridad?.eventosCriticos24h > 0 ? 'red' : 'green'}
         />
         <KpiCard
           label="Fallos de login"
           value={d.seguridad?.intentosLogin24h}
-          icon="🔐"
+          icono="candado"
           color={d.seguridad?.intentosLogin24h > 50 ? 'red' : 'gray'}
         />
         <KpiCard
           label="Rate limit hits"
           value={d.seguridad?.rateLimitHits24h}
-          icon="🛑"
+          icono="alerta"
           color={d.seguridad?.rateLimitHits24h > 100 ? 'amber' : 'gray'}
         />
         <KpiCard
           label="Alertas abiertas"
           value={d.seguridad?.alertasAbiertas}
-          icon="⚠️"
+          icono="alerta"
           color={d.seguridad?.alertasAbiertas > 0 ? 'red' : 'green'}
           sub={`${d.seguridad?.alertasCriticas ?? 0} críticas`}
         />
         <KpiCard
           label="Webhooks pendientes"
           value={d.webhooks?.pendientes}
-          icon="🔔"
+          icono="campana"
           color={d.webhooks?.pendientes > 0 ? 'amber' : 'green'}
         />
       </Section>
@@ -178,14 +183,14 @@ export default function AdminObservabilidad() {
         <KpiCard
           label="Tokens del mes"
           value={d.ia?.tokensMes}
-          icon="🤖"
+          icono="sparkle"
           color="purple"
           sub="entrada + salida"
         />
         <KpiCard
           label="Llamadas a la API"
           value={d.ia?.llamadasMes}
-          icon="📡"
+          icono="sparkle"
           color="purple"
         />
       </Section>
@@ -195,7 +200,7 @@ export default function AdminObservabilidad() {
         <KpiCard
           label="Tamaño BD"
           value={d.baseDeDatos?.tamano}
-          icon="🗄️"
+          icono="lista"
           color="blue"
           sub={d.baseDeDatos?.tamanoBytes
             ? `${(d.baseDeDatos.tamanoBytes / 1024 / 1024).toFixed(1)} MB`

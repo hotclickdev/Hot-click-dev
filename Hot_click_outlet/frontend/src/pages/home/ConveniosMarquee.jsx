@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { convenioService } from '@/services/convenioService'
+import { convenioService, listaConvenios } from '@/services/convenioService'
 
 // ─── Marquee de emprendimientos con convenio ──────────────────────────────────
 export default function ConveniosMarquee() {
@@ -8,8 +8,8 @@ export default function ConveniosMarquee() {
 
   useEffect(() => {
     convenioService.getPublicos()
-      .then(r => setItems(r.data?.data ?? []))
-      .catch(() => { /* marquee decorativo */ })
+      .then((r) => setItems(listaConvenios(r)))
+      .catch((err) => { console.error('[ConveniosMarquee] convenios', err) })
   }, [])
 
   if (items.length === 0) return null
@@ -36,7 +36,17 @@ export default function ConveniosMarquee() {
                 <img src={c.logoUrl} alt={c.nombre} style={{ width: 22, height: 22, objectFit: 'contain', borderRadius: 4 }} />
               )}
               <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--hc-text-2)' }}>{c.nombre}</span>
-              <span style={{ fontSize: 10, color: 'var(--hc-border-strong)', marginLeft: 8 }}>✦</span>
+              <span
+                aria-hidden="true"
+                style={{
+                  width: 4,
+                  height: 4,
+                  borderRadius: '50%',
+                  background: 'var(--hc-border-strong)',
+                  marginLeft: 8,
+                  display: 'inline-block',
+                }}
+              />
             </div>
           ))}
         </motion.div>

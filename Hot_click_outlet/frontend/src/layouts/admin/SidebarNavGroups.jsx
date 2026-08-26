@@ -123,7 +123,9 @@ export default function SidebarNavGroups({
                               {link.label}
                               {link.feature && tenantLoaded && !hasFeature(link.feature) && (
                                 <svg className="w-3 h-3 shrink-0" style={{ color: muted }}
-                                  fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}
+                                  aria-label="Incluido en el plan PYME" role="img">
+                                  <title>Incluido en el plan PYME — tocá para ver qué incluye</title>
                                   <rect x="4" y="10" width="16" height="10" rx="2"/>
                                   <path strokeLinecap="round" d="M8 10V7a4 4 0 118 0v3"/>
                                 </svg>
@@ -169,7 +171,9 @@ export default function SidebarNavGroups({
                               {link.label}
                               {link.feature && tenantLoaded && !hasFeature(link.feature) && (
                                 <svg className="w-3 h-3 shrink-0" style={{ color: faint }}
-                                  fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                  fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}
+                                  aria-label="Incluido en el plan PYME" role="img">
+                                  <title>Incluido en el plan PYME — tocá para ver qué incluye</title>
                                   <rect x="4" y="10" width="16" height="10" rx="2"/>
                                   <path strokeLinecap="round" d="M8 10V7a4 4 0 118 0v3"/>
                                 </svg>

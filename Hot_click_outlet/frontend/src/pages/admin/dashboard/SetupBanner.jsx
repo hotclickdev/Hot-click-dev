@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 const PASOS = [
   { label: 'Completar perfil', to: '/admin/mi-empresa', step: 1 },
@@ -23,7 +24,7 @@ export default function SetupBanner({ onDismiss }) {
                 style={{ backgroundColor: 'rgba(23,71,168,0.12)', border: '1px solid rgba(23,71,168,0.25)', color: '#7fa0ff' }}
               >
                 <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0" style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>{step}</span>
-                {label} →
+                <TextoFlecha>{label}</TextoFlecha>
               </Link>
             ))}
           </div>

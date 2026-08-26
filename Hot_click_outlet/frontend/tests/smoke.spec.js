@@ -99,6 +99,28 @@ test.describe('Smoke público', () => {
     guards.assertClean()
   })
 
+  test('Emprender abre hub /emprende, no el directorio', async ({ page }) => {
+    const guards = attachGuards(page)
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
+    await page.getByRole('link', { name: 'Emprender' }).first().waitFor()
+    await page.getByRole('navigation').getByRole('link', { name: 'Emprender' }).click()
+    await expect(page).toHaveURL(/\/emprende$/)
+    await expect(page.getByRole('heading', { name: /Crecé tu negocio|Grow your business|Cresça seu negócio/ })).toBeVisible()
+    await page.getByRole('link', { name: /Crear mi negocio|Create my business|Criar meu negócio/ }).first().click()
+    await expect(page).toHaveURL(/\/registro-empresa/)
+    await page.goto('/emprendimientos', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByRole('heading', { name: 'Aliados' })).toBeVisible()
+    await page.goto('/esta-ruta-no-existe-p0', { waitUntil: 'domcontentloaded' })
+    await page.getByText(/Crecer con HotClick|Grow with HotClick|Crescer com HotClick/).click()
+    await expect(page).toHaveURL(/\/emprende$/)
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
+    await page.getByRole('button', { name: 'Menú' }).click()
+    await page.locator('.hc-mobile-menu a[href="/emprende"]').click()
+    await expect(page).toHaveURL(/\/emprende$/)
+    guards.assertClean()
+  })
+
   test('Checkout /checkout renderiza UI', async ({ page }) => {
     const guards = attachGuards(page)
     await page.goto('/checkout', { waitUntil: 'domcontentloaded' })

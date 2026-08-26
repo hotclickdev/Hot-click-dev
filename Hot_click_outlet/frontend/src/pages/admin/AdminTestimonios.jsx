@@ -4,6 +4,7 @@ import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import { useToast } from '@/components/ui/Toast'
 import { testimonioService } from '@/services/testimonioService'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 const ESTADO_STYLES = {
   PENDIENTE:  { bg: 'rgba(217,119,6,0.1)',   text: '#d97706', border: 'rgba(217,119,6,0.25)' },
@@ -99,7 +100,9 @@ export default function AdminTestimonios() {
         ) : visible.length === 0 ? (
           <div className="text-center py-16 rounded-2xl border"
             style={{ backgroundColor: 'var(--hc-surface)', borderColor: 'var(--hc-border)' }}>
-            <p className="text-4xl opacity-30">💬</p>
+            <p className="flex justify-center opacity-30" style={{ color: 'var(--hc-muted)' }}>
+              <TrustGlyph tipo="chat" className="w-10 h-10" />
+            </p>
             <p className="mt-3 text-sm" style={{ color: 'var(--hc-muted)' }}>No hay testimonios en esta categoría</p>
           </div>
         ) : (

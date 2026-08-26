@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { HotClickMark } from '@/components/ui/BrandLogo'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function FooterCtaStrip() {
   return (
@@ -35,7 +36,7 @@ export default function FooterCtaStrip() {
             whiteSpace: 'nowrap',
           }}
         >
-          Registrá tu emprendimiento →
+          <TextoFlecha>Registrá tu emprendimiento</TextoFlecha>
         </Link>
       </div>
     </div>

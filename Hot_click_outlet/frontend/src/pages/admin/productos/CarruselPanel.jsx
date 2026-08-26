@@ -1,3 +1,6 @@
+import CloseIcon from '@/components/ui/CloseIcon'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+
 const SLOT_COLORES = ['rgba(23,71,168,0.1)', 'rgba(122,163,255,0.1)', 'rgba(30,127,79,0.1)', 'rgba(245,158,11,0.1)', 'rgba(220,38,38,0.08)']
 const SLOT_BORDES = ['rgba(23,71,168,0.3)', 'rgba(122,163,255,0.3)', 'rgba(30,127,79,0.3)', 'rgba(245,158,11,0.3)', 'rgba(220,38,38,0.25)']
 const CARRUSEL_SLOTS = 5
@@ -6,14 +9,6 @@ function BoxIcon({ className }) {
   return (
     <svg className={className} style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
-    </svg>
-  )
-}
-
-function XIcon() {
-  return (
-    <svg className="w-3 h-3 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6 18L18 6M6 6l12 12" />
     </svg>
   )
 }
@@ -35,20 +30,23 @@ function CarruselSlotOcupado({ slot, index, total, onMover, onQuitar }) {
         <button type="button"
           onClick={() => onMover(slot, -1)}
           disabled={index === 0}
-          className="flex-1 h-6 rounded-lg text-[10px] transition-colors hover:bg-[var(--hc-surface)] disabled:opacity-30"
+          aria-label="Mover a la izquierda"
+          className="flex-1 h-6 rounded-lg transition-colors hover:bg-[var(--hc-surface)] disabled:opacity-30"
           style={{ color: 'var(--hc-muted)' }}
-        >←</button>
+        ><TrustGlyph tipo="atras" className="w-3.5 h-3.5 mx-auto" /></button>
         <button type="button"
           onClick={() => onQuitar(slot)}
+          aria-label="Quitar del carrusel"
           className="h-6 px-1.5 rounded-lg text-[10px] transition-colors hover:bg-red-500/15"
           style={{ color: '#a8291f' }}
-        ><XIcon /></button>
+        ><CloseIcon className="w-3 h-3 mx-auto" /></button>
         <button type="button"
           onClick={() => onMover(slot, 1)}
           disabled={index === total - 1}
-          className="flex-1 h-6 rounded-lg text-[10px] transition-colors hover:bg-[var(--hc-surface)] disabled:opacity-30"
+          aria-label="Mover a la derecha"
+          className="flex-1 h-6 rounded-lg transition-colors hover:bg-[var(--hc-surface)] disabled:opacity-30"
           style={{ color: 'var(--hc-muted)' }}
-        >→</button>
+        ><TrustGlyph tipo="adelante" className="w-3.5 h-3.5 mx-auto" /></button>
       </div>
     </>
   )

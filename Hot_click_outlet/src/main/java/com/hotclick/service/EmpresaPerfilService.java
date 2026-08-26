@@ -60,7 +60,10 @@ public class EmpresaPerfilService {
         if (body.containsKey("numeroWhatsapp")) e.setNumeroWhatsapp(body.get("numeroWhatsapp"));
         if (body.containsKey("colorPrimario")) e.setColorPrimario(body.get("colorPrimario"));
         if (body.containsKey("colorSecundario")) e.setColorSecundario(body.get("colorSecundario"));
+        if (body.containsKey("colorAcento")) e.setColorAcento(body.get("colorAcento"));
         if (body.containsKey("logoUrl")) e.setLogoUrl(body.get("logoUrl"));
+        if (body.containsKey("tagline")) e.setTagline(body.get("tagline"));
+        if (body.containsKey("footerTexto")) e.setFooterTexto(body.get("footerTexto"));
         empresaRepository.save(e);
         return toSafeMap(e);
     }
@@ -140,7 +143,10 @@ public class EmpresaPerfilService {
         m.put("logoUrl", e.getLogoUrl());
         m.put("colorPrimario", e.getColorPrimario());
         m.put("colorSecundario", e.getColorSecundario());
+        m.put("colorAcento", e.getColorAcento());
         m.put("numeroWhatsapp", e.getNumeroWhatsapp());
+        m.put("tagline", e.getTagline());
+        m.put("footerTexto", e.getFooterTexto());
         m.put("visibilidadPublica", Boolean.TRUE.equals(e.getVisibilidadPublica()));
         m.put("estadoEmpresa", e.getEstadoEmpresa());
         m.put("cedulaJuridica", e.getCedulaJuridica());

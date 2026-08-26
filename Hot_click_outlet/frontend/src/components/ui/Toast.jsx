@@ -1,5 +1,14 @@
 import { createContext, useContext, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import TrustGlyph from './TrustGlyph'
+import CloseIcon from './CloseIcon'
+
+function tipoGlifoToast(type) {
+  if (type === 'success') return 'check'
+  if (type === 'error') return 'error'
+  if (type === 'warning') return 'alerta'
+  return 'info'
+}
 
 const ToastContext = createContext(null)
 
@@ -31,7 +40,6 @@ export function ToastProvider({ children }) {
     warning: 'var(--hc-warning)',
     info: 'var(--hc-blue-500)',
   }
-  const ICON = { success: '✓', error: '!', warning: '⚠', info: 'ℹ' }
 
   return (
     <ToastContext.Provider value={toast}>
@@ -63,7 +71,7 @@ export function ToastProvider({ children }) {
                 style={{ width: 20, height: 20, marginTop: 1, background: ICON_BG[t.type] || ICON_BG.info, color: '#FFFFFF' }}
                 aria-hidden="true"
               >
-                {ICON[t.type] || ICON.info}
+                <TrustGlyph tipo={tipoGlifoToast(t.type)} className="w-3 h-3" />
               </span>
               <p className="text-sm leading-snug flex-1">{t.message}</p>
               <button type="button"
@@ -72,9 +80,7 @@ export function ToastProvider({ children }) {
                 className="shrink-0 flex items-center justify-center rounded opacity-60 hover:opacity-100 transition-opacity"
                 style={{ width: 18, height: 18, marginTop: 1 }}
               >
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                  <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/>
-                </svg>
+                <CloseIcon className="w-3 h-3" />
               </button>
             </motion.div>
           ))}

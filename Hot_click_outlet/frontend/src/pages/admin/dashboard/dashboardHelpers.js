@@ -1,4 +1,5 @@
 import { formatPrice } from '@/utils/format'
+import { isoDay } from '../sistema-inicio/sistemaInicioHelpers'
 
 /** Roles that see the first-run setup banner. */
 export const ROLES_NEGOCIO = new Set(['EMPRENDEDOR'])
@@ -35,7 +36,7 @@ export function buildSalesLast7(ventas) {
   for (let i = 6; i >= 0; i--) {
     const d = new Date()
     d.setDate(d.getDate() - i)
-    const key = d.toISOString().slice(0, 10)
+    const key = isoDay(i)
     const label = d.toLocaleDateString('es-CR', { weekday: 'short' })
     const total = ventas
       .filter((v) => (v.fechaCreacion ?? '').startsWith(key) && (v.estado === 'COMPLETADO' || v.estado === 'ENTREGADO'))

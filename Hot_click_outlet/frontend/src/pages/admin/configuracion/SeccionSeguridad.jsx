@@ -4,7 +4,7 @@ import { authService } from '@/services/authService'
 import PanelCambiarContrasena from './PanelCambiarContrasena'
 import Panel2FA from './Panel2FA'
 import PanelEmailOtp from './PanelEmailOtp'
-import { F, Block, SectionHeader, AlertIcon } from './configUi'
+import { F, Block, SectionHeader, AlertIcon, KeyIcon, LockIcon, MailIcon } from './configUi'
 
 export default function SeccionSeguridad({ refreshToken, toast, onTwoFAChange }) {
   const { t } = useTranslation()
@@ -57,17 +57,17 @@ export default function SeccionSeguridad({ refreshToken, toast, onTwoFAChange })
         </div>
         {/* Active methods badges */}
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '12px' }}>
-          <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '6px', background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.2)' }}>
-            🔑 Contraseña
-          </span>
+            <span className="inline-flex items-center gap-1" style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '6px', background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.2)' }}>
+              <KeyIcon style={{ width: 10, height: 10 }} /> Contraseña
+            </span>
           {totpEnabled && (
-            <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '6px', background: 'rgba(23,71,168,0.1)', color: 'var(--hc-accent)', border: '1px solid rgba(23,71,168,0.2)' }}>
-              🔐 App Authenticator
+            <span className="inline-flex items-center gap-1" style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '6px', background: 'rgba(23,71,168,0.1)', color: 'var(--hc-accent)', border: '1px solid rgba(23,71,168,0.2)' }}>
+              <LockIcon style={{ width: 10, height: 10 }} /> App Authenticator
             </span>
           )}
           {emailOtpEnabled && (
-            <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '6px', background: 'rgba(14,165,233,0.1)', color: '#0ea5e9', border: '1px solid rgba(14,165,233,0.2)' }}>
-              📧 Email OTP
+            <span className="inline-flex items-center gap-1" style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '6px', background: 'rgba(14,165,233,0.1)', color: '#0ea5e9', border: '1px solid rgba(14,165,233,0.2)' }}>
+              <MailIcon style={{ width: 10, height: 10 }} /> Email OTP
             </span>
           )}
         </div>

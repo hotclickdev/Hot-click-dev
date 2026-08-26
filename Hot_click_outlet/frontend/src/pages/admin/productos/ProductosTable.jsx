@@ -98,7 +98,7 @@ export default function ProductosTable({
 
 function encabezadosProductos(t, isAdmin, vistaSimple) {
   return [
-    ...(isAdmin ? ['★', 'Pos.'] : []),
+    ...(isAdmin ? ['Dest.', 'Pos.'] : []),
     ...(vistaSimple ? [] : ['ID']),
     t('admin.products.name'),
     t('admin.products.price'),

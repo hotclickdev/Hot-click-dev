@@ -7,14 +7,7 @@ import Spinner from '@/components/ui/Spinner'
 import { useToast } from '@/components/ui/Toast'
 import { marcaService } from '@/services/marcaService'
 import { urlLogoDesdeRespuesta } from './formMarca'
-
-function XIcon() {
-  return (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-    </svg>
-  )
-}
+import CloseIcon from '@/components/ui/CloseIcon'
 
 function UploadIcon() {
   return (
@@ -42,7 +35,7 @@ function LogoPreview({ url, onQuitar }) {
           className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
           title="Quitar logo"
         >
-          <XIcon />
+          <CloseIcon className="w-4 h-4" />
         </button>
       </div>
     </div>

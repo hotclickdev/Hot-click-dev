@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { vs } from './heroRotatorHelpers'
+import TrustGlyph from '@/components/ui/TrustGlyph'
 
 export function ChatDecos({ productos }) {
   const p0 = productos?.[0]?.imagenUrl
@@ -79,8 +80,10 @@ export function ProductDecos({ productos }) {
               <img src={img} alt="" className="w-full h-4/5 object-cover"
                 onError={(e) => { e.target.style.display = 'none' }} />
             ) : (
-              <div className="w-full h-4/5 flex items-center justify-center opacity-20"
-                style={{ background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', fontSize: '2rem' }}>📦</div>
+              <div className="w-full h-4/5 flex items-center justify-center opacity-30"
+                style={{ background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)', color: 'var(--hc-muted)' }}>
+                <TrustGlyph tipo="paquete" className="w-8 h-8" />
+              </div>
             )}
             <div className="absolute bottom-0 inset-x-0 h-1/5 flex items-center justify-center"
               style={{ background: 'var(--hc-surface)' }}>

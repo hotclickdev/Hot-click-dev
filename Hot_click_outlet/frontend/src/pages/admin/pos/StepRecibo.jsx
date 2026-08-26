@@ -1,5 +1,6 @@
 import { formatMontoPos } from './posHelpers'
 import { CheckIcon, PrintIcon, WhatsAppIcon } from './posIcons'
+import TextoMas from '@/components/ui/TextoMas'
 
 export default function StepRecibo({ venta, userName, onNueva }) {
   const fecha = venta?.fechaPedido
@@ -74,9 +75,9 @@ export default function StepRecibo({ venta, userName, onNueva }) {
             <WhatsAppIcon /> WhatsApp
           </button>
           <button type="button" onClick={onNueva}
-            className="py-3 rounded-2xl text-xs font-semibold transition-all hover:brightness-125"
+            className="py-3 rounded-2xl text-xs font-semibold transition-all hover:brightness-125 inline-flex items-center justify-center"
             style={{ background: 'var(--hc-accent)', color: '#fff' }}>
-            + Nueva
+            <TextoMas>Nueva</TextoMas>
           </button>
         </div>
       </div>

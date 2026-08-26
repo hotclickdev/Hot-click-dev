@@ -4,6 +4,10 @@ import com.hotclick.security.RateLimiter;
 import com.hotclick.security.TenantContext;
 import com.hotclick.service.AiCopilotService;
 import com.hotclick.service.AiQuotaService;
+import com.hotclick.service.copilot.AiCopilotStreamProcessor;
+import com.hotclick.sse.SseStreamHeaders;
+import io.sentry.Sentry;
+import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,10 +39,12 @@ public class AiCopilotController {
     @Autowired private RateLimiter      rateLimiter;
     @Autowired @Qualifier("sseExecutor") private Executor sseExecutor;
     @Autowired private com.hotclick.service.TextModerationService textModerationService;
+    @Autowired private AiCopilotStreamProcessor streamProcessor;
 
     /** SSE streaming chat endpoint. */
     @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter chat(@RequestBody Map<String, String> body) {
+    public SseEmitter chat(@RequestBody Map<String, String> body, HttpServletResponse response) {
+        SseStreamHeaders.aplicar(response);
         String message = body.getOrDefault("message", "").trim();
         SseEmitter emitter = new SseEmitter(120_000L);
 
@@ -66,9 +72,8 @@ public class AiCopilotController {
         }
 
         final String finalMessage = message;
-        emitter.onCompletion(emitter::complete);
         emitter.onTimeout(emitter::complete);
-        sseExecutor.execute(() -> aiCopilotService.chatStream(empresaId, finalMessage, emitter));
+        lanzarChat(emitter, empresaId, finalMessage);
         return emitter;
     }
 
@@ -113,12 +118,25 @@ public class AiCopilotController {
         return ResponseEntity.ok(Map.of("ok", true));
     }
 
+    /**
+     * El emitter se devuelve vacío: Spring tiene que commitear las cabeceras SSE
+     * antes de escribir. Completarlo en este hilo provoca
+     * {@code ERR_INCOMPLETE_CHUNKED_ENCODING} en Chrome.
+     */
     private SseEmitter errorEmitter(SseEmitter emitter, String msg) {
-        try {
-            emitter.send(SseEmitter.event().name("error")
-                .data("{\"error\":\"" + msg + "\"}"));
-            emitter.complete();
-        } catch (Exception e) { log.warn("SSE error: {}", e.getMessage()); }
+        sseExecutor.execute(() -> streamProcessor.sendError(emitter, msg));
         return emitter;
+    }
+
+    private void lanzarChat(SseEmitter emitter, Long empresaId, String message) {
+        sseExecutor.execute(() -> {
+            try {
+                aiCopilotService.chatStream(empresaId, message, emitter);
+            } catch (Exception e) {
+                log.error("[AI] stream copilot falló empresaId={}", empresaId, e);
+                Sentry.captureException(e);
+                streamProcessor.sendError(emitter, "Hot no pudo responder. Reintentá en un momento.");
+            }
+        });
     }
 }

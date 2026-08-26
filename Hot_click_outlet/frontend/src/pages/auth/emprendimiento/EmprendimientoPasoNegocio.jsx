@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import PhoneField from '@/components/ui/PhoneField'
 import Input from '@/components/ui/Input'
 import ErrMsg from '../ErrMsg'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 
 /**
  * Paso 0 — datos del negocio.
@@ -20,7 +21,7 @@ export default function EmprendimientoPasoNegocio({ form, error, actualizarCampo
       {error && <ErrMsg>{error}</ErrMsg>}
       <button type="submit" className="hc-btn hc-btn-primary hc-btn-lg w-full"
         style={{ background: 'var(--hc-primary)', borderColor: 'var(--hc-primary)', boxShadow: '0 4px 20px rgba(231,59,51,0.3)' }}>
-        Continuar →
+        <TextoFlecha>Continuar</TextoFlecha>
       </button>
     </motion.form>
   )

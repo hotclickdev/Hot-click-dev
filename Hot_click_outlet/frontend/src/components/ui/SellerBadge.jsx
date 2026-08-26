@@ -1,6 +1,6 @@
 /**
  * Sello de vendedor (Brand Book §15.4).
- * «✓ Emprendedor verificado» — badge azul, solo cuando la verificación es real.
+ * «Emprendedor verificado» — badge azul, solo cuando la verificación es real.
  * «Hecho en Costa Rica» — badge neutro, opt-in del vendedor.
  * Pills con punto/check + texto: el color nunca es el único indicador (cap. 9).
  */
