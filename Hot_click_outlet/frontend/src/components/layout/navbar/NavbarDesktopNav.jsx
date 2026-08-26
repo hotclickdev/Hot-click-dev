@@ -87,6 +87,7 @@ function NavbarMasMenu({ link, pathname }) {
           className="absolute top-full left-0 mt-1 min-w-[200px] rounded-xl border py-1 z-50 shadow-[0_8px_24px_rgba(20,23,28,0.12)]"
           style={{ backgroundColor: 'var(--hc-surface)', borderColor: 'var(--hc-border)' }}
           onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => event.stopPropagation()}
         >
           {link.menu.map((item) => {
             const isActive = pathname === item.href

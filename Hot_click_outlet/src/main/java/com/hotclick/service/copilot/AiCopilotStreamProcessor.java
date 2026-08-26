@@ -11,6 +11,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
@@ -20,14 +21,14 @@ public class AiCopilotStreamProcessor {
     private static final long PING_MS = 10_000;
 
     @Autowired private ObjectMapper objectMapper;
+    private final ConcurrentHashMap<SseEmitter, Object> candadosSse = new ConcurrentHashMap<>();
 
     /**
      * Comentarios SSE periódicos para que Nginx no cierre el POST mientras Claude corre.
      */
     public AutoCloseable startHeartbeat(SseEmitter emitter) {
         AtomicBoolean vivo = new AtomicBoolean(true);
-        Thread hilo = Thread.ofVirtual().unstarted(() -> latir(emitter, vivo));
-        hilo.setName("copilot-sse-ping");
+        Thread hilo = Thread.ofPlatform().name("copilot-sse-ping").unstarted(() -> latir(emitter, vivo));
         hilo.start();
         return () -> {
             vivo.set(false);
@@ -103,15 +104,21 @@ public class AiCopilotStreamProcessor {
     }
 
     /** SseEmitter no es thread-safe: heartbeat y respuesta no pueden intercalarse. */
-    private static void enviar(SseEmitter emitter, SseEmitter.SseEventBuilder event) throws IOException {
-        synchronized (emitter) {
+    private Object candadoDe(SseEmitter emitter) {
+        return candadosSse.computeIfAbsent(emitter, e -> new Object());
+    }
+
+    private void enviar(SseEmitter emitter, SseEmitter.SseEventBuilder event) throws IOException {
+        synchronized (candadoDe(emitter)) {
             emitter.send(event);
         }
     }
 
-    private static void cerrar(SseEmitter emitter) {
-        synchronized (emitter) {
+    private void cerrar(SseEmitter emitter) {
+        Object candado = candadoDe(emitter);
+        synchronized (candado) {
             emitter.complete();
         }
+        candadosSse.remove(emitter);
     }
 }
