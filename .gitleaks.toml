@@ -65,6 +65,6 @@ regexes = [
   '''hotclick-test-secret-minimum-32-chars-hs256''',
   '''sk_test_placeholder''',
   '''hck_live_TESTKEY''',
-  '''emprende\.paso\d(?:hint)?'',
-  '''emprende\.pasoOwner\d(?:hint)?'',
+  '''emprende\.paso\d(?:hint)?''',
+  '''emprende\.pasoOwner\d(?:hint)?''',
 ]
