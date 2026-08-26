@@ -46,3 +46,20 @@ export function parseCopilotSse(line, eventName) {
   }
   return { eventName }
 }
+
+/**
+ * Subtítulo de consultas restantes. Vacío si no hay uso o el plan no incluye Hot.
+ * @param {{ llamadas?: number, limite?: number, habilitado?: boolean } | null | undefined} uso
+ * @returns {string}
+ */
+export function textoConsultasRestantes(uso) {
+  if (!uso || uso.habilitado === false) return ''
+  const usadas = Number(uso.llamadas) || 0
+  const limite = Number(uso.limite)
+  if (!Number.isFinite(limite)) return ''
+  if (limite < 0) return 'Consultas ilimitadas este mes'
+  if (limite === 0) return ''
+  const restantes = Math.max(0, limite - usadas)
+  if (restantes === 1) return 'Te queda 1 consulta este mes'
+  return `Te quedan ${restantes} consultas este mes`
+}

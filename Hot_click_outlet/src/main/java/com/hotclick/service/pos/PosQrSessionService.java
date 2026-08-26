@@ -23,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -90,7 +91,7 @@ public class PosQrSessionService {
     @Transactional(readOnly = true)
     public Map<String, Object> getInfoPublica(String token) {
         PosQrSesion sesion = findSesionActiva(token);
-        Empresa empresa = sesion.getEmpresa();
+        Empresa empresa = exigirEmpresa(sesion);
 
         List<Map<String, Object>> items;
         try {
@@ -124,8 +125,12 @@ public class PosQrSessionService {
         r.put("total", sesion.getTotal());
         r.put("metodoPago", sesion.getMetodoPago());
         r.put("expiracion", sesion.getFechaExpiracion().toString());
-        r.put("sinpeNumero", numeroSinpe(sesion.getEmpresa()));
+        r.put("sinpeNumero", numeroSinpe(exigirEmpresa(sesion)));
         return r;
+    }
+
+    static Empresa exigirEmpresa(PosQrSesion sesion) {
+        return Objects.requireNonNull(sesion.getEmpresa(), "sesión QR sin empresa");
     }
 
     static String numeroSinpe(Empresa empresa) {
@@ -158,7 +163,7 @@ public class PosQrSessionService {
     public void cancelar(String token, Long empresaId) {
         PosQrSesion sesion = posQrRepo.findByToken(token)
             .orElseThrow(() -> new NoSuchElementException("Sesión no encontrada"));
-        if (!sesion.getEmpresa().getId().equals(empresaId)) {
+        if (!exigirEmpresa(sesion).getId().equals(empresaId)) {
             throw new SecurityException("No autorizado");
         }
         sesion.setEstado("CANCELADO");

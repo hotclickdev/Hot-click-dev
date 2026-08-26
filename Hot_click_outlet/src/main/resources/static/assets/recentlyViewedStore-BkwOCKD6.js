@@ -1,1 +1,0 @@
-import{i as e,r as t}from"./vendor-misc-BgjcWX3a.js";var n=6,r=e(t((e,t)=>({items:[],addItem:r=>{let i=t().items.filter(e=>e.id!==r.id);e({items:[{id:r.id,nombre:r.nombre,precio:r.precio,imagenUrl:r.imagenUrl},...i].slice(0,n)})}}),{name:`hotclick-recently-viewed`}));export{r as t};

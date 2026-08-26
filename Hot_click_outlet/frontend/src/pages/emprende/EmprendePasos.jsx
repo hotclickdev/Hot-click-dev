@@ -3,15 +3,15 @@ import { useTranslation } from 'react-i18next'
 import { RUTA_SISTEMA_MARCA } from '@/utils/rutaTienda'
 
 const PASOS_NUEVO = [
-  { titleKey: 'emprende.paso1', hintKey: 'emprende.paso1hint', to: '/registro-empresa' },
-  { titleKey: 'emprende.paso2', hintKey: 'emprende.paso2hint', to: null },
-  { titleKey: 'emprende.paso3', hintKey: 'emprende.paso3hint', to: null },
+  { tituloI18n: 'emprende.paso1', hintI18n: 'emprende.paso1hint', to: '/registro-empresa' },
+  { tituloI18n: 'emprende.paso2', hintI18n: 'emprende.paso2hint', to: null },
+  { tituloI18n: 'emprende.paso3', hintI18n: 'emprende.paso3hint', to: null },
 ]
 
 const PASOS_DUENIO = [
-  { titleKey: 'emprende.pasoOwner1', hintKey: 'emprende.pasoOwner1hint', to: RUTA_SISTEMA_MARCA },
-  { titleKey: 'emprende.pasoOwner2', hintKey: 'emprende.pasoOwner2hint', to: '/admin/productos/nuevo' },
-  { titleKey: 'emprende.pasoOwner3', hintKey: 'emprende.pasoOwner3hint', to: '/admin/billing/planes' },
+  { tituloI18n: 'emprende.pasoOwner1', hintI18n: 'emprende.pasoOwner1hint', to: RUTA_SISTEMA_MARCA },
+  { tituloI18n: 'emprende.pasoOwner2', hintI18n: 'emprende.pasoOwner2hint', to: '/admin/productos/nuevo' },
+  { tituloI18n: 'emprende.pasoOwner3', hintI18n: 'emprende.pasoOwner3hint', to: '/admin/billing/planes' },
 ]
 
 const estiloPaso = {
@@ -29,10 +29,10 @@ export default function EmprendePasos({ yaEsDuenio }) {
     <ol className="flex flex-col gap-3">
       {pasos.map((paso, indice) => (
         <PasoItem
-          key={paso.titleKey}
+          key={paso.tituloI18n}
           indice={indice}
-          title={t(paso.titleKey)}
-          hint={t(paso.hintKey)}
+          title={t(paso.tituloI18n)}
+          hint={t(paso.hintI18n)}
           to={paso.to}
         />
       ))}
