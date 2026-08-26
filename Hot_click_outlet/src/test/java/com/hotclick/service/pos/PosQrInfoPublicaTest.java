@@ -29,7 +29,7 @@ class PosQrInfoPublicaTest {
     @Test
     @DisplayName("Sesión QR sin empresa no se muestra al público")
     void sesionSinEmpresaNoSeMuestra() {
-        String token = "abcdefgh12345678";
+        String token = "token-prueba-qr-pos-01";
         PosQrSesion sesion = sesionPendiente(token);
         sesion.setEmpresa(null);
         when(posQrRepo.findByToken(token)).thenReturn(Optional.of(sesion));
@@ -42,7 +42,7 @@ class PosQrInfoPublicaTest {
     @Test
     @DisplayName("Con empresa, arma el nombre comercial para el cliente")
     void conEmpresaMuestraNombreComercial() {
-        String token = "abcdefgh12345678";
+        String token = "token-prueba-qr-pos-02";
         Empresa empresa = new Empresa();
         empresa.setNombreComercial("Café Luna");
         PosQrSesion sesion = sesionPendiente(token);

@@ -23,7 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -130,7 +129,11 @@ public class PosQrSessionService {
     }
 
     static Empresa exigirEmpresa(PosQrSesion sesion) {
-        return Objects.requireNonNull(sesion.getEmpresa(), "sesión QR sin empresa");
+        Empresa empresa = sesion.getEmpresa();
+        if (empresa == null) {
+            throw new RecursoNoEncontradoException("Empresa de la sesión QR", sesion.getToken());
+        }
+        return empresa;
     }
 
     static String numeroSinpe(Empresa empresa) {
