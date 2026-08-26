@@ -67,4 +67,5 @@ regexes = [
   '''hck_live_TESTKEY''',
   '''emprende\.paso\d(?:hint)?''',
   '''emprende\.pasoOwner\d(?:hint)?''',
+  '''abcdefgh12345678''',
 ]

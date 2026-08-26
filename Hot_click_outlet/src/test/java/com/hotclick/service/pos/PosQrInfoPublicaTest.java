@@ -29,12 +29,12 @@ class PosQrInfoPublicaTest {
     @Test
     @DisplayName("Sesión QR sin empresa no se muestra al público")
     void sesionSinEmpresaNoSeMuestra() {
-        String token = "abcdefgh12345678";
-        PosQrSesion sesion = sesionPendiente(token);
+        String codigoQr = "qr-sesion-de-prueba-01";
+        PosQrSesion sesion = sesionPendiente(codigoQr);
         sesion.setEmpresa(null);
-        when(posQrRepo.findByToken(token)).thenReturn(Optional.of(sesion));
+        when(posQrRepo.findByToken(codigoQr)).thenReturn(Optional.of(sesion));
 
-        assertThatThrownBy(() -> service.getInfoPublica(token))
+        assertThatThrownBy(() -> service.getInfoPublica(codigoQr))
             .isInstanceOf(RecursoNoEncontradoException.class)
             .hasMessageContaining("Empresa de la sesión QR");
     }
@@ -42,21 +42,21 @@ class PosQrInfoPublicaTest {
     @Test
     @DisplayName("Con empresa, arma el nombre comercial para el cliente")
     void conEmpresaMuestraNombreComercial() {
-        String token = "abcdefgh12345678";
+        String codigoQr = "qr-sesion-de-prueba-01";
         Empresa empresa = new Empresa();
         empresa.setNombreComercial("Café Luna");
-        PosQrSesion sesion = sesionPendiente(token);
+        PosQrSesion sesion = sesionPendiente(codigoQr);
         sesion.setEmpresa(empresa);
-        when(posQrRepo.findByToken(token)).thenReturn(Optional.of(sesion));
+        when(posQrRepo.findByToken(codigoQr)).thenReturn(Optional.of(sesion));
 
-        var info = service.getInfoPublica(token);
+        var info = service.getInfoPublica(codigoQr);
 
         assertThat(info.get("empresaNombre")).isEqualTo("Café Luna");
     }
 
-    private static PosQrSesion sesionPendiente(String token) {
+    private static PosQrSesion sesionPendiente(String codigoQr) {
         PosQrSesion sesion = new PosQrSesion();
-        sesion.setToken(token);
+        sesion.setToken(codigoQr);
         sesion.setEstado("PENDIENTE");
         sesion.setTotal(1000);
         sesion.setMetodoPago("SINPE");
