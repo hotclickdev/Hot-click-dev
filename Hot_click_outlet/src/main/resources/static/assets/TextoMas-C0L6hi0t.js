@@ -1,0 +1,1 @@
+import{a as e}from"./rolldown-runtime-BYbx6iT9.js";import{s as t}from"./vendor-clerk-BsRJ-NCt.js";import{t as n}from"./TrustGlyph-lX10Mhzg.js";var r=e(t(),1);function i({children:e,className:t=`inline-flex items-center gap-1.5`,iconClassName:i=`w-3.5 h-3.5`}){return(0,r.jsxs)(`span`,{className:t,children:[(0,r.jsx)(n,{tipo:`mas`,className:i}),e]})}export{i as t};

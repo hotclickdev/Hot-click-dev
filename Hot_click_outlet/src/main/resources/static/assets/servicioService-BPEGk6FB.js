@@ -1,1 +1,0 @@
-import{t as e}from"./api-BBCnYdhZ.js";var t={subirFoto:t=>e.post(`/servicios/fotos`,t,{headers:{"Content-Type":void 0}}),crear:t=>e.post(`/servicios`,t),misSolicitudes:()=>e.get(`/servicios/mis-solicitudes`),listarTodas:()=>e.get(`/servicios`),cambiarEstado:(t,n,r)=>e.put(`/servicios/${t}/estado`,{estado:n,notasAdmin:r}),eliminar:t=>e.delete(`/servicios/${t}`)};export{t};
