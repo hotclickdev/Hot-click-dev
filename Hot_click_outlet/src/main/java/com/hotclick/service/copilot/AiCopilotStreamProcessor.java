@@ -11,6 +11,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
@@ -18,6 +19,8 @@ public class AiCopilotStreamProcessor {
 
     private static final Logger log = LoggerFactory.getLogger(AiCopilotStreamProcessor.class);
     private static final long PING_MS = 10_000;
+    /** Candados por identidad de emitter: SseEmitter no es thread-safe entre heartbeat y respuesta. */
+    private static final ConcurrentHashMap<SseEmitter, Object> CANDADOS = new ConcurrentHashMap<>();
 
     @Autowired private ObjectMapper objectMapper;
 
@@ -26,8 +29,8 @@ public class AiCopilotStreamProcessor {
      */
     public AutoCloseable startHeartbeat(SseEmitter emitter) {
         AtomicBoolean vivo = new AtomicBoolean(true);
-        Thread hilo = Thread.ofVirtual().unstarted(() -> latir(emitter, vivo));
-        hilo.setName("copilot-sse-ping");
+        Thread hilo = new Thread(() -> latir(emitter, vivo), "copilot-sse-ping");
+        hilo.setDaemon(true);
         hilo.start();
         return () -> {
             vivo.set(false);
@@ -104,14 +107,20 @@ public class AiCopilotStreamProcessor {
 
     /** SseEmitter no es thread-safe: heartbeat y respuesta no pueden intercalarse. */
     private static void enviar(SseEmitter emitter, SseEmitter.SseEventBuilder event) throws IOException {
-        synchronized (emitter) {
+        synchronized (candadoDe(emitter)) {
             emitter.send(event);
         }
     }
 
     private static void cerrar(SseEmitter emitter) {
-        synchronized (emitter) {
+        Object candado = candadoDe(emitter);
+        synchronized (candado) {
             emitter.complete();
         }
+        CANDADOS.remove(emitter, candado);
+    }
+
+    private static Object candadoDe(SseEmitter emitter) {
+        return CANDADOS.computeIfAbsent(emitter, ignored -> new Object());
     }
 }

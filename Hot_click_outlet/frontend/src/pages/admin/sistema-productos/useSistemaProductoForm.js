@@ -149,7 +149,7 @@ async function resolverTiendaPublica() {
   if (stored.estadoEmpresa) return tiendaEsPublica(stored)
   try {
     const { data } = await empresaService.getPerfil()
-    const e = data?.id ? data : data
+    const e = data
     useTenantStore.getState().setEmpresaStatus({
       estadoEmpresa: e?.estadoEmpresa,
       visibilidadPublica: e?.visibilidadPublica,
