@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router-dom'
+import { esRutaPrototipo } from '@/utils/rutaPrototipo'
 import useUiStore from '@/store/uiStore'
 import { HotClickMark } from '@/components/ui/BrandLogo'
 import useChatStore from '@/store/chatStore'
@@ -28,6 +29,7 @@ export default function AccessibilityPanel() {
   // en el panel admin flotaba encima de botones y texto de las herramientas internas.
   if (pathname.startsWith('/admin')) return null
   if (pathname.startsWith('/tienda')) return null
+  if (esRutaPrototipo(pathname)) return null
   if (chatOpen) return null
 
   const isDark = theme === 'dark'

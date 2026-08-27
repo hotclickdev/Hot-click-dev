@@ -12,10 +12,11 @@ import { initGA4, trackPageView } from '@/utils/ga4'
 import { trackAiPage } from '@/components/ai/aiChat/aiChatBehavior'
 import { surfaceFromPath } from '@/components/ai/aiChat/chatSurface'
 import { esRutaTienda } from '@/utils/rutaTienda'
+import { esRutaPrototipo } from '@/utils/rutaPrototipo'
 import ChatModal from '@/components/ai/ChatModal'
 
 // Excluded paths — social proof / abandoned-cart watcher skip these
-const EXCLUDED_PREFIXES = ['/admin', '/carrito', '/checkout', '/pago', '/tienda']
+const EXCLUDED_PREFIXES = ['/admin', '/carrito', '/checkout', '/pago', '/tienda', '/prototipo']
 
 // El botón de WhatsApp no aparece en checkout/pago (Brand Book §15.4) ni en flujos de auth
 const WAB_HIDDEN_PATHS = new Set(['/login', '/registro', '/carrito', '/checkout'])
@@ -28,7 +29,7 @@ export function ScrollToTop() {
   useEffect(() => {
     globalThis.scrollTo(0, 0)
     trackPageView(pathname)
-    if (pathname.startsWith('/admin')) return
+    if (pathname.startsWith('/admin') || esRutaPrototipo(pathname)) return
     const ficha = pathname.match(/^\/productos\/([^/]+)/)
     trackAiPage(surfaceFromPath(pathname), ficha?.[1])
   }, [pathname])
@@ -55,14 +56,14 @@ export function ConditionalWhatsAppFab() {
   const { pathname } = useLocation()
   if (WAB_HIDDEN_PATHS.has(pathname)) return null
   if (pathname.startsWith('/admin') || pathname.startsWith('/checkout') || pathname.startsWith('/pago')) return null
-  if (esRutaTienda(pathname)) return null
+  if (esRutaTienda(pathname) || esRutaPrototipo(pathname)) return null
   return <WhatsAppFab />
 }
 
 /** Asistente del marketplace: no se abre encima de la tienda de un vendedor. */
 export function ConditionalChatModal() {
   const { pathname } = useLocation()
-  if (esRutaTienda(pathname)) return null
+  if (esRutaTienda(pathname) || esRutaPrototipo(pathname)) return null
   return <ChatModal />
 }
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
+import { esRutaPrototipo } from '@/utils/rutaPrototipo'
 
 const STORAGE_KEY = 'hotclick-cookie-consent'
 
@@ -18,14 +19,16 @@ export function setCookieConsent(value) {
 }
 
 export default function CookieBanner({ onConsent }) {
+  const { pathname } = useLocation()
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
+    if (esRutaPrototipo(pathname)) return
     const saved = localStorage.getItem(STORAGE_KEY)
     if (saved) return
     const t = setTimeout(() => setVisible(true), 12000)
     return () => clearTimeout(t)
-  }, [])
+  }, [pathname])
 
   const accept = (analytics) => {
     document.activeElement?.blur()
@@ -34,6 +37,8 @@ export default function CookieBanner({ onConsent }) {
     setVisible(false)
     onConsent?.(consent)
   }
+
+  if (esRutaPrototipo(pathname)) return null
 
   return (
     <AnimatePresence>
