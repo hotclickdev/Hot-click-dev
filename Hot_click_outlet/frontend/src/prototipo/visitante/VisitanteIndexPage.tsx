@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import BrandLogo from '@/components/ui/BrandLogo'
+import { visitanteRuta } from './visitanteMock'
 
 const CONFIANZA = [
   { titulo: 'Estamos disponible', detalle: 'Escribinos por WhatsApp' },
@@ -9,10 +10,10 @@ const CONFIANZA = [
 ] as const
 
 const CATEGORIAS = [
-  { nombre: 'Tecnología', to: '/productos?categoria=tecnologia', cantidad: 7 },
-  { nombre: 'Hogar', to: '/productos?categoria=hogar', cantidad: 7 },
-  { nombre: 'Ropa', to: '/productos?categoria=ropa', cantidad: 7 },
-  { nombre: 'Belleza', to: '/productos?categoria=belleza', cantidad: 7 },
+  { nombre: 'Tecnología', to: visitanteRuta('shop'), cantidad: 7 },
+  { nombre: 'Hogar', to: visitanteRuta('shop'), cantidad: 7 },
+  { nombre: 'Ropa', to: visitanteRuta('shop'), cantidad: 7 },
+  { nombre: 'Belleza', to: visitanteRuta('shop'), cantidad: 7 },
 ] as const
 
 /**
@@ -37,9 +38,10 @@ function CabeceraVisitante() {
       <span className="text-sm text-hc-muted">Menú</span>
       <BrandLogo size={28} />
       <div className="flex gap-3 text-sm text-hc-muted">
-        <Link to="/productos">Buscar</Link>
-        <Link to="/wishlist">Favoritos</Link>
-        <Link to="/carrito">Carrito</Link>
+        <Link to={visitanteRuta('shop')}>Buscar</Link>
+        <Link to={visitanteRuta('notificaciones')}>Avisos</Link>
+        <Link to={visitanteRuta('favoritos')}>Favoritos</Link>
+        <Link to={visitanteRuta('carrito')}>Carrito</Link>
       </div>
     </header>
   )
@@ -49,7 +51,7 @@ function BannerRegreso() {
   return (
     <p className="mb-4 rounded-lg px-3 py-2 text-sm text-hc-text" style={{ background: 'var(--hc-red-50)' }}>
       ¡Volviste! Tenés productos en el carrito.{' '}
-      <Link to="/carrito" className="font-semibold text-hc-accent">Ver carrito</Link>
+      <Link to={visitanteRuta('carrito')} className="font-semibold text-hc-accent">Ver carrito</Link>
     </p>
   )
 }
@@ -60,10 +62,13 @@ function BusquedaHero() {
       <h1 className="font-display text-2xl font-bold">¿Qué estás buscando hoy?</h1>
       <p className="mt-1 text-sm text-hc-muted">Escribí qué buscás en el catálogo.</p>
       <Link
-        to="/productos"
+        to={visitanteRuta('shop')}
         className="mt-3 flex min-h-11 items-center rounded-full border border-hc-border bg-hc-surface px-4 text-sm text-hc-muted"
       >
         Escribí qué buscás...
+      </Link>
+      <Link to={visitanteRuta('asistente')} className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-hc-accent">
+        Preguntale al asistente
       </Link>
     </section>
   )
@@ -86,7 +91,7 @@ function TarjetaDiscover() {
   return (
     <section className="mb-6 rounded-xl border border-hc-accent/30 p-4" style={{ background: 'var(--hc-blue-50)' }}>
       <p className="text-sm">¿No sabés qué buscar? Deslizá entre productos y encontrá lo que te gusta.</p>
-      <Link to="/descubri" className="mt-3 inline-flex min-h-11 items-center font-semibold text-hc-accent">
+      <Link to={visitanteRuta('discover')} className="mt-3 inline-flex min-h-11 items-center font-semibold text-hc-accent">
         Probar Discover
       </Link>
     </section>
@@ -98,7 +103,7 @@ function GrillaCategorias() {
     <section>
       <div className="mb-3 flex items-baseline justify-between">
         <h2 className="text-lg font-semibold">Elegí una categoría</h2>
-        <Link to="/productos" className="text-sm text-hc-accent">Ver catálogo completo</Link>
+        <Link to={visitanteRuta('shop')} className="text-sm text-hc-accent">Ver catálogo completo</Link>
       </div>
       <ul className="grid grid-cols-2 gap-3">
         {CATEGORIAS.map((cat) => (
