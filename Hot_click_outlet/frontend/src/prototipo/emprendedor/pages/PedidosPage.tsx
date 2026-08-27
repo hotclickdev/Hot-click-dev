@@ -14,7 +14,7 @@ const FILTROS = ['Todos', 'Pendientes', 'Enviados', 'Entregados'] as const
  * Pedidos (Figma 128:128).
  */
 export default function PedidosPage() {
-  const { pedidos, loading } = usePedidosEmprendedor()
+  const { pedidos } = usePedidosEmprendedor()
   const [filtro, setFiltro] = useState('Todos')
   const visibles = useMemo(() => filtrarPedidos(pedidos, filtro), [pedidos, filtro])
 
@@ -25,7 +25,6 @@ export default function PedidosPage() {
         <p className="text-xs text-hc-muted">Tus ventas y su estado de envío</p>
       </div>
       <FilaChips valor={filtro} opciones={FILTROS} onChange={setFiltro} />
-      {loading ? <p className="text-sm text-hc-muted">Cargando pedidos…</p> : null}
       {visibles.map((pedido) => (
         <Link
           key={pedido.id}

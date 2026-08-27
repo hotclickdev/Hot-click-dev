@@ -4,7 +4,7 @@ const DESC_AURICULARES =
   'Auriculares inalámbricos con cancelación de ruido, batería de larga duración y estuche de carga incluido. Ideal para uso diario.'
 
 /**
- * Catálogo del mock Figma (Paso 2 / 5 / 8). Fallback si la API no responde.
+ * Catálogo del mock Figma (Paso 2 / 5 / 8).
  */
 export const PRODUCTOS_DEMO: ProductoEmprendedor[] = [
   {

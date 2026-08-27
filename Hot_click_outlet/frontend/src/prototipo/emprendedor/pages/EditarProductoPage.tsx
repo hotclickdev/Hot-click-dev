@@ -7,8 +7,8 @@ import CampoTexto from '../ui/CampoTexto'
 import FilaChips from '../ui/FilaChips'
 import { CATEGORIAS_PRODUCTO, RUTA_EMPRENDEDOR } from '../constants'
 import { PRODUCTOS_DEMO } from '../data/catalogoDemo'
-import { productService } from '@/services/productService'
 import { useCatalogoEmprendedor } from '../hooks/useCatalogoEmprendedor'
+import { esCategoriaProducto, useEmprendedorDemoStore } from '../store/emprendedorDemoStore'
 import type { EstadoPublicacion } from '../types'
 
 const ESTADOS = ['Publicado', 'Pausado'] as const
@@ -20,6 +20,7 @@ export default function EditarProductoPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
   const { productos } = useCatalogoEmprendedor()
+  const actualizarProducto = useEmprendedorDemoStore((estadoStore) => estadoStore.actualizarProducto)
   const original = useMemo(
     () => productos.find((p) => p.id === id) ?? PRODUCTOS_DEMO.find((p) => p.id === id),
     [productos, id],
@@ -31,7 +32,6 @@ export default function EditarProductoPage() {
   const [stock, setStock] = useState(String(original?.stock ?? ''))
   const [categoria, setCategoria] = useState<string>(original?.categoria ?? 'Tecnología')
   const [estado, setEstado] = useState<string>(original?.estado ?? 'Publicado')
-  const [error, setError] = useState<string | null>(null)
 
   if (!original) {
     return (
@@ -51,7 +51,7 @@ export default function EditarProductoPage() {
           Cambiar foto
         </span>
       </div>
-      <form className="flex flex-col gap-5" onSubmit={(evento) => void guardar(evento)}>
+      <form className="flex flex-col gap-5" onSubmit={guardar}>
         <CampoTexto etiqueta="Nombre del producto" value={nombre} onChange={setNombre} />
         <CampoTexto etiqueta="Precio de compra" value={compra} onChange={setCompra} type="number" />
         <CampoTexto etiqueta="Precio de venta" value={venta} onChange={setVenta} type="number" />
@@ -65,7 +65,6 @@ export default function EditarProductoPage() {
           <p className="mb-2 text-xs font-medium text-hc-muted">Estado</p>
           <FilaChips valor={estado} opciones={ESTADOS} onChange={setEstado} />
         </div>
-        {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
         <BotonPrimario type="submit">Guardar cambios</BotonPrimario>
         <BotonSecundario tono="peligro" onClick={() => navigate(`${RUTA_EMPRENDEDOR}/productos/${id}/eliminar`)}>
           Eliminar producto
@@ -74,21 +73,18 @@ export default function EditarProductoPage() {
     </main>
   )
 
-  async function guardar(evento: FormEvent) {
+  function guardar(evento: FormEvent) {
     evento.preventDefault()
-    setError(null)
-    try {
-      await productService.update(id, {
-        nombre,
-        descripcion,
-        precioCompra: Number(compra) || 0,
-        precioVenta: Number(venta) || 0,
-        stock: Number(stock) || 0,
-        visibleCatalogo: (estado as EstadoPublicacion) === 'Publicado',
-      })
-    } catch {
-      setError('No se pudo guardar en el servidor. El prototipo sigue.')
-    }
+    if (!esCategoriaProducto(categoria)) return
+    actualizarProducto(id, {
+      nombre,
+      precioCompra: compra,
+      precioVenta: venta,
+      descripcion,
+      stock,
+      categoria,
+      estado: estado as EstadoPublicacion,
+    })
     navigate(`${RUTA_EMPRENDEDOR}/productos`)
   }
 }

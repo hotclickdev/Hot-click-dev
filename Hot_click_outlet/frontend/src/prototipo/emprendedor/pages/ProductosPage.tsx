@@ -12,7 +12,7 @@ const FILTROS = ['Todos', 'Recién agregados', 'Tecnología', 'Ropa'] as const
  * Paso 2 Mis Productos (Figma 7:2) + vacío 155:540.
  */
 export default function ProductosPage() {
-  const { productos, loading } = useCatalogoEmprendedor()
+  const { productos } = useCatalogoEmprendedor()
   const [filtro, setFiltro] = useState<string>('Todos')
   const visibles = useMemo(() => filtrarProductos(productos, filtro), [productos, filtro])
 
@@ -24,8 +24,7 @@ export default function ProductosPage() {
       </header>
       <EnlacePrimario to="/productos/nuevo">+ Agregar producto</EnlacePrimario>
       <FilaChips valor={filtro} opciones={FILTROS} onChange={setFiltro} />
-      {loading ? <p className="text-sm text-hc-muted">Cargando productos…</p> : null}
-      {!loading && visibles.length === 0 ? <VacioProductos /> : <ListadoGrupos productos={visibles} filtro={filtro} />}
+      {visibles.length === 0 ? <VacioProductos /> : <ListadoGrupos productos={visibles} filtro={filtro} />}
     </main>
   )
 }

@@ -10,7 +10,7 @@ import { useBodegasEmprendedor } from '../hooks/useBodegasEmprendedor'
  */
 export default function BodegasPage() {
   const navigate = useNavigate()
-  const { bodegas, loading } = useBodegasEmprendedor()
+  const { bodegas } = useBodegasEmprendedor()
   return (
     <main className="flex flex-col gap-[18px] px-5 pb-10 pt-8">
       <div>
@@ -18,7 +18,6 @@ export default function BodegasPage() {
         <p className="text-xs text-hc-muted">Dónde guardás tu inventario</p>
       </div>
       <EnlacePrimario to="/opciones/bodegas/nueva">+ Nueva bodega</EnlacePrimario>
-      {loading ? <p className="text-sm text-hc-muted">Cargando bodegas…</p> : null}
       {bodegas.map((bodega) => (
         <button
           key={bodega.id}

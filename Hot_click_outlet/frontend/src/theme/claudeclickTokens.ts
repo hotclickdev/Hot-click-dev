@@ -18,6 +18,7 @@
  * - Emojis del mock (reloj, ojo, lupa, estrellas) se reemplazan por texto.
  * - Figma lista 6 productos en moderacion y muestra 4; el prototipo sigue las 4 cards.
  * - Agregar marca / garantia / servicio abre Proximamente (no hay frame de alta).
+ * - El prototipo Emprendedor no llama al API: altas, cobros y pedidos viven en memoria.
  */
 export const FIGMA_BRAND = {
   red: '#E31E24',

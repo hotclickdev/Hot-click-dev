@@ -6,13 +6,14 @@ import CabeceraAtras from '../ui/CabeceraAtras'
 import CampoTexto from '../ui/CampoTexto'
 import FilaChips from '../ui/FilaChips'
 import { CATEGORIAS_PRODUCTO, RUTA_EMPRENDEDOR } from '../constants'
-import { productService } from '@/services/productService'
+import { useEmprendedorDemoStore } from '../store/emprendedorDemoStore'
 
 /**
  * Paso 3 Agregar Producto (Figma 10:2).
  */
 export default function AgregarProductoPage() {
   const navigate = useNavigate()
+  const agregarProducto = useEmprendedorDemoStore((estado) => estado.agregarProducto)
   const [nombre, setNombre] = useState('')
   const [compra, setCompra] = useState('')
   const [venta, setVenta] = useState('')
@@ -21,11 +22,28 @@ export default function AgregarProductoPage() {
   const [categoria, setCategoria] = useState<(typeof CATEGORIAS_PRODUCTO)[number]>('Tecnología')
   const [error, setError] = useState<string | null>(null)
 
+  function publicar(evento: FormEvent) {
+    evento.preventDefault()
+    if (!nombre.trim()) {
+      setError('Escribí el nombre del producto.')
+      return
+    }
+    agregarProducto({
+      nombre,
+      precioCompra: compra,
+      precioVenta: venta,
+      descripcion,
+      stock,
+      categoria,
+    })
+    navigate(`${RUTA_EMPRENDEDOR}/productos`)
+  }
+
   return (
     <main className="flex flex-col gap-[22px] px-5 py-8">
       <CabeceraAtras titulo="Nuevo Producto" to={`${RUTA_EMPRENDEDOR}/productos`} />
       <ZonaFoto />
-      <form className="flex flex-col gap-5" onSubmit={(evento) => void publicar(evento)}>
+      <form className="flex flex-col gap-5" onSubmit={publicar}>
         <CampoTexto etiqueta="Nombre del producto" value={nombre} onChange={setNombre} placeholder="Ej: Camiseta Oversize Negra" />
         <CampoTexto etiqueta="Precio de compra" value={compra} onChange={setCompra} type="number" placeholder="₡ 0" />
         <CampoTexto etiqueta="Precio de venta" value={venta} onChange={setVenta} type="number" placeholder="₡ 0" />
@@ -40,23 +58,6 @@ export default function AgregarProductoPage() {
       </form>
     </main>
   )
-
-  async function publicar(evento: FormEvent) {
-    evento.preventDefault()
-    setError(null)
-    try {
-      await productService.create({
-        nombre,
-        descripcion,
-        precioCompra: Number(compra) || 0,
-        precioVenta: Number(venta) || 0,
-        stock: Number(stock) || 0,
-      })
-    } catch {
-      setError('No se pudo publicar en el servidor. Lo dejamos en el prototipo.')
-    }
-    navigate(`${RUTA_EMPRENDEDOR}/productos`)
-  }
 }
 
 function ZonaFoto() {

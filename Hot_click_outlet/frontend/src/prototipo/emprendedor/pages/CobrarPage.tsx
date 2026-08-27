@@ -5,7 +5,6 @@ import BotonPrimario from '../ui/BotonPrimario'
 import CabeceraAtras from '../ui/CabeceraAtras'
 import ChipFiltro from '../ui/ChipFiltro'
 import { RUTA_EMPRENDEDOR } from '../constants'
-import { posService } from '@/services/posService'
 import { leerTicket, totalTicket } from '../ticketPos'
 
 const METODOS = ['Efectivo', 'SINPE', 'Tarjeta'] as const
@@ -16,7 +15,6 @@ const METODOS = ['Efectivo', 'SINPE', 'Tarjeta'] as const
 export default function CobrarPage() {
   const navigate = useNavigate()
   const [metodo, setMetodo] = useState<string>('Efectivo')
-  const [error, setError] = useState<string | null>(null)
   const ticket = leerTicket()
   const total = totalTicket(ticket)
 
@@ -44,24 +42,14 @@ export default function CobrarPage() {
           </ChipFiltro>
         ))}
       </div>
-      {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
-      <BotonPrimario onClick={() => void confirmar()}>Confirmar cobro</BotonPrimario>
+      <BotonPrimario onClick={confirmar}>Confirmar cobro</BotonPrimario>
     </main>
   )
 
-  async function confirmar() {
+  function confirmar() {
     if (metodo === 'Tarjeta') {
       navigate(`${RUTA_EMPRENDEDOR}/pos/qr`)
       return
-    }
-    try {
-      await posService.crearVenta({
-        items: ticket.map((linea) => ({ productoId: linea.id, cantidad: linea.cantidad })),
-        metodoPago: metodo.toUpperCase(),
-      })
-    } catch (err) {
-      console.error('[prototipo emprendedor] POS venta', err)
-      setError('No se registró en el servidor. El prototipo continúa.')
     }
     navigate(`${RUTA_EMPRENDEDOR}/pos/venta`)
   }

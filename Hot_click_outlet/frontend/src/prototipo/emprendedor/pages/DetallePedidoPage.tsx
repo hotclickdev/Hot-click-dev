@@ -8,7 +8,7 @@ import Miniatura from '../ui/Miniatura'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import { PEDIDOS_DEMO } from '../data/pedidosDemo'
 import { usePedidosEmprendedor } from '../hooks/usePedidosEmprendedor'
-import { orderService } from '@/services/orderService'
+import { useEmprendedorDemoStore } from '../store/emprendedorDemoStore'
 
 /**
  * Detalle de pedido (Figma 128:157).
@@ -17,6 +17,7 @@ export default function DetallePedidoPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
   const { pedidos } = usePedidosEmprendedor()
+  const marcarPedidoEnviado = useEmprendedorDemoStore((estado) => estado.marcarPedidoEnviado)
   const pedido = useMemo(
     () => pedidos.find((p) => p.id === id) ?? PEDIDOS_DEMO.find((p) => p.id === id),
     [pedidos, id],
@@ -33,12 +34,8 @@ export default function DetallePedidoPage() {
 
   const pedidoId = pedido.id
 
-  async function marcarEnviado() {
-    try {
-      await orderService.updateStatus(pedidoId, 'ENVIADO')
-    } catch (err) {
-      console.error('[prototipo emprendedor] pedido', err)
-    }
+  function marcarEnviado() {
+    marcarPedidoEnviado(pedidoId)
     navigate(`${RUTA_EMPRENDEDOR}/pedidos`)
   }
 
@@ -68,7 +65,7 @@ export default function DetallePedidoPage() {
         <span className="text-hc-primary">{formatoColon(pedido.total)}</span>
       </div>
       {pedido.estado === 'Pendiente' ? (
-        <BotonPrimario onClick={() => void marcarEnviado()}>Marcar como enviado</BotonPrimario>
+        <BotonPrimario onClick={marcarEnviado}>Marcar como enviado</BotonPrimario>
       ) : null}
     </main>
   )
