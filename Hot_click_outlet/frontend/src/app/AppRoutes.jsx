@@ -24,6 +24,7 @@ const SSOCallback   = CLERK_ENABLED ? lazy(() => import('@/pages/SSOCallback')) 
 const SSOComplete   = CLERK_ENABLED ? lazy(() => import('@/pages/SSOComplete')) : null
 
 const HomePage = lazy(() => import('@/pages/HomePage'))
+const VisitanteRoutes = lazy(() => import('@/prototipo/visitante/VisitanteRoutes'))
 const ProductsPage = lazy(() => import('@/pages/ProductsPage'))
 const DescubriPage = lazy(() => import('@/pages/DescubriPage'))
 const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage'))
@@ -127,6 +128,7 @@ export default function AppRoutes() {
   return (
             <Routes>
               <Route path="/" element={<HomePage />} />
+              <Route path="/prototipo/visitante/*" element={<VisitanteRoutes />} />
               <Route path="/productos" element={<ProductsPage />} />
               <Route path="/descubri" element={<DescubriPage />} />
               <Route path="/productos/:id" element={<ProductDetailPage />} />
