@@ -73,7 +73,7 @@ src/
 
 ## Alias de importación
 
-`@/` apunta a `src/` (configurado en `vite.config.js`).
+`@/` apunta a `src/` (configurado en `vite.config.ts`).
 
 ## Notas
 
