@@ -11,6 +11,13 @@
  * - Sin keyframes en el archivo Figma (logo/hero son estáticos).
  * - Fotos de catálogo en Visitante son placeholders.
  * - image 3 (PDP desktop) no está como frame con capas.
+ * Super Admin (41:128):
+ * - Login 59:294 deja el input de correo a 163px; el prototipo usa ancho completo.
+ * - Elipse decorativa detras del isotipo del dashboard no se porta.
+ * - Fotos de producto en moderacion y vista previa son bloques de superficie.
+ * - Emojis del mock (reloj, ojo, lupa, estrellas) se reemplazan por texto.
+ * - Figma lista 6 productos en moderacion y muestra 4; el prototipo sigue las 4 cards.
+ * - Agregar marca / garantia / servicio abre Proximamente (no hay frame de alta).
  */
 export const FIGMA_BRAND = {
   red: '#E31E24',

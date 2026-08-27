@@ -25,6 +25,7 @@ const SSOComplete   = CLERK_ENABLED ? lazy(() => import('@/pages/SSOComplete')) 
 
 const HomePage = lazy(() => import('@/pages/HomePage'))
 const VisitanteRoutes = lazy(() => import('@/prototipo/visitante/VisitanteRoutes'))
+const AdminProtoRoutes = lazy(() => import('@/prototipo/admin/AdminRoutes'))
 const ProductsPage = lazy(() => import('@/pages/ProductsPage'))
 const DescubriPage = lazy(() => import('@/pages/DescubriPage'))
 const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage'))
@@ -129,6 +130,7 @@ export default function AppRoutes() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/prototipo/visitante/*" element={<VisitanteRoutes />} />
+              <Route path="/prototipo/admin/*" element={<AdminProtoRoutes />} />
               <Route path="/productos" element={<ProductsPage />} />
               <Route path="/descubri" element={<DescubriPage />} />
               <Route path="/productos/:id" element={<ProductDetailPage />} />
