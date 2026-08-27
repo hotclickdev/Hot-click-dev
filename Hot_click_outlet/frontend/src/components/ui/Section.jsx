@@ -7,13 +7,25 @@ import TrustGlyph from '@/components/ui/TrustGlyph'
  * Ritmo vertical fijo (40/56px) y fondos con significado:
  *   default  → hereda el fondo de página (neutro 50)
  *   surface  → blanco, para alternar bloques
- *   blue50   → franja informativa/confianza
+ *   blue50   → franja informativa/confianza (siempre clara; aísla tokens del html.dark)
  *   blue900  → franja de campaña (texto claro)
  */
 const TONES = {
   default: {},
   surface: { background: 'var(--hc-surface)', borderTop: '1px solid var(--hc-border)', borderBottom: '1px solid var(--hc-border)' },
-  blue50: { background: 'var(--hc-blue-50)' },
+  blue50: {
+    background: 'var(--hc-blue-50)',
+    /* Bajo html.dark, --hc-text es claro y --hc-blue-50 sigue claro → título invisible.
+       Esta franja es siempre “banda clara”: fijamos roles semánticos locales. */
+    '--hc-text': 'var(--hc-n-900)',
+    '--hc-muted': 'var(--hc-n-600)',
+    '--hc-text-secondary': 'var(--hc-n-600)',
+    '--hc-surface': 'var(--hc-n-0)',
+    '--hc-surface-raised': 'var(--hc-n-0)',
+    '--hc-border': 'var(--hc-n-200)',
+    '--hc-link': 'var(--hc-blue-600)',
+    color: 'var(--hc-n-900)',
+  },
   blue900: { background: 'var(--hc-blue-900)' },
 }
 
