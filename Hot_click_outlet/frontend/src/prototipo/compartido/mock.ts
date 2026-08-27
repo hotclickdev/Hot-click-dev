@@ -1,7 +1,7 @@
 import type { PlanId } from './plan'
 
 export type EstadoProducto = 'Publicado' | 'Pausado'
-export type CategoriaProducto = 'Tecnología' | 'Ropa'
+export type CategoriaProducto = 'Tecnología' | 'Ropa' | 'Otro'
 
 export type ProductoMock = {
   id: string
