@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   IconoCamion,
   IconoCandado,
@@ -11,42 +11,64 @@ import {
   IconoPlay,
   IconoVolver,
 } from './VisitanteIcons'
-import VisitanteMain, { VisitanteBoton, VisitantePrecio } from './VisitantePiezas'
-import { productoPorId, visitanteRuta } from './visitanteMock'
+import VisitanteMain, { VisitanteBoton, VisitanteEmptyState, VisitantePrecio } from './VisitantePiezas'
+import { visitanteRuta } from './visitanteMock'
+import useCartStore from '@/store/cartStore'
+import { useProductoVisitante } from './useProductoVisitante'
+import type { Producto } from '@/types/producto'
 
 /**
- * Detalle de producto Visitante (Figma 129:288).
+ * Detalle de producto Visitante (Figma 129:288). Compra solo con producto API.
  */
 export default function VisitanteProductoPage() {
   const { id } = useParams()
-  const producto = productoPorId(id)
+  const { vista, crudo, cargando, error } = useProductoVisitante(id)
   const [cantidad, setCantidad] = useState(1)
   const [tab, setTab] = useState<'specs' | 'uso'>('specs')
+  const [aviso, setAviso] = useState('')
+  const addItem = useCartStore((s) => s.addItem)
+  const navigate = useNavigate()
+
+  if (cargando) {
+    return (
+      <VisitanteMain conNav={false}>
+        <p className="text-sm text-hc-muted">Cargando producto…</p>
+      </VisitanteMain>
+    )
+  }
+
+  if (error || !vista) {
+    return (
+      <VisitanteMain conNav={false}>
+        <VisitanteEmptyState
+          titulo="Producto no disponible"
+          detalle="No encontramos este producto en el catálogo."
+        />
+        <div className="mt-4">
+          <VisitanteBoton to={visitanteRuta('shop')}>Volver al shop</VisitanteBoton>
+        </div>
+      </VisitanteMain>
+    )
+  }
+
+  const agregar = () => agregarSiHayCrudo(crudo, cantidad, addItem, navigate, setAviso)
 
   return (
     <div className="mx-auto max-w-md bg-hc-surface">
-      <div className="relative h-[300px] bg-[var(--hc-n-100)]">
-        <Link
-          to={visitanteRuta('shop')}
-          aria-label="Volver"
-          className="absolute left-5 top-5 flex size-[38px] items-center justify-center rounded-full bg-hc-surface"
-        >
-          <IconoVolver className="size-5" />
-        </Link>
-      </div>
+      <HeroProducto imagenUrl={vista.imagenUrl} />
       <VisitanteMain conNav={false} className="pt-6">
         <Link
-          to={visitanteRuta(`negocio/${producto.negocioId}`)}
+          to={visitanteRuta(`negocio/${vista.negocioId}`)}
           className="mb-4 inline-flex rounded-full bg-[var(--hc-blue-50)] px-3 py-1 text-[10px] font-medium text-hc-accent"
         >
-          {producto.negocio}
+          {vista.negocio}
         </Link>
-        <h1 className="font-display text-xl font-bold">{producto.nombre}</h1>
+        <h1 className="font-display text-xl font-bold">{vista.nombre}</h1>
         <p className="mt-2">
-          <VisitantePrecio colones={producto.precio} className="text-2xl" />
+          <VisitantePrecio colones={vista.precio} className="text-2xl" />
         </p>
         <div className="mt-4 flex gap-2">
-          <Badge tono="ok">{producto.agotado ? 'Agotado' : 'En stock'}</Badge>
+          <Badge tono="ok">{vista.agotado ? 'Agotado' : 'En stock'}</Badge>
           <Badge tono="aviso">Garantía 15 días</Badge>
         </div>
         <Stepper cantidad={cantidad} onMenos={() => setCantidad((n) => Math.max(1, n - 1))} onMas={() => setCantidad((n) => n + 1)} />
@@ -55,13 +77,49 @@ export default function VisitanteProductoPage() {
         <SellosConfianza />
         <TabsProducto tab={tab} onTab={setTab} />
         <p className="mb-6 text-xs text-hc-muted">
-          {tab === 'specs' ? producto.descripcion : 'Colocalo en el sofá o la cama. La funda se quita para lavar.'}
+          {tab === 'specs' ? vista.descripcion : (crudo?.comoUsar || 'No hay instrucciones de uso para este producto.')}
         </p>
-        <VisitanteBoton to={visitanteRuta('carrito')}>Agregar al carrito</VisitanteBoton>
+        {aviso ? <p className="mb-3 text-xs text-hc-danger">{aviso}</p> : null}
+        <VisitanteBoton onClick={agregar} disabled={vista.agotado}>
+          Agregar al carrito
+        </VisitanteBoton>
       </VisitanteMain>
     </div>
   )
 }
+
+function agregarSiHayCrudo(
+  crudo: Producto | null,
+  cantidad: number,
+  addItem: (p: Producto, qty?: number) => void,
+  navigate: ReturnType<typeof useNavigate>,
+  setAviso: (msg: string) => void,
+) {
+  if (!crudo) {
+    setAviso('Este producto no está disponible para comprar.')
+    return
+  }
+  addItem(crudo, cantidad)
+  navigate(visitanteRuta('carrito'))
+}
+
+function HeroProducto({ imagenUrl }: { imagenUrl?: string }) {
+  const fondo = imagenUrl
+    ? { backgroundImage: `url(${imagenUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    : undefined
+  return (
+    <div className="relative h-[300px] bg-[var(--hc-n-100)]" style={fondo}>
+      <Link
+        to={visitanteRuta('shop')}
+        aria-label="Volver"
+        className="absolute left-5 top-5 flex size-[38px] items-center justify-center rounded-full bg-hc-surface"
+      >
+        <IconoVolver className="size-5" />
+      </Link>
+    </div>
+  )
+}
+
 
 function Badge({ tono, children }: { tono: 'ok' | 'aviso'; children: string }) {
   const cls = tono === 'ok'
@@ -98,10 +156,6 @@ function TarjetaAsesor() {
           <p className="text-[13px] font-bold">Preguntá sobre este producto</p>
           <p className="text-[10px] text-hc-muted">Asesor IA de HotClick · Respuesta al instante</p>
         </div>
-      </div>
-      <div className="mb-3 rounded-xl bg-[var(--hc-n-100)] px-3 py-2.5 text-[11px]">
-        <p>“¿Viene con funda lavable?”</p>
-        <p className="text-[10px] text-hc-muted">Sí, la funda se puede lavar a máquina.</p>
       </div>
       <VisitanteBoton to={visitanteRuta('asesor-ia')} variant="soft" className="gap-2 py-3 text-xs">
         <IconoChat className="size-4" />

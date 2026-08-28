@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import VisitanteMain, {
   VisitanteChip,
   VisitanteEmptyState,
@@ -6,18 +6,17 @@ import VisitanteMain, {
   VisitanteSearchField,
   VisitanteTitulo,
 } from './VisitantePiezas'
-import { CHIPS_SHOP, filtrarProductos, type CategoriaShop } from './visitanteMock'
+import { CHIPS_SHOP, type CategoriaShop, type ProductoVisitante } from './visitanteMock'
+import { useCatalogoVisitante } from './useCatalogoVisitante'
 
 /**
- * Shop Visitante (Figma 120:327) y vacío (155:553).
+ * Shop Visitante: catálogo API. Sin SKUs mock si el backend falla o está vacío.
  */
 export default function VisitanteShopPage({ sinResultados = false }: { sinResultados?: boolean }) {
   const [categoria, setCategoria] = useState<CategoriaShop>('Todos')
   const [consulta, setConsulta] = useState(sinResultados ? 'xyz' : '')
-  const productos = useMemo(
-    () => (sinResultados ? [] : filtrarProductos(categoria, consulta)),
-    [categoria, consulta, sinResultados],
-  )
+  const { productos, cargando, error } = useCatalogoVisitante(categoria, consulta)
+  const lista = sinResultados ? [] : productos
 
   return (
     <VisitanteMain>
@@ -30,20 +29,46 @@ export default function VisitanteShopPage({ sinResultados = false }: { sinResult
           </VisitanteChip>
         ))}
       </div>
-      {productos.length === 0 ? (
-        <VisitanteEmptyState
-          titulo="No encontramos productos"
-          detalle="Probá con otra palabra o revisá otra categoría"
-        />
-      ) : (
-        <ul className="grid grid-cols-2 gap-4">
-          {productos.map((producto) => (
-            <li key={producto.id}>
-              <VisitanteProductCard producto={producto} />
-            </li>
-          ))}
-        </ul>
-      )}
+      <CuerpoShop cargando={cargando && !sinResultados} error={error && !sinResultados} productos={lista} />
     </VisitanteMain>
+  )
+}
+
+function CuerpoShop({
+  cargando,
+  error,
+  productos,
+}: {
+  cargando: boolean
+  error: boolean
+  productos: ProductoVisitante[]
+}) {
+  if (cargando) {
+    return <p className="text-sm text-hc-muted">Cargando productos…</p>
+  }
+  if (error) {
+    return (
+      <VisitanteEmptyState
+        titulo="Catálogo no disponible"
+        detalle="No pudimos cargar los productos. Intentá de nuevo en un momento."
+      />
+    )
+  }
+  if (productos.length === 0) {
+    return (
+      <VisitanteEmptyState
+        titulo="No encontramos productos"
+        detalle="Probá con otra palabra o revisá otra categoría"
+      />
+    )
+  }
+  return (
+    <ul className="grid grid-cols-2 gap-4">
+      {productos.map((producto) => (
+        <li key={producto.id}>
+          <VisitanteProductCard producto={producto} />
+        </li>
+      ))}
+    </ul>
   )
 }

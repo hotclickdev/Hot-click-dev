@@ -78,17 +78,21 @@ export function EncabezadoPagina({ titulo, subtitulo, volverA, extra }: Encabeza
 type CampoProps = {
   etiqueta: string
   defaultValue?: string
+  value?: string
+  onChange?: (valor: string) => void
   placeholder?: string
   type?: string
 }
 
-export function Campo({ etiqueta, defaultValue, placeholder, type = 'text' }: CampoProps) {
+export function Campo({ etiqueta, defaultValue, value, onChange, placeholder, type = 'text' }: CampoProps) {
   return (
     <label className="mb-4 block">
       <span className="mb-2 block text-xs font-medium text-hc-muted">{etiqueta}</span>
       <input
         type={type}
-        defaultValue={defaultValue}
+        defaultValue={onChange ? undefined : defaultValue}
+        value={onChange ? value : undefined}
+        onChange={onChange ? (evento) => onChange(evento.target.value) : undefined}
         placeholder={placeholder}
         className="min-h-12 w-full rounded-xl bg-hc-surface-2 px-3.5 text-sm text-hc-text placeholder:text-hc-muted"
       />

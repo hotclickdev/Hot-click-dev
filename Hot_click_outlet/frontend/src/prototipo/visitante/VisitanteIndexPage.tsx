@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import BrandLogo from '@/components/ui/BrandLogo'
+import useCartStore from '@/store/cartStore'
 import { visitanteRuta } from './visitanteMock'
 
 const CONFIANZA = [
@@ -10,14 +11,14 @@ const CONFIANZA = [
 ] as const
 
 const CATEGORIAS = [
-  { nombre: 'Tecnología', to: visitanteRuta('shop'), cantidad: 7 },
-  { nombre: 'Hogar', to: visitanteRuta('shop'), cantidad: 7 },
-  { nombre: 'Ropa', to: visitanteRuta('shop'), cantidad: 7 },
-  { nombre: 'Belleza', to: visitanteRuta('shop'), cantidad: 7 },
+  { nombre: 'Tecnología', to: visitanteRuta('shop') },
+  { nombre: 'Hogar', to: visitanteRuta('shop') },
+  { nombre: 'Ropa', to: visitanteRuta('shop') },
+  { nombre: 'Belleza', to: visitanteRuta('shop') },
 ] as const
 
 /**
- * Index marketplace Visitante 01 (Figma 105:128).
+ * Index marketplace Visitante. Banner de carrito solo si hay items reales.
  */
 export default function VisitanteIndexPage() {
   return (
@@ -35,7 +36,7 @@ export default function VisitanteIndexPage() {
 function CabeceraVisitante() {
   return (
     <header className="mb-4 flex items-center justify-between gap-3">
-      <span className="text-sm text-hc-muted">Menú</span>
+      <Link to="/emprende" className="text-sm font-semibold text-hc-accent">Emprender</Link>
       <BrandLogo size={28} />
       <div className="flex gap-3 text-sm text-hc-muted">
         <Link to={visitanteRuta('shop')}>Buscar</Link>
@@ -48,6 +49,8 @@ function CabeceraVisitante() {
 }
 
 function BannerRegreso() {
+  const hayItems = useCartStore((s) => s.items.length > 0)
+  if (!hayItems) return null
   return (
     <p className="mb-4 rounded-lg px-3 py-2 text-sm text-hc-text" style={{ background: 'var(--hc-red-50)' }}>
       ¡Volviste! Tenés productos en el carrito.{' '}
@@ -67,7 +70,7 @@ function BusquedaHero() {
       >
         Escribí qué buscás...
       </Link>
-      <Link to={visitanteRuta('asistente')} className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-hc-accent">
+      <Link to="/productos?ai=1" className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-hc-accent">
         Preguntale al asistente
       </Link>
     </section>
@@ -110,7 +113,7 @@ function GrillaCategorias() {
           <li key={cat.nombre}>
             <Link to={cat.to} className="block rounded-xl bg-hc-surface p-3">
               <p className="font-medium">{cat.nombre}</p>
-              <p className="text-sm text-hc-muted">Ver {cat.cantidad} productos</p>
+              <p className="text-sm text-hc-muted">Ver productos</p>
             </Link>
           </li>
         ))}

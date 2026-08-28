@@ -1,22 +1,90 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { IconoEstrella, IconoMas, IconoVolver } from './VisitanteIcons'
-import VisitanteMain, { VisitanteBoton, VisitanteProductCard, VisitanteSearchField } from './VisitantePiezas'
-import { negocioPorId, PRODUCTOS_VISITANTE, visitanteRuta } from './visitanteMock'
+import { IconoMas, IconoVolver } from './VisitanteIcons'
+import VisitanteMain, {
+  VisitanteBoton,
+  VisitanteEmptyState,
+  VisitanteProductCard,
+  VisitanteSearchField,
+} from './VisitantePiezas'
+import { visitanteRuta, type NegocioVisitante, type ProductoVisitante } from './visitanteMock'
+import { useProductosVisitanteApi } from './useCatalogoVisitante'
+import { negocioDesdeProductos, productosDeNegocio } from './visitanteCatalogo'
 
 /**
- * Perfil de negocio Visitante (Figma 135:288).
+ * Perfil de negocio Visitante: productos de la API de esa tienda.
  */
 export default function VisitanteNegocioPage() {
   const { id } = useParams()
-  const negocio = negocioPorId(id)
+  const { productos: catalogo, cargando, error } = useProductosVisitanteApi()
+  const deTienda = productosDeNegocio(id, catalogo)
+  const negocio = id ? negocioDesdeProductos(id, deTienda) : null
+
+  return (
+    <CuerpoNegocio
+      negocio={negocio}
+      deTienda={deTienda}
+      cargando={cargando}
+      error={error}
+    />
+  )
+}
+
+function CuerpoNegocio({
+  negocio,
+  deTienda,
+  cargando,
+  error,
+}: {
+  negocio: NegocioVisitante | null
+  deTienda: ProductoVisitante[]
+  cargando: boolean
+  error: boolean
+}) {
+  if (cargando) {
+    return (
+      <VisitanteMain>
+        <p className="text-sm text-hc-muted">Cargando tienda…</p>
+      </VisitanteMain>
+    )
+  }
+  if (error) {
+    return (
+      <VisitanteMain>
+        <VisitanteEmptyState
+          titulo="Tienda no disponible"
+          detalle="No pudimos cargar este negocio. Intentá de nuevo en un momento."
+        />
+      </VisitanteMain>
+    )
+  }
+  if (!negocio) {
+    return (
+      <VisitanteMain>
+        <VisitanteEmptyState
+          titulo="Negocio no encontrado"
+          detalle="Esta tienda no tiene productos en el catálogo."
+        />
+        <div className="mt-4">
+          <VisitanteBoton to={visitanteRuta('shop')}>Ver el shop</VisitanteBoton>
+        </div>
+      </VisitanteMain>
+    )
+  }
+  return <PerfilNegocio negocio={negocio} deTienda={deTienda} />
+}
+
+function PerfilNegocio({
+  negocio,
+  deTienda,
+}: {
+  negocio: NegocioVisitante
+  deTienda: ProductoVisitante[]
+}) {
   const [sigue, setSigue] = useState(false)
   const [consulta, setConsulta] = useState('')
-  const productos = PRODUCTOS_VISITANTE.filter((item) => {
-    if (item.negocioId !== negocio.id) return false
-    if (!consulta.trim()) return true
-    return item.nombre.toLowerCase().includes(consulta.trim().toLowerCase())
-  })
+  const q = consulta.trim().toLowerCase()
+  const productos = deTienda.filter((item) => !q || item.nombre.toLowerCase().includes(q))
 
   return (
     <div className="mx-auto max-w-md bg-hc-surface">
@@ -36,13 +104,9 @@ export default function VisitanteNegocioPage() {
         <div className="pt-10">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="font-display text-[17px] font-bold">{negocio.nombre}</h1>
-            <span className="rounded-full bg-[var(--hc-blue-50)] px-2 py-0.5 text-[8px] font-bold text-hc-accent">
-              {negocio.plan}
-            </span>
           </div>
-          <p className="mt-1 flex items-center gap-1 text-[11px] text-hc-muted">
-            <IconoEstrella className="size-3 text-hc-warning" />
-            {negocio.rating} · {negocio.productos} productos · {negocio.rubro}
+          <p className="mt-1 text-[11px] text-hc-muted">
+            {negocio.productos} productos · {negocio.rubro}
           </p>
         </div>
       </div>
@@ -59,16 +123,19 @@ export default function VisitanteNegocioPage() {
             Mensaje
           </VisitanteBoton>
         </div>
-        <p className="mb-5 text-xs text-hc-muted">{negocio.bio}</p>
         <VisitanteSearchField placeholder="Buscar en esta tienda" value={consulta} onChange={setConsulta} />
         <h2 className="mb-3 text-[15px] font-bold">Productos</h2>
-        <ul className="grid grid-cols-2 gap-3">
-          {productos.map((producto) => (
-            <li key={producto.id}>
-              <VisitanteProductCard producto={producto} />
-            </li>
-          ))}
-        </ul>
+        {productos.length === 0 ? (
+          <VisitanteEmptyState titulo="Sin productos" detalle="No hay artículos que coincidan con la búsqueda." />
+        ) : (
+          <ul className="grid grid-cols-2 gap-3">
+            {productos.map((producto) => (
+              <li key={producto.id}>
+                <VisitanteProductCard producto={producto} />
+              </li>
+            ))}
+          </ul>
+        )}
       </VisitanteMain>
     </div>
   )

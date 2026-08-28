@@ -60,6 +60,7 @@ type BotonProps = {
   variant?: 'accent' | 'danger' | 'ghost' | 'soft'
   className?: string
   type?: 'button' | 'submit'
+  disabled?: boolean
 }
 
 export function VisitanteBoton({
@@ -70,9 +71,10 @@ export function VisitanteBoton({
   variant = 'accent',
   className = '',
   type = 'button',
+  disabled = false,
 }: BotonProps) {
   const estilos = estiloBoton(variant)
-  const cls = `inline-flex min-h-11 w-full items-center justify-center rounded-full px-5 py-3.5 text-sm font-bold ${estilos} ${className}`
+  const cls = `inline-flex min-h-11 w-full items-center justify-center rounded-full px-5 py-3.5 text-sm font-bold ${estilos} ${disabled ? 'opacity-50' : ''} ${className}`
   if (to) return <Link to={to} className={cls}>{children}</Link>
   if (href) {
     return (
@@ -82,9 +84,9 @@ export function VisitanteBoton({
     )
   }
   return (
-    <button type={type} onClick={onClick} className={cls}>
-      {children}
-    </button>
+        <button type={type} onClick={onClick} className={cls} disabled={disabled} aria-disabled={disabled}>
+          {children}
+        </button>
   )
 }
 
@@ -103,13 +105,18 @@ export function VisitanteThumb({
   agotado,
   altura = 'h-[120px]',
   children,
+  imagenUrl,
 }: {
   agotado?: boolean
   altura?: string
   children?: ReactNode
+  imagenUrl?: string
 }) {
   return (
     <div className={`relative overflow-hidden rounded-2xl bg-[var(--hc-n-100)] ${altura} ${agotado ? 'opacity-50' : ''}`}>
+      {imagenUrl ? (
+        <img src={imagenUrl} alt="" className="size-full object-cover" />
+      ) : null}
       {agotado ? (
         <span className="absolute left-2.5 top-2.5 rounded-full bg-hc-text px-2.5 py-1 text-[9px] font-bold text-white">
           Agotado
@@ -123,7 +130,7 @@ export function VisitanteThumb({
 export function VisitanteProductCard({ producto }: { producto: ProductoVisitante }) {
   return (
     <Link to={visitanteRuta(`producto/${producto.id}`)} className="flex min-w-0 flex-col gap-2">
-      <VisitanteThumb agotado={producto.agotado} />
+      <VisitanteThumb agotado={producto.agotado} imagenUrl={producto.imagenUrl} />
       <p className={`text-xs font-medium text-hc-text ${producto.agotado ? 'opacity-50' : ''}`}>{producto.nombre}</p>
       <p className="text-[10px] text-hc-muted">{producto.negocio}</p>
       <VisitantePrecio colones={producto.precio} />
@@ -194,10 +201,12 @@ export function VisitanteMenuRow({
   to,
   children,
   peligro,
+  onClick,
 }: {
   to?: string
   children: ReactNode
   peligro?: boolean
+  onClick?: () => void
 }) {
   const color = peligro ? 'text-hc-danger' : 'text-hc-text'
   const contenido = (
@@ -209,6 +218,13 @@ export function VisitanteMenuRow({
     </>
   )
   const cls = 'flex min-h-11 w-full items-center justify-between border-b border-hc-border py-4'
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={cls}>
+        {contenido}
+      </button>
+    )
+  }
   if (!to) return <div className={cls}>{contenido}</div>
   return <Link to={to} className={cls}>{contenido}</Link>
 }

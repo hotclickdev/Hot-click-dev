@@ -11,11 +11,12 @@
     "dev": "vite",
     "build": "pnpm typecheck && vite build",
     "build:watch": "vite build --watch",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.e2e.json",
     "lint": "eslint .",
+    "lint:ci": "eslint src/utils/analytics.ts src/utils/ga4.ts src/utils/posthog.ts src/utils/clarity.ts src/utils/initAnalytics.ts src/utils/siteVerification.tsx src/App.tsx src/app/AppChrome.tsx src/main.tsx src/store/authStore.ts src/pages/admin/security/SistemaTab.tsx vite.config.ts",
     "preview": "vite preview",
     "test:e2e": "playwright test",
-    "test:e2e:smoke": "playwright test tests/smoke.spec.js"
+    "test:e2e:smoke": "playwright test tests/smoke.spec.ts"
   },
   "dependencies": {
     "@clerk/react": "^6.7.2",

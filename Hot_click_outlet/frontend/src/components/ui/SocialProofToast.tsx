@@ -1,0 +1,138 @@
+import { useState, useEffect } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
+import useChatStore from '@/store/chatStore'
+import TrustGlyph from '@/components/ui/TrustGlyph'
+import CloseIcon from '@/components/ui/CloseIcon'
+import type { SocialProofNotification } from '@/hooks/useSocialProof'
+
+const AUTO_DISMISS_MS = 5_000
+const MAX_VISIBLE     = 2   // never stack more than 2 at once
+
+/**
+ * Floating social-proof notification stack.
+ */
+export default function SocialProofToast({ notification }: { notification: SocialProofNotification | null }) {
+  const [queue, setQueue] = useState<SocialProofNotification[]>([])
+  const chatOpen = useChatStore(s => s.isOpen)
+
+  // Push incoming notification into the queue (cap at MAX_VISIBLE)
+  useEffect(() => {
+    if (!notification) return
+    setQueue((prev) => [...prev, notification].slice(-MAX_VISIBLE))
+  }, [notification])
+
+  // No mostrar notificaciones cuando el chat está abierto
+  if (chatOpen) return null
+
+  const dismiss = (id: number) => setQueue((prev) => prev.filter((n) => n.id !== id))
+
+  return (
+    // Mobile: above BottomNav (bottom-20); Desktop: bottom-right corner
+    <div
+      aria-live="polite"
+      aria-atomic="false"
+      className="fixed bottom-[4.75rem] left-3 right-auto w-[calc(100vw-5.5rem)] max-w-xs sm:bottom-4 md:bottom-20 sm:left-auto sm:right-4 sm:w-80 z-40 flex flex-col gap-2 pointer-events-none"
+    >
+      <AnimatePresence initial={false}>
+        {queue.map((item) => (
+          <ToastItem key={item.id} item={item} onDismiss={() => dismiss(item.id)} />
+        ))}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+function ToastItem({ item, onDismiss }: { item: SocialProofNotification; onDismiss: () => void }) {
+  const { t } = useTranslation()
+  const shouldReduce = useReducedMotion()
+
+  // Auto-dismiss
+  useEffect(() => {
+    const timer = setTimeout(onDismiss, AUTO_DISMISS_MS)
+    return () => clearTimeout(timer)
+  }, [onDismiss])
+
+  const variants = shouldReduce
+    ? { initial: {}, animate: {}, exit: {} }
+    : {
+        initial: { opacity: 0, y: 20, scale: 0.96 },
+        animate: { opacity: 1, y: 0,  scale: 1 },
+        exit:    { opacity: 0, scale: 0.95 },
+      }
+
+  const { buyer, action, product } = item
+
+  return (
+    <motion.div
+      layout
+      variants={variants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      role="status"
+      className="pointer-events-auto flex items-center gap-3 rounded-2xl px-4 py-3 shadow-lg"
+      style={{
+        background:   '#ffffff',
+        border:       '1px solid #e5e7eb',
+        boxShadow:    '0 8px 32px rgba(0,0,0,0.14)',
+      }}
+    >
+      {/* Left: product thumbnail or action emoji */}
+      <div className="shrink-0">
+        {product.imagenUrl ? (
+          <div
+            className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--hc-border)' }}
+          >
+            <img
+              src={product.imagenUrl}
+              alt={product.nombre}
+              width={40}
+              height={40}
+              loading="lazy"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ) : (
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{ background: 'rgba(23,71,168,0.12)', border: '1px solid rgba(23,71,168,0.25)', color: 'var(--hc-accent)' }}
+          >
+            <TrustGlyph tipo={action.icono} className="w-5 h-5" />
+          </div>
+        )}
+      </div>
+
+      {/* Center: message */}
+      <div className="flex-1 min-w-0">
+        <p className="text-xs leading-snug" style={{ color: '#111827' }}>
+          <span className="font-semibold">{buyer.nombre}</span>
+          {' '}
+          <span style={{ color: '#6B7280' }}>{t('socialProofToast.from')} {buyer.ciudad}</span>
+          {' '}
+          <span>{action.text}</span>
+          {' '}
+          <span className="font-medium truncate">{product.nombre}</span>
+        </p>
+        <p className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>
+          {t('socialProofToast.moment')}
+        </p>
+      </div>
+
+      {/* Right: close + status dot */}
+      <div className="shrink-0 flex flex-col items-center gap-1.5">
+        <button type="button"
+          onClick={onDismiss}
+          aria-label={t('socialProofToast.closeNotif')}
+          className="w-5 h-5 rounded-full flex items-center justify-center transition-colors"
+          style={{ color: 'var(--hc-muted)' }}
+        >
+          <CloseIcon className="w-3 h-3" />
+        </button>
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+      </div>
+    </motion.div>
+  )
+}

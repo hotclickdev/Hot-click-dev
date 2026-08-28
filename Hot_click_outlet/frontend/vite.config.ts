@@ -7,8 +7,30 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 const directorioFrontend = path.dirname(fileURLToPath(import.meta.url))
 
+function escapeHtmlAttr(value: string) {
+  return value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;')
+}
+
+/** Metas GSC/Bing (si hay token de build) y link al feed Merchant para crawlers. */
+function injectSiteVerification() {
+  return {
+    name: 'site-verification-meta',
+    transformIndexHtml(html: string) {
+      const google = process.env.VITE_GOOGLE_SITE_VERIFICATION?.trim() ?? ''
+      const bing = process.env.VITE_BING_SITE_VERIFICATION?.trim() ?? ''
+      const tags = [
+        google ? `    <meta name="google-site-verification" content="${escapeHtmlAttr(google)}" />` : '',
+        bing ? `    <meta name="msvalidate.01" content="${escapeHtmlAttr(bing)}" />` : '',
+        '    <link rel="alternate" type="application/rss+xml" title="Google Merchant Center" href="https://hotclick.lat/api/public/feed/shopping.xml" />',
+      ].filter(Boolean).join('\n')
+      return html.replace('    <!-- HC_SEO_BLOCK_END -->', `${tags}\n    <!-- HC_SEO_BLOCK_END -->`)
+    },
+  }
+}
+
 export default defineConfig({
   plugins: [
+    injectSiteVerification(),
     react(),
     tailwindcss(),
     VitePWA({
@@ -90,6 +112,7 @@ export default defineConfig({
     alias: {
       '@': path.resolve(directorioFrontend, './src'),
     },
+    extensions: ['.mjs', '.mts', '.ts', '.tsx', '.jsx', '.js', '.json'],
   },
   server: {
     port: 3000,

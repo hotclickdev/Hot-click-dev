@@ -1,0 +1,125 @@
+import { IconPhone, IconCash, IconCard, IconRapido, IconNormalGam, IconFueraGam, IconEncomienda, IconInternacional } from './enviosIcons'
+import type { ComponentType, ReactNode } from 'react'
+
+export type PaymentMethodChip = {
+  label: string
+  Icon: ComponentType
+  active?: boolean
+  tag?: string
+}
+
+/** Métodos de pago mostrados en el hero. */
+export const paymentMethods: PaymentMethodChip[] = [
+  { label: 'SINPE Móvil', Icon: IconPhone, active: true },
+  { label: 'Efectivo', Icon: IconCash, active: true },
+  { label: 'Tarjeta', Icon: IconCard, active: true },
+]
+
+export type EnviosCta = {
+  label: string
+  href: string
+  internal?: boolean
+  atajo?: boolean
+  ariaLabel?: string
+}
+
+export type EnviosService = {
+  id: string
+  icon: ReactNode
+  name: string
+  badge: string
+  badgeType: 'prior' | 'official' | 'soon'
+  time: string
+  desc: string
+  price?: string | null
+  priceSub?: string | null
+  payment?: { label: string; Icon: ComponentType }[]
+  paymentNote?: string
+  active: boolean
+  color: string
+  cta?: EnviosCta
+}
+
+/** Opciones de envío de la página. No alterar copy ni precios. */
+export const services: EnviosService[] = [
+  {
+    id: 'rapido',
+    icon: <IconRapido />,
+    name: 'Envío Rápido',
+    badge: 'Pago previo',
+    badgeType: 'prior',
+    time: '30 min – 2 horas',
+    desc: 'Mensajero en moto directo a tu puerta dentro del Gran Área Metropolitana. Pago previo requerido.',
+    price: '₡5,000',
+    priceSub: 'GAM · se elige en datos y pago',
+    payment: [{ label: 'SINPE Móvil', Icon: IconPhone }],
+    active: true,
+    color: '#f59e0b',
+    cta: { label: 'Elegirlo en datos y pago', href: '/productos', internal: true },
+  },
+  {
+    id: 'normal-gam',
+    icon: <IconNormalGam />,
+    name: 'Envío Normal — GAM',
+    badge: 'Servicio oficial',
+    badgeType: 'official',
+    time: '2–4 días hábiles',
+    desc: 'Correos de Costa Rica a San José, Heredia, Alajuela y Cartago. Número de rastreo incluido.',
+    price: '~₡4,000',
+    priceSub: 'Estimado · puede variar',
+    payment: [{ label: 'SINPE Móvil', Icon: IconPhone }, { label: 'Efectivo', Icon: IconCash }],
+    paymentNote: 'Contra entrega',
+    active: true,
+    color: 'var(--hc-accent)',
+  },
+  {
+    id: 'fuera-gam',
+    icon: <IconFueraGam />,
+    name: 'Fuera de la GAM',
+    badge: 'Servicio oficial',
+    badgeType: 'official',
+    time: '3–4 días hábiles',
+    desc: 'Correos de Costa Rica a Guanacaste, Puntarenas, Limón y zonas rurales. Rastreo incluido.',
+    price: '~₡4,000',
+    priceSub: 'Estimado · puede variar',
+    payment: [{ label: 'SINPE Móvil', Icon: IconPhone }, { label: 'Efectivo', Icon: IconCash }],
+    paymentNote: 'Contra entrega',
+    active: true,
+    color: 'var(--hc-accent)',
+  },
+  {
+    id: 'encomienda',
+    icon: <IconEncomienda />,
+    name: 'Tu encomienda',
+    badge: 'Servicio oficial',
+    badgeType: 'official',
+    time: 'Según tu mensajero',
+    desc: 'Coordinamos con el mensajero que vos elegís. HOTCLICK cubre la gestión; la tarifa del courier va aparte.',
+    price: '₡2,500 + tarifa encomienda',
+    priceSub: 'Costo HOTCLICK · tarifa del courier aparte',
+    payment: [{ label: 'SINPE Móvil', Icon: IconPhone }],
+    active: true,
+    color: '#8b5cf6',
+    cta: { label: 'Elegirlo en datos y pago', href: '/productos', internal: true },
+  },
+  {
+    id: 'internacional',
+    icon: <IconInternacional />,
+    name: 'Internacional',
+    badge: 'Servicio oficial',
+    badgeType: 'official',
+    time: 'A coordinar',
+    desc: 'Enviamos a cualquier país. Tiempo y costo se coordinan directamente según destino y peso.',
+    price: 'Consultar',
+    priceSub: null,
+    payment: [{ label: 'SINPE Móvil', Icon: IconPhone }],
+    active: true,
+    color: 'var(--hc-accent)',
+    cta: {
+      label: 'Consultar por WhatsApp',
+      href: 'https://wa.me/50686667888?text=Hola%20HotClick%2C%20consulto%20un%20env%C3%ADo%20internacional.',
+      atajo: true,
+      ariaLabel: 'Consultar envío internacional por WhatsApp',
+    },
+  },
+]

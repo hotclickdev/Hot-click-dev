@@ -25,7 +25,7 @@ export default function MenuPage() {
           {accion.etiqueta}
         </Link>
       ))}
-      <EnlacePrimario to="/pos" variante="oscuro">
+      <EnlacePrimario to={`${RUTA_EMPRENDEDOR}/pos`} variante="oscuro">
         Abrí la Caja (POS)
       </EnlacePrimario>
       <Link

@@ -1,1 +1,0 @@
-import{n as e}from"./authStore-CAIFn71u.js";import{F as t,S as n,x as r}from"./index-B83siZah.js";function i(){let i=e(e=>e.empresaSlug),a=t(e=>e.estadoEmpresa),o=t(e=>e.visibilidadPublica);return{slug:i,estadoEmpresa:a,visibilidadPublica:o,tiendaPublica:n({estadoEmpresa:a,visibilidadPublica:o}),rutaTienda:i?`/tienda/${i}`:null,rutaProducto:e=>r(i,e)}}export{i as t};

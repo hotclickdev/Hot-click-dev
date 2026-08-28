@@ -16,6 +16,7 @@ export type ProductoVisitante = {
   categoria: Exclude<CategoriaShop, 'Todos'>
   agotado?: boolean
   descripcion: string
+  imagenUrl?: string
 }
 
 export type NegocioVisitante = {

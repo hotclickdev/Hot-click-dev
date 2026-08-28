@@ -53,7 +53,7 @@ export default function DetalleProductoPage() {
         </p>
         <h2 className="text-sm font-bold">Descripción</h2>
         <p className="text-xs text-hc-muted">{producto.descripcion}</p>
-        <BotonPrimario onClick={() => navigate(`${RUTA_EMPRENDEDOR}/tienda/carrito`, { state: { productoId: producto.id } })}>
+        <BotonPrimario onClick={() => navigate('/carrito')}>
           Comprar ahora
         </BotonPrimario>
       </div>

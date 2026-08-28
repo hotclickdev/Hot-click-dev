@@ -1,4 +1,5 @@
 import { formatoColon } from '@/theme/formatoColon'
+import useCartStore from '@/store/cartStore'
 import VisitanteMain, {
   VisitanteBoton,
   VisitanteEmptyState,
@@ -6,13 +7,28 @@ import VisitanteMain, {
   VisitanteThumb,
   VisitanteTitulo,
 } from './VisitantePiezas'
-import { COSTO_ENVIO_CRC, lineasCarrito, subtotalCarrito, visitanteRuta } from './visitanteMock'
+import { COSTO_ENVIO_CRC, visitanteRuta } from './visitanteMock'
+
+type ItemCarrito = {
+  id: number | string
+  nombre?: string
+  nombreProducto?: string
+  precio?: number
+  precioVenta?: number
+  cantidad: number
+  imagenUrl?: string
+  empresaNombre?: string
+}
 
 /**
- * Carrito Visitante (Figma 121:128) y vacío (131:336).
+ * Carrito Visitante (Figma 121:128) con items de cartStore.
  */
 export default function VisitanteCarritoPage({ vacio = false }: { vacio?: boolean }) {
-  if (vacio) {
+  const items = useCartStore((s) => s.items) as ItemCarrito[]
+  const totalStore = useCartStore((s) => s.total) as () => number
+  const vacioReal = vacio || items.length === 0
+
+  if (vacioReal) {
     return (
       <VisitanteMain>
         <VisitanteTitulo>Tu carrito</VisitanteTitulo>
@@ -26,22 +42,21 @@ export default function VisitanteCarritoPage({ vacio = false }: { vacio?: boolea
     )
   }
 
-  const lineas = lineasCarrito()
-  const subtotal = subtotalCarrito()
+  const subtotal = totalStore()
   const total = subtotal + COSTO_ENVIO_CRC
 
   return (
     <VisitanteMain>
       <VisitanteTitulo>Tu carrito</VisitanteTitulo>
       <ul className="flex flex-col gap-6">
-        {lineas.map((item) => (
-          <li key={item.id} className="flex gap-3.5">
-            <VisitanteThumb altura="size-16 rounded-[14px]" />
+        {items.map((item) => (
+          <li key={String(item.id)} className="flex gap-3.5">
+            <VisitanteThumb altura="size-16 rounded-[14px]" imagenUrl={item.imagenUrl} />
             <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-medium">{item.nombre}</p>
-              <p className="text-[10px] text-hc-muted">{item.negocio}</p>
+              <p className="text-[13px] font-medium">{item.nombre ?? item.nombreProducto}</p>
+              <p className="text-[10px] text-hc-muted">{item.empresaNombre ?? 'HotClick'}</p>
               <div className="mt-1 flex items-center justify-between">
-                <VisitantePrecio colones={item.precio} />
+                <VisitantePrecio colones={item.precio ?? item.precioVenta ?? 0} />
                 <span className="rounded-full bg-[var(--hc-blue-50)] px-2.5 py-1 text-[10px] font-bold text-hc-accent">
                   x{item.cantidad}
                 </span>
@@ -57,7 +72,7 @@ export default function VisitanteCarritoPage({ vacio = false }: { vacio?: boolea
         <span>Total</span>
         <VisitantePrecio colones={total} className="text-[15px]" />
       </div>
-      <VisitanteBoton to={visitanteRuta('checkout')}>Ir a pagar</VisitanteBoton>
+      <VisitanteBoton to="/checkout">Ir a pagar</VisitanteBoton>
     </VisitanteMain>
   )
 }

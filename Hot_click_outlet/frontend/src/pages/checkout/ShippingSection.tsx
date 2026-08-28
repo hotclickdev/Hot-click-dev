@@ -1,0 +1,172 @@
+import { AnimatePresence, motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
+import PhoneField from '@/components/ui/PhoneField'
+import { formatPrice } from '@/utils/format'
+import SmartField from './SmartField'
+import { GlobeIcon } from './checkoutIcons'
+import { WHATSAPP, validateAddress, validatePhone } from './checkoutHelpers'
+import type { OpcionEnvio } from './checkoutHelpers'
+import type { Dispatch, SetStateAction } from 'react'
+
+const TEXTO_WA_INTERNACIONAL = encodeURIComponent('Hola HotClick, consulto un envío internacional.')
+
+function EnvioInternacionalAtajo() {
+  const { t } = useTranslation()
+  return (
+    <a
+      href={`https://wa.me/${WHATSAPP}?text=${TEXTO_WA_INTERNACIONAL}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={t('checkout.envioInternacionalAria')}
+      className="flex items-center gap-2 min-h-11 px-1 text-sm"
+      style={{ color: 'var(--hc-muted)' }}
+    >
+      <GlobeIcon />
+      <span>
+        {t('checkout.envioInternacional')}
+        {' — '}
+        {t('checkout.envioInternacionalHint')}
+      </span>
+    </a>
+  )
+}
+
+type ShippingSectionProps = {
+  opciones: OpcionEnvio[]
+  metodoEnvio: string
+  setMetodoEnvio: Dispatch<SetStateAction<string>>
+  metodoPago: string
+  setMetodoPago: Dispatch<SetStateAction<string>>
+  token: string | null
+  telefono: string
+  setTelefono: Dispatch<SetStateAction<string>>
+  telefonoError: string
+  setTelefonoError: Dispatch<SetStateAction<string>>
+  telefonoDirty: boolean
+  direccion: string
+  setDireccion: Dispatch<SetStateAction<string>>
+  direccionError: string
+  setDireccionError: Dispatch<SetStateAction<string>>
+  direccionDirty: boolean
+  setDireccionDirty: Dispatch<SetStateAction<boolean>>
+}
+
+export default function ShippingSection({
+  opciones,
+  metodoEnvio,
+  setMetodoEnvio,
+  metodoPago,
+  setMetodoPago,
+  token,
+  telefono,
+  setTelefono,
+  telefonoError,
+  setTelefonoError,
+  telefonoDirty,
+  direccion,
+  setDireccion,
+  direccionError,
+  setDireccionError,
+  direccionDirty,
+  setDireccionDirty,
+}: ShippingSectionProps) {
+  const { t } = useTranslation()
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.04 }}
+      className="rounded-2xl p-4 sm:p-6 space-y-3 sm:space-y-4"
+      style={{ background: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
+    >
+      <h2 className="font-semibold" style={{ color: 'var(--hc-text)' }}>{t('checkout.deliveryMethod')}</h2>
+      <div className="space-y-2">
+        {opciones.map((op) => (
+          <label
+            key={op.value}
+            className="flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all duration-200"
+            style={metodoEnvio === op.value
+              ? { borderColor: 'var(--hc-accent)', background: 'color-mix(in srgb, var(--hc-accent) 6%, transparent)' }
+              : { borderColor: 'var(--hc-border)' }}
+          >
+            <input
+              type="radio" name="envio" value={op.value}
+              checked={metodoEnvio === op.value}
+              onChange={() => {
+                setMetodoEnvio(op.value)
+                if (op.value === 'ENVIO_RAPIDO' && metodoPago === 'EFECTIVO') setMetodoPago('SINPE')
+              }}
+              style={{ accentColor: 'var(--hc-accent)' }}
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="font-medium text-sm" style={{ color: 'var(--hc-text)' }}>{op.label}</p>
+                {op.badge && (
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${op.badgeColor}`}>
+                    {op.badge}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>{op.sub}</p>
+            </div>
+            <span
+              className="font-semibold text-sm shrink-0"
+              style={{ color: op.precio === 0 ? 'var(--hc-accent)' : 'var(--hc-text)' }}
+            >
+              {op.precio === 0 ? 'Gratis' : formatPrice(op.precio)}
+            </span>
+          </label>
+        ))}
+        <EnvioInternacionalAtajo />
+      </div>
+
+      {/* Domicilio fields — animate in */}
+      <AnimatePresence>
+        {opciones.find(o => o.value === metodoEnvio)?.needsAddress && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
+            className="space-y-4 overflow-hidden pt-2"
+          >
+            <div className="border-t" style={{ borderColor: 'var(--hc-border)' }} />
+            <p className="text-xs font-medium" style={{ color: 'var(--hc-muted)' }}>
+              {t('checkout.deliveryData')}
+            </p>
+            {token && (
+              <PhoneField
+                label={t('checkout.phoneContact')}
+                value={telefono}
+                onChange={(val) => {
+                  setTelefono(val)
+                  if (telefonoDirty) setTelefonoError(validatePhone(val, t))
+                }}
+                error={telefonoDirty ? telefonoError : ''}
+                hint={t('checkout.phoneHelp')}
+                required
+              />
+            )}
+            <SmartField
+              id="direccion"
+              label={t('checkout.addressLabel')}
+              multiline
+              rows={3}
+              value={direccion}
+              placeholder={t('checkout.addressPlaceholder')}
+              error={direccionDirty ? direccionError : ''}
+              success={direccionDirty && !direccionError && direccion.trim().length >= 10}
+              helpText={t('checkout.charCount', { count: direccion.length, max: 200 })}
+              maxLength={200}
+              onChange={(e) => {
+                setDireccion(e.target.value)
+                if (direccionDirty) setDireccionError(validateAddress(e.target.value, t))
+              }}
+              onBlur={() => { setDireccionDirty(true); setDireccionError(validateAddress(direccion, t)) }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  )
+}
