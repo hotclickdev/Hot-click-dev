@@ -18,12 +18,20 @@ const ACTIONS = [
   { text: 'acaba de ver',      icono: 'buscar' },
 ] as const
 
+/** Entero uniforme [0, maxExclusive) — UI demo, no crypto de auth. */
+function enteroAleatorio(maxExclusive: number): number {
+  if (maxExclusive <= 0) return 0
+  const buf = new Uint32Array(1)
+  crypto.getRandomValues(buf)
+  return buf[0]! % maxExclusive
+}
+
 function pick<T>(arr: readonly T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)] as T
+  return arr[enteroAleatorio(arr.length)] as T
 }
 
 function rand(min: number, max: number) {
-  return min + Math.random() * (max - min)
+  return min + enteroAleatorio(Math.floor((max - min) * 1000) + 1) / 1000
 }
 
 export type SocialProofNotification = {

@@ -29,7 +29,7 @@ export function aBodegaEmprendedor(b: BodegaApi, indice: number): BodegaEmprende
 
 export async function cargarBodegasVendedor(): Promise<BodegaEmprendedor[]> {
   const { data } = await warehouseService.getAll()
-  return listaBodegas(data).map(aBodegaEmprendedor)
+  return listaBodegas(data).map((bodega, indice) => aBodegaEmprendedor(bodega, indice))
 }
 
 export async function crearBodegaVendedor(nombre: string, ubicacion: string, encargado: string) {

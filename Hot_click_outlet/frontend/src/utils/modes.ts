@@ -1,6 +1,9 @@
-const ROLES_CAJA = new Set(['ADMIN', 'EMPRENDEDOR', 'CAJERO', 'GERENTE', 'SUPERVISOR'])
-const ALL_ADMIN_ROLES = new Set(['ADMIN', 'EMPRENDEDOR', 'GERENTE', 'SUPERVISOR'])
-const STORE_ROLES = new Set(['ADMIN', 'EMPRENDEDOR'])
+import { prefijoPorPlan } from './planPaths'
+import { ROLES_VENDEDOR } from './sistemaUser'
+
+const ROLES_CAJA = new Set(['ADMIN', 'CAJERO', 'GERENTE', 'SUPERVISOR', ...ROLES_VENDEDOR])
+const ALL_ADMIN_ROLES = new Set(['ADMIN', 'GERENTE', 'SUPERVISOR', ...ROLES_VENDEDOR])
+const STORE_ROLES = new Set(['ADMIN', ...ROLES_VENDEDOR])
 
 export type ModoApp = {
   id: string
@@ -20,11 +23,11 @@ export function puedeUsarCaja(rol: string, permissions: string[] = []) {
 /**
  * Modos de entrada. Sistema (dueño) no se etiqueta como Admin IT.
  */
-export function getAvailableModes(rol: string, permissions: string[] = [], opts: { empresaSlug?: string | null } = {}) {
+export function getAvailableModes(rol: string, permissions: string[] = [], opts: { empresaSlug?: string | null; planNombre?: string | null } = {}) {
   const empresaSlug = opts.empresaSlug
   const isAdmin = ALL_ADMIN_ROLES.has(rol)
   const isCajero = rol === 'CAJERO'
-  const esSistema = rol === 'EMPRENDEDOR'
+  const esSistema = ROLES_VENDEDOR.has(rol)
 
   const modes: ModoApp[] = []
 
@@ -33,7 +36,7 @@ export function getAvailableModes(rol: string, permissions: string[] = [], opts:
       id: 'admin',
       label: esSistema ? 'Sistema' : 'Panel de administración',
       sub: esSistema ? 'Productos, pedidos y tu plan' : 'Gestiona productos, pedidos y reportes',
-      path: '/admin',
+      path: esSistema ? prefijoPorPlan(opts.planNombre) : '/admin',
       icon: 'admin',
     })
   }

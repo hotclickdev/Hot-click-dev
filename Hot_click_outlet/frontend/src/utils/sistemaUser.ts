@@ -9,6 +9,9 @@ export const ROLES_VENDEDOR = new Set<string>([
   'LECTOR',
 ])
 
+/** Caja: POSShell en `/admin/pos`. No entran al shell Figma vendedor. */
+export const ROLES_POS = new Set<string>(['CAJERO', 'GERENTE', 'SUPERVISOR'])
+
 /** Acceso a /admin: plataforma + vendedor. ADMIN de equipo no va acá (el JWT lo mapea). */
 export const ADMIN_ROLES = new Set<string>(['ADMIN', ...ROLES_VENDEDOR])
 
