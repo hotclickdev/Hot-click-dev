@@ -104,6 +104,11 @@ export function sortCatalogo(
   })
 }
 
+/** `cat` es el param canónico; `categoria` queda como alias del menú / chips viejos. */
+export function parseCategoryFromSearchParams(searchParams: URLSearchParams): string {
+  return searchParams.get('cat') ?? searchParams.get('categoria') ?? ''
+}
+
 export function parsePageFromSearchParams(searchParams: URLSearchParams): number {
   const p = Number.parseInt(searchParams.get('page') ?? '0', 10)
   return Number.isNaN(p) || p < 0 ? 0 : p

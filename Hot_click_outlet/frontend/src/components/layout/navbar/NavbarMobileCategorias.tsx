@@ -57,7 +57,7 @@ export default function NavbarMobileCategorias({
               </Link>
               {categoriasPadre.map(cat => (
                 <Link key={String(cat.id)}
-                  to={`/productos?categoria=${String(cat.id)}`}
+                  to={`/productos?cat=${encodeURIComponent(String(cat.id))}`}
                   onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-150"
                   style={{ color: 'var(--hc-muted)' }}

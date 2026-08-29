@@ -90,10 +90,9 @@ export default function AccessibilityPanel() {
         onClick={() => setOpen(!open)}
         aria-label={t('a11y.open')}
         title={t('a11y.panel')}
-        className="w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200
+        className="hc-isotipo-placa w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200
           shadow-[0_4px_20px_var(--hc-shadow)] hover:scale-110 active:scale-95"
         style={{
-          backgroundColor: 'var(--hc-surface)',
           border: `1px solid ${open ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
         }}
       >

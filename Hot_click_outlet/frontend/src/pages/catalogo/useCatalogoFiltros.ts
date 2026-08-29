@@ -3,9 +3,18 @@ import type { SetURLSearchParams } from 'react-router-dom'
 import { loadGustos } from '@/utils/gustos'
 import {
   parsePageFromSearchParams,
+  parseCategoryFromSearchParams,
   parseMarcasFilterFromSearchParams,
   catalogoSearchParamsFromState,
 } from './catalogoFiltros'
+
+function mismosIds(actual: Set<string>, siguiente: Set<string>): boolean {
+  if (actual.size !== siguiente.size) return false
+  for (const id of actual) {
+    if (!siguiente.has(id)) return false
+  }
+  return true
+}
 
 /**
  * Estado de filtros del catálogo y sync URL ↔ filtros.
@@ -13,7 +22,7 @@ import {
 export function useCatalogoFiltros(searchParams: URLSearchParams, setSearchParams: SetURLSearchParams) {
   const [page, setPage] = useState(() => parsePageFromSearchParams(searchParams))
   const [search, setSearch] = useState(() => searchParams.get('search') ?? '')
-  const [category, setCategory] = useState(() => searchParams.get('cat') ?? '')
+  const [category, setCategory] = useState(() => parseCategoryFromSearchParams(searchParams))
   const [marcasFilter, setMarcasFilter] = useState(() => parseMarcasFilterFromSearchParams(searchParams))
   const [sort, setSort] = useState(
     () => searchParams.get('sort') ?? localStorage.getItem('hc-products-sort') ?? 'default',
@@ -28,6 +37,20 @@ export function useCatalogoFiltros(searchParams: URLSearchParams, setSearchParam
   const [priceMin, setPriceMin] = useState('')
   const [priceMax, setPriceMax] = useState('')
   const [filterViewPage, setFilterViewPage] = useState(0)
+  const query = searchParams.toString()
+
+  useEffect(() => {
+    const params = new URLSearchParams(query)
+    const catUrl = parseCategoryFromSearchParams(params)
+    const searchUrl = params.get('search') ?? ''
+    const pageUrl = parsePageFromSearchParams(params)
+    const marcasUrl = parseMarcasFilterFromSearchParams(params)
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- click del menú cambia la URL sin remount
+    setCategory((prev) => (prev === catUrl ? prev : catUrl))
+    setSearch((prev) => (prev === searchUrl ? prev : searchUrl))
+    setPage((prev) => (prev === pageUrl ? prev : pageUrl))
+    setMarcasFilter((prev) => (mismosIds(prev, marcasUrl) ? prev : marcasUrl))
+  }, [query])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- nueva búsqueda arranca en página 0

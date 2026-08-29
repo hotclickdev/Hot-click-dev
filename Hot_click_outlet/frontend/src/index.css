@@ -584,6 +584,14 @@ html.dark .hc-input:focus {
 .hc-wordmark .hot { color: var(--hc-wordmark-hot); }
 .hc-wordmark .click { color: var(--hc-wordmark-click); }
 
+/* Placa del isotipo (§2.4): siempre blanca, también en dark mode. */
+.hc-isotipo-placa {
+  background-color: #ffffff;
+}
+html.dark .hc-isotipo-placa {
+  background-color: #ffffff !important;
+}
+
 /* ═══════════════════════════════════════════════════════
    LIGHT MODE — override hardcoded Tailwind dark classes
    Note: CSS attribute selectors match literal class strings
