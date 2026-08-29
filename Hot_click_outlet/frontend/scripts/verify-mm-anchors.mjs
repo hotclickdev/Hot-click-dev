@@ -1,5 +1,5 @@
 /**
- * Smoke estático: cada ancla seller del mmRegistry debe existir como data-mm en src.
+ * Smoke estático: cada ancla seller/visitante del mmRegistry debe existir en src.
  * Uso: node scripts/verify-mm-anchors.mjs
  */
 import fs from 'node:fs'
@@ -13,7 +13,7 @@ const srcRoot = path.join(root, 'src')
 const registry = fs.readFileSync(registryPath, 'utf8')
 const anclas = [...registry.matchAll(/ancla:\s*'([^']+)'/g)]
   .map((m) => m[1])
-  .filter((a) => a.startsWith('seller-'))
+  .filter((a) => a.startsWith('seller-') || a.startsWith('vis-'))
 
 const unique = [...new Set(anclas)]
 
@@ -30,20 +30,25 @@ function walk(dir, out = []) {
   return out
 }
 
+function anclaPresente(blob, ancla) {
+  return (
+    blob.includes(`data-mm="${ancla}"`)
+    || blob.includes(`dataMm="${ancla}"`)
+    || blob.includes(`dataMm='${ancla}'`)
+    || blob.includes(`dataMm = '${ancla}'`)
+    || blob.includes(`'${ancla}'`)
+  )
+}
+
 const files = walk(srcRoot)
 const blob = files.map((f) => fs.readFileSync(f, 'utf8')).join('\n')
 
-const missing = unique.filter((ancla) => {
-  const asAttr = `data-mm="${ancla}"`
-  const asProp = `dataMm="${ancla}"`
-  const asPropSingle = `dataMm='${ancla}'`
-  return !blob.includes(asAttr) && !blob.includes(asProp) && !blob.includes(asPropSingle)
-})
+const missing = unique.filter((ancla) => !anclaPresente(blob, ancla))
 
 if (missing.length) {
   console.error('MM anchors missing in src:', missing.join(', '))
   process.exit(1)
 }
 
-console.log(`OK ${unique.length} seller anclas presentes en src`)
+console.log(`OK ${unique.length} anclas seller/visitante presentes en src`)
 console.log(unique.join('\n'))

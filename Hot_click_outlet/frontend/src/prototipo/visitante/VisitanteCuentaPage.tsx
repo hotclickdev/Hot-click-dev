@@ -2,9 +2,10 @@ import { useNavigate } from 'react-router-dom'
 import VisitanteMain, { VisitanteMenuRow, VisitanteTitulo } from './VisitantePiezas'
 import { visitanteRuta } from './visitanteMock'
 import useAuthStore from '@/store/authStore'
+import MmGuiaToggle from '@/prototipo/compartido/MmGuiaToggle'
 
 const MENU = [
-  { to: visitanteRuta('pedidos'), label: 'Mis pedidos' },
+  { to: visitanteRuta('pedidos'), label: 'Mis pedidos', dataMm: 'vis-cuenta-pedidos' },
   { to: visitanteRuta('favoritos'), label: 'Favoritos' },
   { to: visitanteRuta('direcciones'), label: 'Direcciones de envío' },
   { to: visitanteRuta('metodos-pago'), label: 'Métodos de pago' },
@@ -37,8 +38,15 @@ export default function VisitanteCuentaPage() {
           <p className="text-[11px] text-hc-muted">{correo}</p>
         </div>
       </div>
+      <div className="mb-4">
+        <MmGuiaToggle dataMm="vis-cuenta-guia" />
+      </div>
       {MENU.map((item) => (
-        <VisitanteMenuRow key={item.to} to={item.to}>
+        <VisitanteMenuRow
+          key={item.to}
+          to={item.to}
+          dataMm={'dataMm' in item ? item.dataMm : undefined}
+        >
           {item.label}
         </VisitanteMenuRow>
       ))}

@@ -12,9 +12,9 @@ export default function VisitanteBottomNav() {
   const badge = count()
   const items = [
     { to: visitanteRuta(), label: 'Home', end: true as const, Icon: IconoCasa },
-    { to: visitanteRuta('shop'), label: 'Shop', Icon: IconoBolsa },
+    { to: visitanteRuta('shop'), label: 'Shop', Icon: IconoBolsa, dataMm: 'vis-nav-shop' },
     { to: visitanteRuta('discover'), label: 'Discover', Icon: IconoDiscover },
-    { to: visitanteRuta('carrito'), label: 'Cart', Icon: IconoCarrito, badge },
+    { to: visitanteRuta('carrito'), label: 'Cart', Icon: IconoCarrito, badge, dataMm: 'vis-nav-carrito' },
     { to: visitanteRuta('cuenta'), label: 'Account', Icon: IconoCuenta },
   ]
   return (
@@ -30,6 +30,7 @@ export default function VisitanteBottomNav() {
               <NavLink
                 to={item.to}
                 end={Boolean(item.end)}
+                {...('dataMm' in item && item.dataMm ? { 'data-mm': item.dataMm } : {})}
                 className={`flex min-h-11 flex-col items-center justify-center gap-0.5 ${
                   activa ? 'text-hc-accent' : 'text-hc-muted'
                 }`}

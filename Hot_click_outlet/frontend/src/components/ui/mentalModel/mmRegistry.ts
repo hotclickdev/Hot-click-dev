@@ -12,6 +12,9 @@ export const MM_WELCOME_KEY = 'hc-mm-v1-welcome-done'
 /** Bienvenida del panel vendedor (emprendedor / pyme / plus). */
 export const MM_WELCOME_SELLER_KEY = 'hc-mm-v1-welcome-seller-done'
 
+/** Bienvenida del marketplace Visitante. */
+export const MM_WELCOME_VISITANTE_KEY = 'hc-mm-v1-welcome-visitante-done'
+
 export type MmPaso = {
   /** Valor de `data-mm` en el ancla real. Vacío = tooltip centrado. */
   ancla: string
@@ -36,6 +39,15 @@ function guiasVendedor(segmento: string, pasos: readonly MmPaso[]): MmGuia[] {
     roles: [...ROLES_VENDEDOR],
     pasos,
   }))
+}
+
+/** Guías Visitante: sin roles → también anónimos. */
+function guiasVisitante(segmento: string, pasos: readonly MmPaso[]): MmGuia[] {
+  return [{
+    path: segmento ? `/visitante/${segmento}` : '/visitante',
+    roles: [],
+    pasos,
+  }]
 }
 
 /**
@@ -241,14 +253,73 @@ export const MM_GUIAS: readonly MmGuia[] = [
       texto: 'Invitá cajeros o ayudantes para que operen la caja y los pedidos.',
     },
   ]),
+
+  ...guiasVisitante('', [
+    {
+      ancla: 'vis-nav-shop',
+      titulo: 'Shop',
+      texto: 'Acá está todo el catálogo. Empezá buscando lo que necesitás.',
+    },
+    {
+      ancla: 'vis-nav-carrito',
+      titulo: 'Carrito',
+      texto: 'Tus productos van acá. Cuando estés listo, pagás desde el carrito.',
+    },
+  ]),
+  ...guiasVisitante('shop', [
+    {
+      ancla: 'vis-shop-buscar',
+      titulo: 'Buscar',
+      texto: 'Escribí el nombre o usá las categorías para filtrar.',
+    },
+    {
+      ancla: 'vis-shop-lista',
+      titulo: 'Productos',
+      texto: 'Tocá uno para ver detalle y agregarlo al carrito.',
+    },
+  ]),
+  ...guiasVisitante('carrito', [
+    {
+      ancla: 'vis-carrito-pagar',
+      titulo: 'Ir a pagar',
+      texto: 'Confirmá el total y seguí al checkout sin salir de esta experiencia.',
+    },
+  ]),
+  ...guiasVisitante('cuenta', [
+    {
+      ancla: 'vis-cuenta-pedidos',
+      titulo: 'Mis pedidos',
+      texto: 'Después de comprar, acá ves el estado de tus pedidos.',
+    },
+    {
+      ancla: 'vis-cuenta-guia',
+      titulo: 'Guías al entrar',
+      texto: 'Podés apagar estas explicaciones cuando ya conozcas la tienda.',
+    },
+  ]),
 ]
 
 export function esRutaVendedor(pathname: string): boolean {
   return BASES_VENDEDOR.some((base) => pathname === base || pathname.startsWith(`${base}/`))
 }
 
+export function esRutaVisitante(pathname: string): boolean {
+  return pathname === '/visitante' || pathname.startsWith('/visitante/')
+}
+
+const VISITANTE_SIN_COACH = [
+  '/visitante/checkout',
+  '/visitante/compra-confirmada',
+  '/visitante/pago-fallido',
+  '/visitante/asesor-ia',
+  '/visitante/asistente',
+] as const
+
 export function esRutaConCoach(pathname: string): boolean {
-  return pathname.startsWith('/admin') || esRutaVendedor(pathname)
+  if (pathname.startsWith('/admin') || esRutaVendedor(pathname)) return true
+  if (!esRutaVisitante(pathname)) return false
+  const limpio = pathname.split('?')[0].replace(/\/$/, '') || '/visitante'
+  return !VISITANTE_SIN_COACH.some((ruta) => limpio === ruta || limpio.startsWith(`${ruta}/`))
 }
 
 export function clavePantalla(path: string): string {
@@ -257,7 +328,6 @@ export function clavePantalla(path: string): string {
 }
 
 export function guiaPara(pathname: string, rol: string | null | undefined): MmGuia | null {
-  if (!rol) return null
   const path = pathname.split('?')[0].replace(/\/$/, '') || '/admin'
   const candidatas = MM_GUIAS.filter((g) => {
     const base = g.path.replace(/\/$/, '') || '/admin'
@@ -265,6 +335,7 @@ export function guiaPara(pathname: string, rol: string | null | undefined): MmGu
       || (base !== '/admin' && path.startsWith(`${base}/`))
     if (!coincide) return false
     if (!g.roles || g.roles.length === 0) return true
+    if (!rol) return false
     return g.roles.includes(rol)
   })
   const exacta = candidatas.find((g) => (g.path.replace(/\/$/, '') || '/admin') === path)
@@ -352,5 +423,19 @@ export function welcomeSellerHecho(): boolean {
 export function marcarWelcomeSellerHecho(): void {
   try {
     localStorage.setItem(MM_WELCOME_SELLER_KEY, '1')
+  } catch { /* ok */ }
+}
+
+export function welcomeVisitanteHecho(): boolean {
+  try {
+    return localStorage.getItem(MM_WELCOME_VISITANTE_KEY) === '1'
+  } catch {
+    return true
+  }
+}
+
+export function marcarWelcomeVisitanteHecho(): void {
+  try {
+    localStorage.setItem(MM_WELCOME_VISITANTE_KEY, '1')
   } catch { /* ok */ }
 }

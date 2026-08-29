@@ -21,7 +21,12 @@ export default function VisitanteShopPage({ sinResultados = false }: { sinResult
   return (
     <VisitanteMain>
       <VisitanteTitulo sub="Todo el catálogo de HotClick en un solo lugar">Shop</VisitanteTitulo>
-      <VisitanteSearchField placeholder="Buscar productos" value={consulta} onChange={setConsulta} />
+      <VisitanteSearchField
+        placeholder="Buscar productos"
+        value={consulta}
+        onChange={setConsulta}
+        dataMm="vis-shop-buscar"
+      />
       <div className="mb-6 flex gap-2.5 overflow-x-auto">
         {CHIPS_SHOP.map((chip) => (
           <VisitanteChip key={chip} activo={categoria === chip} onClick={() => setCategoria(chip)}>
@@ -29,7 +34,9 @@ export default function VisitanteShopPage({ sinResultados = false }: { sinResult
           </VisitanteChip>
         ))}
       </div>
-      <CuerpoShop cargando={cargando && !sinResultados} error={error && !sinResultados} productos={lista} />
+      <div data-mm="vis-shop-lista">
+        <CuerpoShop cargando={cargando && !sinResultados} error={error && !sinResultados} productos={lista} />
+      </div>
     </VisitanteMain>
   )
 }

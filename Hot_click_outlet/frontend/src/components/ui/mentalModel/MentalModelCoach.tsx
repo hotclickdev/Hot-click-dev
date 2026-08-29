@@ -8,13 +8,16 @@ import {
   autoSpotlightOmitido,
   esRutaConCoach,
   esRutaVendedor,
+  esRutaVisitante,
   guiaPara,
   marcarPantallaVista,
   marcarWelcomeHecho,
   marcarWelcomeSellerHecho,
+  marcarWelcomeVisitanteHecho,
   mmApagado,
   welcomeHecho,
   welcomeSellerHecho,
+  welcomeVisitanteHecho,
   type MmPaso,
 } from './mmRegistry'
 
@@ -41,6 +44,7 @@ export default function MentalModelCoach() {
 
   const path = location.pathname
   const esSeller = esRutaVendedor(path)
+  const esVisitante = esRutaVisitante(path)
 
   const recalcular = useCallback((ancla: string) => {
     setRect(rectDeAncla(ancla))
@@ -70,6 +74,15 @@ export default function MentalModelCoach() {
     if (mmApagado()) return
     if (!esRutaConCoach(path)) return
 
+    if (esVisitante) {
+      if (!welcomeVisitanteHecho()) {
+        const t = setTimeout(() => setFase('welcome'), 500)
+        return () => clearTimeout(t)
+      }
+      const t = setTimeout(() => iniciarSpotlight(false), 700)
+      return () => clearTimeout(t)
+    }
+
     if (esSeller) {
       if (!welcomeSellerHecho()) {
         const t = setTimeout(() => setFase('welcome'), 500)
@@ -86,17 +99,18 @@ export default function MentalModelCoach() {
     }
     const t = setTimeout(() => iniciarSpotlight(false), 800)
     return () => clearTimeout(t)
-  }, [path, esSeller, iniciarSpotlight])
+  }, [path, esSeller, esVisitante, iniciarSpotlight])
 
   useEffect(() => {
     const handler = () => {
-      if (esSeller) marcarWelcomeSellerHecho()
+      if (esVisitante) marcarWelcomeVisitanteHecho()
+      else if (esSeller) marcarWelcomeSellerHecho()
       else marcarWelcomeHecho()
       iniciarSpotlight(true)
     }
     globalThis.addEventListener('hc-open-tour', handler as EventListener)
     return () => globalThis.removeEventListener('hc-open-tour', handler as EventListener)
-  }, [iniciarSpotlight, esSeller])
+  }, [iniciarSpotlight, esSeller, esVisitante])
 
   useEffect(() => {
     if (fase !== 'spotlight' || pasos.length === 0) return
@@ -121,31 +135,35 @@ export default function MentalModelCoach() {
         cerrarSpotlight()
         return
       }
-      if (esSeller) marcarWelcomeSellerHecho()
+      if (esVisitante) marcarWelcomeVisitanteHecho()
+      else if (esSeller) marcarWelcomeSellerHecho()
       else marcarWelcomeHecho()
       setFase('idle')
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [fase, cerrarSpotlight, esSeller])
+  }, [fase, cerrarSpotlight, esSeller, esVisitante])
 
   if (fase === 'idle' || mmApagado()) return null
 
   if (fase === 'welcome' || fase === 'modos') {
+    const varianteWelcome = esVisitante ? 'visitante' : esSeller ? 'seller' : 'admin'
     return (
       <WelcomeModal
         fase={fase}
-        variante={esSeller ? 'seller' : 'admin'}
+        variante={varianteWelcome}
         userName={userName}
         modes={getAvailableModes(userRole ?? '', permissions, { empresaSlug, planNombre })}
         onTour={() => {
-          if (esSeller) marcarWelcomeSellerHecho()
+          if (esVisitante) marcarWelcomeVisitanteHecho()
+          else if (esSeller) marcarWelcomeSellerHecho()
           else marcarWelcomeHecho()
           iniciarSpotlight(true)
         }}
         onModos={() => setFase('modos')}
         onOmitir={() => {
-          if (esSeller) marcarWelcomeSellerHecho()
+          if (esVisitante) marcarWelcomeVisitanteHecho()
+          else if (esSeller) marcarWelcomeSellerHecho()
           else marcarWelcomeHecho()
           marcarPantallaVista(path)
           setFase('idle')
@@ -215,7 +233,7 @@ function WelcomeModal({
   onVolver,
 }: {
   fase: 'welcome' | 'modos'
-  variante: 'admin' | 'seller'
+  variante: 'admin' | 'seller' | 'visitante'
   userName: string | null
   modes: { id: string; label: string; sub: string; path: string }[]
   onTour: () => void
@@ -225,6 +243,16 @@ function WelcomeModal({
   onVolver: () => void
 }) {
   const nombre = userName?.split(' ')[0]
+  const tituloWelcome = variante === 'visitante'
+    ? `Bienvenido${nombre ? `, ${nombre}` : ''} a HotClick`
+    : variante === 'seller'
+      ? `Bienvenido${nombre ? `, ${nombre}` : ''} a tu negocio`
+      : `Bienvenido${nombre ? `, ${nombre}` : ''} al panel`
+  const textoWelcome = variante === 'visitante'
+    ? 'Te mostramos cómo buscar, armar el carrito y pagar. Podés apagarlo desde Mi cuenta.'
+    : variante === 'seller'
+      ? 'En cada pestaña te mostramos paso a paso qué hacer. Podés apagarlo cuando quieras desde Opciones.'
+      : 'Te mostramos qué podés hacer en cada pantalla y dónde hacer clic.'
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center p-4"
@@ -237,15 +265,11 @@ function WelcomeModal({
         {fase === 'welcome' ? (
           <>
             <h2 id="mm-welcome-title" className="font-display text-xl font-bold text-hc-text md:text-2xl">
-              {variante === 'seller'
-                ? `Bienvenido${nombre ? `, ${nombre}` : ''} a tu negocio`
-                : `Bienvenido${nombre ? `, ${nombre}` : ''} al panel`}
+              {tituloWelcome}
             </h2>
             <p className="mt-2 text-base font-semibold text-hc-text">Hagamos que sea tuyo</p>
             <p className="mt-2 text-sm text-hc-muted">
-              {variante === 'seller'
-                ? 'En cada pestaña te mostramos paso a paso qué hacer. Podés apagarlo cuando quieras desde Opciones.'
-                : 'Te mostramos qué podés hacer en cada pantalla y dónde hacer clic.'}
+              {textoWelcome}
             </p>
             <div className="mt-6 flex flex-col gap-3">
               <button

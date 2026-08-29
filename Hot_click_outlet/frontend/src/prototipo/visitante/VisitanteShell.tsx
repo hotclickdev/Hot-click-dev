@@ -1,4 +1,5 @@
 import { Outlet, useLocation } from 'react-router-dom'
+import MentalModelCoach from '@/components/ui/mentalModel/MentalModelCoach'
 import VisitanteBottomNav from './VisitanteBottomNav'
 
 const SIN_NAV = [
@@ -30,6 +31,7 @@ export default function VisitanteShell() {
     <div className={`min-h-dvh bg-hc-bg text-hc-text ${conNav ? 'pb-16' : ''}`}>
       <Outlet />
       {conNav ? <VisitanteBottomNav /> : null}
+      <MentalModelCoach />
     </div>
   )
 }

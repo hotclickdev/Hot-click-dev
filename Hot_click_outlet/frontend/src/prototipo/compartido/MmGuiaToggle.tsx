@@ -6,9 +6,9 @@ import {
 } from '@/components/ui/mentalModel/mmRegistry'
 
 /**
- * Toggle en Opciones: guías al entrar a cada pestaña.
+ * Toggle en Opciones / Cuenta: guías al entrar a cada pestaña.
  */
-export default function MmGuiaToggle() {
+export default function MmGuiaToggle({ dataMm = 'seller-opciones-guia' }: { dataMm?: string }) {
   const [activo, setActivo] = useState(() => !mmApagado())
 
   function cambiar(siguiente: boolean) {
@@ -23,7 +23,7 @@ export default function MmGuiaToggle() {
   return (
     <div
       className="rounded-xl border border-hc-border bg-hc-surface p-4"
-      data-mm="seller-opciones-guia"
+      data-mm={dataMm}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">

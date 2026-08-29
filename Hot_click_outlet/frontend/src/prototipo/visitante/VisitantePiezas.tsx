@@ -61,6 +61,7 @@ type BotonProps = {
   className?: string
   type?: 'button' | 'submit'
   disabled?: boolean
+  dataMm?: string
 }
 
 export function VisitanteBoton({
@@ -72,19 +73,21 @@ export function VisitanteBoton({
   className = '',
   type = 'button',
   disabled = false,
+  dataMm,
 }: BotonProps) {
   const estilos = estiloBoton(variant)
   const cls = `inline-flex min-h-11 w-full items-center justify-center rounded-full px-5 py-3.5 text-sm font-bold ${estilos} ${disabled ? 'opacity-50' : ''} ${className}`
-  if (to) return <Link to={to} className={cls}>{children}</Link>
+  const attrs = dataMm ? { 'data-mm': dataMm } : {}
+  if (to) return <Link to={to} className={cls} {...attrs}>{children}</Link>
   if (href) {
     return (
-      <a href={href} target="_blank" rel="noreferrer" className={cls}>
+      <a href={href} target="_blank" rel="noreferrer" className={cls} {...attrs}>
         {children}
       </a>
     )
   }
   return (
-        <button type={type} onClick={onClick} className={cls} disabled={disabled} aria-disabled={disabled}>
+        <button type={type} onClick={onClick} className={cls} disabled={disabled} aria-disabled={disabled} {...attrs}>
           {children}
         </button>
   )
@@ -142,13 +145,18 @@ export function VisitanteSearchField({
   placeholder,
   value,
   onChange,
+  dataMm,
 }: {
   placeholder: string
   value?: string
   onChange?: (valor: string) => void
+  dataMm?: string
 }) {
   return (
-    <label className="mb-4 flex min-h-11 items-center gap-2.5 rounded-full bg-[var(--hc-n-100)] px-4 py-3">
+    <label
+      className="mb-4 flex min-h-11 items-center gap-2.5 rounded-full bg-[var(--hc-n-100)] px-4 py-3"
+      {...(dataMm ? { 'data-mm': dataMm } : {})}
+    >
       <span className="size-4 text-hc-muted">
         <IconoBuscar className="size-4" />
       </span>
@@ -202,11 +210,13 @@ export function VisitanteMenuRow({
   children,
   peligro,
   onClick,
+  dataMm,
 }: {
   to?: string
   children: ReactNode
   peligro?: boolean
   onClick?: () => void
+  dataMm?: string
 }) {
   const color = peligro ? 'text-hc-danger' : 'text-hc-text'
   const contenido = (
@@ -218,13 +228,20 @@ export function VisitanteMenuRow({
     </>
   )
   const cls = 'flex min-h-11 w-full items-center justify-between border-b border-hc-border py-4'
+  const attrs = dataMm ? { 'data-mm': dataMm } : {}
   if (onClick) {
     return (
-      <button type="button" onClick={onClick} className={cls}>
+      <button type="button" onClick={onClick} className={cls} {...attrs}>
         {contenido}
       </button>
     )
   }
-  if (!to) return <div className={cls}>{contenido}</div>
-  return <Link to={to} className={cls}>{contenido}</Link>
+  if (to) {
+    return (
+      <Link to={to} className={cls} {...attrs}>
+        {contenido}
+      </Link>
+    )
+  }
+  return <div className={cls} {...attrs}>{contenido}</div>
 }
