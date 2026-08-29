@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { paymentService } from '../services/paymentService'
 import type { CheckoutPayload } from '@/types/pedido'
+import { sincronizarRetornoPagoAlIniciar } from '@/prototipo/visitante/pagoRetornoVisitante'
 
 const MAX_INTENTOS = 3
 const POLL_INTERVAL_MS = 3000
@@ -37,6 +38,7 @@ export function usePayment() {
 
   const iniciarPago = useCallback(async (checkoutPayload: CheckoutPayload, isGuest: boolean = false, isSinpe: boolean = false) => {
     sessionStorage.setItem(GUEST_KEY, isGuest ? '1' : '0')
+    sincronizarRetornoPagoAlIniciar(globalThis.location.pathname)
     setEstado('loading')
     setError(null)
     setIntentos((i: number) => i + 1)

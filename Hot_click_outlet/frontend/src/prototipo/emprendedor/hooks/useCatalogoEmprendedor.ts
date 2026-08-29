@@ -1,9 +1,8 @@
-import { useEmprendedorDemoStore } from '../store/emprendedorDemoStore'
+import { useCatalogoVendedor } from '@/prototipo/compartido/useCatalogoVendedor'
 
 /**
- * Catálogo del prototipo (mock Figma, sin API).
+ * Catálogo del vendedor: API real (`productService.adminGetAll`).
  */
 export function useCatalogoEmprendedor() {
-  const productos = useEmprendedorDemoStore((estado) => estado.productos)
-  return { productos }
+  return useCatalogoVendedor()
 }

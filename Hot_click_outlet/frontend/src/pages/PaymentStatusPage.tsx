@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useSearchParams, useLocation } from 'react-router-dom'
+import { Navigate, useSearchParams, useLocation } from 'react-router-dom'
 import { usePayment } from '@/hooks/usePayment'
 import useCartStore from '@/store/cartStore'
 import useAuthStore from '@/store/authStore'
@@ -10,18 +10,34 @@ import PagoPendiente from './pago/PagoPendiente'
 import PagoError from './pago/PagoError'
 import { leerParamsPago, estaOcupado, pedidoDesdeBusqueda } from './pago/pagoHelpers'
 import type { PagoResumen } from './pago/pagoHelpers'
+import {
+  destinoVisitanteDesdePago,
+  limpiarRetornoPagoVisitante,
+} from '@/prototipo/visitante/pagoRetornoVisitante'
 
 export default function PaymentStatusPage() {
-  const [params]      = useSearchParams()
-  const { pathname, search }  = useLocation()
+  const [params] = useSearchParams()
+  const { pathname, search } = useLocation()
+  const destinoVisitante = destinoVisitanteDesdePago(pathname, search)
   const { stripeApproved, esCancelacion } = leerParamsPago(params, pathname)
   const numeroPedido = pedidoDesdeBusqueda(search)
 
-  const { clearCart }                                                           = useCartStore()
-  const { token }                                                               = useAuthStore()
-  const { estado, pagoData, error, iniciarPolling, stopPolling,
-          cancelarPedido }                                      = usePayment()
+  const { clearCart } = useCartStore()
+  const { token } = useAuthStore()
+  const {
+    estado,
+    pagoData,
+    error,
+    iniciarPolling,
+    stopPolling,
+    cancelarPedido,
+  } = usePayment()
   const ran = useRef(false)
+
+  useEffect(() => {
+    if (!destinoVisitante) return
+    limpiarRetornoPagoVisitante()
+  }, [destinoVisitante])
 
   useEffect(() => () => stopPolling(), [stopPolling])
 
@@ -30,11 +46,12 @@ export default function PaymentStatusPage() {
   }, [])
 
   useEffect(() => {
+    if (destinoVisitante) return
     if (estado === 'success') clearCart()
-  }, [estado, clearCart])
+  }, [estado, clearCart, destinoVisitante])
 
   useEffect(() => {
-    if (!numeroPedido || ran.current) return
+    if (destinoVisitante || !numeroPedido || ran.current) return
     ran.current = true
 
     if (esCancelacion) {
@@ -43,7 +60,11 @@ export default function PaymentStatusPage() {
     }
 
     iniciarPolling(numeroPedido)
-  }, [numeroPedido])
+  }, [numeroPedido, destinoVisitante, esCancelacion, cancelarPedido, iniciarPolling])
+
+  if (destinoVisitante) {
+    return <Navigate to={destinoVisitante} replace />
+  }
 
   if (!numeroPedido) {
     return (

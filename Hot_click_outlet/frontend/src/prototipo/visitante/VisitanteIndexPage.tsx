@@ -70,7 +70,7 @@ function BusquedaHero() {
       >
         Escribí qué buscás...
       </Link>
-      <Link to="/productos?ai=1" className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-hc-accent">
+      <Link to={visitanteRuta('asesor-ia')} className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-hc-accent">
         Preguntale al asistente
       </Link>
     </section>

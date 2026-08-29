@@ -1,42 +1,66 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { crearBodegaVendedor } from '@/prototipo/compartido/bodegasVendedorApi'
 import BotonPrimario from '../ui/BotonPrimario'
-import CabeceraAtras from '../ui/CabeceraAtras'
 import CampoTexto from '../ui/CampoTexto'
+import EmprendedorPageFrame, { EmprendedorCard } from '../ui/EmprendedorPageFrame'
 import { RUTA_EMPRENDEDOR } from '../constants'
-import { useEmprendedorDemoStore } from '../store/emprendedorDemoStore'
 
 /**
- * Nueva bodega (Figma 78:150).
+ * Nueva bodega (Figma 78:150 / 352:10492).
  */
 export default function NuevaBodegaPage() {
   const navigate = useNavigate()
-  const agregarBodega = useEmprendedorDemoStore((estado) => estado.agregarBodega)
   const [nombre, setNombre] = useState('')
   const [ubicacion, setUbicacion] = useState('')
   const [encargado, setEncargado] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [guardando, setGuardando] = useState(false)
 
-  function guardar(evento: FormEvent) {
+  async function guardar(evento: FormEvent) {
     evento.preventDefault()
     if (!nombre.trim() || !ubicacion.trim()) {
       setError('Nombre y ubicación son obligatorios.')
       return
     }
-    agregarBodega(nombre, ubicacion)
-    navigate(`${RUTA_EMPRENDEDOR}/opciones/bodegas`)
+    setGuardando(true)
+    try {
+      await crearBodegaVendedor(nombre, ubicacion, encargado)
+      navigate(`${RUTA_EMPRENDEDOR}/opciones/bodegas`)
+    } catch (err: unknown) {
+      console.error('[NuevaBodega]', err)
+      setError('No se pudo guardar la bodega.')
+    } finally {
+      setGuardando(false)
+    }
   }
 
   return (
-    <main className="flex flex-col gap-5 px-5 pb-10 pt-8">
-      <CabeceraAtras titulo="Nueva Bodega" to={`${RUTA_EMPRENDEDOR}/opciones/bodegas`} />
-      <form className="flex flex-col gap-5" onSubmit={guardar}>
-        <CampoTexto etiqueta="Nombre de la bodega" value={nombre} onChange={setNombre} placeholder="Ej: Bodega Central" />
-        <CampoTexto etiqueta="Ubicación" value={ubicacion} onChange={setUbicacion} placeholder="Ej: San José, Costa Rica" />
-        <CampoTexto etiqueta="Encargado (opcional)" value={encargado} onChange={setEncargado} placeholder="Ej: Sofía Vargas" />
+    <EmprendedorPageFrame titulo="Nueva Bodega" volverA={`${RUTA_EMPRENDEDOR}/opciones/bodegas`}>
+      <form className="flex flex-col gap-4" onSubmit={(e) => void guardar(e)}>
+        <EmprendedorCard className="flex flex-col gap-4">
+          <CampoTexto
+            etiqueta="Nombre de la bodega"
+            value={nombre}
+            onChange={setNombre}
+            placeholder="Ej: Bodega Central"
+          />
+          <CampoTexto
+            etiqueta="Ubicación"
+            value={ubicacion}
+            onChange={setUbicacion}
+            placeholder="Ej: San José, Costa Rica"
+          />
+          <CampoTexto
+            etiqueta="Encargado (opcional)"
+            value={encargado}
+            onChange={setEncargado}
+            placeholder="Ej: Sofía Vargas"
+          />
+        </EmprendedorCard>
         {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
-        <BotonPrimario type="submit">Guardar bodega</BotonPrimario>
+        <BotonPrimario type="submit">{guardando ? 'Guardando…' : 'Guardar bodega'}</BotonPrimario>
       </form>
-    </main>
+    </EmprendedorPageFrame>
   )
 }

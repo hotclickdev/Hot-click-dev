@@ -72,7 +72,7 @@ export default function VisitanteCarritoPage({ vacio = false }: { vacio?: boolea
         <span>Total</span>
         <VisitantePrecio colones={total} className="text-[15px]" />
       </div>
-      <VisitanteBoton to="/checkout">Ir a pagar</VisitanteBoton>
+      <VisitanteBoton to={visitanteRuta('checkout')}>Ir a pagar</VisitanteBoton>
     </VisitanteMain>
   )
 }

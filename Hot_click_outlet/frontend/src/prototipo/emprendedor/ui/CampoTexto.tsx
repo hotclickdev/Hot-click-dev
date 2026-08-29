@@ -29,7 +29,7 @@ export default function CampoTexto({
         placeholder={placeholder}
         autoComplete={autoComplete}
         onChange={(evento) => onChange(evento.target.value)}
-        className="min-h-11 w-full rounded-xl bg-[var(--hc-n-50)] px-3.5 py-3.5 text-sm font-medium text-hc-text outline-none placeholder:font-normal placeholder:text-hc-muted"
+        className="min-h-11 w-full rounded-lg border border-hc-border bg-[#F8F9FB] px-3.5 py-3 text-sm font-normal text-hc-text outline-none placeholder:text-hc-muted"
       />
     </label>
   )

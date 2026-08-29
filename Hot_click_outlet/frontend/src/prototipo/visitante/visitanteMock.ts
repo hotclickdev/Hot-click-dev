@@ -1,6 +1,8 @@
 /** Datos locales tipados del prototipo Visitante (Figma 96:128). */
 
-export const VISITANTE_BASE = '/prototipo/visitante'
+import { VISITANTE_BASE } from '@/utils/planPaths'
+
+export { VISITANTE_BASE }
 
 export const COSTO_ENVIO_CRC = 2500
 export const WHATSAPP_HOTCLICK = '50686667888'

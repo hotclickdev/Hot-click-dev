@@ -1,7 +1,5 @@
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import EmprendedorShell from './EmprendedorShell'
-import LoginPage from './pages/LoginPage'
-import RegistroPage from './pages/RegistroPage'
 import MenuPage from './pages/MenuPage'
 import ProductosPage from './pages/ProductosPage'
 import ProductosVacioPage from './pages/ProductosVacioPage'
@@ -20,10 +18,6 @@ import CobroPage from './pages/CobroPage'
 import AyudaPage from './pages/AyudaPage'
 import ConsultasHotPage from './pages/ConsultasHotPage'
 import ProximamentePage from './pages/ProximamentePage'
-import PosPage from './pages/PosPage'
-import CobrarPage from './pages/CobrarPage'
-import VentaRegistradaPage from './pages/VentaRegistradaPage'
-import QrPagoPage from './pages/QrPagoPage'
 import BodegasPage from './pages/BodegasPage'
 import NuevaBodegaPage from './pages/NuevaBodegaPage'
 import PedidosPage from './pages/PedidosPage'
@@ -38,8 +32,10 @@ import PlanActualizadoPage from './pages/PlanActualizadoPage'
 export default function EmprendedorRoutes() {
   return (
     <Routes>
-      <Route path="login" element={<LoginPage />} />
-      <Route path="registro" element={<RegistroPage />} />
+      <Route path="login" element={<Navigate to="/login" replace />} />
+      <Route path="registro" element={<Navigate to="/registro" replace />} />
+      <Route path="pos" element={<Navigate to="/admin/pos" replace />} />
+      <Route path="pos/*" element={<Navigate to="/admin/pos" replace />} />
       <Route element={<EmprendedorShell conNav />}>
         <Route index element={<MenuPage />} />
         <Route path="productos" element={<ProductosPage />} />
@@ -66,10 +62,6 @@ export default function EmprendedorRoutes() {
         <Route path="opciones/plan" element={<PlanesPage />} />
         <Route path="opciones/plan/actualizado" element={<PlanActualizadoPage />} />
         <Route path="proximamente" element={<ProximamentePage />} />
-        <Route path="pos" element={<PosPage />} />
-        <Route path="pos/cobrar" element={<CobrarPage />} />
-        <Route path="pos/venta" element={<VentaRegistradaPage />} />
-        <Route path="pos/qr" element={<QrPagoPage />} />
         <Route path="pedidos" element={<PedidosPage />} />
         <Route path="pedidos/:id" element={<DetallePedidoPage />} />
       </Route>

@@ -5,7 +5,8 @@ import SellerRoutes from '../compartido/SellerRoutes'
 import SucursalesPage from './SucursalesPage'
 
 /**
- * Prototipo Negocio Plus (Figma page 60:171).
+ * Negocio Plus (Figma Planes — Negocio Plus / 305:636+).
+ * Reusa SellerShell; diferencial: Sucursales.
  */
 export default function NegocioPlusRoutes() {
   return (

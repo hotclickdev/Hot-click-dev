@@ -16,6 +16,7 @@ import {
   RedirectSiSistema,
 } from '@/app/routeGuards'
 import AdminRoleSwitch from '@/app/AdminRoleSwitch'
+import PrototipoRedirect from '@/app/PrototipoRedirect'
 
 const CLERK_ENABLED = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 const ClerkShell = CLERK_ENABLED ? lazy(() => import('@/components/auth/ClerkShell')) : null
@@ -23,12 +24,10 @@ const SSOCallback = CLERK_ENABLED ? lazy(() => import('@/pages/SSOCallback')) : 
 const SSOComplete = CLERK_ENABLED ? lazy(() => import('@/pages/SSOComplete')) : null
 
 const HomePage = lazy(() => import('@/pages/HomePage'))
-const PrototipoHubPage = lazy(() => import('@/prototipo/PrototipoHubPage'))
 const VisitanteRoutes = lazy(() => import('@/prototipo/visitante/VisitanteRoutes'))
-const AdminProtoRoutes = lazy(() => import('@/prototipo/admin/AdminRoutes'))
-const EmprendedorRoutes = lazy(() => import('@/prototipo/emprendedor/EmprendedorRoutes'))
-const PymeRoutes = lazy(() => import('@/prototipo/pyme/PymeRoutes'))
-const NegocioPlusRoutes = lazy(() => import('@/prototipo/negocio-plus/NegocioPlusRoutes'))
+const EmprendedorArea = lazy(() => import('@/app/FigmaSellerGate').then((m) => ({ default: m.EmprendedorArea })))
+const PymeArea = lazy(() => import('@/app/FigmaSellerGate').then((m) => ({ default: m.PymeArea })))
+const NegocioPlusArea = lazy(() => import('@/app/FigmaSellerGate').then((m) => ({ default: m.NegocioPlusArea })))
 const ProductsPage = lazy(() => import('@/pages/ProductsPage'))
 const DescubriPage = lazy(() => import('@/pages/DescubriPage'))
 const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage'))
@@ -61,6 +60,7 @@ const AdminImportar = lazy(() => import('@/pages/admin/AdminImportar'))
 const AdminPagos = lazy(() => import('@/pages/admin/AdminPagos'))
 const AdminMarcas = lazy(() => import('@/pages/admin/AdminMarcas'))
 const AdminConfiguracion = lazy(() => import('@/pages/admin/AdminConfiguracion'))
+const AdminMasHerramientas = lazy(() => import('@/pages/admin/AdminMasHerramientas'))
 const CheckoutPage = lazy(() => import('@/pages/CheckoutPage'))
 const PaymentStatusPage = lazy(() => import('@/pages/PaymentStatusPage'))
 const AdminUsers = lazy(() => import('@/pages/admin/AdminUsers'))
@@ -123,18 +123,19 @@ const TiendaCheckoutPage = lazy(() => import('@/pages/tienda/TiendaCheckoutPage'
 const TiendaSuccessPage = lazy(() => import('@/pages/tienda/TiendaSuccessPage'))
 
 /**
- * Árbol de rutas: marketplace de producción, prototipo Figma en `/prototipo`.
+ * Home `/` = marketplace de producción (Compra · Vende · Emprende).
+ * Figma Visitante vive en `/visitante/*`. `/prototipo/*` redirige a prefijos por rol.
  */
 export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-      <Route path="/prototipo" element={<PrototipoHubPage />} />
-      <Route path="/prototipo/visitante/*" element={<VisitanteRoutes />} />
-      <Route path="/prototipo/admin/*" element={<AdminProtoRoutes />} />
-      <Route path="/prototipo/emprendedor/*" element={<EmprendedorRoutes />} />
-      <Route path="/prototipo/pyme/*" element={<PymeRoutes />} />
-      <Route path="/prototipo/negocio-plus/*" element={<NegocioPlusRoutes />} />
+      <Route path="/visitante/*" element={<VisitanteRoutes />} />
+      <Route path="/emprendedor/*" element={<EmprendedorArea />} />
+      <Route path="/pyme/*" element={<PymeArea />} />
+      <Route path="/negocio-plus/*" element={<NegocioPlusArea />} />
+      <Route path="/prototipo" element={<PrototipoRedirect />} />
+      <Route path="/prototipo/*" element={<PrototipoRedirect />} />
       <Route path="/productos" element={<ProductsPage />} />
       <Route path="/descubri" element={<DescubriPage />} />
       <Route path="/productos/:id" element={<ProductDetailPage />} />
@@ -200,7 +201,7 @@ export default function AppRoutes() {
         <Route path="carga-masiva" element={<Navigate to="/admin/productos/carga-masiva" replace />} />
         <Route path="carga-masiva/revisar" element={<Navigate to="/admin/productos/carga-masiva" replace />} />
         <Route path="carga-masiva/completada" element={<Navigate to="/admin/productos" replace />} />
-        <Route path="herramientas" element={<Navigate to="/admin" replace />} />
+        <Route path="herramientas" element={<AdminMasHerramientas />} />
         <Route path="herramientas/marcas" element={<Navigate to="/admin/marcas" replace />} />
         <Route path="herramientas/garantias" element={<Navigate to="/admin/garantias" replace />} />
         <Route path="herramientas/clientes" element={<Navigate to="/admin/clientes" replace />} />

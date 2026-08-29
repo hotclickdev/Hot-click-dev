@@ -3284,3 +3284,60 @@ UPDATE hot_click_categoria_tb SET icono = 'herram'  WHERE icono = '🔧';
 UPDATE hot_click_categoria_tb SET icono = 'regal'   WHERE icono = '🎁';
 UPDATE hot_click_categoria_tb SET icono = 'cuidado' WHERE icono = '🧴';
 
+-- V104: token opaco para recuperar carrito abandonado
+ALTER TABLE hot_click_carrito_abandonado_tb
+    ADD COLUMN IF NOT EXISTS token_recuperacion VARCHAR(36);
+
+UPDATE hot_click_carrito_abandonado_tb
+SET token_recuperacion = gen_random_uuid()::text
+WHERE token_recuperacion IS NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_carrito_abandonado_token
+    ON hot_click_carrito_abandonado_tb (token_recuperacion);
+
+-- V105: planes SaaS + demos PYME / Negocio Plus
+INSERT INTO hot_click_plan_tb
+    (nombre, descripcion, precio_mensual, precio_usd, comision_porcentaje,
+     max_usuarios, max_productos, max_bodegas, max_cajas,
+     tiene_pos, tiene_crm, tiene_compras, tiene_reportes, tiene_ai, tiene_api,
+     max_creditos_ai, activo)
+VALUES
+    ('EMPRENDEDOR', 'Plan gratuito. Modelo basado en comisión por venta.', 0, 0.00, 1.50, 2, 50, 1, 1, false, false, false, true, false, false, 0, true),
+    ('PYME', 'Plan para negocios en crecimiento. Incluye IA y reportes.', 0, 11.99, 0.00, 5, 500, 2, 2, true, false, true, true, true, false, 80, true),
+    ('NEGOCIO_PLUS', 'Plan completo. Usuarios ilimitados, IA sin límite.', 0, 19.99, 0.00, -1, -1, -1, -1, true, true, true, true, true, false, -1, true)
+ON CONFLICT (nombre) DO UPDATE SET activo = true;
+
+UPDATE hot_click_empresa_tb e
+SET fk_id_plan = p.id_plan, plan_saas = 'EMPRENDEDOR'
+FROM hot_click_plan_tb p
+WHERE p.nombre = 'EMPRENDEDOR' AND e.fk_id_plan IS NULL;
+
+UPDATE hot_click_empresa_tb e
+SET fk_id_plan = p.id_plan, plan_saas = 'PYME'
+FROM hot_click_plan_tb p
+WHERE p.nombre = 'PYME'
+  AND (e.correo_empresa = 'qa.pyme.demo@hotclick.test'
+    OR e.id_empresa IN (SELECT u.fk_id_empresa FROM hot_click_usuario_tb u WHERE u.correo = 'qa.pyme.demo@hotclick.test' AND u.fk_id_empresa IS NOT NULL));
+
+UPDATE hot_click_empresa_tb e
+SET fk_id_plan = p.id_plan, plan_saas = 'NEGOCIO_PLUS'
+FROM hot_click_plan_tb p
+WHERE p.nombre = 'NEGOCIO_PLUS'
+  AND (e.correo_empresa = 'qa.negocioplus.demo@hotclick.test'
+    OR e.id_empresa IN (SELECT u.fk_id_empresa FROM hot_click_usuario_tb u WHERE u.correo = 'qa.negocioplus.demo@hotclick.test' AND u.fk_id_empresa IS NOT NULL));
+
+-- V106: sucursales por empresa (Negocio Plus — multi-sucursal)
+CREATE TABLE IF NOT EXISTS hot_click_sucursal_tb (
+    id_sucursal    BIGSERIAL PRIMARY KEY,
+    nombre         VARCHAR(120) NOT NULL,
+    fk_id_empresa  BIGINT NOT NULL REFERENCES hot_click_empresa_tb(id_empresa) ON DELETE CASCADE,
+    fk_id_estado   INTEGER NOT NULL DEFAULT 1,
+    fecha_creacion TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_sucursal_empresa
+    ON hot_click_sucursal_tb(fk_id_empresa);
+
+CREATE INDEX IF NOT EXISTS idx_sucursal_empresa_estado
+    ON hot_click_sucursal_tb(fk_id_empresa, fk_id_estado);
+

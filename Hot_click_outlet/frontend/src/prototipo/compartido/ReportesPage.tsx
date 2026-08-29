@@ -1,47 +1,38 @@
 import { useState } from 'react'
 import { formatoColon } from '@/theme/formatoColon'
 import { Chip, EncabezadoPagina, Miniatura } from './ui'
+import { useReportesVendedor } from './useReportesVendedor'
 
 const PERIODOS = ['Hoy', 'Semana', 'Mes', 'Todo'] as const
-const BARRAS = [
-  { dia: 'L', alto: 18 },
-  { dia: 'M', alto: 30 },
-  { dia: 'M2', alto: 22 },
-  { dia: 'J', alto: 44 },
-  { dia: 'V', alto: 60 },
-  { dia: 'S', alto: 38 },
-  { dia: 'D', alto: 14 },
-] as const
-
-const TOP = [
-  { nombre: 'Auriculares Bluetooth X200', vendidos: 5, total: 92500 },
-  { nombre: 'Camiseta Oversize Negra', vendidos: 2, total: 19800 },
-  { nombre: 'Cargador USB-C 30W', vendidos: 1, total: 7200 },
-] as const
 
 /**
- * Reportes del vendedor (Figma 61:270).
+ * Reportes del vendedor (Figma 61:270) — catálogo y pedidos reales.
  */
 export default function ReportesPage() {
-  const [periodo, setPeriodo] = useState<(typeof PERIODOS)[number]>('Hoy')
+  const [periodo, setPeriodo] = useState<(typeof PERIODOS)[number]>('Todo')
+  const { publicados, unidadesVendidas, gananciaVendida, gananciaPotencial, top, cargando, error } = useReportesVendedor()
   return (
-    <main className="px-5 pb-8 pt-[60px]">
+    <main className="px-5 pb-8 pt-[60px]" data-mm="seller-reportes">
       <EncabezadoPagina titulo="Reportes" subtitulo="Resumen de tu negocio" />
       <div className="mb-4 flex gap-2">
         {PERIODOS.map((item) => (
           <Chip key={item} activo={periodo === item} onClick={() => setPeriodo(item)}>{item}</Chip>
         ))}
       </div>
+      {cargando ? <p className="mb-3 text-sm text-hc-muted">Cargando reportes…</p> : null}
+      {error ? <p className="mb-3 text-sm text-hc-danger">{error}</p> : null}
       <div className="grid grid-cols-2 gap-3">
-        <Kpi titulo="Productos publicados" valor="12" />
-        <Kpi titulo="Vendidos" valor="8" />
-        <Kpi titulo="Ganancia vendida" valor={formatoColon(145000)} />
-        <Kpi titulo="Ganancia potencial" valor={formatoColon(320000)} />
+        <Kpi titulo="Productos publicados" valor={String(publicados)} />
+        <Kpi titulo="Vendidos" valor={String(unidadesVendidas)} />
+        <Kpi titulo="Ganancia vendida" valor={formatoColon(gananciaVendida)} />
+        <Kpi titulo="Ganancia potencial" valor={formatoColon(gananciaPotencial)} />
       </div>
-      <GraficoBarras />
       <h2 className="mb-3 mt-6 text-[15px] font-bold">Más vendidos</h2>
+      {top.length === 0 && !cargando ? (
+        <p className="text-sm text-hc-muted">Todavía no hay ventas para mostrar.</p>
+      ) : null}
       <ul className="space-y-4">
-        {TOP.map((item) => (
+        {top.map((item) => (
           <li key={item.nombre} className="flex items-center gap-3">
             <Miniatura className="size-12" />
             <div className="min-w-0 flex-1">
@@ -64,21 +55,5 @@ function Kpi({ titulo, valor }: { titulo: string; valor: string }) {
       <p className="text-xs text-hc-muted">{titulo}</p>
       <p className="mt-1 text-xl font-bold">{valor}</p>
     </div>
-  )
-}
-
-function GraficoBarras() {
-  return (
-    <section className="mt-4 rounded-xl border border-hc-border p-4">
-      <h2 className="mb-3 text-sm font-semibold">Ventas por día</h2>
-      <div className="flex h-20 items-end justify-between px-2">
-        {BARRAS.map((barra) => (
-          <div key={barra.dia} className="flex w-7 flex-col items-center gap-1">
-            <span className="w-3.5 rounded-sm bg-hc-primary" style={{ height: barra.alto }} />
-            <span className="text-[10px] text-hc-muted">{barra.dia.replace('2', '')}</span>
-          </div>
-        ))}
-      </div>
-    </section>
   )
 }

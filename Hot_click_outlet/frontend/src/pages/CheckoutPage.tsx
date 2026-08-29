@@ -12,6 +12,7 @@ import { useCheckoutActions } from './checkout/useCheckoutActions'
 
 /**
  * Checkout de producción: mismos side effects de pago; layout TypeScript Figma.
+ * Bajo `/visitante/*` omite MainLayout (skin vía pathname en subvistas).
  */
 export default function CheckoutPage() {
   const { items, total, toWhatsAppMessage } = useCartStore()

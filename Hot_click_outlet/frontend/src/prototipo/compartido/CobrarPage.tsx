@@ -8,7 +8,7 @@ import { resumenTicket } from './posTicket'
 const DEFAULT: Record<string, number> = { auriculares: 2, camiseta: 1 }
 
 /**
- * Cobrar ticket POS (Figma 73:305).
+ * Cobrar ticket POS (Figma 71:179).
  */
 export default function CobrarPage() {
   const ruta = useSellerRuta()

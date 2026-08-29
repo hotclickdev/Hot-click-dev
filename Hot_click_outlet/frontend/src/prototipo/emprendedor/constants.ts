@@ -1,4 +1,4 @@
-export const RUTA_EMPRENDEDOR = '/prototipo/emprendedor'
+export { RUTA_EMPRENDEDOR } from '@/utils/planPaths'
 
 export const WHATSAPP_SOPORTE = '50686667888'
 

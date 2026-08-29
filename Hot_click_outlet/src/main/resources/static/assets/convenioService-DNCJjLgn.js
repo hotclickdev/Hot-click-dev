@@ -1,1 +1,0 @@
-import{t as e}from"./api-CL6L0HEX.js";function t(e){let t=e?.data;return Array.isArray(t)?t:Array.isArray(t?.data)?t.data:[]}var n={getPublicos:()=>e.get(`/convenios/publicos`),getAll:()=>e.get(`/convenios`),create:t=>e.post(`/convenios`,t),update:(t,n)=>e.put(`/convenios/${t}`,n),delete:t=>e.delete(`/convenios/${t}`)};export{t as n,n as t};

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { IconoMas, IconoMenos } from './VisitanteIcons'
 import VisitanteMain, { VisitanteBackHeader, VisitanteBoton } from './VisitantePiezas'
 import { FAQ_VISITANTE, visitanteRuta, WHATSAPP_HOTCLICK } from './visitanteMock'
@@ -33,6 +34,14 @@ export default function VisitanteAyudaPage() {
       <VisitanteBoton href={`https://wa.me/${WHATSAPP_HOTCLICK}`} className="text-sm">
         Escribinos por WhatsApp
       </VisitanteBoton>
+      <nav className="mt-8 space-y-3 text-sm" aria-label="Páginas legales">
+        <p className="font-semibold">Más información</p>
+        <Link to="/envios" className="block min-h-11 font-medium text-hc-accent">Envíos</Link>
+        <Link to="/nosotros" className="block min-h-11 font-medium text-hc-accent">Nosotros</Link>
+        <Link to="/terminos" className="block min-h-11 font-medium text-hc-accent">Términos</Link>
+        <Link to="/privacidad" className="block min-h-11 font-medium text-hc-accent">Privacidad</Link>
+        <Link to="/devoluciones" className="block min-h-11 font-medium text-hc-accent">Devoluciones</Link>
+      </nav>
     </VisitanteMain>
   )
 }

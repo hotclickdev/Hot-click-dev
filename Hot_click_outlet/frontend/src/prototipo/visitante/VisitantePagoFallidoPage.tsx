@@ -1,6 +1,6 @@
-import { Navigate } from 'react-router-dom'
+import VisitantePagoResultado from './VisitantePagoResultado'
 
-/** Pago rechazado: misma pantalla de producción. */
+/** Pago cancelado/fallido bajo chrome Visitante (`/visitante/pago-fallido`). */
 export default function VisitantePagoFallidoPage() {
-  return <Navigate to="/pago/cancelado" replace />
+  return <VisitantePagoResultado />
 }

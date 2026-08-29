@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatoColon } from '@/theme/formatoColon'
-import { PRODUCTOS, type CategoriaProducto, type ProductoMock } from './mock'
+import { type CategoriaProducto, type ProductoMock } from './mock'
 import { Boton, Chip, EncabezadoPagina, Miniatura } from './ui'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
+import { useCatalogoVendedor } from './useCatalogoVendedor'
 
 type Filtro = 'Todos' | 'Recién agregados' | CategoriaProducto
 
@@ -13,26 +14,35 @@ type Filtro = 'Todos' | 'Recién agregados' | CategoriaProducto
 export default function ProductosPage() {
   const plan = useSellerPlan()
   const ruta = useSellerRuta()
+  const { seller, cargando, error } = useCatalogoVendedor()
   const [filtro, setFiltro] = useState<Filtro>('Todos')
-  const visibles = filtrarProductos(filtro)
+  const visibles = filtrarProductos(seller, filtro)
   return (
     <main className="px-5 pb-8 pt-[60px]">
       <EncabezadoPagina titulo="Mis Productos" subtitulo={`Outlet · ${plan.usuario}`} />
-      <Boton to={ruta('productos/nuevo')}>+ Agregar producto</Boton>
+      <Boton to={ruta('productos/nuevo')} dataMm="seller-agregar-producto">+ Agregar producto</Boton>
       <div className="mt-6 flex gap-2 overflow-x-auto pb-1">
         {(['Todos', 'Recién agregados', 'Tecnología', 'Ropa'] as const).map((item) => (
           <Chip key={item} activo={filtro === item} onClick={() => setFiltro(item)}>{item}</Chip>
         ))}
       </div>
-      <SeccionesProductos filtro={filtro} productos={visibles} ruta={ruta} />
+      {cargando ? <p className="mt-6 text-sm text-hc-muted">Cargando catálogo…</p> : null}
+      {error ? <p className="mt-6 text-sm text-hc-danger">{error}</p> : null}
+      <div data-mm="seller-lista-productos">
+        {!cargando && seller.length === 0 ? (
+          <p className="mt-8 text-center text-sm text-hc-muted">Todavía no subiste productos</p>
+        ) : (
+          <SeccionesProductos filtro={filtro} productos={visibles} ruta={ruta} />
+        )}
+      </div>
     </main>
   )
 }
 
-function filtrarProductos(filtro: Filtro): ProductoMock[] {
-  if (filtro === 'Todos') return PRODUCTOS
-  if (filtro === 'Recién agregados') return PRODUCTOS.filter((item) => item.reciente)
-  return PRODUCTOS.filter((item) => item.categoria === filtro)
+function filtrarProductos(productos: ProductoMock[], filtro: Filtro): ProductoMock[] {
+  if (filtro === 'Todos') return productos
+  if (filtro === 'Recién agregados') return productos.filter((item) => item.reciente)
+  return productos.filter((item) => item.categoria === filtro)
 }
 
 function SeccionesProductos({

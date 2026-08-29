@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import BrandLogo from '@/components/ui/BrandLogo'
 import EnlacePrimario from '../ui/EnlacePrimario'
 import { RUTA_EMPRENDEDOR } from '../constants'
+import OnboardingPrimeraVez from '@/prototipo/compartido/OnboardingPrimeraVez'
 
 const ACCIONES = [
   { to: `${RUTA_EMPRENDEDOR}/productos`, etiqueta: 'PRODUCTOS SUBIDOS' },
@@ -14,22 +15,25 @@ const ACCIONES = [
  */
 export default function MenuPage() {
   return (
-    <main className="flex min-h-[calc(100dvh-4rem)] flex-col items-center gap-2 px-6 pb-10 pt-16">
+    <main className="flex min-h-[calc(100dvh-4rem)] flex-col items-center gap-2 px-6 pb-10 pt-16 md:max-w-[480px] md:items-stretch md:px-16 md:py-12">
       <HeroMarca />
+      <OnboardingPrimeraVez rol="emprendedor" />
       {ACCIONES.map((accion) => (
         <Link
           key={accion.to}
           to={accion.to}
+          data-mm={accion.to.includes('/productos') ? 'seller-menu-productos' : undefined}
           className="flex h-[54px] w-full items-center justify-center rounded-[14px] border border-hc-border bg-hc-surface text-sm font-bold"
         >
           {accion.etiqueta}
         </Link>
       ))}
-      <EnlacePrimario to={`${RUTA_EMPRENDEDOR}/pos`} variante="oscuro">
+      <EnlacePrimario to="/admin/pos" variante="oscuro" dataMm="seller-menu-pos">
         Abrí la Caja (POS)
       </EnlacePrimario>
       <Link
         to={`${RUTA_EMPRENDEDOR}/pedidos`}
+        data-mm="seller-menu-pedidos"
         className="flex min-h-11 w-full items-center justify-center rounded-[14px] border border-hc-border py-4 text-sm font-bold"
       >
         Mirá los pedidos

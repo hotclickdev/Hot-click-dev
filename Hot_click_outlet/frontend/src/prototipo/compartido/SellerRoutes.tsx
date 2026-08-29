@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import SellerShell from './SellerShell'
 import MenuPage from './MenuPage'
 import ProductosPage from './ProductosPage'
@@ -22,14 +22,8 @@ import NuevaBodegaPage from './NuevaBodegaPage'
 import DatosNegocioPage from './DatosNegocioPage'
 import CompararPlanesPage from './CompararPlanesPage'
 import PlanActualizadoPage from './PlanActualizadoPage'
-import PosPage from './PosPage'
-import CobrarPage from './CobrarPage'
-import VentaOkPage from './VentaOkPage'
-import QrPagoPage from './QrPagoPage'
 import PedidosPage from './PedidosPage'
 import PedidoDetallePage from './PedidoDetallePage'
-import LoginPage from './LoginPage'
-import RegistroPage from './RegistroPage'
 
 /**
  * Rutas compartidas PYME / Negocio Plus. `extra` cuelga Equipo o Sucursales.
@@ -45,9 +39,11 @@ export default function SellerRoutes({ extra }: { extra?: ReactNode }) {
         <Route path="tienda" element={<TiendaPublicaPage />} />
         <Route path="opciones" element={<OpcionesPage />} />
       </Route>
+      <Route path="login" element={<Navigate to="/login" replace />} />
+      <Route path="registro" element={<Navigate to="/registro" replace />} />
+      <Route path="pos" element={<Navigate to="/admin/pos" replace />} />
+      <Route path="pos/*" element={<Navigate to="/admin/pos" replace />} />
       <Route element={<SellerShell sinNav />}>
-        <Route path="login" element={<LoginPage />} />
-        <Route path="registro" element={<RegistroPage />} />
         <Route path="productos/:id" element={<ProductoDetallePage />} />
         <Route path="productos/:id/editar" element={<ProductoFormPage />} />
         <Route path="productos/:id/eliminar" element={<EliminarProductoPage />} />
@@ -64,10 +60,6 @@ export default function SellerRoutes({ extra }: { extra?: ReactNode }) {
         <Route path="negocio" element={<DatosNegocioPage />} />
         <Route path="plan" element={<CompararPlanesPage />} />
         <Route path="plan/actualizado" element={<PlanActualizadoPage />} />
-        <Route path="pos" element={<PosPage />} />
-        <Route path="pos/cobrar" element={<CobrarPage />} />
-        <Route path="pos/venta" element={<VentaOkPage />} />
-        <Route path="pos/qr" element={<QrPagoPage />} />
         <Route path="pedidos" element={<PedidosPage />} />
         <Route path="pedidos/:id" element={<PedidoDetallePage />} />
         {extra}

@@ -6,7 +6,7 @@ import type { PlanId } from './plan'
 const PLANES = [
   {
     id: 'emprendedor' as const,
-    nombre: 'Emprendimiento',
+    nombre: 'Emprendedor',
     precio: 'Gratis',
     puntos: ['Hasta 20 productos publicados', 'Reportes básicos', '1 bodega', 'Caja (POS)'],
   },

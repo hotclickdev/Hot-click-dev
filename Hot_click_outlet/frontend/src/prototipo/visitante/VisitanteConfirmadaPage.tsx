@@ -1,6 +1,6 @@
-import { Navigate } from 'react-router-dom'
+import VisitantePagoResultado from './VisitantePagoResultado'
 
-/** Confirmación de pago real: sin pedido mock #4021. */
+/** Confirmación de pago real bajo chrome Visitante (`/visitante/compra-confirmada`). */
 export default function VisitanteConfirmadaPage() {
-  return <Navigate to="/pago/exito" replace />
+  return <VisitantePagoResultado />
 }

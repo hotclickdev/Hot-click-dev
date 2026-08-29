@@ -16,25 +16,53 @@ type ActionProps = {
   to?: string
   onClick?: () => void
   type?: 'button' | 'submit'
+  dataMm?: string
 }
 
-function Action({ children, className, to, onClick, type = 'button' }: ActionProps) {
+function Action({ children, className, to, onClick, type = 'button', dataMm }: ActionProps) {
+  const attrs = dataMm ? { 'data-mm': dataMm } : {}
   if (to) {
     return (
-      <Link to={to} className={className}>
+      <Link to={to} className={className} {...attrs}>
         {children}
       </Link>
     )
   }
   return (
-    <button type={type} onClick={onClick} className={className}>
+    <button type={type} onClick={onClick} className={className} {...attrs}>
       {children}
     </button>
   )
 }
 
 const BTN =
-  'flex min-h-12 w-full items-center justify-center rounded-lg px-4 text-sm font-semibold'
+  'flex min-h-12 w-full items-center justify-center rounded-[14px] px-4 text-sm font-semibold'
+
+/** Chip de filtro (Figma Super Admin / POS): activo en rojo marca. */
+export function AdminFilterChip({
+  activo,
+  onClick,
+  children,
+  dataMm,
+}: {
+  activo: boolean
+  onClick: () => void
+  children: string
+  dataMm?: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      data-mm={dataMm}
+      className={`min-h-8 shrink-0 rounded-full px-3.5 text-[11px] font-medium ${
+        activo ? 'bg-hc-primary text-white' : 'border border-hc-border bg-hc-surface text-hc-text'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
 
 /** Badge de estado / rol (Figma pills). */
 export function AdminBadge({ tono, children }: { tono: TonoBadge; children: string }) {
@@ -45,12 +73,21 @@ export function AdminBadge({ tono, children }: { tono: TonoBadge; children: stri
   )
 }
 
-export function AdminAvatar({ letra, size = 'md' }: { letra: string; size?: 'sm' | 'md' | 'lg' }) {
+export function AdminAvatar({
+  letra,
+  size = 'md',
+  redondo = false,
+}: {
+  letra: string
+  size?: 'sm' | 'md' | 'lg'
+  redondo?: boolean
+}) {
   const dim = size === 'sm' ? 'size-11' : size === 'lg' ? 'size-14' : 'size-12'
   const text = size === 'lg' ? 'text-xl' : 'text-base'
+  const forma = redondo ? 'rounded-full' : 'rounded-xl'
   return (
     <span
-      className={`flex shrink-0 items-center justify-center rounded-xl bg-hc-surface-2 font-display font-bold text-hc-muted ${dim} ${text}`}
+      className={`flex shrink-0 items-center justify-center bg-[var(--hc-surface-3,#F1F3F6)] font-display font-bold text-hc-muted ${dim} ${text} ${forma}`}
       aria-hidden
     >
       {letra}
@@ -67,10 +104,10 @@ export function AdminStatCard({
   valor: string
   destacado?: boolean
 }) {
-  const fondo = destacado ? 'bg-[var(--hc-red-50)]' : 'bg-hc-surface-2'
+  const fondo = destacado ? 'bg-[var(--hc-danger-bg)]' : 'bg-hc-surface-2'
   const cifra = destacado ? 'text-hc-primary' : 'text-hc-text'
   return (
-    <div className={`rounded-lg px-3.5 py-4 ${fondo}`}>
+    <div className={`rounded-[14px] px-3.5 py-4 ${fondo}`}>
       <p className="text-[11px] font-medium text-hc-muted">{label}</p>
       <p className={`mt-1.5 font-display text-lg font-bold ${cifra}`}>{valor}</p>
     </div>
@@ -82,21 +119,23 @@ export function AdminSearchField({
   onChange,
   placeholder,
   label,
+  dataMm,
 }: {
   value: string
   onChange: (v: string) => void
   placeholder: string
   label: string
+  dataMm?: string
 }) {
   return (
-    <label className="block">
+    <label className="block" data-mm={dataMm}>
       <span className="sr-only">{label}</span>
       <input
         type="search"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="min-h-11 w-full rounded-lg bg-hc-surface-2 px-3.5 text-sm text-hc-text placeholder:text-hc-muted"
+        className="min-h-11 w-full rounded-xl bg-hc-surface-2 px-3.5 text-sm text-hc-text placeholder:text-hc-muted"
       />
     </label>
   )
@@ -106,13 +145,15 @@ export function AdminChipRow<T extends string>({
   opciones,
   valor,
   onChange,
+  dataMm,
 }: {
   opciones: readonly T[]
   valor: T
   onChange: (v: T) => void
+  dataMm?: string
 }) {
   return (
-    <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="tablist">
+    <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="tablist" data-mm={dataMm}>
       {opciones.map((opcion) => {
         const activo = opcion === valor
         return (
@@ -153,7 +194,7 @@ export function AdminEntityRow({
 }) {
   const inner = (
     <>
-      <AdminAvatar letra={letra} size="sm" />
+      <AdminAvatar letra={letra} />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[13px] font-medium">{titulo}</span>
         <span className="block truncate text-[11px] text-hc-muted">{subtitulo}</span>
@@ -171,12 +212,39 @@ export function AdminEntityRow({
   )
 }
 
-export function AdminMenuRow({ to, label, extra }: { to: string; label: string; extra?: string }) {
-  return (
-    <Link to={to} className="flex min-h-14 items-center justify-between gap-3">
+export function AdminMenuRow({
+  to,
+  label,
+  extra,
+  onClick,
+  peligro = false,
+}: {
+  to?: string
+  label: string
+  extra?: string
+  onClick?: () => void
+  peligro?: boolean
+}) {
+  const className = `flex min-h-14 w-full items-center justify-between gap-3 text-left ${
+    peligro ? 'text-hc-primary' : ''
+  }`
+  const inner = (
+    <>
       <span className="text-sm font-medium">{label}</span>
-      <span className="text-hc-muted">{extra ?? '›'}</span>
-    </Link>
+      <span className={peligro ? 'text-hc-primary' : 'text-hc-muted'}>{extra ?? '›'}</span>
+    </>
+  )
+  if (to) {
+    return (
+      <Link to={to} className={className}>
+        {inner}
+      </Link>
+    )
+  }
+  return (
+    <button type="button" onClick={onClick} className={className}>
+      {inner}
+    </button>
   )
 }
 
@@ -188,17 +256,17 @@ export function AdminPrimaryButton({ children, to, onClick, type }: Omit<ActionP
   )
 }
 
-export function AdminDarkButton({ children, to, onClick }: Omit<ActionProps, 'className' | 'type'>) {
+export function AdminDarkButton({ children, to, onClick, dataMm }: Omit<ActionProps, 'className' | 'type'>) {
   return (
-    <Action to={to} onClick={onClick} className={`${BTN} bg-hc-text text-hc-surface`}>
+    <Action to={to} onClick={onClick} dataMm={dataMm} className={`${BTN} bg-hc-text text-hc-surface`}>
       {children}
     </Action>
   )
 }
 
-export function AdminSecondaryButton({ children, to, onClick }: Omit<ActionProps, 'className' | 'type'>) {
+export function AdminSecondaryButton({ children, to, onClick, dataMm }: Omit<ActionProps, 'className' | 'type'>) {
   return (
-    <Action to={to} onClick={onClick} className={`${BTN} border border-hc-border bg-hc-surface text-hc-text`}>
+    <Action to={to} onClick={onClick} dataMm={dataMm} className={`${BTN} border border-hc-border bg-hc-surface text-hc-text`}>
       {children}
     </Action>
   )

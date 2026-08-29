@@ -9,7 +9,7 @@ import { useSellerRuta } from './SellerPlanContext'
 const INICIAL: Record<string, number> = { auriculares: 2, camiseta: 1 }
 
 /**
- * Caja POS (Figma 73:254).
+ * Caja POS (Figma 71:128).
  */
 export default function PosPage() {
   const ruta = useSellerRuta()
@@ -44,7 +44,7 @@ export default function PosPage() {
       <div className="fixed bottom-4 left-0 right-0 mx-auto max-w-md px-5">
         <div className="flex items-center justify-between rounded-2xl bg-hc-text p-4 text-white">
           <div>
-            <p className="text-[11px] text-white/70">{items} productos en el ticket</p>
+            <p className="text-[11px] text-white/70">{items} productos en la factura</p>
             <p className="text-lg font-bold">{formatoColon(total)}</p>
           </div>
           <button

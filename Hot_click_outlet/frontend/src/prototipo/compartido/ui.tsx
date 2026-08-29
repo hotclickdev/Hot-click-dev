@@ -27,7 +27,7 @@ type BotonProps = {
   type?: 'button' | 'submit'
 }
 
-export function Boton({ children, to, onClick, variante = 'primario', type = 'button' }: BotonProps) {
+export function Boton({ children, to, onClick, variante = 'primario', type = 'button', dataMm }: BotonProps & { dataMm?: string }) {
   const estilos: Record<NonNullable<BotonProps['variante']>, string> = {
     primario: 'bg-hc-primary text-white',
     oscuro: 'bg-hc-text text-white',
@@ -36,14 +36,15 @@ export function Boton({ children, to, onClick, variante = 'primario', type = 'bu
     suave: 'border border-hc-border text-hc-text',
   }
   const clase = `flex min-h-11 w-full items-center justify-center rounded-[14px] px-4 py-3 text-sm font-bold ${estilos[variante]}`
+  const attrs = dataMm ? { 'data-mm': dataMm } : {}
   if (to?.startsWith('http')) {
-    return <a href={to} className={clase} target="_blank" rel="noreferrer">{children}</a>
+    return <a href={to} className={clase} target="_blank" rel="noreferrer" {...attrs}>{children}</a>
   }
   if (to) {
-    return <Link to={to} className={clase}>{children}</Link>
+    return <Link to={to} className={clase} {...attrs}>{children}</Link>
   }
   return (
-    <button type={type} onClick={onClick} className={clase}>
+    <button type={type} onClick={onClick} className={clase} {...attrs}>
       {children}
     </button>
   )
@@ -115,13 +116,35 @@ export function BadgePlan({ texto }: { texto: string }) {
   )
 }
 
-export function FilaOpcion({ to, label, peligro = false }: { to: string; label: string; peligro?: boolean }) {
+export function FilaOpcion({
+  to,
+  label,
+  peligro = false,
+  onClick,
+  dataMm,
+}: {
+  to?: string
+  label: string
+  peligro?: boolean
+  onClick?: () => void
+  dataMm?: string
+}) {
   const color = peligro ? 'text-hc-primary' : 'text-hc-text'
-  return (
-    <Link to={to} className={`flex min-h-14 items-center justify-between border-b border-hc-border ${color}`}>
+  const clase = `flex min-h-14 w-full items-center justify-between border-b border-hc-border ${color}`
+  const attrs = dataMm ? { 'data-mm': dataMm } : {}
+  const contenido = (
+    <>
       <span className="text-sm font-medium">{label}</span>
       <span className="text-base font-bold text-hc-muted" aria-hidden>›</span>
-    </Link>
+    </>
+  )
+  if (to) {
+    return <Link to={to} className={clase} {...attrs}>{contenido}</Link>
+  }
+  return (
+    <button type="button" onClick={onClick} className={`text-left ${clase}`} {...attrs}>
+      {contenido}
+    </button>
   )
 }
 

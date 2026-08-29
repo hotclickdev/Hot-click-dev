@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom'
+import { visitanteRuta } from './visitanteMock'
 
-/** El asistente de compra es el del catálogo real. */
+/** Asistente Visitante: reusa el asesor IA del prototipo (sin salir del chrome). */
 export default function VisitanteAsistentePage() {
-  return <Navigate to="/productos?ai=1" replace />
+  return <Navigate to={visitanteRuta('asesor-ia')} replace />
 }

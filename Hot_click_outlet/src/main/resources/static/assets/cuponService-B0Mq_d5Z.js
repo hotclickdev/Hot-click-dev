@@ -1,1 +1,0 @@
-import{t as e}from"./api-CL6L0HEX.js";var t={validar:t=>e.get(`/cupones/validar?codigo=${encodeURIComponent(t)}`),getAll:t=>e.get(`/cupones`,{params:t}),getEstadisticas:()=>e.get(`/cupones/estadisticas`)};export{t};

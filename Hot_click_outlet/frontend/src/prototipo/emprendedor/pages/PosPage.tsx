@@ -47,7 +47,7 @@ export default function PosPage() {
       <div className="fixed bottom-0 left-0 right-0 mx-auto max-w-md p-5">
         <div className="flex items-center justify-between rounded-2xl bg-hc-text p-4">
           <div>
-            <p className="text-[11px] text-[var(--hc-n-400)]">{cantidadTicket(ticket)} productos en el ticket</p>
+            <p className="text-[11px] text-[var(--hc-n-400)]">{cantidadTicket(ticket)} productos en la factura</p>
             <p className="text-lg font-bold text-white">{formatoColon(totalTicket(ticket))}</p>
           </div>
           <button

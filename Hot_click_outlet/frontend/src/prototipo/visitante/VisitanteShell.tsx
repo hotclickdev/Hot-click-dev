@@ -14,6 +14,7 @@ const SIN_NAV = [
 ]
 
 function muestraNav(pathname: string): boolean {
+  if (pathname === '/visitante' || pathname === '/visitante/') return true
   if (pathname.includes('/producto/')) return false
   if (pathname.includes('/negocio/')) return false
   return !SIN_NAV.some((seg) => pathname.endsWith(`/${seg}`))

@@ -1,1 +1,0 @@
-var e=`/registro-empresa`,t=`/registrar-negocio`,n=`/admin`;function r({tokenVivo:r,rol:a,empresaId:o}){return r?i(a,o)?n:t:e}function i(e,t){return e===`EMPRENDEDOR`||e===`ADMIN`?!0:!!t&&e!==`USUARIO_FINAL`}export{e as n,r,t};

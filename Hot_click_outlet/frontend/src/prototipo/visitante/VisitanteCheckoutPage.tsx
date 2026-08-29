@@ -1,6 +1,14 @@
-import { Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import CheckoutPage from '@/pages/CheckoutPage'
+import { marcarRetornoPagoVisitante } from './pagoRetornoVisitante'
 
-/** El checkout de compra es el real, no la maqueta Figma. */
+/**
+ * Checkout real bajo VisitanteShell: reutiliza CheckoutPage (mismos APIs de pago).
+ * Skin/chrome por pathname `/visitante/*`; marca retorno post-pasarela.
+ */
 export default function VisitanteCheckoutPage() {
-  return <Navigate to="/checkout" replace />
+  useEffect(() => {
+    marcarRetornoPagoVisitante()
+  }, [])
+  return <CheckoutPage />
 }

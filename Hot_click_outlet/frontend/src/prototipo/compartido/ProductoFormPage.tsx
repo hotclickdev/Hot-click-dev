@@ -1,40 +1,77 @@
-import { useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { productoPorId } from './mock'
 import { Boton, Campo, Chip, EncabezadoPagina } from './ui'
 import { useSellerRuta } from './SellerPlanContext'
+import { useCatalogoVendedor } from './useCatalogoVendedor'
+import {
+  guardarProductoVendedor,
+  mensajeErrorProducto,
+  publicarProductoVendedor,
+} from './catalogoVendedorApi'
 import iconCamara from './assets/icon-camara.svg'
 
 const CATEGORIAS = ['Tecnología', 'Ropa', 'Otro'] as const
 type CategoriaForm = (typeof CATEGORIAS)[number]
 
 /**
- * Alta / edición de producto (Figma 61:231 / 61:422).
+ * Alta / edición de producto (Figma 61:231 / 61:422) con API real.
  */
 export default function ProductoFormPage() {
   const { id } = useParams()
   const ruta = useSellerRuta()
   const navigate = useNavigate()
-  const existente = id ? productoPorId(id) : undefined
-  const [categoria, setCategoria] = useState<CategoriaForm>(existente?.categoria ?? 'Tecnología')
-  const [estado, setEstado] = useState(existente?.estado ?? 'Publicado')
-  const editar = Boolean(existente)
+  const { seller, cargando } = useCatalogoVendedor()
+  const existente = id ? seller.find((p) => p.id === id) : undefined
+  const [nombre, setNombre] = useState('')
+  const [compra, setCompra] = useState('')
+  const [venta, setVenta] = useState('')
+  const [descripcion, setDescripcion] = useState('')
+  const [stock, setStock] = useState('')
+  const [categoria, setCategoria] = useState<CategoriaForm>('Tecnología')
+  const [estado, setEstado] = useState<'Publicado' | 'Pausado'>('Publicado')
+  const [error, setError] = useState<string | null>(null)
+  const [iniciado, setIniciado] = useState(false)
+  const editar = Boolean(id)
+
+  useEffect(() => {
+    if (!existente || iniciado) return
+    setNombre(existente.nombre)
+    setCompra(String(existente.precioCompra))
+    setVenta(String(existente.precio))
+    setDescripcion(existente.descripcion)
+    setStock(String(existente.stock))
+    setCategoria(existente.categoria)
+    setEstado(existente.estado)
+    setIniciado(true)
+  }, [existente, iniciado])
+
+  async function enviar(evento: FormEvent) {
+    evento.preventDefault()
+    if (!nombre.trim()) {
+      setError('Escribí el nombre del producto.')
+      return
+    }
+    const datos = { nombre, precioCompra: compra, precioVenta: venta, descripcion, stock, categoria, estado }
+    try {
+      if (id) await guardarProductoVendedor(id, datos)
+      else await publicarProductoVendedor(datos)
+      navigate(ruta('productos'))
+    } catch (err: unknown) {
+      setError(mensajeErrorProducto(err, 'No se pudo guardar el producto.'))
+    }
+  }
 
   return (
     <main className="px-5 pb-8 pt-[60px]">
       <EncabezadoPagina titulo={editar ? 'Editar Producto' : 'Nuevo Producto'} volverA={ruta('productos')} />
+      {cargando && editar && !existente ? <p className="text-sm text-hc-muted">Cargando…</p> : null}
       <ZonaFoto editar={editar} nombre={existente?.nombre} />
-      <form
-        onSubmit={(evento) => {
-          evento.preventDefault()
-          navigate(ruta('productos'))
-        }}
-      >
-        <Campo etiqueta="Nombre del producto" defaultValue={existente?.nombre} placeholder="Ej: Camiseta Oversize Negra" />
-        <Campo etiqueta="Precio de compra" defaultValue={existente ? String(existente.precioCompra) : ''} placeholder="₡ 0.00" />
-        <Campo etiqueta="Precio de venta" defaultValue={existente ? String(existente.precio) : ''} placeholder="₡ 0.00" />
-        <Campo etiqueta="Descripción" defaultValue={existente?.descripcion} placeholder="Ej: Auriculares con estuche de carga..." />
-        <Campo etiqueta="Stock disponible" defaultValue={existente ? String(existente.stock) : ''} placeholder="Ej: 10" />
+      <form onSubmit={(e) => void enviar(e)}>
+        <Campo etiqueta="Nombre del producto" value={nombre} onChange={setNombre} placeholder="Ej: Camiseta Oversize Negra" />
+        <Campo etiqueta="Precio de compra" value={compra} onChange={setCompra} placeholder="₡ 0.00" type="number" />
+        <Campo etiqueta="Precio de venta" value={venta} onChange={setVenta} placeholder="₡ 0.00" type="number" />
+        <Campo etiqueta="Descripción" value={descripcion} onChange={setDescripcion} placeholder="Ej: Auriculares con estuche de carga..." />
+        <Campo etiqueta="Stock disponible" value={stock} onChange={setStock} placeholder="Ej: 10" type="number" />
         <p className="mb-2 text-xs font-medium text-hc-muted">Categoría</p>
         <div className="mb-4 flex gap-2">
           {CATEGORIAS.map((item) => (
@@ -50,6 +87,7 @@ export default function ProductoFormPage() {
             </div>
           </>
         ) : null}
+        {error ? <p className="mb-3 text-sm text-hc-danger">{error}</p> : null}
         <Boton type="submit">{editar ? 'Guardar cambios' : 'Publicar producto'}</Boton>
         {editar && id ? (
           <div className="mt-3">
