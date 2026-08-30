@@ -185,7 +185,10 @@ final class SecurityAuthorizationRules {
                 "/registerSW.js", "/vite.svg", "/robots.txt").permitAll()
             .requestMatchers("/", "/*.html", "/*.ico", "/*.jpg", "/*.jpeg", "/*.png",
                 "/*.svg", "/*.webp", "/favicon.ico", "/pages/**", "/css/**", "/js/**",
-                "/images/**", "/assets/**", "/admin/**",
+                "/images/**", "/assets/**", "/brand/**", "/admin/**",
+                "/visitante", "/visitante/**", "/emprendedor", "/emprendedor/**",
+                "/pyme", "/pyme/**", "/negocio-plus", "/negocio-plus/**",
+                "/prototipo", "/prototipo/**",
                 "/nosotros", "/productos", "/productos/**", "/descubri", "/informacion", "/contacto",
                 "/carrito", "/login", "/registro", "/registro-empresa", "/perfil", "/perfil/**", "/mis-pedidos",
                 "/wishlist", "/blog", "/blog/**", "/emprende", "/emprendimientos",
