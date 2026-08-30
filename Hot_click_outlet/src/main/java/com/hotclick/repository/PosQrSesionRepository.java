@@ -15,6 +15,10 @@ public interface PosQrSesionRepository extends JpaRepository<PosQrSesion, Long> 
 
     Optional<PosQrSesion> findByToken(String token);
 
+    Optional<PosQrSesion> findByStripeSessionId(String stripeSessionId);
+
+    Optional<PosQrSesion> findByPedidoId(Long pedidoId);
+
     @Modifying
     @Query("""
         UPDATE PosQrSesion s SET s.estado = 'EXPIRADO'

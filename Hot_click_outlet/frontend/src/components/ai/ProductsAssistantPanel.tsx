@@ -5,6 +5,7 @@ import { ProductsAssistantBurbuja } from './productsAssistant/ProductsAssistantB
 import { useProductsAssistant } from './productsAssistant/useProductsAssistant'
 import IconoAsistente from './IconoAsistente'
 import CloseIcon from '@/components/ui/CloseIcon'
+import { useVisualViewportBox } from '@/hooks/useVisualViewportBox'
 
 export default function ProductsAssistantPanel({
   isOpen,
@@ -22,12 +23,14 @@ export default function ProductsAssistantPanel({
     input,
     setInput,
     cargando,
-    bottomRef,
+    historyRef,
     inputRef,
     addCartItem,
     enviar,
     onKeyDown,
   } = useProductsAssistant({ isOpen, initialQuery })
+
+  const viewport = useVisualViewportBox(isOpen)
 
   return createPortal(
     <AnimatePresence>
@@ -47,8 +50,10 @@ export default function ProductsAssistantPanel({
             animate={{ x: 0 }}
             exit={{ x: -380 }}
             transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-            className="hc-ai-panel fixed left-0 top-0 h-full z-50 flex flex-col"
+            className="hc-ai-panel fixed left-0 z-50 flex flex-col"
             style={{
+              top: viewport.offsetTop,
+              height: viewport.height,
               width: 'min(360px, 100vw)',
               backgroundColor: '#13131f',
               borderRight: '1px solid rgba(255,255,255,0.1)',
@@ -94,11 +99,10 @@ export default function ProductsAssistantPanel({
               </div>
             )}
 
-            <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
+            <div ref={historyRef} className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
               {mensajes.map((m, i) => (
                 <ProductsAssistantBurbuja key={i} msg={m} onAdd={addCartItem} onCategoryFilter={onCategoryFilter} />
               ))}
-              <div ref={bottomRef} />
             </div>
 
             {mensajes.length <= 1 && !cargando && !initialQuery && (

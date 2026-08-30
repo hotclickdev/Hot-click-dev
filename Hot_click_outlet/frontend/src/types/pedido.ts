@@ -27,6 +27,8 @@ export type CheckoutPayload = {
   notas?: string | null
   provider?: string
   guestEmail?: string
+  /** Token del QR del POS — al pagar, marca la sesión del cajero como PAGADO. */
+  posQrToken?: string
   [key: string]: unknown
 }
 

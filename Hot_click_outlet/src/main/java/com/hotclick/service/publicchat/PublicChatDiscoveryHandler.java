@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Catálogo de descubrimiento: fichas en pantalla desde el 3.er turno (salvo populares/ofertas).
+ * Catálogo de descubrimiento: fichas en pantalla desde el primer pedido de producto.
  */
 @Component
 public class PublicChatDiscoveryHandler {
@@ -49,7 +49,8 @@ public class PublicChatDiscoveryHandler {
 
         boolean showAll = intentHelper.isShowAllOrPopularQuery(userMessage);
         boolean showOffers = !showAll && intentHelper.isOfferQuery(userMessage);
-        boolean mostrarFichas = fichasEnPantalla(context, history, showAll, showOffers);
+        boolean tieneTerminos = !intentHelper.userTerms(userMessage).isEmpty();
+        boolean mostrarFichas = fichasEnPantalla(context, showAll, showOffers, tieneTerminos);
 
         List<Map<String, Object>> page = pagina(empresaId, marketplace, userMessage, offset,
             history, focusIds, showAll, showOffers, maxBudget, negations);
@@ -65,10 +66,10 @@ public class PublicChatDiscoveryHandler {
             isEnglish, isGift, maxBudget, negations, afterHours, mostrarFichas);
     }
 
-    static boolean fichasEnPantalla(String context, List<Map<String, Object>> history,
-                                    boolean showAll, boolean showOffers) {
+    static boolean fichasEnPantalla(String context, boolean showAll, boolean showOffers,
+                                    boolean tieneTerminos) {
         if (context != null && context.startsWith("CARRITO")) return true;
-        return showAll || showOffers || PublicChatTurnos.mostrarFichasCatalogo(history);
+        return PublicChatTurnos.tieneIntencionProducto(showAll, showOffers, tieneTerminos);
     }
 
     private List<Map<String, Object>> pagina(Long empresaId, boolean marketplace, String userMessage,

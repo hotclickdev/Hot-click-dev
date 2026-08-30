@@ -1,6 +1,7 @@
 package com.hotclick.service.publicchat;
 
 import com.hotclick.service.catalogo.CatalogoChatSql;
+import com.hotclick.service.catalogo.ChatKeywordRankSql;
 import com.hotclick.service.catalogo.ChatProductoMatchSql;
 import com.hotclick.service.catalogo.ChatSearchTerms;
 import org.slf4j.Logger;
@@ -36,9 +37,11 @@ public class PublicChatProductSearch {
             """;
 
     private final JdbcTemplate jdbc;
+    private final PublicChatIntentHelper intentHelper;
 
-    public PublicChatProductSearch(JdbcTemplate jdbc) {
+    public PublicChatProductSearch(JdbcTemplate jdbc, PublicChatIntentHelper intentHelper) {
         this.jdbc = jdbc;
+        this.intentHelper = intentHelper;
     }
 
     public int getPageSize() {
@@ -50,7 +53,9 @@ public class PublicChatProductSearch {
             + " FROM hot_click_producto_tb p"
             + CatalogoChatSql.joins(marketplace)
             + " WHERE " + CatalogoChatSql.whereVisible(marketplace, false)
-            + " ORDER BY p.destacado DESC, p.en_carrusel DESC, p.id_producto DESC"
+            + " ORDER BY "
+            + "CASE WHEN p.imagen_principal_url IS NOT NULL AND TRIM(p.imagen_principal_url) <> '' THEN 0 ELSE 1 END, "
+            + "p.destacado DESC, p.en_carrusel DESC, p.id_producto DESC"
             + " LIMIT ? OFFSET ?";
         return queryConEmpresa(sql, empresaId, marketplace, PAGE + 1, offset);
     }
@@ -61,7 +66,9 @@ public class PublicChatProductSearch {
             + CatalogoChatSql.joins(marketplace)
             + " WHERE " + CatalogoChatSql.whereVisible(marketplace, false)
             + " AND p.en_oferta = TRUE"
-            + " ORDER BY p.id_producto DESC"
+            + " ORDER BY "
+            + "CASE WHEN p.imagen_principal_url IS NOT NULL AND TRIM(p.imagen_principal_url) <> '' THEN 0 ELSE 1 END, "
+            + "p.id_producto DESC"
             + " LIMIT ? OFFSET ?";
         return queryConEmpresa(sql, empresaId, marketplace, PAGE + 1, offset);
     }
@@ -98,15 +105,16 @@ public class PublicChatProductSearch {
     public List<Map<String, Object>> buscarProductos(Long empresaId, boolean marketplace, String tsQuery,
                                                      String raw, int offset,
                                                      Long maxBudget, Set<String> negations) {
-        List<Map<String, Object>> porTs = buscarPorTsvector(empresaId, marketplace, tsQuery, offset, maxBudget);
+        List<String> userTerms = resolverTerminosUsuario(tsQuery, raw);
+        List<String> synonymBoost = intentHelper.expandSynonyms(userTerms);
+
+        List<Map<String, Object>> porTs = buscarPorTsvector(
+            empresaId, marketplace, ChatSearchTerms.websearchQuery(userTerms), offset, maxBudget, synonymBoost);
         List<Map<String, Object>> filtrados = applyNegationFilter(porTs, negations);
         if (!filtrados.isEmpty()) return filtrados;
 
-        List<String> terms = ChatSearchTerms.fromTsQuery(tsQuery);
-        if (terms.isEmpty() && raw != null && !raw.isBlank()) {
-            terms = List.of(raw.trim().toLowerCase());
-        }
-        List<Map<String, Object>> porLike = buscarPorIlike(empresaId, marketplace, terms, offset, maxBudget);
+        List<Map<String, Object>> porLike = buscarPorIlike(
+            empresaId, marketplace, userTerms, synonymBoost, offset, maxBudget);
         return applyNegationFilter(porLike, negations);
     }
 
@@ -123,25 +131,39 @@ public class PublicChatProductSearch {
             .toList();
     }
 
+    private List<String> resolverTerminosUsuario(String tsQuery, String raw) {
+        List<String> fromTs = ChatSearchTerms.fromTsQuery(tsQuery);
+        if (!fromTs.isEmpty()) return fromTs;
+        if (raw != null && !raw.isBlank()) return intentHelper.userTerms(raw);
+        return List.of();
+    }
+
     private List<Map<String, Object>> buscarPorTsvector(Long empresaId, boolean marketplace,
-                                                        String tsQuery, int offset, Long maxBudget) {
-        if (tsQuery == null || tsQuery.isBlank()) return List.of();
+                                                        String webQuery, int offset, Long maxBudget,
+                                                        List<String> synonymBoost) {
+        if (webQuery == null || webQuery.isBlank()) return List.of();
         try {
             List<Object> params = new ArrayList<>();
-            params.add(tsQuery);
+            params.add(webQuery);
             CatalogoChatSql.bindEmpresaSiTenant(params, empresaId, marketplace);
-            params.add(tsQuery);
+            params.add(webQuery);
             String price = appendPrecio(params, maxBudget);
+            ChatKeywordRankSql.bindScoreTerminos(params, synonymBoost);
             params.add(PAGE + 1);
             params.add(offset);
+            int synCount = synonymBoost == null ? 0 : synonymBoost.size();
             String sql = SELECT_FICHA
-                + ", ts_rank(p.search_vector, to_tsquery('spanish', ?)) AS rank"
+                + ", ts_rank(p.search_vector, websearch_to_tsquery('spanish', ?)) AS rank"
                 + " FROM hot_click_producto_tb p"
                 + CatalogoChatSql.joins(marketplace)
                 + " WHERE " + CatalogoChatSql.whereVisible(marketplace, false)
-                + " AND p.search_vector @@ to_tsquery('spanish', ?)"
+                + " AND p.search_vector @@ websearch_to_tsquery('spanish', ?)"
                 + price
-                + " ORDER BY rank DESC, p.id_producto DESC"
+                + " ORDER BY "
+                + "CASE WHEN p.imagen_principal_url IS NOT NULL AND TRIM(p.imagen_principal_url) <> '' THEN 0 ELSE 1 END, "
+                + "rank DESC"
+                + (synCount > 0 ? ", " + ChatKeywordRankSql.scoreExpr(synCount, 1, 1, 1, 0) + " DESC" : "")
+                + ", p.id_producto DESC"
                 + " LIMIT ? OFFSET ?";
             return jdbc.queryForList(sql, params.toArray());
         } catch (Exception e) {
@@ -151,23 +173,27 @@ public class PublicChatProductSearch {
     }
 
     private List<Map<String, Object>> buscarPorIlike(Long empresaId, boolean marketplace,
-                                                     List<String> terms, int offset, Long maxBudget) {
-        if (terms.isEmpty()) return List.of();
+                                                     List<String> userTerms, List<String> synonymBoost,
+                                                     int offset, Long maxBudget) {
+        if (userTerms == null || userTerms.isEmpty()) return List.of();
         List<Object> params = new ArrayList<>();
         CatalogoChatSql.bindEmpresaSiTenant(params, empresaId, marketplace);
-        for (String term : terms) {
+        for (String term : userTerms) {
             ChatProductoMatchSql.bindTermino(params, term);
         }
         String price = appendPrecio(params, maxBudget);
+        ChatKeywordRankSql.bindScoreTerminos(params, userTerms);
+        ChatKeywordRankSql.bindScoreTerminos(params, synonymBoost);
         params.add(PAGE + 1);
         params.add(offset);
+        int synCount = synonymBoost == null ? 0 : synonymBoost.size();
         String sql = SELECT_FICHA
             + " FROM hot_click_producto_tb p"
             + CatalogoChatSql.joins(marketplace)
             + " WHERE " + CatalogoChatSql.whereVisible(marketplace, false)
-            + " AND (" + ChatProductoMatchSql.orDeTerminos(terms.size()) + ")"
+            + " AND (" + ChatProductoMatchSql.orDeTerminos(userTerms.size()) + ")"
             + price
-            + " ORDER BY p.precio_venta ASC"
+            + ChatKeywordRankSql.orderByRelevancia(userTerms.size(), synCount)
             + " LIMIT ? OFFSET ?";
         return jdbc.queryForList(sql, params.toArray());
     }

@@ -31,6 +31,7 @@ export default function CatalogAllView({
     productCountByCat, categoryTotalCount, marcasCountInScope, marcasForCategoryScope,
     selectedParentNode, hasFilters, flatGrid, showSubcatGrid,
     filteredPages, filteredSlice, activeCatName, gridAnimKey, convenioMarcaNames,
+    tieneGustos,
   } = catalogo
 
   return (
@@ -133,6 +134,7 @@ export default function CatalogAllView({
               onVerEmprendimientos={() => { setViewMode('emprendimientos'); clearFilters() }}
               onQuickView={setQuickView}
               page={page}
+              needsGustos={sort === 'para_vos' && !tieneGustos}
             />
           </div>
         </div>

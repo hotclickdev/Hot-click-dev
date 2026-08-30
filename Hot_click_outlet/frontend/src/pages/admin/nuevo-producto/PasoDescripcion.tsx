@@ -11,7 +11,7 @@ export default function PasoDescripcion({ form, setCampo }: {
       <div>
         <Label>Descripción corta</Label>
         <textarea className={ta} style={inpStyle} rows={4} value={form.descripcion} onChange={setCampo('descripcion')}
-          placeholder="Ej: Tenis running con suela de aire, talla 42, color blanco." maxLength={200} autoFocus />
+          placeholder="Ej: Tenis running con suela de aire, talla 42, color blanco." maxLength={200} />
         <p className="text-xs mt-1 text-right" style={{ color: form.descripcion.length >= 180 ? '#8a5a00' : 'var(--hc-muted)' }}>
           {form.descripcion.length}/200
         </p>

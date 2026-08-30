@@ -4,11 +4,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * En el chat de descubrimiento las fichas salen a partir del 3.er mensaje del usuario.
+ * Cuándo mostrar tarjetas de producto en el chat de descubrimiento.
+ * Con intención de producto (términos de búsqueda) se muestran desde el primer mensaje.
  */
 public final class PublicChatTurnos {
-
-    public static final int TURNO_FICHAS = 3;
 
     private PublicChatTurnos() {}
 
@@ -21,7 +20,11 @@ public final class PublicChatTurnos {
         return previos + 1;
     }
 
-    public static boolean mostrarFichasCatalogo(List<Map<String, Object>> history) {
-        return turnoUsuario(history) >= TURNO_FICHAS;
+    /**
+     * Hay intención de catálogo si el mensaje trae términos de búsqueda
+     * (ya filtrados de stopwords), o si piden populares/ofertas.
+     */
+    public static boolean tieneIntencionProducto(boolean showAll, boolean showOffers, boolean tieneTerminos) {
+        return showAll || showOffers || tieneTerminos;
     }
 }

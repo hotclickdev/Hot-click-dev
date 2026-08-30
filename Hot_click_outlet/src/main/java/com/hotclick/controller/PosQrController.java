@@ -1,13 +1,14 @@
 package com.hotclick.controller;
 
-import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.dto.ResponseDTO;
-import com.hotclick.model.*;
-import com.hotclick.repository.*;
+import com.hotclick.model.PosQrSesion;
 import com.hotclick.security.JwtUtil;
 import com.hotclick.service.PosQrService;
 import com.hotclick.service.TurnoCajaService;
+import com.hotclick.service.pos.PosQrSessionService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,6 +24,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/pos/qr")
 public class PosQrController {
+
+    private static final Logger log = LoggerFactory.getLogger(PosQrController.class);
 
     @Autowired private PosQrService    posQrService;
     @Autowired private JwtUtil         jwtUtil;
@@ -41,17 +44,18 @@ public class PosQrController {
             @SuppressWarnings("unchecked")
             var items = (java.util.List<Map<String, Object>>) body.get("items");
             String notas    = (String) body.get("notas");
+            Long clienteId  = PosQrSessionService.longOpcional(body.get("clienteId"));
+            Long bodegaId   = PosQrSessionService.longOpcional(body.get("bodegaId"));
 
             Long turnoId = turnoCajaService.getTurnoActivo(usuarioId)
                 .map(t -> t.getId()).orElse(null);
 
-            PosQrSesion sesion = posQrService.crearSesion(
-                usuarioId, empresaId, turnoId, metodo, items, notas);
-
             return ResponseEntity.ok(ResponseDTO.success("QR generado",
-                posQrService.respuestaCajero(sesion)));
+                posQrService.crearSesion(usuarioId, empresaId, turnoId, metodo, items, notas, clienteId, bodegaId)));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            log.error("[POS-QR] Error creando sesión: {}", e.getMessage(), e);
+            String detalle = e.getMessage() != null ? e.getMessage() : "Error al generar QR";
+            return ResponseEntity.badRequest().body(ResponseDTO.error(detalle));
         }
     }
 
@@ -107,6 +111,7 @@ public class PosQrController {
         } catch (java.util.NoSuchElementException e) {
             return ResponseEntity.status(404).body(Map.of("error", "QR no encontrado"));
         } catch (Exception e) {
+            log.error("[POS-QR] Error iniciando pago tarjeta token={}: {}", token, e.getMessage(), e);
             return ResponseEntity.status(500).body(Map.of("error", "Error al iniciar pago: " + e.getMessage()));
         }
     }

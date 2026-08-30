@@ -23,7 +23,7 @@ export default function EmprendimientoPasoNegocio({
       exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }}
       onSubmit={onSubmit} className="space-y-4">
       <Input label="Nombre del negocio *" placeholder="Ej: Mi Tienda Tica"
-        value={form.nombreEmpresa} onChange={actualizarCampo('nombreEmpresa')} autoFocus required maxLength={150} />
+        value={form.nombreEmpresa} onChange={actualizarCampo('nombreEmpresa')} required maxLength={150} />
       <Input label="Correo del negocio" type="email" placeholder="contacto@minegocio.com"
         value={form.correoEmpresa} onChange={actualizarCampo('correoEmpresa')} hint="Opcional" maxLength={150} />
       <PhoneField label="Teléfono del negocio"

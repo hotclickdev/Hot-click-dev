@@ -205,7 +205,6 @@ function FormularioSucursal({
           onChange={(e) => setNombre(e.target.value)}
           placeholder="Ej. San José Centro"
           maxLength={120}
-          autoFocus
           disabled={enviando}
         />
         <div className="mt-5 flex flex-wrap gap-2">

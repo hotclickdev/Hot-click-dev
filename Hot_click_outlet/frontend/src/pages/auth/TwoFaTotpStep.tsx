@@ -48,7 +48,7 @@ export default function TwoFaTotpStep({
                 <label htmlFor="login-recovery-code" className="hc-input-label block mb-2">{t('login.recoveryCodeLabel')}</label>
                 <input id="login-recovery-code" type="text" value={recoveryInput}
                   onChange={e => onRecoveryInput(e.target.value.toUpperCase())}
-                  placeholder="XXXXX-XXXXX" autoFocus
+                  placeholder="XXXXX-XXXXX"
                   className="hc-input w-full text-center"
                   style={{ fontFamily: 'monospace', letterSpacing: '0.2em' }} />
                 <p className="text-xs mt-1.5 text-center" style={{ color: 'var(--hc-muted)' }}>{t('login.emergencyCodeHint')}</p>

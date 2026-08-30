@@ -3341,3 +3341,10 @@ CREATE INDEX IF NOT EXISTS idx_sucursal_empresa
 CREATE INDEX IF NOT EXISTS idx_sucursal_empresa_estado
     ON hot_click_sucursal_tb(fk_id_empresa, fk_id_estado);
 
+-- V108: cliente y bodega de la venta QR
+ALTER TABLE hot_click_pos_qr_sesion_tb
+    ADD COLUMN IF NOT EXISTS fk_id_cliente BIGINT;
+
+ALTER TABLE hot_click_pos_qr_sesion_tb
+    ADD COLUMN IF NOT EXISTS fk_id_bodega BIGINT;
+

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { affinityOf } from '@/utils/gustos'
+import { hasGustos, productoEsRelacionado, rankScoreParaVos, loadRecentlyViewedIds, type GustosPerfil } from '@/utils/gustos'
 import { buildCategoryTree } from './catalogoHelpers'
 import {
   PAGE_SIZE,
@@ -28,6 +28,7 @@ type CatalogoDerivedArgs = {
   marcasFilter: Set<string>
   sort: string
   gustosScores: Map<string, number> | null
+  gustosPerfil: GustosPerfil | null
   filterStock: string
   filterCond: string
   filterTalla: string
@@ -41,7 +42,7 @@ type CatalogoDerivedArgs = {
  */
 export function useCatalogoDerived({
   products, categories, marcas, convenios, viewMode,
-  search, category, marcasFilter, sort, gustosScores,
+  search, category, marcasFilter, sort, gustosScores, gustosPerfil,
   filterStock, filterCond, filterTalla, priceMin, priceMax, filterViewPage,
 }: CatalogoDerivedArgs) {
   const convenioMarcaNames = useMemo(
@@ -57,14 +58,24 @@ export function useCatalogoDerived({
   const filtered = useMemo(() => {
     const minPrice = priceMin !== '' ? Number(priceMin) : null
     const maxPrice = priceMax !== '' ? Number(priceMax) : null
-    const lista = filtrarCatalogo({
+    let lista = filtrarCatalogo({
       products, viewMode, convenioMarcaNames, search, categoryScope,
       marcasFilter, filterStock, filterCond, filterTalla, minPrice, maxPrice,
     })
-    return sortCatalogo(lista, sort, gustosScores, affinityOf)
+    // "Según tus gustos": oculta lo no relacionado (no solo reordena).
+    if (sort === 'para_vos') {
+      if (!gustosPerfil || !hasGustos(gustosPerfil)) return []
+      lista = lista.filter((p) => productoEsRelacionado(p, gustosPerfil, categories))
+      const viewed = loadRecentlyViewedIds()
+      const scores = gustosPerfil.scores
+      return [...lista].sort(
+        (a, b) => rankScoreParaVos(b, scores, viewed) - rankScoreParaVos(a, scores, viewed),
+      )
+    }
+    return sortCatalogo(lista, sort, gustosScores, (p, scores) => rankScoreParaVos(p, scores))
   }, [
-    products, search, categoryScope, marcasFilter, sort, gustosScores,
-    filterStock, filterCond, priceMin, priceMax, viewMode, convenioMarcaNames, filterTalla,
+    products, search, categoryScope, marcasFilter, sort, gustosScores, gustosPerfil,
+    categories, filterStock, filterCond, priceMin, priceMax, viewMode, convenioMarcaNames, filterTalla,
   ])
 
   const productCountByCat = useMemo(() => {

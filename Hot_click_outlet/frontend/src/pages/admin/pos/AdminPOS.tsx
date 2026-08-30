@@ -1,5 +1,4 @@
 import POSHeader from './POSHeader'
-import CierreTurnoModal from './CierreTurnoModal'
 import POSLoadingScreen from './POSLoadingScreen'
 import AdminPOSSteps from './AdminPOSSteps'
 import { useAdminPOS } from './useAdminPOS'
@@ -15,17 +14,8 @@ export default function AdminPOS() {
   return (
     <div className="flex flex-col h-screen overflow-hidden"
       style={{ backgroundColor: posUi.fondo }}>
-      <POSHeader userName={pos.userName} turno={pos.turno} step={pos.step} onCerrarTurno={() => pos.setShowCierre(true)}
+      <POSHeader userName={pos.userName} turno={pos.turno} step={pos.step}
         mostrarVolverSistema={pos.userRole !== 'CAJERO'} />
-
-      {pos.showCierre && (
-        <CierreTurnoModal
-          saving={pos.saving}
-          onCancel={() => pos.setShowCierre(false)}
-          onCerrar={pos.handleCerrarTurno}
-          onTotal={pos.setMontoFinalCierre}
-        />
-      )}
 
       <AdminPOSSteps pos={pos} />
     </div>

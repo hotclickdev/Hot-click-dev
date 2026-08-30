@@ -14,7 +14,7 @@ export default function PasoContenido({ form, setCampo, setForm }: {
       <div>
         <Label>Especificaciones técnicas</Label>
         <textarea className={ta} style={inpStyle} rows={5} value={form.especificaciones} onChange={setCampo('especificaciones')}
-          placeholder={'Marca: \nModelo: \nMaterial: \nTalla: \nColor: '} maxLength={500} autoFocus />
+          placeholder={'Marca: \nModelo: \nMaterial: \nTalla: \nColor: '} maxLength={500} />
         <p className="text-xs mt-1 text-right" style={{ color: form.especificaciones.length >= 450 ? '#8a5a00' : 'var(--hc-muted)' }}>
           {form.especificaciones.length}/500
         </p>

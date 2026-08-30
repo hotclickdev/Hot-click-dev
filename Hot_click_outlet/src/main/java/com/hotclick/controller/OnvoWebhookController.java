@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.payment.OnvoPaymentProvider;
 import com.hotclick.service.OnvoService;
+import com.hotclick.service.pos.PosQrVentaService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -30,13 +31,16 @@ public class OnvoWebhookController {
 
     private final OnvoService onvoService;
     private final OnvoPaymentProvider onvoPaymentProvider;
+    private final PosQrVentaService posQrVentaService;
     private final ObjectMapper objectMapper;
 
     public OnvoWebhookController(OnvoService onvoService,
                                   OnvoPaymentProvider onvoPaymentProvider,
+                                  PosQrVentaService posQrVentaService,
                                   ObjectMapper objectMapper) {
         this.onvoService = onvoService;
         this.onvoPaymentProvider = onvoPaymentProvider;
+        this.posQrVentaService = posQrVentaService;
         this.objectMapper = objectMapper;
     }
 
@@ -69,7 +73,11 @@ public class OnvoWebhookController {
                         log.error("[onvo-webhook] checkout-session.succeeded sin id");
                         return ResponseEntity.badRequest().body(Map.of("error", "missing id"));
                     }
-                    onvoPaymentProvider.procesarPagoExitoso(sessionId, payload, "webhook");
+                    if (posQrVentaService.completarSiPagoPasarela(sessionId)) {
+                        log.info("[onvo-webhook] Pago POS QR confirmado session={}", sessionId);
+                    } else {
+                        onvoPaymentProvider.procesarPagoExitoso(sessionId, payload, "webhook");
+                    }
                 }
                 case "payment-intent.failed" -> {
                     String motivo = data.path("error").path("message").asText("sin_detalle");

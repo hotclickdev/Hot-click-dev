@@ -62,7 +62,7 @@ export function InlineChat({ initialQuery, accent, onClose }: InlineChatProps) {
       >
         <AIChat
           context="GENERAL"
-          sessionKey="hotclick"
+          sessionKey="tienda-home"
           chips={chips}
           placeholder={t('hero.chatPlaceholder')}
           autoQuery={initialQuery ?? null}

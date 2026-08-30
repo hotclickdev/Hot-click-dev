@@ -4,7 +4,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hotclick.exception.IntegracionExternaException;
 import com.hotclick.model.PosQrSesion;
 import com.hotclick.repository.PosQrSesionRepository;
+import com.hotclick.service.OnvoService;
 import com.hotclick.service.StripeService;
+import com.hotclick.service.TurnoCajaService;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,37 +27,124 @@ public class PosQrVentaService {
 
     @Autowired private PosQrSesionRepository posQrRepo;
     @Autowired private StripeService         stripeService;
+    @Autowired private OnvoService           onvoService;
     @Autowired private PosQrSessionService   sessionService;
     @Autowired private PosQrVentaCompletionService completionService;
+    @Autowired private TurnoCajaService       turnoCajaService;
 
     @Value("${app.url:http://localhost:3000}")
     private String appUrl;
 
+    /**
+     * Crea el checkout de tarjeta (ONVO, igual que la tienda).
+     * La ruta HTTP sigue llamándose /stripe por compatibilidad con el front.
+     */
     @Transactional
     public String crearStripeCheckout(String token) {
         PosQrSesion sesion = sessionService.findSesionActiva(token);
         if (!"TARJETA".equals(sesion.getMetodoPago())) {
             throw new IllegalStateException("Esta sesión no es de pago con tarjeta");
         }
+        if (onvoService.isMockMode()) {
+            throw new IllegalStateException(
+                "ONVO no está configurado. Añade ONVO_SECRET_KEY para cobrar con tarjeta en el POS.");
+        }
 
         String successUrl = appUrl + "/pos/pago/" + token + "?resultado=exito";
         String cancelUrl  = appUrl + "/pos/pago/" + token + "?resultado=cancelado";
+        Long empresaId = sesion.getEmpresa().getId();
 
         try {
             List<Map<String, Object>> items = sessionService.getMapper().readValue(
                 sesion.getItemsJson(), new TypeReference<>() {});
+            String descripcion = descripcionCheckout(items);
 
-            String checkoutUrl = stripeService.crearCheckoutPOS(
-                sesion.getTotal(), items, successUrl, cancelUrl,
-                sesion.getEmpresa().getId(), token);
+            OnvoService.OnvoCheckoutSession checkout = onvoService.crearCheckoutSession(
+                sesion.getTotal(), descripcion, successUrl, cancelUrl, null,
+                Map.of(
+                    "pos_qr_token", token,
+                    "origen", "POS",
+                    "empresa_id", String.valueOf(empresaId)
+                ));
 
+            sesion.setStripeSessionId(checkout.id());
             posQrRepo.save(sesion);
-            return checkoutUrl;
+            return checkout.url();
+        } catch (IllegalStateException e) {
+            throw e;
         } catch (Exception e) {
-            log.error("[POS-QR] Error creando Stripe checkout para token={}: {}", token, e.getMessage());
-            throw new IntegracionExternaException("stripe", IntegracionExternaException.Tipo.IO_ERROR,
+            log.error("[POS-QR] Error creando checkout ONVO para token={}: {}", token, e.getMessage());
+            throw new IntegracionExternaException("onvo", IntegracionExternaException.Tipo.IO_ERROR,
                 "Error al crear sesión de pago: " + e.getMessage(), e);
         }
+    }
+
+    @Transactional
+    public boolean completarSiPagoPasarela(String pasarelaSessionId) {
+        if (pasarelaSessionId == null || pasarelaSessionId.isBlank()) return false;
+        PosQrSesion sesion = posQrRepo.findByStripeSessionId(pasarelaSessionId).orElse(null);
+        if (sesion == null) return false;
+        if ("PAGADO".equals(sesion.getEstado())) return true;
+        if (!"PENDIENTE".equals(sesion.getEstado())) {
+            log.warn("[POS-QR] Checkout {} en estado {}, no se completa", pasarelaSessionId, sesion.getEstado());
+            return true;
+        }
+        // Ya vinculado a un pedido de tienda: no crear segundo pedido POS.
+        if (sesion.getPedidoId() != null) {
+            marcarPagadoSinPedidoPos(sesion);
+            return true;
+        }
+        completionService.completarVentaTarjeta(sesion);
+        return true;
+    }
+
+    /**
+     * Al iniciar checkout de la tienda con el token del QR, guarda el pedido
+     * sin marcar PAGADO todavía (eso ocurre al confirmar el pago).
+     */
+    @Transactional
+    public void vincularPedidoTienda(String posQrToken, Long pedidoId) {
+        if (posQrToken == null || posQrToken.isBlank() || pedidoId == null) return;
+        PosQrSesion sesion = posQrRepo.findByToken(posQrToken).orElse(null);
+        if (sesion == null) {
+            log.warn("[POS-QR] Token {} no encontrado al vincular pedido {}", posQrToken, pedidoId);
+            return;
+        }
+        if (!"PENDIENTE".equals(sesion.getEstado())) {
+            log.warn("[POS-QR] Sesión {} en estado {}, no se vincula pedido", posQrToken, sesion.getEstado());
+            return;
+        }
+        sesion.setPedidoId(pedidoId);
+        posQrRepo.save(sesion);
+        log.info("[POS-QR] Sesión {} vinculada a pedido tienda {}", posQrToken, pedidoId);
+    }
+
+    /**
+     * Cuando el pago de la tienda confirma el pedido, avisa al cajero.
+     * No crea un segundo pedido POS (el ORD-… ya descontó stock).
+     */
+    @Transactional
+    public void marcarPagadoPorPedidoTienda(Long pedidoId) {
+        if (pedidoId == null) return;
+        PosQrSesion sesion = posQrRepo.findByPedidoId(pedidoId).orElse(null);
+        if (sesion == null) return;
+        if ("PAGADO".equals(sesion.getEstado())) return;
+        if (!"PENDIENTE".equals(sesion.getEstado())) return;
+        marcarPagadoSinPedidoPos(sesion);
+    }
+
+    private void marcarPagadoSinPedidoPos(PosQrSesion sesion) {
+        sesion.setEstado("PAGADO");
+        posQrRepo.save(sesion);
+        if (sesion.getTurno() != null) {
+            try {
+                turnoCajaService.actualizarTotales(
+                    sesion.getTurno().getId(), sesion.getMetodoPago(), sesion.getTotal());
+            } catch (Exception e) {
+                log.warn("[POS-QR] No se pudo actualizar turno al marcar PAGADO: {}", e.getMessage());
+            }
+        }
+        log.info("[POS-QR] Sesión {} marcada PAGADO vía pedido tienda {}", sesion.getToken(), sesion.getPedidoId());
     }
 
     @Transactional
@@ -73,7 +162,8 @@ public class PosQrVentaService {
             return "EXPIRADO";
         }
 
-        if ("TARJETA".equals(sesion.getMetodoPago()) && sesion.getStripeSessionId() != null) {
+        if ("TARJETA".equals(sesion.getMetodoPago()) && sesion.getStripeSessionId() != null
+                && sesion.getStripeSessionId().startsWith("cs_")) {
             try {
                 boolean pagado = stripeService.checkoutSessionPagada(sesion.getStripeSessionId());
                 if (pagado) {
@@ -112,5 +202,13 @@ public class PosQrVentaService {
     @Transactional
     protected void completarVentaSinpe(PosQrSesion sesion, Long usuarioId, String notas) {
         completionService.completarVentaSinpe(sesion, usuarioId, notas);
+    }
+
+    static String descripcionCheckout(List<Map<String, Object>> items) {
+        String texto = items.stream()
+            .map(i -> i.getOrDefault("nombre", "Producto") + " x" + i.getOrDefault("cantidad", 1))
+            .reduce((a, b) -> a + ", " + b)
+            .orElse("Compra POS");
+        return texto.length() <= 100 ? texto : texto.substring(0, 100);
     }
 }

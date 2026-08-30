@@ -1,0 +1,86 @@
+import type { ComponentType, SVGProps } from 'react'
+import { NavLink } from 'react-router-dom'
+
+type IconoNav = ComponentType<SVGProps<SVGSVGElement>>
+
+export type ItemNav = {
+  to: string
+  etiqueta: string
+  Icono: IconoNav
+  end?: boolean
+}
+
+export type GrupoNav = {
+  titulo: string
+  items: readonly ItemNav[]
+}
+
+type Props = {
+  grupos: readonly GrupoNav[]
+  cuenta?: readonly ItemNav[]
+  ariaLabel: string
+}
+
+function clasesItem(activo: boolean) {
+  return [
+    'flex items-center gap-2.5 rounded-[var(--hc-r-md)] px-3 py-2 text-sm',
+    'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--hc-focus-ring)]',
+    activo
+      ? 'bg-[var(--hc-blue-50)] font-semibold text-[var(--hc-link)]'
+      : 'font-medium text-hc-text hover:bg-[var(--hc-n-50)]',
+  ].join(' ')
+}
+
+function ItemNavLink({ item }: { item: ItemNav }) {
+  const { Icono } = item
+  return (
+    <NavLink to={item.to} end={item.end} className={({ isActive }) => clasesItem(isActive)}>
+      {({ isActive }) => (
+        <>
+          <Icono
+            className={`size-4 shrink-0 ${isActive ? '' : 'text-[var(--hc-n-500)]'}`}
+            aria-hidden
+          />
+          <span className="min-w-0 truncate" title={item.etiqueta}>
+            {item.etiqueta}
+          </span>
+        </>
+      )}
+    </NavLink>
+  )
+}
+
+function GrupoLinks({ grupo }: { grupo: GrupoNav }) {
+  return (
+    <div role="group" aria-label={grupo.titulo} className="pb-4">
+      <p className="px-3 pb-1 text-[11px] font-bold uppercase tracking-[0.08em] text-hc-muted">
+        {grupo.titulo}
+      </p>
+      <div className="flex flex-col gap-0.5">
+        {grupo.items.map((item) => (
+          <ItemNavLink key={item.to} item={item} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** Nav de sidebar Figma: grupos + íconos + activo azul Click. */
+export default function PrototipoSidebarNav({ grupos, cuenta, ariaLabel }: Props) {
+  return (
+    <nav className="flex flex-1 flex-col overflow-y-auto" aria-label={ariaLabel}>
+      {grupos.map((grupo) => (
+        <GrupoLinks key={grupo.titulo} grupo={grupo} />
+      ))}
+      {cuenta && cuenta.length > 0 ? (
+        <div className="mt-auto border-t border-hc-border pt-3" role="group" aria-label="Cuenta">
+          <div className="flex flex-col gap-0.5">
+            {cuenta.map((item) => (
+              <ItemNavLink key={item.to} item={item} />
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </nav>
+  )
+}

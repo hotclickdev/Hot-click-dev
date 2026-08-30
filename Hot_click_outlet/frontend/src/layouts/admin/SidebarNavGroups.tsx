@@ -46,6 +46,7 @@ export default function SidebarNavGroups({
       ref={navRef}
       onScroll={onScroll}
       className="flex-1 px-3 py-2 overflow-y-auto"
+      aria-label={layoutSistema ? 'Navegación sistema' : 'Navegación admin'}
     >
       {groups.map((group, gi) => {
         const isOpen = !group.section || !collapsed.has(group.section)
@@ -53,7 +54,11 @@ export default function SidebarNavGroups({
         const sectionTitle = group.section ? getSectionLabel(t, group.section) : null
 
         return (
-          <div key={group.section || `g-${gi}`}>
+          <div
+            key={group.section || `g-${gi}`}
+            role={sectionTitle ? 'group' : undefined}
+            aria-label={sectionTitle ?? undefined}
+          >
             {group.section && (layoutSistema ? (
               <div className="px-3 pt-3.5 pb-1">
                 <span className="text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--hc-muted)' }}>
@@ -116,7 +121,7 @@ export default function SidebarNavGroups({
                         style={({ isActive }) => ({
                           color:           isActive ? 'var(--hc-link)' : 'var(--hc-text)',
                           fontWeight:      isActive ? 700 : 500,
-                          backgroundColor: isActive ? 'rgba(23,71,168,0.08)' : 'transparent',
+                          backgroundColor: isActive ? 'var(--hc-blue-50)' : 'transparent',
                         })}
                       >
                         {({ isActive }) => layoutSistema ? (
@@ -124,6 +129,7 @@ export default function SidebarNavGroups({
                             isActive={isActive}
                             hoverBg={hoverBg}
                             muted={muted}
+                            icon={link.icon ?? 'box'}
                             label={link.label ?? ''}
                             feature={link.feature}
                             tenantLoaded={tenantLoaded}
@@ -168,11 +174,12 @@ function CandadoPlan({ color }: { color: string }) {
 }
 
 function ItemSistema({
-  isActive, hoverBg, muted, label, feature, tenantLoaded, hasFeature,
+  isActive, hoverBg, muted, icon, label, feature, tenantLoaded, hasFeature,
 }: {
   isActive: boolean
   hoverBg: string
   muted: string
+  icon: string
   label: string
   feature?: string
   tenantLoaded: boolean
@@ -187,11 +194,13 @@ function ItemSistema({
         />
       )}
       <span
-        className="relative w-[7px] h-[7px] rounded-[3px] shrink-0"
-        style={{ backgroundColor: isActive ? 'var(--hc-link)' : '#cbc2b1' }}
-      />
-      <span className="relative flex-1 text-sm leading-tight flex items-center gap-1.5">
-        {label}
+        className="relative flex size-4 shrink-0 items-center justify-center"
+        style={{ color: isActive ? 'var(--hc-link)' : 'var(--hc-n-500)' }}
+      >
+        <SidebarIcon name={icon} />
+      </span>
+      <span className="relative flex min-w-0 flex-1 items-center gap-1.5 text-sm leading-tight">
+        <span className="truncate">{label}</span>
         {feature && tenantLoaded && !hasFeature(feature) && <CandadoPlan color={muted} />}
       </span>
     </>

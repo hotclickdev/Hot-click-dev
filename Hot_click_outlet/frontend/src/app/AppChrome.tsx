@@ -60,10 +60,11 @@ export function ConditionalWhatsAppFab() {
   return <WhatsAppFab />
 }
 
-/** Asistente del marketplace: no se abre encima de la tienda de un vendedor ni del prototipo. */
+/** Asistente del marketplace: no encima de tienda vendedor, prototipo ni ficha de producto. */
 export function ConditionalChatModal() {
   const { pathname } = useLocation()
   if (esRutaTienda(pathname) || esRutaClaudeclick(pathname)) return null
+  if (/^\/productos\/[^/]+/.test(pathname)) return null
   return <ChatModal />
 }
 

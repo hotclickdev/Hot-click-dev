@@ -7,6 +7,7 @@ import type { Id, JsonBody } from '@/types/api'
 import {
   agregarProductoAlCarrito,
   mensajeErrorPos,
+  qrDataDesdeRespuesta,
   statusErrorPos,
   type ClienteSeleccionadoPos,
   type ItemCarritoPos,
@@ -51,8 +52,6 @@ export function useAdminPOS() {
   const [qrData, setQrData]         = useState<PosQrData | null>(null)
   const [loadingVenta, setLoadingVenta]     = useState(false)
   const [loadingConfirm, setLoadingConfirm] = useState(false)
-  const [showCierre, setShowCierre]         = useState(false)
-  const [montoFinalCierre, setMontoFinalCierre] = useState(0)
 
   useEffect(() => {
     const init = async () => {
@@ -120,70 +119,14 @@ export function useAdminPOS() {
     }
   }
 
-  const handleCerrarTurno = async () => {
-    if (!turno?.id) return
-    setSaving(true)
-    try {
-      await posService.cerrarCaja(turno.id, { montoDeclarado: montoFinalCierre } as JsonBody)
-      setTurno(null)
-      setShowCierre(false)
-      setMontoFinalCierre(0)
-      setCartItems([])
-      setDescuento(0)
-      setStep('apertura')
-      showToast('Turno cerrado correctamente', 'success')
-    } catch (err: unknown) {
-      showToast(mensajeErrorPos(err, 'Error al cerrar turno'), 'error')
-    } finally {
-      setSaving(false)
-    }
-  }
-
   const handleQrCliente = async () => {
     if (cartItems.length === 0) return
-    setLoadingVenta(true)
-    try {
-      const data = await posService.crearQrSesion({
-        metodoPago: 'TARJETA',
-        bodegaId,
-        items: cartItems.map(i => ({ productoId: i.id, cantidad: i.cantidad, precioUnitario: i.precio, nombre: i.nombre })),
-      } as JsonBody) as PosQrData
-      setQrData({
-        token:      data.token,
-        metodoPago: data.metodoPago ?? 'TARJETA',
-        total:      data.total ?? total,
-        sinpeNumero: data.sinpeNumero ?? '',
-      })
-      setStep('qr')
-    } catch (err: unknown) {
-      showToast(mensajeErrorPos(err, 'Error al generar QR'), 'error')
-    } finally {
-      setLoadingVenta(false)
-    }
+    await crearSesionQr('TARJETA')
   }
 
   const handleConfirmarPago = async (payload: PayloadCobroPos) => {
     if (payload.metodoPago === 'SINPE' || payload.metodoPago === 'TARJETA') {
-      setLoadingVenta(true)
-      try {
-        const data = await posService.crearQrSesion({
-          metodoPago: payload.metodoPago,
-          bodegaId,
-          clienteId: cliente?.id ?? null,
-          items: cartItems.map(i => ({ productoId: i.id, cantidad: i.cantidad, precioUnitario: i.precio, nombre: i.nombre })),
-        } as JsonBody) as PosQrData
-        setQrData({
-          token:       data.token,
-          metodoPago:  data.metodoPago,
-          total:       data.total ?? total,
-          sinpeNumero: data.sinpeNumero ?? '',
-        })
-        setStep('qr')
-      } catch (err: unknown) {
-        showToast(mensajeErrorPos(err, 'Error al generar QR'), 'error')
-      } finally {
-        setLoadingVenta(false)
-      }
+      await crearSesionQr(payload.metodoPago)
       return
     }
 
@@ -204,6 +147,35 @@ export function useAdminPOS() {
       showToast('Venta registrada', 'success')
     } catch (err: unknown) {
       showToast(mensajeErrorPos(err, 'Error al procesar la venta'), 'error')
+    } finally {
+      setLoadingVenta(false)
+    }
+  }
+
+  const crearSesionQr = async (metodoPago: string) => {
+    setLoadingVenta(true)
+    try {
+      const data = await posService.crearQrSesion({
+        metodoPago,
+        bodegaId,
+        clienteId: cliente?.id ?? null,
+        items: cartItems.map(i => ({
+          productoId: i.id,
+          cantidad: i.cantidad,
+          precioUnitario: i.precio,
+          nombre: i.nombre,
+          imagen: i.imagen,
+        })),
+      } as JsonBody)
+      const qr = qrDataDesdeRespuesta(data, total)
+      if (!qr) {
+        showToast('El servidor no devolvió el token del QR', 'error')
+        return
+      }
+      setQrData(qr)
+      setStep('qr')
+    } catch (err: unknown) {
+      showToast(mensajeErrorPos(err, 'Error al generar QR'), 'error')
     } finally {
       setLoadingVenta(false)
     }
@@ -262,9 +234,6 @@ export function useAdminPOS() {
     qrData,
     loadingVenta,
     loadingConfirm,
-    showCierre,
-    setShowCierre,
-    setMontoFinalCierre,
     subtotal,
     total,
     agregarProducto,
@@ -273,7 +242,6 @@ export function useAdminPOS() {
     quitarItem,
     nuevaVenta,
     handleAbrir,
-    handleCerrarTurno,
     handleQrCliente,
     handleConfirmarPago,
     handleQrConfirmSinpe,

@@ -115,21 +115,31 @@ public class PublicChatIntentHelper {
         return "GENERAL";
     }
 
-    public String buildTsQuery(String message) {
+    /**
+     * Términos del usuario (sin stopwords ni sinónimos).
+     * Los sinónimos solo se usan como boost de rank, no para el match ILIKE.
+     */
+    public List<String> userTerms(String message) {
+        if (message == null || message.isBlank()) return List.of();
         String[] words = message.toLowerCase()
             .replaceAll("[^a-záéíóúüñ\\s]", " ")
             .split("\\s+");
-
-        List<String> terms = Arrays.stream(words)
+        return Arrays.stream(words)
             .filter(w -> w.length() > 2 && !PublicChatIntentLexicon.STOP.contains(w))
             .distinct()
             .toList();
+    }
 
-        List<String> expandedTerms = new ArrayList<>(terms);
-        expandedTerms.addAll(expandSynonyms(terms));
+    /** tsquery OR solo con términos del usuario (sinónimos ya no amplían el match). */
+    public String buildTsQuery(String message) {
+        List<String> terms = userTerms(message);
+        if (terms.isEmpty()) return "";
+        return String.join(" | ", terms);
+    }
 
-        if (expandedTerms.isEmpty()) return "";
-        return expandedTerms.stream().distinct().collect(java.util.stream.Collectors.joining(" | "));
+    /** Sinónimos para boost de ranking — no para WHERE ILIKE. */
+    public List<String> synonymBoostTerms(String message) {
+        return expandSynonyms(userTerms(message));
     }
 
     public List<String> expandSynonyms(List<String> terms) {

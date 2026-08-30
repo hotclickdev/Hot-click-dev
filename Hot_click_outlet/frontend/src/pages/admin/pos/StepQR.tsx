@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import QRCode from 'react-qr-code'
 import { posService } from '@/services/posService'
-import { formatMontoPos, type PosQrData } from './posHelpers'
+import { formatMontoPos, enlacePagoPosQr, type PosQrData } from './posHelpers'
 import { MetodoPagoIcon } from './posIcons'
+import PosQrImagen from './PosQrImagen'
 
 export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConfirm }: {
   qrData: PosQrData
@@ -13,7 +13,7 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
 }) {
   const { t } = useTranslation()
   const { token, metodoPago, total, sinpeNumero } = qrData
-  const qrUrl = `${globalThis.location.origin}/pos/pago/${token}`
+  const qrUrl = enlacePagoPosQr(token)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [paid, setPaid] = useState(false)
 
@@ -67,10 +67,21 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
         </div>
 
         <div className="flex justify-center">
-          <div className="p-4 rounded-2xl bg-white shadow-2xl">
-            <QRCode value={qrUrl} size={200} />
+          <div className="rounded-2xl p-4 shadow-2xl" style={{ backgroundColor: '#ffffff' }}>
+            {token ? (
+              <PosQrImagen value={qrUrl} size={200} alt={t('pos.qr.imagenAlt')} />
+            ) : (
+              <p className="w-[200px] text-center text-sm" style={{ color: '#b91c1c' }}>
+                {t('pos.qr.tokenFaltante')}
+              </p>
+            )}
           </div>
         </div>
+        {token ? (
+          <p className="break-all text-center text-[11px] font-mono" style={{ color: 'var(--hc-muted)' }}>
+            {qrUrl}
+          </p>
+        ) : null}
 
         {metodoPago === 'SINPE' && (
           <div className="rounded-2xl p-4 space-y-2"

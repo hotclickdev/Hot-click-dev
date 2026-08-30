@@ -37,6 +37,9 @@ public class PaymentCheckoutRequest {
     /** Código de gift card (opcional). Solo para usuarios autenticados. */
     private String codigoGiftCard;
 
+    /** Token del QR del POS — al confirmar el pago marca la sesión del cajero. */
+    private String posQrToken;
+
     public Long getBodegaId() { return bodegaId; }
     public void setBodegaId(Long bodegaId) { this.bodegaId = bodegaId; }
 
@@ -63,6 +66,9 @@ public class PaymentCheckoutRequest {
 
     public String getCodigoGiftCard() { return codigoGiftCard; }
     public void setCodigoGiftCard(String codigoGiftCard) { this.codigoGiftCard = codigoGiftCard; }
+
+    public String getPosQrToken() { return posQrToken; }
+    public void setPosQrToken(String posQrToken) { this.posQrToken = posQrToken; }
 
     public static class ItemDTO {
 

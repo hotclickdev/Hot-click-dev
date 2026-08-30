@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useToast } from '@/components/ui/Toast'
+import useChatStore from '@/store/chatStore'
 import { useCatalogoFiltros } from './useCatalogoFiltros'
 import { useCatalogoFetch } from './useCatalogoFetch'
 import { useCatalogoDerived } from './useCatalogoDerived'
@@ -16,19 +17,19 @@ export function useCatalogoPage() {
 
   const [viewMode, setViewMode] = useState<CatalogViewMode>('all')
   const [quickView, setQuickView] = useState<Producto | null>(null)
-  const [aiPanelOpen, setAiPanelOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const aiQuery = searchParams.get('q') || ''
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- abrir panel IA / tab desde query
-    if (searchParams.get('ai') === '1') setAiPanelOpen(true)
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- abrir chat / tab desde query
+    if (searchParams.get('ai') === '1') {
+      useChatStore.getState().open(searchParams.get('q') || null)
+    }
     if (searchParams.get('vista') === 'emprendimientos') setViewMode('emprendimientos')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const filtros = useCatalogoFiltros(searchParams, setSearchParams)
-  const data = useCatalogoFetch(toast, filtros.page, filtros.setPage)
+  const data = useCatalogoFetch(toast, filtros.page, filtros.setPage, filtros.sort)
   const derived = useCatalogoDerived({ ...data, ...filtros, viewMode })
   const { categories } = data
   const { setCategory } = filtros
@@ -39,7 +40,7 @@ export function useCatalogoPage() {
     )
     if (match) {
       setCategory(String(match.id))
-      setAiPanelOpen(false)
+      useChatStore.getState().close()
     }
   }, [categories, setCategory])
 
@@ -71,13 +72,10 @@ export function useCatalogoPage() {
     setPriceMax: filtros.setPriceMax,
     quickView,
     setQuickView,
-    aiPanelOpen,
-    setAiPanelOpen,
     sidebarOpen,
     setSidebarOpen,
     filterViewPage: filtros.filterViewPage,
     setFilterViewPage: filtros.setFilterViewPage,
-    aiQuery,
     toggleMarca: filtros.toggleMarca,
     clearMarcas: filtros.clearMarcas,
     clearFilters: filtros.clearFilters,
@@ -95,6 +93,7 @@ export function useCatalogoPage() {
     activeCatName: derived.activeCatName,
     gridAnimKey: derived.gridAnimKey,
     convenioMarcaNames: derived.convenioMarcaNames,
+    tieneGustos: filtros.tieneGustos,
     selectCategoryFromAi,
   }
 }

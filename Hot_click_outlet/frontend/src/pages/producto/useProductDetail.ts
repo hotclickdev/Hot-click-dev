@@ -6,6 +6,7 @@ import useCartStore from '@/store/cartStore'
 import useRecentlyViewedStore from '@/store/recentlyViewedStore'
 import { useToast } from '@/components/ui/Toast'
 import { analytics } from '@/utils/analytics'
+import { bumpGustosDesdeVista } from '@/utils/gustos'
 import type { Producto } from '@/types/producto'
 import type { Id } from '@/types/api'
 import {
@@ -57,6 +58,7 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
         setProduct(p)
         setTallaSeleccionada(parseTallas(p.talla)[0] ?? null)
         addRecentlyViewed(p)
+        bumpGustosDesdeVista(p)
         analytics.productView(p)
         if (p.especificaciones?.trim()) setActiveTab('especificaciones')
         else if (p.comoUsar?.trim()) setActiveTab('como-usar')

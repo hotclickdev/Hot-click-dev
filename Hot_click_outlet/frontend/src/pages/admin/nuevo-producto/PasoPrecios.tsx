@@ -26,7 +26,7 @@ export default function PasoPrecios({ form, setCampo, priceWarning, setPriceWarn
           <Label required>Precio de compra (₡)</Label>
           <input className={inp} style={inpStyle} type="number" value={form.precioCompra}
             onChange={e => { setCampo('precioCompra')(e); setPriceWarning(false) }}
-            placeholder="0" min="0" autoFocus />
+            placeholder="0" min="0" />
           <p className="text-xs mt-1" style={{ color: 'var(--hc-muted)' }}>Lo que pagaste</p>
         </div>
         <div>

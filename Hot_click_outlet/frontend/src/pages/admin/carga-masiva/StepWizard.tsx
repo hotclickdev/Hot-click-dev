@@ -164,7 +164,6 @@ export default function StepWizard({ drafts, onUpdate, onFinalizar, categories, 
               value={draft.nombre}
               onChange={(e) => set('nombre', e.target.value)}
               placeholder="Ej: Camiseta azul talla M"
-              autoFocus
             />
             {errors.nombre && <p className="text-xs mt-1" style={{ color: '#f87171' }}>{errors.nombre}</p>}
           </div>

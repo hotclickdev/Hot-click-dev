@@ -2,12 +2,19 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { paymentService } from '../services/paymentService'
 import type { CheckoutPayload } from '@/types/pedido'
 import { sincronizarRetornoPagoAlIniciar } from '@/prototipo/visitante/pagoRetornoVisitante'
+import { POS_QR_TOKEN_KEY } from '@/pages/pos/POSPagoPage'
 
 const MAX_INTENTOS = 3
 const POLL_INTERVAL_MS = 3000
 const POLL_MAX_ATTEMPTS = 60
 
 const GUEST_KEY = 'hc-guest-checkout'
+
+function payloadConPosQr(checkoutPayload: CheckoutPayload): CheckoutPayload {
+  const posQrToken = sessionStorage.getItem(POS_QR_TOKEN_KEY)
+  if (!posQrToken) return checkoutPayload
+  return { ...checkoutPayload, posQrToken }
+}
 
 type PagoData = {
   total?: number
@@ -49,8 +56,11 @@ export function usePayment() {
       } else {
         method = isGuest ? paymentService.guestCheckout : paymentService.checkout
       }
-      const { data } = await method(checkoutPayload)
+      const { data } = await method(payloadConPosQr(checkoutPayload))
       setPagoData(data)
+      if (sessionStorage.getItem(POS_QR_TOKEN_KEY)) {
+        sessionStorage.removeItem(POS_QR_TOKEN_KEY)
+      }
       if (data.proveedor === 'GIFT_CARD') {
         setEstado('gift_card_paid')
       } else if (!data.redirectUrl || data.proveedor === 'SINPE') {

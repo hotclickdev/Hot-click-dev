@@ -2,7 +2,9 @@ package com.hotclick.rag.service;
 
 import com.hotclick.rag.dto.ProductoContexto;
 import com.hotclick.service.catalogo.CatalogoChatSql;
+import com.hotclick.service.catalogo.ChatKeywordRankSql;
 import com.hotclick.service.catalogo.ChatProductoMatchSql;
+import com.hotclick.service.catalogo.ChatRankingConstants;
 import com.hotclick.service.catalogo.ChatSearchTerms;
 import com.hotclick.service.publicchat.PublicChatIntentHelper;
 import org.slf4j.Logger;
@@ -12,14 +14,17 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Búsqueda de productos para el pipeline RAG.
  *
- * Estrategia con degradación en dos niveles:
- *   1. Búsqueda semántica (pgvector + Voyage) — más precisa.
- *   2. Fallback a palabras clave (ILIKE OR + sinónimos del chat público).
+ * Estrategia:
+ *   1. Embedding (pgvector coseno) con umbral {@link ChatRankingConstants#CHAT_DISTANCIA_MAXIMA}.
+ *   2. Keyword (tsvector / ILIKE) — mismos términos de usuario que el chat público.
+ *   3. Fusión RRF si ambas listas tienen resultados.
  */
 @Service
 public class VectorSearchService {
@@ -72,8 +77,10 @@ public class VectorSearchService {
     public List<ProductoContexto> buscarSimilares(Long empresaId, String query, int limit,
                                                   boolean marketplace) {
         List<ProductoContexto> semanticos = buscarPorEmbedding(empresaId, query, limit, marketplace);
-        if (!semanticos.isEmpty()) return semanticos;
-        return buscarPorKeywords(empresaId, query, limit, marketplace);
+        List<ProductoContexto> keywords = buscarPorKeywords(empresaId, query, limit, marketplace);
+        if (semanticos.isEmpty()) return keywords;
+        if (keywords.isEmpty()) return semanticos;
+        return fusionRrf(semanticos, keywords, limit);
     }
 
     private List<ProductoContexto> buscarPorEmbedding(Long empresaId, String query, int limit,
@@ -84,20 +91,27 @@ public class VectorSearchService {
 
             List<Object> params = new ArrayList<>();
             CatalogoChatSql.bindEmpresaSiTenant(params, empresaId, marketplace);
-            params.add(vectorStr);
+            params.add(vectorStr); // SELECT distancia
+            params.add(vectorStr); // WHERE distancia
+            params.add(ChatRankingConstants.CHAT_DISTANCIA_MAXIMA);
+            params.add(vectorStr); // ORDER BY
             params.add(limit);
 
             String sql = SELECT_FICHA
+                + ", (emb.embedding <=> ?::vector) AS distancia"
                 + " FROM hot_click_producto_embedding_tb emb"
                 + " JOIN hot_click_producto_tb p ON p.id_producto = emb.fk_id_producto"
                 + CatalogoChatSql.joins(marketplace)
                 + " WHERE " + CatalogoChatSql.whereVisible(marketplace, true)
-                + " ORDER BY emb.embedding <-> ?::vector"
+                + " AND (emb.embedding <=> ?::vector) <= ?"
+                + " ORDER BY "
+                + "CASE WHEN p.imagen_principal_url IS NOT NULL AND TRIM(p.imagen_principal_url) <> '' THEN 0 ELSE 1 END, "
+                + "emb.embedding <=> ?::vector"
                 + " LIMIT ?";
 
             List<ProductoContexto> resultados = jdbc.query(sql, (rs, rowNum) -> mapProducto(rs), params.toArray());
             if (!resultados.isEmpty()) return resultados;
-            log.debug("[vector-search] Embedding OK pero sin filas — usando fallback keyword");
+            log.debug("[vector-search] Embedding OK pero sin filas bajo umbral — fallback keyword");
         } catch (Exception e) {
             log.warn("[vector-search] Embedding falló empresa={}: {} — usando fallback por palabras clave",
                 empresaId, e.getMessage());
@@ -108,22 +122,29 @@ public class VectorSearchService {
     private List<ProductoContexto> buscarPorKeywords(Long empresaId, String query, int limit,
                                                      boolean marketplace) {
         try {
-            List<String> terms = ChatSearchTerms.fromTsQuery(intentHelper.buildTsQuery(query));
-            if (terms.isEmpty()) return Collections.emptyList();
+            List<String> userTerms = intentHelper.userTerms(query);
+            if (userTerms.isEmpty()) return Collections.emptyList();
+            List<String> synonymBoost = intentHelper.expandSynonyms(userTerms);
+
+            List<ProductoContexto> porTs = buscarPorTsvector(
+                empresaId, marketplace, ChatSearchTerms.websearchQuery(userTerms), limit, synonymBoost);
+            if (!porTs.isEmpty()) return porTs;
 
             List<Object> params = new ArrayList<>();
             CatalogoChatSql.bindEmpresaSiTenant(params, empresaId, marketplace);
-            for (String term : terms) {
+            for (String term : userTerms) {
                 ChatProductoMatchSql.bindTermino(params, term);
             }
+            ChatKeywordRankSql.bindScoreTerminos(params, userTerms);
+            ChatKeywordRankSql.bindScoreTerminos(params, synonymBoost);
             params.add(limit);
 
             String sql = SELECT_FICHA
                 + " FROM hot_click_producto_tb p"
                 + CatalogoChatSql.joins(marketplace)
                 + " WHERE " + CatalogoChatSql.whereVisible(marketplace, true)
-                + " AND (" + ChatProductoMatchSql.orDeTerminos(terms.size()) + ")"
-                + " ORDER BY p.nombre_producto"
+                + " AND (" + ChatProductoMatchSql.orDeTerminos(userTerms.size()) + ")"
+                + ChatKeywordRankSql.orderByRelevancia(userTerms.size(), synonymBoost.size())
                 + " LIMIT ?";
 
             List<ProductoContexto> resultados = jdbc.query(sql, (rs, rowNum) -> mapProducto(rs), params.toArray());
@@ -133,6 +154,62 @@ public class VectorSearchService {
         } catch (Exception ex) {
             log.warn("[vector-search] Fallback keyword también falló empresa={}: {}", empresaId, ex.getMessage());
             return Collections.emptyList();
+        }
+    }
+
+    private List<ProductoContexto> buscarPorTsvector(Long empresaId, boolean marketplace,
+                                                     String webQuery, int limit,
+                                                     List<String> synonymBoost) {
+        if (webQuery == null || webQuery.isBlank()) return List.of();
+        try {
+            List<Object> params = new ArrayList<>();
+            params.add(webQuery);
+            CatalogoChatSql.bindEmpresaSiTenant(params, empresaId, marketplace);
+            params.add(webQuery);
+            ChatKeywordRankSql.bindScoreTerminos(params, synonymBoost);
+            params.add(limit);
+            int synCount = synonymBoost == null ? 0 : synonymBoost.size();
+            String sql = SELECT_FICHA
+                + ", ts_rank(p.search_vector, websearch_to_tsquery('spanish', ?)) AS rank"
+                + " FROM hot_click_producto_tb p"
+                + CatalogoChatSql.joins(marketplace)
+                + " WHERE " + CatalogoChatSql.whereVisible(marketplace, true)
+                + " AND p.search_vector @@ websearch_to_tsquery('spanish', ?)"
+                + " ORDER BY "
+                + "CASE WHEN p.imagen_principal_url IS NOT NULL AND TRIM(p.imagen_principal_url) <> '' THEN 0 ELSE 1 END, "
+                + "rank DESC"
+                + (synCount > 0 ? ", " + ChatKeywordRankSql.scoreExpr(synCount, 1, 1, 1, 0) + " DESC" : "")
+                + ", p.id_producto DESC"
+                + " LIMIT ?";
+            return jdbc.query(sql, (rs, rowNum) -> mapProducto(rs), params.toArray());
+        } catch (Exception e) {
+            log.debug("[vector-search] tsvector falló: {}", e.getMessage());
+            return List.of();
+        }
+    }
+
+    /** Reciprocal Rank Fusion de dos listas ordenadas. */
+    static List<ProductoContexto> fusionRrf(List<ProductoContexto> a, List<ProductoContexto> b, int limit) {
+        Map<Long, Double> scores = new LinkedHashMap<>();
+        Map<Long, ProductoContexto> byId = new LinkedHashMap<>();
+        addRrfScores(a, scores, byId);
+        addRrfScores(b, scores, byId);
+        return scores.entrySet().stream()
+            .sorted(Map.Entry.<Long, Double>comparingByValue().reversed())
+            .limit(limit)
+            .map(e -> byId.get(e.getKey()))
+            .toList();
+    }
+
+    private static void addRrfScores(List<ProductoContexto> list,
+                                     Map<Long, Double> scores,
+                                     Map<Long, ProductoContexto> byId) {
+        int k = ChatRankingConstants.RRF_K;
+        for (int i = 0; i < list.size(); i++) {
+            ProductoContexto p = list.get(i);
+            if (p.id() == null) continue;
+            byId.putIfAbsent(p.id(), p);
+            scores.merge(p.id(), 1.0 / (k + i + 1), Double::sum);
         }
     }
 

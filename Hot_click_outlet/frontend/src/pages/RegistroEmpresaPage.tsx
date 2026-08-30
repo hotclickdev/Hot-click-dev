@@ -19,7 +19,7 @@ import type { AuthResponse } from '@/types/auth'
 
 const STEP_TITLES = ['Requisito previo', 'Tu empresa', 'Tu cuenta de acceso']
 const STEP_DESCS = [
-  'Verificamos que puedas emitir facturas electrónicas.',
+  'Debés estar inscrito en Tributación Directa para emitir facturas electrónicas.',
   'Datos básicos de tu negocio.',
   'Con estos datos iniciás sesión en el panel.',
 ]
@@ -212,7 +212,7 @@ export default function RegistroEmpresaPage() {
                 <AnimatePresence mode="wait">
                   {step === 0 && (
                     <StepTributacion
-                      key={tributacion === false ? 's0-blocked' : 's0'}
+                      key={tributacion === false ? 's0-ayuda' : 's0'}
                       tributacion={tributacion}
                       onInscrito={() => handleTributacion(true)}
                       onNoInscrito={() => handleTributacion(false)}
