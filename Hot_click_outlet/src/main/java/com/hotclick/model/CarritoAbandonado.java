@@ -33,6 +33,9 @@ public class CarritoAbandonado {
     @Column(name = "status", length = 20, nullable = false)
     private String status = "PENDIENTE";
 
+    @Column(name = "token_recuperacion", length = 36)
+    private String tokenRecuperacion;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -43,6 +46,9 @@ public class CarritoAbandonado {
     void prePersist() {
         createdAt = LocalDateTime.now(Constants.ZONA_CR);
         updatedAt  = createdAt;
+        if (tokenRecuperacion == null || tokenRecuperacion.isBlank()) {
+            tokenRecuperacion = java.util.UUID.randomUUID().toString();
+        }
     }
 
     @PreUpdate
@@ -67,6 +73,9 @@ public class CarritoAbandonado {
 
     public String getStatus()            { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getTokenRecuperacion() { return tokenRecuperacion; }
+    public void setTokenRecuperacion(String tokenRecuperacion) { this.tokenRecuperacion = tokenRecuperacion; }
 
     public LocalDateTime getCreatedAt()             { return createdAt; }
     public void setCreatedAt(LocalDateTime c)       { this.createdAt = c; }

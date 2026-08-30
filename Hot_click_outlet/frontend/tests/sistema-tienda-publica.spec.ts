@@ -71,18 +71,14 @@ async function sesionDueño(page: Page, { estadoEmpresa, visibilidadPublica }: {
 }
 
 test.describe('Sistema — publicar la tienda', () => {
-  test('si está oculta, el dueño publica desde Configuración, no desde un link 404', async ({ page }) => {
+  test('/admin del dueño va al prefijo; la marca real sigue en Configuración', async ({ page }) => {
     await sesionDueño(page, { estadoEmpresa: 'ACTIVO', visibilidadPublica: false })
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/admin', { waitUntil: 'domcontentloaded' })
-
+    await expect(page).toHaveURL(/\/emprendedor\/?$/)
     await expect(page.getByText('Tu tienda está oculta')).toBeVisible()
-    await expect(page.locator(`a[href="${RUTA_SISTEMA_VISIBILIDAD}"]`, { hasText: 'Configuración' })).toBeVisible()
-    const publica = page.getByRole('link', { name: 'Publicá tu tienda' })
-    await expect(publica).toHaveAttribute('href', RUTA_SISTEMA_VISIBILIDAD)
-    await expect(page.getByRole('link', { name: 'Ver mi tienda' })).toHaveCount(0)
 
-    await publica.click()
+    await page.goto('/admin/configuracion?seccion=marca', { waitUntil: 'domcontentloaded' })
     await expect(page).toHaveURL(/\/admin\/configuracion\?seccion=marca/)
     const interruptor = page.getByRole('switch', { name: 'Visibilidad pública' })
     await expect(interruptor).toHaveAttribute('aria-checked', 'false')
@@ -91,15 +87,11 @@ test.describe('Sistema — publicar la tienda', () => {
     await expect(page.getByText('Tu tienda ya es visible al público')).toBeVisible()
   })
 
-  test('si HotClick aún no aprobó, no ofrece un link público falso', async ({ page }) => {
+  test('si HotClick aún no aprobó, /admin no deja al dueño en Sistema', async ({ page }) => {
     await sesionDueño(page, { estadoEmpresa: 'PENDIENTE_APROBACION', visibilidadPublica: false })
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/admin', { waitUntil: 'domcontentloaded' })
-
-    await expect(page.getByText('Tu negocio está pendiente de aprobación')).toBeVisible()
-    await expect(page.getByText('Tu tienda se publica cuando HotClick apruebe el negocio')).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Publicá tu tienda' })).toHaveCount(0)
-    await expect(page.getByRole('link', { name: 'Ver mi tienda' })).toHaveCount(0)
+    await expect(page).toHaveURL(/\/emprendedor\/?$/)
   })
 })
 

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useToast } from '@/components/ui/Toast'
 import { gastoService } from '@/services/gastoService'
 import type { JsonBody } from '@/types/api'
@@ -18,6 +19,7 @@ type GastoModalProps = {
 }
 
 export default function GastoModal({ editing, onClose, onSaved }: GastoModalProps) {
+  const { t } = useTranslation()
   const { showToast } = useToast()
   const [form, setForm] = useState<GastoForm>(editing ?? EMPTY_GASTO)
   const [saving, setSaving] = useState(false)
@@ -26,11 +28,11 @@ export default function GastoModal({ editing, onClose, onSaved }: GastoModalProp
 
   const handleSave = async () => {
     if (!form.concepto.trim()) {
-      showToast('El concepto es requerido', 'error')
+      showToast(t('adminFinanzas.conceptRequired'), 'error')
       return
     }
     if (!form.monto || Number.parseInt(String(form.monto)) <= 0) {
-      showToast('El monto debe ser mayor a 0', 'error')
+      showToast(t('adminFinanzas.amountPositive'), 'error')
       return
     }
     setSaving(true)
@@ -38,10 +40,10 @@ export default function GastoModal({ editing, onClose, onSaved }: GastoModalProp
       const dto = { ...form, monto: Number.parseInt(String(form.monto)) } as JsonBody
       if (editing?.id) await gastoService.actualizar(editing.id, dto)
       else await gastoService.crear(dto)
-      showToast(editing?.id ? 'Gasto actualizado' : 'Gasto registrado', 'success')
+      showToast(editing?.id ? t('adminFinanzas.expenseUpdated') : t('adminFinanzas.expenseCreated'), 'success')
       onSaved()
     } catch {
-      showToast('Error al guardar gasto', 'error')
+      showToast(t('adminFinanzas.errorSaveExpense'), 'error')
     } finally {
       setSaving(false)
     }
@@ -57,9 +59,9 @@ export default function GastoModal({ editing, onClose, onSaved }: GastoModalProp
         style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid rgba(255,255,255,0.08)' }}>
         <div className="flex items-center justify-between">
           <h2 className="font-bold" style={{ color: 'var(--hc-text)' }}>
-            {editing?.id ? 'Editar gasto' : 'Nuevo gasto'}
+            {editing?.id ? t('adminFinanzas.editExpense') : t('adminFinanzas.newExpense')}
           </h2>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
+          <button type="button" onClick={onClose} aria-label={t('adminFinanzas.close')} className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
             style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>
             <CloseIcon />
           </button>
@@ -108,7 +110,7 @@ export default function GastoModal({ editing, onClose, onSaved }: GastoModalProp
           <button type="button" onClick={handleSave} disabled={saving || !form.concepto.trim() || montoInvalido}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-80 disabled:opacity-40"
             style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-            {saving ? 'Guardando…' : 'Guardar'}
+            {saving ? t('adminFinanzas.saving') : t('adminFinanzas.save')}
           </button>
         </div>
       </div>

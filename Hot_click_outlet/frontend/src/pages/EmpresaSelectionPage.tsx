@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { authService } from '@/services/authService'
 import useAuthStore from '@/store/authStore'
+import useTenantStore from '@/store/tenantStore'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import { mensajeErrorAuth } from './auth/authHelpers'
+import { rutaPanelPorRol } from '@/utils/planPaths'
 import type { AuthResponse } from '@/types/auth'
 import type { Id } from '@/types/api'
 
@@ -39,7 +41,10 @@ export default function EmpresaSelectionPage() {
       // Response is AuthResponse (no ResponseDTO wrapper for this endpoint)
       const authData = (data as AuthResponse & { data?: AuthResponse })?.data ?? (data as AuthResponse)
       loginStore(authData)
-      navigate('/admin', { replace: true })
+      if (authData.empresaId) {
+        await useTenantStore.getState().loadTenantInfo()
+      }
+      navigate(rutaPanelPorRol(authData.rol, useTenantStore.getState().planNombre), { replace: true })
     } catch (err: unknown) {
       setError(mensajeErrorAuth(err, 'Error al seleccionar el negocio'))
       setLoading(null)

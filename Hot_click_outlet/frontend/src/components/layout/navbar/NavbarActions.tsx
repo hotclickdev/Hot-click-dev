@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import type { TFunction } from 'i18next'
 import useWishlistStore from '@/store/wishlistStore'
 import useUiStore from '@/store/uiStore'
+import useRutaPanel from '@/app/useRutaPanel'
 import {
   SearchNavIcon,
   WishlistNavIcon,
@@ -33,6 +34,7 @@ export default function NavbarActions({
 }: NavbarActionsProps) {
   const wishlistCount = useWishlistStore((s) => s.count())
   const { setSearchOpen } = useUiStore()
+  const rutaPanel = useRutaPanel()
 
   return (
     <div className="flex items-center gap-1">
@@ -109,7 +111,7 @@ export default function NavbarActions({
         <div className="flex items-center gap-1">
           {isAdmin() && (
             <Link
-              to="/admin"
+              to={rutaPanel}
               className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors"
               style={{ color: 'var(--hc-muted)' }}
             >
@@ -155,14 +157,14 @@ export default function NavbarActions({
             onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--hc-text)'; e.currentTarget.style.backgroundColor = 'var(--hc-surface-2)' }}
             onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--hc-muted)'; e.currentTarget.style.backgroundColor = 'transparent' }}
           >
-            Ingresar
+            {t('nav.ingresar')}
           </Link>
           <Link
             to="/registro"
             className="px-3 py-1.5 rounded-xl text-sm font-semibold text-white transition-all duration-150 hover:-translate-y-0.5"
             style={{ backgroundColor: 'var(--hc-accent)', boxShadow: '0 0 16px color-mix(in srgb, var(--hc-accent) 35%, transparent)' }}
           >
-            Crear cuenta
+            {t('nav.crearCuenta')}
           </Link>
         </div>
       )}

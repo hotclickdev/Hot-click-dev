@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo, type Dispatch, type SetStateAction } from 'react'
+﻿import { useState, useEffect, useMemo, type Dispatch, type SetStateAction } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { orderService } from '@/services/orderService'
 import { gastoService } from '@/services/gastoService'
 import ImportExportBar from '@/components/admin/ImportExportBar'
@@ -17,7 +18,6 @@ import {
   COLUMNAS_EXPORT_INGRESOS,
   EMPTY_GASTO,
   QUICK_DAYS,
-  QUICK_LABEL,
   envioDePedido,
   filasExportIngresos,
   listaPedidosDesdeRespuesta,
@@ -28,22 +28,32 @@ import {
   type GastoAdmin,
   type GastoForm,
   type PedidoFinanzas,
+  type QuickDays,
 } from './finanzas/finanzasHelpers'
 
 type TabFinanzas = 'ingresos' | 'egresos' | 'dashboard'
 
-const TABS_FINANZAS: [TabFinanzas, string][] = [
-  ['ingresos', 'Ingresos'],
-  ['egresos', 'Egresos'],
-  ['dashboard', 'Dashboard'],
+const TAB_KEYS: [TabFinanzas, string][] = [
+  ['ingresos', 'adminFinanzas.tabIngresos'],
+  ['egresos', 'adminFinanzas.tabEgresos'],
+  ['dashboard', 'adminFinanzas.tabDashboard'],
 ]
-const CLASE_FECHA = 'h-9 px-3 rounded-xl text-sm text-[#e8e8ed] focus:outline-none bg-[#111114] border border-white/10'
+
+const QUICK_LABEL_KEY: Record<QuickDays, string> = {
+  0: 'adminFinanzas.today',
+  7: 'adminFinanzas.days7',
+  30: 'adminFinanzas.days30',
+  [-1]: 'adminFinanzas.all',
+}
+
+const CLASE_FECHA = 'h-9 px-3 rounded-xl text-sm text-hc-text focus:outline-none bg-hc-surface border border-hc-border'
 
 function listaGastosDesdeRespuesta(data: unknown): GastoAdmin[] {
   return Array.isArray(data) ? data as GastoAdmin[] : []
 }
 
 export default function AdminFinanzas() {
+  const { t } = useTranslation()
   const { showToast } = useToast()
 
   const [tab, setTab] = useState<TabFinanzas>('ingresos')
@@ -75,7 +85,7 @@ export default function AdminFinanzas() {
       .then(({ data }) => { if (!cancelado) setPedidos(listaPedidosDesdeRespuesta(data)) })
       .catch((err: unknown) => {
         console.error('[AdminFinanzas] ingresos', err)
-        if (!cancelado) showToast('Error al cargar ingresos', 'error')
+        if (!cancelado) showToast(t('adminFinanzas.errorLoadIncome'), 'error')
       })
       .finally(() => { if (!cancelado) setLoadingP(false) })
     return () => { cancelado = true }
@@ -88,7 +98,7 @@ export default function AdminFinanzas() {
       .then((lista) => setGastos(listaGastosDesdeRespuesta(lista)))
       .catch((err: unknown) => {
         console.error('[AdminFinanzas] gastos', err)
-        showToast('Error al cargar gastos', 'error')
+        showToast(t('adminFinanzas.errorLoadExpenses'), 'error')
       })
       .finally(() => setLoadingG(false))
   }
@@ -100,7 +110,7 @@ export default function AdminFinanzas() {
       .then((lista) => { if (!cancelado) setGastos(listaGastosDesdeRespuesta(lista)) })
       .catch((err: unknown) => {
         console.error('[AdminFinanzas] gastos', err)
-        if (!cancelado) showToast('Error al cargar gastos', 'error')
+        if (!cancelado) showToast(t('adminFinanzas.errorLoadExpenses'), 'error')
       })
       .finally(() => { if (!cancelado) setLoadingG(false) })
     return () => { cancelado = true }
@@ -126,12 +136,12 @@ export default function AdminFinanzas() {
     if (!deleteGasto) return
     try {
       await gastoService.eliminar(deleteGasto.id)
-      showToast('Gasto eliminado', 'success')
+      showToast(t('adminFinanzas.expenseDeleted'), 'success')
       setDeleteGasto(null)
       loadGastos()
     } catch (err: unknown) {
       console.error('[AdminFinanzas] eliminar gasto', err)
-      showToast('Error al eliminar', 'error')
+      showToast(t('adminFinanzas.errorDelete'), 'error')
     }
   }
 
@@ -202,9 +212,9 @@ export default function AdminFinanzas() {
 
       <ConfirmModal
         open={!!deleteGasto}
-        title="Eliminar gasto"
-        message={`¿Eliminar "${deleteGasto?.concepto}"? Esta acción no se puede deshacer.`}
-        confirmLabel="Eliminar"
+        title={t('adminFinanzas.deleteExpense')}
+        message={t('adminFinanzas.deleteExpenseMsg', { concepto: deleteGasto?.concepto ?? '' })}
+        confirmLabel={t('adminFinanzas.delete')}
         onConfirm={handleDeleteGasto}
         onClose={() => setDeleteGasto(null)}
       />
@@ -253,16 +263,16 @@ function agruparPorCategoria(gastos: GastoAdmin[]) {
 
 function claseTabFinanzas(activa: boolean) {
   const base = 'px-4 py-1.5 rounded-lg text-xs font-medium transition-all '
-  if (activa) return `${base}bg-[#4f7cff] text-white`
-  return `${base}text-[#8e8e9a] hover:text-white`
+  if (activa) return `${base}bg-hc-primary text-white`
+  return `${base}text-hc-muted hover:text-hc-text`
 }
 
 function estiloQuickPildora(activa: boolean) {
   if (activa) {
     return {
-      backgroundColor: 'var(--hc-accent)',
+      backgroundColor: 'var(--hc-primary)',
       color: 'white',
-      border: '1px solid color-mix(in srgb,var(--hc-accent) 40%,transparent)',
+      border: '1px solid color-mix(in srgb,var(--hc-primary) 40%,transparent)',
     }
   }
   return {
@@ -277,14 +287,15 @@ function FinanzasCabecera({ tab, filteredP, onNuevoGasto }: {
   filteredP: PedidoFinanzas[]
   onNuevoGasto: () => void
 }) {
+  const { t } = useTranslation()
   return (
     <div className="flex items-start justify-between gap-4 flex-wrap">
       <div>
-        <h1 className="text-2xl font-bold text-[#e8e8ed]">Finanzas</h1>
-        <p className="text-sm text-[#8e8e9a] mt-1">Ingresos, egresos y flujo de caja</p>
+        <h1 className="text-2xl font-bold text-hc-text">{t('adminFinanzas.title')}</h1>
+        <p className="text-sm text-hc-muted mt-1">{t('adminFinanzas.subtitleFlow')}</p>
         <Link to="/admin/finanzas/reporte-contador"
-          className="inline-block text-xs text-[#4f7cff] hover:underline mt-1">
-          <TextoFlecha>Ver analítica financiera y reporte para el contador</TextoFlecha>
+          className="inline-block text-xs text-hc-link hover:underline mt-1">
+          <TextoFlecha>{t('adminFinanzas.linkContador')}</TextoFlecha>
         </Link>
       </div>
       {tab === 'ingresos' && (
@@ -298,7 +309,7 @@ function FinanzasCabecera({ tab, filteredP, onNuevoGasto }: {
         <button type="button" onClick={onNuevoGasto}
           className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80 inline-flex items-center gap-1.5"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-          <TextoMas>Nuevo gasto</TextoMas>
+          <TextoMas>{t('adminFinanzas.newExpense')}</TextoMas>
         </button>
       )}
     </div>
@@ -306,11 +317,12 @@ function FinanzasCabecera({ tab, filteredP, onNuevoGasto }: {
 }
 
 function FinanzasTabs({ tab, onTab }: { tab: TabFinanzas; onTab: (k: TabFinanzas) => void }) {
+  const { t } = useTranslation()
   return (
-    <div className="flex gap-1 bg-white/3 border border-white/8 rounded-xl p-1 w-fit">
-      {TABS_FINANZAS.map(([k, l]) => (
+    <div className="flex gap-1 bg-hc-surface-2 border border-hc-border rounded-xl p-1 w-fit">
+      {TAB_KEYS.map(([k, key]) => (
         <button type="button" key={k} onClick={() => onTab(k)}
-          className={claseTabFinanzas(tab === k)}>{l}</button>
+          className={claseTabFinanzas(tab === k)}>{t(key)}</button>
       ))}
     </div>
   )
@@ -324,17 +336,18 @@ function FinanzasPeriodo({ quick, desde, hasta, onQuick, onDesde, onHasta }: {
   onDesde: (v: string) => void
   onHasta: (v: string) => void
 }) {
+  const { t } = useTranslation()
   return (
     <div className="flex flex-wrap gap-2">
       {QUICK_DAYS.map((days) => (
         <button type="button" key={days} onClick={() => onQuick(days)}
           className="px-3 py-1.5 rounded-lg text-sm transition-all"
-          style={estiloQuickPildora(quick === days)}>{QUICK_LABEL[days]}</button>
+          style={estiloQuickPildora(quick === days)}>{t(QUICK_LABEL_KEY[days])}</button>
       ))}
-      <input id="finanzas-desde" type="date" aria-label="Desde" value={desde}
+      <input id="finanzas-desde" type="date" aria-label={t('adminFinanzas.from')} value={desde}
         onChange={(e) => onDesde(e.target.value)}
         className={CLASE_FECHA} />
-      <input id="finanzas-hasta" type="date" aria-label="Hasta" value={hasta}
+      <input id="finanzas-hasta" type="date" aria-label={t('adminFinanzas.to')} value={hasta}
         onChange={(e) => onHasta(e.target.value)}
         className={CLASE_FECHA} />
     </div>

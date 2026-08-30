@@ -1,10 +1,15 @@
 import { useTranslation } from 'react-i18next'
 import useUiStore from '@/store/uiStore'
+import LanguageRadiogroup from '@/components/ui/accessibility/LanguageRadiogroup'
 import { F, Block, Toggle, SectionHeader, CheckIcon } from './configUi'
 
 export default function SeccionApariencia() {
   const { t } = useTranslation()
-  const { theme, setTheme, fontSize, setFontSize, highContrast, toggleHighContrast, reduceMotion, toggleReduceMotion } = useUiStore()
+  const {
+    theme, setTheme, fontSize, setFontSize,
+    highContrast, toggleHighContrast, reduceMotion, toggleReduceMotion,
+    language, setLanguage,
+  } = useUiStore()
 
   const themes = [
     { id: 'dark',  labelKey: 'adminConfig.apThemeDark',  bg: '#0a0a0d', accent: 'var(--hc-accent)' },
@@ -34,6 +39,10 @@ export default function SeccionApariencia() {
             </button>
           ))}
         </div>
+      </Block>
+
+      <Block label={t('lang.select')} sublabel={t('adminConfig.apLangSubtitle')}>
+        <LanguageRadiogroup language={language} setLanguage={setLanguage} />
       </Block>
 
       <Block label={t('adminConfig.apFontTitle')} sublabel={t('adminConfig.apFontSubtitle')}>

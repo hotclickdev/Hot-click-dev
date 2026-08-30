@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { productService } from '@/services/productService'
 import { ofertaService } from '@/services/ofertaService'
 import { useToast } from '@/components/ui/Toast'
@@ -44,6 +45,7 @@ function ProductRow({ p, onToggle }: {
   p: ProductoOferta
   onToggle: (id: Id, enOferta: boolean, pct: number | null) => Promise<void>
 }) {
+  const { t } = useTranslation()
   const [pct, setPct] = useState<number | string>(p.porcentajeDescuento ?? '')
   const [saving, setSaving] = useState(false)
 
@@ -78,7 +80,7 @@ function ProductRow({ p, onToggle }: {
         <p style={{ fontSize: 12, color: 'var(--hc-muted)', margin: 0 }}>
           {fmt(p.precioVenta)}
           {p.enOferta && p.precioOferta && (
-            <span style={{ marginLeft: 8, color: '#dc2626', fontWeight: 600 }}>ahora {fmt(p.precioOferta)}</span>
+            <span style={{ marginLeft: 8, color: '#dc2626', fontWeight: 600 }}>{t('adminOfertas.now')} {fmt(p.precioOferta)}</span>
           )}
         </p>
       </div>
@@ -89,7 +91,7 @@ function ProductRow({ p, onToggle }: {
             <input
               type="number" min={1} max={99} value={pct}
               onChange={e => setPct(e.target.value)}
-              placeholder="% desc."
+              placeholder={t('adminOfertas.pctPh')}
               style={{
                 width: 80, padding: '5px 8px', borderRadius: 7,
                 border: '1px solid var(--hc-border)',
@@ -107,7 +109,7 @@ function ProductRow({ p, onToggle }: {
                 opacity: saving ? 0.7 : 1,
               }}
             >
-              {saving ? '...' : 'Aplicar'}
+              {saving ? '...' : t('adminOfertas.apply')}
             </button>
           </>
         ) : (
@@ -121,7 +123,7 @@ function ProductRow({ p, onToggle }: {
               opacity: saving ? 0.7 : 1,
             }}
           >
-            {saving ? '...' : 'Quitar oferta'}
+            {saving ? '...' : t('adminOfertas.remove')}
           </button>
         )}
       </div>
@@ -130,6 +132,7 @@ function ProductRow({ p, onToggle }: {
 }
 
 export default function AdminOfertas() {
+  const { t } = useTranslation()
   const { showToast } = useToast()
   const [productos, setProductos] = useState<ProductoOferta[]>([])
   const [loading, setLoading] = useState(true)
@@ -141,11 +144,11 @@ export default function AdminOfertas() {
       const pRes = await productService.adminGetAll()
       setProductos(productosDesdeAdmin(pRes.data))
     } catch {
-      showToast('Error cargando datos', 'error')
+      showToast(t('adminOfertas.errorLoad'), 'error')
     } finally {
       setLoading(false)
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [showToast, t])
 
   useEffect(() => { fetchData() }, [fetchData]) // eslint-disable-line react-hooks/set-state-in-effect -- carga al montar
 
@@ -154,7 +157,7 @@ export default function AdminOfertas() {
       const { data } = await ofertaService.aplicar(id, enOferta, pct as number)
       const body = data as { pendiente?: boolean } | undefined
       if (body?.pendiente) {
-        showToast('Promoción enviada — pendiente de aprobación del admin', 'success')
+        showToast(t('adminOfertas.pendingApproval'), 'success')
         return
       }
       setProductos(prev => prev.map(p => {
@@ -166,9 +169,9 @@ export default function AdminOfertas() {
           precioOferta: enOferta && pct ? Math.round((p.precioVenta ?? 0) * (1 - pct / 100)) : null,
         }
       }))
-      showToast(enOferta ? `Oferta aplicada (-${pct}%)` : 'Oferta quitada', 'success')
+      showToast(enOferta ? t('adminOfertas.applied', { pct }) : t('adminOfertas.removed'), 'success')
     } catch (err: unknown) {
-      showToast(mensajeErrorOferta(err, 'Error actualizando oferta'), 'error')
+      showToast(mensajeErrorOferta(err, t('adminOfertas.errorUpdate')), 'error')
     }
   }
 
@@ -179,12 +182,11 @@ export default function AdminOfertas() {
 
   return (
     <div style={{ padding: '24px 28px', maxWidth: 900, margin: '0 auto' }}>
-      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--hc-text)', margin: 0 }}>Gestión de Ofertas</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--hc-text)', margin: 0 }}>{t('adminOfertas.title')}</h1>
           <p style={{ fontSize: 13, color: 'var(--hc-muted)', margin: '4px 0 0' }}>
-            {enOfertaCount} producto{enOfertaCount === 1 ? '' : 's'} con oferta activa
+            {t('adminOfertas.activeCount', { count: enOfertaCount })}
           </p>
         </div>
         <div style={{
@@ -192,13 +194,13 @@ export default function AdminOfertas() {
           background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)',
           fontSize: 13, fontWeight: 700, color: '#dc2626',
         }}>
-          {enOfertaCount} en oferta
+          {t('adminOfertas.inOffer', { count: enOfertaCount })}
         </div>
       </div>
 
       <input
         value={search} onChange={e => setSearch(e.target.value)}
-        placeholder="Buscar producto..."
+        placeholder={t('adminOfertas.searchPh')}
         style={{
           width: '100%', padding: '9px 14px', borderRadius: 10, marginBottom: 16,
           border: '1.5px solid var(--hc-border)', background: 'var(--hc-surface-2)',
@@ -206,14 +208,14 @@ export default function AdminOfertas() {
         }}
       />
       {loading ? (
-        <p style={{ color: 'var(--hc-muted)', textAlign: 'center', padding: 32 }}>Cargando...</p>
+        <p style={{ color: 'var(--hc-muted)', textAlign: 'center', padding: 32 }}>{t('adminOfertas.loading')}</p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {filtrados.map(p => (
             <ProductRow key={p.id} p={p} onToggle={handleToggle} />
           ))}
           {filtrados.length === 0 && (
-            <p style={{ color: 'var(--hc-muted)', textAlign: 'center', padding: 32 }}>Sin resultados</p>
+            <p style={{ color: 'var(--hc-muted)', textAlign: 'center', padding: 32 }}>{t('adminOfertas.noResults')}</p>
           )}
         </div>
       )}

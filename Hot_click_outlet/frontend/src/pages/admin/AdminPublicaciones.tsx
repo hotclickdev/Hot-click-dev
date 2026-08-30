@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { useToast } from '@/components/ui/Toast'
@@ -107,8 +107,8 @@ export default function AdminPublicaciones() {
     <>
       <div className="space-y-5">
         <div>
-          <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.publicaciones.title')}</h1>
-          <p className="text-sm text-[#8e8e9a] mt-1">
+          <h1 className="text-2xl font-bold text-hc-text">{t('admin.publicaciones.title')}</h1>
+          <p className="text-sm text-hc-muted mt-1">
             {t('admin.publicaciones.text')}
           </p>
         </div>
@@ -178,8 +178,8 @@ function puedeGuardar(productoId: string, resultado: ResultadoVision | null) {
 
 function claseTabPublicaciones(activa: boolean) {
   const base = 'px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 '
-  if (activa) return `${base}bg-[#4f7cff] text-white shadow-[0_0_12px_rgba(23,71,168,0.3)]`
-  return `${base}text-[#8e8e9a] hover:text-white`
+  if (activa) return `${base}bg-hc-primary text-white shadow-[0_0_12px_rgba(23,71,168,0.3)]`
+  return `${base}text-hc-muted hover:text-hc-text`
 }
 
 function PublicacionesTabs({ tab, publicaciones, t, onTab }: {
@@ -193,7 +193,7 @@ function PublicacionesTabs({ tab, publicaciones, t, onTab }: {
     { key: 'cola', label: `${t('admin.publicaciones.status')}${publicaciones.length ? ` (${publicaciones.length})` : ''}` },
   ]
   return (
-    <div className="flex gap-1 p-1 rounded-xl bg-white/5 border border-white/8 w-fit">
+    <div className="flex gap-1 p-1 rounded-xl bg-hc-surface-2 border border-hc-border w-fit">
       {tabs.map(({ key, label }) => (
         <button type="button" key={key} onClick={() => onTab(key)}
           className={claseTabPublicaciones(tab === key)}>

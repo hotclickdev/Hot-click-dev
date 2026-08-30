@@ -6,6 +6,7 @@ import CatalogHero from './CatalogHero'
 import ActiveFilterChips from './ActiveFilterChips'
 import CatalogProductGrid from './CatalogProductGrid'
 import CatalogMobileSidebar from './CatalogMobileSidebar'
+import { useTranslation } from 'react-i18next'
 import type { CatalogoPageModel } from './useCatalogoPage'
 import type { RefObject } from 'react'
 
@@ -19,6 +20,7 @@ export default function CatalogAllView({
   productGridRef: RefObject<Element | null>
   shouldRenderGrid: boolean
 }) {
+  const { t } = useTranslation()
   const {
     products, categories, marcas, loading, page, setViewMode,
     search, setSearch, category, setCategory, marcasFilter, sort, setSort,
@@ -98,7 +100,7 @@ export default function CatalogAllView({
                 marcasFilter={marcasFilter}
                 toggleMarca={toggleMarca}
                 clearMarcas={clearMarcas}
-                title={category ? 'Marcas en esta categoría' : 'Compra por Marca'}
+                title={category ? t('products.brandsInCategory') : t('products.shopByBrand')}
               />
             )}
 

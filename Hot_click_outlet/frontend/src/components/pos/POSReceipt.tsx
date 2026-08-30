@@ -55,7 +55,7 @@ export default function POSReceipt({ venta, onNuevaVenta }: {
       <div className="w-full max-w-sm flex flex-col gap-4">
         {/* Recibo imprimible */}
         <div ref={printRef} className="rounded-2xl p-5"
-          style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid rgba(255,255,255,0.08)' }}
+          style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
           id="pos-receipt">
           {/* Cabecera */}
           <div className="text-center mb-4">
@@ -72,7 +72,7 @@ export default function POSReceipt({ venta, onNuevaVenta }: {
             )}
           </div>
 
-          <div className="border-t border-b py-3 my-3" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+          <div className="border-t border-b py-3 my-3" style={{ borderColor: 'var(--hc-border)' }}>
             {(venta.items ?? []).map((item, i) => (
               <div key={i} className="flex justify-between text-xs py-1">
                 <span style={{ color: 'var(--hc-text)' }}>
@@ -108,7 +108,7 @@ export default function POSReceipt({ venta, onNuevaVenta }: {
         <div className="flex gap-2">
           <button type="button" onClick={handlePrint}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
-            style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'var(--hc-text)' }}>
+            style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)' }}>
             Imprimir
           </button>
           <button type="button" onClick={handleWhatsApp}

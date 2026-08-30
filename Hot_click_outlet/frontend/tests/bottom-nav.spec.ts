@@ -16,35 +16,35 @@ function barraMovil(page: Page) {
   return page.locator('nav.hc-bottom-nav')
 }
 
-test.describe('BottomNav — Comprar · Vender · Emprender', () => {
+test.describe('BottomNav — Productos · Servicios · Emprender', () => {
   test.use({ viewport: { width: 375, height: 700 } })
 
-  test('muestra los tres jobs, Pedido y Cuenta; no Tienda ni Descubrí', async ({ page }) => {
+  test('muestra Productos, Servicios, Emprender, Pedido y Cuenta', async ({ page }) => {
     await mockApis(page)
     await page.goto('/', { waitUntil: 'domcontentloaded' })
 
     const bar = barraMovil(page)
     await expect(bar).toBeVisible()
-    await expect(bar.getByRole('link', { name: 'Comprar' })).toBeVisible()
-    await expect(bar.getByRole('link', { name: 'Vender' })).toBeVisible()
+    await expect(bar.getByRole('link', { name: 'Productos' })).toBeVisible()
+    await expect(bar.getByRole('link', { name: 'Servicios' })).toBeVisible()
     await expect(bar.getByRole('link', { name: 'Emprender' })).toBeVisible()
     await expect(bar.getByRole('link', { name: 'Pedido' })).toBeVisible()
     await expect(bar.getByRole('link', { name: 'Cuenta' })).toBeVisible()
-    await expect(bar.getByRole('link', { name: 'Tienda' })).toHaveCount(0)
+    await expect(bar.getByRole('link', { name: 'Vender' })).toHaveCount(0)
     await expect(bar.getByRole('link', { name: 'Descubrí' })).toHaveCount(0)
     await expect(bar.getByRole('link', { name: 'Inicio' })).toHaveCount(0)
   })
 
-  test('cada job llega a su ruta; Pedido sigue en /carrito', async ({ page }) => {
+  test('cada pestaña llega a su ruta; Pedido sigue en /carrito', async ({ page }) => {
     await mockApis(page)
     await page.goto('/', { waitUntil: 'domcontentloaded' })
     const bar = barraMovil(page)
 
-    await bar.getByRole('link', { name: 'Comprar' }).click()
+    await bar.getByRole('link', { name: 'Productos' }).click()
     await expect(page).toHaveURL(/\/productos/)
 
-    await bar.getByRole('link', { name: 'Vender' }).click()
-    await expect(page).toHaveURL(/\/registro-empresa/)
+    await bar.getByRole('link', { name: 'Servicios' }).click()
+    await expect(page).toHaveURL(/\/servicios/)
 
     await bar.getByRole('link', { name: 'Emprender' }).click()
     await expect(page).toHaveURL(/\/emprende$/)
@@ -62,7 +62,7 @@ test.describe('BottomNav — Comprar · Vender · Emprender', () => {
     await expect(barraMovil(page).getByRole('link', { name: 'Descubrí' })).toHaveCount(0)
   })
 
-  test('el FAB de WhatsApp no compite con la barra de jobs', async ({ page }) => {
+  test('el FAB de WhatsApp no compite con la barra', async ({ page }) => {
     await mockApis(page)
     await page.goto('/', { waitUntil: 'domcontentloaded' })
     await expect(page.getByRole('link', { name: 'Consultar un producto por WhatsApp', exact: true })).toBeHidden()

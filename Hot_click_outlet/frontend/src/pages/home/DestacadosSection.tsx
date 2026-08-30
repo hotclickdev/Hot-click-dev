@@ -12,7 +12,7 @@ export default function DestacadosSection({ destacados = [] }: { destacados?: Pr
   return (
     <Section
       title={`${t('home.destacados')}.`}
-      subtitle="Esto te va a gustar."
+      subtitle={t('home.destacadosTeaser')}
       action={{ label: t('home.verTodos'), to: '/productos' }}
     >
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">

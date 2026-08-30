@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.dto.AiChatRequest;
 import com.hotclick.security.RateLimiter;
 import com.hotclick.security.TenantContext;
 import com.hotclick.service.AiCopilotService;
@@ -8,6 +9,7 @@ import com.hotclick.service.copilot.AiCopilotStreamProcessor;
 import com.hotclick.sse.SseStreamHeaders;
 import io.sentry.Sentry;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,9 +45,9 @@ public class AiCopilotController {
 
     /** SSE streaming chat endpoint. */
     @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter chat(@RequestBody Map<String, String> body, HttpServletResponse response) {
+    public SseEmitter chat(@Valid @RequestBody AiChatRequest body, HttpServletResponse response) {
         SseStreamHeaders.aplicar(response);
-        String message = body.getOrDefault("message", "").trim();
+        String message = body.getMessage() == null ? "" : body.getMessage().trim();
         SseEmitter emitter = new SseEmitter(120_000L);
 
         if (message.isBlank()) {
@@ -57,15 +59,15 @@ public class AiCopilotController {
             return errorEmitter(emitter, "Mensaje rechazado: contenido no permitido en la plataforma");
         }
 
-        // Truncate oversized messages rather than reject — preserves UX,
-        // prevents token bombs from malformed or automated clients.
         if (message.length() > MAX_MSG_CHARS) {
             message = message.substring(0, MAX_MSG_CHARS);
         }
 
         Long empresaId = TenantContext.get();
+        if (empresaId == null) {
+            return errorEmitter(emitter, "Seleccioná un negocio para usar el copilot.");
+        }
 
-        // Per-empresa burst guard (independent of monthly quota)
         String burstKey = "empresa:" + empresaId + ":ai:burst";
         if (!rateLimiter.tryAcquire(burstKey, BURST_MAX, BURST_WINDOW)) {
             return errorEmitter(emitter, "Demasiadas consultas al AI en poco tiempo. Esperá un momento.");

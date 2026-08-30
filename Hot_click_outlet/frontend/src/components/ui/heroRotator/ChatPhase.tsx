@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { PREGUNTAS, SUGERENCIAS } from './heroRotatorData'
+import { useTranslation } from 'react-i18next'
+import { tStringArray } from './heroRotatorHelpers'
 import type { Producto } from '@/types/producto'
 
 export type ChatPhaseProps = {
@@ -13,15 +14,23 @@ export type ChatPhaseProps = {
 
 /** Pregunta rotativa e input para abrir el chat del hero. */
 export function ChatPhase({ accent, onPause, onResume, onSubmit }: ChatPhaseProps) {
+  const { t } = useTranslation()
+  const preguntas = tStringArray(t, 'hero.questions')
+  const sugerencias = tStringArray(t, 'hero.suggestions')
+  const count = Math.max(preguntas.length, 1)
   const [qIdx, setQIdx] = useState(0)
   const [input, setInput] = useState('')
   const [focused, setFocused] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    const t = setInterval(() => setQIdx((i) => (i + 1) % PREGUNTAS.length), 8000)
-    return () => clearInterval(t)
-  }, [])
+    const id = setInterval(() => setQIdx((i) => (i + 1) % count), 8000)
+    return () => clearInterval(id)
+  }, [count])
+
+  const safeIdx = qIdx % count
+  const pregunta = preguntas[safeIdx] ?? ''
+  const sugerencia = sugerencias[safeIdx] ?? sugerencias[0] ?? ''
 
   function submit(msg?: string) {
     const text = (msg ?? input).trim()
@@ -42,7 +51,7 @@ export function ChatPhase({ accent, onPause, onResume, onSubmit }: ChatPhaseProp
       <div className="relative z-10 flex flex-col items-center max-w-xl mx-auto px-4 w-full">
         <p className="font-black tracking-tight mb-2"
           style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', lineHeight: 1.08, color: 'var(--hc-text)' }}>
-          ¿Qué estás buscando hoy?
+          {t('hero.title')}
         </p>
 
         <div className="w-full flex flex-col items-center mb-7" style={{ minHeight: '6.5rem' }}>
@@ -50,32 +59,32 @@ export function ChatPhase({ accent, onPause, onResume, onSubmit }: ChatPhaseProp
             style={{ minHeight: '3.2rem' }}>
             <AnimatePresence mode="wait">
               <motion.button
-                key={`q-${qIdx}`}
+                key={`q-${safeIdx}`}
                 initial={{ y: -38, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 30, opacity: 0 }}
                 transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                onClick={() => submit(PREGUNTAS[qIdx])}
+                onClick={() => submit(pregunta)}
                 className="absolute inset-x-0 font-bold hover:opacity-75 transition-opacity leading-snug"
                 style={{ fontSize: 'clamp(1.1rem, 2.5vw, 1.5rem)', color: accent }}
               >
-                {PREGUNTAS[qIdx]}
+                {pregunta}
               </motion.button>
             </AnimatePresence>
           </div>
 
           <AnimatePresence mode="wait">
             <motion.button
-              key={`s-${qIdx}`}
+              key={`s-${safeIdx}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.35, delay: 0.4 }}
-              onClick={() => submit(SUGERENCIAS[qIdx])}
+              onClick={() => submit(sugerencia)}
               className="mt-2 text-sm hover:underline active:opacity-70 transition-opacity"
               style={{ color: 'var(--hc-muted)' }}
             >
-              {SUGERENCIAS[qIdx]}
+              {sugerencia}
             </motion.button>
           </AnimatePresence>
         </div>
@@ -101,7 +110,7 @@ export function ChatPhase({ accent, onPause, onResume, onSubmit }: ChatPhaseProp
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); submit() } }}
             onFocus={() => { setFocused(true); onPause?.() }}
             onBlur={() => { setFocused(false); if (!input.trim()) onResume?.() }}
-            placeholder="Escribí qué buscás..."
+            placeholder={t('hero.placeholder')}
             className="flex-1 bg-transparent text-sm outline-none"
             style={{ color: 'var(--hc-text)', caretColor: accent }}
           />
@@ -109,7 +118,7 @@ export function ChatPhase({ accent, onPause, onResume, onSubmit }: ChatPhaseProp
             whileTap={{ scale: 0.88 }}
             onClick={() => submit()}
             disabled={!input.trim()}
-            aria-label="Enviar consulta"
+            aria-label={t('hero.send')}
             className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-150"
             style={{
               backgroundColor: input.trim() ? accent : 'transparent',

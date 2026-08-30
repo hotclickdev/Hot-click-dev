@@ -62,6 +62,7 @@ final class SecurityAuthorizationRules {
             .requestMatchers(GET, "/api/productos/marca/*").permitAll()
             .requestMatchers(GET, "/api/productos/*/recomendaciones").permitAll()
             .requestMatchers(GET, "/api/productos/*/imagenes").permitAll()
+            .requestMatchers(GET, "/api/productos/*/variantes").permitAll()
             .requestMatchers(GET, API_PRODUCTO_POR_ID).permitAll()
             // Stock en tiempo real (SSE) — público; el tenant se infiere del producto, no del caller
             .requestMatchers(GET, "/api/marketplace/productos/*/stock-stream").permitAll()
@@ -84,6 +85,12 @@ final class SecurityAuthorizationRules {
             .requestMatchers(GET,  "/api/public/branding").permitAll()
             .requestMatchers(POST, "/api/public/chat").permitAll()
             .requestMatchers(POST, "/api/public/shopping-assistant/chat").permitAll()
+            .requestMatchers(POST, "/api/public/shopping-assistant/search-by-image").permitAll()
+            .requestMatchers(POST, "/api/public/shopping-assistant/feedback").permitAll()
+            .requestMatchers(DELETE, "/api/public/shopping-assistant/session/**").permitAll()
+            .requestMatchers(GET, "/api/cupones/validar").permitAll()
+            .requestMatchers(GET, "/api/testimonios/producto/*/resenas").permitAll()
+            .requestMatchers(POST, "/api/public/solicitud-especial").permitAll()
             .requestMatchers("/api/admin/branding").authenticated()
             // Marketplace de plugins y API keys
             .requestMatchers("/api/admin/plugins/**").authenticated()
@@ -143,6 +150,9 @@ final class SecurityAuthorizationRules {
             .requestMatchers(POST,   "/api/empresa/equipo").hasRole(Constants.ROL_EMPRENDEDOR)
             .requestMatchers(PUT,    "/api/empresa/equipo/*/rol").hasRole(Constants.ROL_EMPRENDEDOR)
             .requestMatchers(DELETE, "/api/empresa/equipo/*").hasRole(Constants.ROL_EMPRENDEDOR)
+            // Sucursales (Negocio Plus) — ADMIN / EMPRENDEDOR; aislamiento por CompanyScope
+            .requestMatchers(GET,  "/api/sucursales").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(POST, "/api/sucursales").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             // Security Center — ADMIN only
             .requestMatchers("/api/security/**").hasRole(Constants.ROL_ADMIN)
             // Observabilidad — ADMIN only

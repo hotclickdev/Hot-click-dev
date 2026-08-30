@@ -73,12 +73,12 @@ export default function POSPaymentPanel({ total, onConfirm, onClose, loading }: 
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
       <div className="w-full max-w-md rounded-2xl p-6 flex flex-col gap-5"
-        style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid rgba(255,255,255,0.08)' }}>
+        style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
 
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold" style={{ color: 'var(--hc-text)' }}>Cobrar venta</h2>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
-            style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>
+            style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>
             <CloseIcon />
           </button>
         </div>

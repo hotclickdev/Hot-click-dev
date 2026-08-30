@@ -1,4 +1,4 @@
-import { formatPrice } from '@/utils/format'
+﻿import { formatPrice } from '@/utils/format'
 import DataCell from './DataCell'
 import Pagination from './Pagination'
 import Select from './Select'
@@ -22,20 +22,20 @@ function TarjetaComprobante({
   return (
     <div
       className="rounded-2xl p-5 space-y-4"
-      style={{ background: '#111114', border: `1px solid ${c.estado === 'PENDIENTE' ? 'rgba(245,158,11,0.25)' : 'rgba(255,255,255,0.08)'}` }}
+      style={{ background: 'var(--hc-surface)', border: `1px solid ${c.estado === 'PENDIENTE' ? 'rgba(245,158,11,0.25)' : 'rgba(255,255,255,0.08)'}` }}
     >
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="space-y-0.5">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-mono text-sm font-semibold text-[#4f7cff]">{c.numeroPedido}</span>
+            <span className="font-mono text-sm font-semibold text-hc-link">{c.numeroPedido}</span>
             <span className={`px-2 py-0.5 rounded-full border text-[10px] font-semibold ${claseEstadoComprobante(c.estado ?? '')}`}>{c.estado}</span>
             {c.monto && (
               <span className="text-sm font-bold text-emerald-400">{formatPrice(c.monto)}</span>
             )}
           </div>
-          <p className="text-xs text-[#8e8e9a]">Subido: {c.fechaSubida}</p>
+          <p className="text-xs text-hc-muted">Subido: {c.fechaSubida}</p>
           {c.fechaResolucion && (
-            <p className="text-xs text-[#8e8e9a]">Resuelto: {c.fechaResolucion} por {c.adminEmail}</p>
+            <p className="text-xs text-hc-muted">Resuelto: {c.fechaResolucion} por {c.adminEmail}</p>
           )}
         </div>
 
@@ -73,10 +73,10 @@ function TarjetaComprobante({
 
       {c.urlComprobante && (
         <div>
-          <p className="text-xs text-[#8e8e9a] mb-2">Comprobante:</p>
+          <p className="text-xs text-hc-muted mb-2">Comprobante:</p>
           <button type="button"
             onClick={() => onAmpliar(c.urlComprobante as string)}
-            className="block rounded-xl overflow-hidden border border-white/10 hover:border-[#4f7cff]/50 transition-colors group max-w-xs"
+            className="block rounded-xl overflow-hidden border border-hc-border hover:border-hc-primary/50 transition-colors group max-w-xs"
           >
             <img
               src={c.urlComprobante}
@@ -84,7 +84,7 @@ function TarjetaComprobante({
               className="w-full max-h-48 object-contain bg-black/30 group-hover:opacity-90 transition-opacity"
               loading="lazy"
             />
-            <p className="text-[10px] text-center text-[#8e8e9a] py-1.5">Clic para ampliar</p>
+            <p className="text-[10px] text-center text-hc-muted py-1.5">Clic para ampliar</p>
           </button>
         </div>
       )}
@@ -117,12 +117,12 @@ function ListaComprobantes({
 }) {
   if (loading) {
     return (
-      <div className="text-center py-16 text-[#8e8e9a]">{t('common.loading')}</div>
+      <div className="text-center py-16 text-hc-muted">{t('common.loading')}</div>
     )
   }
   if (comprobantes.length === 0) {
     return (
-      <div className="text-center py-16 text-[#8e8e9a]">No hay comprobantes en este estado</div>
+      <div className="text-center py-16 text-hc-muted">No hay comprobantes en este estado</div>
     )
   }
   return (
@@ -181,7 +181,7 @@ export default function ComprobantesTab({
         />
         <button type="button"
           onClick={onRetry}
-          className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/8 text-[#8e8e9a] hover:text-[#e8e8ed] text-sm transition-colors"
+          className="px-4 py-2 rounded-lg bg-hc-surface-2 hover:bg-hc-surface-2 text-hc-muted hover:text-hc-text text-sm transition-colors"
         >
           Actualizar
         </button>

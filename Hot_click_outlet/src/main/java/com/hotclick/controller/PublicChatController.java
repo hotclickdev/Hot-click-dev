@@ -1,67 +1,58 @@
 package com.hotclick.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hotclick.dto.PublicChatRequest;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.security.RateLimiter;
 import com.hotclick.service.PublicChatService;
+import com.hotclick.service.TextModerationService;
 import com.hotclick.service.catalogo.MarketplaceCatalogo;
 import com.hotclick.service.publicchat.PublicChatRequestParser;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.concurrent.Executor;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.concurrent.Executor;
 
 /**
- * Public product discovery chat — no JWT required.
+ * Chat público de descubrimiento — sin JWT.
  *
  * POST /api/public/chat?slug=mi-tienda
- *   body: { message: "algo para la sala", offset: 0 }
- *
- * Rate limits:
- *   - IP-level 10/60s → RateLimitingFilter
- *   - Per-empresa 300/day → this controller (protects AI cost per tenant)
- *
- * Streams SSE:
- *   event: products  — { productos: [...], hasMore: boolean }
- *   event: delta     — { text: "..." }   (Claude response chunks)
- *   event: done      — {}
+ *   body: { message, offset, history, context, focusIds, productoId }
  */
 @RestController
 @RequestMapping("/api/public/chat")
 public class PublicChatController {
 
-    // 300 public chat calls per empresa per day — enough for real traffic,
-    // blocks runaway bots that would exhaust AI costs.
     private static final Logger log = LoggerFactory.getLogger(PublicChatController.class);
-    private static final int  DAILY_MAX    = 300;
-    private static final int  DAILY_WINDOW = 86_400; // 24h
-    private static final int  MAX_MSG_CHARS = 500;
+    private static final int DAILY_MAX = 300;
+    private static final int DAILY_WINDOW = 86_400;
 
-    @Autowired private PublicChatService  chatService;
-    @Autowired private EmpresaRepository  empresaRepository;
-    @Autowired private RateLimiter        rateLimiter;
+    @Autowired private PublicChatService chatService;
+    @Autowired private EmpresaRepository empresaRepository;
+    @Autowired private RateLimiter rateLimiter;
     @Autowired @Qualifier("sseExecutor") private Executor sseExecutor;
-    @Autowired private com.hotclick.service.TextModerationService textModerationService;
+    @Autowired private TextModerationService textModerationService;
+    @Autowired private ObjectMapper objectMapper;
 
     @PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter chat(
             @RequestParam(required = false) String slug,
-            @RequestBody Map<String, Object> body) {
-
-        String message = ((String) body.getOrDefault("message", "")).trim();
-        int rawOffset  = body.containsKey("offset") ? ((Number) body.get("offset")).intValue() : 0;
-        int offset     = Math.max(0, Math.min(rawOffset, 10_000));
+            @Valid @RequestBody PublicChatRequest body) {
 
         SseEmitter emitter = new SseEmitter(60_000L);
-
+        String message = PublicChatRequestParser.mensaje(body);
         if (message.isBlank()) {
             return doneEmitter(emitter);
         }
@@ -71,78 +62,60 @@ public class PublicChatController {
             return errorEmitter(emitter, "Mensaje rechazado: contenido no permitido en la plataforma");
         }
 
-        // Truncate to avoid token bombs
-        if (message.length() > MAX_MSG_CHARS) {
-            message = message.substring(0, MAX_MSG_CHARS);
-        }
-
-        // Resolve empresaId from slug or take first active
-        Long empresaId = slug != null && !slug.isBlank()
-            ? empresaRepository.findBySlug(slug).map(e -> e.getId()).orElse(null)
-            : empresaRepository.findFirstByEstadoEmpresaOrderByIdAsc("ACTIVO").map(e -> e.getId()).orElse(null);
-
+        Long empresaId = resolverEmpresa(slug);
         if (empresaId == null) {
             return errorEmitter(emitter, "Tienda no encontrada");
         }
 
-        // Per-empresa daily limit to protect AI cost
         String dailyKey = "empresa:" + empresaId + ":public_chat:day";
         if (!rateLimiter.tryAcquire(dailyKey, DAILY_MAX, DAILY_WINDOW)) {
             return errorEmitter(emitter, "Límite diario del chat alcanzado. Volvé mañana.");
         }
 
-        // Lee historial de conversación y lo valida/limita
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> rawHistory = body.containsKey("history")
-            ? (List<Map<String, Object>>) body.get("history")
-            : List.of();
-        List<Map<String, Object>> history = rawHistory.stream()
-            .filter(m -> m instanceof Map && m.containsKey("rol") && m.containsKey("texto"))
-            .limit(12)
-            .collect(Collectors.toList());
+        lanzarChat(emitter, empresaId, slug, message, body);
+        return emitter;
+    }
 
-        String context = body.containsKey("context") ? String.valueOf(body.get("context")) : "GENERAL";
+    private Long resolverEmpresa(String slug) {
+        if (slug != null && !slug.isBlank()) {
+            return empresaRepository.findBySlug(slug).map(e -> e.getId()).orElse(null);
+        }
+        return empresaRepository.findFirstByEstadoEmpresaOrderByIdAsc("ACTIVO")
+            .map(e -> e.getId()).orElse(null);
+    }
 
-        // Ids de los productos ya mostrados en el turno anterior — evita que un follow-up (FAQ)
-        // dispare una búsqueda nueva que muestre un producto distinto sin que el usuario lo pida.
-        @SuppressWarnings("unchecked")
-        List<Object> rawFocusIds = body.containsKey("focusIds")
-            ? (List<Object>) body.get("focusIds")
-            : List.of();
-        List<Long> focusIds = rawFocusIds.stream()
-            .filter(o -> o instanceof Number)
-            .map(o -> ((Number) o).longValue())
-            .limit(5)
-            .collect(Collectors.toList());
-
+    private void lanzarChat(SseEmitter emitter, Long empresaId, String slug,
+                            String message, PublicChatRequest body) {
+        int offset = PublicChatRequestParser.offset(body);
+        List<Map<String, Object>> history = PublicChatRequestParser.history(body);
+        String context = PublicChatRequestParser.contexto(body);
+        List<Long> focusIds = PublicChatRequestParser.focusIds(body);
         Long productoId = PublicChatRequestParser.productoId(body);
-
-        final Long eid = empresaId;
-        final boolean marketplace = MarketplaceCatalogo.esMarketplace(slug);
-        final String finalMessage = message;
-        final List<Map<String, Object>> finalHistory = history;
-        final String finalContext = context;
+        boolean marketplace = MarketplaceCatalogo.esMarketplace(slug);
         emitter.onCompletion(emitter::complete);
         emitter.onTimeout(emitter::complete);
         sseExecutor.execute(() -> chatService.chat(
-            eid, marketplace, finalMessage, offset, finalHistory, finalContext, focusIds, productoId, emitter));
-        return emitter;
+            empresaId, marketplace, message, offset, history, context, focusIds, productoId, emitter));
     }
 
     private SseEmitter doneEmitter(SseEmitter emitter) {
         try {
             emitter.send(SseEmitter.event().name("done").data("{}"));
             emitter.complete();
-        } catch (Exception e) { log.debug("SSE error: {}", e.getMessage()); }
+        } catch (Exception e) {
+            log.debug("SSE error: {}", e.getMessage());
+        }
         return emitter;
     }
 
     private SseEmitter errorEmitter(SseEmitter emitter, String msg) {
         try {
             emitter.send(SseEmitter.event().name("error")
-                .data("{\"error\":\"" + msg + "\"}"));
+                .data(objectMapper.writeValueAsString(Map.of("error", msg))));
             emitter.complete();
-        } catch (Exception e) { log.debug("SSE error: {}", e.getMessage()); }
+        } catch (Exception e) {
+            log.debug("SSE error: {}", e.getMessage());
+        }
         return emitter;
     }
 }

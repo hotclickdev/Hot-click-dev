@@ -37,6 +37,8 @@ async function entrarPanel(page: Page, rol: string) {
   await page.addInitScript(({ auth, tourKey }: { auth: ReturnType<typeof payloadAuth>; tourKey: string }) => {
     localStorage.setItem('hotclick-auth', JSON.stringify(auth))
     localStorage.setItem(tourKey, '1')
+    localStorage.setItem('hc-mm-v1-off', '1')
+    localStorage.setItem('hc-mm-v1-welcome-done', '1')
     localStorage.removeItem('hc-sidebar-collapsed')
   }, { auth: payloadAuth(rol), tourKey: 'hc-admin-tour-v4-done' })
   await page.setViewportSize({ width: 1280, height: 800 })
@@ -52,7 +54,13 @@ test.describe('Admin IT — nav por jobs', () => {
     await entrarPanel(page, 'ADMIN')
     const sidebar = sidebarVisible(page)
 
-    await expect(sidebar.getByText('IT Admin')).toBeVisible()
+    await expect(sidebar.getByText('Admin', { exact: true }).first()).toBeVisible()
+    await expect(sidebar.getByRole('link', { name: 'Inicio' })).toBeVisible()
+    await expect(sidebar.getByRole('link', { name: 'Tiendas' })).toBeVisible()
+    await expect(sidebar.getByRole('link', { name: 'Usuarios' })).toBeVisible()
+    await expect(sidebar.getByRole('link', { name: 'Moderación' })).toBeVisible()
+    await expect(sidebar.getByRole('link', { name: 'Config' })).toBeVisible()
+    await expect(sidebar.getByRole('link', { name: 'Más herramientas' })).toBeVisible()
     await expect(sidebar.getByRole('button', { name: /abastecimiento/i })).toBeVisible()
     await expect(sidebar.getByRole('button', { name: /plataforma/i })).toBeVisible()
     await expect(sidebar.getByRole('button', { name: /finanzas/i })).toBeVisible()
@@ -64,6 +72,13 @@ test.describe('Admin IT — nav por jobs', () => {
     await expect(sidebar.getByRole('link', { name: 'AI Copilot' })).toHaveCount(0)
     await expect(sidebar.getByRole('link', { name: 'Comprobantes Electrónicos' })).toHaveCount(0)
 
+    const fondoSidebar = await sidebar.evaluate((el) => getComputedStyle(el).backgroundColor)
+    expect(fondoSidebar).not.toBe('rgb(20, 23, 28)')
+    const primary = await page.locator('.hc-superadmin-theme').evaluate((el) =>
+      getComputedStyle(el).getPropertyValue('--hc-primary').trim(),
+    )
+    expect(primary.toLowerCase()).toBe('#e31e24')
+
     await sidebar.getByRole('button', { name: /^ia$/i }).click()
     await expect(sidebar.getByRole('link', { name: 'AI Copilot' })).toBeVisible()
 
@@ -71,15 +86,19 @@ test.describe('Admin IT — nav por jobs', () => {
     await expect(sidebar.getByRole('link', { name: 'Comprobantes Electrónicos' })).toBeVisible()
   })
 
-  test('EMPRENDEDOR sigue en Sistema, no en el menú IT', async ({ page }) => {
-    await entrarPanel(page, 'EMPRENDEDOR')
-    const sidebar = sidebarVisible(page)
+  test('POS chrome es claro, sin terminal n-900', async ({ page }) => {
+    await entrarPanel(page, 'ADMIN')
+    await page.goto('/admin/pos', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByText('POS', { exact: true })).toBeVisible()
+    const fondo = await page.locator('body').evaluate((el) => getComputedStyle(el).backgroundColor)
+    expect(fondo).not.toBe('rgb(8, 8, 12)')
+  })
 
-    await expect(sidebar.getByText('Sistema', { exact: true })).toBeVisible()
-    await expect(sidebar.getByRole('link', { name: 'Ventas y pedidos' })).toBeVisible()
-    await expect(sidebar.getByRole('link', { name: 'Consultas con Hot' })).toBeVisible()
-    await expect(sidebar.getByText('IT Admin')).toHaveCount(0)
-    await expect(sidebar.getByRole('button', { name: /abastecimiento/i })).toHaveCount(0)
-    await expect(sidebar.getByRole('button', { name: /plataforma/i })).toHaveCount(0)
+  test('EMPRENDEDOR en /admin sale a /emprendedor, no al menú IT', async ({ page }) => {
+    await entrarPanel(page, 'EMPRENDEDOR')
+    await expect(page).toHaveURL(/\/emprendedor\/?$/)
+    await expect(page.getByRole('link', { name: 'PRODUCTOS SUBIDOS' })).toBeVisible()
+    await expect(page.getByText('IT Admin')).toHaveCount(0)
+    await expect(page.getByText('Admin', { exact: true })).toHaveCount(0)
   })
 })

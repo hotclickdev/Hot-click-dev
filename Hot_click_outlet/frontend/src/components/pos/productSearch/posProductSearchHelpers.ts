@@ -28,7 +28,9 @@ export type ProductoPos = Producto & {
 
 export function CatColor(idx: number) { return CAT_COLORS[idx % CAT_COLORS.length] }
 
-/** Lista de un GET que puede venir cruda o envuelta en ResponseDTO. */
+export function idProductoPos(p: Pick<ProductoPos, 'id' | 'idProducto'>): string {
+  return String(p.id ?? p.idProducto ?? '')
+}
 export function listaDesdeRespuesta<T>(data: unknown): T[] {
   if (Array.isArray(data)) return data as T[]
   if (data && typeof data === 'object') {

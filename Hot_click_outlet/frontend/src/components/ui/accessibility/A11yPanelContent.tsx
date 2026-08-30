@@ -1,5 +1,6 @@
-import { LANGUAGES, COLOR_FILTERS } from './a11yConstants'
+import { COLOR_FILTERS } from './a11yConstants'
 import { SectionLabel, ThemeBtn, ToggleRow } from './a11yUi'
+import LanguageRadiogroup from './LanguageRadiogroup'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import type { TFunction } from 'i18next'
 
@@ -42,31 +43,7 @@ export default function A11yPanelContent({
       {/* ── Idioma ── */}
       <div>
         <SectionLabel>{t('lang.select')}</SectionLabel>
-        <div className="flex gap-1.5">
-          {LANGUAGES.map((lang) => (
-            <button type="button"
-              key={lang.code}
-              onClick={() => setLanguage(lang.code)}
-              aria-label={lang.label}
-              aria-pressed={lang.code === language}
-              className="flex-1 flex flex-col items-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150"
-              style={{
-                backgroundColor: lang.code === language ? 'var(--hc-accent)' : 'var(--hc-surface-2)',
-                color: lang.code === language ? '#fff' : 'var(--hc-muted)',
-                border: `1px solid ${lang.code === language ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
-              }}
-            >
-              <img
-                src={lang.flagSrc}
-                alt={lang.country}
-                aria-hidden="true"
-                className="w-7 h-5 rounded object-cover shadow-sm"
-                onError={(e) => { e.currentTarget.style.display = 'none' }}
-              />
-              <span>{lang.label}</span>
-            </button>
-          ))}
-        </div>
+        <LanguageRadiogroup language={language} setLanguage={setLanguage} />
       </div>
 
       {/* ── Tamaño de fuente ── */}
@@ -100,28 +77,32 @@ export default function A11yPanelContent({
       <div>
         <SectionLabel>{t('a11y.filtroColor')}</SectionLabel>
         <div className="flex flex-col gap-1">
-          {COLOR_FILTERS.map(({ value, label, desc, dot }) => (
-            <button type="button"
-              key={value}
-              onClick={() => setColorFilter(value)}
-              aria-label={`${label} — ${desc}`}
-              aria-pressed={colorFilter === value}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150 text-left"
-              style={{
-                backgroundColor: colorFilter === value ? 'var(--hc-accent)' : 'var(--hc-surface-2)',
-                color: colorFilter === value ? '#fff' : 'var(--hc-text)',
-                border: `1px solid ${colorFilter === value ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
-              }}
-            >
-              <span
-                aria-hidden="true"
-                className="w-3 h-3 rounded-full shrink-0"
-                style={{ backgroundColor: dot, opacity: colorFilter === value ? 1 : 0.8 }}
-              />
-              <span className="font-semibold">{label}</span>
-              <span className="ml-auto text-[10px] font-normal opacity-70">{desc}</span>
-            </button>
-          ))}
+          {COLOR_FILTERS.map(({ value, labelKey, descKey, dot }) => {
+            const label = t(labelKey)
+            const desc = t(descKey)
+            return (
+              <button type="button"
+                key={value}
+                onClick={() => setColorFilter(value)}
+                aria-label={`${label} — ${desc}`}
+                aria-pressed={colorFilter === value}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150 text-left"
+                style={{
+                  backgroundColor: colorFilter === value ? 'var(--hc-accent)' : 'var(--hc-surface-2)',
+                  color: colorFilter === value ? '#fff' : 'var(--hc-text)',
+                  border: `1px solid ${colorFilter === value ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  className="w-3 h-3 rounded-full shrink-0"
+                  style={{ backgroundColor: dot, opacity: colorFilter === value ? 1 : 0.8 }}
+                />
+                <span className="font-semibold">{label}</span>
+                <span className="ml-auto text-[10px] font-normal opacity-70">{desc}</span>
+              </button>
+            )
+          })}
         </div>
       </div>
 

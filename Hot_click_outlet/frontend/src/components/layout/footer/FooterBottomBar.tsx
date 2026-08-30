@@ -2,6 +2,13 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 
+const LEGAL_LINKS = [
+  { path: '/privacidad', key: 'footer.privacidadShort' },
+  { path: '/terminos', key: 'footer.terminosShort' },
+  { path: '/devoluciones', key: 'footer.devolucionesShort' },
+  { path: '/envios', key: 'footer.enviosShort' },
+] as const
+
 export default function FooterBottomBar({ year }: { year: number }) {
   const { t } = useTranslation()
 
@@ -18,14 +25,11 @@ export default function FooterBottomBar({ year }: { year: number }) {
         </p>
         <div className="hidden sm:block text-xs" style={{ color: 'var(--hc-border)' }}>·</div>
         <div className="flex items-center gap-3 flex-wrap justify-center">
-          {['/privacidad', '/terminos', '/devoluciones', '/envios'].map((path) => (
+          {LEGAL_LINKS.map(({ path, key }) => (
             <Link key={path} to={path} className="text-xs transition-colors hover:opacity-80" style={{ color: 'var(--hc-muted)', textDecoration: 'none' }}
               onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--hc-text)' }}
               onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--hc-muted)' }}>
-              {path === '/privacidad' && 'Privacidad'}
-              {path === '/terminos' && 'Términos'}
-              {path === '/devoluciones' && 'Devoluciones'}
-              {path === '/envios' && 'Envíos'}
+              {t(key)}
             </Link>
           ))}
         </div>
@@ -33,7 +37,7 @@ export default function FooterBottomBar({ year }: { year: number }) {
 
       <div className="flex items-center gap-2 order-2">
         <span className="text-[10px] font-bold uppercase tracking-widest mr-1" style={{ color: 'var(--hc-muted)' }}>
-          Aceptamos
+          {t('footer.aceptamos')}
         </span>
         <div className="flex items-center justify-center px-2.5 py-1.5 rounded-lg"
           style={{ background: '#1a1f71', border: '1px solid rgba(255,255,255,0.12)', minWidth: 44 }}>
@@ -61,7 +65,7 @@ export default function FooterBottomBar({ year }: { year: number }) {
       </div>
 
       <p className="text-xs flex items-center gap-1.5 order-1 sm:order-3" style={{ color: 'var(--hc-muted)' }}>
-        Hecho en Costa Rica
+        {t('footer.hechoEnCR')}
       </p>
     </motion.div>
   )

@@ -3,7 +3,10 @@ package com.hotclick.service;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.PermisoRepository;
 import com.hotclick.repository.UsuarioRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -17,6 +20,8 @@ import java.util.List;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
+
+    private static final Logger log = LoggerFactory.getLogger(CustomUserDetailsService.class);
 
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private PermisoRepository permisoRepository;
@@ -32,8 +37,12 @@ public class CustomUserDetailsService implements UserDetailsService {
         usuario.getRoles().forEach(rol ->
             authorities.add(new SimpleGrantedAuthority("ROLE_" + rol.getNombreRol())));
 
-        permisoRepository.findPermisosByUsuarioId(usuario.getId())
-            .forEach(p -> authorities.add(new SimpleGrantedAuthority(p)));
+        try {
+            permisoRepository.findPermisosByUsuarioId(usuario.getId())
+                .forEach(p -> authorities.add(new SimpleGrantedAuthority(p)));
+        } catch (DataAccessException ex) {
+            log.warn("No se pudieron cargar permisos para {}: {}", correo, ex.getMessage());
+        }
 
         return new User(usuario.getCorreo(), usuario.getContrasenaHash(), authorities);
     }

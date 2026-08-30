@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router-dom'
-import { esRutaPrototipo } from '@/utils/rutaPrototipo'
+import { esRutaClaudeclick } from '@/utils/rutaPrototipo'
 import useUiStore from '@/store/uiStore'
 import { HotClickMark } from '@/components/ui/BrandLogo'
 import useChatStore from '@/store/chatStore'
@@ -13,6 +13,8 @@ export default function AccessibilityPanel() {
   const { t } = useTranslation()
   const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const titleId = useId()
 
   const chatOpen = useChatStore((s) => s.isOpen)
   const theme = useUiStore((s) => s.theme)
@@ -28,12 +30,24 @@ export default function AccessibilityPanel() {
   const colorFilter = useUiStore((s) => s.colorFilter)
   const setColorFilter = useUiStore((s) => s.setColorFilter)
 
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpen(false)
+        triggerRef.current?.focus()
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open])
+
   if (pathname.startsWith('/checkout') || pathname.startsWith('/pago')) return null
   // El widget es para clientes de la tienda (idioma, tamaño de letra, filtros de color);
   // en el panel admin flotaba encima de botones y texto de las herramientas internas.
   if (pathname.startsWith('/admin')) return null
   if (pathname.startsWith('/tienda')) return null
-  if (esRutaPrototipo(pathname)) return null
+  if (esRutaClaudeclick(pathname)) return null
   if (chatOpen) return null
 
   const isDark = theme === 'dark'
@@ -43,6 +57,9 @@ export default function AccessibilityPanel() {
       <AnimatePresence>
         {open && (
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
             initial={{ opacity: 0, y: 10, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.96 }}
@@ -57,14 +74,17 @@ export default function AccessibilityPanel() {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 sticky top-0"
               style={{ borderBottom: '1px solid var(--hc-border)', backgroundColor: 'var(--hc-surface)' }}>
-              <span className="text-sm font-semibold flex items-center gap-2" style={{ color: 'var(--hc-text)' }}>
+              <span id={titleId} className="text-sm font-semibold flex items-center gap-2" style={{ color: 'var(--hc-text)' }}>
                 <span className="shrink-0" style={{ color: 'var(--hc-muted)' }} aria-hidden="true">
                   <A11yIcon />
                 </span>
                 {t('a11y.panel')}
               </span>
               <button type="button"
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  setOpen(false)
+                  triggerRef.current?.focus()
+                }}
                 aria-label={t('a11y.close')}
                 className="p-1 rounded-lg transition-colors"
                 style={{ color: 'var(--hc-muted)' }}
@@ -87,8 +107,11 @@ export default function AccessibilityPanel() {
 
       {/* ── Trigger button — símbolo de marca (§2.4) ── */}
       <button type="button"
+        ref={triggerRef}
         onClick={() => setOpen(!open)}
         aria-label={t('a11y.open')}
+        aria-expanded={open}
+        aria-haspopup="dialog"
         title={t('a11y.panel')}
         className="hc-isotipo-placa w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200
           shadow-[0_4px_20px_var(--hc-shadow)] hover:scale-110 active:scale-95"

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { RUTA_SISTEMA_MARCA } from '@/utils/rutaTienda'
+import { RUTA_EMPRENDEDOR } from '@/utils/planPaths'
 
 type PasoEmprende = {
   tituloI18n: string
@@ -15,9 +15,9 @@ const PASOS_NUEVO: PasoEmprende[] = [
 ]
 
 const PASOS_DUENIO: PasoEmprende[] = [
-  { tituloI18n: 'emprende.pasoOwner1', hintI18n: 'emprende.pasoOwner1hint', to: RUTA_SISTEMA_MARCA },
-  { tituloI18n: 'emprende.pasoOwner2', hintI18n: 'emprende.pasoOwner2hint', to: '/admin/productos/nuevo' },
-  { tituloI18n: 'emprende.pasoOwner3', hintI18n: 'emprende.pasoOwner3hint', to: '/admin/billing/planes' },
+  { tituloI18n: 'emprende.pasoOwner1', hintI18n: 'emprende.pasoOwner1hint', to: `${RUTA_EMPRENDEDOR}/opciones` },
+  { tituloI18n: 'emprende.pasoOwner2', hintI18n: 'emprende.pasoOwner2hint', to: `${RUTA_EMPRENDEDOR}/productos/nuevo` },
+  { tituloI18n: 'emprende.pasoOwner3', hintI18n: 'emprende.pasoOwner3hint', to: `${RUTA_EMPRENDEDOR}/opciones/plan` },
 ]
 
 const estiloPaso = {

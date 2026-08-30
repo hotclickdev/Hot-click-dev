@@ -12,6 +12,7 @@ import com.hotclick.service.GeminiService;
 import com.hotclick.service.NotificacionEmailService;
 import com.hotclick.service.ResendEmailService;
 import com.hotclick.service.SupabaseStorageService;
+import com.hotclick.service.analytics.PostHogCaptureService;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,6 +49,7 @@ public abstract class BaseIntegrationTest {
     @MockitoBean protected SupabaseStorageService   supabaseStorageService;
     @MockitoBean protected BccrService              bccrService;
     @MockitoBean protected GeminiService            geminiService;
+    @MockitoBean protected PostHogCaptureService    postHogCaptureService;
 
     // ── Beans del contexto ────────────────────────────────────────────────────
     @Autowired protected MockMvc        mockMvc;

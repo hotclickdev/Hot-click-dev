@@ -80,13 +80,13 @@ test.describe('Emprende — una puerta, no un laberinto', () => {
     await expect(page.getByRole('heading', { name: /seguí creciendo en sistema/i })).toBeVisible()
     await expect(page.getByRole('link', { name: /completar marca/i })).toHaveAttribute(
       'href',
-      '/admin/configuracion?seccion=marca',
+      '/emprendedor/opciones',
     )
     await expect(page.getByRole('link', { name: /agregar un producto/i })).toHaveAttribute(
       'href',
-      '/admin/productos/nuevo',
+      '/emprendedor/productos/nuevo',
     )
-    await expect(page.getByRole('link', { name: /ver tu plan/i })).toHaveAttribute('href', '/admin/billing/planes')
-    await expect(page.getByRole('link', { name: 'Ir a Sistema' })).toHaveAttribute('href', '/admin')
+    await expect(page.getByRole('link', { name: /ver tu plan/i })).toHaveAttribute('href', '/emprendedor/opciones/plan')
+    await expect(page.getByRole('link', { name: 'Ir a Sistema' })).toHaveAttribute('href', '/emprendedor')
   })
 })

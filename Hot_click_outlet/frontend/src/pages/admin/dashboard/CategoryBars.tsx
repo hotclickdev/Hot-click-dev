@@ -10,13 +10,13 @@ export default function CategoryBars({ categorias }: CategoryBarsProps) {
   const maxCat = Math.max(...categorias.map((c) => c.cantidad ?? 0), 1)
 
   return (
-    <div className="bg-[#111114] border border-white/8 rounded-2xl p-5">
-      <h2 className="text-sm font-semibold text-[#e8e8ed] mb-4">Productos por categoría</h2>
+    <div className="bg-[var(--hc-surface)] border border-[var(--hc-border)] rounded-2xl p-5">
+      <h2 className="text-sm font-semibold text-[var(--hc-text)] mb-4">Productos por categoría</h2>
       <div className="space-y-2.5">
         {categorias.slice(0, 6).map((cat, i) => (
           <div key={cat.nombre} className="flex items-center gap-3">
-            <span className="text-xs text-[#8e8e9a] w-28 truncate shrink-0">{cat.nombre}</span>
-            <div className="flex-1 h-2.5 bg-white/5 rounded-full overflow-hidden">
+            <span className="text-xs text-[var(--hc-muted)] w-28 truncate shrink-0">{cat.nombre}</span>
+            <div className="flex-1 h-2.5 bg-[var(--hc-surface-2)] rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${((cat.cantidad ?? 0) / maxCat) * 100}%` }}
@@ -25,7 +25,7 @@ export default function CategoryBars({ categorias }: CategoryBarsProps) {
                 style={{ background: `hsl(${220 + i * 35}, 75%, 65%)` }}
               />
             </div>
-            <span className="text-xs font-semibold text-[#e8e8ed] w-6 text-right shrink-0">
+            <span className="text-xs font-semibold text-[var(--hc-text)] w-6 text-right shrink-0">
               {cat.cantidad}
             </span>
           </div>

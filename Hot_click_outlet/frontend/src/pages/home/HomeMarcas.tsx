@@ -60,8 +60,8 @@ export default function HomeMarcas({ marcas = [] }: { marcas?: MarcaHome[] }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
           <SectionHeader
             title={`${t('home.brands')}.`}
-            subtitle="Confianza que se reconoce."
-            action={{ label: 'Ver todas', to: '/productos' }}
+            subtitle={t('home.brandsSub')}
+            action={{ label: t('products.seeAll'), to: '/productos' }}
           />
           <div className="flex flex-wrap gap-3 sm:gap-4 justify-center">
             {marcas.map((m) => (

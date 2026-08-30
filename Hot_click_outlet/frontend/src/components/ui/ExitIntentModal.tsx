@@ -10,7 +10,15 @@ import type { ItemCarrito } from '@/types/carrito'
 
 const SESSION_KEY = 'hc-exit-intent-shown'
 const DELAY_BEFORE_ARMED_MS = 5000
-const BLOCKED_PATHS = ['/checkout', '/pago/exito', '/pago/cancelado', '/carrito']
+const BLOCKED_PATHS = [
+  '/checkout',
+  '/pago/exito',
+  '/pago/cancelado',
+  '/carrito',
+  '/visitante/checkout',
+  '/visitante/compra-confirmada',
+  '/visitante/pago-fallido',
+]
 const CART_EXIT_DELAY_MS = 5 * 60 * 1000
 
 export default function ExitIntentModal() {

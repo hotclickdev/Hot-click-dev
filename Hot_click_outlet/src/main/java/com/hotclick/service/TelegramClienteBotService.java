@@ -3,10 +3,10 @@ package com.hotclick.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -44,20 +44,23 @@ public class TelegramClienteBotService {
     @Value("${app.url:http://localhost:8080}")
     private String appUrl;
 
-    private final RestTemplate restTemplate;
+    private static final Duration TIMEOUT_CONEXION = Duration.ofSeconds(5);
+    private static final Duration TIMEOUT_LECTURA = Duration.ofSeconds(10);
+    private static final Duration TIMEOUT_DESCARGA = Duration.ofSeconds(20);
 
-    /** Cliente aparte para bajar archivos: una foto puede tardar más que los 10s del compartido. */
+    private final RestTemplate restTemplate;
     private final RestTemplate descargaTemplate;
 
-    public TelegramClienteBotService(RestTemplateBuilder builder) {
-        this.restTemplate = builder
-                .connectTimeout(Duration.ofSeconds(5))
-                .readTimeout(Duration.ofSeconds(10))
-                .build();
-        this.descargaTemplate = builder
-                .connectTimeout(Duration.ofSeconds(5))
-                .readTimeout(Duration.ofSeconds(20))
-                .build();
+    public TelegramClienteBotService() {
+        this.restTemplate = restTemplateConTimeout(TIMEOUT_CONEXION, TIMEOUT_LECTURA);
+        this.descargaTemplate = restTemplateConTimeout(TIMEOUT_CONEXION, TIMEOUT_DESCARGA);
+    }
+
+    private static RestTemplate restTemplateConTimeout(Duration conexion, Duration lectura) {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(conexion);
+        factory.setReadTimeout(lectura);
+        return new RestTemplate(factory);
     }
 
     public boolean isConfigured() {

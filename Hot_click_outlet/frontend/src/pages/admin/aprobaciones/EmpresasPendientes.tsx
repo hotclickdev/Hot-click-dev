@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { nombreVisibleEmpresa } from '../empresas/empresasHelpers'
 import type { Id } from '@/types/api'
 import BotonesAprobarRechazar from './BotonesAprobarRechazar'
@@ -22,6 +23,7 @@ export default function EmpresasPendientes({ solicitudes, loading, stats, aproba
   aprobar: (id: Id) => Promise<void>
   rechazar: (id: Id) => Promise<void>
 }) {
+  const { t } = useTranslation()
   const [saving, setSaving] = useState<string | null>(null)
   const [confirm, setConfirm] = useState<ConfirmAprobacion | null>(null)
 
@@ -42,9 +44,9 @@ export default function EmpresasPendientes({ solicitudes, loading, stats, aproba
     <>
       <div className="grid grid-cols-3 gap-3">
         {kpisAprobacion(stats).map((kpi) => (
-          <div key={kpi.label} className="rounded-xl p-4" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+          <div key={kpi.labelKey} className="rounded-xl p-4" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
             <div className={`text-2xl font-bold ${kpi.color}`}>{kpi.value}</div>
-            <div className="text-xs mt-1" style={{ color: 'var(--hc-muted)' }}>{kpi.label}</div>
+            <div className="text-xs mt-1" style={{ color: 'var(--hc-muted)' }}>{t(kpi.labelKey)}</div>
           </div>
         ))}
       </div>
@@ -70,11 +72,12 @@ function ListaEmpresas({ loading, solicitudes, confirm, saving, onEjecutar, onCo
   onConfirm: (confirm: ConfirmAprobacion) => void
   onCancel: () => void
 }) {
+  const { t } = useTranslation()
   if (loading) {
-    return <div className="py-12 text-center text-sm" style={{ color: 'var(--hc-muted)' }}>Cargando solicitudes…</div>
+    return <div className="py-12 text-center text-sm" style={{ color: 'var(--hc-muted)' }}>{t('adminAprobaciones.loading')}</div>
   }
   if (solicitudes.length === 0) {
-    return <EmptyPendientes mensaje="Todas las solicitudes están al día." />
+    return <EmptyPendientes mensaje={t('adminAprobaciones.emptyEmpresas')} />
   }
   const ocupado = saving !== null
   return (

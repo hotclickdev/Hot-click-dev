@@ -3284,7 +3284,7 @@ UPDATE hot_click_categoria_tb SET icono = 'herram'  WHERE icono = '🔧';
 UPDATE hot_click_categoria_tb SET icono = 'regal'   WHERE icono = '🎁';
 UPDATE hot_click_categoria_tb SET icono = 'cuidado' WHERE icono = '🧴';
 
--- V104: token opaco para recuperar carrito abandonado
+-- V107 (Flyway): token opaco para recuperar carrito abandonado
 ALTER TABLE hot_click_carrito_abandonado_tb
     ADD COLUMN IF NOT EXISTS token_recuperacion VARCHAR(36);
 

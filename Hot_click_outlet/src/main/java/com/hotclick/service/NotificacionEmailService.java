@@ -108,13 +108,13 @@ public class NotificacionEmailService {
 
     public void enviarRecuperacionCarrito(
 
-            String email, Long carritoId,
+            String email, String tokenRecuperacion,
 
             List<CarritoAbandonadoRequestDTO.CartItemDTO> items,
 
             String appUrl) {
 
-        pedidoEmailSender.enviarRecuperacionCarrito(email, carritoId, items, appUrl);
+        pedidoEmailSender.enviarRecuperacionCarrito(email, tokenRecuperacion, items, appUrl);
 
     }
 

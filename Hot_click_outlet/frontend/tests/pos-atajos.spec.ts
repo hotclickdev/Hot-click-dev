@@ -82,6 +82,8 @@ async function mockCaja(page: Page) {
   await page.addInitScript((auth) => {
     localStorage.setItem('hotclick-auth', JSON.stringify(auth))
     localStorage.setItem('hc-admin-tour-v4-done', '1')
+    localStorage.setItem('hc-mm-v1-off', '1')
+    localStorage.setItem('hc-mm-v1-welcome-done', '1')
     localStorage.setItem('hotclick-cookie-consent', JSON.stringify({
       analytics: false,
       functional: true,
@@ -94,10 +96,10 @@ async function mockCaja(page: Page) {
 async function abrirCajaConMouse(page: Page) {
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto('/admin/pos', { waitUntil: 'domcontentloaded' })
-  await expect(page.getByText('PEDIDO', { exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Caja (POS)' })).toBeVisible()
   await page.getByRole('button', { name: 'Accesorios' }).click()
   await page.getByRole('button', { name: /Mouse/ }).click()
-  await expect(page.getByRole('button', { name: /COBRAR/ })).toBeEnabled()
+  await expect(page.getByRole('button', { name: /Cobrar/i }).first()).toBeEnabled()
 }
 
 test.describe('POS — atajos de caja', () => {
@@ -112,7 +114,7 @@ test.describe('POS — atajos de caja', () => {
     await expect(page.locator('[data-pos-qty]').last()).toBeFocused()
 
     await page.keyboard.press('F8')
-    await expect(page.getByText('¿Cómo paga el cliente?')).toBeVisible()
+    await expect(page.getByText('Método de pago')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Confirmar cobro' })).toBeVisible()
     expect(cobros.venta).toBe(0)
     expect(cobros.qr).toBe(0)
@@ -122,9 +124,11 @@ test.describe('POS — atajos de caja', () => {
     await mockCaja(page)
     await page.setViewportSize({ width: 375, height: 700 })
     await page.goto('/admin/pos', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByRole('button', { name: 'Carrito' })).toBeVisible()
-    await page.getByRole('button', { name: 'Carrito' }).click()
-    await expect(page.getByText('Buscá un producto y tocalo para agregarlo')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Caja (POS)' })).toBeVisible()
+    await page.getByRole('button', { name: 'Accesorios' }).click()
+    await page.getByRole('button', { name: /Mouse/ }).click()
+    await page.locator('[data-pos-ticket-open]').click()
+    await expect(page.getByRole('dialog', { name: 'Factura' })).toBeVisible()
 
     await page.keyboard.press('F2')
     await expect(page.locator('[data-pos-search]')).toBeVisible()

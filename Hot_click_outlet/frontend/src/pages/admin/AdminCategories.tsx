@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import { useToast } from '@/components/ui/Toast'
 import { categoriaService } from '@/services/orderService'
@@ -10,6 +9,8 @@ import CategoriaCard from './categorias/CategoriaCard'
 import CategoriaFormModal from './categorias/CategoriaFormModal'
 import CategoriasEmptyState from './categorias/CategoriasEmptyState'
 import TextoMas from '@/components/ui/TextoMas'
+import AdminPageHeader from '@/prototipo/admin/AdminPageHeader'
+import { AdminPrimaryButton } from '@/prototipo/admin/AdminUi'
 import {
   COLUMNAS_EXPORT_CATEGORIAS,
   COLUMNAS_IMPORT_CATEGORIAS,
@@ -134,7 +135,6 @@ export default function AdminCategories() {
         <CategoriasHeader
           categorias={categorias}
           onImportar={importarCategorias}
-          onNueva={() => abrirNueva()}
         />
         <CategoriasContenido
           loading={loading}
@@ -171,19 +171,18 @@ export default function AdminCategories() {
   )
 }
 
-function CategoriasHeader({ categorias, onImportar, onNueva }: {
+function CategoriasHeader({ categorias, onImportar }: {
   categorias: CategoriaAdmin[]
   onImportar: (filas: FilaImport[]) => Promise<void>
-  onNueva: () => void
 }) {
-  const { t } = useTranslation()
   return (
-    <div className="flex items-start justify-between gap-4 flex-wrap">
-      <div>
-        <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.categories.title')}</h1>
-        <p className="text-sm text-[#8e8e9a] mt-1">{etiquetaConteoCategorias(categorias)}</p>
-      </div>
-      <div className="flex items-center gap-3 flex-wrap">
+    <div className="space-y-4">
+      <AdminPageHeader
+        titulo="Categorías"
+        subtitulo={etiquetaConteoCategorias(categorias)}
+        atras="/admin/configuracion"
+      />
+      <div className="flex flex-wrap items-center gap-3">
         <ImportExportBar
           data={filasExportacionCategorias(categorias)}
           columns={COLUMNAS_EXPORT_CATEGORIAS}
@@ -193,7 +192,6 @@ function CategoriasHeader({ categorias, onImportar, onNueva }: {
           mapImportRow={filaImportacionCategoria}
           onImport={onImportar}
         />
-        <Button onClick={onNueva}><TextoMas>Nuevo grupo</TextoMas></Button>
       </div>
     </div>
   )
@@ -215,16 +213,21 @@ function CategoriasContenido({ loading, arbol, categorias, onNueva, onEdit, onDe
     return <CategoriasEmptyState onCrear={onNueva} />
   }
   return (
-    <div className="space-y-3">
-      {arbol.map((nodo) => (
-        <CategoriaCard
-          key={nodo.id}
-          node={nodo}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onAddSub={onAddSub}
-        />
-      ))}
+    <div className="space-y-4">
+      <div className="space-y-3">
+        {arbol.map((nodo) => (
+          <CategoriaCard
+            key={nodo.id}
+            node={nodo}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onAddSub={onAddSub}
+          />
+        ))}
+      </div>
+      <AdminPrimaryButton onClick={onNueva}>
+        <TextoMas>Agregar categoría</TextoMas>
+      </AdminPrimaryButton>
     </div>
   )
 }

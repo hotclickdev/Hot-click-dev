@@ -23,7 +23,11 @@ export function esStripeAprobado(redirectStatus: string | null): boolean {
 }
 
 export function esCancelacionPago(pathname: string, redirectStatus: string | null): boolean {
-  return pathname === '/pago/cancelado' || redirectStatus === 'failed'
+  return (
+    pathname === '/pago/cancelado'
+    || pathname.endsWith('/pago-fallido')
+    || redirectStatus === 'failed'
+  )
 }
 
 export function leerParamsPago(params: URLSearchParams, pathname: string) {

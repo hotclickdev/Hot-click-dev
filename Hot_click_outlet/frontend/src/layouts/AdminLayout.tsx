@@ -10,15 +10,18 @@ import GlobalSearch from '@/components/admin/GlobalSearch'
 import TrialBanner from '@/components/TrialBanner'
 import OfflineBanner from '@/components/OfflineBanner'
 import AppTour from '@/components/ui/AppTour'
+import MentalModelCoach from '@/components/ui/mentalModel/MentalModelCoach'
 import { esUsuarioSistema } from '@/utils/sistemaUser'
 import { RUTA_SISTEMA_VISIBILIDAD } from '@/utils/rutaTienda'
 import { buildSidebarLinks } from './admin/adminSidebarLinks'
 import SidebarContent, { type RoleBadge } from './admin/SidebarContent'
 import AdminMobileHeader from './admin/AdminMobileHeader'
+import AdminBottomNav from '@/prototipo/admin/AdminBottomNav'
+import { etiquetaChromeAdmin } from './admin/adminChrome'
 
 const ROLE_BADGES: Record<string, RoleBadge> = {
-  ADMIN:       { label: 'IT Admin',    color: 'bg-red-500/20 text-red-400' },
-  EMPRENDEDOR: { label: 'Emprendedor', color: 'bg-amber-500/20 text-amber-400' },
+  ADMIN:       { label: 'Admin',       color: 'bg-[rgba(13,71,161,0.10)] text-[var(--hc-link)]' },
+  EMPRENDEDOR: { label: 'Emprendedor', color: 'bg-[rgba(245,158,11,0.12)] text-amber-800' },
 }
 
 /** Shell del panel admin: sidebar, header móvil, drawer y contenido. */
@@ -79,34 +82,33 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
     })
   }, [userRole, empresaId])
 
-  const roleBadge = (userRole ? ROLE_BADGES[userRole] : undefined) ?? { label: userRole, color: 'bg-gray-500/20 text-gray-400' }
+  const roleBadge = (userRole ? ROLE_BADGES[userRole] : undefined) ?? { label: userRole, color: 'bg-[var(--hc-surface-2)] text-[var(--hc-muted)]' }
 
   const sidebarProps = { sidebarLinks, roleBadge, t, userName, empresaNombre, userRole, handleLogout, onSearch: () => setSearchOpen(true) }
-  // Sistema (EMPRENDEDOR) usa sidebar claro siguiendo el mockup aprobado;
-  // ADMIN/GERENTE/SUPERVISOR mantienen el nav oscuro n-900 (Brand Book cap. 6).
-  const isLightSidebar = esUsuarioSistema(userRole)
+  const esSistema = esUsuarioSistema(userRole)
+  const esSuperAdmin = userRole === 'ADMIN'
+  const temaPanel = esSuperAdmin ? 'hc-superadmin-theme' : 'hc-sistema-theme'
+  const anchoSidebar = esSistema || esSuperAdmin ? 'w-[230px]' : 'w-60'
+  const margenSidebar = esSistema || esSuperAdmin ? 'md:ml-[230px]' : 'md:ml-60'
 
   return (
-    <div className={`hc-admin-content min-h-screen ${isLightSidebar ? 'hc-sistema-theme' : ''}`} style={{ backgroundColor: 'var(--hc-bg)' }}>
+    <div className={`hc-admin-content ${temaPanel} min-h-screen`} style={{ backgroundColor: 'var(--hc-bg)' }}>
       <Helmet>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
       {/* ── Desktop sidebar ── */}
-      {/* Nav oscura n-900 con ítem activo rojo (Brand Book cap. 6) para ADMIN;
-          Sistema (EMPRENDEDOR) usa el sidebar claro del mockup aprobado. */}
       <aside
-        className={`hc-admin-sidebar shrink-0 flex-col fixed inset-y-0 left-0 z-20 hidden md:flex ${isLightSidebar ? 'w-[230px]' : 'w-60'}`}
-        style={isLightSidebar
-          ? { backgroundColor: 'var(--hc-surface)', borderRight: '1px solid var(--hc-border)' }
-          : { backgroundColor: 'var(--hc-n-900)', borderRight: '1px solid var(--hc-n-800)' }}
+        className={`hc-admin-sidebar shrink-0 flex-col fixed inset-y-0 left-0 z-20 hidden md:flex ${anchoSidebar}`}
+        style={{ backgroundColor: 'var(--hc-surface)', borderRight: '1px solid var(--hc-border)' }}
       >
         <SidebarContent {...sidebarProps} />
       </aside>
 
       {/* ── Mobile: top header bar ── */}
       <AdminMobileHeader
-        isLightSidebar={isLightSidebar}
+        etiquetaChrome={etiquetaChromeAdmin(userRole)}
+        mostrarCaja={esSistema}
         t={t}
         userName={userName}
         location={location}
@@ -131,32 +133,17 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 350, damping: 35 }}
-              className={`hc-admin-sidebar fixed inset-y-0 left-0 z-50 flex flex-col md:hidden ${isLightSidebar ? 'w-[230px]' : 'w-64'}`}
-              style={isLightSidebar
-                ? { backgroundColor: 'var(--hc-surface)', borderRight: '1px solid var(--hc-border)' }
-                : { backgroundColor: 'var(--hc-n-900)', borderRight: '1px solid var(--hc-n-800)' }}
+              className={`hc-admin-sidebar fixed inset-y-0 left-0 z-50 flex flex-col md:hidden ${esSistema || esSuperAdmin ? 'w-[230px]' : 'w-64'}`}
+              style={{ backgroundColor: 'var(--hc-surface)', borderRight: '1px solid var(--hc-border)' }}
             >
-              {/* En Sistema (isLight) el botón de cerrar vive junto al wordmark,
-                  dentro de SidebarContent, igual que el mockup móvil aprobado. */}
-              {!isLightSidebar && (
-                <button type="button"
-                  onClick={() => setDrawerOpen(false)}
-                  className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-[var(--hc-surface-2)] transition-colors"
-                  style={{ color: 'var(--hc-muted)' }}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                  </svg>
-                </button>
-              )}
-              <SidebarContent {...sidebarProps} onClose={isLightSidebar ? () => setDrawerOpen(false) : undefined} />
+              <SidebarContent {...sidebarProps} onClose={() => setDrawerOpen(false)} />
             </motion.aside>
           </>
         )}
       </AnimatePresence>
 
       {/* ── Content ── */}
-      <div className={`h-screen overflow-hidden flex flex-col pt-14 md:pt-0 ${isLightSidebar ? 'md:ml-[230px]' : 'md:ml-60'}`}>
+      <div className={`h-screen overflow-hidden flex flex-col pt-14 md:pt-0 ${margenSidebar}`}>
         <OfflineBanner />
         <TrialBanner />
         <motion.main
@@ -164,7 +151,7 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
-          className="flex-1 overflow-y-auto px-4 py-4 md:pt-6 md:px-6 lg:px-8"
+          className={`flex-1 overflow-y-auto px-4 py-4 md:pt-6 md:px-6 lg:px-8 ${esSuperAdmin ? 'pb-20 md:pb-6' : ''}`}
         >
           {/* Banner: negocio pendiente de aprobación */}
           {estadoEmpresa === 'PENDIENTE_APROBACION' && (
@@ -202,8 +189,10 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
       {/* Buscador global Cmd+K */}
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
 
-      {/* Tour guiado para admins — solo se muestra la primera vez */}
+      {/* Coach Mental Model (welcome + spotlight) + tour legacy opcional */}
+      <MentalModelCoach />
       <AppTour />
+      {esSuperAdmin ? <AdminBottomNav /> : null}
     </div>
   )
 }

@@ -8,7 +8,10 @@ import com.hotclick.security.JwtUtil;
 import com.hotclick.service.RefreshTokenService;
 import com.hotclick.service.UsuarioService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.text.Normalizer;
@@ -16,6 +19,8 @@ import java.util.List;
 
 @Service
 public class AuthSupport {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthSupport.class);
 
     @Autowired private UsuarioService      usuarioService;
     @Autowired private JwtUtil             jwtUtil;
@@ -26,7 +31,7 @@ public class AuthSupport {
         String rol          = usuario.getRoles().isEmpty() ? "USUARIO_FINAL" : usuario.getRoles().get(0).getNombreRol();
         String empresaSlug  = usuario.getEmpresa() != null ? usuario.getEmpresa().getSlug()         : null;
         String empresaNombre= usuario.getEmpresa() != null ? usuario.getEmpresa().getNombreEmpresa() : null;
-        List<String> permisos = permisoRepository.findPermisosByUsuarioId(usuario.getId());
+        List<String> permisos = permisosDe(usuario.getId());
         String accessToken  = jwtUtil.generateTokenFull(
             usuario.getCorreo(), usuario.getId(), rol,
             usuario.getEmpresaId(), empresaSlug, permisos
@@ -39,6 +44,19 @@ public class AuthSupport {
         resp.setEmpresaNombre(empresaNombre);
         resp.setPermisos(permisos);
         return resp;
+    }
+
+    /**
+     * Permisos del rol. Si falta la tabla nativa (H2 sin Flyway), el login
+     * sigue con el JWT de rol; no se bloquea la sesión.
+     */
+    public List<String> permisosDe(Long userId) {
+        try {
+            return permisoRepository.findPermisosByUsuarioId(userId);
+        } catch (DataAccessException ex) {
+            log.warn("No se pudieron leer permisos userId={}: {}", userId, ex.getMessage());
+            return List.of();
+        }
     }
 
     public Usuario usuarioFromRequest(HttpServletRequest request) {

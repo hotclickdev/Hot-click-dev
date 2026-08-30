@@ -1,22 +1,20 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { TOUR_KEY, STEPS, TOTAL } from './appTourSteps'
+import useAuthStore from '@/store/authStore'
+import { TOUR_KEY, pasosTourParaRol } from './appTourSteps'
 import { TOUR_CSS } from './appTourStyles'
 
 /**
- * Estado y handlers del tour admin — bit-idéntico al original.
+ * Tour legacy opcional (evento hc-open-legacy-tour).
+ * La primera visita la maneja MentalModelCoach.
  */
 export function useAppTour() {
   const [show, setShow] = useState(false)
   const [step, setStep] = useState(0)
   const navigate = useNavigate()
-
-  useEffect(() => {
-    if (!localStorage.getItem(TOUR_KEY)) {
-      const t = setTimeout(() => setShow(true), 1800)
-      return () => clearTimeout(t)
-    }
-  }, [])
+  const userRole = useAuthStore((s) => s.userRole)
+  const steps = useMemo(() => pasosTourParaRol(userRole), [userRole])
+  const total = steps.length
 
   useEffect(() => {
     const el = document.createElement('style')
@@ -31,27 +29,32 @@ export function useAppTour() {
   }, [show])
 
   useEffect(() => {
-    const handler = () => { setStep(0); setShow(true) }
-    globalThis.addEventListener('hc-open-tour', handler as EventListener)
-    return () => globalThis.removeEventListener('hc-open-tour', handler as EventListener)
-  }, [setShow])
+    const handler = () => {
+      if (localStorage.getItem('hc-mm-v1-off') === '1') {
+        setStep(0)
+        setShow(true)
+      }
+    }
+    globalThis.addEventListener('hc-open-legacy-tour', handler as EventListener)
+    return () => globalThis.removeEventListener('hc-open-legacy-tour', handler as EventListener)
+  }, [])
 
   const dismiss = useCallback(() => {
     localStorage.setItem(TOUR_KEY, '1')
     setShow(false)
-  }, [setShow])
+  }, [])
 
   const go = useCallback((next: number) => {
-    if (next < 0 || next >= TOTAL) { dismiss(); return }
-    const s = STEPS[next]
+    if (next < 0 || next >= total) { dismiss(); return }
+    const s = steps[next]
     if (s?.path) navigate(s.path)
     setStep(next)
-  }, [navigate, dismiss])
+  }, [navigate, dismiss, steps, total])
 
-  const current = STEPS[step]
-  const isSpecial = current.type === 'welcome' || current.type === 'done'
-  const isFirst   = step === 0
-  const isLast    = step === TOTAL - 1
+  const current = steps[step] ?? steps[0]
+  const isSpecial = current?.type === 'welcome' || current?.type === 'done'
+  const isFirst = step === 0
+  const isLast = step === total - 1
 
-  return { show, step, current, isSpecial, isFirst, isLast, dismiss, go }
+  return { show, step, current, isSpecial, isFirst, isLast, dismiss, go, steps }
 }

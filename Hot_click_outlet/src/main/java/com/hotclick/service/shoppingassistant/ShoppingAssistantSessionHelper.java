@@ -1,11 +1,14 @@
 package com.hotclick.service.shoppingassistant;
 
+import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -145,22 +148,16 @@ class ShoppingAssistantSessionHelper {
         if (sesionIdStr == null || sesionIdStr.isBlank()) return;
         try {
             UUID sesionId = UUID.fromString(sesionIdStr.trim());
-
             jdbc.update(
-                "DELETE FROM hot_click_chat_mensaje_shopping_tb WHERE fk_id_sesion = ?::uuid",
-                sesionId.toString());
-
-            // Retrocede el timestamp para que DataRetentionScheduler (30 días) la limpie pronto
+                "DELETE FROM hot_click_chat_mensaje_shopping_tb WHERE fk_id_sesion = ?",
+                sesionId);
+            LocalDateTime corte = LocalDateTime.now(Constants.ZONA_CR).minusDays(31);
             jdbc.update(
-                "UPDATE hot_click_chat_sesion_tb " +
-                "SET ultimo_mensaje_en = NOW() - INTERVAL '31 days' " +
-                "WHERE id_sesion = ?::uuid",
-                sesionId.toString());
-
+                "UPDATE hot_click_chat_sesion_tb SET ultimo_mensaje_en = ? WHERE id_sesion = ?",
+                corte, sesionId);
             log.debug("[rag] Sesión expirada manualmente id={}", sesionId);
-
-        } catch (IllegalArgumentException ignored) {
-            // UUID inválido — no-op silencioso
+        } catch (IllegalArgumentException | DataAccessException e) {
+            log.debug("[rag] expireSession no-op: {}", e.getMessage());
         }
     }
 }

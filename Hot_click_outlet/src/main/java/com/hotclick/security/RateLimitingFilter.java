@@ -93,6 +93,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         Map.entry("/api/public/chat",                                 new Limit(10,  60)),
         Map.entry("/api/public/shopping-assistant/chat",              new Limit(10,  60)),
         Map.entry("/api/public/shopping-assistant/search-by-image",   new Limit(5,   60)),
+        Map.entry("/api/public/shopping-assistant/feedback",          new Limit(20,  60)),
+        Map.entry("/api/public/solicitud-especial",                   new Limit(5,   60)),
         Map.entry("/api/admin/ai/chat",                               new Limit(20,  60))
     );
 
@@ -107,6 +109,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     // Matched in order — first prefix wins. Only covers unauthenticated-friendly routes.
     private static final List<GetLimit> GET_LIMITS = List.of(
         new GetLimit("/api/hacienda/contribuyente",      10,  60), // proxy a API Hacienda CR
+        new GetLimit("/api/img",                         60,  60),
         new GetLimit("/api/convenios/publicos",          60,  60),
         new GetLimit("/api/marcas/publicas",             60,  60),
         new GetLimit("/api/categorias",                  60,  60),

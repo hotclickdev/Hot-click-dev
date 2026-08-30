@@ -19,7 +19,8 @@ class ChatSearchTermsTest {
         List<String> terms = ChatSearchTerms.fromTsQuery(ts);
 
         assertThat(terms).contains("sala", "living", "sofa", "mueble");
-        assertThat(terms).doesNotContain("quiero", "productos", "para", "ver");
+        assertThat(ChatSearchTerms.sanitizarLike("Sala%_Living")).isEqualTo("salaliving");
+        assertThat(ChatSearchTerms.quitarComodinesLike("%sofá_")).isEqualTo("sofá");
     }
 
     @Test

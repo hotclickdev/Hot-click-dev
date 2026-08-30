@@ -92,12 +92,46 @@
   --hc-dur-slow: 320ms;
 }
 
+/* ---------- Super Admin (rol ADMIN · Figma CLAUDECLICK 41:128) ----------
+   Manual de Marca: rojo #E31E24, azul #0D47A1, navy #0B132B.
+   Fondo blanco / n-50 — NUNCA la paleta crema de .hc-sistema-theme.
+   Scoped: no hereda html.dark (el panel Admin es siempre modo claro). */
+.hc-superadmin-theme {
+  /* Figma 41:128: canvas blanco; KPI/search #F8F9FB; avatares un tono más. */
+  --hc-bg:             #FFFFFF;
+  --hc-surface:        #FFFFFF;
+  --hc-surface-raised: #FFFFFF;
+  --hc-surface-2:      #F8F9FB;
+  --hc-surface-3:      #F1F3F6;
+  --hc-text:           #0B132B;
+  --hc-text-secondary: #4D5560;
+  --hc-text-disabled:  #9AA1AE;
+  --hc-muted:          #4D5560;
+  --hc-border:         #E6E6E6;
+  --hc-border-strong:  #CDD2DB;
+  --hc-primary:        #E31E24;
+  --hc-primary-hover:  #C4181E;
+  --hc-primary-press:  #A11418;
+  --hc-link:           #0D47A1;
+  --hc-accent:         #0D47A1;
+  --hc-accent-hover:   #0A3780;
+  --hc-focus-ring:     #3F6CDE;
+  --hc-success: #178A50;  --hc-success-bg: #E9F7F0;
+  --hc-warning: #9A6700;  --hc-warning-bg: #FDF3DC;
+  --hc-danger:  #E31E24;  --hc-danger-bg:  #FEF2F1;
+  --hc-info:    #0D47A1;  --hc-info-bg:    #EFF4FE;
+  --hc-shadow-1: 0 1px 2px rgba(11,19,43,.06);
+  --hc-shadow-2: 0 2px 8px rgba(11,19,43,.08);
+  --hc-shadow-3: 0 12px 32px rgba(11,19,43,.14);
+  color: var(--hc-text);
+  background-color: var(--hc-bg);
+}
+
 /* ---------- Panel "Sistema" (rol EMPRENDEDOR) ----------
    Los mockups aprobados por junta (Front para cliente EPN/) usan una
    paleta cálida distinta del resto del sitio (Brand Book v1.1, neutros
    fríos). Se sobreescribe solo dentro de .hc-sistema-theme —aplicada por
-   AdminLayout.jsx únicamente cuando userRole === 'EMPRENDEDOR'— para no
-   afectar el panel ADMIN ni el sitio público. */
+   AdminLayout únicamente cuando el rol NO es ADMIN. */
 .hc-sistema-theme {
   --hc-bg:     #ede5da;
   /* Bordes un par de pasos más oscuros que el #e3dacb del mockup: el dueño

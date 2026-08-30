@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
 import TrustGlyph from '@/components/ui/TrustGlyph'
+import LegalMasLinks from '@/pages/legal/LegalMasLinks'
 
 const SITE_URL = 'https://hotclick.lat'
 
@@ -208,6 +209,7 @@ export default function NosotrosPage() {
         </motion.div>
 
       </div>
+      <LegalMasLinks />
     </MainLayout>
   )
 }

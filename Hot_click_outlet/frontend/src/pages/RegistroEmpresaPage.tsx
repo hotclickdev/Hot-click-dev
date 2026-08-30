@@ -13,7 +13,7 @@ import StepDatosEmpresa from './registro-empresa/StepDatosEmpresa'
 import StepDatosAdmin from './registro-empresa/StepDatosAdmin'
 import { isTokenAlive } from '@/utils/authToken'
 import { rutaLoginConRetorno } from '@/utils/authRedirect'
-import { destinoVender, RUTA_REGISTRO_EMPRESA, RUTA_REGISTRAR_NEGOCIO } from '@/utils/destinoVender'
+import { destinoVender, RUTA_PANEL_VENDEDOR, RUTA_REGISTRO_EMPRESA, RUTA_REGISTRAR_NEGOCIO } from '@/utils/destinoVender'
 import { mensajeErrorAuth } from './auth/authHelpers'
 import type { AuthResponse } from '@/types/auth'
 
@@ -125,7 +125,7 @@ export default function RegistroEmpresaPage() {
       if (envelope?.data) {
         loginStore(envelope.data)
         toast({ message: '¡Negocio creado! Bienvenido a tu panel.', type: 'success' })
-        navigate('/admin')
+        navigate(RUTA_PANEL_VENDEDOR)
       }
     } catch (err: unknown) {
       const msg = mensajeErrorAuth(err, '')

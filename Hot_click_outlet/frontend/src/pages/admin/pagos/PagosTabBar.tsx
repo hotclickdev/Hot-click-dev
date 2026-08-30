@@ -1,4 +1,4 @@
-import type { TFunction } from 'i18next'
+﻿import type { TFunction } from 'i18next'
 import type { Dispatch, SetStateAction } from 'react'
 
 export default function PagosTabBar({ t, tab, setTab, setLoadingC }: {
@@ -8,10 +8,10 @@ export default function PagosTabBar({ t, tab, setTab, setLoadingC }: {
   setLoadingC: Dispatch<SetStateAction<boolean>>
 }) {
   return (
-    <div className="flex gap-2 mb-6 border-b border-white/8">
+    <div className="flex gap-2 mb-6 border-b border-hc-border">
       {[
         { key: 'pagos', label: t('admin.pagos.title') },
-        { key: 'comprobantes', label: 'Comprobantes SINPE' },
+        { key: 'comprobantes', label: t('admin.pagos.comprobantesSinpe') },
         { key: 'webhooks', label: t('admin.pagos.webhooks') },
       ].map((tabItem) => (
         <button type="button"
@@ -22,8 +22,8 @@ export default function PagosTabBar({ t, tab, setTab, setLoadingC }: {
           }}
           className={`px-5 py-2.5 text-sm font-medium capitalize transition-colors border-b-2 -mb-px ${
             tab === tabItem.key
-              ? 'border-[#4f7cff] text-[#4f7cff]'
-              : 'border-transparent text-[#8e8e9a] hover:text-[#e8e8ed]'
+              ? 'border-hc-primary text-hc-link'
+              : 'border-transparent text-hc-muted hover:text-hc-text'
           }`}
         >
           {tabItem.label}

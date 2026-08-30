@@ -1,5 +1,4 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { STEPS } from './appTour/appTourSteps'
 import { DemoPreview } from './appTour/AppTourDemoPreview'
 import { useAppTour } from './appTour/useAppTour'
 import TrustGlyph from '@/components/ui/TrustGlyph'
@@ -7,7 +6,8 @@ import CloseIcon from '@/components/ui/CloseIcon'
 import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function AppTour() {
-  const { show, step, current, isSpecial, isFirst, isLast, dismiss, go } = useAppTour()
+  const { show, step, current, isSpecial, isFirst, isLast, dismiss, go, steps } = useAppTour()
+  if (!current) return null
 
   return (
     <AnimatePresence>
@@ -20,8 +20,8 @@ export default function AppTour() {
             onClick={isSpecial ? dismiss : undefined}
             className="fixed inset-0 z-[90]"
             style={{
-              backgroundColor: isSpecial ? 'rgba(0,0,0,0.62)' : 'rgba(0,0,0,0.18)',
-              backdropFilter: isSpecial ? 'blur(6px)' : 'none',
+              backgroundColor: isSpecial ? 'rgba(20,23,28,0.45)' : 'rgba(20,23,28,0.18)',
+              backdropFilter: isSpecial ? 'blur(4px)' : 'none',
               pointerEvents: isSpecial ? 'auto' : 'none',
             }}
           />
@@ -45,7 +45,7 @@ export default function AppTour() {
                 maxWidth: isSpecial ? undefined : '27rem',
                 backgroundColor: 'var(--hc-surface)',
                 border: '1px solid var(--hc-border)',
-                boxShadow: '0 28px 72px rgba(0,0,0,0.55), 0 4px 20px rgba(0,0,0,0.25)',
+                boxShadow: '0 28px 72px rgba(20,23,28,0.18), 0 4px 20px rgba(20,23,28,0.08)',
               }}
             >
               <div className="h-1.5 w-full" style={{ background: `linear-gradient(90deg, ${current.color}, ${current.color}99)` }} />
@@ -111,7 +111,7 @@ export default function AppTour() {
 
                 <div>
                   <div className="flex items-center gap-1 mb-3">
-                    {STEPS.map((_, i) => (
+                    {steps.map((_, i) => (
                       <button type="button"
                         key={i}
                         onClick={() => go(i)}
@@ -125,7 +125,7 @@ export default function AppTour() {
                       />
                     ))}
                     <span className="ml-auto text-[10px] font-medium shrink-0" style={{ color: 'var(--hc-muted)' }}>
-                      {step + 1} / {STEPS.length}
+                      {step + 1} / {steps.length}
                     </span>
                   </div>
 

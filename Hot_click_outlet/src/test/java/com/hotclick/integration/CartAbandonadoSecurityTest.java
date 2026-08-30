@@ -128,11 +128,27 @@ class CartAbandonadoSecurityTest extends BaseIntegrationTest {
     // ── Public recovery endpoints still work ─────────────────────────────────
 
     @Test
-    @DisplayName("GET recover/{id} sigue siendo público (sin auth) → 200")
+    @DisplayName("GET recover/{token} público → 200 y no expone sessionId")
     void recover_public_noAuthNeeded() throws Exception {
-        mockMvc.perform(get("/api/cart/abandoned/recover/" + carritoA.getId()))
+        mockMvc.perform(get("/api/cart/abandoned/recover/" + carritoA.getTokenRecuperacion()))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.items").isArray());
+            .andExpect(jsonPath("$.data.items").isArray())
+            .andExpect(jsonPath("$.data.sessionId").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("GET recover con ID numérico (sin token) → 404")
+    void recover_idNumerico_returns404() throws Exception {
+        mockMvc.perform(get("/api/cart/abandoned/recover/" + carritoA.getId()))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("DELETE recover/{token} con token del email → 200")
+    void delete_porTokenRecuperacion_returns200() throws Exception {
+        mockMvc.perform(delete("/api/cart/abandoned/recover/" + carritoA.getTokenRecuperacion()))
+            .andExpect(status().isOk());
+        assertThat(carritoRepo.existsById(carritoA.getId())).isFalse();
     }
 
     @Test

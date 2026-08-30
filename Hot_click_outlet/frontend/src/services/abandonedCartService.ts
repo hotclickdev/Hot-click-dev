@@ -42,8 +42,8 @@ export const abandonedCartService = {
   },
 
   /** Fetches items for a recovery page (opened from email link). */
-  getAbandonedCart: (token: Id) =>
-    api.get(`/cart/abandoned/recover/${token}`),
+  getAbandonedCart: (token: string) =>
+    api.get(`/cart/abandoned/recover/${encodeURIComponent(token)}`),
 
   /** Checks whether there is a PENDIENTE cart for the current session. */
   getAbandonedCartBySession: () => {
@@ -58,6 +58,6 @@ export const abandonedCartService = {
   },
 
   /** Descarta el carrito recuperado con el token del email. */
-  deleteAbandonedCartByToken: (token: Id) =>
-    api.delete(`/cart/abandoned/recover/${token}`),
+  deleteAbandonedCartByToken: (token: string) =>
+    api.delete(`/cart/abandoned/recover/${encodeURIComponent(token)}`),
 }

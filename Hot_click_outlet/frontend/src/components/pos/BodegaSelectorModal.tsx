@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { posService } from '@/services/posService'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import TextoCamino from '@/components/ui/TextoCamino'
+import { HotClickMark } from '@/components/ui/BrandLogo'
 import type { Id } from '@/types/api'
 
 type BodegaPos = {
@@ -54,16 +55,15 @@ export default function BodegaSelectorModal({ onSelect }: { onSelect: (bodegaId:
   /* ── Layout completo (reemplaza el POS entero mientras no hay selección) ── */
   return (
     <div className="fixed inset-0 z-50 flex flex-col"
-      style={{ backgroundColor: '#08080c', fontFamily: "'JetBrains Mono','Fira Code','Consolas',monospace" }}>
+      style={{ backgroundColor: 'var(--hc-bg)' }}>
 
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b shrink-0"
-        style={{ borderColor: 'rgba(255,255,255,0.06)', backgroundColor: '#0c0c12' }}>
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black shrink-0"
-          style={{ background: 'var(--hc-accent)', color: '#fff' }}>HC</div>
+        style={{ borderColor: 'var(--hc-border)', backgroundColor: 'var(--hc-surface)' }}>
+        <HotClickMark size={28} className="shrink-0" />
         <div>
-          <p className="text-sm font-black" style={{ color: '#fff' }}>Caja POS</p>
-          <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>Seleccioná la bodega de hoy</p>
+          <p className="text-sm font-black" style={{ color: 'var(--hc-text)' }}>Caja POS</p>
+          <p className="text-[11px]" style={{ color: 'var(--hc-muted)' }}>Seleccioná la bodega de hoy</p>
         </div>
       </div>
 
@@ -77,10 +77,10 @@ export default function BodegaSelectorModal({ onSelect }: { onSelect: (bodegaId:
               style={{ backgroundColor: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', color: '#fbbf24' }}>
               <TrustGlyph tipo="edificio" className="w-8 h-8" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black leading-tight" style={{ color: '#fff' }}>
+            <h1 className="text-2xl sm:text-3xl font-black leading-tight" style={{ color: 'var(--hc-text)' }}>
               ¿Desde qué bodega<br />operás hoy?
             </h1>
-            <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
               El stock se descontará de esta bodega en cada venta
             </p>
           </div>
@@ -115,8 +115,8 @@ export default function BodegaSelectorModal({ onSelect }: { onSelect: (bodegaId:
                   <button type="button" key={b.id} onClick={() => setSelected(b.id)}
                     className="w-full text-left rounded-2xl transition-all active:scale-[0.99]"
                     style={{
-                      backgroundColor: activa ? 'rgba(23,71,168,0.15)' : 'rgba(255,255,255,0.04)',
-                      border: `2px solid ${activa ? 'var(--hc-accent)' : 'rgba(255,255,255,0.09)'}`,
+                      backgroundColor: activa ? 'rgba(23,71,168,0.15)' : 'var(--hc-surface-2)',
+                      border: `2px solid ${activa ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
                       padding: '16px 18px',
                     }}>
                     <div className="flex items-start gap-4">
@@ -124,9 +124,9 @@ export default function BodegaSelectorModal({ onSelect }: { onSelect: (bodegaId:
                       {/* Ícono */}
                       <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
                         style={{
-                          backgroundColor: activa ? 'rgba(23,71,168,0.22)' : 'rgba(255,255,255,0.06)',
-                          border: `1px solid ${activa ? 'rgba(23,71,168,0.5)' : 'rgba(255,255,255,0.1)'}`,
-                          color: activa ? '#7aa3ff' : 'rgba(255,255,255,0.55)',
+                          backgroundColor: activa ? 'rgba(23,71,168,0.22)' : 'var(--hc-surface)',
+                          border: `1px solid ${activa ? 'rgba(23,71,168,0.5)' : 'var(--hc-border)'}`,
+                          color: activa ? 'var(--hc-link)' : 'var(--hc-muted)',
                         }}>
                         <TrustGlyph tipo="edificio" className="w-6 h-6" />
                       </div>
@@ -134,18 +134,18 @@ export default function BodegaSelectorModal({ onSelect }: { onSelect: (bodegaId:
                       {/* Datos */}
                       <div className="flex-1 min-w-0 space-y-0.5">
                         <p className="text-base font-bold leading-snug"
-                          style={{ color: activa ? '#fff' : 'rgba(255,255,255,0.85)' }}>
+                          style={{ color: activa ? 'var(--hc-text)' : 'var(--hc-text)' }}>
                           {b.nombreBodega}
                         </p>
                         {b.direccionExacta && (
                           <p className="text-sm truncate"
-                            style={{ color: 'rgba(255,255,255,0.38)' }}>
+                            style={{ color: 'var(--hc-muted)' }}>
                             {b.direccionExacta}
                           </p>
                         )}
                         {b.encargadoNombre && (
                           <p className="text-xs"
-                            style={{ color: 'rgba(255,255,255,0.28)' }}>
+                            style={{ color: 'var(--hc-muted)' }}>
                             {b.encargadoNombre}
                           </p>
                         )}
@@ -154,8 +154,8 @@ export default function BodegaSelectorModal({ onSelect }: { onSelect: (bodegaId:
                       {/* Checkmark */}
                       <div className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center mt-0.5"
                         style={{
-                          backgroundColor: activa ? 'var(--hc-accent)' : 'rgba(255,255,255,0.07)',
-                          border: `2px solid ${activa ? 'var(--hc-accent)' : 'rgba(255,255,255,0.18)'}`,
+                          backgroundColor: activa ? 'var(--hc-accent)' : 'var(--hc-surface-2)',
+                          border: `2px solid ${activa ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
                           transition: 'all 0.15s ease',
                         }}>
                         {activa && <TrustGlyph tipo="check" className="w-3.5 h-3.5 text-white" />}
@@ -170,10 +170,10 @@ export default function BodegaSelectorModal({ onSelect }: { onSelect: (bodegaId:
           {/* Sin bodegas */}
           {!loading && !error && bodegas.length === 0 && (
             <div className="rounded-2xl p-8 text-center space-y-3"
-              style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)' }}>
               <TrustGlyph tipo="paquete" className="w-10 h-10 mx-auto opacity-50" />
-              <p className="font-bold" style={{ color: 'rgba(255,255,255,0.7)' }}>No hay bodegas activas</p>
-              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              <p className="font-bold" style={{ color: 'var(--hc-text)' }}>No hay bodegas activas</p>
+              <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
                 Creá al menos una bodega en <TextoCamino partes={['Configuración', 'Bodegas']} /> antes de usar el POS
               </p>
             </div>
@@ -187,7 +187,7 @@ export default function BodegaSelectorModal({ onSelect }: { onSelect: (bodegaId:
               className="w-full rounded-2xl font-black text-base transition-all disabled:opacity-30 disabled:cursor-not-allowed"
               style={{
                 padding: '18px 0',
-                background: selected ? 'var(--hc-accent)' : 'rgba(255,255,255,0.06)',
+                background: selected ? 'var(--hc-accent)' : 'var(--hc-surface-2)',
                 color: '#fff',
                 boxShadow: selected ? '0 8px 28px rgba(23,71,168,0.45)' : 'none',
                 letterSpacing: '0.04em',
@@ -198,7 +198,7 @@ export default function BodegaSelectorModal({ onSelect }: { onSelect: (bodegaId:
             </button>
           )}
 
-          <p className="text-center text-xs" style={{ color: 'rgba(255,255,255,0.18)' }}>
+          <p className="text-center text-xs" style={{ color: 'var(--hc-muted)' }}>
             Podés cambiar la bodega desde el encabezado del POS en cualquier momento
           </p>
         </div>

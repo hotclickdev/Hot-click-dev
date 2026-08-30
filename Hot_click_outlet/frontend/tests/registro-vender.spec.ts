@@ -77,7 +77,7 @@ test.describe('Puerta Vender — una entrada, tres rutas', () => {
   test('vendedor logueado en /registro-empresa va al panel', async ({ page }) => {
     await sesion(page, payloadAuth({ rol: 'EMPRENDEDOR', empresaId: 1 }))
     await page.goto('/registro-empresa', { waitUntil: 'domcontentloaded' })
-    await expect(page).toHaveURL(/\/admin/)
+    await expect(page).toHaveURL(/\/emprendedor/)
   })
 
   test('/registro y /registrar-negocio siguen existiendo', async ({ page }) => {

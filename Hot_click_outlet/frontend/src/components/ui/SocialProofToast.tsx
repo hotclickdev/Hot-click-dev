@@ -112,7 +112,7 @@ function ToastItem({ item, onDismiss }: { item: SocialProofNotification; onDismi
           {' '}
           <span style={{ color: '#6B7280' }}>{t('socialProofToast.from')} {buyer.ciudad}</span>
           {' '}
-          <span>{action.text}</span>
+          <span>{t(`socialProofToast.${action.key}`)}</span>
           {' '}
           <span className="font-medium truncate">{product.nombre}</span>
         </p>

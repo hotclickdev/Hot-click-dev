@@ -7,8 +7,11 @@ import useAuthStore from '@/store/authStore'
 import { RUTA_SISTEMA_MARCA } from '@/utils/rutaTienda'
 import { EmpresaIcon } from './perfilIcons'
 import { roleLabel } from './perfilHelpers'
+import useRutaPanel from '@/app/useRutaPanel'
 
 function EmpresaCard({ empresaNombre, empresaSlug }: { empresaNombre: string; empresaSlug: string | null }) {
+  const rutaPanel = useRutaPanel()
+  const rutaMarca = rutaPanel === '/admin' ? RUTA_SISTEMA_MARCA : `${rutaPanel}/opciones`
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -28,14 +31,14 @@ function EmpresaCard({ empresaNombre, empresaSlug }: { empresaNombre: string; em
       </div>
       <div className="flex gap-2 shrink-0">
         <Link
-          to={RUTA_SISTEMA_MARCA}
+          to={rutaMarca}
           className="text-xs px-3 py-1.5 rounded-lg font-medium transition-opacity hover:opacity-80"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
         >
           Configurar marca
         </Link>
         <Link
-          to="/admin"
+          to={rutaPanel}
           className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
           style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
         >

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Subset local de Hacienda 4.3 alineado al XML que emitimos hoy.
+  NO es el XSD oficial (el CDN de Hacienda responde AccessDenied).
+
+  Huecos vs esquema oficial: Emisor sin Ubicacion/Telefono;
+  MedioPago único (oficial permite lista); ResumenFactura sin
+  TotalVenta/TotalExento/TotalMercanciasGravadas/etc.; sin Otros/Normativa.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/facturaElectronica"
+           xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/facturaElectronica"
+           elementFormDefault="qualified">
+
+  <xs:element name="FacturaElectronica" type="ComprobanteType"/>
+
+  <xs:complexType name="ComprobanteType">
+    <xs:sequence>
+      <xs:element name="Clave" type="xs:string"/>
+      <xs:element name="CodigoActividad" type="xs:string"/>
+      <xs:element name="NumeroConsecutivo" type="xs:string"/>
+      <xs:element name="FechaEmision">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}-06:00"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="Emisor" type="EmisorType"/>
+      <xs:element name="Receptor" type="ReceptorType" minOccurs="0"/>
+      <xs:element name="CondicionVenta" type="xs:string"/>
+      <xs:element name="MedioPago" type="xs:string"/>
+      <xs:element name="DetalleServicio" type="DetalleServicioType"/>
+      <xs:element name="ResumenFactura" type="ResumenType"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="IdentificacionType">
+    <xs:sequence>
+      <xs:element name="Tipo" type="xs:string"/>
+      <xs:element name="Numero" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="EmisorType">
+    <xs:sequence>
+      <xs:element name="Nombre" type="xs:string"/>
+      <xs:element name="Identificacion" type="IdentificacionType"/>
+      <xs:element name="CorreoElectronico" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ReceptorType">
+    <xs:sequence>
+      <xs:element name="Nombre" type="xs:string"/>
+      <xs:element name="Identificacion" type="IdentificacionType"/>
+      <xs:element name="CorreoElectronico" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="DetalleServicioType">
+    <xs:sequence>
+      <xs:element name="LineaDetalle" type="LineaDetalleType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="LineaDetalleType">
+    <xs:sequence>
+      <xs:element name="NumeroLinea" type="xs:positiveInteger"/>
+      <xs:element name="Detalle" type="xs:string"/>
+      <xs:element name="Cantidad" type="xs:decimal"/>
+      <xs:element name="UnidadMedida" type="xs:string"/>
+      <xs:element name="PrecioUnitario" type="xs:decimal"/>
+      <xs:element name="MontoTotal" type="xs:decimal"/>
+      <xs:element name="Impuesto" type="ImpuestoType" minOccurs="0"/>
+      <xs:element name="SubTotal" type="xs:decimal"/>
+      <xs:element name="ImpuestoNeto" type="xs:decimal"/>
+      <xs:element name="MontoTotalLinea" type="xs:decimal"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ImpuestoType">
+    <xs:sequence>
+      <xs:element name="Codigo" type="xs:string"/>
+      <xs:element name="CodigoTarifa" type="xs:string"/>
+      <xs:element name="Tarifa" type="xs:decimal"/>
+      <xs:element name="Monto" type="xs:decimal"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ResumenType">
+    <xs:sequence>
+      <xs:element name="CodigoTipoMoneda">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="CodigoMoneda" type="xs:string"/>
+            <xs:element name="TipoCambio" type="xs:decimal"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="TotalGravado" type="xs:decimal"/>
+      <xs:element name="TotalImpuesto" type="xs:decimal"/>
+      <xs:element name="TotalComprobante" type="xs:decimal"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>

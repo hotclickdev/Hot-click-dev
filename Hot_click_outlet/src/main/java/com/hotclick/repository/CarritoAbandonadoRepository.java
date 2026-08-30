@@ -13,6 +13,8 @@ public interface CarritoAbandonadoRepository extends JpaRepository<CarritoAbando
 
     Optional<CarritoAbandonado> findFirstBySessionIdAndStatusOrderByCreatedAtDesc(String sessionId, String status);
 
+    Optional<CarritoAbandonado> findByTokenRecuperacion(String tokenRecuperacion);
+
     List<CarritoAbandonado> findByStatusAndCreatedAtBefore(String status, LocalDateTime fecha);
 
     void deleteBySessionId(String sessionId);

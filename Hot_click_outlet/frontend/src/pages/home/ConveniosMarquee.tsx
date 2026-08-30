@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { convenioService, listaConvenios } from '@/services/convenioService'
 
 export type ConvenioMarquee = {
@@ -10,6 +11,7 @@ export type ConvenioMarquee = {
 
 // ─── Marquee de emprendimientos con convenio ──────────────────────────────────
 export default function ConveniosMarquee() {
+  const { t } = useTranslation()
   const [items, setItems] = useState<ConvenioMarquee[]>([])
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export default function ConveniosMarquee() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10, paddingLeft: 24 }}>
         <span style={{ width: 4, height: 16, borderRadius: 2, background: 'var(--hc-accent)', display: 'inline-block' }} />
         <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--hc-muted)' }}>
-          Emprendimientos con convenio
+          {t('home.conveniosTitle')}
         </span>
       </div>
       <div style={{ display: 'flex', gap: 0, width: '100%', overflow: 'hidden' }}>

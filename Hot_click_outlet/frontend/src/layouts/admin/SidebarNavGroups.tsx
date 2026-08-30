@@ -1,9 +1,10 @@
 import type { RefObject, UIEvent } from 'react'
+import type { TFunction } from 'i18next'
 import { NavLink } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getSectionColor } from './adminSidebarTheme'
+import { getSectionLabel, type SidebarLink } from './adminItJobs'
 import { SidebarIcon } from './SidebarIcons'
-import type { SidebarLink } from './adminItJobs'
 
 export type SidebarGroup = {
   section: string | null
@@ -16,27 +17,29 @@ export type SidebarNavGroupsProps = {
   groups: SidebarGroup[]
   collapsed: Set<string>
   toggleSection: (section: string) => void
-  isLight: boolean
+  layoutSistema: boolean
   faint: string
   hoverBg: string
   muted: string
   tenantLoaded: boolean
   hasFeature: (feature: string) => boolean
+  t: TFunction
 }
 
-/** Nav del sidebar admin agrupado por sección (colapsable). */
+/** Nav del sidebar admin agrupado por sección (colapsable en IT). */
 export default function SidebarNavGroups({
   navRef,
   onScroll,
   groups,
   collapsed,
   toggleSection,
-  isLight,
+  layoutSistema,
   faint,
   hoverBg,
   muted,
   tenantLoaded,
   hasFeature,
+  t,
 }: SidebarNavGroupsProps) {
   return (
     <nav
@@ -47,15 +50,14 @@ export default function SidebarNavGroups({
       {groups.map((group, gi) => {
         const isOpen = !group.section || !collapsed.has(group.section)
         const color  = group.section ? getSectionColor(group.section) : null
+        const sectionTitle = group.section ? getSectionLabel(t, group.section) : null
 
         return (
           <div key={group.section || `g-${gi}`}>
-            {/* Cabecera de sección — plana y estática en Sistema (mockup aprobado),
-                colapsable con barra de color en el nav oscuro (ADMIN) */}
-            {group.section && (isLight ? (
+            {group.section && (layoutSistema ? (
               <div className="px-3 pt-3.5 pb-1">
                 <span className="text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--hc-muted)' }}>
-                  {group.section}
+                  {sectionTitle}
                 </span>
               </div>
             ) : (
@@ -71,10 +73,10 @@ export default function SidebarNavGroups({
                     style={{ backgroundColor: color ?? undefined }}
                   />
                   <span
-                    className="text-[9px] font-bold uppercase tracking-[0.13em] transition-colors duration-150 group-hover/sec:text-white/60"
-                    style={{ color: isOpen ? 'rgba(255,255,255,0.38)' : 'rgba(255,255,255,0.22)' }}
+                    className="text-[9px] font-bold uppercase tracking-[0.13em] transition-colors duration-150 group-hover/sec:text-[var(--hc-text)]"
+                    style={{ color: isOpen ? 'var(--hc-muted)' : 'color-mix(in srgb, var(--hc-muted) 70%, transparent)' }}
                   >
-                    {group.section}
+                    {sectionTitle}
                   </span>
                 </div>
                 <motion.svg
@@ -90,7 +92,6 @@ export default function SidebarNavGroups({
               </button>
             ))}
 
-            {/* Items de la sección con animación */}
             <AnimatePresence initial={false}>
               {isOpen && (
                 <motion.div
@@ -111,106 +112,35 @@ export default function SidebarNavGroups({
                       <NavLink
                         to={link.to ?? ''}
                         end={link.exact}
-                        className={`group/item relative flex items-center gap-2.5 px-3 mb-0.5 transition-colors duration-150 ${isLight ? 'py-2 rounded-[10px]' : 'py-2.5 rounded-xl'}`}
-                        style={({ isActive }) => (isLight
-                          ? {
-                              color:           isActive ? 'var(--hc-link)' : 'var(--hc-text)',
-                              fontWeight:      isActive ? 700 : 500,
-                              backgroundColor: isActive ? 'rgba(23,71,168,0.08)' : 'transparent',
-                            }
-                          : {
-                              color:           isActive ? '#fff' : 'rgba(255,255,255,0.48)',
-                              backgroundColor: isActive ? 'rgba(231,59,51,0.16)' : 'transparent',
-                              border:          '1px solid transparent',
-                            })}
+                        className={`group/item relative flex items-center gap-2.5 px-3 mb-0.5 transition-colors duration-150 ${layoutSistema ? 'py-2 rounded-[10px]' : 'py-2.5 rounded-xl'}`}
+                        style={({ isActive }) => ({
+                          color:           isActive ? 'var(--hc-link)' : 'var(--hc-text)',
+                          fontWeight:      isActive ? 700 : 500,
+                          backgroundColor: isActive ? 'rgba(23,71,168,0.08)' : 'transparent',
+                        })}
                       >
-                        {({ isActive }) => isLight ? (
-                          <>
-                            {/* Hover background */}
-                            {!isActive && (
-                              <motion.div
-                                className="absolute inset-0 rounded-[10px] opacity-0 group-hover/item:opacity-100 transition-opacity duration-150"
-                                style={{ backgroundColor: hoverBg }}
-                              />
-                            )}
-
-                            {/* Bullet — como en el mockup aprobado, sin ícono por ítem */}
-                            <span
-                              className="relative w-[7px] h-[7px] rounded-[3px] shrink-0"
-                              style={{ backgroundColor: isActive ? 'var(--hc-link)' : '#cbc2b1' }}
-                            />
-
-                            <span className="relative flex-1 text-sm leading-tight flex items-center gap-1.5">
-                              {link.label}
-                              {link.feature && tenantLoaded && !hasFeature(link.feature) && (
-                                <svg className="w-3 h-3 shrink-0" style={{ color: muted }}
-                                  fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}
-                                  aria-label="Incluido en el plan PYME" role="img">
-                                  <title>Incluido en el plan PYME — tocá para ver qué incluye</title>
-                                  <rect x="4" y="10" width="16" height="10" rx="2"/>
-                                  <path strokeLinecap="round" d="M8 10V7a4 4 0 118 0v3"/>
-                                </svg>
-                              )}
-                            </span>
-                          </>
+                        {({ isActive }) => layoutSistema ? (
+                          <ItemSistema
+                            isActive={isActive}
+                            hoverBg={hoverBg}
+                            muted={muted}
+                            label={link.label ?? ''}
+                            feature={link.feature}
+                            tenantLoaded={tenantLoaded}
+                            hasFeature={hasFeature}
+                          />
                         ) : (
-                          <>
-                            {/* Línea lateral activa */}
-                            {isActive && (
-                              <motion.div
-                                layoutId="sidebar-active-line"
-                                className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full"
-                                style={{ backgroundColor: 'var(--hc-red-500)' }}
-                                transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                              />
-                            )}
-
-                            {/* Hover background */}
-                            {!isActive && (
-                              <motion.div
-                                className="absolute inset-0 rounded-xl opacity-0 group-hover/item:opacity-100 transition-opacity duration-150"
-                                style={{ backgroundColor: hoverBg }}
-                              />
-                            )}
-
-                            {/* Icono */}
-                            <motion.span
-                              className="relative w-[18px] h-[18px] flex items-center justify-center shrink-0 transition-colors duration-150"
-                              style={{ color: isActive ? (color || 'var(--hc-accent)') : 'rgba(255,255,255,0.38)' }}
-                              whileHover={{ scale: 1.12 }}
-                              transition={{ duration: 0.15 }}
-                            >
-                              <SidebarIcon name={link.icon} />
-                            </motion.span>
-
-                            {/* Label */}
-                            <motion.span
-                              className="relative flex-1 text-[13px] font-medium leading-tight flex items-center gap-1.5"
-                              whileHover={{ x: 2 }}
-                              transition={{ duration: 0.15 }}
-                            >
-                              {link.label}
-                              {link.feature && tenantLoaded && !hasFeature(link.feature) && (
-                                <svg className="w-3 h-3 shrink-0" style={{ color: faint }}
-                                  fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}
-                                  aria-label="Incluido en el plan PYME" role="img">
-                                  <title>Incluido en el plan PYME — tocá para ver qué incluye</title>
-                                  <rect x="4" y="10" width="16" height="10" rx="2"/>
-                                  <path strokeLinecap="round" d="M8 10V7a4 4 0 118 0v3"/>
-                                </svg>
-                              )}
-                            </motion.span>
-
-                            {/* Dot activo animado */}
-                            {isActive && (
-                              <motion.div
-                                layoutId="sidebar-active-dot"
-                                className="w-1.5 h-1.5 rounded-full shrink-0"
-                                style={{ backgroundColor: 'var(--hc-red-500)' }}
-                                transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                              />
-                            )}
-                          </>
+                          <ItemIt
+                            isActive={isActive}
+                            hoverBg={hoverBg}
+                            faint={faint}
+                            color={color}
+                            icon={link.icon ?? 'box'}
+                            label={link.label ?? ''}
+                            feature={link.feature}
+                            tenantLoaded={tenantLoaded}
+                            hasFeature={hasFeature}
+                          />
                         )}
                       </NavLink>
                     </motion.div>
@@ -222,5 +152,105 @@ export default function SidebarNavGroups({
         )
       })}
     </nav>
+  )
+}
+
+function CandadoPlan({ color }: { color: string }) {
+  return (
+    <svg className="w-3 h-3 shrink-0" style={{ color }}
+      fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}
+      aria-label="Incluido en el plan PYME" role="img">
+      <title>Incluido en el plan PYME — tocá para ver qué incluye</title>
+      <rect x="4" y="10" width="16" height="10" rx="2"/>
+      <path strokeLinecap="round" d="M8 10V7a4 4 0 118 0v3"/>
+    </svg>
+  )
+}
+
+function ItemSistema({
+  isActive, hoverBg, muted, label, feature, tenantLoaded, hasFeature,
+}: {
+  isActive: boolean
+  hoverBg: string
+  muted: string
+  label: string
+  feature?: string
+  tenantLoaded: boolean
+  hasFeature: (feature: string) => boolean
+}) {
+  return (
+    <>
+      {!isActive && (
+        <motion.div
+          className="absolute inset-0 rounded-[10px] opacity-0 group-hover/item:opacity-100 transition-opacity duration-150"
+          style={{ backgroundColor: hoverBg }}
+        />
+      )}
+      <span
+        className="relative w-[7px] h-[7px] rounded-[3px] shrink-0"
+        style={{ backgroundColor: isActive ? 'var(--hc-link)' : '#cbc2b1' }}
+      />
+      <span className="relative flex-1 text-sm leading-tight flex items-center gap-1.5">
+        {label}
+        {feature && tenantLoaded && !hasFeature(feature) && <CandadoPlan color={muted} />}
+      </span>
+    </>
+  )
+}
+
+function ItemIt({
+  isActive, hoverBg, faint, color, icon, label, feature, tenantLoaded, hasFeature,
+}: {
+  isActive: boolean
+  hoverBg: string
+  faint: string
+  color: string | null
+  icon: string
+  label: string
+  feature?: string
+  tenantLoaded: boolean
+  hasFeature: (feature: string) => boolean
+}) {
+  return (
+    <>
+      {isActive && (
+        <motion.div
+          layoutId="sidebar-active-line"
+          className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full"
+          style={{ backgroundColor: 'var(--hc-link)' }}
+          transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+        />
+      )}
+      {!isActive && (
+        <motion.div
+          className="absolute inset-0 rounded-xl opacity-0 group-hover/item:opacity-100 transition-opacity duration-150"
+          style={{ backgroundColor: hoverBg }}
+        />
+      )}
+      <motion.span
+        className="relative w-[18px] h-[18px] flex items-center justify-center shrink-0 transition-colors duration-150"
+        style={{ color: isActive ? (color || 'var(--hc-accent)') : 'var(--hc-muted)' }}
+        whileHover={{ scale: 1.12 }}
+        transition={{ duration: 0.15 }}
+      >
+        <SidebarIcon name={icon} />
+      </motion.span>
+      <motion.span
+        className="relative flex-1 text-[13px] font-medium leading-tight flex items-center gap-1.5"
+        whileHover={{ x: 2 }}
+        transition={{ duration: 0.15 }}
+      >
+        {label}
+        {feature && tenantLoaded && !hasFeature(feature) && <CandadoPlan color={faint} />}
+      </motion.span>
+      {isActive && (
+        <motion.div
+          layoutId="sidebar-active-dot"
+          className="w-1.5 h-1.5 rounded-full shrink-0"
+          style={{ backgroundColor: 'var(--hc-link)' }}
+          transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+        />
+      )}
+    </>
   )
 }

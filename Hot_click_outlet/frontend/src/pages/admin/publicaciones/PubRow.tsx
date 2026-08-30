@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Badge from '@/components/ui/Badge'
 import { useToast } from '@/components/ui/Toast'
@@ -25,18 +25,18 @@ export default function PubRow({ pub, onCopiar, onPublicado, onEliminar }: PubRo
   }
 
   return (
-    <div className="rounded-xl bg-white/3 border border-white/8 overflow-hidden">
+    <div className="rounded-xl bg-hc-surface-2 border border-hc-border overflow-hidden">
       <div className="flex items-center gap-3 px-4 py-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-medium text-[#e8e8ed] truncate">
+            <span className="text-sm font-medium text-hc-text truncate">
               {pub.tituloFb ?? pub.producto?.nombreProducto ?? `Producto #${pub.fkIdProducto}`}
             </span>
             <Badge variant={ESTADO_COLOR[pub.estadoPublicacion ?? ''] ?? 'default'}>
               {pub.estadoPublicacion}
             </Badge>
           </div>
-          <div className="flex items-center gap-3 mt-0.5 text-xs text-[#8e8e9a]">
+          <div className="flex items-center gap-3 mt-0.5 text-xs text-hc-muted">
             {pub.precioPublicar && <span>{formatPrice(pub.precioPublicar)}</span>}
             {pub.condicionFb && <span>· {pub.condicionFb}</span>}
             {pub.categoriaFb && <span>· {pub.categoriaFb}</span>}
@@ -45,7 +45,7 @@ export default function PubRow({ pub, onCopiar, onPublicado, onEliminar }: PubRo
         <div className="flex items-center gap-1.5 shrink-0">
           <button type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="px-2.5 py-1.5 rounded-lg text-xs text-[#8e8e9a] hover:text-white hover:bg-white/8 transition-colors border border-white/10"
+            className="px-2.5 py-1.5 rounded-lg text-xs text-hc-muted hover:text-hc-text hover:bg-hc-surface-2 transition-colors border border-hc-border"
           >
             {expanded ? 'Ocultar' : 'Ver texto'}
           </button>
@@ -53,7 +53,7 @@ export default function PubRow({ pub, onCopiar, onPublicado, onEliminar }: PubRo
             <>
               <button type="button"
                 onClick={copiar}
-                className="px-2.5 py-1.5 rounded-lg text-xs bg-[#4f7cff]/15 text-[#4f7cff] hover:bg-[#4f7cff]/25 transition-colors border border-[#4f7cff]/20"
+                className="px-2.5 py-1.5 rounded-lg text-xs bg-hc-primary/15 text-hc-link hover:bg-hc-primary/25 transition-colors border border-hc-primary/20"
               >
                 Copiar
               </button>
@@ -67,7 +67,7 @@ export default function PubRow({ pub, onCopiar, onPublicado, onEliminar }: PubRo
           )}
           <button type="button"
             onClick={() => onEliminar(pub.id)}
-            className="p-1.5 rounded-lg text-[#8e8e9a] hover:text-red-400 hover:bg-red-500/8 transition-colors"
+            className="p-1.5 rounded-lg text-hc-muted hover:text-red-400 hover:bg-red-500/8 transition-colors"
             title="Eliminar"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -85,8 +85,8 @@ export default function PubRow({ pub, onCopiar, onPublicado, onEliminar }: PubRo
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-4 pb-4 border-t border-white/8 pt-3">
-              <pre className="text-xs text-[#c8c8d0] whitespace-pre-wrap font-sans leading-relaxed bg-black/20 rounded-xl p-4">
+            <div className="px-4 pb-4 border-t border-hc-border pt-3">
+              <pre className="text-xs text-hc-muted whitespace-pre-wrap font-sans leading-relaxed bg-black/20 rounded-xl p-4">
                 {pub.textoFb}
               </pre>
             </div>

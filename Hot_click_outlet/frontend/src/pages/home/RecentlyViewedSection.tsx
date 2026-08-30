@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import useCartStore from '@/store/cartStore'
 import useRecentlyViewedStore from '@/store/recentlyViewedStore'
 import { useToast } from '@/components/ui/Toast'
@@ -11,7 +12,15 @@ import TrustGlyph from '@/components/ui/TrustGlyph'
 import type { ItemVisto } from '@/types/carrito'
 import type { Producto } from '@/types/producto'
 
-function RecentlyViewedCard({ product, onAdd }: { product: ItemVisto; onAdd: (product: ItemVisto) => void }) {
+function RecentlyViewedCard({
+  product,
+  onAdd,
+  t,
+}: {
+  product: ItemVisto
+  onAdd: (product: ItemVisto) => void
+  t: TFunction
+}) {
   return (
     <motion.article
       role="listitem"
@@ -46,7 +55,7 @@ function RecentlyViewedCard({ product, onAdd }: { product: ItemVisto; onAdd: (pr
       <div className="flex flex-col flex-1 px-3 pt-2 pb-3 gap-1">
         <Link
           to={`/productos/${product.id}`}
-          aria-label={`Ver ${product.nombre}, ${formatPrice(product.precio)}`}
+          aria-label={t('home.viewProductAria', { name: product.nombre, price: formatPrice(product.precio) })}
           className="flex-1"
         >
           <p className="text-xs font-medium leading-snug line-clamp-2" style={{ color: 'var(--hc-muted)' }}>{product.nombre}</p>
@@ -55,7 +64,7 @@ function RecentlyViewedCard({ product, onAdd }: { product: ItemVisto; onAdd: (pr
         <div className="flex justify-end mt-1">
           <motion.button
             whileTap={{ scale: 0.88 }}
-            aria-label={`Agregar ${product.nombre} al pedido`}
+            aria-label={t('home.addToOrderAria', { name: product.nombre })}
             onClick={() => onAdd(product)}
             className="w-7 h-7 rounded-full flex items-center justify-center text-white text-base font-bold shadow"
             style={{ background: 'var(--hc-accent)' }}
@@ -81,10 +90,10 @@ export default function RecentlyViewedSection() {
   }
 
   return (
-    <Section title={`${t('home.recentlyViewed')}.`} subtitle="Seguí donde lo dejaste.">
+    <Section title={`${t('home.recentlyViewed')}.`} subtitle={t('home.recentlyViewedSub')}>
       <div role="list" className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide px-1">
         {recentlyViewed.map((p) => (
-          <RecentlyViewedCard key={p.id} product={p} onAdd={handleAdd} />
+          <RecentlyViewedCard key={p.id} product={p} onAdd={handleAdd} t={t} />
         ))}
       </div>
     </Section>

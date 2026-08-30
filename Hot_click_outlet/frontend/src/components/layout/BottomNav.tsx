@@ -6,10 +6,11 @@ import useCartStore from '@/store/cartStore'
 import useAuthStore from '@/store/authStore'
 import { itemsBottomNav, estaTabActiva } from './bottomNavItems'
 import { esRutaTienda } from '@/utils/rutaTienda'
+import { esRutaClaudeclick } from '@/utils/rutaPrototipo'
 
 const ICONOS: Record<string, (props: { active: boolean }) => ReactElement> = {
-  comprar: ShopIcon,
-  vender: VenderIcon,
+  productos: ShopIcon,
+  servicios: ServiciosIcon,
   emprender: EmprenderIcon,
   pedido: CartNavIcon,
   cuenta: AccountIcon,
@@ -21,7 +22,7 @@ export default function BottomNav() {
   const cartCount = useCartStore((s) => s.count())
   const { token } = useAuthStore()
 
-  if (location.pathname.startsWith('/admin') || esRutaTienda(location.pathname)) return null
+  if (location.pathname.startsWith('/admin') || esRutaTienda(location.pathname) || esRutaClaudeclick(location.pathname)) return null
 
   const cartBadge = cartCount > 9 ? '9+' : `${cartCount}`
   const items = itemsBottomNav({
@@ -43,6 +44,7 @@ export default function BottomNav() {
       <div className="flex items-stretch h-16">
         {items.map((item) => {
           const Icon = ICONOS[item.icon]
+          if (!Icon) return null
           const isActive = estaTabActiva(item, location.pathname)
           return (
             <Link
@@ -102,14 +104,10 @@ function ShopIcon({ active }: { active: boolean }) {
   )
 }
 
-function VenderIcon({ active }: { active: boolean }) {
-  return active ? (
-    <svg className="w-[22px] h-[22px]" style={{ color: 'var(--hc-accent)' }} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M3 21h18V10.5L12 3 3 10.5V21zm8-2v-5h2v5h-2z" />
-    </svg>
-  ) : (
-    <svg className="w-[22px] h-[22px]" style={{ color: 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 21h18M5 21V10l7-6 7 6v11M9 21v-6h6v6" />
+function ServiciosIcon({ active }: { active: boolean }) {
+  return (
+    <svg className="w-[22px] h-[22px]" style={{ color: active ? 'var(--hc-accent)' : 'var(--hc-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M13 10V3L4 14h7v7l9-11h-7z" />
     </svg>
   )
 }

@@ -23,31 +23,88 @@ export type TourStep = {
   demo?: TourDemo
 }
 
+const COLOR = 'var(--hc-primary)'
+
+/** Tour corto Super Admin: sin Finanzas ni Copilot (no son su modelo mental). */
+export const STEPS_SUPER_ADMIN: TourStep[] = [
+  {
+    type: 'welcome',
+    icono: 'bolsa',
+    title: 'Panel Super Admin',
+    desc: 'Recorrido corto de la plataforma: tiendas, usuarios, moderación y configuración.',
+    color: COLOR,
+  },
+  {
+    path: '/admin',
+    icono: 'casa',
+    title: 'Panel Admin',
+    subtitle: 'Vista general',
+    desc: 'KPIs de la plataforma, carga masiva y tiendas recientes.',
+    tip: 'Empezá por Carga masiva o Moderación según lo que tengas pendiente.',
+    color: COLOR,
+    demo: { type: 'kpis', items: [
+      { label: 'Tiendas activas', value: '24' },
+      { label: 'Pendientes', value: '3' },
+    ] },
+  },
+  {
+    path: '/admin/aprobaciones',
+    icono: 'lista',
+    title: 'Moderación',
+    subtitle: 'Cola de revisión',
+    desc: 'Aprobá o rechazá productos, promociones y solicitudes de tienda.',
+    color: COLOR,
+  },
+  {
+    path: '/admin/empresas',
+    icono: 'edificio',
+    title: 'Tiendas',
+    subtitle: 'Negocios en la plataforma',
+    desc: 'Buscá, filtrá y abrí el detalle de cada tienda.',
+    color: COLOR,
+  },
+  {
+    path: '/admin/configuracion',
+    icono: 'edificio',
+    title: 'Configuración',
+    subtitle: 'Ajustes de plataforma',
+    desc: 'Comisión, categorías, política y métodos de pago.',
+    color: COLOR,
+  },
+  {
+    type: 'done',
+    icono: 'check',
+    title: 'Listo',
+    desc: 'Podés volver a ver la guía por pantalla desde el botón de ayuda.',
+    color: COLOR,
+  },
+]
+
+/** Tour del dueño / equipo de tienda (sin saltos a Finanzas/Copilot en el flujo principal). */
 export const STEPS: TourStep[] = [
   {
     type: 'welcome',
     icono: 'bolsa',
-    title: '¡Bienvenido al Panel HotClick!',
-    desc: 'Este tour te lleva por cada sección del panel para que aprendas a gestionar tu negocio paso a paso. Solo toma un par de minutos.',
-    color: 'var(--hc-accent)',
+    title: 'Bienvenido al Panel HotClick',
+    desc: 'Este tour te lleva por las secciones principales para gestionar tu negocio.',
+    color: COLOR,
   },
   {
     path: '/admin',
     icono: 'casa',
     title: 'Dashboard',
     subtitle: 'Tu centro de control diario',
-    desc: 'La primera pantalla que verás al entrar. Muestra el estado de tu negocio en tiempo real para tomar decisiones rápidas.',
+    desc: 'La primera pantalla que verás al entrar. Muestra el estado de tu negocio en tiempo real.',
     features: [
       'KPIs de ventas: ingresos hoy, esta semana y este mes',
       'Pedidos recientes con su estado actual',
       'Gráfica de ventas de los últimos 7 días',
-      'Últimos clientes registrados en la plataforma',
     ],
-    tip: 'Empezá aquí cada día para ver el panorama completo antes de atender clientes.',
-    color: 'var(--hc-accent)',
+    tip: 'Empezá aquí cada día para ver el panorama completo.',
+    color: COLOR,
     demo: { type: 'kpis', items: [
-      { label: 'Ventas hoy',    value: '₡145,000' },
-      { label: 'Pedidos',       value: '12' },
+      { label: 'Ventas hoy', value: '₡145,000' },
+      { label: 'Pedidos', value: '12' },
       { label: 'Clientes nuevos', value: '3' },
     ] },
   },
@@ -55,35 +112,21 @@ export const STEPS: TourStep[] = [
     path: '/admin/productos',
     icono: 'paquete',
     title: 'Catálogo de Productos',
-    subtitle: 'Tu inventario digital completo',
-    desc: 'Desde acá creás y gestionás todo lo que vendés: fotos, precios, stock, categorías y más.',
-    features: [
-      'Crear productos con fotos, precio y descripción detallada',
-      'Generar fichas de producto automáticamente con IA desde una foto',
-      'Clasificar por categorías, marcas y etiquetas',
-      'Control de stock con alertas de inventario bajo',
-      'Destacar productos para que aparezcan en el homepage',
-    ],
-    tip: 'Usá "Crear con IA" — sacás una foto y la IA rellena título, descripción y precio sugerido.',
-    color: 'var(--hc-accent)',
+    subtitle: 'Tu inventario digital',
+    desc: 'Creá y gestioná lo que vendés: fotos, precios, stock y categorías.',
+    tip: 'Usá Nuevo producto o Carga masiva según el volumen.',
+    color: COLOR,
     demo: { type: 'products', items: [
-      { nombre: 'Camisa azul talla M',       precio: '₡12,000', stock: 8 },
-      { nombre: 'Audífonos inalámbricos',    precio: '₡25,000', stock: 3 },
+      { nombre: 'Camisa azul talla M', precio: '₡12,000', stock: 8 },
+      { nombre: 'Audífonos inalámbricos', precio: '₡25,000', stock: 3 },
     ] },
   },
   {
     path: '/admin/pedidos',
     icono: 'lista',
     title: 'Pedidos',
-    subtitle: 'Gestión de órdenes online',
-    desc: 'Acá aterrizan todas las compras que hacen tus clientes desde la tienda online. Podés gestionar cada pedido de principio a fin.',
-    features: [
-      'Avanzar estados: Pendiente, Pagado, Enviado, Entregado',
-      'Asignar número de guía de Correos de Costa Rica',
-      'Notificar al cliente por email con un solo click',
-      'Generar mensaje de WhatsApp listo para enviar',
-    ],
-    tip: 'El botón WhatsApp genera un mensaje completo con productos, estado y guía — solo abrís el chat.',
+    subtitle: 'Órdenes online',
+    desc: 'Gestioná estados, guías y avisos al cliente.',
     color: '#34d399',
     demo: { type: 'orders', items: [
       { numero: '#ORD-1042', estado: 'Pendiente', total: '₡18,500' },
@@ -94,101 +137,27 @@ export const STEPS: TourStep[] = [
     path: '/admin/pos',
     icono: 'monitor',
     title: 'Caja POS',
-    subtitle: 'Ventas presenciales y ferias',
-    desc: 'Punto de venta para cobrar cara a cara en tu tienda, feria o evento. No necesitás internet para funcionar.',
-    features: [
-      'Buscador ultra rápido para agregar productos al carrito',
-      'Aceptar efectivo, SINPE Móvil y tarjeta débito/crédito',
-      'Enviar recibo por WhatsApp o imprimir en térmica',
-      'Cuadre de caja al final de cada turno',
-      'Modo mesas: ideal para restaurantes y cafeterías',
-    ],
-    tip: 'Activá el modo offline antes de ir a una feria — podés cobrar sin señal y sincroniza al volver.',
+    subtitle: 'Ventas presenciales',
+    desc: 'Cobrá cara a cara: buscá, agregá a la factura y cobrá.',
+    tip: 'F2 buscar · F8 cobrar.',
     color: '#f59e0b',
     demo: { type: 'pos', items: [
       { nombre: 'Camisa azul talla M', cant: 1, precio: '₡12,000' },
-      { nombre: 'Gorra negra',         cant: 1, precio: '₡6,500' },
+      { nombre: 'Gorra negra', cant: 1, precio: '₡6,500' },
     ], total: '₡18,500', metodo: 'SINPE Móvil' },
-  },
-  {
-    path: '/admin/finanzas',
-    icono: 'tarjeta',
-    title: 'Finanzas',
-    subtitle: 'Ingresos reales de tu negocio',
-    desc: 'Resumen financiero claro: cuánto entraste, cuánto costaron los envíos y el desglose por cada pedido entregado.',
-    features: [
-      'Ingresos totales por productos (solo pedidos ENTREGADOS)',
-      'Costos de envío desglosados: moto vs Correos CR',
-      'Filtros por período: hoy, 7 días, 30 días o rango manual',
-      'Tabla con desglose detallado y totales por pedido',
-    ],
-    tip: 'Solo se muestran pedidos ENTREGADOS — siempre ves dinero real, no promesas de pago.',
-    color: '#4ade80',
-    demo: { type: 'finance', items: [
-      { label: 'Ingresos productos', value: '₡845,000' },
-      { label: 'Costos de envío',    value: '₡42,000' },
-      { label: 'Total cobrado',      value: '₡887,000' },
-    ] },
-  },
-  {
-    path: '/admin/ofertas',
-    icono: 'megafono',
-    title: 'Marketing',
-    subtitle: 'Atraé y retené clientes',
-    desc: 'Herramientas para promocionar tu negocio: ofertas automáticas, cupones, publicaciones en redes y blog.',
-    features: [
-      'Crear ofertas con descuento por porcentaje o monto fijo',
-      'Generar códigos de cupón para clientes especiales',
-      'Publicar posts directamente en tu página de Facebook',
-      'Blog: artículos y noticias para posicionar tu marca',
-      'Aparecer en el directorio de emprendimientos',
-    ],
-    tip: 'Los cupones se aplican automáticamente en el checkout — sin pasos extra para el cliente.',
-    color: '#E5A93D',
-    demo: { type: 'offer', badge: '-20% Camisas de verano', cupon: 'VERANO20' },
-  },
-  {
-    path: '/admin/copilot',
-    icono: 'sparkle',
-    title: 'Consultas con Hot',
-    subtitle: 'Preguntale por tu negocio',
-    desc: 'Hot usa los datos reales de tu tienda: ventas, stock y productos. Las respuestas pueden tener errores: verificá lo importante.',
-    features: [
-      'Inventario, ventas del día y qué reponer',
-      'Productos que no se mueven, con acción sugerida',
-      'Te quedan N consultas al mes según tu plan',
-    ],
-    tip: 'Probá: "¿Cómo está el inventario y el stock crítico?"',
-    color: 'var(--hc-blue-300)',
-    demo: { type: 'ai',
-      pregunta: '¿Cuál es mi producto más rentable?',
-      respuesta: 'Camisa azul: 34% de margen, 18 unidades vendidas este mes.' },
-  },
-  {
-    path: '/admin/configuracion?seccion=marca',
-    icono: 'edificio',
-    title: 'Marca de tu tienda',
-    subtitle: 'Cómo te ven los compradores',
-    desc: 'Nombre comercial, logo, WhatsApp y visibilidad pública. Eso es lo que aparece en /tienda.',
-    features: [
-      'Nombre, logo, frase y WhatsApp de la tienda',
-      'Colores de tu marca en la tienda pública',
-      'Publicar u ocultar la tienda cuando esté lista',
-    ],
-    tip: 'Sin marca clara, el comprador no sabe de quién es el pedido.',
-    color: '#6490EA',
-    demo: { type: 'team', items: [
-      { nombre: 'María',  rol: 'Cajera' },
-      { nombre: 'Carlos', rol: 'Gerente' },
-    ] },
   },
   {
     type: 'done',
     icono: 'check',
-    title: '¡Tour completado!',
-    desc: 'Ya conocés las secciones principales del panel. Podés volver a ver este tour cuando quieras desde el botón de ayuda en el menú.',
-    color: 'var(--hc-accent)',
+    title: 'Tour completado',
+    desc: 'Ya conocés las secciones principales. La guía por pantalla también está en el botón de ayuda.',
+    color: COLOR,
   },
 ]
+
+export function pasosTourParaRol(rol: string | null | undefined): TourStep[] {
+  if (rol === 'ADMIN') return STEPS_SUPER_ADMIN
+  return STEPS
+}
 
 export const TOTAL = STEPS.length

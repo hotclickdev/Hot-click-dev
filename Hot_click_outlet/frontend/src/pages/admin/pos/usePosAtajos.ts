@@ -40,7 +40,7 @@ export function usePosAtajos({ activo, hayItems, onCobrar, alBuscar, alCantidad 
       if (event.key === 'F4') {
         event.preventDefault()
         alCantidad?.()
-        setTimeout(enfocarCantidad, 0)
+        setTimeout(enfocarCantidad, 50)
         return
       }
       if (event.key === 'F8' && hayItems) {

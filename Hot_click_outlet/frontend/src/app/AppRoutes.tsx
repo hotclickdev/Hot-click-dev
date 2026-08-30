@@ -173,7 +173,7 @@ export default function AppRoutes() {
       <Route path="/envios" element={<EnviosPage />} />
       <Route path="/acuerdo-vendedores" element={<AcuerdoVendedoresPage />} />
       <Route path="/cookies" element={<CookiesPage />} />
-      <Route path="/recuperar-carrito/:id" element={<RecuperarCarritoPage />} />
+      <Route path="/recuperar-carrito/:token" element={<RecuperarCarritoPage />} />
       <Route path="/cotizacion/:token" element={<CotizacionPublicaPage />} />
       <Route path="/servicios" element={<ServiciosHotPage />} />
       <Route path="/blog" element={<BlogPage />} />

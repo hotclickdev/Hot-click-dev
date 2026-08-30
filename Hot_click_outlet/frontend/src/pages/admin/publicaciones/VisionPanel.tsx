@@ -1,4 +1,4 @@
-import { formatPrice } from '@/utils/format'
+﻿import { formatPrice } from '@/utils/format'
 import { motion } from 'framer-motion'
 import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
@@ -26,13 +26,13 @@ export default function VisionPanel({ resultado, tc, onGuardar, saving }: Vision
     >
       {(todasEtiquetas?.length ?? 0) > 0 && (
         <div>
-          <p className="text-xs text-[#8e8e9a] mb-2">Producto identificado como:</p>
+          <p className="text-xs text-hc-muted mb-2">Producto identificado como:</p>
           <div className="flex flex-wrap gap-1.5">
             {(todasEtiquetas ?? []).slice(0, 6).map((e, i) => (
               <span key={i} className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
                 i === 0
-                  ? 'bg-[#4f7cff]/20 text-[#4f7cff] border border-[#4f7cff]/30'
-                  : 'bg-white/5 text-[#8e8e9a] border border-white/10'
+                  ? 'bg-hc-primary/20 text-hc-link border border-hc-primary/30'
+                  : 'bg-hc-surface-2 text-hc-muted border border-hc-border'
               }`}>{e}</span>
             ))}
           </div>
@@ -46,29 +46,29 @@ export default function VisionPanel({ resultado, tc, onGuardar, saving }: Vision
       )}
 
       {(precios?.length ?? 0) > 0 ? (
-        <div className="rounded-xl bg-white/3 border border-white/8 p-4 space-y-3">
+        <div className="rounded-xl bg-hc-surface-2 border border-hc-border p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold text-[#8e8e9a] uppercase tracking-wide">
+            <p className="text-xs font-semibold text-hc-muted uppercase tracking-wide">
               Precios encontrados ({precios?.length} fuentes)
             </p>
-            <p className="text-xs text-[#8e8e9a]">TC: {formatPrice(tc)}</p>
+            <p className="text-xs text-hc-muted">TC: {formatPrice(tc)}</p>
           </div>
           <div className="space-y-3">
             {(precios ?? []).map((p, i) => (
               <PriceBar key={i} {...p} max={max} />
             ))}
           </div>
-          <div className="pt-2 border-t border-white/8 flex items-center justify-between">
-            <span className="text-xs text-[#8e8e9a]">Promedio CRC</span>
-            <span className="text-sm font-semibold text-[#e8e8ed]">{formatPrice(promedioCrc)}</span>
+          <div className="pt-2 border-t border-hc-border flex items-center justify-between">
+            <span className="text-xs text-hc-muted">Promedio CRC</span>
+            <span className="text-sm font-semibold text-hc-text">{formatPrice(promedioCrc)}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-xs text-[#8e8e9a]">Precio sugerido final (+IVA+imp+margen)</span>
-            <span className="text-base font-bold text-[#4f7cff]">{formatPrice(precioFinal)}</span>
+            <span className="text-xs text-hc-muted">Precio sugerido final (+IVA+imp+margen)</span>
+            <span className="text-base font-bold text-hc-link">{formatPrice(precioFinal)}</span>
           </div>
         </div>
       ) : (
-        <div className="rounded-xl bg-white/3 border border-white/8 px-4 py-3 text-sm text-[#8e8e9a]">
+        <div className="rounded-xl bg-hc-surface-2 border border-hc-border px-4 py-3 text-sm text-hc-muted">
           No se encontraron precios en las fuentes analizadas.
         </div>
       )}

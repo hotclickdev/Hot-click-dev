@@ -1,7 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, type RefObject } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
+import { HotClickMark } from '@/components/ui/BrandLogo'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 import { METODOS, formatMontoPos, sugerirMontos, descomponer, type ItemCarritoPos, type PayloadCobroPos } from './posHelpers'
 import { MetodoPagoIcon } from './posIcons'
-import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function StepCobro({ total, cartItems, descuento, onBack, onConfirmar, loading }: {
   total: number
@@ -11,6 +14,7 @@ export default function StepCobro({ total, cartItems, descuento, onBack, onConfi
   onConfirmar: (payload: PayloadCobroPos) => void
   loading: boolean
 }) {
+  const { t } = useTranslation()
   const [metodo, setMetodo] = useState('EFECTIVO')
   const [recibido, setRecibido] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -21,179 +25,220 @@ export default function StepCobro({ total, cartItems, descuento, onBack, onConfi
   const vuelto = metodo === 'EFECTIVO' && recibidoNum > total ? recibidoNum - total : 0
   const faltante = metodo === 'EFECTIVO' && recibidoNum > 0 && recibidoNum < total
   const puedeConfirmar = metodo !== 'EFECTIVO' || (recibidoNum >= total && recibidoNum > 0)
-  const montosSugeridos = sugerirMontos(total)
-  const billetesSugeridos = descomponer(vuelto)
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-lg mx-auto px-4 py-5 space-y-5">
-        {/* Volver */}
-        <div className="flex items-center gap-3">
-          <button type="button" onClick={onBack}
-            className="px-3 py-2 rounded-xl text-sm font-semibold transition-all hover:brightness-125"
-            style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <TextoFlecha dir="atras">Volver al pedido</TextoFlecha>
-          </button>
-        </div>
-
-        {/* Resumen del pedido */}
-        <div className="rounded-2xl p-4 space-y-2"
-          style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid rgba(255,255,255,0.07)' }}>
-          <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>
-            Resumen del pedido
-          </p>
-          {cartItems.map((item, i) => (
-            <div key={i} className="flex justify-between text-sm">
-              <span style={{ color: 'rgba(255,255,255,0.65)' }}>
-                {item.nombre} <span style={{ color: 'rgba(255,255,255,0.35)' }}>×{item.cantidad}</span>
-              </span>
-              <span className="font-semibold tabular-nums" style={{ color: '#fff' }}>₡{formatMontoPos(Number(item.precio) * item.cantidad)}</span>
-            </div>
-          ))}
-          {descuento > 0 && (
-            <div className="flex justify-between text-sm border-t pt-2" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-              <span style={{ color: '#f87171' }}>Descuento</span>
-              <span style={{ color: '#f87171' }}>-₡{formatMontoPos(descuento)}</span>
-            </div>
-          )}
-          <div className="flex justify-between font-black text-lg border-t pt-2"
-            style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-            <span style={{ color: '#fff' }}>Total a cobrar</span>
-            <span style={{ color: 'var(--hc-accent)' }}>₡{formatMontoPos(total)}</span>
-          </div>
-        </div>
-
-        {/* Método de pago */}
-        <div className="space-y-3">
-          <p className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.7)' }}>¿Cómo paga el cliente?</p>
-          <div className="grid grid-cols-3 gap-2">
-            {METODOS.map(m => (
-              <button type="button" key={m.id} onClick={() => setMetodo(m.id)}
-                className="flex items-center gap-3 px-4 py-4 rounded-2xl text-left transition-all"
-                style={{
-                  backgroundColor: metodo === m.id ? `${m.color}15` : 'rgba(255,255,255,0.04)',
-                  border: `2px solid ${metodo === m.id ? m.color : 'rgba(255,255,255,0.08)'}`,
-                  transform: metodo === m.id ? 'scale(1.02)' : 'scale(1)',
-                }}>
-                <span style={{ color: metodo === m.id ? m.color : 'rgba(255,255,255,0.65)' }}>
-                  <MetodoPagoIcon iconId={m.iconId} />
-                </span>
-                <div>
-                  <p className="text-sm font-bold" style={{ color: metodo === m.id ? m.color : 'rgba(255,255,255,0.65)' }}>
-                    {m.label}
-                  </p>
-                  <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.3)' }}>{m.desc}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Efectivo: calculadora de vuelto */}
+      <div className="mx-auto max-w-lg space-y-5 px-5 py-6">
+        <CabeceraCobro onBack={onBack} />
+        <LineasTicket items={cartItems} descuento={descuento} total={total} />
+        <p className="text-xs font-medium text-hc-muted">{t('pos.cobro.metodoPago')}</p>
+        <ChipsMetodo metodo={metodo} onChange={setMetodo} />
         {metodo === 'EFECTIVO' && (
-          <div className="rounded-2xl p-4 space-y-3"
-            style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid rgba(255,255,255,0.07)' }}>
-            <p className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.4)' }}>Monto recibido</p>
-
-            <div className="flex flex-wrap gap-2">
-              {montosSugeridos.map(m => (
-                <button type="button" key={m} onClick={() => setRecibido(String(m))}
-                  className="px-3 py-2 rounded-xl text-sm font-bold transition-all hover:scale-105"
-                  style={{
-                    backgroundColor: recibidoNum === m ? 'rgba(23,71,168,0.25)' : 'rgba(23,71,168,0.08)',
-                    border: `1px solid ${recibidoNum === m ? 'var(--hc-accent)' : 'rgba(23,71,168,0.2)'}`,
-                    color: '#7aa3ff',
-                  }}>
-                  ₡{formatMontoPos(m)}
-                </button>
-              ))}
-            </div>
-
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold" style={{ color: 'rgba(255,255,255,0.3)' }}>₡</span>
-              <input
-                ref={inputRef}
-                type="number" min={0} value={recibido} placeholder="0"
-                onChange={e => setRecibido(e.target.value)}
-                className="w-full pl-9 pr-4 py-4 rounded-xl text-2xl font-black outline-none tabular-nums"
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.06)',
-                  border: `2px solid ${bordeInputCobro(puedeConfirmar, recibidoNum, faltante)}`,
-                  color: '#fff',
-                }}/>
-            </div>
-
-            {recibidoNum > 0 && (
-              <div className="rounded-xl p-3"
-                style={{
-                  backgroundColor: vuelto >= 0 && !faltante ? 'rgba(52,211,153,0.06)' : 'rgba(239,68,68,0.06)',
-                  border: `1px solid ${vuelto > 0 || (!faltante && recibidoNum === total) ? 'rgba(52,211,153,0.2)' : 'rgba(239,68,68,0.2)'}`,
-                }}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold uppercase" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                    {faltante ? 'Faltante' : 'Vuelto'}
-                  </span>
-                  <span className="text-2xl font-black tabular-nums"
-                    style={{ color: faltante ? '#f87171' : '#34d399' }}>
-                    ₡{formatMontoPos(Math.abs(recibidoNum - total))}
-                  </span>
-                </div>
-                {vuelto > 0 && billetesSugeridos.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {billetesSugeridos.map((b, i) => (
-                      <span key={i} className="px-2 py-1 rounded-lg text-xs font-bold"
-                        style={{ backgroundColor: b.bg, color: b.color }}>
-                        {b.q}× {b.label}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          <CalculadoraEfectivo
+            total={total}
+            recibido={recibido}
+            recibidoNum={recibidoNum}
+            vuelto={vuelto}
+            faltante={faltante}
+            puedeConfirmar={puedeConfirmar}
+            inputRef={inputRef}
+            onRecibido={setRecibido}
+          />
         )}
-
-        {/* SINPE / Tarjeta */}
-        {(metodo === 'SINPE' || metodo === 'TARJETA') && (
-          <div className="rounded-2xl p-4 text-center space-y-1"
-            style={{ backgroundColor: 'rgba(23,71,168,0.06)', border: '1px solid rgba(23,71,168,0.2)' }}>
-            <p className="font-semibold text-sm flex items-center justify-center gap-2" style={{ color: '#7aa3ff' }}>
-              <MetodoPagoIcon iconId={metodo === 'SINPE' ? 'sinpe' : 'tarjeta'} className="w-4 h-4" />
-              {metodo === 'SINPE' ? 'Se genera un QR de SINPE Móvil' : 'Se genera un QR para pago con tarjeta'}
-            </p>
-            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
-              {metodo === 'SINPE'
-                ? 'Se muestra el número del negocio para enviar el comprobante'
-                : 'El cliente escanea el QR y paga en la pasarela; el carrito ya está listo'}
-            </p>
-          </div>
-        )}
-
-        {/* Confirmar */}
-        <button type="button"
+        {(metodo === 'SINPE' || metodo === 'TARJETA') && <AvisoQr metodo={metodo} />}
+        <button
+          type="button"
           onClick={() => onConfirmar({ metodoPago: metodo, montoRecibido: metodo === 'EFECTIVO' ? recibidoNum : null })}
           disabled={!puedeConfirmar || loading}
-          className="w-full py-4 rounded-2xl font-black text-base transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-          style={{
-            background: puedeConfirmar ? 'var(--hc-accent)' : 'rgba(255,255,255,0.06)',
-            color: '#fff',
-            boxShadow: puedeConfirmar ? '0 8px 24px rgba(23,71,168,0.35)' : 'none',
-          }}>
-          {etiquetaConfirmarCobro(loading, metodo)}
+          className="w-full rounded-[14px] py-4 text-[15px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-30"
+          style={{ background: puedeConfirmar ? 'var(--hc-primary)' : 'var(--hc-surface-2)' }}
+        >
+          {etiquetaConfirmarCobro(t, loading, metodo)}
         </button>
       </div>
     </div>
   )
 }
 
-function bordeInputCobro(puedeConfirmar: boolean, recibidoNum: number, faltante: boolean | number) {
-  if (puedeConfirmar && recibidoNum > 0) return 'rgba(52,211,153,0.4)'
-  if (faltante) return 'rgba(239,68,68,0.4)'
-  return 'rgba(255,255,255,0.1)'
+function CabeceraCobro({ onBack }: { onBack: () => void }) {
+  const { t } = useTranslation()
+  return (
+    <div>
+      <HotClickMark size={20} className="mb-1" />
+      <div className="flex items-center gap-2.5">
+        <button type="button" onClick={onBack} className="font-display text-xl font-bold" aria-label={t('pos.cobro.volverAria')}>
+          <TextoFlecha dir="atras" />
+        </button>
+        <h1 className="font-display text-xl font-bold">{t('pos.cobro.title')}</h1>
+      </div>
+    </div>
+  )
 }
 
-function etiquetaConfirmarCobro(loading: boolean, metodo: string) {
-  if (loading) return 'Procesando…'
-  if (metodo === 'SINPE' || metodo === 'TARJETA') return 'Generar QR de pago'
-  return 'Confirmar cobro'
+function LineasTicket({ items, descuento, total }: { items: ItemCarritoPos[]; descuento: number; total: number }) {
+  const { t } = useTranslation()
+  return (
+    <div className="space-y-4">
+      {items.map((item, i) => (
+        <div key={i} className="flex justify-between gap-3 text-[13px]">
+          <span>{item.nombre}  x{item.cantidad}</span>
+          <span className="shrink-0 font-medium">₡{formatMontoPos(Number(item.precio) * item.cantidad)}</span>
+        </div>
+      ))}
+      {descuento > 0 && (
+        <div className="flex justify-between text-[13px] text-hc-danger">
+          <span>{t('pos.cobro.descuento')}</span>
+          <span>-₡{formatMontoPos(descuento)}</span>
+        </div>
+      )}
+      <div className="h-px bg-hc-border" />
+      <div className="flex items-baseline justify-between">
+        <span className="text-[15px] font-bold">{t('pos.cobro.totalACobrar')}</span>
+        <span className="font-display text-xl font-bold text-hc-primary">₡{formatMontoPos(total)}</span>
+      </div>
+    </div>
+  )
+}
+
+function ChipsMetodo({ metodo, onChange }: { metodo: string; onChange: (id: string) => void }) {
+  const { t } = useTranslation()
+  const chipLabel: Record<string, string> = {
+    EFECTIVO: t('pos.cobro.efectivo'),
+    SINPE: t('pos.cobro.sinpe'),
+    TARJETA: t('pos.cobro.tarjeta'),
+  }
+  return (
+    <div className="flex flex-wrap gap-2">
+      {METODOS.map((opcion) => {
+        const activo = metodo === opcion.id
+        return (
+          <button
+            type="button"
+            key={opcion.id}
+            onClick={() => onChange(opcion.id)}
+            className={`rounded-xl px-4 py-2.5 text-xs ${
+              activo ? 'bg-hc-primary font-bold text-white' : 'border border-hc-border font-medium text-hc-text'
+            }`}
+          >
+            {chipLabel[opcion.id] ?? opcion.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function CalculadoraEfectivo({
+  total,
+  recibido,
+  recibidoNum,
+  vuelto,
+  faltante,
+  puedeConfirmar,
+  inputRef,
+  onRecibido,
+}: {
+  total: number
+  recibido: string
+  recibidoNum: number
+  vuelto: number
+  faltante: boolean
+  puedeConfirmar: boolean
+  inputRef: RefObject<HTMLInputElement | null>
+  onRecibido: (v: string) => void
+}) {
+  const { t } = useTranslation()
+  const montosSugeridos = sugerirMontos(total)
+  const billetesSugeridos = descomponer(vuelto)
+  return (
+    <div className="space-y-3 rounded-2xl border border-hc-border bg-hc-surface p-4">
+      <p className="text-xs font-semibold text-hc-muted">{t('pos.cobro.montoRecibido')}</p>
+      <div className="flex flex-wrap gap-2">
+        {montosSugeridos.map((monto) => (
+          <button
+            type="button"
+            key={monto}
+            onClick={() => onRecibido(String(monto))}
+            className="rounded-xl px-3 py-2 text-sm font-bold text-hc-text"
+            style={{
+              backgroundColor: recibidoNum === monto ? 'var(--hc-red-50)' : 'var(--hc-surface-2)',
+              border: `1px solid ${recibidoNum === monto ? 'var(--hc-primary)' : 'var(--hc-border)'}`,
+            }}
+          >
+            ₡{formatMontoPos(monto)}
+          </button>
+        ))}
+      </div>
+      <div className="relative">
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-hc-muted">₡</span>
+        <input
+          ref={inputRef}
+          type="number"
+          min={0}
+          value={recibido}
+          placeholder="0"
+          onChange={(e) => onRecibido(e.target.value)}
+          className="w-full rounded-xl py-4 pl-9 pr-4 text-2xl font-black tabular-nums outline-none"
+          style={{
+            backgroundColor: 'var(--hc-surface-2)',
+            border: `2px solid ${bordeInputCobro(puedeConfirmar, recibidoNum, faltante)}`,
+            color: 'var(--hc-text)',
+          }}
+        />
+      </div>
+      {recibidoNum > 0 && (
+        <div
+          className="rounded-xl p-3"
+          style={{
+            backgroundColor: vuelto >= 0 && !faltante ? 'var(--hc-success-bg)' : 'var(--hc-danger-bg)',
+          }}
+        >
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase text-hc-muted">{faltante ? t('pos.cobro.faltante') : t('pos.cobro.vuelto')}</span>
+            <span className={`text-2xl font-black tabular-nums ${faltante ? 'text-hc-danger' : 'text-hc-success'}`}>
+              ₡{formatMontoPos(Math.abs(recibidoNum - total))}
+            </span>
+          </div>
+          {vuelto > 0 && billetesSugeridos.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {billetesSugeridos.map((billete, i) => (
+                <span key={i} className="rounded-lg px-2 py-1 text-xs font-bold" style={{ backgroundColor: billete.bg, color: billete.color }}>
+                  {billete.q}× {billete.label}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AvisoQr({ metodo }: { metodo: string }) {
+  const { t } = useTranslation()
+  return (
+    <div className="space-y-1 rounded-2xl border border-hc-border bg-hc-surface-2 p-4 text-center">
+      <p className="flex items-center justify-center gap-2 text-sm font-semibold text-hc-text">
+        <MetodoPagoIcon iconId={metodo === 'SINPE' ? 'sinpe' : 'tarjeta'} className="h-4 w-4" />
+        {metodo === 'SINPE' ? t('pos.cobro.avisoSinpeTitle') : t('pos.cobro.avisoTarjetaTitle')}
+      </p>
+      <p className="text-xs text-hc-muted">
+        {metodo === 'SINPE'
+          ? t('pos.cobro.avisoSinpeDesc')
+          : t('pos.cobro.avisoTarjetaDesc')}
+      </p>
+    </div>
+  )
+}
+
+function bordeInputCobro(puedeConfirmar: boolean, recibidoNum: number, faltante: boolean | number) {
+  if (puedeConfirmar && recibidoNum > 0) return 'var(--hc-success)'
+  if (faltante) return 'var(--hc-danger)'
+  return 'var(--hc-border)'
+}
+
+function etiquetaConfirmarCobro(t: TFunction, loading: boolean, metodo: string) {
+  if (loading) return t('pos.cobro.procesando')
+  if (metodo === 'SINPE' || metodo === 'TARJETA') return t('pos.cobro.generarQr')
+  return t('pos.cobro.confirmarCobro')
 }

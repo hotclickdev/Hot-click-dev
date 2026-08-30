@@ -1,4 +1,4 @@
-import type { OpcionSelect } from './pagosHelpers'
+﻿import type { OpcionSelect } from './pagosHelpers'
 
 export default function Select({ value, onChange, options }: {
   value: string
@@ -9,7 +9,7 @@ export default function Select({ value, onChange, options }: {
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="px-3 py-2 rounded-lg bg-[#111114] border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff] transition-colors"
+      className="px-3 py-2 rounded-lg bg-hc-surface border border-hc-border text-hc-text text-sm focus:outline-none focus:border-hc-primary transition-colors"
     >
       {options.map((o) => (
         <option key={o.value} value={o.value}>{o.label}</option>

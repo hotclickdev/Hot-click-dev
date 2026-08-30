@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { copilotService } from '@/services/copilotService'
 import { ofertaService } from '@/services/ofertaService'
 import { productService } from '@/services/productService'
@@ -15,10 +16,6 @@ import type { Producto } from '@/types/producto'
 const CARD_SHADOW = '0 1px 2px rgba(26,26,26,0.04), 0 8px 20px rgba(26,26,26,0.06)'
 const DESCUENTO_SUGERIDO_LENTOS = 15
 
-const ESTADO_LABEL: Record<string, string> = {
-  PENDIENTE: 'Pendiente de revisión',
-  RECHAZADO: 'Necesita ajustes',
-}
 const ESTADO_COLOR: Record<string, { bg: string; text: string }> = {
   PENDIENTE: { bg: 'rgba(23,71,168,0.08)', text: 'var(--hc-accent)' },
   RECHAZADO: { bg: '#f7ead2',              text: '#8a5a00' },
@@ -46,6 +43,7 @@ function ProductRow({ p, onAplicar, disabled, pctSugerido }: {
   disabled: boolean
   pctSugerido?: number
 }) {
+  const { t } = useTranslation()
   const [pct, setPct] = useState(pctSugerido ? String(pctSugerido) : '')
   const [saving, setSaving] = useState(false)
   const nombre = p.nombreProducto ?? p.nombre
@@ -70,19 +68,19 @@ function ProductRow({ p, onAplicar, disabled, pctSugerido }: {
         <p className="text-sm font-semibold truncate" style={{ color: 'var(--hc-text)' }}>{nombre}</p>
         <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
           {formatPrice(p.precioVenta)}
-          {p.enOferta && p.precioOferta && <span className="ml-2 font-semibold" style={{ color: 'var(--hc-primary)' }}>ahora {formatPrice(p.precioOferta)}</span>}
+          {p.enOferta && p.precioOferta && <span className="ml-2 font-semibold" style={{ color: 'var(--hc-primary)' }}>{t('adminOfertas.now')} {formatPrice(p.precioOferta)}</span>}
         </p>
       </div>
       {p.enOferta ? (
         <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: '#f7ead2', color: '#8a5a00' }}>
-          -{p.porcentajeDescuento}% activa
+          {t('adminOfertas.activeBadge', { pct: p.porcentajeDescuento })}
         </span>
       ) : (
         <div className="flex items-center gap-2">
           <input
             type="number" min={1} max={99} value={pct}
             onChange={e => setPct(e.target.value)}
-            placeholder="% desc."
+            placeholder={t('adminOfertas.pctPh')}
             disabled={disabled}
             className="w-20 px-2.5 py-1.5 rounded-lg text-sm"
             style={{ border: '1px solid var(--hc-border)', backgroundColor: 'var(--hc-surface)', color: 'var(--hc-text)' }}
@@ -92,7 +90,7 @@ function ProductRow({ p, onAplicar, disabled, pctSugerido }: {
             className="px-3.5 py-1.5 rounded-lg text-sm font-semibold disabled:opacity-50 transition-opacity hover:opacity-90"
             style={{ backgroundColor: 'var(--hc-primary)', color: '#fff' }}
           >
-            {saving ? '...' : 'Aplicar'}
+            {saving ? '...' : t('adminOfertas.apply')}
           </button>
         </div>
       )}
@@ -101,6 +99,7 @@ function ProductRow({ p, onAplicar, disabled, pctSugerido }: {
 }
 
 export default function SistemaPromociones() {
+  const { t } = useTranslation()
   const toast = useToast()
   const [productos, setProductos] = useState<Producto[]>([])
   const [pendientes, setPendientes] = useState<SolicitudOferta[]>([])
@@ -127,11 +126,11 @@ export default function SistemaPromociones() {
       const insights = iRes.data as { lentos?: unknown } | undefined
       setLentos(Array.isArray(insights?.lentos) ? insights.lentos as Producto[] : [])
     } catch {
-      toast({ message: 'Error cargando promociones', type: 'error' })
+      toast({ message: t('adminOfertas.errorLoadSistema'), type: 'error' })
     } finally {
       setLoading(false)
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [t, toast])
 
   useEffect(() => { cargar() }, [cargar]) // eslint-disable-line react-hooks/set-state-in-effect -- carga al montar
 
@@ -140,11 +139,11 @@ export default function SistemaPromociones() {
       const { data } = await ofertaService.aplicar(id, true, pct)
       const cuerpo = data as { pendiente?: boolean } | undefined
       if (cuerpo?.pendiente) {
-        toast({ message: 'Promoción enviada — pendiente de aprobación del admin', type: 'success' })
+        toast({ message: t('adminOfertas.pendingApproval'), type: 'success' })
         cargar()
       }
     } catch (err: unknown) {
-      toast({ message: mensajeErrorProducto(err, 'Error enviando la promoción'), type: 'error' })
+      toast({ message: mensajeErrorProducto(err, t('adminOfertas.errorSend')), type: 'error' })
     }
   }
 
@@ -160,28 +159,33 @@ export default function SistemaPromociones() {
     return nombre.includes(search.toLowerCase())
   })
 
+  const estadoLabel = (estado?: string) => {
+    if (estado === 'RECHAZADO') return t('adminOfertas.statusRejected')
+    return t('adminOfertas.statusPending')
+  }
+
   if (loading) return <div className="flex justify-center py-20"><Spinner size="lg" /></div>
 
   return (
     <div className="space-y-4 max-w-[1060px]">
       <Link to="/admin" className="inline-flex items-center gap-1 text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
-        <TextoFlecha dir="atras">Inicio</TextoFlecha>
+        <TextoFlecha dir="atras">{t('adminClientes.backHome')}</TextoFlecha>
       </Link>
 
       <header>
-        <h1 style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 26, letterSpacing: '-0.5px', color: 'var(--hc-text)' }}>Promociones</h1>
+        <h1 style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 26, letterSpacing: '-0.5px', color: 'var(--hc-text)' }}>{t('adminOfertas.titleSistema')}</h1>
         <p style={{ margin: '4px 0 0', fontSize: 15, color: 'var(--hc-muted)' }}>
-          HOTCLICK revisa antes de publicar. Arriba van las sugeridas (sin venta ~60 días, {DESCUENTO_SUGERIDO_LENTOS}%).
+          {t('adminOfertas.subtitleSistema', { pct: DESCUENTO_SUGERIDO_LENTOS })}
         </p>
       </header>
 
       {sugeridos.length > 0 && (
         <div className="rounded-2xl p-5 flex flex-col gap-3" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
           <h2 style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, color: 'var(--hc-text)' }}>
-            Sugeridas — sin venta reciente
+            {t('adminOfertas.suggestedTitle')}
           </h2>
           <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-            Un {DESCUENTO_SUGERIDO_LENTOS}% puede moverlas. El equipo revisa antes de publicar.
+            {t('adminOfertas.suggestedHint', { pct: DESCUENTO_SUGERIDO_LENTOS })}
           </p>
           <div className="flex flex-col gap-2">
             {sugeridos.map((p) => (
@@ -199,7 +203,7 @@ export default function SistemaPromociones() {
 
       {pendientesActivos.length > 0 && (
         <div className="rounded-2xl p-5 flex flex-col gap-3" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
-          <h2 style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, color: 'var(--hc-text)' }}>Mis solicitudes</h2>
+          <h2 style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, color: 'var(--hc-text)' }}>{t('adminOfertas.myRequests')}</h2>
           {pendientesActivos.map(s => {
             const color = ESTADO_COLOR[s.estadoSolicitud ?? ''] ?? ESTADO_COLOR.PENDIENTE
             return (
@@ -209,11 +213,11 @@ export default function SistemaPromociones() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>{s.nombreProducto}</p>
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: color.bg, color: color.text }}>
-                      {ESTADO_LABEL[s.estadoSolicitud ?? '']}
+                      {estadoLabel(s.estadoSolicitud)}
                     </span>
                   </div>
                   <p className="text-xs mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-                    -{s.porcentajeDescuento}% · enviado {fmtDate(s.fechaSolicitud)}
+                    {t('adminOfertas.sentAt', { pct: s.porcentajeDescuento, date: fmtDate(s.fechaSolicitud) })}
                   </p>
                   {s.estadoSolicitud === 'RECHAZADO' && s.comentarioRevisor && (
                     <p className="text-sm mt-1.5 rounded-lg px-3 py-2" style={{ backgroundColor: '#f7ead2', color: '#8a5a00' }}>
@@ -229,10 +233,10 @@ export default function SistemaPromociones() {
 
       <div className="rounded-2xl p-5 flex flex-col gap-3" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <h2 style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, color: 'var(--hc-text)' }}>Tus productos</h2>
+          <h2 style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, color: 'var(--hc-text)' }}>{t('adminOfertas.yourProducts')}</h2>
           <input
             value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar producto..."
+            placeholder={t('adminOfertas.searchPh')}
             className="px-3.5 py-2 rounded-lg text-sm w-56"
             style={{ border: '1px solid var(--hc-border)', backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)' }}
           />
@@ -242,7 +246,7 @@ export default function SistemaPromociones() {
             <ProductRow key={p.id} p={p} onAplicar={handleAplicar} disabled={idsConSolicitudPendiente.has(p.id)} />
           ))}
           {filtrados.length === 0 && (
-            <p className="text-sm text-center py-8" style={{ color: 'var(--hc-muted)' }}>Sin resultados</p>
+            <p className="text-sm text-center py-8" style={{ color: 'var(--hc-muted)' }}>{t('adminOfertas.noResults')}</p>
           )}
         </div>
       </div>

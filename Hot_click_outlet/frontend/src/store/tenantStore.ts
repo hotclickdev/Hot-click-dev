@@ -96,7 +96,7 @@ const useTenantStore = create<TenantState>((set, get) => ({
         loading: false,
       })
     } catch {
-      set({ loading: false })
+      set({ loaded: true, loading: false })
     }
   },
 

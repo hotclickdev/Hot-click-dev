@@ -36,10 +36,24 @@ export const ROLE_COLORS: Record<string, BadgeVariant> = {
   USUARIO_FINAL: 'default',
 }
 
-export const ROLE_LABELS: Record<string, string> = {
+export const FIGMA_ROL_LABEL: Record<string, string> = {
+  EMPRENDEDOR: 'Vendedor',
+  USUARIO_FINAL: 'Comprador',
   ADMIN: 'Admin',
-  EMPRENDEDOR: 'Emprendedor',
-  USUARIO_FINAL: 'Cliente',
+  CAJERO: 'Cajero',
+}
+
+export function tonoRolFigma(rol: string, estado: string): { label: string; clase: string } {
+  if (estado === 'SUSPENDIDO') {
+    return { label: 'Suspendido', clase: 'bg-[var(--hc-danger-bg)] text-hc-danger' }
+  }
+  if (rol === 'USUARIO_FINAL') {
+    return { label: 'Comprador', clase: 'bg-[var(--hc-success-bg)] text-hc-success' }
+  }
+  if (rol === 'EMPRENDEDOR') {
+    return { label: 'Vendedor', clase: 'bg-[var(--hc-info-bg)] text-hc-link' }
+  }
+  return { label: FIGMA_ROL_LABEL[rol] ?? rol, clase: 'bg-hc-surface-2 text-hc-muted' }
 }
 
 export const PLANES = ['EMPRENDEDOR', 'PYME', 'NEGOCIO_PLUS']

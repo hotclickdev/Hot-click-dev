@@ -1,4 +1,5 @@
 import { Helmet } from 'react-helmet-async'
+import { useTranslation } from 'react-i18next'
 import Seo from '@/components/seo/Seo'
 import { generateWebsiteJsonLd, generateOrganizationJsonLd, generateFAQJsonLd, generateItemListJsonLd } from '@/utils/jsonLd'
 import type { Producto } from '@/types/producto'
@@ -7,11 +8,12 @@ import type { Producto } from '@/types/producto'
  * SEO y JSON-LD de la home. Recibe destacados para el ItemList.
  */
 export default function HomeSeo({ destacados = [] }: { destacados?: Producto[] }) {
+  const { t } = useTranslation()
   return (
     <>
       <Seo
-        title="HotClick — Compra · Vende · Emprende en Costa Rica"
-        description="Todo empieza con un click. Comprá a emprendedores de Costa Rica, vendé tu negocio o crecé en HotClick. Envío a todo el país y pagos seguros."
+        title={t('home.seoTitle')}
+        description={t('home.seoDescription')}
         type="website"
       />
       <Helmet>

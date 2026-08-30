@@ -13,9 +13,9 @@ export default function PosMetodosPago({ metodoPago, setMetodoPago }: {
             title={m.desc}
             className="flex flex-col items-start px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
             style={(() => {
-              const borderColor = metodoPago === m.id ? 'var(--hc-accent)' : 'rgba(255,255,255,0.08)'
+              const borderColor = metodoPago === m.id ? 'var(--hc-accent)' : 'var(--hc-border)'
               return {
-                backgroundColor: metodoPago === m.id ? 'var(--hc-accent)' : 'rgba(255,255,255,0.05)',
+                backgroundColor: metodoPago === m.id ? 'var(--hc-accent)' : 'var(--hc-surface-2)',
                 color: metodoPago === m.id ? '#fff' : 'var(--hc-muted)',
                 border: `1px solid ${borderColor}`,
               }

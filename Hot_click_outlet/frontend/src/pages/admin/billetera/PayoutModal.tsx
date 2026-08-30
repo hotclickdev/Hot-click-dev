@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from 'react'
+﻿import { useState, type ChangeEvent } from 'react'
 import { walletService } from '@/services/walletService'
 import { useToast } from '@/components/ui/Toast'
 import { mensajeErrorBilletera, type PayoutForm } from './billeteraHelpers'
@@ -44,17 +44,17 @@ export default function PayoutModal({ onClose, onSaved }: { onClose: () => void;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-[#16161a] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+      <div className="bg-hc-surface border border-hc-border rounded-2xl p-6 w-full max-w-md shadow-2xl">
         <h2 className="text-lg font-semibold mb-5">Solicitar retiro</h2>
 
-        <label htmlFor="bil-monto" className="block text-xs text-[#8e8e9a] mb-1">Monto (₡)</label>
+        <label htmlFor="bil-monto" className="block text-xs text-hc-muted mb-1">Monto (₡)</label>
         <input id="bil-monto"
           type="number" min="1" className="input-base w-full mb-4"
           placeholder="Ej: 50000"
           value={form.monto} onChange={set('monto')}
         />
 
-        <label htmlFor="bil-metodo" className="block text-xs text-[#8e8e9a] mb-1">Método de pago</label>
+        <label htmlFor="bil-metodo" className="block text-xs text-hc-muted mb-1">Método de pago</label>
         <select id="bil-metodo" className="input-base w-full mb-4" value={form.metodo} onChange={set('metodo')}>
           <option value="SINPE">SINPE Móvil</option>
           <option value="TRANSFERENCIA">Transferencia bancaria</option>
@@ -62,7 +62,7 @@ export default function PayoutModal({ onClose, onSaved }: { onClose: () => void;
 
         {form.metodo === 'SINPE' && (
           <>
-            <label htmlFor="bil-sinpe" className="block text-xs text-[#8e8e9a] mb-1">Número SINPE (8 dígitos)</label>
+            <label htmlFor="bil-sinpe" className="block text-xs text-hc-muted mb-1">Número SINPE (8 dígitos)</label>
             <input id="bil-sinpe"
               type="tel" maxLength={8} className="input-base w-full mb-4"
               placeholder="88001234"
@@ -73,25 +73,25 @@ export default function PayoutModal({ onClose, onSaved }: { onClose: () => void;
 
         {form.metodo === 'TRANSFERENCIA' && (
           <>
-            <label htmlFor="bil-iban" className="block text-xs text-[#8e8e9a] mb-1">IBAN</label>
+            <label htmlFor="bil-iban" className="block text-xs text-hc-muted mb-1">IBAN</label>
             <input id="bil-iban" className="input-base w-full mb-3" placeholder="CR21 0152 0200 1026 2840 66"
               value={form.destinoIban} onChange={set('destinoIban')} />
-            <label htmlFor="bil-titular" className="block text-xs text-[#8e8e9a] mb-1">Nombre del titular</label>
+            <label htmlFor="bil-titular" className="block text-xs text-hc-muted mb-1">Nombre del titular</label>
             <input id="bil-titular" className="input-base w-full mb-3"
               value={form.nombreTitular} onChange={set('nombreTitular')} />
-            <label htmlFor="bil-banco" className="block text-xs text-[#8e8e9a] mb-1">Banco</label>
+            <label htmlFor="bil-banco" className="block text-xs text-hc-muted mb-1">Banco</label>
             <input id="bil-banco" className="input-base w-full mb-3"
               value={form.bancoDestino} onChange={set('bancoDestino')} />
           </>
         )}
 
-        <label htmlFor="bil-notas" className="block text-xs text-[#8e8e9a] mb-1">Notas (opcional)</label>
+        <label htmlFor="bil-notas" className="block text-xs text-hc-muted mb-1">Notas (opcional)</label>
         <textarea id="bil-notas" className="input-base w-full mb-5 resize-none" rows={2}
           value={form.notas} onChange={set('notas')} />
 
         <div className="flex gap-3 justify-end">
           <button type="button" onClick={onClose}
-            className="px-4 py-2 rounded-xl text-sm border border-white/10 hover:bg-white/5">
+            className="px-4 py-2 rounded-xl text-sm border border-hc-border hover:bg-hc-surface-2">
             Cancelar
           </button>
           <button type="button" onClick={handleSave} disabled={saving}

@@ -1,13 +1,15 @@
 import { useNavigate, useMatch } from 'react-router-dom'
 import { getAvailableModes, MODE_PREF_KEY } from '@/utils/modes'
 import useAuthStore from '@/store/authStore'
+import useTenantStore from '@/store/tenantStore'
 
 /** Alterna entre panel admin y caja POS cuando el usuario tiene ambos modos. */
 export default function ModeSwitcherWrapper({ userRole }: { userRole?: string | null }) {
   const permissions = useAuthStore((s) => s.permissions)
   const empresaSlug = useAuthStore((s) => s.empresaSlug)
+  const planNombre  = useTenantStore((s) => s.planNombre)
   const navigate    = useNavigate()
-  const modes       = getAvailableModes(userRole ?? '', permissions, { empresaSlug })
+  const modes       = getAvailableModes(userRole ?? '', permissions, { empresaSlug, planNombre })
   const inPOSA      = useMatch('/admin/pos')
   const inPOSB      = useMatch('/admin/pos/*')
   if (modes.length <= 1) return null

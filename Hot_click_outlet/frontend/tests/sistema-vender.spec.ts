@@ -156,53 +156,29 @@ test.describe('Vender — Sistema, no un admin genérico', () => {
     await expect(page.getByText('Tienda de Demo Store en HotClick')).toBeVisible()
   })
 
-  test('sin productos, el primer paso es publicar uno', async ({ page }) => {
+  test('sin productos, el dueño entra al menú Figma en /emprendedor', async ({ page }) => {
     await sesionEmprendedor(page, { totalProductos: 0, visibilidadPublica: false })
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/admin', { waitUntil: 'domcontentloaded' })
 
-    await expect(page.getByText('Empezá a vender')).toBeVisible()
-    const producto = page.getByRole('link', { name: /agregar un producto/i })
-    await expect(producto).toHaveAttribute('href', '/admin/productos/nuevo')
-    await expect(producto).toHaveClass(/hc-btn-primary/)
-    await expect(page.getByRole('link', { name: /completar marca/i })).toHaveAttribute(
-      'href',
-      '/admin/configuracion?seccion=marca',
-    )
-    await expect(page.getByRole('link', { name: /completar marca/i })).not.toHaveClass(/hc-btn-primary/)
-    await expect(page.getByRole('link', { name: /publicá tu tienda/i }).first()).toHaveAttribute(
-      'href',
-      '/admin/configuracion?seccion=marca',
-    )
-    await expect(page.getByRole('link', { name: /ver tu plan/i })).toHaveAttribute('href', '/admin/billing/planes')
-    await expect(page.getByRole('link', { name: /abrí la caja/i })).toHaveAttribute('href', '/admin/pos')
+    await expect(page).toHaveURL(/\/emprendedor\/?$/)
+    await expect(page.getByRole('link', { name: 'PRODUCTOS SUBIDOS' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'PRODUCTOS SUBIDOS' })).toHaveAttribute('href', '/emprendedor/productos')
   })
 
-  test('con producto y tienda oculta, el checklist sigue y publicar es el primario', async ({ page }) => {
+  test('con producto, /admin sigue mandando al prefijo del plan', async ({ page }) => {
     await sesionEmprendedor(page, { totalProductos: 1, estadoEmpresa: 'ACTIVO', visibilidadPublica: false })
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/admin', { waitUntil: 'domcontentloaded' })
-
-    // Perfil async: AccesoTiendaPublica (sin número de paso) confirma ACTIVO + oculta
-    await expect(page.getByRole('link', { name: /^publicá tu tienda$/i })).toBeVisible({ timeout: 15000 })
-    const checklist = page.getByTestId('sistema-checklist')
-    await expect(checklist).toBeVisible()
-    // El paso lleva número en el nombre accesible ("3 Publicá tu tienda")
-    const publicar = checklist.getByRole('link', { name: /publicá tu tienda/i })
-    await expect(publicar).toBeVisible()
-    await expect(publicar).toHaveAttribute('href', '/admin/configuracion?seccion=marca')
-    await expect(publicar).toHaveClass(/hc-btn-primary/)
-    await expect(checklist.getByRole('link', { name: /agregar un producto/i })).toHaveCount(0)
+    await expect(page).toHaveURL(/\/emprendedor\/?$/)
+    await expect(page.getByRole('link', { name: 'PRODUCTOS SUBIDOS' })).toBeVisible()
   })
 
-  test('con producto y tienda pública, el checklist de arranque ya no aparece', async ({ page }) => {
+  test('tienda pública no cambia el prefijo de vendedor', async ({ page }) => {
     await sesionEmprendedor(page, { totalProductos: 2, estadoEmpresa: 'ACTIVO', visibilidadPublica: true })
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/admin', { waitUntil: 'domcontentloaded' })
-
-    // Esperar perfil: "Ver mi tienda" confirma ACTIVO + visible
-    await expect(page.getByRole('link', { name: /^ver mi tienda$/i })).toBeVisible({ timeout: 15000 })
-    await expect(page.getByText('Empezá a vender')).toHaveCount(0)
+    await expect(page).toHaveURL(/\/emprendedor\/?$/)
   })
 
   test('el dueño abre la caja desde los modos, sin permiso pos.usar', async ({ page }) => {
@@ -223,6 +199,8 @@ test('el dueño usa caja sin el permiso granular pos.usar', () => {
     'pos',
     'store',
   ])
+  expect(getAvailableModes('EMPRENDEDOR', [], { empresaSlug: 'demo' }).find((m) => m.id === 'admin')?.path).toBe('/emprendedor')
+  expect(getAvailableModes('EMPRENDEDOR', [], { empresaSlug: 'demo', planNombre: 'PYME' }).find((m) => m.id === 'admin')?.path).toBe('/pyme')
 })
 
 test('checklist: no se oculta solo por tener un producto si la tienda está oculta', () => {

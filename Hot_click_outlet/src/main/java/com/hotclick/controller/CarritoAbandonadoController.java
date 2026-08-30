@@ -46,19 +46,18 @@ public class CarritoAbandonadoController {
     }
 
     /**
-     * Returns items for a cart recovery link (email click).
-     * Public — the email link does not carry a JWT.
+     * Recupera el carrito con el token del email. El ID secuencial no alcanza.
+     * No se devuelve sessionId: eso permitiría borrar el carrito vía DELETE.
      */
-    @GetMapping("/abandoned/recover/{id}")
-    public ResponseEntity<ResponseDTO> recuperar(@PathVariable Long id) {
-        return service.findById(id)
+    @GetMapping("/abandoned/recover/{token}")
+    public ResponseEntity<ResponseDTO> recuperar(@PathVariable String token) {
+        return service.findByTokenRecuperacion(token)
             .map(c -> {
                 List<CarritoAbandonadoRequestDTO.CartItemDTO> items = service.deserializarItems(c.getItems());
                 Map<String, Object> body = Map.of(
-                    "id",        c.getId(),
-                    "sessionId", c.getSessionId(),
-                    "status",    c.getStatus(),
-                    "items",     items
+                    "id",     c.getId(),
+                    "status", c.getStatus(),
+                    "items",  items
                 );
                 return ResponseEntity.ok(ResponseDTO.success("ok", body));
             })
@@ -103,6 +102,17 @@ public class CarritoAbandonadoController {
             service.eliminar(id);
             return ResponseEntity.ok(ResponseDTO.success("Eliminado", null));
         }).orElse(ResponseEntity.notFound().build());
+    }
+
+    /** Quien tiene el token del email puede descartar el carrito recuperado. */
+    @DeleteMapping("/abandoned/recover/{token}")
+    public ResponseEntity<ResponseDTO> eliminarPorToken(@PathVariable String token) {
+        return service.findByTokenRecuperacion(token)
+            .map(cart -> {
+                service.eliminar(cart.getId());
+                return ResponseEntity.ok(ResponseDTO.success("Eliminado", null));
+            })
+            .orElse(ResponseEntity.notFound().build());
     }
 
     // ── helpers ─────────────────────────────────────────────────────────────

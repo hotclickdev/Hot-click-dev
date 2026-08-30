@@ -4,6 +4,7 @@ import com.hotclick.model.ComprobanteFiscal;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.PedidoItem;
+import com.hotclick.service.hacienda.XmlFacturaSchemaValidator;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -16,11 +17,9 @@ import java.util.List;
  *
  * Referencia: https://www.hacienda.go.cr/contenido/14638-esquemas-xsd-para-los-comprobantes-electronicos
  *
- * PENDIENTE antes de producción:
- *   1. Validar el XML generado contra el XSD oficial descargado de Hacienda.
- *   2. Verificar el namespace exacto: FacturaElectronica_V4.3.xsd o TiqueteElectronico_V4.3.xsd
- *   3. Confirmar el formato de fecha/hora: debe incluir zona horaria Costa Rica (-06:00)
- *   4. Los montos van en la moneda de la empresa (CRC por defecto)
+ * Spike: validación contra subset local (namespace 4.3, fecha -06:00, estructura emitida).
+ * El XSD oficial completo no está en CDN público; ver comentarios en
+ * hacienda/factura-electronica-4.3-subset.xsd.
  */
 @Service
 public class XmlFacturaBuilder {
@@ -32,6 +31,12 @@ public class XmlFacturaBuilder {
         "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/facturaElectronica";
     private static final String NS_TIQUETE =
         "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/tiqueteElectronico";
+
+    private final XmlFacturaSchemaValidator schemaValidator;
+
+    public XmlFacturaBuilder(XmlFacturaSchemaValidator schemaValidator) {
+        this.schemaValidator = schemaValidator;
+    }
 
     /**
      * Genera el XML completo del comprobante.
@@ -159,7 +164,9 @@ public class XmlFacturaBuilder {
 
         xml.append("</").append(rootTag).append(">\n");
 
-        return xml.toString();
+        String resultado = xml.toString();
+        schemaValidator.validar(resultado, esFactura);
+        return resultado;
     }
 
     /** Escapa caracteres especiales XML. */

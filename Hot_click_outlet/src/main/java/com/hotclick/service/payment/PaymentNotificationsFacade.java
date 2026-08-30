@@ -6,6 +6,7 @@ import com.hotclick.service.AggregatorService;
 import com.hotclick.service.N8nWebhookService;
 import com.hotclick.service.NotificacionEmailService;
 import com.hotclick.service.WebhookDispatcherService;
+import com.hotclick.service.analytics.PostHogCaptureService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,7 @@ public class PaymentNotificationsFacade {
     @Autowired private N8nWebhookService        n8nWebhookService;
     @Autowired private WebhookDispatcherService webhookDispatcher;
     @Autowired private AggregatorService        aggregatorService;
+    @Autowired(required = false) private PostHogCaptureService postHogCaptureService;
 
     public void onPedidoCreado(Pedido pedido, String provider) {
         webhookDispatcher.dispatch(pedido.getEmpresaId(), "pedido.creado", Map.of(
@@ -35,6 +37,7 @@ public class PaymentNotificationsFacade {
     public void onGiftCardFullPayment(Pedido pedido, String gcCodigo) {
         notificacionEmailService.enviarConfirmacionPedido(pedido);
         n8nWebhookService.notificarPedidoNuevo(pedido);
+        capturarPedidoPagado(pedido, null);
         log.info("Pedido {} pagado 100% con gift card {}", pedido.getNumeroPedido(), gcCodigo);
     }
 
@@ -49,7 +52,13 @@ public class PaymentNotificationsFacade {
         ));
         // Acreditar wallet del emprendedor (async, fuera de esta TX)
         aggregatorService.acreditarVentaAsync(pedido);
+        capturarPedidoPagado(pedido, pago);
         log.info("Pedido {} confirmado PAGADO via {}", pedido.getNumeroPedido(), pago.getProveedor());
+    }
+
+    private void capturarPedidoPagado(Pedido pedido, Pago pago) {
+        if (postHogCaptureService == null) return;
+        postHogCaptureService.capturarPedidoPagado(pedido, pago);
     }
 
     public void onPagoFallido(Pedido pedido, String motivo) {

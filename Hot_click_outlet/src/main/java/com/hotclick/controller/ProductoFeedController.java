@@ -64,6 +64,7 @@ public class ProductoFeedController {
             xml.append("      <g:availability>in stock</g:availability>\n");
             xml.append("      <g:condition>").append(condicion).append("</g:condition>\n");
             xml.append("      <g:brand>").append(xe(brand)).append("</g:brand>\n");
+            xml.append("      <g:identifier_exists>false</g:identifier_exists>\n");
             xml.append("    </item>\n");
         }
 

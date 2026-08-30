@@ -15,7 +15,7 @@ class RecuperacionCarritoEmailBuilder {
     @Autowired private EmailLayoutHelper layout;
 
     String buildRecuperacionCarrito(
-            Long carritoId,
+            String tokenRecuperacion,
             List<CarritoAbandonadoRequestDTO.CartItemDTO> items,
             String appUrl) {
 
@@ -38,7 +38,7 @@ class RecuperacionCarritoEmailBuilder {
                 .append("</tr>");
         }
 
-        String recoverUrl = appUrl + "/recuperar-carrito/" + carritoId;
+        String recoverUrl = appUrl + "/recuperar-carrito/" + tokenRecuperacion;
 
         return layout.abrirHtml()
             + layout.header("Tu carrito te espera", "Dejaste productos sin completar la compra")

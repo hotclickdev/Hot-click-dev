@@ -16,9 +16,9 @@ import type { ChangeEvent, CSSProperties, FormEvent } from 'react'
 
 function estiloBotonIcono(seleccionado: boolean): CSSProperties {
   if (seleccionado) {
-    return { background: 'rgba(23,71,168,0.2)', borderColor: 'var(--hc-accent)', color: 'var(--hc-accent)' }
+    return { background: 'var(--hc-red-50)', borderColor: 'var(--hc-primary)', color: 'var(--hc-primary)' }
   }
-  return { background: 'transparent', borderColor: 'rgba(255,255,255,0.1)', color: '#8e8e9a' }
+  return { background: 'var(--hc-surface-2)', borderColor: 'var(--hc-border)', color: 'var(--hc-muted)' }
 }
 
 type IconoItem = (typeof ICONOS_CATEGORIA)[number]
@@ -44,7 +44,7 @@ function BotonIconoCategoria({ item, seleccionado, onCambiar }: {
 function IconoCategoriaPicker({ icono, onCambiar }: { icono: string; onCambiar: (clave: string) => void }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <p className="text-sm font-medium text-[#e8e8ed]">Icono (opcional)</p>
+      <p className="text-sm font-medium text-hc-text">Icono (opcional)</p>
       <div className="grid grid-cols-10 gap-1">
         <button
           type="button"
@@ -63,7 +63,7 @@ function IconoCategoriaPicker({ icono, onCambiar }: { icono: string; onCambiar: 
         ))}
       </div>
       {icono && (
-        <p className="text-xs text-[#8e8e9a]">
+        <p className="text-xs text-hc-muted">
           Icono seleccionado: {etiquetaIconoCategoria(icono)}
         </p>
       )}
@@ -79,12 +79,12 @@ function SelectPadre({ padreId, opciones, categorias, onChange }: {
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor="cat-padre" className="text-sm font-medium text-[#e8e8ed]">Grupo al que pertenece (opcional)</label>
+      <label htmlFor="cat-padre" className="text-sm font-medium text-hc-text">Grupo al que pertenece (opcional)</label>
       <select
         id="cat-padre"
         value={padreId}
         onChange={onChange}
-        className="h-11 px-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60"
+        className="h-11 rounded-xl border border-hc-border bg-hc-surface-2 px-3 text-sm text-hc-text focus:border-hc-primary focus:outline-none"
       >
         <option value="">Ninguno — categoría principal</option>
         {opciones.map((categoria) => (
@@ -93,7 +93,7 @@ function SelectPadre({ padreId, opciones, categorias, onChange }: {
           </option>
         ))}
       </select>
-      <p className="text-xs text-[#8e8e9a]">
+      <p className="text-xs text-hc-muted">
         Si elegís un grupo, esta pasa a ser subcategoría dentro de él.
       </p>
     </div>

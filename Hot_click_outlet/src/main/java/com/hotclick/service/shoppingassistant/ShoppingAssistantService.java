@@ -9,6 +9,7 @@ import com.hotclick.rag.pipeline.RagResult;
 import com.hotclick.service.AiQuotaService;
 import com.hotclick.service.customermemory.CustomerMemoryDto;
 import com.hotclick.service.customermemory.CustomerMemoryService;
+import com.hotclick.utils.ChatContextoPermitido;
 import com.hotclick.utils.InputSanitizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,8 +119,9 @@ public class ShoppingAssistantService {
         CustomerMemoryDto memoria = customerMemoryService.getOrCreate(visitorId);
 
         // 6. Ejecutar el pipeline RAG con memoria del cliente inyectada en el prompt
+        String contextoSeguro = ChatContextoPermitido.normalizar(contexto);
         RagResult resultado = ragPipeline.ejecutar(
-            mensaje, empresaId, empresaNombre, historial, contexto, memoria.toXmlBlock(), marketplace, productoId);
+            mensaje, empresaId, empresaNombre, historial, contextoSeguro, memoria.toXmlBlock(), marketplace, productoId);
 
         // 7. Persistir pregunta + respuesta de forma atómica; actualizar sesión
         persistence.persistirMensajes(sesionId, empresaId, mensaje, resultado);

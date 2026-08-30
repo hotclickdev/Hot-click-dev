@@ -10,9 +10,9 @@ export default function CartItem({ item, onSetCantidad, onSetPrecio, onRemove }:
 }) {
   return (
     <div className="rounded-xl p-3 flex gap-3 group"
-      style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+      style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
       <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 flex items-center justify-center"
-        style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
+        style={{ backgroundColor: 'var(--hc-surface-2)' }}>
         {item.imagen
           ? <img src={item.imagen} alt="" className="w-full h-full object-cover" />
           : <PackageIcon />}
@@ -20,7 +20,7 @@ export default function CartItem({ item, onSetCantidad, onSetPrecio, onRemove }:
 
       <div className="flex-1 min-w-0 space-y-1.5">
         <div className="flex items-start justify-between gap-1">
-          <p className="text-xs font-semibold line-clamp-2 leading-tight" style={{ color: '#F4F6F9' }}>
+          <p className="text-xs font-semibold line-clamp-2 leading-tight" style={{ color: 'var(--hc-text)' }}>
             {item.nombre}
           </p>
           <button type="button" onClick={() => onRemove(item.id)}
@@ -34,15 +34,15 @@ export default function CartItem({ item, onSetCantidad, onSetPrecio, onRemove }:
           <div className="flex items-center gap-1">
             <button type="button" onClick={() => onSetCantidad(item.id, item.cantidad - 1)} disabled={item.cantidad <= 1}
               className="w-6 h-6 rounded-md font-bold text-sm flex items-center justify-center disabled:opacity-30"
-              style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#fff' }}>−</button>
+              style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)' }}>−</button>
             <input type="number" min={1} value={item.cantidad}
               data-pos-qty
               onChange={e => onSetCantidad(item.id, e.target.value)}
               className="w-10 text-center text-xs font-bold rounded-md outline-none"
-              style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '3px 0' }}/>
+              style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)', padding: '3px 0' }}/>
             <button type="button" onClick={() => onSetCantidad(item.id, item.cantidad + 1)} disabled={item.cantidad >= item.stockActual}
               className="w-6 h-6 rounded-md font-bold text-sm flex items-center justify-center disabled:opacity-30"
-              style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#fff' }}>+</button>
+              style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-text)' }}>+</button>
           </div>
 
           <div className="flex-1 relative">
@@ -53,14 +53,14 @@ export default function CartItem({ item, onSetCantidad, onSetPrecio, onRemove }:
               style={{
                 backgroundColor: item.precio !== item.precioOriginal ? 'rgba(251,191,36,0.08)' : 'rgba(23,71,168,0.06)',
                 border: `1px solid ${item.precio !== item.precioOriginal ? 'rgba(251,191,36,0.3)' : 'rgba(23,71,168,0.2)'}`,
-                color: item.precio !== item.precioOriginal ? '#fbbf24' : '#7aa3ff',
+                color: item.precio !== item.precioOriginal ? '#b45309' : 'var(--hc-link)',
                 padding: '4px 8px 4px 18px',
               }}/>
           </div>
         </div>
 
         <div className="text-right">
-          <span className="text-xs font-bold tabular-nums" style={{ color: 'rgba(255,255,255,0.5)' }}>
+          <span className="text-xs font-bold tabular-nums" style={{ color: 'var(--hc-muted)' }}>
             = ₡{formatMontoPos(Number(item.precio) * item.cantidad)}
           </span>
         </div>

@@ -685,20 +685,33 @@ html.dark .hc-isotipo-placa {
   outline-offset: -4px;
 }
 
-/* — Admin sidebar: nav oscura n-900 en ambos modos (Brand Book cap. 6) — */
-:root .hc-admin-sidebar {
-  background-color: var(--hc-n-900) !important;
-  border-right-color: var(--hc-n-800) !important;
-}
-/* Sistema (rol EMPRENDEDOR) usa sidebar clara siguiendo el mockup aprobado
-   (Front para cliente EPN/) — debe ganar sobre la regla oscura de arriba. */
-.hc-sistema-theme .hc-admin-sidebar {
+/* Super Admin Figma: sidebar clara (Manual de Marca). */
+:root .hc-admin-sidebar,
+.hc-sistema-theme .hc-admin-sidebar,
+.hc-superadmin-theme .hc-admin-sidebar {
   background-color: var(--hc-surface) !important;
   border-right-color: var(--hc-border) !important;
 }
-:root .hc-admin-content {
+:root .hc-admin-content,
+.hc-superadmin-theme.hc-admin-content {
   background-color: var(--hc-bg) !important;
 }
+
+/* Páginas admin que aún hardcodean el tema oscuro anterior. */
+.hc-sistema-theme [class*="text-[#e8e8ed]"] { color: var(--hc-text) !important; }
+.hc-sistema-theme [class*="text-[#8e8e9a]"] { color: var(--hc-muted) !important; }
+.hc-sistema-theme [class*="placeholder-[#8e8e9a]"]::placeholder { color: var(--hc-muted) !important; }
+.hc-sistema-theme [class*="bg-[#111114]"],
+.hc-sistema-theme [class*="bg-[#16161a]"],
+.hc-sistema-theme [class*="bg-[#0a0a0d]"],
+.hc-sistema-theme [class*="bg-[#1a1a1f]"] { background-color: var(--hc-surface) !important; }
+.hc-sistema-theme [class*="bg-white/3"],
+.hc-sistema-theme [class*="bg-white/5"],
+.hc-sistema-theme [class*="bg-white/8"] { background-color: var(--hc-surface-2) !important; }
+.hc-sistema-theme [class*="border-white/"] { border-color: var(--hc-border) !important; }
+.hc-sistema-theme [class*="hover:text-white"]:hover { color: var(--hc-text) !important; }
+.hc-sistema-theme [class*="hover:bg-white/"]:hover { background-color: var(--hc-surface-2) !important; }
+.hc-sistema-theme [class*="divide-white/"] > * + * { border-color: var(--hc-border) !important; }
 
 /* "Sistema" (EMPRENDEDOR) es un único prototipo de color — nunca debe
    heredar modo oscuro / alto contraste (ver bloque equivalente en
@@ -719,6 +732,25 @@ html.dark .hc-isotipo-placa {
   --hc-scrollbar-hover: rgba(20, 23, 28, 0.34);
   --hc-wordmark-hot: var(--hc-red-500);
   --hc-wordmark-click: var(--hc-blue-600);
+  color-scheme: light;
+}
+
+/* Super Admin (rol ADMIN · Figma 41:128): Manual de Marca, siempre claro. */
+.hc-superadmin-theme {
+  --hc-surface-2: #F8F9FB;
+  --hc-surface-3: #F1F3F6;
+  --hc-text-2:    #4D5560;
+  --hc-accent:       #0D47A1;
+  --hc-accent-hover: #0A3780;
+  --hc-shadow: rgba(11, 19, 43, 0.10);
+  --hc-glass-bg: rgba(255, 255, 255, 0.88);
+  --hc-glass-border: rgba(11, 19, 43, 0.08);
+  --hc-glass-strong-bg: rgba(255, 255, 255, 0.94);
+  --hc-glass-strong-border: rgba(11, 19, 43, 0.12);
+  --hc-scrollbar: rgba(11, 19, 43, 0.18);
+  --hc-scrollbar-hover: rgba(11, 19, 43, 0.34);
+  --hc-wordmark-hot: #E31E24;
+  --hc-wordmark-click: #0D47A1;
   color-scheme: light;
 }
 

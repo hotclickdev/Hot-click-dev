@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import { productService } from '@/services/productService'
 import { marcaService } from '@/services/marcaService'
@@ -46,6 +47,7 @@ function contenidoProductos(data: unknown): ProductoListaHome[] {
 }
 
 export default function HomePage() {
+  const { t } = useTranslation()
   const [destacados, setDestacados] = useState<Producto[]>([])
   const [marcas, setMarcas] = useState<MarcaHome[]>([])
   const [categorias, setCategorias] = useState<CategoriaBrowse[]>([])
@@ -55,13 +57,13 @@ export default function HomePage() {
   useEffect(() => {
     productService.getDestacados()
       .then(({ data }) => setDestacados(Array.isArray(data) ? data.slice(0, 8) : []))
-      .catch(() => toast({ message: 'Error al cargar destacados', type: 'error' }))
+      .catch(() => toast({ message: t('home.errorFeatured'), type: 'error' }))
     marcaService.getPublicas()
       .then(({ data }) => setMarcas(listaMarcas(data)))
-      .catch(() => toast({ message: 'Error al cargar marcas', type: 'error' }))
+      .catch(() => toast({ message: t('home.errorBrands'), type: 'error' }))
     productService.getCategories()
       .then(({ data }) => setCategorias(listaCategorias(data)))
-      .catch(() => toast({ message: 'Error al cargar categorías', type: 'error' }))
+      .catch(() => toast({ message: t('home.errorCategories'), type: 'error' }))
     productService.getAll(0, 60)
       .then(({ data }) => {
         const content = contenidoProductos(data)
@@ -72,8 +74,8 @@ export default function HomePage() {
           nombre: p.nombreProducto ?? p.nombre ?? p.titulo,
         })))
       })
-      .catch(() => toast({ message: 'Error al cargar productos', type: 'error' }))
-  }, [toast])
+      .catch(() => toast({ message: t('home.errorProducts'), type: 'error' }))
+  }, [toast, t])
 
   return (
     <MainLayout>

@@ -135,12 +135,12 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @Query(nativeQuery = true, value =
         "SELECT p.* FROM hot_click_producto_tb p " +
         "LEFT JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
-        "WHERE LOWER(p.nombre_producto) LIKE LOWER(CONCAT('%',:q,'%')) AND p.fk_id_estado = :estado " +
+        "WHERE LOWER(p.nombre_producto) LIKE LOWER(CONCAT('%', REPLACE(REPLACE(:q, '%', ''), '_', ''), '%')) AND p.fk_id_estado = :estado " +
         "AND (p.fk_id_empresa IS NULL OR (e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE))",
         countQuery =
         "SELECT COUNT(*) FROM hot_click_producto_tb p " +
         "LEFT JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa " +
-        "WHERE LOWER(p.nombre_producto) LIKE LOWER(CONCAT('%',:q,'%')) AND p.fk_id_estado = :estado " +
+        "WHERE LOWER(p.nombre_producto) LIKE LOWER(CONCAT('%', REPLACE(REPLACE(:q, '%', ''), '_', ''), '%')) AND p.fk_id_estado = :estado " +
         "AND (p.fk_id_empresa IS NULL OR (e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE))")
     Page<Producto> findByNombrePublico(@Param("q") String q, @Param("estado") Integer estado, Pageable pageable);
 

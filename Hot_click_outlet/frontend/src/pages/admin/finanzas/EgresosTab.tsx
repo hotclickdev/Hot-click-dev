@@ -1,3 +1,4 @@
+﻿import { useTranslation } from 'react-i18next'
 import Spinner from '@/components/ui/Spinner'
 import { formatPrice } from '@/utils/format'
 import Kpi from './Kpi'
@@ -21,19 +22,29 @@ export default function EgresosTab({
   onEditar,
   onEliminar,
 }: EgresosTabProps) {
+  const { t } = useTranslation()
+
   if (loading) {
     return (
       <div className="flex justify-center py-16"><Spinner size="lg" /></div>
     )
   }
 
+  const headers = [
+    t('adminFinanzas.colDate'),
+    t('adminFinanzas.colConcept'),
+    t('adminFinanzas.colCategory'),
+    t('adminFinanzas.colAmount'),
+    t('adminFinanzas.colActions'),
+  ]
+
   const kpis = (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <Kpi label="Total egresos" value={totalEgresos}
-        sub={`${gastos.length} gasto${gastos.length === 1 ? '' : 's'} registrado${gastos.length === 1 ? '' : 's'}`}
+      <Kpi label={t('adminFinanzas.kpiTotalExpenses')} value={totalEgresos}
+        sub={t('adminFinanzas.expensesCount', { count: gastos.length })}
         color="#f87171" negative />
-      <Kpi label="Promedio por gasto" value={gastos.length > 0 ? Math.round(totalEgresos / gastos.length) : 0}
-        sub="en el período" color="#f87171" />
+      <Kpi label={t('adminFinanzas.kpiAvgExpense')} value={gastos.length > 0 ? Math.round(totalEgresos / gastos.length) : 0}
+        sub={t('adminFinanzas.inPeriod')} color="#f87171" />
     </div>
   )
 
@@ -41,13 +52,13 @@ export default function EgresosTab({
     return (
       <>
         {kpis}
-        <div className="bg-[#111114] border border-white/8 rounded-2xl p-10 text-center space-y-3">
-          <p className="text-[#e8e8ed] font-medium">Sin gastos registrados</p>
-          <p className="text-sm text-[#8e8e9a]">Registrá los egresos operativos para ver la utilidad neta.</p>
+        <div className="bg-hc-surface border border-hc-border rounded-2xl p-10 text-center space-y-3">
+          <p className="text-hc-text font-medium">{t('adminFinanzas.noExpenses')}</p>
+          <p className="text-sm text-hc-muted">{t('adminFinanzas.noExpensesHint')}</p>
           <button type="button" onClick={() => onNuevo(EMPTY_GASTO)}
             className="px-4 py-2 rounded-xl text-sm font-semibold inline-flex items-center"
             style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-            <TextoMas>Primer gasto</TextoMas>
+            <TextoMas>{t('adminFinanzas.firstExpense')}</TextoMas>
           </button>
         </div>
       </>
@@ -57,23 +68,23 @@ export default function EgresosTab({
   return (
     <>
       {kpis}
-      <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
+      <div className="bg-hc-surface border border-hc-border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[560px]">
             <thead>
-              <tr className="border-b border-white/8">
-                {['Fecha', 'Concepto', 'Categoría', 'Monto', 'Acciones'].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-[#8e8e9a]">{h}</th>
+              <tr className="border-b border-hc-border">
+                {headers.map((h) => (
+                  <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-hc-muted">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {gastos.map((g) => (
-                <tr key={g.id} className="hover:bg-white/3 transition-colors">
-                  <td className="px-4 py-3 text-xs text-[#8e8e9a]">{g.fecha ?? '—'}</td>
+                <tr key={g.id} className="hover:bg-hc-surface-2 transition-colors">
+                  <td className="px-4 py-3 text-xs text-hc-muted">{g.fecha ?? '—'}</td>
                   <td className="px-4 py-3">
-                    <p className="font-medium text-[#e8e8ed]">{g.concepto}</p>
-                    {g.notas && <p className="text-[10px] text-[#8e8e9a] truncate max-w-[200px]">{g.notas}</p>}
+                    <p className="font-medium text-hc-text">{g.concepto}</p>
+                    {g.notas && <p className="text-[10px] text-hc-muted truncate max-w-[200px]">{g.notas}</p>}
                   </td>
                   <td className="px-4 py-3">
                     <span className="px-2 py-0.5 rounded text-[10px] font-medium"
@@ -81,16 +92,16 @@ export default function EgresosTab({
                       {g.categoria ?? 'OTRO'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 font-bold text-[#f87171]">{formatPrice(g.monto)}</td>
+                  <td className="px-4 py-3 font-bold text-hc-danger">{formatPrice(g.monto)}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
                       <button type="button" onClick={() => onEditar(g)}
-                        className="px-3 py-1 text-xs rounded-lg bg-white/5 hover:bg-white/10 text-[#8e8e9a] hover:text-white transition-colors">
-                        Editar
+                        className="px-3 py-1 text-xs rounded-lg bg-hc-surface-2 hover:bg-hc-surface-2 text-hc-muted hover:text-hc-text transition-colors">
+                        {t('adminFinanzas.edit')}
                       </button>
                       <button type="button" onClick={() => onEliminar(g)}
                         className="px-3 py-1 text-xs rounded-lg bg-red-500/8 hover:bg-red-500/15 text-red-400 transition-colors">
-                        Eliminar
+                        {t('adminFinanzas.delete')}
                       </button>
                     </div>
                   </td>
@@ -99,8 +110,8 @@ export default function EgresosTab({
             </tbody>
             <tfoot>
               <tr style={{ borderTop: '2px solid var(--hc-border)' }}>
-                <td colSpan={3} className="px-4 py-3 text-xs font-semibold text-[#8e8e9a] uppercase">Total</td>
-                <td className="px-4 py-3 font-bold text-[#f87171]">{formatPrice(totalEgresos)}</td>
+                <td colSpan={3} className="px-4 py-3 text-xs font-semibold text-hc-muted uppercase">{t('adminFinanzas.total')}</td>
+                <td className="px-4 py-3 font-bold text-hc-danger">{formatPrice(totalEgresos)}</td>
                 <td />
               </tr>
             </tfoot>

@@ -50,7 +50,7 @@ public class AuthTenantSwitchHandler {
                 return ResponseEntity.status(403).body(ResponseDTO.error("No tenés acceso a ese negocio"));
             Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Negocio no encontrado"));
-            String rol = rolDeMembresia(membresia, currentUser);
+            String rol = RolMembresia.paraJwt(membresia, currentUser);
             String accessToken = jwtUtil.generateToken(currentUser.getCorreo(), currentUser.getId(), rol, empresaId, empresa.getSlug());
             RefreshToken rt = refreshTokenService.crear(currentUser);
             String nombre = currentUser.getNombre() != null ? currentUser.getNombre() : currentUser.getCorreo().split("@")[0];
@@ -111,7 +111,7 @@ public class AuthTenantSwitchHandler {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Negocio no encontrado"));
             // Generar JWT apuntando a la empresa seleccionada, con el rol QUE TIENE
             // en esa empresa (no el rol global de la cuenta)
-            String rol          = rolDeMembresia(membresia, usuario);
+            String rol          = RolMembresia.paraJwt(membresia, usuario);
             String accessToken = jwtUtil.generateToken(usuario.getCorreo(), userId, rol, empresaId, empresa.getSlug());
             RefreshToken rt    = refreshTokenService.crear(usuario);
             String nombre      = usuario.getNombre() != null ? usuario.getNombre() : usuario.getCorreo().split("@")[0];
@@ -126,11 +126,4 @@ public class AuthTenantSwitchHandler {
         }
     }
 
-    static String rolDeMembresia(MiembroEmpresa membresia, Usuario usuario) {
-        if (membresia.getRolEnEmpresa() != null && !membresia.getRolEnEmpresa().isBlank()) {
-            return membresia.getRolEnEmpresa();
-        }
-        if (usuario.getRoles().isEmpty()) return "USUARIO_FINAL";
-        return usuario.getRoles().get(0).getNombreRol();
-    }
 }

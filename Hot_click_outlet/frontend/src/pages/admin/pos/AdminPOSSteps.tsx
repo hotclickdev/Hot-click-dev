@@ -22,7 +22,10 @@ export default function AdminPOSSteps({ pos }: { pos: AdminPOSController }) {
           subtotal={pos.subtotal}
           total={pos.total}
           onNueva={pos.nuevaVenta}
-          onCobrar={() => pos.setStep('cobro')}
+          onCobrar={() => {
+            if (pos.cartItems.length === 0) return
+            pos.setStep('cobro')
+          }}
           onQrCliente={pos.handleQrCliente}
           loadingQr={pos.loadingVenta}
           cliente={pos.cliente}

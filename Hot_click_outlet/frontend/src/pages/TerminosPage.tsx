@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
 import TextoFlecha from '@/components/ui/TextoFlecha'
+import LegalMasLinks from '@/pages/legal/LegalMasLinks'
 
 const SITE_URL = 'https://hotclick.lat'
 const LAST_UPDATED = '5 de junio de 2025'
@@ -212,6 +213,7 @@ export default function TerminosPage() {
           </div>
         </div>
       </div>
+      <LegalMasLinks />
     </MainLayout>
   )
 }

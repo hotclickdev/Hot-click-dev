@@ -36,6 +36,7 @@ import {
   buildSalesLast7,
 } from './dashboard/dashboardHelpers'
 import type { DashboardStats, UsuarioDashboard, VentaDashboard } from './dashboard/dashboardHelpers'
+import SuperAdminHome from './dashboard/SuperAdminHome'
 import {
   metricasDecision,
   textoCambioDelta,
@@ -64,6 +65,12 @@ function statsDesdeRespuesta(data: unknown): DashboardStats {
 }
 
 export default function AdminDashboard() {
+  const userRole = useAuthStore((s) => s.userRole)
+  if (userRole === 'ADMIN') return <SuperAdminHome />
+  return <DashboardDecision />
+}
+
+function DashboardDecision() {
   const { t } = useTranslation()
   const userRole = useAuthStore((s) => s.userRole)
   const [stats, setStats] = useState<DashboardStats | null>(null)
@@ -211,11 +218,11 @@ type AccesoRapido = QuickLink & { roles: string[] }
 function accesosRapidos(t: TFunction, userRole: string | null): AccesoRapido[] {
   return [
     { to: '/admin/pedidos', label: t('admin.orders.title'), icon: <ClipboardQLIcon />, roles: ['ADMIN', 'EMPRENDEDOR'], highlight: true },
-    { to: '/admin/pos', label: 'Caja POS', icon: <MonitorIcon />, roles: ['ADMIN', 'EMPRENDEDOR', 'CAJERO', 'GERENTE', 'SUPERVISOR'] },
+    { to: '/admin/pos', label: t('admin.dashboard.posCash'), icon: <MonitorIcon />, roles: ['EMPRENDEDOR', 'CAJERO', 'GERENTE', 'SUPERVISOR'] },
     { to: '/admin/productos', label: t('admin.products.title'), icon: <PackageIcon />, roles: ['ADMIN', 'EMPRENDEDOR'] },
     { to: '/admin/usuarios', label: t('admin.users.title'), icon: <PeopleIcon />, roles: ['ADMIN'] },
     { to: '/admin/finanzas', label: t('admin.finanzas.title'), icon: <CoinIcon />, roles: ['ADMIN', 'EMPRENDEDOR'] },
     { to: '/admin/reportes', label: t('admin.reportes.title'), icon: <BarChartIcon />, roles: ['ADMIN', 'EMPRENDEDOR'] },
-    { to: RUTA_SISTEMA_MARCA, label: 'Mi marca', icon: <PackageIcon />, roles: ['EMPRENDEDOR'] },
+    { to: RUTA_SISTEMA_MARCA, label: t('admin.dashboard.myBrand'), icon: <PackageIcon />, roles: ['EMPRENDEDOR'] },
   ].filter((link) => link.roles.includes(userRole ?? ''))
 }

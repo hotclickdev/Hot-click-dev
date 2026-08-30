@@ -1,80 +1,24 @@
 import { useState, type Dispatch, type SetStateAction } from 'react'
-import { formatDateShort } from '@/utils/format'
+import { letraDe } from '@/prototipo/admin/adminData'
+import {
+  AdminEntityRow,
+  AdminFilterChip,
+  AdminSearchField,
+} from '@/prototipo/admin/AdminUi'
+import TextoFlecha from '@/components/ui/TextoFlecha'
 import { EyeIcon, EyeOffIcon } from './empresasIcons'
 import {
-  COLUMNAS_TABLA,
-  ESTADO_COLOR,
-  ESTADOS,
+  CHIPS_ESTADO_TIENDA,
   PAGE_SIZE,
-  PLAN_COLOR,
   PLANES,
+  etiquetaEstadoTienda,
   filtrarEmpresas,
   indicesPagina,
-  kpisEmpresas,
   nombreVisibleEmpresa,
+  tonoEstadoTiendaLista,
   type EmpresaLista,
 } from './empresasHelpers'
-import TextoFlecha from '@/components/ui/TextoFlecha'
 import type { Id } from '@/types/api'
-
-function Kpis({ empresas }: { empresas: EmpresaLista[] }) {
-  const kpis = kpisEmpresas(empresas)
-  const items = [
-    { label: 'Total', value: kpis.total, color: 'text-blue-400' },
-    { label: 'Activas', value: kpis.activas, color: 'text-green-400' },
-    { label: 'Suspendidas', value: kpis.suspendidas, color: 'text-red-400' },
-    { label: 'PRO/Enterprise', value: kpis.pro, color: 'text-amber-400' },
-  ]
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      {items.map((k) => (
-        <div key={k.label} className="rounded-xl p-4" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-          <div className={`text-2xl font-bold ${k.color}`}>{k.value}</div>
-          <div className="text-xs mt-1" style={{ color: 'var(--hc-muted)' }}>{k.label}</div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function Filtros({ search, filtroEstado, filtroPlan, onSearch, onEstado, onPlan }: {
-  search: string
-  filtroEstado: string
-  filtroPlan: string
-  onSearch: (value: string) => void
-  onEstado: (value: string) => void
-  onPlan: (value: string) => void
-}) {
-  return (
-    <div className="flex flex-wrap gap-3 items-center">
-      <input
-        value={search}
-        onChange={(e) => onSearch(e.target.value)}
-        placeholder="Buscar empresa, slug o correo…"
-        className="flex-1 min-w-48 px-3 py-2 rounded-xl text-sm outline-none"
-        style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
-      />
-      <select
-        value={filtroEstado}
-        onChange={(e) => onEstado(e.target.value)}
-        className="px-3 py-2 rounded-xl text-sm outline-none"
-        style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
-      >
-        <option value="ALL">Todos los estados</option>
-        {ESTADOS.map((s) => <option key={s} value={s}>{s}</option>)}
-      </select>
-      <select
-        value={filtroPlan}
-        onChange={(e) => onPlan(e.target.value)}
-        className="px-3 py-2 rounded-xl text-sm outline-none"
-        style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
-      >
-        <option value="ALL">Todos los planes</option>
-        {PLANES.map((p) => <option key={p} value={p}>{p}</option>)}
-      </select>
-    </div>
-  )
-}
 
 function VisibilidadToggle({ emp, saving, onToggle }: {
   emp: EmpresaLista
@@ -84,13 +28,13 @@ function VisibilidadToggle({ emp, saving, onToggle }: {
   const visible = emp.visibilidadPublica
   return (
     <button type="button"
-      onClick={() => onToggle(emp.id, !visible)}
+      onClick={(e) => { e.stopPropagation(); onToggle(emp.id, !visible) }}
       disabled={saving}
       title={visible ? 'Ocultar negocio' : 'Hacer visible'}
-      className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full transition-opacity disabled:opacity-40"
+      className="flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full transition-opacity disabled:opacity-40"
       style={{
-        background: visible ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
-        color: visible ? '#4ade80' : '#f87171',
+        background: visible ? 'var(--hc-success-bg)' : 'var(--hc-danger-bg)',
+        color: visible ? 'var(--hc-success)' : 'var(--hc-danger)',
       }}
     >
       {visible ? <><EyeIcon />Visible</> : <><EyeOffIcon />Oculto</>}
@@ -104,44 +48,20 @@ function EmpresaFila({ emp, saving, onToggleVisibilidad, onAbrirDetalle }: {
   onToggleVisibilidad: (id: Id, visibilidadPublica: boolean) => void
   onAbrirDetalle: (emp: EmpresaLista) => void
 }) {
+  const nombre = nombreVisibleEmpresa(emp) ?? 'Tienda'
   return (
-    <tr style={{ borderBottom: '1px solid var(--hc-border)', backgroundColor: 'var(--hc-surface)' }}
-      className="hover:bg-[var(--hc-surface-2)] transition-colors">
-      <td className="px-4 py-3">
-        <div className="font-medium" style={{ color: 'var(--hc-text)' }}>{nombreVisibleEmpresa(emp)}</div>
-        <div className="text-xs" style={{ color: 'var(--hc-muted)' }}>{emp.correoEmpresa}</div>
-      </td>
-      <td className="px-4 py-3 text-xs font-mono" style={{ color: 'var(--hc-muted)' }}>{emp.slug}</td>
-      <td className="px-4 py-3">
-        <span
-          title="Modificar desde Ver detalle"
-          className={`text-xs font-semibold px-2 py-1 rounded-full cursor-default select-none ${PLAN_COLOR[emp.plan as string] ?? ''}`}
-        >
-          {emp.plan || 'Sin plan'}
-        </span>
-      </td>
-      <td className="px-4 py-3">
-        <span
-          title="Modificar desde Ver detalle"
-          className={`text-xs font-semibold px-2 py-1 rounded-full cursor-default select-none ${ESTADO_COLOR[emp.estadoEmpresa as string] ?? ''}`}
-        >
-          {emp.estadoEmpresa}
-        </span>
-      </td>
-      <td className="px-4 py-3">
-        <VisibilidadToggle emp={emp} saving={saving} onToggle={onToggleVisibilidad} />
-      </td>
-      <td className="px-4 py-3 text-xs" style={{ color: 'var(--hc-muted)' }}>{formatDateShort(emp.fechaRegistro)}</td>
-      <td className="px-4 py-3">
-        <button type="button"
-          onClick={() => onAbrirDetalle(emp)}
-          className="text-xs px-3 py-1 rounded-lg transition-colors hover:opacity-80"
-          style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
-        >
-          Detalles
-        </button>
-      </td>
-    </tr>
+    <li className="flex items-center gap-2">
+      <button type="button" onClick={() => onAbrirDetalle(emp)} className="min-w-0 flex-1 text-left">
+        <AdminEntityRow
+          letra={letraDe(nombre)}
+          titulo={nombre}
+          subtitulo={emp.slug ?? emp.correoEmpresa ?? ''}
+          badge={etiquetaEstadoTienda(emp.estadoEmpresa)}
+          badgeTono={tonoEstadoTiendaLista(emp.estadoEmpresa)}
+        />
+      </button>
+      <VisibilidadToggle emp={emp} saving={saving} onToggle={onToggleVisibilidad} />
+    </li>
   )
 }
 
@@ -154,26 +74,24 @@ function Paginacion({ page, totalPages, filteredCount, onPage }: {
   if (totalPages <= 1) return null
   return (
     <div className="flex items-center justify-between pt-1">
-      <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-        {filteredCount} empresa{filteredCount === 1 ? '' : 's'} · página {page + 1} de {totalPages}
+      <span className="text-xs text-hc-muted">
+        {filteredCount} tienda{filteredCount === 1 ? '' : 's'} · página {page + 1} de {totalPages}
       </span>
       <div className="flex gap-1">
         <button type="button"
           onClick={() => onPage(Math.max(0, page - 1))}
           disabled={page === 0}
-          className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity disabled:opacity-40 hover:opacity-80"
-          style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
+          className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity disabled:opacity-40"
+          style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
         >
           <TextoFlecha dir="atras">Anterior</TextoFlecha>
         </button>
         {indicesPagina(page, totalPages).map((idx) => (
-          <button type="button"
-            key={idx}
-            onClick={() => onPage(idx)}
-            className="w-8 h-8 rounded-lg text-xs font-medium transition-all"
+          <button type="button" key={idx} onClick={() => onPage(idx)}
+            className="w-8 h-8 rounded-lg text-xs font-medium"
             style={{
-              backgroundColor: page === idx ? 'var(--hc-accent)' : 'var(--hc-surface)',
-              border: `1px solid ${page === idx ? 'var(--hc-accent)' : 'var(--hc-border)'}`,
+              backgroundColor: page === idx ? 'var(--hc-primary)' : 'var(--hc-surface)',
+              border: `1px solid ${page === idx ? 'var(--hc-primary)' : 'var(--hc-border)'}`,
               color: page === idx ? '#fff' : 'var(--hc-text)',
             }}
           >
@@ -183,8 +101,8 @@ function Paginacion({ page, totalPages, filteredCount, onPage }: {
         <button type="button"
           onClick={() => onPage(Math.min(totalPages - 1, page + 1))}
           disabled={page >= totalPages - 1}
-          className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity disabled:opacity-40 hover:opacity-80"
-          style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
+          className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity disabled:opacity-40"
+          style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
         >
           <TextoFlecha>Siguiente</TextoFlecha>
         </button>
@@ -201,9 +119,12 @@ export type EmpresaListProps = {
   onAbrirDetalle: (emp: EmpresaLista) => void
 }
 
+/**
+ * Lista de tiendas (Figma 42:128) con datos reales.
+ */
 export default function EmpresaList({ empresas, loading, saving, onToggleVisibilidad, onAbrirDetalle }: EmpresaListProps) {
   const [search, setSearch] = useState('')
-  const [filtroEstado, setFiltroEstado] = useState('ACTIVO')
+  const [filtroEstado, setFiltroEstado] = useState('ALL')
   const [filtroPlan, setFiltroPlan] = useState('ALL')
   const [page, setPage] = useState(0)
 
@@ -216,62 +137,66 @@ export default function EmpresaList({ empresas, loading, saving, onToggleVisibil
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>Negocios en la plataforma</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>Administrá planes, estados y visibilidad de cada emprendedor</p>
-      </div>
-
-      <Kpis empresas={empresas} />
-      <Filtros
-        search={search}
-        filtroEstado={filtroEstado}
-        filtroPlan={filtroPlan}
-        onSearch={cambiarFiltro(setSearch)}
-        onEstado={cambiarFiltro(setFiltroEstado)}
-        onPlan={cambiarFiltro(setFiltroPlan)}
+    <div className="mx-auto flex max-w-md flex-col gap-[18px] pb-8 md:max-w-4xl">
+      <header>
+        <h1 className="font-display text-[22px] font-bold">Tiendas</h1>
+        <p className="mt-0.5 text-xs text-hc-muted">
+          {empresas.length} tiendas registradas en HotClick
+        </p>
+      </header>
+      <AdminSearchField
+        value={search}
+        onChange={cambiarFiltro(setSearch)}
+        placeholder="Buscar tienda o vendedor"
+        label="Buscar tienda"
+        dataMm="buscar-tienda"
       />
-
-      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--hc-border)' }}>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[700px] text-sm">
-            <thead>
-              <tr style={{ backgroundColor: 'var(--hc-surface-2)', borderBottom: '1px solid var(--hc-border)' }}>
-                {COLUMNAS_TABLA.map((h) => (
-                  <th key={h} className="text-left px-4 py-3 font-medium text-xs uppercase tracking-wider" style={{ color: 'var(--hc-muted)' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filasTablaEmpresas(loading, paged, { saving, onToggleVisibilidad, onAbrirDetalle })}
-            </tbody>
-          </table>
-        </div>
+      <div className="-mx-1 flex gap-2 overflow-x-auto px-1">
+        {CHIPS_ESTADO_TIENDA.map((chip) => (
+          <AdminFilterChip key={chip.id} activo={filtroEstado === chip.id} onClick={() => cambiarFiltro(setFiltroEstado)(chip.id)}>
+            {chip.label}
+          </AdminFilterChip>
+        ))}
       </div>
-
+      <label className="hidden text-xs text-hc-muted md:block">
+        Plan
+        <select
+          value={filtroPlan}
+          onChange={(e) => cambiarFiltro(setFiltroPlan)(e.target.value)}
+          className="ml-2 min-h-9 rounded-xl border border-hc-border bg-hc-surface px-3 text-sm"
+        >
+          <option value="ALL">Todos</option>
+          {PLANES.map((p) => <option key={p} value={p}>{p}</option>)}
+        </select>
+      </label>
+      {cuerpoLista(loading, paged, { saving, onToggleVisibilidad, onAbrirDetalle })}
       <Paginacion page={page} totalPages={totalPages} filteredCount={filtered.length} onPage={setPage} />
     </div>
   )
 }
 
-function filasTablaEmpresas(loading: boolean, paged: EmpresaLista[], { saving, onToggleVisibilidad, onAbrirDetalle }: {
+function cuerpoLista(loading: boolean, paged: EmpresaLista[], { saving, onToggleVisibilidad, onAbrirDetalle }: {
   saving: boolean
   onToggleVisibilidad: (id: Id, visibilidadPublica: boolean) => void
   onAbrirDetalle: (emp: EmpresaLista) => void
 }) {
   if (loading) {
-    return <tr><td colSpan={7} className="px-4 py-8 text-center text-sm" style={{ color: 'var(--hc-muted)' }}>Cargando…</td></tr>
+    return <p className="py-8 text-center text-sm text-hc-muted">Cargando…</p>
   }
   if (paged.length === 0) {
-    return <tr><td colSpan={7} className="px-4 py-8 text-center text-sm" style={{ color: 'var(--hc-muted)' }}>Sin resultados</td></tr>
+    return <p className="py-8 text-center text-sm text-hc-muted">Sin resultados</p>
   }
-  return paged.map((emp) => (
-    <EmpresaFila
-      key={emp.id}
-      emp={emp}
-      saving={saving}
-      onToggleVisibilidad={onToggleVisibilidad}
-      onAbrirDetalle={onAbrirDetalle}
-    />
-  ))
+  return (
+    <ul className="flex flex-col gap-5">
+      {paged.map((emp) => (
+        <EmpresaFila
+          key={String(emp.id)}
+          emp={emp}
+          saving={saving}
+          onToggleVisibilidad={onToggleVisibilidad}
+          onAbrirDetalle={onAbrirDetalle}
+        />
+      ))}
+    </ul>
+  )
 }

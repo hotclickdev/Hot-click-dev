@@ -1,4 +1,4 @@
-import Pagination from './Pagination'
+﻿import Pagination from './Pagination'
 import Select from './Select'
 import { BADGE_WH, type WebhookAdmin } from './pagosHelpers'
 import type { TFunction } from 'i18next'
@@ -10,24 +10,24 @@ function TablaWebhooks({ webhooks, page, totalPages, onPage }: {
   onPage: (p: number) => void
 }) {
   return (
-    <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
+    <div className="bg-hc-surface border border-hc-border rounded-2xl overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm min-w-[860px]">
           <thead>
-            <tr className="border-b border-white/8 bg-white/3">
+            <tr className="border-b border-hc-border bg-hc-surface-2">
               {['Token / ID evento', 'Tipo', 'IP origen', 'Estado', 'Error', 'Recibido', 'Procesado en'].map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-[#8e8e9a] font-medium text-xs">{h}</th>
+                <th key={h} className="px-4 py-3 text-left text-hc-muted font-medium text-xs">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {webhooks.map((w) => (
-              <tr key={w.id} className="border-b border-white/5 hover:bg-white/3 transition-colors">
-                <td className="px-4 py-3 font-mono text-[#e8e8ed] text-[10px]" title={w.merchantToken}>
+              <tr key={w.id} className="border-b border-white/5 hover:bg-hc-surface-2 transition-colors">
+                <td className="px-4 py-3 font-mono text-hc-text text-[10px]" title={w.merchantToken}>
                   {w.merchantToken?.slice(0, 16)}…
                 </td>
-                <td className="px-4 py-3 text-[#8e8e9a] text-xs">{w.eventoTipo}</td>
-                <td className="px-4 py-3 text-[#8e8e9a] text-xs">{w.ipOrigen}</td>
+                <td className="px-4 py-3 text-hc-muted text-xs">{w.eventoTipo}</td>
+                <td className="px-4 py-3 text-hc-muted text-xs">{w.ipOrigen}</td>
                 <td className="px-4 py-3">
                   <span className={`px-2 py-0.5 rounded-full border text-[10px] font-semibold ${BADGE_WH[w.procesado as unknown as string]}`}>
                     {w.procesado ? 'OK' : 'Error'}
@@ -36,8 +36,8 @@ function TablaWebhooks({ webhooks, page, totalPages, onPage }: {
                 <td className="px-4 py-3 text-red-400 text-xs" title={w.errorProcesamiento ?? ''}>
                   <span className="truncate block max-w-[280px]">{w.errorProcesamiento ?? '—'}</span>
                 </td>
-                <td className="px-4 py-3 text-[#8e8e9a] text-xs whitespace-nowrap">{w.fechaRecepcion}</td>
-                <td className="px-4 py-3 text-[#8e8e9a] text-xs whitespace-nowrap">{w.procesadoEn ?? '—'}</td>
+                <td className="px-4 py-3 text-hc-muted text-xs whitespace-nowrap">{w.fechaRecepcion}</td>
+                <td className="px-4 py-3 text-hc-muted text-xs whitespace-nowrap">{w.procesadoEn ?? '—'}</td>
               </tr>
             ))}
           </tbody>
@@ -58,12 +58,12 @@ function ListaWebhooks({ t, loading, webhooks, page, totalPages, onPage }: {
 }) {
   if (loading) {
     return (
-      <div className="text-center py-16 text-[#8e8e9a]">{t('common.loading')}</div>
+      <div className="text-center py-16 text-hc-muted">{t('common.loading')}</div>
     )
   }
   if (webhooks.length === 0) {
     return (
-      <div className="text-center py-16 text-[#8e8e9a]">{t('common.noData')}</div>
+      <div className="text-center py-16 text-hc-muted">{t('common.noData')}</div>
     )
   }
   return (
@@ -102,7 +102,7 @@ export default function WebhooksTab({
             { value: 'false', label: 'Con error' },
           ]} />
         <button type="button" onClick={onRetry}
-          className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/8 text-[#8e8e9a] hover:text-[#e8e8ed] text-sm transition-colors">
+          className="px-4 py-2 rounded-lg bg-hc-surface-2 hover:bg-hc-surface-2 text-hc-muted hover:text-hc-text text-sm transition-colors">
           Actualizar
         </button>
       </div>

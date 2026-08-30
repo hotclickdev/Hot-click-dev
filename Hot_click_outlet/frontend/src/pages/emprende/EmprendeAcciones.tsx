@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { RUTA_CATALOGO_EMPRENDIMIENTOS, RUTA_EMPRENDIMIENTOS } from '@/utils/emprendimientoRutas'
+import { RUTA_EMPRENDEDOR } from '@/utils/planPaths'
 
 const btnPrimario = {
   backgroundColor: 'var(--hc-primary)',
@@ -16,7 +17,7 @@ const btnSecundario = {
 /** CTAs: crear negocio o Sistema, catálogo interno, directorio de aliados. */
 export default function EmprendeAcciones({ yaEsDuenio }: { yaEsDuenio: boolean }) {
   const { t } = useTranslation()
-  const primarioTo = yaEsDuenio ? '/admin' : '/registro-empresa'
+  const primarioTo = yaEsDuenio ? RUTA_EMPRENDEDOR : '/registro-empresa'
   const primarioLabel = yaEsDuenio ? t('emprende.ctaSistema') : t('emprende.ctaCrear')
 
   return (
