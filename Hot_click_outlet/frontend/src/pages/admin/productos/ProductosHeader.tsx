@@ -29,10 +29,10 @@ export default function ProductosHeader({ t, filteredCount, totalProds, products
       <div className="flex items-center gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>{t('admin.products.title')}</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>{filteredCount} de {totalProds} productos</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>{t('admin.products.countOf', { filtered: filteredCount, total: totalProds })}</p>
         </div>
         <div className="flex flex-col items-start gap-0.5">
-          <span className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>Cuenta</span>
+          <span className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>{t('admin.products.account')}</span>
           <EmpresaProfileCard totalProductos={totalProds} />
         </div>
       </div>
@@ -56,11 +56,11 @@ export default function ProductosHeader({ t, filteredCount, totalProds, products
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
               </svg>
-              Carga masiva
+              {t('admin.products.bulkUpload')}
             </Link>
           </>
         )}
-        <Button onClick={onNuevo}><TextoMas>{t('admin.products.new')}</TextoMas></Button>
+        <Button onClick={onNuevo} data-mm="nuevo-producto"><TextoMas>{t('admin.products.new')}</TextoMas></Button>
       </div>
     </div>
   )

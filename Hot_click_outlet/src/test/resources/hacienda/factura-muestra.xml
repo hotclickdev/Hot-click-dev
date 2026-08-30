@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FacturaElectronica xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/facturaElectronica">
+  <Clave>50627082600310112345600100001010000000001199999999</Clave>
+  <CodigoActividad>722003</CodigoActividad>
+  <NumeroConsecutivo>00100001010000000001</NumeroConsecutivo>
+  <FechaEmision>2026-08-27T15:30:00-06:00</FechaEmision>
+  <Emisor>
+    <Nombre>HOTCLICK</Nombre>
+    <Identificacion>
+      <Tipo>02</Tipo>
+      <Numero>3101123456</Numero>
+    </Identificacion>
+    <CorreoElectronico>facturas@hotclick.lat</CorreoElectronico>
+  </Emisor>
+  <Receptor>
+    <Nombre>Cliente CR</Nombre>
+    <Identificacion>
+      <Tipo>01</Tipo>
+      <Numero>101110111</Numero>
+    </Identificacion>
+    <CorreoElectronico>cliente@example.com</CorreoElectronico>
+  </Receptor>
+  <CondicionVenta>01</CondicionVenta>
+  <MedioPago>01</MedioPago>
+  <DetalleServicio>
+    <LineaDetalle>
+      <NumeroLinea>1</NumeroLinea>
+      <Detalle>Cable USB</Detalle>
+      <Cantidad>2</Cantidad>
+      <UnidadMedida>Unid</UnidadMedida>
+      <PrecioUnitario>1000</PrecioUnitario>
+      <MontoTotal>2000</MontoTotal>
+      <Impuesto>
+        <Codigo>01</Codigo>
+        <CodigoTarifa>08</CodigoTarifa>
+        <Tarifa>13</Tarifa>
+        <Monto>260</Monto>
+      </Impuesto>
+      <SubTotal>2000</SubTotal>
+      <ImpuestoNeto>260</ImpuestoNeto>
+      <MontoTotalLinea>2260</MontoTotalLinea>
+    </LineaDetalle>
+  </DetalleServicio>
+  <ResumenFactura>
+    <CodigoTipoMoneda>
+      <CodigoMoneda>CRC</CodigoMoneda>
+      <TipoCambio>1</TipoCambio>
+    </CodigoTipoMoneda>
+    <TotalGravado>2000</TotalGravado>
+    <TotalImpuesto>260</TotalImpuesto>
+    <TotalComprobante>2260</TotalComprobante>
+  </ResumenFactura>
+</FacturaElectronica>

@@ -13,6 +13,7 @@ import EmprendimientoPasoVerificar from './emprendimiento/EmprendimientoPasoVeri
 import TextoFlecha from '@/components/ui/TextoFlecha'
 import type { AuthResponse } from '@/types/auth'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
+import { RUTA_PANEL_VENDEDOR } from '@/utils/destinoVender'
 
 export type FormEmprendimiento = {
   nombreEmpresa: string
@@ -95,7 +96,7 @@ export default function EmprendimientoForm({ onVolver }: { onVolver: () => void 
     try {
       await authService.verificarCorreoNegocio(correoReg, codigoVerif.trim())
       toast({ message: '¡Correo verificado! Bienvenido a tu panel.', type: 'success' })
-      navigate('/admin')
+      navigate(RUTA_PANEL_VENDEDOR)
     } catch (err: unknown) {
       setError(mensajeErrorAuth(err, 'Código incorrecto o expirado') || 'Código incorrecto o expirado')
     } finally { setLoading(false) }

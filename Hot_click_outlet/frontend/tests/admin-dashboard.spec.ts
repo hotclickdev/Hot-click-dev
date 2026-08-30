@@ -26,43 +26,9 @@ function payloadAuth(rol: string) {
   }
 }
 
-function diaLocal(offset = 0) {
-  const d = new Date()
-  d.setDate(d.getDate() - offset)
-  const yyyy = d.getFullYear()
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const dd = String(d.getDate()).padStart(2, '0')
-  return `${yyyy}-${mm}-${dd}`
-}
-
-const VENTAS = [
-  {
-    id: 11,
-    fechaCreacion: `${diaLocal(0)}T10:00:00`,
-    estado: 'ENTREGADO',
-    total: 10000,
-    origen: 'POS',
-    metodoPago: 'EFECTIVO',
-    nombreCliente: 'Ana',
-  },
-  {
-    id: 12,
-    fechaCreacion: `${diaLocal(0)}T11:00:00`,
-    estado: 'PENDIENTE',
-    total: 5000,
-    origen: 'ONLINE',
-    metodoPago: 'SINPE',
-    nombreCliente: 'Luis',
-  },
-  {
-    id: 10,
-    fechaCreacion: `${diaLocal(1)}T10:00:00`,
-    estado: 'ENTREGADO',
-    total: 8000,
-    origen: 'POS',
-    metodoPago: 'EFECTIVO',
-    nombreCliente: 'Ayer',
-  },
+const EMPRESAS = [
+  { id: 1, nombreComercial: 'QA2 Emprendedor', slug: 'qa2.emprendedor', estadoEmpresa: 'ACTIVO' },
+  { id: 2, nombreComercial: 'Moda Urbana', slug: 'maria.moda', estadoEmpresa: 'PENDIENTE_APROBACION' },
 ]
 
 async function entrarDashboard(page: Page) {
@@ -74,16 +40,27 @@ async function entrarDashboard(page: Page) {
         contentType: 'application/json',
         body: JSON.stringify({
           success: true,
-          data: { stockBajo: 4, totalProductos: 20, totalUsuarios: 9, pedidosPendientes: 1, categorias: [] },
+          data: { stockBajo: 4, totalProductos: 1240, totalUsuarios: 63, totalVentas: 8_450_000, categorias: [] },
         }),
       })
       return
     }
-    if (url.includes('/ventas')) {
+    if (url.includes('/admin/empresas') && !url.includes('/admin/empresas/')) {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ success: true, data: VENTAS }),
+        body: JSON.stringify({ success: true, data: EMPRESAS }),
+      })
+      return
+    }
+    if (url.includes('/admin/usuarios')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [{ id: 9, nombre: 'Carlos', correo: 'c@test.com', roles: [{ nombreRol: 'EMPRENDEDOR' }] }],
+        }),
       })
       return
     }
@@ -96,30 +73,39 @@ async function entrarDashboard(page: Page) {
   await page.addInitScript(({ auth, tourKey }) => {
     localStorage.setItem('hotclick-auth', JSON.stringify(auth))
     localStorage.setItem(tourKey, '1')
+    localStorage.setItem('hc-mm-v1-off', '1')
+    localStorage.setItem('hc-mm-v1-welcome-done', '1')
     localStorage.removeItem('hc-sidebar-collapsed')
   }, { auth: payloadAuth('ADMIN'), tourKey: 'hc-admin-tour-v4-done' })
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto('/admin', { waitUntil: 'domcontentloaded' })
 }
 
-test.describe('Admin IT — dashboard de decisiones', () => {
-  test('muestra hoy vs ayer, ticket, stock bajo y canal', async ({ page }) => {
+test.describe('Admin IT — Panel Admin Figma', () => {
+  test('muestra KPIs de plataforma, carga masiva y tiendas recientes', async ({ page }) => {
     await entrarDashboard(page)
 
-    await expect(page.getByText('Hoy vs ayer — ingresos, pedidos, ticket y stock.')).toBeVisible()
-    await expect(page.getByText('Ventas de hoy')).toBeVisible()
-    await expect(page.getByText('Pedidos de hoy')).toBeVisible()
-    await expect(page.getByText('Ticket promedio')).toBeVisible()
-    await expect(page.getByText('Stock bajo')).toBeVisible()
-    await expect(page.getByText('Canal de hoy')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Panel Admin' })).toBeVisible()
+    await expect(page.getByText('Vista general de HotClick')).toBeVisible()
+    await expect(page.getByText('Tiendas activas')).toBeVisible()
+    await expect(page.getByText('Vendedores')).toBeVisible()
+    await expect(page.getByText('Productos publicados')).toBeVisible()
+    await expect(page.getByText('Ventas totales')).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Carga masiva de productos' })).toBeVisible()
+    await expect(page.locator('[data-mm="mas-herramientas"]')).toBeVisible()
+    await expect(page.getByText('QA2 Emprendedor')).toBeVisible()
+    await expect(page.getByText('Activa', { exact: true })).toBeVisible()
+    await expect(page.locator('.hc-superadmin-theme')).toBeAttached()
 
-    await expect(page.getByRole('link', { name: /Ventas de hoy/ })).toContainText('₡10')
-    await expect(page.getByRole('link', { name: /Pedidos de hoy/ })).toContainText('2')
-    await expect(page.getByText('+25% vs ayer')).toBeVisible()
-    await expect(page.getByText('Marketplace')).toBeVisible()
-    await expect(page.getByText('usuarios activos')).toHaveCount(0)
+    await page.getByRole('link', { name: 'Carga masiva de productos' }).click()
+    await expect(page).toHaveURL(/\/admin\/productos\/carga-masiva/)
+  })
 
-    await page.getByRole('link', { name: /Stock bajo/ }).click()
-    await expect(page).toHaveURL(/\/admin\/productos/)
+  test('dashboard usa tarjetas claras', async ({ page }) => {
+    await entrarDashboard(page)
+    await expect(page.getByText('Tiendas activas')).toBeVisible()
+    const kpi = page.getByText('Tiendas activas').locator('xpath=ancestor::div[contains(@class,"rounded")][1]')
+    const bg = await kpi.evaluate((el) => getComputedStyle(el).backgroundColor)
+    expect(bg).not.toBe('rgb(17, 17, 20)')
   })
 })

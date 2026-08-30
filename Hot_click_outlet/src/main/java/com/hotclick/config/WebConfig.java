@@ -1,9 +1,9 @@
 package com.hotclick.config;
 
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.CacheControl;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.lang.NonNull;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -15,13 +15,16 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    /** RestTemplate compartido para llamadas HTTP externas (Hacienda, etc.). */
+    private static final Duration HTTP_CONNECT_TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration HTTP_READ_TIMEOUT = Duration.ofSeconds(30);
+
+    /** RestTemplate compartido para llamadas HTTP externas (Hacienda, PostHog, etc.). */
     @Bean
-    public RestTemplate restTemplate(RestTemplateBuilder builder) {
-        return builder
-            .connectTimeout(Duration.ofSeconds(10))
-            .readTimeout(Duration.ofSeconds(30))
-            .build();
+    public RestTemplate restTemplate() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(HTTP_CONNECT_TIMEOUT);
+        factory.setReadTimeout(HTTP_READ_TIMEOUT);
+        return new RestTemplate(factory);
     }
 
     // CORS is handled exclusively by SecurityConfig.corsConfigurationSource().

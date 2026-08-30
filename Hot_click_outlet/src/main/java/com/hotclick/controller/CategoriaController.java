@@ -1,9 +1,11 @@
 package com.hotclick.controller;
 
 import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.Categoria;
 import com.hotclick.repository.CategoriaRepository;
+import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.utils.Constants;
@@ -27,6 +29,7 @@ import java.util.Map;
 public class CategoriaController {
 
     @Autowired private CategoriaRepository categoriaRepository;
+    @Autowired private EmpresaRepository   empresaRepository;
     @Autowired private UsuarioRepository   usuarioRepository;
     @Autowired private CompanyScope        companyScope;
     @Autowired private InputSanitizer      sanitizer;
@@ -51,7 +54,7 @@ public class CategoriaController {
         return ResponseEntity.ok(ResponseDTO.success("Categorías", cats));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPRENDEDOR')")
     @CacheEvict(value = {"categorias", "categorias-publicas"}, allEntries = true)
     @PostMapping
     public ResponseEntity<ResponseDTO> crear(
@@ -66,9 +69,7 @@ public class CategoriaController {
             cat.setDescripcion(sanitizer.cleanWithLimit(body.getOrDefault("descripcion", ""), 500));
             if (body.get("icono") != null) cat.setIcono(sanitizer.cleanWithLimit(body.get("icono"), 20));
             cat.setEstado(Constants.ESTADO_ACTIVO);
-            // Solo ADMIN llega hasta acá: la categoría queda global (sin empresa) para que
-            // la vean y usen todos los negocios, no atada a la empresa propia del admin.
-            cat.setEmpresa(null);
+            asignarAlcance(cat);
             cat.setAdminCliente(
                 usuarioRepository.findByCorreo(ud.getUsername())
                     .orElseThrow(() -> new RecursoNoEncontradoException("Admin no encontrado"))
@@ -84,7 +85,7 @@ public class CategoriaController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPRENDEDOR')")
     @Transactional
     @CacheEvict(value = {"categorias", "categorias-publicas"}, allEntries = true)
     @PostMapping("/bulk")
@@ -101,8 +102,7 @@ public class CategoriaController {
             cat.setNombreCategoria(sanitizer.cleanWithLimit(nombre, 150));
             cat.setDescripcion(sanitizer.cleanWithLimit(item.getOrDefault("descripcion", ""), 500));
             cat.setEstado(Constants.ESTADO_ACTIVO);
-            // Global (sin empresa) — ver comentario en crear().
-            cat.setEmpresa(null);
+            asignarAlcance(cat);
             cat.setAdminCliente(admin);
             batch.add(cat);
         }
@@ -110,7 +110,7 @@ public class CategoriaController {
         return ResponseEntity.ok(ResponseDTO.success("Importadas: " + batch.size() + " categorías", Map.of("ok", batch.size())));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPRENDEDOR')")
     @CacheEvict(value = {"categorias", "categorias-publicas"}, allEntries = true)
     @PutMapping("/{id}")
     public ResponseEntity<ResponseDTO> actualizar(
@@ -146,7 +146,7 @@ public class CategoriaController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPRENDEDOR')")
     @CacheEvict(value = {"categorias", "categorias-publicas"}, allEntries = true)
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseDTO> eliminar(@PathVariable Long id) {
@@ -160,5 +160,18 @@ public class CategoriaController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
+    }
+
+    /** ADMIN: categoría global. EMPRENDEDOR: atada a su empresa. */
+    private void asignarAlcance(Categoria cat) {
+        Long empresaId = companyScope.getCurrentEmpresaId();
+        if (empresaId != null) {
+            cat.setEmpresa(empresaRepository.getReferenceById(empresaId));
+            return;
+        }
+        if (!companyScope.isAdminIT()) {
+            throw new TenantAccessDeniedException("Sin empresa activa para crear la categoría");
+        }
+        cat.setEmpresa(null);
     }
 }

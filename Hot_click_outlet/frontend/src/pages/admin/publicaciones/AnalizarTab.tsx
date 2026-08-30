@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+﻿import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
@@ -50,15 +50,15 @@ export default function AnalizarTab({
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-      <div className="flex gap-1 p-1 rounded-xl bg-white/5 border border-white/8 w-fit">
+      <div className="flex gap-1 p-1 rounded-xl bg-hc-surface-2 border border-hc-border w-fit">
         {MODOS_ANALISIS.map(({ key, label }) => (
           <button type="button"
             key={key}
             onClick={() => onModoAnalisis(key)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               modoAnalisis === key
-                ? 'bg-[#4f7cff] text-white'
-                : 'text-[#8e8e9a] hover:text-white'
+                ? 'bg-hc-primary text-white'
+                : 'text-hc-muted hover:text-hc-text'
             }`}
           >{label}</button>
         ))}
@@ -67,24 +67,24 @@ export default function AnalizarTab({
       {modoAnalisis === 'nombre' && (
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-[#8e8e9a] block mb-1">{t('admin.publicaciones.product')}</label>
+            <label className="text-xs text-hc-muted block mb-1">{t('admin.publicaciones.product')}</label>
             <input
               type="text"
               value={nombreBusqueda}
               onChange={(e) => onNombreBusqueda(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && onAnalizar()}
               placeholder="Ej: iPhone 15 Pro, Tablet Samsung Galaxy..."
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm placeholder:text-[#8e8e9a]/40 focus:outline-none focus:border-[#4f7cff]/60"
+              className="w-full px-4 py-3 rounded-xl bg-hc-surface-2 border border-hc-border text-hc-text text-sm placeholder:text-hc-muted/40 focus:outline-none focus:border-hc-primary/60"
             />
           </div>
           <div>
-            <label className="text-xs text-[#8e8e9a] block mb-1">
+            <label className="text-xs text-hc-muted block mb-1">
               Asociar a un producto (guarda precios en BD y genera texto FB)
             </label>
             <select
               value={productoId}
               onChange={(e) => onProductoId(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60"
+              className="w-full px-3 py-2 rounded-xl bg-hc-surface-2 border border-hc-border text-hc-text text-sm focus:outline-none focus:border-hc-primary/60"
             >
               <option value="">— Solo buscar, no guardar —</option>
               {productos.map((p) => (
@@ -109,17 +109,17 @@ export default function AnalizarTab({
               <img
                 src={preview}
                 alt="Preview"
-                className="w-24 h-24 object-cover rounded-xl border border-white/10 shrink-0"
+                className="w-24 h-24 object-cover rounded-xl border border-hc-border shrink-0"
               />
               <div className="flex-1 space-y-3">
                 <div>
-                  <label className="text-xs text-[#8e8e9a] block mb-1">
+                  <label className="text-xs text-hc-muted block mb-1">
                     Asociar a un producto (opcional — guarda precios en BD)
                   </label>
                   <select
                     value={productoId}
                     onChange={(e) => onProductoId(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-[#e8e8ed] text-sm focus:outline-none focus:border-[#4f7cff]/60"
+                    className="w-full px-3 py-2 rounded-xl bg-hc-surface-2 border border-hc-border text-hc-text text-sm focus:outline-none focus:border-hc-primary/60"
                   >
                     <option value="">— Solo analizar, no guardar —</option>
                     {productos.map((p) => (

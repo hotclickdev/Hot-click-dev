@@ -1,4 +1,4 @@
-import ImportExportBar from '@/components/admin/ImportExportBar'
+﻿import ImportExportBar from '@/components/admin/ImportExportBar'
 import {
   COLUMNAS_EXPORT_PAGOS,
   COLUMNAS_EXPORT_WEBHOOKS,
@@ -21,7 +21,7 @@ export default function PagosHeader({ t, tab, pagos, webhooks }: {
 
   return (
     <div className="flex items-start justify-between gap-4 flex-wrap">
-      <h1 className="text-2xl font-bold text-[#e8e8ed]">{t('admin.pagos.title')} &amp; {t('admin.pagos.webhooks')}</h1>
+      <h1 className="text-2xl font-bold text-hc-text">{t('admin.pagos.title')} &amp; {t('admin.pagos.webhooks')}</h1>
       <ImportExportBar
         exportOnly
         data={exportData}

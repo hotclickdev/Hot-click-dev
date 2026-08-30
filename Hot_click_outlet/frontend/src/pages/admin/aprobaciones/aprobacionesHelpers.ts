@@ -21,10 +21,11 @@ export type StatsAprobacion = {
   suspendidas?: number
 }
 
-export type ProductoPendiente = Pick<Producto, 'imagenUrl' | 'precioVenta' | 'sku' | 'empresaNombre'> & {
+export type ProductoPendiente = Pick<Producto, 'imagenUrl' | 'precioVenta' | 'sku' | 'empresaNombre' | 'categoriaNombre'> & {
   id: Id
   nombreProducto?: string
   usuarioPide?: string
+  nombreCategoria?: string
 }
 
 export type OfertaPendiente = Pick<Producto, 'imagenUrl' | 'precioVenta' | 'empresaNombre'> & {
@@ -69,11 +70,11 @@ export function statsDesdeEmpresas(empresas: EmpresaSolicitud[]): StatsAprobacio
   }
 }
 
-export function kpisAprobacion(stats: StatsAprobacion): { label: string; value: number; color: string }[] {
+export function kpisAprobacion(stats: StatsAprobacion): { labelKey: string; value: number; color: string }[] {
   return [
-    { label: 'Por aprobar', value: stats.pendientes ?? 0, color: 'text-yellow-400' },
-    { label: 'Activos', value: stats.activas ?? 0, color: 'text-green-400' },
-    { label: 'Suspendidos', value: stats.suspendidas ?? 0, color: 'text-red-400' },
+    { labelKey: 'adminAprobaciones.kpiPending', value: stats.pendientes ?? 0, color: 'text-yellow-400' },
+    { labelKey: 'adminAprobaciones.kpiActive', value: stats.activas ?? 0, color: 'text-green-400' },
+    { labelKey: 'adminAprobaciones.kpiSuspended', value: stats.suspendidas ?? 0, color: 'text-red-400' },
   ]
 }
 
@@ -81,15 +82,31 @@ export function tabsAprobacion({ pendientes, productos, ofertas }: {
   pendientes?: number
   productos: number
   ofertas: number
-}): { id: TabAprobacion; label: string; count: number }[] {
+}): { id: TabAprobacion; count: number }[] {
   return [
-    { id: 'empresas', label: 'Empresas', count: pendientes ?? 0 },
-    { id: 'productos', label: 'Productos', count: productos },
-    { id: 'ofertas', label: 'Promociones', count: ofertas },
+    { id: 'empresas', count: pendientes ?? 0 },
+    { id: 'productos', count: productos },
+    { id: 'ofertas', count: ofertas },
   ]
 }
 
 export function fechaSolicitud(date?: string | number | Date | null): string {
   if (!date) return '—'
   return formatDateTime(date)
+}
+
+export function metaProductoPendiente(producto: ProductoPendiente): string {
+  const categoria = producto.categoriaNombre ?? producto.nombreCategoria
+  return [producto.empresaNombre, categoria].filter(Boolean).join(' · ')
+}
+
+export function subtituloModeracion(
+  tab: TabAprobacion,
+  productos: number,
+  empresas: number,
+  ofertas: number,
+): string {
+  if (tab === 'productos') return `${productos} productos esperando revisión`
+  if (tab === 'ofertas') return `${ofertas} promociones esperando revisión`
+  return `${empresas} tiendas esperando revisión`
 }

@@ -12,6 +12,7 @@ import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -65,6 +66,7 @@ public class EmpresaAdminService {
         empresaRepository.save(empresa);
     }
 
+    @CacheEvict(value = "tenantInfo", key = "#id")
     public String cambiarPlan(Long id, String nombrePlan) {
         if (nombrePlan == null || !PLANES_VALIDOS.contains(nombrePlan)) {
             throw new IllegalArgumentException("Plan inválido. Valores permitidos: " + PLANES_VALIDOS);
@@ -73,6 +75,7 @@ public class EmpresaAdminService {
             .orElseThrow(() -> new IllegalStateException("Plan " + nombrePlan + " no configurado en hot_click_plan_tb"));
         Empresa empresa = empresa(id);
         empresa.setPlan(plan);
+        empresa.setPlanSaas(nombrePlan);
         empresaRepository.save(empresa);
         return nombrePlan;
     }

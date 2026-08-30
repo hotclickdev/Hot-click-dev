@@ -7,6 +7,7 @@ import EnviosServiceCards from './envios/EnviosServiceCards'
 import EnviosUrgentBanner from './envios/EnviosUrgentBanner'
 import EnviosFaq from './envios/EnviosFaq'
 import EnviosCta from './envios/EnviosCta'
+import LegalMasLinks from '@/pages/legal/LegalMasLinks'
 
 export default function EnviosPage() {
   return (
@@ -29,6 +30,7 @@ export default function EnviosPage() {
           <EnviosCta />
         </div>
       </div>
+      <LegalMasLinks />
     </MainLayout>
   )
 }

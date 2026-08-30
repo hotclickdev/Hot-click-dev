@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import Spinner from '@/components/ui/Spinner'
 import { orderService } from '@/services/orderService'
@@ -23,7 +23,7 @@ function DetallePedido({ loading, error, data }: DetallePedidoProps) {
   }
   if (error) {
     return (
-      <p className="text-center text-[#f87171] py-8 text-sm">Error al cargar el pedido.</p>
+      <p className="text-center text-hc-danger py-8 text-sm">Error al cargar el pedido.</p>
     )
   }
   if (!data) return null
@@ -35,17 +35,17 @@ function DetallePedido({ loading, error, data }: DetallePedidoProps) {
     <>
       <div className="rounded-xl p-3 space-y-1"
         style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
-        <p className="text-[10px] font-bold uppercase tracking-wider text-[#8e8e9a]">Cliente</p>
-        <p className="font-medium text-[#e8e8ed] text-sm">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-hc-muted">Cliente</p>
+        <p className="font-medium text-hc-text text-sm">
           {data.usuarioFinal?.nombre ?? data.nombreCliente ?? '—'}
         </p>
-        {data.telefono && <p className="text-xs text-[#8e8e9a]">{data.telefono}</p>}
-        {data.direccionEntrega && <p className="text-xs text-[#8e8e9a]">{data.direccionEntrega}</p>}
+        {data.telefono && <p className="text-xs text-hc-muted">{data.telefono}</p>}
+        {data.direccionEntrega && <p className="text-xs text-hc-muted">{data.direccionEntrega}</p>}
       </div>
 
       {items.length > 0 && (
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[#8e8e9a] mb-2">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-hc-muted mb-2">
             Productos ({items.length})
           </p>
           <div className="space-y-2">
@@ -59,14 +59,14 @@ function DetallePedido({ loading, error, data }: DetallePedidoProps) {
                     <img src={item.imagenUrl} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[#e8e8ed] truncate">
+                    <p className="text-sm font-medium text-hc-text truncate">
                       {item.nombreProducto ?? item.nombre ?? 'Producto'}
                     </p>
-                    <p className="text-xs text-[#8e8e9a]">
+                    <p className="text-xs text-hc-muted">
                       {item.cantidad} × {formatPrice(precio)}
                     </p>
                   </div>
-                  <p className="text-sm font-bold text-[#4ade80] shrink-0">{formatPrice(subtotalItem)}</p>
+                  <p className="text-sm font-bold text-hc-success shrink-0">{formatPrice(subtotalItem)}</p>
                 </div>
               )
             })}
@@ -76,38 +76,38 @@ function DetallePedido({ loading, error, data }: DetallePedidoProps) {
 
       <div className="rounded-xl p-3 space-y-2"
         style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
-        <p className="text-[10px] font-bold uppercase tracking-wider text-[#8e8e9a]">Resumen</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider text-hc-muted">Resumen</p>
         <div className="space-y-1.5 text-sm">
           <div className="flex justify-between">
-            <span className="text-[#8e8e9a]">Subtotal productos</span>
-            <span className="text-[#4ade80] font-semibold">{formatPrice(subtotal)}</span>
+            <span className="text-hc-muted">Subtotal productos</span>
+            <span className="text-hc-success font-semibold">{formatPrice(subtotal)}</span>
           </div>
           {(data.costoEnvio ?? 0) > 0 && (
             <div className="flex justify-between">
-              <span className="text-[#8e8e9a]">Costo de envío</span>
+              <span className="text-hc-muted">Costo de envío</span>
               <span className="text-amber-400 font-semibold">{formatPrice(data.costoEnvio)}</span>
             </div>
           )}
           <div className="flex justify-between pt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-            <span className="font-bold text-[#e8e8ed]">Total cobrado</span>
-            <span className="font-bold text-[#4f7cff]">{formatPrice(data.total ?? data.totalPedido ?? 0)}</span>
+            <span className="font-bold text-hc-text">Total cobrado</span>
+            <span className="font-bold text-hc-link">{formatPrice(data.total ?? data.totalPedido ?? 0)}</span>
           </div>
         </div>
-        <div className="flex gap-3 pt-1 text-xs text-[#8e8e9a]">
-          {data.metodoPago && <span>Pago: <span className="text-[#e8e8ed]">{data.metodoPago}</span></span>}
-          {data.metodoEnvio && <span>Envío: <span className="text-[#e8e8ed]">{data.metodoEnvio}</span></span>}
-          {data.origen && <span>Canal: <span className="text-[#e8e8ed]">{data.origen}</span></span>}
+        <div className="flex gap-3 pt-1 text-xs text-hc-muted">
+          {data.metodoPago && <span>Pago: <span className="text-hc-text">{data.metodoPago}</span></span>}
+          {data.metodoEnvio && <span>Envío: <span className="text-hc-text">{data.metodoEnvio}</span></span>}
+          {data.origen && <span>Canal: <span className="text-hc-text">{data.origen}</span></span>}
         </div>
       </div>
 
       {data.numeroGuia && (
         <div className="rounded-xl p-3"
           style={{ backgroundColor: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.2)' }}>
-          <p className="text-xs font-semibold text-[#6490EA] mb-0.5">Guía de envío</p>
-          <p className="text-sm text-[#e8e8ed]">{data.numeroGuia}</p>
+          <p className="text-xs font-semibold text-hc-link mb-0.5">Guía de envío</p>
+          <p className="text-sm text-hc-text">{data.numeroGuia}</p>
           {data.urlTracking && (
             <a href={data.urlTracking} target="_blank" rel="noopener noreferrer"
-              className="text-xs text-[#6490EA] underline mt-1 block">
+              className="text-xs text-hc-link underline mt-1 block">
               <TextoFlecha>Rastrear</TextoFlecha>
             </a>
           )}
@@ -117,8 +117,8 @@ function DetallePedido({ loading, error, data }: DetallePedidoProps) {
       {data.notas && (
         <div className="rounded-xl p-3"
           style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[#8e8e9a] mb-1">Notas</p>
-          <p className="text-sm text-[#8e8e9a]">{data.notas}</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-hc-muted mb-1">Notas</p>
+          <p className="text-sm text-hc-muted">{data.notas}</p>
         </div>
       )}
     </>
@@ -160,11 +160,11 @@ export default function SaleDetailModal({ pedidoId, onClose }: SaleDetailModalPr
         <div className="flex items-center justify-between px-5 py-4 shrink-0"
           style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
           <div>
-            <h2 className="font-bold text-[#e8e8ed]">
+            <h2 className="font-bold text-hc-text">
               Pedido #{data?.numeroPedido ?? data?.id ?? pedidoId}
             </h2>
             {data?.fechaCreacion && (
-              <p className="text-xs text-[#8e8e9a] mt-0.5">{formatDate(data.fechaCreacion)}</p>
+              <p className="text-xs text-hc-muted mt-0.5">{formatDate(data.fechaCreacion)}</p>
             )}
           </div>
           <button type="button" onClick={onClose} aria-label="Cerrar"

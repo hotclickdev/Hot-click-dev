@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import QRCode from 'react-qr-code'
 import { posService } from '@/services/posService'
 import { formatMontoPos, type PosQrData } from './posHelpers'
@@ -10,6 +11,7 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
   onCancelar: () => void
   loadingConfirm: boolean
 }) {
+  const { t } = useTranslation()
   const { token, metodoPago, total, sinpeNumero } = qrData
   const qrUrl = `${globalThis.location.origin}/pos/pago/${token}`
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -29,6 +31,27 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
 
   useEffect(() => { if (paid) onConfirmSinpe(null, true) }, [paid]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const filasSinpe: { id: string; label: string; value: string; highlight: boolean }[] = [
+    {
+      id: 'sinpe',
+      label: t('pos.qr.sinpeA'),
+      value: sinpeNumero || t('pos.qr.configWhatsapp'),
+      highlight: false,
+    },
+    {
+      id: 'ref',
+      label: t('pos.qr.referencia'),
+      value: (token ?? '').substring(0, 8).toUpperCase(),
+      highlight: false,
+    },
+    {
+      id: 'monto',
+      label: t('pos.qr.montoExacto'),
+      value: `₡${formatMontoPos(total)}`,
+      highlight: true,
+    },
+  ]
+
   return (
     <div className="flex-1 flex items-center justify-center p-4 overflow-y-auto">
       <div className="w-full max-w-sm space-y-5">
@@ -36,9 +59,9 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
           <p className="text-xs font-bold uppercase tracking-widest mb-2 flex items-center justify-center gap-1.5"
             style={{ color: metodoPago === 'SINPE' ? '#6490EA' : '#7aa3ff' }}>
             <MetodoPagoIcon iconId={metodoPago === 'SINPE' ? 'sinpe' : 'tarjeta'} className="w-4 h-4" />
-            {metodoPago === 'SINPE' ? 'Pago SINPE Móvil' : 'Pago con tarjeta'}
+            {metodoPago === 'SINPE' ? t('pos.qr.pagoSinpe') : t('pos.qr.pagoTarjeta')}
           </p>
-          <p className="text-4xl font-black tabular-nums" style={{ color: '#fff', letterSpacing: '-1px' }}>
+          <p className="text-4xl font-black tabular-nums" style={{ color: 'var(--hc-text)', letterSpacing: '-1px' }}>
             ₡{formatMontoPos(total)}
           </p>
         </div>
@@ -52,14 +75,10 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
         {metodoPago === 'SINPE' && (
           <div className="rounded-2xl p-4 space-y-2"
             style={{ backgroundColor: 'rgba(100,144,234,0.08)', border: '1px solid rgba(100,144,234,0.2)' }}>
-            {[
-              ['SINPE Móvil a:', sinpeNumero || 'Configurá el WhatsApp del negocio'],
-              ['Referencia:', (token ?? '').substring(0, 8).toUpperCase()],
-              ['Monto exacto:', `₡${formatMontoPos(total)}`],
-            ].map(([k, v]) => (
-              <div key={k} className="flex justify-between text-sm">
-                <span style={{ color: 'rgba(255,255,255,0.45)' }}>{k}</span>
-                <span className="font-bold font-mono" style={{ color: k.includes('Monto') ? '#34d399' : '#6490EA' }}>{v}</span>
+            {filasSinpe.map((fila) => (
+              <div key={fila.id} className="flex justify-between text-sm">
+                <span style={{ color: 'var(--hc-muted)' }}>{fila.label}</span>
+                <span className="font-bold font-mono" style={{ color: fila.highlight ? '#34d399' : '#6490EA' }}>{fila.value}</span>
               </div>
             ))}
           </div>
@@ -67,7 +86,7 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
 
         {metodoPago === 'TARJETA' && !paid && (
           <p className="text-center text-xs animate-pulse" style={{ color: '#7aa3ff' }}>
-            Esperando confirmación de pago…
+            {t('pos.qr.esperandoConfirmacion')}
           </p>
         )}
 
@@ -75,18 +94,18 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
           <button type="button" onClick={onCancelar}
             className="py-3 rounded-2xl text-sm font-semibold"
             style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
-            Cancelar
+            {t('pos.qr.cancelar')}
           </button>
           {metodoPago === 'SINPE' ? (
             <button type="button" onClick={() => onConfirmSinpe(token, false)} disabled={loadingConfirm}
               className="py-3 rounded-2xl text-sm font-black disabled:opacity-40"
               style={{ background: 'var(--hc-accent)', color: '#fff' }}>
-              {loadingConfirm ? 'Confirmando…' : 'SINPE recibido'}
+              {loadingConfirm ? t('pos.qr.confirmando') : t('pos.qr.sinpeRecibido')}
             </button>
           ) : (
             <div className="py-3 rounded-2xl text-xs text-center"
-              style={{ backgroundColor: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.3)' }}>
-              Auto-detecta el pago
+              style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>
+              {t('pos.qr.autoDetecta')}
             </div>
           )}
         </div>

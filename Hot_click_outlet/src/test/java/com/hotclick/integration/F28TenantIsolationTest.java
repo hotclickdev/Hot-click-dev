@@ -205,6 +205,29 @@ class F28TenantIsolationTest extends BaseIntegrationTest {
     }
 
     @Test
+    @DisplayName("Chat público con message no-string → 400 (no 500)")
+    void publicChat_tipoIncorrecto_returns400() throws Exception {
+        mockMvc.perform(post("/api/public/chat?slug=f28-alpha")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"message\":[\"no\",\"soy\",\"texto\"]}"))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Hacienda cédula inválida → 400 sin pegarle a la API")
+    void hacienda_cedulaInvalida_returns400() throws Exception {
+        mockMvc.perform(get("/api/hacienda/contribuyente/abc"))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Proxy /api/img con path traversal → 400")
+    void imgProxy_pathHostil_returns400() throws Exception {
+        mockMvc.perform(get("/api/img").param("p", "../secret"))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
     @DisplayName("F28-T14 | HIGH — AI copilot admin sin token → 401")
     void aiCopilot_sinToken_returns401() throws Exception {
         mockMvc.perform(post("/api/admin/ai/chat")

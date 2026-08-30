@@ -56,7 +56,8 @@ public class CarritoAbandonadoScheduler {
                 n8nWebhookService.notificarCarritoAbandonado(carrito, itemsPayload);
 
                 if (carrito.getEmail() != null && !carrito.getEmail().isBlank()) {
-                    emailService.enviarRecuperacionCarrito(carrito.getEmail(), carrito.getId(), itemsDtos, appUrl);
+                    emailService.enviarRecuperacionCarrito(
+                        carrito.getEmail(), carrito.getTokenRecuperacion(), itemsDtos, appUrl);
                     cartService.marcarEmailEnviado(carrito.getId());
                     log.info("Email de recuperación enviado a {} (carrito {})",
                         carrito.getEmail(), carrito.getId());

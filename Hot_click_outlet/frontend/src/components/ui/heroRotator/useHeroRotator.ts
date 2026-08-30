@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
-import { PHASES, type Convenio } from './heroRotatorData'
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import { PHASES, PHASE_LABEL_KEYS, type Convenio, type HeroPhase } from './heroRotatorData'
 import { esConvenio } from './heroRotatorHelpers'
 import { convenioService, listaConvenios } from '@/services/convenioService'
 import useChatStore from '@/store/chatStore'
@@ -9,13 +10,19 @@ import useChatStore from '@/store/chatStore'
  * El chat abre el drawer; el hero sigue rotando destacados y emprendimientos.
  */
 export function useHeroRotator() {
+  const { t } = useTranslation()
   const [phaseIdx, setPhaseIdx] = useState(0)
   const [progress, setProgress] = useState(0)
   const [convenios, setConvenios] = useState<Convenio[]>([])
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const pausedRef   = useRef(false)
 
-  const phase = PHASES[phaseIdx]
+  const phases: HeroPhase[] = useMemo(
+    () => PHASES.map((p) => ({ ...p, label: t(PHASE_LABEL_KEYS[p.id]) })),
+    [t],
+  )
+
+  const phase = phases[phaseIdx]!
 
   function pauseTimer()  { pausedRef.current = true }
   function resumeTimer() { pausedRef.current = false }
@@ -64,6 +71,7 @@ export function useHeroRotator() {
 
   return {
     phase,
+    phases,
     phaseIdx,
     progress,
     convenios,

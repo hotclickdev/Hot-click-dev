@@ -191,6 +191,19 @@ class PedidoServiceTest {
 
         assertThat(result.getEstadoPedido()).isEqualTo(Constants.PEDIDO_ENVIADO);
         verify(notificacionEmailService, never()).enviarSeguimientoEstado(any(), any());
+        verify(n8nWebhookService, never()).notificarPedidoEntregado(any());
+    }
+
+    @Test
+    @DisplayName("cambiarEstado ENTREGADO notifica n8n; otro estado no")
+    void cambiarEstadoEntregadoNotificaN8n() {
+        Pedido pedido = buildPedido(Constants.PEDIDO_ENVIADO);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.save(any())).thenReturn(pedido);
+
+        service.cambiarEstado(1L, Constants.PEDIDO_ENTREGADO, null);
+
+        verify(n8nWebhookService).notificarPedidoEntregado(pedido);
     }
 
     @Test

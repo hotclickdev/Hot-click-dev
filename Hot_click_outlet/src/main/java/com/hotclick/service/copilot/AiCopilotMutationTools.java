@@ -2,6 +2,7 @@ package com.hotclick.service.copilot;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotclick.dto.AccionPropuestaTelegram;
+import com.hotclick.service.catalogo.ChatSearchTerms;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -31,7 +32,7 @@ class AiCopilotMutationTools {
         "Ya se generó una propuesta en este turno — no se generó una segunda. Seguí solo con la primera.";
 
     List<PedidoCandidato> buscarPedidos(Long empresaId, String query) {
-        String q = query.trim();
+        String q = ChatSearchTerms.quitarComodinesLike(query.trim());
         String sql = """
             SELECT id_pedido, numero_pedido, estado_pedido
             FROM hot_click_pedido_tb
@@ -47,7 +48,7 @@ class AiCopilotMutationTools {
     }
 
     List<ProductoCandidato> buscarProductos(Long empresaId, String query) {
-        String q = query.trim();
+        String q = ChatSearchTerms.quitarComodinesLike(query.trim());
         String sql = """
             SELECT id_producto, nombre_producto
             FROM hot_click_producto_tb

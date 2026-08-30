@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { formatPrice } from '@/utils/format'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import type { Producto } from '@/types/producto'
@@ -11,6 +12,7 @@ export type ProductsPhaseProps = {
 
 /** Carrusel de hasta 3 productos destacados del hero. */
 export function ProductsPhase({ productos, accent }: ProductsPhaseProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const items = (productos ?? []).slice(0, 3)
 
@@ -26,16 +28,16 @@ export function ProductsPhase({ productos, accent }: ProductsPhaseProps) {
       <div className="flex items-end justify-between mb-6">
         <div>
           <p className="text-[10px] font-bold tracking-[0.22em] uppercase mb-1" style={{ color: accent }}>
-            Lo más destacado
+            {t('home.featuredKicker')}
           </p>
           <h2 className="font-black tracking-tight" style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', color: 'var(--hc-text)', lineHeight: 1.1 }}>
-            Productos destacados
+            {t('home.destacados')}
           </h2>
         </div>
         <Link to="/productos"
           className="text-sm font-semibold flex items-center gap-1 hover:opacity-70 transition-opacity shrink-0"
           style={{ color: accent }}>
-          Ver todos los productos
+          {t('home.verTodosProductos')}
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
           </svg>

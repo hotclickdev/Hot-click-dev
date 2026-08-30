@@ -11,7 +11,7 @@ import RegistrarNegocioCard from './registrar-negocio/RegistrarNegocioCard'
 import DatosNegocioFields from './registrar-negocio/DatosNegocioFields'
 import HaciendaVerificacion from './registrar-negocio/HaciendaVerificacion'
 import AcuerdoYSubmit from './registrar-negocio/AcuerdoYSubmit'
-import { destinoVender, RUTA_REGISTRAR_NEGOCIO } from '@/utils/destinoVender'
+import { destinoVender, RUTA_PANEL_VENDEDOR, RUTA_REGISTRAR_NEGOCIO } from '@/utils/destinoVender'
 import { mensajeErrorAuth } from './auth/authHelpers'
 import type { AuthResponse } from '@/types/auth'
 import type { FormNegocio, ContribuyenteHacienda } from './registrar-negocio/registrarNegocioTypes'
@@ -93,7 +93,7 @@ export default function RegistrarNegocioPage() {
       const { data } = await authService.upgradeEmprendedor(payload as JsonBody)
       login((data as AuthResponse & { data?: AuthResponse })?.data ?? (data as AuthResponse))
       toast({ message: '¡Negocio registrado! Bienvenido al panel de emprendedor.', type: 'success' })
-      navigate('/admin', { replace: true })
+      navigate(RUTA_PANEL_VENDEDOR, { replace: true })
     } catch (err: unknown) {
       setError(mensajeErrorAuth(err, 'Error al registrar el negocio'))
     } finally { setLoading(false) }

@@ -62,8 +62,8 @@ export default function AdminOrders() {
 
   return (
     <>
-      <div className="space-y-5">
-        {loadError && !loading && (
+    <div className="space-y-6" data-mm="lista-pedidos">
+      {loadError && !loading && (
           <RetryBanner message="Error al cargar los pedidos. Verificá tu conexión." onRetry={() => { setLoadError(false); setLoading(true); load() }} />
         )}
 

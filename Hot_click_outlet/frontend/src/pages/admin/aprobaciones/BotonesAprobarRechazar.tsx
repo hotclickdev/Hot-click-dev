@@ -1,26 +1,28 @@
-export default function BotonesAprobarRechazar({ disabled, onAprobar, onRechazar }: {
+export default function BotonesAprobarRechazar({ disabled, onAprobar, onRechazar, dataMmAprobar }: {
   disabled: boolean
   onAprobar: () => void
   onRechazar: () => void
+  dataMmAprobar?: string
 }) {
   return (
-    <>
-      <button type="button"
+    <div className="mt-3 grid grid-cols-2 gap-2.5">
+      <button
+        type="button"
         onClick={onAprobar}
         disabled={disabled}
-        className="px-4 py-2 rounded-xl text-sm font-medium disabled:opacity-50 transition-opacity hover:opacity-80"
-        style={{ backgroundColor: '#22c55e', color: '#fff' }}
+        data-mm={dataMmAprobar}
+        className="flex min-h-10 items-center justify-center rounded-[10px] bg-[var(--hc-success-bg)] text-xs font-bold text-hc-success disabled:opacity-50"
       >
         Aprobar
       </button>
-      <button type="button"
+      <button
+        type="button"
         onClick={onRechazar}
         disabled={disabled}
-        className="px-4 py-2 rounded-xl text-sm font-medium disabled:opacity-50 transition-opacity hover:opacity-80"
-        style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: '#ef4444' }}
+        className="flex min-h-10 items-center justify-center rounded-[10px] bg-[var(--hc-danger-bg)] text-xs font-bold text-hc-primary disabled:opacity-50"
       >
         Rechazar
       </button>
-    </>
+    </div>
   )
 }

@@ -8,6 +8,7 @@ import com.hotclick.security.CompanyScope;
 import com.hotclick.service.ProductoService;
 import com.hotclick.service.StockService;
 import com.hotclick.service.producto.ProductoAccessGuard;
+import com.hotclick.service.catalogo.ChatSearchTerms;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -86,7 +87,8 @@ public class ProductoCatalogHandler {
             return ResponseEntity.ok(ResponseDTO.success("OK", List.of()));
         }
         var pageable = PageRequest.of(0, 30);
-        var resultados = productoRepository.buscarPorTextoOCodigoEnEmpresa(q.trim(), empresaId, pageable);
+        var resultados = productoRepository.buscarPorTextoOCodigoEnEmpresa(
+            ChatSearchTerms.quitarComodinesLike(q.trim()), empresaId, pageable);
         return ResponseEntity.ok(ResponseDTO.success("OK", resultados));
     }
 

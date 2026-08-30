@@ -1,19 +1,12 @@
 import { Fragment, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { posService } from '@/services/posService'
 import TextoFlecha from '@/components/ui/TextoFlecha'
 import type { Id } from '@/types/api'
 import type { PosVenta } from './posHelpers'
 
 const fmt = (n: number | null | undefined) => new Intl.NumberFormat('es-CR').format(n ?? 0)
-const fmtDate = (d: string | number | Date | null | undefined) => d ? new Date(d).toLocaleString('es-CR', { dateStyle: 'short', timeStyle: 'short' }) : '—'
-
-const FILTROS = [
-  { key: 'hoy',    label: 'Hoy' },
-  { key: 'semana', label: '7 días' },
-  { key: 'mes',    label: '30 días' },
-  { key: 'todo',   label: 'Todo' },
-]
 
 function dentroDelFiltro(fechaStr: string | number | Date | undefined, filtro: string) {
   if (filtro === 'todo') return true
@@ -27,10 +20,22 @@ function dentroDelFiltro(fechaStr: string | number | Date | undefined, filtro: s
 }
 
 export default function AdminPOSHistorial() {
+  const { t, i18n } = useTranslation()
   const [ventas, setVentas]   = useState<PosVenta[]>([])
   const [loading, setLoading] = useState(true)
   const [filtro, setFiltro]   = useState('hoy')
   const [expanded, setExpanded] = useState<Id | null | undefined>(null)
+
+  const localeFecha = i18n.language?.startsWith('en') ? 'en-CR' : i18n.language?.startsWith('pt') ? 'pt-BR' : 'es-CR'
+  const fmtDate = (d: string | number | Date | null | undefined) =>
+    d ? new Date(d).toLocaleString(localeFecha, { dateStyle: 'short', timeStyle: 'short' }) : '—'
+
+  const FILTROS = [
+    { key: 'hoy',    label: t('pos.historial.filtroHoy') },
+    { key: 'semana', label: t('pos.historial.filtroSemana') },
+    { key: 'mes',    label: t('pos.historial.filtroMes') },
+    { key: 'todo',   label: t('pos.historial.filtroTodo') },
+  ] as const
 
   useEffect(() => {
     posService.historial()
@@ -47,11 +52,18 @@ export default function AdminPOSHistorial() {
 
   const exportCSV = () => {
     const rows = [
-      ['Ticket','Fecha','Cliente','Items','Método','Total'],
+      [
+        t('pos.historial.csvTicket'),
+        t('pos.historial.csvFecha'),
+        t('pos.historial.csvCliente'),
+        t('pos.historial.csvItems'),
+        t('pos.historial.csvMetodo'),
+        t('pos.historial.csvTotal'),
+      ],
       ...ventasFiltradas.map(v => [
         v.numeroPedido,
         fmtDate(v.fechaPedido),
-        v.usuarioFinal?.nombre ?? 'Mostrador',
+        v.usuarioFinal?.nombre ?? t('pos.historial.mostrador'),
         (v.items ?? []).length,
         v.metodoPago,
         v.totalPedido,
@@ -70,12 +82,12 @@ export default function AdminPOSHistorial() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <Link to="/admin/pos" className="text-xs font-semibold" style={{ color: 'var(--hc-muted)' }}>
-            <TextoFlecha dir="atras">Volver al POS</TextoFlecha>
+            <TextoFlecha dir="atras">{t('pos.common.volverAlPos')}</TextoFlecha>
           </Link>
-          <h1 className="text-xl font-bold mt-1" style={{ color: 'var(--hc-text)' }}>Historial POS</h1>
+          <h1 className="text-xl font-bold mt-1" style={{ color: 'var(--hc-text)' }}>{t('pos.historial.title')}</h1>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex rounded-xl overflow-hidden border" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+          <div className="flex rounded-xl overflow-hidden border" style={{ borderColor: 'var(--hc-border)' }}>
             {FILTROS.map(f => (
               <button type="button" key={f.key} onClick={() => setFiltro(f.key)}
                 className="px-3 py-1.5 text-xs font-medium transition-all"
@@ -89,8 +101,8 @@ export default function AdminPOSHistorial() {
           </div>
           <button type="button" onClick={exportCSV}
             className="px-3 py-1.5 rounded-xl text-xs font-medium transition-opacity hover:opacity-70"
-            style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>
-            CSV
+            style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>
+            {t('pos.historial.csv')}
           </button>
         </div>
       </div>
@@ -98,12 +110,12 @@ export default function AdminPOSHistorial() {
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Total vendido',   value: `₡${fmt(totalVendido)}`,   color: 'var(--hc-accent)' },
-          { label: 'Transacciones',   value: numTx,                      color: 'var(--hc-text)' },
-          { label: 'Ticket promedio', value: `₡${fmt(ticketPromedio)}`,  color: '#34d399' },
+          { label: t('pos.historial.totalVendido'),   value: `₡${fmt(totalVendido)}`,   color: 'var(--hc-accent)' },
+          { label: t('pos.historial.transacciones'),   value: numTx,                      color: 'var(--hc-text)' },
+          { label: t('pos.historial.ticketPromedio'), value: `₡${fmt(ticketPromedio)}`,  color: '#34d399' },
         ].map(k => (
           <div key={k.label} className="rounded-xl p-4"
-            style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
             <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>{k.label}</p>
             <p className="text-xl font-black mt-1" style={{ color: k.color }}>{k.value}</p>
           </div>
@@ -118,15 +130,21 @@ export default function AdminPOSHistorial() {
         </div>
       ) : ventasFiltradas.length === 0 ? (
         <div className="text-center py-16" style={{ color: 'var(--hc-muted)' }}>
-          <p className="text-sm">Sin ventas POS para este período</p>
+          <p className="text-sm">{t('pos.historial.sinVentas')}</p>
         </div>
       ) : (
-        <div className="rounded-2xl overflow-hidden border" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
+        <div className="rounded-2xl overflow-hidden border" style={{ borderColor: 'var(--hc-border)' }}>
           <div className="overflow-x-auto">
           <table className="w-full min-w-[480px] text-sm">
             <thead>
-              <tr style={{ backgroundColor: 'rgba(255,255,255,0.03)' }}>
-                {['Hora','Cliente','Ítems','Método','Total'].map(h => (
+              <tr style={{ backgroundColor: 'var(--hc-surface-2)' }}>
+                {[
+                  t('pos.historial.colHora'),
+                  t('pos.historial.colCliente'),
+                  t('pos.historial.colItems'),
+                  t('pos.historial.colMetodo'),
+                  t('pos.historial.colTotal'),
+                ].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-medium"
                     style={{ color: 'var(--hc-muted)' }}>{h}</th>
                 ))}
@@ -145,12 +163,12 @@ export default function AdminPOSHistorial() {
                       }
                     }}
                     className="cursor-pointer transition-colors hover:bg-white/[0.02] border-t"
-                    style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                    style={{ borderColor: 'var(--hc-border)' }}>
                     <td className="px-4 py-3 text-xs" style={{ color: 'var(--hc-muted)' }}>
                       {fmtDate(v.fechaPedido)}
                     </td>
                     <td className="px-4 py-3 text-xs" style={{ color: 'var(--hc-text)' }}>
-                      {v.usuarioFinal?.nombre ?? 'Mostrador'}
+                      {v.usuarioFinal?.nombre ?? t('pos.historial.mostrador')}
                     </td>
                     <td className="px-4 py-3 text-xs" style={{ color: 'var(--hc-muted)' }}>
                       {(v.items ?? []).length}
@@ -166,26 +184,26 @@ export default function AdminPOSHistorial() {
                     </td>
                   </tr>
                   {expanded === v.id && (
-                    <tr key={`${v.id}-detail`} style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                    <tr key={`${v.id}-detail`} style={{ backgroundColor: 'var(--hc-surface-2)' }}>
                       <td colSpan={5} className="px-6 py-3">
                         <div className="space-y-1">
                           {(v.items ?? []).map((item, i) => (
                             <div key={i} className="flex justify-between text-xs">
                               <span style={{ color: 'var(--hc-muted)' }}>
-                                {item.producto?.nombreProducto ?? 'Producto'} ×{item.cantidad}
+                                {item.producto?.nombreProducto ?? t('pos.historial.producto')} ×{item.cantidad}
                               </span>
                               <span style={{ color: 'var(--hc-text)' }}>₡{fmt(item.subtotalItem)}</span>
                             </div>
                           ))}
                           {(v.descuentoTotal ?? 0) > 0 && (
                             <div className="flex justify-between text-xs">
-                              <span style={{ color: '#f87171' }}>Descuento</span>
+                              <span style={{ color: '#f87171' }}>{t('pos.historial.descuento')}</span>
                               <span style={{ color: '#f87171' }}>-₡{fmt(v.descuentoTotal)}</span>
                             </div>
                           )}
                           <div className="flex justify-between text-xs font-bold pt-1 border-t"
-                            style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-                            <span style={{ color: 'var(--hc-text)' }}>Total</span>
+                            style={{ borderColor: 'var(--hc-border)' }}>
+                            <span style={{ color: 'var(--hc-text)' }}>{t('pos.common.total')}</span>
                             <span style={{ color: 'var(--hc-accent)' }}>₡{fmt(v.totalPedido)}</span>
                           </div>
                         </div>

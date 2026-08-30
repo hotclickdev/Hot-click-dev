@@ -56,3 +56,8 @@ security-tools/**/__pycache__/
 security-tools/**/reports/
 security-tools/**/.env
 !security-tools/**/.env.example
+
+# Lab local (no commit)
+Hot_click_outlet/.local-*
+Hot_click_outlet/.local-migrations/
+

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { authService } from '@/services/authService'
 import useAuthStore from '@/store/authStore'
 import useCartStore from '@/store/cartStore'
+import useTenantStore from '@/store/tenantStore'
 import { useToast } from '@/components/ui/Toast'
 import { abandonedCartService } from '@/services/abandonedCartService'
 import { destinoPostLogin, mensajeErrorAuth, statusErrorAuth } from './authHelpers'
@@ -199,8 +200,12 @@ export function useLoginFlow() {
 
   const handleLoginSuccess = async (data: LoginApiData) => {
     login(data)
+    if (data.empresaId) {
+      await useTenantStore.getState().loadTenantInfo()
+    }
     const modes = getAvailableModes(data.rol ?? '', data.permisos ?? [], {
       empresaSlug: data.empresaSlug,
+      planNombre: useTenantStore.getState().planNombre,
     })
     const isInternal = data.rol !== 'USUARIO_FINAL'
     toast({ message: isInternal ? t('login.welcomeAdmin') : t('login.welcome'), type: 'success' })

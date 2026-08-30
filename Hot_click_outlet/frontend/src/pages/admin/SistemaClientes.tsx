@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { crmService } from '@/services/crmService'
 import { useToast } from '@/components/ui/Toast'
 import ClienteDetailModal from '@/components/admin/ClienteDetailModal'
@@ -23,6 +24,7 @@ type ClienteSistema = ClienteDetalle & {
  * Clientes del dueño — tarjetas, no tabla CRM de admin.
  */
 export default function SistemaClientes() {
+  const { t } = useTranslation()
   const { showToast } = useToast()
   const [clientes, setClientes] = useState<ClienteSistema[]>([])
   const [loading, setLoading] = useState(true)
@@ -34,7 +36,7 @@ export default function SistemaClientes() {
     setLoading(true)
     crmService.listarClientes()
       .then((data: unknown) => setClientes(Array.isArray(data) ? data as ClienteSistema[] : []))
-      .catch(() => showToast('No se pudieron cargar los clientes', 'error'))
+      .catch(() => showToast(t('adminClientes.errorLoadSistema'), 'error'))
       .finally(() => setLoading(false))
   }
 
@@ -48,12 +50,12 @@ export default function SistemaClientes() {
   return (
     <div className="max-w-[1060px]">
       <Link to="/admin" className="inline-flex items-center gap-1 text-sm font-semibold mb-4" style={{ color: 'var(--hc-text)' }}>
-        <TextoFlecha dir="atras">Inicio</TextoFlecha>
+        <TextoFlecha dir="atras">{t('adminClientes.backHome')}</TextoFlecha>
       </Link>
       <header className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <div>
-          <h1 className="text-[26px] font-bold tracking-tight m-0" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>Clientes</h1>
-          <p className="text-[15px] m-0 mt-1" style={{ color: '#6b6459' }}>{textoConteoClientes(clientes.length)}</p>
+          <h1 className="text-[26px] font-bold tracking-tight m-0" style={{ fontFamily: 'var(--font-display)', color: 'var(--hc-text)' }}>{t('adminClientes.titleSistema')}</h1>
+          <p className="text-[15px] m-0 mt-1" style={{ color: '#6b6459' }}>{t('adminClientes.count', { count: clientes.length })}</p>
         </div>
         <button
           type="button"
@@ -61,7 +63,7 @@ export default function SistemaClientes() {
           className="inline-flex items-center justify-center px-[22px] py-[13px] rounded-[10px] text-[15px] font-bold"
           style={{ backgroundColor: 'var(--hc-primary)', color: '#fff' }}
         >
-          <TextoMas>Agregá un cliente</TextoMas>
+          <TextoMas>{t('adminClientes.addClient')}</TextoMas>
         </button>
       </header>
 
@@ -71,7 +73,7 @@ export default function SistemaClientes() {
         type="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Buscá por nombre o teléfono…"
+        placeholder={t('adminClientes.searchPhSistema')}
         className="w-full max-w-[380px] px-3.5 py-3 rounded-[10px] text-[15px] mb-4 focus:outline-none"
         style={{ border: '1px solid #d8cfc0', backgroundColor: 'var(--hc-surface)', color: 'var(--hc-text)' }}
       />
@@ -80,8 +82,8 @@ export default function SistemaClientes() {
       {!loading && filtrados.length === 0 && (
         <p className="text-sm py-12 text-center" style={{ color: '#6b6459' }}>
           {clientes.length === 0
-            ? 'Todavía no registraste clientes. Se agregan solos cuando alguien compra, o creá uno ahora.'
-            : 'Nadie coincide con esa búsqueda.'}
+            ? t('adminClientes.emptySistema')
+            : t('adminClientes.noSearchMatch')}
         </p>
       )}
       {!loading && filtrados.length > 0 && (
@@ -100,6 +102,7 @@ export default function SistemaClientes() {
 }
 
 function FormNuevoCliente({ onCreado }: { onCreado: () => void }) {
+  const { t } = useTranslation()
   const { showToast } = useToast()
   const [nombre, setNombre] = useState('')
   const [telefono, setTelefono] = useState('')
@@ -113,10 +116,10 @@ function FormNuevoCliente({ onCreado }: { onCreado: () => void }) {
     setSaving(true)
     try {
       await crmService.crearCliente({ nombre: nombre.trim(), telefono: telefono.trim(), correo: correo.trim() })
-      showToast('Cliente registrado', 'success')
+      showToast(t('adminClientes.clientCreated'), 'success')
       onCreado()
     } catch (err: unknown) {
-      showToast(mensajeErrorProducto(err, 'Error al registrar cliente'), 'error')
+      showToast(mensajeErrorProducto(err, t('adminClientes.errorCreate')), 'error')
     } finally {
       setSaving(false)
     }
@@ -124,11 +127,11 @@ function FormNuevoCliente({ onCreado }: { onCreado: () => void }) {
 
   return (
     <form onSubmit={crear} className="rounded-2xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
-      <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre" required className="px-3 py-2.5 rounded-[10px] text-sm focus:outline-none" style={inputStyle} />
-      <input value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="Teléfono" className="px-3 py-2.5 rounded-[10px] text-sm focus:outline-none" style={inputStyle} />
-      <input value={correo} onChange={(e) => setCorreo(e.target.value)} placeholder="Correo (opcional)" type="email" className="px-3 py-2.5 rounded-[10px] text-sm focus:outline-none" style={inputStyle} />
+      <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder={t('adminClientes.phName')} required className="px-3 py-2.5 rounded-[10px] text-sm focus:outline-none" style={inputStyle} />
+      <input value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder={t('adminClientes.phPhone')} className="px-3 py-2.5 rounded-[10px] text-sm focus:outline-none" style={inputStyle} />
+      <input value={correo} onChange={(e) => setCorreo(e.target.value)} placeholder={t('adminClientes.phEmail')} type="email" className="px-3 py-2.5 rounded-[10px] text-sm focus:outline-none" style={inputStyle} />
       <button type="submit" disabled={saving} className="sm:col-span-3 py-2.5 rounded-[10px] text-sm font-bold disabled:opacity-50" style={{ backgroundColor: 'var(--hc-primary)', color: '#fff' }}>
-        {saving ? 'Guardando…' : 'Guardá el cliente'}
+        {saving ? t('adminClientes.saving') : t('adminClientes.register')}
       </button>
     </form>
   )
@@ -164,12 +167,6 @@ function TarjetaCliente({ cliente, onVer }: { cliente: ClienteSistema; onVer: ()
 
 function coincideCliente(c: ClienteSistema, q: string) {
   return [c.nombre, c.apellidoPaterno, c.telefono, c.correo].some((v) => String(v ?? '').toLowerCase().includes(q))
-}
-
-function textoConteoClientes(n: number) {
-  if (n === 0) return 'Todavía no te han comprado.'
-  if (n === 1) return '1 cliente te ha comprado.'
-  return `${n} clientes te han comprado.`
 }
 
 function iniciales(nombre: string) {

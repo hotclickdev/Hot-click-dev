@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import Section from '@/components/ui/Section'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import TextoFlecha from '@/components/ui/TextoFlecha'
@@ -34,6 +35,7 @@ export default function CategoryBrowse({
   products: ProductoMuestraCategoria[]
   categories: CategoriaBrowse[]
 }) {
+  const { t } = useTranslation()
   // Agrupar productos por categoría y tomar las 8 categorías con más productos
   const catGroups = useMemo(() => {
     const map: Record<string, { products: ProductoMuestraCategoria[]; catId: string }> = {}
@@ -47,20 +49,20 @@ export default function CategoryBrowse({
     return Object.values(map)
       .map((g): CatGroup => {
         const cat = categories.find(c => String(c.id ?? c.idCategoria) === g.catId)
-        return { ...g, nombre: cat?.nombreCategoria ?? cat?.nombre ?? 'Sin nombre' }
+        return { ...g, nombre: cat?.nombreCategoria ?? cat?.nombre ?? t('home.unnamedCategory') }
       })
       .filter(g => g.products.length >= 1)
       .sort((a, b) => b.products.length - a.products.length)
       .slice(0, 8)
-  }, [products, categories])
+  }, [products, categories, t])
 
   if (catGroups.length === 0) return null
 
   return (
     <Section
-      title="Elegí una categoría."
-      subtitle="Hay mucho por explorar."
-      action={{ label: 'Ver catálogo completo', to: '/productos' }}
+      title={t('home.browseTitle')}
+      subtitle={t('home.browseSub')}
+      action={{ label: t('home.fullCatalog'), to: '/productos' }}
       tone="surface"
     >
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -113,7 +115,7 @@ export default function CategoryBrowse({
               <div className="px-4 py-3">
                 <span className="text-xs font-semibold transition-opacity group-hover:opacity-60"
                   style={{ color: 'var(--hc-accent)' }}>
-                  <TextoFlecha>Ver {group.products.length} producto{group.products.length === 1 ? '' : 's'}</TextoFlecha>
+                  <TextoFlecha>{t('products.viewResults', { count: group.products.length })}</TextoFlecha>
                 </span>
               </div>
             </Link>

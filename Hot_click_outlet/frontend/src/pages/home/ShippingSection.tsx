@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import {
   IconRayo,
   IconPaquete,
@@ -13,11 +14,9 @@ import {
 } from './homeIcons'
 import type { ComponentType } from 'react'
 
-type EnvioOpt = {
+type EnvioOptBase = {
+  id: string
   Icon: ComponentType
-  title: string
-  time: string
-  desc: string
   price: string
   accent: string
   accentBg: string
@@ -25,53 +24,43 @@ type EnvioOpt = {
   consultar?: boolean
 }
 
-const ENVIO_OPTS: EnvioOpt[] = [
+const ENVIO_OPTS_BASE: EnvioOptBase[] = [
   {
+    id: 'rapido',
     Icon: IconRayo,
-    title: 'Envío Rápido',
-    time: '30 min – 2 horas',
-    desc: 'Dentro de la GAM · Pago previo requerido',
     price: '₡5,000',
     accent: '#f59e0b',
     accentBg: 'rgba(245,158,11,0.10)',
     accentBorder: 'rgba(245,158,11,0.25)',
   },
   {
+    id: 'normal',
     Icon: IconPaquete,
-    title: 'Envío Normal — GAM',
-    time: '2–4 días hábiles',
-    desc: 'Con número de rastreo incluido',
     price: '₡4,000',
     accent: 'var(--hc-accent)',
     accentBg: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)',
     accentBorder: 'color-mix(in srgb, var(--hc-accent) 28%, transparent)',
   },
   {
+    id: 'fuera',
     Icon: IconPin,
-    title: 'Fuera de la GAM',
-    time: '3–4 días hábiles',
-    desc: 'Con número de rastreo incluido',
     price: '₡4,000',
     accent: '#6366f1',
     accentBg: 'rgba(99,102,241,0.10)',
     accentBorder: 'rgba(99,102,241,0.28)',
   },
   {
+    id: 'encomienda',
     Icon: IconCamion,
-    title: 'Tu encomienda',
-    time: 'Según tu mensajero',
-    desc: 'Te entregamos en el punto de tu preferencia',
     price: '₡2,500',
     accent: '#10b981',
     accentBg: 'rgba(16,185,129,0.09)',
     accentBorder: 'rgba(16,185,129,0.24)',
   },
   {
+    id: 'intl',
     Icon: IconAvion,
-    title: 'Internacional',
-    time: 'A coordinar',
-    desc: 'Realizamos envíos fuera de Costa Rica',
-    price: 'Consultar',
+    price: '',
     accent: '#8b5cf6',
     accentBg: 'rgba(139,92,246,0.10)',
     accentBorder: 'rgba(139,92,246,0.28)',
@@ -79,50 +68,69 @@ const ENVIO_OPTS: EnvioOpt[] = [
   },
 ]
 
-const HREF_WA_INTERNACIONAL = 'https://wa.me/50686667888?text=Hola%20HotClick%2C%20consulto%20un%20env%C3%ADo%20internacional.'
+const WA_BASE = 'https://wa.me/50686667888'
 
-function EnvioInternacionalAtajo({ className }: { className?: string }) {
+function EnvioInternacionalAtajo({
+  className,
+  label,
+  ariaLabel,
+  href,
+}: {
+  className?: string
+  label: string
+  ariaLabel: string
+  href: string
+}) {
   return (
     <a
-      href={HREF_WA_INTERNACIONAL}
+      href={href}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="Consultar envío internacional por WhatsApp"
+      aria-label={ariaLabel}
       className={className}
       style={{ color: 'var(--hc-muted)' }}
     >
-      Consultar por WhatsApp
+      {label}
     </a>
   )
 }
 
-const PAGO_OPTS: { label: string; Icon: ComponentType; color: string }[] = [
-  { label: 'SINPE Móvil', Icon: IconSinpe, color: '#10b981' },
-  { label: 'Efectivo', Icon: IconEfectivo, color: '#f59e0b' },
-  { label: 'Tarjeta', Icon: IconTarjeta, color: '#6490EA' },
-]
-
 export default function ShippingSection() {
+  const { t } = useTranslation()
   const [active, setActive] = useState(0)
-  const opt = ENVIO_OPTS[active]!
+  const waIntlHref = `${WA_BASE}?text=${encodeURIComponent(t('home.shippingWaIntl'))}`
+
+  const envioOpts = ENVIO_OPTS_BASE.map((o) => ({
+    ...o,
+    title: t(`home.shipping.${o.id}Title`),
+    time: t(`home.shipping.${o.id}Time`),
+    desc: t(`home.shipping.${o.id}Desc`),
+    price: o.consultar ? t('home.shipping.consultar') : o.price,
+  }))
+
+  const pagoOpts: { label: string; Icon: ComponentType; color: string }[] = [
+    { label: t('home.shipping.pagoSinpe'), Icon: IconSinpe, color: '#10b981' },
+    { label: t('home.shipping.pagoEfectivo'), Icon: IconEfectivo, color: '#f59e0b' },
+    { label: t('home.shipping.pagoTarjeta'), Icon: IconTarjeta, color: '#6490EA' },
+  ]
+
+  const opt = envioOpts[active]!
 
   return (
     <section style={{ borderTop: '1px solid var(--hc-border)', borderBottom: '1px solid var(--hc-border)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-8">
           <div>
             <p className="text-[11px] font-bold tracking-[0.12em] uppercase mb-2" style={{ color: 'var(--hc-accent)' }}>
-              Logística HotClick
+              {t('home.shipping.badge')}
             </p>
             <h2 className="text-2xl sm:text-3xl font-black leading-tight" style={{ color: 'var(--hc-text)', letterSpacing: '-0.02em' }}>
-              Enviamos a todo el país.
+              {t('home.shipping.title')}
             </h2>
-            <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>Elegí la opción que mejor se adapte a vos.</p>
+            <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>{t('home.shipping.sub')}</p>
           </div>
-          {/* Métodos de pago */}
           <div className="flex items-center gap-2">
-            {PAGO_OPTS.map(p => (
+            {pagoOpts.map(p => (
               <div
                 key={p.label}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold"
@@ -139,11 +147,10 @@ export default function ShippingSection() {
           </div>
         </div>
 
-        {/* Cards desktop grid + tab selector mobile */}
         <div className="hidden sm:grid grid-cols-5 gap-3">
-          {ENVIO_OPTS.map((o, i) => (
+          {envioOpts.map((o, i) => (
             <motion.div
-              key={o.title}
+              key={o.id}
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -165,20 +172,23 @@ export default function ShippingSection() {
               <div className="flex items-center justify-between mt-auto pt-2" style={{ borderTop: `1px solid ${o.accentBorder}` }}>
                 <span className="text-sm font-black" style={{ color: o.accent }}>{o.price}</span>
                 {o.consultar && (
-                  <EnvioInternacionalAtajo className="text-[10px] font-medium min-h-11 inline-flex items-center" />
+                  <EnvioInternacionalAtajo
+                    className="text-[10px] font-medium min-h-11 inline-flex items-center"
+                    label={t('home.shipping.consultarWa')}
+                    ariaLabel={t('home.shipping.consultarWaAria')}
+                    href={waIntlHref}
+                  />
                 )}
               </div>
             </motion.div>
           ))}
         </div>
 
-        {/* Mobile: tabs + panel */}
         <div className="sm:hidden">
-          {/* Tab pills */}
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
-            {ENVIO_OPTS.map((o, i) => (
+            {envioOpts.map((o, i) => (
               <button type="button"
-                key={o.title}
+                key={o.id}
                 onClick={() => setActive(i)}
                 className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
                 style={active === i
@@ -191,7 +201,6 @@ export default function ShippingSection() {
             ))}
           </div>
 
-          {/* Panel */}
           <AnimatePresence mode="wait">
             <motion.div
               key={active}
@@ -215,14 +224,19 @@ export default function ShippingSection() {
                 <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: `1px solid ${opt.accentBorder}` }}>
                   <span className="text-lg font-black" style={{ color: opt.accent }}>{opt.price}</span>
                   {opt.consultar ? (
-                    <EnvioInternacionalAtajo className="text-xs font-medium min-h-11 inline-flex items-center" />
+                    <EnvioInternacionalAtajo
+                      className="text-xs font-medium min-h-11 inline-flex items-center"
+                      label={t('home.shipping.consultarWa')}
+                      ariaLabel={t('home.shipping.consultarWaAria')}
+                      href={waIntlHref}
+                    />
                   ) : (
                     <Link
                       to="/productos"
                       className="text-xs font-semibold px-3 py-1.5 rounded-lg min-h-11 inline-flex items-center"
                       style={{ background: 'var(--hc-accent)', color: '#fff' }}
                     >
-                      Ver catálogo
+                      {t('home.shipping.verCatalogo')}
                     </Link>
                   )}
                 </div>
@@ -231,7 +245,6 @@ export default function ShippingSection() {
           </AnimatePresence>
         </div>
 
-        {/* Footer strip — envío rápido call to action */}
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -244,12 +257,12 @@ export default function ShippingSection() {
               <IconRayo />
             </div>
             <div>
-              <p className="text-sm font-bold text-amber-300">¿Necesitás algo urgente?</p>
-              <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Elegilo en datos y pago — 30 min a 2 horas en la GAM. Pago previo.</p>
+              <p className="text-sm font-bold text-amber-300">{t('home.shipping.urgenteTitle')}</p>
+              <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>{t('home.shipping.urgenteDesc')}</p>
             </div>
           </div>
           <Link to="/productos" className="hc-btn hc-btn-primary shrink-0 min-h-11">
-            Pedir envío rápido
+            {t('home.shipping.pedirRapido')}
           </Link>
         </motion.div>
       </div>

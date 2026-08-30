@@ -94,9 +94,32 @@ export const PLAN_COLOR: Record<string, string> = {
 }
 
 export const ESTADO_COLOR: Record<string, string> = {
-  ACTIVO: 'bg-green-500/15 text-green-400',
-  SUSPENDIDO: 'bg-red-500/15 text-red-400',
-  INACTIVO: 'bg-gray-500/15 text-gray-400',
+  ACTIVO: 'bg-[var(--hc-success-bg)] text-hc-success',
+  PENDIENTE_APROBACION: 'bg-[var(--hc-warning-bg)] text-hc-warning',
+  SUSPENDIDO: 'bg-[var(--hc-danger-bg)] text-hc-danger',
+  INACTIVO: 'bg-hc-surface-2 text-hc-muted',
+}
+
+export const CHIPS_ESTADO_TIENDA: { id: string; label: string }[] = [
+  { id: 'ALL', label: 'Todas' },
+  { id: 'ACTIVO', label: 'Activas' },
+  { id: 'PENDIENTE_APROBACION', label: 'Pendientes' },
+  { id: 'SUSPENDIDO', label: 'Suspendidas' },
+]
+
+export function etiquetaEstadoTienda(estado?: string): string {
+  if (estado === 'ACTIVO') return 'Activa'
+  if (estado === 'PENDIENTE_APROBACION') return 'Pendiente'
+  if (estado === 'SUSPENDIDO') return 'Suspendida'
+  if (estado === 'INACTIVO') return 'Inactiva'
+  return estado || '—'
+}
+
+export function tonoEstadoTiendaLista(estado?: string): 'ok' | 'warn' | 'danger' | 'muted' {
+  if (estado === 'ACTIVO') return 'ok'
+  if (estado === 'PENDIENTE_APROBACION') return 'warn'
+  if (estado === 'SUSPENDIDO') return 'danger'
+  return 'muted'
 }
 
 export const PAGE_SIZE = 10

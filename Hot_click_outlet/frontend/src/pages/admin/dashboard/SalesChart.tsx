@@ -14,13 +14,13 @@ export default function SalesChart({ salesLast7 }: SalesChartProps) {
   const maxSale = Math.max(...salesLast7.map((d) => d.total), 1)
 
   return (
-    <div className="bg-[#111114] border border-white/8 rounded-2xl p-5">
+    <div className="bg-[var(--hc-surface)] border border-[var(--hc-border)] rounded-2xl p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-sm font-semibold text-[#e8e8ed]">{t('admin.dashboard.revenue')}</h2>
-          <p className="text-xs text-[#8e8e9a] mt-0.5">Últimos 7 días (completadas)</p>
+          <h2 className="text-sm font-semibold text-[var(--hc-text)]">{t('admin.dashboard.revenue')}</h2>
+          <p className="text-xs text-[var(--hc-muted)] mt-0.5">Últimos 7 días (completadas)</p>
         </div>
-        <Link to="/admin/reportes" className="text-xs text-[#4f7cff] hover:underline">
+        <Link to="/admin/reportes" className="text-xs text-[var(--hc-link)] hover:underline">
           <TextoFlecha>Ver reportes</TextoFlecha>
         </Link>
       </div>
@@ -28,7 +28,7 @@ export default function SalesChart({ salesLast7 }: SalesChartProps) {
         {salesLast7.map((d, i) => (
           <div key={i} className="flex-1 flex flex-col items-center gap-1">
             <span
-              className="text-[9px] text-[#8e8e9a] text-center leading-tight"
+              className="text-[9px] text-[var(--hc-muted)] text-center leading-tight"
               style={{ minHeight: '22px' }}
             >
               {d.total > 0 ? formatPrice(d.total) : ''}
@@ -44,11 +44,11 @@ export default function SalesChart({ salesLast7 }: SalesChartProps) {
                 style={{
                   background: d.total > 0
                     ? 'linear-gradient(to top, #4f7cff, #7fa0ff)'
-                    : 'rgba(255,255,255,0.06)',
+                    : 'var(--hc-surface-2)',
                 }}
               />
             </div>
-            <span className="text-[10px] text-[#8e8e9a] capitalize">{d.label}</span>
+            <span className="text-[10px] text-[var(--hc-muted)] capitalize">{d.label}</span>
           </div>
         ))}
       </div>

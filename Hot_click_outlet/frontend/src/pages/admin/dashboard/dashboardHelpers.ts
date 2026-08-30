@@ -11,6 +11,9 @@ export const SETUP_KEY = 'hotclick-setup-dismissed'
 /** Health poll interval for ADMIN users. */
 export const HEALTH_POLL_MS = 30_000
 
+/** Tarjeta clara del dashboard (Figma Super Admin). */
+export const CLASE_TARJETA_DASH = 'bg-[var(--hc-surface)] border border-[var(--hc-border)] rounded-2xl'
+
 export const stagger: { container: Variants; item: Variants } = {
   container: { show: { transition: { staggerChildren: 0.07 } } },
   item: { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.3 } } },
@@ -71,14 +74,14 @@ export type ActivityItem = {
 type ActivityDraft = Omit<ActivityItem, 'date'> & { date?: string }
 
 export function badgeStyle(badge?: string) {
-  if (!badge) return 'bg-white/10 text-[#8e8e9a]'
+  if (!badge) return 'bg-[var(--hc-surface-2)] text-[var(--hc-muted)]'
   const b = badge.toUpperCase()
-  if (b === 'COMPLETADO' || b === 'ENTREGADO') return 'bg-emerald-500/15 text-emerald-400'
-  if (b === 'PENDIENTE') return 'bg-amber-500/15 text-amber-400'
-  if (b === 'PAGADO') return 'bg-[#4f7cff]/15 text-[#4f7cff]'
-  if (b === 'REGISTRO') return 'bg-[var(--hc-blue-500)]/15 text-[var(--hc-blue-400)]'
-  if (b === 'CANCELADO') return 'bg-red-500/15 text-red-400'
-  return 'bg-white/10 text-[#8e8e9a]'
+  if (b === 'COMPLETADO' || b === 'ENTREGADO') return 'bg-emerald-500/15 text-emerald-700'
+  if (b === 'PENDIENTE') return 'bg-amber-500/15 text-amber-700'
+  if (b === 'PAGADO') return 'bg-[var(--hc-link)]/15 text-[var(--hc-link)]'
+  if (b === 'REGISTRO') return 'bg-[var(--hc-blue-500)]/15 text-[var(--hc-link)]'
+  if (b === 'CANCELADO') return 'bg-red-500/15 text-red-600'
+  return 'bg-[var(--hc-surface-2)] text-[var(--hc-muted)]'
 }
 
 export function buildSalesLast7(ventas: VentaDashboard[]): SalesDay[] {

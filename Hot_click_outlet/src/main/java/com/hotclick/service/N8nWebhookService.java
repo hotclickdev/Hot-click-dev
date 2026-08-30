@@ -54,6 +54,7 @@ public class N8nWebhookService {
         try {
             Map<String, Object> payload = new HashMap<>();
             payload.put("carritoId", carrito.getId());
+            payload.put("recoverToken", carrito.getTokenRecuperacion());
             payload.put("email", carrito.getEmail());
             payload.put("sessionId", carrito.getSessionId());
             payload.put("items", items);

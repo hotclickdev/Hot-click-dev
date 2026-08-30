@@ -20,7 +20,9 @@ const CONSOLE_ALLOWLIST = [
   /AxiosError/i,
   /\[useBranding\]/i,
   /\[AppChrome\]/i,
-  /\[catalogoVisitante\]/i,
+  /\[catalogoVendedor\]/i,
+  /\[pedidosVendedor\]/i,
+  /\[VendedorAvisos\]/i,
   /\[productoVisitante\]/i,
   /\[EmprendimientosPage\]/i,
   /\[useHeroRotator\]/i,
@@ -225,17 +227,14 @@ test.describe('Smoke público', () => {
     guards.assertClean()
   })
 
-  test('Prototipo vendedor no confirma SKUs mock', async ({ page }) => {
+  test('Prototipo vendedor exige sesión al salir de /prototipo', async ({ page }) => {
     const guards = attachGuards(page)
     await page.goto('/prototipo/emprendedor/tienda/compra-confirmada', { waitUntil: 'domcontentloaded' })
-    await expect(page).toHaveURL(/\/pago\/exito/)
-    await expect(page.locator('body')).not.toContainText(/pedido\s*#4021/i)
-    await assertSinSkusMock(page)
+    await expect(page).toHaveURL(/\/login/)
     await page.goto('/prototipo/pyme/compra-ok', { waitUntil: 'domcontentloaded' })
-    await expect(page).toHaveURL(/\/pago\/exito/)
-    await assertSinSkusMock(page)
+    await expect(page).toHaveURL(/\/login/)
     await page.goto('/prototipo/emprendedor/tienda/carrito', { waitUntil: 'domcontentloaded' })
-    await expect(page).toHaveURL(/\/carrito/)
+    await expect(page).toHaveURL(/\/login/)
     guards.assertClean()
   })
 

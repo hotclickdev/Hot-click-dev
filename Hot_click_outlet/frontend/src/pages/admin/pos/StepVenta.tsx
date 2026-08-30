@@ -1,13 +1,34 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import POSProductSearch from '@/components/pos/POSProductSearch'
+import { formatoColon } from '@/theme/formatoColon'
 import CartItem from './CartItem'
 import ClienteSelector from './ClienteSelector'
 import { formatMontoPos, type ClienteSeleccionadoPos, type ItemCarritoPos, type ProductoEntradaCarrito } from './posHelpers'
-import { CartEmptyIcon } from './posIcons'
 import { usePosAtajos } from './usePosAtajos'
 import type { Id } from '@/types/api'
 
-export default function StepVenta({ cartItems, onAdd, onSetCantidad, onSetPrecio, onRemove, descuento, onSetDescuento, subtotal, total, onNueva, onCobrar, onQrCliente, loadingQr, cliente, onSetCliente }: {
+/**
+ * Caja POS (Figma 71:128 móvil / catálogo + ticket).
+ * Sin panel PEDIDO dual ni tabs Productos/Carrito.
+ */
+export default function StepVenta({
+  cartItems,
+  onAdd,
+  onSetCantidad,
+  onSetPrecio,
+  onRemove,
+  descuento,
+  onSetDescuento,
+  subtotal,
+  total,
+  onNueva,
+  onCobrar,
+  onQrCliente,
+  loadingQr,
+  cliente,
+  onSetCliente,
+}: {
   cartItems: ItemCarritoPos[]
   onAdd: (producto: ProductoEntradaCarrito) => void
   onSetCantidad: (id: Id | undefined, val: string | number) => void
@@ -24,155 +45,337 @@ export default function StepVenta({ cartItems, onAdd, onSetCantidad, onSetPrecio
   cliente: ClienteSeleccionadoPos
   onSetCliente: (c: ClienteSeleccionadoPos) => void
 }) {
-  const [mobileTab, setMobileTab] = useState('productos')
+  const [ticketAbierto, setTicketAbierto] = useState(false)
   const numItems = cartItems.reduce((s, i) => s + i.cantidad, 0)
+  const cantidades = Object.fromEntries(cartItems.map((item) => [String(item.id), item.cantidad]))
+
   usePosAtajos({
     activo: true,
     hayItems: cartItems.length > 0,
     onCobrar,
-    alBuscar: () => setMobileTab('productos'),
-    alCantidad: () => setMobileTab('carrito'),
+    alBuscar: () => setTicketAbierto(false),
+    alCantidad: () => {
+      if (window.matchMedia('(max-width: 767px)').matches) setTicketAbierto(true)
+    },
   })
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Tabs — solo móvil */}
-      <div className="flex sm:hidden border-b" style={{ borderColor: 'rgba(255,255,255,0.06)', backgroundColor: '#0c0c12' }}>
-        {[
-          { id: 'productos', label: 'Productos' },
-          { id: 'carrito', label: `Carrito${numItems > 0 ? ` (${numItems})` : ''}` },
-        ].map(t => (
-          <button type="button" key={t.id} onClick={() => setMobileTab(t.id)}
-            className="flex-1 py-3 text-sm font-semibold transition-colors"
-            style={{
-              color: mobileTab === t.id ? 'var(--hc-accent)' : 'rgba(255,255,255,0.4)',
-              borderBottom: `2px solid ${mobileTab === t.id ? 'var(--hc-accent)' : 'transparent'}`,
-            }}>
-            {t.label}
+    <div className="relative flex flex-1 flex-col overflow-hidden" style={{ backgroundColor: 'var(--hc-surface-2, #F8F9FB)' }}>
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 overflow-hidden p-3 pb-28 md:flex-row md:gap-5 md:p-5 md:pb-5">
+        <section
+          className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 rounded-2xl border bg-white p-4 md:p-5"
+          style={{ borderColor: 'var(--hc-border, #E5E7EC)' }}
+        >
+          <CabeceraCaja />
+          <div className="min-h-0 flex-1 border-t pt-3" style={{ borderColor: 'var(--hc-border, #E5E7EC)' }}>
+            <POSProductSearch onAdd={onAdd} cantidades={cantidades} />
+          </div>
+        </section>
+
+        <aside className="hidden w-full shrink-0 flex-col md:flex md:w-[360px]">
+          <PanelTicket
+            cartItems={cartItems}
+            numItems={numItems}
+            descuento={descuento}
+            subtotal={subtotal}
+            total={total}
+            cliente={cliente}
+            loadingQr={loadingQr}
+            onSetCantidad={onSetCantidad}
+            onSetPrecio={onSetPrecio}
+            onRemove={onRemove}
+            onSetDescuento={onSetDescuento}
+            onSetCliente={onSetCliente}
+            onNueva={onNueva}
+            onCobrar={onCobrar}
+            onQrCliente={onQrCliente}
+          />
+        </aside>
+      </div>
+
+      <div className="fixed bottom-4 left-0 right-0 z-10 mx-auto max-w-md px-4 md:hidden">
+        <TicketBarPos
+          numItems={numItems}
+          total={total}
+          disabled={cartItems.length === 0}
+          onCobrar={onCobrar}
+          onAbrirTicket={() => setTicketAbierto(true)}
+        />
+      </div>
+
+      {ticketAbierto ? (
+        <TicketDrawer
+          cartItems={cartItems}
+          numItems={numItems}
+          descuento={descuento}
+          subtotal={subtotal}
+          total={total}
+          cliente={cliente}
+          loadingQr={loadingQr}
+          onClose={() => setTicketAbierto(false)}
+          onSetCantidad={onSetCantidad}
+          onSetPrecio={onSetPrecio}
+          onRemove={onRemove}
+          onSetDescuento={onSetDescuento}
+          onSetCliente={onSetCliente}
+          onNueva={onNueva}
+          onCobrar={() => { setTicketAbierto(false); onCobrar() }}
+          onQrCliente={onQrCliente}
+        />
+      ) : null}
+    </div>
+  )
+}
+
+function CabeceraCaja() {
+  const { t } = useTranslation()
+  return (
+    <header className="shrink-0">
+      <h1 className="font-display text-xl font-bold text-hc-text md:text-[28px]">{t('pos.venta.title')}</h1>
+      <p className="text-xs text-hc-muted md:mt-1 md:text-sm">{t('pos.venta.subtitle')}</p>
+    </header>
+  )
+}
+
+function TicketBarPos({
+  numItems,
+  total,
+  disabled,
+  onCobrar,
+  onAbrirTicket,
+}: {
+  numItems: number
+  total: number
+  disabled: boolean
+  onCobrar: () => void
+  onAbrirTicket: () => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <div className="flex items-center justify-between rounded-2xl bg-hc-text p-4 text-white shadow-lg">
+      <button type="button" onClick={onAbrirTicket} className="min-w-0 text-left" data-pos-ticket-open>
+        <p className="text-[11px] text-white/70">{t('pos.venta.productosEnFactura', { count: numItems })}</p>
+        <p className="font-display text-lg font-bold">{formatoColon(total)}</p>
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          if (disabled) return
+          onCobrar()
+        }}
+        disabled={disabled}
+        aria-disabled={disabled}
+        data-mm="pos-cobrar"
+        className={claseBotonCobrar(disabled, 'min-h-11 shrink-0 rounded-xl px-5 text-sm font-bold')}
+      >
+        {t('pos.venta.cobrar')}
+      </button>
+    </div>
+  )
+}
+
+function claseBotonCobrar(disabled: boolean, extra: string): string {
+  if (disabled) {
+    return `${extra} cursor-not-allowed bg-[var(--hc-n-200,#D1D5DB)] text-white/80 pointer-events-none`
+  }
+  return `${extra} bg-hc-primary text-white`
+}
+
+type TicketProps = {
+  cartItems: ItemCarritoPos[]
+  numItems: number
+  descuento: number
+  subtotal: number
+  total: number
+  cliente: ClienteSeleccionadoPos
+  loadingQr: boolean
+  onSetCantidad: (id: Id | undefined, val: string | number) => void
+  onSetPrecio: (id: Id | undefined, val: string) => void
+  onRemove: (id: Id | undefined) => void
+  onSetDescuento: (n: number) => void
+  onSetCliente: (c: ClienteSeleccionadoPos) => void
+  onNueva: () => void
+  onCobrar: () => void
+  onQrCliente: () => void
+}
+
+function PanelTicket(props: TicketProps) {
+  const { t } = useTranslation()
+  return (
+    <div
+      className="flex h-full flex-col rounded-2xl border-2 bg-white p-5 md:p-6"
+      style={{ borderColor: 'var(--hc-border, #E5E7EC)' }}
+    >
+      <div
+        className="mb-4 flex items-center justify-between gap-2 border-b pb-3"
+        style={{ borderColor: 'var(--hc-border, #E5E7EC)' }}
+      >
+        <p className="font-display text-base font-bold text-hc-text">
+          {t('pos.venta.productosEnFactura', { count: props.numItems })}
+        </p>
+        {props.cartItems.length > 0 ? (
+          <button
+            type="button"
+            onClick={props.onNueva}
+            className="text-xs font-medium text-hc-danger"
+          >
+            {t('pos.venta.limpiar')}
           </button>
-        ))}
+        ) : null}
       </div>
+      <TicketLineas {...props} />
+      <div
+        className="mt-auto space-y-3 border-t pt-4"
+        style={{ borderColor: 'var(--hc-border, #E5E7EC)' }}
+      >
+        <TotalesTicket {...props} />
+        <BotonCobrarFactura
+          disabled={props.cartItems.length === 0}
+          onCobrar={props.onCobrar}
+        />
+      </div>
+    </div>
+  )
+}
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Panel productos */}
-        <div className={`${mobileTab === 'carrito' ? 'hidden' : 'flex'} sm:flex flex-1 flex-col overflow-hidden border-r border-white/5`}>
-          <div className="px-4 pt-2 pb-1 shrink-0">
-            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
-              F2 buscar · F4 cantidad · F8 cobrar
-            </p>
+function TicketDrawer(props: TicketProps & { onClose: () => void }) {
+  const { t } = useTranslation()
+  return (
+    <div className="fixed inset-0 z-20 md:hidden" role="dialog" aria-modal="true" aria-label={t('pos.venta.facturaAria')}>
+      <button type="button" className="absolute inset-0 bg-[rgba(20,23,28,0.45)]" aria-label={t('pos.common.cerrar')} onClick={props.onClose} />
+      <div
+        className="absolute inset-x-0 bottom-0 max-h-[85vh] space-y-3 overflow-y-auto rounded-t-2xl border bg-white p-4 shadow-xl"
+        style={{ borderColor: 'var(--hc-border, #E5E7EC)' }}
+      >
+        <div className="flex items-center justify-between gap-2 border-b pb-3" style={{ borderColor: 'var(--hc-border, #E5E7EC)' }}>
+          <p className="font-display text-base font-bold">
+            {t('pos.venta.productosEnFactura', { count: props.numItems })}
+          </p>
+          <button type="button" onClick={props.onClose} className="text-sm font-medium text-hc-muted">
+            {t('pos.common.cerrar')}
+          </button>
+        </div>
+        <TicketLineas {...props} />
+        {props.cartItems.length > 0 ? (
+          <button
+            type="button"
+            onClick={props.onNueva}
+            className="w-full py-2 text-sm font-medium text-hc-danger"
+          >
+            {t('pos.venta.limpiarFactura')}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+function BotonCobrarFactura({
+  disabled,
+  onCobrar,
+}: {
+  disabled: boolean
+  onCobrar: () => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        if (disabled) return
+        onCobrar()
+      }}
+      disabled={disabled}
+      aria-disabled={disabled}
+      data-mm="pos-cobrar"
+      className={claseBotonCobrar(
+        disabled,
+        'flex min-h-12 w-full items-center justify-center rounded-[10px] text-[15px] font-bold',
+      )}
+    >
+      {t('pos.venta.cobrar')}
+    </button>
+  )
+}
+
+function TicketLineas(props: TicketProps) {
+  const { t } = useTranslation()
+  if (props.cartItems.length === 0) {
+    return (
+      <p className="py-8 text-center text-sm text-hc-muted">
+        {t('pos.venta.vacio')}
+      </p>
+    )
+  }
+  return (
+    <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto">
+      {props.cartItems.map((item) => (
+        <li key={String(item.id)}>
+          <CartItem
+            item={item}
+            onSetCantidad={props.onSetCantidad}
+            onSetPrecio={props.onSetPrecio}
+            onRemove={props.onRemove}
+          />
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function TotalesTicket(props: TicketProps & { bloqueado?: boolean }) {
+  const { t } = useTranslation()
+  const bloqueado = props.bloqueado ?? props.cartItems.length === 0
+  return (
+    <div className={`space-y-3 ${bloqueado ? 'pointer-events-none opacity-50' : ''}`}>
+      <ClienteSelector cliente={props.cliente} onChange={props.onSetCliente} />
+      <div className="flex items-center gap-3">
+        <span className="shrink-0 text-xs text-hc-muted">{t('pos.venta.descuentoColon')}</span>
+        <input
+          type="number"
+          min={0}
+          value={props.descuento || ''}
+          placeholder="0"
+          disabled={bloqueado}
+          readOnly={bloqueado}
+          onChange={(e) => {
+            if (bloqueado) return
+            props.onSetDescuento(Math.max(0, Number.parseInt(e.target.value || '0')))
+          }}
+          className="flex-1 rounded-xl px-3 py-2 text-right text-sm font-bold outline-none disabled:cursor-not-allowed"
+          style={{
+            backgroundColor: props.descuento > 0 ? 'var(--hc-danger-bg)' : 'var(--hc-surface-2)',
+            border: `1px solid ${props.descuento > 0 ? 'var(--hc-danger)' : 'var(--hc-border)'}`,
+            color: props.descuento > 0 ? 'var(--hc-danger)' : 'var(--hc-text)',
+          }}
+        />
+      </div>
+      {props.descuento > 0 ? (
+        <div className="space-y-0.5 text-xs">
+          <div className="flex justify-between text-hc-muted">
+            <span>{t('pos.common.subtotal')}</span>
+            <span>₡{formatMontoPos(props.subtotal)}</span>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 pt-2">
-            <POSProductSearch onAdd={onAdd} />
+          <div className="flex justify-between text-hc-danger">
+            <span>{t('pos.common.descuento')}</span>
+            <span>-₡{formatMontoPos(props.descuento)}</span>
           </div>
         </div>
-
-        {/* Panel carrito */}
-        <div className={`${mobileTab === 'productos' ? 'hidden' : 'flex'} sm:flex flex-col w-full sm:w-80 lg:w-96 shrink-0 overflow-hidden`}
-          style={{ backgroundColor: '#0a0a0e' }}>
-
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 shrink-0">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold" style={{ color: '#fff' }}>PEDIDO</span>
-              {numItems > 0 && (
-                <span className="text-xs px-2 py-0.5 rounded-full font-bold"
-                  style={{ backgroundColor: 'rgba(23,71,168,0.2)', color: '#7aa3ff' }}>{numItems}</span>
-              )}
-            </div>
-            {cartItems.length > 0 && (
-              <button type="button" onClick={onNueva}
-                className="text-xs px-2.5 py-1 rounded-lg"
-                style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
-                Limpiar
-              </button>
-            )}
-          </div>
-
-          <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
-            {cartItems.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-48 gap-3 opacity-30">
-                <CartEmptyIcon />
-                <p className="text-xs font-semibold text-center" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  Buscá un producto y tocalo para agregarlo
-                </p>
-              </div>
-            ) : (
-              cartItems.map(item => (
-                <CartItem key={item.id} item={item}
-                  onSetCantidad={onSetCantidad} onSetPrecio={onSetPrecio} onRemove={onRemove} />
-              ))
-            )}
-          </div>
-
-          {/* Totales */}
-          <div className="shrink-0 border-t border-white/5 p-4 space-y-3" style={{ backgroundColor: '#0c0c12' }}>
-            <ClienteSelector cliente={cliente} onChange={onSetCliente} />
-
-            <div className="flex items-center gap-3">
-              <span className="text-xs shrink-0" style={{ color: 'rgba(255,255,255,0.35)' }}>Descuento ₡</span>
-              <input type="number" min={0} value={descuento || ''} placeholder="0"
-                onChange={e => onSetDescuento(Math.max(0, Number.parseInt(e.target.value || '0')))}
-                className="flex-1 text-right px-3 py-2 rounded-xl text-sm font-bold outline-none"
-                style={{
-                  backgroundColor: descuento > 0 ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${descuento > 0 ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.08)'}`,
-                  color: descuento > 0 ? '#f87171' : 'rgba(255,255,255,0.5)',
-                }}/>
-            </div>
-
-            {descuento > 0 && (
-              <div className="space-y-0.5">
-                <div className="flex justify-between text-xs">
-                  <span style={{ color: 'rgba(255,255,255,0.35)' }}>Subtotal</span>
-                  <span style={{ color: 'rgba(255,255,255,0.5)' }}>₡{formatMontoPos(subtotal)}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span style={{ color: '#f87171' }}>Descuento</span>
-                  <span style={{ color: '#f87171' }}>-₡{formatMontoPos(descuento)}</span>
-                </div>
-              </div>
-            )}
-
-            <div className="rounded-xl px-4 py-3 flex items-center justify-between"
-              style={{
-                background: cartItems.length > 0 ? 'linear-gradient(135deg,rgba(23,71,168,0.2),rgba(23,71,168,0.1))' : 'rgba(255,255,255,0.03)',
-                border: `1px solid ${cartItems.length > 0 ? 'rgba(23,71,168,0.3)' : 'rgba(255,255,255,0.06)'}`,
-              }}>
-              <span className="text-xs font-bold tracking-widest" style={{ color: 'rgba(255,255,255,0.5)' }}>TOTAL</span>
-              <span className="text-2xl font-black tabular-nums"
-                style={{ color: cartItems.length > 0 ? '#fff' : 'rgba(255,255,255,0.2)', letterSpacing: '-0.5px' }}>
-                ₡{formatMontoPos(total)}
-              </span>
-            </div>
-
-            <button type="button" onClick={onCobrar} disabled={cartItems.length === 0}
-              className="w-full py-4 rounded-2xl font-black text-base transition-all disabled:opacity-20 disabled:cursor-not-allowed"
-              style={{
-                background: cartItems.length > 0 ? 'var(--hc-accent)' : 'rgba(255,255,255,0.06)',
-                color: '#fff',
-                boxShadow: cartItems.length > 0 ? '0 6px 24px rgba(23,71,168,0.4)' : 'none',
-                letterSpacing: '0.05em',
-              }}>
-              {cartItems.length === 0 ? 'Agregá productos primero' : `COBRAR  ·  ₡${formatMontoPos(total)}  (F8)`}
-            </button>
-
-            {cartItems.length > 0 && (
-              <button type="button" onClick={onQrCliente} disabled={loadingQr}
-                className="w-full py-3 rounded-2xl font-semibold text-sm transition-all disabled:opacity-40 flex items-center justify-center gap-2"
-                style={{
-                  backgroundColor: 'rgba(122,163,255,0.08)',
-                  border: '1px solid rgba(122,163,255,0.25)',
-                  color: '#7aa3ff',
-                }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-                  <path d="M14 14h1v1h-1z M17 14h1v1h-1z M20 14h1v1h-1z M14 17h1v1h-1z M17 17h1v1h-1z M20 17h1v1h-1z M14 20h1v1h-1z M17 20h1v1h-1z M20 20h1v1h-1z"/>
-                </svg>
-                {loadingQr ? 'Generando QR…' : 'QR pago con tarjeta (cliente)'}
-              </button>
-            )}
-          </div>
-        </div>
+      ) : null}
+      <div className="flex items-center justify-between text-sm">
+        <span className="font-medium text-hc-text">{t('pos.common.total')}</span>
+        <span className="font-display text-lg font-bold text-hc-text">{formatoColon(props.total)}</span>
       </div>
+      {props.cartItems.length > 0 ? (
+        <button
+          type="button"
+          onClick={props.onQrCliente}
+          disabled={props.loadingQr}
+          className="w-full rounded-xl border border-hc-border py-2.5 text-sm font-semibold text-hc-text disabled:opacity-40"
+        >
+          {props.loadingQr ? t('pos.venta.generandoQr') : t('pos.venta.qrTarjetaCliente')}
+        </button>
+      ) : null}
     </div>
   )
 }

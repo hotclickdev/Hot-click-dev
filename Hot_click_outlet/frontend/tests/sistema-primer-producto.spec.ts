@@ -104,71 +104,24 @@ async function sesion(page: Page, opts: {
   }, payloadAuth())
 }
 
-async function esperarLinkCopiado(page: Page) {
-  await page.getByRole('button', { name: 'Copiar link de tu tienda' }).click()
-  await expect(page.getByRole('button', { name: 'Link copiado' })).toBeVisible()
-  const clip = await page.evaluate(() => (globalThis as typeof globalThis & { __hcClipboard?: string }).__hcClipboard)
-  expect(clip).toMatch(/\/tienda\/demo$/)
-}
-
 async function publicarProducto(page: Page) {
   await page.goto('/admin/productos/nuevo', { waitUntil: 'domcontentloaded' })
-  await expect(page.getByRole('heading', { name: 'Agregá un producto' })).toBeVisible()
-  await page.getByPlaceholder('Ej: Café molido 500 g').fill('Café molido 500 g')
-  await page.locator('input[type="number"]').first().fill('4500')
-  await page.getByRole('button', { name: 'Guardá el producto' }).click()
+  await expect(page).toHaveURL(/\/emprendedor\/productos\/nuevo/)
+  await expect(page.getByText('Nuevo Producto')).toBeVisible()
 }
 
-test.describe('Primer producto — verlo en la tienda', () => {
-  test('después de publicar, el dueño abre el producto en su tienda', async ({ page }) => {
+test.describe('Primer producto — Fase 0 sale de /admin a Figma', () => {
+  test('el alta de producto ya no vive en Sistema', async ({ page }) => {
     await sesion(page)
     await page.setViewportSize({ width: 1280, height: 800 })
     await publicarProducto(page)
-
-    await expect(page.getByRole('heading', { name: 'Ya está en tu tienda' })).toBeVisible()
-    await expect(page.getByText('/tienda/demo', { exact: true })).toBeVisible()
-    await esperarLinkCopiado(page)
-    const ver = page.getByRole('link', { name: 'Verlo en tu tienda' })
-    await expect(ver).toHaveAttribute('href', '/tienda/demo/producto/42')
-    await ver.click()
-    await expect(page).toHaveURL(/\/tienda\/demo\/producto\/42/)
-    await expect(page.getByText('Café molido 500 g')).toBeVisible()
   })
 
-  test('si el negocio no está activo, no finge un link público', async ({ page }) => {
-    await sesion(page, { estadoEmpresa: 'PENDIENTE_APROBACION', visibilidadPublica: false })
-    await page.setViewportSize({ width: 1280, height: 800 })
-    await publicarProducto(page)
-
-    await expect(page.getByRole('heading', { name: 'Producto listo en Sistema' })).toBeVisible()
-    await expect(page.getByText('Producto enviado a revisión')).toHaveCount(0)
-    await expect(page.getByText(/un admin lo va a revisar/i)).toHaveCount(0)
-    await expect(page.getByRole('link', { name: 'Verlo en tu tienda' })).toHaveCount(0)
-    await expect(page.getByRole('button', { name: 'Copiar link de tu tienda' })).toHaveCount(0)
-    await expect(page.getByText(/cuando hotclick active tu negocio/i)).toBeVisible()
-    await expect(page.getByText('/tienda/demo')).toBeVisible()
-  })
-
-  test('el listado enlaza la tienda pública cuando ya está activa', async ({ page }) => {
+  test('el listado de productos redirige al prefijo del plan', async ({ page }) => {
     await sesion(page)
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/admin/productos', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByRole('heading', { name: 'Productos' })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Ver mi tienda' })).toHaveAttribute('href', '/tienda/demo')
-    await esperarLinkCopiado(page)
-  })
-
-  test('si la tienda está oculta, el dueño puede publicarla', async ({ page }) => {
-    await sesion(page, { estadoEmpresa: 'ACTIVO', visibilidadPublica: false })
-    await page.setViewportSize({ width: 1280, height: 800 })
-    await publicarProducto(page)
-
-    await expect(page.getByRole('heading', { name: 'Producto listo en Sistema' })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Verlo en tu tienda' })).toHaveCount(0)
-    await expect(page.getByRole('button', { name: 'Copiar link de tu tienda' })).toHaveCount(0)
-    await expect(page.getByRole('link', { name: 'Publicála' })).toHaveAttribute(
-      'href',
-      '/admin/configuracion?seccion=marca',
-    )
+    await expect(page).toHaveURL(/\/emprendedor\/productos/)
+    await expect(page.getByRole('heading', { name: 'Mis Productos' })).toBeVisible()
   })
 })

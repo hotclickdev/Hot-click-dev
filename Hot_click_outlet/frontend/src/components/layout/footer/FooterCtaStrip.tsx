@@ -1,9 +1,11 @@
 import type { CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { HotClickMark } from '@/components/ui/BrandLogo'
 import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export default function FooterCtaStrip() {
+  const { t } = useTranslation()
   return (
     <div style={{
       background: 'var(--hc-blue-900)',
@@ -20,11 +22,11 @@ export default function FooterCtaStrip() {
           </div>
           <div>
             <p className="text-sm font-bold text-white">
-              ¿Tenés un negocio?{' '}
-              <span style={{ color: 'var(--hc-blue-200)' }}>Vendé en HotClick</span>
+              {t('footer.ctaNegocio')}{' '}
+              <span style={{ color: 'var(--hc-blue-200)' }}>{t('footer.ctaVende')}</span>
             </p>
             <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.68)' }}>
-              Sin comisiones el primer mes · Tienda activa en 24h · 100% gratis para empezar
+              {t('footer.ctaBeneficios')}
             </p>
           </div>
         </div>
@@ -37,7 +39,7 @@ export default function FooterCtaStrip() {
             whiteSpace: 'nowrap',
           }}
         >
-          <TextoFlecha>Registrá tu emprendimiento</TextoFlecha>
+          <TextoFlecha>{t('footer.ctaRegistro')}</TextoFlecha>
         </Link>
       </div>
     </div>

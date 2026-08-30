@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { walletService } from '@/services/walletService'
 import Spinner from '@/components/ui/Spinner'
 import { useToast } from '@/components/ui/Toast'
@@ -10,12 +11,13 @@ import type { WalletPayout, WalletSaldo, WalletTx } from './billetera/billeteraH
 
 type TabBilletera = 'movimientos' | 'retiros'
 
-const TABS: [TabBilletera, string][] = [
-  ['movimientos', 'Movimientos'],
-  ['retiros', 'Historial de retiros'],
+const TAB_KEYS: [TabBilletera, string][] = [
+  ['movimientos', 'adminBilletera.tabMovimientos'],
+  ['retiros', 'adminBilletera.tabRetiros'],
 ]
 
 export default function AdminBilletera() {
+  const { t } = useTranslation()
   const { showToast } = useToast()
   const [wallet, setWallet] = useState<WalletSaldo | null>(null)
   const [txs, setTxs] = useState<WalletTx[]>([])
@@ -41,11 +43,11 @@ export default function AdminBilletera() {
       const prData = prRes.data as { content?: WalletPayout[] }
       setPayouts(prData.content ?? [])
     } catch {
-      showToast('Error cargando billetera', 'error')
+      showToast(t('adminBilletera.errorLoad'), 'error')
     } finally {
       setLoading(false)
     }
-  }, [txPage]) // eslint-disable-line react-hooks/exhaustive-deps -- showToast es estable
+  }, [txPage, showToast, t])
 
   useEffect(() => { fetchAll() }, [fetchAll]) // eslint-disable-line react-hooks/set-state-in-effect -- carga al montar / cambiar página
 
@@ -57,9 +59,9 @@ export default function AdminBilletera() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold">Mi Billetera</h1>
-          <p className="text-sm text-[#8e8e9a] mt-0.5">
-            Saldo de ventas procesadas por la plataforma
+          <h1 className="text-xl font-semibold">{t('adminBilletera.title')}</h1>
+          <p className="text-sm text-hc-muted mt-0.5">
+            {t('adminBilletera.subtitle')}
           </p>
         </div>
         <button type="button"
@@ -67,53 +69,51 @@ export default function AdminBilletera() {
           disabled={hayPayoutActivo || !wallet?.saldoDisponible}
           className="px-4 py-2 rounded-xl text-sm bg-[var(--color-accent)] text-white font-medium disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Solicitar retiro
+          {t('adminBilletera.requestPayout')}
         </button>
       </div>
 
       {hayPayoutActivo && (
         <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-3 text-sm text-yellow-300">
-          Tienes un retiro en proceso. Espera a que sea resuelto antes de solicitar otro.
+          {t('adminBilletera.payoutInProgress')}
         </div>
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiBox label="Saldo disponible" value={wallet?.saldoDisponible} color="#4ade80" sub="Listo para retirar" />
-        <KpiBox label="Retenido" value={wallet?.saldoRetenido} color="#facc15" sub="Retiro en proceso" />
-        <KpiBox label="Total acreditado" value={wallet?.totalAcreditado} color="#60a5fa" sub="Ventas históricas netas" />
-        <KpiBox label="Total retirado" value={wallet?.totalRetirado} color="#c084fc" sub="Pagos procesados" />
+        <KpiBox label={t('adminBilletera.kpiAvailable')} value={wallet?.saldoDisponible} color="#4ade80" sub={t('adminBilletera.kpiAvailableSub')} />
+        <KpiBox label={t('adminBilletera.kpiHeld')} value={wallet?.saldoRetenido} color="#facc15" sub={t('adminBilletera.kpiHeldSub')} />
+        <KpiBox label={t('adminBilletera.kpiCredited')} value={wallet?.totalAcreditado} color="#60a5fa" sub={t('adminBilletera.kpiCreditedSub')} />
+        <KpiBox label={t('adminBilletera.kpiWithdrawn')} value={wallet?.totalRetirado} color="#c084fc" sub={t('adminBilletera.kpiWithdrawnSub')} />
       </div>
 
-      <div className="bg-[#111114] border border-white/8 rounded-2xl p-5">
-        <h2 className="text-sm font-medium mb-3 text-[#8e8e9a]">¿Cómo se calcula tu saldo?</h2>
+      <div className="bg-hc-surface border border-hc-border rounded-2xl p-5">
+        <h2 className="text-sm font-medium mb-3 text-hc-muted">{t('adminBilletera.howCalculated')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
           <div className="bg-white/4 rounded-xl p-3">
-            <p className="text-[#8e8e9a] text-xs mb-1">Total que paga el cliente</p>
+            <p className="text-hc-muted text-xs mb-1">{t('adminBilletera.clientPays')}</p>
             <p className="font-semibold">100%</p>
           </div>
           <div className="bg-red-500/8 rounded-xl p-3">
-            <p className="text-red-400 text-xs mb-1">Comisión plataforma</p>
+            <p className="text-red-400 text-xs mb-1">{t('adminBilletera.platformFee')}</p>
             <p className="font-semibold text-red-300">− 2%</p>
           </div>
           <div className="bg-red-500/8 rounded-xl p-3">
-            <p className="text-red-400 text-xs mb-1">Comisión pasarela (estimado)</p>
+            <p className="text-red-400 text-xs mb-1">{t('adminBilletera.gatewayFee')}</p>
             <p className="font-semibold text-red-300">− 3%</p>
           </div>
         </div>
-        <p className="text-xs text-[#8e8e9a] mt-3">
-          Tu saldo neto ={' '}<span className="text-green-400 font-medium">95%</span>{' '}del total bruto de cada venta.
-          El IVA (13%) ya está incluido en el precio de tus productos y es tu obligación declararlo a Hacienda.
-          Tus comprobantes electrónicos se generan automáticamente.
+        <p className="text-xs text-hc-muted mt-3">
+          {t('adminBilletera.netExplainer')}
         </p>
       </div>
 
-      <div className="flex gap-1 border-b border-white/8">
-        {TABS.map(([k, label]) => (
+      <div className="flex gap-1 border-b border-hc-border">
+        {TAB_KEYS.map(([k, key]) => (
           <button type="button" key={k} onClick={() => setTab(k)}
             className={`px-4 py-2 text-sm font-medium transition-colors ${
-              tab === k ? 'border-b-2 border-[var(--color-accent)] text-white' : 'text-[#8e8e9a] hover:text-white'
+              tab === k ? 'border-b-2 border-hc-primary text-hc-text' : 'text-hc-muted hover:text-hc-text'
             }`}>
-            {label}
+            {t(key)}
           </button>
         ))}
       </div>

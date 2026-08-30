@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import type { Convenio } from './heroRotatorData'
 
 export type BusinessesPhaseProps = {
@@ -8,6 +9,7 @@ export type BusinessesPhaseProps = {
 
 /** Hasta 2 emprendimientos con convenio en el hero. */
 export function BusinessesPhase({ convenios, accent }: BusinessesPhaseProps) {
+  const { t } = useTranslation()
   const items = (convenios ?? []).slice(0, 2)
 
   return (
@@ -21,10 +23,10 @@ export function BusinessesPhase({ convenios, accent }: BusinessesPhaseProps) {
     >
       <div className="text-center mb-8">
         <p className="text-[10px] font-bold tracking-[0.22em] uppercase mb-1" style={{ color: accent }}>
-          Aliados HotClick
+          {t('home.aliados')}
         </p>
         <h2 className="font-black tracking-tight" style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', color: 'var(--hc-text)', lineHeight: 1.1 }}>
-          Emprendimientos con convenio
+          {t('home.conveniosTitle')}
         </h2>
       </div>
 
@@ -75,7 +77,7 @@ export function BusinessesPhase({ convenios, accent }: BusinessesPhaseProps) {
                 )}
                 <div className="mt-3 inline-flex items-center gap-1 text-xs font-semibold"
                   style={{ color: accent }}>
-                  Convenio activo
+                  {t('home.convenioActivo')}
                   <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>

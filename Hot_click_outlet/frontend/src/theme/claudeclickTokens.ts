@@ -5,8 +5,8 @@
  * de Figma sin decisión de producto.
  *
  * Huecos vs Figma:
- * - Figma rojo #E31E24 / azul #0D47A1 / navy #0B132B; producción usa
- *   --hc-red-500 #E73B33 y --hc-blue-600 #1747A8.
+ * - Super Admin usa .hc-superadmin-theme (#E31E24 / #0D47A1 / #0B132B).
+ * - Resto del sitio: Brand Book --hc-red-500 #E73B33 y --hc-blue-600 #1747A8.
  * - Figma tipografía Poppins; producción Sora + Public Sans.
  * - Sin keyframes en el archivo Figma (logo/hero son estáticos).
  * - Fotos de catálogo en Visitante son placeholders.

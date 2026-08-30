@@ -1,10 +1,11 @@
 import CatalogBrandLogo from './CatalogBrandLogo'
 import CloseIcon from '@/components/ui/CloseIcon'
+import { useTranslation } from 'react-i18next'
 import type { CatalogCounts, CatalogMarca } from './catalogoTipos'
 
 // ── Showcase de marcas en grande (reemplaza las pills pequeñas) ───────────────
 export default function BrandShowcase({
-  marcas, visibleMarcaIds, marcasCountInScope = {}, marcasFilter, toggleMarca, clearMarcas, title = 'Compra por Marca',
+  marcas, visibleMarcaIds, marcasCountInScope = {}, marcasFilter, toggleMarca, clearMarcas, title,
 }: {
   marcas: CatalogMarca[]
   visibleMarcaIds: Set<string> | null
@@ -14,6 +15,8 @@ export default function BrandShowcase({
   clearMarcas: () => void
   title?: string
 }) {
+  const { t } = useTranslation()
+  const heading = title ?? t('products.shopByBrand')
   const visible = (visibleMarcaIds
     ? marcas.filter(m => visibleMarcaIds.has(String(m.id)))
     : marcas
@@ -25,10 +28,10 @@ export default function BrandShowcase({
     <div className="mb-8">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-base font-black tracking-tight" style={{ color: 'var(--hc-text)' }}>{title}</h2>
+          <h2 className="text-base font-black tracking-tight" style={{ color: 'var(--hc-text)' }}>{heading}</h2>
           {visibleMarcaIds && (
             <p className="text-[11px] mt-0.5" style={{ color: 'var(--hc-muted)' }}>
-              {visible.length} marca{visible.length === 1 ? '' : 's'} disponible{visible.length === 1 ? '' : 's'}
+              {t('products.brandsAvailable', { count: visible.length })}
             </p>
           )}
         </div>
@@ -39,7 +42,7 @@ export default function BrandShowcase({
             style={{ color: 'var(--hc-accent)', background: 'color-mix(in srgb, var(--hc-accent) 10%, transparent)' }}
           >
             <CloseIcon className="w-3 h-3" />
-            Ver todas
+            {t('products.seeAll')}
           </button>
         )}
       </div>

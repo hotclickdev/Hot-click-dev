@@ -1,4 +1,5 @@
 import ImportExportBar from '@/components/admin/ImportExportBar'
+import { AdminFilterChip, AdminSearchField } from '@/prototipo/admin/AdminUi'
 import { getEstadoStr, getRolStr, type UsuarioAdmin } from './usuarioHelpers'
 
 export type UsuariosHeaderProps = {
@@ -12,6 +13,9 @@ export type UsuariosHeaderProps = {
   onSearch: (value: string) => void
 }
 
+/**
+ * Encabezado Usuarios (Figma 42:191).
+ */
 export default function UsuariosHeader({
   title,
   subtitle,
@@ -23,11 +27,11 @@ export default function UsuariosHeader({
   onSearch,
 }: UsuariosHeaderProps) {
   return (
-    <>
+    <div className="flex flex-col gap-4">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-[#e8e8ed]">{title}</h1>
-          <p className="text-sm text-[#8e8e9a] mt-1">{subtitle}</p>
+          <h1 className="font-display text-[22px] font-bold text-hc-text">{title}</h1>
+          <p className="mt-0.5 text-xs text-hc-muted">{subtitle}</p>
         </div>
         <ImportExportBar
           exportOnly
@@ -44,59 +48,26 @@ export default function UsuariosHeader({
         />
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="flex gap-1 bg-white/3 border border-white/8 rounded-xl p-1 w-fit">
-          {tabs.map(([key, label]) => (
-            <button type="button"
-              key={key}
-              onClick={() => onTab(key)}
-              className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${claseTabUsuarios(tab, key)}`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        <div className="relative flex-1 max-w-xs">
-          <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8e8e9a]"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            strokeWidth={1.8}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input
-            type="text"
-            placeholder="Buscar usuario..."
-            value={search}
-            onChange={(e) => onSearch(e.target.value)}
-            className="w-full h-9 pl-9 pr-4 rounded-xl bg-[#111114] border border-white/10 text-[#e8e8ed] text-xs placeholder-[#8e8e9a] focus:outline-none focus:border-[#4f7cff]/60"
-          />
-        </div>
+      <AdminSearchField
+        value={search}
+        onChange={onSearch}
+        placeholder="Buscar usuario"
+        label="Buscar usuario"
+      />
+
+      <div className="-mx-1 flex gap-2 overflow-x-auto px-1" data-mm="filtro-usuarios">
+        {tabs.map(([key, label]) => (
+          <AdminFilterChip key={key} activo={tab === key} onClick={() => onTab(key)}>
+            {label}
+          </AdminFilterChip>
+        ))}
       </div>
 
       {tab === 'deleted' && (
-        <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-red-500/8 border border-red-500/20 text-xs text-red-300">
-          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z"
-            />
-          </svg>
-          Los datos de estos usuarios se conservan en la base de datos. Podés restaurar una cuenta para que vuelva a estar activa.
+        <div className="flex items-center gap-2.5 rounded-xl border border-hc-border bg-[var(--hc-danger-bg)] px-4 py-3 text-xs text-hc-danger">
+          Los datos de estos usuarios se conservan. Podés restaurar una cuenta para que vuelva a estar activa.
         </div>
       )}
-    </>
+    </div>
   )
-}
-
-function claseTabUsuarios(tab: string, key: string): string {
-  if (tab !== key) return 'text-[#8e8e9a] hover:text-white'
-  if (key === 'deleted') return 'bg-red-500/80 text-white'
-  return 'bg-[#4f7cff] text-white'
 }

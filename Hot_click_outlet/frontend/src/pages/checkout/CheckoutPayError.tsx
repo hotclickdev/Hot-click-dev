@@ -21,7 +21,13 @@ function WhatsAppAtajo({ href, children }: { href: string; children: ReactNode }
   )
 }
 
-function ErrorStock({ productoBloqueado }: { productoBloqueado: string | null }) {
+function ErrorStock({
+  productoBloqueado,
+  rutaCarrito,
+}: {
+  productoBloqueado: string | null
+  rutaCarrito: string
+}) {
   return (
     <div className="space-y-2">
       <p>
@@ -32,7 +38,7 @@ function ErrorStock({ productoBloqueado }: { productoBloqueado: string | null })
       <p className="text-xs text-red-300/80">
         Retirá ese producto del pedido y volvé a intentarlo.
       </p>
-      <Link to="/carrito" className="hc-btn hc-btn-primary mt-1 min-h-11 inline-flex items-center justify-center">
+      <Link to={rutaCarrito} className="hc-btn hc-btn-primary mt-1 min-h-11 inline-flex items-center justify-center">
         Ir al pedido
       </Link>
     </div>
@@ -68,6 +74,7 @@ type CheckoutPayErrorProps = {
   onPagar: () => void
   toWhatsAppMessage: () => string
   errorBannerRef: RefObject<HTMLDivElement | null>
+  rutaCarrito?: string
 }
 
 export default function CheckoutPayError({
@@ -78,6 +85,7 @@ export default function CheckoutPayError({
   onPagar,
   toWhatsAppMessage,
   errorBannerRef,
+  rutaCarrito = '/carrito',
 }: CheckoutPayErrorProps) {
   const { t } = useTranslation()
   if (estado !== 'failed' || !error) return null
@@ -101,7 +109,7 @@ export default function CheckoutPayError({
       <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-red-400">
         <p className="font-medium mb-1">{t('checkout.payError')}</p>
         {isStockError
-          ? <ErrorStock productoBloqueado={stockMatch?.[1] ?? null} />
+          ? <ErrorStock productoBloqueado={stockMatch?.[1] ?? null} rutaCarrito={rutaCarrito} />
           : (
             <ErrorPago
               errorStr={errorStr}

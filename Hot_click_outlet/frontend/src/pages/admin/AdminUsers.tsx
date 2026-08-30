@@ -9,7 +9,7 @@ import UsuariosHeader from './usuarios/UsuariosHeader'
 import UsuariosTable from './usuarios/UsuariosTable'
 import UsuarioEditModal from './usuarios/UsuarioEditModal'
 import UsuariosConfirmModals from './usuarios/UsuariosConfirmModals'
-import { getEstadoStr, type UsuarioAdmin } from './usuarios/usuarioHelpers'
+import { getEstadoStr, getRolStr, type UsuarioAdmin } from './usuarios/usuarioHelpers'
 import { obtenerUsuarios, useAdminUsersActions } from './usuarios/useAdminUsersActions'
 import type { ClienteCrm } from './clientes/clientesHelpers'
 import type { Id } from '@/types/api'
@@ -138,18 +138,20 @@ export default function AdminUsers() {
     : baseForTab
 
   const tabs: [string, string][] = [
-    ['all', `Activos (${activeUsers.length})`],
+    ['all', 'Todos'],
+    ['vendedores', 'Vendedores'],
+    ['compradores', 'Compradores'],
     ['pending', `Pendientes (${pending.length})`],
-    ['deleted', `Eliminados (${deletedUsers.length})`],
-    ['crm', `CRM Clientes (${clientes.length})`],
+    ['deleted', 'Eliminados'],
+    ['crm', 'CRM'],
   ]
 
   return (
     <>
-      <div className="space-y-5">
+      <div className="mx-auto max-w-md space-y-5 pb-8 md:max-w-4xl">
         <UsuariosHeader
-          title={t('admin.users.title')}
-          subtitle={`${users.length} registrados · ${pending.length} ${t('admin.orders.pending').toLowerCase()} · ${deletedUsers.length} eliminados`}
+          title="Usuarios"
+          subtitle="Vendedores y compradores de la plataforma"
           users={users}
           tabs={tabs}
           tab={tab}
@@ -213,6 +215,8 @@ export default function AdminUsers() {
 function usuariosDeTab(tab: string, pending: UsuarioAdmin[], deletedUsers: UsuarioAdmin[], activeUsers: UsuarioAdmin[]): UsuarioAdmin[] {
   if (tab === 'pending') return pending
   if (tab === 'deleted') return deletedUsers
+  if (tab === 'vendedores') return activeUsers.filter((u) => getRolStr(u) === 'EMPRENDEDOR')
+  if (tab === 'compradores') return activeUsers.filter((u) => getRolStr(u) === 'USUARIO_FINAL')
   return activeUsers
 }
 

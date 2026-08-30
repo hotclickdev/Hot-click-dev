@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { formatPrice } from '@/utils/format'
 import type { Id } from '@/types/api'
 import BotonesAprobarRechazar from './BotonesAprobarRechazar'
@@ -12,6 +13,7 @@ export default function OfertasPendientes({ ofertas, loading, aprobar, rechazar 
   aprobar: (id: Id) => Promise<void>
   rechazar: (id: Id, comentario: string) => Promise<void>
 }) {
+  const { t } = useTranslation()
   const [saving, setSaving] = useState<string | null>(null)
   const [confirm, setConfirm] = useState<ConfirmAprobacion | null>(null)
   const [comentario, setComentario] = useState('')
@@ -31,10 +33,10 @@ export default function OfertasPendientes({ ofertas, loading, aprobar, rechazar 
   }
 
   if (loading) {
-    return <div className="py-12 text-center text-sm" style={{ color: 'var(--hc-muted)' }}>Cargando promociones…</div>
+    return <div className="py-12 text-center text-sm" style={{ color: 'var(--hc-muted)' }}>{t('adminAprobaciones.loading')}</div>
   }
   if (ofertas.length === 0) {
-    return <EmptyPendientes mensaje="No hay promociones esperando aprobación." />
+    return <EmptyPendientes mensaje={t('adminAprobaciones.emptyOfertas')} />
   }
 
   const ocupado = saving !== null

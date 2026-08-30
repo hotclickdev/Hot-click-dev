@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom'
+﻿import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import Spinner from '@/components/ui/Spinner'
 import { formatPrice, formatDate } from '@/utils/format'
 import type { Id } from '@/types/api'
@@ -23,14 +24,26 @@ type TablaIngresosProps = {
 }
 
 function TablaIngresos({ filteredP, totalProductos, totalEnvio, totalIngresos, onSelectPedido }: TablaIngresosProps) {
+  const { t } = useTranslation()
+  const headers = [
+    t('adminFinanzas.colId'),
+    t('adminFinanzas.colClient'),
+    t('adminFinanzas.colDate'),
+    t('adminFinanzas.colOrigin'),
+    t('adminFinanzas.colMethod'),
+    t('adminFinanzas.colProducts'),
+    t('adminFinanzas.colShippingShort'),
+    t('adminFinanzas.colTotalShort'),
+    '',
+  ]
   return (
-    <div className="bg-[#111114] border border-white/8 rounded-2xl overflow-hidden">
+    <div className="bg-hc-surface border border-hc-border rounded-2xl overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm min-w-[700px]">
           <thead>
-            <tr className="border-b border-white/8">
-              {['#', 'Cliente', 'Fecha', 'Origen', 'Método', 'Productos', 'Envío', 'Total', ''].map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-[#8e8e9a]">{h}</th>
+            <tr className="border-b border-hc-border">
+              {headers.map((h, i) => (
+                <th key={`${h}-${i}`} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-hc-muted">{h}</th>
               ))}
             </tr>
           </thead>
@@ -40,31 +53,31 @@ function TablaIngresos({ filteredP, totalProductos, totalEnvio, totalIngresos, o
               const productos = subtotalDePedido(p)
               return (
                 <tr key={p.id}
-                  className="hover:bg-white/5 transition-colors cursor-pointer"
-                  title="Ver detalle de venta"
+                  className="hover:bg-hc-surface-2 transition-colors cursor-pointer"
+                  title={t('adminFinanzas.viewSaleDetail')}
                   onClick={() => onSelectPedido(p.id as Id)}>
-                  <td className="px-4 py-3 font-mono text-xs text-[#8e8e9a]">#{p.id}</td>
-                  <td className="px-4 py-3 text-[#e8e8ed] truncate max-w-[120px]">{clienteDePedido(p)}</td>
-                  <td className="px-4 py-3 text-xs text-[#8e8e9a]">
+                  <td className="px-4 py-3 font-mono text-xs text-hc-muted">#{p.id}</td>
+                  <td className="px-4 py-3 text-hc-text truncate max-w-[120px]">{clienteDePedido(p)}</td>
+                  <td className="px-4 py-3 text-xs text-hc-muted">
                     {formatDate((fechaDePedido(p) ?? '') as string)}
                   </td>
                   <td className="px-4 py-3">
                     <span className="px-1.5 py-0.5 rounded text-[10px] font-medium"
                       style={estiloOrigen(p.origen)}>{p.origen ?? 'ONLINE'}</span>
                   </td>
-                  <td className="px-4 py-3 text-xs text-[#8e8e9a]">{p.metodoPago ?? '—'}</td>
-                  <td className="px-4 py-3 font-semibold text-[#4ade80]">{formatPrice(productos)}</td>
+                  <td className="px-4 py-3 text-xs text-hc-muted">{p.metodoPago ?? '—'}</td>
+                  <td className="px-4 py-3 font-semibold text-hc-success">{formatPrice(productos)}</td>
                   <td className="px-4 py-3">
                     {envio > 0
                       ? <span className="font-semibold text-amber-400">{formatPrice(envio)}</span>
-                      : <span className="text-[#8e8e9a]/40 text-xs">—</span>}
+                      : <span className="text-hc-muted/40 text-xs">—</span>}
                   </td>
-                  <td className="px-4 py-3 font-bold text-[#4f7cff]">
+                  <td className="px-4 py-3 font-bold text-hc-link">
                     {formatPrice(totalDePedido(p))}
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-[10px] text-[#8e8e9a]/60 hover:text-[#4f7cff] transition-colors whitespace-nowrap">
-                      <TextoFlecha>Ver</TextoFlecha>
+                    <span className="text-[10px] text-hc-muted/60 hover:text-hc-link transition-colors whitespace-nowrap">
+                      <TextoFlecha>{t('adminFinanzas.view')}</TextoFlecha>
                     </span>
                   </td>
                 </tr>
@@ -73,12 +86,12 @@ function TablaIngresos({ filteredP, totalProductos, totalEnvio, totalIngresos, o
           </tbody>
           <tfoot>
             <tr style={{ borderTop: '2px solid var(--hc-border)' }}>
-              <td colSpan={5} className="px-4 py-3 text-xs font-semibold text-[#8e8e9a] uppercase">
-                Totales del período
+              <td colSpan={5} className="px-4 py-3 text-xs font-semibold text-hc-muted uppercase">
+                {t('adminFinanzas.periodTotals')}
               </td>
-              <td className="px-4 py-3 font-bold text-[#4ade80]">{formatPrice(totalProductos)}</td>
+              <td className="px-4 py-3 font-bold text-hc-success">{formatPrice(totalProductos)}</td>
               <td className="px-4 py-3 font-bold text-amber-400">{formatPrice(totalEnvio)}</td>
-              <td className="px-4 py-3 font-bold text-[#4f7cff]">{formatPrice(totalIngresos)}</td>
+              <td className="px-4 py-3 font-bold text-hc-link">{formatPrice(totalIngresos)}</td>
               <td />
             </tr>
           </tfoot>
@@ -100,6 +113,8 @@ export default function IngresosTab({
   totalIngresos,
   onSelectPedido,
 }: IngresosTabProps) {
+  const { t } = useTranslation()
+
   if (loading) {
     return (
       <div className="flex justify-center py-16"><Spinner size="lg" /></div>
@@ -108,12 +123,12 @@ export default function IngresosTab({
 
   const kpis = (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <Kpi label="Productos vendidos" value={totalProductos}
-        sub={`${filteredP.length} pedidos entregados`} color="#4ade80" />
-      <Kpi label="Costos de envío (moto)" value={totalEnvio}
-        sub={`${filteredP.filter((p) => envioDePedido(p) > 0).length} con envío`} color="#f59e0b" />
-      <Kpi label="Total cobrado" value={totalIngresos}
-        sub="Productos + envío" color="#4f7cff" />
+      <Kpi label={t('adminFinanzas.kpiProductsSold')} value={totalProductos}
+        sub={t('adminFinanzas.delivered', { count: filteredP.length })} color="#4ade80" />
+      <Kpi label={t('adminFinanzas.kpiShipping')} value={totalEnvio}
+        sub={t('adminFinanzas.withShipping', { count: filteredP.filter((p) => envioDePedido(p) > 0).length })} color="#f59e0b" />
+      <Kpi label={t('adminFinanzas.kpiTotal')} value={totalIngresos}
+        sub={t('adminFinanzas.productsPlusShipping')} color="#4f7cff" />
     </div>
   )
 
@@ -121,13 +136,11 @@ export default function IngresosTab({
     return (
       <>
         {kpis}
-        <div className="bg-[#111114] border border-white/8 rounded-2xl p-10 text-center space-y-2">
-          <p className="text-[#e8e8ed] font-medium">Sin ventas en este período</p>
-          <p className="text-sm text-[#8e8e9a]">
-            Las ventas aparecen aquí al marcar pedidos como <strong className="text-[#4ade80]">Entregado</strong>.
-          </p>
-          <Link to="/admin/pedidos" className="inline-block text-xs text-[#4f7cff] hover:underline mt-1">
-            <TextoFlecha>Ver pedidos</TextoFlecha>
+        <div className="bg-hc-surface border border-hc-border rounded-2xl p-10 text-center space-y-2">
+          <p className="text-hc-text font-medium">{t('adminFinanzas.noSalesPeriod')}</p>
+          <p className="text-sm text-hc-muted">{t('adminFinanzas.noSalesHint')}</p>
+          <Link to="/admin/pedidos" className="inline-block text-xs text-hc-link hover:underline mt-1">
+            <TextoFlecha>{t('adminFinanzas.viewOrders')}</TextoFlecha>
           </Link>
         </div>
       </>

@@ -1,6 +1,7 @@
 package com.hotclick.controller.observabilidad;
 
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.service.whatsapp.WhatsAppOperacionStatus;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +25,7 @@ public class ObservabilityMetricsHandler {
     @Autowired private ObservabilityNegocioMetrics negocioMetrics;
     @Autowired private ObservabilityHttpMetrics    httpMetrics;
     @Autowired private ObservabilityJvmMetrics     jvmMetrics;
+    @Autowired private WhatsAppOperacionStatus     whatsAppOperacionStatus;
 
     public ResponseEntity<ResponseDTO> getMetrics() {
         try {
@@ -43,6 +45,7 @@ public class ObservabilityMetricsHandler {
             jvmMetrics.agregarCaches(metrics);
             jvmMetrics.agregarHikari(metrics);
 
+            metrics.put("integraciones", Map.of("whatsappModo", whatsAppOperacionStatus.modo()));
             metrics.put("generadoEn", LocalDateTime.now(Constants.ZONA_CR).toString());
 
             return ResponseEntity.ok(ResponseDTO.success("Métricas de plataforma", metrics));

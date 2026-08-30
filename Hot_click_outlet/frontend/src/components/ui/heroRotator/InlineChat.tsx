@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import AIChat from '@/components/ai/AIChat'
 import { isBrowser } from '@/utils/browser'
-import { CHAT_CHIPS } from './heroRotatorData'
+import { tStringArray } from './heroRotatorHelpers'
 
 export type InlineChatProps = {
   initialQuery?: string | null
@@ -11,6 +12,9 @@ export type InlineChatProps = {
 
 /** Chat inline del hero con query inicial. */
 export function InlineChat({ initialQuery, accent, onClose }: InlineChatProps) {
+  const { t } = useTranslation()
+  const chips = tStringArray(t, 'hero.chips')
+
   return (
     <motion.div
       key="inline-chat"
@@ -24,14 +28,14 @@ export function InlineChat({ initialQuery, accent, onClose }: InlineChatProps) {
       <div className="flex items-center gap-3 mb-5">
         <button type="button"
           onClick={onClose}
-          aria-label="Volver"
+          aria-label={t('hero.back')}
           className="flex items-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-60"
           style={{ color: 'var(--hc-muted)' }}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 5l-7 7 7 7" />
           </svg>
-          Volver
+          {t('hero.back')}
         </button>
         <div className="flex-1" />
         <div className="flex items-center gap-2">
@@ -44,7 +48,7 @@ export function InlineChat({ initialQuery, accent, onClose }: InlineChatProps) {
                 d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
             </svg>
           </div>
-          <span className="text-sm font-bold" style={{ color: 'var(--hc-text)' }}>Asistente HotClick</span>
+          <span className="text-sm font-bold" style={{ color: 'var(--hc-text)' }}>{t('hero.assistant')}</span>
         </div>
       </div>
 
@@ -59,8 +63,8 @@ export function InlineChat({ initialQuery, accent, onClose }: InlineChatProps) {
         <AIChat
           context="GENERAL"
           sessionKey="hotclick"
-          chips={CHAT_CHIPS}
-          placeholder="¿Qué estás buscando?"
+          chips={chips}
+          placeholder={t('hero.chatPlaceholder')}
           autoQuery={initialQuery ?? null}
           maxHistoryHeight={Math.max(320, (isBrowser ? globalThis.innerHeight : 800) - 280)}
         />

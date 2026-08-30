@@ -13,9 +13,9 @@ const BUYERS = [
 ] as const
 
 const ACTIONS = [
-  { text: 'compró',            icono: 'bolsa' },
-  { text: 'agregó al pedido', icono: 'paquete' },
-  { text: 'acaba de ver',      icono: 'buscar' },
+  { key: 'bought' as const, icono: 'bolsa' },
+  { key: 'added' as const, icono: 'paquete' },
+  { key: 'viewed' as const, icono: 'buscar' },
 ] as const
 
 /** Entero uniforme [0, maxExclusive) — UI demo, no crypto de auth. */
@@ -34,10 +34,12 @@ function rand(min: number, max: number) {
   return min + enteroAleatorio(Math.floor((max - min) * 1000) + 1) / 1000
 }
 
+export type SocialProofAction = (typeof ACTIONS)[number]
+
 export type SocialProofNotification = {
   id: number
   buyer: (typeof BUYERS)[number]
-  action: (typeof ACTIONS)[number]
+  action: SocialProofAction
   product: Producto
 }
 

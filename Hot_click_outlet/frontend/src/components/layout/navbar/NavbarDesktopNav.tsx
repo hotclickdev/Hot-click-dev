@@ -15,6 +15,9 @@ function rutaActiva(pathname: string, href: string) {
   if (href === '/productos') {
     return pathname === '/productos' || pathname.startsWith('/productos/')
   }
+  if (href === '/servicios') {
+    return pathname === '/servicios' || pathname.startsWith('/servicios/')
+  }
   if (href === '/registro-empresa') {
     return pathname === '/registro-empresa' || pathname === '/registrar-negocio'
   }
@@ -55,7 +58,7 @@ function PuntoActivo() {
 function NavbarMasMenu({ link, pathname }: { link: NavLinkItem; pathname: string }) {
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement | null>(null)
-  const childActive = (link.menu ?? []).some((item) => pathname === item.href)
+  const childActive = (link.menu ?? []).some((item) => rutaActiva(pathname, item.href))
 
   useEffect(() => {
     function cerrarSiAfuera(event: MouseEvent) {
@@ -99,7 +102,7 @@ function NavbarMasMenu({ link, pathname }: { link: NavLinkItem; pathname: string
           onKeyDown={(event) => event.stopPropagation()}
         >
           {link.menu?.map((item) => {
-            const isActive = pathname === item.href
+            const isActive = rutaActiva(pathname, item.href)
             return (
               <Link
                 key={item.href}
@@ -122,7 +125,7 @@ function NavbarMasMenu({ link, pathname }: { link: NavLinkItem; pathname: string
   )
 }
 
-/** Links de navegación desktop: Comprar / Vender / Emprender / Más. */
+/** Links de navegación desktop: Productos / Servicios HOT / Emprender / Más. */
 export default function NavbarDesktopNav({ navLinks, pathname }: { navLinks: NavLinkItem[]; pathname: string }) {
   return (
     <div className="hidden md:flex items-center gap-0.5">

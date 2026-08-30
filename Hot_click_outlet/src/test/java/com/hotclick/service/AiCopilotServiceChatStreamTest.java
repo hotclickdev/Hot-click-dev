@@ -59,4 +59,13 @@ class AiCopilotServiceChatStreamTest {
         verify(streamProcessor).streamText(emitter, "Hoy ₡50.000");
         verify(messageStore).saveMsg(empresa, "assistant", "Hoy ₡50.000", 20);
     }
+
+    @Test
+    @DisplayName("Sin empresaId no consulta Claude ni la BD")
+    void chatStream_sinTenant_noNpe() {
+        SseEmitter emitter = new SseEmitter();
+        service.chatStream(null, "ventas de hoy", emitter);
+        verify(streamProcessor).sendError(emitter, "Seleccioná un negocio para usar el copilot.");
+        verify(empresaRepository, org.mockito.Mockito.never()).findById(org.mockito.ArgumentMatchers.any());
+    }
 }

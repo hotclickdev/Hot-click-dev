@@ -1,13 +1,17 @@
 package com.hotclick.controller;
 
 import com.hotclick.service.ResendEmailService;
+import com.hotclick.utils.InputSanitizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.util.HtmlUtils;
 
 import java.util.Map;
 
@@ -21,16 +25,19 @@ public class SolicitudEspecialController {
 
     private static final Logger log = LoggerFactory.getLogger(SolicitudEspecialController.class);
     private static final String ADMIN_EMAIL = "hotclick.cr@gmail.com";
+    private static final int MAX_NOMBRE = 100;
+    private static final int MAX_CORREO = 150;
+    private static final int MAX_DESCRIPCION = 1000;
 
-    private final JdbcTemplate       jdbc;
-    private final ResendEmailService  emailService;
+    private final JdbcTemplate jdbc;
+    private final ResendEmailService emailService;
+    private final InputSanitizer sanitizer;
 
-    @Value("${app.base-url:https://hotclick.cr}")
-    private String baseUrl;
-
-    public SolicitudEspecialController(JdbcTemplate jdbc, ResendEmailService emailService) {
-        this.jdbc         = jdbc;
+    public SolicitudEspecialController(JdbcTemplate jdbc, ResendEmailService emailService,
+                                       InputSanitizer sanitizer) {
+        this.jdbc = jdbc;
         this.emailService = emailService;
+        this.sanitizer = sanitizer;
     }
 
     @PostMapping
@@ -42,14 +49,16 @@ public class SolicitudEspecialController {
             @RequestParam(required = false) MultipartFile imagen,
             @RequestParam(required = false) String empresaSlug) {
 
-        if (nombre == null || nombre.isBlank()) {
+        String nombreLimpio = sanitizer.cleanWithLimit(nombre, MAX_NOMBRE);
+        if (nombreLimpio == null || nombreLimpio.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "El nombre es requerido"));
         }
         if (whatsapp == null || !whatsapp.matches("[2-9]\\d{7}")) {
             return ResponseEntity.badRequest().body(Map.of("error", "WhatsApp inválido"));
         }
+        String correoLimpio = correo == null ? null : sanitizer.cleanWithLimit(correo, MAX_CORREO);
+        String descLimpia = descripcion == null ? null : sanitizer.cleanWithLimit(descripcion, MAX_DESCRIPCION);
 
-        // Persistir (imagen_url queda null por ahora — upload a Supabase Storage es mejora futura)
         Long id = jdbc.queryForObject("""
             INSERT INTO hot_click_solicitud_especial_tb
                 (nombre, whatsapp, correo, descripcion, estado)
@@ -57,24 +66,23 @@ public class SolicitudEspecialController {
             RETURNING id
             """,
             Long.class,
-            nombre.trim(),
+            nombreLimpio,
             whatsapp.trim(),
-            correo != null ? correo.trim() : null,
-            descripcion != null ? descripcion.trim() : null
+            correoLimpio,
+            descLimpia
         );
 
-        // Notificar al equipo por email (fallo silencioso — no bloquea la respuesta)
         try {
-            enviarNotificacionAdmin(id, nombre, whatsapp, correo, descripcion);
+            enviarNotificacionAdmin(id, nombreLimpio, whatsapp, correoLimpio, descLimpia);
         } catch (Exception e) {
             log.warn("[solicitud-especial] Email de notificación falló para id={}: {}", id, e.getMessage());
         }
 
-        log.info("[solicitud-especial] Nueva solicitud id={} nombre='{}' wa={}", id, nombre, whatsapp);
+        log.info("[solicitud-especial] Nueva solicitud id={} wa={}", id, whatsapp);
 
         return ResponseEntity.ok(Map.of(
             "id",      id,
-            "mensaje", "¡Solicitud recibida! El equipo de HOTCLICK te contacta pronto por WhatsApp."
+            "mensaje", "Solicitud recibida. El equipo de HOTCLICK te contacta pronto por WhatsApp."
         ));
     }
 
@@ -94,11 +102,14 @@ public class SolicitudEspecialController {
               </table>
             </div>
             """.formatted(
-                id, nombre, waLink, whatsapp,
-                correo != null ? correo : "—",
-                descripcion != null ? descripcion : "—"
+                id,
+                HtmlUtils.htmlEscape(nombre),
+                HtmlUtils.htmlEscape(waLink),
+                HtmlUtils.htmlEscape(whatsapp),
+                HtmlUtils.htmlEscape(correo != null ? correo : "—"),
+                HtmlUtils.htmlEscape(descripcion != null ? descripcion : "—")
             );
 
-        emailService.send(ADMIN_EMAIL, "🔔 Solicitud especial #" + id + " — " + nombre, html);
+        emailService.send(ADMIN_EMAIL, "Solicitud especial #" + id + " — " + nombre, html);
     }
 }

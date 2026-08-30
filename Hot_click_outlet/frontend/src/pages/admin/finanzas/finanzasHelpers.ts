@@ -5,6 +5,7 @@ export const ESTADOS_COMPLETADOS = new Set(['ENTREGADO', 'COMPLETADO'])
 
 export const QUICK_DAYS = [0, 7, 30, -1] as const
 export type QuickDays = (typeof QUICK_DAYS)[number]
+/** @deprecated Prefer i18n keys adminFinanzas.today|days7|days30|all */
 export const QUICK_LABEL: Record<QuickDays, string> = { 0: 'Hoy', 7: '7 días', 30: '30 días', [-1]: 'Todo' }
 
 export const CATEGORIAS = [

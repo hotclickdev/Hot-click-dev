@@ -1,7 +1,8 @@
 package com.hotclick.service;
-import com.hotclick.utils.Constants;
 
 import com.hotclick.repository.EmpresaRepository;
+import com.hotclick.utils.CedulaCr;
+import com.hotclick.utils.Constants;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
@@ -46,16 +47,17 @@ public class HaciendaContribuyenteService {
     @CircuitBreaker(name = "hacienda-contribuyente", fallbackMethod = "fallbackConsulta")
     @Retry(name = "hacienda-contribuyente")
     public ContribuyenteDTO consultar(String cedula) {
-        log.info("Consultando contribuyente Hacienda: {}", cedula);
+        String identificacion = CedulaCr.requireValida(cedula);
+        log.info("Consultando contribuyente Hacienda");
         try {
             @SuppressWarnings("unchecked")
-            Map<String, Object> resp = restTemplate.getForObject(API_URL, Map.class, cedula);
+            Map<String, Object> resp = restTemplate.getForObject(API_URL, Map.class, identificacion);
             if (resp == null) {
-                return noEncontrado(cedula);
+                return noEncontrado(identificacion);
             }
-            return parsear(cedula, resp);
+            return parsear(identificacion, resp);
         } catch (HttpClientErrorException.NotFound e) {
-            return noEncontrado(cedula);
+            return noEncontrado(identificacion);
         }
     }
 

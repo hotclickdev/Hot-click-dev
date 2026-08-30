@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+﻿import { motion } from 'framer-motion'
 import Spinner from '@/components/ui/Spinner'
 import PubRow from './PubRow'
 import { FILTROS_ESTADO_COLA, type PublicacionFb } from './publicacionesHelpers'
@@ -35,8 +35,8 @@ export default function ColaTab({
             onClick={() => onFiltroEstado(e)}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
               filtroEstado === e
-                ? 'bg-[#4f7cff]/20 text-[#4f7cff] border border-[#4f7cff]/30'
-                : 'bg-white/5 text-[#8e8e9a] border border-white/10 hover:text-white'
+                ? 'bg-hc-primary/20 text-hc-link border border-hc-primary/30'
+                : 'bg-hc-surface-2 text-hc-muted border border-hc-border hover:text-hc-text'
             }`}
           >
             {e || 'Todos'}
@@ -45,13 +45,13 @@ export default function ColaTab({
         <div className="ml-auto flex items-center gap-2">
           <button type="button"
             onClick={onActualizar}
-            className="px-3 py-1 rounded-full text-xs text-[#8e8e9a] hover:text-white border border-white/10 hover:bg-white/5 transition-colors"
+            className="px-3 py-1 rounded-full text-xs text-hc-muted hover:text-hc-text border border-hc-border hover:bg-hc-surface-2 transition-colors"
           >
             Actualizar
           </button>
           <button type="button"
             onClick={onAgregar}
-            className="px-3 py-1 rounded-full text-xs font-medium bg-[#4f7cff]/15 text-[#4f7cff] border border-[#4f7cff]/30 hover:bg-[#4f7cff]/25 transition-colors inline-flex items-center"
+            className="px-3 py-1 rounded-full text-xs font-medium bg-hc-primary/15 text-hc-link border border-hc-primary/30 hover:bg-hc-primary/25 transition-colors inline-flex items-center"
           >
             <TextoMas>Agregar a la cola</TextoMas>
           </button>
@@ -61,7 +61,7 @@ export default function ColaTab({
       {loading ? (
         <div className="flex justify-center py-12"><Spinner /></div>
       ) : publicaciones.length === 0 ? (
-        <div className="text-center py-12 text-[#8e8e9a] text-sm">
+        <div className="text-center py-12 text-hc-muted text-sm">
           No hay publicaciones{filtroEstado ? ` con estado ${filtroEstado}` : ''}.
           <br />
           <span className="text-xs mt-1 block">

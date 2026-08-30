@@ -37,6 +37,35 @@ export function usePOSProductSearch() {
       .finally(() => setLoadingProd(false))
   }, [])
 
+  const cargarTodos = useCallback((cats: CategoriaPos[]) => {
+    setCatSel(null)
+    setQuery('')
+    setSearchResults([])
+    if (cats.length === 0) { setProductos([]); return }
+    setLoadingProd(true)
+    Promise.all(cats.map((cat) => api.get(`/productos/pos/categoria/${cat.id}`)))
+      .then((respuestas) => {
+        const vistos = new Set<string>()
+        const todos: ProductoPos[] = []
+        for (const { data } of respuestas) {
+          for (const p of listaDesdeRespuesta<ProductoPos>(data)) {
+            const id = String(p.id ?? p.idProducto ?? '')
+            if (!id || vistos.has(id)) continue
+            vistos.add(id)
+            todos.push(p)
+          }
+        }
+        setProductos(todos)
+      })
+      .catch(() => setProductos([]))
+      .finally(() => setLoadingProd(false))
+  }, [])
+
+  useEffect(() => {
+    if (categorias.length === 0) return
+    cargarTodos(categorias)
+  }, [categorias, cargarTodos])
+
   const buscar = useCallback((q: string) => {
     if (!q || q.trim().length < 2) { setSearchResults([]); return }
     setSearchLoading(true)
@@ -88,6 +117,7 @@ export function usePOSProductSearch() {
     searchLoading,
     inputRef,
     cargarPorCategoria,
+    cargarTodos,
     handleChange,
     handleKeyDown,
     handleAdd,

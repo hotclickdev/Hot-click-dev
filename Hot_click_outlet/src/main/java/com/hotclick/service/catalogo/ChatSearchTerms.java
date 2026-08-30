@@ -17,7 +17,12 @@ public final class ChatSearchTerms {
     }
 
     public static String sanitizarLike(String termino) {
+        return quitarComodinesLike(termino).toLowerCase();
+    }
+
+    /** Quita % y _ para que el usuario no amplíe un LIKE parametrizado. */
+    public static String quitarComodinesLike(String termino) {
         if (termino == null) return "";
-        return termino.toLowerCase().replace("%", "").replace("_", "").trim();
+        return termino.replace("%", "").replace("_", "").trim();
     }
 }

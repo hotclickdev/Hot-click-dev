@@ -6,6 +6,7 @@ import com.hotclick.model.MiembroEmpresa;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.MiembroEmpresaRepository;
+import com.hotclick.repository.PlanRepository;
 import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.exception.RecursoNoEncontradoException;
@@ -26,6 +27,7 @@ public class EmprendedorRegistroService {
     @Autowired private EmpresaRepository        empresaRepository;
     @Autowired private UsuarioRepository        usuarioRepository;
     @Autowired private RolRepository            rolRepository;
+    @Autowired private PlanRepository           planRepository;
     @Autowired private PasswordEncoder          passwordEncoder;
     @Autowired private NotificacionEmailService notificacionEmailService;
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
@@ -74,7 +76,7 @@ public class EmprendedorRegistroService {
         empresa.setSlug(slug);
         empresa.setCorreoEmpresa(correoEmpresa);
         empresa.setTelefonoEmpresa(dto.getTelefonoEmpresa());
-        empresa.setPlanSaas("GRATUITO");
+        aplicarPlanInicial(empresa);
         empresa.setEstadoEmpresa("PENDIENTE_APROBACION");
         empresa.setVisibilidadPublica(false);
         empresa.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
@@ -159,7 +161,7 @@ public class EmprendedorRegistroService {
         empresa.setSlug(slug);
         empresa.setCorreoEmpresa(correoEmp);
         empresa.setTelefonoEmpresa(telefonoEmpresa);
-        empresa.setPlanSaas("GRATUITO");
+        aplicarPlanInicial(empresa);
         empresa.setEstadoEmpresa("PENDIENTE_APROBACION");
         empresa.setVisibilidadPublica(false);
         empresa.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
@@ -202,6 +204,14 @@ public class EmprendedorRegistroService {
             empresa.getNombreComercial());
 
         return saved;
+    }
+
+    /** Plan SaaS inicial: EMPRENDEDOR (fk + plan_saas). */
+    private void aplicarPlanInicial(Empresa empresa) {
+        planRepository.findByNombre("EMPRENDEDOR").ifPresentOrElse(plan -> {
+            empresa.setPlan(plan);
+            empresa.setPlanSaas("EMPRENDEDOR");
+        }, () -> empresa.setPlanSaas("EMPRENDEDOR"));
     }
 
     private String slugify(String text) {

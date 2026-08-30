@@ -71,6 +71,10 @@ public class AiCopilotService {
     @CircuitBreaker(name = "claude", fallbackMethod = "chatStreamFallback")
     public void chatStream(Long empresaId, String userMessage, SseEmitter emitter) {
         Long tenantId = TenantContext.get();
+        if (empresaId == null) {
+            streamProcessor.sendError(emitter, "Seleccioná un negocio para usar el copilot.");
+            return;
+        }
 
         if (!aiQuotaService.verificarYReservar(empresaId)) {
             streamProcessor.sendError(emitter, "Cuota mensual de AI agotada. Actualiza tu plan.");

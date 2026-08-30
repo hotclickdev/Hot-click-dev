@@ -1,13 +1,15 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import BrandLogo from '@/components/ui/BrandLogo'
 export default function AuthLayout({ children }: { children?: ReactNode }) {
+  const { t } = useTranslation()
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--hc-bg)' }}>
       {/* Header */}
       <header className="h-16 flex items-center justify-between px-6">
-        <Link to="/" className="flex items-center gap-2.5" aria-label="HotClick — inicio">
+        <Link to="/" className="flex items-center gap-2.5" aria-label={t('footer.inicioAria')}>
           <BrandLogo size={30} wordmarkSize={18} />
         </Link>
       </header>

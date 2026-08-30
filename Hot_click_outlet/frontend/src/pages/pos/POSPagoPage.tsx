@@ -68,23 +68,23 @@ export default function POSPagoPage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#08080c' }}>
+    <div className="hc-sistema-theme min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--hc-bg)' }}>
       <div className="text-center">
         <div className="w-12 h-12 rounded-2xl mx-auto mb-4 animate-pulse"
           style={{ background: 'var(--hc-accent)' }} />
-        <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>Cargando…</p>
+        <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>Cargando…</p>
       </div>
     </div>
   )
 
   if (error) return (
-    <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: '#08080c' }}>
+    <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: 'var(--hc-bg)' }}>
       <div className="text-center max-w-xs">
         <div className="mb-4 flex justify-center" style={{ color: '#fbbf24' }}>
           <TrustGlyph tipo="alerta" className="w-12 h-12" />
         </div>
-        <p className="font-bold text-white mb-2">QR inválido o expirado</p>
-        <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
+        <p className="font-bold text-[var(--hc-text)] mb-2">QR inválido o expirado</p>
+        <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
           Este código de pago ya no es válido. Solicita uno nuevo al cajero.
         </p>
       </div>
@@ -92,25 +92,25 @@ export default function POSPagoPage() {
   )
 
   if (estado === 'PAGADO') return (
-    <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: '#08080c' }}>
+    <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: 'var(--hc-bg)' }}>
       <div className="text-center max-w-xs">
         <div className="w-20 h-20 rounded-3xl mx-auto mb-5 flex items-center justify-center"
           style={{ backgroundColor: 'rgba(52,211,153,0.15)', border: '1px solid rgba(52,211,153,0.3)', color: '#34d399' }}>
           <TrustGlyph tipo="check" className="w-10 h-10" />
         </div>
         <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#34d399' }}>Pago completado</p>
-        <p className="text-3xl font-black tabular-nums mb-1" style={{ color: '#fff' }}>₡{fmt(info?.total)}</p>
-        <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.4)' }}>
+        <p className="text-3xl font-black tabular-nums mb-1" style={{ color: 'var(--hc-text)' }}>₡{fmt(info?.total)}</p>
+        <p className="text-sm mb-6" style={{ color: 'var(--hc-muted)' }}>
           {info?.empresaNombre} · Gracias por tu compra
         </p>
         <div className="rounded-2xl p-4 text-left space-y-1.5"
-          style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
           {(info?.items ?? []).map((item, i) => (
             <div key={i} className="flex justify-between text-sm">
-              <span style={{ color: 'rgba(255,255,255,0.6)' }}>
+              <span style={{ color: 'var(--hc-text)' }}>
                 {item.nombre ?? item.nombreProducto} ×{item.cantidad}
               </span>
-              <span className="font-semibold tabular-nums" style={{ color: '#fff' }}>
+              <span className="font-semibold tabular-nums" style={{ color: 'var(--hc-text)' }}>
                 ₡{fmt((item.precioUnitario ?? 0) * (item.cantidad ?? 1))}
               </span>
             </div>
@@ -124,7 +124,7 @@ export default function POSPagoPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6"
-      style={{ backgroundColor: '#08080c', fontFamily: "'Inter', sans-serif" }}>
+      style={{ backgroundColor: 'var(--hc-bg)' }}>
       <div className="w-full max-w-sm">
 
         {/* Header empresa */}
@@ -132,29 +132,29 @@ export default function POSPagoPage() {
           {info?.logoUrl && (
             <img src={info.logoUrl} alt="" className="w-14 h-14 rounded-2xl mx-auto mb-3 object-cover" />
           )}
-          <p className="font-bold text-white">{info?.empresaNombre}</p>
-          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+          <p className="font-bold text-[var(--hc-text)]">{info?.empresaNombre}</p>
+          <p className="text-xs mt-1" style={{ color: 'var(--hc-muted)' }}>
             {isSinpe ? 'Pago por SINPE Móvil' : 'Pago con tarjeta'}
           </p>
         </div>
 
         {/* Total */}
         <div className="text-center mb-6">
-          <p className="text-xs uppercase tracking-widest mb-1" style={{ color: 'rgba(255,255,255,0.35)' }}>Total a pagar</p>
-          <p className="text-5xl font-black tabular-nums" style={{ color: '#fff', letterSpacing: '-2px' }}>
+          <p className="text-xs uppercase tracking-widest mb-1" style={{ color: 'var(--hc-muted)' }}>Total a pagar</p>
+          <p className="text-5xl font-black tabular-nums" style={{ color: 'var(--hc-text)', letterSpacing: '-2px' }}>
             ₡{fmt(info?.total)}
           </p>
         </div>
 
         {/* Productos */}
         <div className="rounded-2xl p-4 mb-5 space-y-2"
-          style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
           {(info?.items ?? []).map((item, i) => (
             <div key={i} className="flex justify-between text-sm">
-              <span style={{ color: 'rgba(255,255,255,0.65)' }}>
+              <span style={{ color: 'var(--hc-text)' }}>
                 {item.nombre ?? item.nombreProducto} ×{item.cantidad}
               </span>
-              <span className="font-semibold tabular-nums" style={{ color: '#F4F6F9' }}>
+              <span className="font-semibold tabular-nums" style={{ color: 'var(--hc-text)' }}>
                 ₡{fmt((item.precioUnitario ?? 0) * (item.cantidad ?? 1))}
               </span>
             </div>
@@ -168,13 +168,13 @@ export default function POSPagoPage() {
             <p className="text-xs font-bold uppercase tracking-wider" style={{ color: '#6490EA' }}>
               Instrucciones SINPE Móvil
             </p>
-            <ol className="text-sm space-y-2" style={{ color: 'rgba(255,255,255,0.7)' }}>
+            <ol className="text-sm space-y-2" style={{ color: 'var(--hc-text)' }}>
               <li>1. Abrí SINPE Móvil en tu banco</li>
-              <li>2. Ingresá este número: <strong className="text-white font-mono">{info.sinpeNumero}</strong></li>
-              <li>3. Monto exacto: <strong style={{ color: '#34d399' }}>₡{fmt(info.total)}</strong></li>
-              <li>4. En descripción escribí: <strong className="text-white font-mono">{info.sinpeRef}</strong></li>
+              <li>2. Ingresá este número: <strong className="font-mono">{info.sinpeNumero}</strong></li>
+              <li>3. Monto exacto: <strong style={{ color: 'var(--hc-success)' }}>₡{fmt(info.total)}</strong></li>
+              <li>4. En descripción escribí: <strong className="font-mono">{info.sinpeRef}</strong></li>
             </ol>
-            <p className="text-xs text-center mt-2" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            <p className="text-xs text-center mt-2" style={{ color: 'var(--hc-muted)' }}>
               El cajero confirmará tu pago al recibirlo
             </p>
           </div>
@@ -192,7 +192,7 @@ export default function POSPagoPage() {
           </button>
         )}
 
-        <p className="text-center text-xs mt-6" style={{ color: 'rgba(255,255,255,0.2)' }}>
+        <p className="text-center text-xs mt-6" style={{ color: 'var(--hc-muted)' }}>
           HotClick · Pago seguro
         </p>
       </div>

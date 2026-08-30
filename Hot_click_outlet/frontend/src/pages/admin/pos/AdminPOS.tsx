@@ -3,6 +3,7 @@ import CierreTurnoModal from './CierreTurnoModal'
 import POSLoadingScreen from './POSLoadingScreen'
 import AdminPOSSteps from './AdminPOSSteps'
 import { useAdminPOS } from './useAdminPOS'
+import { posUi } from './posApariencia'
 
 export default function AdminPOS() {
   const pos = useAdminPOS()
@@ -13,7 +14,7 @@ export default function AdminPOS() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden"
-      style={{ backgroundColor: '#08080c', fontFamily: "'JetBrains Mono','Fira Code','Consolas',monospace" }}>
+      style={{ backgroundColor: posUi.fondo }}>
       <POSHeader userName={pos.userName} turno={pos.turno} step={pos.step} onCerrarTurno={() => pos.setShowCierre(true)}
         mostrarVolverSistema={pos.userRole !== 'CAJERO'} />
 

@@ -2,12 +2,11 @@ import { NavLink } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import type { TFunction } from 'i18next'
 import { PLAN_LABELS } from './adminSidebarTheme'
-import { esUsuarioSistema } from '@/utils/sistemaUser'
 import ModeSwitcherWrapper from './ModeSwitcherWrapper'
 import TextoFlecha from '@/components/ui/TextoFlecha'
 
 export type SidebarUserFooterProps = {
-  isLight: boolean
+  esSistema: boolean
   handleLogout: () => void
   t: TFunction
   userRole: string | null
@@ -20,7 +19,7 @@ export type SidebarUserFooterProps = {
 
 /** Footer del sidebar admin: acciones de cuenta y avatar. */
 export default function SidebarUserFooter({
-  isLight,
+  esSistema,
   handleLogout,
   t,
   userRole,
@@ -31,11 +30,8 @@ export default function SidebarUserFooter({
   empresaNombre,
 }: SidebarUserFooterProps) {
   return (
-    <div className="p-3 space-y-1 shrink-0" style={{ borderTop: `1px solid ${isLight ? 'var(--hc-border)' : 'var(--hc-n-800)'}` }}>
-      {isLight ? (
-        /* "Ver tienda como cliente" y "Tour del panel" viven en Configuración
-           → Plan y cuenta (AdminPlanes.jsx). "Cerrar sesión" también sigue
-           ahí, pero por pedido del dueño hay un acceso directo en el sidebar. */
+    <div className="p-3 space-y-1 shrink-0" style={{ borderTop: '1px solid var(--hc-border)' }}>
+      {esSistema ? (
         <>
           <NavLink
             to="/admin/pos"
@@ -61,7 +57,7 @@ export default function SidebarUserFooter({
           <ModeSwitcherWrapper userRole={userRole} />
           <NavLink
             to="/"
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-[var(--hc-surface-2)]"
             style={{ color: 'var(--hc-link)', backgroundColor: 'rgba(23,71,168,0.08)', border: '1px solid rgba(23,71,168,0.2)' }}
           >
             <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -72,7 +68,7 @@ export default function SidebarUserFooter({
           </NavLink>
           <button type="button"
             onClick={() => globalThis.dispatchEvent(new Event('hc-open-tour'))}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors text-left hover:bg-white/[0.04]"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors text-left hover:bg-[var(--hc-surface-2)]"
             style={{ color: muted }}
           >
             <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -84,31 +80,29 @@ export default function SidebarUserFooter({
             onClick={handleLogout}
             whileHover={{ backgroundColor: 'rgba(239,68,68,0.06)' }}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors text-left"
-            style={{ color: '#f87171' }}
+            style={{ color: 'var(--hc-danger)' }}
           >
             {t('admin.sidebar.cerrarSesion')}
           </motion.button>
         </>
       )}
-      <div className={`flex items-center px-3 ${isLight ? 'gap-2.5 pt-3 pb-0.5' : 'gap-2 py-2'}`}>
+      <div className="flex items-center px-3 gap-2.5 pt-3 pb-0.5">
         <motion.div
           whileHover={{ scale: 1.08 }}
           transition={{ duration: 0.15 }}
-          className={`rounded-full flex items-center justify-center shrink-0 ${isLight ? 'w-[34px] h-[34px] text-[13px] font-bold' : 'w-7 h-7 text-xs font-semibold'}`}
-          style={isLight
-            ? { backgroundColor: 'var(--hc-link)', color: '#fff' }
-            : { backgroundColor: 'rgba(23,71,168,0.15)', color: 'var(--hc-accent)' }}
+          className="rounded-full flex items-center justify-center shrink-0 w-[34px] h-[34px] text-[13px] font-bold"
+          style={{ backgroundColor: 'var(--hc-link)', color: '#fff' }}
         >
           {userName?.[0]?.toUpperCase() || 'A'}
         </motion.div>
         <div className="min-w-0">
-          <div className={`truncate ${isLight ? 'text-[13px] font-semibold' : 'text-xs'}`} style={{ color: isLight ? 'var(--hc-text)' : 'rgba(255,255,255,0.55)' }}>{userName || 'Admin'}</div>
-          {esUsuarioSistema(userRole) && tenantLoaded ? (
-            <div className={`truncate ${isLight ? 'text-xs' : 'text-[10px]'}`} style={{ color: muted }}>
+          <div className="truncate text-[13px] font-semibold" style={{ color: 'var(--hc-text)' }}>{userName || 'Admin'}</div>
+          {esSistema && tenantLoaded ? (
+            <div className="truncate text-xs" style={{ color: muted }}>
               Plan {PLAN_LABELS[planNombre] ?? planNombre}
             </div>
           ) : empresaNombre && (
-            <div className="text-[10px] truncate text-amber-400">{empresaNombre}</div>
+            <div className="text-[10px] truncate text-amber-700">{empresaNombre}</div>
           )}
         </div>
       </div>

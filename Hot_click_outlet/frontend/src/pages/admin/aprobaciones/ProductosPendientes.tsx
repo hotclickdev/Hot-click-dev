@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { formatPrice } from '@/utils/format'
 import type { Id } from '@/types/api'
+import { AdminBadge } from '@/prototipo/admin/AdminUi'
 import BotonesAprobarRechazar from './BotonesAprobarRechazar'
 import ConfirmAccion from './ConfirmAccion'
 import EmptyPendientes from './EmptyPendientes'
-import type { AccionAprobacion, ConfirmAprobacion, ProductoPendiente } from './aprobacionesHelpers'
+import { metaProductoPendiente, type AccionAprobacion, type ConfirmAprobacion, type ProductoPendiente } from './aprobacionesHelpers'
 
 export default function ProductosPendientes({ productos, loading, aprobar, rechazar }: {
   productos: ProductoPendiente[]
@@ -12,6 +14,7 @@ export default function ProductosPendientes({ productos, loading, aprobar, recha
   aprobar: (id: Id) => Promise<void>
   rechazar: (id: Id, comentario: string) => Promise<void>
 }) {
+  const { t } = useTranslation()
   const [saving, setSaving] = useState<string | null>(null)
   const [confirm, setConfirm] = useState<ConfirmAprobacion | null>(null)
   const [comentario, setComentario] = useState('')
@@ -31,32 +34,32 @@ export default function ProductosPendientes({ productos, loading, aprobar, recha
   }
 
   if (loading) {
-    return <div className="py-12 text-center text-sm" style={{ color: 'var(--hc-muted)' }}>Cargando productos…</div>
+    return <div className="py-12 text-center text-sm text-hc-muted">{t('adminAprobaciones.loading')}</div>
   }
   if (productos.length === 0) {
-    return <EmptyPendientes mensaje="Nada en esta cola. Aprobar el negocio publica sus productos; no hay revisión producto por producto." />
+    return <EmptyPendientes mensaje={t('adminAprobaciones.emptyProductos')} />
   }
 
   const ocupado = saving !== null
   return (
-    <div className="space-y-3">
-      {productos.map((producto) => (
-        <div key={producto.id} className="rounded-xl p-4 flex items-center gap-4"
-          style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-          <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0" style={{ backgroundColor: 'rgba(255,255,255,0.04)' }}>
-            {producto.imagenUrl && <img src={producto.imagenUrl} alt={producto.nombreProducto} className="w-full h-full object-cover" />}
-          </div>
-          <div className="flex-1 min-w-0 space-y-0.5">
-            <p className="font-semibold truncate" style={{ color: 'var(--hc-text)' }}>{producto.nombreProducto ?? '—'}</p>
-            <div className="flex flex-wrap gap-x-4 text-xs" style={{ color: 'var(--hc-muted)' }}>
-              <span>{formatPrice(producto.precioVenta)}</span>
-              {producto.sku && <span className="font-mono">{producto.sku}</span>}
-              <span>{producto.empresaNombre}</span>
-              {producto.usuarioPide && <span>Por: {producto.usuarioPide}</span>}
+    <ul className="flex flex-col gap-4">
+      {productos.map((producto, idx) => (
+        <li key={producto.id} className="rounded-[14px] border border-hc-border p-3.5">
+          <div className="flex items-start gap-3">
+            <div className="size-14 shrink-0 overflow-hidden rounded-xl bg-hc-surface-2">
+              {producto.imagenUrl ? (
+                <img src={producto.imagenUrl} alt="" className="size-full object-cover" />
+              ) : null}
             </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[13px] font-medium">{producto.nombreProducto ?? '—'}</p>
+              <p className="text-[11px] text-hc-muted">{metaProductoPendiente(producto)}</p>
+              <p className="mt-0.5 text-xs font-bold text-hc-primary">{formatPrice(producto.precioVenta)}</p>
+            </div>
+            <AdminBadge tono="warn">Pendiente</AdminBadge>
           </div>
-          <div className="flex flex-col gap-2 shrink-0">
-            {confirm?.id === producto.id ? (
+          {confirm?.id === producto.id ? (
+            <div className="mt-3">
               <ConfirmAccion
                 action={confirm.action}
                 titulo={confirm.action === 'aprobar' ? '¿Publicar producto?' : '¿Rechazar producto?'}
@@ -67,16 +70,17 @@ export default function ProductosPendientes({ productos, loading, aprobar, recha
                 onCancel={() => { setConfirm(null); setComentario('') }}
                 saving={ocupado}
               />
-            ) : (
-              <BotonesAprobarRechazar
-                disabled={ocupado}
-                onAprobar={() => setConfirm({ id: producto.id, action: 'aprobar' })}
-                onRechazar={() => { setConfirm({ id: producto.id, action: 'rechazar' }); setComentario('') }}
-              />
-            )}
-          </div>
-        </div>
+            </div>
+          ) : (
+            <BotonesAprobarRechazar
+              disabled={ocupado}
+              dataMmAprobar={idx === 0 ? 'aprobar-primero' : undefined}
+              onAprobar={() => setConfirm({ id: producto.id, action: 'aprobar' })}
+              onRechazar={() => { setConfirm({ id: producto.id, action: 'rechazar' }); setComentario('') }}
+            />
+          )}
+        </li>
       ))}
-    </div>
+    </ul>
   )
 }

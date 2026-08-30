@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, type DragEvent, type KeyboardEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { createDraft, IMAGE_MAX_BYTES, type ProductoDraft } from './cargaMasivaHelpers'
-import { IconUpload, IconX, IconPlus, IconArrow } from './cargaMasivaIcons'
+import { IconUpload, IconX, IconPlus } from './cargaMasivaIcons'
 
 export default function StepSubida({ onContinuar, limit }: {
   onContinuar: (drafts: ProductoDraft[]) => void
@@ -53,43 +54,44 @@ export default function StepSubida({ onContinuar, limit }: {
         onDragLeave={() => setDragging(false)}
         onClick={openFilePicker}
         onKeyDown={onZoneKeyDown}
-        className="w-full rounded-2xl border-2 border-dashed cursor-pointer transition-all flex flex-col items-center justify-center py-16 gap-4"
+        className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed py-[30px] transition-all"
         style={{
-          borderColor: dragging ? 'var(--hc-accent)' : 'rgba(255,255,255,0.12)',
-          background: dragging ? 'rgba(79,124,255,0.06)' : 'rgba(255,255,255,0.02)',
+          borderColor: dragging ? 'var(--hc-primary)' : 'var(--hc-border)',
+          background: dragging ? 'var(--hc-red-50)' : 'var(--hc-surface-2)',
         }}
       >
         <input ref={inputRef} type="file" accept="image/*" multiple className="hidden"
           onChange={(e) => { addFiles(e.target.files); e.target.value = '' }}
           onClick={(e) => e.stopPropagation()}
         />
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
-          style={{ background: 'rgba(79,124,255,0.12)', border: '1px solid rgba(79,124,255,0.3)' }}>
-          <IconUpload className="w-7 h-7" style={{ color: 'var(--hc-accent)' }} />
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--hc-red-50)]">
+          <IconUpload className="h-7 w-7 text-hc-primary" />
         </div>
-        <div className="text-center pointer-events-none">
-          <p className="font-semibold text-base" style={{ color: 'var(--hc-text)' }}>
+        <div className="pointer-events-none text-center">
+          <p className="text-[13px] font-medium text-hc-text">
             {drafts.length === 0 ? 'Arrastrá las fotos aquí o hacé clic' : textoFotosCargadas(drafts.length)}
           </p>
-          <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>
+          <p className="mt-1 text-[11px] text-hc-muted">
             1 foto = 1 producto · máx. {limit} imágenes · hasta 10 MB por foto
           </p>
         </div>
       </button>
 
+      <Link to="/admin/productos/importar" className="block text-xs font-bold text-hc-primary">
+        Importar catálogo CSV
+      </Link>
+
       {drafts.length > 0 && (
         <>
-          <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2">
+          <div className="grid grid-cols-5 gap-2 sm:grid-cols-8 md:grid-cols-10">
             {drafts.map((d) => (
-              <div key={d.id} className="relative aspect-square rounded-xl overflow-hidden group"
-                style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
-                <img src={d.mainPreview} alt="" className="w-full h-full object-cover" />
+              <div key={d.id} className="group relative aspect-square overflow-hidden rounded-xl border border-hc-border">
+                <img src={d.mainPreview} alt="" className="size-full object-cover" />
                 <button type="button"
                   onClick={(e) => { e.stopPropagation(); remove(d.id) }}
-                  className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  style={{ background: 'rgba(0,0,0,0.75)' }}
+                  className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-hc-text/80 opacity-0 transition-opacity group-hover:opacity-100"
                 >
-                  <IconX className="w-3 h-3 text-white" />
+                  <IconX className="h-3 w-3 text-white" />
                 </button>
               </div>
             ))}
@@ -97,27 +99,19 @@ export default function StepSubida({ onContinuar, limit }: {
               <button
                 type="button"
                 onClick={openFilePicker}
-                className="aspect-square rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
-                style={{ border: '1px dashed rgba(255,255,255,0.15)' }}
+                className="flex aspect-square items-center justify-center rounded-xl border border-dashed border-hc-border"
               >
-                <IconPlus className="w-5 h-5 pointer-events-none" style={{ color: 'var(--hc-muted)' }} />
+                <IconPlus className="h-5 w-5 pointer-events-none text-hc-muted" />
               </button>
             )}
           </div>
-
-          <div className="flex items-center justify-between">
-            <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
-              {drafts.length} de {limit} imágenes
-            </p>
-            <button type="button"
-              onClick={() => onContinuar(drafts)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-opacity hover:opacity-85"
-              style={{ background: 'var(--hc-accent)', color: '#fff' }}
-            >
-              Continuar con {drafts.length} producto{drafts.length === 1 ? '' : 's'}
-              <IconArrow className="w-4 h-4" />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => onContinuar(drafts)}
+            className="w-full rounded-[14px] bg-hc-primary py-4 text-[15px] font-bold text-white"
+          >
+            Continuar
+          </button>
         </>
       )}
     </div>

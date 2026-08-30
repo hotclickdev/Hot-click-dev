@@ -14,6 +14,7 @@ import java.util.Map;
 public class WhatsAppMessageSender {
 
     private static final Logger log = LoggerFactory.getLogger(WhatsAppMessageSender.class);
+    private static final int MAX_ERROR = 500;
 
     @Autowired private WhatsAppGeminiTextClient geminiTextClient;
     @Autowired private WhatsAppMetaApiClient    metaApiClient;
@@ -23,36 +24,8 @@ public class WhatsAppMessageSender {
                   WaPlantilla plantilla, Map<String, String> ctx) {
         String texto = geminiTextClient.generarTexto(plantilla, ctx);
         String telefono = WhatsAppHelpers.normalizarTelefono(u.getTelefono());
-
-        WaMensajeLog entry = new WaMensajeLog();
-        entry.setUsuarioId(u.getId());
-        entry.setEmpresaId(empresaId);
-        entry.setTelefono(telefono);
-        entry.setTipoMensaje(plantilla.escenario);
-        entry.setVariante(plantilla.name());
-        entry.setTextoEnviado(texto);
-        entry.setPedidoNumero(pedidoNum);
-
-        if (!metaApiClient.credencialesConfiguradas()) {
-            entry.setEstado("SIMULADO");
-            logRepo.save(entry);
-            log.info("[WA-SIMULADO] {} → {}: {}", plantilla.escenario, telefono, texto);
-            return texto;
-        }
-
-        try {
-            String metaId = metaApiClient.llamarMetaApi(telefono, texto);
-            entry.setEstado("ENVIADO");
-            entry.setMetaMessageId(metaId);
-            log.info("[WA-ENVIADO] {} → {} (msgId={})", plantilla.escenario, telefono, metaId);
-        } catch (Exception e) {
-            entry.setEstado("ERROR");
-            entry.setErrorDetalle(e.getMessage() != null ? e.getMessage().substring(0, Math.min(500, e.getMessage().length())) : "unknown");
-            log.error("[WA-ERROR] {} → {}: {}", plantilla.escenario, telefono, e.getMessage());
-        }
-
-        logRepo.save(entry);
-        return texto;
+        WaMensajeLog entry = nuevoLog(u.getId(), empresaId, telefono, plantilla, texto, pedidoNum);
+        return despachar(entry, plantilla, telefono, texto);
     }
 
     /** Envía a un número raw (empresa, admin) sin necesidad de un Usuario registrado. */
@@ -60,35 +33,46 @@ public class WhatsAppMessageSender {
                          WaPlantilla plantilla, Map<String, String> ctx) {
         String texto   = geminiTextClient.generarTexto(plantilla, ctx);
         String telNorm = WhatsAppHelpers.normalizarTelefono(telefono);
+        WaMensajeLog entry = nuevoLog(null, empresaId, telNorm, plantilla, texto, pedidoNum);
+        return despachar(entry, plantilla, telNorm, texto);
+    }
 
+    private WaMensajeLog nuevoLog(Long usuarioId, Long empresaId, String telefono,
+                                  WaPlantilla plantilla, String texto, String pedidoNum) {
         WaMensajeLog entry = new WaMensajeLog();
+        entry.setUsuarioId(usuarioId);
         entry.setEmpresaId(empresaId);
-        entry.setTelefono(telNorm);
+        entry.setTelefono(telefono);
         entry.setTipoMensaje(plantilla.escenario);
         entry.setVariante(plantilla.name());
         entry.setTextoEnviado(texto);
         entry.setPedidoNumero(pedidoNum);
+        return entry;
+    }
 
+    private String despachar(WaMensajeLog entry, WaPlantilla plantilla, String telefono, String texto) {
         if (!metaApiClient.credencialesConfiguradas()) {
             entry.setEstado("SIMULADO");
             logRepo.save(entry);
-            log.info("[WA-SIMULADO] {} → {}: {}", plantilla.escenario, telNorm, texto);
+            log.warn("[WA-SIMULADO] {} → {}: {}", plantilla.escenario, telefono, texto);
             return texto;
         }
-
-        try {
-            String metaId = metaApiClient.llamarMetaApi(telNorm, texto);
-            entry.setEstado("ENVIADO");
-            entry.setMetaMessageId(metaId);
-            log.info("[WA-ENVIADO] {} → {} (msgId={})", plantilla.escenario, telNorm, metaId);
-        } catch (Exception e) {
-            entry.setEstado("ERROR");
-            entry.setErrorDetalle(e.getMessage() != null
-                ? e.getMessage().substring(0, Math.min(500, e.getMessage().length())) : "unknown");
-            log.error("[WA-ERROR] {} → {}: {}", plantilla.escenario, telNorm, e.getMessage());
-        }
-
+        enviarAMeta(entry, plantilla, telefono, texto);
         logRepo.save(entry);
         return texto;
+    }
+
+    private void enviarAMeta(WaMensajeLog entry, WaPlantilla plantilla, String telefono, String texto) {
+        try {
+            String metaId = metaApiClient.llamarMetaApi(telefono, texto);
+            entry.setEstado("ENVIADO");
+            entry.setMetaMessageId(metaId);
+            log.info("[WA-ENVIADO] {} → {} (msgId={})", plantilla.escenario, telefono, metaId);
+        } catch (Exception e) {
+            String msg = e.getMessage() != null ? e.getMessage() : "unknown";
+            entry.setEstado("ERROR");
+            entry.setErrorDetalle(msg.substring(0, Math.min(MAX_ERROR, msg.length())));
+            log.error("[WA-ERROR] {} → {}: {}", plantilla.escenario, telefono, e.getMessage());
+        }
     }
 }

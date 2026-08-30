@@ -135,18 +135,18 @@ export default function AdminCargaMasiva() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <div className="flex items-center gap-4 mb-8">
+    <div className="mx-auto max-w-3xl p-5 md:p-6">
+      <div className="mb-6 flex items-start gap-3">
         <button type="button"
-          onClick={() => navigate('/admin/productos')}
-          className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/8"
-          style={{ border: '1px solid rgba(255,255,255,0.1)' }}
+          onClick={() => navigate('/admin')}
+          className="inline-flex min-h-8 min-w-8 items-center text-xl"
+          aria-label="Volver"
         >
-          <IconArrow className="w-4 h-4" style={{ color: 'var(--hc-muted)' }} left />
+          <IconArrow className="h-4 w-4 text-hc-text" left />
         </button>
         <div>
-          <h1 className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>Carga masiva de productos</h1>
-          <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
+          <h1 className="font-display text-xl font-bold text-hc-text">Carga Masiva de Productos</h1>
+          <p className="text-xs text-hc-muted">
             Subí hasta {limit} productos de una vez
           </p>
         </div>

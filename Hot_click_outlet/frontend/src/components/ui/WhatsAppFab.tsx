@@ -1,21 +1,25 @@
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import useChatStore from '@/store/chatStore'
 
 const WHATSAPP = '50686667888'
-const WA_URL = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola HotClick, consulto un producto.')}`
 
 export default function WhatsAppFab() {
+  const { t } = useTranslation()
   const chatOpen = useChatStore(s => s.isOpen)
   if (chatOpen) return null
+
+  const label = t('common.whatsappConsult')
+  const waUrl = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(t('common.whatsappGreeting'))}`
 
   return (
     <div className="hidden md:flex fixed bottom-4 right-4 z-40 flex-col items-center">
       <motion.a
-        href={WA_URL}
+        href={waUrl}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Consultar un producto por WhatsApp"
-        title="Consultar un producto por WhatsApp"
+        aria-label={label}
+        title={label}
         className="w-14 h-14 rounded-full flex items-center justify-center"
         style={{ backgroundColor: '#25D366', boxShadow: 'var(--hc-shadow-2)' }}
         whileHover={{ scale: 1.08 }}

@@ -27,7 +27,7 @@ public class ImageProxyController {
     private String s3PublicUrl;
 
     private final HttpClient httpClient = HttpClient.newBuilder()
-        .followRedirects(HttpClient.Redirect.NORMAL)
+        .followRedirects(HttpClient.Redirect.NEVER)
         .connectTimeout(Duration.ofSeconds(10))
         .build();
 
@@ -46,7 +46,7 @@ public class ImageProxyController {
             @RequestParam(value = "h", required = false) Integer h,
             @RequestParam(value = "q", defaultValue = "82") int q) {
 
-        if (p == null || p.contains("..") || p.startsWith("/")) {
+        if (!ImageProxyPaths.esSeguro(p)) {
             return ResponseEntity.badRequest().build();
         }
 
@@ -54,9 +54,14 @@ public class ImageProxyController {
         int height  = (h != null) ? Math.min(h, MAX_DIM) : 0;
         int quality = Math.min(Math.max(q, 10), 100);
 
-        // Strip legacy "HOT_CLICK/" prefix from old Supabase-era URLs stored in DB
         String cleanPath = p.startsWith("HOT_CLICK/") ? p.substring("HOT_CLICK/".length()) : p;
+        if (!ImageProxyPaths.esSeguro(cleanPath)) {
+            return ResponseEntity.badRequest().build();
+        }
         String imageUrl  = s3PublicUrl + "/" + cleanPath;
+        if (!ImageProxyPaths.hostPermitido(imageUrl, s3PublicUrl)) {
+            return ResponseEntity.badRequest().build();
+        }
 
         try {
             HttpRequest req = HttpRequest.newBuilder()

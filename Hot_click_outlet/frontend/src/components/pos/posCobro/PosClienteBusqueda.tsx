@@ -39,7 +39,7 @@ export default function PosClienteBusqueda({
           onChange={e => buscarCliente(e.target.value)}
           placeholder="Buscar por nombre, correo o teléfono…"
           className="w-full px-3 py-2 rounded-xl text-xs outline-none"
-          style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--hc-text)' }}/>
+          style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}/>
         {clienteId && (
           <button type="button" onClick={limpiarCliente}
             className="absolute right-2 top-1/2 -translate-y-1/2"
@@ -52,11 +52,11 @@ export default function PosClienteBusqueda({
 
       {sugerencias.length > 0 && (
         <div className="mt-1 rounded-xl overflow-hidden border"
-          style={{ backgroundColor: 'var(--hc-bg)', borderColor: 'rgba(255,255,255,0.08)' }}>
+          style={{ backgroundColor: 'var(--hc-bg)', borderColor: 'var(--hc-border)' }}>
           {sugerencias.slice(0, 5).map(c => (
             <button type="button" key={c.id} onClick={() => seleccionarCliente(c)}
-              className="w-full flex items-center justify-between px-3 py-2.5 text-xs text-left transition-colors hover:bg-white/[0.04] border-b last:border-0"
-              style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+              className="w-full flex items-center justify-between px-3 py-2.5 text-xs text-left transition-colors hover:bg-[var(--hc-surface-2)] border-b last:border-0"
+              style={{ borderColor: 'var(--hc-border)' }}>
               <div>
                 <p className="font-medium" style={{ color: 'var(--hc-text)' }}>
                   {c.nombre} {c.apellidoPaterno}

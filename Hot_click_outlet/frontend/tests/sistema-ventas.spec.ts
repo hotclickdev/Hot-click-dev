@@ -68,20 +68,13 @@ async function sesionDueñoSinPosEnPlan(page: Page) {
 }
 
 test.describe('Sistema — ventas de mostrador', () => {
-  test('aunque el plan no liste pos, el dueño ve Ventas y puede abrir caja', async ({ page }) => {
+  test('los pedidos del dueño salen de /admin; la caja real sigue en POS', async ({ page }) => {
     await sesionDueñoSinPosEnPlan(page)
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/admin/pedidos', { waitUntil: 'domcontentloaded' })
+    await expect(page).toHaveURL(/\/emprendedor\/pedidos/)
 
-    await expect(page.getByRole('heading', { name: 'Ventas y pedidos' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Ventas' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Pedidos' })).toBeVisible()
-    await expect(page.getByRole('button', { name: /creá un pedido/i })).toBeVisible()
-
-    await page.getByRole('button', { name: 'Ventas' }).click()
-    const registrar = page.getByRole('link', { name: /registrá una venta/i })
-    await expect(registrar).toHaveAttribute('href', '/admin/pos')
-    await registrar.click()
+    await page.goto('/admin/pos', { waitUntil: 'domcontentloaded' })
     await expect(page).toHaveURL(/\/admin\/pos/)
     await expect(page.getByRole('heading', { name: /abrí el turno/i })).toBeVisible()
   })

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useLocation } from 'react-router-dom'
-import { esRutaPrototipo } from '@/utils/rutaPrototipo'
+import { useTranslation } from 'react-i18next'
+import { esRutaClaudeclick } from '@/utils/rutaPrototipo'
 
 const STORAGE_KEY = 'hotclick-cookie-consent'
 
@@ -33,7 +34,7 @@ export default function CookieBanner({ onConsent }: { onConsent?: (consent: Cook
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    if (esRutaPrototipo(pathname)) return
+    if (esRutaClaudeclick(pathname)) return
     if (localStorage.getItem(STORAGE_KEY)) return
     const t = setTimeout(() => setVisible(true), 12000)
     return () => clearTimeout(t)
@@ -47,7 +48,7 @@ export default function CookieBanner({ onConsent }: { onConsent?: (consent: Cook
     onConsent?.(consent)
   }
 
-  if (esRutaPrototipo(pathname)) return null
+  if (esRutaClaudeclick(pathname)) return null
 
   return (
     <AnimatePresence>
@@ -89,6 +90,7 @@ function CuerpoBanner({
   onSoloEsenciales: () => void
   onAceptarTodo: () => void
 }) {
+  const { t } = useTranslation()
   return (
     <div
       className="mx-auto flex max-w-3xl flex-col items-start gap-4 rounded-2xl px-5 py-4 pointer-events-auto sm:flex-row sm:items-center"
@@ -102,12 +104,12 @@ function CuerpoBanner({
       <IconoCookie />
       <div className="min-w-0 flex-1">
         <p className="mb-0.5 text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
-          Usamos cookies para mejorar tu experiencia
+          {t('cookies.title')}
         </p>
         <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-          Las cookies esenciales mantienen tu carrito y sesión. Las de análisis nos ayudan a mejorar la plataforma.{' '}
+          {t('cookies.body')}{' '}
           <Link to="/informacion" className="underline underline-offset-2 transition-opacity hover:opacity-80" style={{ color: 'var(--hc-accent)' }}>
-            Más información
+            {t('cookies.moreInfo')}
           </Link>
         </p>
       </div>
@@ -118,7 +120,7 @@ function CuerpoBanner({
           className="flex-1 rounded-xl px-4 py-2 text-xs font-semibold transition-all hover:bg-white/8 sm:flex-none"
           style={{ color: 'var(--hc-muted)', border: '1px solid var(--hc-border)' }}
         >
-          Solo esenciales
+          {t('cookies.essentialOnly')}
         </button>
         <button
           type="button"
@@ -129,7 +131,7 @@ function CuerpoBanner({
             boxShadow: '0 0 16px color-mix(in srgb, var(--hc-accent) 40%, transparent)',
           }}
         >
-          Aceptar todo
+          {t('cookies.acceptAll')}
         </button>
       </div>
     </div>

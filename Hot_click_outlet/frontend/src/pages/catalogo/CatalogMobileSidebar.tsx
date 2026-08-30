@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Dispatch, SetStateAction } from 'react'
+import { useTranslation } from 'react-i18next'
 import CategorySidebar from './CategorySidebar'
 import CloseIcon from '@/components/ui/CloseIcon'
 import type { CatalogCategoria, CatalogCounts } from './catalogoTipos'
@@ -17,6 +18,7 @@ export default function CatalogMobileSidebar({
   setCategory: Dispatch<SetStateAction<string>>
   categoryTotalCount: CatalogCounts
 }) {
+  const { t } = useTranslation()
   return (
     <AnimatePresence>
       {sidebarOpen && (
@@ -49,10 +51,10 @@ export default function CatalogMobileSidebar({
               className="flex items-center justify-between px-5 py-4"
               style={{ borderBottom: '1px solid var(--hc-border)' }}
             >
-              <p className="font-bold text-sm" style={{ color: 'var(--hc-text)' }}>Filtrar catálogo</p>
+              <p className="font-bold text-sm" style={{ color: 'var(--hc-text)' }}>{t('products.filterCatalog')}</p>
               <button type="button"
                 onClick={() => setSidebarOpen(false)}
-                aria-label="Cerrar"
+                aria-label={t('a11y.close')}
                 className="w-8 h-8 rounded-lg flex items-center justify-center transition-opacity hover:opacity-60"
                 style={{ color: 'var(--hc-muted)' }}
               >

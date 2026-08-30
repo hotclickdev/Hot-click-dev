@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useAuthStore from '@/store/authStore'
+import useTenantStore from '@/store/tenantStore'
 import { getAvailableModes, MODE_PREF_KEY } from '@/utils/modes'
 import type { ModoApp } from '@/utils/modes'
 
@@ -52,10 +53,11 @@ export default function ModeSelector() {
   const userRole    = useAuthStore(s => s.userRole)
   const permissions = useAuthStore(s => s.permissions)
   const empresaSlug = useAuthStore(s => s.empresaSlug)
+  const planNombre  = useTenantStore(s => s.planNombre)
   const userName    = useAuthStore(s => s.userName)
   const token       = useAuthStore(s => s.token)
 
-  const modes = getAvailableModes(userRole ?? '', permissions, { empresaSlug })
+  const modes = getAvailableModes(userRole ?? '', permissions, { empresaSlug, planNombre })
 
   // Si no hay sesión → login
   useEffect(() => {
@@ -93,37 +95,34 @@ export default function ModeSelector() {
         </p>
       </div>
 
-      {/* Tarjetas de modo — Sistema (clara) vs. Caja/POS (oscura), nunca mezcladas */}
+      {/* Tarjetas de modo — todas claras (tokens HotClick) */}
       <div className="w-full flex flex-wrap gap-6 justify-center items-stretch">
         {modes.map(mode => {
-          const dark = mode.id === 'pos'
+          const esPos = mode.id === 'pos'
           return (
             <button type="button"
               key={mode.id}
               onClick={() => handleSelect(mode)}
-              className="group flex flex-col gap-4.5 text-left rounded-2xl p-7 transition-all duration-200 hover:-translate-y-0.5"
-              style={{
-                width: 360,
-                minHeight: 220,
-                backgroundColor: dark ? '#1a1a1a' : 'var(--hc-surface)',
-                color: dark ? '#ffffff' : 'var(--hc-text)',
-                border: '2px solid transparent',
-                boxShadow: '0 1px 3px rgba(26,26,26,0.06)',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = dark ? '#5d5d5d' : 'var(--hc-accent)'; e.currentTarget.style.boxShadow = dark ? '0 10px 28px rgba(26,26,26,0.25)' : '0 10px 28px rgba(26,26,26,0.10)' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(26,26,26,0.06)' }}
+              data-mm={esPos ? 'modo-pos' : mode.id === 'admin' ? 'modo-admin' : undefined}
+              className="group flex flex-col gap-4.5 text-left rounded-2xl border-2 border-transparent bg-hc-surface p-7 text-hc-text shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-hc-primary hover:shadow-md"
+              style={{ width: 360, minHeight: 220 }}
             >
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center"
-                style={{ backgroundColor: dark ? 'rgba(255,255,255,0.12)' : 'rgba(23,71,168,0.08)', color: dark ? '#ffffff' : 'var(--hc-accent)' }}>
+              <div
+                className="flex h-12 w-12 items-center justify-center rounded-xl"
+                style={{
+                  backgroundColor: esPos ? 'var(--hc-red-50)' : 'var(--hc-blue-50)',
+                  color: esPos ? 'var(--hc-primary)' : 'var(--hc-link)',
+                }}
+              >
                 <ModeIcon icon={mode.icon} size={24} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <p className="font-bold text-[21px]" style={{ color: dark ? '#ffffff' : 'var(--hc-text)' }}>{mode.label}</p>
+                <p className="text-[21px] font-bold text-hc-text">{mode.label}</p>
                 {mode.sub && (
-                  <p className="text-[15px] leading-relaxed" style={{ color: dark ? '#b8b3ab' : 'var(--hc-muted)' }}>{mode.sub}</p>
+                  <p className="text-[15px] leading-relaxed text-hc-muted">{mode.sub}</p>
                 )}
               </div>
-              <div className="mt-auto font-bold text-[15px]" style={{ color: dark ? '#ffffff' : 'var(--hc-accent)' }}>
+              <div className="mt-auto text-[15px] font-bold text-hc-primary">
                 {pieModo(mode)}
               </div>
             </button>

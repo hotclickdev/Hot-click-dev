@@ -1,16 +1,19 @@
-import { CatColor, type ProductoPos } from './productSearch/posProductSearchHelpers'
+import { AdminFilterChip } from '@/prototipo/admin/AdminUi'
 import { ProductGrid } from './productSearch/ProductGrid'
 import { usePOSProductSearch } from './productSearch/usePOSProductSearch'
-import CatIcon from '@/pages/catalogo/CatIcon'
-import TextoFlecha from '@/components/ui/TextoFlecha'
+import type { ProductoPos } from './productSearch/posProductSearchHelpers'
 
-export default function POSProductSearch({ onAdd }: { onAdd: (p: ProductoPos) => void }) {
+export default function POSProductSearch({
+  onAdd,
+  cantidades = {},
+}: {
+  onAdd: (p: ProductoPos) => void
+  cantidades?: Record<string, number>
+}) {
   const {
     categorias,
     catSel,
-    setCatSel,
     productos,
-    setProductos,
     loadingCat,
     loadingProd,
     query,
@@ -18,107 +21,76 @@ export default function POSProductSearch({ onAdd }: { onAdd: (p: ProductoPos) =>
     searchLoading,
     inputRef,
     cargarPorCategoria,
+    cargarTodos,
     handleChange,
     handleKeyDown,
     handleAdd,
   } = usePOSProductSearch()
 
+  const items = query ? searchResults : productos
+  const vacioBusqueda = Boolean(query) && searchResults.length === 0 && !searchLoading
+
   return (
-    <div className="flex flex-col gap-3 h-full">
+    <div className="flex h-full flex-col gap-3">
       <div className="relative">
-        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--hc-muted)' }}
-          fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
-        </svg>
         <input
           ref={inputRef}
           type="text"
           data-pos-search
+          data-mm="pos-buscar"
           value={query}
           onChange={handleChange}
           onKeyDown={(e) => handleKeyDown(e, onAdd)}
-          placeholder="Buscar o escanear (F2)"
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm outline-none"
+          placeholder="Buscar producto o escanear código"
+          className="w-full rounded-xl border px-3.5 py-3 text-[13px] text-hc-text outline-none placeholder:text-hc-muted"
           style={{
-            backgroundColor: 'var(--hc-surface)',
-            border: `1px solid ${query ? 'rgba(23,71,168,0.4)' : 'rgba(255,255,255,0.08)'}`,
-            color: 'var(--hc-text)',
+            borderColor: 'var(--hc-border, #E5E7EC)',
+            backgroundColor: 'rgba(248, 249, 251, 0.65)',
           }}
         />
         {(searchLoading || loadingProd) && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 rounded-full animate-spin"
-            style={{ borderColor: 'var(--hc-accent)', borderTopColor: 'transparent' }}/>
+          <div
+            className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2"
+            style={{ borderColor: 'var(--hc-primary)', borderTopColor: 'transparent' }}
+          />
         )}
       </div>
 
-      {query ? (
-        <div className="flex-1 overflow-y-auto">
-          {searchResults.length === 0 && !searchLoading ? (
-            <div className="flex items-center justify-center h-32">
-              <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>Sin resultados para "{query}"</p>
-            </div>
-          ) : (
-            <ProductGrid items={searchResults} onAdd={(p) => handleAdd(p, onAdd)} />
-          )}
+      {!query && (
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1">
+          <AdminFilterChip activo={!catSel} onClick={() => cargarTodos(categorias)}>
+            Todos
+          </AdminFilterChip>
+          {categorias.map((cat) => (
+            <AdminFilterChip
+              key={String(cat.id)}
+              activo={catSel?.id === cat.id}
+              onClick={() => cargarPorCategoria(cat)}
+            >
+              {cat.nombreCategoria ?? 'Categoría'}
+            </AdminFilterChip>
+          ))}
         </div>
-      ) : (
-        <>
-          {catSel ? (
-            <>
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={() => { setCatSel(null); setProductos([]) }}
-                  className="p-1.5 rounded-lg hover:bg-white/8 transition-colors"
-                  style={{ color: 'var(--hc-muted)' }}>
-                  <TextoFlecha dir="atras">Volver</TextoFlecha>
-                </button>
-                <span className="text-sm font-semibold" style={{ color: 'var(--hc-text)' }}>
-                  {catSel.nombreCategoria}
-                </span>
-                <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-                  ({productos.length} productos)
-                </span>
-              </div>
-              <div className="flex-1 overflow-y-auto">
-                <ProductGrid items={productos} onAdd={(p) => handleAdd(p, onAdd)} />
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 overflow-y-auto">
-              {loadingCat ? (
-                <div className="flex justify-center py-8">
-                  <div className="w-6 h-6 border-2 rounded-full animate-spin"
-                    style={{ borderColor: 'var(--hc-accent)', borderTopColor: 'transparent' }}/>
-                </div>
-              ) : categorias.length === 0 ? (
-                <div className="flex items-center justify-center h-32">
-                  <p className="text-sm text-center" style={{ color: 'var(--hc-muted)' }}>
-                    Este negocio aún no tiene productos para vender en caja
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                  {categorias.map((cat, i) => {
-                    const c = CatColor(i)
-                    return (
-                      <button type="button" key={cat.id}
-                        onClick={() => cargarPorCategoria(cat)}
-                        className="flex flex-col items-center justify-center gap-1.5 p-4 rounded-2xl text-center transition-all hover:scale-[1.03] active:scale-[0.97]"
-                        style={{ backgroundColor: c.bg, border: `1.5px solid ${c.border}`, minHeight: 80 }}>
-                        <span style={{ color: c.text }}>
-                          <CatIcon name={cat.nombreCategoria} className="w-8 h-8" />
-                        </span>
-                        <span className="text-xs font-semibold leading-tight" style={{ color: c.text }}>
-                          {cat.nombreCategoria}
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-        </>
       )}
+
+      <div className="flex-1 overflow-y-auto">
+        {vacioBusqueda ? (
+          <p className="py-10 text-center text-sm text-hc-muted">Sin resultados para “{query}”</p>
+        ) : loadingCat ? (
+          <div className="flex justify-center py-8">
+            <div
+              className="h-6 w-6 animate-spin rounded-full border-2"
+              style={{ borderColor: 'var(--hc-primary)', borderTopColor: 'transparent' }}
+            />
+          </div>
+        ) : categorias.length === 0 && !query ? (
+          <p className="py-10 text-center text-sm text-hc-muted">
+            Este negocio aún no tiene productos para vender en caja
+          </p>
+        ) : (
+          <ProductGrid items={items} cantidades={cantidades} onAdd={(p) => handleAdd(p, onAdd)} />
+        )}
+      </div>
     </div>
   )
 }

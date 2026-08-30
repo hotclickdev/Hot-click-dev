@@ -1,5 +1,4 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { PHASES } from './heroRotator/heroRotatorData'
 import { ChatDecos, ProductDecos, BusinessDecos } from './heroRotator/HeroRotatorDecos'
 import { ChatPhase, ProductsPhase, BusinessesPhase, PhaseBar } from './heroRotator/HeroRotatorPhases'
 import { useHeroRotator } from './heroRotator/useHeroRotator'
@@ -12,6 +11,7 @@ export type HeroRotatorProps = {
 export default function HeroRotator({ destacados }: HeroRotatorProps) {
   const {
     phase,
+    phases,
     phaseIdx,
     progress,
     convenios,
@@ -99,7 +99,7 @@ export default function HeroRotator({ destacados }: HeroRotatorProps) {
 
       <div className="relative w-full flex justify-center pb-6">
         <PhaseBar
-          phases={PHASES}
+          phases={phases}
           currentIdx={phaseIdx}
           progress={progress}
           onSelect={goTo}

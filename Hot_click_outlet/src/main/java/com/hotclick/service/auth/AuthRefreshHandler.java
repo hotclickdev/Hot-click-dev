@@ -3,7 +3,6 @@ package com.hotclick.service.auth;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.RefreshToken;
 import com.hotclick.model.Usuario;
-import com.hotclick.repository.PermisoRepository;
 import com.hotclick.security.JwtUtil;
 import com.hotclick.service.RefreshTokenService;
 import com.hotclick.service.SecurityAuditService;
@@ -24,7 +23,7 @@ public class AuthRefreshHandler {
 
     @Autowired private JwtUtil                     jwtUtil;
     @Autowired private RefreshTokenService         refreshTokenService;
-    @Autowired private PermisoRepository           permisoRepository;
+    @Autowired private AuthSupport                 authSupport;
     @Autowired private SecurityAuditService        securityAuditService;
 
     public ResponseEntity<?> refresh(Map<String, String> body) {
@@ -37,7 +36,7 @@ public class AuthRefreshHandler {
             Usuario usuario = rt.getUsuario();
             String rol = usuario.getRoles().isEmpty() ? "USUARIO_FINAL" : usuario.getRoles().get(0).getNombreRol();
             String empresaSlug = usuario.getEmpresa() != null ? usuario.getEmpresa().getSlug() : null;
-            List<String> permisos = permisoRepository.findPermisosByUsuarioId(usuario.getId());
+            List<String> permisos = authSupport.permisosDe(usuario.getId());
             String newAccessToken = jwtUtil.generateTokenFull(
                 usuario.getCorreo(), usuario.getId(), rol,
                 usuario.getEmpresaId(), empresaSlug, permisos

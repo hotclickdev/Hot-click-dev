@@ -32,8 +32,13 @@ public class FeatureFlagService {
     @Cacheable(value = "empresaFlags", key = "#empresaId")
     @Transactional(readOnly = true)
     public Set<String> getFlagsActivosParaEmpresa(Long empresaId) {
-        List<String> nombres = flagRepo.findNombresActivosParaEmpresa(empresaId);
-        return new HashSet<>(nombres);
+        try {
+            List<String> nombres = flagRepo.findNombresActivosParaEmpresa(empresaId);
+            return new HashSet<>(nombres);
+        } catch (RuntimeException ex) {
+            log.warn("[feature-flag] no se pudieron leer flags empresa={}: {}", empresaId, ex.getMessage());
+            return Set.of();
+        }
     }
 
     /**

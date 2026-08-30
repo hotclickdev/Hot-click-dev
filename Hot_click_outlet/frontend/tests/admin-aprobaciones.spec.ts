@@ -37,6 +37,8 @@ async function entrarAprobaciones(page: Page) {
   await page.addInitScript((auth) => {
     localStorage.setItem('hotclick-auth', JSON.stringify(auth))
     localStorage.setItem('hc-admin-tour-v4-done', '1')
+    localStorage.setItem('hc-mm-v1-off', '1')
+    localStorage.setItem('hc-mm-v1-welcome-done', '1')
   }, payloadAuth())
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto('/admin/aprobaciones', { waitUntil: 'domcontentloaded' })
@@ -46,11 +48,10 @@ test.describe('Aprobaciones IT — el gate es el negocio', () => {
   test('la pestaña Productos no enseña revisión ítem por ítem', async ({ page }) => {
     await entrarAprobaciones(page)
 
-    await expect(page.getByRole('heading', { name: 'Solicitudes pendientes' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Moderación' })).toBeVisible()
     await page.getByRole('button', { name: /productos/i }).click()
 
-    await expect(page.getByText(/el catálogo se abre al aprobar el negocio/i)).toBeVisible()
-    await expect(page.getByText('Productos nuevos esperando tu aprobación para publicarse en el catálogo')).toHaveCount(0)
     await expect(page.getByText(/no hay revisión producto por producto/i)).toBeVisible()
+    await expect(page.getByText('Productos nuevos esperando tu aprobación para publicarse en el catálogo')).toHaveCount(0)
   })
 })

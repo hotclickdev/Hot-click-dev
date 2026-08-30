@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { crmService } from '@/services/crmService'
 import { useToast } from '@/components/ui/Toast'
 import { CloseIcon } from './posIcons'
@@ -10,6 +11,7 @@ export default function ClienteSelector({ cliente, onChange }: {
   cliente: ClienteSeleccionadoPos
   onChange: (c: ClienteSeleccionadoPos) => void
 }) {
+  const { t } = useTranslation()
   const { showToast } = useToast()
   const [open, setOpen]     = useState(false)
   const [tab, setTab]       = useState('buscar') // 'buscar' | 'nuevo'
@@ -30,20 +32,20 @@ export default function ClienteSelector({ cliente, onChange }: {
 
   useEffect(() => {
     if (!query || query.trim().length < 2) return
-    const t = setTimeout(() => {
+    const tmr = setTimeout(() => {
       setLoading(true)
       crmService.buscarClientes(query.trim())
         .then((data) => setResults(data as ClientePos[]))
         .catch(() => setResults([]))
         .finally(() => setLoading(false))
     }, 250)
-    return () => clearTimeout(t)
+    return () => clearTimeout(tmr)
   }, [query])
 
   const listaClientes = query.trim().length < 2 ? [] : results
 
   const seleccionar = (c: ClientePos) => {
-    onChange({ id: c.id, nombre: c.nombre || c.correo || 'Cliente' })
+    onChange({ id: c.id, nombre: c.nombre || c.correo || t('pos.cliente.fallbackNombre') })
     setOpen(false); setQuery(''); setResults([])
   }
 
@@ -54,9 +56,9 @@ export default function ClienteSelector({ cliente, onChange }: {
       const nuevo = await crmService.crearCliente({ nombre: nombre.trim(), telefono: telefono.trim() } as JsonBody)
       seleccionar(nuevo as ClientePos)
       setNombre(''); setTelefono('')
-      showToast('Cliente registrado', 'success')
+      showToast(t('pos.cliente.toastRegistrado'), 'success')
     } catch (err: unknown) {
-      showToast(mensajeErrorPos(err, 'Error al registrar cliente'), 'error')
+      showToast(mensajeErrorPos(err, t('pos.cliente.toastError')), 'error')
     } finally {
       setCreando(false)
     }
@@ -68,15 +70,15 @@ export default function ClienteSelector({ cliente, onChange }: {
       <button type="button" onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-sm transition-colors"
         style={{
-          backgroundColor: cliente ? 'rgba(23,71,168,0.1)' : 'rgba(255,255,255,0.04)',
-          border: `1px solid ${cliente ? 'rgba(23,71,168,0.3)' : 'rgba(255,255,255,0.08)'}`,
-          color: cliente ? '#7aa3ff' : 'rgba(255,255,255,0.4)',
+          backgroundColor: cliente ? 'rgba(23,71,168,0.1)' : 'var(--hc-surface-2)',
+          border: `1px solid ${cliente ? 'rgba(23,71,168,0.3)' : 'var(--hc-border)'}`,
+          color: cliente ? 'var(--hc-link)' : 'var(--hc-muted)',
         }}>
         <span className="flex items-center gap-1.5 truncate">
           <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
           </svg>
-          <span className="truncate font-medium">{cliente ? cliente.nombre : 'Cliente: Mostrador'}</span>
+          <span className="truncate font-medium">{cliente ? cliente.nombre : t('pos.cliente.mostrador')}</span>
         </span>
       </button>
         {cliente && (
@@ -87,9 +89,9 @@ export default function ClienteSelector({ cliente, onChange }: {
             style={{
               backgroundColor: 'rgba(23,71,168,0.1)',
               border: '1px solid rgba(23,71,168,0.3)',
-              color: '#7aa3ff',
+              color: 'var(--hc-link)',
             }}
-            aria-label="Quitar cliente"
+            aria-label={t('pos.cliente.quitarAria')}
           >
             <CloseIcon />
           </button>
@@ -98,13 +100,13 @@ export default function ClienteSelector({ cliente, onChange }: {
 
       {open && (
         <div className="absolute z-20 left-0 right-0 mt-1.5 rounded-xl overflow-hidden shadow-xl"
-          style={{ backgroundColor: '#15151d', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <div className="flex border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-            {[{ id: 'buscar', label: 'Buscar' }, { id: 'nuevo', label: 'Nuevo', mas: true }].map(t => (
-              <button type="button" key={t.id} onClick={() => setTab(t.id)}
+          style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
+          <div className="flex border-b" style={{ borderColor: 'var(--hc-border)' }}>
+            {([{ id: 'buscar', label: t('pos.cliente.tabBuscar') }, { id: 'nuevo', label: t('pos.cliente.tabNuevo'), mas: true }] as const).map(tabItem => (
+              <button type="button" key={tabItem.id} onClick={() => setTab(tabItem.id)}
                 className="flex-1 py-2 text-xs font-semibold transition-colors inline-flex items-center justify-center"
-                style={{ color: tab === t.id ? '#7aa3ff' : 'rgba(255,255,255,0.35)' }}>
-                {t.mas ? <TextoMas>{t.label}</TextoMas> : t.label}
+                style={{ color: tab === tabItem.id ? 'var(--hc-link)' : 'var(--hc-muted)' }}>
+                {'mas' in tabItem && tabItem.mas ? <TextoMas>{tabItem.label}</TextoMas> : tabItem.label}
               </button>
             ))}
           </div>
@@ -112,35 +114,35 @@ export default function ClienteSelector({ cliente, onChange }: {
           {tab === 'buscar' ? (
             <div className="p-2">
               <input autoFocus value={query} onChange={e => setQuery(e.target.value)}
-                placeholder="Nombre, correo o teléfono…"
+                placeholder={t('pos.cliente.buscarPh')}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff' }} />
+                style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }} />
               <div className="max-h-40 overflow-y-auto mt-1.5">
-                {loading && <p className="text-xs text-center py-2" style={{ color: 'rgba(255,255,255,0.3)' }}>Buscando…</p>}
+                {loading && <p className="text-xs text-center py-2" style={{ color: 'var(--hc-muted)' }}>{t('pos.cliente.buscando')}</p>}
                 {!loading && query.trim().length >= 2 && results.length === 0 && (
-                  <p className="text-xs text-center py-2" style={{ color: 'rgba(255,255,255,0.3)' }}>Sin resultados</p>
+                  <p className="text-xs text-center py-2" style={{ color: 'var(--hc-muted)' }}>{t('pos.cliente.sinResultados')}</p>
                 )}
                 {listaClientes.map(c => (
                   <button type="button" key={c.id} onClick={() => seleccionar(c)}
-                    className="w-full text-left px-2 py-1.5 rounded-lg text-xs hover:bg-white/5 transition-colors">
-                    <span className="font-medium" style={{ color: '#fff' }}>{c.nombre} {c.apellidoPaterno}</span>
-                    <span className="ml-1.5" style={{ color: 'rgba(255,255,255,0.35)' }}>{c.telefono}</span>
+                    className="w-full text-left px-2 py-1.5 rounded-lg text-xs hover:bg-[var(--hc-surface-2)] transition-colors">
+                    <span className="font-medium" style={{ color: 'var(--hc-text)' }}>{c.nombre} {c.apellidoPaterno}</span>
+                    <span className="ml-1.5" style={{ color: 'var(--hc-muted)' }}>{c.telefono}</span>
                   </button>
                 ))}
               </div>
             </div>
           ) : (
             <div className="p-2 space-y-1.5">
-              <input value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Nombre del cliente"
+              <input value={nombre} onChange={e => setNombre(e.target.value)} placeholder={t('pos.cliente.nombrePh')}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff' }} />
-              <input value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="Teléfono (opcional)"
+                style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }} />
+              <input value={telefono} onChange={e => setTelefono(e.target.value)} placeholder={t('pos.cliente.telefonoPh')}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff' }} />
+                style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }} />
               <button type="button" onClick={crear} disabled={!nombre.trim() || creando}
                 className="w-full py-2 rounded-lg text-xs font-semibold disabled:opacity-40 transition-opacity"
                 style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
-                {creando ? 'Guardando…' : 'Registrar y usar'}
+                {creando ? t('pos.cliente.guardando') : t('pos.cliente.registrarUsar')}
               </button>
             </div>
           )}

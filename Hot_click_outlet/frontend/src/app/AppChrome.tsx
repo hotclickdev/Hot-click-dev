@@ -14,11 +14,11 @@ import { trackPageView } from '@/utils/ga4'
 import { trackAiPage } from '@/components/ai/aiChat/aiChatBehavior'
 import { surfaceFromPath } from '@/components/ai/aiChat/chatSurface'
 import { esRutaTienda } from '@/utils/rutaTienda'
-import { esRutaPrototipo } from '@/utils/rutaPrototipo'
+import { esRutaClaudeclick, esRutaPrototipo, esRutaVendedorFigma, esRutaVisitanteFigma } from '@/utils/rutaPrototipo'
 import ChatModal from '@/components/ai/ChatModal'
 import type { Producto } from '@/types/producto'
 
-const EXCLUDED_PREFIXES = ['/admin', '/carrito', '/checkout', '/pago', '/tienda', '/prototipo']
+const EXCLUDED_PREFIXES = ['/admin', '/carrito', '/checkout', '/pago', '/tienda', '/prototipo', '/emprendedor', '/pyme', '/negocio-plus', '/visitante']
 const WAB_HIDDEN_PATHS = new Set(['/login', '/registro', '/carrito', '/checkout'])
 
 /**
@@ -29,7 +29,7 @@ export function ScrollToTop() {
   useEffect(() => {
     globalThis.scrollTo(0, 0)
     trackPageView(pathname)
-    if (pathname.startsWith('/admin') || esRutaPrototipo(pathname)) return
+    if (pathname.startsWith('/admin') || esRutaClaudeclick(pathname)) return
     const ficha = pathname.match(/^\/productos\/([^/]+)/)
     trackAiPage(surfaceFromPath(pathname), ficha?.[1])
   }, [pathname])
@@ -56,14 +56,14 @@ export function ConditionalWhatsAppFab() {
   const { pathname } = useLocation()
   if (WAB_HIDDEN_PATHS.has(pathname)) return null
   if (pathname.startsWith('/admin') || pathname.startsWith('/checkout') || pathname.startsWith('/pago')) return null
-  if (esRutaTienda(pathname) || esRutaPrototipo(pathname)) return null
+  if (esRutaTienda(pathname) || esRutaClaudeclick(pathname)) return null
   return <WhatsAppFab />
 }
 
 /** Asistente del marketplace: no se abre encima de la tienda de un vendedor ni del prototipo. */
 export function ConditionalChatModal() {
   const { pathname } = useLocation()
-  if (esRutaTienda(pathname) || esRutaPrototipo(pathname)) return null
+  if (esRutaTienda(pathname) || esRutaClaudeclick(pathname)) return null
   return <ChatModal />
 }
 
@@ -91,7 +91,7 @@ export function SocialProofController() {
   const [products, setProducts] = useState<Producto[]>([])
 
   const isAdmin = ADMIN_ROLES.has(userRole ?? '')
-  const isExcluded = EXCLUDED_PREFIXES.some((p) => pathname.startsWith(p))
+  const isExcluded = EXCLUDED_PREFIXES.some((p) => pathname.startsWith(p)) || esRutaClaudeclick(pathname)
 
   useEffect(() => {
     if (isAdmin || isExcluded) return
@@ -119,7 +119,7 @@ function conFotoYStock(producto: Producto) {
 /** Aplica branding del tenant; el prototipo usa tokens de producción. */
 export function BrandingInit() {
   const { pathname } = useLocation()
-  if (esRutaPrototipo(pathname)) return null
+  if (esRutaPrototipo(pathname) || esRutaVendedorFigma(pathname) || esRutaVisitanteFigma(pathname)) return null
   return <BrandingFetch />
 }
 

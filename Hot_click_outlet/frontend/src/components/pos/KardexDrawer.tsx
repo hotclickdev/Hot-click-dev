@@ -19,7 +19,7 @@ const TIPO_COLORS: Record<string, { bg: string; text: string }> = {
 }
 
 function TipoBadge({ tipo }: { tipo?: string }) {
-  const { bg, text } = TIPO_COLORS[tipo ?? ''] ?? { bg: 'rgba(255,255,255,0.06)', text: 'var(--hc-muted)' }
+  const { bg, text } = TIPO_COLORS[tipo ?? ''] ?? { bg: 'var(--hc-surface-2)', text: 'var(--hc-muted)' }
   return (
     <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap"
       style={{ backgroundColor: bg, color: text }}>
@@ -67,7 +67,7 @@ export default function KardexDrawer({ producto, onClose }: {
 
         {/* Header */}
         <div className="flex items-start justify-between p-5 border-b sticky top-0 z-10"
-          style={{ borderColor: 'rgba(255,255,255,0.07)', backgroundColor: 'var(--hc-surface)' }}>
+          style={{ borderColor: 'var(--hc-border)', backgroundColor: 'var(--hc-surface)' }}>
           <div>
             <h2 className="font-bold text-base" style={{ color: 'var(--hc-text)' }}>
               Kardex — {producto.nombre ?? producto.nombreProducto}
@@ -86,7 +86,7 @@ export default function KardexDrawer({ producto, onClose }: {
           </div>
           <button type="button" onClick={onClose} aria-label="Cerrar"
             className="w-8 h-8 flex items-center justify-center rounded-lg hover:opacity-70"
-            style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--hc-muted)' }}>
+            style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>
             <CloseIcon />
           </button>
         </div>
@@ -113,7 +113,7 @@ export default function KardexDrawer({ producto, onClose }: {
             <div className="space-y-2">
               {movimientos.map((m, i) => (
                 <div key={m.id ?? i} className="rounded-xl p-3 flex items-center gap-3"
-                  style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)' }}>
                   {/* Tipo */}
                   <div className="shrink-0">
                     <TipoBadge tipo={m.tipo ?? m.tipoMovimiento} />
@@ -143,7 +143,7 @@ export default function KardexDrawer({ producto, onClose }: {
                       <p className="text-xs truncate" style={{ color: 'var(--hc-muted)' }}>{m.referencia}</p>
                     )}
                     {m.operadorCorreo && (
-                      <p className="text-[10px] truncate" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                      <p className="text-[10px] truncate" style={{ color: 'var(--hc-muted)' }}>
                         {m.operadorCorreo}
                       </p>
                     )}

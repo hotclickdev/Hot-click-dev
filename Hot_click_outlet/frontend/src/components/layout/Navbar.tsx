@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { HotClickMark } from '@/components/ui/BrandLogo'
 import { useNavbar } from './navbar/useNavbar'
 import NavbarDesktopNav from './navbar/NavbarDesktopNav'
+import { linksNavbarPrincipal } from './navbar/navbarLinks'
 import NavbarActions from './navbar/NavbarActions'
 import NavbarMobileMenu from './navbar/NavbarMobileMenu'
 import { MenuIcon } from './navbar/navbarIcons'
@@ -27,22 +28,7 @@ export default function Navbar() {
     handleLogout,
   } = useNavbar()
 
-  const navLinks = [
-    { href: '/productos', label: t('nav.comprar') },
-    { href: '/registro-empresa', label: t('nav.vender') },
-    { href: '/emprende', label: t('nav.emprender') },
-    {
-      id: 'mas',
-      label: t('nav.mas'),
-      menu: [
-        { href: '/descubri', label: t('nav.descubri') },
-        { href: '/servicios', label: t('nav.servicios') },
-        { href: '/informacion', label: t('nav.informacion') },
-        { href: '/nosotros', label: t('nav.nosotros') },
-        { href: '/contacto', label: t('nav.contacto') },
-      ],
-    },
-  ]
+  const navLinks = linksNavbarPrincipal(t)
 
   return (
     <>
@@ -73,8 +59,8 @@ export default function Navbar() {
               <MenuIcon open={menuOpen} />
             </button>
 
-            <Link to="/" className="flex items-center gap-2 shrink-0 group" aria-label="HotClick — inicio">
-              <HotClickMark size={30} className="shrink-0 transition-transform duration-200 group-hover:scale-105" />
+            <Link to="/" className="flex items-center gap-2 shrink-0 group" aria-label={t('footer.inicioAria')}>
+              <HotClickMark size={40} className="shrink-0 transition-transform duration-200 group-hover:scale-105" />
               <span className="hc-wordmark hidden sm:inline text-[18px] leading-none transition-opacity duration-200 group-hover:opacity-80">
                 <span className="hot">Hot</span><span className="click">Click</span>
               </span>

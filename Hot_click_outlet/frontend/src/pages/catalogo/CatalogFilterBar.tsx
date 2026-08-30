@@ -1,5 +1,6 @@
 import { useMemo, type Dispatch, type SetStateAction } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { buildCategoryTree } from './catalogoHelpers'
 import CatIcon from './CatIcon'
 import CloseIcon from '@/components/ui/CloseIcon'
@@ -27,6 +28,7 @@ export default function CatalogFilterBar({
   hasFilters, clearFilters,
   onOpenSidebar,
 }: CatalogFilterBarProps) {
+  const { t } = useTranslation()
   const tree = useMemo(
     () => buildCategoryTree(categories).filter(c => (categoryTotalCount?.[String(c.id)] ?? 0) > 0),
     [categories, categoryTotalCount]
@@ -48,7 +50,7 @@ export default function CatalogFilterBar({
             </svg>
             <input
               type="text"
-              placeholder="Buscar productos..."
+              placeholder={t('products.search')}
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="hc-input w-full"
@@ -67,7 +69,7 @@ export default function CatalogFilterBar({
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
               </svg>
-              Descubrí
+              {t('nav.descubri')}
             </Link>
 
             {/* Mobile: abre sidebar drawer */}
@@ -82,7 +84,7 @@ export default function CatalogFilterBar({
                 <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
                 <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
               </svg>
-              Filtrar
+              {t('products.filter')}
             </button>
 
             {/* Limpiar todo */}
@@ -93,7 +95,7 @@ export default function CatalogFilterBar({
                 style={{ color: 'var(--hc-muted)', borderColor: 'var(--hc-border)' }}
               >
                 <CloseIcon className="w-3 h-3" />
-                Limpiar
+                {t('products.clear')}
               </button>
             )}
           </div>
@@ -119,7 +121,7 @@ export default function CatalogFilterBar({
                 <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
                 </svg>
-                <span>Todos</span>
+                <span>{t('products.all')}</span>
               </button>
 
               {tree.map(cat => {

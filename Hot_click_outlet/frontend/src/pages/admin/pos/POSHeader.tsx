@@ -1,7 +1,14 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import TextoFlecha from '@/components/ui/TextoFlecha'
+import { HotClickMark } from '@/components/ui/BrandLogo'
+import useRutaPanel from '@/app/useRutaPanel'
 import type { PosStep, PosTurno } from './posHelpers'
+import { posUi } from './posApariencia'
 
+/**
+ * Chrome utilitario de la caja. El título “Caja (POS)” vive en StepVenta (Figma 71:128).
+ */
 export default function POSHeader({ userName, turno, step, onCerrarTurno, mostrarVolverSistema }: {
   userName?: string | null
   turno: PosTurno | null
@@ -9,72 +16,95 @@ export default function POSHeader({ userName, turno, step, onCerrarTurno, mostra
   onCerrarTurno: () => void
   mostrarVolverSistema?: boolean
 }) {
-  const labels: Record<string, string> = { apertura: 'Paso 1 — Abrir turno', venta: 'Paso 2 — Pedido', cobro: 'Paso 3 — Cobrar', qr: 'Esperando pago', recibo: 'Venta lista' }
+  const { t } = useTranslation()
+  const rutaPanel = useRutaPanel()
+  const enVenta = step === 'venta'
+  const labels: Record<string, string> = {
+    apertura: t('pos.header.stepApertura'),
+    cobro: t('pos.header.stepCobro'),
+    qr: t('pos.header.stepQr'),
+    recibo: t('pos.header.stepRecibo'),
+  }
+  const chipSec = { backgroundColor: posUi.panel, color: posUi.muted, border: `1px solid ${posUi.borde}` }
+
   return (
-    <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 shrink-0 border-b border-white/5"
-      style={{ backgroundColor: '#0c0c12' }}>
-      <div className="flex items-center gap-2 mr-1">
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0"
-          style={{ background: 'var(--hc-accent)', color: '#fff' }}>HC</div>
-        <span className="text-sm font-bold tracking-wider hidden sm:block" style={{ color: '#fff' }}>POS</span>
+    <div
+      className="flex shrink-0 items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4 sm:py-2.5"
+      style={{ backgroundColor: posUi.barra, borderBottom: `1.5px solid ${posUi.borde}` }}
+    >
+      <div className="mr-1 flex items-center gap-2">
+        <HotClickMark size={24} className="shrink-0" />
+        {!enVenta && labels[step] ? (
+          <span className="hidden text-sm font-bold sm:block" style={{ color: posUi.texto }}>
+            {labels[step]}
+          </span>
+        ) : (
+          <span className="hidden text-sm font-bold tracking-wider sm:block" style={{ color: posUi.texto }}>
+            {t('pos.common.pos')}
+          </span>
+        )}
       </div>
 
-      {mostrarVolverSistema && (
-        <Link to="/admin"
-          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all hover:brightness-125"
-          style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <TextoFlecha dir="atras">Sistema</TextoFlecha>
+      {mostrarVolverSistema ? (
+        <Link
+          to={rutaPanel}
+          className="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all hover:bg-[var(--hc-surface-2)]"
+          style={chipSec}
+        >
+          <TextoFlecha dir="atras">{t('pos.header.panel')}</TextoFlecha>
         </Link>
-      )}
+      ) : null}
 
-      {labels[step] && (
-        <span className="text-xs px-2.5 py-1 rounded-full font-medium"
-          style={{ backgroundColor: 'rgba(23,71,168,0.12)', color: '#7aa3ff', border: '1px solid rgba(23,71,168,0.2)' }}>
-          {labels[step]}
-        </span>
-      )}
-      {step === 'venta' && (
-        <span className="text-xs px-2.5 py-1 rounded-full font-medium hidden sm:inline"
-          style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.08)' }}>
-          F2 buscar · F4 cantidad · F8 cobrar
-        </span>
-      )}
-
-      {turno && (
-        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
-          style={{ backgroundColor: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.15)' }}>
-          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-          <span className="text-xs font-bold" style={{ color: '#34d399' }}>TURNO ACTIVO</span>
+      {turno ? (
+        <div
+          className="hidden items-center gap-1.5 rounded-lg px-2.5 py-1 sm:flex"
+          style={{ backgroundColor: 'rgba(23,138,80,0.08)', border: '1px solid rgba(23,138,80,0.2)' }}
+        >
+          <span className="size-1.5 animate-pulse rounded-full bg-[var(--hc-success)]" />
+          <span className="text-xs font-bold" style={{ color: 'var(--hc-success)' }}>{t('pos.common.turnoActivo')}</span>
         </div>
-      )}
+      ) : null}
 
       <div className="flex-1" />
 
-      {turno && (
-        <button type="button" onClick={onCerrarTurno}
-          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all hover:brightness-125"
-          style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
-          Cerrar turno
+      {turno ? (
+        <button
+          type="button"
+          onClick={onCerrarTurno}
+          className="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all hover:brightness-125"
+          style={{
+            backgroundColor: 'var(--hc-danger-bg)',
+            color: 'var(--hc-danger)',
+            border: '1px solid color-mix(in srgb, var(--hc-danger) 25%, transparent)',
+          }}
+        >
+          {t('pos.common.cerrarTurno')}
         </button>
-      )}
+      ) : null}
 
-      <Link to="/admin/pos/caja"
-        className="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all hover:brightness-125"
-        style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.08)' }}>
-        Cuadre
+      <Link
+        to="/admin/pos/caja"
+        className="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all hover:bg-[var(--hc-surface-2)]"
+        style={chipSec}
+      >
+        {t('pos.header.cuadre')}
       </Link>
-      <Link to="/admin/pos/historial"
-        className="hidden sm:block px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all hover:brightness-125"
-        style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.08)' }}>
-        Historial
+      <Link
+        to="/admin/pos/historial"
+        className="hidden rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all hover:bg-[var(--hc-surface-2)] sm:block"
+        style={chipSec}
+      >
+        {t('pos.header.historial')}
       </Link>
 
-      <div className="flex items-center gap-2 pl-2 border-l border-white/8">
-        <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-          style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)', color: '#fff' }}>
+      <div className="flex items-center gap-2 pl-2" style={{ borderLeft: `1px solid ${posUi.borde}` }}>
+        <div
+          className="flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+          style={{ backgroundColor: 'var(--hc-primary)', color: '#fff' }}
+        >
           {userName?.[0]?.toUpperCase() ?? 'C'}
         </div>
-        <span className="text-xs hidden lg:block" style={{ color: 'rgba(255,255,255,0.5)' }}>{userName}</span>
+        <span className="hidden text-xs lg:block" style={{ color: posUi.muted }}>{userName}</span>
       </div>
     </div>
   )

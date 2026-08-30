@@ -18,6 +18,7 @@ type CheckoutFormProps = {
   errorBannerRef: RefObject<HTMLDivElement | null>
   onPagar: () => void
   onWhatsApp: () => void
+  rutaCarrito?: string
 }
 
 /**
@@ -34,6 +35,7 @@ export default function CheckoutForm({
   errorBannerRef,
   onPagar,
   onWhatsApp,
+  rutaCarrito = '/carrito',
 }: CheckoutFormProps) {
   const {
     SHIPPING_OPTIONS,
@@ -142,6 +144,7 @@ export default function CheckoutForm({
         onPagar={onPagar}
         toWhatsAppMessage={toWhatsAppMessage}
         errorBannerRef={errorBannerRef}
+        rutaCarrito={rutaCarrito}
       />
     </div>
   )

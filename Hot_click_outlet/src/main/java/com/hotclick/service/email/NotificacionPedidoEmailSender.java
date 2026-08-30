@@ -92,18 +92,18 @@ public class NotificacionPedidoEmailSender {
     }
 
     public void enviarRecuperacionCarrito(
-            String email, Long carritoId,
+            String email, String tokenRecuperacion,
             List<CarritoAbandonadoRequestDTO.CartItemDTO> items,
             String appUrl) {
         try {
             resendEmailService.send(
                 email,
                 "Tu carrito te espera — HotClick",
-                pedidoEmailBuilder.buildRecuperacionCarrito(carritoId, items, appUrl)
+                pedidoEmailBuilder.buildRecuperacionCarrito(tokenRecuperacion, items, appUrl)
             );
-            log.info("Email recuperación carrito enviado a {} (carrito {})", email, carritoId);
+            log.info("Email recuperación carrito enviado a {}", email);
         } catch (Exception e) {
-            log.error("No se pudo enviar email de recuperación de carrito {}: {}", carritoId, e.getMessage());
+            log.error("No se pudo enviar email de recuperación de carrito: {}", e.getMessage());
         }
     }
 

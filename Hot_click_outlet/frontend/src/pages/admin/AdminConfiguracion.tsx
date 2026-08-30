@@ -17,6 +17,10 @@ import SeccionTelegram from './configuracion/SeccionTelegram'
 import SeccionDatos from './configuracion/SeccionDatos'
 import SeccionApariencia from './configuracion/SeccionApariencia'
 import SeccionSistema from './configuracion/SeccionSistema'
+import SuperAdminConfig from './configuracion/SuperAdminConfig'
+import SuperAdminMetodosPago from './configuracion/SuperAdminMetodosPago'
+import SuperAdminNotificaciones from './configuracion/SuperAdminNotificaciones'
+import SuperAdminPolitica from './configuracion/SuperAdminPolitica'
 import {
   F, UserIcon, StoreIcon, ShieldIcon, BellIcon, SendIcon, DatabaseIcon, PaletteIcon, CogIcon, CardIcon, BoxIcon,
 } from './configuracion/configUi'
@@ -55,16 +59,16 @@ export default function AdminConfiguracion() {
   const isEmprendedor = esUsuarioSistema(userRole)
 
   const allNav: NavItem[] = [
-    { id: 'plan',           label: 'Plan y cuenta',                    icon: CardIcon,     desc: 'Tu plan y suscripción',      soloEmprendedor: true },
-    { id: 'perfil',         label: t('adminConfig.navPerfil'),         icon: UserIcon,     desc: 'Nombre y datos personales' },
-    { id: 'marca',          label: isEmprendedor ? 'Marca' : t('adminConfig.navTienda'), icon: StoreIcon, desc: isEmprendedor ? 'Logo, nombre y cómo te ven' : 'Contacto y horario' },
-    { id: 'bodega',         label: 'Bodega',                           icon: BoxIcon,      desc: 'Dónde guardás el inventario', soloEmprendedor: true },
-    { id: 'seguridad',      label: t('adminConfig.navSeguridad'),      icon: ShieldIcon,   desc: 'Contraseña y 2FA',           badge: !twoFAOn ? '!' : null },
-    { id: 'notificaciones', label: t('adminConfig.navNotificaciones'), icon: BellIcon,     desc: 'Alertas y emails',           emprendedor: false },
-    { id: 'telegram',       label: 'Telegram',                         icon: SendIcon,     desc: 'Bot y avisos del negocio' },
-    { id: 'datos',          label: t('adminConfig.navDatos'),          icon: DatabaseIcon, desc: 'Exportar información',       emprendedor: false },
-    { id: 'apariencia',     label: t('adminConfig.navApariencia'),     icon: PaletteIcon,  desc: 'Tema, fuente e idioma',      emprendedor: false },
-    { id: 'sistema',        label: t('adminConfig.navSistema'),        icon: CogIcon,      desc: 'Servidor y mantenimiento',   emprendedor: false },
+    { id: 'plan',           label: t('adminConfig.navPlan'),           icon: CardIcon,     desc: t('adminConfig.descPlan'),           soloEmprendedor: true },
+    { id: 'perfil',         label: t('adminConfig.navPerfil'),         icon: UserIcon,     desc: t('adminConfig.descPerfil') },
+    { id: 'marca',          label: isEmprendedor ? t('adminConfig.navMarca') : t('adminConfig.navTienda'), icon: StoreIcon, desc: isEmprendedor ? t('adminConfig.descMarca') : t('adminConfig.descTienda') },
+    { id: 'bodega',         label: t('adminConfig.navBodega'),         icon: BoxIcon,      desc: t('adminConfig.descBodega'),         soloEmprendedor: true },
+    { id: 'seguridad',      label: t('adminConfig.navSeguridad'),      icon: ShieldIcon,   desc: t('adminConfig.descSeguridad'),      badge: !twoFAOn ? '!' : null },
+    { id: 'notificaciones', label: t('adminConfig.navNotificaciones'), icon: BellIcon,     desc: t('adminConfig.descNotificaciones'), emprendedor: false },
+    { id: 'telegram',       label: t('adminConfig.navTelegram'),       icon: SendIcon,     desc: t('adminConfig.descTelegram') },
+    { id: 'datos',          label: t('adminConfig.navDatos'),          icon: DatabaseIcon, desc: t('adminConfig.descDatos'),          emprendedor: false },
+    { id: 'apariencia',     label: t('adminConfig.navApariencia'),     icon: PaletteIcon,  desc: t('adminConfig.descApariencia'),     emprendedor: false },
+    { id: 'sistema',        label: t('adminConfig.navSistema'),        icon: CogIcon,      desc: t('adminConfig.descSistema'),        emprendedor: false },
   ]
   // EMPRENDEDOR: ocultar tabs marcados con emprendedor: false — "notificaciones"
   // se fusiona dentro de "perfil" (ver SeccionPerfil), "datos"/"apariencia"/
@@ -76,6 +80,11 @@ export default function AdminConfiguracion() {
     : allNav.filter(n => !n.soloEmprendedor)
 
   const go = (id: string) => { setSection(id); setAnimKey(k => k + 1) }
+  const seccionFigma = searchParams.get('seccion')
+  if (userRole === 'ADMIN' && !seccionFigma) return <SuperAdminConfig />
+  if (userRole === 'ADMIN' && seccionFigma === 'politica') return <SuperAdminPolitica />
+  if (userRole === 'ADMIN' && seccionFigma === 'pagos-metodos') return <SuperAdminMetodosPago />
+  if (userRole === 'ADMIN' && seccionFigma === 'alertas') return <SuperAdminNotificaciones />
 
   return (
     <>

@@ -37,9 +37,9 @@ class PedidoClienteEmailBuilder {
     }
 
     String buildRecuperacionCarrito(
-            Long carritoId,
+            String tokenRecuperacion,
             List<CarritoAbandonadoRequestDTO.CartItemDTO> items,
             String appUrl) {
-        return carrito.buildRecuperacionCarrito(carritoId, items, appUrl);
+        return carrito.buildRecuperacionCarrito(tokenRecuperacion, items, appUrl);
     }
 }

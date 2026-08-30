@@ -10,13 +10,12 @@ import { formatPrice } from '@/utils/format'
 import { useToast } from '@/components/ui/Toast'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import TextoFlecha from '@/components/ui/TextoFlecha'
-import type { Id } from '@/types/api'
 import type { ItemCarritoAbandonado } from '@/types/carrito'
 import type { Producto } from '@/types/producto'
 
 export default function RecuperarCarritoPage() {
   const { t } = useTranslation()
-  const { id } = useParams()
+  const { token } = useParams<{ token: string }>()
   const navigate = useNavigate()
   const addItem = useCartStore((s) => s.addItem)
   const toast   = useToast()
@@ -27,7 +26,12 @@ export default function RecuperarCarritoPage() {
   const [adding,  setAdding]  = useState(false)
 
   useEffect(() => {
-    abandonedCartService.getAbandonedCart(id as Id)
+    if (!token) {
+      setError(true)
+      setLoading(false)
+      return
+    }
+    abandonedCartService.getAbandonedCart(token)
       .then(({ data }) => {
         const body = data as { data?: { items?: ItemCarritoAbandonado[] } }
         const list = body?.data?.items ?? []
@@ -35,13 +39,14 @@ export default function RecuperarCarritoPage() {
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false))
-  }, [id])
+  }, [token])
 
   const total = items.reduce(
     (sum, i) => sum + (i.precio ?? 0) * (i.cantidad ?? 1), 0
   )
 
   const handleRestore = async () => {
+    if (!token) return
     setAdding(true)
     items.forEach((item) =>
       addItem({
@@ -53,7 +58,11 @@ export default function RecuperarCarritoPage() {
         cantidad:  item.cantidad,
       } as unknown as Producto)
     )
-    try { await abandonedCartService.deleteAbandonedCart(id as Id) } catch { /* ok */ }
+    try {
+      await abandonedCartService.deleteAbandonedCartByToken(token)
+    } catch (err) {
+      console.error('[RecuperarCarrito] no se pudo descartar el carrito abandonado', err)
+    }
     toast({ message: t('recuperarCarrito.addedToast', { count: items.length }), type: 'success' })
     navigate('/carrito')
   }

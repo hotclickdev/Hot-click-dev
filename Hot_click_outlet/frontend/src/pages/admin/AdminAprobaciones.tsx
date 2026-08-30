@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useToast } from '@/components/ui/Toast'
 import { aprobacionService } from '@/services/aprobacionService'
 import { adminService } from '@/services/orderService'
@@ -6,8 +7,8 @@ import type { Id } from '@/types/api'
 import EmpresasPendientes from './aprobaciones/EmpresasPendientes'
 import OfertasPendientes from './aprobaciones/OfertasPendientes'
 import ProductosPendientes from './aprobaciones/ProductosPendientes'
+import { AdminFilterChip } from '@/prototipo/admin/AdminUi'
 import {
-  SUBTITULO_TAB,
   listaDesdeRespuesta,
   solicitudesPendientes,
   statsDesdeEmpresas,
@@ -19,9 +20,28 @@ import {
   type TabAprobacion,
 } from './aprobaciones/aprobacionesHelpers'
 
+const TAB_LABEL_KEY: Record<TabAprobacion, string> = {
+  empresas: 'adminAprobaciones.tabEmpresas',
+  productos: 'adminAprobaciones.tabProductos',
+  ofertas: 'adminAprobaciones.tabOfertas',
+}
+
+function subtituloModeracionI18n(
+  t: (key: string, opts?: { count: number }) => string,
+  tab: TabAprobacion,
+  productos: number,
+  empresas: number,
+  ofertas: number,
+): string {
+  if (tab === 'productos') return t('adminAprobaciones.waitingProducts', { count: productos })
+  if (tab === 'ofertas') return t('adminAprobaciones.waitingOffers', { count: ofertas })
+  return t('adminAprobaciones.waitingStores', { count: empresas })
+}
+
 export default function AdminAprobaciones() {
+  const { t } = useTranslation()
   const toast = useToast()
-  const [tab, setTab] = useState<TabAprobacion>('empresas')
+  const [tab, setTab] = useState<TabAprobacion>('productos')
   const [solicitudes, setSolicitudes] = useState<EmpresaSolicitud[]>([])
   const [stats, setStats] = useState<StatsAprobacion>({})
   const [loading, setLoading] = useState(true)
@@ -43,7 +63,7 @@ export default function AdminAprobaciones() {
       const { data } = await aprobacionService.listProductos()
       setProductos(listaDesdeRespuesta<ProductoPendiente>(data))
     } catch {
-      toast({ message: 'Error al cargar productos pendientes', type: 'error' })
+      toast({ message: t('adminAprobaciones.errorLoadProducts'), type: 'error' })
     } finally {
       setLoadingProductos(false)
     }
@@ -52,10 +72,10 @@ export default function AdminAprobaciones() {
   async function aprobarProducto(id: Id) {
     try {
       await aprobacionService.aprobarProducto(id)
-      toast({ message: 'Producto aprobado y publicado', type: 'success' })
+      toast({ message: t('adminAprobaciones.productApproved'), type: 'success' })
       cargarProductos()
     } catch {
-      toast({ message: 'Error al aprobar el producto', type: 'error' })
+      toast({ message: t('adminAprobaciones.errorApproveProduct'), type: 'error' })
       throw new Error('aprobar-producto-failed')
     }
   }
@@ -63,10 +83,10 @@ export default function AdminAprobaciones() {
   async function rechazarProducto(id: Id, comentario: string) {
     try {
       await aprobacionService.rechazarProducto(id, comentario)
-      toast({ message: 'Producto rechazado', type: 'success' })
+      toast({ message: t('adminAprobaciones.productRejected'), type: 'success' })
       cargarProductos()
     } catch {
-      toast({ message: 'Error al rechazar el producto', type: 'error' })
+      toast({ message: t('adminAprobaciones.errorRejectProduct'), type: 'error' })
       throw new Error('rechazar-producto-failed')
     }
   }
@@ -77,7 +97,7 @@ export default function AdminAprobaciones() {
       const { data } = await aprobacionService.listOfertas()
       setOfertas(listaDesdeRespuesta<OfertaPendiente>(data))
     } catch {
-      toast({ message: 'Error al cargar promociones pendientes', type: 'error' })
+      toast({ message: t('adminAprobaciones.errorLoadOffers'), type: 'error' })
     } finally {
       setLoadingOfertas(false)
     }
@@ -86,10 +106,10 @@ export default function AdminAprobaciones() {
   async function aprobarOferta(id: Id) {
     try {
       await aprobacionService.aprobarOferta(id)
-      toast({ message: 'Promoción aprobada y aplicada', type: 'success' })
+      toast({ message: t('adminAprobaciones.offerApproved'), type: 'success' })
       cargarOfertas()
     } catch {
-      toast({ message: 'Error al aprobar la promoción', type: 'error' })
+      toast({ message: t('adminAprobaciones.errorApproveOffer'), type: 'error' })
       throw new Error('aprobar-oferta-failed')
     }
   }
@@ -97,10 +117,10 @@ export default function AdminAprobaciones() {
   async function rechazarOferta(id: Id, comentario: string) {
     try {
       await aprobacionService.rechazarOferta(id, comentario)
-      toast({ message: 'Promoción rechazada', type: 'success' })
+      toast({ message: t('adminAprobaciones.offerRejected'), type: 'success' })
       cargarOfertas()
     } catch {
-      toast({ message: 'Error al rechazar la promoción', type: 'error' })
+      toast({ message: t('adminAprobaciones.errorRejectOffer'), type: 'error' })
       throw new Error('rechazar-oferta-failed')
     }
   }
@@ -113,7 +133,7 @@ export default function AdminAprobaciones() {
       const { data: todas } = await adminService.getEmpresas()
       setStats(statsDesdeEmpresas(listaDesdeRespuesta<EmpresaSolicitud>(todas)))
     } catch {
-      toast({ message: 'Error al cargar solicitudes', type: 'error' })
+      toast({ message: t('adminAprobaciones.errorLoadRequests'), type: 'error' })
     } finally {
       setLoading(false)
     }
@@ -122,10 +142,10 @@ export default function AdminAprobaciones() {
   async function aprobarEmpresa(id: Id) {
     try {
       await aprobacionService.aprobarEmpresa(id)
-      toast({ message: 'Negocio aprobado correctamente', type: 'success' })
+      toast({ message: t('adminAprobaciones.companyApproved'), type: 'success' })
       cargar()
     } catch {
-      toast({ message: 'Error al aprobar', type: 'error' })
+      toast({ message: t('adminAprobaciones.errorApprove'), type: 'error' })
       throw new Error('aprobar-empresa-failed')
     }
   }
@@ -133,10 +153,10 @@ export default function AdminAprobaciones() {
   async function rechazarEmpresa(id: Id) {
     try {
       await aprobacionService.rechazarEmpresa(id)
-      toast({ message: 'Solicitud rechazada', type: 'success' })
+      toast({ message: t('adminAprobaciones.requestRejected'), type: 'success' })
       cargar()
     } catch {
-      toast({ message: 'Error al rechazar', type: 'error' })
+      toast({ message: t('adminAprobaciones.errorReject'), type: 'error' })
       throw new Error('rechazar-empresa-failed')
     }
   }
@@ -148,23 +168,28 @@ export default function AdminAprobaciones() {
   })
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-md space-y-5 pb-8 md:max-w-4xl">
       <div>
-        <h1 className="text-xl font-bold" style={{ color: 'var(--hc-text)' }}>Solicitudes pendientes</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>{SUBTITULO_TAB[tab]}</p>
+        <h1 className="font-display text-[22px] font-bold text-hc-text">{t('adminAprobaciones.title')}</h1>
+        <p className="mt-0.5 text-xs text-hc-muted">
+          {subtituloModeracionI18n(t, tab, productos.length, solicitudes.length, ofertas.length)}
+        </p>
       </div>
 
-      <div className="flex gap-2 border-b" style={{ borderColor: 'var(--hc-border)' }}>
-        {tabs.map((item) => (
-          <button type="button" key={item.id} onClick={() => setTab(item.id)}
-            className="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors"
-            style={{
-              borderColor: tab === item.id ? 'var(--hc-accent)' : 'transparent',
-              color: tab === item.id ? 'var(--hc-text)' : 'var(--hc-muted)',
-            }}>
-            {item.label} {item.count > 0 && <span className="ml-1 text-xs">({item.count})</span>}
-          </button>
-        ))}
+      <div className="-mx-1 flex gap-2 overflow-x-auto px-1">
+        {tabs.map((item) => {
+          const label = t(TAB_LABEL_KEY[item.id])
+          return (
+            <AdminFilterChip
+              key={item.id}
+              activo={tab === item.id}
+              onClick={() => setTab(item.id)}
+              dataMm={item.id === 'productos' ? 'tab-productos' : undefined}
+            >
+              {item.count > 0 ? `${label} (${item.count})` : label}
+            </AdminFilterChip>
+          )
+        })}
       </div>
 
       {tab === 'productos' ? (
