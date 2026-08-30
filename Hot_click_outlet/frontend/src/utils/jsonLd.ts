@@ -167,7 +167,7 @@ export function generateOrganizationJsonLd(urlBase: string, socialUrls: string[]
     url: urlBase,
     logo: {
       '@type': 'ImageObject',
-      url: `${urlBase}/favicon.svg`,
+      url: `${urlBase}/brand/app-icon.png`,
       width: 512,
       height: 512,
     },

@@ -44,7 +44,7 @@ function buildBlogPostingJsonLd(post: EntradaBlog) {
       name: 'HotClick',
       logo: {
         '@type': 'ImageObject',
-        url: `${SITE_URL}/favicon.svg`,
+        url: `${SITE_URL}/brand/app-icon.png`,
       },
     },
     mainEntityOfPage: {

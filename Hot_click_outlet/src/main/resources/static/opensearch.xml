@@ -4,7 +4,7 @@
   <Description>Buscar productos en HOTCLICK — Marketplace Costa Rica</Description>
   <InputEncoding>UTF-8</InputEncoding>
   <Url type="text/html" template="https://hotclick.lat/productos?search={searchTerms}"/>
-  <Image width="32" height="32" type="image/svg+xml">https://hotclick.lat/favicon.svg</Image>
+  <Image width="32" height="32" type="image/png">https://hotclick.lat/favicon-32.png</Image>
   <Language>es-CR</Language>
   <Contact>soporte@hotclick.lat</Contact>
 </OpenSearchDescription>
