@@ -1,0 +1,1 @@
+import{t as e}from"./api-DqyV69ZO.js";var t={getPublicos:()=>e.get(`/blog/publico`),getPublico:t=>e.get(`/blog/publico/${t}`),getAll:()=>e.get(`/blog`),create:t=>e.post(`/blog`,t),update:(t,n)=>e.put(`/blog/${t}`,n),delete:t=>e.delete(`/blog/${t}`)};export{t};

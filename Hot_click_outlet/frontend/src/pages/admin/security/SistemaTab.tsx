@@ -1,0 +1,100 @@
+import { useEffect, useState } from 'react'
+import { Card } from './securityUi'
+
+type EstadoServidor = {
+  up: boolean
+  ms: number | null
+  whatsappModo?: string
+}
+
+export default function SistemaTab() {
+  const [serverStatus, setServerStatus] = useState<EstadoServidor | null>(null)
+
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const t0 = Date.now()
+        const res = await fetch('/api/health')
+        const body = await res.json().catch(() => ({})) as { whatsappModo?: string }
+        setServerStatus({
+          up: res.ok,
+          ms: Date.now() - t0,
+          whatsappModo: typeof body.whatsappModo === 'string' ? body.whatsappModo : undefined,
+        })
+      } catch {
+        setServerStatus({ up: false, ms: null })
+      }
+    }
+    check()
+  }, [])
+
+  const herramientas = [
+    { label: 'Sentry',         desc: 'Errores en producción', href: 'https://sentry.io/',                                                                  color: '#f84f35' },
+    { label: 'PostHog',        desc: 'Analytics y sesiones',  href: 'https://app.posthog.com/',                                                            color: '#f9bd2b' },
+    { label: 'Search Console', desc: 'Indexación y queries',  href: 'https://search.google.com/search-console',                                            color: '#4285f4' },
+    { label: 'Merchant',       desc: 'Feed Shopping',         href: 'https://merchants.google.com/',                                                       color: '#34a853' },
+    { label: 'Bing Webmaster', desc: 'Sitemap Bing',          href: 'https://www.bing.com/webmasters',                                                     color: '#008373' },
+    { label: 'UptimeRobot',    desc: 'Monitor /api/health',   href: 'https://uptimerobot.com/dashboard',                                                   color: '#3bd671' },
+    { label: 'SonarCloud',     desc: 'Calidad de código',     href: 'https://sonarcloud.io/project/overview?id=hotclickdev_Hot-click-dev',                  color: '#f3702a' },
+    { label: 'GitHub Actions', desc: 'CI / CD',               href: 'https://github.com/hotclickdev/Hot-click-dev/actions',                                color: '#4f7cff' },
+  ]
+
+  return (
+    <div className="space-y-6">
+      {serverStatus?.whatsappModo === 'SIMULADO' && (
+        <Card className="p-4">
+          <div className="rounded-lg p-3" style={{ outline: '1px solid rgba(234,179,8,0.45)' }}>
+          <p className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>
+            WhatsApp en modo SIMULADO
+          </p>
+          <p className="text-xs mt-1" style={{ color: 'var(--hc-muted)' }}>
+            Faltan WHATSAPP_PHONE_ID y WHATSAPP_TOKEN. Los mensajes se guardan en bitácora y no llegan al cliente.
+            Configuralos en el .env del servidor y reiniciá la app.
+          </p>
+          </div>
+        </Card>
+      )}
+      <Card className="p-5">
+        <div className="flex items-center justify-between pb-4 mb-4" style={{ borderBottom: '1px solid var(--hc-border)' }}>
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full shrink-0 ${clasePuntoServidor(serverStatus)}`} />
+            <span className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Servidor hotclick.lat</span>
+          </div>
+          <span className="text-xs" style={{ color: 'var(--hc-muted)' }}>
+            {textoEstadoServidor(serverStatus)}
+          </span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {herramientas.map(({ label, desc, href, color }) => (
+            <a key={label} href={href} target="_blank" rel="noopener noreferrer"
+              className="flex flex-col gap-1.5 p-3 rounded-xl transition-all group"
+              style={{ backgroundColor: 'var(--hc-bg)', border: '1px solid var(--hc-border)' }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--hc-border)' }}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold" style={{ color }}>{label}</span>
+                <svg className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--hc-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </div>
+              <span className="text-[10px]" style={{ color: 'var(--hc-muted)' }}>{desc}</span>
+            </a>
+          ))}
+        </div>
+      </Card>
+    </div>
+  )
+}
+
+function clasePuntoServidor(serverStatus: EstadoServidor | null) {
+  if (serverStatus === null) return 'bg-amber-400 animate-pulse'
+  if (serverStatus.up) return 'bg-emerald-400'
+  return 'bg-red-400 animate-pulse'
+}
+
+function textoEstadoServidor(serverStatus: EstadoServidor | null) {
+  if (serverStatus === null) return 'Verificando...'
+  if (serverStatus.up) return `Operativo · ${serverStatus.ms}ms`
+  return 'Sin respuesta'
+}

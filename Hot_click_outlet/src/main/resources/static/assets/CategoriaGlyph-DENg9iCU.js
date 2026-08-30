@@ -1,1 +1,0 @@
-import{a as e}from"./rolldown-runtime-BYbx6iT9.js";import{r as t}from"./vendor-clerk-cCjb-hS0.js";import{t as n}from"./CatIcon-DEtJnfJD.js";import{n as r}from"./categoriaIconos-B9X9q_gb.js";var i=e(t(),1);function a({icono:e,nombre:t,className:a=`w-4 h-4 shrink-0`}){let o=r(e)??t;return o?(0,i.jsx)(n,{name:o,className:a}):null}export{a as t};

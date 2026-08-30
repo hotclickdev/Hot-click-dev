@@ -6,18 +6,27 @@ import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+
 @Component
+@Order(100)
 public class DataSeeder implements ApplicationRunner {
+
+    private static final String DEMO_PYME = "qa.pyme.demo@hotclick.test";
+    private static final String DEMO_PLUS = "qa.negocioplus.demo@hotclick.test";
 
     @Autowired private RolRepository rolRepository;
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private BodegaRepository bodegaRepository;
     @Autowired private CategoriaRepository categoriaRepository;
     @Autowired private EstadoRepository estadoRepository;
+    @Autowired private PlanRepository planRepository;
+    @Autowired private EmpresaRepository empresaRepository;
     @Autowired private PasswordEncoder passwordEncoder;
 
     @Override
@@ -28,6 +37,104 @@ public class DataSeeder implements ApplicationRunner {
         seedRol(Constants.ROL_EMPRENDEDOR,   "Dueño de empresa",                   7);
         seedRol(Constants.ROL_USUARIO_FINAL, "Cliente final",                       1);
         seedAdminUser();
+        seedPlanesSaas();
+        asignarPlanesDemo();
+    }
+
+    private void seedPlanesSaas() {
+        seedPlan(
+            "EMPRENDEDOR",
+            "Plan gratuito. Modelo basado en comisión por venta.",
+            BigDecimal.ZERO, new BigDecimal("1.50"),
+            2, 50, 1, 1,
+            false, false, false, true, false, false, 0
+        );
+        seedPlan(
+            "PYME",
+            "Plan para negocios en crecimiento. Incluye IA y reportes.",
+            new BigDecimal("11.99"), BigDecimal.ZERO,
+            5, 500, 2, 2,
+            true, false, true, true, true, false, 80
+        );
+        seedPlan(
+            "NEGOCIO_PLUS",
+            "Plan completo. Usuarios ilimitados, IA sin límite.",
+            new BigDecimal("19.99"), BigDecimal.ZERO,
+            -1, -1, -1, -1,
+            true, true, true, true, true, false, -1
+        );
+        backfillSinPlan();
+    }
+
+    private void seedPlan(
+        String nombre, String descripcion,
+        BigDecimal precioUsd, BigDecimal comision,
+        int maxUsuarios, int maxProductos, int maxBodegas, int maxCajas,
+        boolean pos, boolean crm, boolean compras, boolean reportes,
+        boolean ai, boolean api, int creditosAi
+    ) {
+        var existente = planRepository.findByNombre(nombre);
+        if (existente.isPresent()) {
+            Plan p = existente.get();
+            if (!Boolean.TRUE.equals(p.getActivo())) {
+                p.setActivo(true);
+                planRepository.save(p);
+            }
+            return;
+        }
+        Plan plan = new Plan();
+        plan.setNombre(nombre);
+        plan.setDescripcion(descripcion);
+        plan.setPrecioMensual(0);
+        plan.setPrecioUsd(precioUsd);
+        plan.setComisionPorcentaje(comision);
+        plan.setMaxUsuarios(maxUsuarios);
+        plan.setMaxProductos(maxProductos);
+        plan.setMaxBodegas(maxBodegas);
+        plan.setMaxCajas(maxCajas);
+        plan.setTienePos(pos);
+        plan.setTieneCrm(crm);
+        plan.setTieneCompras(compras);
+        plan.setTieneReportes(reportes);
+        plan.setTieneAi(ai);
+        plan.setTieneApi(api);
+        plan.setMaxCreditosAi(creditosAi);
+        plan.setActivo(true);
+        planRepository.save(plan);
+    }
+
+    /** Empresas sin fk_id_plan quedan como EMPRENDEDOR (equivalente a V89). */
+    private void backfillSinPlan() {
+        Plan emprendedor = planRepository.findByNombre("EMPRENDEDOR").orElse(null);
+        if (emprendedor == null) return;
+        for (Empresa empresa : empresaRepository.findAll()) {
+            if (empresa.getPlan() != null) continue;
+            empresa.setPlan(emprendedor);
+            empresa.setPlanSaas("EMPRENDEDOR");
+            empresaRepository.save(empresa);
+        }
+    }
+
+    private void asignarPlanesDemo() {
+        asignarPlanPorCorreo(DEMO_PYME, "PYME");
+        asignarPlanPorCorreo(DEMO_PLUS, "NEGOCIO_PLUS");
+    }
+
+    private void asignarPlanPorCorreo(String correo, String nombrePlan) {
+        Plan plan = planRepository.findByNombre(nombrePlan).orElse(null);
+        if (plan == null) return;
+        usuarioRepository.findByCorreo(correo).ifPresent(usuario -> {
+            Empresa empresa = usuario.getEmpresa();
+            if (empresa == null) return;
+            empresa.setPlan(plan);
+            empresa.setPlanSaas(nombrePlan);
+            empresaRepository.save(empresa);
+        });
+        empresaRepository.findByCorreoEmpresa(correo).ifPresent(empresa -> {
+            empresa.setPlan(plan);
+            empresa.setPlanSaas(nombrePlan);
+            empresaRepository.save(empresa);
+        });
     }
 
     private void seedEstados() {

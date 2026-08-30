@@ -7,6 +7,9 @@ Allow: /contacto
 Allow: /servicios
 Allow: /blog
 Allow: /emprendimientos
+# Merchant Center y crawlers de Google/Bing deben poder leer el feed.
+# Disallow: /api/ es más corto; la regla Allow más específica gana.
+Allow: /api/public/feed/
 
 Disallow: /admin/
 Disallow: /perfil
@@ -24,3 +27,6 @@ Disallow: /sso-complete
 Disallow: /mode-select
 
 Sitemap: https://hotclick.lat/sitemap.xml
+
+# Feed Google Merchant Center (no es sitemap; se registra en merchants.google.com)
+# https://hotclick.lat/api/public/feed/shopping.xml

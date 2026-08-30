@@ -1,0 +1,58 @@
+import { formatoColon } from '@/theme/formatoColon'
+import FilaChips from '../ui/FilaChips'
+import Miniatura from '../ui/Miniatura'
+import { useState } from 'react'
+import { useReportesVendedor } from '@/prototipo/compartido/useReportesVendedor'
+
+const PERIODOS = ['Hoy', 'Semana', 'Mes', 'Todo'] as const
+
+/**
+ * Paso 4 Reportes (Figma 13:2) — números reales del catálogo y pedidos.
+ */
+export default function ReportesPage() {
+  const [periodo, setPeriodo] = useState<string>('Todo')
+  const { publicados, unidadesVendidas, gananciaVendida, gananciaPotencial, top, cargando, error } = useReportesVendedor()
+
+  return (
+    <main className="flex flex-col gap-[22px] px-5 pt-8" data-mm="seller-reportes">
+      <header>
+        <h1 className="font-display text-[22px] font-bold">Reportes</h1>
+        <p className="text-xs text-hc-muted">Resumen de tu negocio</p>
+      </header>
+      <FilaChips valor={periodo} opciones={PERIODOS} onChange={setPeriodo} />
+      {cargando ? <p className="text-sm text-hc-muted">Cargando reportes…</p> : null}
+      {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
+      <div className="grid grid-cols-2 gap-3">
+        <Kpi etiqueta="Productos publicados" valor={String(publicados)} />
+        <Kpi etiqueta="Vendidos" valor={String(unidadesVendidas)} />
+        <Kpi etiqueta="Ganancia vendida" valor={formatoColon(gananciaVendida)} destacado />
+        <Kpi etiqueta="Ganancia potencial" valor={formatoColon(gananciaPotencial)} />
+      </div>
+      <h2 className="text-[15px] font-bold">Más vendidos</h2>
+      {top.length === 0 && !cargando ? (
+        <p className="text-sm text-hc-muted">Todavía no hay ventas para mostrar.</p>
+      ) : null}
+      {top.map((item) => (
+        <div key={item.nombre} className="flex items-center gap-3">
+          <Miniatura alt="" size="sm" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-medium">{item.nombre}</p>
+            <p className="text-[11px] text-hc-muted">{item.vendidos} vendidos</p>
+          </div>
+          <span className="rounded-full bg-[var(--hc-red-50)] px-2.5 py-1 text-[11px] font-bold text-hc-primary">
+            {formatoColon(item.total)}
+          </span>
+        </div>
+      ))}
+    </main>
+  )
+}
+
+function Kpi({ etiqueta, valor, destacado = false }: { etiqueta: string; valor: string; destacado?: boolean }) {
+  return (
+    <div className={`rounded-[14px] px-3.5 py-4 ${destacado ? 'bg-[var(--hc-red-50)]' : 'bg-[var(--hc-n-50)]'}`}>
+      <p className="text-[11px] font-medium text-hc-muted">{etiqueta}</p>
+      <p className={`mt-1.5 text-[19px] font-bold ${destacado ? 'text-hc-primary' : ''}`}>{valor}</p>
+    </div>
+  )
+}
