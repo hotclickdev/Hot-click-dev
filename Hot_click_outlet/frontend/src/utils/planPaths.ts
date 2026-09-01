@@ -41,16 +41,9 @@ export function rutaPanelPorRol(rol: string | null | undefined, planNombre?: str
   return '/'
 }
 
-/** Caja y herramientas reales (marca, plan, copilot) se quedan en `/admin`. */
+/** Solo POS usa AdminLayout propio; el resto del vendedor va al shell Figma. */
 export function vendedorSeQuedaEnAdmin(pathname: string): boolean {
-  return (
-    pathname.startsWith('/admin/pos')
-    || pathname.startsWith('/admin/configuracion')
-    || pathname.startsWith('/admin/billing')
-    || pathname.startsWith('/admin/copilot')
-    || pathname.startsWith('/admin/mi-empresa')
-    || pathname.startsWith('/admin/ayuda')
-  )
+  return pathname.startsWith('/admin/pos')
 }
 
 export function rutaSellerDesdeAdmin(
