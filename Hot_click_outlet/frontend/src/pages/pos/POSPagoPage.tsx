@@ -124,8 +124,8 @@ async function productoParaCarrito(item: QrPagoItem): Promise<Producto> {
     nombreProducto: item.nombre ?? item.nombreProducto,
     precio: item.precioUnitario ?? 0,
     precioVenta: item.precioUnitario ?? 0,
-    imagenUrl: item.imagen ?? undefined,
-    imagenPrincipalUrl: item.imagen ?? undefined,
+    imagenUrl: item.imagen ?? '',
+    imagenPrincipalUrl: item.imagen ?? '',
     stock: 99,
-  }
+  } as Producto
 }

@@ -16,6 +16,7 @@ paths = [
   '''.*/target/.*''',
   '''.*\.env\.example$''',
   '''security-tools/.*/\.env\.example$''',
+  '''Hot_click_outlet/frontend/src/components/ui/accessibility/a11yConstants\.ts$''',
 ]
 
 [[allowlists]]
@@ -67,4 +68,6 @@ regexes = [
   '''hck_live_TESTKEY''',
   '''emprende\.paso\d(?:hint)?''',
   '''emprende\.pasoOwner\d(?:hint)?''',
+  '''a11y\.filtro\w+''',
+  '''a11y\.filtro\w+Desc''',
 ]

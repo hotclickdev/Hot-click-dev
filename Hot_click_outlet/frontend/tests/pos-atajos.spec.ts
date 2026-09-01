@@ -253,3 +253,13 @@ test('F8 del POS no dispara crearVenta ni QR', () => {
   expect(steps).toContain("pos.setStep('cobro')")
   expect(steps).toContain('onConfirmar={pos.handleConfirmarPago}')
 })
+
+test('StepQR no monta react-qr-code (CJS + React 19 → error #130)', () => {
+  const raiz = dirname(fileURLToPath(import.meta.url))
+  const stepQr = readFileSync(join(raiz, '../src/pages/admin/pos/StepQR.tsx'), 'utf8')
+  const imagen = readFileSync(join(raiz, '../src/pages/admin/pos/PosQrImagen.tsx'), 'utf8')
+  expect(stepQr).not.toContain('react-qr-code')
+  expect(stepQr).toContain('PosQrImagen')
+  expect(imagen).toContain("from 'qrcode'")
+  expect(imagen).toContain('toDataURL')
+})

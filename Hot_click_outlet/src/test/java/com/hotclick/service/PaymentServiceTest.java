@@ -9,6 +9,7 @@ import com.hotclick.payment.PaymentSession;
 import com.hotclick.repository.*;
 import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.service.payment.*;
+import com.hotclick.service.pos.PosQrVentaService;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -55,6 +56,7 @@ class PaymentServiceTest {
     @Mock private WebhookDispatcherService  webhookDispatcher;
     @Mock private PaymentProvider           mockProvider;
     @Mock private ApplicationEventPublisher eventPublisher;
+    @Mock private PosQrVentaService          posQrVentaService;
 
     @InjectMocks private CheckoutValidator              checkoutValidator;
     @InjectMocks private GuestUserResolver              guestUserResolver;
@@ -125,6 +127,8 @@ class PaymentServiceTest {
         ReflectionTestUtils.setField(service, "paymentFailureHandler", paymentFailureHandler);
         ReflectionTestUtils.setField(service, "userCancellationService", userCancellationService);
         ReflectionTestUtils.setField(service, "sinpePaymentAdminService", sinpePaymentAdminService);
+        ReflectionTestUtils.setField(service, "posQrVentaService", posQrVentaService);
+        ReflectionTestUtils.setField(orderConfirmationService, "posQrVentaService", posQrVentaService);
         ReflectionTestUtils.setField(orderConfirmationService, "pedidoRepository", pedidoRepository);
         ReflectionTestUtils.setField(orderConfirmationService, "cuponService", cuponService);
         ReflectionTestUtils.setField(orderConfirmationService, "giftCardService", giftCardService);
