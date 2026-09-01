@@ -1,0 +1,1 @@
+import{t as e}from"./api-B_hSDqbx.js";var t={validar:t=>e.get(`/cupones/validar?codigo=${encodeURIComponent(t)}`),getAll:t=>e.get(`/cupones`,{params:t}),getEstadisticas:()=>e.get(`/cupones/estadisticas`)};export{t};

@@ -53,7 +53,10 @@ public class StockReservationService {
             productoRepository.save(p);
             productosMap.put(p.getId(), p);
 
-            subtotal   += p.getPrecioVenta()  * item.getCantidad();
+            int precioUnitario = item.getPrecioUnitarioOverride() != null
+                ? item.getPrecioUnitarioOverride()
+                : p.getPrecioVenta();
+            subtotal   += precioUnitario * item.getCantidad();
             costoTotal += p.getPrecioCompra() * item.getCantidad();
         }
         return new StockReservationResult(subtotal, costoTotal, productosMap);

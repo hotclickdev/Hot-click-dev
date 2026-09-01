@@ -3,7 +3,9 @@ import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import type { RefObject } from 'react'
 import SocialProof from '@/components/ui/SocialProof'
+import Button from '@/components/ui/Button'
 import type { Producto } from '@/types/producto'
+import type { PersonalizacionCarrito } from '@/types/carrito'
 import { stockDesdeProducto } from './productoHelpers'
 import type { VarianteProducto } from './productoHelpers'
 import TitleAndBadges from './TitleAndBadges'
@@ -12,6 +14,8 @@ import ProductLowStockAlert from './ProductLowStockAlert'
 import QuantitySelector from './QuantitySelector'
 import ProductBuyActions from './ProductBuyActions'
 import TrustBadges from './TrustBadges'
+import PersonalizacionPanel from './PersonalizacionPanel'
+import useAuthStore from '@/store/authStore'
 
 type ProductInfoProps = {
   product: Producto
@@ -27,6 +31,11 @@ type ProductInfoProps = {
   inStock: boolean
   atMax: boolean
   mainCTARef: RefObject<HTMLButtonElement | null>
+  personalizacion: PersonalizacionCarrito
+  onPersonalizacionChange: (p: PersonalizacionCarrito) => void
+  contactoEncargo: { nombre: string; email: string; telefono: string }
+  onContactoEncargoChange: (c: { nombre: string; email: string; telefono: string }) => void
+  enviandoEncargo: boolean
 }
 
 export default function ProductInfo({
@@ -43,10 +52,18 @@ export default function ProductInfo({
   inStock,
   atMax,
   mainCTARef,
+  personalizacion,
+  onPersonalizacionChange,
+  contactoEncargo,
+  onContactoEncargoChange,
+  enviandoEncargo,
 }: ProductInfoProps) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { badge: stockBadge, label: stockLabel } = stockDesdeProducto(product, t)
+  const token = useAuthStore(s => s.token)
+  const esCotizable = product.esPersonalizado && product.modoPrecioPersonalizado !== 'FIJO'
+  const requiereContacto = esCotizable && !token
 
   return (
     <motion.div
@@ -74,11 +91,23 @@ export default function ProductInfo({
         <p className="text-sm text-[#8e8e9a] leading-relaxed">{product.descripcion}</p>
       )}
 
-      {inStock && product.stock <= 5 && (
+      {product.esPersonalizado && (
+        <PersonalizacionPanel
+          product={product}
+          tallaSeleccionada={tallaSeleccionada}
+          personalizacion={personalizacion}
+          onChange={onPersonalizacionChange}
+          contacto={contactoEncargo}
+          onContactoChange={onContactoEncargoChange}
+          requiereContacto={requiereContacto}
+        />
+      )}
+
+      {inStock && product.stock <= 5 && !esCotizable && (
         <ProductLowStockAlert product={product} t={t} />
       )}
 
-      {inStock && (
+      {inStock && !esCotizable && (
         <QuantitySelector
           quantity={quantity}
           stock={product.stock}
@@ -89,14 +118,27 @@ export default function ProductInfo({
         />
       )}
 
-      <ProductBuyActions
-        mainCTARef={mainCTARef}
-        inStock={inStock}
-        justAdded={justAdded}
-        onAdd={onAdd}
-        onComprarAhora={onComprarAhora}
-        t={t}
-      />
+      {esCotizable ? (
+        <Button
+          ref={mainCTARef}
+          variant="primary"
+          size="xl"
+          className="w-full h-14 rounded-2xl text-sm font-semibold"
+          disabled={enviandoEncargo}
+          onClick={onAdd}
+        >
+          {enviandoEncargo ? 'Enviando…' : 'Solicitar encargo'}
+        </Button>
+      ) : (
+        <ProductBuyActions
+          mainCTARef={mainCTARef}
+          inStock={inStock}
+          justAdded={justAdded}
+          onAdd={onAdd}
+          onComprarAhora={onComprarAhora}
+          t={t}
+        />
+      )}
 
       <TrustBadges />
     </motion.div>

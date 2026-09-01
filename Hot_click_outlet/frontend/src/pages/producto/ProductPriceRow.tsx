@@ -6,6 +6,19 @@ import type { Producto } from '@/types/producto'
 import type { Id } from '@/types/api'
 import HeartDetailIcon from './HeartDetailIcon'
 
+function textoPrecioPersonalizado(product: Producto): string | null {
+  if (!product.esPersonalizado) return null
+  if (product.modoPrecioPersonalizado === 'COTIZACION') return 'A cotizar'
+  if (
+    product.modoPrecioPersonalizado === 'RANGO'
+    && product.precioPersonalizadoMin != null
+    && product.precioPersonalizadoMax != null
+  ) {
+    return `Desde ${formatPrice(product.precioPersonalizadoMin)}`
+  }
+  return null
+}
+
 type ProductPriceRowProps = {
   product: Producto
   t: TFunction
@@ -18,7 +31,7 @@ export default function ProductPriceRow({ product, t }: ProductPriceRowProps) {
   return (
     <div className="flex items-center gap-3 flex-wrap">
       <span className="text-3xl sm:text-4xl font-bold text-[#e8e8ed]">
-        {formatPrice(product.precio)}
+        {textoPrecioPersonalizado(product) ?? formatPrice(product.precio)}
       </span>
       <motion.button
         onClick={() => toggleWishlist(product)}

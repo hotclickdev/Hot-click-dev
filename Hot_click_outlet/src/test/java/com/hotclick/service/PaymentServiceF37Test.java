@@ -58,6 +58,7 @@ class PaymentServiceF37Test {
     @Mock AggregatorService         aggregatorService;
     @Mock ApplicationEventPublisher eventPublisher;
     @Mock PosQrVentaService          posQrVentaService;
+    @Mock EncargoService             encargoService;
 
     @InjectMocks CheckoutValidator              checkoutValidator;
     @InjectMocks GuestUserResolver              guestUserResolver;
@@ -125,6 +126,8 @@ class PaymentServiceF37Test {
         ReflectionTestUtils.setField(service, "userCancellationService", userCancellationService);
         ReflectionTestUtils.setField(service, "sinpePaymentAdminService", sinpePaymentAdminService);
         ReflectionTestUtils.setField(service, "posQrVentaService", posQrVentaService);
+        ReflectionTestUtils.setField(checkoutOrderFactory, "encargoService", encargoService);
+        ReflectionTestUtils.setField(orderConfirmationService, "encargoService", encargoService);
         ReflectionTestUtils.setField(orderConfirmationService, "posQrVentaService", posQrVentaService);
         ReflectionTestUtils.setField(orderConfirmationService, "pedidoRepository", pedidoRepository);
         ReflectionTestUtils.setField(orderConfirmationService, "cuponService", cuponService);

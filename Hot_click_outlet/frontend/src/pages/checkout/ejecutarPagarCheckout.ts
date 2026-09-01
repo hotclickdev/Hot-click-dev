@@ -149,7 +149,20 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
       metodoEnvio,
       notas: notasFull || null,
       provider: metodoPago,
-      items: items.map((i) => ({ productoId: i.id, cantidad: i.cantidad })),
+      items: items.map((i) => ({
+        productoId: i.id,
+        cantidad: i.cantidad,
+        ...(i.personalizacion
+          ? {
+              personalizacion: {
+                imagenes: i.personalizacion.imagenes || [],
+                notas: i.personalizacion.notas || null,
+                tallaSeleccionada: i.personalizacion.tallaSeleccionada || null,
+                encargoToken: i.personalizacion.encargoToken || null,
+              },
+            }
+          : {}),
+      })),
       codigoCupon: cuponCodigo || null,
       codigoGiftCard: gcCodigo || null,
       ...(token

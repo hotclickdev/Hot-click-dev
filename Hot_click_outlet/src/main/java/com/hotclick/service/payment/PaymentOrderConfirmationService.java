@@ -4,6 +4,7 @@ import com.hotclick.model.Pago;
 import com.hotclick.model.Pedido;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.service.CuponService;
+import com.hotclick.service.EncargoService;
 import com.hotclick.service.GiftCardService;
 import com.hotclick.service.pos.PosQrVentaService;
 import com.hotclick.utils.Constants;
@@ -12,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +28,7 @@ public class PaymentOrderConfirmationService {
     @Autowired private StockReservationService    stockReservationService;
     @Autowired private PaymentNotificationsFacade paymentNotificationsFacade;
     @Autowired private PosQrVentaService          posQrVentaService;
+    @Autowired @Lazy private EncargoService       encargoService;
 
     @Transactional
     public void confirmarPedido(Pago pago, Object paymentServiceSelf, ApplicationEventPublisher eventPublisher) {
@@ -53,6 +56,7 @@ public class PaymentOrderConfirmationService {
         if (pedido.getGiftCardCodigo() != null && pedido.getGiftCardMonto() != null && pedido.getGiftCardMonto() > 0) {
             giftCardService.canjear(pedido.getGiftCardCodigo(), pedido, pedido.getGiftCardMonto());
         }
+        encargoService.marcarPagadosPorPedido(pedido.getId());
         paymentNotificationsFacade.onPedidoConfirmado(pedido, pago);
         posQrVentaService.marcarPagadoPorPedidoTienda(pedido.getId());
     }

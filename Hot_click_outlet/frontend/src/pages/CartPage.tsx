@@ -119,7 +119,7 @@ export default function CartPage() {
   }
 
   function quitarItem(item: ItemCarrito) {
-    removeItem(item.id as Id)
+    removeItem(item.id as Id, item.cartLineId)
     toast({ message: t('cart.removed', { name: item.nombre }), type: 'info' })
   }
 
@@ -172,7 +172,7 @@ export default function CartPage() {
             <AnimatePresence>
               {items.map((item) => (
                 <CartItemRow
-                  key={item.id}
+                  key={item.cartLineId || String(item.id)}
                   item={item}
                   onRemove={quitarItem}
                   onUpdateQuantity={updateQuantity}

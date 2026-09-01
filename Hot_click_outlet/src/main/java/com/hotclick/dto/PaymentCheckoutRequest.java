@@ -79,10 +79,45 @@ public class PaymentCheckoutRequest {
         @Min(value = 1, message = "La cantidad debe ser al menos 1")
         private Integer cantidad;
 
+        /** Precio unitario forzado (solo uso interno, p.ej. encargo cotizado). */
+        private Integer precioUnitarioOverride;
+
+        private PersonalizacionDTO personalizacion;
+
         public Long getProductoId() { return productoId; }
         public void setProductoId(Long productoId) { this.productoId = productoId; }
 
         public Integer getCantidad() { return cantidad; }
         public void setCantidad(Integer cantidad) { this.cantidad = cantidad; }
+
+        public Integer getPrecioUnitarioOverride() { return precioUnitarioOverride; }
+        public void setPrecioUnitarioOverride(Integer precioUnitarioOverride) {
+            this.precioUnitarioOverride = precioUnitarioOverride;
+        }
+
+        public PersonalizacionDTO getPersonalizacion() { return personalizacion; }
+        public void setPersonalizacion(PersonalizacionDTO personalizacion) {
+            this.personalizacion = personalizacion;
+        }
+    }
+
+    public static class PersonalizacionDTO {
+        private java.util.List<String> imagenes;
+        private String notas;
+        private String tallaSeleccionada;
+        /** Si viene de un encargo ya creado (cotización), enlaza el pedido al token. */
+        private String encargoToken;
+
+        public java.util.List<String> getImagenes() { return imagenes; }
+        public void setImagenes(java.util.List<String> imagenes) { this.imagenes = imagenes; }
+
+        public String getNotas() { return notas; }
+        public void setNotas(String notas) { this.notas = notas; }
+
+        public String getTallaSeleccionada() { return tallaSeleccionada; }
+        public void setTallaSeleccionada(String tallaSeleccionada) { this.tallaSeleccionada = tallaSeleccionada; }
+
+        public String getEncargoToken() { return encargoToken; }
+        public void setEncargoToken(String encargoToken) { this.encargoToken = encargoToken; }
     }
 }

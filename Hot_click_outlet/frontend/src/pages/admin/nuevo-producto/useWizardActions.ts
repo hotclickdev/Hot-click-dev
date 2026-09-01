@@ -236,6 +236,11 @@ export function useWizardActions({
       const sl = form.seoByLang ?? {}
       const dto = denormalizeProduct({
         ...form, imagenUrl,
+        precioVenta: form.esPersonalizado && form.modoPrecioPersonalizado === 'COTIZACION'
+          ? (form.precioVenta || '1')
+          : form.esPersonalizado && form.modoPrecioPersonalizado === 'RANGO'
+            ? (form.precioPersonalizadoMin || form.precioVenta || '1')
+            : form.precioVenta,
         metaTitle:         sl.es?.title       || form.metaTitle        || '',
         metaDescription:   sl.es?.description || form.metaDescription  || '',
         metaKeywords:      form.metaKeywords   || '',
@@ -246,6 +251,11 @@ export function useWizardActions({
         metaDescriptionEn: sl.en?.description  || '',
         metaDescriptionPt: sl.pt?.description  || '',
         metaDescriptionFr: sl.fr?.description  || '',
+        esPersonalizado: form.esPersonalizado,
+        modoPrecioPersonalizado: form.modoPrecioPersonalizado,
+        precioPersonalizadoMin: form.precioPersonalizadoMin,
+        precioPersonalizadoMax: form.precioPersonalizadoMax,
+        instruccionesPersonalizacion: form.instruccionesPersonalizacion,
       } satisfies ProductoForm)
       // 2+ tallas marcadas -> mismo producto en varias filas (una por talla), agrupadas
       // como variantes (mismo mecanismo que ya se usa para colores en el import).

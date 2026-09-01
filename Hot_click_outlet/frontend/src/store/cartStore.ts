@@ -1,16 +1,22 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { analytics } from '@/utils/analytics'
-import type { ItemCarrito } from '@/types/carrito'
+import type { ItemCarrito, PersonalizacionCarrito } from '@/types/carrito'
 import type { Producto } from '@/types/producto'
 import type { Id } from '@/types/api'
+
+type ProductoConExtras = Producto & {
+  tallaSeleccionada?: string
+  personalizacion?: PersonalizacionCarrito
+  cartLineId?: string
+}
 
 type CartState = {
   items: ItemCarrito[]
   cartUpdatedAt: number | null
-  addItem: (product: Producto, qty?: number) => void
-  removeItem: (id: Id) => void
-  updateQuantity: (id: Id, cantidad: number) => void
+  addItem: (product: ProductoConExtras, qty?: number) => void
+  removeItem: (id: Id, cartLineId?: string) => void
+  updateQuantity: (id: Id, cantidad: number, cartLineId?: string) => void
   clearCart: () => void
   getCartItems: () => ItemCarrito[]
   total: () => number
@@ -18,42 +24,76 @@ type CartState = {
   toWhatsAppMessage: () => string
 }
 
+function mismaLinea(a: ItemCarrito, productId: Id, cartLineId?: string) {
+  if (cartLineId) return a.cartLineId === cartLineId
+  if (a.personalizacion || a.cartLineId) return false
+  return a.id === productId
+}
+
 const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
-
-      // Timestamp of last cart modification — for abandoned cart analytics
       cartUpdatedAt: null,
 
       addItem: (product, qty = 1) => {
         const { items } = get()
-        const existing = items.find((i) => i.id === product.id)
+        const esPersonalizado = Boolean(product.personalizacion) || product.esPersonalizado === true
+
+        if (esPersonalizado && product.personalizacion) {
+          const cartLineId = product.cartLineId ?? crypto.randomUUID()
+          set({
+            items: [
+              ...items,
+              {
+                ...product,
+                cantidad: Math.min(qty, product.stock ?? 99),
+                cartLineId,
+                personalizacion: product.personalizacion,
+              },
+            ],
+            cartUpdatedAt: Date.now(),
+          })
+          analytics.addToCart(product)
+          return
+        }
+
+        const existing = items.find((i) => mismaLinea(i, product.id as Id))
         if (existing) {
           set({
             items: items.map((i) =>
-              i.id === product.id
+              mismaLinea(i, product.id as Id)
                 ? { ...i, cantidad: Math.min(i.cantidad + qty, i.stock ?? 99) }
                 : i
             ),
             cartUpdatedAt: Date.now(),
           })
         } else {
-          set({ items: [...items, { ...product, cantidad: Math.min(qty, product.stock ?? 99) }], cartUpdatedAt: Date.now() })
+          set({
+            items: [...items, { ...product, cantidad: Math.min(qty, product.stock ?? 99) }],
+            cartUpdatedAt: Date.now(),
+          })
         }
         analytics.addToCart(product)
       },
 
-      removeItem: (id) => {
-        const item = get().items.find((i) => i.id === id)
+      removeItem: (id, cartLineId) => {
+        const item = get().items.find((i) => mismaLinea(i, id, cartLineId))
         if (item) analytics.removeFromCart(id, item.nombre)
-        set({ items: get().items.filter((i) => i.id !== id), cartUpdatedAt: Date.now() })
+        set({
+          items: get().items.filter((i) => !mismaLinea(i, id, cartLineId)),
+          cartUpdatedAt: Date.now(),
+        })
       },
 
-      updateQuantity: (id, cantidad) => {
-        if (cantidad < 1) return get().removeItem(id)
+      updateQuantity: (id, cantidad, cartLineId) => {
+        if (cantidad < 1) return get().removeItem(id, cartLineId)
         set({
-          items: get().items.map((i) => i.id === id ? { ...i, cantidad: Math.min(cantidad, i.stock ?? 99) } : i),
+          items: get().items.map((i) =>
+            mismaLinea(i, id, cartLineId)
+              ? { ...i, cantidad: Math.min(cantidad, i.stock ?? 99) }
+              : i
+          ),
           cartUpdatedAt: Date.now(),
         })
       },
@@ -70,9 +110,11 @@ const useCartStore = create<CartState>()(
 
       toWhatsAppMessage: () => {
         const { items, total } = get()
-        const lines = items.map(
-          (i) => `  • ${i.nombre ?? i.nombreProducto}${i.tallaSeleccionada ? ` (Talla ${i.tallaSeleccionada})` : ''} x${i.cantidad} — ₡${((i.precio ?? i.precioVenta ?? 0) * i.cantidad).toLocaleString('es-CR')}`
-        )
+        const lines = items.map((i) => {
+          const talla = i.tallaSeleccionada || i.personalizacion?.tallaSeleccionada
+          const pers = i.personalizacion ? ' [personalizado]' : ''
+          return `  • ${i.nombre ?? i.nombreProducto}${talla ? ` (Talla ${talla})` : ''}${pers} x${i.cantidad} — ₡${((i.precio ?? i.precioVenta ?? 0) * i.cantidad).toLocaleString('es-CR')}`
+        })
         const detalle = items.length
           ? `${lines.join('\n')}\n\nTotal: ₡${total().toLocaleString('es-CR')}\n\n`
           : ''
@@ -81,10 +123,8 @@ const useCartStore = create<CartState>()(
         )
       },
     }),
-    {
-      name: 'hotclick-cart',
-    }
-  )
+    { name: 'hotclick-cart' },
+  ),
 )
 
 export default useCartStore

@@ -227,6 +227,23 @@ public class Producto extends BaseEntity {
     @Column(name = "porcentaje_descuento")
     private Integer porcentajeDescuento;
 
+    // ── Producto personalizado / por encargo ─────────────────────────────────
+    @Column(name = "es_personalizado", nullable = false)
+    private Boolean esPersonalizado = false;
+
+    /** FIJO | RANGO | COTIZACION — solo si esPersonalizado */
+    @Column(name = "modo_precio_personalizado", length = 20)
+    private String modoPrecioPersonalizado;
+
+    @Column(name = "precio_personalizado_min")
+    private Integer precioPersonalizadoMin;
+
+    @Column(name = "precio_personalizado_max")
+    private Integer precioPersonalizadoMax;
+
+    @Column(name = "instrucciones_personalizacion", columnDefinition = "TEXT")
+    private String instruccionesPersonalizacion;
+
     // ── IVA Hacienda CR (F12) ────────────────────────────────────────────────
     /** Porcentaje de IVA: 13.00 (general), 4.00, 2.00, 0.00 (exento) */
     @Column(name = "porcentaje_iva", columnDefinition = "NUMERIC(5,2) DEFAULT 13.00")
@@ -456,6 +473,29 @@ public class Producto extends BaseEntity {
 
     public Integer getPorcentajeDescuento() { return porcentajeDescuento; }
     public void setPorcentajeDescuento(Integer porcentajeDescuento) { this.porcentajeDescuento = porcentajeDescuento; }
+
+    public Boolean getEsPersonalizado() { return esPersonalizado != null ? esPersonalizado : false; }
+    public void setEsPersonalizado(Boolean esPersonalizado) { this.esPersonalizado = esPersonalizado; }
+
+    public String getModoPrecioPersonalizado() { return modoPrecioPersonalizado; }
+    public void setModoPrecioPersonalizado(String modoPrecioPersonalizado) {
+        this.modoPrecioPersonalizado = modoPrecioPersonalizado;
+    }
+
+    public Integer getPrecioPersonalizadoMin() { return precioPersonalizadoMin; }
+    public void setPrecioPersonalizadoMin(Integer precioPersonalizadoMin) {
+        this.precioPersonalizadoMin = precioPersonalizadoMin;
+    }
+
+    public Integer getPrecioPersonalizadoMax() { return precioPersonalizadoMax; }
+    public void setPrecioPersonalizadoMax(Integer precioPersonalizadoMax) {
+        this.precioPersonalizadoMax = precioPersonalizadoMax;
+    }
+
+    public String getInstruccionesPersonalizacion() { return instruccionesPersonalizacion; }
+    public void setInstruccionesPersonalizacion(String instruccionesPersonalizacion) {
+        this.instruccionesPersonalizacion = instruccionesPersonalizacion;
+    }
 
     public java.math.BigDecimal getRatingPromedio() { return ratingPromedio != null ? ratingPromedio : java.math.BigDecimal.ZERO; }
     public void setRatingPromedio(java.math.BigDecimal v) { this.ratingPromedio = v; }

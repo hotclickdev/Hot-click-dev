@@ -111,6 +111,14 @@ final class SecurityAuthorizationRules {
             .requestMatchers(GET,    "/api/servicios").hasRole(Constants.ROL_ADMIN)
             .requestMatchers(PUT,    "/api/servicios/*/estado").hasRole(Constants.ROL_ADMIN)
             .requestMatchers(DELETE, "/api/servicios/*").hasRole(Constants.ROL_ADMIN)
+            // Encargos personalizados — público: subir imagen, crear, ver token, checkout
+            .requestMatchers(POST, "/api/public/encargos/imagenes").permitAll()
+            .requestMatchers(POST, "/api/public/encargos").permitAll()
+            .requestMatchers(GET,  "/api/public/encargos/**").permitAll()
+            .requestMatchers(POST, "/api/public/encargos/*/checkout").permitAll()
+            .requestMatchers(GET,  "/api/encargos").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(PUT,  "/api/encargos/*/aprobar").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(PUT,  "/api/encargos/*/rechazar").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             // Garantías — mis-garantias y mis-solicitudes: auth; admin: ADMIN
             .requestMatchers(GET, "/api/garantias/solicitudes/mis-solicitudes").authenticated()
             .requestMatchers(GET, "/api/garantias/solicitudes").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)

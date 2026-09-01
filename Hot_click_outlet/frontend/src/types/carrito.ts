@@ -1,9 +1,19 @@
 import type { Id } from './api'
 import type { Producto } from './producto'
 
+export type PersonalizacionCarrito = {
+  imagenes: string[]
+  notas?: string
+  tallaSeleccionada?: string
+  encargoToken?: string
+}
+
 export type ItemCarrito = Producto & {
   cantidad: number
   tallaSeleccionada?: string
+  /** Clave única de línea: productos personalizados no se fusionan. */
+  cartLineId?: string
+  personalizacion?: PersonalizacionCarrito
 }
 
 export type ItemWishlist = {
