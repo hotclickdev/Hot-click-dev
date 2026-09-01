@@ -63,6 +63,20 @@ jobs:
         run: pnpm install --frozen-lockfile
         working-directory: Hot_click_outlet/frontend
 
+      - name: Unit tests (Vitest)
+        run: pnpm test
+        working-directory: Hot_click_outlet/frontend
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install chromium --with-deps
+        working-directory: Hot_click_outlet/frontend
+
+      - name: E2E tests (Playwright)
+        run: pnpm test:e2e:ci
+        working-directory: Hot_click_outlet/frontend
+        env:
+          CI: "true"
+
       - name: Build
         run: pnpm build
         working-directory: Hot_click_outlet/frontend
