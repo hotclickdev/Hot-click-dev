@@ -21,13 +21,21 @@ export const PRICE_BANDS: { id: PriceBandId; maxExclusive: number | null }[] = [
 ]
 
 type GustosSeen = Record<string, unknown>
-type GustosScores = Map<string, number>
+export type GustosScores = Map<string, number>
 
 export type GustosPerfil = {
   scores: GustosScores
   seen: GustosSeen
   selectedCategoryIds: string[]
   selectedPriceBands: PriceBandId[]
+}
+
+/** Respuesta de GET /api/customer-memory/affinity (scores compatibles con affinityOf). */
+export type GustosAffinityPayload = {
+  scores: Record<string, number>
+  selectedCategoryIds: string[]
+  selectedPriceBands: PriceBandId[]
+  fromBackend?: boolean
 }
 
 export type CategoriaScope = {
@@ -266,6 +274,33 @@ export function bumpGustosDesdeVista(
       updatedAt: Date.now(),
     }))
   } catch { /* almacenamiento lleno o bloqueado */ }
+}
+
+/** true si hay scores útiles en la respuesta del backend. */
+export function hasAffinityContent(payload: GustosAffinityPayload): boolean {
+  if (payload.selectedCategoryIds.length > 0) return true
+  return Object.keys(payload.scores ?? {}).some((k) => k.startsWith('c:') || k.startsWith('m:'))
+}
+
+/** Convierte afinidad del backend en GustosPerfil (read-only). */
+export function gustosPerfilFromAffinity(payload: GustosAffinityPayload): GustosPerfil {
+  const scores: GustosScores = new Map()
+  for (const [k, v] of Object.entries(payload.scores ?? {})) {
+    const num = typeof v === 'number' ? v : Number(v)
+    if (Number.isFinite(num) && Math.abs(num) >= 0.5) scores.set(k, num)
+  }
+  const selectedCategoryIds = asStringArray(payload.selectedCategoryIds)
+  const selectedPriceBands = asPriceBands(payload.selectedPriceBands)
+  return {
+    scores,
+    seen: {},
+    selectedCategoryIds: selectedCategoryIds.length > 0
+      ? selectedCategoryIds
+      : positiveCategoryIds(scores),
+    selectedPriceBands: selectedPriceBands.length > 0
+      ? selectedPriceBands
+      : positivePriceBands(scores),
+  }
 }
 
 /** true si el visitante ya eligió al menos una categoría. */
