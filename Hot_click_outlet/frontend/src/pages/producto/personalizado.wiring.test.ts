@@ -41,4 +41,13 @@ describe('productos personalizados — wiring estático', () => {
     expect(svc).toContain('aprobar')
     expect(svc).toContain('rechazar')
   })
+
+  it('Mis Productos pide elegir tipo al agregar', () => {
+    const routes = readFileSync(resolve(root, 'src/prototipo/emprendedor/EmprendedorRoutes.tsx'), 'utf8')
+    expect(routes).toContain('ElegirTipoProductoPage')
+    expect(routes).toContain('productos/nuevo/personalizado')
+    const menu = readFileSync(resolve(root, 'src/prototipo/compartido/ElegirTipoProductoMenu.tsx'), 'utf8')
+    expect(menu).toContain('Producto de catálogo')
+    expect(menu).toContain('Producto personalizado')
+  })
 })

@@ -92,6 +92,11 @@ public class WebhookDispatcherService {
         if (BLOCKED_HOSTS.contains(host.toLowerCase())) {
             throw new IllegalArgumentException("URL apunta a host restringido: " + host);
         }
+        // Reject common internal ports before DNS (DNS can fail in CI for fake hosts)
+        int port = uri.getPort();
+        if (port > 0 && Set.of(22, 3306, 5432, 6379, 8500, 9200, 27017).contains(port)) {
+            throw new IllegalArgumentException("Puerto interno restringido: " + port);
+        }
         // Reject private/loopback IPs by resolving the hostname
         try {
             InetAddress addr = InetAddress.getByName(host);
@@ -108,11 +113,6 @@ public class WebhookDispatcherService {
             throw rethrow;
         } catch (Exception e) {
             throw new IllegalArgumentException("No se pudo resolver el host: " + host);
-        }
-        // Reject common internal ports
-        int port = uri.getPort();
-        if (port > 0 && Set.of(22, 3306, 5432, 6379, 8500, 9200, 27017).contains(port)) {
-            throw new IllegalArgumentException("Puerto interno restringido: " + port);
         }
     }
 

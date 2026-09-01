@@ -165,8 +165,9 @@ export default function AdminEncargos() {
               {selected.estado === 'PENDIENTE' && (
                 <div className="space-y-3 pt-2 border-t" style={{ borderColor: 'var(--hc-border)' }}>
                   <div>
-                    <label className="text-xs">Precio a cobrar (₡)</label>
+                    <label htmlFor="encargo-precio-aprobar" className="text-xs">Precio a cobrar (₡)</label>
                     <input
+                      id="encargo-precio-aprobar"
                       type="number"
                       min={1}
                       className="w-full mt-1 rounded-xl border px-3 py-2 text-sm"
@@ -179,8 +180,9 @@ export default function AdminEncargos() {
                     Aprobar y enviar link de pago
                   </Button>
                   <div>
-                    <label className="text-xs">O rechazar con motivo</label>
+                    <label htmlFor="encargo-motivo-rechazo" className="text-xs">O rechazar con motivo</label>
                     <textarea
+                      id="encargo-motivo-rechazo"
                       className="w-full mt-1 rounded-xl border px-3 py-2 text-sm"
                       style={{ borderColor: 'var(--hc-border)', minHeight: 64 }}
                       value={motivo}

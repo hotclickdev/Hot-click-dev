@@ -4,6 +4,7 @@ import SellerShell from './SellerShell'
 import MenuPage from './MenuPage'
 import ProductosPage from './ProductosPage'
 import ProductoFormPage from './ProductoFormPage'
+import ElegirTipoProductoPage from './ElegirTipoProductoPage'
 import ProductoDetallePage from './ProductoDetallePage'
 import EliminarProductoPage from './EliminarProductoPage'
 import ReportesPage from './ReportesPage'
@@ -34,7 +35,9 @@ export default function SellerRoutes({ extra }: { extra?: ReactNode }) {
       <Route element={<SellerShell />}>
         <Route index element={<MenuPage />} />
         <Route path="productos" element={<ProductosPage />} />
-        <Route path="productos/nuevo" element={<ProductoFormPage />} />
+        <Route path="productos/nuevo" element={<ElegirTipoProductoPage />} />
+        <Route path="productos/nuevo/catalogo" element={<ProductoFormPage />} />
+        <Route path="productos/nuevo/personalizado" element={<ProductoFormPage personalizado />} />
         <Route path="reportes" element={<ReportesPage />} />
         <Route path="tienda" element={<TiendaPublicaPage />} />
         <Route path="opciones" element={<OpcionesPage />} />

@@ -134,7 +134,7 @@ export default function BodegaSelectorModal({ onSelect }: { onSelect: (bodegaId:
                       {/* Datos */}
                       <div className="flex-1 min-w-0 space-y-0.5">
                         <p className="text-base font-bold leading-snug"
-                          style={{ color: activa ? 'var(--hc-text)' : 'var(--hc-text)' }}>
+                          style={{ color: 'var(--hc-text)' }}>
                           {b.nombreBodega}
                         </p>
                         {b.direccionExacta && (

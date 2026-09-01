@@ -8,15 +8,23 @@ import {
   mensajeErrorProducto,
   publicarProductoVendedor,
 } from './catalogoVendedorApi'
+import CamposPersonalizadoProducto from './CamposPersonalizadoProducto'
+import {
+  type ModoPrecioPersonalizado,
+  precioVentaPersonalizado,
+  tituloFormProducto,
+} from './personalizadoProductoHelpers'
 import iconCamara from './assets/icon-camara.svg'
 
 const CATEGORIAS = ['Tecnología', 'Ropa', 'Otro'] as const
 type CategoriaForm = (typeof CATEGORIAS)[number]
 
+type Props = Readonly<{ personalizado?: boolean }>
+
 /**
  * Alta / edición de producto (Figma 61:231 / 61:422) con API real.
  */
-export default function ProductoFormPage() {
+export default function ProductoFormPage({ personalizado = false }: Props) {
   const { id } = useParams()
   const ruta = useSellerRuta()
   const navigate = useNavigate()
@@ -29,9 +37,14 @@ export default function ProductoFormPage() {
   const [stock, setStock] = useState('')
   const [categoria, setCategoria] = useState<CategoriaForm>('Tecnología')
   const [estado, setEstado] = useState<'Publicado' | 'Pausado'>('Publicado')
+  const [modoPrecio, setModoPrecio] = useState<ModoPrecioPersonalizado>('FIJO')
+  const [precioMin, setPrecioMin] = useState('')
+  const [precioMax, setPrecioMax] = useState('')
+  const [instrucciones, setInstrucciones] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [iniciado, setIniciado] = useState(false)
   const editar = Boolean(id)
+  const esPersonalizado = personalizado && !editar
 
   useEffect(() => {
     if (!existente || iniciado) return
@@ -51,7 +64,24 @@ export default function ProductoFormPage() {
       setError('Escribí el nombre del producto.')
       return
     }
-    const datos = { nombre, precioCompra: compra, precioVenta: venta, descripcion, stock, categoria, estado }
+    if (esPersonalizado && modoPrecio === 'RANGO' && (!precioMin || !precioMax)) {
+      setError('Indicá el rango de precio (mínimo y máximo).')
+      return
+    }
+    const datos = {
+      nombre,
+      precioCompra: compra,
+      precioVenta: precioVentaPersonalizado(esPersonalizado, modoPrecio, venta, precioMin),
+      descripcion,
+      stock,
+      categoria,
+      estado,
+      esPersonalizado: esPersonalizado || undefined,
+      modoPrecioPersonalizado: esPersonalizado ? modoPrecio : undefined,
+      precioPersonalizadoMin: esPersonalizado && modoPrecio === 'RANGO' ? precioMin : undefined,
+      precioPersonalizadoMax: esPersonalizado && modoPrecio === 'RANGO' ? precioMax : undefined,
+      instruccionesPersonalizacion: esPersonalizado ? instrucciones : undefined,
+    }
     try {
       if (id) await guardarProductoVendedor(id, datos)
       else await publicarProductoVendedor(datos)
@@ -61,15 +91,34 @@ export default function ProductoFormPage() {
     }
   }
 
+  const volverA = editar ? ruta('productos') : ruta('productos/nuevo')
+
   return (
     <main className="px-5 pb-8 pt-[60px]">
-      <EncabezadoPagina titulo={editar ? 'Editar Producto' : 'Nuevo Producto'} volverA={ruta('productos')} />
+      <EncabezadoPagina titulo={tituloFormProducto(editar, esPersonalizado)} volverA={volverA} />
       {cargando && editar && !existente ? <p className="text-sm text-hc-muted">Cargando…</p> : null}
       <ZonaFoto editar={editar} nombre={existente?.nombre} />
       <form onSubmit={(e) => void enviar(e)}>
         <Campo etiqueta="Nombre del producto" value={nombre} onChange={setNombre} placeholder="Ej: Camiseta Oversize Negra" />
-        <Campo etiqueta="Precio de compra" value={compra} onChange={setCompra} placeholder="₡ 0.00" type="number" />
-        <Campo etiqueta="Precio de venta" value={venta} onChange={setVenta} placeholder="₡ 0.00" type="number" />
+        {!esPersonalizado || modoPrecio === 'FIJO' ? (
+          <>
+            <Campo etiqueta="Precio de compra" value={compra} onChange={setCompra} placeholder="₡ 0.00" type="number" />
+            <Campo etiqueta="Precio de venta" value={venta} onChange={setVenta} placeholder="₡ 0.00" type="number" />
+          </>
+        ) : null}
+        {esPersonalizado ? (
+          <CamposPersonalizadoProducto
+            idPrefijo="pyme"
+            modoPrecio={modoPrecio}
+            onModoChange={setModoPrecio}
+            precioMin={precioMin}
+            onPrecioMinChange={setPrecioMin}
+            precioMax={precioMax}
+            onPrecioMaxChange={setPrecioMax}
+            instrucciones={instrucciones}
+            onInstruccionesChange={setInstrucciones}
+          />
+        ) : null}
         <Campo etiqueta="Descripción" value={descripcion} onChange={setDescripcion} placeholder="Ej: Auriculares con estuche de carga..." />
         <Campo etiqueta="Stock disponible" value={stock} onChange={setStock} placeholder="Ej: 10" type="number" />
         <p className="mb-2 text-xs font-medium text-hc-muted">Categoría</p>
@@ -99,7 +148,7 @@ export default function ProductoFormPage() {
   )
 }
 
-function ZonaFoto({ editar, nombre }: { editar: boolean; nombre?: string }) {
+function ZonaFoto({ editar, nombre }: Readonly<{ editar: boolean; nombre?: string }>) {
   return (
     <div className="mb-6 flex h-[118px] flex-col items-center justify-center rounded-xl bg-hc-surface-2">
       {editar ? (

@@ -4,6 +4,7 @@ import MenuPage from './pages/MenuPage'
 import ProductosPage from './pages/ProductosPage'
 import ProductosVacioPage from './pages/ProductosVacioPage'
 import AgregarProductoPage from './pages/AgregarProductoPage'
+import ElegirTipoProductoPage from './pages/ElegirTipoProductoPage'
 import EditarProductoPage from './pages/EditarProductoPage'
 import ConfirmarEliminacionPage from './pages/ConfirmarEliminacionPage'
 import ReportesPage from './pages/ReportesPage'
@@ -41,7 +42,9 @@ export default function EmprendedorRoutes() {
         <Route index element={<MenuPage />} />
         <Route path="productos" element={<ProductosPage />} />
         <Route path="productos/vacio" element={<ProductosVacioPage />} />
-        <Route path="productos/nuevo" element={<AgregarProductoPage />} />
+        <Route path="productos/nuevo" element={<ElegirTipoProductoPage />} />
+        <Route path="productos/nuevo/catalogo" element={<AgregarProductoPage />} />
+        <Route path="productos/nuevo/personalizado" element={<AgregarProductoPage personalizado />} />
         <Route path="tienda" element={<TiendaPublicaPage />} />
         <Route path="reportes" element={<ReportesPage />} />
         <Route path="opciones" element={<OpcionesPage />} />

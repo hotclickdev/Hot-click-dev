@@ -82,8 +82,11 @@ export default function PersonalizacionPanel({
                   </button>
                 </>
               ) : (
-                <label className="flex flex-col items-center gap-1 text-[11px] cursor-pointer p-2 text-center"
-                  style={{ color: 'var(--hc-muted)' }}>
+                <label
+                  className="flex flex-col items-center gap-1 text-[11px] cursor-pointer p-2 text-center"
+                  style={{ color: 'var(--hc-muted)' }}
+                  aria-label={`Subir imagen de referencia ${slot + 1}`}
+                >
                   <span>{subiendo === slot ? 'Subiendo…' : `Imagen ${slot + 1}`}</span>
                   <input type="file" accept="image/*" className="hidden" disabled={subiendo !== null}
                     onChange={e => void subir(slot, e.target.files?.[0])} />
@@ -95,8 +98,11 @@ export default function PersonalizacionPanel({
       </div>
 
       <div>
-        <label className="text-xs font-medium" style={{ color: 'var(--hc-text)' }}>Notas para el artista</label>
+        <label htmlFor="notas-artista-personalizacion" className="text-xs font-medium" style={{ color: 'var(--hc-text)' }}>
+          Notas para el artista
+        </label>
         <textarea
+          id="notas-artista-personalizacion"
           className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
           style={{ borderColor: 'var(--hc-border)', minHeight: 72 }}
           value={personalizacion.notas || ''}
