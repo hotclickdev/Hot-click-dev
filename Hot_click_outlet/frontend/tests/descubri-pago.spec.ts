@@ -1,7 +1,80 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
+
+test.use(process.env.CI ? {} : { channel: 'chrome' })
+
+const CATEGORIAS = [
+  { id: 7, nombreCategoria: 'Tecnología', padreId: null, icono: 'tecnologia' },
+  { id: 8, nombreCategoria: 'Hogar', padreId: null, icono: 'hogar' },
+]
+
+const PRODUCTOS = [
+  {
+    id: 1,
+    nombreProducto: 'Mouse gamer RGB',
+    precioVenta: 8000,
+    stockActual: 4,
+    categoriaId: 7,
+    imagenPrincipalUrl: 'https://example.com/mouse.jpg',
+    categoria: { id: 7, nombreCategoria: 'Tecnología' },
+  },
+  {
+    id: 2,
+    nombreProducto: 'Silla de comedor',
+    precioVenta: 45000,
+    stockActual: 2,
+    categoriaId: 8,
+    imagenPrincipalUrl: 'https://example.com/silla.jpg',
+    categoria: { id: 8, nombreCategoria: 'Hogar' },
+  },
+]
+
+async function mockDescubriApis(page: Page) {
+  await page.route('**/api/**', async (route) => {
+    const path = new URL(route.request().url()).pathname
+    if (path.includes('/categorias/publicas')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: CATEGORIAS }),
+      })
+      return
+    }
+    if (path.includes('/productos') && !path.match(/\/productos\/\d+/)) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            content: PRODUCTOS,
+            totalElements: PRODUCTOS.length,
+            totalPages: 1,
+            number: 0,
+            size: 100,
+          },
+        }),
+      })
+      return
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: [] }),
+    })
+  })
+  await page.addInitScript(() => {
+    localStorage.setItem('hotclick-cookie-consent', JSON.stringify({
+      analytics: false,
+      functional: true,
+      timestamp: Date.now(),
+    }))
+    localStorage.setItem('hc-mm-v1-off', '1')
+  })
+}
 
 test.describe('Descubrí chips', () => {
   test.beforeEach(async ({ page }) => {
+    await mockDescubriApis(page)
     await page.addInitScript(() => {
       localStorage.removeItem('hotclick-descubri-gustos')
     })
@@ -10,13 +83,12 @@ test.describe('Descubrí chips', () => {
   test('CTA deshabilitado sin categoría; tras guardar muestra resultados', async ({ page }) => {
     await page.goto('/descubri', { waitUntil: 'domcontentloaded' })
 
-    // Banner de cookies si aparece
     const accept = page.getByRole('button', { name: /aceptar todo|accept all|aceitar tudo/i })
     if (await accept.isVisible({ timeout: 3000 }).catch(() => false)) {
       await accept.click()
     }
 
-    await expect(page.getByRole('heading', { name: /descubri|discover|descubra/i })).toBeVisible({ timeout: 20000 })
+    await expect(page.getByRole('heading', { name: /descubr|discover|descubra/i })).toBeVisible({ timeout: 20000 })
 
     const cta = page.getByRole('button', { name: /ver productos para mí|show products for me|ver produtos para mim/i })
     await expect(cta).toBeDisabled({ timeout: 20000 })
@@ -47,7 +119,7 @@ test.describe('Descubrí chips', () => {
       await accept.click()
     }
     await expect(
-      page.getByRole('link', { name: /ir a descubri|go to discover|ir a descubra/i }),
+      page.getByRole('link', { name: /ir a descubr|go to discover/i }),
     ).toBeVisible({ timeout: 20000 })
   })
 })
