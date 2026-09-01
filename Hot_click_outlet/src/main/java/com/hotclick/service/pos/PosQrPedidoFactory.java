@@ -55,7 +55,7 @@ public class PosQrPedidoFactory {
             Bodega bodega   = resolverBodega(sesion.getBodegaId(), empresa.getId());
 
             Pedido pedido = armarPedido(sesion, metodoPago, empresa, cliente, bodega, cajero);
-            TotalesQr totales = cargarItems(items, pedido, cajero.getCorreo());
+            TotalesQr totales = cargarItems(items, pedido, correoCajero(cajero));
             aplicarTotales(pedido, totales);
 
             Pedido saved = pedidoRepo.save(pedido);
@@ -64,7 +64,7 @@ public class PosQrPedidoFactory {
 
             log.info("[POS-QR] Venta {} registrada — método={} total={} cajero={} cliente={}",
                 saved.getNumeroPedido(), metodoPago, totales.totalPedido(),
-                cajero.getId(), cliente.getId());
+                idCajero(cajero), cliente.getId());
             telegramNotificacionClienteService.notificarVenta(empresa.getId(), saved.getNumeroPedido(),
                 totales.totalPedido(), metodoPago, cliente.getNombre(), "POS");
         } catch (RuntimeException e) {
@@ -130,6 +130,16 @@ public class PosQrPedidoFactory {
         if (cajero.getNombre() != null && !cajero.getNombre().isBlank()) return cajero.getNombre();
         if (cajero.getCorreo() != null && !cajero.getCorreo().isBlank()) return cajero.getCorreo();
         return "POS";
+    }
+
+    static String correoCajero(Usuario cajero) {
+        if (cajero == null) return "pos@hotclick.local";
+        if (cajero.getCorreo() != null && !cajero.getCorreo().isBlank()) return cajero.getCorreo();
+        return "pos@hotclick.local";
+    }
+
+    static Long idCajero(Usuario cajero) {
+        return cajero != null ? cajero.getId() : null;
     }
 
     private TotalesQr cargarItems(List<Map<String, Object>> items, Pedido pedido, String correo) {

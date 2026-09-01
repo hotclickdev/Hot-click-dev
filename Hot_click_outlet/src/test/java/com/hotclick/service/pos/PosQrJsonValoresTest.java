@@ -41,4 +41,13 @@ class PosQrNotaCajeroTest {
         assertThat(PosQrPedidoFactory.notaConCajero(null, cajero)).isEqualTo("Cajero: Ana Emprendedora");
         assertThat(PosQrPedidoFactory.notaConCajero("Promo", cajero)).isEqualTo("Promo · Cajero: Ana Emprendedora");
     }
+
+    @Test
+    @DisplayName("correoCajero tolera cajero nulo")
+    void correoCajeroSinSesion() {
+        assertThat(PosQrPedidoFactory.correoCajero(null)).isEqualTo("pos@hotclick.local");
+        Usuario cajero = new Usuario();
+        cajero.setCorreo("ana@tienda.cr");
+        assertThat(PosQrPedidoFactory.correoCajero(cajero)).isEqualTo("ana@tienda.cr");
+    }
 }
