@@ -11,7 +11,7 @@ import {
 import BotonPrimario from '../ui/BotonPrimario'
 import CabeceraAtras from '../ui/CabeceraAtras'
 import CampoTexto from '../ui/CampoTexto'
-import { CUENTA_DEMO, RUTA_EMPRENDEDOR } from '../constants'
+import { RUTA_EMPRENDEDOR } from '../constants'
 import { leerExtrasNegocio, guardarExtrasNegocio } from '../data/negocioExtras'
 
 type FormNegocio = {
@@ -24,12 +24,12 @@ type FormNegocio = {
 }
 
 const FORM_INICIAL: FormNegocio = {
-  nombre: CUENTA_DEMO.tienda,
-  descripcion: 'Tecnología y accesorios con envío a todo el país',
-  categoria: 'Tecnología',
-  whatsapp: CUENTA_DEMO.telefono,
-  instagram: CUENTA_DEMO.instagram,
-  zona: 'Todo Costa Rica',
+  nombre: '',
+  descripcion: '',
+  categoria: '',
+  whatsapp: '',
+  instagram: '',
+  zona: '',
 }
 
 /**

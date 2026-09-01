@@ -4,9 +4,9 @@ import { ChevronLeftIcon } from '@heroicons/react/24/outline'
 import { formatoColon } from '@/theme/formatoColon'
 import BadgeEstado from '../ui/BadgeEstado'
 import BotonPrimario from '../ui/BotonPrimario'
-import { CUENTA_DEMO, RUTA_EMPRENDEDOR } from '../constants'
-import { PRODUCTOS_DEMO } from '../data/catalogoDemo'
+import { RUTA_EMPRENDEDOR } from '../constants'
 import { useCatalogoEmprendedor } from '../hooks/useCatalogoEmprendedor'
+import { useCuentaVendedor } from '../hooks/useCuentaVendedor'
 
 /**
  * Paso 8 Detalle de producto público (Figma 21:24).
@@ -14,11 +14,17 @@ import { useCatalogoEmprendedor } from '../hooks/useCatalogoEmprendedor'
 export default function DetalleProductoPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
-  const { productos } = useCatalogoEmprendedor()
-  const producto = useMemo(
-    () => productos.find((p) => p.id === id) ?? PRODUCTOS_DEMO.find((p) => p.id === id),
-    [productos, id],
-  )
+  const { productos, cargando } = useCatalogoEmprendedor()
+  const { tienda } = useCuentaVendedor()
+  const producto = useMemo(() => productos.find((p) => p.id === id), [productos, id])
+
+  if (cargando) {
+    return (
+      <main className="px-5 py-10">
+        <p className="text-sm text-hc-muted">Cargando producto…</p>
+      </main>
+    )
+  }
 
   if (!producto) {
     return (
@@ -49,10 +55,10 @@ export default function DetalleProductoPage() {
         <p className="text-2xl font-bold text-hc-primary">{formatoColon(producto.precio)}</p>
         <p className="rounded-xl bg-[var(--hc-n-50)] px-3 py-2.5 text-xs">
           <span className="text-hc-muted">Vendido por </span>
-          <span className="font-bold">Tienda {CUENTA_DEMO.tienda}</span>
+          <span className="font-bold">Tienda {tienda}</span>
         </p>
         <h2 className="text-sm font-bold">Descripción</h2>
-        <p className="text-xs text-hc-muted">{producto.descripcion}</p>
+        <p className="text-xs text-hc-muted">{producto.descripcion || 'Sin descripción.'}</p>
         <BotonPrimario onClick={() => navigate('/carrito')}>
           Comprar ahora
         </BotonPrimario>

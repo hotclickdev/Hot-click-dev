@@ -5,6 +5,7 @@ type Props = {
   type?: 'text' | 'password' | 'email' | 'number' | 'tel'
   placeholder?: string
   autoComplete?: string
+  readOnly?: boolean
 }
 
 /**
@@ -17,6 +18,7 @@ export default function CampoTexto({
   type = 'text',
   placeholder,
   autoComplete,
+  readOnly = false,
 }: Props) {
   const id = etiqueta.replaceAll(' ', '-').toLowerCase()
   return (
@@ -28,6 +30,7 @@ export default function CampoTexto({
         value={value}
         placeholder={placeholder}
         autoComplete={autoComplete}
+        readOnly={readOnly}
         onChange={(evento) => onChange(evento.target.value)}
         className="min-h-11 w-full rounded-lg border border-hc-border bg-[#F8F9FB] px-3.5 py-3 text-sm font-normal text-hc-text outline-none placeholder:text-hc-muted"
       />
