@@ -8,19 +8,18 @@ import {
   mensajeErrorProducto,
   publicarProductoVendedor,
 } from './catalogoVendedorApi'
+import CamposPersonalizadoProducto from './CamposPersonalizadoProducto'
+import {
+  type ModoPrecioPersonalizado,
+  precioVentaPersonalizado,
+  tituloFormProducto,
+} from './personalizadoProductoHelpers'
 import iconCamara from './assets/icon-camara.svg'
 
 const CATEGORIAS = ['Tecnología', 'Ropa', 'Otro'] as const
 type CategoriaForm = (typeof CATEGORIAS)[number]
-type ModoPrecio = 'FIJO' | 'RANGO' | 'COTIZACION'
 
-const MODOS: { valor: ModoPrecio; titulo: string }[] = [
-  { valor: 'FIJO', titulo: 'Precio fijo' },
-  { valor: 'RANGO', titulo: 'Rango' },
-  { valor: 'COTIZACION', titulo: 'Cotización' },
-]
-
-type Props = { personalizado?: boolean }
+type Props = Readonly<{ personalizado?: boolean }>
 
 /**
  * Alta / edición de producto (Figma 61:231 / 61:422) con API real.
@@ -38,7 +37,7 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
   const [stock, setStock] = useState('')
   const [categoria, setCategoria] = useState<CategoriaForm>('Tecnología')
   const [estado, setEstado] = useState<'Publicado' | 'Pausado'>('Publicado')
-  const [modoPrecio, setModoPrecio] = useState<ModoPrecio>('FIJO')
+  const [modoPrecio, setModoPrecio] = useState<ModoPrecioPersonalizado>('FIJO')
   const [precioMin, setPrecioMin] = useState('')
   const [precioMax, setPrecioMax] = useState('')
   const [instrucciones, setInstrucciones] = useState('')
@@ -69,11 +68,10 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
       setError('Indicá el rango de precio (mínimo y máximo).')
       return
     }
-    const precioVenta = precioVentaGuardar(esPersonalizado, modoPrecio, venta, precioMin)
     const datos = {
       nombre,
       precioCompra: compra,
-      precioVenta,
+      precioVenta: precioVentaPersonalizado(esPersonalizado, modoPrecio, venta, precioMin),
       descripcion,
       stock,
       categoria,
@@ -93,12 +91,11 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
     }
   }
 
-  const titulo = editar ? 'Editar Producto' : esPersonalizado ? 'Producto personalizado' : 'Nuevo Producto'
   const volverA = editar ? ruta('productos') : ruta('productos/nuevo')
 
   return (
     <main className="px-5 pb-8 pt-[60px]">
-      <EncabezadoPagina titulo={titulo} volverA={volverA} />
+      <EncabezadoPagina titulo={tituloFormProducto(editar, esPersonalizado)} volverA={volverA} />
       {cargando && editar && !existente ? <p className="text-sm text-hc-muted">Cargando…</p> : null}
       <ZonaFoto editar={editar} nombre={existente?.nombre} />
       <form onSubmit={(e) => void enviar(e)}>
@@ -110,15 +107,16 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
           </>
         ) : null}
         {esPersonalizado ? (
-          <CamposPersonalizado
+          <CamposPersonalizadoProducto
+            idPrefijo="pyme"
             modoPrecio={modoPrecio}
-            setModoPrecio={setModoPrecio}
+            onModoChange={setModoPrecio}
             precioMin={precioMin}
-            setPrecioMin={setPrecioMin}
+            onPrecioMinChange={setPrecioMin}
             precioMax={precioMax}
-            setPrecioMax={setPrecioMax}
+            onPrecioMaxChange={setPrecioMax}
             instrucciones={instrucciones}
-            setInstrucciones={setInstrucciones}
+            onInstruccionesChange={setInstrucciones}
           />
         ) : null}
         <Campo etiqueta="Descripción" value={descripcion} onChange={setDescripcion} placeholder="Ej: Auriculares con estuche de carga..." />
@@ -150,69 +148,7 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
   )
 }
 
-function precioVentaGuardar(
-  personalizado: boolean,
-  modo: ModoPrecio,
-  venta: string,
-  precioMin: string,
-): string {
-  if (!personalizado) return venta
-  if (modo === 'COTIZACION') return venta || '1'
-  if (modo === 'RANGO') return precioMin || '1'
-  return venta
-}
-
-function CamposPersonalizado({
-  modoPrecio, setModoPrecio, precioMin, setPrecioMin, precioMax, setPrecioMax, instrucciones, setInstrucciones,
-}: {
-  modoPrecio: ModoPrecio
-  setModoPrecio: (m: ModoPrecio) => void
-  precioMin: string
-  setPrecioMin: (v: string) => void
-  precioMax: string
-  setPrecioMax: (v: string) => void
-  instrucciones: string
-  setInstrucciones: (v: string) => void
-}) {
-  return (
-    <div className="mb-4 space-y-3 rounded-xl border border-hc-border p-3">
-      <p className="text-xs font-medium text-hc-muted" id="modo-precio-pyme">Cómo se define el precio</p>
-      <div className="flex flex-wrap gap-2" role="radiogroup" aria-labelledby="modo-precio-pyme">
-        {MODOS.map((modo) => (
-          <label key={modo.valor} className="flex cursor-pointer items-center gap-1.5 rounded-full border border-hc-border px-3 py-1.5 text-xs">
-            <input
-              type="radio"
-              name="modoPrecioPersonalizado"
-              checked={modoPrecio === modo.valor}
-              onChange={() => setModoPrecio(modo.valor)}
-              aria-label={modo.titulo}
-            />
-            {modo.titulo}
-          </label>
-        ))}
-      </div>
-      {modoPrecio === 'RANGO' ? (
-        <div className="grid grid-cols-2 gap-2">
-          <Campo etiqueta="Precio mínimo" value={precioMin} onChange={setPrecioMin} type="number" placeholder="₡ 5.000" />
-          <Campo etiqueta="Precio máximo" value={precioMax} onChange={setPrecioMax} type="number" placeholder="₡ 25.000" />
-        </div>
-      ) : null}
-      <label htmlFor="instrucciones-pyme" className="mb-1 block text-xs font-medium text-hc-muted">
-        Instrucciones para el cliente
-      </label>
-      <textarea
-        id="instrucciones-pyme"
-        className="min-h-[80px] w-full rounded-xl border border-hc-border px-3 py-2 text-sm"
-        value={instrucciones}
-        onChange={(e) => setInstrucciones(e.target.value)}
-        placeholder="Ej: Subí foto del diseño."
-        maxLength={3000}
-      />
-    </div>
-  )
-}
-
-function ZonaFoto({ editar, nombre }: { editar: boolean; nombre?: string }) {
+function ZonaFoto({ editar, nombre }: Readonly<{ editar: boolean; nombre?: string }>) {
   return (
     <div className="mb-6 flex h-[118px] flex-col items-center justify-center rounded-xl bg-hc-surface-2">
       {editar ? (

@@ -7,16 +7,14 @@ import CampoTexto from '../ui/CampoTexto'
 import FilaChips from '../ui/FilaChips'
 import { CATEGORIAS_PRODUCTO, RUTA_EMPRENDEDOR } from '../constants'
 import { mensajeErrorProducto, publicarProductoVendedor } from '@/prototipo/compartido/catalogoVendedorApi'
+import CamposPersonalizadoProducto from '@/prototipo/compartido/CamposPersonalizadoProducto'
+import {
+  type ModoPrecioPersonalizado,
+  precioVentaPersonalizado,
+  tituloFormProducto,
+} from '@/prototipo/compartido/personalizadoProductoHelpers'
 
-type ModoPrecio = 'FIJO' | 'RANGO' | 'COTIZACION'
-
-const MODOS_PRECIO: { valor: ModoPrecio; titulo: string; ayuda: string }[] = [
-  { valor: 'FIJO', titulo: 'Precio fijo', ayuda: 'El cliente paga de una vez.' },
-  { valor: 'RANGO', titulo: 'Rango', ayuda: 'Mostrás desde–hasta y cotizás dentro del rango.' },
-  { valor: 'COTIZACION', titulo: 'Cotización', ayuda: 'Sin precio público: revisás y cotizás después.' },
-]
-
-type Props = { personalizado?: boolean }
+type Props = Readonly<{ personalizado?: boolean }>
 
 /**
  * Paso agregar producto — catálogo o personalizado según `personalizado`.
@@ -29,7 +27,7 @@ export default function AgregarProductoPage({ personalizado = false }: Props) {
   const [descripcion, setDescripcion] = useState('')
   const [stock, setStock] = useState('')
   const [categoria, setCategoria] = useState<(typeof CATEGORIAS_PRODUCTO)[number]>('Tecnología')
-  const [modoPrecio, setModoPrecio] = useState<ModoPrecio>('FIJO')
+  const [modoPrecio, setModoPrecio] = useState<ModoPrecioPersonalizado>('FIJO')
   const [precioMin, setPrecioMin] = useState('')
   const [precioMax, setPrecioMax] = useState('')
   const [instrucciones, setInstrucciones] = useState('')
@@ -52,7 +50,7 @@ export default function AgregarProductoPage({ personalizado = false }: Props) {
       await publicarProductoVendedor({
         nombre,
         precioCompra: compra,
-        precioVenta: ventaParaGuardar(personalizado, modoPrecio, venta, precioMin),
+        precioVenta: precioVentaPersonalizado(personalizado, modoPrecio, venta, precioMin),
         descripcion,
         stock,
         categoria,
@@ -70,11 +68,12 @@ export default function AgregarProductoPage({ personalizado = false }: Props) {
     }
   }
 
-  const titulo = personalizado ? 'Producto personalizado' : 'Nuevo Producto'
-
   return (
     <main className="flex flex-col gap-[22px] px-5 py-8">
-      <CabeceraAtras titulo={titulo} to={`${RUTA_EMPRENDEDOR}/productos/nuevo`} />
+      <CabeceraAtras
+        titulo={tituloFormProducto(false, personalizado)}
+        to={`${RUTA_EMPRENDEDOR}/productos/nuevo`}
+      />
       <ZonaFoto />
       <form className="flex flex-col gap-5" onSubmit={publicar}>
         <CampoTexto etiqueta="Nombre del producto" value={nombre} onChange={setNombre} placeholder="Ej: Camiseta Oversize Negra" />
@@ -85,15 +84,16 @@ export default function AgregarProductoPage({ personalizado = false }: Props) {
           </>
         ) : null}
         {personalizado ? (
-          <CamposPersonalizado
+          <CamposPersonalizadoProducto
+            idPrefijo="emp"
             modoPrecio={modoPrecio}
-            setModoPrecio={setModoPrecio}
+            onModoChange={setModoPrecio}
             precioMin={precioMin}
-            setPrecioMin={setPrecioMin}
+            onPrecioMinChange={setPrecioMin}
             precioMax={precioMax}
-            setPrecioMax={setPrecioMax}
+            onPrecioMaxChange={setPrecioMax}
             instrucciones={instrucciones}
-            setInstrucciones={setInstrucciones}
+            onInstruccionesChange={setInstrucciones}
           />
         ) : null}
         <CampoTexto etiqueta="Descripción" value={descripcion} onChange={setDescripcion} placeholder="Ej: Auriculares con estuche de carga…" />
@@ -106,74 +106,6 @@ export default function AgregarProductoPage({ personalizado = false }: Props) {
         <BotonPrimario type="submit">{guardando ? 'Publicando…' : 'Publicar producto'}</BotonPrimario>
       </form>
     </main>
-  )
-}
-
-function ventaParaGuardar(
-  personalizado: boolean,
-  modo: ModoPrecio,
-  venta: string,
-  precioMin: string,
-): string {
-  if (!personalizado) return venta
-  if (modo === 'COTIZACION') return venta || '1'
-  if (modo === 'RANGO') return precioMin || '1'
-  return venta
-}
-
-function CamposPersonalizado({
-  modoPrecio, setModoPrecio, precioMin, setPrecioMin, precioMax, setPrecioMax, instrucciones, setInstrucciones,
-}: {
-  modoPrecio: ModoPrecio
-  setModoPrecio: (m: ModoPrecio) => void
-  precioMin: string
-  setPrecioMin: (v: string) => void
-  precioMax: string
-  setPrecioMax: (v: string) => void
-  instrucciones: string
-  setInstrucciones: (v: string) => void
-}) {
-  return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-hc-border p-3">
-      <p className="text-xs font-medium text-hc-muted" id="modo-precio-label">Cómo se define el precio</p>
-      <div className="flex flex-col gap-2" role="radiogroup" aria-labelledby="modo-precio-label">
-        {MODOS_PRECIO.map((modo) => (
-          <label key={modo.valor} className="flex cursor-pointer items-start gap-2 rounded-xl border border-hc-border px-3 py-2">
-            <input
-              type="radio"
-              name="modoPrecioPersonalizado"
-              checked={modoPrecio === modo.valor}
-              onChange={() => setModoPrecio(modo.valor)}
-              aria-label={modo.titulo}
-            />
-            <span>
-              <span className="block text-sm font-medium text-hc-text">{modo.titulo}</span>
-              <span className="block text-xs text-hc-muted">{modo.ayuda}</span>
-            </span>
-          </label>
-        ))}
-      </div>
-      {modoPrecio === 'RANGO' ? (
-        <div className="grid grid-cols-2 gap-2">
-          <CampoTexto etiqueta="Precio mínimo" value={precioMin} onChange={setPrecioMin} type="number" placeholder="₡ 5.000" />
-          <CampoTexto etiqueta="Precio máximo" value={precioMax} onChange={setPrecioMax} type="number" placeholder="₡ 25.000" />
-        </div>
-      ) : null}
-      {modoPrecio === 'COTIZACION' ? (
-        <p className="text-xs text-hc-muted">El cliente envía fotos y notas; vos cotizás al aprobar el encargo.</p>
-      ) : null}
-      <label htmlFor="instrucciones-personalizacion" className="text-xs font-medium text-hc-muted">
-        Instrucciones para el cliente
-      </label>
-      <textarea
-        id="instrucciones-personalizacion"
-        className="min-h-[88px] w-full rounded-xl border border-hc-border px-3 py-2 text-sm"
-        value={instrucciones}
-        onChange={(e) => setInstrucciones(e.target.value)}
-        placeholder="Ej: Subí foto del diseño. Indicá talla."
-        maxLength={3000}
-      />
-    </div>
   )
 }
 

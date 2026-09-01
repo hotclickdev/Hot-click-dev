@@ -33,7 +33,7 @@ class WebhookDispatcherSsrfTest {
     @DisplayName("URL pública HTTP → aceptada sin excepción")
     void publicHttpUrl_accepted() {
         assertThatNoException().isThrownBy(() ->
-            WebhookDispatcherService.validateWebhookUrl("http://api.ejemplo.com/hook"));
+            WebhookDispatcherService.validateWebhookUrl("http://example.com/hook"));
     }
 
     // ── Casos error: IPs privadas ─────────────────────────────────────────────
