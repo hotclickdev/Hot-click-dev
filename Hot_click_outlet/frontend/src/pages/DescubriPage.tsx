@@ -12,8 +12,8 @@ import {
   loadRecentlyViewedIds,
   productoEsRelacionado,
   type PriceBandId,
-  type GustosPerfil,
 } from '@/utils/gustos'
+import { useGustosPerfil } from '@/hooks/useGustosPerfil'
 import { buildCategoryTree } from '@/pages/catalogo/catalogoHelpers'
 import type { CatalogCategoria } from '@/pages/catalogo/catalogoTipos'
 import type { Producto, ProductoBackend } from '@/types/producto'
@@ -65,11 +65,11 @@ function toggleBand(ids: PriceBandId[], id: PriceBandId): PriceBandId[] {
 
 export default function DescubriPage() {
   const { t } = useTranslation()
+  const { perfil, source, refreshLocal } = useGustosPerfil()
   const [status, setStatus] = useState<Status>('loading')
   const [fase, setFase] = useState<Fase>(() => (hasGustos() ? 'resultados' : 'chips'))
   const [categories, setCategories] = useState<CatalogCategoria[]>([])
   const [products, setProducts] = useState<Producto[]>([])
-  const [perfil, setPerfil] = useState<GustosPerfil>(() => loadGustos())
   const [selectedCats, setSelectedCats] = useState<string[]>(
     () => loadGustos().selectedCategoryIds,
   )
@@ -94,6 +94,10 @@ export default function DescubriPage() {
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    setFase(hasGustos(perfil) ? 'resultados' : 'chips')
+  }, [perfil])
 
   useEffect(() => {
     if (status !== 'ready') return
@@ -123,8 +127,7 @@ export default function DescubriPage() {
   const handleSave = () => {
     if (selectedCats.length === 0) return
     saveGustosSeleccion(selectedCats, selectedBands)
-    const next = loadGustos()
-    setPerfil(next)
+    if (source !== 'backend') refreshLocal()
     analytics.descubriChipsSave(selectedCats.length, selectedBands.length)
     resultsViewed.current = false
     setFase('resultados')
@@ -132,8 +135,9 @@ export default function DescubriPage() {
 
   const handleChangeGustos = () => {
     chipsViewed.current = false
-    setSelectedCats(perfil.selectedCategoryIds)
-    setSelectedBands(perfil.selectedPriceBands)
+    const local = loadGustos()
+    setSelectedCats(source === 'backend' ? local.selectedCategoryIds : perfil.selectedCategoryIds)
+    setSelectedBands(source === 'backend' ? local.selectedPriceBands : perfil.selectedPriceBands)
     setFase('chips')
   }
 
