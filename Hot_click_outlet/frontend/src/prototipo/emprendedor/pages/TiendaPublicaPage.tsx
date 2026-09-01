@@ -6,8 +6,9 @@ import iconBuscar from '../assets/icon-buscar.svg'
 import BadgeEstado from '../ui/BadgeEstado'
 import FilaChips from '../ui/FilaChips'
 import Miniatura from '../ui/Miniatura'
-import { CUENTA_DEMO, RUTA_EMPRENDEDOR } from '../constants'
+import { RUTA_EMPRENDEDOR } from '../constants'
 import { useCatalogoEmprendedor } from '../hooks/useCatalogoEmprendedor'
+import { useCuentaVendedor } from '../hooks/useCuentaVendedor'
 import type { ProductoEmprendedor } from '../types'
 
 const FILTROS = ['Todos', 'Tecnología', 'Ropa'] as const
@@ -16,12 +17,17 @@ const FILTROS = ['Todos', 'Tecnología', 'Ropa'] as const
  * Paso 5 Tienda vista pública (Figma 15:2).
  */
 export default function TiendaPublicaPage() {
-  const { productos } = useCatalogoEmprendedor()
+  const { productos, cargando, error } = useCatalogoEmprendedor()
+  const { tienda, inicial } = useCuentaVendedor()
   const [filtro, setFiltro] = useState<string>('Todos')
   const [seguir, setSeguir] = useState(false)
+  const publicados = useMemo(
+    () => productos.filter((p) => p.estado === 'Publicado'),
+    [productos],
+  )
   const visibles = useMemo(
-    () => (filtro === 'Todos' ? productos : productos.filter((p) => p.categoria === filtro)),
-    [productos, filtro],
+    () => (filtro === 'Todos' ? publicados : publicados.filter((p) => p.categoria === filtro)),
+    [publicados, filtro],
   )
 
   return (
@@ -33,7 +39,7 @@ export default function TiendaPublicaPage() {
         <p className="text-[10px] font-medium text-white">Así te ven los compradores</p>
       </div>
       <div className="h-24 bg-gradient-to-r from-hc-primary to-[var(--hc-red-700)]" />
-      <CabeceraTienda seguir={seguir} onSeguir={() => setSeguir((v) => !v)} />
+      <CabeceraTienda tienda={tienda} inicial={inicial} seguir={seguir} onSeguir={() => setSeguir((v) => !v)} />
       <div className="flex flex-col gap-[18px] px-5 pb-10 pt-2">
         <div className="flex items-center gap-2 rounded-xl bg-[var(--hc-n-50)] px-3.5 py-3">
           <span className="size-3.5 overflow-hidden">
@@ -43,6 +49,16 @@ export default function TiendaPublicaPage() {
         </div>
         <FilaChips valor={filtro} opciones={FILTROS} onChange={setFiltro} />
         <h2 className="text-[15px] font-bold">Productos de esta tienda</h2>
+        {cargando ? <p className="text-sm text-hc-muted">Cargando productos…</p> : null}
+        {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
+        {!cargando && publicados.length === 0 ? (
+          <p className="rounded-xl border border-hc-border bg-hc-surface px-4 py-8 text-center text-sm text-hc-muted">
+            Todavía no tenés productos publicados. Agregá uno desde Mis Productos.
+          </p>
+        ) : null}
+        {!cargando && publicados.length > 0 && visibles.length === 0 ? (
+          <p className="text-sm text-hc-muted">No hay productos en este filtro.</p>
+        ) : null}
         <ul className="grid grid-cols-2 gap-3">
           {visibles.map((producto) => (
             <TarjetaTienda key={producto.id} producto={producto} />
@@ -53,16 +69,26 @@ export default function TiendaPublicaPage() {
   )
 }
 
-function CabeceraTienda({ seguir, onSeguir }: { seguir: boolean; onSeguir: () => void }) {
+function CabeceraTienda({
+  tienda,
+  inicial,
+  seguir,
+  onSeguir,
+}: {
+  tienda: string
+  inicial: string
+  seguir: boolean
+  onSeguir: () => void
+}) {
   return (
     <div className="px-5">
       <div className="flex gap-3">
         <div className="-mt-8 flex size-16 items-center justify-center rounded-2xl border-4 border-white bg-hc-surface text-2xl font-bold text-hc-primary">
-          Q
+          {inicial}
         </div>
         <div className="pt-9">
-          <p className="text-[15px] font-bold">Tienda {CUENTA_DEMO.tienda}</p>
-          <p className="text-[10px] text-hc-muted">4.8 · 126 ventas · Outlet oficial</p>
+          <p className="text-[15px] font-bold">Tienda {tienda}</p>
+          <p className="text-[10px] text-hc-muted">Outlet oficial</p>
         </div>
       </div>
       <button

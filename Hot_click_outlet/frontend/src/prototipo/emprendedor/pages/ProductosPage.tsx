@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react'
 import EnlacePrimario from '../ui/EnlacePrimario'
 import FilaChips from '../ui/FilaChips'
 import FilaProducto from '../ui/FilaProducto'
-import { CUENTA_DEMO } from '../constants'
 import { useCatalogoEmprendedor } from '../hooks/useCatalogoEmprendedor'
+import { useCuentaVendedor } from '../hooks/useCuentaVendedor'
 import type { ProductoEmprendedor } from '../types'
 
 const FILTROS = ['Todos', 'Recién agregados', 'Tecnología', 'Ropa'] as const
@@ -13,6 +13,7 @@ const FILTROS = ['Todos', 'Recién agregados', 'Tecnología', 'Ropa'] as const
  */
 export default function ProductosPage() {
   const { productos, cargando, error } = useCatalogoEmprendedor()
+  const { usuario } = useCuentaVendedor()
   const [filtro, setFiltro] = useState<string>('Todos')
   const visibles = useMemo(() => filtrarProductos(productos, filtro), [productos, filtro])
   const vacio = !cargando && productos.length === 0
@@ -21,7 +22,7 @@ export default function ProductosPage() {
     <main className="flex flex-col gap-6 px-5 py-8 md:max-w-[760px] md:gap-6 md:px-16 md:py-12">
       <header>
         <h1 className="font-display text-[22px] font-bold md:text-[28px]">Mis Productos</h1>
-        <p className="text-xs text-hc-muted md:hidden">Outlet · {CUENTA_DEMO.usuario}</p>
+        <p className="text-xs text-hc-muted md:hidden">Outlet · {usuario}</p>
       </header>
 
       {vacio ? <VacioProductos /> : null}

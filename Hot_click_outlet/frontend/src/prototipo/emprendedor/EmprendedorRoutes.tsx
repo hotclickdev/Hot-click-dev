@@ -25,6 +25,7 @@ import DetallePedidoPage from './pages/DetallePedidoPage'
 import DatosNegocioPage from './pages/DatosNegocioPage'
 import PlanesPage from './pages/PlanesPage'
 import PlanActualizadoPage from './pages/PlanActualizadoPage'
+import { RUTA_EMPRENDEDOR } from './constants'
 
 /**
  * Rutas del prototipo Emprendedor (Figma Page 1, iPhone 11).
@@ -61,6 +62,11 @@ export default function EmprendedorRoutes() {
         <Route path="opciones/negocio" element={<DatosNegocioPage />} />
         <Route path="opciones/plan" element={<PlanesPage />} />
         <Route path="opciones/plan/actualizado" element={<PlanActualizadoPage />} />
+        <Route path="proximamente/pedidos" element={<Navigate to={`${RUTA_EMPRENDEDOR}/pedidos`} replace />} />
+        <Route path="proximamente/bodegas" element={<Navigate to={`${RUTA_EMPRENDEDOR}/opciones/bodegas`} replace />} />
+        <Route path="proximamente/productos" element={<Navigate to={`${RUTA_EMPRENDEDOR}/productos`} replace />} />
+        <Route path="proximamente/reportes" element={<Navigate to={`${RUTA_EMPRENDEDOR}/reportes`} replace />} />
+        <Route path="proximamente/negocio" element={<Navigate to={`${RUTA_EMPRENDEDOR}/opciones/negocio`} replace />} />
         <Route path="proximamente" element={<ProximamentePage />} />
         <Route path="pedidos" element={<PedidosPage />} />
         <Route path="pedidos/:id" element={<DetallePedidoPage />} />
