@@ -3,9 +3,11 @@ import BrandLogo from '@/components/ui/BrandLogo'
 import EnlacePrimario from '../ui/EnlacePrimario'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import OnboardingPrimeraVez from '@/prototipo/compartido/OnboardingPrimeraVez'
+import { useEncargosPendientesCount } from '@/features/encargos/useEncargos'
 
-const ACCIONES = [
+const ACCIONES_BASE = [
   { to: `${RUTA_EMPRENDEDOR}/productos`, etiqueta: 'PRODUCTOS SUBIDOS' },
+  { to: `${RUTA_EMPRENDEDOR}/encargos`, etiqueta: 'ENCARGOS', conBadge: true },
   { to: `${RUTA_EMPRENDEDOR}/reportes`, etiqueta: 'VER REPORTES' },
   { to: `${RUTA_EMPRENDEDOR}/opciones`, etiqueta: 'OPCIONES' },
 ] as const
@@ -14,18 +16,25 @@ const ACCIONES = [
  * Paso 1 Menú Principal (Figma 3:2).
  */
 export default function MenuPage() {
+  const { data: pendientesEncargos = 0 } = useEncargosPendientesCount()
+
   return (
     <main className="flex min-h-[calc(100dvh-4rem)] flex-col items-center gap-2 px-6 pb-10 pt-16 md:max-w-[480px] md:items-stretch md:px-16 md:py-12">
       <HeroMarca />
       <OnboardingPrimeraVez rol="emprendedor" />
-      {ACCIONES.map((accion) => (
+      {ACCIONES_BASE.map((accion) => (
         <Link
           key={accion.to}
           to={accion.to}
           data-mm={accion.to.includes('/productos') ? 'seller-menu-productos' : undefined}
-          className="flex h-[54px] w-full items-center justify-center rounded-[14px] border border-hc-border bg-hc-surface text-sm font-bold"
+          className="relative flex h-[54px] w-full items-center justify-center rounded-[14px] border border-hc-border bg-hc-surface text-sm font-bold"
         >
           {accion.etiqueta}
+          {'conBadge' in accion && accion.conBadge && pendientesEncargos > 0 ? (
+            <span className="absolute right-4 flex size-6 items-center justify-center rounded-full bg-hc-primary text-[11px] font-bold text-white">
+              {pendientesEncargos > 99 ? '99+' : pendientesEncargos}
+            </span>
+          ) : null}
         </Link>
       ))}
       <EnlacePrimario to="/admin/pos" variante="oscuro" dataMm="seller-menu-pos">

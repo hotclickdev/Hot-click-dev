@@ -13,6 +13,12 @@ export type ProductoMock = {
   estado: EstadoProducto
   reciente: boolean
   descripcion: string
+  imagenUrl?: string
+  esPersonalizado?: boolean
+  modoPrecioPersonalizado?: string
+  precioPersonalizadoMin?: number
+  precioPersonalizadoMax?: number
+  instruccionesPersonalizacion?: string
 }
 
 export type EstadoPedido = 'Pendiente' | 'Enviado' | 'Entregado' | 'Cancelado'

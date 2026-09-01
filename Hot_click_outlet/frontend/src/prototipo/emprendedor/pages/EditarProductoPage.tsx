@@ -8,18 +8,26 @@ import FilaChips from '../ui/FilaChips'
 import { CATEGORIAS_PRODUCTO, RUTA_EMPRENDEDOR } from '../constants'
 import { useCatalogoEmprendedor } from '../hooks/useCatalogoEmprendedor'
 import { guardarProductoVendedor, mensajeErrorProducto } from '@/prototipo/compartido/catalogoVendedorApi'
+import CamposPersonalizadoProducto from '@/prototipo/compartido/CamposPersonalizadoProducto'
+import ZonaFotoProducto from '@/prototipo/compartido/ZonaFotoProducto'
+import {
+  type ModoPrecioPersonalizado,
+  modosPrecioPersonalizadoHabilitados,
+  preciosAlPublicar,
+} from '@/prototipo/compartido/personalizadoProductoHelpers'
 import type { EstadoPublicacion } from '../types'
 
 const ESTADOS = ['Publicado', 'Pausado'] as const
 
 /**
- * Paso 6 Editar Producto (Figma 18:2) — guarda en el catálogo real.
+ * Editar producto — catálogo o personalizado según el producto cargado.
  */
 export default function EditarProductoPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
   const { productos, cargando } = useCatalogoEmprendedor()
   const original = useMemo(() => productos.find((p) => p.id === id), [productos, id])
+  const esPersonalizado = original?.esPersonalizado === true
   const [nombre, setNombre] = useState('')
   const [compra, setCompra] = useState('')
   const [venta, setVenta] = useState('')
@@ -27,6 +35,11 @@ export default function EditarProductoPage() {
   const [stock, setStock] = useState('')
   const [categoria, setCategoria] = useState('Tecnología')
   const [estado, setEstado] = useState('Publicado')
+  const [instrucciones, setInstrucciones] = useState('')
+  const [modoPrecio, setModoPrecio] = useState<ModoPrecioPersonalizado>('COTIZACION')
+  const [precioMin, setPrecioMin] = useState('')
+  const [precioMax, setPrecioMax] = useState('')
+  const [imagenUrl, setImagenUrl] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [iniciado, setIniciado] = useState(false)
 
@@ -39,6 +52,11 @@ export default function EditarProductoPage() {
     setStock(String(original.stock))
     setCategoria(original.categoria)
     setEstado(original.estado)
+    setInstrucciones(original.instruccionesPersonalizacion ?? '')
+    setModoPrecio((original.modoPrecioPersonalizado as ModoPrecioPersonalizado) || 'COTIZACION')
+    setPrecioMin(original.precioPersonalizadoMin != null ? String(original.precioPersonalizadoMin) : '')
+    setPrecioMax(original.precioPersonalizadoMax != null ? String(original.precioPersonalizadoMax) : '')
+    setImagenUrl(original.imagenUrl ?? '')
     setIniciado(true)
   }, [original, iniciado])
 
@@ -63,15 +81,30 @@ export default function EditarProductoPage() {
   async function guardar(evento: FormEvent) {
     evento.preventDefault()
     setError(null)
+    if (esPersonalizado && modosPrecioPersonalizadoHabilitados() && modoPrecio === 'RANGO' && (!precioMin || !precioMax)) {
+      setError('Indicá el rango de precio (mínimo y máximo).')
+      return
+    }
+    const precios = preciosAlPublicar(esPersonalizado, compra, venta, {
+      modoPrecio: esPersonalizado ? modoPrecio : undefined,
+      precioMin,
+      precioMax,
+    })
     try {
       await guardarProductoVendedor(id, {
         nombre,
-        precioCompra: compra,
-        precioVenta: venta,
+        precioCompra: precios.precioCompra,
+        precioVenta: precios.precioVenta,
         descripcion,
         stock,
         categoria,
         estado: estado as EstadoPublicacion,
+        esPersonalizado,
+        modoPrecioPersonalizado: precios.modoPrecioPersonalizado,
+        precioPersonalizadoMin: precios.precioPersonalizadoMin,
+        precioPersonalizadoMax: precios.precioPersonalizadoMax,
+        instruccionesPersonalizacion: esPersonalizado ? instrucciones : undefined,
+        imagenUrl: imagenUrl || undefined,
       })
       navigate(`${RUTA_EMPRENDEDOR}/productos`)
     } catch (err: unknown) {
@@ -81,11 +114,35 @@ export default function EditarProductoPage() {
 
   return (
     <main className="flex flex-col gap-[22px] px-5 py-8">
-      <CabeceraAtras titulo="Editar Producto" to={`${RUTA_EMPRENDEDOR}/productos`} />
+      <CabeceraAtras
+        titulo={esPersonalizado ? 'Editar personalizado' : 'Editar Producto'}
+        to={`${RUTA_EMPRENDEDOR}/productos`}
+      />
+      <ZonaFotoProducto imagenUrl={imagenUrl} onImagenChange={setImagenUrl} bordeDiscontinuo />
       <form className="flex flex-col gap-5" onSubmit={(e) => void guardar(e)}>
         <CampoTexto etiqueta="Nombre del producto" value={nombre} onChange={setNombre} />
-        <CampoTexto etiqueta="Precio de compra" value={compra} onChange={setCompra} type="number" />
-        <CampoTexto etiqueta="Precio de venta" value={venta} onChange={setVenta} type="number" />
+        {!esPersonalizado ? (
+          <>
+            <CampoTexto etiqueta="Precio de compra" value={compra} onChange={setCompra} type="number" />
+            <CampoTexto etiqueta="Precio de venta" value={venta} onChange={setVenta} type="number" />
+          </>
+        ) : (
+          <CamposPersonalizadoProducto
+            idPrefijo="emp-edit"
+            instrucciones={instrucciones}
+            onInstruccionesChange={setInstrucciones}
+            modoPrecio={modoPrecio}
+            onModoChange={setModoPrecio}
+            precioMin={precioMin}
+            onPrecioMinChange={setPrecioMin}
+            precioMax={precioMax}
+            onPrecioMaxChange={setPrecioMax}
+            compra={compra}
+            onCompraChange={setCompra}
+            venta={venta}
+            onVentaChange={setVenta}
+          />
+        )}
         <CampoTexto etiqueta="Descripción" value={descripcion} onChange={setDescripcion} />
         <CampoTexto etiqueta="Stock disponible" value={stock} onChange={setStock} type="number" />
         <div>

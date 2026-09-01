@@ -206,8 +206,17 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
       toast({ message: 'Indicá tu nombre y email para enviar el encargo', type: 'warning' })
       return
     }
+    if (personalizacion.presupuestoTipo === 'RANGO') {
+      const min = Number(personalizacion.presupuestoMin)
+      const max = Number(personalizacion.presupuestoMax)
+      if (!min || !max || max < min) {
+        toast({ message: 'Indicá un rango de presupuesto válido o elegí sin presupuesto', type: 'warning' })
+        return
+      }
+    }
     setEnviandoEncargo(true)
     try {
+      const presupuestoTipo = personalizacion.presupuestoTipo ?? 'SIN_PRESUPUESTO'
       const { data } = await encargoService.crear({
         productoId: product.id as Id,
         nombreCliente: nombre,
@@ -216,6 +225,9 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
         notas: personalizacion.notas,
         tallaSeleccionada: tallaSeleccionada || undefined,
         imagenes: personalizacion.imagenes || [],
+        presupuestoTipo,
+        presupuestoMin: presupuestoTipo === 'RANGO' ? Number(personalizacion.presupuestoMin) : undefined,
+        presupuestoMax: presupuestoTipo === 'RANGO' ? Number(personalizacion.presupuestoMax) : undefined,
       })
       const encargo = encargoDesdeRespuesta(data)
       toast({ message: 'Encargo enviado. Te avisaremos cuando el artista responda.', type: 'success' })

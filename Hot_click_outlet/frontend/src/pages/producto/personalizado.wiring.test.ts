@@ -42,12 +42,27 @@ describe('productos personalizados — wiring estático', () => {
     expect(svc).toContain('rechazar')
   })
 
-  it('Mis Productos pide elegir tipo al agregar', () => {
+  it('Mis Productos ofrece catálogo y personalizado al agregar', () => {
     const routes = readFileSync(resolve(root, 'src/prototipo/emprendedor/EmprendedorRoutes.tsx'), 'utf8')
     expect(routes).toContain('ElegirTipoProductoPage')
     expect(routes).toContain('productos/nuevo/personalizado')
-    const menu = readFileSync(resolve(root, 'src/prototipo/compartido/ElegirTipoProductoMenu.tsx'), 'utf8')
-    expect(menu).toContain('Producto de catálogo')
-    expect(menu).toContain('Producto personalizado')
+    expect(routes).toContain('encargos')
+    expect(routes).toContain('EncargosPage')
+    const botones = readFileSync(resolve(root, 'src/prototipo/compartido/BotonesAgregarProducto.tsx'), 'utf8')
+    expect(botones).toContain('Producto de catálogo')
+    expect(botones).toContain('Producto personalizado')
+    const listado = readFileSync(resolve(root, 'src/prototipo/emprendedor/pages/ProductosPage.tsx'), 'utf8')
+    expect(listado).toContain('BotonesAgregarProducto')
+  })
+
+  it('panel de encargo compartido y presupuesto del cliente', () => {
+    const panel = readFileSync(resolve(root, 'src/features/encargos/EncargosPanel.tsx'), 'utf8')
+    expect(panel).toContain('EncargosPanel')
+    const personalizacion = readFileSync(resolve(root, 'src/pages/producto/PersonalizacionPanel.tsx'), 'utf8')
+    expect(personalizacion).toContain('presupuestoTipo')
+    expect(personalizacion).toContain('SIN_PRESUPUESTO')
+    expect(personalizacion).toContain('presupuestoMin')
+    const helpers = readFileSync(resolve(root, 'src/prototipo/compartido/personalizadoProductoHelpers.ts'), 'utf8')
+    expect(helpers).toContain('VITE_PERSONALIZADO_MODOS_PRECIO')
   })
 })

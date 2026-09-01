@@ -1,6 +1,8 @@
 import api from './api'
 import type { Id } from '@/types/api'
 
+export type PresupuestoTipo = 'SIN_PRESUPUESTO' | 'RANGO'
+
 export type Encargo = {
   id: number
   productoId?: number
@@ -18,10 +20,25 @@ export type Encargo = {
   precioCotizado?: number | null
   estado: string
   motivoRechazo?: string | null
+  mensajeVendedor?: string | null
+  presupuestoTipo?: PresupuestoTipo
+  presupuestoMin?: number | null
+  presupuestoMax?: number | null
+  estadoFulfillment?: string | null
   tokenPublico: string
   fechaVencimiento?: string | null
   fechaCreacion?: string
   pedidoId?: number | null
+}
+
+export type EncargoKpis = {
+  pendientes: number
+  aprobados: number
+  pendientePago: number
+  pagados: number
+  rechazados: number
+  vencidos: number
+  ticketPromedioCotizado: number
 }
 
 export type EncargoCreatePayload = {
@@ -32,6 +49,9 @@ export type EncargoCreatePayload = {
   notas?: string
   tallaSeleccionada?: string
   imagenes: string[]
+  presupuestoTipo?: PresupuestoTipo
+  presupuestoMin?: number
+  presupuestoMax?: number
 }
 
 export const encargoService = {
@@ -57,11 +77,20 @@ export const encargoService = {
   listar: (estado?: string) =>
     api.get('/encargos', { params: estado ? { estado } : {} }),
 
-  aprobar: (id: Id, precioCotizado: number) =>
-    api.put(`/encargos/${id}/aprobar`, { precioCotizado }),
+  kpis: () =>
+    api.get('/encargos/kpis'),
+
+  eventos: (id: Id) =>
+    api.get(`/encargos/${id}/eventos`),
+
+  aprobar: (id: Id, precioCotizado: number, mensajeArtista?: string) =>
+    api.put(`/encargos/${id}/aprobar`, { precioCotizado, mensajeArtista: mensajeArtista || null }),
 
   rechazar: (id: Id, motivoRechazo: string) =>
     api.put(`/encargos/${id}/rechazar`, { motivoRechazo }),
+
+  fulfillment: (id: Id, estadoFulfillment: string, detalle?: string) =>
+    api.put(`/encargos/${id}/fulfillment`, { estadoFulfillment, detalle }),
 }
 
 export function urlDesdeUploadEncargo(data: unknown): string | undefined {
@@ -83,4 +112,27 @@ export function listaEncargosDesdeRespuesta(data: unknown): Encargo[] {
   if (Array.isArray(data)) return data as Encargo[]
   const body = data as { data?: Encargo[] }
   return Array.isArray(body.data) ? body.data : []
+}
+
+export function kpisDesdeRespuesta(data: unknown): EncargoKpis | null {
+  if (!data || typeof data !== 'object') return null
+  const body = data as { data?: EncargoKpis }
+  return body.data ?? (data as EncargoKpis)
+}
+
+export function etiquetaPresupuestoCliente(encargo: Encargo): string {
+  if (encargo.presupuestoTipo === 'RANGO' && encargo.presupuestoMin != null && encargo.presupuestoMax != null) {
+    const fmt = (n: number) => new Intl.NumberFormat('es-CR').format(n)
+    return `₡${fmt(encargo.presupuestoMin)} – ₡${fmt(encargo.presupuestoMax)}`
+  }
+  return 'Sin presupuesto indicado'
+}
+
+export function linkWhatsAppCotizacion(encargo: Encargo, precio: number): string | null {
+  const tel = encargo.telefono?.replace(/\D/g, '')
+  if (!tel) return null
+  const fmt = new Intl.NumberFormat('es-CR').format(precio)
+  const link = `${globalThis.location?.origin ?? 'https://hotclick.lat'}/encargo/${encargo.tokenPublico}`
+  const msg = `Hola ${encargo.nombreCliente}, tu encargo de ${encargo.productoNombre ?? 'producto personalizado'} quedó cotizado en ₡${fmt}. Pagá acá: ${link}`
+  return `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`
 }

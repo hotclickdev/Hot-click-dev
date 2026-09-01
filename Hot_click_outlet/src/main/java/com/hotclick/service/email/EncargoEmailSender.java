@@ -49,6 +49,7 @@ public class EncargoEmailSender {
                 + "<p>Hola " + layout.esc(encargo.getNombreCliente()) + ",</p>"
                 + "<p>El artista aprobó tu encargo de <strong>" + producto + "</strong>.</p>"
                 + "<p>Precio: <strong>" + precio + "</strong>. Tenés 7 días para pagar.</p>"
+                + mensajeVendedorHtml(encargo)
                 + layout.cta(link, "Pagar ahora")
                 + layout.footer("¿Tenés dudas sobre tu encargo?");
             resendEmailService.send(encargo.getEmail(), "Encargo aprobado — " + producto, html);
@@ -88,5 +89,30 @@ public class EncargoEmailSender {
         } catch (Exception e) {
             log.error("No se pudo confirmar encargo al cliente {}: {}", encargo.getId(), e.getMessage());
         }
+    }
+
+    public void notificarEncargoVencido(EncargoPersonalizado encargo) {
+        try {
+            String producto = layout.esc(encargo.getProductoNombre());
+            String link = appUrl + "/encargo/" + encargo.getTokenPublico();
+            String html = layout.abrirHtml()
+                + layout.header("Cotización vencida", producto)
+                + layout.abrirCuerpo()
+                + "<p>Hola " + layout.esc(encargo.getNombreCliente()) + ",</p>"
+                + "<p>La cotización de tu encargo de <strong>" + producto + "</strong> venció.</p>"
+                + "<p>Podés solicitar un nuevo encargo desde la tienda del artista.</p>"
+                + layout.cta(link, "Ver encargo")
+                + layout.footer("¿Tenés dudas?");
+            resendEmailService.send(encargo.getEmail(), "Cotización vencida — " + producto, html);
+        } catch (Exception e) {
+            log.error("No se pudo notificar vencimiento de encargo {}: {}", encargo.getId(), e.getMessage());
+        }
+    }
+
+    private String mensajeVendedorHtml(EncargoPersonalizado encargo) {
+        if (encargo.getMensajeVendedor() == null || encargo.getMensajeVendedor().isBlank()) {
+            return "";
+        }
+        return "<p><strong>Nota del artista:</strong> " + layout.esc(encargo.getMensajeVendedor()) + "</p>";
     }
 }

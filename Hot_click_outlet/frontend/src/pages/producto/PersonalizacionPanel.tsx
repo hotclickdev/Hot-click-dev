@@ -116,6 +116,8 @@ export default function PersonalizacionPanel({
         />
       </div>
 
+      <PresupuestoCliente personalizacion={personalizacion} onChange={onChange} tallaSeleccionada={tallaSeleccionada} />
+
       {requiereContacto && (
         <div className="grid gap-2 sm:grid-cols-3">
           <input className="rounded-xl border px-3 py-2 text-sm" style={{ borderColor: 'var(--hc-border)' }}
@@ -131,6 +133,69 @@ export default function PersonalizacionPanel({
       )}
 
       <ComoFunciona modo={modo} product={product} />
+    </div>
+  )
+}
+
+function PresupuestoCliente({
+  personalizacion,
+  onChange,
+  tallaSeleccionada,
+}: {
+  personalizacion: PersonalizacionCarrito
+  onChange: (next: PersonalizacionCarrito) => void
+  tallaSeleccionada: string | null
+}) {
+  const tipo = personalizacion.presupuestoTipo ?? 'SIN_PRESUPUESTO'
+  const labelId = 'presupuesto-encargo-label'
+
+  function setTipo(next: 'SIN_PRESUPUESTO' | 'RANGO') {
+    onChange({
+      ...personalizacion,
+      presupuestoTipo: next,
+      presupuestoMin: next === 'RANGO' ? personalizacion.presupuestoMin : undefined,
+      presupuestoMax: next === 'RANGO' ? personalizacion.presupuestoMax : undefined,
+      tallaSeleccionada: tallaSeleccionada || undefined,
+    })
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-medium" id={labelId} style={{ color: 'var(--hc-text)' }}>
+        Tu presupuesto (opcional)
+      </p>
+      <div className="flex flex-col gap-2" role="radiogroup" aria-labelledby={labelId}>
+        <label className="flex cursor-pointer items-center gap-2 text-sm">
+          <input type="radio" name="presupuesto-tipo" checked={tipo === 'SIN_PRESUPUESTO'} onChange={() => setTipo('SIN_PRESUPUESTO')} />
+          Sin presupuesto — el artista cotiza libremente
+        </label>
+        <label className="flex cursor-pointer items-center gap-2 text-sm">
+          <input type="radio" name="presupuesto-tipo" checked={tipo === 'RANGO'} onChange={() => setTipo('RANGO')} />
+          Tengo un rango en mente
+        </label>
+      </div>
+      {tipo === 'RANGO' ? (
+        <div className="grid grid-cols-2 gap-2">
+          <input
+            type="number"
+            min={1}
+            className="rounded-xl border px-3 py-2 text-sm"
+            style={{ borderColor: 'var(--hc-border)' }}
+            placeholder="Mínimo ₡"
+            value={personalizacion.presupuestoMin ?? ''}
+            onChange={e => onChange({ ...personalizacion, presupuestoMin: e.target.value, presupuestoTipo: 'RANGO' })}
+          />
+          <input
+            type="number"
+            min={1}
+            className="rounded-xl border px-3 py-2 text-sm"
+            style={{ borderColor: 'var(--hc-border)' }}
+            placeholder="Máximo ₡"
+            value={personalizacion.presupuestoMax ?? ''}
+            onChange={e => onChange({ ...personalizacion, presupuestoMax: e.target.value, presupuestoTipo: 'RANGO' })}
+          />
+        </div>
+      ) : null}
     </div>
   )
 }

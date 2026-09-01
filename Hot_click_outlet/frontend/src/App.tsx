@@ -25,6 +25,7 @@ import {
   SocialProofController,
   BrandingInit,
   AnalyticsInit,
+  ServiceWorkerRefresh,
 } from '@/app/AppChrome'
 
 const queryClient = new QueryClient({
@@ -38,6 +39,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <AnalyticsInit />
+        <ServiceWorkerRefresh />
         <SiteVerification />
         <HtmlClassManager />
         <BrowserRouter>

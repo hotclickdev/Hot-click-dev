@@ -3,6 +3,7 @@ package com.hotclick.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.util.ArrayList;
@@ -33,6 +34,13 @@ public class EncargoCreateRequest {
 
     private List<@Size(max = 500) String> imagenes = new ArrayList<>();
 
+    @Pattern(regexp = "^(SIN_PRESUPUESTO|RANGO)?$", message = "Tipo de presupuesto inválido")
+    private String presupuestoTipo = "SIN_PRESUPUESTO";
+
+    private Integer presupuestoMin;
+
+    private Integer presupuestoMax;
+
     public Long getProductoId() { return productoId; }
     public void setProductoId(Long productoId) { this.productoId = productoId; }
 
@@ -53,4 +61,13 @@ public class EncargoCreateRequest {
 
     public List<String> getImagenes() { return imagenes; }
     public void setImagenes(List<String> imagenes) { this.imagenes = imagenes; }
+
+    public String getPresupuestoTipo() { return presupuestoTipo; }
+    public void setPresupuestoTipo(String presupuestoTipo) { this.presupuestoTipo = presupuestoTipo; }
+
+    public Integer getPresupuestoMin() { return presupuestoMin; }
+    public void setPresupuestoMin(Integer presupuestoMin) { this.presupuestoMin = presupuestoMin; }
+
+    public Integer getPresupuestoMax() { return presupuestoMax; }
+    public void setPresupuestoMax(Integer presupuestoMax) { this.presupuestoMax = presupuestoMax; }
 }

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import EnlacePrimario from '../ui/EnlacePrimario'
+import BotonesAgregarProducto from '@/prototipo/compartido/BotonesAgregarProducto'
+import { RUTA_EMPRENDEDOR } from '../constants'
 import FilaChips from '../ui/FilaChips'
 import FilaProducto from '../ui/FilaProducto'
 import { useCatalogoEmprendedor } from '../hooks/useCatalogoEmprendedor'
@@ -25,14 +26,11 @@ export default function ProductosPage() {
         <p className="text-xs text-hc-muted md:hidden">Outlet · {usuario}</p>
       </header>
 
+      <BotonesAgregarProducto baseNuevo={`${RUTA_EMPRENDEDOR}/productos/nuevo`} />
+
       {vacio ? <VacioProductos /> : null}
 
-      {!vacio ? (
-        <>
-          <EnlacePrimario to="/productos/nuevo" dataMm="seller-agregar-producto">+ Agregar producto</EnlacePrimario>
-          <FilaChips valor={filtro} opciones={FILTROS} onChange={setFiltro} />
-        </>
-      ) : null}
+      {!vacio ? <FilaChips valor={filtro} opciones={FILTROS} onChange={setFiltro} /> : null}
 
       {cargando ? <p className="text-sm text-hc-muted">Cargando catálogo…</p> : null}
       {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
@@ -82,8 +80,7 @@ function VacioProductos() {
       data-mm="seller-lista-productos"
     >
       <p className="font-display text-[15px] font-bold md:text-lg">Todavía no subiste productos</p>
-      <p className="text-xs text-hc-muted md:text-sm">Agregá tu primer producto para empezar a vender</p>
-      <EnlacePrimario to="/productos/nuevo" dataMm="seller-agregar-producto">+ Agregar producto</EnlacePrimario>
+      <p className="text-xs text-hc-muted md:text-sm">Usá los botones de arriba para publicar catálogo o personalizado.</p>
     </div>
   )
 }

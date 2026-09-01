@@ -10,19 +10,28 @@ import {
   QuestionMarkCircleIcon,
   SparklesIcon,
 } from '@heroicons/react/24/outline'
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BrandLogo from '@/components/ui/BrandLogo'
 import useAuthStore from '@/store/authStore'
 import PrototipoSidebarNav, { type GrupoNav, type ItemNav } from '@/prototipo/compartido/PrototipoSidebarNav'
+import { useEncargosPendientesCount } from '@/features/encargos/useEncargos'
 import { RUTA_EMPRENDEDOR } from './constants'
 
-const GRUPOS: readonly GrupoNav[] = [
+function gruposNav(pendientesEncargos: number): readonly GrupoNav[] {
+  return [
   {
     titulo: 'Operar',
     items: [
       { to: RUTA_EMPRENDEDOR, etiqueta: 'Inicio', Icono: HomeIcon, end: true },
       { to: '/admin/pos', etiqueta: 'Caja (POS)', Icono: ComputerDesktopIcon, end: true },
       { to: `${RUTA_EMPRENDEDOR}/pedidos`, etiqueta: 'Pedidos', Icono: ClipboardDocumentListIcon },
+      {
+        to: `${RUTA_EMPRENDEDOR}/encargos`,
+        etiqueta: 'Encargos',
+        Icono: ClipboardDocumentListIcon,
+        badge: pendientesEncargos,
+      },
     ],
   },
   {
@@ -41,6 +50,7 @@ const GRUPOS: readonly GrupoNav[] = [
     ],
   },
 ]
+}
 
 const CUENTA: readonly ItemNav[] = [
   { to: `${RUTA_EMPRENDEDOR}/opciones/notificaciones`, etiqueta: 'Notificaciones', Icono: BellIcon, end: true },
@@ -54,6 +64,8 @@ export default function EmprendedorSidebar() {
   const navigate = useNavigate()
   const userName = useAuthStore((s) => s.userName) ?? 'Emprendedor'
   const logout = useAuthStore((s) => s.logout)
+  const { data: pendientesEncargos = 0 } = useEncargosPendientesCount()
+  const grupos = useMemo(() => gruposNav(pendientesEncargos), [pendientesEncargos])
 
   function cerrarSesion() {
     logout()
@@ -69,7 +81,7 @@ export default function EmprendedorSidebar() {
         <BrandLogo size={20} wordmarkSize={16} />
       </div>
       <PrototipoSidebarNav
-        grupos={GRUPOS}
+        grupos={grupos}
         cuenta={CUENTA}
         ariaLabel="Navegación emprendedor"
       />

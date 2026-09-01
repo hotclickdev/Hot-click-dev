@@ -1,4 +1,5 @@
-import EnlacePrimario from '../ui/EnlacePrimario'
+import BotonesAgregarProducto from '@/prototipo/compartido/BotonesAgregarProducto'
+import { RUTA_EMPRENDEDOR } from '../constants'
 
 /**
  * Empty state de productos (Figma 155:540). Ruta dedicada para el mock.
@@ -16,7 +17,7 @@ export default function ProductosVacioPage() {
         </div>
         <p className="text-[15px] font-bold">Todavía no subiste productos</p>
         <p className="text-xs text-hc-muted">Agregá tu primer producto para empezar a vender</p>
-        <EnlacePrimario to="/productos/nuevo" dataMm="seller-agregar-producto">+ Agregar producto</EnlacePrimario>
+        <BotonesAgregarProducto baseNuevo={`${RUTA_EMPRENDEDOR}/productos/nuevo`} />
       </div>
     </main>
   )

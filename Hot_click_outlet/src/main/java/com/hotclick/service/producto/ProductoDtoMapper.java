@@ -7,8 +7,12 @@ import com.hotclick.repository.MarcaRepository;
 import com.hotclick.utils.InputSanitizer;
 import org.springframework.stereotype.Component;
 
+import java.util.Set;
+
 @Component
 public class ProductoDtoMapper {
+
+    private static final Set<String> MODOS_PERSONALIZADO = Set.of("FIJO", "RANGO", "COTIZACION");
 
     private final InputSanitizer sanitizer;
     private final MarcaRepository marcaRepository;
@@ -19,6 +23,9 @@ public class ProductoDtoMapper {
     }
 
     public void mapDtoToProducto(ProductoRequestDTO dto, Producto p) {
+        if (Boolean.TRUE.equals(dto.getEsPersonalizado())) {
+            validarModoPersonalizado(dto, p);
+        }
         if (dto.getNombreProducto()     != null) p.setNombreProducto(sanitizer.cleanWithLimit(dto.getNombreProducto(), 200));
         if (dto.getDescripcionCorta()   != null) p.setDescripcionCorta(sanitizer.cleanWithLimit(dto.getDescripcionCorta(), 255));
         if (dto.getTituloProducto()     != null) p.setTituloProducto(sanitizer.cleanWithLimit(dto.getTituloProducto(), 255));
@@ -71,6 +78,28 @@ public class ProductoDtoMapper {
         if (mid != null) {
             p.setMarca(marcaRepository.findById(mid)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Marca", mid)));
+        }
+    }
+
+    private void validarModoPersonalizado(ProductoRequestDTO dto, Producto p) {
+        String modo = dto.getModoPrecioPersonalizado();
+        if (modo == null || modo.isBlank()) {
+            modo = p.getModoPrecioPersonalizado();
+        }
+        if (modo == null || modo.isBlank()) {
+            throw new IllegalArgumentException("Indicá el modo de precio del producto personalizado");
+        }
+        if (!MODOS_PERSONALIZADO.contains(modo)) {
+            throw new IllegalArgumentException("Modo de precio personalizado inválido");
+        }
+        if ("RANGO".equals(modo)) {
+            Integer min = dto.getPrecioPersonalizadoMin() != null
+                ? dto.getPrecioPersonalizadoMin() : p.getPrecioPersonalizadoMin();
+            Integer max = dto.getPrecioPersonalizadoMax() != null
+                ? dto.getPrecioPersonalizadoMax() : p.getPrecioPersonalizadoMax();
+            if (min == null || max == null || min < 1 || max < min) {
+                throw new IllegalArgumentException("Indicá un rango de precio válido (mínimo y máximo)");
+            }
         }
     }
 }

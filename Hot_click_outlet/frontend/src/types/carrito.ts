@@ -6,6 +6,9 @@ export type PersonalizacionCarrito = {
   notas?: string
   tallaSeleccionada?: string
   encargoToken?: string
+  presupuestoTipo?: 'SIN_PRESUPUESTO' | 'RANGO'
+  presupuestoMin?: string
+  presupuestoMax?: string
 }
 
 export type ItemCarrito = Producto & {

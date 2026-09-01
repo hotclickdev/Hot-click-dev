@@ -1,7 +1,9 @@
 import { lazy, type ReactNode } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import useAuthStore, { ADMIN_ROLES } from '@/store/authStore'
+import useTenantStore from '@/store/tenantStore'
 import { esUsuarioSistema } from '@/utils/sistemaUser'
+import { rutaNuevoProductoSeller } from '@/prototipo/compartido/rutaNuevoProductoSeller'
 import { isTokenAlive } from '@/utils/authToken'
 import { rutaLoginConRetorno } from '@/utils/authRedirect'
 
@@ -88,7 +90,12 @@ export function AdminProductosRoute() {
 
 export function SistemaProductoFormRoute() {
   const userRole = useAuthStore((s) => s.userRole)
+  const { pathname } = useLocation()
+  const planNombre = useTenantStore((s) => s.planNombre)
   if (!esUsuarioSistema(userRole)) return <Navigate to="/admin/productos" replace />
+  if (pathname.endsWith('/productos/nuevo')) {
+    return <Navigate to={rutaNuevoProductoSeller(planNombre)} replace />
+  }
   return <SistemaProductoForm />
 }
 

@@ -10,7 +10,7 @@ const OPCIONES = [
   {
     path: 'personalizado',
     titulo: 'Producto personalizado',
-    ayuda: 'Por encargo: el cliente sube fotos y notas (sublimado, arte, manualidades).',
+    ayuda: 'Por encargo: sin precio fijo; el cliente pide y vos cotizás después.',
   },
 ] as const
 

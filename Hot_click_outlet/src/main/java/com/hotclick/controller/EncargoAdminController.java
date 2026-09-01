@@ -1,6 +1,7 @@
 package com.hotclick.controller;
 
 import com.hotclick.dto.EncargoAprobarRequest;
+import com.hotclick.dto.EncargoFulfillmentRequest;
 import com.hotclick.dto.EncargoRechazarRequest;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.EncargoPersonalizado;
@@ -24,6 +25,16 @@ public class EncargoAdminController {
         return ResponseEntity.ok(ResponseDTO.success("Encargos obtenidos", lista));
     }
 
+    @GetMapping("/kpis")
+    public ResponseEntity<ResponseDTO> kpis() {
+        return ResponseEntity.ok(ResponseDTO.success("KPIs de encargos", encargoService.kpisDelTenant().toMap()));
+    }
+
+    @GetMapping("/{id}/eventos")
+    public ResponseEntity<ResponseDTO> eventos(@PathVariable Long id) {
+        return ResponseEntity.ok(ResponseDTO.success("Eventos del encargo", encargoService.eventosDeEncargo(id)));
+    }
+
     @PutMapping("/{id}/aprobar")
     public ResponseEntity<ResponseDTO> aprobar(
             @PathVariable Long id,
@@ -43,6 +54,18 @@ public class EncargoAdminController {
         try {
             EncargoPersonalizado encargo = encargoService.rechazar(id, req);
             return ResponseEntity.ok(ResponseDTO.success("Encargo rechazado", encargo));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}/fulfillment")
+    public ResponseEntity<ResponseDTO> fulfillment(
+            @PathVariable Long id,
+            @Valid @RequestBody EncargoFulfillmentRequest req) {
+        try {
+            EncargoPersonalizado encargo = encargoService.actualizarFulfillment(id, req);
+            return ResponseEntity.ok(ResponseDTO.success("Fulfillment actualizado", encargo));
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }

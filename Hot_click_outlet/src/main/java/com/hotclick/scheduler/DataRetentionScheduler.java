@@ -2,6 +2,7 @@ package com.hotclick.scheduler;
 import com.hotclick.utils.Constants;
 
 import com.hotclick.repository.IpBloqueadaRepository;
+import com.hotclick.service.EncargoService;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,10 +38,13 @@ public class DataRetentionScheduler {
 
     private final JdbcTemplate          jdbc;
     private final IpBloqueadaRepository ipBloqueadaRepo;
+    private final EncargoService        encargoService;
 
-    public DataRetentionScheduler(JdbcTemplate jdbc, IpBloqueadaRepository ipBloqueadaRepo) {
+    public DataRetentionScheduler(JdbcTemplate jdbc, IpBloqueadaRepository ipBloqueadaRepo,
+                                  EncargoService encargoService) {
         this.jdbc            = jdbc;
         this.ipBloqueadaRepo = ipBloqueadaRepo;
+        this.encargoService  = encargoService;
     }
 
     @Scheduled(cron = "0 30 2 * * *")
@@ -182,12 +186,8 @@ public class DataRetentionScheduler {
 
     private int marcarEncargosVencidos() {
         try {
-            LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
-            int n = jdbc.update(
-                "UPDATE hot_click_encargo_tb SET estado = 'VENCIDO', fecha_actualizacion = ? " +
-                "WHERE estado = 'APROBADO' AND fecha_vencimiento IS NOT NULL AND fecha_vencimiento < ?",
-                ahora, ahora);
-            if (n > 0) log.info("[retention] encargos: {} marcados VENCIDO", n);
+            int n = encargoService.marcarVencidos();
+            if (n > 0) log.info("[retention] encargos: {} marcados VENCIDO (con email)", n);
             return n;
         } catch (Exception e) {
             log.warn("[retention] encargos vencidos: {}", e.getMessage());

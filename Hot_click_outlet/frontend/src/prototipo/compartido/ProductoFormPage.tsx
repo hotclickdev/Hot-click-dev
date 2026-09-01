@@ -9,12 +9,13 @@ import {
   publicarProductoVendedor,
 } from './catalogoVendedorApi'
 import CamposPersonalizadoProducto from './CamposPersonalizadoProducto'
+import ZonaFotoProducto from './ZonaFotoProducto'
 import {
   type ModoPrecioPersonalizado,
-  precioVentaPersonalizado,
+  modosPrecioPersonalizadoHabilitados,
+  preciosAlPublicar,
   tituloFormProducto,
 } from './personalizadoProductoHelpers'
-import iconCamara from './assets/icon-camara.svg'
 
 const CATEGORIAS = ['Tecnología', 'Ropa', 'Otro'] as const
 type CategoriaForm = (typeof CATEGORIAS)[number]
@@ -37,14 +38,17 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
   const [stock, setStock] = useState('')
   const [categoria, setCategoria] = useState<CategoriaForm>('Tecnología')
   const [estado, setEstado] = useState<'Publicado' | 'Pausado'>('Publicado')
-  const [modoPrecio, setModoPrecio] = useState<ModoPrecioPersonalizado>('FIJO')
+  const [instrucciones, setInstrucciones] = useState('')
+  const [modoPrecio, setModoPrecio] = useState<ModoPrecioPersonalizado>('COTIZACION')
   const [precioMin, setPrecioMin] = useState('')
   const [precioMax, setPrecioMax] = useState('')
-  const [instrucciones, setInstrucciones] = useState('')
+  const [imagenUrl, setImagenUrl] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [iniciado, setIniciado] = useState(false)
   const editar = Boolean(id)
   const esPersonalizado = personalizado && !editar
+    ? true
+    : existente?.esPersonalizado === true
 
   useEffect(() => {
     if (!existente || iniciado) return
@@ -55,6 +59,11 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
     setStock(String(existente.stock))
     setCategoria(existente.categoria)
     setEstado(existente.estado)
+    setInstrucciones(existente.instruccionesPersonalizacion ?? '')
+    setModoPrecio((existente.modoPrecioPersonalizado as ModoPrecioPersonalizado) || 'COTIZACION')
+    setPrecioMin(existente.precioPersonalizadoMin != null ? String(existente.precioPersonalizadoMin) : '')
+    setPrecioMax(existente.precioPersonalizadoMax != null ? String(existente.precioPersonalizadoMax) : '')
+    setImagenUrl(existente.imagenUrl ?? '')
     setIniciado(true)
   }, [existente, iniciado])
 
@@ -64,23 +73,29 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
       setError('Escribí el nombre del producto.')
       return
     }
-    if (esPersonalizado && modoPrecio === 'RANGO' && (!precioMin || !precioMax)) {
+    if (esPersonalizado && modosPrecioPersonalizadoHabilitados() && modoPrecio === 'RANGO' && (!precioMin || !precioMax)) {
       setError('Indicá el rango de precio (mínimo y máximo).')
       return
     }
+    const precios = preciosAlPublicar(esPersonalizado, compra, venta, {
+      modoPrecio: esPersonalizado ? modoPrecio : undefined,
+      precioMin,
+      precioMax,
+    })
     const datos = {
       nombre,
-      precioCompra: compra,
-      precioVenta: precioVentaPersonalizado(esPersonalizado, modoPrecio, venta, precioMin),
+      precioCompra: precios.precioCompra,
+      precioVenta: precios.precioVenta,
       descripcion,
       stock,
       categoria,
       estado,
       esPersonalizado: esPersonalizado || undefined,
-      modoPrecioPersonalizado: esPersonalizado ? modoPrecio : undefined,
-      precioPersonalizadoMin: esPersonalizado && modoPrecio === 'RANGO' ? precioMin : undefined,
-      precioPersonalizadoMax: esPersonalizado && modoPrecio === 'RANGO' ? precioMax : undefined,
+      modoPrecioPersonalizado: precios.modoPrecioPersonalizado,
+      precioPersonalizadoMin: precios.precioPersonalizadoMin,
+      precioPersonalizadoMax: precios.precioPersonalizadoMax,
       instruccionesPersonalizacion: esPersonalizado ? instrucciones : undefined,
+      imagenUrl: imagenUrl || undefined,
     }
     try {
       if (id) await guardarProductoVendedor(id, datos)
@@ -97,28 +112,31 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
     <main className="px-5 pb-8 pt-[60px]">
       <EncabezadoPagina titulo={tituloFormProducto(editar, esPersonalizado)} volverA={volverA} />
       {cargando && editar && !existente ? <p className="text-sm text-hc-muted">Cargando…</p> : null}
-      <ZonaFoto editar={editar} nombre={existente?.nombre} />
+      <ZonaFotoProducto imagenUrl={imagenUrl} onImagenChange={setImagenUrl} />
       <form onSubmit={(e) => void enviar(e)}>
         <Campo etiqueta="Nombre del producto" value={nombre} onChange={setNombre} placeholder="Ej: Camiseta Oversize Negra" />
-        {!esPersonalizado || modoPrecio === 'FIJO' ? (
+        {!esPersonalizado ? (
           <>
             <Campo etiqueta="Precio de compra" value={compra} onChange={setCompra} placeholder="₡ 0.00" type="number" />
             <Campo etiqueta="Precio de venta" value={venta} onChange={setVenta} placeholder="₡ 0.00" type="number" />
           </>
-        ) : null}
-        {esPersonalizado ? (
+        ) : (
           <CamposPersonalizadoProducto
             idPrefijo="pyme"
+            instrucciones={instrucciones}
+            onInstruccionesChange={setInstrucciones}
             modoPrecio={modoPrecio}
             onModoChange={setModoPrecio}
             precioMin={precioMin}
             onPrecioMinChange={setPrecioMin}
             precioMax={precioMax}
             onPrecioMaxChange={setPrecioMax}
-            instrucciones={instrucciones}
-            onInstruccionesChange={setInstrucciones}
+            compra={compra}
+            onCompraChange={setCompra}
+            venta={venta}
+            onVentaChange={setVenta}
           />
-        ) : null}
+        )}
         <Campo etiqueta="Descripción" value={descripcion} onChange={setDescripcion} placeholder="Ej: Auriculares con estuche de carga..." />
         <Campo etiqueta="Stock disponible" value={stock} onChange={setStock} placeholder="Ej: 10" type="number" />
         <p className="mb-2 text-xs font-medium text-hc-muted">Categoría</p>
@@ -145,25 +163,5 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
         ) : null}
       </form>
     </main>
-  )
-}
-
-function ZonaFoto({ editar, nombre }: Readonly<{ editar: boolean; nombre?: string }>) {
-  return (
-    <div className="mb-6 flex h-[118px] flex-col items-center justify-center rounded-xl bg-hc-surface-2">
-      {editar ? (
-        <>
-          <p className="text-xs text-hc-muted">{nombre}.jpg</p>
-          <span className="mt-2 rounded-full border border-hc-border px-3 py-1 text-xs">Cambiar foto</span>
-        </>
-      ) : (
-        <>
-          <span className="relative mb-2 block size-[26px] overflow-clip">
-            <img src={iconCamara} alt="" width={26} height={26} className="size-full" />
-          </span>
-          <p className="text-sm text-hc-muted">Agregar foto</p>
-        </>
-      )}
-    </div>
   )
 }
