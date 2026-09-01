@@ -129,6 +129,18 @@ function BrandingFetch() {
   return null
 }
 
+/** Recarga la app cuando el service worker instala una versión nueva (PWA). */
+export function ServiceWorkerRefresh() {
+  useEffect(() => {
+    function recargar() {
+      globalThis.location.reload()
+    }
+    globalThis.addEventListener('sw-update-available', recargar)
+    return () => globalThis.removeEventListener('sw-update-available', recargar)
+  }, [])
+  return null
+}
+
 /** Inicializa GA4 / PostHog / Clarity una vez al montar si hay consentimiento. */
 export function AnalyticsInit() {
   useEffect(() => {

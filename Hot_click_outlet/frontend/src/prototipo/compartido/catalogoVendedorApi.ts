@@ -2,6 +2,7 @@ import { productService, denormalizeProduct, normalizeProduct } from '@/services
 import type { Producto } from '@/types/producto'
 import type { ProductoEmprendedor } from '@/prototipo/emprendedor/types'
 import type { ProductoMock } from '@/prototipo/compartido/mock'
+import { MODO_PRECIO_PERSONALIZADO_FASE1, modosPrecioPersonalizadoHabilitados } from './personalizadoProductoHelpers'
 
 export type DatosProductoVendedor = {
   nombre: string
@@ -16,6 +17,7 @@ export type DatosProductoVendedor = {
   precioPersonalizadoMin?: string
   precioPersonalizadoMax?: string
   instruccionesPersonalizacion?: string
+  imagenUrl?: string
 }
 
 function listaDesdeRespuesta(data: Producto[] | { content: Producto[] }): Producto[] {
@@ -42,6 +44,11 @@ export function aProductoEmprendedor(p: Producto): ProductoEmprendedor {
     recienAgregado: false,
     descripcion: p.descripcion ?? '',
     imagenUrl: p.imagenUrl || undefined,
+    esPersonalizado: p.esPersonalizado === true,
+    modoPrecioPersonalizado: p.modoPrecioPersonalizado ?? undefined,
+    precioPersonalizadoMin: p.precioPersonalizadoMin ?? undefined,
+    precioPersonalizadoMax: p.precioPersonalizadoMax ?? undefined,
+    instruccionesPersonalizacion: p.instruccionesPersonalizacion ?? undefined,
   }
 }
 
@@ -58,6 +65,12 @@ export function aProductoSeller(p: Producto): ProductoMock {
     estado: e.estado,
     reciente: e.recienAgregado,
     descripcion: e.descripcion,
+    imagenUrl: e.imagenUrl,
+    esPersonalizado: e.esPersonalizado,
+    modoPrecioPersonalizado: e.modoPrecioPersonalizado,
+    precioPersonalizadoMin: e.precioPersonalizadoMin,
+    precioPersonalizadoMax: e.precioPersonalizadoMax,
+    instruccionesPersonalizacion: e.instruccionesPersonalizacion,
   }
 }
 
@@ -70,22 +83,35 @@ export async function cargarProductosVendedor(): Promise<Producto[]> {
 }
 
 function cuerpoProducto(datos: DatosProductoVendedor) {
-  return {
+  const personalizado = datos.esPersonalizado === true
+  const modo = personalizado && modosPrecioPersonalizadoHabilitados()
+    ? (datos.modoPrecioPersonalizado ?? MODO_PRECIO_PERSONALIZADO_FASE1)
+    : MODO_PRECIO_PERSONALIZADO_FASE1
+  const dto = {
     ...denormalizeProduct({
       nombre: datos.nombre.trim(),
       descripcion: datos.descripcion,
-      precioCompra: datos.precioCompra,
-      precioVenta: datos.precioVenta,
+      precioCompra: personalizado && modo !== 'FIJO' ? '0' : datos.precioCompra,
+      precioVenta: personalizado && modo !== 'FIJO' ? (modo === 'RANGO' ? (datos.precioPersonalizadoMin ?? '0') : '0') : datos.precioVenta,
       stock: datos.stock,
-      esPersonalizado: datos.esPersonalizado === true,
-      modoPrecioPersonalizado: datos.modoPrecioPersonalizado,
-      precioPersonalizadoMin: datos.precioPersonalizadoMin,
-      precioPersonalizadoMax: datos.precioPersonalizadoMax,
+      esPersonalizado: personalizado,
+      modoPrecioPersonalizado: personalizado ? modo : datos.modoPrecioPersonalizado,
+      precioPersonalizadoMin: personalizado && modo === 'RANGO' ? datos.precioPersonalizadoMin : undefined,
+      precioPersonalizadoMax: personalizado && modo === 'RANGO' ? datos.precioPersonalizadoMax : undefined,
       instruccionesPersonalizacion: datos.instruccionesPersonalizacion,
+      imagenUrl: datos.imagenUrl ?? '',
     }),
     visibleCatalogo: datos.estado !== 'Pausado',
     tags: datos.categoria || null,
   }
+  if (personalizado && !modosPrecioPersonalizadoHabilitados()) {
+    dto.modoPrecioPersonalizado = MODO_PRECIO_PERSONALIZADO_FASE1
+    dto.precioVenta = 0
+    dto.precioCompra = 0
+    dto.precioPersonalizadoMin = null
+    dto.precioPersonalizadoMax = null
+  }
+  return dto
 }
 
 export async function publicarProductoVendedor(datos: DatosProductoVendedor) {

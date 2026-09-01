@@ -14,6 +14,12 @@ function aSeller(p: ProductoEmprendedor): ProductoMock {
     estado: p.estado,
     reciente: p.recienAgregado,
     descripcion: p.descripcion,
+    imagenUrl: p.imagenUrl,
+    esPersonalizado: p.esPersonalizado === true,
+    modoPrecioPersonalizado: p.modoPrecioPersonalizado ?? undefined,
+    precioPersonalizadoMin: p.precioPersonalizadoMin,
+    precioPersonalizadoMax: p.precioPersonalizadoMax,
+    instruccionesPersonalizacion: p.instruccionesPersonalizacion,
   }
 }
 

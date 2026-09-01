@@ -6,6 +6,7 @@ import com.hotclick.dto.EncargoRechazarRequest;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.EncargoPersonalizado;
 import com.hotclick.model.Producto;
+import com.hotclick.repository.EncargoEventoRepository;
 import com.hotclick.repository.EncargoPersonalizadoRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.UsuarioRepository;
@@ -35,6 +36,7 @@ import static org.mockito.Mockito.*;
 class EncargoServiceTest {
 
     @Mock EncargoPersonalizadoRepository encargoRepo;
+    @Mock EncargoEventoRepository eventoRepo;
     @Mock ProductoRepository productoRepo;
     @Mock UsuarioRepository usuarioRepo;
     @Mock SupabaseStorageService storageService;
@@ -153,6 +155,76 @@ class EncargoServiceTest {
         assertThat(out.getPrecioCotizado()).isEqualTo(12000);
         assertThat(out.getFechaVencimiento()).isNotNull();
         verify(emailSender).notificarEncargoAprobado(any());
+    }
+
+    @Test
+    @DisplayName("aprobar: persiste mensaje del vendedor")
+    void aprobar_conMensajeArtista_persiste() {
+        EncargoPersonalizado encargo = encargoPendiente(productoCotizacion);
+        when(encargoRepo.findById(1L)).thenReturn(Optional.of(encargo));
+        when(encargoRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        doNothing().when(companyScope).assertCanAccess(7L);
+
+        EncargoAprobarRequest req = new EncargoAprobarRequest();
+        req.setPrecioCotizado(12000);
+        req.setMensajeArtista("Listo en 5 días hábiles");
+
+        EncargoPersonalizado out = service.aprobar(1L, req);
+
+        assertThat(out.getMensajeVendedor()).contains("5 días");
+    }
+
+    @Test
+    @DisplayName("crear: presupuesto RANGO del cliente")
+    void crear_presupuestoRango_ok() {
+        when(productoRepo.findById(42L)).thenReturn(Optional.of(productoCotizacion));
+        when(encargoRepo.save(any())).thenAnswer(inv -> {
+            EncargoPersonalizado e = inv.getArgument(0);
+            e.setId(100L);
+            e.setTokenPublico("tok-pres");
+            return e;
+        });
+
+        EncargoCreateRequest req = requestBase();
+        req.setPresupuestoTipo(EncargoPersonalizado.PRESUPUESTO_RANGO);
+        req.setPresupuestoMin(15000);
+        req.setPresupuestoMax(30000);
+
+        EncargoPersonalizado creado = service.crear(req, null);
+
+        assertThat(creado.getPresupuestoTipo()).isEqualTo(EncargoPersonalizado.PRESUPUESTO_RANGO);
+        assertThat(creado.getPresupuestoMin()).isEqualTo(15000);
+        assertThat(creado.getPresupuestoMax()).isEqualTo(30000);
+    }
+
+    @Test
+    @DisplayName("crear: presupuesto RANGO inválido rechaza")
+    void crear_presupuestoRangoInvalido_rechaza() {
+        when(productoRepo.findById(42L)).thenReturn(Optional.of(productoCotizacion));
+        EncargoCreateRequest req = requestBase();
+        req.setPresupuestoTipo(EncargoPersonalizado.PRESUPUESTO_RANGO);
+        req.setPresupuestoMin(30000);
+        req.setPresupuestoMax(15000);
+
+        assertThatThrownBy(() -> service.crear(req, null))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("rango");
+        verify(encargoRepo, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("marcarVencidos: notifica por email")
+    void marcarVencidos_notifica() {
+        EncargoPersonalizado encargo = encargoPendiente(productoCotizacion);
+        encargo.setEstado(EncargoPersonalizado.ESTADO_APROBADO);
+        when(encargoRepo.findAprobadosVencidos(any())).thenReturn(List.of(encargo));
+        when(encargoRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        int n = service.marcarVencidos();
+
+        assertThat(n).isEqualTo(1);
+        assertThat(encargo.getEstado()).isEqualTo(EncargoPersonalizado.ESTADO_VENCIDO);
+        verify(emailSender).notificarEncargoVencido(encargo);
     }
 
     @Test

@@ -22,6 +22,13 @@ public class EncargoPersonalizado {
     public static final String MODO_RANGO = "RANGO";
     public static final String MODO_COTIZACION = "COTIZACION";
 
+    public static final String PRESUPUESTO_SIN = "SIN_PRESUPUESTO";
+    public static final String PRESUPUESTO_RANGO = "RANGO";
+
+    public static final String FULFILLMENT_EN_PRODUCCION = "EN_PRODUCCION";
+    public static final String FULFILLMENT_LISTO = "LISTO";
+    public static final String FULFILLMENT_ENTREGADO = "ENTREGADO";
+
     public static final int DIAS_VENCIMIENTO_COTIZACION = 7;
 
     @Id
@@ -84,6 +91,21 @@ public class EncargoPersonalizado {
 
     @Column(name = "motivo_rechazo", columnDefinition = "TEXT")
     private String motivoRechazo;
+
+    @Column(name = "presupuesto_tipo", nullable = false, length = 20)
+    private String presupuestoTipo = PRESUPUESTO_SIN;
+
+    @Column(name = "presupuesto_min")
+    private Integer presupuestoMin;
+
+    @Column(name = "presupuesto_max")
+    private Integer presupuestoMax;
+
+    @Column(name = "mensaje_vendedor", columnDefinition = "TEXT")
+    private String mensajeVendedor;
+
+    @Column(name = "estado_fulfillment", length = 20)
+    private String estadoFulfillment;
 
     @Column(name = "token_publico", nullable = false, length = 36)
     private String tokenPublico;
@@ -175,6 +197,21 @@ public class EncargoPersonalizado {
 
     public String getMotivoRechazo() { return motivoRechazo; }
     public void setMotivoRechazo(String motivoRechazo) { this.motivoRechazo = motivoRechazo; }
+
+    public String getPresupuestoTipo() { return presupuestoTipo; }
+    public void setPresupuestoTipo(String presupuestoTipo) { this.presupuestoTipo = presupuestoTipo; }
+
+    public Integer getPresupuestoMin() { return presupuestoMin; }
+    public void setPresupuestoMin(Integer presupuestoMin) { this.presupuestoMin = presupuestoMin; }
+
+    public Integer getPresupuestoMax() { return presupuestoMax; }
+    public void setPresupuestoMax(Integer presupuestoMax) { this.presupuestoMax = presupuestoMax; }
+
+    public String getMensajeVendedor() { return mensajeVendedor; }
+    public void setMensajeVendedor(String mensajeVendedor) { this.mensajeVendedor = mensajeVendedor; }
+
+    public String getEstadoFulfillment() { return estadoFulfillment; }
+    public void setEstadoFulfillment(String estadoFulfillment) { this.estadoFulfillment = estadoFulfillment; }
 
     public String getTokenPublico() { return tokenPublico; }
     public void setTokenPublico(String tokenPublico) { this.tokenPublico = tokenPublico; }

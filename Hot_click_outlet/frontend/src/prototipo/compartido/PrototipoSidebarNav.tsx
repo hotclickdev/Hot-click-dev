@@ -8,6 +8,7 @@ export type ItemNav = {
   etiqueta: string
   Icono: IconoNav
   end?: boolean
+  badge?: number
 }
 
 export type GrupoNav = {
@@ -41,9 +42,14 @@ function ItemNavLink({ item }: { item: ItemNav }) {
             className={`size-4 shrink-0 ${isActive ? '' : 'text-[var(--hc-n-500)]'}`}
             aria-hidden
           />
-          <span className="min-w-0 truncate" title={item.etiqueta}>
+          <span className="min-w-0 flex-1 truncate" title={item.etiqueta}>
             {item.etiqueta}
           </span>
+          {item.badge != null && item.badge > 0 ? (
+            <span className="ml-auto flex size-5 shrink-0 items-center justify-center rounded-full bg-hc-primary text-[10px] font-bold text-white">
+              {item.badge > 99 ? '99+' : item.badge}
+            </span>
+          ) : null}
         </>
       )}
     </NavLink>

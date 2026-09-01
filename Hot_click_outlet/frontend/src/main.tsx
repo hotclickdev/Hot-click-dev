@@ -28,8 +28,22 @@ if ('serviceWorker' in navigator) {
     onOfflineReady() {},
     onRegistered(swRegistration) {
       if (swRegistration) {
+        void swRegistration.update()
         setInterval(() => { void swRegistration.update() }, 60 * 60 * 1000)
       }
+    },
+    onRegisteredSW(_swUrl, swRegistration) {
+      if (swRegistration?.waiting) {
+        swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' })
+      }
+      swRegistration?.addEventListener('updatefound', () => {
+        const worker = swRegistration.installing
+        worker?.addEventListener('statechange', () => {
+          if (worker.state === 'installed' && swRegistration.waiting) {
+            swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' })
+          }
+        })
+      })
     },
     onRegisterError() {},
   })

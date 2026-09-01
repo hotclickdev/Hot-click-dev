@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatoColon } from '@/theme/formatoColon'
 import { type CategoriaProducto, type ProductoMock } from './mock'
-import { Boton, Chip, EncabezadoPagina, Miniatura } from './ui'
+import { Chip, EncabezadoPagina, Miniatura } from './ui'
+import BotonesAgregarProducto from './BotonesAgregarProducto'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
 import { useCatalogoVendedor } from './useCatalogoVendedor'
 
@@ -20,7 +21,7 @@ export default function ProductosPage() {
   return (
     <main className="px-5 pb-8 pt-[60px]">
       <EncabezadoPagina titulo="Mis Productos" subtitulo={`Outlet · ${plan.usuario}`} />
-      <Boton to={ruta('productos/nuevo')} dataMm="seller-agregar-producto">+ Agregar producto</Boton>
+      <BotonesAgregarProducto baseNuevo={ruta('productos/nuevo')} />
       <div className="mt-6 flex gap-2 overflow-x-auto pb-1">
         {(['Todos', 'Recién agregados', 'Tecnología', 'Ropa'] as const).map((item) => (
           <Chip key={item} activo={filtro === item} onClick={() => setFiltro(item)}>{item}</Chip>

@@ -7,7 +7,6 @@ import { copilotService } from '@/services/copilotService'
 import { formatPrice } from '@/utils/format'
 import useAuthStore from '@/store/authStore'
 import TextoFlecha from '@/components/ui/TextoFlecha'
-import TextoMas from '@/components/ui/TextoMas'
 import HoyAlertas from './sistema-inicio/HoyAlertas'
 import SistemaChecklist from './sistema-inicio/SistemaChecklist'
 import { SETUP_KEY } from './dashboard/dashboardHelpers'
@@ -26,6 +25,8 @@ import {
   type VentaInicio,
 } from './sistema-inicio/sistemaInicioHelpers'
 import AccesoTiendaPublica from '@/components/sistema/AccesoTiendaPublica'
+import BotonesAgregarProducto from '@/prototipo/compartido/BotonesAgregarProducto'
+import { rutaNuevoProductoSeller } from '@/prototipo/compartido/rutaNuevoProductoSeller'
 import useTenantStore from '@/store/tenantStore'
 import { debeMostrarChecklist } from './sistema-inicio/sistemaChecklistPasos'
 
@@ -221,13 +222,13 @@ function badgeDelta(hoy: number, ayer: number) {
 }
 
 function AccesosRapidos({ porDespachar }: { porDespachar: number }) {
+  const planNombre = useTenantStore((s) => s.planNombre)
   return (
-    <div className="flex flex-wrap gap-3">
-      <Link to="/admin/productos/nuevo"
-        className="flex items-center justify-center gap-1.5 px-5 py-3.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-90"
-        style={{ backgroundColor: 'var(--hc-surface)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
-        <TextoMas>Agregá un producto</TextoMas>
-      </Link>
+    <div className="flex flex-col gap-4">
+      <div className="max-w-md">
+        <BotonesAgregarProducto baseNuevo={rutaNuevoProductoSeller(planNombre)} />
+      </div>
+      <div className="flex flex-wrap gap-3">
       <Link to="/admin/pedidos"
         className="flex items-center gap-2 px-5 py-3.5 rounded-xl text-sm font-semibold transition-colors"
         style={{ backgroundColor: 'var(--hc-surface)', color: 'var(--hc-accent)', border: '1px solid var(--hc-border)' }}>
@@ -249,6 +250,7 @@ function AccesosRapidos({ porDespachar }: { porDespachar: number }) {
         style={{ backgroundColor: 'var(--hc-surface)', color: 'var(--hc-text)', border: '1px solid var(--hc-border)' }}>
         Tu plan
       </Link>
+      </div>
     </div>
   )
 }

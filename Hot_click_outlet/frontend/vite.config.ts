@@ -54,6 +54,8 @@ export default defineConfig({
         ],
       },
       workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,png}', '*.svg'],
         globIgnores: ['**/node_modules/**', 'brand/**', 'admin/**'],
         runtimeCaching: [
@@ -102,8 +104,6 @@ export default defineConfig({
             method: 'POST',
           },
         ],
-        skipWaiting: false,
-        clientsClaim: true,
       },
       devOptions: {
         enabled: false,

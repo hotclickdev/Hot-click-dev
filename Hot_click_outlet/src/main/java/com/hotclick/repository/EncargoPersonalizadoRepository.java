@@ -40,4 +40,16 @@ public interface EncargoPersonalizadoRepository extends JpaRepository<EncargoPer
           AND e.fechaVencimiento < :ahora
         """)
     List<EncargoPersonalizado> findAprobadosVencidos(@Param("ahora") LocalDateTime ahora);
+
+    @Query("""
+        SELECT COUNT(e) FROM EncargoPersonalizado e
+        WHERE e.empresa.id = :empresaId AND e.estado = :estado
+        """)
+    long countByEmpresaIdAndEstado(@Param("empresaId") Long empresaId, @Param("estado") String estado);
+
+    @Query("""
+        SELECT COALESCE(AVG(e.precioCotizado), 0) FROM EncargoPersonalizado e
+        WHERE e.empresa.id = :empresaId AND e.precioCotizado IS NOT NULL AND e.precioCotizado > 0
+        """)
+    Double promedioPrecioCotizado(@Param("empresaId") Long empresaId);
 }

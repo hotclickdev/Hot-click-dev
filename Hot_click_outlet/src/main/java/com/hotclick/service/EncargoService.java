@@ -3,6 +3,7 @@ package com.hotclick.service;
 import com.hotclick.dto.*;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.*;
+import com.hotclick.repository.EncargoEventoRepository;
 import com.hotclick.repository.EncargoPersonalizadoRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.UsuarioRepository;
@@ -19,7 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class EncargoService {
@@ -28,6 +31,7 @@ public class EncargoService {
     private static final int MAX_IMAGENES = 3;
 
     @Autowired private EncargoPersonalizadoRepository encargoRepo;
+    @Autowired private EncargoEventoRepository eventoRepo;
     @Autowired private ProductoRepository productoRepo;
     @Autowired private UsuarioRepository usuarioRepo;
     @Autowired private SupabaseStorageService storageService;
@@ -73,6 +77,7 @@ public class EncargoService {
             encargo.setTallaSeleccionada(sanitizer.cleanWithLimit(req.getTallaSeleccionada(), 50));
         }
         aplicarImagenes(encargo, req.getImagenes());
+        aplicarPresupuesto(encargo, req);
         encargo.setModoPrecio(producto.getModoPrecioPersonalizado());
         encargo.setEstado(EncargoPersonalizado.ESTADO_PENDIENTE);
 
@@ -82,6 +87,7 @@ public class EncargoService {
 
         EncargoPersonalizado guardado = encargoRepo.save(encargo);
         enriquecer(guardado);
+        registrarEvento(guardado, "CREADO", null, EncargoPersonalizado.ESTADO_PENDIENTE, null);
         notificarNuevo(guardado);
         return guardado;
     }
@@ -116,11 +122,16 @@ public class EncargoService {
         validarPrecioEnRango(encargo, req.getPrecioCotizado());
 
         encargo.setPrecioCotizado(req.getPrecioCotizado());
+        if (req.getMensajeArtista() != null && !req.getMensajeArtista().isBlank()) {
+            encargo.setMensajeVendedor(sanitizer.cleanWithLimit(req.getMensajeArtista(), 500));
+        }
         encargo.setEstado(EncargoPersonalizado.ESTADO_APROBADO);
         encargo.setFechaVencimiento(
             LocalDateTime.now(Constants.ZONA_CR).plusDays(EncargoPersonalizado.DIAS_VENCIMIENTO_COTIZACION));
         EncargoPersonalizado guardado = encargoRepo.save(encargo);
         enriquecer(guardado);
+        registrarEvento(guardado, "APROBADO", EncargoPersonalizado.ESTADO_PENDIENTE,
+            EncargoPersonalizado.ESTADO_APROBADO, "₡" + req.getPrecioCotizado());
         emailSender.notificarEncargoAprobado(guardado);
         return guardado;
     }
@@ -135,6 +146,8 @@ public class EncargoService {
         encargo.setMotivoRechazo(sanitizer.cleanWithLimit(req.getMotivoRechazo(), 1000));
         EncargoPersonalizado guardado = encargoRepo.save(encargo);
         enriquecer(guardado);
+        registrarEvento(guardado, "RECHAZADO", EncargoPersonalizado.ESTADO_PENDIENTE,
+            EncargoPersonalizado.ESTADO_RECHAZADO, req.getMotivoRechazo());
         emailSender.notificarEncargoRechazado(guardado);
         return guardado;
     }
@@ -227,8 +240,53 @@ public class EncargoService {
         List<EncargoPersonalizado> lista = encargoRepo.findByPedido_Id(pedidoId);
         for (EncargoPersonalizado e : lista) {
             e.setEstado(EncargoPersonalizado.ESTADO_PAGADO);
+            e.setEstadoFulfillment(EncargoPersonalizado.FULFILLMENT_EN_PRODUCCION);
             encargoRepo.save(e);
+            registrarEvento(e, "PAGADO", EncargoPersonalizado.ESTADO_PENDIENTE_PAGO,
+                EncargoPersonalizado.ESTADO_PAGADO, null);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public EncargoKpisDto kpisDelTenant() {
+        Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
+        if (empresaId == null) {
+            throw new IllegalStateException("No se pudo determinar la empresa del usuario");
+        }
+        Map<String, Long> porEstado = new HashMap<>();
+        for (String est : List.of(
+            EncargoPersonalizado.ESTADO_PENDIENTE,
+            EncargoPersonalizado.ESTADO_APROBADO,
+            EncargoPersonalizado.ESTADO_PENDIENTE_PAGO,
+            EncargoPersonalizado.ESTADO_PAGADO,
+            EncargoPersonalizado.ESTADO_RECHAZADO,
+            EncargoPersonalizado.ESTADO_VENCIDO)) {
+            porEstado.put(est, encargoRepo.countByEmpresaIdAndEstado(empresaId, est));
+        }
+        Double avg = encargoRepo.promedioPrecioCotizado(empresaId);
+        EncargoKpisDto dto = EncargoKpisDto.desdeConteos(porEstado, 0, 0);
+        dto.ticketPromedioCotizado = avg != null ? Math.round(avg) : 0L;
+        return dto;
+    }
+
+    @Transactional
+    public EncargoPersonalizado actualizarFulfillment(Long id, EncargoFulfillmentRequest req) {
+        EncargoPersonalizado encargo = cargarYAutorizar(id);
+        if (!EncargoPersonalizado.ESTADO_PAGADO.equals(encargo.getEstado())) {
+            throw new IllegalStateException("Solo encargos pagados tienen fulfillment");
+        }
+        String anterior = encargo.getEstadoFulfillment();
+        encargo.setEstadoFulfillment(req.getEstadoFulfillment());
+        EncargoPersonalizado guardado = encargoRepo.save(encargo);
+        registrarEvento(guardado, "FULFILLMENT", anterior, req.getEstadoFulfillment(), req.getDetalle());
+        enriquecer(guardado);
+        return guardado;
+    }
+
+    @Transactional(readOnly = true)
+    public List<EncargoEvento> eventosDeEncargo(Long id) {
+        EncargoPersonalizado encargo = cargarYAutorizar(id);
+        return eventoRepo.findByEncargo_IdOrderByFechaEventoDesc(encargo.getId());
     }
 
     @Transactional
@@ -236,10 +294,48 @@ public class EncargoService {
         List<EncargoPersonalizado> vencidos =
             encargoRepo.findAprobadosVencidos(LocalDateTime.now(Constants.ZONA_CR));
         for (EncargoPersonalizado e : vencidos) {
+            String anterior = e.getEstado();
             e.setEstado(EncargoPersonalizado.ESTADO_VENCIDO);
             encargoRepo.save(e);
+            enriquecer(e);
+            registrarEvento(e, "VENCIDO", anterior, EncargoPersonalizado.ESTADO_VENCIDO, null);
+            emailSender.notificarEncargoVencido(e);
         }
         return vencidos.size();
+    }
+
+    private void aplicarPresupuesto(EncargoPersonalizado encargo, EncargoCreateRequest req) {
+        String tipo = req.getPresupuestoTipo();
+        if (tipo == null || tipo.isBlank() || EncargoPersonalizado.PRESUPUESTO_SIN.equals(tipo)) {
+            encargo.setPresupuestoTipo(EncargoPersonalizado.PRESUPUESTO_SIN);
+            encargo.setPresupuestoMin(null);
+            encargo.setPresupuestoMax(null);
+            return;
+        }
+        if (!EncargoPersonalizado.PRESUPUESTO_RANGO.equals(tipo)) {
+            throw new IllegalArgumentException("Tipo de presupuesto inválido");
+        }
+        Integer min = req.getPresupuestoMin();
+        Integer max = req.getPresupuestoMax();
+        if (min == null || max == null || min < 1 || max < min) {
+            throw new IllegalArgumentException("Indicá un rango de presupuesto válido (mínimo y máximo)");
+        }
+        encargo.setPresupuestoTipo(EncargoPersonalizado.PRESUPUESTO_RANGO);
+        encargo.setPresupuestoMin(min);
+        encargo.setPresupuestoMax(max);
+    }
+
+    private void registrarEvento(EncargoPersonalizado encargo, String tipo,
+                                 String estadoAnterior, String estadoNuevo, String detalle) {
+        EncargoEvento ev = new EncargoEvento();
+        ev.setEncargo(encargo);
+        ev.setTipoEvento(tipo);
+        ev.setEstadoAnterior(estadoAnterior);
+        ev.setEstadoNuevo(estadoNuevo);
+        if (detalle != null) {
+            ev.setDetalle(sanitizer.cleanWithLimit(detalle, 1000));
+        }
+        eventoRepo.save(ev);
     }
 
     private EncargoPersonalizado cargarYAutorizar(Long id) {

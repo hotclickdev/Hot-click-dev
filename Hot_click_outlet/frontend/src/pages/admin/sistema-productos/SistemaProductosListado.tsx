@@ -1,5 +1,8 @@
 import { Link } from 'react-router-dom'
 import { formatPrice } from '@/utils/format'
+import BotonesAgregarProducto from '@/prototipo/compartido/BotonesAgregarProducto'
+import { rutaNuevoProductoSeller } from '@/prototipo/compartido/rutaNuevoProductoSeller'
+import useTenantStore from '@/store/tenantStore'
 import { CARD_SHADOW, PAGE_SIZE, STOCK_BAJO_MAX, codigoProducto, estaAgotado, estiloChip, estiloEstado, textoStock } from './sistemaProductosHelpers'
 import type { SistemaProductosPage } from './useSistemaProductos'
 import type { CategoriaAdmin } from '../productos/productosHelpers'
@@ -221,6 +224,7 @@ function Paginacion({ total, page, onPage }: {
 }
 
 function VacioSinProductos() {
+  const planNombre = useTenantStore((s) => s.planNombre)
   return (
     <section className="rounded-2xl px-8 py-16 flex flex-col items-center gap-3.5 text-center" style={{ backgroundColor: 'var(--hc-surface)', boxShadow: CARD_SHADOW }}>
       <div className="w-14 h-14 rounded-xl" style={{ backgroundColor: 'var(--hc-surface-2)' }} />
@@ -228,13 +232,9 @@ function VacioSinProductos() {
       <p className="text-[15px] max-w-sm leading-relaxed" style={{ color: '#6b6459' }}>
         Agregá tu primer producto. Cuando tu negocio esté activo, los compradores lo ven en tu tienda.
       </p>
-      <Link
-        to="/admin/productos/nuevo"
-        className="inline-flex items-center justify-center px-[22px] py-3 rounded-[10px] text-[15px] font-bold mt-1"
-        style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
-      >
-        Agregá tu primer producto
-      </Link>
+      <div className="mt-1 w-full max-w-sm">
+        <BotonesAgregarProducto baseNuevo={rutaNuevoProductoSeller(planNombre)} />
+      </div>
     </section>
   )
 }
