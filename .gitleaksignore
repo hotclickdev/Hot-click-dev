@@ -8,5 +8,4 @@ c65fdfe1b458500d181c0a27a3e04385aebcaeeb:Hot_click_outlet/frontend/src/pages/adm
 48cdd37f76599d6b3b270a02ac0c356bcbf06cfd:Hot_click_outlet/src/test/java/com/hotclick/service/ApiKeyCacheTest.java:generic-api-key:43
 5bd6a764e5309c0fe70ad05cc217a9c5d55da91a:.github/workflows/ci.yml:stripe-access-token:36
 bbfcd51c909d58b40bf2d6aa85885103fffebbc5:Hot_click_outlet/src/test/java/com/hotclick/service/pos/PosQrInfoPublicaTest.java:generic-api-key:32
-  '''Hot_click_outlet/frontend/src/components/ui/accessibility/a11yConstants\.ts$''',
-]
+bbfcd51c909d58b40bf2d6aa85885103fffebbc5:Hot_click_outlet/src/test/java/com/hotclick/service/pos/PosQrInfoPublicaTest.java:generic-api-key:45

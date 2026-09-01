@@ -70,4 +70,5 @@ regexes = [
   '''emprende\.pasoOwner\d(?:hint)?''',
   '''a11y\.filtro\w+''',
   '''a11y\.filtro\w+Desc''',
+  '''token-prueba-qr-pos-\d+''',
 ]
