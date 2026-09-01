@@ -55,8 +55,8 @@ test.describe('Admin IT — nav por jobs', () => {
     const sidebar = sidebarVisible(page)
 
     await expect(sidebar.getByText('Admin', { exact: true }).first()).toBeVisible()
-    await expect(sidebar.getByRole('link', { name: 'Inicio' })).toBeVisible()
-    await expect(sidebar.getByRole('link', { name: 'Tiendas' })).toBeVisible()
+    await expect(sidebar.getByRole('link', { name: 'Inicio' }).locator('svg')).toBeVisible()
+    await expect(sidebar.getByRole('link', { name: 'Tiendas' }).locator('svg')).toBeVisible()
     await expect(sidebar.getByRole('link', { name: 'Usuarios' })).toBeVisible()
     await expect(sidebar.getByRole('link', { name: 'Moderación' })).toBeVisible()
     await expect(sidebar.getByRole('link', { name: 'Config' })).toBeVisible()
@@ -100,5 +100,32 @@ test.describe('Admin IT — nav por jobs', () => {
     await expect(page.getByRole('link', { name: 'PRODUCTOS SUBIDOS' })).toBeVisible()
     await expect(page.getByText('IT Admin')).toHaveCount(0)
     await expect(page.getByText('Admin', { exact: true })).toHaveCount(0)
+  })
+
+  test('Sistema en /admin/ayuda usa íconos SVG y grupos, no el puntito', async ({ page }) => {
+    await page.route('**/api/**', async (route: Route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: [] }),
+      })
+    })
+    await page.addInitScript(({ auth }: { auth: ReturnType<typeof payloadAuth> }) => {
+      localStorage.setItem('hotclick-auth', JSON.stringify(auth))
+      localStorage.setItem('hc-admin-tour-v4-done', '1')
+      localStorage.setItem('hc-mm-v1-off', '1')
+      localStorage.setItem('hc-mm-v1-welcome-done', '1')
+    }, { auth: payloadAuth('EMPRENDEDOR') })
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.goto('/admin/ayuda', { waitUntil: 'domcontentloaded' })
+
+    await expect(page).toHaveURL(/\/admin\/ayuda/)
+    const nav = page.getByRole('navigation', { name: 'Navegación sistema' })
+    await expect(nav.getByRole('link', { name: 'Inicio' }).locator('svg')).toBeVisible()
+    await expect(nav.getByRole('group', { name: 'Vender' })).toBeVisible()
+    await expect(nav.getByRole('group', { name: 'Catálogo' })).toBeVisible()
+    await expect(nav.getByRole('group', { name: 'Mi negocio' })).toBeVisible()
+    await expect(nav.getByRole('group', { name: 'Más' })).toBeVisible()
+    await expect(nav.getByRole('link', { name: 'Ayuda' })).toHaveAttribute('aria-current', 'page')
   })
 })

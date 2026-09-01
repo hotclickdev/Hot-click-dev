@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import type { SetURLSearchParams } from 'react-router-dom'
-import { loadGustos } from '@/utils/gustos'
+import { hasGustos, loadGustos, type GustosPerfil } from '@/utils/gustos'
 import {
   parsePageFromSearchParams,
   parseCategoryFromSearchParams,
@@ -27,10 +27,12 @@ export function useCatalogoFiltros(searchParams: URLSearchParams, setSearchParam
   const [sort, setSort] = useState(
     () => searchParams.get('sort') ?? localStorage.getItem('hc-products-sort') ?? 'default',
   )
-  const gustosScores = useMemo(
-    () => (sort === 'para_vos' ? loadGustos().scores : null),
+  const gustosPerfil = useMemo(
+    (): GustosPerfil | null => (sort === 'para_vos' ? loadGustos() : null),
     [sort],
   )
+  const gustosScores = gustosPerfil?.scores ?? null
+  const tieneGustos = sort === 'para_vos' && hasGustos(gustosPerfil ?? undefined)
   const [filterStock, setFilterStock] = useState('')
   const [filterCond, setFilterCond] = useState('')
   const [filterTalla, setFilterTalla] = useState('')
@@ -97,6 +99,8 @@ export function useCatalogoFiltros(searchParams: URLSearchParams, setSearchParam
     sort,
     setSort,
     gustosScores,
+    gustosPerfil,
+    tieneGustos,
     filterStock,
     setFilterStock,
     filterCond,

@@ -96,4 +96,7 @@ public class Constants {
 
     // 2FA — ventana de replay protection TOTP (±1 periodo = 3 × 30s = 90s)
     public static final long TOTP_REPLAY_WINDOW_SECONDS = 90L;
+
+    /** Cliente genérico de ventas de mostrador (POS sin cliente elegido). */
+    public static final Long ID_USUARIO_MOSTRADOR = 999L;
 }

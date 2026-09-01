@@ -12,6 +12,7 @@ import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.TurnoCajaRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.utils.Constants;
+import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +42,7 @@ public class PosQrSessionService {
     @Transactional
     public PosQrSesion crearSesion(Long usuarioId, Long empresaId, Long turnoId,
                             String metodoPago, List<Map<String, Object>> items,
-                            String notas) {
+                            String notas, Long clienteId, Long bodegaId) {
         if (items == null || items.isEmpty()) {
             throw new IllegalArgumentException("El carrito no puede estar vacío");
         }
@@ -56,14 +57,15 @@ public class PosQrSessionService {
             .orElseThrow(() -> new RecursoNoEncontradoException("Empresa", empresaId));
 
         int total = items.stream()
-            .mapToInt(i -> ((Number) i.getOrDefault("precioUnitario", 0)).intValue()
-                        * ((Number) i.getOrDefault("cantidad", 1)).intValue())
+            .mapToInt(i -> enteroDe(i, "precioUnitario", 0) * enteroDe(i, "cantidad", 1))
             .sum();
 
         PosQrSesion sesion = new PosQrSesion();
         sesion.setToken(UUID.randomUUID().toString().replace("-", ""));
         sesion.setEmpresa(empresa);
         sesion.setUsuario(usuario);
+        sesion.setClienteId(clienteId);
+        sesion.setBodegaId(bodegaId);
         sesion.setTotal(total);
         sesion.setMetodoPago(metodoPago);
         sesion.setEstado("PENDIENTE");
@@ -82,6 +84,8 @@ public class PosQrSessionService {
         }
 
         PosQrSesion saved = posQrRepo.save(sesion);
+        // open-in-view=false: respuestaCajero lee empresa LAZY en el mismo request.
+        Hibernate.initialize(saved.getEmpresa());
         log.info("[POS-QR] Sesión {} creada por usuario={} empresa={} método={} total={}",
             saved.getToken(), usuarioId, empresaId, metodoPago, total);
         return saved;
@@ -152,10 +156,43 @@ public class PosQrSessionService {
         }
     }
 
-    private static Long productoIdDe(Map<String, Object> item) {
+    static Long productoIdDe(Map<String, Object> item) {
         Object raw = item.get("productoId");
         if (raw instanceof Number n) return n.longValue();
+        if (raw instanceof String texto && !texto.isBlank()) {
+            try {
+                return Long.parseLong(texto.trim());
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Cada ítem necesita productoId");
+            }
+        }
         throw new IllegalArgumentException("Cada ítem necesita productoId");
+    }
+
+    static int enteroDe(Map<String, Object> item, String clave, int defecto) {
+        Object raw = item.get(clave);
+        if (raw == null) return defecto;
+        if (raw instanceof Number n) return n.intValue();
+        if (raw instanceof String texto && !texto.isBlank()) {
+            try {
+                return Integer.parseInt(texto.trim());
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Valor inválido en " + clave);
+            }
+        }
+        return defecto;
+    }
+
+    public static Long longOpcional(Object raw) {
+        if (raw instanceof Number n) return n.longValue();
+        if (raw instanceof String texto && !texto.isBlank()) {
+            try {
+                return Long.parseLong(texto.trim());
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
     }
 
     private static boolean tieneTexto(String valor) {

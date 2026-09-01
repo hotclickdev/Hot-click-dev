@@ -3,7 +3,7 @@ package com.hotclick.service.catalogo;
 import java.util.Arrays;
 import java.util.List;
 
-/** Parte el tsquery OR (`sala | living | sofa`) en términos para ILIKE. */
+/** Términos de búsqueda del chat: parseo de tsquery e ILIKE seguro. */
 public final class ChatSearchTerms {
 
     private ChatSearchTerms() {}
@@ -14,6 +14,12 @@ public final class ChatSearchTerms {
             .map(String::trim)
             .filter(s -> !s.isBlank())
             .toList();
+    }
+
+    /** Une términos de usuario para {@code websearch_to_tsquery}. */
+    public static String websearchQuery(List<String> terms) {
+        if (terms == null || terms.isEmpty()) return "";
+        return String.join(" ", terms);
     }
 
     public static String sanitizarLike(String termino) {

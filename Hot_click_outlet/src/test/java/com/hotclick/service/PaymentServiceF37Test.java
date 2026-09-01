@@ -7,6 +7,7 @@ import com.hotclick.payment.PaymentProviderFactory;
 import com.hotclick.payment.PaymentSession;
 import com.hotclick.repository.*;
 import com.hotclick.service.payment.*;
+import com.hotclick.service.pos.PosQrVentaService;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -56,6 +57,7 @@ class PaymentServiceF37Test {
     @Mock N8nWebhookService         n8nWebhookService;
     @Mock AggregatorService         aggregatorService;
     @Mock ApplicationEventPublisher eventPublisher;
+    @Mock PosQrVentaService          posQrVentaService;
 
     @InjectMocks CheckoutValidator              checkoutValidator;
     @InjectMocks GuestUserResolver              guestUserResolver;
@@ -122,6 +124,8 @@ class PaymentServiceF37Test {
         ReflectionTestUtils.setField(service, "paymentFailureHandler", paymentFailureHandler);
         ReflectionTestUtils.setField(service, "userCancellationService", userCancellationService);
         ReflectionTestUtils.setField(service, "sinpePaymentAdminService", sinpePaymentAdminService);
+        ReflectionTestUtils.setField(service, "posQrVentaService", posQrVentaService);
+        ReflectionTestUtils.setField(orderConfirmationService, "posQrVentaService", posQrVentaService);
         ReflectionTestUtils.setField(orderConfirmationService, "pedidoRepository", pedidoRepository);
         ReflectionTestUtils.setField(orderConfirmationService, "cuponService", cuponService);
         ReflectionTestUtils.setField(orderConfirmationService, "giftCardService", giftCardService);

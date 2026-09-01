@@ -74,9 +74,9 @@ public class PosVentaService {
     }
 
     private Usuario resolverCliente(Long clienteId) {
-        Long id = clienteId != null ? clienteId : 999L;
+        Long id = clienteId != null ? clienteId : Constants.ID_USUARIO_MOSTRADOR;
         return usuarioRepository.findById(id)
-            .orElseGet(() -> usuarioRepository.findById(999L)
+            .orElseGet(() -> usuarioRepository.findById(Constants.ID_USUARIO_MOSTRADOR)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario mostrador (id=999) no encontrado")));
     }
 

@@ -54,6 +54,8 @@ const useChatStore = create<ChatState>((set, get) => ({
       set({ mensajes: [], sesionId: null, lastActivity: null })
       try {
         sessionStorage.removeItem('hc-chat-msgs-hotclick')
+        sessionStorage.removeItem('hc-chat-msgs-tienda-home')
+        sessionStorage.removeItem('hc-chat-msgs-tienda-catalogo')
       } catch (err) {
         console.error(err)
       }

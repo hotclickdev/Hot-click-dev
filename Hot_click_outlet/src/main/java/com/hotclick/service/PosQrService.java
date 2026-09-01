@@ -20,11 +20,18 @@ public class PosQrService {
     @Autowired private PosQrSessionService sessionService;
     @Autowired private PosQrVentaService   ventaService;
 
+    /**
+     * Crea la sesión y arma el payload del cajero en la misma transacción.
+     * Con open-in-view=false, leer empresa LAZY después del commit tira
+     * LazyInitializationException y el front nunca recibe el token del QR.
+     */
     @Transactional
-    public PosQrSesion crearSesion(Long usuarioId, Long empresaId, Long turnoId,
+    public Map<String, Object> crearSesion(Long usuarioId, Long empresaId, Long turnoId,
                                    String metodoPago, List<Map<String, Object>> items,
-                                   String notas) {
-        return sessionService.crearSesion(usuarioId, empresaId, turnoId, metodoPago, items, notas);
+                                   String notas, Long clienteId, Long bodegaId) {
+        PosQrSesion sesion = sessionService.crearSesion(
+            usuarioId, empresaId, turnoId, metodoPago, items, notas, clienteId, bodegaId);
+        return sessionService.respuestaCajero(sesion);
     }
 
     public Map<String, Object> respuestaCajero(PosQrSesion sesion) {

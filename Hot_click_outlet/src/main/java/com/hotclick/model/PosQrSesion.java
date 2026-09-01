@@ -55,6 +55,12 @@ public class PosQrSesion {
     @Column(name = "notas", columnDefinition = "TEXT")
     private String notas;
 
+    @Column(name = "fk_id_cliente")
+    private Long clienteId;
+
+    @Column(name = "fk_id_bodega")
+    private Long bodegaId;
+
     public Long getId() { return id; }
     public String getToken() { return token; }
     public void setToken(String token) { this.token = token; }
@@ -82,4 +88,8 @@ public class PosQrSesion {
     public void setFechaExpiracion(LocalDateTime fechaExpiracion) { this.fechaExpiracion = fechaExpiracion; }
     public String getNotas() { return notas; }
     public void setNotas(String notas) { this.notas = notas; }
+    public Long getClienteId() { return clienteId; }
+    public void setClienteId(Long clienteId) { this.clienteId = clienteId; }
+    public Long getBodegaId() { return bodegaId; }
+    public void setBodegaId(Long bodegaId) { this.bodegaId = bodegaId; }
 }

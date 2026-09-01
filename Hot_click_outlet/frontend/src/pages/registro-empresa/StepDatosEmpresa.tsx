@@ -20,7 +20,7 @@ export default function StepDatosEmpresa({
   return (
     <motion.form key="s1" {...STEP_MOTION} onSubmit={onSubmit} className="space-y-4">
       <Input label="Nombre del negocio *" placeholder="Ej: Mi Tienda Tica"
-        value={form.nombreEmpresa} onChange={onCampo('nombreEmpresa')} autoFocus required />
+        value={form.nombreEmpresa} onChange={onCampo('nombreEmpresa')} required />
       <Input label="Correo del negocio" type="email" placeholder="contacto@minegocio.com"
         value={form.correoEmpresa} onChange={onCampo('correoEmpresa')} hint="Opcional" />
       <PhoneField label="Teléfono del negocio"

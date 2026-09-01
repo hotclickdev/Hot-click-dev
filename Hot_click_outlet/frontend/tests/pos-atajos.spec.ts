@@ -97,6 +97,8 @@ async function abrirCajaConMouse(page: Page) {
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto('/admin/pos', { waitUntil: 'domcontentloaded' })
   await expect(page.getByRole('heading', { name: 'Caja (POS)' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Cerrar turno' })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Cuadre' })).toHaveCount(0)
   await page.getByRole('button', { name: 'Accesorios' }).click()
   await page.getByRole('button', { name: /Mouse/ }).click()
   await expect(page.getByRole('button', { name: /Cobrar/i }).first()).toBeEnabled()
@@ -120,6 +122,18 @@ test.describe('POS — atajos de caja', () => {
     expect(cobros.qr).toBe(0)
   })
 
+  test('Exacto llena el total y habilita confirmar cobro', async ({ page }) => {
+    await mockCaja(page)
+    await abrirCajaConMouse(page)
+    await page.getByRole('button', { name: /Cobrar/i }).first().click()
+
+    const confirmar = page.getByRole('button', { name: 'Confirmar cobro' })
+    await expect(confirmar).toBeDisabled()
+    await page.getByRole('button', { name: /Exacto/ }).click()
+    await expect(page.getByRole('spinbutton')).toHaveValue('5000')
+    await expect(confirmar).toBeEnabled()
+  })
+
   test('en móvil F2 vuelve al buscador', async ({ page }) => {
     await mockCaja(page)
     await page.setViewportSize({ width: 375, height: 700 })
@@ -136,6 +150,98 @@ test.describe('POS — atajos de caja', () => {
   })
 })
 
+async function mockCajaConQr(page: Page) {
+  await page.route('**/api/**', async (route) => {
+    const path = new URL(route.request().url()).pathname
+    const method = route.request().method()
+    if (path.endsWith('/pos/qr') && method === 'POST') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            token: 'tokentarjetaqr01',
+            total: 5000,
+            metodoPago: 'TARJETA',
+            sinpeNumero: '',
+          },
+        }),
+      })
+      return
+    }
+    if (path.includes('/pos/qr/pago/') && path.endsWith('/estado')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ estado: 'PENDIENTE' }),
+      })
+      return
+    }
+    if (path.includes('/pos/venta') && method !== 'GET') {
+      await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' })
+      return
+    }
+    if (path.includes('/pos/caja/activo')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: { id: 1, estado: 'ABIERTA' } }),
+      })
+      return
+    }
+    if (path.includes('/productos/pos/categoria/')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: [PRODUCTO] }),
+      })
+      return
+    }
+    if (path.includes('/productos/pos/categorias')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: [{ id: 1, nombreCategoria: 'Accesorios' }] }),
+      })
+      return
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: [] }),
+    })
+  })
+  await page.addInitScript((auth) => {
+    localStorage.setItem('hotclick-auth', JSON.stringify(auth))
+    localStorage.setItem('hc-admin-tour-v4-done', '1')
+    localStorage.setItem('hc-mm-v1-off', '1')
+    localStorage.setItem('hc-mm-v1-welcome-done', '1')
+    localStorage.setItem('hotclick-cookie-consent', JSON.stringify({
+      analytics: false,
+      functional: true,
+      timestamp: Date.now(),
+    }))
+  }, AUTH)
+}
+
+test.describe('POS — QR de tarjeta', () => {
+  test('cobrar con tarjeta muestra el código QR con el enlace de pago', async ({ page }) => {
+    await mockCajaConQr(page)
+    await abrirCajaConMouse(page)
+
+    await page.getByRole('button', { name: /Cobrar/i }).first().click()
+    await expect(page.getByText('Método de pago')).toBeVisible()
+    await page.getByRole('button', { name: 'Tarjeta' }).click()
+    await page.getByRole('button', { name: 'Generar QR de pago' }).click()
+
+    await expect(page.getByText('Pago con tarjeta')).toBeVisible()
+    await expect(page.getByText('/pos/pago/tokentarjetaqr01')).toBeVisible()
+    await expect(page.getByRole('img', { name: 'Código QR de pago' })).toBeVisible()
+    await expect(page.getByText(/pague en el carrito|carrito/i)).toBeVisible()
+  })
+})
+
 test('F8 del POS no dispara crearVenta ni QR', () => {
   const raiz = dirname(fileURLToPath(import.meta.url))
   const atajos = readFileSync(join(raiz, '../src/pages/admin/pos/usePosAtajos.ts'), 'utf8')
@@ -144,6 +250,16 @@ test('F8 del POS no dispara crearVenta ni QR', () => {
   expect(atajos).not.toContain('crearVenta')
   expect(atajos).not.toContain('crearQrSesion')
   expect(atajos).not.toContain('handleConfirmarPago')
-  expect(steps).toContain("onCobrar={() => pos.setStep('cobro')}")
+  expect(steps).toContain("pos.setStep('cobro')")
   expect(steps).toContain('onConfirmar={pos.handleConfirmarPago}')
+})
+
+test('StepQR no monta react-qr-code (CJS + React 19 → error #130)', () => {
+  const raiz = dirname(fileURLToPath(import.meta.url))
+  const stepQr = readFileSync(join(raiz, '../src/pages/admin/pos/StepQR.tsx'), 'utf8')
+  const imagen = readFileSync(join(raiz, '../src/pages/admin/pos/PosQrImagen.tsx'), 'utf8')
+  expect(stepQr).not.toContain('react-qr-code')
+  expect(stepQr).toContain('PosQrImagen')
+  expect(imagen).toContain("from 'qrcode'")
+  expect(imagen).toContain('toDataURL')
 })

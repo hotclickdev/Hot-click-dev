@@ -5,6 +5,7 @@ import com.hotclick.model.Pedido;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.service.CuponService;
 import com.hotclick.service.GiftCardService;
+import com.hotclick.service.pos.PosQrVentaService;
 import com.hotclick.utils.Constants;
 import org.hibernate.Hibernate;
 import org.slf4j.Logger;
@@ -24,6 +25,7 @@ public class PaymentOrderConfirmationService {
     @Autowired private GiftCardService            giftCardService;
     @Autowired private StockReservationService    stockReservationService;
     @Autowired private PaymentNotificationsFacade paymentNotificationsFacade;
+    @Autowired private PosQrVentaService          posQrVentaService;
 
     @Transactional
     public void confirmarPedido(Pago pago, Object paymentServiceSelf, ApplicationEventPublisher eventPublisher) {
@@ -52,5 +54,6 @@ public class PaymentOrderConfirmationService {
             giftCardService.canjear(pedido.getGiftCardCodigo(), pedido, pedido.getGiftCardMonto());
         }
         paymentNotificationsFacade.onPedidoConfirmado(pedido, pago);
+        posQrVentaService.marcarPagadoPorPedidoTienda(pedido.getId());
     }
 }

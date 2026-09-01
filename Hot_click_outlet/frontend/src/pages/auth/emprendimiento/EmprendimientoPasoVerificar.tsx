@@ -50,7 +50,7 @@ export default function EmprendimientoPasoVerificar({
           </label>
           <input id="reg-codigo-verif"
             type="text" inputMode="numeric" pattern="[0-9]*" maxLength={6}
-            placeholder="000000" autoFocus
+            placeholder="000000"
             value={codigoVerif}
             onChange={e => setCodigoVerif(e.target.value.replace(/\D/g, '').slice(0, 6))}
             className="w-full text-center outline-none"

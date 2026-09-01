@@ -28,7 +28,7 @@ export default function StepDatosAdmin({
         </span>
       </div>
       <Input label="Tu nombre completo" placeholder="Ana García"
-        value={form.nombreAdmin} onChange={onCampo('nombreAdmin')} autoFocus />
+        value={form.nombreAdmin} onChange={onCampo('nombreAdmin')} />
       <Input label="Tu correo *" type="email" placeholder="ana@miempresa.com"
         value={form.correoAdmin} onChange={onCampo('correoAdmin')} required />
       <Input label="Contraseña *" type="password" placeholder="Mínimo 6 caracteres"

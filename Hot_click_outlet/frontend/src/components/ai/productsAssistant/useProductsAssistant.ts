@@ -20,7 +20,7 @@ export function useProductsAssistant({ isOpen, initialQuery = '' }: { isOpen: bo
   const [cargando, setCargando] = useState(false)
   const [sesionId, setSesionId] = useState(() => shoppingAssistantService.loadSesionId('hotclick'))
   const visitorId = useMemo(() => getOrCreateVisitorId(), [])
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const historyRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const cargRef = useRef(false)
   const sentInitial = useRef(false)
@@ -48,7 +48,8 @@ export function useProductsAssistant({ isOpen, initialQuery = '' }: { isOpen: bo
   }, [isOpen])
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const el = historyRef.current
+    if (el) el.scrollTop = el.scrollHeight
   }, [mensajes])
 
   const addCartItem = useCallback((producto: ProductoSugerido) => {
@@ -136,7 +137,7 @@ export function useProductsAssistant({ isOpen, initialQuery = '' }: { isOpen: bo
     input,
     setInput,
     cargando,
-    bottomRef,
+    historyRef,
     inputRef,
     addCartItem,
     enviar,

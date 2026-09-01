@@ -15,7 +15,6 @@ type AIChatMessageListProps = {
   setMensajes: Dispatch<SetStateAction<AiChatMensaje[]>>
   removeMsg: (msg: AiChatMensaje) => (list: AiChatMensaje[]) => AiChatMensaje[]
   handleAdd: (producto: Producto) => void
-  whatsappNumber: string
   isCarritoContext: boolean
   hasProductsInLastMsg: boolean
 }
@@ -29,7 +28,6 @@ export function AIChatMessageList({
   setMensajes,
   removeMsg,
   handleAdd,
-  whatsappNumber,
   isCarritoContext,
   hasProductsInLastMsg,
 }: AIChatMessageListProps) {
@@ -63,7 +61,10 @@ export function AIChatMessageList({
               >
                 {m.rol === 'user'
                   ? <span style={{ whiteSpace: 'pre-wrap' }}>{m.texto}</span>
-                  : <span style={{ whiteSpace: 'pre-wrap' }}>
+                  : <span
+                      className={m.productos && m.productos.length > 0 ? 'line-clamp-2' : undefined}
+                      style={{ whiteSpace: 'pre-wrap' }}
+                    >
                       <MarkdownSpan text={m.texto ?? ''} />
                       {m.typing && <span className="inline-block w-1.5 h-4 ml-0.5 align-middle animate-pulse rounded-sm bg-current opacity-70" />}
                     </span>
@@ -104,10 +105,9 @@ export function AIChatMessageList({
         }
 
         {m.productos && m.productos.length > 0 && (
-          <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
             {m.productos.map((p, pi) => (
-              <AIProductCard key={p.id ?? pi} producto={p} similarity={p.similarity}
-                onAdd={handleAdd} whatsappNumber={whatsappNumber} />
+              <AIProductCard key={p.id ?? pi} producto={p} onAdd={handleAdd} />
             ))}
           </div>
         )}

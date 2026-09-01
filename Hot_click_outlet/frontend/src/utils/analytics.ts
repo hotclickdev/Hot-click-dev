@@ -116,15 +116,11 @@ export const analytics = {
   quickViewOpen: (p: ItemAnalitica) => track('vista_rapida', { producto_id: p.id }),
   searchQuery: (q: string, count: number) => track(EVENTO.BUSQUEDA, { query: q, results: count }),
   checkoutStart: (total: number, n: number) => track(EVENTO.CHECKOUT_INICIADO, { monto: total, item_count: n }),
-  descubriStart: (deckSize: unknown) => track('descubri_start', { deck_size: deckSize }),
-  descubriSwipe: (p: ItemAnalitica, dir: unknown) => track('descubri_swipe', {
-    producto_id: p.id, monto: p.precio, categoria: p.categoriaNombre, dir,
+  descubriChipsView: () => track('descubri_chips_view', {}),
+  descubriChipsSave: (categories: number, bands: number) => track('descubri_chips_save', {
+    category_count: categories, band_count: bands,
   }),
-  descubriFinish: (likes: unknown, seen: unknown) => track('descubri_finish', { likes, seen }),
-  descubriAddAll: (n: number, value: unknown) => track('descubri_add_all', { item_count: n, value }),
-  descubriInfoView: (variant: string) => track('descubri_info_view', { variant }),
-  descubriInfoTap: (variant: string, cta: unknown) => track('descubri_info_tap', { variant, cta }),
-  descubriEmpresaView: (slug: string) => track('descubri_empresa_view', { slug }),
-  descubriEmpresaTap: (slug: string) => track('descubri_empresa_tap', { slug }),
-  descubriUndo: () => track('descubri_undo', {}),
+  descubriResultsView: (categories: number) => track('descubri_results_view', {
+    category_count: categories,
+  }),
 }

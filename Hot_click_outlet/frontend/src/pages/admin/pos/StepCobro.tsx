@@ -148,27 +148,11 @@ function CalculadoraEfectivo({
   onRecibido: (v: string) => void
 }) {
   const { t } = useTranslation()
-  const montosSugeridos = sugerirMontos(total)
   const billetesSugeridos = descomponer(vuelto)
   return (
     <div className="space-y-3 rounded-2xl border border-hc-border bg-hc-surface p-4">
       <p className="text-xs font-semibold text-hc-muted">{t('pos.cobro.montoRecibido')}</p>
-      <div className="flex flex-wrap gap-2">
-        {montosSugeridos.map((monto) => (
-          <button
-            type="button"
-            key={monto}
-            onClick={() => onRecibido(String(monto))}
-            className="rounded-xl px-3 py-2 text-sm font-bold text-hc-text"
-            style={{
-              backgroundColor: recibidoNum === monto ? 'var(--hc-red-50)' : 'var(--hc-surface-2)',
-              border: `1px solid ${recibidoNum === monto ? 'var(--hc-primary)' : 'var(--hc-border)'}`,
-            }}
-          >
-            ₡{formatMontoPos(monto)}
-          </button>
-        ))}
-      </div>
+      <BotonesMontoSugerido total={total} recibidoNum={recibidoNum} onRecibido={onRecibido} />
       <div className="relative">
         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-hc-muted">₡</span>
         <input
@@ -210,6 +194,43 @@ function CalculadoraEfectivo({
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+function BotonesMontoSugerido({
+  total,
+  recibidoNum,
+  onRecibido,
+}: {
+  total: number
+  recibidoNum: number
+  onRecibido: (v: string) => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <div className="flex flex-wrap gap-2">
+      {sugerirMontos(total).map((monto) => {
+        const exacto = monto === total
+        const activo = recibidoNum === monto
+        return (
+          <button
+            type="button"
+            key={monto}
+            onClick={() => onRecibido(String(monto))}
+            aria-label={exacto ? `${t('pos.cobro.pagoExacto')} ₡${formatMontoPos(monto)}` : undefined}
+            className="rounded-xl px-3 py-2 text-sm font-bold text-hc-text"
+            style={{
+              backgroundColor: activo ? 'var(--hc-red-50)' : 'var(--hc-surface-2)',
+              border: `1px solid ${activo ? 'var(--hc-primary)' : 'var(--hc-border)'}`,
+            }}
+          >
+            {exacto
+              ? `${t('pos.cobro.pagoExacto')} ₡${formatMontoPos(monto)}`
+              : `₡${formatMontoPos(monto)}`}
+          </button>
+        )
+      })}
     </div>
   )
 }

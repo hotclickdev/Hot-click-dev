@@ -88,6 +88,38 @@ export type PosQrData = {
   sinpeNumero: string
 }
 
+function registroQr(data: unknown): Record<string, unknown> | null {
+  if (!data || typeof data !== 'object') return null
+  const obj = data as Record<string, unknown>
+  if (typeof obj.token === 'string' && obj.token) return obj
+  const inner = obj.data
+  if (inner && typeof inner === 'object') {
+    const nested = inner as Record<string, unknown>
+    if (typeof nested.token === 'string' && nested.token) return nested
+  }
+  return null
+}
+
+/**
+ * El interceptor de Axios suele unwrappear ResponseDTO; si no, el token viene en data.data.
+ */
+export function qrDataDesdeRespuesta(data: unknown, totalFallback: number): PosQrData | null {
+  const inner = registroQr(data)
+  if (!inner) return null
+  const totalRaw = inner.total
+  const total = typeof totalRaw === 'number' ? totalRaw : totalFallback
+  return {
+    token: inner.token as string,
+    metodoPago: typeof inner.metodoPago === 'string' ? inner.metodoPago : 'TARJETA',
+    total,
+    sinpeNumero: typeof inner.sinpeNumero === 'string' ? inner.sinpeNumero : '',
+  }
+}
+
+export function enlacePagoPosQr(token: string) {
+  return `${globalThis.location.origin}/pos/pago/${token}`
+}
+
 export type PosVentaItem = {
   producto?: { nombreProducto?: string }
   nombre?: string
@@ -113,7 +145,7 @@ export type PayloadCobroPos = {
 }
 
 type AxiosErrorBody = {
-  response?: { data?: { message?: unknown }; status?: number }
+  response?: { data?: { message?: unknown; error?: unknown }; status?: number }
 }
 
 /**
@@ -123,12 +155,14 @@ export function formatMontoPos(n: number | null | undefined) {
   return new Intl.NumberFormat('es-CR').format(Math.round(n ?? 0))
 }
 
+/** Exacto primero, luego billetes redondeados hacia arriba (máx. 4 extra). */
 export function sugerirMontos(total: number) {
+  const exacto = Math.round(total)
   const bases = [1000, 2000, 5000, 10000, 20000, 50000]
-  const out: number[] = []
+  const out: number[] = [exacto]
   for (const b of bases) {
-    const s = Math.ceil(total / b) * b
-    if (s >= total && !out.includes(s) && out.length < 4) out.push(s)
+    const s = Math.ceil(exacto / b) * b
+    if (s >= exacto && !out.includes(s) && out.length < 5) out.push(s)
   }
   return out
 }
@@ -161,8 +195,12 @@ export function agregarProductoAlCarrito(prev: ItemCarritoPos[], producto: Produ
 
 export function mensajeErrorPos(err: unknown, fallback = ''): string {
   if (!err || typeof err !== 'object') return fallback
-  const message = (err as AxiosErrorBody).response?.data?.message
-  return typeof message === 'string' ? message : fallback
+  const body = (err as AxiosErrorBody).response?.data
+  const message = body?.message
+  if (typeof message === 'string' && message) return message
+  const error = body?.error
+  if (typeof error === 'string' && error) return error
+  return fallback
 }
 
 export function statusErrorPos(err: unknown): number | undefined {

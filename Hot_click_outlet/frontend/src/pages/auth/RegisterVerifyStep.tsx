@@ -90,7 +90,7 @@ export default function RegisterVerifyStep({
                 <label htmlFor="reg-codigo-email" className="hc-input-label block mb-2">{t('register.verificationCode')}</label>
                 <input id="reg-codigo-email" type="text" inputMode="numeric" pattern="[0-9]*" maxLength={6}
                   value={codigo} onChange={(e) => setCodigo(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="000000" autoFocus className="hc-input w-full text-center"
+                  placeholder="000000" className="hc-input w-full text-center"
                   style={{ fontSize: 32, fontWeight: 900, letterSpacing: '0.55em', height: 64, padding: '0 12px' }} />
                 <p className="text-xs text-center mt-2" style={{ color: 'var(--hc-muted)' }}>
                   Ingresá los 6 dígitos que llegaron a tu correo

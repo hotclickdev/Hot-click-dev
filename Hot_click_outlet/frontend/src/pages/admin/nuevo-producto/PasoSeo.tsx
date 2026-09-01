@@ -72,7 +72,7 @@ export default function PasoSeo({ form, setForm, seoLang, setSeoLang, seoAuto, s
         </div>
         <input className={inp} style={inpStyle} value={currentSeo.title} maxLength={60}
           placeholder={isEs ? 'Nombre del producto | HotClick Outlet' : 'Product name | HotClick Outlet'}
-          onChange={e => handleTitleChange(e.target.value)} autoFocus />
+          onChange={e => handleTitleChange(e.target.value)} />
       </div>
       <div>
         <div className="flex items-center justify-between mb-1.5">

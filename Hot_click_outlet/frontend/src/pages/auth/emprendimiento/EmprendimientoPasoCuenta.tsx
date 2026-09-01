@@ -42,7 +42,7 @@ export default function EmprendimientoPasoCuenta({
           Negocio: <strong style={{ color: 'var(--hc-text)' }}>{form.nombreEmpresa}</strong>
         </span>
       </div>
-      <Input label="Tu nombre completo" placeholder="Ana García" value={form.nombreAdmin} onChange={actualizarCampo('nombreAdmin')} autoFocus maxLength={100} />
+      <Input label="Tu nombre completo" placeholder="Ana García" value={form.nombreAdmin} onChange={actualizarCampo('nombreAdmin')} maxLength={100} />
       <Input label="Tu correo *" type="email" placeholder="ana@miempresa.com" value={form.correoAdmin} onChange={actualizarCampo('correoAdmin')} required maxLength={150} />
       <Input label="Contraseña *" type="password" placeholder="Mínimo 8 caracteres" value={form.passwordAdmin} onChange={actualizarCampo('passwordAdmin')} required minLength={8} maxLength={128} />
       <PhoneField label="Teléfono personal"

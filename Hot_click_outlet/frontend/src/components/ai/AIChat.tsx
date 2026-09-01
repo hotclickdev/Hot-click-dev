@@ -67,7 +67,6 @@ export default function AIChat({
     setMensajes: chat.setMensajes,
     removeMsg: chat.removeMsg,
     handleAdd: chat.handleAdd,
-    whatsappNumber,
     isCarritoContext: chat.isCarritoContext,
     hasProductsInLastMsg: chat.hasProductsInLastMsg,
   }

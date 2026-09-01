@@ -9,11 +9,10 @@ import { posUi } from './posApariencia'
 /**
  * Chrome utilitario de la caja. El título “Caja (POS)” vive en StepVenta (Figma 71:128).
  */
-export default function POSHeader({ userName, turno, step, onCerrarTurno, mostrarVolverSistema }: {
+export default function POSHeader({ userName, turno, step, mostrarVolverSistema }: {
   userName?: string | null
   turno: PosTurno | null
   step: PosStep | string
-  onCerrarTurno: () => void
   mostrarVolverSistema?: boolean
 }) {
   const { t } = useTranslation()
@@ -67,28 +66,6 @@ export default function POSHeader({ userName, turno, step, onCerrarTurno, mostra
 
       <div className="flex-1" />
 
-      {turno ? (
-        <button
-          type="button"
-          onClick={onCerrarTurno}
-          className="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all hover:brightness-125"
-          style={{
-            backgroundColor: 'var(--hc-danger-bg)',
-            color: 'var(--hc-danger)',
-            border: '1px solid color-mix(in srgb, var(--hc-danger) 25%, transparent)',
-          }}
-        >
-          {t('pos.common.cerrarTurno')}
-        </button>
-      ) : null}
-
-      <Link
-        to="/admin/pos/caja"
-        className="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all hover:bg-[var(--hc-surface-2)]"
-        style={chipSec}
-      >
-        {t('pos.header.cuadre')}
-      </Link>
       <Link
         to="/admin/pos/historial"
         className="hidden rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all hover:bg-[var(--hc-surface-2)] sm:block"

@@ -53,12 +53,13 @@ public class PublicChatAdvisorHandler {
                           List<Map<String, Object>> history, Long productoId,
                           SseEmitter emitter) throws Exception {
         Map<String, Object> ficha = productSearch.buscarFichaAsesor(empresaId, marketplace, productoId);
-        enviarProductosVacios(emitter, userMessage);
         if (ficha == null) {
+            enviarProductosVacios(emitter, userMessage);
             enviarTextoYCerrar(emitter, "Este producto no está disponible. ¿Querés ver el catálogo?",
                 List.of("Ver productos populares", "Contactar por WhatsApp"));
             return;
         }
+        enviarProductoFicha(emitter, ficha, userMessage);
         registrarAnalitica(empresaId, userMessage);
         boolean isEnglish = intentHelper.isEnglish(userMessage);
         boolean afterHours = intentHelper.isOutsideBusinessHours();
@@ -74,6 +75,15 @@ public class PublicChatAdvisorHandler {
     private void enviarProductosVacios(SseEmitter emitter, String query) throws Exception {
         Map<String, Object> event = new LinkedHashMap<>();
         event.put("productos", List.of());
+        event.put("hasMore", false);
+        event.put("query", query);
+        emitter.send(SseEmitter.event().name("products")
+            .data(objectMapper.writeValueAsString(event)));
+    }
+
+    private void enviarProductoFicha(SseEmitter emitter, Map<String, Object> ficha, String query) throws Exception {
+        Map<String, Object> event = new LinkedHashMap<>();
+        event.put("productos", List.of(ficha));
         event.put("hasMore", false);
         event.put("query", query);
         emitter.send(SseEmitter.event().name("products")

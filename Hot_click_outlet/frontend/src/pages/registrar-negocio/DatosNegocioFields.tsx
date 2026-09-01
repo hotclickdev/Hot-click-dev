@@ -18,7 +18,7 @@ export default function DatosNegocioFields({
         placeholder="Ej: Mi Tienda Tica"
         value={form.nombreEmpresa}
         onChange={onCampo('nombreEmpresa')}
-        autoFocus required
+        required
       />
       <Input
         label="Nombre comercial (opcional)"

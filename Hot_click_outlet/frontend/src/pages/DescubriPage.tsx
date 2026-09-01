@@ -1,91 +1,140 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
-import useWishlistStore from '@/store/wishlistStore'
-import useCartStore from '@/store/cartStore'
-import { useToast } from '@/components/ui/Toast'
+import { productService, normalizeProduct } from '@/services/productService'
 import { analytics } from '@/utils/analytics'
-import useDescubriDeck from '@/components/descubri/useDescubriDeck'
+import {
+  hasGustos,
+  loadGustos,
+  saveGustosSeleccion,
+  rankScoreParaVos,
+  loadRecentlyViewedIds,
+  productoEsRelacionado,
+  type PriceBandId,
+  type GustosPerfil,
+} from '@/utils/gustos'
+import { buildCategoryTree } from '@/pages/catalogo/catalogoHelpers'
+import type { CatalogCategoria } from '@/pages/catalogo/catalogoTipos'
+import type { Producto, ProductoBackend } from '@/types/producto'
+import type { Id, Pagina } from '@/types/api'
 import DescubriHeader from './descubri/DescubriHeader'
 import DescubriLoading from './descubri/DescubriLoading'
 import DescubriError from './descubri/DescubriError'
-import DescubriDeck from './descubri/DescubriDeck'
-import DescubriDone from './descubri/DescubriDone'
-import { destinoDetalleDescubri, type DescubriDeckApi, type DirSwipeDescubri } from './descubri/destinoDetalleDescubri'
-import type { Id } from '@/types/api'
+import DescubriChips from './descubri/DescubriChips'
+import DescubriResultados from './descubri/DescubriResultados'
+
+type Fase = 'chips' | 'resultados'
+type Status = 'loading' | 'ready' | 'error'
+
+function listaProductos(data: unknown): Producto[] {
+  let raw: ProductoBackend[] = []
+  if (Array.isArray(data)) raw = data as ProductoBackend[]
+  else if (data && typeof data === 'object' && 'content' in data) {
+    const pagina = data as Pagina<ProductoBackend>
+    raw = Array.isArray(pagina.content) ? pagina.content : []
+  }
+  return raw
+    .map((p) => normalizeProduct(p))
+    .filter((p): p is Producto => !!p && !!p.imagenUrl && (p.stock ?? 0) > 0)
+}
+
+function normalizarCategorias(data: unknown): CatalogCategoria[] {
+  if (!Array.isArray(data)) return []
+  const out: CatalogCategoria[] = []
+  for (const raw of data) {
+    const c = raw as CatalogCategoria & { idCategoria?: unknown }
+    const idRaw = c.id ?? c.idCategoria
+    if (idRaw == null || String(idRaw) === '') continue
+    out.push({
+      ...c,
+      id: idRaw as Id,
+      padreId: c.padreId ?? c.categoriaPadre?.id ?? c.parentId ?? null,
+    })
+  }
+  return out
+}
+
+function toggleId(ids: string[], id: string): string[] {
+  return ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]
+}
+
+function toggleBand(ids: PriceBandId[], id: PriceBandId): PriceBandId[] {
+  return ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]
+}
 
 export default function DescubriPage() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
-  const toast = useToast()
-  const deck = useDescubriDeck() as DescubriDeckApi
-  const { toggle, isLiked } = useWishlistStore()
-  const addItem = useCartStore((s) => s.addItem)
-  const [lastDir, setLastDir] = useState<DirSwipeDescubri>('like')
-  const lastSwipeAt = useRef(0)
-  const startedRef = useRef(false)
+  const [status, setStatus] = useState<Status>('loading')
+  const [fase, setFase] = useState<Fase>(() => (hasGustos() ? 'resultados' : 'chips'))
+  const [categories, setCategories] = useState<CatalogCategoria[]>([])
+  const [products, setProducts] = useState<Producto[]>([])
+  const [perfil, setPerfil] = useState<GustosPerfil>(() => loadGustos())
+  const [selectedCats, setSelectedCats] = useState<string[]>(
+    () => loadGustos().selectedCategoryIds,
+  )
+  const [selectedBands, setSelectedBands] = useState<PriceBandId[]>(
+    () => loadGustos().selectedPriceBands,
+  )
+  const chipsViewed = useRef(false)
+  const resultsViewed = useRef(false)
+
+  const load = useCallback(() => {
+    setStatus('loading')
+    productService.getCategories()
+      .then((catsRes) => {
+        setCategories(normalizarCategorias(catsRes.data))
+        setStatus('ready')
+      })
+      .catch(() => setStatus('error'))
+
+    productService.getAll(0, 100)
+      .then((prodRes) => setProducts(listaProductos(prodRes.data)))
+      .catch(() => setProducts([]))
+  }, [])
+
+  useEffect(() => { load() }, [load])
 
   useEffect(() => {
-    if (deck.status === 'ready' && !startedRef.current) {
-      startedRef.current = true
-      analytics.descubriStart(deck.total)
+    if (status !== 'ready') return
+    if (fase === 'chips' && !chipsViewed.current) {
+      chipsViewed.current = true
+      analytics.descubriChipsView()
     }
-  }, [deck.status, deck.total])
-
-  useEffect(() => {
-    if (deck.status === 'done') analytics.descubriFinish(deck.liked.length, deck.seen)
-  }, [deck.status]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleSwipe = useCallback((dir: DirSwipeDescubri) => {
-    const now = Date.now()
-    if (now - lastSwipeAt.current < 260) return
-    lastSwipeAt.current = now
-    const top = deck.remaining[0]
-    if (!top) return
-    setLastDir(dir)
-    // Carta especial (info/empresa): solo se descarta — sin wishlist ni
-    // analytics de producto (su evento _view ya se disparó al ser top).
-    if (top._tipo) {
-      deck.swipe(dir)
-      return
+    if (fase === 'resultados' && !resultsViewed.current) {
+      resultsViewed.current = true
+      analytics.descubriResultsView(perfil.selectedCategoryIds.length)
     }
-    if (dir === 'like' && !isLiked(top.id as Id)) toggle(top)
-    analytics.descubriSwipe(top, dir)
-    deck.swipe(dir)
-  }, [deck, isLiked, toggle])
+  }, [status, fase, perfil.selectedCategoryIds.length])
 
-  const handleUndo = useCallback(() => {
-    if (!deck.canUndo) return
-    analytics.descubriUndo()
-    deck.undo()
-  }, [deck])
+  const roots = useMemo(
+    () => buildCategoryTree(categories).filter((c) => c.id != null && String(c.id) !== ''),
+    [categories],
+  )
 
-  // Teclado en PC: ← paso, → me gusta, Z deshacer
-  useEffect(() => {
-    if (deck.status !== 'ready') return
-    const onKey = (e: KeyboardEvent) => {
-      const target = e.target
-      if (target instanceof Element && target.closest('input, textarea, select')) return
-      if (e.key === 'ArrowRight') handleSwipe('like')
-      else if (e.key === 'ArrowLeft') handleSwipe('skip')
-      else if (e.key.toLowerCase() === 'z') handleUndo()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [deck.status, handleSwipe, handleUndo])
+  const relacionados = useMemo(() => {
+    if (!hasGustos(perfil)) return []
+    const viewed = loadRecentlyViewedIds()
+    return products
+      .filter((p) => productoEsRelacionado(p, perfil, categories))
+      .sort((a, b) => rankScoreParaVos(b, perfil.scores, viewed) - rankScoreParaVos(a, perfil.scores, viewed))
+  }, [products, perfil, categories])
 
-  // Destino del botón "detalle" según la carta en el top del mazo
-  const top = deck.remaining[0]
-  const detailTo = destinoDetalleDescubri(top, deck.remaining)
+  const handleSave = () => {
+    if (selectedCats.length === 0) return
+    saveGustosSeleccion(selectedCats, selectedBands)
+    const next = loadGustos()
+    setPerfil(next)
+    analytics.descubriChipsSave(selectedCats.length, selectedBands.length)
+    resultsViewed.current = false
+    setFase('resultados')
+  }
 
-  const handleAddAll = () => {
-    const disponibles = deck.liked.filter((p) => p.stock > 0)
-    disponibles.forEach((p) => addItem(p))
-    analytics.descubriAddAll(disponibles.length, disponibles.reduce((s, p) => s + p.precio, 0))
-    toast({ message: t('descubri.addedAll', { count: disponibles.length }), type: 'success' })
-    navigate('/carrito')
+  const handleChangeGustos = () => {
+    chipsViewed.current = false
+    setSelectedCats(perfil.selectedCategoryIds)
+    setSelectedBands(perfil.selectedPriceBands)
+    setFase('chips')
   }
 
   return (
@@ -95,24 +144,26 @@ export default function DescubriPage() {
         <meta name="description" content={t('descubri.metaDescription')} />
       </Helmet>
 
-      <div className="max-w-md mx-auto px-4 pt-5 pb-8 sm:pt-8">
-        <DescubriHeader deck={deck} />
-        {deck.status === 'loading' && <DescubriLoading />}
-        {deck.status === 'error' && <DescubriError onRetry={deck.restart} />}
-        {deck.status === 'ready' && (
-          <DescubriDeck
-            deck={deck}
-            lastDir={lastDir}
-            onSwipe={handleSwipe}
-            onUndo={handleUndo}
-            detailTo={detailTo}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-5 pb-10 sm:pt-8">
+        <DescubriHeader
+          subtitle={fase === 'chips' ? t('descubri.chipsTitle') : undefined}
+        />
+        {status === 'loading' && <DescubriLoading />}
+        {status === 'error' && <DescubriError onRetry={load} />}
+        {status === 'ready' && fase === 'chips' && (
+          <DescubriChips
+            roots={roots}
+            selectedCats={selectedCats}
+            selectedBands={selectedBands}
+            onToggleCat={(id) => setSelectedCats((s) => toggleId(s, id))}
+            onToggleBand={(id) => setSelectedBands((s) => toggleBand(s, id))}
+            onSave={handleSave}
           />
         )}
-        {deck.status === 'done' && (
-          <DescubriDone
-            liked={deck.liked}
-            onAddAll={handleAddAll}
-            onRestart={deck.restart}
+        {status === 'ready' && fase === 'resultados' && (
+          <DescubriResultados
+            products={relacionados}
+            onChangeGustos={handleChangeGustos}
           />
         )}
       </div>

@@ -10,6 +10,7 @@ import com.hotclick.repository.*;
 import com.hotclick.exception.IntegracionExternaException;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.service.payment.*;
+import com.hotclick.service.pos.PosQrVentaService;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +50,7 @@ public class PaymentService {
     @Autowired private PaymentFailureHandler            paymentFailureHandler;
     @Autowired private PaymentUserCancellationService   userCancellationService;
     @Autowired private SinpePaymentAdminService         sinpePaymentAdminService;
+    @Autowired private PosQrVentaService                posQrVentaService;
 
     @Transactional
     public PaymentCheckoutResponse checkout(PaymentCheckoutRequest req, String correoUsuario) {
@@ -70,6 +72,7 @@ public class PaymentService {
         Pedido pedido = checkoutOrderFactory.createPendingOrder(
             req, pricing, reservation.subtotal(), reservation.costoTotal(), provider, usuario, bodega);
         checkoutOrderFactory.addItemSnapshots(pedido, req.getItems(), reservation.productosMap());
+        posQrVentaService.vincularPedidoTienda(req.getPosQrToken(), pedido.getId());
 
         if (pricing.pagoGC()) {
             stockReservationService.consumeForGiftCard(pedido);
@@ -78,6 +81,7 @@ public class PaymentService {
             pedidoRepository.save(pedido);
             giftCardService.canjear(pricing.gcCodigo(), pedido, pricing.gcMonto());
             paymentNotificationsFacade.onGiftCardFullPayment(pedido, pricing.gcCodigo());
+            posQrVentaService.marcarPagadoPorPedidoTienda(pedido.getId());
             return new PaymentCheckoutResponse(pedido.getId(), pedido.getNumeroPedido(),
                 null, "PAGADO", 0, "GIFT_CARD");
         }

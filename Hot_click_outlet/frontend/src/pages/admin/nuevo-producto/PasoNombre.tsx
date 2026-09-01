@@ -22,7 +22,7 @@ export default function PasoNombre({ form, setCampo, trademarkWarning }: {
       <div>
         <Label required>Nombre del producto</Label>
         <input className={inp} style={inpStyle} value={form.nombre} onChange={setCampo('nombre')}
-          placeholder="Ej: Tenis Nike Air Max 90 Blanco" autoFocus maxLength={80} />
+          placeholder="Ej: Tenis Nike Air Max 90 Blanco" maxLength={80} />
         <p className="text-xs mt-1 text-right" style={{ color: form.nombre.length >= 72 ? '#8a5a00' : 'var(--hc-muted)' }}>
           {form.nombre.length}/80
         </p>

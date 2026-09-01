@@ -30,17 +30,17 @@ class PublicChatPromptBuilderTest {
         assertThat(prompt).contains("Lámpara de pie");
         assertThat(prompt).contains("tags: sala,iluminación");
         assertThat(prompt).contains("cat: Iluminación");
-        assertThat(prompt).contains("recomendálos YA");
+        assertThat(prompt).contains("conectalos en 1 frase");
     }
 
     @Test
-    @DisplayName("Antes del 3.er turno no empuja fichas")
-    void conversacionTemprana_sinEmpujarCatalogo() {
+    @DisplayName("Sin fichas no empuja catálogo")
+    void sinFichas_sinEmpujarCatalogo() {
         PublicChatPromptBuilder builder = new PublicChatPromptBuilder();
         String prompt = builder.buildSalesSystemPrompt(
             "50686667888", "GENERAL", List.of(), false, false, null, Set.of(), false, false);
-        assertThat(prompt).contains("Es temprano en la charla");
-        assertThat(prompt).doesNotContain("recomendálos YA");
+        assertThat(prompt).contains("No hay tarjetas en pantalla");
+        assertThat(prompt).doesNotContain("conectalos en 1 frase");
     }
 
     @Test
@@ -60,7 +60,7 @@ class PublicChatPromptBuilderTest {
         assertThat(prompt).contains("Uso: madera y metal");
         assertThat(prompt).contains("NO CONSTA");
         assertThat(prompt).doesNotContain("Convencelo");
-        assertThat(prompt).doesNotContain("recomendálos YA");
+        assertThat(prompt).doesNotContain("conectalos en 1 frase");
         assertThat(PublicChatPromptBuilder.formatearFicha(ficha)).contains("no consta");
     }
 }

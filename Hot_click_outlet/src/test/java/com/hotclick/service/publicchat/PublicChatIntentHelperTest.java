@@ -11,17 +11,17 @@ class PublicChatIntentHelperTest {
     private final PublicChatIntentHelper helper = new PublicChatIntentHelper();
 
     @Test
-    @DisplayName("quiero ver productos para sala → sala y sinónimos, no stopwords")
+    @DisplayName("quiero ver productos para sala → sala sin stopwords; sinónimos en boost")
     void querySala_expandeSinonimosSinStopwords() {
         String ts = helper.buildTsQuery("quiero ver productos para sala");
 
         assertThat(ts).contains("sala");
-        assertThat(ts).contains("living");
-        assertThat(ts).contains("sofa");
-        assertThat(ts).contains("mueble");
         assertThat(ts).doesNotContain("quiero");
         assertThat(ts).doesNotContain("productos");
         assertThat(ts).doesNotContain("para");
+
+        assertThat(helper.synonymBoostTerms("quiero ver productos para sala"))
+            .contains("living", "sofa", "mueble");
     }
 
     @Test

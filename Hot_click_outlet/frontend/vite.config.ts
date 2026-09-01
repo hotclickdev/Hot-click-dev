@@ -48,11 +48,13 @@ export default defineConfig({
         theme_color: '#E73B33',
         lang: 'es-CR',
         icons: [
-          { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' },
+          { src: '/brand/app-icon.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png', purpose: 'any' },
+          { src: '/brand/app-icon.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html}', '*.svg'],
+        globPatterns: ['**/*.{js,css,html,png}', '*.svg'],
         globIgnores: ['**/node_modules/**', 'brand/**', 'admin/**'],
         runtimeCaching: [
           {
