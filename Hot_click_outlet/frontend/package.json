@@ -15,8 +15,10 @@
     "lint": "eslint .",
     "lint:ci": "eslint src/utils/analytics.ts src/utils/ga4.ts src/utils/posthog.ts src/utils/clarity.ts src/utils/initAnalytics.ts src/utils/siteVerification.tsx src/App.tsx src/app/AppChrome.tsx src/main.tsx src/store/authStore.ts src/pages/admin/security/SistemaTab.tsx vite.config.ts",
     "preview": "vite preview",
+    "test": "vitest run",
     "test:e2e": "playwright test",
-    "test:e2e:smoke": "playwright test tests/smoke.spec.ts"
+    "test:e2e:smoke": "playwright test tests/smoke.spec.ts",
+    "test:e2e:ci": "playwright test tests/pos-qr-carrito.spec.ts tests/descubri-pago.spec.ts"
   },
   "dependencies": {
     "@clerk/react": "^6.7.2",
@@ -78,6 +80,7 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.68.0",
     "vite": "^8.0.10",
-    "vite-plugin-pwa": "^1.3.0"
+    "vite-plugin-pwa": "^1.3.0",
+    "vitest": "3.2.4"
   }
 }

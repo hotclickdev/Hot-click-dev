@@ -2,4 +2,4 @@ allowBuilds:
   '@clerk/shared': false
   '@sentry/cli': false
   core-js: false
-
+  esbuild: true
