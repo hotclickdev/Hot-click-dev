@@ -80,6 +80,8 @@ const AdminObservabilidad = lazy(() => import('@/pages/admin/AdminObservabilidad
 const AdminCotizaciones = lazy(() => import('@/pages/admin/AdminCotizaciones'))
 const AdminNuevaCotizacion = lazy(() => import('@/pages/admin/AdminNuevaCotizacion'))
 const CotizacionPublicaPage = lazy(() => import('@/pages/CotizacionPublicaPage'))
+const EncargoPublicPage = lazy(() => import('@/pages/EncargoPublicPage'))
+const AdminEncargos = lazy(() => import('@/pages/admin/AdminEncargos'))
 const AdminAiControl = lazy(() => import('@/pages/admin/AdminAiControl'))
 const AdminFacturas = lazy(() => import('@/pages/admin/AdminFacturas'))
 const AdminConfigFiscal = lazy(() => import('@/pages/admin/AdminConfigFiscal'))
@@ -175,6 +177,7 @@ export default function AppRoutes() {
       <Route path="/cookies" element={<CookiesPage />} />
       <Route path="/recuperar-carrito/:token" element={<RecuperarCarritoPage />} />
       <Route path="/cotizacion/:token" element={<CotizacionPublicaPage />} />
+      <Route path="/encargo/:token" element={<EncargoPublicPage />} />
       <Route path="/servicios" element={<ServiciosHotPage />} />
       <Route path="/blog" element={<BlogPage />} />
       <Route path="/blog/:slug" element={<BlogPostPage />} />
@@ -214,6 +217,7 @@ export default function AppRoutes() {
         <Route path="productos/nuevo" element={<SistemaProductoFormRoute />} />
         <Route path="productos/:id/editar" element={<SistemaProductoFormRoute />} />
         <Route path="pedidos" element={<AdminPedidosRoute />} />
+        <Route path="encargos" element={<AdminEncargos />} />
         <Route path="bodegas" element={<RedirectSiSistema to="/admin/configuracion?seccion=bodega"><AdminWarehouses /></RedirectSiSistema>} />
         <Route path="ventas" element={<RedirectSiSistema to="/admin/pedidos"><AdminNewSale /></RedirectSiSistema>} />
         <Route path="clientes" element={<AdminClientesRoute />} />

@@ -3,8 +3,10 @@ package com.hotclick.service.payment;
 import com.hotclick.dto.PaymentCheckoutRequest;
 import com.hotclick.model.*;
 import com.hotclick.repository.PedidoRepository;
+import com.hotclick.service.EncargoService;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -17,6 +19,7 @@ import java.util.Map;
 public class CheckoutOrderFactory {
 
     @Autowired private PedidoRepository pedidoRepository;
+    @Autowired @Lazy private EncargoService encargoService;
 
     public Pedido createPendingOrder(PaymentCheckoutRequest req, OrderPricingResult pricing,
                                      int subtotal, int costoTotal, String provider,
@@ -54,15 +57,17 @@ public class CheckoutOrderFactory {
 
     public void addItemSnapshots(Pedido pedido, List<PaymentCheckoutRequest.ItemDTO> items,
                                  Map<Long, Producto> productosMap) {
-        // Snapshot de precios al momento de compra — reutiliza productos ya cargados (no N+1)
         for (PaymentCheckoutRequest.ItemDTO item : items) {
             Producto p = productosMap.get(item.getProductoId());
+            int precioUnitario = item.getPrecioUnitarioOverride() != null
+                ? item.getPrecioUnitarioOverride()
+                : p.getPrecioVenta();
             PedidoItem pi = new PedidoItem();
             pi.setCantidad(item.getCantidad());
-            pi.setPrecioUnitarioMomento(p.getPrecioVenta());
+            pi.setPrecioUnitarioMomento(precioUnitario);
             pi.setCostoUnitarioMomento(p.getPrecioCompra());
-            pi.setSubtotalItem(p.getPrecioVenta() * item.getCantidad());
-            pi.setUtilidadItem((p.getPrecioVenta() - p.getPrecioCompra()) * item.getCantidad());
+            pi.setSubtotalItem(precioUnitario * item.getCantidad());
+            pi.setUtilidadItem((precioUnitario - p.getPrecioCompra()) * item.getCantidad());
             pi.setDescuentoAplicado(0);
             pi.setProducto(p);
             pi.setPedido(pedido);
@@ -70,5 +75,6 @@ public class CheckoutOrderFactory {
             pedido.getItems().add(pi);
         }
         pedidoRepository.save(pedido);
+        encargoService.crearEncargosDesdeCheckout(pedido, items, pedido.getUsuarioFinal());
     }
 }

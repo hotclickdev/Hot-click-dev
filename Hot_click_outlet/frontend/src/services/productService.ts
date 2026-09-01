@@ -60,6 +60,11 @@ export function normalizeProduct(p: ProductoBackend | null | undefined): Product
     garantiaDias: p.garantiaDias ?? 0,
     grupoVarianteId: p.grupoVarianteId ?? null,
     colorVariante: p.colorVariante ?? null,
+    esPersonalizado: p.esPersonalizado === true,
+    modoPrecioPersonalizado: p.modoPrecioPersonalizado ?? null,
+    precioPersonalizadoMin: p.precioPersonalizadoMin ?? null,
+    precioPersonalizadoMax: p.precioPersonalizadoMax ?? null,
+    instruccionesPersonalizacion: p.instruccionesPersonalizacion ?? null,
   }
 }
 
@@ -97,6 +102,19 @@ export function denormalizeProduct(form: ProductoForm) {
     sku:     form.sku     || null,
     barcode: form.barcode || null,
     tags:    form.tags    || null,
+    esPersonalizado: form.esPersonalizado === true,
+    modoPrecioPersonalizado: form.esPersonalizado
+      ? (form.modoPrecioPersonalizado || 'FIJO')
+      : null,
+    precioPersonalizadoMin: form.esPersonalizado && form.precioPersonalizadoMin != null && form.precioPersonalizadoMin !== ''
+      ? Number(form.precioPersonalizadoMin)
+      : null,
+    precioPersonalizadoMax: form.esPersonalizado && form.precioPersonalizadoMax != null && form.precioPersonalizadoMax !== ''
+      ? Number(form.precioPersonalizadoMax)
+      : null,
+    instruccionesPersonalizacion: form.esPersonalizado
+      ? (form.instruccionesPersonalizacion || null)
+      : null,
   }
 }
 

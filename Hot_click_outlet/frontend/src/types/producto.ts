@@ -74,6 +74,11 @@ export type ProductoBackend = {
   grupoVarianteId?: number | null
   colorVariante?: string | null
   condicion?: string
+  esPersonalizado?: boolean
+  modoPrecioPersonalizado?: 'FIJO' | 'RANGO' | 'COTIZACION' | string | null
+  precioPersonalizadoMin?: number | null
+  precioPersonalizadoMax?: number | null
+  instruccionesPersonalizacion?: string | null
 }
 
 /** Forma canónica en el frontend tras `normalizeProduct`. */
@@ -120,6 +125,11 @@ export type Producto = ProductoBackend & {
   garantiaDias: number
   grupoVarianteId: number | null
   colorVariante: string | null
+  esPersonalizado: boolean
+  modoPrecioPersonalizado: string | null
+  precioPersonalizadoMin: number | null
+  precioPersonalizadoMax: number | null
+  instruccionesPersonalizacion: string | null
 }
 
 /** Campos de formulario admin / wizard hacia `denormalizeProduct`. */
@@ -156,4 +166,9 @@ export type ProductoForm = {
   sku?: string | null
   barcode?: string | null
   tags?: string | null
+  esPersonalizado?: boolean
+  modoPrecioPersonalizado?: string | null
+  precioPersonalizadoMin?: number | string | null
+  precioPersonalizadoMax?: number | string | null
+  instruccionesPersonalizacion?: string | null
 }

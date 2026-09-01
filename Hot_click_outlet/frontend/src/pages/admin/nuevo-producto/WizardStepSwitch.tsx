@@ -43,7 +43,7 @@ export default function WizardStepSwitch({ wizard }: { wizard: WizardView }) {
   }
   if (id === 'nombre') return <PasoNombre form={form} setCampo={setCampo} trademarkWarning={trademarkWarning} />
   if (id === 'descripcion') return <PasoDescripcion form={form} setCampo={setCampo} />
-  if (id === 'precios') return <PasoPrecios form={form} setCampo={setCampo} priceWarning={priceWarning} setPriceWarning={setPriceWarning} />
+  if (id === 'precios') return <PasoPrecios form={form} setCampo={setCampo} priceWarning={priceWarning} setPriceWarning={setPriceWarning} setForm={setForm} />
   if (id === 'clasificacion') {
     return (
       <PasoClasificacion

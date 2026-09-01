@@ -25,6 +25,13 @@ export type ItemCheckout = {
   bodegaNombre?: string
   bodegaDireccion?: string
   bodegaTelefono?: string
+  personalizacion?: {
+    imagenes?: string[]
+    notas?: string
+    tallaSeleccionada?: string
+    encargoToken?: string
+  }
+  cartLineId?: string
 }
 
 export type BodegaRetiro = {

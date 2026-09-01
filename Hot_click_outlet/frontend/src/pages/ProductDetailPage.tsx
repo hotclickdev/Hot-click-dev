@@ -26,6 +26,7 @@ export default function ProductDetailPage() {
     variantes, tallaSeleccionada, setTallaSeleccionada, mainCTARef,
     recentlyViewed, inStock, atMax, handleDecrease, handleIncrease, handleAdd,
     handleComprarAhora,
+    personalizacion, setPersonalizacion, contactoEncargo, setContactoEncargo, enviandoEncargo,
   } = useProductDetail(id, t)
 
   if (loading) {
@@ -70,6 +71,11 @@ export default function ProductDetailPage() {
             inStock={inStock}
             atMax={atMax}
             mainCTARef={mainCTARef}
+            personalizacion={personalizacion}
+            onPersonalizacionChange={setPersonalizacion}
+            contactoEncargo={contactoEncargo}
+            onContactoEncargoChange={setContactoEncargo}
+            enviandoEncargo={enviandoEncargo}
           />
         </div>
 

@@ -54,6 +54,11 @@ export type WizardForm = {
   metaKeywords: string
   tags: string
   seoByLang: SeoByLang
+  esPersonalizado: boolean
+  modoPrecioPersonalizado: 'FIJO' | 'RANGO' | 'COTIZACION'
+  precioPersonalizadoMin: string
+  precioPersonalizadoMax: string
+  instruccionesPersonalizacion: string
 }
 
 export type WizardCampoTexto = {
@@ -197,6 +202,11 @@ export const EMPTY_FORM: WizardForm = {
   sku: '', barcode: '',
   metaTitle: '', metaDescription: '', metaKeywords: '',
   tags: '',
+  esPersonalizado: false,
+  modoPrecioPersonalizado: 'FIJO',
+  precioPersonalizadoMin: '',
+  precioPersonalizadoMax: '',
+  instruccionesPersonalizacion: '',
   seoByLang: {
     es: { title: '', description: '' },
     en: { title: '', description: '' },
@@ -210,7 +220,7 @@ export const ALL_STEPS: WizardStep[] = [
   { id: 'fotos',         title: 'Fotos del producto',           subtitle: 'Subí fotos para que la IA complete los datos automáticamente', optional: true },
   { id: 'nombre',        title: '¿Cómo se llama el producto?',  subtitle: null, validate: f => !!f.nombre.trim(), validateMsg: 'El nombre es obligatorio' },
   { id: 'descripcion',   title: 'Describí el producto',         subtitle: 'Una frase corta que verán los clientes en la tienda', optional: true },
-  { id: 'precios',       title: 'Precios y stock',              subtitle: null, validate: f => !!f.precioVenta, validateMsg: 'El precio de venta es obligatorio' },
+  { id: 'precios',       title: 'Precios y stock',              subtitle: null, validate: validarPasoPrecios, validateMsg: 'Completá el precio o la configuración personalizada' },
   { id: 'clasificacion', title: 'Clasificación',                subtitle: 'Categoría, marca, condición y bodega', validate: f => !!f.categoriaId, validateMsg: 'La categoría es obligatoria' },
   { id: 'detalles',      title: 'Detalles del producto',        subtitle: 'Talla, garantía, SKU y código de barras', optional: true },
   { id: 'contenido',     title: 'Especificaciones y tags',      subtitle: 'Información técnica y etiquetas de búsqueda', optional: true },
@@ -226,6 +236,14 @@ export const SEO_LANGS: SeoLangOption[] = [
 ]
 
 export const DRAFT_KEY = 'hotclick-draft-producto'
+
+function validarPasoPrecios(f: WizardForm): boolean {
+  if (f.esPersonalizado && f.modoPrecioPersonalizado === 'COTIZACION') return true
+  if (f.esPersonalizado && f.modoPrecioPersonalizado === 'RANGO') {
+    return !!f.precioPersonalizadoMin && !!f.precioPersonalizadoMax
+  }
+  return !!f.precioVenta
+}
 
 /**
  * Pasos visibles según el rol. El paso SEO queda solo para ADMIN.

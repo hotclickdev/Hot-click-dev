@@ -58,6 +58,8 @@ public class DataRetentionScheduler {
         total += limpiarSesionesChatAsistente();
         total += limpiarColaFacturacionOffline();
         total += expirarIpsBloqueadas();
+        total += marcarEncargosVencidos();
+        total += limpiarEncargosViejos();
 
         long ms = System.currentTimeMillis() - inicio;
         if (total > 0) {
@@ -176,5 +178,36 @@ public class DataRetentionScheduler {
         } while (n == 500);
         if (total > 0) log.info("[retention] chat_sesion: {} sesiones eliminadas (> 30 días, mensajes en cascada)", total);
         return total;
+    }
+
+    private int marcarEncargosVencidos() {
+        try {
+            LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
+            int n = jdbc.update(
+                "UPDATE hot_click_encargo_tb SET estado = 'VENCIDO', fecha_actualizacion = ? " +
+                "WHERE estado = 'APROBADO' AND fecha_vencimiento IS NOT NULL AND fecha_vencimiento < ?",
+                ahora, ahora);
+            if (n > 0) log.info("[retention] encargos: {} marcados VENCIDO", n);
+            return n;
+        } catch (Exception e) {
+            log.warn("[retention] encargos vencidos: {}", e.getMessage());
+            return 0;
+        }
+    }
+
+    private int limpiarEncargosViejos() {
+        try {
+            LocalDateTime corte = LocalDateTime.now(Constants.ZONA_CR).minusDays(90);
+            int n = jdbc.update(
+                "DELETE FROM hot_click_encargo_tb WHERE ctid IN (" +
+                "SELECT ctid FROM hot_click_encargo_tb " +
+                "WHERE estado IN ('RECHAZADO', 'VENCIDO') AND fecha_creacion < ? LIMIT 500)",
+                corte);
+            if (n > 0) log.info("[retention] encargos: {} eliminados (> 90 días RECHAZADO/VENCIDO)", n);
+            return n;
+        } catch (Exception e) {
+            log.warn("[retention] encargos limpieza: {}", e.getMessage());
+            return 0;
+        }
     }
 }

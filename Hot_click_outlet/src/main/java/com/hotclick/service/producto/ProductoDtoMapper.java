@@ -50,6 +50,23 @@ public class ProductoDtoMapper {
         if (dto.getGrupoVarianteId()    != null) p.setGrupoVarianteId(sanitizer.cleanWithLimit(dto.getGrupoVarianteId(), 64));
         if (dto.getColorVariante()      != null) p.setColorVariante(sanitizer.cleanWithLimit(dto.getColorVariante(), 50));
         if (dto.getTags()               != null) p.setTags(sanitizer.cleanWithLimit(dto.getTags().toLowerCase(), 500));
+        if (dto.getEsPersonalizado()    != null) p.setEsPersonalizado(dto.getEsPersonalizado());
+        if (Boolean.TRUE.equals(dto.getEsPersonalizado())) {
+            if (dto.getModoPrecioPersonalizado() != null) {
+                p.setModoPrecioPersonalizado(dto.getModoPrecioPersonalizado());
+            }
+            p.setPrecioPersonalizadoMin(dto.getPrecioPersonalizadoMin());
+            p.setPrecioPersonalizadoMax(dto.getPrecioPersonalizadoMax());
+            if (dto.getInstruccionesPersonalizacion() != null) {
+                p.setInstruccionesPersonalizacion(
+                    sanitizer.cleanWithLimit(dto.getInstruccionesPersonalizacion(), 3000));
+            }
+        } else if (Boolean.FALSE.equals(dto.getEsPersonalizado())) {
+            p.setModoPrecioPersonalizado(null);
+            p.setPrecioPersonalizadoMin(null);
+            p.setPrecioPersonalizadoMax(null);
+            p.setInstruccionesPersonalizacion(null);
+        }
         Long mid = dto.getMarcaId();
         if (mid != null) {
             p.setMarca(marcaRepository.findById(mid)

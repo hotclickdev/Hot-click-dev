@@ -17,6 +17,9 @@ import {
   nombreError,
 } from './productoHelpers'
 import type { VarianteProducto } from './productoHelpers'
+import type { PersonalizacionCarrito } from '@/types/carrito'
+import { encargoService, encargoDesdeRespuesta } from '@/services/encargoService'
+import useAuthStore from '@/store/authStore'
 
 export function useProductDetail(id: string | undefined, t: TFunction) {
   const navigate = useNavigate()
@@ -35,6 +38,9 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
   const [activeImg, setActiveImg] = useState(0)
   const [variantes, setVariantes] = useState<VarianteProducto[]>([])
   const [tallaSeleccionada, setTallaSeleccionada] = useState<string | null>(null)
+  const [personalizacion, setPersonalizacion] = useState<PersonalizacionCarrito>({ imagenes: [], notas: '' })
+  const [contactoEncargo, setContactoEncargo] = useState({ nombre: '', email: '', telefono: '' })
+  const [enviandoEncargo, setEnviandoEncargo] = useState(false)
   const addTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const mainCTARef = useRef<HTMLButtonElement>(null)
   const addRecentlyViewed = useRecentlyViewedStore((s) => s.addItem)
@@ -161,18 +167,80 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
 
   const handleAdd = () => {
     if (!inStock || justAdded) return
+    if (product?.esPersonalizado && product.modoPrecioPersonalizado !== 'FIJO') {
+      void handleSolicitarEncargo()
+      return
+    }
+    if (product?.esPersonalizado && !tieneReferencia(personalizacion)) {
+      toast({ message: 'Subí al menos una imagen o escribí notas para el artista', type: 'warning' })
+      return
+    }
     agregarAlPedido({ conAviso: true })
   }
 
   const handleComprarAhora = () => {
     if (!inStock) return
+    if (product?.esPersonalizado && product.modoPrecioPersonalizado !== 'FIJO') {
+      void handleSolicitarEncargo()
+      return
+    }
+    if (product?.esPersonalizado && !tieneReferencia(personalizacion)) {
+      toast({ message: 'Subí al menos una imagen o escribí notas para el artista', type: 'warning' })
+      return
+    }
     if (!justAdded) agregarAlPedido({ conAviso: false })
     navigate('/checkout')
   }
 
+  async function handleSolicitarEncargo() {
+    if (!product || enviandoEncargo) return
+    if (!tieneReferencia(personalizacion)) {
+      toast({ message: 'Subí al menos una imagen o escribí notas para el artista', type: 'warning' })
+      return
+    }
+    const userName = useAuthStore.getState().userName
+    const userEmail = useAuthStore.getState().userEmail
+    const nombre = contactoEncargo.nombre.trim() || userName || ''
+    const email = contactoEncargo.email.trim() || userEmail || ''
+    if (!nombre || !email) {
+      toast({ message: 'Indicá tu nombre y email para enviar el encargo', type: 'warning' })
+      return
+    }
+    setEnviandoEncargo(true)
+    try {
+      const { data } = await encargoService.crear({
+        productoId: product.id as Id,
+        nombreCliente: nombre,
+        email,
+        telefono: contactoEncargo.telefono.trim() || undefined,
+        notas: personalizacion.notas,
+        tallaSeleccionada: tallaSeleccionada || undefined,
+        imagenes: personalizacion.imagenes || [],
+      })
+      const encargo = encargoDesdeRespuesta(data)
+      toast({ message: 'Encargo enviado. Te avisaremos cuando el artista responda.', type: 'success' })
+      if (encargo?.tokenPublico) navigate(`/encargo/${encargo.tokenPublico}`)
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+      toast({ message: msg || 'No se pudo enviar el encargo', type: 'error' })
+    } finally {
+      setEnviandoEncargo(false)
+    }
+  }
+
   function agregarAlPedido({ conAviso }: { conAviso: boolean }) {
     const productoActual = product as Producto
-    addItem({ ...normalizeProduct(productoActual), tallaSeleccionada } as Producto, quantity)
+    const pers = productoActual.esPersonalizado
+      ? {
+          ...personalizacion,
+          tallaSeleccionada: tallaSeleccionada || personalizacion.tallaSeleccionada,
+        }
+      : undefined
+    addItem({
+      ...normalizeProduct(productoActual),
+      tallaSeleccionada,
+      personalizacion: pers,
+    } as Producto, quantity)
     if (!conAviso) return
     const qtyPrefix = quantity > 1 ? `${quantity}× ` : ''
     toast({
@@ -189,5 +257,12 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
     variantes, tallaSeleccionada, setTallaSeleccionada, mainCTARef,
     recentlyViewed, inStock, atMax, handleDecrease, handleIncrease, handleAdd,
     handleComprarAhora,
+    personalizacion, setPersonalizacion, contactoEncargo, setContactoEncargo, enviandoEncargo,
   }
+}
+
+function tieneReferencia(p: PersonalizacionCarrito) {
+  const imgs = (p.imagenes || []).some(Boolean)
+  const notas = Boolean(p.notas?.trim())
+  return imgs || notas
 }

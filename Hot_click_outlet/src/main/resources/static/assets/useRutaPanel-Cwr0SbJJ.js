@@ -1,1 +1,0 @@
-import{a as e}from"./api-CgbvA26a.js";import{u as t}from"./planPaths-6rdiJ9IZ.js";import{t as n}from"./tenantStore-B26xjYk-.js";function r(){return t(e(e=>e.userRole),n(e=>e.planNombre))}export{r as t};
