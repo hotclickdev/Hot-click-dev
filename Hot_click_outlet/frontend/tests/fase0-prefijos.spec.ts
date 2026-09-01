@@ -100,7 +100,7 @@ test.describe('Fase 0 — URLs por rol', () => {
     await sesion(page, 'EMPRENDEDOR')
     await page.goto('/admin/productos', { waitUntil: 'domcontentloaded' })
     await expect(page).toHaveURL(/\/emprendedor\/productos/)
-    await expect(page.getByRole('heading', { name: 'Productos' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Mis Productos' })).toBeVisible()
   })
 
   test('ADMIN se queda en /admin, no en /emprendedor', async ({ page }) => {

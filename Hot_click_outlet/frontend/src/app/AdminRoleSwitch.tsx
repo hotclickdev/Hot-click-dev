@@ -21,8 +21,8 @@ function SpinnerRuta() {
 }
 
 /**
- * `/admin/*`: Super Admin (IT) en AdminLayout. El vendedor va al prefijo Figma de su plan;
- * solo POS permanece en `/admin/pos` (POSShell).
+ * `/admin/*`: Super Admin (IT) en AdminLayout. El vendedor va al prefijo de su plan,
+ * salvo POS / configuración / billing / copilot (herramientas reales).
  */
 export default function AdminRoleSwitch() {
   const { token, userRole } = useAuthStore()
