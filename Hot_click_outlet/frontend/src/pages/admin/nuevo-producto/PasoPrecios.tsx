@@ -91,7 +91,7 @@ function SeccionPersonalizado({ form, setForm }: {
 }) {
   return (
     <div className="rounded-2xl border p-4 space-y-3" style={{ borderColor: 'var(--hc-border)' }}>
-      <label className="flex items-start gap-3 cursor-pointer">
+      <label className="flex items-start gap-3 cursor-pointer" aria-label="Producto personalizado / por encargo">
         <input
           type="checkbox"
           className="mt-1"
@@ -115,15 +115,21 @@ function SeccionPersonalizado({ form, setForm }: {
       {form.esPersonalizado && (
         <>
           <div>
-            <Label>Cómo se define el precio</Label>
-            <div className="grid gap-2 mt-1">
+            <p className="text-xs block mb-1.5" style={{ color: 'var(--hc-muted)' }} id="modo-precio-wizard">
+              Cómo se define el precio
+            </p>
+            <div className="grid gap-2 mt-1" role="radiogroup" aria-labelledby="modo-precio-wizard">
               {([
                 ['FIJO', 'Precio fijo', 'El cliente paga de una vez (ej. camisa sublimada ₡8.000).'],
                 ['RANGO', 'Rango de precio', 'Mostrás “desde–hasta” y aprobás un monto dentro del rango.'],
                 ['COTIZACION', 'Cotización', 'Sin precio público: revisás las fotos y cotizás después.'],
               ] as const).map(([valor, titulo, ayuda]) => (
-                <label key={valor} className="flex gap-2 items-start rounded-xl px-3 py-2 cursor-pointer"
-                  style={{ background: form.modoPrecioPersonalizado === valor ? 'rgba(231,59,51,0.06)' : 'transparent', border: '1px solid var(--hc-border)' }}>
+                <label
+                  key={valor}
+                  className="flex gap-2 items-start rounded-xl px-3 py-2 cursor-pointer"
+                  style={{ background: form.modoPrecioPersonalizado === valor ? 'rgba(231,59,51,0.06)' : 'transparent', border: '1px solid var(--hc-border)' }}
+                  aria-label={titulo}
+                >
                   <input
                     type="radio"
                     name="modoPrecioPersonalizado"
@@ -143,8 +149,9 @@ function SeccionPersonalizado({ form, setForm }: {
             </div>
           </div>
           <div>
-            <Label>Instrucciones para el cliente</Label>
+            <Label htmlFor="instrucciones-personalizacion-wizard">Instrucciones para el cliente</Label>
             <textarea
+              id="instrucciones-personalizacion-wizard"
               className={inp}
               style={{ ...inpStyle, minHeight: 88 }}
               value={form.instruccionesPersonalizacion}

@@ -11,6 +11,11 @@ export type DatosProductoVendedor = {
   stock: string
   categoria: string
   estado?: 'Publicado' | 'Pausado'
+  esPersonalizado?: boolean
+  modoPrecioPersonalizado?: 'FIJO' | 'RANGO' | 'COTIZACION'
+  precioPersonalizadoMin?: string
+  precioPersonalizadoMax?: string
+  instruccionesPersonalizacion?: string
 }
 
 function listaDesdeRespuesta(data: Producto[] | { content: Producto[] }): Producto[] {
@@ -72,6 +77,11 @@ function cuerpoProducto(datos: DatosProductoVendedor) {
       precioCompra: datos.precioCompra,
       precioVenta: datos.precioVenta,
       stock: datos.stock,
+      esPersonalizado: datos.esPersonalizado === true,
+      modoPrecioPersonalizado: datos.modoPrecioPersonalizado,
+      precioPersonalizadoMin: datos.precioPersonalizadoMin,
+      precioPersonalizadoMax: datos.precioPersonalizadoMax,
+      instruccionesPersonalizacion: datos.instruccionesPersonalizacion,
     }),
     visibleCatalogo: datos.estado !== 'Pausado',
     tags: datos.categoria || null,
