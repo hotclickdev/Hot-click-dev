@@ -54,15 +54,20 @@ test.describe('Emprende — una puerta, no un laberinto', () => {
     await page.goto('/emprende', { waitUntil: 'domcontentloaded' })
 
     await expect(page.getByRole('heading', { name: /crecé tu negocio/i })).toBeVisible()
-    await expect(page.locator('ol').getByRole('link', { name: /crear mi negocio/i })).toHaveAttribute(
+    await expect(page.getByRole('heading', { name: /paso a paso/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /qué pide el formulario/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /qué te llevás al vender/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /más información/i })).toBeVisible()
+    await expect(page.getByAltText('Interior de un local comercial')).toBeVisible()
+    await expect(page.locator('ol').getByRole('link', { name: /crear mi negocio/i }).first()).toHaveAttribute(
       'href',
       '/registro-empresa',
     )
     await expect(page.getByRole('link', { name: /publicar el primer producto/i })).toHaveCount(0)
     await expect(page.getByRole('link', { name: /elegir plan/i })).toHaveCount(0)
-    await expect(page.getByText('Publicar el primer producto')).toBeVisible()
+    await expect(page.getByText('Publicar el primer producto', { exact: true })).toBeVisible()
     await expect(page.getByText('Después del alta, en Sistema. Sin producto no hay venta.')).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Crear mi negocio', exact: true })).toHaveAttribute(
+    await expect(page.getByRole('link', { name: 'Crear mi negocio', exact: true }).first()).toHaveAttribute(
       'href',
       '/registro-empresa',
     )
@@ -88,5 +93,6 @@ test.describe('Emprende — una puerta, no un laberinto', () => {
     )
     await expect(page.getByRole('link', { name: /ver tu plan/i })).toHaveAttribute('href', '/emprendedor/opciones/plan')
     await expect(page.getByRole('link', { name: 'Ir a Sistema' })).toHaveAttribute('href', '/emprendedor')
+    await expect(page.getByRole('heading', { name: /más información/i })).toHaveCount(0)
   })
 })

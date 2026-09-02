@@ -1,4 +1,5 @@
 import EmprendeHero from './EmprendeHero'
+import EmprendeGaleria from './EmprendeGaleria'
 import EmprendeProceso from './EmprendeProceso'
 import EmprendeFormulario from './EmprendeFormulario'
 import EmprendeBeneficios from './EmprendeBeneficios'
@@ -11,6 +12,7 @@ export default function EmprendeLanding() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
       <EmprendeHero yaEsDuenio={false} />
+      <EmprendeGaleria />
       <EmprendeProceso />
       <EmprendeFormulario />
       <EmprendeBeneficios />

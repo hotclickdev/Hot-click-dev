@@ -19,10 +19,11 @@ function ListaPuntos({ planId }: { planId: string }) {
   const { t } = useTranslation()
   const puntos = t(`emprende.plan${capitalize(planId)}Puntos`, { returnObjects: true })
   if (!Array.isArray(puntos)) return null
+  const textos = puntos.filter((punto): punto is string => typeof punto === 'string')
 
   return (
     <ul className="flex flex-col gap-2 flex-1">
-      {puntos.map((punto) => (
+      {textos.map((punto) => (
         <li key={punto} className="flex gap-2 text-sm" style={{ color: 'var(--hc-text)' }}>
           <span className="shrink-0 mt-0.5" style={{ color: 'var(--hc-success, #22c55e)' }}>
             <TrustGlyph tipo="check" className="w-4 h-4" />
