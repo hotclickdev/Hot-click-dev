@@ -99,4 +99,11 @@ public class Constants {
 
     /** Cliente genérico de ventas de mostrador (POS sin cliente elegido). */
     public static final Long ID_USUARIO_MOSTRADOR = 999L;
+
+    /** Primeros cupos de plan Emprendedor sin membresía de pago. */
+    public static final int CUPO_EMPRENDEDORES_GRATIS = 70;
+
+    public static final String ESTADO_PLAN_REQUIERE_MEMBRESIA = "REQUIERE_MEMBRESIA";
+
+    public static final String CORREO_DEMO_EMPRESA_SUFIJO = "@hotclick.test";
 }

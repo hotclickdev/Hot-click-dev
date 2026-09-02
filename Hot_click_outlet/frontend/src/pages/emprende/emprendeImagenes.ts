@@ -4,7 +4,7 @@ type FotoEmprende = {
   altKey: string
 }
 
-/** Fotos de comercios: archivo local primero, Unsplash de respaldo. */
+/** Fotos de comercios y ferias: archivo local primero, Unsplash de respaldo. */
 export const FOTOS_EMPRENDE = {
   local: {
     local: '/emprende/local.jpg',
@@ -36,6 +36,21 @@ export const FOTOS_EMPRENDE = {
     fallback: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&q=80',
     altKey: 'emprende.fotoRegistroAlt',
   },
+  feria1: {
+    local: '/emprende/feria-1.jpg',
+    fallback: 'https://images.unsplash.com/photo-1533900298318-6b8da08a523e?w=800&q=80',
+    altKey: 'emprende.fotoFeria1Alt',
+  },
+  feria2: {
+    local: '/emprende/feria-2.jpg',
+    fallback: 'https://images.unsplash.com/photo-1506483255810-1c797d702389?w=800&q=80',
+    altKey: 'emprende.fotoFeria2Alt',
+  },
+  feria3: {
+    local: '/emprende/feria-3.jpg',
+    fallback: 'https://images.unsplash.com/photo-1515165562839-978bb86d3fde?w=800&q=80',
+    altKey: 'emprende.fotoFeria3Alt',
+  },
 } as const satisfies Record<string, FotoEmprende>
 
 export const FOTOS_GALERIA: readonly FotoEmprende[] = [
@@ -43,6 +58,21 @@ export const FOTOS_GALERIA: readonly FotoEmprende[] = [
   FOTOS_EMPRENDE.caja,
   FOTOS_EMPRENDE.tienda,
   FOTOS_EMPRENDE.cafe,
+]
+
+export const FOTOS_FERIA: readonly FotoEmprende[] = [
+  FOTOS_EMPRENDE.mercado,
+  FOTOS_EMPRENDE.feria1,
+  FOTOS_EMPRENDE.feria2,
+  FOTOS_EMPRENDE.feria3,
+]
+
+export const FOTOS_FASES: readonly FotoEmprende[] = [
+  FOTOS_EMPRENDE.feria1,
+  FOTOS_EMPRENDE.registro,
+  FOTOS_EMPRENDE.tienda,
+  FOTOS_EMPRENDE.caja,
+  FOTOS_EMPRENDE.local,
 ]
 
 export const FOTOS_PROCESO: readonly FotoEmprende[] = [

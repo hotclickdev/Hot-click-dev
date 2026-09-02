@@ -1,5 +1,6 @@
 package com.hotclick.service.email;
 
+import com.hotclick.dto.CupoEmprendedorEstado;
 import com.hotclick.service.ResendEmailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,6 +73,18 @@ public class NotificacionNegocioEmailSender {
             log.info("Email invitación miembro enviado a {}", correo);
         } catch (Exception e) {
             log.error("No se pudo enviar email de invitación a {}: {}", correo, e.getMessage());
+        }
+    }
+
+    public void enviarAltaEmprendedorAdmin(String correoAdmin, String nombreEmpresa, String correo,
+                                          boolean cupoGratis, CupoEmprendedorEstado estado) {
+        try {
+            resendEmailService.send(correoAdmin,
+                "Nueva alta de emprendimiento — " + emailLayoutHelper.esc(nombreEmpresa),
+                negocioEmailBuilder.buildAltaEmprendedorAdmin(nombreEmpresa, correo, cupoGratis, estado));
+            log.info("Email alta emprendedor enviado a admin {}", correoAdmin);
+        } catch (Exception e) {
+            log.error("No se pudo enviar email de alta emprendedor a {}: {}", correoAdmin, e.getMessage());
         }
     }
 }

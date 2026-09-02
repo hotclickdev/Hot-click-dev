@@ -3,6 +3,7 @@ package com.hotclick.service;
 
 
 import com.hotclick.dto.CarritoAbandonadoRequestDTO;
+import com.hotclick.dto.CupoEmprendedorEstado;
 
 import com.hotclick.model.Pedido;
 
@@ -207,6 +208,20 @@ public class NotificacionEmailService {
                                         String nombreEmpresa, String passwordPlano) {
 
         negocioEmailSender.enviarInvitacionMiembro(correo, nombre, rolEnEmpresa, nombreEmpresa, passwordPlano);
+
+    }
+
+
+
+    @Async
+
+    public void enviarAltaEmprendedorAAdminIT(String nombreEmpresa, String correo,
+
+                                              boolean cupoGratis, CupoEmprendedorEstado estado) {
+
+        if (adminItEmail == null || adminItEmail.isBlank()) return;
+
+        negocioEmailSender.enviarAltaEmprendedorAdmin(adminItEmail, nombreEmpresa, correo, cupoGratis, estado);
 
     }
 
