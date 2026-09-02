@@ -1,1 +1,0 @@
-import{t as e,u as t}from"./planPaths-CzbDXQ_Q.js";var n=`/registro-empresa`,r=`/registrar-negocio`,i=e;function a({tokenVivo:e,rol:i,empresaId:a,planNombre:s}){return e?o(i,a)?t(i,s):r:n}function o(e,t){return e===`EMPRENDEDOR`||e===`ADMIN`?!0:!!t&&e!==`USUARIO_FINAL`}export{a as i,r as n,n as r,i as t};
