@@ -61,13 +61,21 @@ export type FormularioBusquedaProps = {
   handleEnviar: (e: FormEvent<HTMLFormElement>) => void
   handleFotoChange: (e: ChangeEvent<HTMLInputElement>) => void
   t: TFunction
+  etiquetaEnviar?: string
+  descLabel?: string
+  descPh?: string
+  ocultarPresupuesto?: boolean
 }
 
 /** Formulario de solicitud de búsqueda de producto (éxito o campos). */
 export default function FormularioBusqueda({
   token, success, setSuccess, setTabBusqueda, form, setForm, phone, setPhone,
   fotos, setFotos, uploading, sending, error, fileRef, handleEnviar, handleFotoChange, t,
+  etiquetaEnviar, descLabel, descPh, ocultarPresupuesto = false,
 }: FormularioBusquedaProps) {
+  const labelDesc = descLabel ?? t('serviciosPage.descLabelFull')
+  const placeholderDesc = descPh ?? t('serviciosPage.descPhFull')
+  const textoEnviar = etiquetaEnviar ?? t('serviciosPage.submit')
   if (success) {
     return (
       <div className="text-center py-16 rounded-3xl"
@@ -93,8 +101,8 @@ export default function FormularioBusqueda({
   return (
     <form onSubmit={handleEnviar} className="rounded-3xl p-6 sm:p-8 space-y-6"
       style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
-      <Field label={t('serviciosPage.descLabelFull')} required>
-        <textarea rows={4} placeholder={t('serviciosPage.descPhFull')}
+      <Field label={labelDesc} required>
+        <textarea rows={4} placeholder={placeholderDesc}
           value={form.descripcion}
           onChange={e => setForm(f => ({ ...f, descripcion: e.target.value }))}
           style={{ ...inputStyle, resize: 'none' }} />
@@ -131,12 +139,14 @@ export default function FormularioBusqueda({
         </p>
       </Field>
 
-      <Field label={t('serviciosPage.budgetLabelFull')} hint="Opcional">
-        <input type="text" placeholder={t('serviciosPage.budgetPhFull')}
-          value={form.presupuesto}
-          onChange={e => setForm(f => ({ ...f, presupuesto: e.target.value }))}
-          style={inputStyle} />
-      </Field>
+      {!ocultarPresupuesto && (
+        <Field label={t('serviciosPage.budgetLabelFull')} hint="Opcional">
+          <input type="text" placeholder={t('serviciosPage.budgetPhFull')}
+            value={form.presupuesto}
+            onChange={e => setForm(f => ({ ...f, presupuesto: e.target.value }))}
+            style={inputStyle} />
+        </Field>
+      )}
 
       <PhoneField label="Número de teléfono" value={phone} onChange={setPhone} required hint="Te avisamos por WhatsApp" />
 
@@ -165,7 +175,7 @@ export default function FormularioBusqueda({
               {t('serviciosPage.sending')}
             </span>
           : <span className="flex items-center justify-center gap-2">
-              <SendIcon /> {t('serviciosPage.submit')}
+              <SendIcon /> {textoEnviar}
             </span>
         }
       </motion.button>

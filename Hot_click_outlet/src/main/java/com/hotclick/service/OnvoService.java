@@ -31,6 +31,9 @@ public class OnvoService {
     @Value("${onvo.webhook-secret:}")
     private String webhookSecret;
 
+    @Value("${onvo.publishable-key:}")
+    private String publishableKey;
+
     private final RestTemplate restTemplate;
 
     private boolean mockMode = false;
@@ -52,10 +55,15 @@ public class OnvoService {
 
     public String getWebhookSecret() { return webhookSecret; }
 
+    public String getPublishableKey() { return publishableKey != null ? publishableKey : ""; }
+
     public boolean isMockMode() { return mockMode; }
 
     /** Resultado de crear una sesión de checkout hospedado en ONVO. */
     public record OnvoCheckoutSession(String id, String url) {}
+
+    /** Payment intent para el SDK embebido (Apple Pay, Google Pay, tarjeta). */
+    public record OnvoPaymentIntent(String id) {}
 
     /**
      * Crea una sesión de checkout hospedado en modo pago único (one-time-link).
@@ -106,6 +114,56 @@ public class OnvoService {
         String url = String.valueOf(respBody.get("url"));
         log.info("[onvo] Checkout session creada: {}", id);
         return new OnvoCheckoutSession(id, url);
+    }
+
+    /**
+     * Crea un payment intent para cobro embebido con el Web SDK de ONVO.
+     * Monto en unidad menor (colones × 100).
+     */
+    @CircuitBreaker(name = "onvo", fallbackMethod = "crearPaymentIntentFallback")
+    @Retry(name = "onvo")
+    public OnvoPaymentIntent crearPaymentIntent(int totalColones, String descripcion,
+                                                Map<String, String> metadata) {
+        if (mockMode) {
+            return new OnvoPaymentIntent("onvo_pi_mock_" + System.currentTimeMillis());
+        }
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("amount", totalColones * 100L);
+        body.put("currency", "CRC");
+        body.put("description", descripcion);
+        if (metadata != null && !metadata.isEmpty()) {
+            body.put("metadata", metadata);
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(secretKey);
+
+        ResponseEntity<Map> resp = restTemplate.exchange(
+            API_BASE + "/payment-intents",
+            HttpMethod.POST,
+            new HttpEntity<>(body, headers),
+            Map.class
+        );
+
+        Map<?, ?> respBody = resp.getBody();
+        if (respBody == null || respBody.get("id") == null) {
+            throw new IllegalStateException("Respuesta inválida de ONVO al crear payment intent");
+        }
+
+        String id = String.valueOf(respBody.get("id"));
+        log.info("[onvo] Payment intent creado: {}", id);
+        return new OnvoPaymentIntent(id);
+    }
+
+    // fallback — invocado por Resilience4j cuando el circuit está OPEN o se agota el retry
+
+    private OnvoPaymentIntent crearPaymentIntentFallback(int totalColones, String descripcion,
+                                                         Map<String, String> metadata,
+                                                         Throwable t) {
+        log.error("[onvo-circuit] OPEN crearPaymentIntent: {}", t.getMessage());
+        throw new IllegalStateException("Servicio de pagos no disponible temporalmente", t);
     }
 
     // fallback — invocado por Resilience4j cuando el circuit está OPEN o se agota el retry

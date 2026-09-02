@@ -49,6 +49,11 @@ public class PosQrService {
     }
 
     @Transactional
+    public Map<String, String> crearPaymentIntent(String token) {
+        return ventaService.crearPaymentIntent(token);
+    }
+
+    @Transactional
     public String verificarEstado(String token) {
         return ventaService.verificarEstado(token);
     }

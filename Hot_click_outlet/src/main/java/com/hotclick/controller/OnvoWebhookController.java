@@ -79,6 +79,18 @@ public class OnvoWebhookController {
                         onvoPaymentProvider.procesarPagoExitoso(sessionId, payload, "webhook");
                     }
                 }
+                case "payment-intent.succeeded" -> {
+                    String intentId = data.path("id").asText(null);
+                    if (intentId == null) {
+                        log.error("[onvo-webhook] payment-intent.succeeded sin id");
+                        return ResponseEntity.badRequest().body(Map.of("error", "missing id"));
+                    }
+                    if (posQrVentaService.completarSiPagoPasarela(intentId)) {
+                        log.info("[onvo-webhook] Pago POS QR confirmado intent={}", intentId);
+                    } else {
+                        log.debug("[onvo-webhook] payment-intent.succeeded sin sesión POS: {}", intentId);
+                    }
+                }
                 case "payment-intent.failed" -> {
                     String motivo = data.path("error").path("message").asText("sin_detalle");
                     log.warn("[onvo-webhook] payment-intent.failed id={} motivo='{}'",

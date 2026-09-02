@@ -8,7 +8,7 @@ export const serviciosJsonLd = {
   name: 'Servicios HotClick',
   description: 'Servicios disponibles para clientes de HotClick Marketplace Costa Rica.',
   url: `${SITE_URL}/servicios`,
-  numberOfItems: 2,
+  numberOfItems: 3,
   itemListElement: [
     {
       '@type': 'ListItem',
@@ -43,8 +43,27 @@ export const serviciosJsonLd = {
         offers: { '@type': 'Offer', price: '0', priceCurrency: 'CRC', availability: 'https://schema.org/InStock' },
       },
     },
+    {
+      '@type': 'ListItem',
+      position: 3,
+      item: {
+        '@type': 'Service',
+        name: 'Digitalización y etiquetado de inventario',
+        description: 'Digitalizamos el inventario de tu negocio en el local: escaneo de códigos de barras, registro manual, SKU internos HOTCLICK y etiquetas impresas para productos sin código.',
+        provider: { '@type': 'Organization', name: 'HotClick', url: SITE_URL },
+        areaServed: { '@type': 'Country', name: 'Costa Rica' },
+        availableChannel: {
+          '@type': 'ServiceChannel',
+          serviceUrl: `${SITE_URL}/servicios`,
+          servicePhone: '+506-8666-7888',
+        },
+      },
+    },
   ],
 }
+
+/** Prefijo en descripción al solicitar digitalización de inventario (admin). */
+export const PREFIJO_SOLICITUD_INVENTARIO = '[Digitalización de inventario]'
 
 /** Estilos de badge por estado de solicitud de búsqueda. */
 export const ESTADO_STYLES: Record<string, { color: string; bg: string }> = {
@@ -94,9 +113,14 @@ export const CARD_IMAGES = {
     fallback: 'https://images.unsplash.com/photo-1556742031-c6961e8560b0?w=800&q=80',
     alt: 'Dejar reseña',
   },
+  inventario: {
+    local: '/servicios/inventario.jpg',
+    fallback: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800&q=80',
+    alt: 'Digitalización de inventario',
+  },
 }
 
-export type VistaServicios = 'inicio' | 'busqueda' | 'garantia' | 'testimonio'
+export type VistaServicios = 'inicio' | 'busqueda' | 'garantia' | 'testimonio' | 'inventario'
 export type TabBusqueda = 'solicitar' | 'mis-solicitudes'
 
 export type FormBusqueda = {

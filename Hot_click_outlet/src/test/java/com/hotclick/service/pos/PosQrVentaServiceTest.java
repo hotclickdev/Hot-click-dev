@@ -84,6 +84,25 @@ class PosQrVentaServiceTest {
     }
 
     @Test
+    @DisplayName("Crea payment intent ONVO para SDK embebido")
+    void creaPaymentIntentOnvo() {
+        PosQrSesion sesion = sesionTarjeta();
+        when(sessionService.findSesionActiva("tokentarjetaqr01")).thenReturn(sesion);
+        when(sessionService.getMapper()).thenReturn(new ObjectMapper());
+        when(onvoService.isMockMode()).thenReturn(false);
+        when(onvoService.getPublishableKey()).thenReturn("onvo_test_publishable");
+        when(onvoService.crearPaymentIntent(eq(5000), any(), any()))
+            .thenReturn(new OnvoService.OnvoPaymentIntent("onvo_pi_pos"));
+        when(posQrRepo.save(sesion)).thenReturn(sesion);
+
+        Map<String, String> res = service.crearPaymentIntent("tokentarjetaqr01");
+
+        assertThat(res).containsEntry("paymentIntentId", "onvo_pi_pos");
+        assertThat(res).containsEntry("publishableKey", "onvo_test_publishable");
+        assertThat(sesion.getStripeSessionId()).isEqualTo("onvo_pi_pos");
+    }
+
+    @Test
     @DisplayName("Webhook POS completa la venta pendiente")
     void webhookCompletaVentaPendiente() {
         PosQrSesion sesion = sesionTarjeta();

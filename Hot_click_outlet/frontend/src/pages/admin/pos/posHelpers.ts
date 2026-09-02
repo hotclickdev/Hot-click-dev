@@ -117,7 +117,12 @@ export function qrDataDesdeRespuesta(data: unknown, totalFallback: number): PosQ
 }
 
 export function enlacePagoPosQr(token: string) {
-  return `${globalThis.location.origin}/pos/pago/${token}`
+  // Preferir URL pública (celular no puede abrir localhost del cajero).
+  const publica = (import.meta.env.VITE_PUBLIC_APP_URL as string | undefined)?.replace(/\/$/, '')
+  const base = publica && /^https?:\/\//.test(publica)
+    ? publica
+    : globalThis.location.origin
+  return `${base}/pos/pago/${token}`
 }
 
 export type PosVentaItem = {
