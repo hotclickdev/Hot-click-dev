@@ -1,23 +1,10 @@
 import { motion } from 'framer-motion'
 import useWishlistStore from '@/store/wishlistStore'
-import { formatPrice } from '@/utils/format'
 import type { TFunction } from 'i18next'
 import type { Producto } from '@/types/producto'
 import type { Id } from '@/types/api'
 import HeartDetailIcon from './HeartDetailIcon'
-
-function textoPrecioPersonalizado(product: Producto): string | null {
-  if (!product.esPersonalizado) return null
-  if (product.modoPrecioPersonalizado === 'COTIZACION') return 'A cotizar'
-  if (
-    product.modoPrecioPersonalizado === 'RANGO'
-    && product.precioPersonalizadoMin != null
-    && product.precioPersonalizadoMax != null
-  ) {
-    return `Desde ${formatPrice(product.precioPersonalizadoMin)}`
-  }
-  return null
-}
+import { textoPrecioProducto } from '@/utils/precioProducto'
 
 type ProductPriceRowProps = {
   product: Producto
@@ -31,7 +18,7 @@ export default function ProductPriceRow({ product, t }: ProductPriceRowProps) {
   return (
     <div className="flex items-center gap-3 flex-wrap">
       <span className="text-3xl sm:text-4xl font-bold text-[#e8e8ed]">
-        {textoPrecioPersonalizado(product) ?? formatPrice(product.precio)}
+        {textoPrecioProducto(product)}
       </span>
       <motion.button
         onClick={() => toggleWishlist(product)}

@@ -170,7 +170,7 @@ export const productService = {
     api.post('/productos/bulk', dtos),
 
   uploadImage: (formData: FormData) =>
-    api.post('/productos/imagen', formData, { headers: { 'Content-Type': undefined } }),
+    api.post('/productos/imagen', formData, { timeout: 60000 }),
 
   getDestacados: () =>
     api.get('/productos/destacados')

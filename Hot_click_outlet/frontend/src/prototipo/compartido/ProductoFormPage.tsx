@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Boton, Campo, Chip, EncabezadoPagina } from './ui'
 import { useSellerRuta } from './SellerPlanContext'
@@ -9,16 +9,16 @@ import {
   publicarProductoVendedor,
 } from './catalogoVendedorApi'
 import CamposPersonalizadoProducto from './CamposPersonalizadoProducto'
+import ChipsCategoriaVendedor from './ChipsCategoriaVendedor'
 import ZonaFotoProducto from './ZonaFotoProducto'
+import { idCategoriaValido } from './categoriaVendedor'
 import {
   type ModoPrecioPersonalizado,
-  modosPrecioPersonalizadoHabilitados,
+  errorCatalogoProducto,
+  errorPreciosPersonalizado,
   preciosAlPublicar,
   tituloFormProducto,
 } from './personalizadoProductoHelpers'
-
-const CATEGORIAS = ['Tecnología', 'Ropa', 'Otro'] as const
-type CategoriaForm = (typeof CATEGORIAS)[number]
 
 type Props = Readonly<{ personalizado?: boolean }>
 
@@ -36,7 +36,8 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
   const [venta, setVenta] = useState('')
   const [descripcion, setDescripcion] = useState('')
   const [stock, setStock] = useState('')
-  const [categoria, setCategoria] = useState<CategoriaForm>('Tecnología')
+  const [categoria, setCategoria] = useState('')
+  const [categoriaId, setCategoriaId] = useState('')
   const [estado, setEstado] = useState<'Publicado' | 'Pausado'>('Publicado')
   const [instrucciones, setInstrucciones] = useState('')
   const [modoPrecio, setModoPrecio] = useState<ModoPrecioPersonalizado>('COTIZACION')
@@ -45,6 +46,7 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
   const [imagenUrl, setImagenUrl] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [iniciado, setIniciado] = useState(false)
+  const [guardando, setGuardando] = useState(false)
   const editar = Boolean(id)
   const esPersonalizado = personalizado && !editar
     ? true
@@ -58,6 +60,7 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
     setDescripcion(existente.descripcion)
     setStock(String(existente.stock))
     setCategoria(existente.categoria)
+    setCategoriaId(existente.categoriaId ?? '')
     setEstado(existente.estado)
     setInstrucciones(existente.instruccionesPersonalizacion ?? '')
     setModoPrecio((existente.modoPrecioPersonalizado as ModoPrecioPersonalizado) || 'COTIZACION')
@@ -67,14 +70,30 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
     setIniciado(true)
   }, [existente, iniciado])
 
+  const elegirCategoria = useCallback((idCat: string, nombreCat: string) => {
+    setCategoriaId(idCat)
+    setCategoria(nombreCat)
+  }, [])
+
   async function enviar(evento: FormEvent) {
     evento.preventDefault()
+    if (guardando) return
     if (!nombre.trim()) {
       setError('Escribí el nombre del producto.')
       return
     }
-    if (esPersonalizado && modosPrecioPersonalizadoHabilitados() && modoPrecio === 'RANGO' && (!precioMin || !precioMax)) {
-      setError('Indicá el rango de precio (mínimo y máximo).')
+    if (!idCategoriaValido(categoriaId)) {
+      setError('Seleccioná una categoría.')
+      return
+    }
+    const errorCatalogo = errorCatalogoProducto(esPersonalizado, venta, stock)
+    if (errorCatalogo) {
+      setError(errorCatalogo)
+      return
+    }
+    const errorPrecios = errorPreciosPersonalizado(esPersonalizado, modoPrecio, venta, precioMin, precioMax)
+    if (errorPrecios) {
+      setError(errorPrecios)
       return
     }
     const precios = preciosAlPublicar(esPersonalizado, compra, venta, {
@@ -89,6 +108,7 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
       descripcion,
       stock,
       categoria,
+      categoriaId,
       estado,
       esPersonalizado: esPersonalizado || undefined,
       modoPrecioPersonalizado: precios.modoPrecioPersonalizado,
@@ -97,12 +117,16 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
       instruccionesPersonalizacion: esPersonalizado ? instrucciones : undefined,
       imagenUrl: imagenUrl || undefined,
     }
+    setGuardando(true)
+    setError(null)
     try {
       if (id) await guardarProductoVendedor(id, datos)
       else await publicarProductoVendedor(datos)
       navigate(ruta('productos'))
     } catch (err: unknown) {
       setError(mensajeErrorProducto(err, 'No se pudo guardar el producto.'))
+    } finally {
+      setGuardando(false)
     }
   }
 
@@ -112,8 +136,8 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
     <main className="px-5 pb-8 pt-[60px]">
       <EncabezadoPagina titulo={tituloFormProducto(editar, esPersonalizado)} volverA={volverA} />
       {cargando && editar && !existente ? <p className="text-sm text-hc-muted">Cargando…</p> : null}
-      <ZonaFotoProducto imagenUrl={imagenUrl} onImagenChange={setImagenUrl} />
       <form onSubmit={(e) => void enviar(e)}>
+        <ZonaFotoProducto imagenUrl={imagenUrl} onImagenChange={setImagenUrl} />
         <Campo etiqueta="Nombre del producto" value={nombre} onChange={setNombre} placeholder="Ej: Camiseta Oversize Negra" />
         {!esPersonalizado ? (
           <>
@@ -140,10 +164,8 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
         <Campo etiqueta="Descripción" value={descripcion} onChange={setDescripcion} placeholder="Ej: Auriculares con estuche de carga..." />
         <Campo etiqueta="Stock disponible" value={stock} onChange={setStock} placeholder="Ej: 10" type="number" />
         <p className="mb-2 text-xs font-medium text-hc-muted">Categoría</p>
-        <div className="mb-4 flex gap-2">
-          {CATEGORIAS.map((item) => (
-            <Chip key={item} activo={categoria === item} onClick={() => setCategoria(item)}>{item}</Chip>
-          ))}
+        <div className="mb-4">
+          <ChipsCategoriaVendedor categoriaId={categoriaId} onChange={elegirCategoria} />
         </div>
         {editar ? (
           <>
@@ -155,7 +177,7 @@ export default function ProductoFormPage({ personalizado = false }: Props) {
           </>
         ) : null}
         {error ? <p className="mb-3 text-sm text-hc-danger">{error}</p> : null}
-        <Boton type="submit">{editar ? 'Guardar cambios' : 'Publicar producto'}</Boton>
+        <Boton type="submit">{guardando ? (editar ? 'Guardando…' : 'Publicando…') : (editar ? 'Guardar cambios' : 'Publicar producto')}</Boton>
         {editar && id ? (
           <div className="mt-3">
             <Boton variante="suave" to={ruta(`productos/${id}/eliminar`)}>Eliminar producto</Boton>

@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { formatPrice, conditionLabel, conditionVariant } from '@/utils/format'
+import { conditionLabel, conditionVariant } from '@/utils/format'
+import { textoPrecioProducto } from '@/utils/precioProducto'
 import Badge, { type BadgeProps } from '@/components/ui/Badge'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import CloseIcon from '@/components/ui/CloseIcon'
@@ -57,7 +58,7 @@ export default function QuickViewInfo({ product, inStock, onClose, children }: Q
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-2xl font-bold text-[#e8e8ed]">{formatPrice(product.precio)}</span>
+          <span className="text-2xl font-bold text-[#e8e8ed]">{textoPrecioProducto(product)}</span>
           <div className="flex items-center gap-1.5">
             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${inStock ? 'bg-emerald-400' : 'bg-red-400'}`} />
             <span className={`text-xs font-medium ${inStock ? 'text-emerald-400' : 'text-red-400'}`}>

@@ -166,11 +166,12 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
   }
 
   const handleAdd = () => {
-    if (!inStock || justAdded) return
+    if (justAdded) return
     if (product?.esPersonalizado && product.modoPrecioPersonalizado !== 'FIJO') {
       void handleSolicitarEncargo()
       return
     }
+    if (!inStock) return
     if (product?.esPersonalizado && !tieneReferencia(personalizacion)) {
       toast({ message: 'Subí al menos una imagen o escribí notas para el artista', type: 'warning' })
       return
@@ -179,11 +180,11 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
   }
 
   const handleComprarAhora = () => {
-    if (!inStock) return
     if (product?.esPersonalizado && product.modoPrecioPersonalizado !== 'FIJO') {
       void handleSolicitarEncargo()
       return
     }
+    if (!inStock) return
     if (product?.esPersonalizado && !tieneReferencia(personalizacion)) {
       toast({ message: 'Subí al menos una imagen o escribí notas para el artista', type: 'warning' })
       return

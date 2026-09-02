@@ -3,6 +3,7 @@ import useAuthStore from '@/store/authStore'
 import { rutaLoginConRetorno } from '@/utils/authRedirect'
 import type { AuthPersistido } from '@/types/auth'
 import type { ResponseDTO } from '@/types/api'
+import { quitarContentTypeSiFormData } from './apiMultipart'
 
 type RetryConfig = InternalAxiosRequestConfig & { _retry?: boolean }
 
@@ -24,6 +25,7 @@ const getStored = (): AuthPersistido => {
 api.interceptors.request.use((config) => {
   const { token } = getStored()
   if (token) config.headers.Authorization = `Bearer ${token}`
+  quitarContentTypeSiFormData(config.headers, config.data)
   return config
 })
 

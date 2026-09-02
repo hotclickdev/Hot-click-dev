@@ -3,6 +3,9 @@ export type ModoPrecioPersonalizado = 'FIJO' | 'RANGO' | 'COTIZACION'
 /** Fase 1 default: todo personalizado se publica sin precio público; se cotiza después. */
 export const MODO_PRECIO_PERSONALIZADO_FASE1: ModoPrecioPersonalizado = 'COTIZACION'
 
+/** El API exige precioVenta ≥ 1. Cotización usa ₡1 de placeholder (igual que el wizard admin). */
+export const PRECIO_VENTA_PLACEHOLDER_COTIZACION = '1'
+
 /** Feature flag: habilita selector FIJO/RANGO/COTIZACION en formularios seller. */
 export function modosPrecioPersonalizadoHabilitados(): boolean {
   return import.meta.env.VITE_PERSONALIZADO_MODOS_PRECIO === 'true'
@@ -45,7 +48,7 @@ export function preciosAlPublicar(
   if (!modosPrecioPersonalizadoHabilitados()) {
     return {
       precioCompra: '0',
-      precioVenta: '0',
+      precioVenta: PRECIO_VENTA_PLACEHOLDER_COTIZACION,
       modoPrecioPersonalizado: MODO_PRECIO_PERSONALIZADO_FASE1,
     }
   }
@@ -60,7 +63,7 @@ export function preciosAlPublicar(
   if (modo === 'RANGO') {
     return {
       precioCompra: '0',
-      precioVenta: opciones.precioMin || '0',
+      precioVenta: precioAlMenosUno(opciones.precioMin),
       modoPrecioPersonalizado: 'RANGO',
       precioPersonalizadoMin: opciones.precioMin,
       precioPersonalizadoMax: opciones.precioMax,
@@ -68,9 +71,41 @@ export function preciosAlPublicar(
   }
   return {
     precioCompra: '0',
-    precioVenta: '0',
+    precioVenta: PRECIO_VENTA_PLACEHOLDER_COTIZACION,
     modoPrecioPersonalizado: 'COTIZACION',
   }
+}
+
+function precioAlMenosUno(valor: string | undefined): string {
+  return Number(valor) >= 1 ? String(valor) : PRECIO_VENTA_PLACEHOLDER_COTIZACION
+}
+
+/** Validación de precios del formulario seller (personalizado). */
+export function errorPreciosPersonalizado(
+  personalizado: boolean,
+  modo: ModoPrecioPersonalizado,
+  venta: string,
+  precioMin: string,
+  precioMax: string,
+): string | null {
+  if (!personalizado || !modosPrecioPersonalizadoHabilitados()) return null
+  if (modo === 'RANGO' && (!precioMin || !precioMax)) {
+    return 'Indicá el rango de precio (mínimo y máximo).'
+  }
+  if (modo === 'RANGO' && Number(precioMin) > Number(precioMax)) {
+    return 'El precio mínimo no puede ser mayor que el máximo.'
+  }
+  if (modo === 'FIJO' && Number(venta) < 1) {
+    return 'Indicá el precio de venta.'
+  }
+  return null
+}
+
+export function errorCatalogoProducto(personalizado: boolean, venta: string, stock: string): string | null {
+  if (personalizado) return null
+  if (Number(venta) < 1) return 'Indicá el precio de venta.'
+  if (Number(stock) < 1) return 'Indicá el stock (mínimo 1 para que se vea en el catálogo).'
+  return null
 }
 
 export function tituloFormProducto(editar: boolean, personalizado: boolean): string {

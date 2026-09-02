@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
-import { formatPrice } from '@/utils/format'
 import { CLASE_TARJETA_TIENDA } from './tiendaTheme'
 import TiendaPlaceholder from './TiendaPlaceholder'
+import { esProductoCotizable, textoPrecioProducto } from '@/utils/precioProducto'
 import type { Producto } from '@/types/producto'
 
 /** Tarjeta de catálogo de la tienda del vendedor. */
@@ -37,8 +37,17 @@ export default function TiendaProductoCard({
           </h3>
         </Link>
         <p className="text-base font-bold mt-auto" style={{ color: 'var(--t-primary)' }}>
-          {formatPrice(producto.precio)}
+          {textoPrecioProducto(producto)}
         </p>
+        {esProductoCotizable(producto) ? (
+          <Link
+            to={`/tienda/${slug}/producto/${producto.id}`}
+            className="w-full py-2 min-h-[44px] rounded-lg text-white text-xs font-semibold text-center"
+            style={{ backgroundColor: 'var(--t-primary)' }}
+          >
+            Personalizar
+          </Link>
+        ) : (
         <button
           type="button"
           onClick={() => onAgregar(producto)}
@@ -47,6 +56,7 @@ export default function TiendaProductoCard({
         >
           {agregado ? 'Agregado al pedido' : 'Agregar al pedido'}
         </button>
+        )}
       </div>
     </article>
   )

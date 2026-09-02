@@ -2,7 +2,11 @@ import { productService, denormalizeProduct, normalizeProduct } from '@/services
 import type { Producto } from '@/types/producto'
 import type { ProductoEmprendedor } from '@/prototipo/emprendedor/types'
 import type { ProductoMock } from '@/prototipo/compartido/mock'
-import { MODO_PRECIO_PERSONALIZADO_FASE1, modosPrecioPersonalizadoHabilitados } from './personalizadoProductoHelpers'
+import {
+  MODO_PRECIO_PERSONALIZADO_FASE1,
+  PRECIO_VENTA_PLACEHOLDER_COTIZACION,
+  modosPrecioPersonalizadoHabilitados,
+} from './personalizadoProductoHelpers'
 
 export type DatosProductoVendedor = {
   nombre: string
@@ -11,6 +15,7 @@ export type DatosProductoVendedor = {
   descripcion: string
   stock: string
   categoria: string
+  categoriaId?: string
   estado?: 'Publicado' | 'Pausado'
   esPersonalizado?: boolean
   modoPrecioPersonalizado?: 'FIJO' | 'RANGO' | 'COTIZACION'
@@ -44,6 +49,7 @@ export function aProductoEmprendedor(p: Producto): ProductoEmprendedor {
     recienAgregado: false,
     descripcion: p.descripcion ?? '',
     imagenUrl: p.imagenUrl || undefined,
+    categoriaId: p.categoriaId != null && p.categoriaId !== '' ? String(p.categoriaId) : '',
     esPersonalizado: p.esPersonalizado === true,
     modoPrecioPersonalizado: p.modoPrecioPersonalizado ?? undefined,
     precioPersonalizadoMin: p.precioPersonalizadoMin ?? undefined,
@@ -66,6 +72,7 @@ export function aProductoSeller(p: Producto): ProductoMock {
     reciente: e.recienAgregado,
     descripcion: e.descripcion,
     imagenUrl: e.imagenUrl,
+    categoriaId: e.categoriaId,
     esPersonalizado: e.esPersonalizado,
     modoPrecioPersonalizado: e.modoPrecioPersonalizado,
     precioPersonalizadoMin: e.precioPersonalizadoMin,
@@ -82,9 +89,26 @@ export async function cargarProductosVendedor(): Promise<Producto[]> {
     .filter((item): item is Producto => Boolean(item))
 }
 
-function cuerpoProducto(datos: DatosProductoVendedor) {
+function stockAlPublicar(stock: string): string {
+  return Number(stock) >= 1 ? stock : '1'
+}
+
+function precioVentaPayload(
+  personalizado: boolean,
+  modo: 'FIJO' | 'RANGO' | 'COTIZACION',
+  datos: DatosProductoVendedor,
+): string {
+  if (!personalizado || modo === 'FIJO') return datos.precioVenta
+  if (modo === 'RANGO' && Number(datos.precioPersonalizadoMin) >= 1) {
+    return String(datos.precioPersonalizadoMin)
+  }
+  return PRECIO_VENTA_PLACEHOLDER_COTIZACION
+}
+
+export function cuerpoProductoVendedor(datos: DatosProductoVendedor) {
   const personalizado = datos.esPersonalizado === true
-  const modo = personalizado && modosPrecioPersonalizadoHabilitados()
+  const modosOn = modosPrecioPersonalizadoHabilitados()
+  const modo = personalizado && modosOn
     ? (datos.modoPrecioPersonalizado ?? MODO_PRECIO_PERSONALIZADO_FASE1)
     : MODO_PRECIO_PERSONALIZADO_FASE1
   const dto = {
@@ -92,8 +116,9 @@ function cuerpoProducto(datos: DatosProductoVendedor) {
       nombre: datos.nombre.trim(),
       descripcion: datos.descripcion,
       precioCompra: personalizado && modo !== 'FIJO' ? '0' : datos.precioCompra,
-      precioVenta: personalizado && modo !== 'FIJO' ? (modo === 'RANGO' ? (datos.precioPersonalizadoMin ?? '0') : '0') : datos.precioVenta,
-      stock: datos.stock,
+      precioVenta: precioVentaPayload(personalizado, modo, datos),
+      stock: stockAlPublicar(datos.stock),
+      categoriaId: datos.categoriaId || undefined,
       esPersonalizado: personalizado,
       modoPrecioPersonalizado: personalizado ? modo : datos.modoPrecioPersonalizado,
       precioPersonalizadoMin: personalizado && modo === 'RANGO' ? datos.precioPersonalizadoMin : undefined,
@@ -104,9 +129,9 @@ function cuerpoProducto(datos: DatosProductoVendedor) {
     visibleCatalogo: datos.estado !== 'Pausado',
     tags: datos.categoria || null,
   }
-  if (personalizado && !modosPrecioPersonalizadoHabilitados()) {
+  if (personalizado && !modosOn) {
     dto.modoPrecioPersonalizado = MODO_PRECIO_PERSONALIZADO_FASE1
-    dto.precioVenta = 0
+    dto.precioVenta = Number(PRECIO_VENTA_PLACEHOLDER_COTIZACION)
     dto.precioCompra = 0
     dto.precioPersonalizadoMin = null
     dto.precioPersonalizadoMax = null
@@ -115,11 +140,11 @@ function cuerpoProducto(datos: DatosProductoVendedor) {
 }
 
 export async function publicarProductoVendedor(datos: DatosProductoVendedor) {
-  await productService.create(cuerpoProducto(datos))
+  await productService.create(cuerpoProductoVendedor(datos))
 }
 
 export async function guardarProductoVendedor(id: string, datos: DatosProductoVendedor) {
-  await productService.update(id, cuerpoProducto(datos))
+  await productService.update(id, cuerpoProductoVendedor(datos))
 }
 
 export async function borrarProductoVendedor(id: string) {
@@ -127,6 +152,7 @@ export async function borrarProductoVendedor(id: string) {
 }
 
 export function mensajeErrorProducto(err: unknown, respaldo: string): string {
+  if (err instanceof Error && !('response' in err) && err.message.trim()) return err.message
   if (!err || typeof err !== 'object' || !('response' in err)) return respaldo
   const data = (err as { response?: { data?: { message?: string } | string } }).response?.data
   if (typeof data === 'string' && data.trim()) return data

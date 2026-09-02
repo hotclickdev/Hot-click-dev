@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { formatPrice } from '@/utils/format'
+import { textoPrecioProducto } from '@/utils/precioProducto'
 import type { Producto } from '@/types/producto'
 
 function IconLocal() {
@@ -44,7 +44,7 @@ export default function EmpCard({ p, i }: { p: Producto; i: number }) {
           )}
           <p className="text-sm font-semibold line-clamp-2 mb-3" style={{ color: 'var(--hc-text)' }}>{p.nombre}</p>
           <p className="text-xl font-black" style={{ color: 'var(--hc-text)', fontFamily: 'var(--font-display)' }}>
-            {formatPrice(p.precio)}
+            {textoPrecioProducto(p)}
           </p>
         </div>
       </Link>

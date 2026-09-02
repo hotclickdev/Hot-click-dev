@@ -13,6 +13,7 @@ export type ProductoEmprendedor = {
   recienAgregado: boolean
   descripcion: string
   imagenUrl?: string
+  categoriaId?: string
   esPersonalizado?: boolean
   modoPrecioPersonalizado?: string
   precioPersonalizadoMin?: number

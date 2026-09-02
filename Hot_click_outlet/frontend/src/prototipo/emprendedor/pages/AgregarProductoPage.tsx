@@ -1,16 +1,18 @@
-import { useState, type FormEvent } from 'react'
+import { useCallback, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BotonPrimario from '../ui/BotonPrimario'
 import CabeceraAtras from '../ui/CabeceraAtras'
 import CampoTexto from '../ui/CampoTexto'
-import FilaChips from '../ui/FilaChips'
-import { CATEGORIAS_PRODUCTO, RUTA_EMPRENDEDOR } from '../constants'
+import { RUTA_EMPRENDEDOR } from '../constants'
 import { mensajeErrorProducto, publicarProductoVendedor } from '@/prototipo/compartido/catalogoVendedorApi'
 import CamposPersonalizadoProducto from '@/prototipo/compartido/CamposPersonalizadoProducto'
+import ChipsCategoriaVendedor from '@/prototipo/compartido/ChipsCategoriaVendedor'
 import ZonaFotoProducto from '@/prototipo/compartido/ZonaFotoProducto'
+import { idCategoriaValido } from '@/prototipo/compartido/categoriaVendedor'
 import {
   type ModoPrecioPersonalizado,
-  modosPrecioPersonalizadoHabilitados,
+  errorCatalogoProducto,
+  errorPreciosPersonalizado,
   preciosAlPublicar,
   tituloFormProducto,
 } from '@/prototipo/compartido/personalizadoProductoHelpers'
@@ -27,7 +29,8 @@ export default function AgregarProductoPage({ personalizado = false }: Props) {
   const [venta, setVenta] = useState('')
   const [descripcion, setDescripcion] = useState('')
   const [stock, setStock] = useState('')
-  const [categoria, setCategoria] = useState<(typeof CATEGORIAS_PRODUCTO)[number]>('Tecnología')
+  const [categoria, setCategoria] = useState('')
+  const [categoriaId, setCategoriaId] = useState('')
   const [instrucciones, setInstrucciones] = useState('')
   const [modoPrecio, setModoPrecio] = useState<ModoPrecioPersonalizado>('COTIZACION')
   const [precioMin, setPrecioMin] = useState('')
@@ -36,14 +39,29 @@ export default function AgregarProductoPage({ personalizado = false }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
 
+  const elegirCategoria = useCallback((id: string, nombreCat: string) => {
+    setCategoriaId(id)
+    setCategoria(nombreCat)
+  }, [])
+
   async function publicar(evento: FormEvent) {
     evento.preventDefault()
     if (!nombre.trim()) {
       setError('Escribí el nombre del producto.')
       return
     }
-    if (personalizado && modosPrecioPersonalizadoHabilitados() && modoPrecio === 'RANGO' && (!precioMin || !precioMax)) {
-      setError('Indicá el rango de precio (mínimo y máximo).')
+    if (!idCategoriaValido(categoriaId)) {
+      setError('Seleccioná una categoría.')
+      return
+    }
+    const errorCatalogo = errorCatalogoProducto(personalizado, venta, stock)
+    if (errorCatalogo) {
+      setError(errorCatalogo)
+      return
+    }
+    const errorPrecios = errorPreciosPersonalizado(personalizado, modoPrecio, venta, precioMin, precioMax)
+    if (errorPrecios) {
+      setError(errorPrecios)
       return
     }
     const precios = preciosAlPublicar(personalizado, compra, venta, {
@@ -61,6 +79,7 @@ export default function AgregarProductoPage({ personalizado = false }: Props) {
         descripcion,
         stock,
         categoria,
+        categoriaId,
         esPersonalizado: personalizado,
         modoPrecioPersonalizado: precios.modoPrecioPersonalizado,
         precioPersonalizadoMin: precios.precioPersonalizadoMin,
@@ -82,12 +101,12 @@ export default function AgregarProductoPage({ personalizado = false }: Props) {
         titulo={tituloFormProducto(false, personalizado)}
         to={`${RUTA_EMPRENDEDOR}/productos/nuevo`}
       />
-      <ZonaFotoProducto
-        imagenUrl={imagenUrl}
-        onImagenChange={setImagenUrl}
-        bordeDiscontinuo
-      />
       <form className="flex flex-col gap-5" onSubmit={publicar}>
+        <ZonaFotoProducto
+          imagenUrl={imagenUrl}
+          onImagenChange={setImagenUrl}
+          bordeDiscontinuo
+        />
         <CampoTexto etiqueta="Nombre del producto" value={nombre} onChange={setNombre} placeholder="Ej: Camiseta Oversize Negra" />
         {!personalizado ? (
           <>
@@ -115,7 +134,7 @@ export default function AgregarProductoPage({ personalizado = false }: Props) {
         <CampoTexto etiqueta="Stock disponible" value={stock} onChange={setStock} type="number" placeholder="Ej: 10" />
         <div>
           <p className="mb-2 text-xs font-medium text-hc-muted">Categoría</p>
-          <FilaChips valor={categoria} opciones={CATEGORIAS_PRODUCTO} onChange={setCategoria} />
+          <ChipsCategoriaVendedor categoriaId={categoriaId} onChange={elegirCategoria} />
         </div>
         {error ? <p className="text-sm text-hc-danger">{error}</p> : null}
         <BotonPrimario type="submit">{guardando ? 'Publicando…' : 'Publicar producto'}</BotonPrimario>

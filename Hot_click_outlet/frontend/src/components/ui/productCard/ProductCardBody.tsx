@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { formatPrice } from '@/utils/format'
+import { textoPrecioProducto, esProductoCotizable } from '@/utils/precioProducto'
 import type { Producto } from '@/types/producto'
 
 type ProductCardBodyProps = {
@@ -13,6 +13,8 @@ type ProductCardBodyProps = {
 
 export default function ProductCardBody({ product, stockColor, stockText, added, onAddToCart }: ProductCardBodyProps) {
   const { t } = useTranslation()
+  const cotizable = esProductoCotizable(product)
+  const sinStock = !cotizable && product.stock === 0
 
   return (
     <div className="p-4 sm:p-5 flex flex-col gap-2.5">
@@ -39,7 +41,7 @@ export default function ProductCardBody({ product, stockColor, stockText, added,
           className="text-lg sm:text-xl leading-none"
           style={{ color: 'var(--hc-text)', fontFamily: 'var(--font-display)', fontWeight: 700, letterSpacing: '-0.02em' }}
         >
-          {formatPrice(product.precio)}
+          {textoPrecioProducto(product)}
         </span>
         <div className="flex items-center gap-1.5 shrink-0 pb-0.5">
           <span
@@ -63,8 +65,8 @@ export default function ProductCardBody({ product, stockColor, stockText, added,
         type="button"
         whileTap={{ scale: 0.94 }}
         onClick={onAddToCart}
-        disabled={product.stock === 0}
-        className={claseAgregarCatalogo(product.stock === 0, added)}
+        disabled={sinStock}
+        className={claseAgregarCatalogo(sinStock, added)}
       >
         {added ? (
           <>
@@ -78,7 +80,7 @@ export default function ProductCardBody({ product, stockColor, stockText, added,
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
-            {t('product.addToCart')}
+            {cotizable ? 'Personalizar' : t('product.addToCart')}
           </>
         )}
       </motion.button>

@@ -1,1 +1,0 @@
-import{t as e}from"./api-B_hSDqbx.js";var t={list:()=>e.get(`/admin/flags`),getByEmpresa:t=>e.get(`/admin/flags/${t}`),set:(t,n,r)=>e.post(`/admin/flags/${t}/${n}/${r?`on`:`off`}`)};export{t};

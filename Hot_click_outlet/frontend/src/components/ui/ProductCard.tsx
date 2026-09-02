@@ -9,6 +9,7 @@ import ProductCardImage from '@/components/ui/productCard/ProductCardImage'
 import ProductCardBody from '@/components/ui/productCard/ProductCardBody'
 import type { Producto } from '@/types/producto'
 import type { Id } from '@/types/api'
+import { esProductoCotizable } from '@/utils/precioProducto'
 
 type ProductCardProps = {
   product: Producto
@@ -36,6 +37,10 @@ function ProductCard({ product, priority = false, index = 0, hotTag = null }: Pr
 
   const handleAddToCart = (e: { stopPropagation: () => void }) => {
     e.stopPropagation()
+    if (esProductoCotizable(product)) {
+      navigate(`/productos/${product.id}`, { state: { product } })
+      return
+    }
     if (product.stock === 0) return
     addItem(product)
     setAdded(true)
