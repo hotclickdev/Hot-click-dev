@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { posService } from '@/services/posService'
 import { formatColones } from './posPagoFormat'
+import PosPagoReporteModal from './PosPagoReporteModal'
 
 const ONVO_SDK_URL = 'https://sdk.onvopay.com/sdk.js'
 
@@ -59,6 +60,7 @@ export default function PosPagoOnvoEmbed({ token, onSuccess, onFallback, total }
   const [listo, setListo] = useState(false)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(false)
+  const [reporteAbierto, setReporteAbierto] = useState(false)
   const instanciaRef = useRef<OnvoPayInstance | null>(null)
 
   useEffect(() => {
@@ -121,7 +123,17 @@ export default function PosPagoOnvoEmbed({ token, onSuccess, onFallback, total }
         style={{ borderColor: 'var(--hc-border)', background: 'var(--hc-surface)' }}
       />
       {error ? (
-        <p className="text-sm text-center text-red-500">{t('pos.pago.errorPagoDesc')}</p>
+        <div className="space-y-2">
+          <p className="text-sm text-center text-red-500">{t('pos.pago.errorPagoDesc')}</p>
+          <button
+            type="button"
+            onClick={() => setReporteAbierto(true)}
+            className="w-full rounded-[14px] border border-[var(--hc-border)] py-3 text-sm font-semibold text-[var(--hc-text)]"
+            style={{ background: 'var(--hc-surface)' }}
+          >
+            {t('pos.pago.reportarError')}
+          </button>
+        </div>
       ) : null}
       <button
         type="button"
@@ -132,6 +144,12 @@ export default function PosPagoOnvoEmbed({ token, onSuccess, onFallback, total }
         {t('pos.pago.pagar', { monto: formatColones(total) })}
       </button>
       <p className="text-xs text-center text-[var(--hc-muted)]">{t('pos.pago.walletsAviso')}</p>
+      <PosPagoReporteModal
+        open={reporteAbierto}
+        onClose={() => setReporteAbierto(false)}
+        token={token}
+        codigoError="onvo_embed"
+      />
     </div>
   )
 }

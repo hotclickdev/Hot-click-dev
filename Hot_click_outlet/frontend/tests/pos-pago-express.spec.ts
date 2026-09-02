@@ -94,4 +94,38 @@ test.describe('POS pago express', () => {
     await page.getByRole('button', { name: /Pagar/i }).click()
     await expect.poll(() => stripeLlamado).toBe(true)
   })
+
+  test('QR inválido muestra botón reportar problema', async ({ page }) => {
+    await page.route('**/api/**', async (route) => {
+      const path = new URL(route.request().url()).pathname
+      if (path.includes('/pos/qr/pago/')) {
+        await route.fulfill({
+          status: 404,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'QR inválido o expirado' }),
+        })
+        return
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: [] }),
+      })
+    })
+    await page.addInitScript(() => {
+      localStorage.setItem('hc-mm-v1-off', '1')
+      localStorage.setItem('hotclick-cookie-consent', JSON.stringify({
+        analytics: false,
+        functional: true,
+        timestamp: Date.now(),
+      }))
+    })
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/pos/pago/tokeninvalido99', { waitUntil: 'domcontentloaded' })
+
+    await expect(
+      page.getByRole('button', { name: /Reportar|reportar|problema/i }),
+    ).toBeVisible()
+  })
 })

@@ -6,6 +6,7 @@ import { CloseIcon } from './posIcons'
 import TextoMas from '@/components/ui/TextoMas'
 import type { JsonBody } from '@/types/api'
 import { mensajeErrorPos, type ClientePos, type ClienteSeleccionadoPos } from './posHelpers'
+import PosReporteModal from './PosReporteModal'
 
 export default function ClienteSelector({ cliente, onChange }: {
   cliente: ClienteSeleccionadoPos
@@ -21,6 +22,8 @@ export default function ClienteSelector({ cliente, onChange }: {
   const [nombre, setNombre]   = useState('')
   const [telefono, setTelefono] = useState('')
   const [creando, setCreando] = useState(false)
+  const [falloRegistro, setFalloRegistro] = useState(false)
+  const [reporteAbierto, setReporteAbierto] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -52,6 +55,7 @@ export default function ClienteSelector({ cliente, onChange }: {
   const crear = async () => {
     if (!nombre.trim()) return
     setCreando(true)
+    setFalloRegistro(false)
     try {
       const nuevo = await crmService.crearCliente({ nombre: nombre.trim(), telefono: telefono.trim() } as JsonBody)
       seleccionar(nuevo as ClientePos)
@@ -59,6 +63,7 @@ export default function ClienteSelector({ cliente, onChange }: {
       showToast(t('pos.cliente.toastRegistrado'), 'success')
     } catch (err: unknown) {
       showToast(mensajeErrorPos(err, t('pos.cliente.toastError')), 'error')
+      setFalloRegistro(true)
     } finally {
       setCreando(false)
     }
@@ -144,10 +149,27 @@ export default function ClienteSelector({ cliente, onChange }: {
                 style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>
                 {creando ? t('pos.cliente.guardando') : t('pos.cliente.registrarUsar')}
               </button>
+              {falloRegistro ? (
+                <button
+                  type="button"
+                  onClick={() => setReporteAbierto(true)}
+                  className="w-full py-1 text-xs font-medium underline underline-offset-2 transition-opacity hover:opacity-80"
+                  style={{ color: 'var(--hc-muted)' }}
+                  aria-label={t('pos.reporte.botonAria')}
+                >
+                  {t('pos.header.reportar')}
+                </button>
+              ) : null}
             </div>
           )}
         </div>
       )}
+
+      <PosReporteModal
+        open={reporteAbierto}
+        onClose={() => setReporteAbierto(false)}
+        pasoActual="cliente"
+      />
     </div>
   )
 }

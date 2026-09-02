@@ -5,6 +5,7 @@ import { posService } from '@/services/posService'
 import { useToast } from '@/components/ui/Toast'
 import ConteoEfectivo from './ConteoEfectivo'
 import StatBox from './StatBox'
+import PosReporteModal from './PosReporteModal'
 import { formatMontoPos, mensajeErrorPos, type PosCierre, type PosTurno } from './posHelpers'
 import { CheckIcon, TransferenciaIcon } from './posIcons'
 import TextoFlecha from '@/components/ui/TextoFlecha'
@@ -20,6 +21,8 @@ export default function AdminPOSCaja() {
   const [montoDeclarado, setMontoDeclarado] = useState(0)
   const [notas, setNotas]     = useState('')
   const [cerrado, setCerrado] = useState<PosCierre | null>(null)
+  const [reporteAbierto, setReporteAbierto] = useState(false)
+  const [errorCerrar, setErrorCerrar] = useState(false)
 
   useEffect(() => {
     posService.getCajaActiva()
@@ -31,6 +34,7 @@ export default function AdminPOSCaja() {
   const handleCerrar = async () => {
     if (!turno) { showToast(t('pos.caja.toastNoTurno'), 'error'); return }
     setSaving(true)
+    setErrorCerrar(false)
     try {
       const res = await posService.cerrarCaja(turno.id as number | string, { montoDeclarado, notas } as JsonBody) as PosCierre
       setCerrado(res.data ?? res)
@@ -38,6 +42,7 @@ export default function AdminPOSCaja() {
       showToast(t('pos.caja.toastCerrado'), 'success')
     } catch (err: unknown) {
       showToast(mensajeErrorPos(err, t('pos.caja.toastErrorCerrar')), 'error')
+      setErrorCerrar(true)
     } finally { setSaving(false) }
   }
 
@@ -132,10 +137,21 @@ export default function AdminPOSCaja() {
             {t('pos.caja.pasoCierre')}
           </p>
         </div>
-        <span className="px-2.5 py-1 rounded-full text-xs font-medium text-green-400"
-          style={{ backgroundColor: 'rgba(52,211,153,0.12)' }}>
-          {t('pos.common.turnoActivo')}
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setReporteAbierto(true)}
+            className="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-opacity hover:opacity-80"
+            style={{ color: 'var(--hc-muted)' }}
+            aria-label={t('pos.reporte.botonAria')}
+          >
+            {t('pos.header.reportar')}
+          </button>
+          <span className="px-2.5 py-1 rounded-full text-xs font-medium text-green-400"
+            style={{ backgroundColor: 'rgba(52,211,153,0.12)' }}>
+            {t('pos.common.turnoActivo')}
+          </span>
+        </div>
       </div>
 
       {/* KPIs del turno */}
@@ -202,7 +218,27 @@ export default function AdminPOSCaja() {
           style={{ backgroundColor: 'rgba(239,68,68,0.8)', color: '#fff' }}>
           {saving ? t('pos.caja.cerrando') : montoDeclarado === 0 ? t('pos.caja.contaPrimero') : t('pos.caja.cerrarTurno')}
         </button>
+
+        {errorCerrar && (
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => setReporteAbierto(true)}
+              className="text-xs font-semibold underline-offset-2 hover:underline"
+              style={{ color: 'var(--hc-muted)' }}
+              aria-label={t('pos.reporte.botonAria')}
+            >
+              {t('pos.header.reportar')}
+            </button>
+          </div>
+        )}
       </div>
+
+      <PosReporteModal
+        open={reporteAbierto}
+        onClose={() => setReporteAbierto(false)}
+        pasoActual="caja"
+      />
     </div>
   )
 }

@@ -5,6 +5,7 @@ import PosPagoResumen from '@/features/pos-pago/PosPagoResumen'
 import PosPagoEstado from '@/features/pos-pago/PosPagoEstado'
 import PosPagoSinpe from '@/features/pos-pago/PosPagoSinpe'
 import PosPagoOnvoEmbed from '@/features/pos-pago/PosPagoOnvoEmbed'
+import PosPagoReporteModal from '@/features/pos-pago/PosPagoReporteModal'
 import { usePosPagoQr } from '@/features/pos-pago/usePosPagoQr'
 import { formatColones } from '@/features/pos-pago/posPagoFormat'
 
@@ -17,6 +18,7 @@ export default function POSPagoPage() {
   const { token } = useParams()
   const { t } = useTranslation()
   const [modoEmbed, setModoEmbed] = useState(USA_EMBED_ONVO)
+  const [reporteAbierto, setReporteAbierto] = useState(false)
 
   const {
     info,
@@ -49,12 +51,13 @@ export default function POSPagoPage() {
         vista={vista === 'error' ? 'error' : vista}
         mensajeError={mensajeError}
         onReintentar={reintentar}
+        token={token}
       />,
     )
   }
 
   if (!info) {
-    return shell(<PosPagoEstado vista="error" mensajeError="qr_invalido" />)
+    return shell(<PosPagoEstado vista="error" mensajeError="qr_invalido" token={token} />)
   }
 
   const esTarjeta = info.metodoPago === 'TARJETA'
@@ -64,7 +67,7 @@ export default function POSPagoPage() {
     <div className="w-full space-y-5">
       <PosPagoResumen info={info} />
 
-      {esSinpe ? <PosPagoSinpe info={info} /> : null}
+      {esSinpe ? <PosPagoSinpe info={info} token={token} /> : null}
 
       {esTarjeta && modoEmbed ? (
         <PosPagoOnvoEmbed
@@ -92,8 +95,25 @@ export default function POSPagoPage() {
               : t('pos.pago.pagar', { monto: formatColones(info.total) })}
           </button>
           <p className="text-xs text-center text-[var(--hc-muted)]">{t('pos.pago.hostedAviso')}</p>
+          {mensajeError === 'pago_fallido' ? (
+            <button
+              type="button"
+              onClick={() => setReporteAbierto(true)}
+              className="w-full rounded-[14px] border border-[var(--hc-border)] py-3 text-sm font-semibold text-[var(--hc-text)]"
+              style={{ background: 'var(--hc-surface)' }}
+            >
+              {t('pos.pago.reportarError')}
+            </button>
+          ) : null}
         </div>
       ) : null}
+
+      <PosPagoReporteModal
+        open={reporteAbierto}
+        onClose={() => setReporteAbierto(false)}
+        token={token}
+        codigoError={mensajeError}
+      />
     </div>,
   )
 }

@@ -32,6 +32,8 @@ function armarReceiptQr(qrData: PosQrData | null, cartItems: ItemCarritoPos[], a
   }
 }
 
+export type ReportePendientePos = { mensaje: string }
+
 /**
  * Estado y handlers del POS — bit-idéntico al orquestador original.
  */
@@ -52,6 +54,14 @@ export function useAdminPOS() {
   const [qrData, setQrData]         = useState<PosQrData | null>(null)
   const [loadingVenta, setLoadingVenta]     = useState(false)
   const [loadingConfirm, setLoadingConfirm] = useState(false)
+  const [reportePendiente, setReportePendiente] = useState<ReportePendientePos | null>(null)
+
+  const toastErrorConReporte = (mensaje: string) => {
+    showToast(mensaje, 'error')
+    setReportePendiente({ mensaje })
+  }
+
+  const limpiarReportePendiente = () => setReportePendiente(null)
 
   useEffect(() => {
     const init = async () => {
@@ -113,7 +123,7 @@ export function useAdminPOS() {
           if (t) { setTurno(t); setStep('venta'); showToast('Turno existente recuperado', 'info'); return }
         } catch (recoverErr: unknown) { console.error(recoverErr) }
       }
-      showToast(msg || 'Error al abrir turno', 'error')
+      toastErrorConReporte(msg || 'Error al abrir turno')
     } finally {
       setSaving(false)
     }
@@ -146,7 +156,7 @@ export function useAdminPOS() {
       setStep('recibo')
       showToast('Venta registrada', 'success')
     } catch (err: unknown) {
-      showToast(mensajeErrorPos(err, 'Error al procesar la venta'), 'error')
+      toastErrorConReporte(mensajeErrorPos(err, 'Error al procesar la venta'))
     } finally {
       setLoadingVenta(false)
     }
@@ -169,13 +179,13 @@ export function useAdminPOS() {
       } as JsonBody)
       const qr = qrDataDesdeRespuesta(data, total)
       if (!qr) {
-        showToast('El servidor no devolvió el token del QR', 'error')
+        toastErrorConReporte('El servidor no devolvió el token del QR')
         return
       }
       setQrData(qr)
       setStep('qr')
     } catch (err: unknown) {
-      showToast(mensajeErrorPos(err, 'Error al generar QR'), 'error')
+      toastErrorConReporte(mensajeErrorPos(err, 'Error al generar QR'))
     } finally {
       setLoadingVenta(false)
     }
@@ -204,7 +214,7 @@ export function useAdminPOS() {
       setStep('recibo')
       showToast('SINPE confirmado', 'success')
     } catch (err: unknown) {
-      showToast(mensajeErrorPos(err, 'Error al confirmar SINPE'), 'error')
+      toastErrorConReporte(mensajeErrorPos(err, 'Error al confirmar SINPE'))
     } finally {
       setLoadingConfirm(false)
     }
@@ -234,6 +244,8 @@ export function useAdminPOS() {
     qrData,
     loadingVenta,
     loadingConfirm,
+    reportePendiente,
+    limpiarReportePendiente,
     subtotal,
     total,
     agregarProducto,

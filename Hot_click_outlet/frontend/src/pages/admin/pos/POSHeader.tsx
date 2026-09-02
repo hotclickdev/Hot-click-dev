@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import TextoFlecha from '@/components/ui/TextoFlecha'
@@ -5,6 +6,7 @@ import { HotClickMark } from '@/components/ui/BrandLogo'
 import useRutaPanel from '@/app/useRutaPanel'
 import type { PosStep, PosTurno } from './posHelpers'
 import { posUi } from './posApariencia'
+import PosReporteModal from './PosReporteModal'
 
 /**
  * Chrome utilitario de la caja. El título “Caja (POS)” vive en StepVenta (Figma 71:128).
@@ -17,6 +19,7 @@ export default function POSHeader({ userName, turno, step, mostrarVolverSistema 
 }) {
   const { t } = useTranslation()
   const rutaPanel = useRutaPanel()
+  const [reporteAbierto, setReporteAbierto] = useState(false)
   const enVenta = step === 'venta'
   const labels: Record<string, string> = {
     apertura: t('pos.header.stepApertura'),
@@ -74,6 +77,16 @@ export default function POSHeader({ userName, turno, step, mostrarVolverSistema 
         {t('pos.header.historial')}
       </Link>
 
+      <button
+        type="button"
+        onClick={() => setReporteAbierto(true)}
+        className="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all hover:bg-[var(--hc-surface-2)]"
+        style={chipSec}
+        aria-label={t('pos.reporte.botonAria')}
+      >
+        {t('pos.header.reportar')}
+      </button>
+
       <div className="flex items-center gap-2 pl-2" style={{ borderLeft: `1px solid ${posUi.borde}` }}>
         <div
           className="flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold"
@@ -83,6 +96,12 @@ export default function POSHeader({ userName, turno, step, mostrarVolverSistema 
         </div>
         <span className="hidden text-xs lg:block" style={{ color: posUi.muted }}>{userName}</span>
       </div>
+
+      <PosReporteModal
+        open={reporteAbierto}
+        onClose={() => setReporteAbierto(false)}
+        pasoActual={String(step)}
+      />
     </div>
   )
 }

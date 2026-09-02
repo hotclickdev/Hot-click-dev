@@ -1,9 +1,17 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatColones } from './posPagoFormat'
 import type { QrPagoInfo } from './posPagoTypes'
+import PosPagoReporteModal from './PosPagoReporteModal'
 
-export default function PosPagoSinpe({ info }: { info: QrPagoInfo }) {
+type Props = {
+  info: QrPagoInfo
+  token?: string
+}
+
+export default function PosPagoSinpe({ info, token }: Props) {
   const { t } = useTranslation()
+  const [reporteAbierto, setReporteAbierto] = useState(false)
 
   const filas = [
     {
@@ -36,6 +44,20 @@ export default function PosPagoSinpe({ info }: { info: QrPagoInfo }) {
         </div>
       ))}
       <p className="text-xs text-[var(--hc-muted)] pt-1">{t('pos.pago.sinpeAvisoCajero')}</p>
+      <button
+        type="button"
+        onClick={() => setReporteAbierto(true)}
+        className="w-full rounded-[14px] border border-[var(--hc-border)] py-3 text-sm font-semibold text-[var(--hc-text)]"
+        style={{ background: 'var(--hc-surface)' }}
+      >
+        {t('pos.pago.reportarError')}
+      </button>
+      <PosPagoReporteModal
+        open={reporteAbierto}
+        onClose={() => setReporteAbierto(false)}
+        token={token}
+        codigoError="sinpe"
+      />
     </div>
   )
 }

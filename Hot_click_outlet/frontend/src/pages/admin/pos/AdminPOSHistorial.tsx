@@ -5,6 +5,7 @@ import { posService } from '@/services/posService'
 import TextoFlecha from '@/components/ui/TextoFlecha'
 import type { Id } from '@/types/api'
 import type { PosVenta } from './posHelpers'
+import PosReporteModal from './PosReporteModal'
 
 const fmt = (n: number | null | undefined) => new Intl.NumberFormat('es-CR').format(n ?? 0)
 
@@ -25,6 +26,7 @@ export default function AdminPOSHistorial() {
   const [loading, setLoading] = useState(true)
   const [filtro, setFiltro]   = useState('hoy')
   const [expanded, setExpanded] = useState<Id | null | undefined>(null)
+  const [reporteAbierto, setReporteAbierto] = useState(false)
 
   const localeFecha = i18n.language?.startsWith('en') ? 'en-CR' : i18n.language?.startsWith('pt') ? 'pt-BR' : 'es-CR'
   const fmtDate = (d: string | number | Date | null | undefined) =>
@@ -104,8 +106,23 @@ export default function AdminPOSHistorial() {
             style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}>
             {t('pos.historial.csv')}
           </button>
+          <button
+            type="button"
+            onClick={() => setReporteAbierto(true)}
+            className="px-3 py-1.5 rounded-xl text-xs font-medium transition-opacity hover:opacity-70"
+            style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)' }}
+            aria-label={t('pos.reporte.botonAria')}
+          >
+            {t('pos.header.reportar')}
+          </button>
         </div>
       </div>
+
+      <PosReporteModal
+        open={reporteAbierto}
+        onClose={() => setReporteAbierto(false)}
+        pasoActual="historial"
+      />
 
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-3">

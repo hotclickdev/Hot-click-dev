@@ -1,18 +1,23 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import type { PosPagoVista } from './posPagoTypes'
+import PosPagoReporteModal from './PosPagoReporteModal'
 
 type Props = {
   vista: Exclude<PosPagoVista, 'cargando' | 'resumen'>
   mensajeError?: string | null
   onReintentar?: () => void
+  token?: string
 }
 
-export default function PosPagoEstado({ vista, mensajeError, onReintentar }: Props) {
+export default function PosPagoEstado({ vista, mensajeError, onReintentar, token }: Props) {
   const { t } = useTranslation()
+  const [reporteAbierto, setReporteAbierto] = useState(false)
 
   const config = configEstado(vista, mensajeError, t)
   const iconoColor = vista === 'exito' || vista === 'pagado' ? '#34d399' : '#fbbf24'
+  const mostrarReporte = vista === 'error' || vista === 'cancelado'
 
   return (
     <div className="text-center max-w-xs mx-auto space-y-3">
@@ -31,6 +36,22 @@ export default function PosPagoEstado({ vista, mensajeError, onReintentar }: Pro
           {t('pos.pago.reintentar')}
         </button>
       ) : null}
+      {mostrarReporte ? (
+        <button
+          type="button"
+          onClick={() => setReporteAbierto(true)}
+          className="w-full rounded-[14px] border border-[var(--hc-border)] py-3 text-sm font-semibold text-[var(--hc-text)]"
+          style={{ background: 'var(--hc-surface)' }}
+        >
+          {t('pos.pago.reportarError')}
+        </button>
+      ) : null}
+      <PosPagoReporteModal
+        open={reporteAbierto}
+        onClose={() => setReporteAbierto(false)}
+        token={token}
+        codigoError={mensajeError ?? vista}
+      />
     </div>
   )
 }

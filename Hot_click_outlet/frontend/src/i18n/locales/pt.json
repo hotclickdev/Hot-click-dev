@@ -2149,6 +2149,8 @@
     },
     "reporte": {
       "botonAria": "Reportar um erro do POS",
+      "bannerTitulo": "Quer reportar este erro?",
+      "bannerCta": "Reportar",
       "titulo": "Reportar erro do POS",
       "subtitulo": "Marque o que falhou (pode escolher vários) e descreva o detalhe.",
       "tiposLabel": "O que aconteceu",
@@ -2160,6 +2162,10 @@
       "enviando": "Enviando…",
       "exito": "Reporte enviado. Entraremos em contato por e-mail ou WhatsApp.",
       "errorEnvio": "Não foi possível enviar o reporte. Tente de novo.",
+      "tituloCliente": "Reportar um problema com o pagamento",
+      "subtituloCliente": "Marque o que falhou (pode escolher vários) e descreva o detalhe. Abrimos o WhatsApp com a HotClick.",
+      "detallePlaceholderCliente": "Ex.: o cartão não carrega, fui para o carrinho, o valor não bate…",
+      "enviarWhatsApp": "Enviar pelo WhatsApp",
       "tipos": {
         "qr_no_genera": "O QR não foi gerado",
         "cliente_no_paga": "O cliente não conseguiu pagar",
@@ -2253,7 +2259,8 @@
       "yaPagadoDesc": "Este código já foi usado. Peça um novo ao caixa se precisar pagar de novo.",
       "sinpeTitulo": "Pague com SINPE Móvil",
       "sinpeInstruccion": "Envie o valor exato para o número do negócio com a referência indicada.",
-      "sinpeAvisoCajero": "Avise o caixa quando tiver enviado o SINPE."
+      "sinpeAvisoCajero": "Avise o caixa quando tiver enviado o SINPE.",
+      "reportarError": "Reportar um problema"
     },
     "recibo": {
       "ventaRegistrada": "Venda registrada",

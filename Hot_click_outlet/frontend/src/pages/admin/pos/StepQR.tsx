@@ -1,9 +1,21 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, type MutableRefObject } from 'react'
 import { useTranslation } from 'react-i18next'
 import { posService } from '@/services/posService'
 import { formatMontoPos, enlacePagoPosQr, type PosQrData } from './posHelpers'
 import { MetodoPagoIcon } from './posIcons'
 import PosQrImagen from './PosQrImagen'
+import PosReporteModal from './PosReporteModal'
+import { posUi } from './posApariencia'
+
+function esSesionCerrada(estado: string | undefined): boolean {
+  return estado === 'EXPIRADO' || estado === 'CANCELADO'
+}
+
+function limpiarPoll(pollRef: MutableRefObject<ReturnType<typeof setInterval> | null>) {
+  if (!pollRef.current) return
+  clearInterval(pollRef.current)
+  pollRef.current = null
+}
 
 export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConfirm }: {
   qrData: PosQrData
@@ -16,18 +28,28 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
   const qrUrl = enlacePagoPosQr(token)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [paid, setPaid] = useState(false)
+  const [sesionCerrada, setSesionCerrada] = useState(false)
+  const [reporteAbierto, setReporteAbierto] = useState(false)
+  const tokenFaltante = !token
 
   useEffect(() => {
-    if (metodoPago !== 'TARJETA') return
+    if (metodoPago !== 'TARJETA' || tokenFaltante) return
     pollRef.current = setInterval(async () => {
       try {
         const res = await posService.estadoQrSesion(token) as { estado?: string }
-        if (res?.estado === 'PAGADO') { clearInterval(pollRef.current as ReturnType<typeof setInterval>); setPaid(true) }
-        else if (res?.estado === 'EXPIRADO' || res?.estado === 'CANCELADO') clearInterval(pollRef.current as ReturnType<typeof setInterval>)
+        if (res?.estado === 'PAGADO') {
+          limpiarPoll(pollRef)
+          setPaid(true)
+          return
+        }
+        if (esSesionCerrada(res?.estado)) {
+          limpiarPoll(pollRef)
+          setSesionCerrada(true)
+        }
       } catch { /* transient poll failure — retries on next tick */ }
     }, 3000)
-    return () => clearInterval(pollRef.current as ReturnType<typeof setInterval>)
-  }, [token, metodoPago])
+    return () => limpiarPoll(pollRef)
+  }, [token, metodoPago, tokenFaltante])
 
   useEffect(() => { if (paid) onConfirmSinpe(null, true) }, [paid]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -51,6 +73,12 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
       highlight: true,
     },
   ]
+
+  const estiloSecundario = {
+    backgroundColor: posUi.panel,
+    color: posUi.texto,
+    border: `1px solid ${posUi.borde}`,
+  }
 
   return (
     <div className="flex-1 flex items-center justify-center p-4 overflow-y-auto">
@@ -95,7 +123,7 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
           </div>
         )}
 
-        {metodoPago === 'TARJETA' && !paid && (
+        {metodoPago === 'TARJETA' && !paid && !sesionCerrada && (
           <p className="text-center text-xs animate-pulse" style={{ color: '#7aa3ff' }}>
             {t('pos.qr.esperandoConfirmacion')}
           </p>
@@ -120,6 +148,22 @@ export default function StepQR({ qrData, onConfirmSinpe, onCancelar, loadingConf
             </div>
           )}
         </div>
+
+        <button
+          type="button"
+          onClick={() => setReporteAbierto(true)}
+          className="w-full py-3 rounded-2xl text-sm font-semibold transition-all hover:bg-[var(--hc-surface-2)]"
+          style={estiloSecundario}
+          aria-label={t('pos.reporte.botonAria')}
+        >
+          {t('pos.header.reportar')}
+        </button>
+
+        <PosReporteModal
+          open={reporteAbierto}
+          onClose={() => setReporteAbierto(false)}
+          pasoActual="qr"
+        />
       </div>
     </div>
   )
