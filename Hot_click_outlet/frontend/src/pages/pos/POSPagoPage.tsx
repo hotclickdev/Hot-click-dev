@@ -1,131 +1,99 @@
-import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { posService } from '@/services/posService'
-import { productService } from '@/services/productService'
-import useCartStore from '@/store/cartStore'
-import TrustGlyph from '@/components/ui/TrustGlyph'
-import type { Producto } from '@/types/producto'
-import type { Id } from '@/types/api'
+import { useState, type ReactNode } from 'react'
+import { useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import PosPagoResumen from '@/features/pos-pago/PosPagoResumen'
+import PosPagoEstado from '@/features/pos-pago/PosPagoEstado'
+import PosPagoSinpe from '@/features/pos-pago/PosPagoSinpe'
+import PosPagoOnvoEmbed from '@/features/pos-pago/PosPagoOnvoEmbed'
+import { usePosPagoQr } from '@/features/pos-pago/usePosPagoQr'
+import { formatColones } from '@/features/pos-pago/posPagoFormat'
 
+/** Token legacy del flujo carrito; ya no se escribe desde esta página. */
 export const POS_QR_TOKEN_KEY = 'hc-pos-qr-token'
 
-type QrPagoItem = {
-  productoId?: Id
-  nombre?: string
-  nombreProducto?: string
-  cantidad?: number
-  precioUnitario?: number
-  imagen?: string | null
-}
+const USA_EMBED_ONVO = true
 
-type QrPagoInfo = {
-  estado?: string
-  total?: number
-  empresaNombre?: string
-  items?: QrPagoItem[]
-}
-
-/**
- * Escaneo del QR del POS: carga los productos en el carrito público y va a /carrito.
- */
 export default function POSPagoPage() {
   const { token } = useParams()
-  const navigate = useNavigate()
-  const clearCart = useCartStore((s) => s.clearCart)
-  const addItem = useCartStore((s) => s.addItem)
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const yaCargado = useRef(false)
+  const { t } = useTranslation()
+  const [modoEmbed, setModoEmbed] = useState(USA_EMBED_ONVO)
 
-  useEffect(() => {
-    if (!token || yaCargado.current) return
-    yaCargado.current = true
+  const {
+    info,
+    vista,
+    mensajeError,
+    iniciandoPago,
+    pagarHosted,
+    reintentar,
+    marcarExitoEmbed,
+  } = usePosPagoQr(token)
 
-    const cargar = async () => {
-      try {
-        const data = await posService.infoQrSesion(token) as QrPagoInfo
-        if (data.estado === 'PAGADO') {
-          setLoading(false)
-          setError('Este QR ya fue pagado')
-          return
-        }
-        if (data.estado === 'EXPIRADO' || data.estado === 'CANCELADO') {
-          setLoading(false)
-          setError('QR no encontrado o expirado')
-          return
-        }
-        const items = data.items ?? []
-        if (items.length === 0) {
-          setLoading(false)
-          setError('El QR no tiene productos')
-          return
-        }
+  const shell = (children: ReactNode) => (
+    <div
+      className="hc-sistema-theme min-h-screen flex flex-col items-center justify-center p-6"
+      style={{ backgroundColor: 'var(--hc-bg)' }}
+    >
+      {children}
+    </div>
+  )
 
-        clearCart()
-        for (const item of items) {
-          const producto = await productoParaCarrito(item)
-          const cantidad = Math.max(1, item.cantidad ?? 1)
-          addItem(producto, cantidad)
-        }
-        sessionStorage.setItem(POS_QR_TOKEN_KEY, token)
-        navigate('/carrito', { replace: true })
-      } catch {
-        setError('QR no encontrado o expirado')
-        setLoading(false)
-      }
-    }
-    void cargar()
-  }, [token, clearCart, addItem, navigate])
-
-  if (loading && !error) {
-    return (
-      <div className="hc-sistema-theme min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--hc-bg)' }}>
-        <div className="text-center">
-          <div className="w-12 h-12 rounded-2xl mx-auto mb-4 animate-pulse"
-            style={{ background: 'var(--hc-accent)' }} />
-          <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>Cargando productos al carrito…</p>
-        </div>
-      </div>
+  if (vista === 'cargando') {
+    return shell(
+      <p className="text-sm text-[var(--hc-muted)] animate-pulse">{t('pos.pago.cargando')}</p>,
     )
   }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: 'var(--hc-bg)' }}>
-      <div className="text-center max-w-xs">
-        <div className="mb-4 flex justify-center" style={{ color: '#fbbf24' }}>
-          <TrustGlyph tipo="alerta" className="w-12 h-12" />
-        </div>
-        <p className="font-bold text-[var(--hc-text)] mb-2">
-          {error === 'Este QR ya fue pagado' ? 'Pago ya completado' : 'QR inválido o expirado'}
-        </p>
-        <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
-          {error === 'Este QR ya fue pagado'
-            ? 'Este código ya se usó. Pedile uno nuevo al cajero si necesitás pagar otra vez.'
-            : 'Este código de pago ya no es válido. Solicita uno nuevo al cajero.'}
-        </p>
-      </div>
-    </div>
-  )
-}
-
-async function productoParaCarrito(item: QrPagoItem): Promise<Producto> {
-  const id = item.productoId
-  if (id != null) {
-    try {
-      const { data } = await productService.getById(id)
-      if (data) return data
-    } catch {
-      /* fallback con datos del QR */
-    }
+  if (vista === 'exito' || vista === 'pagado' || vista === 'cancelado' || vista === 'error') {
+    return shell(
+      <PosPagoEstado
+        vista={vista === 'error' ? 'error' : vista}
+        mensajeError={mensajeError}
+        onReintentar={reintentar}
+      />,
+    )
   }
-  return {
-    id: id as number,
-    nombre: item.nombre ?? item.nombreProducto ?? 'Producto',
-    nombreProducto: item.nombre ?? item.nombreProducto,
-    precio: item.precioUnitario ?? 0,
-    precioVenta: item.precioUnitario ?? 0,
-    imagenUrl: item.imagen ?? '',
-    imagenPrincipalUrl: item.imagen ?? '',
-    stock: 99,
-  } as Producto
+
+  if (!info) {
+    return shell(<PosPagoEstado vista="error" mensajeError="qr_invalido" />)
+  }
+
+  const esTarjeta = info.metodoPago === 'TARJETA'
+  const esSinpe = info.metodoPago === 'SINPE'
+
+  return shell(
+    <div className="w-full space-y-5">
+      <PosPagoResumen info={info} />
+
+      {esSinpe ? <PosPagoSinpe info={info} /> : null}
+
+      {esTarjeta && modoEmbed ? (
+        <PosPagoOnvoEmbed
+          token={token!}
+          total={info.total ?? 0}
+          onSuccess={marcarExitoEmbed}
+          onFallback={() => setModoEmbed(false)}
+        />
+      ) : null}
+
+      {esTarjeta && !modoEmbed ? (
+        <div className="w-full max-w-md mx-auto space-y-2">
+          {mensajeError === 'pago_fallido' ? (
+            <p className="text-sm text-center text-red-500">{t('pos.pago.errorPagoDesc')}</p>
+          ) : null}
+          <button
+            type="button"
+            disabled={iniciandoPago}
+            onClick={() => void pagarHosted()}
+            className="w-full rounded-[14px] py-4 text-[15px] font-bold text-white disabled:opacity-50"
+            style={{ background: 'var(--hc-primary)' }}
+          >
+            {iniciandoPago
+              ? t('pos.pago.procesando')
+              : t('pos.pago.pagar', { monto: formatColones(info.total) })}
+          </button>
+          <p className="text-xs text-center text-[var(--hc-muted)]">{t('pos.pago.hostedAviso')}</p>
+        </div>
+      ) : null}
+    </div>,
+  )
 }

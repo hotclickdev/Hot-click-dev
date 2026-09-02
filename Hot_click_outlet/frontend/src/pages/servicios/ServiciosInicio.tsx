@@ -28,6 +28,15 @@ function StarIcon({ className = 'w-6 h-6' }: { className?: string }) {
   )
 }
 
+function TagIcon({ className = 'w-6 h-6' }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
+      <line x1="7" y1="7" x2="7.01" y2="7" />
+    </svg>
+  )
+}
+
 function FlechaCard() {
   return (
     <div className="absolute bottom-4 right-4 w-8 h-8 rounded-full flex items-center justify-center transition-transform duration-200 group-hover:translate-x-1"
@@ -135,6 +144,38 @@ export default function ServiciosInicio({ irA }: { irA: (destino: VistaServicios
           </h3>
           <p className="text-sm leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
             Revisá la garantía activa de los productos que compraste en HotClick.
+          </p>
+        </div>
+      </motion.button>
+
+      <motion.button
+        whileHover={{ y: -4, scale: 1.01 }} whileTap={{ scale: 0.97 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+        onClick={() => irA('inventario')}
+        className="text-left rounded-3xl overflow-hidden relative group cursor-pointer sm:col-span-2"
+        style={{ border: '1px solid rgba(23,71,168,0.2)', backgroundColor: 'var(--hc-surface)' }}>
+
+        <div className="relative h-44 overflow-hidden">
+          <ServiceCardImage type="inventario" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+          <div className="absolute inset-0"
+            style={{ background: 'linear-gradient(to top, rgba(23,71,168,0.88) 0%, rgba(23,71,168,0.2) 50%, transparent 100%)' }} />
+          <div className="absolute top-4 left-4 w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg text-white"
+            style={{ backgroundColor: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
+            <TagIcon className="w-6 h-6" />
+          </div>
+          <span className="absolute top-4 right-4 px-2.5 py-1 rounded-full text-xs font-bold"
+            style={{ backgroundColor: 'rgba(23,71,168,0.9)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }}>
+            En tu local
+          </span>
+          <FlechaCard />
+        </div>
+
+        <div className="p-5">
+          <h3 className="font-black text-lg mb-1.5 leading-tight" style={{ color: 'var(--hc-text)' }}>
+            Digitalización y etiquetado de inventario
+          </h3>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
+            Digitalizamos tu inventario en el local, aunque no tengas códigos de barras ni catálogo digital.
           </p>
         </div>
       </motion.button>

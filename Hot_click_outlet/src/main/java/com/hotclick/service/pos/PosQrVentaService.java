@@ -79,6 +79,55 @@ public class PosQrVentaService {
         }
     }
 
+    /**
+     * Crea payment intent ONVO para pago embebido (SDK) en la página del QR.
+     */
+    @Transactional
+    public Map<String, String> crearPaymentIntent(String token) {
+        PosQrSesion sesion = sessionService.findSesionActiva(token);
+        if (!"TARJETA".equals(sesion.getMetodoPago())) {
+            throw new IllegalStateException("Esta sesión no es de pago con tarjeta");
+        }
+        if (onvoService.isMockMode()) {
+            throw new IllegalStateException(
+                "ONVO no está configurado. Añade ONVO_SECRET_KEY para cobrar con tarjeta en el POS.");
+        }
+        String publishableKey = onvoService.getPublishableKey();
+        if (publishableKey == null || publishableKey.isBlank()) {
+            throw new IllegalStateException(
+                "ONVO_PUBLISHABLE_KEY no configurado para pago embebido en POS.");
+        }
+
+        try {
+            List<Map<String, Object>> items = sessionService.getMapper().readValue(
+                sesion.getItemsJson(), new TypeReference<>() {});
+            String descripcion = descripcionCheckout(items);
+            Long empresaId = sesion.getEmpresa().getId();
+
+            OnvoService.OnvoPaymentIntent intent = onvoService.crearPaymentIntent(
+                sesion.getTotal(), descripcion,
+                Map.of(
+                    "pos_qr_token", token,
+                    "origen", "POS",
+                    "empresa_id", String.valueOf(empresaId)
+                ));
+
+            sesion.setStripeSessionId(intent.id());
+            posQrRepo.save(sesion);
+
+            return Map.of(
+                "paymentIntentId", intent.id(),
+                "publishableKey", publishableKey
+            );
+        } catch (IllegalStateException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("[POS-QR] Error creando payment intent token={}: {}", token, e.getMessage());
+            throw new IntegracionExternaException("onvo", IntegracionExternaException.Tipo.IO_ERROR,
+                "Error al crear intención de pago: " + e.getMessage(), e);
+        }
+    }
+
     @Transactional
     public boolean completarSiPagoPasarela(String pasarelaSessionId) {
         if (pasarelaSessionId == null || pasarelaSessionId.isBlank()) return false;

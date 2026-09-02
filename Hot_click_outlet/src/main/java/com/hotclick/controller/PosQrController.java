@@ -102,7 +102,7 @@ public class PosQrController {
         }
     }
 
-    /** Cliente crea sesión de pago Stripe y recibe la URL de checkout. */
+    /** Cliente crea sesión de pago ONVO (checkout hospedado) y recibe la URL. */
     @PostMapping("/pago/{token}/stripe")
     public ResponseEntity<?> iniciarStripe(@PathVariable String token) {
         try {
@@ -112,6 +112,21 @@ public class PosQrController {
             return ResponseEntity.status(404).body(Map.of("error", "QR no encontrado"));
         } catch (Exception e) {
             log.error("[POS-QR] Error iniciando pago tarjeta token={}: {}", token, e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("error", "Error al iniciar pago: " + e.getMessage()));
+        }
+    }
+
+    /** Cliente crea payment intent ONVO para SDK embebido (wallets + tarjeta). */
+    @PostMapping("/pago/{token}/intent")
+    public ResponseEntity<?> iniciarPaymentIntent(@PathVariable String token) {
+        try {
+            return ResponseEntity.ok(posQrService.crearPaymentIntent(token));
+        } catch (java.util.NoSuchElementException e) {
+            return ResponseEntity.status(404).body(Map.of("error", "QR no encontrado"));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            log.error("[POS-QR] Error iniciando payment intent token={}: {}", token, e.getMessage(), e);
             return ResponseEntity.status(500).body(Map.of("error", "Error al iniciar pago: " + e.getMessage()));
         }
     }

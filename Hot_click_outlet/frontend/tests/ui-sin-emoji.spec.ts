@@ -213,6 +213,7 @@ test('volver y canales de contacto usan TextoFlecha o TrustGlyph', () => {
   expect(leer('../src/pages/MisPedidosPage.tsx')).toContain("onClick={() => navigate('/perfil')}")
   expect(leer('../src/pages/servicios/BotonVolver.tsx')).toContain('onClick={onClick}')
   expect(leer('../src/pages/servicios/ServiciosInicio.tsx')).toContain("onClick={() => irA('busqueda')}")
+  expect(leer('../src/pages/servicios/ServiciosInicio.tsx')).toContain("onClick={() => irA('inventario')}")
   expect(leer('../src/pages/servicios/ServiciosInicio.tsx')).toContain('tipo="adelante"')
   expect(leer('../src/pages/contacto/ContactoCanales.tsx')).toContain('tipo="adelante"')
   expect(leer('../src/pages/contacto/ContactoCanales.tsx')).toContain('wa.me')

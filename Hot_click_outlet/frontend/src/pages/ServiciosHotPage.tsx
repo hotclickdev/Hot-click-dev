@@ -12,8 +12,9 @@ import ServiciosInicio, { ServiciosHero } from './servicios/ServiciosInicio'
 import VistaBusqueda from './servicios/VistaBusqueda'
 import VistaGarantia from './servicios/VistaGarantia'
 import VistaTestimonio from './servicios/VistaTestimonio'
+import VistaDigitalizacion from './servicios/VistaDigitalizacion'
 import {
-  SITE_URL, serviciosJsonLd, FOTO_MAX_BYTES, MAX_FOTOS,
+  SITE_URL, serviciosJsonLd, FOTO_MAX_BYTES, MAX_FOTOS, PREFIJO_SOLICITUD_INVENTARIO,
   type FormBusqueda, type FotoSolicitud, type GarantiaItem, type ProductoParaResena,
   type TabBusqueda, type VistaServicios,
 } from './servicios/serviciosHelpers'
@@ -108,8 +109,13 @@ export default function ServiciosHotPage() {
     if (!phone || phone.replace(/\D/g, '').length < 7) { setError('Por favor ingresá un número de teléfono válido.'); return }
     setSending(true); setError('')
     try {
+      const descripcion = vista === 'inventario'
+        ? `${PREFIJO_SOLICITUD_INVENTARIO} ${form.descripcion.trim()}`
+        : form.descripcion
       await servicioService.crear({
-        ...form, telefonoContacto: phone,
+        ...form,
+        descripcion,
+        telefonoContacto: phone,
         fotosUrls: fotos.length ? JSON.stringify(fotos.map(f => f.url)) : null,
       })
       setSuccess(true)
@@ -184,6 +190,27 @@ export default function ServiciosHotPage() {
               productosResenar={productosResenar}
               loadingResenar={loadingResenar}
               refetchResenar={refetchResenar}
+            />
+          )}
+          {vista === 'inventario' && (
+            <VistaDigitalizacion
+              token={token}
+              success={success}
+              setSuccess={setSuccess}
+              setTabBusqueda={setTabBusqueda}
+              form={form}
+              setForm={setForm}
+              phone={phone}
+              setPhone={setPhone}
+              fotos={fotos}
+              setFotos={setFotos}
+              uploading={uploading}
+              sending={sending}
+              error={error}
+              fileRef={fileRef}
+              handleEnviar={handleEnviar}
+              handleFotoChange={handleFotoChange}
+              volver={volver}
             />
           )}
         </AnimatePresence>
